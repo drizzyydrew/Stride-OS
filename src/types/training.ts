@@ -8,16 +8,25 @@ export type TrainingZone =
 
 export type WorkoutType =
   | 'easy_run'
+  | 'recovery_run'
   | 'long_run'
+  | 'progression_run'
   | 'tempo'
   | 'threshold'
+  | 'marathon_pace'
+  | 'vo2'
+  | 'hill_repeats'
+  | 'fartlek'
   | 'norwegian_4x4'
   | 'intervals'
   | 'strides'
   | 'sprint'
+  | 'taper_session'
+  | 'deload_session'
   | 'recovery'
   | 'strength'
   | 'cross_training'
+  | 'mobility'
   | 'rest';
 
 export type EnergySystem =
@@ -150,6 +159,8 @@ export type ReadinessState = {
 // One record per logged workout. Persisted in workoutStore history array.
 // All fields are required — workoutStore.onRehydrateStorage backfills defaults
 // for records written before this schema existed.
+export type WorkoutLogSource = 'generated' | 'manual';
+
 export type CompletedWorkoutRecord = {
   id:                     string;           // week-scoped key: "w1_easy_run_0"
   workoutId:              string;           // raw workout.id from generator: "easy_run"
@@ -166,6 +177,15 @@ export type CompletedWorkoutRecord = {
   fatigueDelta:           number;           // fatigueAfter − fatigueBefore (negative = recovery)
   recoveryBefore:         number;           // recoveryScore snapshot before this workout
   recoveryDelta:          number;           // workout's contribution to recovery change
+
+  // Extended fields — optional for backward compatibility with existing stored records
+  actualDurationMinutes?: number;           // what was actually done (may differ from planned)
+  actualDistanceMiles?:   number;           // measured distance
+  rpe?:                   number;           // 1–10 actual perceived exertion
+  notes?:                 string;           // free-text athlete notes
+  source?:                WorkoutLogSource; // how the record was created
+  skipped?:               boolean;          // true when session was skipped (not a real completion)
+  skippedReason?:         string;
 };
 
 export type WorkoutGeneratorInput = {

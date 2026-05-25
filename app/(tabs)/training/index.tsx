@@ -1,13 +1,17 @@
-import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
 import { useAdaptationStore } from '../../../src/store/adaptationStore';
+import { useProfileStore } from '../../../src/store/profileStore';
+import { useWorkoutWeekStore } from '../../../src/store/workoutWeekStore';
 
-import { generateTrainingWeek, generateWorkout } from '../../../src/utils/workoutGenerator';
+import { generateRichWeek } from '../../../src/utils/workoutEngine';
 import { adaptWeek, ID_TO_GENERATABLE } from '../../../src/utils/training/adaptWeek';
+import { generateTrainingWeek, generateWorkout } from '../../../src/utils/workoutGenerator';
 import { calculateACWR } from '../../../src/utils/training';
 import {
   getWeeklyMileage,
@@ -29,6 +33,8 @@ import { colors } from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../../src/theme/tokens';
 import type { TrainingPhase, GeneratableWorkoutType } from '../../../src/types/training';
+import type { WorkoutEngineInput } from '../../../src/types/workout';
+import { todayDateKey } from '../../../src/types/checkin';
 
 const PHASE_BADGE: Record<TrainingPhase, { bg: string; text: string; label: string }> = {
   base:   { bg: '#0C2340', text: '#60A5FA', label: 'BASE'   },
@@ -39,86 +45,40 @@ const PHASE_BADGE: Record<TrainingPhase, { bg: string; text: string; label: stri
 };
 
 export default function TrainingScreen() {
+  const router = useRouter();
+
   const {
-    goalRace,
-    weeklyMileage,
-    recoveryScore,
-    fatigueScore,
-    setFatigueScore,
-    setRecentEasyLoad,
-    currentWeek,
-    trainingPhase,
-    progressionLevel,
+    goalRace, weeklyMileage, recoveryScore, fatigueScore,
+    setFatigueScore, setRecentEasyLoad,
+    currentWeek, trainingPhase, progressionLevel,
   } = useAthleteStore();
 
   const { completedWorkouts, completeWorkout, history } = useWorkoutStore();
 
   const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
+  const checkedIn    = todayCheckIn?.date === todayDateKey();
 
   const { getAdaptation, setAdaptation, clearAdaptation } = useAdaptationStore();
   const adaptation = getAdaptation(currentWeek);
 
+  const profile     = useProfileStore(s => s.getActiveProfile());
+  const calibration = profile?.calibration ?? null;
+
+  const { setRichWeek } = useWorkoutWeekStore();
+
   const [isRecalculating, setIsRecalculating] = useState(false);
 
-  const generatorInput = {
-    weeklyMileage, recoveryScore, fatigueScore,
-    goalRace, currentWeek, trainingPhase, progressionLevel,
-  };
-
-  // Always generate the canonical week (used as the reference plan)
-  const canonicalWeek = generateTrainingWeek(generatorInput);
-
-  // Derive original types from the canonical week's workouts
-  // (these are the planned types BEFORE any adaptation)
-  const originalTypes: GeneratableWorkoutType[] = canonicalWeek.plannedWorkouts.map(
-    w => (ID_TO_GENERATABLE[w.id] ?? 'easy_run') as GeneratableWorkoutType,
-  );
-
-  // If an adaptation exists for this week, rebuild the effective workouts from
-  // the stored day types. Otherwise use the canonical workouts.
-  const effectiveWorkouts = adaptation
-    ? adaptation.dayTypes.map(type => generateWorkout(type, generatorInput))
-    : canonicalWeek.plannedWorkouts;
-
-  function handleRecalculate() {
-    setIsRecalculating(true);
-    const weekHistory = history.filter(r => r.week === currentWeek);
-    const { acwr }    = calculateACWR(weekHistory);
-
-    const result = adaptWeek({
-      originalTypes,
-      completedWorkouts,
-      currentWeek,
-      fatigueScore,
-      recoveryScore,
-      soreness:        todayCheckIn?.soreness    ?? null,
-      acwr,
-      trainingPhase,
-      progressionLevel,
-      weekHistory,
-    });
-
-    setAdaptation(currentWeek, result);
-    setIsRecalculating(false);
-  }
-
-  function handleClearAdaptation() {
-    clearAdaptation(currentWeek);
-  }
-
-  // ── Coach intelligence ──────────────────────────────────────────────────────
-  const acwrResult         = calculateACWR(history);
-  const weeklySummaries    = getWeeklyMileage(history);
-  const dist               = getTrainingDistribution(history, 30);
-  const weeklyFatigueTrend = getWeeklyFatigueTrend(history);
-  const weeklyRecoveryData = getWeeklyRecoveryTrend(history);
+  // ── Analytics inputs (shared with coach engine) ───────────────────────────
+  const acwrResult         = useMemo(() => calculateACWR(history), [history]);
+  const weeklySummaries    = useMemo(() => getWeeklyMileage(history), [history]);
+  const dist               = useMemo(() => getTrainingDistribution(history, 30), [history]);
+  const weeklyFatigueTrend = useMemo(() => getWeeklyFatigueTrend(history), [history]);
+  const weeklyRecoveryData = useMemo(() => getWeeklyRecoveryTrend(history), [history]);
 
   const fatigueSlope  = weeklyFatigueTrend.length >= 2
-    ? computeSlope(weeklyFatigueTrend.map(p => p.value))
-    : 0;
+    ? computeSlope(weeklyFatigueTrend.map(p => p.value)) : 0;
   const recoverySlope = weeklyRecoveryData.length >= 2
-    ? computeSlope(weeklyRecoveryData.map(p => p.value))
-    : 0;
+    ? computeSlope(weeklyRecoveryData.map(p => p.value)) : 0;
 
   const totalIntensity =
     (dist.byIntensity.easy      ?? 0) +
@@ -134,6 +94,90 @@ export default function TrainingScreen() {
   const adherenceRate      = Math.min(1, history.length / Math.max(1, currentWeek * 6));
   const consistencyScore   = computeConsistency(weeklySummaries.map(s => s.totalMiles));
 
+  const recentHardSessions = useMemo(() => {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return history.filter(r =>
+      r.timestamp >= cutoff && (r.intensity === 'hard' || r.intensity === 'max'),
+    ).length;
+  }, [history]);
+
+  // ── Rich week generation ──────────────────────────────────────────────────
+  const engineInput: WorkoutEngineInput = {
+    calibration,
+    fatigueSensitivity:    profile?.fatigueSensitivity    ?? 1.0,
+    recoveryResponsiveness: profile?.recoveryResponsiveness ?? 1.0,
+    injuryRisk:            profile?.returningFromInjury   ?? false,
+    fatigueScore,
+    recoveryScore,
+    soreness:    checkedIn ? (todayCheckIn?.soreness    ?? null) : null,
+    motivation:  checkedIn ? (todayCheckIn?.motivation  ?? null) : null,
+    acwr:               acwrResult.acwr,
+    trainingPhase,
+    progressionLevel,
+    weeklyMileage,
+    currentWeek,
+    goalRace,
+    weeksToRace:        0,
+    recentIntensityDist: {
+      easy:     easyProportion,
+      moderate: totalIntensity > 0 ? (dist.byIntensity.moderate ?? 0) / totalIntensity : 0.10,
+      hard:     totalIntensity > 0 ? ((dist.byIntensity.hard ?? 0) + (dist.byIntensity.max ?? 0)) / totalIntensity : 0.10,
+    },
+    recentHardSessions,
+    adherenceRate,
+    consistencyScore,
+    longRunConsistency,
+  };
+
+  const richWeek = useMemo(() => generateRichWeek(engineInput), [
+    calibration, fatigueScore, recoveryScore, trainingPhase,
+    progressionLevel, weeklyMileage, currentWeek, goalRace,
+    acwrResult.acwr, adherenceRate,
+  ]);
+
+  // Publish rich week for the detail screen
+  useEffect(() => { setRichWeek(richWeek); }, [richWeek]);
+
+  // ── Legacy canonical week (for adaptation system + completion keys) ────────
+  const generatorInput = {
+    weeklyMileage, recoveryScore, fatigueScore,
+    goalRace, currentWeek, trainingPhase, progressionLevel,
+  };
+  const canonicalWeek = generateTrainingWeek(generatorInput);
+
+  const originalTypes: GeneratableWorkoutType[] = canonicalWeek.plannedWorkouts.map(
+    w => (ID_TO_GENERATABLE[w.id] ?? 'easy_run') as GeneratableWorkoutType,
+  );
+
+  const effectiveWorkouts = adaptation
+    ? adaptation.dayTypes.map(type => generateWorkout(type, generatorInput))
+    : canonicalWeek.plannedWorkouts;
+
+  function handleRecalculate() {
+    setIsRecalculating(true);
+    const weekHistory = history.filter(r => r.week === currentWeek);
+    const { acwr } = calculateACWR(weekHistory);
+    const result = adaptWeek({
+      originalTypes,
+      completedWorkouts,
+      currentWeek,
+      fatigueScore,
+      recoveryScore,
+      soreness: todayCheckIn?.soreness ?? null,
+      acwr,
+      trainingPhase,
+      progressionLevel,
+      weekHistory,
+    });
+    setAdaptation(currentWeek, result);
+    setIsRecalculating(false);
+  }
+
+  function handleClearAdaptation() {
+    clearAdaptation(currentWeek);
+  }
+
+  // ── Coach card ─────────────────────────────────────────────────────────────
   const { weeklySummary } = generateCoachingOutput({
     athleteName: 'Athlete',
     goalRace,
@@ -143,21 +187,21 @@ export default function TrainingScreen() {
     weeklyMileage,
     fatigueScore,
     recoveryScore,
-    soreness:          todayCheckIn?.soreness    ?? null,
-    motivation:        todayCheckIn?.motivation  ?? null,
-    checkedIn:         todayCheckIn != null,
-    todayWorkoutType:  canonicalWeek.plannedWorkouts[0]?.type ?? 'easy_run',
-    isRestDay:         false,
-    isTodayComplete:   false,
-    acwr:              acwrResult.acwr,
+    soreness:         todayCheckIn?.soreness   ?? null,
+    motivation:       todayCheckIn?.motivation ?? null,
+    checkedIn,
+    todayWorkoutType: canonicalWeek.plannedWorkouts[0]?.type ?? 'easy_run',
+    isRestDay:        false,
+    isTodayComplete:  false,
+    acwr:             acwrResult.acwr,
     adherenceRate,
     longRunConsistency,
     easyProportion,
-    historyWeeks:      weeklySummaries.length,
+    historyWeeks:     weeklySummaries.length,
     consistencyScore,
     fatigueSlope,
     recoverySlope,
-    weeksRemaining:    0,
+    weeksRemaining:   0,
   });
 
   const badge = PHASE_BADGE[trainingPhase];
@@ -165,7 +209,7 @@ export default function TrainingScreen() {
   return (
     <ScreenLayout title="Training">
 
-      {/* Week summary header */}
+      {/* Week summary */}
       <Card style={{ marginBottom: spacing.sectionGap }}>
         <View style={styles.summaryHeader}>
           <Badge label={badge.label} bg={badge.bg} color={badge.text} />
@@ -182,7 +226,13 @@ export default function TrainingScreen() {
         )}
       </Card>
 
-      {/* Adaptation summary card — shown when an adaptation exists, or always */}
+      {/* Rich week phase rationale */}
+      <Card style={styles.rationaleCard}>
+        <Text style={styles.rationaleNote}>{richWeek.progressionNote}</Text>
+        <Text style={styles.rationaleText}>{richWeek.phaseRationale}</Text>
+      </Card>
+
+      {/* Adaptation card */}
       {adaptation ? (
         <AdaptationSummaryCard
           result={adaptation}
@@ -192,48 +242,49 @@ export default function TrainingScreen() {
       ) : (
         <AdaptationSummaryCard
           result={{
-            dayTypes:      originalTypes,
+            dayTypes:     originalTypes,
             originalTypes,
-            entries:       originalTypes.map((t, i) => ({
+            entries:      originalTypes.map((t, i) => ({
               dayIndex: i, originalType: t, adaptedType: t,
               change: 'as_planned' as const, reason: '',
             })),
-            triggers:      [],
-            summary:       'Week is on track — no session changes needed.',
-            appliedCount:  0,
-            missedCount:   0,
+            triggers:     [],
+            summary:      'Week is on track — no session changes needed.',
+            appliedCount: 0,
+            missedCount:  0,
           }}
           onRecalculate={handleRecalculate}
           isLoading={isRecalculating}
         />
       )}
 
-      {/* Weekly coach summary */}
+      {/* Coach summary */}
       <WeeklyCoachCard summary={weeklySummary} />
 
-      {/* Workout cards */}
-      {effectiveWorkouts.map((workout, index) => {
-        // Always use the ORIGINAL workout id for the completion key so that
-        // recalculating the adaptation mid-week doesn't orphan prior completions.
-        const originalId = canonicalWeek.plannedWorkouts[index]?.id ?? workout.id;
-        const completionKey = `w${currentWeek}_${originalId}_${index}`;
+      {/* Workout list — uses rich workouts, navigates to detail on tap */}
+      {richWeek.workouts.map((workout, index) => {
+        const completionKey = `w${currentWeek}_${workout.id}_${index}`;
+        const isComplete    = completedWorkouts.includes(completionKey);
+
         return (
-          <WorkoutCard
+          <TouchableOpacity
             key={completionKey}
-            workout={workout}
-            isComplete={completedWorkouts.includes(completionKey)}
-            onComplete={() =>
-              completeWorkout(
-                completionKey,
-                workout,
-                currentWeek,
-                fatigueScore,
-                recoveryScore,
-                setFatigueScore,
-                setRecentEasyLoad,
-              )
-            }
-          />
+            activeOpacity={0.92}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onPress={() => (router as any).push(`/training/${index}`)}
+          >
+            <WorkoutCard
+              workout={workout}
+              isComplete={isComplete}
+              onComplete={() =>
+                completeWorkout(
+                  completionKey, workout, currentWeek,
+                  fatigueScore, recoveryScore,
+                  setFatigueScore, setRecentEasyLoad,
+                )
+              }
+            />
+          </TouchableOpacity>
         );
       })}
 
@@ -267,5 +318,21 @@ const styles = StyleSheet.create({
     color:     colors.primary,
     fontSize:  FontSize.sm,
     marginTop: spacing.sm,
+  },
+  rationaleCard: {
+    marginBottom:  spacing.cardGap,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  rationaleNote: {
+    color:        colors.primary,
+    fontSize:     FontSize.sm,
+    fontWeight:   FontWeight.medium,
+    marginBottom: spacing.xs,
+  },
+  rationaleText: {
+    color:      colors.textMuted,
+    fontSize:   FontSize.sm,
+    lineHeight: 18,
   },
 });

@@ -5,6 +5,7 @@ import type {
   ProgressionLevel,
   CompletedWorkoutRecord,
 } from './training';
+import type { ReadinessThresholds } from './athlete';
 
 // ─── Input ────────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,10 @@ export type RecommendationInput = {
 
   // Full completion history for ACWR and load-window calculations
   history: CompletedWorkoutRecord[];
+
+  // Calibration-adjusted thresholds (from profileStore.useReadinessThresholds).
+  // When omitted, standard population defaults are used.
+  readinessThresholds?: ReadinessThresholds;
 };
 
 // ─── Output sub-types ─────────────────────────────────────────────────────────

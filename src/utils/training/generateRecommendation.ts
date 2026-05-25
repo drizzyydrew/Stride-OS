@@ -36,6 +36,7 @@
 //   Plan-mandated deload phase always shows as 'suggested' minimum.
 
 import type { WorkoutIntensity, WorkoutType } from '../../types/training';
+import type { ReadinessThresholds } from '../../types/athlete';
 import type {
   RecommendationInput,
   TrainingRecommendation,
@@ -45,6 +46,13 @@ import type {
   DeloadRecommendation,
 } from '../../types/recommendation';
 import { calculateACWR } from './calculateACWR';
+
+const DEFAULT_THRESHOLDS: ReadinessThresholds = {
+  highFatigue:      75,
+  criticalFatigue:  85,
+  poorRecovery:     50,
+  criticalRecovery: 35,
+};
 
 // ─── Intensity rank helpers ───────────────────────────────────────────────────
 
@@ -214,28 +222,29 @@ function buildRecoveryRec(
   soreness:      number | null,
   motivation:    number | null,
   acwr:          number,
+  t:             ReadinessThresholds,
 ): RecoveryRecommendation {
   const s = soreness   ?? 5;
   const m = motivation ?? 7;
 
   const actions: string[] = [];
 
-  if (recoveryScore < 50)         actions.push('Prioritize 8+ hours of sleep tonight');
-  if (fatigueScore > 70)          actions.push('Allow 48h between hard sessions — fitness is built during rest');
-  if (fatigueScore > 55)          actions.push('Add a 10-min easy walk or light mobility session today');
-  if (s >= 8)                     actions.push('High soreness needs blood flow — gentle movement, no impact');
-  else if (s >= 6)                actions.push('Warm up for 10+ min before any intensity work today');
-  if (m <= 3)                     actions.push('Low motivation often signals accumulated stress — trust the rest');
-  if (acwr > 1.3)                 actions.push('Reduce training load before ramping volume again');
-  if (recoveryScore < 40)         actions.push('Consider foam rolling, compression, or cold-water immersion');
+  if (recoveryScore < t.poorRecovery)    actions.push('Prioritize 8+ hours of sleep tonight');
+  if (fatigueScore > t.highFatigue)      actions.push('Allow 48h between hard sessions — fitness is built during rest');
+  if (fatigueScore > 55)                 actions.push('Add a 10-min easy walk or light mobility session today');
+  if (s >= 8)                            actions.push('High soreness needs blood flow — gentle movement, no impact');
+  else if (s >= 6)                       actions.push('Warm up for 10+ min before any intensity work today');
+  if (m <= 3)                            actions.push('Low motivation often signals accumulated stress — trust the rest');
+  if (acwr > 1.3)                        actions.push('Reduce training load before ramping volume again');
+  if (recoveryScore < t.criticalRecovery + 5) actions.push('Consider foam rolling, compression, or cold-water immersion');
 
   const unique  = [...new Set(actions)].slice(0, 3);
   if (unique.length === 0) unique.push('Continue current recovery habits — they are working well');
 
   const priority: RecoveryRecommendation['priority'] =
-    recoveryScore < 35 || fatigueScore > 80 || s >= 9 ? 'critical' :
-    recoveryScore < 50 || fatigueScore > 70 || s >= 7 ? 'high'     :
-    recoveryScore < 65 || fatigueScore > 55 || s >= 5 ? 'moderate' :
+    recoveryScore < t.criticalRecovery || fatigueScore > t.criticalFatigue || s >= 9 ? 'critical' :
+    recoveryScore < t.poorRecovery     || fatigueScore > t.highFatigue      || s >= 7 ? 'high'     :
+    recoveryScore < 65                 || fatigueScore > 55                  || s >= 5 ? 'moderate' :
     'low';
 
   return { priority, actions: unique };
@@ -251,6 +260,7 @@ function buildInjuryRisk(
   soreness:     number | null,
   motivation:   number | null,
   acwr:         number,
+  t:            ReadinessThresholds,
 ): InjuryRiskWarning {
   const s = soreness   ?? 5;
   const m = motivation ?? 7;
@@ -262,9 +272,9 @@ function buildInjuryRisk(
   else if (acwr > 1.3)
     triggers.push(`ACWR ${acwr.toFixed(2)} — approaching elevated risk zone (ceiling: 1.3)`);
 
-  if (fatigueScore > 80)
+  if (fatigueScore > t.criticalFatigue)
     triggers.push(`Cumulative fatigue ${fatigueScore}/100 — overreach threshold exceeded`);
-  else if (fatigueScore > 70)
+  else if (fatigueScore > t.highFatigue)
     triggers.push(`Elevated fatigue score: ${fatigueScore}/100`);
 
   if (s >= 8 && fatigueScore > 60)
@@ -276,8 +286,8 @@ function buildInjuryRisk(
     triggers.push('Critically low motivation — a recognized non-functional overreaching marker');
 
   const level: InjuryRiskWarning['level'] =
-    acwr > 1.5 || (fatigueScore > 80 && s >= 7)          ? 'high'     :
-    acwr > 1.3 || fatigueScore > 70 || (s >= 7 && m <= 3) ? 'elevated' :
+    acwr > 1.5 || (fatigueScore > t.criticalFatigue && s >= 7)          ? 'high'     :
+    acwr > 1.3 || fatigueScore > t.highFatigue || (s >= 7 && m <= 3)    ? 'elevated' :
     'none';
 
   const advice =
@@ -302,11 +312,12 @@ function buildDeloadRec(
   trainingPhase: RecommendationInput['trainingPhase'],
   acwr:          number,
   soreness:      number | null,
+  t:             ReadinessThresholds,
 ): DeloadRecommendation {
   const s = soreness ?? 5;
 
-  const isMandatory   = (fatigueScore > 80 && recoveryScore < 35) || acwr > 1.7;
-  const isRecommended = !isMandatory && ((fatigueScore > 70 && recoveryScore < 45) || acwr > 1.5);
+  const isMandatory   = (fatigueScore > t.criticalFatigue && recoveryScore < t.criticalRecovery) || acwr > 1.7;
+  const isRecommended = !isMandatory && ((fatigueScore > t.highFatigue && recoveryScore < t.poorRecovery - 5) || acwr > 1.5);
   const isSuggested   = !isMandatory && !isRecommended && (
     fatigueScore > 60 || acwr > 1.3 || trainingPhase === 'deload' || (s >= 8 && fatigueScore > 55)
   );
@@ -339,8 +350,10 @@ export function generateRecommendation(input: RecommendationInput): TrainingReco
     soreness, motivation,
     plannedIntensity, plannedType, plannedDuration,
     history,
+    readinessThresholds,
   } = input;
 
+  const t    = { ...DEFAULT_THRESHOLDS, ...readinessThresholds };
   const { acwr } = calculateACWR(history);
 
   const readinessScore = computeReadiness(recoveryScore, fatigueScore, soreness, motivation);
@@ -358,9 +371,9 @@ export function generateRecommendation(input: RecommendationInput): TrainingReco
     acwr,
   );
 
-  const recovery   = buildRecoveryRec(recoveryScore, fatigueScore, soreness, motivation, acwr);
-  const injuryRisk = buildInjuryRisk(fatigueScore, soreness, motivation, acwr);
-  const deload     = buildDeloadRec(fatigueScore, recoveryScore, trainingPhase, acwr, soreness);
+  const recovery   = buildRecoveryRec(recoveryScore, fatigueScore, soreness, motivation, acwr, t);
+  const injuryRisk = buildInjuryRisk(fatigueScore, soreness, motivation, acwr, t);
+  const deload     = buildDeloadRec(fatigueScore, recoveryScore, trainingPhase, acwr, soreness, t);
 
   return { readinessScore, overallReadiness, intensity, recovery, injuryRisk, deload };
 }

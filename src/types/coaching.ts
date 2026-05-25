@@ -12,7 +12,8 @@ export type InsightCategory =
   | 'intensity_distribution' // 80/20 easy-hard split analysis
   | 'taper'                  // taper-phase guidance
   | 'deload'                 // deload recommendations
-  | 'form';                  // positive reinforcement when all signals are green
+  | 'form'                   // positive reinforcement when all signals are green
+  | 'strength';              // strength training readiness, adherence, phase guidance
 
 // Severity drives visual presentation and surface priority.
 // positive — green celebration; info — neutral; caution — amber early warning;

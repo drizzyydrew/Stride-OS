@@ -37,7 +37,7 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
-        name="training/index"
+        name="training"
         options={{
           title: 'Training',
           tabBarIcon: ({ color, focused }) => (
@@ -52,7 +52,7 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
-        name="strength/index"
+        name="strength"
         options={{
           title: 'Strength',
           tabBarIcon: ({ color, focused }) => (

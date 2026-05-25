@@ -2,6 +2,7 @@ import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
 import { useAdaptationStore } from '../../../src/store/adaptationStore';
+import { useReadinessThresholds } from '../../../src/store/profileStore';
 
 import { generateTrainingWeek, generateWorkout } from '../../../src/utils/workoutGenerator';
 import { generateRecommendation, calculateACWR } from '../../../src/utils/training';
@@ -56,7 +57,8 @@ export default function TodayScreen() {
   const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
   const checkedIn    = todayCheckIn?.date === todayDateKey();
 
-  const adaptation = useAdaptationStore(s => s.getAdaptation(currentWeek));
+  const adaptation          = useAdaptationStore(s => s.getAdaptation(currentWeek));
+  const readinessThresholds = useReadinessThresholds();
 
   const generatorInput = {
     weeklyMileage, recoveryScore, fatigueScore,
@@ -160,12 +162,13 @@ export default function TodayScreen() {
     weeklyMileage,
     trainingPhase,
     progressionLevel,
-    soreness:         checkedIn ? todayCheckIn!.soreness   : null,
-    motivation:       checkedIn ? todayCheckIn!.motivation : null,
-    plannedType:      todayWorkout.type,
-    plannedIntensity: todayWorkout.intensity,
-    plannedDuration:  todayWorkout.durationMinutes,
+    soreness:             checkedIn ? todayCheckIn!.soreness   : null,
+    motivation:           checkedIn ? todayCheckIn!.motivation : null,
+    plannedType:          todayWorkout.type,
+    plannedIntensity:     todayWorkout.intensity,
+    plannedDuration:      todayWorkout.durationMinutes,
     history,
+    readinessThresholds,
   });
 
   return (

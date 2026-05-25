@@ -341,6 +341,47 @@ const INSIGHT_ACTIONS: Record<string, ActionTemplate[]> = {
     },
   ],
 
+  strength_high_fatigue: [
+    {
+      slug: 'strength_prehab',
+      title: 'Replace strength session with 20-min prehab or mobility',
+      reason: 'High neuromuscular fatigue means lifting heavy today adds stress without the adaptation — prehab maintains the habit without the cost.',
+      category: 'recovery',
+      dueWindow: 'today',
+      priority: 'high',
+    },
+  ],
+  strength_low_recovery: [
+    {
+      slug: 'strength_skip',
+      title: 'Skip strength training today — prioritise recovery',
+      reason: 'Running and strength both compete for recovery resources. When recovery is low, running wins.',
+      category: 'recovery',
+      dueWindow: 'today',
+      priority: 'high',
+    },
+  ],
+  strength_low_adherence: [
+    {
+      slug: 'strength_short_session',
+      title: 'Schedule a 20-min prehab block this week — even short sessions count',
+      reason: 'Consistent short sessions outperform sporadic long ones for neuromuscular adaptation and injury prevention.',
+      category: 'habit',
+      dueWindow: 'this_week',
+      priority: 'medium',
+    },
+  ],
+  strength_race_proximity: [
+    {
+      slug: 'strength_activation',
+      title: 'Switch to activation-only strength this week',
+      reason: 'Heavy loading within 2–3 weeks of race day adds fatigue that won\'t clear in time. Activation work keeps you sharp.',
+      category: 'race_prep',
+      dueWindow: 'this_week',
+      priority: 'high',
+    },
+  ],
+
   form_peak: [
     {
       slug: 'quality_window',
