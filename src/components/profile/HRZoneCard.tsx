@@ -8,6 +8,8 @@ import type { HRZoneEntry, CalibrationOutput } from '../../types/athlete';
 
 type Props = {
   calibration: CalibrationOutput;
+  // Optional: pass karvonenZones to show Karvonen instead of Friel HRmax zones
+  useKarvonen?: boolean;
 };
 
 const ZONE_COLOR: Record<number, string> = {
@@ -40,23 +42,28 @@ function HRZoneRow({
 
   const bpmLabel = hasHRMax && entry.minBPM !== null && entry.maxBPM !== null
     ? `${entry.minBPM}–${entry.maxBPM} bpm`
-    : `${entry.minPct}–${entry.maxPct}% HRmax`;
+    : `${Math.round(entry.minPct * 100)}–${Math.round(entry.maxPct * 100)}% HRmax`;
 
   return (
     <View style={[row.wrap, !isLast && row.bordered]}>
       <View style={[row.colorBar, { backgroundColor: color }]} />
       <View style={row.main}>
-        <View style={row.labelRow}>
+        {/* Zone name + badge row — RPE on its own line to prevent clipping */}
+        <View style={row.nameRow}>
           <View style={[row.zoneBadge, { backgroundColor: bg }]}>
             <Text style={[row.zoneText, { color }]}>Z{entry.zone}</Text>
           </View>
-          <Text style={[row.label, { color }]}>{entry.label}</Text>
+          <Text style={[row.label, { color }]} numberOfLines={1}>{entry.label}</Text>
+        </View>
+        {/* BPM value — prominent */}
+        <Text style={row.bpm}>{bpmLabel}</Text>
+        {/* Percentage + RPE on same line, both small */}
+        <View style={row.metaRow}>
+          <Text style={row.pct}>
+            {Math.round(entry.minPct * 100)}–{Math.round(entry.maxPct * 100)}% max
+          </Text>
           <Text style={row.rpe}>RPE {entry.rpeRange[0]}–{entry.rpeRange[1]}</Text>
         </View>
-        <Text style={row.bpm}>{bpmLabel}</Text>
-        <Text style={row.pct}>
-          {entry.minPct}–{entry.maxPct}% of max heart rate
-        </Text>
       </View>
     </View>
   );
@@ -80,17 +87,18 @@ const row = StyleSheet.create({
   },
   main: {
     flex: 1,
-    gap:  spacing.xs,
+    gap:  4,
   },
-  labelRow: {
+  nameRow: {
     flexDirection: 'row',
     alignItems:    'center',
     gap:           spacing.sm,
   },
   zoneBadge: {
     paddingHorizontal: 5,
-    paddingVertical:   1,
+    paddingVertical:   2,
     borderRadius:      Radius.sm,
+    flexShrink:        0,
   },
   zoneText: {
     fontSize:      8,
@@ -102,23 +110,40 @@ const row = StyleSheet.create({
     fontWeight: FontWeight.black,
     flex:       1,
   },
-  rpe: {
-    color:    colors.textSubtle,
-    fontSize: 9,
-  },
   bpm: {
     color:      colors.text,
     fontSize:   FontSize.md,
     fontWeight: FontWeight.black,
   },
+  metaRow: {
+    flexDirection:  'row',
+    justifyContent: 'space-between',
+    alignItems:     'center',
+  },
   pct: {
     color:    colors.textDim,
     fontSize: 9,
   },
+  rpe: {
+    color:    colors.textMuted,
+    fontSize: 9,
+  },
 });
 
-export default function HRZoneCard({ calibration }: Props) {
-  const hasHRMax = calibration.estimatedHRMax !== null;
+export default function HRZoneCard({ calibration, useKarvonen }: Props) {
+  const zones   = useKarvonen && calibration.karvonenZones
+    ? calibration.karvonenZones
+    : calibration.hrZones;
+  const hasHRMax = calibration.estimatedHRMax !== null
+    || calibration.hrZones.some(z => z.minBPM !== null);
+
+  const methodLabel = useKarvonen && calibration.karvonenZones
+    ? 'Karvonen Heart-Rate Reserve'
+    : 'Friel 5-zone model';
+
+  const sourceLabel = useKarvonen && calibration.karvonenZones
+    ? 'Karvonen HRR method · Karvonen et al. 1957'
+    : `${calibration.hrMaxSource} · Tanaka et al. 2001`;
 
   return (
     <Card style={styles.card}>
@@ -126,7 +151,9 @@ export default function HRZoneCard({ calibration }: Props) {
         <Text style={styles.sectionLabel}>HEART RATE ZONES</Text>
         {hasHRMax ? (
           <View style={styles.hrMaxBadge}>
-            <Text style={styles.hrMaxText}>HRmax {calibration.estimatedHRMax}</Text>
+            <Text style={styles.hrMaxText}>
+              {calibration.estimatedHRMax ? `HRmax ~${calibration.estimatedHRMax}` : 'HRmax set'}
+            </Text>
           </View>
         ) : (
           <View style={[styles.hrMaxBadge, styles.hrMaxBadgeDim]}>
@@ -136,24 +163,28 @@ export default function HRZoneCard({ calibration }: Props) {
       </View>
 
       <Text style={styles.helper}>
-        {hasHRMax
-          ? 'Zones derived from estimated max heart rate using Friel 5-zone model.'
-          : 'Add age, measured HRmax, or threshold HR to see absolute BPM ranges.'}
+        {methodLabel} · {hasHRMax
+          ? 'Zones calibrated to your heart rate data.'
+          : 'Add age or measured HRmax to see absolute BPM ranges.'}
       </Text>
 
-      {calibration.hrZones.map((entry, i) => (
+      {/* Source label */}
+      <View style={styles.sourceRow}>
+        <View style={styles.sourceDot} />
+        <Text style={styles.sourceLabel}>{calibration.hrMaxSource}</Text>
+      </View>
+
+      {zones.map((entry, i) => (
         <HRZoneRow
           key={entry.zone}
           entry={entry}
-          isLast={i === calibration.hrZones.length - 1}
+          isLast={i === zones.length - 1}
           hasHRMax={hasHRMax}
         />
       ))}
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Friel 5-zone model · Tanaka HRmax formula (208 − 0.7 × age)
-        </Text>
+        <Text style={styles.footerText}>{sourceLabel}</Text>
       </View>
     </Card>
   );
@@ -178,10 +209,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   hrMaxBadge: {
-    backgroundColor:  colors.primaryDim,
-    borderRadius:     Radius.sm,
+    backgroundColor:   colors.primaryDim,
+    borderRadius:      Radius.sm,
     paddingHorizontal: spacing.sm,
-    paddingVertical:  3,
+    paddingVertical:   3,
   },
   hrMaxBadgeDim: {
     backgroundColor: colors.border,
@@ -203,13 +234,33 @@ const styles = StyleSheet.create({
     fontSize:          9,
     lineHeight:        13,
     paddingHorizontal: spacing.xl,
+    marginBottom:      spacing.xs,
+  },
+  sourceRow: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               spacing.xs,
+    paddingHorizontal: spacing.xl,
     marginBottom:      spacing.sm,
+  },
+  sourceDot: {
+    width:  5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+    flexShrink: 0,
+  },
+  sourceLabel: {
+    color:    colors.primary,
+    fontSize: 9,
+    flex:     1,
   },
   footer: {
     borderTopWidth:    1,
     borderTopColor:    colors.border,
     paddingVertical:   spacing.sm,
     paddingHorizontal: spacing.xl,
+    marginTop:         spacing.xs,
   },
   footerText: {
     color:     colors.textSubtle,

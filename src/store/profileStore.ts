@@ -20,8 +20,10 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { AthleteProfile, AthleteProfileMap, RacePR, InjuryRecord, TrainingDay } from '../types/athlete';
-import type { CalibrationInput, CalibrationOutput } from '../types/athlete';
+import type {
+  AthleteProfile, AthleteProfileMap, RacePR, InjuryRecord, TrainingDay,
+  CalibrationInput, CalibrationOutput, ThresholdTestData, MAFTestRecord, ZoneMethod,
+} from '../types/athlete';
 import type { RaceDistance, TrainingPhase } from '../types/training';
 import { runCalibration, createDefaultProfile } from '../utils/calibrationEngine';
 
@@ -51,6 +53,17 @@ type ProfileStore = {
   // ── Injury management ─────────────────────────────────────────────────────────
   addInjury:    (id: string, injury: InjuryRecord) => void;
   updateInjury: (id: string, injuryId: string, patch: Partial<InjuryRecord>) => void;
+
+  // ── Threshold test ────────────────────────────────────────────────────────────
+  setThresholdTest: (id: string, test: ThresholdTestData) => void;
+  clearThresholdTest: (id: string) => void;
+
+  // ── MAF tests ─────────────────────────────────────────────────────────────────
+  addMAFTest:    (id: string, test: MAFTestRecord) => void;
+  removeMAFTest: (id: string, testId: string) => void;
+
+  // ── Zone method ───────────────────────────────────────────────────────────────
+  setZoneMethod: (id: string, method: ZoneMethod) => void;
 
   // ── Calibration ───────────────────────────────────────────────────────────────
   recalibrate: (calInput: Omit<CalibrationInput, 'profile'>) => CalibrationOutput | null;
@@ -150,6 +163,72 @@ export const useProfileStore = create<ProfileStore>()(
           };
         }),
 
+      // ── Threshold test ──────────────────────────────────────────────────────────
+
+      setThresholdTest: (id, test) =>
+        set(state => {
+          const prev = state.profiles[id];
+          if (!prev) return state;
+          return {
+            profiles: {
+              ...state.profiles,
+              [id]: { ...prev, thresholdTest: test, hrThreshold: test.avgHRLastTwentyMin, thresholdPaceSecPerMi: test.avgPaceSecPerMiLastTwenty, updatedAt: Date.now() },
+            },
+          };
+        }),
+
+      clearThresholdTest: (id) =>
+        set(state => {
+          const prev = state.profiles[id];
+          if (!prev) return state;
+          return {
+            profiles: {
+              ...state.profiles,
+              [id]: { ...prev, thresholdTest: null, updatedAt: Date.now() },
+            },
+          };
+        }),
+
+      // ── MAF tests ───────────────────────────────────────────────────────────────
+
+      addMAFTest: (id, test) =>
+        set(state => {
+          const prev = state.profiles[id];
+          if (!prev) return state;
+          return {
+            profiles: {
+              ...state.profiles,
+              [id]: { ...prev, mafTests: [...prev.mafTests, test], updatedAt: Date.now() },
+            },
+          };
+        }),
+
+      removeMAFTest: (id, testId) =>
+        set(state => {
+          const prev = state.profiles[id];
+          if (!prev) return state;
+          return {
+            profiles: {
+              ...state.profiles,
+              [id]: { ...prev, mafTests: prev.mafTests.filter(t => t.id !== testId), updatedAt: Date.now() },
+            },
+          };
+        }),
+
+      // ── Zone method ─────────────────────────────────────────────────────────────
+
+      setZoneMethod: (id, method) =>
+        set(state => {
+          const prev = state.profiles[id];
+          if (!prev) return state;
+          return {
+            profiles: {
+              ...state.profiles,
+              [id]: { ...prev, activeZoneMethod: method, updatedAt: Date.now() },
+            },
+          };
+        }),
+
       // ── Injury management ───────────────────────────────────────────────────────
 
       addInjury: (id, injury) =>
@@ -217,6 +296,21 @@ export const useProfileStore = create<ProfileStore>()(
         profiles:        state.profiles,
         activeAthleteId: state.activeAthleteId,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        // Migrate existing profiles to include fields added after initial schema.
+        const migrated: AthleteProfileMap = {};
+        for (const [id, profile] of Object.entries(state.profiles)) {
+          migrated[id] = {
+            ...profile,
+            hrMaxManual:      profile.hrMaxManual      ?? false,
+            thresholdTest:    profile.thresholdTest    ?? null,
+            mafTests:         profile.mafTests         ?? [],
+            activeZoneMethod: profile.activeZoneMethod ?? 'vdot',
+          };
+        }
+        state.profiles = migrated;
+      },
     },
   ),
 );

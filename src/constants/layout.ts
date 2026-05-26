@@ -8,7 +8,7 @@ export const LAYOUT = {
   tabBarPadTop:    12,
 
   // Screen
-  screenPadH:      24,
+  screenPadH:      20,
   screenPadBottom: 120,  // scroll room above tab bar
 
   // Header
@@ -23,10 +23,20 @@ export const LAYOUT = {
   // centered pillar on tablets and web.
   maxContentWidth: 480,
 
-  // Breakpoints for future responsive / tablet support
+  // Breakpoints
   breakpoints: {
     phone:  0,
     tablet: 744,
     wide:   1024,
   },
 } as const;
+
+// Returns the appropriate max content width for a given screen width.
+//   Phone  (<744px):  fills full width; padding applied by ScrollScreen
+//   Tablet (744–1024): 88% up to 760px
+//   Wide   (≥1024px): 75% up to 960px
+export function responsiveContentWidth(screenWidth: number): number {
+  if (screenWidth >= LAYOUT.breakpoints.wide)   return Math.min(Math.round(screenWidth * 0.75), 960);
+  if (screenWidth >= LAYOUT.breakpoints.tablet) return Math.min(Math.round(screenWidth * 0.88), 760);
+  return screenWidth;
+}

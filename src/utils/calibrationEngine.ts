@@ -4,8 +4,7 @@
 //
 // JACK DANIELS VDOT MODEL (Daniels, 2005 — "Daniels' Running Formula"):
 //   VDOT represents the effective VO2max a runner demonstrates in a race, not
-//   the lab-measured VO2max. A VDOT of 50 means the athlete's race performance
-//   is equivalent to someone with VO2max = 50 mL/kg/min running at 100% effort.
+//   the lab-measured VO2max.
 //
 //   VO2 at velocity v (m/min):
 //     VO2(v) = -4.60 + 0.182258 × v + 0.000104 × v²
@@ -15,45 +14,45 @@
 //
 //   VDOT = VO2(velocity) / %VO2max(duration)
 //
-//   Inverse (velocity at X% of VDOT, used for zone derivation):
-//     VO2_target = VDOT × pct
-//     Quadratic: 0.000104v² + 0.182258v − (4.60 + VO2_target) = 0
-//     v = (−0.182258 + √(0.182258² + 4 × 0.000104 × (4.60 + VO2_target))) / (2 × 0.000104)
+// HR ZONES — FRIEL 5-ZONE MODEL (Friel, "The Triathlete's Training Bible", 2012):
+//   Zone 1: <60% HRmax — Recovery
+//   Zone 2: 60–70% HRmax — Aerobic
+//   Zone 3: 70–80% HRmax — Tempo
+//   Zone 4: 80–90% HRmax — Lactate Threshold
+//   Zone 5: 90–100% HRmax — VO2 Max
 //
-// HR ZONES (Friel / 5-zone model):
-//   Zone 1: <60% HRmax — Recovery (RPE 1–3)
-//   Zone 2: 60–70% HRmax — Aerobic/Easy (RPE 3–5)
-//   Zone 3: 70–80% HRmax — Tempo/Moderate (RPE 5–7)
-//   Zone 4: 80–90% HRmax — Lactate Threshold (RPE 7–8)
-//   Zone 5: 90–100% HRmax — VO2 Max (RPE 8–10)
+// KARVONEN HEART-RATE RESERVE METHOD (Karvonen et al., 1957):
+//   Target HR = ((HRmax − HRresting) × intensity%) + HRresting
+//   Provides individualised zones that account for resting HR variation.
+//   Requires measured or estimated HRmax + morning resting HR.
 //
-//   HRmax estimation:
-//     Tanaka et al. (2001): HRmax = 208 − 0.7 × age (more accurate than 220−age)
-//     From threshold HR:    HRmax ≈ thresholdHR / 0.875 (threshold ≈ 85–90% HRmax)
+// HRMX ESTIMATION — TANAKA et al. (2001):
+//   HRmax = 208 − 0.7 × age
+//   Meta-analysis of 351 studies (n=18,712). More accurate than 220−age,
+//   especially for trained athletes.
 //
-// FATIGUE SENSITIVITY ADAPTATION (Meeusen et al., 2013):
-//   Athletes differ in their fatigue accumulation rate and recovery kinetics.
-//   A fatigueSensitivity of 1.5 means this athlete accumulates fatigue ~50% faster
-//   per unit of load than the baseline model assumes. The recommendation engine
-//   uses this to lower the "high fatigue" threshold from 75 → 58.
+// THRESHOLD ZONES — JOE FRIEL 7-ZONE SYSTEM:
+//   Extended threshold-based zones for runners derived from:
+//     Functional Threshold Pace (FTP-pace): average pace from last 20 min of 30-min TT
+//     Lactate Threshold HR (LTHR): average HR from last 20 min of 30-min TT
+//   Protocol: Joe Friel "30-minute threshold field test" (Friel, "Fast After 50")
+//   Zone percentages are relative to threshold SPEED (higher% = faster):
+//     Zone 1:  <78% FT speed  |  <85% LTHR
+//     Zone 2: 78–88% FT speed | 85–89% LTHR
+//     Zone 3: 88–94% FT speed | 90–94% LTHR
+//     Zone 4: 95–101% FT speed| 95–99% LTHR
+//     Zone 5a: 100–103%       | 100–102% LTHR
+//     Zone 5b: 104–111%       | 103–106% LTHR
+//     Zone 5c: >111%          | >106% LTHR
 //
-// RECOVERY RESPONSIVENESS (Kenttä & Hassmén, 1998):
-//   recoveryResponsiveness > 1.0 = athlete recovers faster than baseline.
-//   Applied as a multiplier on the positive terms in calculateRecoveryScore.
-//
-// DECONDITIONING (Mujika & Padilla, 2000):
-//   VO2max declines measurably after 2 weeks of inactivity.
-//   After 4 weeks: 5–10% decrease. After 8 weeks: 20% decrease.
-//   Detected by training gap > 14 days + no recent workouts.
-//
-// FITNESS IMPROVEMENT DETECTION (Borg et al., 1982 RPE / Coggan power):
-//   Proxy: ACWR 0.8–1.0 for ≥ 3 consecutive weeks with increasing mileage
-//   indicates positive chronic adaptation without overload.
+// MAF — MAXIMUM AEROBIC FUNCTION (Maffetone, 2010):
+//   MAF HR = 180 − age (±adjustments)
+//   Used ONLY for aerobic base trending and drift monitoring.
+//   NOT used as primary training prescription.
 //
 // AI REPLACEMENT HOOK:
 //   `runCalibration(input)` is the designated AI override point.
-//   To replace: call Claude API with CalibrationInput, validate response as
-//   CalibrationOutput, return it. The interface MUST NOT change — only the implementation.
+//   Interface MUST NOT change — only the implementation.
 
 import type {
   CalibrationInput,
@@ -62,8 +61,11 @@ import type {
   CalibrationConfidence,
   PaceZoneEntry,
   HRZoneEntry,
+  ThresholdZoneEntry,
+  RaceTimePrediction,
   ReadinessThresholds,
   AthleteProfile,
+  ZoneMethod,
 } from '../types/athlete';
 import type { PaceZones, PaceGuidance } from '../types/training';
 
@@ -71,8 +73,6 @@ import type { PaceZones, PaceGuidance } from '../types/training';
 
 const METERS_PER_MILE = 1609.344;
 
-// %VO2max at which each training zone runs (mid-point of Jack Daniels ranges).
-// Easy: 65–74%, Threshold: 83–88%, VO2: 95–100%, Rep: 105–115%
 const ZONE_PCT: Record<string, [number, number]> = {
   recovery:  [0.58, 0.65],
   easy:      [0.65, 0.74],
@@ -118,7 +118,7 @@ const ZONE_DESCRIPTIONS: Record<string, string> = {
   rep:       'Fast, relaxed accelerations. Neuromuscular power and running economy.',
 };
 
-// ─── VDOT math ──────────────────────────────────────────────────────────────────
+// ─── VDOT math ─────────────────────────────────────────────────────────────────
 
 function vo2AtVelocity(vMetersPerMin: number): number {
   return -4.60 + 0.182258 * vMetersPerMin + 0.000104 * vMetersPerMin * vMetersPerMin;
@@ -135,7 +135,7 @@ function pctVo2MaxAtDuration(durationMinutes: number): number {
 export function vdotFromRacePR(distanceMeters: number, timeSeconds: number): number {
   if (timeSeconds <= 0 || distanceMeters <= 0) return 0;
   const durationMin = timeSeconds / 60;
-  const velocity    = distanceMeters / durationMin;   // m/min
+  const velocity    = distanceMeters / durationMin;
   const vo2         = vo2AtVelocity(velocity);
   const pct         = pctVo2MaxAtDuration(durationMin);
   return Math.round((vo2 / pct) * 10) / 10;
@@ -144,7 +144,6 @@ export function vdotFromRacePR(distanceMeters: number, timeSeconds: number): num
 export function vdotFromThresholdPace(paceSecPerMi: number): number {
   if (paceSecPerMi <= 0) return 0;
   const velocityMPerMin = (METERS_PER_MILE / paceSecPerMi) * 60;
-  // Threshold corresponds to ~86% of VDOT effort (midpoint 83–88%)
   const vo2AtThreshold  = vo2AtVelocity(velocityMPerMin);
   return Math.round((vo2AtThreshold / 0.86) * 10) / 10;
 }
@@ -160,39 +159,79 @@ function velocityAtPct(vdot: number, pct: number): number {
   return (-b + Math.sqrt(discriminant)) / (2 * a);
 }
 
-// Convert m/min to pace in sec/mi.
 function velToSecPerMi(mPerMin: number): number {
   if (mPerMin <= 0) return 9999;
   return (METERS_PER_MILE / mPerMin) * 60;
 }
 
-// Format sec/mi as "M:SS/mi"
 export function formatPace(secPerMi: number): string {
-  const m   = Math.floor(secPerMi / 60);
-  const s   = Math.round(secPerMi % 60);
-  const ss  = s.toString().padStart(2, '0');
+  const m  = Math.floor(secPerMi / 60);
+  const s  = Math.round(secPerMi % 60);
+  const ss = s.toString().padStart(2, '0');
   return `${m}:${ss}`;
 }
 
-// ─── Pace zone derivation ──────────────────────────────────────────────────────
+// Predict race time for a given VDOT and distance (binary search on velocity).
+// Daniels, 2005 — the same VO2/duration model inverted to solve for time.
+function predictRaceTime(vdot: number, distanceMeters: number): number {
+  if (vdot <= 0 || distanceMeters <= 0) return 0;
+  let lo = 50;    // very slow (~32 min/mi)
+  let hi = 700;   // world-class sprint speed
+
+  for (let i = 0; i < 60; i++) {
+    const mid        = (lo + hi) / 2;
+    const durMin     = distanceMeters / mid;
+    const impliedVdot = vo2AtVelocity(mid) / pctVo2MaxAtDuration(durMin);
+    if (impliedVdot < vdot) lo = mid;
+    else hi = mid;
+  }
+
+  const vel = (lo + hi) / 2;
+  return Math.round((distanceMeters / vel) * 60);   // seconds
+}
+
+const RACE_PREDICTION_DISTANCES: { key: string; label: string; meters: number }[] = [
+  { key: '1_mile',       label: '1 Mile',        meters: 1609.344 },
+  { key: '5k',           label: '5K',            meters: 5000     },
+  { key: '10k',          label: '10K',           meters: 10000    },
+  { key: 'half_marathon',label: 'Half Marathon', meters: 21097.5  },
+  { key: 'marathon',     label: 'Marathon',      meters: 42195    },
+];
+
+export function buildRacePredictions(vdot: number): RaceTimePrediction[] {
+  return RACE_PREDICTION_DISTANCES.map(d => ({
+    distance:         d.label,
+    distanceKey:      d.key,
+    distanceMeters:   d.meters,
+    predictedSeconds: predictRaceTime(vdot, d.meters),
+  }));
+}
+
+export function formatRaceTime(seconds: number): string {
+  const h   = Math.floor(seconds / 3600);
+  const m   = Math.floor((seconds % 3600) / 60);
+  const s   = seconds % 60;
+  const mm  = m.toString().padStart(2, '0');
+  const ss  = s.toString().padStart(2, '0');
+  return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+}
+
+// ─── VDOT pace zone derivation ─────────────────────────────────────────────────
 
 function buildPaceZones(vdot: number): Record<string, PaceZoneEntry> {
   const zones: Record<string, PaceZoneEntry> = {};
 
   for (const [key, [minPct, maxPct]] of Object.entries(ZONE_PCT)) {
-    // In Daniels zones: slower bound = lower % (minPct), faster bound = higher % (maxPct).
-    // But sec/mi inverts: higher velocity = lower sec/mi value.
-    const fastVel = velocityAtPct(vdot, maxPct);   // faster = higher velocity
-    const slowVel = velocityAtPct(vdot, minPct);   // slower = lower velocity
-
+    const fastVel    = velocityAtPct(vdot, maxPct);
+    const slowVel    = velocityAtPct(vdot, minPct);
     const fastSecPerMi = velToSecPerMi(fastVel);
     const slowSecPerMi = velToSecPerMi(slowVel);
 
     zones[key] = {
       label:       ZONE_LABELS[key] ?? key,
       description: ZONE_DESCRIPTIONS[key] ?? '',
-      minSecPerMi: fastSecPerMi,   // min = fastest in zone
-      maxSecPerMi: slowSecPerMi,   // max = slowest in zone
+      minSecPerMi: fastSecPerMi,
+      maxSecPerMi: slowSecPerMi,
       hrZone:      ZONE_HR[key] ?? 2,
       rpeRange:    ZONE_RPE[key] ?? [3, 6],
     };
@@ -201,7 +240,7 @@ function buildPaceZones(vdot: number): Record<string, PaceZoneEntry> {
   return zones;
 }
 
-// ─── HR zone derivation ────────────────────────────────────────────────────────
+// ─── Friel 5-zone HR derivation ────────────────────────────────────────────────
 
 const HR_ZONE_CONFIG: {
   zone: number; label: string; minPct: number; maxPct: number; rpeRange: [number, number];
@@ -214,26 +253,21 @@ const HR_ZONE_CONFIG: {
 ];
 
 export function estimateHRMax(age: number): number {
-  // Tanaka et al. (2001): more accurate than 220 − age for athletes.
+  // Tanaka et al. (2001): 208 − 0.7 × age
   return Math.round(208 - 0.7 * age);
 }
 
 function hrMaxFromThreshold(thresholdHR: number): number {
-  // Threshold HR ≈ 85–90% HRmax → use 87.5% midpoint
+  // Threshold HR ≈ 87.5% HRmax (midpoint of 85–90% range)
   return Math.round(thresholdHR / 0.875);
 }
 
 function buildHRZones(hrMax: number | null): HRZoneEntry[] {
   if (hrMax === null || hrMax <= 0) {
-    // No HR data — return zones without absolute BPM values
     return HR_ZONE_CONFIG.map(z => ({
-      zone:     z.zone,
-      label:    z.label,
-      minBPM:   null,
-      maxBPM:   null,
-      minPct:   z.minPct,
-      maxPct:   z.maxPct,
-      rpeRange: z.rpeRange,
+      zone: z.zone, label: z.label,
+      minBPM: null, maxBPM: null,
+      minPct: z.minPct, maxPct: z.maxPct, rpeRange: z.rpeRange,
     }));
   }
 
@@ -248,62 +282,175 @@ function buildHRZones(hrMax: number | null): HRZoneEntry[] {
   }));
 }
 
-// ─── VDOT fallback estimation ──────────────────────────────────────────────────
+// ─── Karvonen HRR zones ────────────────────────────────────────────────────────
 //
-// Rough empirical estimates when no race PR or threshold pace is available.
-// Based on typical VO2max ranges by running background and training volume.
+// Karvonen et al. (1957): Target HR = ((HRmax − HRresting) × intensity%) + HRresting
+// Uses the same % boundaries as Friel's HRmax zones, applied to HRR.
+
+export function buildKarvonenZones(hrMax: number, restingHR: number): HRZoneEntry[] {
+  const hrr = hrMax - restingHR;
+  if (hrr <= 0) return [];
+
+  return HR_ZONE_CONFIG.map(z => ({
+    zone:     z.zone,
+    label:    z.label,
+    minBPM:   z.minPct === 0 ? restingHR : Math.round(hrr * z.minPct + restingHR),
+    maxBPM:   Math.round(hrr * z.maxPct + restingHR),
+    minPct:   z.minPct,
+    maxPct:   z.maxPct,
+    rpeRange: z.rpeRange,
+  }));
+}
+
+// ─── Threshold 7-zone system ──────────────────────────────────────────────────
+//
+// Joe Friel extended threshold zones for runners.
+// Pace % is relative to threshold SPEED, so:
+//   paceSecPerMi = thresholdPaceSecPerMi / speedPct
+// Higher speedPct → faster pace → lower sec/mi.
+
+type ThresholdZoneDef = {
+  zone: string; label: string; description: string;
+  paceMinSpeedPct: number; paceMaxSpeedPct: number;
+  hrMinPct: number; hrMaxPct: number;
+  rpeRange: [number, number];
+};
+
+const THRESHOLD_ZONE_DEFS: ThresholdZoneDef[] = [
+  {
+    zone: '1', label: 'Active Recovery',
+    description: 'Fully conversational. No cardiovascular demand. Easy movement for recovery.',
+    paceMinSpeedPct: 0,    paceMaxSpeedPct: 0.78,
+    hrMinPct: 0,    hrMaxPct: 0.85,
+    rpeRange: [1, 2],
+  },
+  {
+    zone: '2', label: 'Extensive Aerobic',
+    description: 'Aerobic base endurance. Long runs and easy workouts. Mitochondrial development.',
+    paceMinSpeedPct: 0.78, paceMaxSpeedPct: 0.88,
+    hrMinPct: 0.85, hrMaxPct: 0.89,
+    rpeRange: [2, 4],
+  },
+  {
+    zone: '3', label: 'Intensive Aerobic',
+    description: 'Marathon race effort. Aerobic power. Comfortably sustained for 2–4 hours.',
+    paceMinSpeedPct: 0.88, paceMaxSpeedPct: 0.94,
+    hrMinPct: 0.90, hrMaxPct: 0.94,
+    rpeRange: [4, 6],
+  },
+  {
+    zone: '4', label: 'Threshold',
+    description: 'Comfortably hard. Lactate threshold. Short sentences only. 1-hour max effort.',
+    paceMinSpeedPct: 0.95, paceMaxSpeedPct: 1.01,
+    hrMinPct: 0.95, hrMaxPct: 0.99,
+    rpeRange: [6, 7],
+  },
+  {
+    zone: '5a', label: 'Threshold+',
+    description: 'Just above threshold. 10K race intensity. Raises anaerobic threshold ceiling.',
+    paceMinSpeedPct: 1.00, paceMaxSpeedPct: 1.03,
+    hrMinPct: 1.00, hrMaxPct: 1.02,
+    rpeRange: [7, 8],
+  },
+  {
+    zone: '5b', label: 'Aerobic Power',
+    description: 'VO2max development. 3–5K race intensity. 3–5 minute intervals.',
+    paceMinSpeedPct: 1.04, paceMaxSpeedPct: 1.11,
+    hrMinPct: 1.03, hrMaxPct: 1.06,
+    rpeRange: [8, 9],
+  },
+  {
+    zone: '5c', label: 'Anaerobic / Speed',
+    description: 'Neuromuscular power. Sprint repeats. Under 1 minute at max effort.',
+    paceMinSpeedPct: 1.11, paceMaxSpeedPct: 0,   // 0 = no upper speed limit
+    hrMinPct: 1.06, hrMaxPct: 0,                  // 0 = no upper HR limit
+    rpeRange: [9, 10],
+  },
+];
+
+export function buildThresholdZones(
+  lthr: number,
+  thresholdPaceSecPerMi: number,
+): ThresholdZoneEntry[] {
+  return THRESHOLD_ZONE_DEFS.map(z => {
+    // paceSecPerMi = thresholdPaceSecPerMi / speedPct
+    // Higher speedPct = faster pace = lower sec/mi = minSecPerMi
+    const paceMin = z.paceMinSpeedPct === 0
+      ? null  // Zone 1: no lower (faster) bound — all very easy paces qualify
+      : Math.round(thresholdPaceSecPerMi / z.paceMaxSpeedPct);  // fastest end of zone
+    const paceMax = z.paceMaxSpeedPct === 0
+      ? null  // Zone 5c: no upper (slower) bound — go as fast as possible
+      : Math.round(thresholdPaceSecPerMi / z.paceMinSpeedPct);  // slowest end of zone
+
+    const hrMin = z.hrMinPct === 0 ? null : Math.round(lthr * z.hrMinPct);
+    const hrMax = z.hrMaxPct === 0 ? null : Math.round(lthr * z.hrMaxPct);
+
+    return {
+      zone:            z.zone,
+      label:           z.label,
+      description:     z.description,
+      paceMinSpeedPct: z.paceMinSpeedPct,
+      paceMaxSpeedPct: z.paceMaxSpeedPct,
+      paceMinSecPerMi: paceMin,
+      paceMaxSecPerMi: paceMax,
+      hrMinPct:        z.hrMinPct,
+      hrMaxPct:        z.hrMaxPct,
+      hrMinBPM:        hrMin,
+      hrMaxBPM:        hrMax,
+      rpeRange:        z.rpeRange,
+    };
+  });
+}
+
+// ─── HRmax source label ────────────────────────────────────────────────────────
+
+export function buildHRMaxSourceLabel(profile: AthleteProfile): string {
+  if (profile.hrMax !== null && profile.hrMaxManual) {
+    return `Measured HRmax: ${profile.hrMax} bpm`;
+  }
+  if (profile.hrThreshold !== null && profile.hrMax === null) {
+    const est = hrMaxFromThreshold(profile.hrThreshold);
+    return `Estimated from LTHR: ${est} bpm (LTHR ÷ 0.875)`;
+  }
+  if (profile.age > 0) {
+    const est = estimateHRMax(profile.age);
+    return `Estimated: Tanaka 2001 (208 − 0.7 × ${profile.age} = ${est} bpm)`;
+  }
+  return 'HRmax unknown — enter age or measured HRmax';
+}
+
+// ─── VDOT fallback estimation ──────────────────────────────────────────────────
 
 export function estimateVdotFromProfile(
-  weeklyMileage:     number,
-  trainingAgeYears:  number,
-  vo2Estimate:       number,
+  weeklyMileage:    number,
+  trainingAgeYears: number,
+  vo2Estimate:      number,
 ): number {
-  // If a VO2 estimate is already stored (from prior calibration or external test), use it.
   if (vo2Estimate > 20) return vo2Estimate;
-
-  // Rough estimate from weekly volume + experience.
-  // Novice runners: 30–38; intermediates: 38–50; advanced: 50+
   const baseVdot = 28 + Math.min(weeklyMileage * 0.35, 22);
   const ageBonus = Math.min(trainingAgeYears * 1.2, 8);
   return Math.round((baseVdot + ageBonus) * 10) / 10;
 }
 
 // ─── Confidence scoring ────────────────────────────────────────────────────────
-//
-// Scored additively. Reflects how grounded the calibration is in real data
-// vs. population-average estimates.
-//
-// Points breakdown:
-//   Recent race PR (< 18 months):   35 pts  ← most reliable VDOT source
-//   Threshold pace known:            25 pts  ← direct LT measurement
-//   HRmax known:                     15 pts  ← enables accurate HR zones
-//   Threshold HR known:              10 pts  ← refines threshold zone
-//   Sufficient workout history:      15 pts  ← enables fitness trend detection
-//   Total possible:                 100 pts
 
-const PR_AGE_CUTOFF_MS = 18 * 30 * 24 * 60 * 60 * 1000;  // 18 months
+const PR_AGE_CUTOFF_MS = 18 * 30 * 24 * 60 * 60 * 1000;
 
 function computeConfidenceScore(profile: AthleteProfile, recentWorkoutCount: number): number {
   let score = 0;
-
   const now = Date.now();
 
-  // Recent race PR
   const hasRecentPR = profile.racePRs.some(pr => {
     const prMs = new Date(pr.date).getTime();
     return !isNaN(prMs) && (now - prMs) < PR_AGE_CUTOFF_MS;
   });
   if (hasRecentPR) score += 35;
-  else if (profile.racePRs.length > 0) score += 12;  // old PR = partial credit
+  else if (profile.racePRs.length > 0) score += 12;
 
-  // Threshold pace
-  if (profile.thresholdPaceSecPerMi !== null) score += 25;
-
-  // HR data
+  if (profile.thresholdPaceSecPerMi !== null || profile.thresholdTest !== null) score += 25;
   if (profile.hrMax !== null) score += 15;
-  if (profile.hrThreshold !== null) score += 10;
+  if (profile.hrThreshold !== null || (profile.thresholdTest?.avgHRLastTwentyMin ?? 0) > 0) score += 10;
 
-  // Recent workout history
   if (recentWorkoutCount >= 12) score += 15;
   else if (recentWorkoutCount >= 6) score += 8;
   else if (recentWorkoutCount >= 2) score += 3;
@@ -318,8 +465,6 @@ function confidenceLabel(score: number): CalibrationConfidence {
   return 'estimated';
 }
 
-// ─── Primary calibration source ────────────────────────────────────────────────
-
 function resolveCalibrationSource(profile: AthleteProfile): CalibrationSource {
   const hasRecentPR = profile.racePRs.some(pr => {
     const prMs = new Date(pr.date).getTime();
@@ -327,11 +472,10 @@ function resolveCalibrationSource(profile: AthleteProfile): CalibrationSource {
   });
   if (hasRecentPR)                              return 'race_pr';
   if (profile.thresholdPaceSecPerMi !== null)   return 'threshold_test';
+  if (profile.thresholdTest !== null)           return 'threshold_test';
   if (profile.racePRs.length > 0)               return 'estimated';
   return 'default';
 }
-
-// ─── Missing inputs list ───────────────────────────────────────────────────────
 
 function buildMissingInputs(profile: AthleteProfile, confidenceScore: number): string[] {
   if (confidenceScore >= 75) return [];
@@ -346,25 +490,19 @@ function buildMissingInputs(profile: AthleteProfile, confidenceScore: number): s
     if (!hasRecent) missing.push('Race PR within 18 months — existing PR may be outdated');
   }
 
-  if (profile.thresholdPaceSecPerMi === null)
-    missing.push('Threshold pace — run a 30-min time trial, record average pace');
+  if (profile.thresholdPaceSecPerMi === null && profile.thresholdTest === null)
+    missing.push('Threshold test — 30-min TT, record avg pace and HR for last 20 min');
 
-  if (profile.hrMax === null)
-    missing.push('Max HR — from recent hard workout or HRmax test');
+  if (profile.hrMax === null && profile.hrThreshold === null)
+    missing.push('Max HR — from measured HRmax or threshold test');
 
-  if (profile.hrThreshold === null && profile.hrMax !== null)
-    missing.push('Threshold HR — record average HR during your next threshold run');
+  if (profile.hrResting === null)
+    missing.push('Resting HR — needed for Karvonen HRR zone accuracy');
 
   return missing;
 }
 
-// ─── Fitness improvement detection ────────────────────────────────────────────
-//
-// Detects upward aerobic adaptation trends from workout history signals.
-// Proxy indicators (without lab testing):
-//   - Sustained ACWR 0.85–1.1 over 3+ weeks (progressive aerobic stimulus)
-//   - Increasing weekly mileage trend
-//   - Athlete is in base/build phase with adequate recovery
+// ─── Fitness signals ──────────────────────────────────────────────────────────
 
 function detectFitnessImprovements(
   lastWorkoutDaysAgo:   number,
@@ -372,20 +510,12 @@ function detectFitnessImprovements(
   recentWorkoutCount:   number,
 ): string[] {
   const improvements: string[] = [];
-
   if (lastWorkoutDaysAgo <= 3 && recentWorkoutCount >= 10 && currentRecoveryScore >= 65)
     improvements.push('Consistent training pattern detected — aerobic adaptation is accumulating');
-
   if (recentWorkoutCount >= 15 && currentRecoveryScore >= 70)
     improvements.push('High training volume with maintained recovery — fitness ceiling is rising');
-
   return improvements;
 }
-
-// ─── Deconditioning detection ──────────────────────────────────────────────────
-//
-// Mujika & Padilla (2000): measurable VO2max loss after 2 weeks inactivity.
-// At 4 weeks: −5–10%; at 8 weeks: up to −20%.
 
 function detectDeconditioning(
   lastWorkoutDaysAgo:  number,
@@ -393,40 +523,26 @@ function detectDeconditioning(
   returningFromInjury: boolean,
 ): string[] {
   const flags: string[] = [];
-
   if (returningFromInjury)
     flags.push('Returning from injury — load should increase slowly over 4–6 weeks');
-
   if (lastWorkoutDaysAgo > 21)
     flags.push(`Training gap of ${lastWorkoutDaysAgo}d — VO2max may have declined 5–10%. Restart at 60% of prior load.`);
   else if (lastWorkoutDaysAgo > 10)
     flags.push(`${lastWorkoutDaysAgo}d since last workout — resume with easy aerobic work first`);
-
   if (recentWorkoutCount < 3 && lastWorkoutDaysAgo < 7)
     flags.push('Very low training frequency — adherence below threshold for meaningful adaptation');
-
   return flags;
 }
 
 // ─── Sensitivity multipliers ───────────────────────────────────────────────────
-//
-// Fatigued-adapted readiness thresholds:
-//   A runner with fatigueSensitivity = 1.5 should feel "high fatigue" at 50 (vs 75).
-//   A runner with recoveryResponsiveness = 0.7 recovers slower than baseline.
-//
-// The multipliers are stored in CalibrationOutput and applied by:
-//   - calculateUpdatedFatigue (via profileStore callback)
-//   - getReadinessThresholds (via recommendation engine)
 
 export function getReadinessThresholds(
   fatigueSensitivity:     number,
   recoveryResponsiveness: number,
 ): ReadinessThresholds {
-  // Higher sensitivity = lower threshold before alarm
   const highFatigue     = Math.round(75 / fatigueSensitivity);
   const criticalFatigue = Math.round(85 / fatigueSensitivity);
-  // Lower responsiveness = needs higher recovery score to be considered "good"
-  const poorRecovery     = Math.round(50 * (1 / recoveryResponsiveness));
+  const poorRecovery    = Math.round(50 * (1 / recoveryResponsiveness));
   const criticalRecovery = Math.round(35 * (1 / recoveryResponsiveness));
 
   return {
@@ -438,44 +554,27 @@ export function getReadinessThresholds(
 }
 
 // ─── PaceZones adapter ────────────────────────────────────────────────────────
-//
-// Produces the existing `PaceZones` type (used by workoutGenerator) from
-// CalibrationOutput. Screens that have profile data use this instead of
-// the goalRace-lookup approach.
 
 export function calibrationToPaceZones(calibration: CalibrationOutput): PaceZones {
   const fmtRange = (fast: number, slow: number): string =>
     `${formatPace(fast)}–${formatPace(slow)}/mi`;
 
   const z = calibration.paceZones;
-
-  const recovZone  = z['recovery'];
-  const easyZone   = z['easy'];
-  const threshZone = z['threshold'];
-  const vo2Zone    = z['vo2'];
-  const repZone    = z['rep'];
-
   const make = (zone: PaceZoneEntry | undefined, fallback: PaceGuidance): PaceGuidance =>
-    zone
-      ? {
-          label:       zone.label,
-          description: zone.description,
-          targetPace:  fmtRange(zone.minSecPerMi, zone.maxSecPerMi),
-        }
-      : fallback;
+    zone ? {
+      label:       zone.label,
+      description: zone.description,
+      targetPace:  fmtRange(zone.minSecPerMi, zone.maxSecPerMi),
+    } : fallback;
 
-  const FALLBACK: PaceGuidance = {
-    label: 'Pace',
-    description: 'Based on current fitness estimate.',
-    targetPace: 'N/A',
-  };
+  const FALLBACK: PaceGuidance = { label: 'Pace', description: 'Based on current fitness estimate.', targetPace: 'N/A' };
 
   return {
-    recovery:  make(recovZone, FALLBACK),
-    easy:      make(easyZone, FALLBACK),
-    threshold: make(threshZone, FALLBACK),
-    vo2:       make(vo2Zone, FALLBACK),
-    strides:   make(repZone, FALLBACK),
+    recovery:  make(z['recovery'],  FALLBACK),
+    easy:      make(z['easy'],      FALLBACK),
+    threshold: make(z['threshold'], FALLBACK),
+    vo2:       make(z['vo2'],       FALLBACK),
+    strides:   make(z['rep'],       FALLBACK),
   };
 }
 
@@ -485,102 +584,120 @@ export function calibrationToPaceZones(calibration: CalibrationOutput): PaceZone
 // Pure function. Same input → same output. No side effects.
 
 export function runCalibration(input: CalibrationInput): CalibrationOutput {
-  const {
-    profile,
-    weeklyMileage,
-    recentWorkoutCount,
-    lastWorkoutDaysAgo,
-    currentRecoveryScore,
-  } = input;
+  const { profile, weeklyMileage, recentWorkoutCount, lastWorkoutDaysAgo, currentRecoveryScore } = input;
 
   // ── 1. Determine VDOT ────────────────────────────────────────────────────────
   let vdot = 0;
   let source: CalibrationSource = 'default';
 
-  // Priority: recent race PR → threshold pace → stored vo2Estimate → estimation
-  const sortedPRs = [...profile.racePRs].sort((a, b) => {
-    const aMs = new Date(a.date).getTime();
-    const bMs = new Date(b.date).getTime();
-    return bMs - aMs;  // newest first
-  });
-
+  const sortedPRs = [...profile.racePRs].sort((a, b) =>
+    new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
   for (const pr of sortedPRs) {
     const v = vdotFromRacePR(pr.distanceMeters, pr.timeSeconds);
-    if (v > 0) {
-      vdot   = v;
-      source = 'race_pr';
-      break;
-    }
+    if (v > 0) { vdot = v; source = 'race_pr'; break; }
   }
 
-  if (vdot === 0 && profile.thresholdPaceSecPerMi !== null) {
-    vdot   = vdotFromThresholdPace(profile.thresholdPaceSecPerMi);
+  // Threshold test → VDOT (if no race PR or as supplement)
+  const thresholdPace = profile.thresholdPaceSecPerMi
+    ?? (profile.thresholdTest?.avgPaceSecPerMiLastTwenty ?? null);
+
+  if (vdot === 0 && thresholdPace !== null) {
+    vdot   = vdotFromThresholdPace(thresholdPace);
     source = 'threshold_test';
   }
 
-  if (vdot === 0 && profile.vo2Estimate > 20) {
-    vdot   = profile.vo2Estimate;
-    source = 'estimated';
-  }
-
+  if (vdot === 0 && profile.vo2Estimate > 20) { vdot = profile.vo2Estimate; source = 'estimated'; }
   if (vdot === 0) {
     vdot   = estimateVdotFromProfile(weeklyMileage, profile.trainingAgeYears, 0);
     source = 'default';
   }
-
   vdot = Math.max(15, Math.min(85, vdot));
 
   // ── 2. Resolve HRmax ─────────────────────────────────────────────────────────
-  let resolvedHRMax: number | null = profile.hrMax;
+  let resolvedHRMax: number | null = null;
 
-  if (resolvedHRMax === null && profile.hrThreshold !== null) {
+  if (profile.hrMaxManual && profile.hrMax !== null) {
+    // User explicitly entered HRmax
+    resolvedHRMax = profile.hrMax;
+  } else if (!profile.hrMaxManual && profile.hrThreshold !== null) {
     resolvedHRMax = hrMaxFromThreshold(profile.hrThreshold);
+  } else if (!profile.hrMaxManual && profile.age > 0) {
+    resolvedHRMax = estimateHRMax(profile.age);
   }
 
-  // If still unknown but age is set, use Tanaka estimate (stored separately as estimatedHRMax)
-  const estimatedHRMax =
-    resolvedHRMax === null && profile.age > 0
-      ? estimateHRMax(profile.age)
-      : null;
+  // Also use threshold test LTHR to estimate HRmax if still unresolved
+  const lthr = profile.hrThreshold
+    ?? (profile.thresholdTest?.avgHRLastTwentyMin ?? null);
 
-  const hrMaxForZones = resolvedHRMax ?? estimatedHRMax;
+  if (resolvedHRMax === null && lthr !== null) {
+    resolvedHRMax = hrMaxFromThreshold(lthr);
+  }
 
-  // ── 3. Build zones ────────────────────────────────────────────────────────────
+  const estimatedHRMax = resolvedHRMax !== profile.hrMax ? resolvedHRMax : null;
+  const hrMaxForZones  = resolvedHRMax;
+
+  // ── 3. Build zone systems ─────────────────────────────────────────────────────
   const paceZones = buildPaceZones(vdot);
   const hrZones   = buildHRZones(hrMaxForZones);
 
-  // ── 4. Confidence ─────────────────────────────────────────────────────────────
+  // Karvonen zones: need hrMax + restingHR
+  const restingHR = profile.hrResting;
+  const karvonenZones = (hrMaxForZones !== null && restingHR !== null)
+    ? buildKarvonenZones(hrMaxForZones, restingHR)
+    : null;
+
+  // Threshold 7-zone system: need LTHR + threshold pace
+  const effectiveLTHR  = lthr;
+  const effectiveThreshPace = thresholdPace;
+  const thresholdZones = (effectiveLTHR !== null && effectiveThreshPace !== null)
+    ? buildThresholdZones(effectiveLTHR, effectiveThreshPace)
+    : null;
+
+  // Race time predictions from VDOT
+  const racePredictions = vdot > 0 ? buildRacePredictions(vdot) : null;
+
+  // ── 4. Confidence & source ────────────────────────────────────────────────────
   const confidenceScore = computeConfidenceScore(profile, recentWorkoutCount);
   const confidence      = confidenceLabel(confidenceScore);
   const primarySource   = resolveCalibrationSource(profile);
   const missingInputs   = buildMissingInputs(profile, confidenceScore);
 
-  // ── 5. Days since last calibration ────────────────────────────────────────────
+  const hrMaxSource = buildHRMaxSourceLabel(profile);
+
+  // ── 5. Active zone method ─────────────────────────────────────────────────────
+  // Respect user preference; fall back gracefully when data is unavailable.
+  let activeZoneMethod: ZoneMethod = profile.activeZoneMethod;
+  if (activeZoneMethod === 'threshold' && thresholdZones === null) {
+    activeZoneMethod = 'vdot';  // no threshold data yet
+  }
+  if ((activeZoneMethod === 'tanaka_karvonen' || activeZoneMethod === 'manual_karvonen')
+    && karvonenZones === null) {
+    activeZoneMethod = 'vdot';
+  }
+
+  // ── 6. Stale days ─────────────────────────────────────────────────────────────
   const staleDays = profile.calibration
     ? Math.floor((Date.now() - profile.calibration.lastCalibratedAt) / (24 * 60 * 60 * 1000))
     : 999;
 
-  // ── 6. Fitness signals ────────────────────────────────────────────────────────
-  const fitnessImprovements = detectFitnessImprovements(
-    lastWorkoutDaysAgo,
-    currentRecoveryScore,
-    recentWorkoutCount,
-  );
-  const deconditioningFlags = detectDeconditioning(
-    lastWorkoutDaysAgo,
-    recentWorkoutCount,
-    profile.returningFromInjury,
-  );
+  // ── 7. Fitness signals ────────────────────────────────────────────────────────
+  const fitnessImprovements = detectFitnessImprovements(lastWorkoutDaysAgo, currentRecoveryScore, recentWorkoutCount);
+  const deconditioningFlags = detectDeconditioning(lastWorkoutDaysAgo, recentWorkoutCount, profile.returningFromInjury);
 
-  // ── 7. Sensitivity multipliers ────────────────────────────────────────────────
   const fatigueMultiplier  = Math.max(0.5, Math.min(2.0, profile.fatigueSensitivity));
   const recoveryMultiplier = Math.max(0.5, Math.min(2.0, profile.recoveryResponsiveness));
 
   return {
     vdot,
-    estimatedHRMax:       hrMaxForZones !== profile.hrMax ? hrMaxForZones : null,
+    estimatedHRMax,
     paceZones,
     hrZones,
+    karvonenZones,
+    thresholdZones,
+    racePredictions,
+    hrMaxSource,
+    activeZoneMethod,
     confidenceScore,
     confidenceLabel:      confidence,
     primarySource,
@@ -594,21 +711,17 @@ export function runCalibration(input: CalibrationInput): CalibrationOutput {
   };
 }
 
-// ─── Stale check helper ────────────────────────────────────────────────────────
+// ─── Stale check ──────────────────────────────────────────────────────────────
 
 export function calibrationIsStale(calibration: CalibrationOutput): boolean {
-  const days = (Date.now() - calibration.lastCalibratedAt) / (24 * 60 * 60 * 1000);
-  return days > 60;
+  return (Date.now() - calibration.lastCalibratedAt) / (24 * 60 * 60 * 1000) > 60;
 }
 
 // ─── Default profile factory ──────────────────────────────────────────────────
-//
-// Creates a baseline AthleteProfile for a new athlete with no data.
-// Used when the profile store is first initialized.
 
 export function createDefaultProfile(overrides: {
-  athleteId:  string;
-  name:       string;
+  athleteId:   string;
+  name:        string;
   vo2Estimate: number;
 }): AthleteProfile {
   return {
@@ -626,11 +739,15 @@ export function createDefaultProfile(overrides: {
     racePRs:               [],
     preferredDistances:    ['marathon'],
     hrMax:                 null,
+    hrMaxManual:           false,
     hrResting:             null,
     hrThreshold:           null,
+    thresholdTest:         null,
+    mafTests:              [],
     thresholdPaceSecPerMi: null,
     vo2Estimate:           overrides.vo2Estimate,
     vdot:                  overrides.vo2Estimate,
+    activeZoneMethod:      'vdot',
     fatigueSensitivity:    1.0,
     recoveryResponsiveness: 1.0,
     heatSensitivity:       1.0,
