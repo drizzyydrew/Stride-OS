@@ -1,8 +1,15 @@
-import { useAthleteStore } from '../../../src/store/athleteStore';
-import { useWorkoutStore } from '../../../src/store/workoutStore';
-import { useCheckInStore } from '../../../src/store/checkInStore';
-import { useAdaptationStore } from '../../../src/store/adaptationStore';
+import { useState } from 'react';
+
+import { useAthleteStore }       from '../../../src/store/athleteStore';
+import { useWorkoutStore }       from '../../../src/store/workoutStore';
+import { useCheckInStore }       from '../../../src/store/checkInStore';
+import { useAdaptationStore }    from '../../../src/store/adaptationStore';
 import { useReadinessThresholds } from '../../../src/store/profileStore';
+import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
+
+import LogWorkoutModal from '../../../src/components/shared/LogWorkoutModal';
+import OverrideModal   from '../../../src/components/shared/OverrideModal';
+import FloatingActionButton from '../../../src/layout/FloatingActionButton';
 
 import { generateTrainingWeek, generateWorkout } from '../../../src/utils/workoutGenerator';
 import { generateRecommendation, calculateACWR } from '../../../src/utils/training';
@@ -40,6 +47,10 @@ function formatDate(): string {
 }
 
 export default function TodayScreen() {
+  const [showLog,          setShowLog]          = useState(false);
+  const [showOverride,     setShowOverride]      = useState(false);
+  const [pendingOverrideId, setPendingOverrideId] = useState<string | undefined>();
+
   const {
     goalRace,
     weeklyMileage,
@@ -47,10 +58,28 @@ export default function TodayScreen() {
     fatigueScore,
     setFatigueScore,
     setRecentEasyLoad,
+    recentEasyLoad,
     currentWeek,
     trainingPhase,
     progressionLevel,
   } = useAthleteStore();
+
+  const { addLog: addCustomLog, addOverride } = useCustomWorkoutStore();
+
+  function handleLogPress() {
+    const isLowReadiness = fatigueScore > 60 || recoveryScore < 50;
+    if (isLowReadiness) {
+      setShowOverride(true);
+    } else {
+      setShowLog(true);
+    }
+  }
+
+  function handleOverrideConfirmed(overrideId: string) {
+    setShowOverride(false);
+    setPendingOverrideId(overrideId);
+    setShowLog(true);
+  }
 
   const { completedWorkouts, completeWorkout, history } = useWorkoutStore();
 
@@ -172,7 +201,11 @@ export default function TodayScreen() {
   });
 
   return (
-    <ScreenLayout title="Today" meta={formatDate()}>
+    <ScreenLayout
+      title="Today"
+      meta={formatDate()}
+      fab={<FloatingActionButton icon="add" onPress={handleLogPress} />}
+    >
 
       {checkedIn ? (
         <ReadinessCard
@@ -211,6 +244,28 @@ export default function TodayScreen() {
       {isComplete && !isRestDay && (
         <PostWorkoutCard completionKey={completionKey} />
       )}
+
+      <OverrideModal
+        visible={showOverride}
+        onClose={() => setShowOverride(false)}
+        onConfirmed={handleOverrideConfirmed}
+        fatigueScore={fatigueScore}
+        recoveryScore={recoveryScore}
+        addOverride={addOverride}
+      />
+
+      <LogWorkoutModal
+        visible={showLog}
+        onClose={() => { setShowLog(false); setPendingOverrideId(undefined); }}
+        onSaved={() => { setShowLog(false); setPendingOverrideId(undefined); }}
+        onAddLog={addCustomLog}
+        currentFatigue={fatigueScore}
+        currentRecovery={recoveryScore}
+        recentEasyLoad={recentEasyLoad}
+        setFatigueScore={setFatigueScore}
+        setRecentEasyLoad={setRecentEasyLoad}
+        overrideId={pendingOverrideId}
+      />
 
     </ScreenLayout>
   );
