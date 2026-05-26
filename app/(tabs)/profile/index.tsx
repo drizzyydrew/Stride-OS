@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -8,9 +9,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { router } from 'expo-router';
 
 import { useAthleteStore }                                from '../../../src/store/athleteStore';
 import { useProfileStore, useActiveProfile, useCalibration } from '../../../src/store/profileStore';
+import { useOnboardingStore }                             from '../../../src/store/onboardingStore';
 
 import ScreenLayout             from '../../../src/layout/ScreenLayout';
 import Card                     from '../../../src/components/ui/Card';
@@ -1106,6 +1111,10 @@ export default function ProfileScreen() {
       <SectionLabel label="Sources & Methods" />
       <SourcesMethodsCard />
 
+      {/* ── Reset ─────────────────────────────────────────────────────── */}
+      <SectionLabel label="Data & Privacy" />
+      <ResetDataSection />
+
       {/* ── Modals ────────────────────────────────────────────────────── */}
       <AddPRModal
         visible={showAddPR}
@@ -1137,6 +1146,43 @@ export default function ProfileScreen() {
       )}
 
     </ScreenLayout>
+  );
+}
+
+function ResetDataSection() {
+  const resetOnboarding = useOnboardingStore(s => s.resetOnboarding);
+
+  function handleReset() {
+    Alert.alert(
+      'Reset StrideOS Data',
+      'This will permanently delete all training data, profiles, and settings. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text:  'Reset Everything',
+          style: 'destructive',
+          onPress: async () => {
+            await AsyncStorage.clear();
+            useProfileStore.setState({ profiles: {}, activeAthleteId: 'athlete_default' });
+            resetOnboarding();
+            router.replace('/onboarding' as never);
+          },
+        },
+      ],
+    );
+  }
+
+  return (
+    <View style={styles.resetCard}>
+      <Text style={styles.resetTitle}>Reset StrideOS</Text>
+      <Text style={styles.resetDesc}>
+        Permanently deletes all local data: athlete profile, training history, calibration,
+        and movement analyses. This cannot be undone.
+      </Text>
+      <Pressable style={styles.resetBtn} onPress={handleReset}>
+        <Text style={styles.resetBtnTxt}>Reset All Data</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -1295,6 +1341,39 @@ const styles = StyleSheet.create({
   },
   logTestBtnText: {
     color:      colors.primary,
+    fontSize:   FontSize.base,
+    fontWeight: FontWeight.bold,
+  },
+
+  // Reset section
+  resetCard: {
+    backgroundColor: colors.card,
+    borderRadius:    12,
+    padding:         spacing.md,
+    borderWidth:     1,
+    borderColor:     colors.border,
+    gap:             spacing.md,
+  },
+  resetTitle: {
+    color:      colors.text,
+    fontSize:   FontSize.base,
+    fontWeight: FontWeight.bold,
+  },
+  resetDesc: {
+    color:      colors.textMuted,
+    fontSize:   FontSize.xs,
+    lineHeight: 17,
+  },
+  resetBtn: {
+    backgroundColor: '#1F0707',
+    borderWidth:     1,
+    borderColor:     colors.danger,
+    borderRadius:    Radius.sm,
+    paddingVertical: spacing.md,
+    alignItems:      'center',
+  },
+  resetBtnTxt: {
+    color:      colors.danger,
     fontSize:   FontSize.base,
     fontWeight: FontWeight.bold,
   },

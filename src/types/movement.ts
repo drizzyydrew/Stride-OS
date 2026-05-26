@@ -1,0 +1,323 @@
+// ─── Movement Lab Types ─────────────────────────────────────────────────────
+//
+// Architecture: All analysis is manual today. Future AI hooks are documented
+// with "AI INTEGRATION HOOK" comments where computer vision / pose estimation
+// would plug in (MediaPipe, MoveNet, OpenPose, vGait-style 3D pipelines).
+//
+// Phone video analysis is 2D and estimated. These types are NOT diagnostic —
+// they are for coaching, education, and trend tracking only.
+
+// ─── Enums / union types ─────────────────────────────────────────────────────
+
+export type MovementAnalysisType =
+  | 'running_gait'
+  | 'lifting_mechanics'
+  | 'mobility'
+  | 'other';
+
+export type MovementViewAngle =
+  | 'side'
+  | 'front'
+  | 'rear'
+  | '45_degree'
+  | 'unknown';
+
+export type MovementActivity =
+  | 'running'
+  | 'walking'
+  | 'squat'
+  | 'deadlift'
+  | 'lunge'
+  | 'step_down'
+  | 'jump'
+  | 'press'
+  | 'pull'
+  | 'calf_raise'
+  | 'other';
+
+export type BodySide = 'left' | 'right' | 'bilateral';
+
+export type FindingSeverity   = 'low' | 'moderate' | 'high';
+export type FindingConfidence = 'high' | 'moderate' | 'low';
+
+// ─── Video record ─────────────────────────────────────────────────────────────
+//
+// Stores the URI reference only — actual binary video stays in the device
+// camera roll / filesystem. On web builds, the URI may be an object URL.
+
+export type MovementVideo = {
+  id:           string;
+  uri:          string;            // local URI or asset reference
+  title:        string;
+  date:         string;            // "YYYY-MM-DD"
+  analysisType: MovementAnalysisType;
+  view:         MovementViewAngle;
+  activity:     MovementActivity;
+  shoes?:       string;
+  surface?:     string;
+  paceSecPerMi?: number;           // for running videos
+  loadKg?:      number;            // for lifting videos
+  notes?:       string;
+  painNotes?:   string;
+  durationSec?: number;
+  createdAt:    number;            // Date.now()
+};
+
+// ─── Gait joint types ─────────────────────────────────────────────────────────
+
+export type GaitJoint =
+  | 'trunk'
+  | 'hip'
+  | 'knee'
+  | 'ankle'
+  | 'foot'
+  | 'pelvis'
+  | 'shoulder'
+  | 'elbow';
+
+export type GaitAngleName =
+  | 'trunk_lean'
+  | 'hip_flexion'
+  | 'hip_extension'
+  | 'knee_flexion'
+  | 'ankle_dorsiflexion'
+  | 'ankle_plantarflexion'
+  | 'foot_progression'
+  | 'pelvic_drop';
+
+// ─── Lifting joint types ──────────────────────────────────────────────────────
+
+export type LiftingJoint =
+  | 'trunk'
+  | 'hip'
+  | 'knee'
+  | 'ankle'
+  | 'shoulder'
+  | 'elbow'
+  | 'wrist'
+  | 'neck';
+
+export type LiftingAngleName =
+  | 'trunk_angle'
+  | 'hip_angle'
+  | 'knee_angle'
+  | 'ankle_angle'
+  | 'shoulder_angle'
+  | 'elbow_angle'
+  | 'wrist_angle';
+
+// ─── Joint angle estimate ─────────────────────────────────────────────────────
+//
+// Manually measured from video frame. Angles are estimated to ±10°.
+// Disclaimer: not lab-grade. Intended for trend tracking only.
+
+export type JointAngleEstimate = {
+  id:           string;
+  videoId:      string;
+  angleName:    GaitAngleName | LiftingAngleName | string;
+  joint:        GaitJoint | LiftingJoint;
+  side:         BodySide;
+  angleDegrees: number;           // measured angle in degrees
+  frameNote?:   string;           // "initial contact", "mid-stance", "lockout"
+  view:         MovementViewAngle;
+  confidence:   FindingConfidence;
+  notes?:       string;
+  createdAt:    number;
+};
+
+// ─── Gait analysis fields ─────────────────────────────────────────────────────
+//
+// Manual checklist fields for running gait analysis.
+
+export type FootStrikePattern = 'heel' | 'midfoot' | 'forefoot' | 'unknown';
+export type GaitSymmetry      = 'symmetric' | 'mildly_asymmetric' | 'moderately_asymmetric' | 'severely_asymmetric' | 'unknown';
+export type OscillationLevel  = 'low' | 'moderate' | 'high' | 'unknown';
+export type TrunkPosition     = 'forward' | 'neutral' | 'backward' | 'unknown';
+export type SeverityOrNull    = 'none' | 'mild' | 'moderate' | 'severe' | null;
+export type ArmSwingQuality   = 'restricted' | 'good' | 'excessive' | 'asymmetric' | 'unknown';
+
+export type GaitAnalysis = {
+  videoId:              string;
+  cadence?:             number;           // steps/min
+  stepRate?:            number;           // same as cadence but sometimes distinguished
+  strideLengthEst?:     number;           // meters (estimated from video)
+  strideTimeEst?:       number;           // seconds per stride (estimated)
+  stanceSwingEst?:      string;           // e.g. "60/40" stance/swing %
+  footStrike:           FootStrikePattern;
+  overstride:           boolean | null;
+  crossoverGait:        boolean | null;
+  verticalOscillation:  OscillationLevel;
+  trunkLean:            TrunkPosition;
+  hipDrop:              SeverityOrNull;
+  pelvicControl:        SeverityOrNull;
+  kneeValgus:           SeverityOrNull;
+  footProgressionAngle?: number;          // degrees (positive = toe-out)
+  armSwing:             ArmSwingQuality;
+  symmetry:             GaitSymmetry;
+  painLocation?:        string;
+  fatigueState?:        'fresh' | 'moderate_fatigue' | 'high_fatigue' | 'unknown';
+  additionalNotes?:     string;
+};
+
+// ─── Lifting analysis fields ──────────────────────────────────────────────────
+
+export type DepthQuality   = 'quarter' | 'half' | 'parallel' | 'full' | 'atg' | 'unknown';
+export type HipStrategy    = 'hip_dominant' | 'knee_dominant' | 'balanced' | 'unknown';
+export type BarPathQuality = 'vertical' | 'slight_arc' | 'excessive_drift' | 'unknown';
+
+export type LiftingAnalysis = {
+  videoId:             string;
+  exercise:            string;            // e.g. "Back Squat", "Romanian Deadlift"
+  loadKg?:             number;
+  reps?:               number;
+  setNumber?:          number;
+  tempo?:              string;            // e.g. "3-1-1-0"
+  depth:               DepthQuality;
+  trunkPosition?:      string;           // free text observation
+  hipStrategy:         HipStrategy;
+  kneeValgus:          SeverityOrNull;
+  footPressureNotes?:  string;
+  spinalPositionNotes?: string;
+  barPath:             BarPathQuality;
+  shoulderMechanics?:  string;
+  asymmetry:           GaitSymmetry;
+  painNotes?:          string;
+  additionalNotes?:    string;
+};
+
+// ─── Gait finding ─────────────────────────────────────────────────────────────
+
+export type GaitFinding = {
+  id:             string;
+  videoId:        string;
+  finding:        string;             // e.g. "Overstriding at midfoot contact"
+  severity:       FindingSeverity;
+  confidence:     FindingConfidence;
+  implication?:   string;            // "Increases braking force, shin stress"
+  drill?:         string;            // "A-skips, quick cadence drills"
+  strengthFocus?: string;            // "Glute strength, hip extension"
+  retestNote?:    string;
+  createdAt:      number;
+};
+
+// ─── Lifting finding ──────────────────────────────────────────────────────────
+
+export type LiftingFinding = {
+  id:           string;
+  videoId:      string;
+  exercise:     string;
+  finding:      string;
+  severity:     FindingSeverity;
+  confidence:   FindingConfidence;
+  implication?: string;
+  regression?:  string;            // "Box squat to parallel, goblet squat"
+  progression?: string;            // "Add tempo, increase load 5%"
+  cue?:         string;            // "Chest up, knees track toes"
+  retestNote?:  string;
+  createdAt:    number;
+};
+
+// ─── Movement risk flag ───────────────────────────────────────────────────────
+//
+// Flags are generated from findings. They propagate into the performance scoring
+// system and can influence training recommendations.
+
+export type MovementRiskFlagType =
+  | 'strength_deficit'
+  | 'form_fault'
+  | 'asymmetry'
+  | 'gait_fault'
+  | 'mobility_deficit';
+
+export type MovementScoreKey =
+  | 'movement_capacity'
+  | 'durability'
+  | 'running_economy';
+
+export type MovementRiskFlag = {
+  id:            string;
+  videoId:       string;
+  sourceFinding: string;         // the finding text that triggered this flag
+  type:          MovementRiskFlagType;
+  severity:      FindingSeverity;
+  affectsScores: MovementScoreKey[];
+  suggestion:    string;         // actionable coaching suggestion
+  active:        boolean;        // dismissable by user
+  createdAt:     number;
+};
+
+// ─── Movement analysis session ────────────────────────────────────────────────
+//
+// One session per video. Created on first finding entry. Manual-only for now.
+
+export type MovementAnalysisSession = {
+  id:              string;
+  videoId:         string;
+  createdAt:       number;
+  updatedAt:       number;
+  analyst:         'manual' | 'ai_assisted';  // always 'manual' today
+  gaitAnalysis?:   GaitAnalysis;
+  liftingAnalysis?: LiftingAnalysis;
+  gaitFindings:    GaitFinding[];
+  liftingFindings: LiftingFinding[];
+  jointAngles:     JointAngleEstimate[];
+  riskFlags:       MovementRiskFlag[];
+
+  // ── AI INTEGRATION HOOK ────────────────────────────────────────────────────
+  // Future: MediaPipe/MoveNet/OpenPose would populate poseKeypoints per frame.
+  // Future: vGait-style 3D pipeline would add z-coordinates and joint moments.
+  // Future: Gait event detection (initial contact, toe-off) populates gaitEvents.
+  // Future: Joint angle calculations become automatic from keypoints.
+  // Future: Asymmetry scoring becomes automatic from bilateral keypoints.
+  poseKeypoints?:   PoseKeypoint[];
+  gaitEvents?:      GaitEvent[];
+  gaitMetrics?:     GaitMetric[];
+  frameAnnotations?: VideoFrameAnnotation[];
+};
+
+// ─── Future AI types ──────────────────────────────────────────────────────────
+//
+// These types define the contracts for future computer vision integration.
+// No AI APIs are called today. All fields remain optional/unused until integrated.
+
+// AI INTEGRATION HOOK: MediaPipe/MoveNet pose keypoints (one per landmark per frame).
+export type PoseKeypoint = {
+  name:       string;      // e.g. "left_knee", "right_hip", "nose"
+  x:          number;      // normalized 0–1 (width)
+  y:          number;      // normalized 0–1 (height)
+  z?:         number;      // depth — 3D systems only (vGait / OpenPose 3D)
+  confidence: number;      // 0–1 model confidence
+  frameIndex: number;      // video frame number
+};
+
+// AI INTEGRATION HOOK: Gait event detection — initial contact, toe-off, mid-stance, etc.
+export type GaitEventType =
+  | 'initial_contact'
+  | 'toe_off'
+  | 'mid_stance'
+  | 'terminal_stance'
+  | 'peak_swing';
+
+export type GaitEvent = {
+  type:       GaitEventType;
+  side:       BodySide;
+  frameIndex: number;
+  timeMs:     number;
+};
+
+// AI INTEGRATION HOOK: Computed stride metrics from gait events.
+export type GaitMetric = {
+  name:   string;     // "cadence", "stride_length", "contact_time", "flight_time"
+  value:  number;
+  unit:   string;
+  side?:  BodySide;
+};
+
+// AI INTEGRATION HOOK: Frame-level overlay annotations (rendered by a future vision layer).
+export type VideoFrameAnnotation = {
+  frameIndex: number;
+  type:       'keypoint_overlay' | 'angle_label' | 'event_marker' | 'risk_zone';
+  label?:     string;
+  color?:     string;
+  data?:      Record<string, number | string>;
+};

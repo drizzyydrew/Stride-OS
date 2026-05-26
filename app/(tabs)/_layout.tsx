@@ -82,6 +82,21 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
+        name="movement"
+        options={{
+          title: 'Movement',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name="scan-outline"
+              label="Movement"
+              focused={focused}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="profile/index"
         options={{
           title: 'Profile',
