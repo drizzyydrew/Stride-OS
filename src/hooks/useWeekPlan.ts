@@ -5,6 +5,15 @@
 //
 // All UI screens (training, calendar, dashboard) read from this hook so they
 // share a consistent plan without duplicating engine calls.
+//
+// STABILITY RULES — must obey to avoid infinite render loops:
+//   1. Every useStore() call must use a selector that returns a STABLE reference
+//      (primitive, or the exact same object/array reference from the store).
+//      Never return a new object literal `{ a, b }` from a selector — that
+//      always fails Object.is() and causes useSyncExternalStore to loop.
+//   2. Do NOT write to any Zustand store from this hook or from effects that
+//      depend on this hook's return value.
+//   3. All derived objects must be wrapped in useMemo with stable dep arrays.
 
 import { useMemo } from 'react';
 
@@ -15,35 +24,32 @@ import { useCheckInStore }    from '../store/checkInStore';
 import { useStrengthStore }   from '../store/strengthStore';
 import { useProfileStore }    from '../store/profileStore';
 
-import { calculateACWR }         from '../utils/training';
-import {
-  getWeeklyMileage,
-  getTrainingDistribution,
-} from '../utils/historyUtils';
-import { computeSlope, computeConsistency } from '../utils/analyticsEngine';
+import { calculateACWR }                     from '../utils/training';
+import { getWeeklyMileage }                  from '../utils/historyUtils';
+import { computeConsistency }                from '../utils/analyticsEngine';
 
 import { buildWeekPlan }   from '../utils/trainingEngine';
 import type { WeekPlan }   from '../utils/trainingEngine';
 import { todayDateKey }    from '../types/checkin';
 
 export function useWeekPlan(): WeekPlan {
-  // ── Store reads ──────────────────────────────────────────────────────────
-  const {
-    goalRace,
-    weeklyMileage,
-    fatigueScore,
-    recoveryScore,
-    currentWeek,
-    trainingPhase,
-    progressionLevel,
-  } = useAthleteStore();
+  // ── Store reads — each selector returns a primitive or the store's own
+  //    object/array reference, never a freshly-created object literal ──────
+  const goalRace        = useAthleteStore(s => s.goalRace);
+  const weeklyMileage   = useAthleteStore(s => s.weeklyMileage);
+  const fatigueScore    = useAthleteStore(s => s.fatigueScore);
+  const recoveryScore   = useAthleteStore(s => s.recoveryScore);
+  const currentWeek     = useAthleteStore(s => s.currentWeek);
+  const trainingPhase   = useAthleteStore(s => s.trainingPhase);
+  const progressionLevel = useAthleteStore(s => s.progressionLevel);
 
   const onboardingData = useOnboardingStore(s => s.data);
 
-  const { completedWorkouts, history } = useWorkoutStore(s => ({
-    completedWorkouts: s.completedWorkouts,
-    history:           s.history,
-  }));
+  // CRITICAL: separate selectors, never `s => ({ a: s.a, b: s.b })`.
+  // That pattern creates a new object on every evaluation and causes
+  // useSyncExternalStore's consistency check to loop infinitely.
+  const completedWorkouts = useWorkoutStore(s => s.completedWorkouts);
+  const history           = useWorkoutStore(s => s.history);
 
   const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
   const checkedIn    = todayCheckIn?.date === todayDateKey();
@@ -53,7 +59,7 @@ export function useWeekPlan(): WeekPlan {
   const profile     = useProfileStore(s => s.getActiveProfile());
   const calibration = profile?.calibration ?? null;
 
-  // ── Derived history signals (memoized on history) ──────────────────────
+  // ── Derived history signals (memoized on history) ─────────────────────
   const acwrResult = useMemo(() => calculateACWR(history), [history]);
 
   const recentIntensityDist = useMemo(() => {
@@ -91,7 +97,7 @@ export function useWeekPlan(): WeekPlan {
     [weeklySummaries],
   );
 
-  // ── Build input object (memoized on individual dependencies) ──────────
+  // ── Stable engine input — only recalculated when a real value changes ──
   const engineInput = useMemo(() => ({
     // Athlete state
     goalRace,
@@ -129,7 +135,7 @@ export function useWeekPlan(): WeekPlan {
 
     // Completion keys
     completedWorkoutKeys:  completedWorkouts,
-    completedStrengthKeys: [],   // TODO: wire to strengthStore completed keys
+    completedStrengthKeys: [] as string[],
 
     // Strength history
     strengthHistory,
@@ -145,6 +151,6 @@ export function useWeekPlan(): WeekPlan {
     completedWorkouts, strengthHistory,
   ]);
 
-  // ── Build and return the plan (re-runs only when engineInput changes) ──
+  // ── Build and return the plan — re-runs only when engineInput changes ──
   return useMemo(() => buildWeekPlan(engineInput), [engineInput]);
 }

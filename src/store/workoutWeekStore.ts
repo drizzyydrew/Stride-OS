@@ -1,25 +1,21 @@
-// Non-persisted store — both RichWeek and WeekPlan are regenerated deterministically
-// each session. Stored in memory so multiple screens share the same computed plan
-// without re-running the engine on every navigation.
+// Non-persisted store — kept for future use cases where a screen needs to
+// share pre-computed rich week data without re-running the engine.
+//
+// NOTE: Do NOT write to this store from a useEffect that depends on values
+// derived from it — that creates a store-write → re-render → store-write loop.
+// Prefer calling useWeekPlan() directly in each screen instead.
 
 import { create } from 'zustand';
-import type { RichWeek }  from '../types/workout';
-import type { WeekPlan }  from '../utils/trainingEngine';
+import type { RichWeek } from '../types/workout';
 
 type WorkoutWeekState = {
   richWeek:      RichWeek | null;
-  weekPlan:      WeekPlan | null;
-  setRichWeek:   (week: RichWeek)  => void;
-  setWeekPlan:   (plan: WeekPlan)  => void;
+  setRichWeek:   (week: RichWeek) => void;
   clearRichWeek: () => void;
-  clearWeekPlan: () => void;
 };
 
 export const useWorkoutWeekStore = create<WorkoutWeekState>()((set) => ({
   richWeek:      null,
-  weekPlan:      null,
   setRichWeek:   (week) => set({ richWeek: week }),
-  setWeekPlan:   (plan) => set({ weekPlan: plan }),
   clearRichWeek: ()     => set({ richWeek: null }),
-  clearWeekPlan: ()     => set({ weekPlan: null }),
 }));

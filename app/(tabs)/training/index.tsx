@@ -10,7 +10,7 @@
 //   - Coach output: coachEngine.ts
 //   - No business logic in this component
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -18,7 +18,6 @@ import { useAthleteStore }     from '../../../src/store/athleteStore';
 import { useWorkoutStore }     from '../../../src/store/workoutStore';
 import { useCheckInStore }     from '../../../src/store/checkInStore';
 import { useAdaptationStore }  from '../../../src/store/adaptationStore';
-import { useWorkoutWeekStore } from '../../../src/store/workoutWeekStore';
 import { useOnboardingStore }  from '../../../src/store/onboardingStore';
 import { useWeekPlan }         from '../../../src/hooks/useWeekPlan';
 
@@ -130,8 +129,6 @@ export default function RunningScreen() {
   const { getAdaptation, setAdaptation } = useAdaptationStore();
   const adaptation = getAdaptation(currentWeek);
 
-  const { setRichWeek, setWeekPlan } = useWorkoutWeekStore();
-
   const onboardingData = useOnboardingStore(s => s.data);
   const availableDays  = onboardingData.availableDays;
 
@@ -174,12 +171,6 @@ export default function RunningScreen() {
       r.timestamp >= cutoff && (r.intensity === 'hard' || r.intensity === 'max'),
     ).length;
   }, [history]);
-
-  useEffect(() => {
-    setRichWeek(richWeek);
-    setWeekPlan(weekPlan);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [richWeek]);
 
   // ── Canonical week (adaptation system) ──────────────────────────────────
   const generatorInput = {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   Alert, Modal, Pressable, SafeAreaView,
   ScrollView, StyleSheet, Text, View,
@@ -7,19 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
-import { useCheckInStore } from '../../../src/store/checkInStore';
-import { useProfileStore } from '../../../src/store/profileStore';
-import { useWorkoutWeekStore } from '../../../src/store/workoutWeekStore';
-
-import { generateRichWeek } from '../../../src/utils/workoutEngine';
-import { calculateACWR } from '../../../src/utils/training';
-import {
-  getWeeklyMileage,
-  getTrainingDistribution,
-  getWeeklyFatigueTrend,
-  getWeeklyRecoveryTrend,
-} from '../../../src/utils/historyUtils';
-import { computeSlope, computeConsistency } from '../../../src/utils/analyticsEngine';
+import { useWeekPlan }     from '../../../src/hooks/useWeekPlan';
 
 import WorkoutDetailCard from '../../../src/components/training/WorkoutDetailCard';
 import IntervalStructureCard from '../../../src/components/training/IntervalStructureCard';
@@ -33,9 +21,7 @@ import Badge from '../../../src/components/ui/Badge';
 import { colors } from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../../src/theme/tokens';
-import type { WorkoutEngineInput } from '../../../src/types/workout';
 import type { WorkoutIntensity } from '../../../src/types/training';
-import { todayDateKey } from '../../../src/types/checkin';
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -164,9 +150,9 @@ export default function SessionDetailScreen() {
 
   // ── Stores ──────────────────────────────────────────────────────────────────
   const {
-    goalRace, weeklyMileage, recoveryScore, fatigueScore,
+    recoveryScore, fatigueScore,
     setFatigueScore, setRecentEasyLoad,
-    currentWeek, trainingPhase, progressionLevel,
+    currentWeek,
   } = useAthleteStore();
 
   const {
@@ -174,80 +160,8 @@ export default function SessionDetailScreen() {
     completeWorkout, skipWorkout, editLog, deleteLog, manualLog,
   } = useWorkoutStore();
 
-  const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
-  const checkedIn    = todayCheckIn?.date === todayDateKey();
-
-  const profile     = useProfileStore(s => s.getActiveProfile());
-  const calibration = profile?.calibration ?? null;
-
-  const storedRichWeek = useWorkoutWeekStore(s => s.richWeek);
-
-  // ── Engine input ─────────────────────────────────────────────────────────────
-  const acwrResult         = useMemo(() => calculateACWR(history), [history]);
-  const weeklySummaries    = useMemo(() => getWeeklyMileage(history), [history]);
-  const dist               = useMemo(() => getTrainingDistribution(history, 30), [history]);
-  const weeklyFatigueTrend = useMemo(() => getWeeklyFatigueTrend(history), [history]);
-  const weeklyRecovery     = useMemo(() => getWeeklyRecoveryTrend(history), [history]);
-
-  const fatigueSlope  = weeklyFatigueTrend.length >= 2
-    ? computeSlope(weeklyFatigueTrend.map(p => p.value)) : 0;
-  const recoverySlope = weeklyRecovery.length >= 2
-    ? computeSlope(weeklyRecovery.map(p => p.value)) : 0;
-
-  const totalIntensity =
-    (dist.byIntensity.easy      ?? 0) +
-    (dist.byIntensity.very_easy ?? 0) +
-    (dist.byIntensity.moderate  ?? 0) +
-    (dist.byIntensity.hard      ?? 0) +
-    (dist.byIntensity.max       ?? 0);
-  const easyCount = (dist.byIntensity.easy ?? 0) + (dist.byIntensity.very_easy ?? 0);
-  const easyProportion = totalIntensity > 0 ? easyCount / totalIntensity : 0.80;
-
-  const weeksWithLongRun   = new Set(history.filter(r => r.type === 'long_run').map(r => r.week)).size;
-  const longRunConsistency = currentWeek > 0 ? weeksWithLongRun / currentWeek : 0;
-  const adherenceRate      = Math.min(1, history.length / Math.max(1, currentWeek * 6));
-  const consistencyScore   = computeConsistency(weeklySummaries.map(s => s.totalMiles));
-
-  const recentHardSessions = useMemo(() => {
-    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    return history.filter(r =>
-      r.timestamp >= cutoff && (r.intensity === 'hard' || r.intensity === 'max'),
-    ).length;
-  }, [history]);
-
-  const engineInput: WorkoutEngineInput = {
-    calibration,
-    fatigueSensitivity:    profile?.fatigueSensitivity    ?? 1.0,
-    recoveryResponsiveness: profile?.recoveryResponsiveness ?? 1.0,
-    injuryRisk:            profile?.returningFromInjury   ?? false,
-    fatigueScore,
-    recoveryScore,
-    soreness:    checkedIn ? (todayCheckIn?.soreness    ?? null) : null,
-    motivation:  checkedIn ? (todayCheckIn?.motivation  ?? null) : null,
-    acwr:               acwrResult.acwr,
-    trainingPhase,
-    progressionLevel,
-    weeklyMileage,
-    currentWeek,
-    goalRace,
-    weeksToRace:        0,
-    recentIntensityDist: {
-      easy:     easyProportion,
-      moderate: totalIntensity > 0 ? (dist.byIntensity.moderate ?? 0) / totalIntensity : 0.10,
-      hard:     totalIntensity > 0 ? ((dist.byIntensity.hard ?? 0) + (dist.byIntensity.max ?? 0)) / totalIntensity : 0.10,
-    },
-    recentHardSessions,
-    adherenceRate,
-    consistencyScore,
-    longRunConsistency,
-  };
-
-  // Use stored rich week if available; otherwise generate inline (deterministic)
-  const richWeek = useMemo(
-    () => storedRichWeek ?? generateRichWeek(engineInput),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [storedRichWeek],
-  );
+  // ── Plan (shared with training list — deterministic, no store writes) ────
+  const { richWeek } = useWeekPlan();
 
   const workout = richWeek.workouts[dayIndex];
 
