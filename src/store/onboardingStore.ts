@@ -11,21 +11,12 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { Sex, TrainingDay, StandardDistance } from '../types/athlete';
-import type { ProgressionLevel } from '../types/training';
+import type { ProgressionLevel, GoalType, StrengthLevel, TrainingStyle } from '../types/training';
+
+// Re-export so existing consumers importing from onboardingStore don't break.
+export type { GoalType, StrengthLevel, TrainingStyle };
 
 // ─── Onboarding data shape ────────────────────────────────────────────────────
-
-export type GoalType =
-  | 'marathon'
-  | 'half_marathon'
-  | '10k'
-  | '5k'
-  | 'general_fitness'
-  | 'health'
-  | 'return_to_running';
-
-export type StrengthLevel = 'none' | 'beginner' | 'intermediate' | 'advanced';
-export type TrainingStyle = 'polarized' | 'threshold' | 'mixed' | 'base_only';
 
 export type OnboardingData = {
   // Step 1: Name

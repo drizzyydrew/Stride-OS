@@ -16,8 +16,8 @@
 // novel session variants, and conversational coaching — without any changes
 // to downstream components or stores.
 
-import type { Workout, TrainingPhase, ProgressionLevel, GeneratableWorkoutType } from './training';
-import type { CalibrationOutput } from './athlete';
+import type { Workout, TrainingPhase, ProgressionLevel, GeneratableWorkoutType, TrainingStyle } from './training';
+import type { CalibrationOutput, TrainingDay } from './athlete';
 
 // ─── Workout type taxonomy ────────────────────────────────────────────────────
 
@@ -204,6 +204,10 @@ export type WorkoutEngineInput = {
   adherenceRate:         number;    // 0–1
   consistencyScore:      number;    // 0–100
   longRunConsistency:    number;    // 0–1
+
+  // Training preferences (from onboarding)
+  trainingStyle?:        TrainingStyle;
+  availableDays?:        TrainingDay[];
 
   // Environment (optional — omit if unknown)
   temperatureCelsius?:   number;

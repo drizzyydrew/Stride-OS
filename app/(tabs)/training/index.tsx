@@ -18,11 +18,10 @@ import { useAthleteStore }     from '../../../src/store/athleteStore';
 import { useWorkoutStore }     from '../../../src/store/workoutStore';
 import { useCheckInStore }     from '../../../src/store/checkInStore';
 import { useAdaptationStore }  from '../../../src/store/adaptationStore';
-import { useProfileStore }     from '../../../src/store/profileStore';
 import { useWorkoutWeekStore } from '../../../src/store/workoutWeekStore';
 import { useOnboardingStore }  from '../../../src/store/onboardingStore';
+import { useWeekPlan }         from '../../../src/hooks/useWeekPlan';
 
-import { generateRichWeek }                      from '../../../src/utils/workoutEngine';
 import { adaptWeek, ID_TO_GENERATABLE }          from '../../../src/utils/training/adaptWeek';
 import { generateTrainingWeek, generateWorkout } from '../../../src/utils/workoutGenerator';
 import { calculateACWR }                         from '../../../src/utils/training';
@@ -48,7 +47,6 @@ import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../../src/theme/tokens';
 import type { TrainingPhase, GeneratableWorkoutType } from '../../../src/types/training';
-import type { WorkoutEngineInput } from '../../../src/types/workout';
 import { todayDateKey } from '../../../src/types/checkin';
 
 // ─── Day label helpers ────────────────────────────────────────────────────────
@@ -129,18 +127,20 @@ export default function RunningScreen() {
   const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
   const checkedIn    = todayCheckIn?.date === todayDateKey();
 
-  const { getAdaptation, setAdaptation, clearAdaptation } = useAdaptationStore();
+  const { getAdaptation, setAdaptation } = useAdaptationStore();
   const adaptation = getAdaptation(currentWeek);
 
-  const profile     = useProfileStore(s => s.getActiveProfile());
-  const calibration = profile?.calibration ?? null;
-
-  const { setRichWeek } = useWorkoutWeekStore();
+  const { setRichWeek, setWeekPlan } = useWorkoutWeekStore();
 
   const onboardingData = useOnboardingStore(s => s.data);
   const availableDays  = onboardingData.availableDays;
 
   const [isRecalculating, setIsRecalculating] = useState(false);
+
+  // ── Unified plan — single source of truth for run sessions ───────────────
+  const weekPlan    = useWeekPlan();
+  const richWeek    = weekPlan.richWeek;
+  const weeksToRace = weekPlan.weeksToRace;
 
   // ── Analytics inputs ──────────────────────────────────────────────────────
   const acwrResult         = useMemo(() => calculateACWR(history), [history]);
@@ -175,41 +175,11 @@ export default function RunningScreen() {
     ).length;
   }, [history]);
 
-  // ── Rich week ────────────────────────────────────────────────────────────
-  const engineInput: WorkoutEngineInput = {
-    calibration,
-    fatigueSensitivity:     profile?.fatigueSensitivity    ?? 1.0,
-    recoveryResponsiveness: profile?.recoveryResponsiveness ?? 1.0,
-    injuryRisk:             profile?.returningFromInjury   ?? false,
-    fatigueScore,
-    recoveryScore,
-    soreness:    checkedIn ? (todayCheckIn?.soreness   ?? null) : null,
-    motivation:  checkedIn ? (todayCheckIn?.motivation ?? null) : null,
-    acwr:               acwrResult.acwr,
-    trainingPhase,
-    progressionLevel,
-    weeklyMileage,
-    currentWeek,
-    goalRace,
-    weeksToRace:        0,
-    recentIntensityDist: {
-      easy:     easyProportion,
-      moderate: totalIntensity > 0 ? (dist.byIntensity.moderate ?? 0) / totalIntensity : 0.10,
-      hard:     totalIntensity > 0 ? ((dist.byIntensity.hard ?? 0) + (dist.byIntensity.max ?? 0)) / totalIntensity : 0.10,
-    },
-    recentHardSessions,
-    adherenceRate,
-    consistencyScore,
-    longRunConsistency,
-  };
-
-  const richWeek = useMemo(() => generateRichWeek(engineInput), [
-    calibration, fatigueScore, recoveryScore, trainingPhase,
-    progressionLevel, weeklyMileage, currentWeek, goalRace,
-    acwrResult.acwr, adherenceRate,
-  ]);
-
-  useEffect(() => { setRichWeek(richWeek); }, [richWeek]);
+  useEffect(() => {
+    setRichWeek(richWeek);
+    setWeekPlan(weekPlan);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [richWeek]);
 
   // ── Canonical week (adaptation system) ──────────────────────────────────
   const generatorInput = {
@@ -303,7 +273,7 @@ export default function RunningScreen() {
     consistencyScore,
     fatigueSlope,
     recoverySlope,
-    weeksRemaining:   0,
+    weeksRemaining:   weeksToRace,
   });
 
   return (
@@ -316,7 +286,7 @@ export default function RunningScreen() {
         soreness={checkedIn ? todayCheckIn!.soreness : null}
         acwr={acwrResult.acwr}
         isRestDay={isCurrentRestDay}
-        weeksToRace={0}
+        weeksToRace={weeksToRace}
       />
 
       {/* ── Goal label ── */}

@@ -14,6 +14,7 @@ import FloatingActionButton from '../../../src/layout/FloatingActionButton';
 import { generateTrainingWeek, generateWorkout } from '../../../src/utils/workoutGenerator';
 import { generateRecommendation, calculateACWR } from '../../../src/utils/training';
 import { ID_TO_GENERATABLE } from '../../../src/utils/training/adaptWeek';
+import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { todayDateKey } from '../../../src/types/checkin';
 import {
   getWeeklyMileage,
@@ -94,6 +95,7 @@ export default function TodayScreen() {
 
   const adaptation          = useAdaptationStore(s => s.getAdaptation(currentWeek));
   const readinessThresholds = useReadinessThresholds();
+  const { weeksToRace }     = useWeekPlan();
 
   const generatorInput = {
     weeklyMileage, recoveryScore, fatigueScore,
@@ -177,7 +179,7 @@ export default function TodayScreen() {
     consistencyScore,
     fatigueSlope,
     recoverySlope,
-    weeksRemaining:    0,   // dashboard doesn't have plan context; coach still works
+    weeksRemaining:    weeksToRace,
   });
 
   const actionPlan = generateActionPlan(todayInsights, {

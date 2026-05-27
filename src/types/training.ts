@@ -1,3 +1,15 @@
+export type GoalType =
+  | 'marathon'
+  | 'half_marathon'
+  | '10k'
+  | '5k'
+  | 'general_fitness'
+  | 'health'
+  | 'return_to_running';
+
+export type StrengthLevel = 'none' | 'beginner' | 'intermediate' | 'advanced';
+export type TrainingStyle  = 'polarized' | 'threshold' | 'mixed' | 'base_only';
+
 export type TrainingZone =
   | 'recovery'
   | 'easy'

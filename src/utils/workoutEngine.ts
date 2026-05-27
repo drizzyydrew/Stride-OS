@@ -14,7 +14,7 @@ import type {
   WorkoutEngineInput, RichWeek, RichWorkout, RichWorkoutType,
   EnvironmentAdjustment, PaceRange,
 } from '../types/workout';
-import type { TrainingPhase, ProgressionLevel } from '../types/training';
+import type { TrainingPhase, ProgressionLevel, TrainingStyle } from '../types/training';
 import { buildPaceContext, buildRichWorkout, BuildContext } from './workoutBuilder';
 import { applyAdaptiveModifiers } from './adaptiveModifier';
 import { formatPace } from './calibrationEngine';
@@ -173,6 +173,41 @@ function computeEnvAdjustment(
   };
 }
 
+// ─── Training style modifier ──────────────────────────────────────────────────
+//
+// Applied after adaptive modifiers. Reshapes session distribution to match the
+// athlete's preferred training philosophy without changing volume or rest days.
+//
+//   polarized  — 80 % easy + high-intensity vo2; eliminate middle-ground tempo/threshold
+//   threshold  — tempo/threshold emphasis; convert fartlek → threshold
+//   base_only  — all quality replaced with easy aerobic work
+//   mixed      — no change (default)
+
+function applyTrainingStyle(
+  types: RichWorkoutType[],
+  style?: TrainingStyle,
+): RichWorkoutType[] {
+  if (!style || style === 'mixed') return types;
+  return types.map(t => {
+    switch (style) {
+      case 'polarized':
+        if (t === 'threshold' || t === 'tempo') return 'vo2';
+        if (t === 'fartlek' || t === 'marathon_pace') return 'easy_run';
+        return t;
+      case 'threshold':
+        if (t === 'fartlek') return 'threshold';
+        if (t === 'vo2') return 'threshold';
+        return t;
+      case 'base_only':
+        if (['vo2', 'threshold', 'tempo', 'fartlek', 'hill_repeats',
+             'progression_run', 'strides'].includes(t)) return 'easy_run';
+        return t;
+      default:
+        return t;
+    }
+  });
+}
+
 // ─── Helper exported for screens that need to rebuild a single day ─────────────
 
 export function buildRichDay(
@@ -217,6 +252,7 @@ export function generateRichWeek(input: WorkoutEngineInput): RichWeek {
     : (WEEK_TEMPLATES[trainingPhase]?.[progressionLevel] ?? WEEK_TEMPLATES['base']!['intermediate']!);
 
   const adaptedTypes = applyAdaptiveModifiers(baseTemplate, input, weekInBlock);
+  const styledTypes  = applyTrainingStyle(adaptedTypes, input.trainingStyle);
 
   const multiplier = isAutoDeload
     ? PHASE_MULTIPLIER['deload']!
@@ -233,7 +269,7 @@ export function generateRichWeek(input: WorkoutEngineInput): RichWeek {
     calibration,
   };
 
-  const workouts: RichWorkout[] = adaptedTypes.map((richType, dayIndex) => {
+  const workouts: RichWorkout[] = styledTypes.map((richType, dayIndex) => {
     const workout = buildRichWorkout(richType, ctx, dayIndex);
     const envAdj  = computeEnvAdjustment(
       workout.paceRange,

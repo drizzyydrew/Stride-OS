@@ -1,0 +1,150 @@
+// ─── useWeekPlan Hook ────────────────────────────────────────────────────────
+//
+// Single hook that collects all store state, computes derived signals, and
+// calls buildWeekPlan() to produce the canonical WeekPlan for the current week.
+//
+// All UI screens (training, calendar, dashboard) read from this hook so they
+// share a consistent plan without duplicating engine calls.
+
+import { useMemo } from 'react';
+
+import { useAthleteStore }    from '../store/athleteStore';
+import { useOnboardingStore } from '../store/onboardingStore';
+import { useWorkoutStore }    from '../store/workoutStore';
+import { useCheckInStore }    from '../store/checkInStore';
+import { useStrengthStore }   from '../store/strengthStore';
+import { useProfileStore }    from '../store/profileStore';
+
+import { calculateACWR }         from '../utils/training';
+import {
+  getWeeklyMileage,
+  getTrainingDistribution,
+} from '../utils/historyUtils';
+import { computeSlope, computeConsistency } from '../utils/analyticsEngine';
+
+import { buildWeekPlan }   from '../utils/trainingEngine';
+import type { WeekPlan }   from '../utils/trainingEngine';
+import { todayDateKey }    from '../types/checkin';
+
+export function useWeekPlan(): WeekPlan {
+  // ── Store reads ──────────────────────────────────────────────────────────
+  const {
+    goalRace,
+    weeklyMileage,
+    fatigueScore,
+    recoveryScore,
+    currentWeek,
+    trainingPhase,
+    progressionLevel,
+  } = useAthleteStore();
+
+  const onboardingData = useOnboardingStore(s => s.data);
+
+  const { completedWorkouts, history } = useWorkoutStore(s => ({
+    completedWorkouts: s.completedWorkouts,
+    history:           s.history,
+  }));
+
+  const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
+  const checkedIn    = todayCheckIn?.date === todayDateKey();
+
+  const strengthHistory = useStrengthStore(s => s.history);
+
+  const profile     = useProfileStore(s => s.getActiveProfile());
+  const calibration = profile?.calibration ?? null;
+
+  // ── Derived history signals (memoized on history) ──────────────────────
+  const acwrResult = useMemo(() => calculateACWR(history), [history]);
+
+  const recentIntensityDist = useMemo(() => {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const recent = history.filter(r => r.timestamp >= cutoff);
+    let easy = 0, moderate = 0, hard = 0, total = 0;
+    for (const r of recent) {
+      total++;
+      if (r.intensity === 'easy' || r.intensity === 'very_easy' || r.intensity === 'rest') easy++;
+      else if (r.intensity === 'moderate') moderate++;
+      else hard++;
+    }
+    if (total === 0) return { easy: 0.80, moderate: 0.10, hard: 0.10 };
+    return { easy: easy / total, moderate: moderate / total, hard: hard / total };
+  }, [history]);
+
+  const recentHardSessions = useMemo(() => {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return history.filter(r =>
+      r.timestamp >= cutoff && (r.intensity === 'hard' || r.intensity === 'max'),
+    ).length;
+  }, [history]);
+
+  const weeksWithLongRun = useMemo(
+    () => new Set(history.filter(r => r.type === 'long_run').map(r => r.week)).size,
+    [history],
+  );
+
+  const longRunConsistency = currentWeek > 0 ? weeksWithLongRun / currentWeek : 0;
+  const adherenceRate      = Math.min(1, history.length / Math.max(1, currentWeek * 6));
+
+  const weeklySummaries = useMemo(() => getWeeklyMileage(history), [history]);
+  const consistencyScore = useMemo(
+    () => computeConsistency(weeklySummaries.map(s => s.totalMiles)),
+    [weeklySummaries],
+  );
+
+  // ── Build input object (memoized on individual dependencies) ──────────
+  const engineInput = useMemo(() => ({
+    // Athlete state
+    goalRace,
+    weeklyMileage,
+    fatigueScore,
+    recoveryScore,
+    currentWeek,
+    trainingPhase,
+    progressionLevel,
+
+    // Physiological profile
+    calibration,
+    fatigueSensitivity:     profile?.fatigueSensitivity     ?? 1.0,
+    recoveryResponsiveness: profile?.recoveryResponsiveness ?? 1.0,
+    returningFromInjury:    profile?.returningFromInjury    ?? false,
+
+    // Onboarding preferences
+    availableDays:    onboardingData.availableDays,
+    trainingStyle:    onboardingData.trainingStyle,
+    primaryGoal:      onboardingData.primaryGoal,
+    hasCurrentInjury: onboardingData.hasCurrentInjury,
+    strengthLevel:    onboardingData.strengthLevel,
+
+    // Daily readiness
+    soreness:   checkedIn ? (todayCheckIn?.soreness   ?? null) : null,
+    motivation: checkedIn ? (todayCheckIn?.motivation ?? null) : null,
+
+    // History signals
+    acwr:                acwrResult.acwr,
+    recentIntensityDist,
+    recentHardSessions,
+    adherenceRate,
+    consistencyScore,
+    longRunConsistency,
+
+    // Completion keys
+    completedWorkoutKeys:  completedWorkouts,
+    completedStrengthKeys: [],   // TODO: wire to strengthStore completed keys
+
+    // Strength history
+    strengthHistory,
+  }), [
+    goalRace, weeklyMileage, fatigueScore, recoveryScore,
+    currentWeek, trainingPhase, progressionLevel,
+    calibration, profile,
+    onboardingData,
+    checkedIn, todayCheckIn,
+    acwrResult.acwr,
+    recentIntensityDist, recentHardSessions,
+    adherenceRate, consistencyScore, longRunConsistency,
+    completedWorkouts, strengthHistory,
+  ]);
+
+  // ── Build and return the plan (re-runs only when engineInput changes) ──
+  return useMemo(() => buildWeekPlan(engineInput), [engineInput]);
+}

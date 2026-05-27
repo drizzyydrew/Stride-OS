@@ -17,21 +17,12 @@ import {
 
 import { useAthleteStore }       from '../../../src/store/athleteStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
-import { useWorkoutStore }       from '../../../src/store/workoutStore';
-import { useOnboardingStore }    from '../../../src/store/onboardingStore';
-import { generateTrainingWeek }  from '../../../src/utils/workoutGenerator';
-import { generateStrengthWeek }  from '../../../src/utils/strengthEngine';
+import { useWeekPlan }           from '../../../src/hooks/useWeekPlan';
 import {
   toYMD,
-  sundayOf,
-  addDays,
   weeksInMonth,
-  mapWorkoutsToDates,
-  mapStrengthToDates,
-  mergePlans,
   type CalendarEntry,
 } from '../../../src/utils/calendarEngine';
-import type { TrainingDay }       from '../../../src/types/athlete';
 import type { CustomWorkoutLog }  from '../../../src/types/customWorkout';
 
 import ScreenLayout         from '../../../src/layout/ScreenLayout';
@@ -239,84 +230,13 @@ export default function CalendarScreen() {
 
   const {
     fatigueScore, recoveryScore,
-    weeklyMileage, goalRace, currentWeek, trainingPhase, progressionLevel,
     setFatigueScore, setRecentEasyLoad, recentEasyLoad,
-    vo2Estimate,
   } = useAthleteStore();
-
-  const { completedWorkouts } = useWorkoutStore();
-  const onboardingData        = useOnboardingStore(s => s.data);
-  const availableDays         = onboardingData.availableDays as TrainingDay[];
 
   const { addLog: addCustomLog, addOverride, getLogsForDate, getLogsForRange } = useCustomWorkoutStore();
 
-  // ── Generate current week's planned workouts ───────────────────────────────
-  const generatorInput = useMemo(() => ({
-    weeklyMileage, recoveryScore, fatigueScore,
-    goalRace, currentWeek, trainingPhase, progressionLevel,
-  }), [weeklyMileage, recoveryScore, fatigueScore, goalRace, currentWeek, trainingPhase, progressionLevel]);
-
-  const plannedRunWorkouts = useMemo(() =>
-    generateTrainingWeek(generatorInput).plannedWorkouts,
-    [generatorInput],
-  );
-
-  const plannedStrengthSessions = useMemo(() => {
-    try {
-      return generateStrengthWeek({
-        weeklyMileage,
-        trainingPhase,
-        progressionLevel,
-        fatigueScore,
-        recoveryScore,
-        currentWeek,
-        weeksToRace:     0,
-        soreness:        null,
-        injuryRisk:      onboardingData.hasCurrentInjury ?? false,
-        acwr:            1.0,
-        availableTimeMin: 60,
-        strengthHistory: [],
-      }).sessions;
-    } catch {
-      return [];
-    }
-  }, [weeklyMileage, trainingPhase, progressionLevel, fatigueScore, recoveryScore, currentWeek, onboardingData]);
-
-  // ── Map planned sessions to current week's dates ───────────────────────────
-  const currentWeekSunday = useMemo(() => sundayOf(today), []);
-
-  const runDayPlans = useMemo(() =>
-    mapWorkoutsToDates(
-      plannedRunWorkouts,
-      availableDays,
-      currentWeekSunday,
-      completedWorkouts,
-      currentWeek,
-    ),
-    [plannedRunWorkouts, availableDays, currentWeekSunday, completedWorkouts, currentWeek],
-  );
-
-  const runDateStrings = useMemo(() =>
-    runDayPlans.map(p => p.date),
-    [runDayPlans],
-  );
-
-  const strengthDayPlans = useMemo(() =>
-    mapStrengthToDates(
-      plannedStrengthSessions,
-      availableDays,
-      runDateStrings,
-      currentWeekSunday,
-      completedWorkouts,
-      currentWeek,
-    ),
-    [plannedStrengthSessions, availableDays, runDateStrings, currentWeekSunday, completedWorkouts, currentWeek],
-  );
-
-  const plannedByDate = useMemo(() =>
-    mergePlans(runDayPlans, strengthDayPlans),
-    [runDayPlans, strengthDayPlans],
-  );
+  // ── Unified plan — single source of truth for run + strength calendar data ─
+  const { calendarMap: plannedByDate } = useWeekPlan();
 
   // ── Month grid ─────────────────────────────────────────────────────────────
   const weeks = useMemo(() => weeksInMonth(viewYear, viewMonth), [viewYear, viewMonth]);
