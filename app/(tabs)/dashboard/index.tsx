@@ -26,6 +26,8 @@ import {
   computeConsistency,
 } from '../../../src/utils/analyticsEngine';
 import { generateCoachingOutput } from '../../../src/utils/coachEngine';
+import { buildPerformanceProfile } from '../../../src/utils/performanceEngine';
+import { useMovementStore } from '../../../src/store/movementStore';
 import type { GeneratableWorkoutType } from '../../../src/types/training';
 
 import ScreenLayout from '../../../src/layout/ScreenLayout';
@@ -36,6 +38,7 @@ import PostWorkoutCard from '../../../src/components/today/PostWorkoutCard';
 import RecommendationCard from '../../../src/components/today/RecommendationCard';
 import CoachInsightsCard from '../../../src/components/coaching/CoachInsightsCard';
 import ActionPlanCard from '../../../src/components/today/ActionPlanCard';
+import PerformanceScoreCard from '../../../src/components/performance/PerformanceScoreCard';
 import { generateActionPlan } from '../../../src/utils/actionPlanEngine';
 
 function formatDate(): string {
@@ -62,9 +65,12 @@ export default function TodayScreen() {
     currentWeek,
     trainingPhase,
     progressionLevel,
+    vo2Estimate,
   } = useAthleteStore();
 
   const { addLog: addCustomLog, addOverride } = useCustomWorkoutStore();
+  const getActiveRiskFlags = useMovementStore(s => s.getActiveRiskFlags);
+  const postWorkoutNotes   = useCheckInStore(s => s.postWorkoutNotes);
 
   function handleLogPress() {
     const isLowReadiness = fatigueScore > 60 || recoveryScore < 50;
@@ -200,6 +206,21 @@ export default function TodayScreen() {
     readinessThresholds,
   });
 
+  const activeRiskFlags = getActiveRiskFlags().map(f => ({
+    severity:      f.severity,
+    affectsScores: f.affectsScores as string[],
+  }));
+
+  const performanceProfile = buildPerformanceProfile({
+    history,
+    fatigueScore,
+    recoveryScore,
+    weeklyMileage,
+    vdot:           vo2Estimate > 0 ? vo2Estimate : undefined,
+    activeRiskFlags,
+    checkInCount:   postWorkoutNotes.length,
+  });
+
   return (
     <ScreenLayout
       title="Today"
@@ -244,6 +265,8 @@ export default function TodayScreen() {
       {isComplete && !isRestDay && (
         <PostWorkoutCard completionKey={completionKey} />
       )}
+
+      <PerformanceScoreCard profile={performanceProfile} compact />
 
       <OverrideModal
         visible={showOverride}

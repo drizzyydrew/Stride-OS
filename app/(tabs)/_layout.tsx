@@ -39,11 +39,11 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="training"
         options={{
-          title: 'Training',
+          title: 'Running',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              name="barbell-outline"
-              label="Training"
+              name="footsteps-outline"
+              label="Running"
               focused={focused}
               color={color}
             />

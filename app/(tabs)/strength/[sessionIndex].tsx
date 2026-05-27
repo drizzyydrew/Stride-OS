@@ -404,7 +404,7 @@ export default function StrengthSessionDetailScreen() {
 
 const styles = StyleSheet.create({
   safe:           { flex: 1, backgroundColor: colors.bg },
-  scroll:         { padding: spacing.lg },
+  scroll:         { padding: spacing.lg, paddingBottom: 120 },
   errorText:      { color: colors.critical, fontSize: FontSize.base, padding: spacing.xl },
   backRow:        { marginBottom: spacing.md },
   backText:       { color: colors.primary, fontSize: FontSize.sm },

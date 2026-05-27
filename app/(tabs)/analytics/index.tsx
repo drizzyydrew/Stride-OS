@@ -308,6 +308,7 @@ export default function AnalyticsScreen() {
         planPhases={periodization.planPhases}
         raceDistance={periodization.raceDistance}
         mesocycle={periodization.mesocycle}
+        baseMileage={weeklyMileage}
       />
 
       <WeeklyLoadTargetsCard

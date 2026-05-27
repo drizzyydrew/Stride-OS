@@ -93,8 +93,8 @@ export function recommendStrengthFocus(
   let alternateFocus: StrengthFocus = 'core';
   let intensity:      'low' | 'moderate' | 'high' = 'moderate';
   let duration = 45;
-  let rationale: string;
-  let loadGuidance: string;
+  let rationale    = '';
+  let loadGuidance = '';
   let avoidPatterns: string[] = [];
   let keyExercises:  string[] = [];
   let warning:       string | undefined;

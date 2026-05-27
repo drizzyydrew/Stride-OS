@@ -13,6 +13,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
@@ -273,7 +274,10 @@ function GaitChecklistModal({
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
+const HIT_SLOP = { top: 12, bottom: 12, left: 16, right: 16 } as const;
+
 export default function VideoDetailScreen() {
+  const insets    = useSafeAreaInsets();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
   const {
     videos,
@@ -335,12 +339,12 @@ export default function VideoDetailScreen() {
 
   return (
     <View style={s.root}>
-      {/* Nav bar */}
-      <View style={s.nav}>
-        <Pressable onPress={() => router.back()}>
+      {/* Nav bar — safe area top */}
+      <View style={[s.nav, { paddingTop: insets.top + spacing.sm }]}>
+        <Pressable onPress={() => router.back()} hitSlop={HIT_SLOP}>
           <Text style={s.navBack}>‹ Back</Text>
         </Pressable>
-        <Pressable onPress={handleDelete}>
+        <Pressable onPress={handleDelete} hitSlop={HIT_SLOP}>
           <Text style={s.navDelete}>Delete</Text>
         </Pressable>
       </View>
@@ -506,11 +510,10 @@ const s = StyleSheet.create({
   notFoundTxt:    { color: colors.textMuted, fontSize: FontSize.base },
   back:           { color: colors.primary,   fontSize: FontSize.base },
   nav: {
-    flexDirection:   'row',
-    justifyContent:  'space-between',
+    flexDirection:     'row',
+    justifyContent:    'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop:      spacing.xxl + spacing.lg,
-    paddingBottom:   spacing.sm,
+    paddingBottom:     spacing.sm,
   },
   navBack:        { color: colors.primary,  fontSize: FontSize.base },
   navDelete:      { color: colors.critical, fontSize: FontSize.base },
@@ -546,7 +549,7 @@ const s = StyleSheet.create({
   },
   tabBadgeTxt:   { color: colors.text, fontSize: 9, fontWeight: FontWeight.black },
   body:          { flex: 1 },
-  bodyContent:   { padding: spacing.lg, gap: spacing.md },
+  bodyContent:   { padding: spacing.lg, paddingBottom: 120, gap: spacing.md },
   section:       { gap: spacing.md },
   overviewCard: {
     backgroundColor: colors.card,

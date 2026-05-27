@@ -335,8 +335,9 @@ const s = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    padding: spacing.lg,
-    gap:     spacing.md,
+    padding:       spacing.lg,
+    paddingBottom: 120,
+    gap:           spacing.md,
   },
   aiBanner: {
     backgroundColor: colors.card,

@@ -17,8 +17,10 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 
 import { useOnboardingStore } from '../../src/store/onboardingStore';
-import { useProfileStore } from '../../src/store/profileStore';
+import { useProfileStore }    from '../../src/store/profileStore';
+import { useAthleteStore }    from '../../src/store/athleteStore';
 import { vdotFromRacePR, estimateHRMax } from '../../src/utils/calibrationEngine';
+import { buildGoalRaceLabel } from '../../src/utils/goalRaceEngine';
 import { colors }  from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
@@ -106,6 +108,11 @@ export default function CompleteScreen() {
     recalibrate,
     activeAthleteId,
   } = useProfileStore();
+  const {
+    setGoalRace,
+    setWeeklyMileage: setAthleteWeeklyMileage,
+    setAthleteName,
+  } = useAthleteStore();
 
   const [name,     setName]     = useState('');
   const [building, setBuilding] = useState(false);
@@ -173,7 +180,18 @@ export default function CompleteScreen() {
       currentRecoveryScore: 70,
     });
 
-    // 5. Mark onboarding complete — root layout will redirect to tabs
+    // 5. Wire onboarding data to athleteStore (goal race + mileage + name)
+    const goalRaceStr = buildGoalRaceLabel(
+      data.primaryGoal,
+      data.goalRaceLabel,
+      data.prDistance,
+      data.prTimeSeconds,
+    );
+    setGoalRace(goalRaceStr);
+    setAthleteWeeklyMileage(data.weeklyMileage);
+    setAthleteName(displayName);
+
+    // 6. Mark onboarding complete — root layout will redirect to tabs
     completeOnboarding();
 
     setBuilding(false);
