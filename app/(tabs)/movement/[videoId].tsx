@@ -6,6 +6,7 @@
 import {
   Alert,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -319,13 +320,20 @@ export default function VideoDetailScreen() {
   }
 
   function handleDelete() {
-    Alert.alert('Delete Analysis', 'Remove this analysis record?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive',
-        onPress: () => { deleteVideo(videoId!); router.back(); },
-      },
-    ]);
+    if (Platform.OS === 'web') {
+      if (window.confirm('Remove this analysis record?')) {
+        deleteVideo(videoId!);
+        router.back();
+      }
+    } else {
+      Alert.alert('Delete Analysis', 'Remove this analysis record?', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete', style: 'destructive',
+          onPress: () => { deleteVideo(videoId!); router.back(); },
+        },
+      ]);
+    }
   }
 
   const TABS: { key: Tab; label: string }[] = [

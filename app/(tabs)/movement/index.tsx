@@ -6,6 +6,7 @@
 
 import {
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -31,6 +32,8 @@ type AddVideoForm = {
   activity:     MovementActivity;
   view:         MovementViewAngle;
   notes:        string;
+  videoUri?:    string;
+  fileName?:    string;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -107,10 +110,24 @@ function AddVideoModal({
     setForm(prev => ({ ...prev, [key]: val }));
   }
 
+  function handlePickVideo() {
+    if (Platform.OS !== 'web') return;
+    const input = document.createElement('input');
+    input.type  = 'file';
+    input.accept = 'video/*';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const uri = URL.createObjectURL(file);
+      setForm(prev => ({ ...prev, videoUri: uri, fileName: file.name }));
+    };
+    input.click();
+  }
+
   function handleAdd() {
     if (!form.title.trim()) return;
     onAdd(form);
-    setForm({ title: '', date: today, analysisType: 'running_gait', activity: 'running', view: 'side', notes: '' });
+    setForm({ title: '', date: today, analysisType: 'running_gait', activity: 'running', view: 'side', notes: '', videoUri: undefined, fileName: undefined });
   }
 
   return (
@@ -203,6 +220,22 @@ function AddVideoModal({
             />
           </View>
 
+          {Platform.OS === 'web' && (
+            <View style={m.section}>
+              <Text style={m.label}>VIDEO FILE (OPTIONAL)</Text>
+              <Pressable style={m.input} onPress={handlePickVideo}>
+                <Text style={{ color: form.fileName ? colors.text : colors.textSubtle, fontSize: FontSize.base }}>
+                  {form.fileName ?? 'Choose video file…'}
+                </Text>
+              </Pressable>
+              {form.fileName && (
+                <Text style={{ color: colors.textMuted, fontSize: FontSize.xs, marginTop: 4 }}>
+                  Video stored for this session only. Reload to re-select.
+                </Text>
+              )}
+            </View>
+          )}
+
           <View style={m.aiNote}>
             <Text style={m.aiNoteTitle}>Automatic marker tracking coming soon</Text>
             <Text style={m.aiNoteSub}>
@@ -245,7 +278,7 @@ export default function MovementIndexScreen() {
 
   function handleAdd(form: AddVideoForm) {
     addVideo({
-      uri:          '',   // populated when video picker is available
+      uri:          form.videoUri ?? '',
       title:        form.title,
       date:         form.date,
       analysisType: form.analysisType,

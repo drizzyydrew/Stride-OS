@@ -105,9 +105,8 @@ function DayCell({
 // ─── Day Detail Panel ─────────────────────────────────────────────────────────
 
 function EntryRow({ entry }: { entry: CalendarEntry }) {
-  const durationMin =
-    entry.workout?.durationMinutes ??
-    entry.session?.exercises.length ? (entry.session!.exercises.length * 4) : 0;
+  const exercises     = entry.session?.exercises ?? [];
+  const exerciseCount = exercises.length;
 
   return (
     <View style={s.entryRow}>
@@ -123,7 +122,8 @@ function EntryRow({ entry }: { entry: CalendarEntry }) {
         )}
         {entry.session && (
           <Text style={s.entryMeta}>
-            {entry.session.exercises.length} exercises · {entry.session.sessionType}
+            {exerciseCount > 0 ? `${exerciseCount} exercises` : (entry.session.sessionType ?? 'Strength')}
+            {exerciseCount > 0 ? ` · ~${exerciseCount * 4} min` : ''}
           </Text>
         )}
       </View>
