@@ -112,6 +112,21 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
+        name="coach"
+        options={{
+          title: 'Coach',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name="chatbubble-ellipses-outline"
+              label="Coach"
+              focused={focused}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="profile/index"
         options={{
           title: 'Profile',

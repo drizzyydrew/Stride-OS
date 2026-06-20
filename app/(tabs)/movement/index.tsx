@@ -90,13 +90,6 @@ const TYPE_LABELS: Record<MovementAnalysisType, string> = {
   other:             'Other',
 };
 
-function makeVideoId(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
 
 // ─── Add Video Modal ──────────────────────────────────────────────────────────
 
@@ -318,11 +311,8 @@ export default function MovementIndexScreen() {
   const [uploading, setUploading] = useState(false);
 
   async function handleAdd(form: AddVideoForm) {
-    const videoId = makeVideoId();
-    const destDir = `${FileSystem.documentDirectory}movement-videos/`;
-
-    // Save metadata locally immediately so the card appears right away
-    addVideo({
+    // addVideo returns the ID it assigns — capture it so updateVideo targets the right record
+    const videoId = addVideo({
       uri:          '',
       title:        form.title,
       date:         form.date,
@@ -336,15 +326,14 @@ export default function MovementIndexScreen() {
 
     if (!form.localUri || !user) return;
 
-    // Copy to app document directory for persistent local access
     setUploading(true);
     try {
+      const destDir = `${FileSystem.documentDirectory}movement-videos/`;
       await FileSystem.makeDirectoryAsync(destDir, { intermediates: true });
       const ext       = form.fileName?.split('.').pop() ?? 'mp4';
       const localDest = `${destDir}${videoId}.${ext}`;
       await FileSystem.copyAsync({ from: form.localUri, to: localDest });
 
-      // Upload to Supabase Storage
       const storagePath = `${user.id}/${videoId}.${ext}`;
       const response    = await fetch(localDest);
       const blob        = await response.blob();
@@ -356,7 +345,6 @@ export default function MovementIndexScreen() {
       if (uploadError) {
         console.warn('Supabase upload error:', uploadError.message);
       } else {
-        // Patch local record with storage path + local URI
         updateVideo(videoId, { uri: localDest, storagePath });
       }
     } catch (err) {
