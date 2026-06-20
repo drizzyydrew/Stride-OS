@@ -4,6 +4,7 @@
 // All analysis is entered manually. AI pose estimation is a future integration point.
 
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   Platform,
@@ -14,11 +15,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { useMovementStore } from '../../../src/store/movementStore';
+import { useAuthStore }     from '../../../src/store/authStore';
+import { supabase }         from '../../../src/lib/supabase';
 import { suggestGaitFindings } from '../../../src/utils/movementEngine';
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
@@ -29,11 +33,7 @@ import type {
   FindingSeverity,
   GaitAnalysis,
   FootStrikePattern,
-  OscillationLevel,
-  TrunkPosition,
   SeverityOrNull,
-  ArmSwingQuality,
-  GaitSymmetry,
 } from '../../../src/types/movement';
 
 type Tab = 'overview' | 'gait' | 'angles' | 'flags';
@@ -49,8 +49,6 @@ const SEVERITY_LABEL: Record<FindingSeverity, string> = {
   moderate: 'Moderate',
   high:     'High',
 };
-
-// ─── Gait defaults ───────────────────────────────────────────────────────────
 
 const GAIT_DEFAULTS: Omit<GaitAnalysis, 'videoId'> = {
   footStrike:          'unknown',
@@ -124,8 +122,8 @@ function RiskFlagCard({ flag, onDismiss }: { flag: MovementRiskFlag; onDismiss: 
 type BoolField = 'overstride' | 'crossoverGait';
 
 const GAIT_BOOL_FIELDS: { key: BoolField; label: string }[] = [
-  { key: 'overstride',   label: 'Overstriding'   },
-  { key: 'crossoverGait',label: 'Crossover gait' },
+  { key: 'overstride',    label: 'Overstriding'   },
+  { key: 'crossoverGait', label: 'Crossover gait' },
 ];
 
 const FOOT_STRIKE_OPTIONS: FootStrikePattern[] = ['heel', 'midfoot', 'forefoot', 'unknown'];
@@ -145,12 +143,12 @@ function GaitChecklistModal({
   onSave:   (g: GaitAnalysis) => void;
   onClose:  () => void;
 }) {
-  const [cadence,    setCadence]    = useState(String(existing.cadence ?? ''));
-  const [footStrike, setFootStrike] = useState<FootStrikePattern>(existing.footStrike ?? 'unknown');
-  const [overstride,    setOverstride]   = useState<boolean | null>(existing.overstride ?? null);
-  const [crossover,     setCrossover]    = useState<boolean | null>(existing.crossoverGait ?? null);
-  const [hipDrop,       setHipDrop]      = useState<SeverityOrNull>(existing.hipDrop ?? null);
-  const [kneeValgus,    setKneeValgus]   = useState<SeverityOrNull>(existing.kneeValgus ?? null);
+  const [cadence,    setCadence]   = useState(String(existing.cadence ?? ''));
+  const [footStrike, setFootStrike]= useState<FootStrikePattern>(existing.footStrike ?? 'unknown');
+  const [overstride, setOverstride]= useState<boolean | null>(existing.overstride ?? null);
+  const [crossover,  setCrossover] = useState<boolean | null>(existing.crossoverGait ?? null);
+  const [hipDrop,    setHipDrop]   = useState<SeverityOrNull>(existing.hipDrop ?? null);
+  const [kneeValgus, setKneeValgus]= useState<SeverityOrNull>(existing.kneeValgus ?? null);
 
   function handleSave() {
     const cad = parseInt(cadence, 10);
@@ -177,7 +175,6 @@ function GaitChecklistModal({
           <Pressable onPress={handleSave}><Text style={gc.save}>Save</Text></Pressable>
         </View>
         <ScrollView>
-          {/* Cadence */}
           <View style={gc.row}>
             <Text style={gc.label}>Cadence (spm)</Text>
             <TextInput
@@ -190,7 +187,6 @@ function GaitChecklistModal({
             />
           </View>
 
-          {/* Foot strike */}
           <View style={gc.groupRow}>
             <Text style={gc.label}>Foot strike</Text>
             <View style={gc.pills}>
@@ -208,7 +204,6 @@ function GaitChecklistModal({
             </View>
           </View>
 
-          {/* Boolean flags */}
           {GAIT_BOOL_FIELDS.map(f => {
             const val = f.key === 'overstride' ? overstride : crossover;
             const set = f.key === 'overstride' ? setOverstride : setCrossover;
@@ -232,7 +227,6 @@ function GaitChecklistModal({
             );
           })}
 
-          {/* Hip drop */}
           <View style={gc.groupRow}>
             <Text style={gc.label}>Hip drop</Text>
             <View style={gc.pills}>
@@ -250,7 +244,6 @@ function GaitChecklistModal({
             </View>
           </View>
 
-          {/* Knee valgus */}
           <View style={gc.groupRow}>
             <Text style={gc.label}>Knee valgus</Text>
             <View style={gc.pills}>
@@ -273,6 +266,69 @@ function GaitChecklistModal({
   );
 }
 
+// ─── Submit for Analysis card ─────────────────────────────────────────────────
+
+function SubmitForAnalysisCard({
+  videoId,
+  submitted,
+  status,
+  onSubmit,
+  submitting,
+}: {
+  videoId:    string;
+  submitted:  boolean;
+  status:     string | null | undefined;
+  onSubmit:   () => void;
+  submitting: boolean;
+}) {
+  if (submitted) {
+    const statusLabel =
+      status === 'in_review' ? 'In Review' :
+      status === 'complete'  ? 'Complete'  :
+      'Pending';
+
+    const statusColor =
+      status === 'complete'  ? colors.positive :
+      status === 'in_review' ? colors.warning  :
+      colors.textMuted;
+
+    return (
+      <View style={sub.card}>
+        <Text style={sub.cardLabel}>ANALYSIS SUBMISSION</Text>
+        <View style={sub.statusRow}>
+          <View style={[sub.dot, { backgroundColor: statusColor }]} />
+          <Text style={[sub.statusTxt, { color: statusColor }]}>{statusLabel}</Text>
+        </View>
+        <Text style={sub.desc}>
+          Your video has been submitted. You'll receive coach feedback here once the analysis is complete.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={sub.card}>
+      <Text style={sub.cardLabel}>PROFESSIONAL ANALYSIS</Text>
+      <Text style={sub.heading}>Submit for Coach Review</Text>
+      <Text style={sub.desc}>
+        Get your movement analyzed by a certified coach. Receive detailed findings, drills,
+        and a personalized training recommendation.
+      </Text>
+      <Pressable
+        style={[sub.btn, submitting && sub.btnDisabled]}
+        onPress={onSubmit}
+        disabled={submitting}
+      >
+        {submitting
+          ? <ActivityIndicator color={colors.text} size="small" />
+          : <Text style={sub.btnTxt}>Submit for Analysis</Text>
+        }
+      </Pressable>
+      <Text style={sub.paymentNote}>Payment integration coming soon — submissions are free during beta.</Text>
+    </View>
+  );
+}
+
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 const HIT_SLOP = { top: 12, bottom: 12, left: 16, right: 16 } as const;
@@ -280,6 +336,7 @@ const HIT_SLOP = { top: 12, bottom: 12, left: 16, right: 16 } as const;
 export default function VideoDetailScreen() {
   const insets    = useSafeAreaInsets();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
+  const user = useAuthStore(s => s.user);
   const {
     videos,
     getVideoSession,
@@ -288,6 +345,7 @@ export default function VideoDetailScreen() {
     addGaitFinding,
     dismissRiskFlag,
     deleteVideo,
+    updateVideo,
   } = useMovementStore();
 
   const video   = videos.find(v => v.id === videoId);
@@ -295,6 +353,21 @@ export default function VideoDetailScreen() {
 
   const [tab,           setTab]           = useState<Tab>('overview');
   const [showGaitModal, setShowGaitModal] = useState(false);
+  const [signedUrl,     setSignedUrl]     = useState<string | null>(null);
+  const [submitting,    setSubmitting]    = useState(false);
+
+  const player = useVideoPlayer(signedUrl ?? null);
+
+  // Fetch a signed URL for the video from Supabase Storage
+  useEffect(() => {
+    if (!video?.storagePath) return;
+    supabase.storage
+      .from('movement-videos')
+      .createSignedUrl(video.storagePath, 3600)
+      .then(({ data, error }) => {
+        if (!error && data?.signedUrl) setSignedUrl(data.signedUrl);
+      });
+  }, [video?.storagePath]);
 
   if (!video) {
     return (
@@ -312,27 +385,46 @@ export default function VideoDetailScreen() {
   function handleSaveGait(g: GaitAnalysis) {
     ensureSession(videoId!);
     updateGaitAnalysis(videoId!, g);
-
     const suggested = suggestGaitFindings(g);
-    for (const f of suggested) {
-      addGaitFinding(videoId!, f);
-    }
+    for (const f of suggested) addGaitFinding(videoId!, f);
   }
 
   function handleDelete() {
-    if (Platform.OS === 'web') {
-      if (window.confirm('Remove this analysis record?')) {
-        deleteVideo(videoId!);
-        router.back();
+    const doDelete = () => {
+      // Remove from Supabase Storage if we have a path
+      if (video.storagePath) {
+        supabase.storage.from('movement-videos').remove([video.storagePath]);
       }
+      deleteVideo(videoId!);
+      router.back();
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('Remove this analysis record?')) doDelete();
     } else {
       Alert.alert('Delete Analysis', 'Remove this analysis record?', [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete', style: 'destructive',
-          onPress: () => { deleteVideo(videoId!); router.back(); },
-        },
+        { text: 'Delete', style: 'destructive', onPress: doDelete },
       ]);
+    }
+  }
+
+  async function handleSubmitForAnalysis() {
+    if (!user) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from('analysis_requests').insert({
+        user_id:  user.id,
+        video_id: videoId,
+        status:   'pending',
+      });
+      if (!error) {
+        updateVideo(videoId!, { submittedForAnalysis: true, analysisStatus: 'pending' });
+      }
+    } catch (err) {
+      console.warn('Submit failed:', err);
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -347,7 +439,7 @@ export default function VideoDetailScreen() {
 
   return (
     <View style={s.root}>
-      {/* Nav bar — safe area top */}
+      {/* Nav bar */}
       <View style={[s.nav, { paddingTop: insets.top + spacing.sm }]}>
         <Pressable onPress={() => router.back()} hitSlop={HIT_SLOP}>
           <Text style={s.navBack}>‹ Back</Text>
@@ -356,6 +448,23 @@ export default function VideoDetailScreen() {
           <Text style={s.navDelete}>Delete</Text>
         </Pressable>
       </View>
+
+      {/* Video player — only shown when a signed URL is available */}
+      {signedUrl ? (
+        <View style={s.videoContainer}>
+          <VideoView
+            player={player}
+            style={s.video}
+            contentFit="contain"
+            nativeControls
+          />
+        </View>
+      ) : video.storagePath ? (
+        <View style={s.videoPlaceholder}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={s.videoPlaceholderTxt}>Loading video…</Text>
+        </View>
+      ) : null}
 
       {/* Title */}
       <View style={s.titleSection}>
@@ -383,6 +492,7 @@ export default function VideoDetailScreen() {
 
       {/* Content */}
       <ScrollView style={s.body} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
+
         {/* ── Overview ── */}
         {tab === 'overview' && (
           <View style={s.section}>
@@ -391,9 +501,9 @@ export default function VideoDetailScreen() {
               <View style={s.infoRow}><Text style={s.infoKey}>Type</Text><Text style={s.infoVal}>{video.analysisType.replace(/_/g, ' ')}</Text></View>
               <View style={s.infoRow}><Text style={s.infoKey}>Activity</Text><Text style={s.infoVal}>{video.activity}</Text></View>
               <View style={s.infoRow}><Text style={s.infoKey}>View angle</Text><Text style={s.infoVal}>{video.view}</Text></View>
-              {video.shoes   ? <View style={s.infoRow}><Text style={s.infoKey}>Shoes</Text><Text style={s.infoVal}>{video.shoes}</Text></View> : null}
+              {video.shoes   ? <View style={s.infoRow}><Text style={s.infoKey}>Shoes</Text><Text style={s.infoVal}>{video.shoes}</Text></View>   : null}
               {video.surface ? <View style={s.infoRow}><Text style={s.infoKey}>Surface</Text><Text style={s.infoVal}>{video.surface}</Text></View> : null}
-              {video.notes   ? <View style={s.infoRow}><Text style={s.infoKey}>Notes</Text><Text style={s.infoVal}>{video.notes}</Text></View> : null}
+              {video.notes   ? <View style={s.infoRow}><Text style={s.infoKey}>Notes</Text><Text style={s.infoVal}>{video.notes}</Text></View>    : null}
             </View>
 
             <View style={s.statsRow}>
@@ -410,6 +520,14 @@ export default function VideoDetailScreen() {
                 <Text style={s.statLabel}>Angles</Text>
               </View>
             </View>
+
+            <SubmitForAnalysisCard
+              videoId={videoId!}
+              submitted={video.submittedForAnalysis ?? false}
+              status={video.analysisStatus}
+              onSubmit={handleSubmitForAnalysis}
+              submitting={submitting}
+            />
 
             <View style={s.disclaimer}>
               <Text style={s.disclaimerTxt}>
@@ -431,9 +549,9 @@ export default function VideoDetailScreen() {
               <View style={s.gaitSummary}>
                 <Text style={s.cardLabel}>GAIT DATA</Text>
                 <View style={s.infoRow}><Text style={s.infoKey}>Foot strike</Text><Text style={s.infoVal}>{gait.footStrike}</Text></View>
-                {gait.cadence != null    ? <View style={s.infoRow}><Text style={s.infoKey}>Cadence</Text><Text style={s.infoVal}>{gait.cadence} spm</Text></View> : null}
+                {gait.cadence    != null ? <View style={s.infoRow}><Text style={s.infoKey}>Cadence</Text><Text style={s.infoVal}>{gait.cadence} spm</Text></View> : null}
                 {gait.overstride != null ? <View style={s.infoRow}><Text style={s.infoKey}>Overstride</Text><Text style={s.infoVal}>{gait.overstride ? 'Yes' : 'No'}</Text></View> : null}
-                {gait.hipDrop != null    ? <View style={s.infoRow}><Text style={s.infoKey}>Hip drop</Text><Text style={s.infoVal}>{gait.hipDrop ?? 'Unknown'}</Text></View> : null}
+                {gait.hipDrop    != null ? <View style={s.infoRow}><Text style={s.infoKey}>Hip drop</Text><Text style={s.infoVal}>{gait.hipDrop ?? 'Unknown'}</Text></View> : null}
                 {gait.crossoverGait != null ? <View style={s.infoRow}><Text style={s.infoKey}>Crossover</Text><Text style={s.infoVal}>{gait.crossoverGait ? 'Yes' : 'No'}</Text></View> : null}
                 {gait.kneeValgus != null ? <View style={s.infoRow}><Text style={s.infoKey}>Knee valgus</Text><Text style={s.infoVal}>{gait.kneeValgus ?? 'Unknown'}</Text></View> : null}
               </View>
@@ -444,9 +562,7 @@ export default function VideoDetailScreen() {
             ) : (
               <View style={s.findingsList}>
                 <Text style={s.cardLabel}>FINDINGS ({findings.length})</Text>
-                {findings.map(f => (
-                  <FindingCard key={f.id} finding={f} />
-                ))}
+                {findings.map(f => <FindingCard key={f.id} finding={f} />)}
               </View>
             )}
           </View>
@@ -513,28 +629,47 @@ export default function VideoDetailScreen() {
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  root:           { flex: 1, backgroundColor: colors.bg },
-  notFound:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
-  notFoundTxt:    { color: colors.textMuted, fontSize: FontSize.base },
-  back:           { color: colors.primary,   fontSize: FontSize.base },
+  root:       { flex: 1, backgroundColor: colors.bg },
+  notFound:   { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
+  notFoundTxt:{ color: colors.textMuted, fontSize: FontSize.base },
+  back:       { color: colors.primary, fontSize: FontSize.base },
   nav: {
     flexDirection:     'row',
     justifyContent:    'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom:     spacing.sm,
   },
-  navBack:        { color: colors.primary,  fontSize: FontSize.base },
-  navDelete:      { color: colors.critical, fontSize: FontSize.base },
-  titleSection:   { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, gap: 2 },
-  videoTitle:     { color: colors.text, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
-  videoMeta:      { color: colors.textMuted, fontSize: FontSize.xs },
+  navBack:   { color: colors.primary,  fontSize: FontSize.base },
+  navDelete: { color: colors.critical, fontSize: FontSize.base },
+  videoContainer: {
+    width:           '100%',
+    height:          220,
+    backgroundColor: '#000',
+  },
+  video: {
+    width:  '100%',
+    height: '100%',
+  },
+  videoPlaceholder: {
+    width:           '100%',
+    height:          120,
+    backgroundColor: colors.card,
+    alignItems:      'center',
+    justifyContent:  'center',
+    gap:             spacing.sm,
+    flexDirection:   'row',
+  },
+  videoPlaceholderTxt: { color: colors.textMuted, fontSize: FontSize.sm },
+  titleSection: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.md, gap: 2 },
+  videoTitle:   { color: colors.text, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  videoMeta:    { color: colors.textMuted, fontSize: FontSize.xs },
   tabBar: {
-    flexDirection:  'row',
+    flexDirection:     'row',
     paddingHorizontal: spacing.lg,
-    gap:            spacing.xs,
+    gap:               spacing.xs,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    paddingBottom:  spacing.sm,
+    paddingBottom:     spacing.sm,
   },
   tabItem: {
     paddingHorizontal: spacing.md,
@@ -544,21 +679,19 @@ const s = StyleSheet.create({
     alignItems:        'center',
     gap:               4,
   },
-  tabItemActive: {
-    backgroundColor: colors.primaryDim,
-  },
+  tabItemActive: { backgroundColor: colors.primaryDim },
   tabTxt:        { color: colors.textMuted, fontSize: FontSize.sm },
   tabTxtActive:  { color: colors.primary, fontWeight: FontWeight.bold },
   tabBadge: {
-    backgroundColor: colors.critical,
-    borderRadius:    8,
+    backgroundColor:   colors.critical,
+    borderRadius:      8,
     paddingHorizontal: 5,
     paddingVertical:   1,
   },
-  tabBadgeTxt:   { color: colors.text, fontSize: 9, fontWeight: FontWeight.black },
-  body:          { flex: 1 },
-  bodyContent:   { padding: spacing.lg, paddingBottom: 120, gap: spacing.md },
-  section:       { gap: spacing.md },
+  tabBadgeTxt:     { color: colors.text, fontSize: 9, fontWeight: FontWeight.black },
+  body:            { flex: 1 },
+  bodyContent:     { padding: spacing.lg, paddingBottom: 120, gap: spacing.md },
+  section:         { gap: spacing.md },
   overviewCard: {
     backgroundColor: colors.card,
     borderRadius:    12,
@@ -574,13 +707,10 @@ const s = StyleSheet.create({
     letterSpacing: 0.6,
     marginBottom:  spacing.xs,
   },
-  infoRow:   { flexDirection: 'row', justifyContent: 'space-between' },
-  infoKey:   { color: colors.textSubtle, fontSize: FontSize.sm },
-  infoVal:   { color: colors.text,       fontSize: FontSize.sm, fontWeight: FontWeight.bold },
-  statsRow: {
-    flexDirection: 'row',
-    gap:           spacing.sm,
-  },
+  infoRow:  { flexDirection: 'row', justifyContent: 'space-between' },
+  infoKey:  { color: colors.textSubtle, fontSize: FontSize.sm },
+  infoVal:  { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  statsRow: { flexDirection: 'row', gap: spacing.sm },
   statBox: {
     flex:            1,
     backgroundColor: colors.card,
@@ -591,7 +721,7 @@ const s = StyleSheet.create({
     alignItems:      'center',
     gap:             2,
   },
-  statNum:   { color: colors.text,    fontSize: FontSize.xl, fontWeight: FontWeight.black },
+  statNum:   { color: colors.text, fontSize: FontSize.xl, fontWeight: FontWeight.black },
   statLabel: { color: colors.textMuted, fontSize: FontSize.xs },
   disclaimer: {
     backgroundColor: colors.card,
@@ -600,14 +730,14 @@ const s = StyleSheet.create({
     borderWidth:     1,
     borderColor:     colors.border,
   },
-  disclaimerTxt: { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
+  disclaimerTxt:  { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
   actionBtn: {
     backgroundColor: colors.primary,
     borderRadius:    Radius.sm,
     paddingVertical: spacing.md,
     alignItems:      'center',
   },
-  actionBtnTxt: { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  actionBtnTxt:   { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
   gaitSummary: {
     backgroundColor: colors.card,
     borderRadius:    12,
@@ -616,7 +746,7 @@ const s = StyleSheet.create({
     borderColor:     colors.border,
     gap:             spacing.sm,
   },
-  emptyNote: { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 18 },
+  emptyNote:    { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 18 },
   findingsList: { gap: spacing.sm },
   comingSoonCard: {
     backgroundColor: colors.primaryDim,
@@ -626,20 +756,20 @@ const s = StyleSheet.create({
     borderColor:     colors.primary + '44',
     gap:             spacing.xs,
   },
-  comingSoonTitle: { color: colors.primary,   fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  comingSoonTitle: { color: colors.primary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   comingSoonDesc:  { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
   angleCard: {
-    backgroundColor:colors.card,
-    borderRadius:   10,
-    padding:        spacing.md,
-    borderWidth:    1,
-    borderColor:    colors.border,
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'center',
+    backgroundColor: colors.card,
+    borderRadius:    10,
+    padding:         spacing.md,
+    borderWidth:     1,
+    borderColor:     colors.border,
+    flexDirection:   'row',
+    justifyContent:  'space-between',
+    alignItems:      'center',
   },
   angleLabel: { color: colors.textMuted, fontSize: FontSize.sm, textTransform: 'capitalize' },
-  angleVal:   { color: colors.text,      fontSize: FontSize.base, fontWeight: FontWeight.black },
+  angleVal:   { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.black },
 });
 
 const fc = StyleSheet.create({
@@ -679,37 +809,37 @@ const rf = StyleSheet.create({
   badge:     { borderRadius: Radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
   badgeTxt:  { fontSize: 10, fontWeight: FontWeight.black },
   dismissed: { color: colors.textDim, fontSize: FontSize.xs },
-  title:     { color: colors.text,    fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  title:     { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   body:      { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
-  dismissBtn:{
-    alignSelf:       'flex-start',
-    backgroundColor: colors.border,
-    borderRadius:    Radius.sm,
+  dismissBtn: {
+    alignSelf:         'flex-start',
+    backgroundColor:   colors.border,
+    borderRadius:      Radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical:   spacing.xs,
   },
-  dismissTxt:{ color: colors.textMuted, fontSize: FontSize.xs },
+  dismissTxt: { color: colors.textMuted, fontSize: FontSize.xs },
 });
 
 const gc = StyleSheet.create({
-  root:    { flex: 1, backgroundColor: colors.bg },
+  root:   { flex: 1, backgroundColor: colors.bg },
   header: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'space-between',
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop:      spacing.xl,
-    paddingBottom:   spacing.md,
+    paddingTop:        spacing.xl,
+    paddingBottom:     spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  cancel:  { color: colors.textMuted, fontSize: FontSize.base },
-  title:   { color: colors.text,      fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  save:    { color: colors.primary,   fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  cancel:   { color: colors.textMuted, fontSize: FontSize.base },
+  title:    { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  save:     { color: colors.primary, fontSize: FontSize.base, fontWeight: FontWeight.bold },
   row: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'space-between',
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical:   spacing.md,
     borderBottomWidth: 1,
@@ -735,18 +865,57 @@ const gc = StyleSheet.create({
     borderWidth:     1,
     borderColor:     colors.primary,
   },
-  pillTxt:   { color: colors.textDim,  fontSize: FontSize.xs },
+  pillTxt:   { color: colors.textDim, fontSize: FontSize.xs },
   pillOnTxt: { color: colors.primary, fontWeight: FontWeight.bold },
   numInput: {
-    backgroundColor: colors.card,
-    borderRadius:    Radius.sm,
-    borderWidth:     1,
-    borderColor:     colors.border,
-    color:           colors.text,
-    fontSize:        FontSize.base,
+    backgroundColor:   colors.card,
+    borderRadius:      Radius.sm,
+    borderWidth:       1,
+    borderColor:       colors.border,
+    color:             colors.text,
+    fontSize:          FontSize.base,
     paddingHorizontal: spacing.md,
     paddingVertical:   spacing.xs,
     minWidth:          64,
     textAlign:         'right',
   },
+});
+
+const sub = StyleSheet.create({
+  card: {
+    backgroundColor: colors.card,
+    borderRadius:    12,
+    padding:         spacing.md,
+    borderWidth:     1,
+    borderColor:     colors.border,
+    gap:             spacing.sm,
+  },
+  cardLabel: {
+    color:         colors.textMuted,
+    fontSize:      10,
+    fontWeight:    FontWeight.black,
+    letterSpacing: 0.6,
+  },
+  heading: {
+    color:      colors.text,
+    fontSize:   FontSize.base,
+    fontWeight: FontWeight.bold,
+  },
+  desc: {
+    color:      colors.textMuted,
+    fontSize:   FontSize.xs,
+    lineHeight: 18,
+  },
+  btn: {
+    backgroundColor: colors.primary,
+    borderRadius:    Radius.sm,
+    paddingVertical: spacing.md,
+    alignItems:      'center',
+  },
+  btnDisabled: { opacity: 0.5 },
+  btnTxt:      { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  paymentNote: { color: colors.textSubtle, fontSize: FontSize.xs, textAlign: 'center' },
+  statusRow:   { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  dot:         { width: 8, height: 8, borderRadius: 4 },
+  statusTxt:   { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
 });

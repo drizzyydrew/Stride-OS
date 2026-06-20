@@ -60,6 +60,10 @@ export type MovementVideo = {
   notes?:       string;
   painNotes?:   string;
   durationSec?: number;
+  storagePath?:          string;   // Supabase Storage path for the video file
+  submittedForAnalysis?: boolean;
+  analysisStatus?:       'pending' | 'in_review' | 'complete' | null;
+  analysisRequestId?:    string;
   createdAt:    number;            // Date.now()
 };
 

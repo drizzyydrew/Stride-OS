@@ -1,12 +1,13 @@
 // ─── Movement Lab ─────────────────────────────────────────────────────────────
 //
-// Manual-first movement analysis. Users record video externally and enter
-// observations here. Future AI hook: pose estimation would auto-populate
-// gait/lifting analysis (MediaPipe Pose, MoveNet, OpenPose, vGait 3D).
+// Manual-first movement analysis. Users select a video from their camera roll,
+// which uploads to Supabase Storage (private, per-user). Analysis observations
+// are entered manually. Future AI hook: pose estimation (MediaPipe, MoveNet).
 
 import {
+  ActivityIndicator,
+  Alert,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,8 +17,12 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem  from 'expo-file-system';
 
 import { useMovementStore } from '../../../src/store/movementStore';
+import { useAuthStore }     from '../../../src/store/authStore';
+import { supabase }         from '../../../src/lib/supabase';
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
@@ -32,7 +37,7 @@ type AddVideoForm = {
   activity:     MovementActivity;
   view:         MovementViewAngle;
   notes:        string;
-  videoUri?:    string;
+  localUri?:    string;
   fileName?:    string;
 };
 
@@ -57,11 +62,11 @@ const ACTIVITIES: { key: MovementActivity; label: string }[] = [
 ];
 
 const VIEW_ANGLES: { key: MovementViewAngle; label: string }[] = [
-  { key: 'side',       label: 'Side'    },
-  { key: 'front',      label: 'Front'   },
-  { key: 'rear',       label: 'Rear'    },
-  { key: '45_degree',  label: '45°'     },
-  { key: 'unknown',    label: 'Unknown' },
+  { key: 'side',      label: 'Side'    },
+  { key: 'front',     label: 'Front'   },
+  { key: 'rear',      label: 'Rear'    },
+  { key: '45_degree', label: '45°'     },
+  { key: 'unknown',   label: 'Unknown' },
 ];
 
 const ACTIVITY_LABELS: Record<MovementActivity, string> = {
@@ -85,16 +90,26 @@ const TYPE_LABELS: Record<MovementAnalysisType, string> = {
   other:             'Other',
 };
 
+function makeVideoId(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 // ─── Add Video Modal ──────────────────────────────────────────────────────────
 
 function AddVideoModal({
   visible,
   onClose,
   onAdd,
+  uploading,
 }: {
-  visible: boolean;
-  onClose: () => void;
-  onAdd:   (form: AddVideoForm) => void;
+  visible:   boolean;
+  onClose:   () => void;
+  onAdd:     (form: AddVideoForm) => void;
+  uploading: boolean;
 }) {
   const today = new Date().toISOString().split('T')[0];
   const [form, setForm] = useState<AddVideoForm>({
@@ -110,36 +125,50 @@ function AddVideoModal({
     setForm(prev => ({ ...prev, [key]: val }));
   }
 
-  function handlePickVideo() {
-    if (Platform.OS !== 'web') return;
-    const input = document.createElement('input');
-    input.type  = 'file';
-    input.accept = 'video/*';
-    input.onchange = () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      const uri = URL.createObjectURL(file);
-      setForm(prev => ({ ...prev, videoUri: uri, fileName: file.name }));
-    };
-    input.click();
+  async function handlePickVideo() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'StrideOS needs access to your photo library to select a video.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      allowsEditing: false,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      const asset = result.assets[0];
+      const ext      = asset.uri.split('.').pop() ?? 'mp4';
+      const fileName = `video_${Date.now()}.${ext}`;
+      patch('localUri',  asset.uri);
+      patch('fileName',  fileName);
+    }
   }
 
   function handleAdd() {
     if (!form.title.trim()) return;
     onAdd(form);
-    setForm({ title: '', date: today, analysisType: 'running_gait', activity: 'running', view: 'side', notes: '', videoUri: undefined, fileName: undefined });
+    setForm({
+      title: '', date: today, analysisType: 'running_gait',
+      activity: 'running', view: 'side', notes: '',
+      localUri: undefined, fileName: undefined,
+    });
   }
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={m.root}>
         <View style={m.header}>
-          <Pressable onPress={onClose}>
-            <Text style={m.cancel}>Cancel</Text>
+          <Pressable onPress={onClose} disabled={uploading}>
+            <Text style={[m.cancel, uploading && { opacity: 0.4 }]}>Cancel</Text>
           </Pressable>
           <Text style={m.title}>New Analysis</Text>
-          <Pressable onPress={handleAdd} disabled={!form.title.trim()}>
-            <Text style={[m.add, !form.title.trim() && m.addDisabled]}>Add</Text>
+          <Pressable onPress={handleAdd} disabled={!form.title.trim() || uploading}>
+            <Text style={[m.add, (!form.title.trim() || uploading) && m.addDisabled]}>
+              {uploading ? 'Uploading…' : 'Add'}
+            </Text>
           </Pressable>
         </View>
 
@@ -220,21 +249,29 @@ function AddVideoModal({
             />
           </View>
 
-          {Platform.OS === 'web' && (
-            <View style={m.section}>
-              <Text style={m.label}>VIDEO FILE (OPTIONAL)</Text>
-              <Pressable style={m.input} onPress={handlePickVideo}>
-                <Text style={{ color: form.fileName ? colors.text : colors.textSubtle, fontSize: FontSize.base }}>
-                  {form.fileName ?? 'Choose video file…'}
-                </Text>
-              </Pressable>
-              {form.fileName && (
-                <Text style={{ color: colors.textMuted, fontSize: FontSize.xs, marginTop: 4 }}>
-                  Video stored for this session only. Reload to re-select.
-                </Text>
+          <View style={m.section}>
+            <Text style={m.label}>VIDEO (OPTIONAL)</Text>
+            <Pressable style={m.videoPicker} onPress={handlePickVideo}>
+              {form.localUri ? (
+                <View style={m.videoPickerSelected}>
+                  <Text style={m.videoPickerIcon}>🎥</Text>
+                  <Text style={m.videoPickerTxt} numberOfLines={1}>{form.fileName}</Text>
+                  <Text style={m.videoPickerChange}>Change</Text>
+                </View>
+              ) : (
+                <View style={m.videoPickerEmpty}>
+                  <Text style={m.videoPickerIcon}>📹</Text>
+                  <Text style={m.videoPickerTxt}>Choose from camera roll</Text>
+                </View>
               )}
-            </View>
-          )}
+            </Pressable>
+            {uploading && (
+              <View style={m.uploadRow}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={m.uploadTxt}>Uploading video securely…</Text>
+              </View>
+            )}
+          </View>
 
           <View style={m.aiNote}>
             <Text style={m.aiNoteTitle}>Automatic marker tracking coming soon</Text>
@@ -258,7 +295,9 @@ function VideoCard({ video }: { video: { id: string; title: string; date: string
       onPress={() => router.push({ pathname: '/(tabs)/movement/[videoId]', params: { videoId: video.id } })}
     >
       <View style={vc.iconBox}>
-        <Text style={vc.icon}>{video.analysisType === 'running_gait' ? '🏃' : video.analysisType === 'lifting_mechanics' ? '🏋️' : '📐'}</Text>
+        <Text style={vc.icon}>
+          {video.analysisType === 'running_gait' ? '🏃' : video.analysisType === 'lifting_mechanics' ? '🏋️' : '📐'}
+        </Text>
       </View>
       <View style={vc.info}>
         <Text style={vc.title}>{video.title}</Text>
@@ -273,12 +312,18 @@ function VideoCard({ video }: { video: { id: string; title: string; date: string
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function MovementIndexScreen() {
-  const { videos, addVideo } = useMovementStore();
-  const [showAdd, setShowAdd] = useState(false);
+  const { videos, addVideo, updateVideo } = useMovementStore();
+  const user = useAuthStore(s => s.user);
+  const [showAdd,   setShowAdd]   = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  function handleAdd(form: AddVideoForm) {
+  async function handleAdd(form: AddVideoForm) {
+    const videoId = makeVideoId();
+    const destDir = `${FileSystem.documentDirectory}movement-videos/`;
+
+    // Save metadata locally immediately so the card appears right away
     addVideo({
-      uri:          form.videoUri ?? '',
+      uri:          '',
       title:        form.title,
       date:         form.date,
       analysisType: form.analysisType,
@@ -286,12 +331,43 @@ export default function MovementIndexScreen() {
       view:         form.view,
       notes:        form.notes || undefined,
     });
+
     setShowAdd(false);
+
+    if (!form.localUri || !user) return;
+
+    // Copy to app document directory for persistent local access
+    setUploading(true);
+    try {
+      await FileSystem.makeDirectoryAsync(destDir, { intermediates: true });
+      const ext       = form.fileName?.split('.').pop() ?? 'mp4';
+      const localDest = `${destDir}${videoId}.${ext}`;
+      await FileSystem.copyAsync({ from: form.localUri, to: localDest });
+
+      // Upload to Supabase Storage
+      const storagePath = `${user.id}/${videoId}.${ext}`;
+      const response    = await fetch(localDest);
+      const blob        = await response.blob();
+
+      const { error: uploadError } = await supabase.storage
+        .from('movement-videos')
+        .upload(storagePath, blob, { contentType: `video/${ext}`, upsert: false });
+
+      if (uploadError) {
+        console.warn('Supabase upload error:', uploadError.message);
+      } else {
+        // Patch local record with storage path + local URI
+        updateVideo(videoId, { uri: localDest, storagePath });
+      }
+    } catch (err) {
+      console.warn('Video upload failed:', err);
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
     <View style={s.root}>
-      {/* Header */}
       <View style={s.header}>
         <Text style={s.headerTitle}>Movement Lab</Text>
         <Pressable style={s.addBtn} onPress={() => setShowAdd(true)}>
@@ -299,8 +375,14 @@ export default function MovementIndexScreen() {
         </Pressable>
       </View>
 
+      {uploading && (
+        <View style={s.uploadBanner}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={s.uploadBannerTxt}>Uploading video…</Text>
+        </View>
+      )}
+
       <ScrollView style={s.list} contentContainerStyle={s.listContent} showsVerticalScrollIndicator={false}>
-        {/* AI banner */}
         <View style={s.aiBanner}>
           <Text style={s.aiBannerTitle}>Manual analysis · AI marker tracking coming soon</Text>
           <Text style={s.aiBannerSub}>
@@ -328,7 +410,12 @@ export default function MovementIndexScreen() {
         )}
       </ScrollView>
 
-      <AddVideoModal visible={showAdd} onClose={() => setShowAdd(false)} onAdd={handleAdd} />
+      <AddVideoModal
+        visible={showAdd}
+        onClose={() => setShowAdd(false)}
+        onAdd={handleAdd}
+        uploading={uploading}
+      />
     </View>
   );
 }
@@ -336,42 +423,36 @@ export default function MovementIndexScreen() {
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  root: {
-    flex:            1,
-    backgroundColor: colors.bg,
-  },
+  root:           { flex: 1, backgroundColor: colors.bg },
   header: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'space-between',
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop:      spacing.xxl + spacing.xl,
-    paddingBottom:   spacing.md,
+    paddingTop:        spacing.xxl + spacing.xl,
+    paddingBottom:     spacing.md,
   },
-  headerTitle: {
-    color:      colors.text,
-    fontSize:   22,
-    fontWeight: FontWeight.black,
-  },
+  headerTitle: { color: colors.text, fontSize: 22, fontWeight: FontWeight.black },
   addBtn: {
-    backgroundColor: colors.primary,
-    borderRadius:    Radius.sm,
+    backgroundColor:   colors.primary,
+    borderRadius:      Radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical:   spacing.xs,
   },
-  addBtnTxt: {
-    color:      colors.text,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.bold,
+  addBtnTxt: { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  uploadBanner: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical:   spacing.xs,
+    backgroundColor:   colors.primaryDim,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primary + '44',
   },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    padding:       spacing.lg,
-    paddingBottom: 120,
-    gap:           spacing.md,
-  },
+  uploadBannerTxt: { color: colors.primary, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  list:        { flex: 1 },
+  listContent: { padding: spacing.lg, paddingBottom: 120, gap: spacing.md },
   aiBanner: {
     backgroundColor: colors.card,
     borderRadius:    12,
@@ -380,50 +461,21 @@ const s = StyleSheet.create({
     borderColor:     colors.border,
     gap:             spacing.xs,
   },
-  aiBannerTitle: {
-    color:      colors.primary,
-    fontSize:   FontSize.xs,
-    fontWeight: FontWeight.bold,
-  },
-  aiBannerSub: {
-    color:      colors.textMuted,
-    fontSize:   FontSize.xs,
-    lineHeight: 17,
-  },
-  empty: {
-    alignItems: 'center',
-    paddingTop: spacing.xxxl,
-    gap:        spacing.md,
-  },
-  emptyIcon: {
-    fontSize: 48,
-  },
-  emptyTitle: {
-    color:      colors.text,
-    fontSize:   FontSize.lg,
-    fontWeight: FontWeight.bold,
-  },
-  emptyDesc: {
-    color:      colors.textMuted,
-    fontSize:   FontSize.sm,
-    lineHeight: 20,
-    textAlign:  'center',
-  },
+  aiBannerTitle: { color: colors.primary, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  aiBannerSub:   { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
+  empty: { alignItems: 'center', paddingTop: spacing.xxxl, gap: spacing.md },
+  emptyIcon:    { fontSize: 48 },
+  emptyTitle:   { color: colors.text, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  emptyDesc:    { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 20, textAlign: 'center' },
   emptyBtn: {
-    backgroundColor: colors.primary,
-    borderRadius:    Radius.sm,
+    backgroundColor:   colors.primary,
+    borderRadius:      Radius.sm,
     paddingHorizontal: spacing.xl,
     paddingVertical:   spacing.md,
     marginTop:         spacing.sm,
   },
-  emptyBtnTxt: {
-    color:      colors.text,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.bold,
-  },
-  cards: {
-    gap: spacing.sm,
-  },
+  emptyBtnTxt: { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  cards:       { gap: spacing.sm },
 });
 
 const vc = StyleSheet.create({
@@ -445,70 +497,34 @@ const vc = StyleSheet.create({
     alignItems:      'center',
     justifyContent:  'center',
   },
-  icon: {
-    fontSize: 22,
-  },
-  info: {
-    flex: 1,
-    gap:  2,
-  },
-  title: {
-    color:      colors.text,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.bold,
-  },
-  sub: {
-    color:    colors.textMuted,
-    fontSize: FontSize.xs,
-  },
-  date: {
-    color:    colors.textSubtle,
-    fontSize: FontSize.xs,
-  },
-  chevron: {
-    color:    colors.textSubtle,
-    fontSize: 22,
-  },
+  icon:    { fontSize: 22 },
+  info:    { flex: 1, gap: 2 },
+  title:   { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  sub:     { color: colors.textMuted, fontSize: FontSize.xs },
+  date:    { color: colors.textSubtle, fontSize: FontSize.xs },
+  chevron: { color: colors.textSubtle, fontSize: 22 },
 });
 
 const m = StyleSheet.create({
-  root: {
-    flex:            1,
-    backgroundColor: colors.bg,
-  },
+  root:   { flex: 1, backgroundColor: colors.bg },
   header: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'space-between',
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop:      spacing.xl,
-    paddingBottom:   spacing.md,
+    paddingTop:        spacing.xl,
+    paddingBottom:     spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  cancel: {
-    color:    colors.textMuted,
-    fontSize: FontSize.base,
-  },
-  title: {
-    color:      colors.text,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.bold,
-  },
-  add: {
-    color:      colors.primary,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.bold,
-  },
-  addDisabled: {
-    opacity: 0.4,
-  },
-  body: {
-    flex: 1,
-  },
+  cancel:     { color: colors.textMuted, fontSize: FontSize.base },
+  title:      { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  add:        { color: colors.primary, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  addDisabled:{ opacity: 0.4 },
+  body:       { flex: 1 },
   section: {
-    padding: spacing.lg,
-    gap:     spacing.sm,
+    padding:           spacing.lg,
+    gap:               spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
@@ -527,14 +543,8 @@ const m = StyleSheet.create({
     fontSize:        FontSize.base,
     padding:         spacing.md,
   },
-  inputMulti: {
-    minHeight: 80,
-  },
-  pills: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           spacing.xs,
-  },
+  inputMulti: { minHeight: 80 },
+  pills:      { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   pill: {
     paddingHorizontal: spacing.md,
     paddingVertical:   spacing.xs,
@@ -546,14 +556,43 @@ const m = StyleSheet.create({
     borderWidth:     1,
     borderColor:     colors.primary,
   },
-  pillTxt: {
-    color:    colors.textDim,
-    fontSize: FontSize.sm,
+  pillTxt:       { color: colors.textDim, fontSize: FontSize.sm },
+  pillTxtActive: { color: colors.primary, fontWeight: FontWeight.bold },
+  videoPicker: {
+    backgroundColor: colors.card,
+    borderRadius:    Radius.sm,
+    borderWidth:     1,
+    borderColor:     colors.border,
+    padding:         spacing.md,
   },
-  pillTxtActive: {
+  videoPickerEmpty: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           spacing.sm,
+  },
+  videoPickerSelected: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           spacing.sm,
+  },
+  videoPickerIcon: { fontSize: 20 },
+  videoPickerTxt: {
+    color:    colors.text,
+    fontSize: FontSize.sm,
+    flex:     1,
+  },
+  videoPickerChange: {
     color:      colors.primary,
+    fontSize:   FontSize.xs,
     fontWeight: FontWeight.bold,
   },
+  uploadRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           spacing.sm,
+    marginTop:     spacing.xs,
+  },
+  uploadTxt: { color: colors.primary, fontSize: FontSize.xs },
   aiNote: {
     margin:          spacing.lg,
     backgroundColor: colors.card,
@@ -563,14 +602,6 @@ const m = StyleSheet.create({
     borderColor:     colors.border,
     gap:             spacing.xs,
   },
-  aiNoteTitle: {
-    color:      colors.primary,
-    fontSize:   FontSize.xs,
-    fontWeight: FontWeight.bold,
-  },
-  aiNoteSub: {
-    color:      colors.textMuted,
-    fontSize:   FontSize.xs,
-    lineHeight: 17,
-  },
+  aiNoteTitle: { color: colors.primary, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  aiNoteSub:   { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
 });
