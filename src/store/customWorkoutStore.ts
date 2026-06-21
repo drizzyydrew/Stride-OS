@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { CustomWorkoutLog, OverrideRecord } from '../types/customWorkout';
 import { buildCustomWorkoutLog } from '../utils/customWorkoutEngine';
+import { syncCustomLog, deleteCustomLog } from '../lib/syncService';
 
 type CustomWorkoutStore = {
   logs:      CustomWorkoutLog[];
@@ -27,6 +28,8 @@ type CustomWorkoutStore = {
 
   addOverride:  (override: Omit<OverrideRecord, 'id' | 'createdAt'>) => string;
   linkOverride: (overrideId: string, logId: string) => void;
+
+  hydrateLogs: (records: CustomWorkoutLog[]) => void;
 
   // Queries
   getLogsForDate:     (date: string) => CustomWorkoutLog[];
@@ -56,6 +59,7 @@ export const useCustomWorkoutStore = create<CustomWorkoutStore>()(
         }
 
         set(state => ({ logs: [log, ...state.logs] }));
+        syncCustomLog(log).catch(console.warn);
         return id;
       },
 
@@ -64,8 +68,10 @@ export const useCustomWorkoutStore = create<CustomWorkoutStore>()(
           logs: state.logs.map(l => l.id === id ? { ...l, ...patch } : l),
         })),
 
-      deleteLog: (id) =>
-        set(state => ({ logs: state.logs.filter(l => l.id !== id) })),
+      deleteLog: (id) => {
+        set(state => ({ logs: state.logs.filter(l => l.id !== id) }));
+        deleteCustomLog(id).catch(console.warn);
+      },
 
       addOverride: (partial) => {
         const id = `ov_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -80,6 +86,15 @@ export const useCustomWorkoutStore = create<CustomWorkoutStore>()(
             o.id === overrideId ? { ...o, loggedWorkoutId: logId } : o,
           ),
         })),
+
+      hydrateLogs: (records) => {
+        set(state => {
+          const existingIds = new Set(state.logs.map(l => l.id));
+          const newLogs = records.filter(r => !existingIds.has(r.id));
+          if (newLogs.length === 0) return state;
+          return { logs: [...newLogs, ...state.logs] };
+        });
+      },
 
       getLogsForDate: (date) => get().logs.filter(l => l.date === date),
 

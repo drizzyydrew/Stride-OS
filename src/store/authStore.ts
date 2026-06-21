@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { hydrateFromSupabase } from '../lib/syncService';
+import { useWorkoutStore } from './workoutStore';
+import { useStrengthStore } from './strengthStore';
+import { useCustomWorkoutStore } from './customWorkoutStore';
+import { useCheckInStore } from './checkInStore';
 
 type AuthStore = {
   session:    Session | null;
@@ -28,6 +33,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   signIn: async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) {
+      hydrateFromSupabase().then(result => {
+        useWorkoutStore.getState().hydrateWorkouts(result.workoutLogs);
+        useStrengthStore.getState().hydrateStrength(result.strengthLogs);
+        useCustomWorkoutStore.getState().hydrateLogs(result.customLogs);
+        useCheckInStore.getState().hydrateCheckIns(result.checkIns);
+      }).catch(console.warn);
+    }
     return error?.message ?? null;
   },
 
@@ -39,5 +52,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
   signOut: async () => {
     await supabase.auth.signOut();
     set({ session: null, user: null });
+    // Clear all local store data so the next user starts clean
+    useWorkoutStore.setState({ completedWorkouts: [], history: [] });
+    useStrengthStore.setState({ completedSessions: [], history: [] });
+    useCustomWorkoutStore.setState({ logs: [], overrides: [] });
+    useCheckInStore.setState({ todayCheckIn: null, postWorkoutNotes: [] });
   },
 }));

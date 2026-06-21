@@ -10,6 +10,7 @@ import type {
   StrengthGoal,
 } from '../types/strength';
 import { estimateSessionLoad } from '../utils/strengthEngine';
+import { syncStrengthLog, deleteStrengthLog } from '../lib/syncService';
 
 type StrengthLogEdits = Partial<Pick<StrengthLogRecord,
   'actualDuration' | 'overallRpe' | 'notes' | 'exercises'>>;
@@ -58,6 +59,8 @@ type StrengthStore = {
   deleteLog: (id: string)                            => void;
 
   manualLog: (entry: ManualStrengthEntry, fatigueBefore: number) => void;
+
+  hydrateStrength: (records: StrengthLogRecord[]) => void;
 };
 
 function migrateStrengthRecord(r: Partial<StrengthLogRecord>): StrengthLogRecord {
@@ -141,6 +144,8 @@ export const useStrengthStore = create<StrengthStore>()(
           completedSessions: [...state.completedSessions, completionKey],
           history:           [...state.history, record],
         }));
+
+        syncStrengthLog(record).catch(console.warn);
       },
 
       // ── Skip session ──────────────────────────────────────────────────────────
@@ -173,6 +178,8 @@ export const useStrengthStore = create<StrengthStore>()(
           completedSessions: [...state.completedSessions, completionKey],
           history:           [...state.history, record],
         }));
+
+        syncStrengthLog(record).catch(console.warn);
       },
 
       // ── Edit a logged record ──────────────────────────────────────────────────
@@ -192,6 +199,7 @@ export const useStrengthStore = create<StrengthStore>()(
           completedSessions: state.completedSessions.filter(k => k !== id),
           history:           state.history.filter(r => r.id !== id),
         }));
+        deleteStrengthLog(id).catch(console.warn);
       },
 
       // ── Manual log ────────────────────────────────────────────────────────────
@@ -227,6 +235,22 @@ export const useStrengthStore = create<StrengthStore>()(
           completedSessions: [...state.completedSessions, entry.completionKey],
           history:           [...state.history, record],
         }));
+
+        syncStrengthLog(record).catch(console.warn);
+      },
+
+      // ── Hydrate from Supabase ─────────────────────────────────────────────────
+
+      hydrateStrength: (records) => {
+        set(state => {
+          const existingIds = new Set(state.completedSessions);
+          const newRecords  = records.filter(r => !existingIds.has(r.id)).map(migrateStrengthRecord);
+          if (newRecords.length === 0) return state;
+          return {
+            completedSessions: [...state.completedSessions, ...newRecords.map(r => r.id)],
+            history:           [...state.history, ...newRecords],
+          };
+        });
       },
     }),
     {

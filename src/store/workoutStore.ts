@@ -6,6 +6,7 @@ import type { CompletedWorkoutRecord, Workout, WorkoutIntensity, WorkoutType } f
 import { calculateTrainingLoad } from '../utils/training';
 import { calculateUpdatedFatigue } from '../utils/calculateFatigue';
 import { estimateDistanceMiles } from '../utils/historyUtils';
+import { syncWorkoutLog, deleteWorkoutLog } from '../lib/syncService';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -60,6 +61,7 @@ type WorkoutStore = {
 
   editLog:    (id: string, updates: LogEdits)        => void;
   deleteLog:  (id: string)                           => void;
+  hydrateWorkouts: (records: CompletedWorkoutRecord[]) => void;
   manualLog:  (
     entry:            ManualLogEntry,
     currentWeek:      number,
@@ -191,6 +193,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
           completedWorkouts: [...state.completedWorkouts, completionKey],
           history:           [...state.history, record],
         }));
+
+        syncWorkoutLog(record).catch(console.warn);
       },
 
       // ── Skip ─────────────────────────────────────────────────────────────────
@@ -231,6 +235,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
           completedWorkouts: [...state.completedWorkouts, completionKey],
           history:           [...state.history, record],
         }));
+
+        syncWorkoutLog(record).catch(console.warn);
       },
 
       // ── Edit a logged record ──────────────────────────────────────────────────
@@ -250,6 +256,21 @@ export const useWorkoutStore = create<WorkoutStore>()(
           completedWorkouts: state.completedWorkouts.filter(k => k !== id),
           history:           state.history.filter(r => r.id !== id),
         }));
+        deleteWorkoutLog(id).catch(console.warn);
+      },
+
+      // ── Hydrate from Supabase ─────────────────────────────────────────────────
+
+      hydrateWorkouts: (records) => {
+        set(state => {
+          const existingIds = new Set(state.completedWorkouts);
+          const newRecords  = records.filter(r => !existingIds.has(r.id)).map(migrateRecord);
+          if (newRecords.length === 0) return state;
+          return {
+            completedWorkouts: [...state.completedWorkouts, ...newRecords.map(r => r.id)],
+            history:           [...state.history, ...newRecords],
+          };
+        });
       },
 
       // ── Manual log ────────────────────────────────────────────────────────────
@@ -297,6 +318,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
           completedWorkouts: [...state.completedWorkouts, entry.completionKey],
           history:           [...state.history, record],
         }));
+
+        syncWorkoutLog(record).catch(console.warn);
       },
     }),
     {

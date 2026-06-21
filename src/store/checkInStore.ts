@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { DailyCheckIn, PostWorkoutNote } from '../types/checkin';
 import { todayDateKey } from '../types/checkin';
+import { syncCheckIn } from '../lib/syncService';
 
 type CheckInStore = {
   todayCheckIn:     DailyCheckIn | null;
@@ -12,6 +13,7 @@ type CheckInStore = {
   submitPreCheckIn:  (data: Omit<DailyCheckIn, 'date'>) => void;
   submitPostWorkout: (completionKey: string, rpe: number, notes: string) => void;
   getPostWorkoutNote: (completionKey: string) => PostWorkoutNote | undefined;
+  hydrateCheckIns: (records: DailyCheckIn[]) => void;
 };
 
 export const useCheckInStore = create<CheckInStore>()(
@@ -21,7 +23,9 @@ export const useCheckInStore = create<CheckInStore>()(
       postWorkoutNotes: [],
 
       submitPreCheckIn: (data) => {
-        set({ todayCheckIn: { ...data, date: todayDateKey() } });
+        const checkIn = { ...data, date: todayDateKey() };
+        set({ todayCheckIn: checkIn });
+        syncCheckIn(checkIn).catch(console.warn);
       },
 
       submitPostWorkout: (completionKey, rpe, notes) => {
@@ -41,6 +45,18 @@ export const useCheckInStore = create<CheckInStore>()(
 
       getPostWorkoutNote: (completionKey) =>
         get().postWorkoutNotes.find(n => n.completionKey === completionKey),
+
+      hydrateCheckIns: (records) => {
+        set(state => {
+          const today = todayDateKey();
+          // Only restore today's check-in if we don't already have one locally
+          const todayRemote = records.find(r => r.date === today);
+          if (!state.todayCheckIn && todayRemote) {
+            return { todayCheckIn: todayRemote };
+          }
+          return state;
+        });
+      },
     }),
     {
       name:    'checkin-store',
