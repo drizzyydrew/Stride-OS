@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 import { useAthleteStore }                                from '../../../src/store/athleteStore';
 import { useProfileStore, useActiveProfile, useCalibration } from '../../../src/store/profileStore';
 import { useOnboardingStore }                             from '../../../src/store/onboardingStore';
+import { useSettingsStore }                               from '../../../src/store/settingsStore';
 
 import ScreenLayout             from '../../../src/layout/ScreenLayout';
 import Card                     from '../../../src/components/ui/Card';
@@ -1107,6 +1108,10 @@ export default function ProfileScreen() {
         onAdd={() => setShowMAF(true)}
       />
 
+      {/* ── Units ────────────────────────────────────────────────────── */}
+      <SectionLabel label="Units" />
+      <UnitsToggleCard />
+
       {/* ── Sources & Methods ─────────────────────────────────────────── */}
       <SectionLabel label="Sources & Methods" />
       <SourcesMethodsCard />
@@ -1146,6 +1151,28 @@ export default function ProfileScreen() {
       )}
 
     </ScreenLayout>
+  );
+}
+
+function UnitsToggleCard() {
+  const { units, setUnits } = useSettingsStore();
+  return (
+    <View style={styles.unitsCard}>
+      <Text style={styles.unitsTitle}>Unit System</Text>
+      <View style={styles.unitsPills}>
+        {(['imperial', 'metric'] as const).map(opt => (
+          <Pressable
+            key={opt}
+            style={[styles.unitsPill, units === opt && styles.unitsPillActive]}
+            onPress={() => setUnits(opt)}
+          >
+            <Text style={[styles.unitsPillText, units === opt && styles.unitsPillTextActive]}>
+              {opt === 'imperial' ? 'Imperial  (mi, lb)' : 'Metric  (km, kg)'}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -1375,6 +1402,49 @@ const styles = StyleSheet.create({
   resetBtnTxt: {
     color:      colors.danger,
     fontSize:   FontSize.base,
+    fontWeight: FontWeight.bold,
+  },
+
+  // Units toggle
+  unitsCard: {
+    backgroundColor: colors.card,
+    borderRadius:    12,
+    padding:         spacing.md,
+    borderWidth:     1,
+    borderColor:     colors.border,
+    gap:             spacing.sm,
+  },
+  unitsTitle: {
+    color:      colors.textMuted,
+    fontSize:   FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
+  unitsPills: {
+    flexDirection: 'row',
+    gap:           spacing.sm,
+  },
+  unitsPill: {
+    flex:              1,
+    paddingVertical:   spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius:      Radius.sm,
+    backgroundColor:   colors.bg,
+    borderWidth:       1,
+    borderColor:       colors.border,
+    alignItems:        'center',
+  },
+  unitsPillActive: {
+    backgroundColor: colors.primaryDim,
+    borderColor:     colors.primary,
+  },
+  unitsPillText: {
+    color:      colors.textDim,
+    fontSize:   FontSize.xs,
+    fontWeight: FontWeight.medium,
+    textAlign:  'center',
+  },
+  unitsPillTextActive: {
+    color:      colors.primary,
     fontWeight: FontWeight.bold,
   },
 });

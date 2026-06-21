@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   StrengthLogRecord,
   CompletedExercise,
+  ExerciseSessionDetail,
   StrengthSessionType,
   StrengthGoal,
 } from '../types/strength';
@@ -30,16 +31,17 @@ type StrengthStore = {
   history:           StrengthLogRecord[];
 
   logSession: (
-    completionKey:   string,
-    sessionId:       string,
-    sessionType:     StrengthSessionType,
-    goal:            StrengthGoal,
-    week:            number,
-    plannedDuration: number,
-    exercises:       CompletedExercise[],
-    fatigueBefore:   number,
-    overallRpe?:     number,
-    notes?:          string,
+    completionKey:    string,
+    sessionId:        string,
+    sessionType:      StrengthSessionType,
+    goal:             StrengthGoal,
+    week:             number,
+    plannedDuration:  number,
+    exercises:        CompletedExercise[],
+    fatigueBefore:    number,
+    overallRpe?:      number,
+    notes?:           string,
+    exerciseDetails?: ExerciseSessionDetail[],
   ) => void;
 
   skipSession: (
@@ -69,11 +71,12 @@ function migrateStrengthRecord(r: Partial<StrengthLogRecord>): StrengthLogRecord
     completed:       true,
     skipped:         r.skipped,
     skippedReason:   r.skippedReason,
-    plannedDuration: r.plannedDuration ?? 0,
-    actualDuration:  r.actualDuration,
-    exercises:       r.exercises       ?? [],
-    overallRpe:      r.overallRpe,
-    notes:           r.notes,
+    plannedDuration:  r.plannedDuration  ?? 0,
+    actualDuration:   r.actualDuration,
+    exercises:        r.exercises        ?? [],
+    exerciseDetails:  r.exerciseDetails,
+    overallRpe:       r.overallRpe,
+    notes:            r.notes,
     source:          r.source          ?? 'generated',
     fatigueBefore:   r.fatigueBefore   ?? 0,
     fatigueAfter:    r.fatigueAfter    ?? 0,
@@ -106,7 +109,7 @@ export const useStrengthStore = create<StrengthStore>()(
 
       logSession: (
         completionKey, sessionId, sessionType, goal, week,
-        plannedDuration, exercises, fatigueBefore, overallRpe, notes,
+        plannedDuration, exercises, fatigueBefore, overallRpe, notes, exerciseDetails,
       ) => {
         if (get().completedSessions.includes(completionKey)) return;
 
@@ -124,6 +127,7 @@ export const useStrengthStore = create<StrengthStore>()(
           completed:       true,
           plannedDuration,
           exercises,
+          exerciseDetails,
           overallRpe,
           notes,
           source:          'generated',

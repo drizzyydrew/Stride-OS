@@ -129,6 +129,14 @@ export type CompletedExercise = {
   notes?:     string;
 };
 
+// ─── Per-exercise detail captured during the active workout ──────────────────
+
+export type ExerciseSessionDetail = {
+  exerciseId: string;
+  weightLb?:  number;   // weight used, stored in lb (convert for metric display)
+  status:     'done' | 'skipped' | 'pending';
+};
+
 // ─── Strength log record (persisted) ─────────────────────────────────────────
 //
 // All fields are required. The `migrateStrengthRecord` function in strengthStore
@@ -145,12 +153,13 @@ export type StrengthLogRecord = {
   skipped?:        boolean;
   skippedReason?:  string;
 
-  plannedDuration: number;
-  actualDuration?: number;
-  exercises:       CompletedExercise[];
-  overallRpe?:     number;
-  notes?:          string;
-  source:          'generated' | 'manual';
+  plannedDuration:  number;
+  actualDuration?:  number;
+  exercises:        CompletedExercise[];
+  exerciseDetails?: ExerciseSessionDetail[];  // per-exercise weights + status
+  overallRpe?:      number;
+  notes?:           string;
+  source:           'generated' | 'manual';
 
   fatigueBefore:   number;
   fatigueAfter:    number;
