@@ -82,8 +82,14 @@ function Bubble({ msg }: { msg: Message }) {
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
-const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-const API_KEY       = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY ?? '';
+// On native: call Anthropic directly (no CORS). On web: route through Supabase Edge Function.
+const SUPABASE_URL   = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+const EDGE_FN_URL    = `${SUPABASE_URL}/functions/v1/ai-coach`;
+const ANTHROPIC_URL  = 'https://api.anthropic.com/v1/messages';
+const API_KEY        = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY ?? '';
+const SUPABASE_ANON  = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+
+const isWeb = Platform.OS === 'web';
 
 export default function CoachScreen() {
   const data      = useOnboardingStore(s => s.data);
@@ -111,20 +117,37 @@ export default function CoachScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
-      const res = await fetch(ANTHROPIC_URL, {
-        method:  'POST',
-        headers: {
-          'Content-Type':    'application/json',
-          'x-api-key':       API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model:      'claude-haiku-4-5-20251001',
-          max_tokens: 1024,
-          system:     buildSystemPrompt(data, riskFlags),
-          messages:   updated,
-        }),
-      });
+      const system  = buildSystemPrompt(data, riskFlags);
+      let res: Response;
+
+      if (isWeb) {
+        // Web: proxy through Supabase Edge Function to avoid CORS
+        res = await fetch(EDGE_FN_URL, {
+          method:  'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey':       SUPABASE_ANON,
+            'authorization': `Bearer ${SUPABASE_ANON}`,
+          },
+          body: JSON.stringify({ messages: updated, system }),
+        });
+      } else {
+        // Native: call Anthropic directly
+        res = await fetch(ANTHROPIC_URL, {
+          method:  'POST',
+          headers: {
+            'Content-Type':      'application/json',
+            'x-api-key':         API_KEY,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model:      'claude-haiku-4-5-20251001',
+            max_tokens: 1024,
+            system,
+            messages:   updated,
+          }),
+        });
+      }
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
