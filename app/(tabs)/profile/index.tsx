@@ -40,6 +40,7 @@ import RaceHistoryCard          from '../../../src/components/profile/RaceHistor
 
 import { formatPace }           from '../../../src/utils/calibrationEngine';
 import { colors }               from '../../../src/theme/colors';
+import { useThemeStore }        from '../../../src/store/themeStore';
 import { spacing }              from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 
@@ -760,6 +761,10 @@ export default function ProfileScreen() {
       {/* ── Overview ──────────────────────────────────────────────────── */}
       <ProfileOverviewCard profile={profile} />
 
+      {/* ── Appearance ────────────────────────────────────────────────── */}
+      <SectionLabel label="Appearance" />
+      <AppearanceSection />
+
       {/* ── Identity ──────────────────────────────────────────────────── */}
       <SectionLabel label="Identity" />
       <Card>
@@ -1161,6 +1166,26 @@ export default function ProfileScreen() {
   );
 }
 
+function AppearanceSection() {
+  const { mode, setMode } = useThemeStore();
+  return (
+    <View style={styles.appearanceCard}>
+      {(['dark', 'light'] as const).map(opt => (
+        <Pressable
+          key={opt}
+          style={[styles.appearancePill, mode === opt && styles.appearancePillActive]}
+          onPress={() => setMode(opt)}
+        >
+          <View style={[styles.appearanceSwatch, { backgroundColor: opt === 'dark' ? '#14160F' : '#EDE9DF' }]} />
+          <Text style={[styles.appearancePillText, mode === opt && styles.appearancePillTextActive]}>
+            {opt === 'dark' ? 'Dark' : 'Light'}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 function UnitsToggleCard() {
   const { units, setUnits } = useSettingsStore();
   return (
@@ -1471,6 +1496,49 @@ const styles = StyleSheet.create({
   resetBtnTxt: {
     color:      colors.danger,
     fontSize:   FontSize.base,
+    fontWeight: FontWeight.bold,
+  },
+
+  // Appearance toggle
+  appearanceCard: {
+    flexDirection:   'row',
+    gap:             spacing.sm,
+    backgroundColor: colors.card,
+    borderRadius:    12,
+    padding:         spacing.md,
+    borderWidth:     1,
+    borderColor:     colors.border,
+  },
+  appearancePill: {
+    flex:            1,
+    flexDirection:   'row',
+    alignItems:      'center',
+    justifyContent:  'center',
+    gap:             spacing.sm,
+    paddingVertical: spacing.sm,
+    borderRadius:    Radius.sm,
+    backgroundColor: colors.bg,
+    borderWidth:     1,
+    borderColor:     colors.border,
+  },
+  appearancePillActive: {
+    backgroundColor: colors.primaryDim,
+    borderColor:     colors.primary,
+  },
+  appearanceSwatch: {
+    width:        16,
+    height:       16,
+    borderRadius: 4,
+    borderWidth:  1,
+    borderColor:  colors.border,
+  },
+  appearancePillText: {
+    color:      colors.textDim,
+    fontSize:   FontSize.sm,
+    fontWeight: FontWeight.medium,
+  },
+  appearancePillTextActive: {
+    color:      colors.primary,
     fontWeight: FontWeight.bold,
   },
 

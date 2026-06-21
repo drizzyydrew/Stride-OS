@@ -1,20 +1,79 @@
-export const colors = {
-  // Surfaces
-  bg:     '#0B0F14',
-  card:   '#151C24',
-  border: '#1E293B',
+export type ThemeMode = 'light' | 'dark';
 
-  // Text
-  text:       '#FFFFFF',
-  textMuted:  '#8B9AAF',
-  textDim:    '#5F6B7A',
-  textSubtle: '#334155',
+export type Palette = {
+  bg: string;
+  card: string;
+  border: string;
+  text: string;
+  textMuted: string;
+  textDim: string;
+  textSubtle: string;
+  primary: string;
+  primaryDim: string;
+  onPrimary: string;
+  positive: string;
+  positiveDim: string;
+  warning: string;
+  warningDim: string;
+  critical: string;
+  criticalDim: string;
+  neutral: string;
+  danger: string;
+};
 
-  // Brand
-  primary:    '#2563EB',
-  primaryDim: '#0C1A3D',
+export const darkColors: Palette = {
+  bg:          '#14160F',
+  card:        '#1E2018',
+  border:      '#2E3127',
+  text:        '#F3F1E9',
+  textMuted:   '#A9AD98',
+  textDim:     '#7C8369',
+  textSubtle:  '#4A4E40',
+  primary:     '#8B927C',
+  primaryDim:  '#262A1E',
+  onPrimary:   '#14160F',
+  positive:    '#98B06B',
+  positiveDim: '#22281A',
+  warning:     '#D9A857',
+  warningDim:  '#33270F',
+  critical:    '#CE7E6D',
+  criticalDim: '#33190F',
+  neutral:     '#A9AD98',
+  danger:      '#C06A52',
+};
 
-  // Status
+export const lightColors: Palette = {
+  bg:          '#EDE9DF',
+  card:        '#F8F5EE',
+  border:      '#DCD5C6',
+  text:        '#2B2A24',
+  textMuted:   '#6E7261',
+  textDim:     '#8A8F79',
+  textSubtle:  '#B4B2A4',
+  primary:     '#8B927C',
+  primaryDim:  '#E4E6DB',
+  onPrimary:   '#FBFAF6',
+  positive:    '#6E8B3D',
+  positiveDim: '#E7EDD9',
+  warning:     '#B9842B',
+  warningDim:  '#F4E9D4',
+  critical:    '#B85A48',
+  criticalDim: '#F2DED9',
+  neutral:     '#6E7261',
+  danger:      '#B05036',
+};
+
+export const strideColors: Palette = {
+  bg:          '#0B0F14',
+  card:        '#151C24',
+  border:      '#1E293B',
+  text:        '#FFFFFF',
+  textMuted:   '#8B9AAF',
+  textDim:     '#5F6B7A',
+  textSubtle:  '#334155',
+  primary:     '#2563EB',
+  primaryDim:  '#0C1A3D',
+  onPrimary:   '#FFFFFF',
   positive:    '#4ADE80',
   positiveDim: '#052E16',
   warning:     '#F59E0B',
@@ -22,7 +81,12 @@ export const colors = {
   critical:    '#F87171',
   criticalDim: '#450A0A',
   neutral:     '#8B9AAF',
+  danger:      '#DC2626',
+};
 
-  // Destructive
-  danger: '#DC2626',
-} as const;
+export function getColors(mode: ThemeMode): Palette {
+  return mode === 'light' ? lightColors : darkColors;
+}
+
+// Static fallback — keeps all existing `import { colors }` working without changes.
+export const colors: Palette = darkColors;

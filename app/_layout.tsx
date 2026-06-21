@@ -1,4 +1,6 @@
 import { useFonts } from 'expo-font';
+import { CormorantGaramond_700Bold } from '@expo-google-fonts/cormorant-garamond';
+import { DMSans_400Regular } from '@expo-google-fonts/dm-sans';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import { router, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -25,6 +27,8 @@ export default function RootLayout() {
   const initialize = useAuthStore(s => s.initialize);
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    CormorantGaramond_700Bold,
+    DMSans_400Regular,
   });
 
   useEffect(() => { if (error) throw error; }, [error]);
