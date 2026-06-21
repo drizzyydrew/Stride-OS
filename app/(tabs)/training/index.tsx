@@ -13,6 +13,7 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 import { useAthleteStore }     from '../../../src/store/athleteStore';
 import { useWorkoutStore }     from '../../../src/store/workoutStore';
@@ -398,6 +399,29 @@ export default function RunningScreen() {
         );
       })}
 
+      {/* ── Run Tools ── */}
+      <View style={styles.toolsSection}>
+        <Text style={styles.toolsHeader}>RUN TOOLS</Text>
+        <View style={styles.toolsRow}>
+          <TouchableOpacity
+            style={styles.toolBtn}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onPress={() => (router as any).push('/training/hydration')}
+          >
+            <Ionicons name="water-outline" size={22} color={colors.primary} />
+            <Text style={styles.toolBtnTxt}>Hydration{'\n'}Calculator</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolBtn}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onPress={() => (router as any).push('/training/run-creator')}
+          >
+            <Ionicons name="create-outline" size={22} color={colors.primary} />
+            <Text style={styles.toolBtnTxt}>Build a{'\n'}Run</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
     </ScreenLayout>
   );
 }
@@ -477,5 +501,37 @@ const styles = StyleSheet.create({
   pairTxt: {
     color:    colors.textDim,
     fontSize: FontSize.xs,
+  },
+  toolsSection: {
+    marginBottom:      spacing.cardGap,
+    paddingHorizontal: spacing.lg,
+  },
+  toolsHeader: {
+    color:         colors.textMuted,
+    fontSize:      10,
+    fontWeight:    FontWeight.black,
+    letterSpacing: 0.8,
+    marginBottom:  spacing.sm,
+  },
+  toolsRow: {
+    flexDirection: 'row',
+    gap:           spacing.md,
+  },
+  toolBtn: {
+    flex:            1,
+    alignItems:      'center',
+    gap:             spacing.xs,
+    backgroundColor: colors.card,
+    borderRadius:    14,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    borderWidth:     1,
+    borderColor:     colors.border,
+  },
+  toolBtnTxt: {
+    color:     colors.text,
+    fontSize:  FontSize.xs,
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });
