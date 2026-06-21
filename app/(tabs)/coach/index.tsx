@@ -61,7 +61,8 @@ ${flagTxt}
 
 INSTRUCTIONS
 - Give personalised, actionable advice grounded in this athlete's specific data.
-- Be direct and concise. Use bullet points for multi-step answers.
+- Be direct and concise. Use dashes for bullet points. Emojis are fine but use them sparingly.
+- Do NOT use markdown: no # headers, no ## headers, no **bold**, no *italics*. Plain text only.
 - Never give medical diagnoses. Recommend professional care for pain or injury concerns.
 - If asked about paces or zones, calculate from their profile data.`;
 }
