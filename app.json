@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "StrideOS",
+    "name": "StrideOS: Run, Lift, Recover",
     "slug": "StrideOS",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,9 +8,14 @@
     "scheme": "strideos",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "StrideOS uses your location to track distance and pace during GPS runs.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "StrideOS tracks your location in the background so your run continues recording when the screen is locked.",
+        "NSMotionUsageDescription": "StrideOS uses motion data to improve step counting accuracy."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -49,7 +54,7 @@
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#14160F"
         }
       ]
     ],
