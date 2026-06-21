@@ -17,6 +17,9 @@ import { useAthleteStore }                                from '../../../src/sto
 import { useProfileStore, useActiveProfile, useCalibration } from '../../../src/store/profileStore';
 import { useOnboardingStore }                             from '../../../src/store/onboardingStore';
 import { useSettingsStore }                               from '../../../src/store/settingsStore';
+import { useIntegrationsStore }                          from '../../../src/store/integrationsStore';
+import { startStravaOAuth }                              from '../../../src/lib/strava';
+import { requestPermissions as requestHealthKit }        from '../../../src/lib/healthKit';
 
 import ScreenLayout             from '../../../src/layout/ScreenLayout';
 import Card                     from '../../../src/components/ui/Card';
@@ -1112,6 +1115,10 @@ export default function ProfileScreen() {
       <SectionLabel label="Units" />
       <UnitsToggleCard />
 
+      {/* ── Integrations ─────────────────────────────────────────────── */}
+      <SectionLabel label="Integrations" />
+      <IntegrationsCard />
+
       {/* ── Sources & Methods ─────────────────────────────────────────── */}
       <SectionLabel label="Sources & Methods" />
       <SourcesMethodsCard />
@@ -1171,6 +1178,68 @@ function UnitsToggleCard() {
             </Text>
           </Pressable>
         ))}
+      </View>
+    </View>
+  );
+}
+
+function IntegrationsCard() {
+  const { healthKitEnabled, stravaConnected, setHealthKit, setStrava } = useIntegrationsStore();
+
+  async function handleToggleHealthKit() {
+    if (healthKitEnabled) {
+      setHealthKit(false);
+    } else {
+      const granted = await requestHealthKit();
+      if (granted) setHealthKit(true);
+    }
+  }
+
+  async function handleStravaConnect() {
+    if (stravaConnected) {
+      setStrava(null);
+    } else {
+      await startStravaOAuth();
+      setStrava({
+        access_token:  'pending',
+        refresh_token: 'pending',
+        expires_at:    0,
+      });
+    }
+  }
+
+  return (
+    <View style={styles.integrationsCard}>
+      <View style={styles.integrationRow}>
+        <View style={styles.integrationInfo}>
+          <Text style={styles.integrationTitle}>Apple Health</Text>
+          <Text style={styles.integrationSub}>Sync workouts to Health app</Text>
+        </View>
+        <Pressable
+          style={[styles.integrationToggle, healthKitEnabled && styles.integrationToggleOn]}
+          onPress={handleToggleHealthKit}
+        >
+          <Text style={[styles.integrationToggleTxt, healthKitEnabled && styles.integrationToggleTxtOn]}>
+            {healthKitEnabled ? 'On' : 'Off'}
+          </Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.integrationDivider} />
+
+      <View style={styles.integrationRow}>
+        <View style={styles.integrationInfo}>
+          <Text style={styles.integrationTitle}>Strava</Text>
+          <Text style={styles.integrationSub}>
+            {stravaConnected ? 'Connected — workouts upload automatically' : 'Connect to upload runs to Strava'}
+          </Text>
+        </View>
+        <Pressable
+          style={[styles.integrationBtn, stravaConnected && styles.integrationBtnConnected]}
+          onPress={handleStravaConnect}
+        >
+          <Text style={styles.integrationBtnTxt}>{stravaConnected ? 'Disconnect' : 'Connect'}</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -1447,4 +1516,39 @@ const styles = StyleSheet.create({
     color:      colors.primary,
     fontWeight: FontWeight.bold,
   },
+  integrationsCard: {
+    backgroundColor: colors.card,
+    borderRadius:    12,
+    borderWidth:     1,
+    borderColor:     colors.border,
+    overflow:        'hidden',
+  },
+  integrationRow: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical:   spacing.md,
+    gap:               spacing.md,
+  },
+  integrationInfo:  { flex: 1, gap: 2 },
+  integrationTitle: { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  integrationSub:   { color: colors.textMuted, fontSize: FontSize.xs },
+  integrationDivider: { height: 1, backgroundColor: colors.border, marginHorizontal: spacing.md },
+  integrationToggle: {
+    paddingHorizontal: spacing.md,
+    paddingVertical:   spacing.xs,
+    borderRadius:      20,
+    backgroundColor:   colors.border,
+  },
+  integrationToggleOn:    { backgroundColor: colors.positive },
+  integrationToggleTxt:   { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  integrationToggleTxtOn: { color: colors.bg },
+  integrationBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical:   spacing.xs,
+    borderRadius:      Radius.sm,
+    backgroundColor:   colors.primary,
+  },
+  integrationBtnConnected: { backgroundColor: colors.border },
+  integrationBtnTxt:       { color: colors.text, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
 });

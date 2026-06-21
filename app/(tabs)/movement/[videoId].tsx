@@ -21,7 +21,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 
 import { useMovementStore } from '../../../src/store/movementStore';
-import { useAuthStore }     from '../../../src/store/authStore';
 import { supabase }         from '../../../src/lib/supabase';
 import { suggestGaitFindings } from '../../../src/utils/movementEngine';
 import { colors }  from '../../../src/theme/colors';
@@ -272,14 +271,10 @@ function SubmitForAnalysisCard({
   videoId,
   submitted,
   status,
-  onSubmit,
-  submitting,
 }: {
-  videoId:    string;
-  submitted:  boolean;
-  status:     string | null | undefined;
-  onSubmit:   () => void;
-  submitting: boolean;
+  videoId:   string;
+  submitted: boolean;
+  status:    string | null | undefined;
 }) {
   if (submitted) {
     const statusLabel =
@@ -309,22 +304,14 @@ function SubmitForAnalysisCard({
   return (
     <View style={sub.card}>
       <Text style={sub.cardLabel}>PROFESSIONAL ANALYSIS</Text>
-      <Text style={sub.heading}>Submit for Coach Review</Text>
+      <Text style={sub.heading}>Coach Review — Coming Soon</Text>
       <Text style={sub.desc}>
-        Get your movement analyzed by a certified coach. Receive detailed findings, drills,
-        and a personalized training recommendation.
+        Submit your video to receive a detailed analysis from a certified coach — personalized findings,
+        corrective drills, and training recommendations.
       </Text>
-      <Pressable
-        style={[sub.btn, submitting && sub.btnDisabled]}
-        onPress={onSubmit}
-        disabled={submitting}
-      >
-        {submitting
-          ? <ActivityIndicator color={colors.text} size="small" />
-          : <Text style={sub.btnTxt}>Submit for Analysis</Text>
-        }
-      </Pressable>
-      <Text style={sub.paymentNote}>Payment integration coming soon — submissions are free during beta.</Text>
+      <View style={sub.comingSoon}>
+        <Text style={sub.comingSoonTxt}>Available once in-app purchases are configured</Text>
+      </View>
     </View>
   );
 }
@@ -336,7 +323,6 @@ const HIT_SLOP = { top: 12, bottom: 12, left: 16, right: 16 } as const;
 export default function VideoDetailScreen() {
   const insets    = useSafeAreaInsets();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
-  const user = useAuthStore(s => s.user);
   const {
     videos,
     getVideoSession,
@@ -351,23 +337,36 @@ export default function VideoDetailScreen() {
   const video   = videos.find(v => v.id === videoId);
   const session = getVideoSession(videoId ?? '');
 
-  const [tab,           setTab]           = useState<Tab>('overview');
-  const [showGaitModal, setShowGaitModal] = useState(false);
-  const [signedUrl,     setSignedUrl]     = useState<string | null>(null);
-  const [submitting,    setSubmitting]    = useState(false);
+  const [tab,              setTab]              = useState<Tab>('overview');
+  const [showGaitModal,    setShowGaitModal]    = useState(false);
+  const [videoSource,      setVideoSource]      = useState<string | null>(null);
+  const [videoUnavailable, setVideoUnavailable] = useState(false);
 
-  const player = useVideoPlayer(signedUrl ?? null);
+  const player = useVideoPlayer(videoSource);
 
-  // Fetch a signed URL for the video from Supabase Storage
+  // Try local URI first; fall back to Supabase signed URL
   useEffect(() => {
-    if (!video?.storagePath) return;
+    if (!video) return;
+    const uri = video.uri;
+    if (uri && (uri.startsWith('file://') || uri.startsWith('content://'))) {
+      setVideoSource(uri);
+      return;
+    }
+    if (!video.storagePath) {
+      setVideoUnavailable(true);
+      return;
+    }
     supabase.storage
       .from('movement-videos')
       .createSignedUrl(video.storagePath, 3600)
       .then(({ data, error }) => {
-        if (!error && data?.signedUrl) setSignedUrl(data.signedUrl);
+        if (!error && data?.signedUrl) {
+          setVideoSource(data.signedUrl);
+        } else {
+          setVideoUnavailable(true);
+        }
       });
-  }, [video?.storagePath]);
+  }, [video?.uri, video?.storagePath]);
 
   if (!video) {
     return (
@@ -409,25 +408,6 @@ export default function VideoDetailScreen() {
     }
   }
 
-  async function handleSubmitForAnalysis() {
-    if (!user) return;
-    setSubmitting(true);
-    try {
-      const { error } = await supabase.from('analysis_requests').insert({
-        user_id:  user.id,
-        video_id: videoId,
-        status:   'pending',
-      });
-      if (!error) {
-        updateVideo(videoId!, { submittedForAnalysis: true, analysisStatus: 'pending' });
-      }
-    } catch (err) {
-      console.warn('Submit failed:', err);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   const TABS: { key: Tab; label: string }[] = [
     { key: 'overview', label: 'Overview' },
     { key: 'gait',     label: 'Gait'     },
@@ -449,8 +429,8 @@ export default function VideoDetailScreen() {
         </Pressable>
       </View>
 
-      {/* Video player — only shown when a signed URL is available */}
-      {signedUrl ? (
+      {/* Video player */}
+      {videoSource ? (
         <View style={s.videoContainer}>
           <VideoView
             player={player}
@@ -459,7 +439,11 @@ export default function VideoDetailScreen() {
             nativeControls
           />
         </View>
-      ) : video.storagePath ? (
+      ) : videoUnavailable ? (
+        <View style={s.videoPlaceholder}>
+          <Text style={s.videoPlaceholderTxt}>Video unavailable</Text>
+        </View>
+      ) : (video?.storagePath || video?.uri) ? (
         <View style={s.videoPlaceholder}>
           <ActivityIndicator color={colors.primary} />
           <Text style={s.videoPlaceholderTxt}>Loading video…</Text>
@@ -525,8 +509,6 @@ export default function VideoDetailScreen() {
               videoId={videoId!}
               submitted={video.submittedForAnalysis ?? false}
               status={video.analysisStatus}
-              onSubmit={handleSubmitForAnalysis}
-              submitting={submitting}
             />
 
             <View style={s.disclaimer}>
@@ -912,10 +894,14 @@ const sub = StyleSheet.create({
     paddingVertical: spacing.md,
     alignItems:      'center',
   },
-  btnDisabled: { opacity: 0.5 },
-  btnTxt:      { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  paymentNote: { color: colors.textSubtle, fontSize: FontSize.xs, textAlign: 'center' },
   statusRow:   { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   dot:         { width: 8, height: 8, borderRadius: 4 },
   statusTxt:   { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  comingSoon: {
+    backgroundColor: colors.border,
+    borderRadius:    Radius.sm,
+    padding:         spacing.md,
+    alignItems:      'center',
+  },
+  comingSoonTxt: { color: colors.textMuted, fontSize: FontSize.xs },
 });

@@ -331,7 +331,20 @@ export default function SessionDetailScreen() {
           {!isComplete && !isRest && (
             <>
               {!isStarted ? (
-                <Button label="Start Session" onPress={handleStart} />
+                <View style={styles.startButtons}>
+                  <Button label="Start Session" onPress={handleStart} style={styles.flex1} />
+                  {(workout.type === 'easy_run' || workout.type === 'long_run' ||
+                    workout.type === 'tempo' || workout.type === 'threshold' ||
+                    workout.type === 'intervals' || workout.type === 'recovery_run' ||
+                    workout.type === 'vo2' || workout.type === 'marathon_pace') && (
+                    <Button
+                      label="GPS Run"
+                      onPress={() => router.push(`/training/run-tracking?dayIndex=${dayIndex}`)}
+                      variant="secondary"
+                      style={styles.flex1}
+                    />
+                  )}
+                </View>
               ) : (
                 <View style={styles.timerRow}>
                   <Text style={styles.timerText}>{elapsedMin} min elapsed</Text>
@@ -571,6 +584,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     borderRadius: 12,
   },
+  startButtons: {
+    flexDirection: 'row',
+    gap:           spacing.sm,
+    marginBottom:  spacing.sm,
+  },
+  flex1: { flex: 1 },
   secondaryActions: {
     flexDirection: 'row',
     gap:           spacing.sm,

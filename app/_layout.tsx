@@ -8,6 +8,9 @@ import 'react-native-reanimated';
 import { useOnboardingStore } from '../src/store/onboardingStore';
 import { useAuthStore }       from '../src/store/authStore';
 
+// Register GPS background task at module level (required by expo-task-manager)
+import '../src/lib/gpsTracking';
+
 export {
   ErrorBoundary,
 } from 'expo-router';
