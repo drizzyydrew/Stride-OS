@@ -7,7 +7,7 @@ StrideOS: Run, Lift, Recover
 Your plan. Your pace
 
 ## Promotional Text (170 chars max — updatable without a new build)
-Built for runners just starting out or leveling up. Grow your mileage the safe way, get stronger, and get video feedback on your form — for your runs and your lifts.
+Built for runners just starting out or leveling up. Grow your mileage the safe way, get stronger, and get video feedback on your form for your runs and your lifts.
 
 ## Keywords (100 chars max, comma-separated)
 running,marathon,training plan,AI coach,GPS,pace zones,intervals,strength,5K,injury,zones

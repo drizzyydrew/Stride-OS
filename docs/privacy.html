@@ -115,7 +115,7 @@
     <h2>1. Data We Collect</h2>
     <p><strong>Account information.</strong> When you create an account, we collect your email address via Supabase Auth, a third-party authentication service.</p>
     <p><strong>Training and health data.</strong> Workout logs, strength sessions, check-ins, heart rate data, pace zones, race PRs, and other fitness information you enter in the app. This data is stored on your device (AsyncStorage) and, when you are signed in, backed up to our Supabase database.</p>
-    <p><strong>Movement videos.</strong> Videos you upload to Movement Lab are stored in Supabase Storage in a private bucket accessible only to your account.</p>
+    <p><strong>Movement videos.</strong> Videos you upload to Movement Lab are uploaded to Supabase Storage and stored in a private bucket accessible only to your account. Videos are not stored on your device after upload.</p>
     <p><strong>Location data.</strong> If you use GPS Run Tracking, the app requests access to your device's location. Location data is used only to calculate distance and pace during your run and is stored locally on your device. We do not transmit raw GPS coordinates to our servers.</p>
     <p><strong>AI Coach messages.</strong> Messages you send to the AI Coach are transmitted to Anthropic's Claude API via a secure Edge Function proxy to generate responses. We do not store the content of your AI Coach conversations on our servers.</p>
 
@@ -132,7 +132,7 @@
     <p>StrideOS uses the following third-party services:</p>
     <ul>
       <li><strong>Supabase</strong> — Authentication, database, and file storage. <a href="https://supabase.com/privacy" target="_blank">Supabase Privacy Policy</a></li>
-      <li><strong>Anthropic</strong> — AI responses in the Coach tab. Messages are processed by Claude. <a href="https://www.anthropic.com/privacy" target="_blank">Anthropic Privacy Policy</a></li>
+      <li><strong>Anthropic (Claude)</strong> — AI responses in the Coach tab. Messages are processed by Claude. <a href="https://www.anthropic.com/privacy" target="_blank">Anthropic Privacy Policy</a></li>
       <li><strong>Apple HealthKit</strong> (optional) — If you enable Apple Health integration, workout data is written to the Health app on your device. We do not read health data from HealthKit.</li>
       <li><strong>Strava</strong> (optional) — If you connect Strava, completed workouts are uploaded to your Strava account. <a href="https://www.strava.com/legal/privacy" target="_blank">Strava Privacy Policy</a></li>
     </ul>
