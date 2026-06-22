@@ -65,7 +65,7 @@ Your plan. Your pace.
 | Promo Text | Built for runners just starting out or leveling up... (168 chars) |
 | Primary Category | Health & Fitness |
 | Secondary Category | Sports |
-| Privacy Policy URL | https://drizzyydrew.github.io/stride-os/privacy.html |
+| Privacy Policy URL | https://drizzyydrew.github.io/Stride-OS/privacy.html |
 | Support URL | mailto:mooredrew5@gmail.com (or a support page) |
 | Age Rating | 4+ |
 
