@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StrideOS — Privacy Policy</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #EDE9DF;
+      color: #2B2A24;
+      line-height: 1.7;
+      padding: 40px 20px 80px;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .logo {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+      margin-bottom: 8px;
+    }
+    .logo-stride {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #2B2A24;
+    }
+    .logo-os {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #5E7E92;
+    }
+    .tagline {
+      font-size: 11px;
+      letter-spacing: 1.8px;
+      color: #8A8F79;
+      text-transform: uppercase;
+      margin-bottom: 48px;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #2B2A24;
+    }
+    .updated {
+      font-size: 13px;
+      color: #6E7261;
+      margin-bottom: 36px;
+    }
+    h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #2B2A24;
+      margin-top: 36px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    p {
+      font-size: 15px;
+      color: #3A3830;
+      margin-bottom: 14px;
+    }
+    ul {
+      padding-left: 20px;
+      margin-bottom: 14px;
+    }
+    li {
+      font-size: 15px;
+      color: #3A3830;
+      margin-bottom: 6px;
+    }
+    a {
+      color: #5E7E92;
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+    .divider {
+      height: 1px;
+      background: #DCD5C6;
+      margin: 40px 0;
+    }
+    .contact-card {
+      background: #F8F5EE;
+      border: 1px solid #DCD5C6;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-top: 36px;
+    }
+    .contact-card p { margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="logo">
+      <span class="logo-stride">Stride</span><span class="logo-os">OS</span>
+    </div>
+    <div class="tagline">Move Now &middot; Age Gracefully</div>
+
+    <h1>Privacy Policy</h1>
+    <p class="updated">Effective date: June 21, 2025</p>
+
+    <p>
+      StrideOS ("we," "our," or "us") is a personal training application for runners.
+      This policy explains what data we collect, how we use it, and the choices you have.
+    </p>
+
+    <h2>1. Data We Collect</h2>
+    <p><strong>Account information.</strong> When you create an account, we collect your email address via Supabase Auth, a third-party authentication service.</p>
+    <p><strong>Training and health data.</strong> Workout logs, strength sessions, check-ins, heart rate data, pace zones, race PRs, and other fitness information you enter in the app. This data is stored on your device (AsyncStorage) and, when you are signed in, backed up to our Supabase database.</p>
+    <p><strong>Movement videos.</strong> Videos you upload to Movement Lab are uploaded to Supabase Storage and stored in a private bucket accessible only to your account. Videos are not stored on your device after upload.</p>
+    <p><strong>Location data.</strong> If you use GPS Run Tracking, the app requests access to your device's location. Location data is used only to calculate distance and pace during your run and is stored locally on your device. We do not transmit raw GPS coordinates to our servers.</p>
+    <p><strong>AI Coach messages.</strong> Messages you send to the AI Coach are transmitted to Anthropic's Claude API via a secure Edge Function proxy to generate responses. We do not store the content of your AI Coach conversations on our servers.</p>
+
+    <h2>2. How We Use Your Data</h2>
+    <ul>
+      <li>To power the core features of the app — training plans, analytics, zone calculations, and progress tracking.</li>
+      <li>To back up your training history so you don't lose data if you reinstall the app.</li>
+      <li>To provide Movement Lab storage and professional analysis services when requested.</li>
+      <li>To authenticate your account and keep your data secure.</li>
+    </ul>
+    <p>We do not use your data for advertising. We do not sell your data to third parties.</p>
+
+    <h2>3. Third-Party Services</h2>
+    <p>StrideOS uses the following third-party services:</p>
+    <ul>
+      <li><strong>Supabase</strong> — Authentication, database, and file storage. <a href="https://supabase.com/privacy" target="_blank">Supabase Privacy Policy</a></li>
+      <li><strong>Anthropic (Claude)</strong> — AI responses in the Coach tab. Messages are processed by Claude. <a href="https://www.anthropic.com/privacy" target="_blank">Anthropic Privacy Policy</a></li>
+      <li><strong>Apple HealthKit</strong> (optional) — If you enable Apple Health integration, workout data is written to the Health app on your device. We do not read health data from HealthKit.</li>
+      <li><strong>Strava</strong> (optional) — If you connect Strava, completed workouts are uploaded to your Strava account. <a href="https://www.strava.com/legal/privacy" target="_blank">Strava Privacy Policy</a></li>
+    </ul>
+
+    <h2>4. Data Retention</h2>
+    <p>Your training data remains in our database as long as your account is active. You can delete all data at any time from <strong>Profile → Data &amp; Privacy → Reset All Data</strong>. This permanently removes your account data from our servers.</p>
+
+    <h2>5. Children's Privacy</h2>
+    <p>StrideOS is not directed at children under 13. We do not knowingly collect personal information from children under 13.</p>
+
+    <h2>6. Your Rights</h2>
+    <p>You may request a copy of your data, correction of inaccurate data, or deletion of your account and all associated data at any time by contacting us at the address below.</p>
+
+    <h2>7. Security</h2>
+    <p>All data in transit is encrypted via HTTPS/TLS. Data at rest is stored in Supabase with row-level security policies that ensure you can only access your own data. Movement videos are stored in a private bucket accessible only by authenticated requests from your account.</p>
+
+    <h2>8. Changes to This Policy</h2>
+    <p>We may update this policy as the app evolves. The effective date at the top of this page will reflect the most recent revision. Continued use of the app after changes constitutes acceptance of the updated policy.</p>
+
+    <div class="divider"></div>
+
+    <div class="contact-card">
+      <h2 style="margin-top: 0;">Contact</h2>
+      <p>Questions or requests about your data:</p>
+      <p><strong>Drew Moore</strong><br>
+        <a href="mailto:mooredrew5@gmail.com">mooredrew5@gmail.com</a>
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
