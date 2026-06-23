@@ -11,17 +11,17 @@ import { useCustomWorkoutStore } from './customWorkoutStore';
 import { useCheckInStore } from './checkInStore';
 
 type AuthStore = {
-  session:          Session | null;
-  user:             User | null;
-  loading:          boolean;
-  initialize:       () => Promise<void>;
-  signIn:           (email: string, password: string) => Promise<string | null>;
-  signUp:           (email: string, password: string) => Promise<string | null>;
-  signOut:          () => Promise<void>;
-  resetPassword:    (email: string) => Promise<string | null>;
-  updatePassword:   (newPassword: string) => Promise<string | null>;
-  signInWithApple:  () => Promise<string | null>;
-  signInWithGoogle: () => Promise<string | null>;
+  session:         Session | null;
+  user:            User | null;
+  loading:         boolean;
+  initialize:      () => Promise<void>;
+  signIn:          (email: string, password: string) => Promise<string | null>;
+  signUp:          (email: string, password: string) => Promise<string | null>;
+  signOut:         () => Promise<void>;
+  resetPassword:   (email: string) => Promise<string | null>;
+  updatePassword:  (newPassword: string) => Promise<string | null>;
+  signInWithApple: () => Promise<string | null>;
+  signInWithGoogle:() => Promise<string | null>;
 };
 
 export const useAuthStore = create<AuthStore>((set) => ({

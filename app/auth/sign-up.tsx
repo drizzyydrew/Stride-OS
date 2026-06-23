@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { AntDesign } from '@expo/vector-icons';
 
 import { useAuthStore } from '../../src/store/authStore';
 import { colors }  from '../../src/theme/colors';
@@ -18,7 +20,9 @@ import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 
 export default function SignUpScreen() {
-  const signUp = useAuthStore(s => s.signUp);
+  const signUp          = useAuthStore(s => s.signUp);
+  const signInWithApple  = useAuthStore(s => s.signInWithApple);
+  const signInWithGoogle = useAuthStore(s => s.signInWithGoogle);
 
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
@@ -41,6 +45,18 @@ export default function SignUpScreen() {
     } else {
       setSuccess(true);
     }
+  }
+
+  async function handleApple() {
+    setError(null);
+    const err = await signInWithApple();
+    if (err) setError(err);
+  }
+
+  async function handleGoogle() {
+    setError(null);
+    const err = await signInWithGoogle();
+    if (err) setError(err);
   }
 
   if (success) {
@@ -112,6 +128,27 @@ export default function SignUpScreen() {
               ? <ActivityIndicator color={colors.text} />
               : <Text style={s.btnTxt}>Create Account</Text>
             }
+          </Pressable>
+
+          <View style={s.dividerRow}>
+            <View style={s.dividerLine} />
+            <Text style={s.dividerTxt}>or</Text>
+            <View style={s.dividerLine} />
+          </View>
+
+          {Platform.OS === 'ios' && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+              cornerRadius={Radius.sm}
+              style={s.appleBtn}
+              onPress={handleApple}
+            />
+          )}
+
+          <Pressable style={s.googleBtn} onPress={handleGoogle}>
+            <AntDesign name="google" size={18} color="#4285F4" />
+            <Text style={s.googleBtnTxt}>Continue with Google</Text>
           </Pressable>
         </View>
 
@@ -202,6 +239,40 @@ const s = StyleSheet.create({
     opacity: 0.5,
   },
   btnTxt: {
+    color:      colors.text,
+    fontSize:   FontSize.base,
+    fontWeight: FontWeight.bold,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           spacing.sm,
+  },
+  dividerLine: {
+    flex:            1,
+    height:          1,
+    backgroundColor: colors.border,
+  },
+  dividerTxt: {
+    color:    colors.textMuted,
+    fontSize: FontSize.sm,
+  },
+  appleBtn: {
+    height: 50,
+    width:  '100%',
+  },
+  googleBtn: {
+    flexDirection:   'row',
+    alignItems:      'center',
+    justifyContent:  'center',
+    gap:             spacing.sm,
+    backgroundColor: colors.bg,
+    borderWidth:     1,
+    borderColor:     colors.border,
+    borderRadius:    Radius.sm,
+    paddingVertical: spacing.md,
+  },
+  googleBtnTxt: {
     color:      colors.text,
     fontSize:   FontSize.base,
     fontWeight: FontWeight.bold,
