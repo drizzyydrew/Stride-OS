@@ -60,7 +60,6 @@ export default function RootLayout() {
     return () => sub.remove();
   }, []);
 
-
   if (!loaded && !error) return null;
 
   return (

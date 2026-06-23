@@ -182,13 +182,6 @@ const s = StyleSheet.create({
     fontSize:   FontSize.base,
     fontWeight: FontWeight.bold,
   },
-  back: {
-    alignItems: 'center',
-  },
-  backTxt: {
-    color:    colors.primary,
-    fontSize: FontSize.sm,
-  },
   successBox: {
     flex:           1,
     justifyContent: 'center',
