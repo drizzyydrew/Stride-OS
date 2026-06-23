@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "StrideOS uses your location to track distance and pace during GPS runs.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "StrideOS tracks your location in the background so your run continues recording when the screen is locked.",
@@ -47,6 +47,13 @@
         {
           "supportsBackgroundPlayback": false,
           "supportsPictureInPicture": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "StrideOS tracks your location in the background so your run continues recording when the screen is locked.",
+          "isIosBackgroundLocationEnabled": true
         }
       ],
       [

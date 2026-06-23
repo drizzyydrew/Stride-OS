@@ -31,7 +31,7 @@ export default function RootLayout() {
     DMSans_400Regular,
   });
 
-  useEffect(() => { if (error) throw error; }, [error]);
+  useEffect(() => { if (error) console.warn('[fonts]', error); }, [error]);
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
@@ -39,7 +39,7 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  if (!loaded) return null;
+  if (!loaded && !error) return null;
 
   return (
     <ThemeProvider value={DarkTheme}>
