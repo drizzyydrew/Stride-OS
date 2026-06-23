@@ -14,8 +14,9 @@ type AuthStore = {
   initialize:    () => Promise<void>;
   signIn:        (email: string, password: string) => Promise<string | null>;
   signUp:        (email: string, password: string) => Promise<string | null>;
-  signOut:       () => Promise<void>;
-  resetPassword: (email: string) => Promise<string | null>;
+  signOut:        () => Promise<void>;
+  resetPassword:  (email: string) => Promise<string | null>;
+  updatePassword: (newPassword: string) => Promise<string | null>;
 };
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -51,7 +52,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   resetPassword: async (email) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: 'strideos://auth/new-password',
+    });
+    return error?.message ?? null;
+  },
+
+  updatePassword: async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
     return error?.message ?? null;
   },
 

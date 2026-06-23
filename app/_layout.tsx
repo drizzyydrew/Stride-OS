@@ -4,11 +4,13 @@ import { DMSans_400Regular } from '@expo-google-fonts/dm-sans';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import { router, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Linking from 'expo-linking';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useOnboardingStore } from '../src/store/onboardingStore';
 import { useAuthStore }       from '../src/store/authStore';
+import { supabase }           from '../src/lib/supabase';
 
 // Register GPS background task at module level (required by expo-task-manager)
 import '../src/lib/gpsTracking';
@@ -38,6 +40,25 @@ export default function RootLayout() {
       initialize();
     }
   }, [loaded]);
+
+  // Handle password-reset deep links (strideos://auth/new-password#access_token=...&type=recovery)
+  useEffect(() => {
+    async function handleUrl(url: string) {
+      if (!url.includes('type=recovery')) return;
+      const fragment = url.split('#')[1] ?? url.split('?')[1] ?? '';
+      const params = new URLSearchParams(fragment);
+      const accessToken  = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      if (accessToken && refreshToken) {
+        await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        router.push('/auth/new-password' as never);
+      }
+    }
+
+    Linking.getInitialURL().then(url => { if (url) handleUrl(url); });
+    const sub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+    return () => sub.remove();
+  }, []);
 
   if (!loaded && !error) return null;
 
