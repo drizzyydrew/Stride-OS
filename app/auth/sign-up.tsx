@@ -42,6 +42,8 @@ export default function SignUpScreen() {
     setLoading(false);
     if (err) {
       setError(err);
+    } else if (useAuthStore.getState().session) {
+      // Email confirmation is disabled — user is immediately signed in; NavigationGate will redirect
     } else {
       setSuccess(true);
     }
