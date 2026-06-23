@@ -8,13 +8,14 @@ import { useCustomWorkoutStore } from './customWorkoutStore';
 import { useCheckInStore } from './checkInStore';
 
 type AuthStore = {
-  session:    Session | null;
-  user:       User | null;
-  loading:    boolean;
-  initialize: () => Promise<void>;
-  signIn:     (email: string, password: string) => Promise<string | null>;
-  signUp:     (email: string, password: string) => Promise<string | null>;
-  signOut:    () => Promise<void>;
+  session:       Session | null;
+  user:          User | null;
+  loading:       boolean;
+  initialize:    () => Promise<void>;
+  signIn:        (email: string, password: string) => Promise<string | null>;
+  signUp:        (email: string, password: string) => Promise<string | null>;
+  signOut:       () => Promise<void>;
+  resetPassword: (email: string) => Promise<string | null>;
 };
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -46,6 +47,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   signUp: async (email, password) => {
     const { error } = await supabase.auth.signUp({ email, password });
+    return error?.message ?? null;
+  },
+
+  resetPassword: async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
     return error?.message ?? null;
   },
 

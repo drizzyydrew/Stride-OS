@@ -17,21 +17,42 @@ import { colors }  from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 
-export default function SignInScreen() {
-  const signIn = useAuthStore(s => s.signIn);
+export default function ForgotPasswordScreen() {
+  const resetPassword = useAuthStore(s => s.resetPassword);
 
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [error,    setError]    = useState<string | null>(null);
-  const [loading,  setLoading]  = useState(false);
+  const [email,   setEmail]   = useState('');
+  const [error,   setError]   = useState<string | null>(null);
+  const [sent,    setSent]    = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  async function handleSignIn() {
-    if (!email.trim() || !password.trim()) return;
+  async function handleReset() {
+    if (!email.trim()) return;
     setLoading(true);
     setError(null);
-    const err = await signIn(email.trim(), password);
+    const err = await resetPassword(email.trim());
     setLoading(false);
-    if (err) setError(err);
+    if (err) {
+      setError(err);
+    } else {
+      setSent(true);
+    }
+  }
+
+  if (sent) {
+    return (
+      <View style={s.root}>
+        <View style={s.successBox}>
+          <Text style={s.icon}>✉️</Text>
+          <Text style={s.successTitle}>Check your email</Text>
+          <Text style={s.successDesc}>
+            We sent a password reset link to {email}. Click the link to set a new password, then sign in.
+          </Text>
+          <Pressable style={s.btn} onPress={() => router.replace('/auth/sign-in' as never)}>
+            <Text style={s.btnTxt}>Back to Sign In</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
   }
 
   return (
@@ -40,14 +61,11 @@ export default function SignInScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        <View style={s.brand}>
-          <Text style={s.logo}>⚡</Text>
-          <Text style={s.appName}>StrideOS</Text>
-          <Text style={s.tagline}>Your performance operating system</Text>
-        </View>
-
         <View style={s.card}>
-          <Text style={s.heading}>Sign in</Text>
+          <Text style={s.heading}>Reset password</Text>
+          <Text style={s.subheading}>
+            Enter your email and we will send you a link to reset your password.
+          </Text>
 
           {error ? <Text style={s.error}>{error}</Text> : null}
 
@@ -65,38 +83,20 @@ export default function SignInScreen() {
             />
           </View>
 
-          <View style={s.field}>
-            <Text style={s.label}>PASSWORD</Text>
-            <TextInput
-              style={s.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              placeholderTextColor={colors.textSubtle}
-              secureTextEntry
-            />
-          </View>
-
           <Pressable
-            style={[s.btn, (loading || !email || !password) && s.btnDisabled]}
-            onPress={handleSignIn}
-            disabled={loading || !email.trim() || !password.trim()}
+            style={[s.btn, (loading || !email.trim()) && s.btnDisabled]}
+            onPress={handleReset}
+            disabled={loading || !email.trim()}
           >
             {loading
               ? <ActivityIndicator color={colors.text} />
-              : <Text style={s.btnTxt}>Sign In</Text>
+              : <Text style={s.btnTxt}>Send Reset Link</Text>
             }
-          </Pressable>
-
-          <Pressable onPress={() => router.push('/auth/forgot-password' as never)} style={s.forgotWrap}>
-            <Text style={s.forgotTxt}>Forgot password?</Text>
           </Pressable>
         </View>
 
-        <Pressable style={s.toggle} onPress={() => router.replace('/auth/sign-up' as never)}>
-          <Text style={s.toggleTxt}>
-            Don't have an account? <Text style={s.toggleLink}>Sign up</Text>
-          </Text>
+        <Pressable style={s.back} onPress={() => router.back()}>
+          <Text style={s.backTxt}>← Back to Sign In</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -109,27 +109,10 @@ const s = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   scroll: {
-    flexGrow:        1,
-    justifyContent:  'center',
-    padding:         spacing.xl,
-    gap:             spacing.xl,
-  },
-  brand: {
-    alignItems: 'center',
-    gap:        spacing.xs,
-  },
-  logo: {
-    fontSize: 48,
-  },
-  appName: {
-    color:      colors.text,
-    fontSize:   28,
-    fontWeight: FontWeight.black,
-    letterSpacing: 1,
-  },
-  tagline: {
-    color:    colors.textMuted,
-    fontSize: FontSize.sm,
+    flexGrow:       1,
+    justifyContent: 'center',
+    padding:        spacing.xl,
+    gap:            spacing.xl,
   },
   card: {
     backgroundColor: colors.card,
@@ -143,6 +126,11 @@ const s = StyleSheet.create({
     color:      colors.text,
     fontSize:   FontSize.xl,
     fontWeight: FontWeight.bold,
+  },
+  subheading: {
+    color:      colors.textMuted,
+    fontSize:   FontSize.sm,
+    lineHeight: 20,
   },
   error: {
     color:           colors.critical,
@@ -184,23 +172,21 @@ const s = StyleSheet.create({
     fontSize:   FontSize.base,
     fontWeight: FontWeight.bold,
   },
-  forgotWrap: {
+  back: {
     alignItems: 'center',
-    marginTop:  spacing.xs,
   },
-  forgotTxt: {
+  backTxt: {
     color:    colors.primary,
     fontSize: FontSize.sm,
   },
-  toggle: {
-    alignItems: 'center',
+  successBox: {
+    flex:           1,
+    justifyContent: 'center',
+    alignItems:     'center',
+    padding:        spacing.xl,
+    gap:            spacing.lg,
   },
-  toggleTxt: {
-    color:    colors.textMuted,
-    fontSize: FontSize.sm,
-  },
-  toggleLink: {
-    color:      colors.primary,
-    fontWeight: FontWeight.bold,
-  },
+  icon:         { fontSize: 48 },
+  successTitle: { color: colors.text, fontSize: FontSize.xl, fontWeight: FontWeight.bold, textAlign: 'center' },
+  successDesc:  { color: colors.textMuted, fontSize: FontSize.sm, textAlign: 'center', lineHeight: 22 },
 });
