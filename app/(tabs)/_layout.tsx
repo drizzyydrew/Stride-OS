@@ -2,18 +2,23 @@ import { Tabs } from 'expo-router';
 
 import TabIcon from '../../src/navigation/TabIcon';
 import { LAYOUT } from '../../src/constants/layout';
+import { useThemeStore } from '../../src/store/themeStore';
+import { getColors } from '../../src/theme/colors';
 
 export default function TabsLayout() {
+  const mode   = useThemeStore(s => s.mode);
+  const colors = getColors(mode);
+
   return (
     <Tabs
       screenOptions={{
         headerShown:             false,
         tabBarShowLabel:         false,
-        tabBarActiveTintColor:   '#FFFFFF',
-        tabBarInactiveTintColor: '#3D4A5C',
+        tabBarActiveTintColor:   colors.text,
+        tabBarInactiveTintColor: colors.textDim,
         tabBarStyle: {
-          backgroundColor: '#050B14',
-          borderTopColor:  '#0D1520',
+          backgroundColor: colors.card,
+          borderTopColor:  colors.border,
           borderTopWidth:  1,
           height:          LAYOUT.tabBarHeight,
           paddingBottom:   LAYOUT.tabBarPadBottom,
@@ -21,6 +26,7 @@ export default function TabsLayout() {
         },
       }}
     >
+      {/* ── Visible tabs (3) ─────────────────────────────────── */}
       <Tabs.Screen
         name="dashboard/index"
         options={{
@@ -37,88 +43,13 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
-        name="training"
+        name="more/index"
         options={{
-          title: 'Running',
+          title: 'More',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              name="footsteps-outline"
-              label="Running"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="strength"
-        options={{
-          title: 'Strength',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="fitness-outline"
-              label="Strength"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="analytics/index"
-        options={{
-          title: 'Analytics',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="stats-chart-outline"
-              label="Analytics"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="calendar"
-        options={{
-          title: 'Calendar',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="calendar-outline"
-              label="Calendar"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="movement"
-        options={{
-          title: 'Movement',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="scan-outline"
-              label="Movement"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="coach"
-        options={{
-          title: 'Coach',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="chatbubble-ellipses-outline"
-              label="Coach"
+              name="apps-outline"
+              label="More"
               focused={focused}
               color={color}
             />
@@ -140,6 +71,14 @@ export default function TabsLayout() {
           ),
         }}
       />
+
+      {/* ── Hidden tabs — routes still accessible via router.push ── */}
+      <Tabs.Screen name="training"        options={{ href: null }} />
+      <Tabs.Screen name="strength"        options={{ href: null }} />
+      <Tabs.Screen name="analytics/index" options={{ href: null }} />
+      <Tabs.Screen name="calendar"        options={{ href: null }} />
+      <Tabs.Screen name="movement"        options={{ href: null }} />
+      <Tabs.Screen name="coach"           options={{ href: null }} />
     </Tabs>
   );
 }

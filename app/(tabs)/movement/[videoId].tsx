@@ -306,12 +306,9 @@ function SubmitForAnalysisCard({
       <Text style={sub.cardLabel}>PROFESSIONAL ANALYSIS</Text>
       <Text style={sub.heading}>Coach Review — Coming Soon</Text>
       <Text style={sub.desc}>
-        Submit your video to receive a detailed analysis from a certified coach — personalized findings,
+        Submit your video to receive a detailed analysis from a running coach — personalized findings,
         corrective drills, and training recommendations.
       </Text>
-      <View style={sub.comingSoon}>
-        <Text style={sub.comingSoonTxt}>Available once in-app purchases are configured</Text>
-      </View>
     </View>
   );
 }
@@ -775,7 +772,7 @@ const fc = StyleSheet.create({
     gap:             2,
   },
   recLabel: { color: colors.textMuted, fontSize: 10, fontWeight: FontWeight.black },
-  recTxt:   { color: colors.textSubtle, fontSize: FontSize.xs, lineHeight: 16 },
+  recTxt:   { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 16 },
 });
 
 const rf = StyleSheet.create({

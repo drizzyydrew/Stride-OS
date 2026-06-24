@@ -3,7 +3,7 @@ import { SafeAreaView, StyleSheet, View, ViewStyle } from 'react-native';
 
 import AppHeader from './AppHeader';
 import ScrollScreen from './ScrollScreen';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
 import { spacing } from '../theme/spacing';
 import { LAYOUT } from '../constants/layout';
 
@@ -29,8 +29,9 @@ export default function ScreenLayout({
   rightAction,
   scrollStyle,
 }: Props) {
+  const c = useColors();
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: c.bg }]}>
       <AppHeader title={title} meta={meta} rightAction={rightAction} />
 
       {stickyContent ? (
@@ -46,8 +47,7 @@ export default function ScreenLayout({
 
 const styles = StyleSheet.create({
   safe: {
-    flex:            1,
-    backgroundColor: colors.bg,
+    flex: 1,
   },
   sticky: {
     paddingHorizontal: spacing.xl,

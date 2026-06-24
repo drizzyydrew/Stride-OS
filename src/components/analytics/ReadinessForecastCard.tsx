@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     color:      colors.text,
     fontSize:   FontSize.xxl,
     fontWeight: FontWeight.black,
-    lineHeight: 28,
+    lineHeight: 44,
   },
   subtext: {
     color:     colors.textDim,

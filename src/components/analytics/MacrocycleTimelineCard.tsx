@@ -43,7 +43,7 @@ const PHASE_LABEL: Record<TrainingPhase, string> = {
   build:  'BUILD',
   peak:   'PEAK',
   deload: 'DLD',
-  taper:  'TAPER',
+  taper:  'TPR',
 };
 
 // ─── Key workout by phase ──────────────────────────────────────────────────────
@@ -228,6 +228,7 @@ const pg = StyleSheet.create({
     fontSize:      8,
     fontWeight:    FontWeight.black,
     letterSpacing: 0.5,
+    textAlign:     'center',
   },
   weeks: {
     color:    colors.textSubtle,
@@ -547,7 +548,7 @@ const styles = StyleSheet.create({
     alignItems:    'flex-end',
   },
   raceMarker: {
-    width:      20,
+    width:      28,
     alignItems: 'center',
     gap:        spacing.xs,
   },

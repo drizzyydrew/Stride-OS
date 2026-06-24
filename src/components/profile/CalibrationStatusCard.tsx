@@ -77,7 +77,7 @@ const ring = StyleSheet.create({
   score: {
     fontSize:   FontSize.md,
     fontWeight: FontWeight.black,
-    lineHeight: 18,
+    lineHeight: 22,
   },
   maxLabel: {
     color:    colors.textSubtle,

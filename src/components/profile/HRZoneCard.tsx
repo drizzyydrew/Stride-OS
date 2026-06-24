@@ -71,9 +71,10 @@ function HRZoneRow({
 
 const row = StyleSheet.create({
   wrap: {
-    flexDirection:   'row',
-    gap:             spacing.sm,
-    paddingVertical: spacing.md,
+    flexDirection:     'row',
+    gap:               spacing.sm,
+    paddingVertical:   spacing.md,
+    paddingHorizontal: spacing.xl,
   },
   bordered: {
     borderBottomWidth: 1,

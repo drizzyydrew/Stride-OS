@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert, FlatList, Modal, Pressable, SafeAreaView,
+  Alert, FlatList, Modal, Pressable,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 
 import { useAthleteStore }  from '../../../src/store/athleteStore';
@@ -296,6 +297,9 @@ export default function StrengthSessionDetailScreen() {
   // ── Timer ──────────────────────────────────────────────────────────────────
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [elapsedSec, setElapsedSec]             = useState(0);
+  const [isPaused, setIsPaused]                 = useState(false);
+  const [totalPausedMs, setTotalPausedMs]       = useState(0);
+  const [pausedAt, setPausedAt]                 = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const completionKey = session ? `sw${currentWeek}_${session.id}_${idx}` : '';
@@ -304,13 +308,15 @@ export default function StrengthSessionDetailScreen() {
   const isActive      = sessionStartTime !== null && !isComplete;
 
   useEffect(() => {
-    if (isActive) {
+    if (isActive && !isPaused) {
       timerRef.current = setInterval(() => {
-        setElapsedSec(Math.floor((Date.now() - sessionStartTime!) / 1000));
+        setElapsedSec(Math.floor((Date.now() - sessionStartTime! - totalPausedMs) / 1000));
       }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [isActive, sessionStartTime]);
+  }, [isActive, sessionStartTime, isPaused, totalPausedMs]);
 
   const elapsedMin = Math.floor(elapsedSec / 60);
   const elapsedSS  = String(elapsedSec % 60).padStart(2, '0');
@@ -365,6 +371,19 @@ export default function StrengthSessionDetailScreen() {
 
   function handleStart() {
     setSessionStartTime(Date.now());
+  }
+
+  function handlePause() {
+    setPausedAt(Date.now());
+    setIsPaused(true);
+  }
+
+  function handleResume() {
+    if (pausedAt !== null) {
+      setTotalPausedMs(prev => prev + (Date.now() - pausedAt!));
+      setPausedAt(null);
+    }
+    setIsPaused(false);
   }
 
   function handleMarkComplete() {
@@ -437,8 +456,10 @@ export default function StrengthSessionDetailScreen() {
 
         {/* Status / timer (in-screen display) */}
         {isActive && (
-          <Card style={styles.timerCard}>
-            <Text style={styles.timerLabel}>In Progress</Text>
+          <Card style={[styles.timerCard, isPaused && styles.timerCardPaused]}>
+            <Text style={[styles.timerLabel, isPaused && styles.timerLabelPaused]}>
+              {isPaused ? 'Paused' : 'In Progress'}
+            </Text>
             <Text style={styles.timerValue}>{timerLabel}</Text>
           </Card>
         )}
@@ -584,10 +605,14 @@ export default function StrengthSessionDetailScreen() {
                 <Button label="Skip Session" onPress={() => setShowSkipModal(true)} variant="secondary" />
               </>
             ) : (
-              <>
-                <Button label="Mark Complete" onPress={handleMarkComplete} />
-                <Button label="Skip Session" onPress={() => setShowSkipModal(true)} variant="secondary" />
-              </>
+              <View style={styles.activeControls}>
+                {isPaused ? (
+                  <Button label="Resume" onPress={handleResume} />
+                ) : (
+                  <Button label="Pause" onPress={handlePause} variant="secondary" />
+                )}
+                <Button label="End Session" onPress={handleMarkComplete} />
+              </View>
             )}
           </View>
         )}
@@ -662,9 +687,11 @@ const styles = StyleSheet.create({
   purpose:     { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 18 },
 
   // In-screen timer card
-  timerCard:  { marginBottom: spacing.cardGap, borderLeftWidth: 3, borderLeftColor: colors.positive },
-  timerLabel: { color: colors.positive, fontSize: FontSize.xs, fontWeight: FontWeight.bold, marginBottom: 2 },
-  timerValue: { color: colors.text, fontSize: FontSize.xl, fontWeight: FontWeight.black },
+  timerCard:        { marginBottom: spacing.cardGap, borderLeftWidth: 3, borderLeftColor: colors.positive },
+  timerCardPaused:  { borderLeftColor: colors.warning },
+  timerLabel:       { color: colors.positive, fontSize: FontSize.xs, fontWeight: FontWeight.bold, marginBottom: 2 },
+  timerLabelPaused: { color: colors.warning },
+  timerValue:       { color: colors.text, fontSize: FontSize.xl, fontWeight: FontWeight.black },
 
   // Navigation header timer badge
   timerBadge:     { marginRight: spacing.sm, backgroundColor: colors.positiveDim, borderRadius: Radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 4, borderWidth: 1, borderColor: colors.positive },
@@ -697,6 +724,7 @@ const styles = StyleSheet.create({
   exNumTextDone:{ color: colors.positive },
   exMeta:       { flex: 1 },
   exName:       { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  exPattern:    { color: colors.textMuted, fontSize: FontSize.xs, textTransform: 'capitalize', marginTop: 2 },
   exNameSkipped:{ textDecorationLine: 'line-through', color: colors.textDim },
   exSets:       { alignItems: 'flex-end' },
   exSetsValue:  { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
@@ -732,7 +760,8 @@ const styles = StyleSheet.create({
   rationaleBody:   { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 18, marginBottom: spacing.sm },
   progressionNote: { color: colors.textDim, fontSize: FontSize.xs, fontStyle: 'italic' },
 
-  actions:       { gap: spacing.sm, marginBottom: spacing.cardGap },
+  actions:        { gap: spacing.sm, marginBottom: spacing.cardGap },
+  activeControls: { flexDirection: 'row', gap: spacing.sm },
   modalOverlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   modalSheet:    { backgroundColor: colors.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.xl, paddingBottom: 40 },
   logForm:       { gap: spacing.md },

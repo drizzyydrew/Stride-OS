@@ -18,7 +18,7 @@ export default function WelcomeScreen() {
     <OnboardingShell
       step={0}
       title="Your training, calibrated."
-      subtitle="StrideOS builds a personalized running and strength system from your physiology — not generic algorithms."
+      subtitle="StrideOS builds a personalized running and strength system from your physiology."
       onNext={() => router.push('/onboarding/goal')}
       nextLabel="Get Started"
     >
@@ -33,10 +33,6 @@ export default function WelcomeScreen() {
           </View>
         ))}
       </View>
-
-      <Text style={styles.note}>
-        Everything stays on your device. No account, no cloud, no subscriptions.
-      </Text>
     </OnboardingShell>
   );
 }
