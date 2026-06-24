@@ -1,6 +1,6 @@
 // ─── Hydration Calculator ──────────────────────────────────────────────────────
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useSettingsStore }   from '../../../src/store/settingsStore';
 import { useProfileStore }    from '../../../src/store/profileStore';
+import { useWeather }         from '../../../src/hooks/useWeather';
 import {
   calcHydration,
   estimateEasyPaceSecPerMi,
@@ -78,9 +79,20 @@ export default function HydrationScreen() {
     return estimateEasyPaceSecPerMi(weeklyMileage);
   }, [profile, weeklyMileage]);
 
+  const { weather } = useWeather();
+  const [liveTemp,   setLiveTemp]   = useState(false);
+
   const [distanceMi, setDistanceMi] = useState(5);
   const [tempF,      setTempF]      = useState(65);
   const [manualMin,  setManualMin]  = useState<number | null>(null);
+
+  // Auto-fill temperature from live weather once on mount
+  useEffect(() => {
+    if (weather && !liveTemp) {
+      setTempF(weather.tempF);
+      setLiveTemp(true);
+    }
+  }, [weather]);
 
   const autoDuration = useMemo(
     () => Math.round(distanceMi * easyPaceSecPerMi / 60),
@@ -140,13 +152,21 @@ export default function HydrationScreen() {
 
           <View style={st.divider} />
 
-          <Stepper
-            label="Temperature"
-            value={tempF}
-            unit="°F"
-            onDecrement={() => setTempF(v => Math.max(32, v - 5))}
-            onIncrement={() => setTempF(v => Math.min(115, v + 5))}
-          />
+          <View>
+            <Stepper
+              label="Temperature"
+              value={tempF}
+              unit="°F"
+              onDecrement={() => { setTempF(v => Math.max(32, v - 5)); setLiveTemp(false); }}
+              onIncrement={() => { setTempF(v => Math.min(115, v + 5)); setLiveTemp(false); }}
+            />
+            {liveTemp && (
+              <View style={st.liveBadgeRow}>
+                <View style={st.liveDot} />
+                <Text style={st.liveLabel}>Live weather — tap +/− to override</Text>
+              </View>
+            )}
+          </View>
 
           <View style={st.divider} />
 
@@ -410,5 +430,21 @@ const st = StyleSheet.create({
   cellTxt: {
     color:    colors.text,
     fontSize: FontSize.sm,
+  },
+  liveBadgeRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           spacing.xs,
+    marginTop:     4,
+  },
+  liveDot: {
+    width:           6,
+    height:          6,
+    borderRadius:    3,
+    backgroundColor: colors.positive,
+  },
+  liveLabel: {
+    color:    colors.positive,
+    fontSize: 10,
   },
 });

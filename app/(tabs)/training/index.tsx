@@ -21,6 +21,7 @@ import { useCheckInStore }     from '../../../src/store/checkInStore';
 import { useAdaptationStore }  from '../../../src/store/adaptationStore';
 import { useOnboardingStore }  from '../../../src/store/onboardingStore';
 import { useWeekPlan }         from '../../../src/hooks/useWeekPlan';
+import { useWeather }          from '../../../src/hooks/useWeather';
 
 import { adaptWeek, ID_TO_GENERATABLE }          from '../../../src/utils/training/adaptWeek';
 import { generateTrainingWeek, generateWorkout } from '../../../src/utils/workoutGenerator';
@@ -132,6 +133,8 @@ export default function RunningScreen() {
 
   const onboardingData = useOnboardingStore(s => s.data);
   const availableDays  = onboardingData.availableDays;
+
+  const { weather, loading: weatherLoading } = useWeather();
 
   const [isRecalculating, setIsRecalculating] = useState(false);
 
@@ -399,6 +402,34 @@ export default function RunningScreen() {
         );
       })}
 
+      {/* ── Weather ── */}
+      {(weather || weatherLoading) && (
+        <View style={styles.weatherCard}>
+          {weatherLoading ? (
+            <Text style={styles.weatherLoading}>Fetching conditions…</Text>
+          ) : weather ? (
+            <>
+              <View style={styles.weatherTop}>
+                <Ionicons name={weather.icon as any} size={28} color={colors.primary} />
+                <View style={styles.weatherMain}>
+                  <Text style={styles.weatherTemp}>{weather.tempF}°F</Text>
+                  <Text style={styles.weatherCondition}>{weather.conditionLabel}</Text>
+                </View>
+                <View style={styles.weatherMeta}>
+                  <Text style={styles.weatherMetaTxt}>Feels {weather.feelsLikeF}°F</Text>
+                  <Text style={styles.weatherMetaTxt}>Humidity {weather.humidity}%</Text>
+                  <Text style={styles.weatherMetaTxt}>Wind {weather.windMph} mph</Text>
+                </View>
+              </View>
+              <View style={styles.weatherAdviceRow}>
+                <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
+                <Text style={styles.weatherAdvice}>{weather.runAdvice}</Text>
+              </View>
+            </>
+          ) : null}
+        </View>
+      )}
+
       {/* ── Run Tools ── */}
       <View style={styles.toolsSection}>
         <Text style={styles.toolsHeader}>RUN TOOLS</Text>
@@ -533,5 +564,60 @@ const styles = StyleSheet.create({
     fontSize:  FontSize.xs,
     textAlign: 'center',
     lineHeight: 16,
+  },
+
+  weatherCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom:     spacing.md,
+    backgroundColor:  colors.card,
+    borderRadius:     12,
+    borderWidth:      1,
+    borderColor:      colors.border,
+    padding:          spacing.md,
+    gap:              spacing.sm,
+  },
+  weatherLoading: {
+    color:    colors.textDim,
+    fontSize: FontSize.xs,
+  },
+  weatherTop: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           spacing.md,
+  },
+  weatherMain: {
+    flex: 1,
+    gap:  2,
+  },
+  weatherTemp: {
+    color:      colors.text,
+    fontSize:   28,
+    fontWeight: FontWeight.black,
+    lineHeight: 30,
+  },
+  weatherCondition: {
+    color:    colors.textMuted,
+    fontSize: FontSize.xs,
+  },
+  weatherMeta: {
+    alignItems: 'flex-end',
+    gap:        2,
+  },
+  weatherMetaTxt: {
+    color:    colors.textDim,
+    fontSize: FontSize.xs,
+  },
+  weatherAdviceRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop:     spacing.sm,
+  },
+  weatherAdvice: {
+    color:    colors.textMuted,
+    fontSize: FontSize.xs,
+    flex:     1,
   },
 });
