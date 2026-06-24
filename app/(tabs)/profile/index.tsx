@@ -39,6 +39,7 @@ import TrainingAvailabilityCard from '../../../src/components/profile/TrainingAv
 import RaceHistoryCard          from '../../../src/components/profile/RaceHistoryCard';
 
 import { formatPace }           from '../../../src/utils/calibrationEngine';
+import { formatPaceSecPerMile, formatDistance, distanceUnitLabel } from '../../../src/lib/units';
 import { colors }               from '../../../src/theme/colors';
 import { useThemeStore }        from '../../../src/store/themeStore';
 import { spacing }              from '../../../src/theme/spacing';
@@ -207,6 +208,7 @@ type AddThresholdTestModalProps = {
 };
 
 function AddThresholdTestModal({ visible, onClose, onSubmit }: AddThresholdTestModalProps) {
+  const units = useSettingsStore(s => s.units);
   const [dateStr,  setDateStr]  = useState('');
   const [avgHR,    setAvgHR]    = useState(162);
   const [paceMin,  setPaceMin]  = useState(7);
@@ -215,7 +217,9 @@ function AddThresholdTestModal({ visible, onClose, onSubmit }: AddThresholdTestM
 
   function handleSubmit() {
     const today   = new Date().toISOString().slice(0, 10);
-    const secPerMi = paceMin * 60 + paceSec;
+    const enteredSec = paceMin * 60 + paceSec;
+    // Store always in sec/mi; convert if user entered in /km
+    const secPerMi = units === 'metric' ? enteredSec * 1.60934 : enteredSec;
     if (avgHR < 100 || secPerMi <= 0) return;
     onSubmit({
       date:                      dateStr || today,
@@ -283,7 +287,7 @@ function AddThresholdTestModal({ visible, onClose, onSubmit }: AddThresholdTestM
                 </Pressable>
               </View>
             </View>
-            <Text style={modal.timeSuffix}>/mi</Text>
+            <Text style={modal.timeSuffix}>/{distanceUnitLabel(units)}</Text>
           </View>
 
           <FieldInput
@@ -317,6 +321,7 @@ type AddMAFTestModalProps = {
 };
 
 function AddMAFTestModal({ visible, mafHR, onClose, onSubmit }: AddMAFTestModalProps) {
+  const units = useSettingsStore(s => s.units);
   const [dateStr,      setDateStr]      = useState('');
   const [distanceTenths, setDistanceTenths] = useState(40);  // 40 tenths = 4.0 miles
   const [durationMin,  setDurationMin]  = useState(40);
@@ -362,12 +367,12 @@ function AddMAFTestModal({ visible, mafHR, onClose, onSubmit }: AddMAFTestModalP
           />
 
           <View style={modal.stepperRow}>
-            <Text style={modal.fieldLabel}>DISTANCE (MILES)</Text>
+            <Text style={modal.fieldLabel}>DISTANCE ({units === 'metric' ? 'KM' : 'MILES'})</Text>
             <View style={modal.stepperInline}>
               <Pressable style={modal.timeBtn} onPress={() => setDistanceTenths(v => Math.max(5, v - 5))}>
                 <Text style={modal.timeBtnText}>−</Text>
               </Pressable>
-              <Text style={modal.stepperValue}>{distanceMiles.toFixed(1)} mi</Text>
+              <Text style={modal.stepperValue}>{formatDistance(distanceMiles, units)}</Text>
               <Pressable style={modal.timeBtn} onPress={() => setDistanceTenths(v => Math.min(200, v + 5))}>
                 <Text style={modal.timeBtnText}>+</Text>
               </Pressable>
@@ -389,7 +394,7 @@ function AddMAFTestModal({ visible, mafHR, onClose, onSubmit }: AddMAFTestModalP
 
           {avgPaceSecPerMi > 0 && (
             <Text style={modal.computedPace}>
-              Avg pace: {formatPace(avgPaceSecPerMi)}/mi
+              Avg pace: {formatPaceSecPerMile(avgPaceSecPerMi, units)}
             </Text>
           )}
 
@@ -715,6 +720,7 @@ export default function ProfileScreen() {
 
   const profile     = useActiveProfile();
   const calibration = useCalibration();
+  const units       = useSettingsStore(s => s.units);
 
   const [localName,    setLocalName]    = useState(athleteName);
   const [localGoal,    setLocalGoal]    = useState(goalRace);
@@ -925,7 +931,7 @@ export default function ProfileScreen() {
                 <View style={styles.testStatDivider} />
                 <View style={styles.testStat}>
                   <Text style={styles.testStatValue}>
-                    {formatPace(profile.thresholdTest.avgPaceSecPerMiLastTwenty)}/mi
+                    {formatPaceSecPerMile(profile.thresholdTest.avgPaceSecPerMiLastTwenty, units)}
                   </Text>
                   <Text style={styles.testStatLabel}>FT Pace</Text>
                 </View>
@@ -992,7 +998,7 @@ export default function ProfileScreen() {
         <View style={styles.fields}>
           <FieldStepper
             label="Weekly Mileage"
-            display={`${weeklyMileage.toFixed(1)} mi`}
+            display={formatDistance(weeklyMileage, units)}
             onIncrease={() => setWeeklyMileage(+(weeklyMileage + 0.5).toFixed(1))}
             onDecrease={() => setWeeklyMileage(+(Math.max(5, weeklyMileage - 0.5)).toFixed(1))}
           />

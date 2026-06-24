@@ -338,6 +338,9 @@ export default function MovementIndexScreen() {
       const response    = await fetch(localDest);
       const blob        = await response.blob();
 
+      // Save local URI immediately so video is playable even if cloud upload fails
+      updateVideo(videoId, { uri: localDest });
+
       const { error: uploadError } = await supabase.storage
         .from('movement-videos')
         .upload(storagePath, blob, { contentType: `video/${ext}`, upsert: false });
@@ -345,7 +348,7 @@ export default function MovementIndexScreen() {
       if (uploadError) {
         console.warn('Supabase upload error:', uploadError.message);
       } else {
-        updateVideo(videoId, { uri: localDest, storagePath });
+        updateVideo(videoId, { storagePath });
       }
     } catch (err) {
       console.warn('Video upload failed:', err);

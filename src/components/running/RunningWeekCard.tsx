@@ -10,6 +10,8 @@ import Badge from '../ui/Badge';
 import { colors }  from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
+import { useSettingsStore } from '../../store/settingsStore';
+import { formatDistance } from '../../lib/units';
 import type { TrainingPhase } from '../../types/training';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -56,6 +58,7 @@ export default function RunningWeekCard({
   phase, currentWeek, totalMileage, sessionCount, completedCount,
   keyWorkout, longRunDay, focusSummary, phaseRationale, weekPriority, isDeloadWeek,
 }: RunningWeekCardProps) {
+  const units       = useSettingsStore(s => s.units);
   const badge       = PHASE_BADGE[phase];
   const remaining   = sessionCount - completedCount;
   const progressPct = sessionCount > 0 ? completedCount / sessionCount : 0;
@@ -72,7 +75,7 @@ export default function RunningWeekCard({
               <Text style={s.deloadTxt}>DELOAD</Text>
             </View>
           )}
-          <Text style={s.mileage}>{totalMileage.toFixed(1)} mi</Text>
+          <Text style={s.mileage}>{formatDistance(totalMileage, units)}</Text>
         </View>
 
         <Text style={s.focusTxt}>{focusSummary}</Text>

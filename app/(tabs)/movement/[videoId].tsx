@@ -19,6 +19,7 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
+import * as FileSystem from 'expo-file-system';
 
 import { useMovementStore } from '../../../src/store/movementStore';
 import { supabase }         from '../../../src/lib/supabase';
@@ -341,28 +342,32 @@ export default function VideoDetailScreen() {
 
   const player = useVideoPlayer(videoSource);
 
-  // Try local URI first; fall back to Supabase signed URL
+  // Try local URI first (verify file exists); fall back to Supabase signed URL
   useEffect(() => {
     if (!video) return;
     const uri = video.uri;
+
+    const fetchSignedUrl = () => {
+      if (!video.storagePath) { setVideoUnavailable(true); return; }
+      supabase.storage
+        .from('movement-videos')
+        .createSignedUrl(video.storagePath, 3600)
+        .then(({ data, error }) => {
+          if (!error && data?.signedUrl) setVideoSource(data.signedUrl);
+          else setVideoUnavailable(true);
+        });
+    };
+
     if (uri && (uri.startsWith('file://') || uri.startsWith('content://'))) {
-      setVideoSource(uri);
+      FileSystem.getInfoAsync(uri)
+        .then(info => {
+          if (info.exists) setVideoSource(uri);
+          else fetchSignedUrl();
+        })
+        .catch(() => fetchSignedUrl());
       return;
     }
-    if (!video.storagePath) {
-      setVideoUnavailable(true);
-      return;
-    }
-    supabase.storage
-      .from('movement-videos')
-      .createSignedUrl(video.storagePath, 3600)
-      .then(({ data, error }) => {
-        if (!error && data?.signedUrl) {
-          setVideoSource(data.signedUrl);
-        } else {
-          setVideoUnavailable(true);
-        }
-      });
+    fetchSignedUrl();
   }, [video?.uri, video?.storagePath]);
 
   if (!video) {

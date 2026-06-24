@@ -5,6 +5,8 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import { formatPace } from '../../utils/calibrationEngine';
+import { useSettingsStore } from '../../store/settingsStore';
+import { formatPaceSecPerMile } from '../../lib/units';
 import type { PaceZoneEntry, CalibrationOutput } from '../../types/athlete';
 
 type Props = {
@@ -35,13 +37,16 @@ function PaceZoneRow({
   zoneKey,
   entry,
   isLast,
+  units,
 }: {
   zoneKey: string;
   entry:   PaceZoneEntry;
   isLast:  boolean;
+  units:   'imperial' | 'metric';
 }) {
   const color = ZONE_COLOR[zoneKey] ?? colors.textDim;
   const bg    = ZONE_BG[zoneKey]    ?? colors.border;
+  const paceLabel = units === 'metric' ? '/km' : '/mi';
 
   return (
     <View style={[row.wrap, !isLast && row.bordered]}>
@@ -56,7 +61,7 @@ function PaceZoneRow({
         </View>
         {/* Pace — prominent */}
         <Text style={row.pace}>
-          {formatPace(entry.minSecPerMi)}–{formatPace(entry.maxSecPerMi)}/mi
+          {formatPaceSecPerMile(entry.minSecPerMi, units)}–{formatPaceSecPerMile(entry.maxSecPerMi, units)}{paceLabel}
         </Text>
         {/* Description + RPE on separate rows — no overflow */}
         <Text style={row.desc} numberOfLines={2}>{entry.description}</Text>
@@ -140,6 +145,7 @@ const CONFIDENCE_COLORS: Record<string, string> = {
 };
 
 export default function PaceZoneCard({ calibration }: Props) {
+  const units          = useSettingsStore(s => s.units);
   const orderedKeys    = ZONE_ORDER.filter(k => calibration.paceZones[k]);
   const sourceLabel    = SOURCE_LABELS[calibration.primarySource] ?? calibration.primarySource;
   const confidenceColor = CONFIDENCE_COLORS[calibration.confidenceLabel] ?? colors.textDim;
@@ -176,6 +182,7 @@ export default function PaceZoneCard({ calibration }: Props) {
             zoneKey={key}
             entry={entry}
             isLast={i === orderedKeys.length - 1}
+            units={units}
           />
         );
       })}
