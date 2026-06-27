@@ -34,22 +34,16 @@ const NAV_ITEMS: NavItem[] = [
     route:       '/(tabs)/analytics',
   },
   {
-    label:       'Calendar',
-    description: 'Day, week, and month training view',
-    icon:        'calendar-outline',
-    route:       '/(tabs)/calendar',
-  },
-  {
     label:       'Movement Lab',
     description: 'Gait analysis and video library',
     icon:        'scan-outline',
     route:       '/(tabs)/movement',
   },
   {
-    label:       'AI Coach',
-    description: 'Personalized coaching chat',
-    icon:        'chatbubble-ellipses-outline',
-    route:       '/(tabs)/coach',
+    label:       'Profile & Settings',
+    description: 'Athlete profile, zones, appearance',
+    icon:        'person-outline',
+    route:       '/(tabs)/profile',
   },
 ];
 

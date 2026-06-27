@@ -88,5 +88,19 @@ export function getColors(mode: ThemeMode): Palette {
   return mode === 'light' ? lightColors : darkColors;
 }
 
-// Static fallback — keeps all existing `import { colors }` working without changes.
-export const colors: Palette = darkColors;
+// Dynamic reactive colors — reads the current theme from the Zustand store at
+// access time. Lazy require() breaks the circular dependency (themeStore imports
+// ThemeMode from this file). Every existing `import { colors }` keeps working
+// without any component changes; they just need to re-render to see the update.
+export const colors: Palette = new Proxy(darkColors, {
+  get(_target, prop: string) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { useThemeStore } = require('../store/themeStore') as typeof import('../store/themeStore');
+      const mode = useThemeStore.getState().mode;
+      return getColors(mode)[prop as keyof Palette];
+    } catch {
+      return darkColors[prop as keyof Palette];
+    }
+  },
+});

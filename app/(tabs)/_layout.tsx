@@ -2,11 +2,11 @@ import { Tabs } from 'expo-router';
 
 import TabIcon from '../../src/navigation/TabIcon';
 import { LAYOUT } from '../../src/constants/layout';
-import { useThemeStore } from '../../src/store/themeStore';
+import { useThemeMode } from '../../src/store/themeStore';
 import { getColors } from '../../src/theme/colors';
 
 export default function TabsLayout() {
-  const mode   = useThemeStore(s => s.mode);
+  const mode   = useThemeMode();
   const colors = getColors(mode);
 
   return (
@@ -26,7 +26,7 @@ export default function TabsLayout() {
         },
       }}
     >
-      {/* ── Visible tabs (3) ─────────────────────────────────── */}
+      {/* ── Visible tabs (4) ─────────────────────────────────── */}
       <Tabs.Screen
         name="dashboard/index"
         options={{
@@ -43,13 +43,13 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
-        name="more/index"
+        name="calendar"
         options={{
-          title: 'More',
+          title: 'Calendar',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              name="apps-outline"
-              label="More"
+              name="calendar-outline"
+              label="Calendar"
               focused={focused}
               color={color}
             />
@@ -58,13 +58,28 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
-        name="profile/index"
+        name="coach"
         options={{
-          title: 'Profile',
+          title: 'Coach',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              name="person-outline"
-              label="Profile"
+              name="chatbubble-ellipses-outline"
+              label="Coach"
+              focused={focused}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="more/index"
+        options={{
+          title: 'More',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name="menu-outline"
+              label="More"
               focused={focused}
               color={color}
             />
@@ -76,9 +91,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="training"        options={{ href: null }} />
       <Tabs.Screen name="strength"        options={{ href: null }} />
       <Tabs.Screen name="analytics/index" options={{ href: null }} />
-      <Tabs.Screen name="calendar"        options={{ href: null }} />
       <Tabs.Screen name="movement"        options={{ href: null }} />
-      <Tabs.Screen name="coach"           options={{ href: null }} />
+      <Tabs.Screen name="profile/index"   options={{ href: null }} />
     </Tabs>
   );
 }
