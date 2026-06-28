@@ -32,6 +32,17 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+.env.*
+!.env.example
+
+# Claude Design handoff artifacts
+StrideOs-handoff*.zip
+old-StrideOs-handoff*.zip
+*.z01
+strideos/
+strideos 2/
+strideos_Full_Project_LLM/
 
 # typescript
 *.tsbuildinfo

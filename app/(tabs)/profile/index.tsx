@@ -1,1628 +1,848 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Modal,
-  Pressable,
+  Image,
+  Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 
-import { router } from 'expo-router';
+import { useColors } from '../../../src/theme/useColors';
+import { useThemeStore } from '../../../src/store/themeStore';
+import { useSettingsStore } from '../../../src/store/settingsStore';
+import { useIntegrationsStore } from '../../../src/store/integrationsStore';
+import { useOnboardingStore } from '../../../src/store/onboardingStore';
+import { useAuthStore } from '../../../src/store/authStore';
+import { useWorkoutStore } from '../../../src/store/workoutStore';
+import { useStrengthStore } from '../../../src/store/strengthStore';
+import { getAppleHealthWriteStatus, isAppleHealthAvailable, requestPermissions as requestHealthPermissions } from '../../../src/lib/healthKit';
+import {
+  clearTrainingNotifications,
+  getNotificationAccessStatus,
+  getTrainingNotificationScheduleStatus,
+  scheduleTrainingNotifications,
+  type TrainingNotificationScheduleStatus,
+} from '../../../src/lib/notifications';
+import { LAYOUT } from '../../../src/constants/layout';
 
-import { useAthleteStore }                                from '../../../src/store/athleteStore';
-import { useProfileStore, useActiveProfile, useCalibration } from '../../../src/store/profileStore';
-import { useOnboardingStore }                             from '../../../src/store/onboardingStore';
-import { useSettingsStore }                               from '../../../src/store/settingsStore';
-import { useIntegrationsStore }                          from '../../../src/store/integrationsStore';
-import { startStravaOAuth }                              from '../../../src/lib/strava';
-import { requestPermissions as requestHealthKit }        from '../../../src/lib/healthKit';
-
-import ScreenLayout             from '../../../src/layout/ScreenLayout';
-import Card                     from '../../../src/components/ui/Card';
-import FieldInput               from '../../../src/components/ui/FieldInput';
-import FieldStepper             from '../../../src/components/ui/FieldStepper';
-import FieldPicker              from '../../../src/components/ui/FieldPicker';
-
-import ProfileOverviewCard      from '../../../src/components/profile/ProfileOverviewCard';
-import CalibrationStatusCard    from '../../../src/components/profile/CalibrationStatusCard';
-import PaceZoneCard             from '../../../src/components/profile/PaceZoneCard';
-import HRZoneCard               from '../../../src/components/profile/HRZoneCard';
-import ThresholdZoneCard        from '../../../src/components/profile/ThresholdZoneCard';
-import ZoneComparisonCard       from '../../../src/components/profile/ZoneComparisonCard';
-import MAFCard                  from '../../../src/components/profile/MAFCard';
-import SourcesMethodsCard       from '../../../src/components/profile/SourcesMethodsCard';
-import TrainingAvailabilityCard from '../../../src/components/profile/TrainingAvailabilityCard';
-import RaceHistoryCard          from '../../../src/components/profile/RaceHistoryCard';
-
-import { formatPace }           from '../../../src/utils/calibrationEngine';
-import { formatPaceSecPerMile, formatDistance, distanceUnitLabel } from '../../../src/lib/units';
-import { colors }               from '../../../src/theme/colors';
-import { useThemeStore }        from '../../../src/store/themeStore';
-import { spacing }              from '../../../src/theme/spacing';
-import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
-
-import type {
-  Sex, TrainingDay, StandardDistance, RacePR,
-  MAFTestRecord, ThresholdTestData, ZoneMethod,
-} from '../../../src/types/athlete';
-import type { ProgressionLevel } from '../../../src/types/training';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const SEX_OPTIONS: { value: Sex; label: string }[] = [
-  { value: 'male',              label: 'Male'   },
-  { value: 'female',            label: 'Female' },
-  { value: 'non_binary',        label: 'Other'  },
-  { value: 'prefer_not_to_say', label: '—'      },
-];
-
-const PROGRESSION_OPTIONS: { value: ProgressionLevel; label: string }[] = [
-  { value: 'beginner',     label: 'Beginner'     },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced',     label: 'Advanced'     },
-];
-
-const ALL_DAYS: TrainingDay[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-const STANDARD_DISTANCES: { value: StandardDistance | 'custom'; label: string; meters: number }[] = [
-  { value: 'marathon',      label: 'Marathon',      meters: 42195    },
-  { value: 'half_marathon', label: 'Half Marathon', meters: 21097.5  },
-  { value: '10k',           label: '10K',           meters: 10000    },
-  { value: '5k',            label: '5K',            meters: 5000     },
-  { value: '1_mile',        label: '1 Mile',        meters: 1609.344 },
-  { value: '800m',          label: '800m',          meters: 800      },
-];
-
-// ─── Add-PR modal ─────────────────────────────────────────────────────────────
-
-type AddPRModalProps = {
-  visible:  boolean;
-  onClose:  () => void;
-  onSubmit: (pr: Omit<RacePR, 'id'>) => void;
-};
-
-function AddPRModal({ visible, onClose, onSubmit }: AddPRModalProps) {
-  const [distanceKey, setDistanceKey] = useState<StandardDistance | 'custom'>('5k');
-  const [hours,   setHours]   = useState(0);
-  const [minutes, setMinutes] = useState(25);
-  const [seconds, setSeconds] = useState(0);
-  const [dateStr, setDateStr] = useState('');
-  const [official, setOfficial] = useState(true);
-
-  function handleSubmit() {
-    const dist = STANDARD_DISTANCES.find(d => d.value === distanceKey);
-    if (!dist) return;
-    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-    if (totalSeconds <= 0) return;
-    const today = new Date().toISOString().slice(0, 10);
-    onSubmit({
-      distanceKey,
-      distanceLabel:  dist.label,
-      distanceMeters: dist.meters,
-      timeSeconds:    totalSeconds,
-      date:           dateStr || today,
-      official,
-    });
-    onClose();
-  }
-
-  return (
-    <Modal visible={visible} animationType="slide" transparent presentationStyle="overFullScreen">
-      <View style={modal.overlay}>
-        <View style={modal.sheet}>
-          <Text style={modal.title}>Add Race PR</Text>
-
-          <Text style={modal.fieldLabel}>DISTANCE</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={modal.pillScroll}>
-            <View style={modal.pillRow}>
-              {STANDARD_DISTANCES.map(d => {
-                const active = distanceKey === d.value;
-                return (
-                  <Pressable
-                    key={d.value}
-                    onPress={() => setDistanceKey(d.value)}
-                    style={[modal.pill, active && modal.pillActive]}
-                  >
-                    <Text style={[modal.pillText, active && modal.pillTextActive]}>{d.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </ScrollView>
-
-          <Text style={modal.fieldLabel}>TIME</Text>
-          <View style={modal.timeRow}>
-            {([
-              { label: 'hrs', val: hours,   setVal: setHours,   max: 9  },
-              { label: 'min', val: minutes, setVal: setMinutes, max: 59 },
-              { label: 'sec', val: seconds, setVal: setSeconds, max: 59 },
-            ] as const).map((unit, i) => (
-              <View key={unit.label} style={{ flexDirection: 'row', alignItems: 'center', flex: i === 0 ? 0 : 1 }}>
-                {i > 0 && <Text style={modal.timeSep}>:</Text>}
-                <View style={modal.timeUnit}>
-                  <Text style={modal.timeValue}>{String(unit.val).padStart(2, '0')}</Text>
-                  <Text style={modal.timeUnitLabel}>{unit.label}</Text>
-                  <View style={modal.timeBtns}>
-                    <Pressable style={modal.timeBtn} onPress={() => unit.setVal((v: number) => Math.max(0, v - 1))}>
-                      <Text style={modal.timeBtnText}>−</Text>
-                    </Pressable>
-                    <Pressable style={modal.timeBtn} onPress={() => unit.setVal((v: number) => Math.min(unit.max, v + 1))}>
-                      <Text style={modal.timeBtnText}>+</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              </View>
-            ))}
-          </View>
-
-          <FieldInput
-            label="Race Date (YYYY-MM-DD)"
-            value={dateStr}
-            onChange={setDateStr}
-            placeholder={new Date().toISOString().slice(0, 10)}
-            autoCapitalize="none"
-          />
-
-          <View style={modal.toggleRow}>
-            <Text style={modal.fieldLabel}>RESULT TYPE</Text>
-            <View style={modal.togglePills}>
-              <Pressable
-                style={[modal.togglePill, official && modal.togglePillActive]}
-                onPress={() => setOfficial(true)}
-              >
-                <Text style={[modal.togglePillText, official && modal.togglePillTextActive]}>Race Result</Text>
-              </Pressable>
-              <Pressable
-                style={[modal.togglePill, !official && modal.togglePillActive]}
-                onPress={() => setOfficial(false)}
-              >
-                <Text style={[modal.togglePillText, !official && modal.togglePillTextActive]}>Time Trial</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={modal.actions}>
-            <TouchableOpacity style={modal.cancelBtn} onPress={onClose}>
-              <Text style={modal.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={modal.submitBtn} onPress={handleSubmit}>
-              <Text style={modal.submitText}>Add PR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
+function formatHeight(heightCm: number, imperial: boolean) {
+  if (!heightCm) return '';
+  if (!imperial) return String(Math.round(heightCm));
+  const totalInches = Math.round(heightCm / 2.54);
+  const feet = Math.floor(totalInches / 12);
+  const inches = totalInches % 12;
+  return `${feet}'${inches}`;
 }
 
-// ─── Add-Threshold-Test modal ─────────────────────────────────────────────────
+function parseHeightInput(value: string, imperial: boolean) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
 
-type AddThresholdTestModalProps = {
-  visible:  boolean;
-  onClose:  () => void;
-  onSubmit: (test: Omit<ThresholdTestData, 'id'>) => void;
-};
-
-function AddThresholdTestModal({ visible, onClose, onSubmit }: AddThresholdTestModalProps) {
-  const units = useSettingsStore(s => s.units);
-  const [dateStr,  setDateStr]  = useState('');
-  const [avgHR,    setAvgHR]    = useState(162);
-  const [paceMin,  setPaceMin]  = useState(7);
-  const [paceSec,  setPaceSec]  = useState(30);
-  const [notes,    setNotes]    = useState('');
-
-  function handleSubmit() {
-    const today   = new Date().toISOString().slice(0, 10);
-    const enteredSec = paceMin * 60 + paceSec;
-    // Store always in sec/mi; convert if user entered in /km
-    const secPerMi = units === 'metric' ? enteredSec * 1.60934 : enteredSec;
-    if (avgHR < 100 || secPerMi <= 0) return;
-    onSubmit({
-      date:                      dateStr || today,
-      avgHRLastTwentyMin:        avgHR,
-      avgPaceSecPerMiLastTwenty: secPerMi,
-      notes:                     notes.trim() || undefined,
-    });
-    onClose();
+  if (!imperial) {
+    const cm = Math.round(Number(trimmed));
+    return Number.isFinite(cm) ? cm : null;
   }
 
-  return (
-    <Modal visible={visible} animationType="slide" transparent presentationStyle="overFullScreen">
-      <View style={modal.overlay}>
-        <View style={modal.sheet}>
-          <Text style={modal.title}>30-Min Threshold Test</Text>
-          <Text style={modal.subtitle}>
-            Record avg HR and pace from the last 20 minutes of your 30-minute max effort run.
-          </Text>
-
-          <FieldInput
-            label="Date (YYYY-MM-DD)"
-            value={dateStr}
-            onChange={setDateStr}
-            placeholder={new Date().toISOString().slice(0, 10)}
-            autoCapitalize="none"
-          />
-
-          <View style={modal.stepperRow}>
-            <Text style={modal.fieldLabel}>AVG HR (LAST 20 MIN)</Text>
-            <View style={modal.stepperInline}>
-              <Pressable style={modal.timeBtn} onPress={() => setAvgHR(v => Math.max(100, v - 1))}>
-                <Text style={modal.timeBtnText}>−</Text>
-              </Pressable>
-              <Text style={modal.stepperValue}>{avgHR} bpm</Text>
-              <Pressable style={modal.timeBtn} onPress={() => setAvgHR(v => Math.min(220, v + 1))}>
-                <Text style={modal.timeBtnText}>+</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <Text style={modal.fieldLabel}>AVG PACE (LAST 20 MIN)</Text>
-          <View style={modal.timeRow}>
-            <View style={modal.timeUnit}>
-              <Text style={modal.timeValue}>{String(paceMin).padStart(2, '0')}</Text>
-              <Text style={modal.timeUnitLabel}>min</Text>
-              <View style={modal.timeBtns}>
-                <Pressable style={modal.timeBtn} onPress={() => setPaceMin(v => Math.max(3, v - 1))}>
-                  <Text style={modal.timeBtnText}>−</Text>
-                </Pressable>
-                <Pressable style={modal.timeBtn} onPress={() => setPaceMin(v => Math.min(20, v + 1))}>
-                  <Text style={modal.timeBtnText}>+</Text>
-                </Pressable>
-              </View>
-            </View>
-            <Text style={modal.timeSep}>:</Text>
-            <View style={modal.timeUnit}>
-              <Text style={modal.timeValue}>{String(paceSec).padStart(2, '0')}</Text>
-              <Text style={modal.timeUnitLabel}>sec</Text>
-              <View style={modal.timeBtns}>
-                <Pressable style={modal.timeBtn} onPress={() => setPaceSec(v => Math.max(0, v - 1))}>
-                  <Text style={modal.timeBtnText}>−</Text>
-                </Pressable>
-                <Pressable style={modal.timeBtn} onPress={() => setPaceSec(v => Math.min(59, v + 1))}>
-                  <Text style={modal.timeBtnText}>+</Text>
-                </Pressable>
-              </View>
-            </View>
-            <Text style={modal.timeSuffix}>/{distanceUnitLabel(units)}</Text>
-          </View>
-
-          <FieldInput
-            label="Notes (optional)"
-            value={notes}
-            onChange={setNotes}
-            placeholder="Conditions, effort level, etc."
-          />
-
-          <View style={modal.actions}>
-            <TouchableOpacity style={modal.cancelBtn} onPress={onClose}>
-              <Text style={modal.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={modal.submitBtn} onPress={handleSubmit}>
-              <Text style={modal.submitText}>Save Test</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-// ─── Add-MAF-Test modal ───────────────────────────────────────────────────────
-
-type AddMAFTestModalProps = {
-  visible:  boolean;
-  mafHR:    number;
-  onClose:  () => void;
-  onSubmit: (test: Omit<MAFTestRecord, 'id'>) => void;
-};
-
-function AddMAFTestModal({ visible, mafHR, onClose, onSubmit }: AddMAFTestModalProps) {
-  const units = useSettingsStore(s => s.units);
-  const [dateStr,      setDateStr]      = useState('');
-  const [distanceTenths, setDistanceTenths] = useState(40);  // 40 tenths = 4.0 miles
-  const [durationMin,  setDurationMin]  = useState(40);
-  const [hrDrift,      setHrDrift]      = useState(5);
-  const [notes,        setNotes]        = useState('');
-
-  const distanceMiles  = distanceTenths / 10;
-  const avgPaceSecPerMi = durationMin > 0 && distanceMiles > 0
-    ? Math.round((durationMin * 60) / distanceMiles)
-    : 0;
-
-  function handleSubmit() {
-    if (distanceMiles <= 0 || durationMin <= 0) return;
-    const today = new Date().toISOString().slice(0, 10);
-    onSubmit({
-      date:            dateStr || today,
-      mafHR,
-      distanceMiles,
-      durationMin,
-      avgPaceSecPerMi,
-      hrDriftBPM:      hrDrift,
-      notes:           notes.trim() || undefined,
-    });
-    onClose();
-  }
-
-  return (
-    <Modal visible={visible} animationType="slide" transparent presentationStyle="overFullScreen">
-      <View style={modal.overlay}>
-        <View style={modal.sheet}>
-          <Text style={modal.title}>Log MAF Test</Text>
-          <Text style={modal.subtitle}>
-            Run at or below your MAF HR ({mafHR} bpm) for the full duration.
-            HR drift = difference between first-half and second-half avg HR.
-          </Text>
-
-          <FieldInput
-            label="Date (YYYY-MM-DD)"
-            value={dateStr}
-            onChange={setDateStr}
-            placeholder={new Date().toISOString().slice(0, 10)}
-            autoCapitalize="none"
-          />
-
-          <View style={modal.stepperRow}>
-            <Text style={modal.fieldLabel}>DISTANCE ({units === 'metric' ? 'KM' : 'MILES'})</Text>
-            <View style={modal.stepperInline}>
-              <Pressable style={modal.timeBtn} onPress={() => setDistanceTenths(v => Math.max(5, v - 5))}>
-                <Text style={modal.timeBtnText}>−</Text>
-              </Pressable>
-              <Text style={modal.stepperValue}>{formatDistance(distanceMiles, units)}</Text>
-              <Pressable style={modal.timeBtn} onPress={() => setDistanceTenths(v => Math.min(200, v + 5))}>
-                <Text style={modal.timeBtnText}>+</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={modal.stepperRow}>
-            <Text style={modal.fieldLabel}>DURATION (MINUTES)</Text>
-            <View style={modal.stepperInline}>
-              <Pressable style={modal.timeBtn} onPress={() => setDurationMin(v => Math.max(5, v - 1))}>
-                <Text style={modal.timeBtnText}>−</Text>
-              </Pressable>
-              <Text style={modal.stepperValue}>{durationMin} min</Text>
-              <Pressable style={modal.timeBtn} onPress={() => setDurationMin(v => Math.min(240, v + 1))}>
-                <Text style={modal.timeBtnText}>+</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          {avgPaceSecPerMi > 0 && (
-            <Text style={modal.computedPace}>
-              Avg pace: {formatPaceSecPerMile(avgPaceSecPerMi, units)}
-            </Text>
-          )}
-
-          <View style={modal.stepperRow}>
-            <Text style={modal.fieldLabel}>HR DRIFT (BPM)</Text>
-            <View style={modal.stepperInline}>
-              <Pressable style={modal.timeBtn} onPress={() => setHrDrift(v => Math.max(0, v - 1))}>
-                <Text style={modal.timeBtnText}>−</Text>
-              </Pressable>
-              <Text style={modal.stepperValue}>+{hrDrift} bpm</Text>
-              <Pressable style={modal.timeBtn} onPress={() => setHrDrift(v => Math.min(50, v + 1))}>
-                <Text style={modal.timeBtnText}>+</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <FieldInput
-            label="Notes (optional)"
-            value={notes}
-            onChange={setNotes}
-            placeholder="Temperature, terrain, effort, etc."
-          />
-
-          <View style={modal.actions}>
-            <TouchableOpacity style={modal.cancelBtn} onPress={onClose}>
-              <Text style={modal.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={modal.submitBtn} onPress={handleSubmit}>
-              <Text style={modal.submitText}>Save Test</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-// ─── Shared modal stylesheet ──────────────────────────────────────────────────
-
-const modal = StyleSheet.create({
-  overlay: {
-    flex:            1,
-    justifyContent:  'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.7)',
-  },
-  sheet: {
-    backgroundColor:      colors.card,
-    borderTopLeftRadius:  16,
-    borderTopRightRadius: 16,
-    padding:              spacing.xl,
-    gap:                  spacing.md,
-    paddingBottom:        40,
-  },
-  title: {
-    color:        colors.text,
-    fontSize:     FontSize.lg,
-    fontWeight:   FontWeight.black,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    color:      colors.textMuted,
-    fontSize:   FontSize.xs,
-    lineHeight: 16,
-    marginTop:  -spacing.xs,
-  },
-  fieldLabel: {
-    color:         colors.textMuted,
-    fontSize:      10,
-    fontWeight:    FontWeight.black,
-    letterSpacing: 0.6,
-  },
-  pillScroll: { flexGrow: 0 },
-  pillRow: { flexDirection: 'row', gap: spacing.xs },
-  pill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical:   spacing.sm,
-    borderRadius:      Radius.sm,
-    backgroundColor:   colors.border,
-  },
-  pillActive: {
-    backgroundColor: colors.primaryDim,
-    borderWidth:     1,
-    borderColor:     colors.primary,
-  },
-  pillText: {
-    color:      colors.textDim,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.medium,
-  },
-  pillTextActive: {
-    color:      colors.primary,
-    fontWeight: FontWeight.bold,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           spacing.sm,
-  },
-  timeUnit: {
-    flex:       1,
-    alignItems: 'center',
-    gap:        4,
-  },
-  timeValue: {
-    color:      colors.text,
-    fontSize:   28,
-    fontWeight: FontWeight.black,
-    lineHeight: 32,
-  },
-  timeUnitLabel: {
-    color:    colors.textSubtle,
-    fontSize: 9,
-  },
-  timeBtns: {
-    flexDirection: 'row',
-    gap:           spacing.xs,
-  },
-  timeBtn: {
-    width:           32,
-    height:          32,
-    borderRadius:    Radius.sm,
-    backgroundColor: colors.border,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  timeBtnText: {
-    color:      colors.text,
-    fontSize:   FontSize.md,
-    fontWeight: FontWeight.bold,
-  },
-  timeSep: {
-    color:      colors.textSubtle,
-    fontSize:   24,
-    fontWeight: FontWeight.black,
-    marginTop:  -12,
-  },
-  timeSuffix: {
-    color:      colors.textDim,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.medium,
-    marginTop:  -12,
-  },
-  stepperRow: {
-    gap: spacing.xs,
-  },
-  stepperInline: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.bg,
-    borderRadius:   Radius.sm,
-    padding:        spacing.sm,
-  },
-  stepperValue: {
-    color:      colors.text,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.black,
-  },
-  computedPace: {
-    color:    colors.primary,
-    fontSize: FontSize.xs,
-    marginTop: -spacing.sm,
-  },
-  toggleRow: { gap: spacing.xs },
-  togglePills: {
-    flexDirection: 'row',
-    gap:           spacing.sm,
-  },
-  togglePill: {
-    flex:            1,
-    paddingVertical: spacing.sm,
-    borderRadius:    Radius.sm,
-    backgroundColor: colors.border,
-    alignItems:      'center',
-  },
-  togglePillActive: {
-    backgroundColor: colors.primaryDim,
-    borderWidth:     1,
-    borderColor:     colors.primary,
-  },
-  togglePillText: {
-    color:      colors.textDim,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.medium,
-  },
-  togglePillTextActive: {
-    color:      colors.primary,
-    fontWeight: FontWeight.bold,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap:           spacing.sm,
-    marginTop:     spacing.sm,
-  },
-  cancelBtn: {
-    flex:            1,
-    paddingVertical: spacing.md,
-    borderRadius:    Radius.sm,
-    backgroundColor: colors.border,
-    alignItems:      'center',
-  },
-  cancelText: {
-    color:    colors.textDim,
-    fontSize: FontSize.base,
-  },
-  submitBtn: {
-    flex:            1,
-    paddingVertical: spacing.md,
-    borderRadius:    Radius.sm,
-    backgroundColor: colors.primary,
-    alignItems:      'center',
-  },
-  submitText: {
-    color:      colors.text,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.bold,
-  },
-});
-
-// ─── Day selector ─────────────────────────────────────────────────────────────
-
-function DaySelector({
-  available,
-  onChange,
-}: {
-  available: TrainingDay[];
-  onChange:  (days: TrainingDay[]) => void;
-}) {
-  const activeSet = new Set(available);
-
-  function toggle(day: TrainingDay) {
-    if (activeSet.has(day)) {
-      if (available.length <= 1) return;
-      onChange(available.filter(d => d !== day));
-    } else {
-      onChange([...available, day]);
+  const feetInchesMatch = trimmed.match(/^(\d+)\s*(?:'|ft)?\s*(\d{0,2})?\s*(?:"|in)?$/i);
+  if (feetInchesMatch) {
+    const feet = Number(feetInchesMatch[1]);
+    const inches = Number(feetInchesMatch[2] || 0);
+    if (Number.isFinite(feet) && Number.isFinite(inches)) {
+      return Math.round((feet * 12 + inches) * 2.54);
     }
   }
 
-  return (
-    <View>
-      <Text style={ds.label}>AVAILABLE DAYS</Text>
-      <View style={ds.row}>
-        {ALL_DAYS.map(d => {
-          const active = activeSet.has(d);
+  const totalInches = Number(trimmed);
+  return Number.isFinite(totalInches) ? Math.round(totalInches * 2.54) : null;
+}
+
+function formatWeight(weightKg: number, imperial: boolean) {
+  if (!weightKg) return '';
+  return imperial ? String(Math.round(weightKg * 2.20462)) : String(Math.round(weightKg));
+}
+
+function normalizeReminderTime(value: string) {
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+function formatHistoryDate(timestamp: number) {
+  if (!timestamp) return 'Recent';
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(timestamp));
+}
+
+export default function ProfileScreen() {
+  const C = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { mode } = useThemeStore();
+  const { units, setUnits } = useSettingsStore();
+  const integrations = useIntegrationsStore();
+  const signOut = useAuthStore(state => state.signOut);
+  const { data, updateData } = useOnboardingStore();
+  const workoutHistory = useWorkoutStore(state => state.history);
+  const strengthHistory = useStrengthStore(state => state.history);
+
+  const imp = units === 'imperial';
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notificationSchedule, setNotificationSchedule] = useState<TrainingNotificationScheduleStatus | null>(null);
+  const [ageInput, setAgeInput] = useState('');
+  const [heightInput, setHeightInput] = useState('');
+  const [weightInput, setWeightInput] = useState('');
+  const [notificationTimeDraft, setNotificationTimeDraft] = useState(integrations.notificationTime);
+
+  const currentNotificationPrefs = {
+    enabled: integrations.notificationsEnabled,
+    time: integrations.notificationTime,
+    workout: integrations.workoutNotifications,
+    readiness: integrations.readinessNotifications,
+  };
+
+  const notificationCaption = notificationSchedule && integrations.notificationsEnabled
+    ? notificationSchedule.inSync
+      ? `${notificationSchedule.scheduled} daily reminder${notificationSchedule.scheduled === 1 ? '' : 's'} scheduled`
+      : 'Saved setting is being synced with iOS'
+    : 'Workout reminders & readiness alerts';
+
+  const recentTrainingHistory = useMemo(() => {
+    const runs = workoutHistory.map(record => ({
+      id: `run-${record.id}`,
+      title: record.skipped ? 'Skipped run' : 'Run workout',
+      meta: `${formatHistoryDate(record.timestamp)} · ${
+        record.actualDurationMinutes ?? record.durationMinutes
+      } min${record.actualDistanceMiles ? ` · ${(imp ? record.actualDistanceMiles : record.actualDistanceMiles * 1.609344).toFixed(1)} ${imp ? 'mi' : 'km'}` : ''}`,
+      timestamp: record.timestamp,
+      skipped: Boolean(record.skipped),
+    }));
+
+    const strength = strengthHistory.map(record => ({
+      id: `strength-${record.id}`,
+      title: record.skipped ? 'Skipped strength' : 'Strength session',
+      meta: `${formatHistoryDate(record.timestamp)} · ${record.actualDuration ?? record.plannedDuration} min`,
+      timestamp: record.timestamp,
+      skipped: Boolean(record.skipped),
+    }));
+
+    return [...runs, ...strength]
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 5);
+  }, [imp, strengthHistory, workoutHistory]);
+
+  useEffect(() => {
+    setAgeInput(data.age ? String(data.age) : '');
+    setHeightInput(formatHeight(data.heightCm, imp));
+    setWeightInput(formatWeight(data.weightKg, imp));
+  }, [data.age, data.heightCm, data.weightKg, imp]);
+
+  useEffect(() => {
+    setNotificationTimeDraft(integrations.notificationTime);
+  }, [integrations.notificationTime]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function syncPermissionState() {
+      if (integrations.locationEnabled) {
+        const [foreground, background] = await Promise.all([
+          Location.getForegroundPermissionsAsync(),
+          Location.getBackgroundPermissionsAsync(),
+        ]);
+        if (!cancelled && (foreground.status !== 'granted' || background.status !== 'granted')) {
+          integrations.setLocation(false);
+        }
+      }
+
+      if (integrations.notificationsEnabled) {
+        const hasNotifications = await getNotificationAccessStatus();
+        if (!cancelled && !hasNotifications) {
+          integrations.setNotifications(false);
+          setNotificationSchedule(null);
+          await clearTrainingNotifications().catch(() => undefined);
+        } else if (!cancelled) {
+          const scheduleStatus = await getTrainingNotificationScheduleStatus(currentNotificationPrefs);
+          if (!scheduleStatus.inSync && scheduleStatus.expected > 0) {
+            await scheduleTrainingNotifications(currentNotificationPrefs);
+            const refreshed = await getTrainingNotificationScheduleStatus(currentNotificationPrefs);
+            if (!cancelled) setNotificationSchedule(refreshed);
+          } else {
+            setNotificationSchedule(scheduleStatus);
+          }
+        }
+      } else {
+        const scheduleStatus = await getTrainingNotificationScheduleStatus(currentNotificationPrefs);
+        if (scheduleStatus.scheduled > 0) {
+          await clearTrainingNotifications().catch(() => undefined);
+          const refreshed = await getTrainingNotificationScheduleStatus(currentNotificationPrefs);
+          if (!cancelled) setNotificationSchedule(refreshed);
+        } else if (!cancelled) {
+          setNotificationSchedule(scheduleStatus);
+        }
+      }
+
+      if (integrations.healthKitEnabled) {
+        const canWriteHealth = Platform.OS === 'ios' && await getAppleHealthWriteStatus();
+        if (!cancelled && !canWriteHealth) {
+          integrations.setHealthKit(false);
+        }
+      }
+    }
+
+    syncPermissionState().catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    integrations.healthKitEnabled,
+    integrations.locationEnabled,
+    integrations.notificationsEnabled,
+    integrations.notificationTime,
+    integrations.workoutNotifications,
+    integrations.readinessNotifications,
+  ]);
+
+  async function chooseProfilePhoto() {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permission needed', 'StrideOS needs photo library access to update your profile photo.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+
+      if (!result.canceled && result.assets[0]?.uri) {
+        updateData({ profilePhotoUri: result.assets[0].uri });
+      }
+    } catch (error) {
+      Alert.alert('Photo update failed', error instanceof Error ? error.message : 'Could not update your profile photo.');
+    }
+  }
+
+  function commitAge() {
+    const nextAge = Math.round(Number(ageInput));
+    if (Number.isFinite(nextAge) && nextAge > 0 && nextAge < 120) {
+      updateData({ age: nextAge });
+      setAgeInput(String(nextAge));
+    } else {
+      setAgeInput(data.age ? String(data.age) : '');
+    }
+  }
+
+  function commitHeight() {
+    const heightCm = parseHeightInput(heightInput, imp);
+    if (heightCm && heightCm > 90 && heightCm < 245) {
+      updateData({ heightCm });
+      setHeightInput(formatHeight(heightCm, imp));
+    } else {
+      setHeightInput(formatHeight(data.heightCm, imp));
+    }
+  }
+
+  function commitWeight() {
+    const value = Number(weightInput);
+    if (!Number.isFinite(value) || value <= 0) {
+      setWeightInput(formatWeight(data.weightKg, imp));
+      return;
+    }
+
+    const weightKg = imp ? Math.round(value / 2.20462) : Math.round(value);
+    if (weightKg > 25 && weightKg < 275) {
+      updateData({ weightKg });
+      setWeightInput(formatWeight(weightKg, imp));
+    } else {
+      setWeightInput(formatWeight(data.weightKg, imp));
+    }
+  }
+
+  async function connectAppleHealth() {
+    if (integrations.healthKitEnabled) {
+      integrations.setHealthKit(false);
+      Alert.alert('Apple Health disconnected', 'StrideOS will stop writing workouts to Apple Health.');
+      return;
+    }
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Apple Health unavailable', 'Apple Health is only available on iPhone.');
+      return;
+    }
+    setBusy('health');
+    try {
+      const available = await isAppleHealthAvailable();
+      if (!available) {
+        integrations.setHealthKit(false);
+        Alert.alert(
+          'Apple Health unavailable',
+          'Apple Health is not available in this installed build or on this device. Install the newest TestFlight build on iPhone and try again.',
+        );
+        return;
+      }
+      const ok = await requestHealthPermissions();
+      const canWrite = ok && await getAppleHealthWriteStatus();
+      integrations.setHealthKit(canWrite);
+      Alert.alert(canWrite ? 'Apple Health connected' : 'Apple Health unavailable', canWrite
+        ? 'StrideOS can now read heart rate during runs and write completed workouts to Apple Health.'
+        : 'Apple Health write permission was not granted. Enable workout write access in Apple Health settings.');
+    } catch (error) {
+      Alert.alert('Apple Health connection failed', error instanceof Error ? error.message : 'Could not connect Apple Health.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function setLocationEnabled(enabled: boolean) {
+    if (!enabled) {
+      integrations.setLocation(false);
+      return;
+    }
+    const result = await Location.requestForegroundPermissionsAsync();
+    if (result.status !== 'granted') {
+      integrations.setLocation(false);
+      Alert.alert('Location permission denied', 'Enable location in iOS Settings to use GPS run tracking.');
+      return;
+    }
+
+    const background = await Location.requestBackgroundPermissionsAsync();
+    const ok = background.status === 'granted';
+    integrations.setLocation(ok);
+    Alert.alert(
+      ok ? 'GPS tracking ready' : 'Background location needed',
+      ok
+        ? 'StrideOS can track routes during runs, including when the screen locks.'
+        : 'Foreground location is on, but background permission is needed for reliable GPS tracking when the screen locks.',
+    );
+  }
+
+  async function applyNotifications(next = {
+    enabled: integrations.notificationsEnabled,
+    time: integrations.notificationTime,
+    workout: integrations.workoutNotifications,
+    readiness: integrations.readinessNotifications,
+  }) {
+    setBusy('notifications');
+    try {
+      if (next.enabled) {
+        await scheduleTrainingNotifications(next);
+      } else {
+        await clearTrainingNotifications();
+      }
+      setNotificationSchedule(await getTrainingNotificationScheduleStatus(next));
+    } catch (error) {
+      Alert.alert('Notification setup failed', error instanceof Error ? error.message : 'Could not update notifications.');
+      integrations.setNotifications(false);
+      await clearTrainingNotifications().catch(() => undefined);
+      setNotificationSchedule(null);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function updateNotificationEnabled(enabled: boolean) {
+    integrations.setNotifications(enabled);
+    applyNotifications({
+      enabled,
+      time: integrations.notificationTime,
+      workout: integrations.workoutNotifications,
+      readiness: integrations.readinessNotifications,
+    });
+  }
+
+  function updateWorkoutNotifications(enabled: boolean) {
+    integrations.setWorkoutNotifications(enabled);
+    applyNotifications({
+      enabled: integrations.notificationsEnabled,
+      time: integrations.notificationTime,
+      workout: enabled,
+      readiness: integrations.readinessNotifications,
+    });
+  }
+
+  function updateReadinessNotifications(enabled: boolean) {
+    integrations.setReadinessNotifications(enabled);
+    applyNotifications({
+      enabled: integrations.notificationsEnabled,
+      time: integrations.notificationTime,
+      workout: integrations.workoutNotifications,
+      readiness: enabled,
+    });
+  }
+
+  function commitNotificationTime() {
+    const normalized = normalizeReminderTime(notificationTimeDraft);
+    if (!normalized) {
+      setNotificationTimeDraft(integrations.notificationTime);
+      Alert.alert('Use a valid time', 'Enter reminder time as HH:MM, like 07:00 or 18:30.');
+      return;
+    }
+
+    integrations.setNotificationTime(normalized);
+    setNotificationTimeDraft(normalized);
+    applyNotifications({
+      enabled: integrations.notificationsEnabled,
+      time: normalized,
+      workout: integrations.workoutNotifications,
+      readiness: integrations.readinessNotifications,
+    });
+  }
+
+  function SegmentControl({
+    options,
+    value,
+    onChange,
+    activeTone = 'muted',
+  }: {
+    options: { label: string; value: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    activeTone?: 'muted' | 'primary';
+  }) {
+    return (
+      <View style={[styles.segCtrl, { backgroundColor: C.cardAlt }]}>
+        {options.map(opt => {
+          const active = value === opt.value;
+          const activeBg = activeTone === 'primary' ? C.primaryDim : C.card;
+          const activeColor = activeTone === 'primary' ? C.primary : C.textDim;
           return (
-            <Pressable
-              key={d}
-              onPress={() => toggle(d)}
-              style={[ds.cell, active && ds.cellActive]}
+            <TouchableOpacity
+              key={opt.value}
+              style={[styles.segOption, active && { backgroundColor: activeBg }]}
+              onPress={() => onChange(opt.value)}
+              activeOpacity={0.7}
             >
-              <Text style={[ds.text, active && ds.textActive]}>{d[0]}</Text>
-            </Pressable>
+              <Text style={[styles.segText, { color: active ? activeColor : C.textDim, fontWeight: active ? '700' : '500' }]}>{opt.label}</Text>
+            </TouchableOpacity>
           );
         })}
       </View>
-    </View>
-  );
-}
-
-const ds = StyleSheet.create({
-  label: {
-    color:         colors.textMuted,
-    fontSize:      10,
-    fontWeight:    FontWeight.black,
-    letterSpacing: 0.6,
-    marginBottom:  spacing.sm,
-  },
-  row: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-  },
-  cell: {
-    width:          36,
-    height:         36,
-    borderRadius:   18,
-    borderWidth:    1,
-    borderColor:    colors.border,
-    alignItems:     'center',
-    justifyContent: 'center',
-  },
-  cellActive: {
-    backgroundColor: colors.primaryDim,
-    borderColor:     colors.primary,
-  },
-  text: {
-    color:      colors.textSubtle,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.black,
-  },
-  textActive: {
-    color: colors.primary,
-  },
-});
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
-
-export default function ProfileScreen() {
-  const {
-    athleteName,
-    goalRace,
-    weeklyMileage,
-    currentWeek,
-    progressionLevel,
-    sleepHours,
-    restingHRDelta,
-    fatigueScore,
-    recoveryScore,
-    vo2Estimate,
-    setAthleteName,
-    setGoalRace,
-    setWeeklyMileage,
-    setCurrentWeek,
-    setProgressionLevel,
-    setSleepHours,
-    setRestingHRDelta,
-  } = useAthleteStore();
-
-  const {
-    initDefaultProfile, updateActive, addRacePR, removeRacePR, recalibrate,
-    setThresholdTest, clearThresholdTest, addMAFTest, setZoneMethod,
-  } = useProfileStore();
-
-  const profile     = useActiveProfile();
-  const calibration = useCalibration();
-  const units       = useSettingsStore(s => s.units);
-
-  const [localName,    setLocalName]    = useState(athleteName);
-  const [localGoal,    setLocalGoal]    = useState(goalRace);
-  const [showAddPR,    setShowAddPR]    = useState(false);
-  const [showThreshold, setShowThreshold] = useState(false);
-  const [showMAF,      setShowMAF]      = useState(false);
-
-  useEffect(() => {
-    initDefaultProfile(athleteName, vo2Estimate);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleRecalibrate = useCallback(() => {
-    recalibrate({
-      weeklyMileage,
-      currentPhase:         'base',
-      recentWorkoutCount:   12,
-      lastWorkoutDaysAgo:   1,
-      currentFatigueScore:  fatigueScore,
-      currentRecoveryScore: recoveryScore,
-    });
-  }, [recalibrate, weeklyMileage, fatigueScore, recoveryScore]);
-
-  useEffect(() => {
-    if (profile && !profile.calibration) {
-      handleRecalibrate();
-    }
-  }, [profile?.athleteId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!profile) return null;
-
-  function patchProfile(patch: Parameters<typeof updateActive>[0]) {
-    updateActive(patch);
-  }
-
-  const mafHR = profile.age > 0 ? 180 - profile.age : 0;
-
-  // Derive current LTHR and threshold pace for display
-  const lthr           = profile.hrThreshold ?? profile.thresholdTest?.avgHRLastTwentyMin ?? null;
-  const thresholdPaceSec = profile.thresholdPaceSecPerMi ?? profile.thresholdTest?.avgPaceSecPerMiLastTwenty ?? null;
-
-  return (
-    <ScreenLayout title="Profile">
-
-      {/* ── Overview ──────────────────────────────────────────────────── */}
-      <ProfileOverviewCard profile={profile} />
-
-      {/* ── Appearance ────────────────────────────────────────────────── */}
-      <SectionLabel label="Appearance" />
-      <AppearanceSection />
-
-      {/* ── Identity ──────────────────────────────────────────────────── */}
-      <SectionLabel label="Identity" />
-      <Card>
-        <View style={styles.fields}>
-          <FieldInput
-            label="Athlete Name"
-            value={localName}
-            onChange={setLocalName}
-            onBlur={() => {
-              const name = localName.trim() || athleteName;
-              setAthleteName(name);
-              patchProfile({ name });
-            }}
-            placeholder="Your name"
-          />
-          <FieldInput
-            label="Goal Race"
-            value={localGoal}
-            onChange={setLocalGoal}
-            onBlur={() => setGoalRace(localGoal.trim() || goalRace)}
-            placeholder="e.g. Sub 4 Marathon"
-            autoCapitalize="words"
-          />
-          <FieldStepper
-            label="Age"
-            display={profile.age > 0 ? `${profile.age} yrs` : '—'}
-            onIncrease={() => patchProfile({ age: Math.min(99, profile.age + 1) })}
-            onDecrease={() => patchProfile({ age: Math.max(14, profile.age - 1) })}
-          />
-          <FieldPicker
-            label="Sex"
-            value={profile.sex}
-            options={SEX_OPTIONS}
-            onChange={sex => patchProfile({ sex })}
-          />
-        </View>
-      </Card>
-
-      {/* ── Body Metrics ──────────────────────────────────────────────── */}
-      <SectionLabel label="Body Metrics" />
-      <Card>
-        <View style={styles.fields}>
-          <FieldStepper
-            label="Height"
-            display={
-              profile.heightCm > 0
-                ? `${Math.floor(profile.heightCm / 30.48)}'${Math.round((profile.heightCm % 30.48) / 2.54)}"`
-                : '—'
-            }
-            onIncrease={() => patchProfile({ heightCm: profile.heightCm + 1 })}
-            onDecrease={() => patchProfile({ heightCm: Math.max(100, profile.heightCm - 1) })}
-          />
-          <FieldStepper
-            label="Weight"
-            display={
-              profile.weightKg > 0
-                ? `${Math.round(profile.weightKg * 2.205)} lb`
-                : '—'
-            }
-            onIncrease={() => patchProfile({ weightKg: +(profile.weightKg + 0.5).toFixed(1) })}
-            onDecrease={() => patchProfile({ weightKg: +(Math.max(30, profile.weightKg - 0.5)).toFixed(1) })}
-          />
-          <FieldStepper
-            label="Running Experience"
-            display={profile.trainingAgeYears >= 1 ? `${profile.trainingAgeYears} yrs` : '<1 yr'}
-            onIncrease={() => patchProfile({ trainingAgeYears: Math.min(50, profile.trainingAgeYears + 1) })}
-            onDecrease={() => patchProfile({ trainingAgeYears: Math.max(0, profile.trainingAgeYears - 1) })}
-          />
-        </View>
-      </Card>
-
-      {/* ── Heart Rate & Physiology ───────────────────────────────────── */}
-      <SectionLabel label="Heart Rate & Physiology" />
-      <Card>
-        <View style={styles.fields}>
-
-          {/* HRmax source toggle */}
-          <View style={styles.toggleGroup}>
-            <Text style={styles.toggleGroupLabel}>HRMAX SOURCE</Text>
-            <View style={styles.sourcePills}>
-              <Pressable
-                style={[styles.sourcePill, !profile.hrMaxManual && styles.sourcePillActive]}
-                onPress={() => { patchProfile({ hrMaxManual: false }); handleRecalibrate(); }}
-              >
-                <Text style={[styles.sourcePillText, !profile.hrMaxManual && styles.sourcePillTextActive]}>
-                  Auto-estimate (Tanaka)
-                </Text>
-              </Pressable>
-              <Pressable
-                style={[styles.sourcePill, profile.hrMaxManual && styles.sourcePillActive]}
-                onPress={() => { patchProfile({ hrMaxManual: true }); handleRecalibrate(); }}
-              >
-                <Text style={[styles.sourcePillText, profile.hrMaxManual && styles.sourcePillTextActive]}>
-                  I know my HRmax
-                </Text>
-              </Pressable>
-            </View>
-            {!profile.hrMaxManual && profile.age > 0 && (
-              <Text style={styles.hrEstimate}>
-                Tanaka 2001: {Math.round(208 - 0.7 * profile.age)} bpm (208 − 0.7 × {profile.age})
-              </Text>
-            )}
-            {!profile.hrMaxManual && profile.age === 0 && (
-              <Text style={styles.hrEstimateDim}>Enter age above to see Tanaka estimate</Text>
-            )}
-          </View>
-
-          {/* Measured HRmax — only when manual mode */}
-          {profile.hrMaxManual && (
-            <FieldStepper
-              label="Measured HRmax (bpm)"
-              display={profile.hrMax !== null ? `${profile.hrMax} bpm` : 'Not set'}
-              onIncrease={() => patchProfile({ hrMax: (profile.hrMax ?? 180) + 1 })}
-              onDecrease={() => {
-                const v = (profile.hrMax ?? 180) - 1;
-                patchProfile({ hrMax: v < 100 ? null : v });
-              }}
-            />
-          )}
-
-          <FieldStepper
-            label="Resting HR (bpm)"
-            display={profile.hrResting !== null ? `${profile.hrResting} bpm` : 'Not set'}
-            onIncrease={() => patchProfile({ hrResting: (profile.hrResting ?? 50) + 1 })}
-            onDecrease={() => {
-              const v = (profile.hrResting ?? 50) - 1;
-              patchProfile({ hrResting: v < 30 ? null : v });
-            }}
-          />
-          <FieldStepper
-            label="Sleep Hours"
-            display={`${sleepHours.toFixed(1)} hrs`}
-            onIncrease={() => setSleepHours(+(Math.min(14, sleepHours + 0.5)).toFixed(1))}
-            onDecrease={() => setSleepHours(+(Math.max(0, sleepHours - 0.5)).toFixed(1))}
-          />
-          <FieldStepper
-            label="Resting HR Delta"
-            display={`${restingHRDelta >= 0 ? '+' : ''}${restingHRDelta} bpm`}
-            onIncrease={() => setRestingHRDelta(Math.min(30, restingHRDelta + 1))}
-            onDecrease={() => setRestingHRDelta(Math.max(-10, restingHRDelta - 1))}
-          />
-        </View>
-      </Card>
-
-      {/* ── Threshold Test ────────────────────────────────────────────── */}
-      <SectionLabel label="30-Min Threshold Test" />
-      <Card>
-        {profile.thresholdTest !== null ? (
-          <View style={styles.fields}>
-            <View style={styles.testResultRow}>
-              <View style={styles.testResultStats}>
-                <View style={styles.testStat}>
-                  <Text style={styles.testStatValue}>
-                    {profile.thresholdTest.avgHRLastTwentyMin} bpm
-                  </Text>
-                  <Text style={styles.testStatLabel}>LTHR</Text>
-                </View>
-                <View style={styles.testStatDivider} />
-                <View style={styles.testStat}>
-                  <Text style={styles.testStatValue}>
-                    {formatPaceSecPerMile(profile.thresholdTest.avgPaceSecPerMiLastTwenty, units)}
-                  </Text>
-                  <Text style={styles.testStatLabel}>FT Pace</Text>
-                </View>
-                <View style={styles.testStatDivider} />
-                <View style={styles.testStat}>
-                  <Text style={styles.testStatValue}>{profile.thresholdTest.date}</Text>
-                  <Text style={styles.testStatLabel}>Date</Text>
-                </View>
-              </View>
-            </View>
-            {profile.thresholdTest.notes ? (
-              <Text style={styles.testNotes}>{profile.thresholdTest.notes}</Text>
-            ) : null}
-            <View style={styles.testActions}>
-              <TouchableOpacity
-                style={styles.testActionBtn}
-                onPress={() => setShowThreshold(true)}
-              >
-                <Text style={styles.testActionBtnText}>Update Test</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.testActionBtn, styles.testActionBtnDanger]}
-                onPress={() => {
-                  clearThresholdTest(profile.athleteId);
-                  handleRecalibrate();
-                }}
-              >
-                <Text style={styles.testActionBtnDangerText}>Clear</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.fields}>
-            <Text style={styles.testNote}>
-              Run at maximum sustainable effort for 30 minutes. Record your average HR and
-              pace from the last 20 minutes. These become your LTHR and functional threshold
-              pace — the foundation of the 7-zone Friel system.
-            </Text>
-            <Text style={styles.testNoteRef}>Joe Friel 30-min threshold field test (Friel, "Fast After 50")</Text>
-            <TouchableOpacity
-              style={styles.logTestBtn}
-              onPress={() => setShowThreshold(true)}
-            >
-              <Text style={styles.logTestBtnText}>+ Log Threshold Test</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </Card>
-
-      {/* ── Race History ──────────────────────────────────────────────── */}
-      <SectionLabel label="Race History" />
-      <RaceHistoryCard
-        racePRs={profile.racePRs}
-        onAdd={() => setShowAddPR(true)}
-        onRemove={prId => {
-          removeRacePR(profile.athleteId, prId);
-          handleRecalibrate();
-        }}
-      />
-
-      {/* ── Training Plan ─────────────────────────────────────────────── */}
-      <SectionLabel label="Training Plan" />
-      <Card>
-        <View style={styles.fields}>
-          <FieldStepper
-            label="Weekly Mileage"
-            display={formatDistance(weeklyMileage, units)}
-            onIncrease={() => setWeeklyMileage(+(weeklyMileage + 0.5).toFixed(1))}
-            onDecrease={() => setWeeklyMileage(+(Math.max(5, weeklyMileage - 0.5)).toFixed(1))}
-          />
-          <FieldStepper
-            label="Current Week"
-            display={`Week ${currentWeek}`}
-            onIncrease={() => setCurrentWeek(currentWeek + 1)}
-            onDecrease={() => setCurrentWeek(Math.max(1, currentWeek - 1))}
-          />
-          <FieldPicker
-            label="Progression Level"
-            value={progressionLevel}
-            options={PROGRESSION_OPTIONS}
-            onChange={setProgressionLevel}
-          />
-          <FieldStepper
-            label="Target Sessions / Week"
-            display={`${profile.targetSessions} sessions`}
-            onIncrease={() => patchProfile({ targetSessions: Math.min(7, profile.targetSessions + 1) })}
-            onDecrease={() => patchProfile({ targetSessions: Math.max(3, profile.targetSessions - 1) })}
-          />
-          <DaySelector
-            available={profile.availableDays}
-            onChange={days => patchProfile({ availableDays: days })}
-          />
-        </View>
-      </Card>
-      <TrainingAvailabilityCard
-        availableDays={profile.availableDays}
-        targetSessions={profile.targetSessions}
-      />
-
-      {/* ── Sensitivity Tuning ────────────────────────────────────────── */}
-      <SectionLabel label="Sensitivity Tuning" />
-      <Card>
-        <View style={styles.fields}>
-          <FieldStepper
-            label="Fatigue Sensitivity"
-            display={profile.fatigueSensitivity.toFixed(1) + '×'}
-            onIncrease={() =>
-              patchProfile({ fatigueSensitivity: Math.min(2.0, +(profile.fatigueSensitivity + 0.1).toFixed(1)) })
-            }
-            onDecrease={() =>
-              patchProfile({ fatigueSensitivity: Math.max(0.5, +(profile.fatigueSensitivity - 0.1).toFixed(1)) })
-            }
-          />
-          <FieldStepper
-            label="Recovery Responsiveness"
-            display={profile.recoveryResponsiveness.toFixed(1) + '×'}
-            onIncrease={() =>
-              patchProfile({ recoveryResponsiveness: Math.min(2.0, +(profile.recoveryResponsiveness + 0.1).toFixed(1)) })
-            }
-            onDecrease={() =>
-              patchProfile({ recoveryResponsiveness: Math.max(0.5, +(profile.recoveryResponsiveness - 0.1).toFixed(1)) })
-            }
-          />
-          <FieldStepper
-            label="Heat Sensitivity"
-            display={profile.heatSensitivity.toFixed(1) + '×'}
-            onIncrease={() =>
-              patchProfile({ heatSensitivity: Math.min(2.0, +(profile.heatSensitivity + 0.1).toFixed(1)) })
-            }
-            onDecrease={() =>
-              patchProfile({ heatSensitivity: Math.max(0.5, +(profile.heatSensitivity - 0.1).toFixed(1)) })
-            }
-          />
-        </View>
-        <Text style={styles.sensitivityNote}>
-          1.0 = baseline. Increase fatigue sensitivity if you feel rundown faster than
-          expected. Increase recovery responsiveness if you bounce back quickly.
-        </Text>
-      </Card>
-
-      {/* ── Calibration ───────────────────────────────────────────────── */}
-      <SectionLabel label="Calibration" />
-      <CalibrationStatusCard
-        calibration={calibration}
-        onRecalibrate={handleRecalibrate}
-      />
-
-      {/* ── Zone data — only when calibration exists ──────────────────── */}
-      {calibration && (
-        <>
-          {/* Zone Method Comparison */}
-          <SectionLabel label="Zone Method Comparison" />
-          <ZoneComparisonCard
-            calibration={calibration}
-            onMethodChange={(method: ZoneMethod) => {
-              setZoneMethod(profile.athleteId, method);
-              handleRecalibrate();
-            }}
-          />
-
-          {/* VDOT Pace Zones */}
-          <SectionLabel label="VDOT Pace Zones" />
-          <PaceZoneCard calibration={calibration} />
-
-          {/* HR Zones (Friel 5-zone) */}
-          <SectionLabel label="HR Zones" />
-          <HRZoneCard calibration={calibration} />
-
-          {/* 7-Zone Threshold — only when threshold data is available */}
-          {calibration.thresholdZones && lthr !== null && thresholdPaceSec !== null && (
-            <>
-              <SectionLabel label="7-Zone Threshold System" />
-              <ThresholdZoneCard
-                zones={calibration.thresholdZones}
-                thresholdPaceSec={thresholdPaceSec}
-                lthr={lthr}
-              />
-            </>
-          )}
-        </>
-      )}
-
-      {/* ── Aerobic Base Tracking (MAF) ───────────────────────────────── */}
-      <SectionLabel label="Aerobic Base Tracking" />
-      <MAFCard
-        tests={profile.mafTests}
-        mafHR={mafHR > 0 ? mafHR : undefined}
-        onAdd={() => setShowMAF(true)}
-      />
-
-      {/* ── Units ────────────────────────────────────────────────────── */}
-      <SectionLabel label="Units" />
-      <UnitsToggleCard />
-
-      {/* ── Integrations ─────────────────────────────────────────────── */}
-      <SectionLabel label="Integrations" />
-      <IntegrationsCard />
-
-      {/* ── Sources & Methods ─────────────────────────────────────────── */}
-      <SectionLabel label="Sources & Methods" />
-      <SourcesMethodsCard />
-
-      {/* ── Reset ─────────────────────────────────────────────────────── */}
-      <SectionLabel label="Data & Privacy" />
-      <ResetDataSection />
-
-      {/* ── Modals ────────────────────────────────────────────────────── */}
-      <AddPRModal
-        visible={showAddPR}
-        onClose={() => setShowAddPR(false)}
-        onSubmit={pr => {
-          addRacePR(profile.athleteId, { ...pr, id: `pr_${Date.now()}` });
-          handleRecalibrate();
-        }}
-      />
-
-      <AddThresholdTestModal
-        visible={showThreshold}
-        onClose={() => setShowThreshold(false)}
-        onSubmit={test => {
-          setThresholdTest(profile.athleteId, { ...test, id: `tt_${Date.now()}` });
-          handleRecalibrate();
-        }}
-      />
-
-      {mafHR > 0 && (
-        <AddMAFTestModal
-          visible={showMAF}
-          mafHR={mafHR}
-          onClose={() => setShowMAF(false)}
-          onSubmit={test => {
-            addMAFTest(profile.athleteId, { ...test, id: `maf_${Date.now()}` });
-          }}
-        />
-      )}
-
-    </ScreenLayout>
-  );
-}
-
-function AppearanceSection() {
-  const { mode, setMode } = useThemeStore();
-  return (
-    <View style={styles.appearanceCard}>
-      {(['dark', 'light'] as const).map(opt => (
-        <Pressable
-          key={opt}
-          style={[styles.appearancePill, mode === opt && styles.appearancePillActive]}
-          onPress={() => setMode(opt)}
-        >
-          <View style={[styles.appearanceSwatch, { backgroundColor: opt === 'dark' ? '#14160F' : '#EDE9DF' }]} />
-          <Text style={[styles.appearancePillText, mode === opt && styles.appearancePillTextActive]}>
-            {opt === 'dark' ? 'Dark' : 'Light'}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
-function UnitsToggleCard() {
-  const { units, setUnits } = useSettingsStore();
-  return (
-    <View style={styles.unitsCard}>
-      <Text style={styles.unitsTitle}>Unit System</Text>
-      <View style={styles.unitsPills}>
-        {(['imperial', 'metric'] as const).map(opt => (
-          <Pressable
-            key={opt}
-            style={[styles.unitsPill, units === opt && styles.unitsPillActive]}
-            onPress={() => setUnits(opt)}
-          >
-            <Text style={[styles.unitsPillText, units === opt && styles.unitsPillTextActive]}>
-              {opt === 'imperial' ? 'Imperial  (mi, lb)' : 'Metric  (km, kg)'}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function IntegrationsCard() {
-  const { healthKitEnabled, stravaConnected, setHealthKit, setStrava } = useIntegrationsStore();
-
-  async function handleToggleHealthKit() {
-    if (healthKitEnabled) {
-      setHealthKit(false);
-    } else {
-      const granted = await requestHealthKit();
-      if (granted) setHealthKit(true);
-    }
-  }
-
-  async function handleStravaConnect() {
-    if (stravaConnected) {
-      setStrava(null);
-    } else {
-      await startStravaOAuth();
-      setStrava({
-        access_token:  'pending',
-        refresh_token: 'pending',
-        expires_at:    0,
-      });
-    }
-  }
-
-  return (
-    <View style={styles.integrationsCard}>
-      <View style={styles.integrationRow}>
-        <View style={styles.integrationInfo}>
-          <Text style={styles.integrationTitle}>Apple Health</Text>
-          <Text style={styles.integrationSub}>Sync workouts to Health app</Text>
-        </View>
-        <Pressable
-          style={[styles.integrationToggle, healthKitEnabled && styles.integrationToggleOn]}
-          onPress={handleToggleHealthKit}
-        >
-          <Text style={[styles.integrationToggleTxt, healthKitEnabled && styles.integrationToggleTxtOn]}>
-            {healthKitEnabled ? 'On' : 'Off'}
-          </Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.integrationDivider} />
-
-      <View style={styles.integrationRow}>
-        <View style={styles.integrationInfo}>
-          <Text style={styles.integrationTitle}>Strava</Text>
-          <Text style={styles.integrationSub}>
-            {stravaConnected ? 'Connected — workouts upload automatically' : 'Connect to upload runs to Strava'}
-          </Text>
-        </View>
-        <Pressable
-          style={[styles.integrationBtn, stravaConnected && styles.integrationBtnConnected]}
-          onPress={handleStravaConnect}
-        >
-          <Text style={styles.integrationBtnTxt}>{stravaConnected ? 'Disconnect' : 'Connect'}</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function ResetDataSection() {
-  const resetOnboarding = useOnboardingStore(s => s.resetOnboarding);
-
-  function handleReset() {
-    Alert.alert(
-      'Reset StrideOS Data',
-      'This will permanently delete all training data, profiles, and settings. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text:  'Reset Everything',
-          style: 'destructive',
-          onPress: async () => {
-            await AsyncStorage.clear();
-            useProfileStore.setState({ profiles: {}, activeAthleteId: 'athlete_default' });
-            resetOnboarding();
-            router.replace('/onboarding' as never);
-          },
-        },
-      ],
     );
   }
 
   return (
-    <View style={styles.resetCard}>
-      <Text style={styles.resetTitle}>Reset StrideOS</Text>
-      <Text style={styles.resetDesc}>
-        Permanently deletes all local data: athlete profile, training history, calibration,
-        and movement analyses. This cannot be undone.
-      </Text>
-      <Pressable style={styles.resetBtn} onPress={handleReset}>
-        <Text style={styles.resetBtnTxt}>Reset All Data</Text>
-      </Pressable>
-    </View>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: C.bg }}
+      contentContainerStyle={{ paddingHorizontal: 18, paddingTop: insets.top + 6, paddingBottom: LAYOUT.screenPadBottom }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
+          <Ionicons name="arrow-back" size={20} color={C.primary} />
+        </TouchableOpacity>
+        <View style={{ marginLeft: 10 }}>
+          <Text style={[styles.headerLabel, { color: C.textDim }]}>PROFILE</Text>
+          <Text style={[styles.headerTitle, { color: C.text }]}>Settings</Text>
+        </View>
+      </View>
+
+      {/* User card */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <View style={[styles.userRow, { borderBottomColor: C.border }]}>
+          <TouchableOpacity
+            style={[styles.avatar, { backgroundColor: C.primaryDim, borderColor: C.primary }]}
+            onPress={chooseProfilePhoto}
+            activeOpacity={0.8}
+          >
+            {data.profilePhotoUri ? (
+              <Image source={{ uri: data.profilePhotoUri }} style={styles.avatarImage} />
+            ) : (
+              <Text style={[{ fontSize: 20, fontWeight: '800', color: C.primary }]}>
+                {(data.name || 'A').slice(0, 2).toUpperCase()}
+              </Text>
+            )}
+            <View style={[styles.avatarAdd, { backgroundColor: C.primary }]}>
+              <Text style={[{ color: C.onPrimary, fontSize: 13, fontWeight: '800' }]}>+</Text>
+            </View>
+          </TouchableOpacity>
+          <View>
+            <Text style={[{ fontSize: 16, fontWeight: '700', color: C.text }]}>{data.name || 'Athlete'}</Text>
+            <Text style={[{ fontSize: 12, color: C.textMuted, marginTop: 2 }]}>
+              Running since {new Date().getFullYear() - 5} · {imp ? '2,814 mi' : '4,529 km'}
+            </Text>
+            <Text style={[{ fontSize: 11, color: C.textDim, marginTop: 2 }]}>Tap photo to change</Text>
+          </View>
+        </View>
+        <View style={{ gap: 10, marginTop: 4 }}>
+          {[
+            {
+              label: 'Age',
+              value: ageInput,
+              onChangeText: setAgeInput,
+              onBlur: commitAge,
+              placeholder: '—',
+              keyboardType: 'number-pad' as const,
+              unit: 'yrs',
+            },
+            {
+              label: 'Height',
+              value: heightInput,
+              onChangeText: setHeightInput,
+              onBlur: commitHeight,
+              placeholder: imp ? `5'10` : '178',
+              keyboardType: 'default' as const,
+              unit: imp ? 'ft/in' : 'cm',
+            },
+            {
+              label: 'Weight',
+              value: weightInput,
+              onChangeText: setWeightInput,
+              onBlur: commitWeight,
+              placeholder: '—',
+              keyboardType: 'number-pad' as const,
+              unit: imp ? 'lbs' : 'kg',
+            },
+          ].map(f => (
+            <View key={f.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Text style={[{ fontSize: 12, color: C.textMuted, width: 64 }]}>{f.label}</Text>
+              <TextInput
+                value={f.value}
+                onChangeText={f.onChangeText}
+                onBlur={f.onBlur}
+                onSubmitEditing={f.onBlur}
+                placeholder={f.placeholder}
+                placeholderTextColor={C.textDim}
+                keyboardType={f.keyboardType}
+                style={[styles.profileInput, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
+              />
+              {f.unit ? <Text style={[{ fontSize: 12, color: C.textDim }]}>{f.unit}</Text> : null}
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Appearance */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.sectionLabel, { color: C.textDim }]}>APPEARANCE</Text>
+        <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
+          <View style={styles.settingCopy}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Theme</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Changes the entire app</Text>
+          </View>
+          <SegmentControl
+            options={[{ label: 'Dark', value: 'dark' }, { label: 'Light', value: 'light' }]}
+            value={mode}
+            onChange={v => useThemeStore.getState().setMode(v as any)}
+          />
+        </View>
+        <View style={styles.settingRow}>
+          <View style={styles.settingCopy}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Units</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Updates distances & weights everywhere</Text>
+          </View>
+          <SegmentControl
+            options={[{ label: 'mi/lb', value: 'imperial' }, { label: 'km/kg', value: 'metric' }]}
+            value={units}
+            onChange={v => setUnits(v as any)}
+            activeTone="primary"
+          />
+        </View>
+      </View>
+
+      {/* Training history */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.sectionLabel, { color: C.textDim }]}>TRAINING HISTORY</Text>
+        {recentTrainingHistory.length > 0 ? (
+          recentTrainingHistory.map((item, index) => (
+            <View
+              key={item.id}
+              style={[
+                styles.historyRow,
+                index < recentTrainingHistory.length - 1 && { borderBottomColor: C.border, borderBottomWidth: 1 },
+              ]}
+            >
+              <View style={[styles.historyIcon, { backgroundColor: item.skipped ? C.cardAlt : C.primaryDim }]}>
+                <Ionicons name={item.skipped ? 'remove-circle-outline' : 'checkmark-circle-outline'} size={18} color={item.skipped ? C.textMuted : C.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.settingTitle, { color: C.text }]}>{item.title}</Text>
+                <Text style={[styles.settingCaption, { color: C.textMuted }]}>{item.meta}</Text>
+              </View>
+            </View>
+          ))
+        ) : (
+          <Text style={[styles.settingCaption, { color: C.textMuted }]}>
+            Completed runs and strength sessions will show up here after you log them.
+          </Text>
+        )}
+      </View>
+
+      {/* Integrations */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.sectionLabel, { color: C.textDim }]}>HEALTH DATA SYNC</Text>
+        <View style={styles.settingRow}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 12 }}>
+            <View style={[{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ff3b30' }]}>
+              <Text style={[{ fontSize: 17 }]}>♥</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingTitle, { color: C.text }]}>Apple Health</Text>
+              <Text style={[styles.settingCaption, { color: C.textMuted }]}>Heart rate during runs, sleep, HRV, and workout saving</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.connectBtn, integrations.healthKitEnabled ? { backgroundColor: C.cardAlt } : { backgroundColor: '#ff3b30' }, busy === 'health' && { opacity: 0.6 }]}
+            onPress={connectAppleHealth}
+            disabled={busy === 'health'}
+            activeOpacity={0.8}
+          >
+            <Text style={[{ fontSize: 12, fontWeight: '700', color: integrations.healthKitEnabled ? C.positive : '#fff' }]}>
+              {busy === 'health' ? 'Connecting...' : integrations.healthKitEnabled ? '✓ Connected' : 'Connect'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Location */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.sectionLabel, { color: C.textDim }]}>LOCATION</Text>
+        <View style={styles.settingRow}>
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>GPS Run Tracking</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Track your route and pace on a live map during runs</Text>
+          </View>
+          <Switch
+            value={integrations.locationEnabled}
+            onValueChange={setLocationEnabled}
+            trackColor={{ false: C.cardAlt, true: C.primary }}
+            thumbColor="#fff"
+          />
+        </View>
+      </View>
+
+      {/* Notifications */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.sectionLabel, { color: C.textDim }]}>NOTIFICATIONS</Text>
+        <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
+          <View>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Enable Notifications</Text>
+            <Text style={[styles.settingCaption, { color: notificationSchedule?.inSync === false && integrations.notificationsEnabled ? C.warning : C.textMuted }]}>
+              {notificationCaption}
+            </Text>
+          </View>
+          <Switch
+            value={integrations.notificationsEnabled}
+            onValueChange={updateNotificationEnabled}
+            trackColor={{ false: C.cardAlt, true: C.primary }}
+            thumbColor="#fff"
+          />
+        </View>
+        {integrations.notificationsEnabled && (
+          <>
+            <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
+              <View>
+                <Text style={[styles.settingTitle, { color: C.text }]}>Daily reminder time</Text>
+                <Text style={[styles.settingCaption, { color: C.textMuted }]}>Morning prompt to log readiness</Text>
+              </View>
+              <TextInput
+                value={notificationTimeDraft}
+                onChangeText={setNotificationTimeDraft}
+                onBlur={commitNotificationTime}
+                onSubmitEditing={commitNotificationTime}
+                style={[{ backgroundColor: C.cardAlt, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 6, paddingHorizontal: 10, fontSize: 13, color: C.text }]}
+              />
+            </View>
+            <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
+              <Text style={[styles.settingTitle, { color: C.text }]}>Workout reminders</Text>
+              <Switch
+                value={integrations.workoutNotifications}
+                onValueChange={updateWorkoutNotifications}
+                trackColor={{ false: C.cardAlt, true: C.primary }}
+                thumbColor="#fff"
+              />
+            </View>
+            <View style={styles.settingRow}>
+              <Text style={[styles.settingTitle, { color: C.text }]}>Readiness check-in</Text>
+              <Switch
+                value={integrations.readinessNotifications}
+                onValueChange={updateReadinessNotifications}
+                trackColor={{ false: C.cardAlt, true: C.primary }}
+                thumbColor="#fff"
+              />
+            </View>
+          </>
+        )}
+      </View>
+
+      {/* Danger zone */}
+      <TouchableOpacity
+        style={[styles.dangerBtn, { borderColor: C.critical }]}
+        onPress={() =>
+          Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Sign Out', style: 'destructive',
+              onPress: async () => {
+                integrations.setHealthKit(false);
+                integrations.setLocation(false);
+                integrations.setNotifications(false);
+                await clearTrainingNotifications().catch(() => undefined);
+                await signOut();
+                router.replace('/auth/sign-in');
+              },
+            },
+          ])
+        }
+        activeOpacity={0.8}
+      >
+        <Text style={[{ fontSize: 14, fontWeight: '700', color: C.critical }]}>Sign Out</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
-function SectionLabel({ label }: { label: string }) {
-  return <Text style={styles.sectionLabel}>{label}</Text>;
-}
-
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  headerLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.9,
+    textTransform: 'uppercase',
+  },
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: '700',
+    fontFamily: 'CormorantGaramond_700Bold',
+  },
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 10,
+  },
   sectionLabel: {
-    color:         colors.textDim,
-    fontSize:      FontSize.xs,
-    fontWeight:    FontWeight.medium,
+    fontSize: 11,
+    fontWeight: '700',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    marginBottom:  spacing.sm,
-    marginTop:     spacing.sm,
+    marginBottom: 12,
   },
-  fields: {
-    gap: spacing.xl,
-  },
-  sensitivityNote: {
-    color:      colors.textSubtle,
-    fontSize:   9,
-    lineHeight: 13,
-    marginTop:  spacing.md,
-  },
-
-  // HRmax source toggle
-  toggleGroup: {
-    gap: spacing.xs,
-  },
-  toggleGroupLabel: {
-    color:         colors.textMuted,
-    fontSize:      10,
-    fontWeight:    FontWeight.black,
-    letterSpacing: 0.6,
-  },
-  sourcePills: {
+  settingRow: {
     flexDirection: 'row',
-    gap:           spacing.sm,
-  },
-  sourcePill: {
-    flex:              1,
-    paddingVertical:   spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius:      Radius.sm,
-    backgroundColor:   colors.border,
-    alignItems:        'center',
-  },
-  sourcePillActive: {
-    backgroundColor: colors.primaryDim,
-    borderWidth:     1,
-    borderColor:     colors.primary,
-  },
-  sourcePillText: {
-    color:      colors.textDim,
-    fontSize:   FontSize.xs,
-    fontWeight: FontWeight.medium,
-    textAlign:  'center',
-  },
-  sourcePillTextActive: {
-    color:      colors.primary,
-    fontWeight: FontWeight.bold,
-  },
-  hrEstimate: {
-    color:    colors.primary,
-    fontSize: FontSize.xs,
-  },
-  hrEstimateDim: {
-    color:    colors.textSubtle,
-    fontSize: FontSize.xs,
-  },
-
-  // Threshold test display
-  testResultRow: {
-    gap: spacing.sm,
-  },
-  testResultStats: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    backgroundColor: colors.bg,
-    borderRadius:    10,
-    padding:         spacing.md,
-  },
-  testStat: {
-    flex:       1,
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap:        2,
+    gap: 12,
+    paddingBottom: 14,
+    marginBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'transparent',
   },
-  testStatValue: {
-    color:      colors.text,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.black,
+  settingCopy: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 8,
   },
-  testStatLabel: {
-    color:    colors.textSubtle,
-    fontSize: 9,
+  settingTitle: {
+    fontSize: 14,
+    fontWeight: '700',
   },
-  testStatDivider: {
-    width:           1,
-    height:          28,
-    backgroundColor: colors.border,
-  },
-  testNotes: {
-    color:      colors.textMuted,
-    fontSize:   FontSize.xs,
-    lineHeight: 16,
-    fontStyle:  'italic',
-  },
-  testActions: {
+  historyRow: {
     flexDirection: 'row',
-    gap:           spacing.sm,
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
   },
-  testActionBtn: {
-    flex:            1,
-    paddingVertical: spacing.sm,
-    borderRadius:    Radius.sm,
-    backgroundColor: colors.border,
-    alignItems:      'center',
+  historyIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  testActionBtnDanger: {
-    flex:            0,
-    paddingHorizontal: spacing.lg,
-    backgroundColor:   '#1F0707',
-    borderWidth:       1,
-    borderColor:       colors.critical,
+  settingCaption: {
+    fontSize: 11,
+    marginTop: 2,
   },
-  testActionBtnText: {
-    color:      colors.text,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.medium,
+  profileInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 8,
+    paddingHorizontal: 10,
+    fontSize: 13,
   },
-  testActionBtnDangerText: {
-    color:      colors.critical,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.medium,
-  },
-  testNote: {
-    color:      colors.textMuted,
-    fontSize:   FontSize.sm,
-    lineHeight: 18,
-  },
-  testNoteRef: {
-    color:      colors.textSubtle,
-    fontSize:   8,
-    fontStyle:  'italic',
-    marginTop:  -spacing.sm,
-  },
-  logTestBtn: {
-    paddingVertical: spacing.md,
-    borderRadius:    Radius.sm,
-    backgroundColor: colors.primaryDim,
-    borderWidth:     1,
-    borderColor:     colors.primary,
-    alignItems:      'center',
-  },
-  logTestBtnText: {
-    color:      colors.primary,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.bold,
-  },
-
-  // Reset section
-  resetCard: {
-    backgroundColor: colors.card,
-    borderRadius:    12,
-    padding:         spacing.md,
-    borderWidth:     1,
-    borderColor:     colors.border,
-    gap:             spacing.md,
-  },
-  resetTitle: {
-    color:      colors.text,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.bold,
-  },
-  resetDesc: {
-    color:      colors.textMuted,
-    fontSize:   FontSize.xs,
-    lineHeight: 17,
-  },
-  resetBtn: {
-    backgroundColor: '#1F0707',
-    borderWidth:     1,
-    borderColor:     colors.danger,
-    borderRadius:    Radius.sm,
-    paddingVertical: spacing.md,
-    alignItems:      'center',
-  },
-  resetBtnTxt: {
-    color:      colors.danger,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.bold,
-  },
-
-  // Appearance toggle
-  appearanceCard: {
-    flexDirection:   'row',
-    gap:             spacing.sm,
-    backgroundColor: colors.card,
-    borderRadius:    12,
-    padding:         spacing.md,
-    borderWidth:     1,
-    borderColor:     colors.border,
-  },
-  appearancePill: {
-    flex:            1,
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'center',
-    gap:             spacing.sm,
-    paddingVertical: spacing.sm,
-    borderRadius:    Radius.sm,
-    backgroundColor: colors.bg,
-    borderWidth:     1,
-    borderColor:     colors.border,
-  },
-  appearancePillActive: {
-    backgroundColor: colors.primaryDim,
-    borderColor:     colors.primary,
-  },
-  appearanceSwatch: {
-    width:        16,
-    height:       16,
-    borderRadius: 4,
-    borderWidth:  1,
-    borderColor:  colors.border,
-  },
-  appearancePillText: {
-    color:      colors.textDim,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.medium,
-  },
-  appearancePillTextActive: {
-    color:      colors.primary,
-    fontWeight: FontWeight.bold,
-  },
-
-  // Units toggle
-  unitsCard: {
-    backgroundColor: colors.card,
-    borderRadius:    12,
-    padding:         spacing.md,
-    borderWidth:     1,
-    borderColor:     colors.border,
-    gap:             spacing.sm,
-  },
-  unitsTitle: {
-    color:      colors.textMuted,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.bold,
-  },
-  unitsPills: {
+  segCtrl: {
     flexDirection: 'row',
-    gap:           spacing.sm,
+    borderRadius: 10,
+    padding: 4,
+    gap: 4,
+    flexShrink: 0,
   },
-  unitsPill: {
-    flex:              1,
-    paddingVertical:   spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius:      Radius.sm,
-    backgroundColor:   colors.bg,
-    borderWidth:       1,
-    borderColor:       colors.border,
-    alignItems:        'center',
+  segOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
-  unitsPillActive: {
-    backgroundColor: colors.primaryDim,
-    borderColor:     colors.primary,
+  segText: {
+    fontSize: 13,
   },
-  unitsPillText: {
-    color:      colors.textDim,
-    fontSize:   FontSize.xs,
-    fontWeight: FontWeight.medium,
-    textAlign:  'center',
+  connectBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
-  unitsPillTextActive: {
-    color:      colors.primary,
-    fontWeight: FontWeight.bold,
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 14,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
   },
-  integrationsCard: {
-    backgroundColor: colors.card,
-    borderRadius:    12,
-    borderWidth:     1,
-    borderColor:     colors.border,
-    overflow:        'hidden',
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'visible',
+    position: 'relative',
   },
-  integrationRow: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical:   spacing.md,
-    gap:               spacing.md,
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 30,
   },
-  integrationInfo:  { flex: 1, gap: 2 },
-  integrationTitle: { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
-  integrationSub:   { color: colors.textMuted, fontSize: FontSize.xs },
-  integrationDivider: { height: 1, backgroundColor: colors.border, marginHorizontal: spacing.md },
-  integrationToggle: {
-    paddingHorizontal: spacing.md,
-    paddingVertical:   spacing.xs,
-    borderRadius:      20,
-    backgroundColor:   colors.border,
+  avatarAdd: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  integrationToggleOn:    { backgroundColor: colors.positive },
-  integrationToggleTxt:   { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
-  integrationToggleTxtOn: { color: colors.bg },
-  integrationBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical:   spacing.xs,
-    borderRadius:      Radius.sm,
-    backgroundColor:   colors.primary,
+  dangerBtn: {
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
   },
-  integrationBtnConnected: { backgroundColor: colors.border },
-  integrationBtnTxt:       { color: colors.text, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
 });

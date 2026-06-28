@@ -11,13 +11,20 @@
 export type HydrationResult = {
   totalWaterOz: number;
   carbsMinG:    number;
+  carbsRecommendedG: number;
   carbsMaxG:    number;
   sodiumMg:     number;
   intervalCount: number;
   tempMultiplier: number;
+  carbRate: {
+    minGPerHr: number;
+    recommendedGPerHr: number;
+    maxGPerHr: number;
+  };
   perInterval: {
     waterOz:   number;
     carbsMinG: number;
+    carbsRecommendedG: number;
     carbsMaxG: number;
     sodiumMg:  number;
   };
@@ -32,27 +39,44 @@ export function calcHydration(
   const tempMult = tempF <= 65
     ? 1.0
     : 1 + Math.min((tempF - 65) / 5, 5) * 0.05;
+  const carbRate = carbRateForDuration(durationMin);
+  const hours = durationMin / 60;
 
   const totalWaterOz = (lbs / 30) * (durationMin / 15) * tempMult;
-  const carbsMinG    = (durationMin / 60) * 60;
-  const carbsMaxG    = (durationMin / 60) * 120;
-  const sodiumMg     = (durationMin / 60) * 1000 * tempMult;
+  const carbsMinG    = hours * carbRate.minGPerHr;
+  const carbsRecommendedG = hours * carbRate.recommendedGPerHr;
+  const carbsMaxG    = hours * carbRate.maxGPerHr;
+  const sodiumMg     = hours * 1000 * tempMult;
   const intervals    = Math.max(1, Math.ceil(durationMin / 20));
 
   return {
     totalWaterOz,
     carbsMinG,
+    carbsRecommendedG,
     carbsMaxG,
     sodiumMg,
     intervalCount: intervals,
     tempMultiplier: tempMult,
+    carbRate,
     perInterval: {
       waterOz:   totalWaterOz / intervals,
       carbsMinG: carbsMinG   / intervals,
+      carbsRecommendedG: carbsRecommendedG / intervals,
       carbsMaxG: carbsMaxG   / intervals,
       sodiumMg:  sodiumMg    / intervals,
     },
   };
+}
+
+export function carbRateForDuration(durationMin: number): HydrationResult['carbRate'] {
+  if (durationMin <= 30) return { minGPerHr: 0, recommendedGPerHr: 10, maxGPerHr: 30 };
+  if (durationMin <= 60) return { minGPerHr: 0, recommendedGPerHr: 20, maxGPerHr: 50 };
+  if (durationMin <= 90) return { minGPerHr: 20, recommendedGPerHr: 30, maxGPerHr: 70 };
+  if (durationMin <= 120) return { minGPerHr: 40, recommendedGPerHr: 60, maxGPerHr: 90 };
+  if (durationMin <= 150) return { minGPerHr: 50, recommendedGPerHr: 80, maxGPerHr: 120 };
+  if (durationMin <= 180) return { minGPerHr: 60, recommendedGPerHr: 90, maxGPerHr: 150 };
+  if (durationMin <= 360) return { minGPerHr: 75, recommendedGPerHr: 100, maxGPerHr: 150 };
+  return { minGPerHr: 75, recommendedGPerHr: 90, maxGPerHr: 120 };
 }
 
 // Rough easy pace estimate when no calibration data is available.

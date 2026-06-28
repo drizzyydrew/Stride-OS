@@ -1,815 +1,683 @@
-// ─── Calendar Screen ──────────────────────────────────────────────────────────
-//
-// Three switchable views: Day, Week, Month.
-// Day view:   full list of planned + logged workouts for one day, swipe left/right
-// Week view:  7 columns with dot indicators, swipe to change week
-// Month view: traditional grid, swipe left/right to change month
-//
-// Business logic: calendarEngine.ts (date mapping), customWorkoutStore, workoutGenerator.
-
 import { useMemo, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-import { useAthleteStore }       from '../../../src/store/athleteStore';
-import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
-import { useWeekPlan }           from '../../../src/hooks/useWeekPlan';
-import {
-  toYMD,
-  weeksInMonth,
-  type CalendarEntry,
-} from '../../../src/utils/calendarEngine';
-import type { CustomWorkoutLog }  from '../../../src/types/customWorkout';
+import { LAYOUT } from '../../../src/constants/layout';
+import { useSettingsStore } from '../../../src/store/settingsStore';
+import { useColors } from '../../../src/theme/useColors';
 
-import ScreenLayout         from '../../../src/layout/ScreenLayout';
-import FloatingActionButton from '../../../src/layout/FloatingActionButton';
-import LogWorkoutModal      from '../../../src/components/shared/LogWorkoutModal';
-import OverrideModal        from '../../../src/components/shared/OverrideModal';
+type CalendarView = 'month' | 'week' | 'day';
+type SessionType = 'run' | 'long' | 'intervals' | 'strength' | 'rest';
 
-import { colors }  from '../../../src/theme/colors';
-import { spacing } from '../../../src/theme/spacing';
-import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
+type CalendarCell = {
+  date: Date | null;
+  key: string;
+  type: SessionType | null;
+};
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-const DOW_SHORT  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const DOW_ABBREV = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+function startOfDay(date: Date): Date {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
 
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
-];
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
 
-type CalView = 'day' | 'week' | 'month';
+function startOfWeek(date: Date): Date {
+  return addDays(startOfDay(date), -date.getDay());
+}
 
-function categoryColor(cat: string): string {
-  switch (cat) {
-    case 'running':        return '#2563EB';
-    case 'strength':       return '#A855F7';
-    case 'cross_training': return '#F97316';
-    case 'mobility':       return '#4ADE80';
-    default:               return '#8B9AAF';
+function sameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function getSessionType(date: Date): SessionType {
+  const day = date.getDay();
+  if (day === 0 || day === 3) return 'rest';
+  if (day === 1) return 'run';
+  if (day === 2) return 'intervals';
+  if (day === 4 || day === 5) return 'strength';
+  return 'long';
+}
+
+function buildMonthCells(monthDate: Date): CalendarCell[] {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: CalendarCell[] = [];
+
+  for (let i = 0; i < firstDay.getDay(); i += 1) {
+    cells.push({ date: null, key: `blank-${i}`, type: null });
   }
-}
 
-function categoryLabel(cat: string): string {
-  switch (cat) {
-    case 'running':        return 'Run';
-    case 'strength':       return 'Strength';
-    case 'cross_training': return 'Cross';
-    case 'mobility':       return 'Mobility';
-    default:               return 'Other';
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(year, month, day);
+    cells.push({ date, key: date.toISOString(), type: getSessionType(date) });
   }
+
+  while (cells.length % 7 !== 0) {
+    cells.push({ date: null, key: `blank-end-${cells.length}`, type: null });
+  }
+
+  return cells;
 }
 
-// ─── Shared helpers ───────────────────────────────────────────────────────────
-
-function startOfWeek(d: Date): Date {
-  const copy = new Date(d);
-  copy.setDate(d.getDate() - d.getDay()); // Sunday
-  copy.setHours(0, 0, 0, 0);
-  return copy;
+function formatMonth(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 }
 
-function addDays(d: Date, n: number): Date {
-  const copy = new Date(d);
-  copy.setDate(d.getDate() + n);
-  return copy;
+function formatDayTitle(date: Date): string {
+  return date.toLocaleDateString('en-US', { weekday: 'long' });
 }
 
-// ─── Entry rows ───────────────────────────────────────────────────────────────
+export default function CalendarScreen() {
+  const C = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { units } = useSettingsStore();
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const [view, setView] = useState<CalendarView>('week');
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [displayedMonth, setDisplayedMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const imp = units === 'imperial';
+  const easy4 = imp ? '4 mi' : '6.4 km';
+  const easy6 = imp ? '6 mi' : '9.7 km';
+  const long12 = imp ? '12 mi' : '19.3 km';
+  const paceUnit = imp ? '/mi' : '/km';
+  const weightUnit = imp ? 'lb' : 'kg';
 
-function EntryRow({ entry }: { entry: CalendarEntry }) {
-  const exercises     = entry.session?.exercises ?? [];
-  const exerciseCount = exercises.length;
+  const sessionColors: Record<SessionType, string> = {
+    run: C.primary,
+    long: C.positive,
+    intervals: C.warning,
+    strength: C.accent,
+    rest: 'transparent',
+  };
 
-  return (
-    <View style={s.entryRow}>
-      <View style={[s.entryDot, { backgroundColor: entry.color }]} />
-      <View style={s.entryInfo}>
-        <Text style={s.entryLabel}>{entry.label}</Text>
-        {entry.workout && (
-          <Text style={s.entryMeta}>
-            {entry.workout.durationMinutes} min
-            {entry.workout.targetDistance ? ` · ${entry.workout.targetDistance} mi` : ''}
-            {' · '}{entry.workout.intensity}
-          </Text>
-        )}
-        {entry.session && (
-          <Text style={s.entryMeta}>
-            {exerciseCount > 0 ? `${exerciseCount} exercises` : (entry.session.sessionType ?? 'Strength')}
-            {exerciseCount > 0 ? ` · ~${exerciseCount * 4} min` : ''}
-          </Text>
-        )}
-      </View>
-      {entry.completed && <Text style={s.entryDone}>✓</Text>}
-    </View>
-  );
-}
+  const monthCells = useMemo(() => buildMonthCells(displayedMonth), [displayedMonth]);
+  const weekStart = startOfWeek(selectedDate);
+  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)), [weekStart.getTime()]);
+  const completedThisWeek = weekDays.filter(day => day < today).length;
 
-function LogRow({ log }: { log: CustomWorkoutLog }) {
-  const dur =
-    log.durationMinutes ??
-    log.strengthDurationMin ??
-    log.crossDurationMin ??
-    log.mobilityDurationMin ??
-    log.otherDurationMin ?? 0;
+  function changePeriod(direction: -1 | 1) {
+    if (view === 'month') {
+      const next = new Date(displayedMonth);
+      next.setMonth(next.getMonth() + direction);
+      setDisplayedMonth(next);
+      setSelectedDate(new Date(next.getFullYear(), next.getMonth(), Math.min(selectedDate.getDate(), 28)));
+      return;
+    }
 
-  return (
-    <View style={s.entryRow}>
-      <View style={[s.entryDot, { backgroundColor: categoryColor(log.category) }]} />
-      <View style={s.entryInfo}>
-        <Text style={s.entryLabel}>{categoryLabel(log.category)}</Text>
-        <Text style={s.entryMeta}>
-          {dur} min
-          {log.distanceMiles ? ` · ${log.distanceMiles.toFixed(1)} mi` : ''}
-          {log.rpe ? ` · RPE ${log.rpe}` : ''}
-        </Text>
-        {log.notes ? <Text style={s.entryNotes} numberOfLines={1}>{log.notes}</Text> : null}
-      </View>
-      <Text style={s.entryDone}>✓ Logged</Text>
-    </View>
-  );
-}
+    const offset = view === 'week' ? direction * 7 : direction;
+    const next = addDays(selectedDate, offset);
+    setSelectedDate(next);
+    setDisplayedMonth(new Date(next.getFullYear(), next.getMonth(), 1));
+  }
 
-// ─── Day Detail Panel ─────────────────────────────────────────────────────────
+  function selectDate(date: Date) {
+    setSelectedDate(date);
+    setDisplayedMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+    setView('day');
+  }
 
-function DayDetail({
-  date, plannedEntries, customLogs, onLogWorkout,
-}: {
-  date:           Date;
-  plannedEntries: CalendarEntry[];
-  customLogs:     CustomWorkoutLog[];
-  onLogWorkout:   () => void;
-}) {
-  const dateStr  = toYMD(date);
-  const todayStr = toYMD(new Date());
-  const isFuture = dateStr > todayStr;
+  function renderSegment(label: string, value: CalendarView) {
+    const selected = view === value;
+    return (
+      <TouchableOpacity
+        style={[styles.segment, selected && { backgroundColor: C.primaryDim }]}
+        onPress={() => setView(value)}
+        activeOpacity={0.75}
+      >
+        <Text style={[styles.segmentText, { color: selected ? C.primary : C.textDim }]}>{label}</Text>
+      </TouchableOpacity>
+    );
+  }
 
-  const totalDur = customLogs.reduce((sum, l) =>
-    sum + (l.durationMinutes ?? l.strengthDurationMin ?? l.crossDurationMin ?? l.mobilityDurationMin ?? l.otherDurationMin ?? 0), 0);
-
-  return (
-    <View style={s.detailPanel}>
-      <View style={s.detailHeader}>
-        <View>
-          <Text style={s.detailDate}>
-            {date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-          </Text>
-          {totalDur > 0 && (
-            <Text style={s.detailMeta}>{totalDur} min logged</Text>
-          )}
+  function renderMonthView() {
+    return (
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border, padding: 14 }]}>
+        <View style={styles.monthHeaderGrid}>
+          {DAY_LABELS.map(label => (
+            <Text key={label} style={[styles.monthDow, { color: C.textDim }]}>{label}</Text>
+          ))}
         </View>
-        {!isFuture && (
-          <Pressable style={s.logDayBtn} onPress={onLogWorkout}>
-            <Text style={s.logDayTxt}>+ Log</Text>
-          </Pressable>
-        )}
-      </View>
-
-      {plannedEntries.length > 0 && (
-        <View style={s.sectionGroup}>
-          <Text style={s.groupLabel}>PLANNED</Text>
-          {plannedEntries.map((e, i) => <EntryRow key={i} entry={e} />)}
-        </View>
-      )}
-
-      {customLogs.length > 0 && (
-        <View style={s.sectionGroup}>
-          <Text style={s.groupLabel}>LOGGED</Text>
-          {customLogs.map(log => <LogRow key={log.id} log={log} />)}
-        </View>
-      )}
-
-      {plannedEntries.length === 0 && customLogs.length === 0 && (
-        <Text style={s.emptyTxt}>
-          {isFuture ? 'No sessions planned' : 'No sessions logged'}
-        </Text>
-      )}
-    </View>
-  );
-}
-
-// ─── Day View ─────────────────────────────────────────────────────────────────
-
-function DayView({
-  selected,
-  onChangeDay,
-  plannedByDate,
-  getLogsForDate,
-  onLogWorkout,
-}: {
-  selected:       Date;
-  onChangeDay:    (d: Date) => void;
-  plannedByDate:  Map<string, CalendarEntry[]>;
-  getLogsForDate: (date: string) => CustomWorkoutLog[];
-  onLogWorkout:   () => void;
-}) {
-  const selectedStr = toYMD(selected);
-  const todayStr    = toYMD(new Date());
-
-  return (
-    <View style={{ flex: 1 }}>
-      {/* Day nav header */}
-      <View style={s.dayNavRow}>
-        <Pressable hitSlop={12} onPress={() => onChangeDay(addDays(selected, -1))}>
-          <Text style={s.navArrow}>‹</Text>
-        </Pressable>
-        <Text style={s.dayNavTitle}>
-          {selected.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-          {toYMD(selected) === todayStr ? '  · Today' : ''}
-        </Text>
-        <Pressable hitSlop={12} onPress={() => onChangeDay(addDays(selected, 1))}>
-          <Text style={s.navArrow}>›</Text>
-        </Pressable>
-      </View>
-
-      {/* Scrollable day detail */}
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        <DayDetail
-          date={selected}
-          plannedEntries={plannedByDate.get(selectedStr) ?? []}
-          customLogs={getLogsForDate(selectedStr)}
-          onLogWorkout={onLogWorkout}
-        />
-      </ScrollView>
-    </View>
-  );
-}
-
-// ─── Week View ────────────────────────────────────────────────────────────────
-
-function WeekView({
-  selected,
-  onChangeDay,
-  onChangeWeek,
-  plannedByDate,
-  getLogsForDate,
-  onLogWorkout,
-}: {
-  selected:       Date;
-  onChangeDay:    (d: Date) => void;
-  onChangeWeek:   (delta: number) => void;
-  plannedByDate:  Map<string, CalendarEntry[]>;
-  getLogsForDate: (date: string) => CustomWorkoutLog[];
-  onLogWorkout:   () => void;
-}) {
-  const weekStart  = startOfWeek(selected);
-  const weekDays   = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  const todayStr   = toYMD(new Date());
-  const selectedStr = toYMD(selected);
-
-  const weekStart2 = weekDays[0];
-  const weekEnd    = weekDays[6];
-  const rangeLabel = `${weekStart2.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-
-  return (
-    <View style={{ flex: 1 }}>
-      {/* Week nav header */}
-      <View style={s.monthNav}>
-        <Pressable hitSlop={12} onPress={() => onChangeWeek(-1)}>
-          <Text style={s.navArrow}>‹</Text>
-        </Pressable>
-        <Text style={s.monthTitle}>{rangeLabel}</Text>
-        <Pressable hitSlop={12} onPress={() => onChangeWeek(1)}>
-          <Text style={s.navArrow}>›</Text>
-        </Pressable>
-      </View>
-
-      {/* 7-column week grid */}
-      <View style={s.weekGridRow}>
-        {weekDays.map((day, i) => {
-          const dStr   = toYMD(day);
-          const isToday = dStr === todayStr;
-          const isSel   = dStr === selectedStr;
-          const planned = plannedByDate.get(dStr) ?? [];
-          const logged  = getLogsForDate(dStr);
-          const dots: { color: string }[] = [
-            ...planned.map(e => ({ color: e.color })),
-            ...logged.map(l => ({ color: categoryColor(l.category) })),
-          ];
-
-          return (
-            <Pressable
-              key={i}
-              style={[
-                s.weekDayCol,
-                isToday && s.weekDayColToday,
-                isSel && !isToday && s.weekDayColSelected,
-              ]}
-              onPress={() => onChangeDay(day)}
-            >
-              <Text style={[s.weekDowLabel, isToday && s.weekDowLabelToday]}>
-                {DOW_ABBREV[i]}
-              </Text>
-              <Text style={[
-                s.weekDayNum,
-                isToday && s.weekDayNumToday,
-                isSel && !isToday && s.weekDayNumSelected,
-              ]}>
-                {day.getDate()}
-              </Text>
-              <View style={s.dotRow}>
-                {dots.slice(0, 3).map((d, di) => (
-                  <View key={di} style={[s.dot, { backgroundColor: d.color }]} />
-                ))}
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {/* Selected day detail */}
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        <DayDetail
-          date={selected}
-          plannedEntries={plannedByDate.get(selectedStr) ?? []}
-          customLogs={getLogsForDate(selectedStr)}
-          onLogWorkout={onLogWorkout}
-        />
-      </ScrollView>
-    </View>
-  );
-}
-
-// ─── Month View ───────────────────────────────────────────────────────────────
-
-function DayCell({
-  date, isToday, isCurrentMonth, dots, selected, onPress,
-}: {
-  date:           Date;
-  isToday:        boolean;
-  isCurrentMonth: boolean;
-  dots:           { color: string }[];
-  selected:       boolean;
-  onPress:        () => void;
-}) {
-  return (
-    <Pressable
-      style={[
-        s.dayCell,
-        isToday  && s.dayCellToday,
-        selected && !isToday && s.dayCellSelected,
-      ]}
-      onPress={onPress}
-      hitSlop={4}
-    >
-      <Text style={[
-        s.dayNum,
-        !isCurrentMonth && s.dayNumFaded,
-        isToday         && s.dayNumToday,
-        selected        && !isToday && s.dayNumSelected,
-      ]}>
-        {date.getDate()}
-      </Text>
-      <View style={s.dotRow}>
-        {dots.slice(0, 3).map((d, i) => (
-          <View key={i} style={[s.dot, { backgroundColor: d.color }]} />
-        ))}
-      </View>
-    </Pressable>
-  );
-}
-
-function MonthView({
-  viewYear,
-  viewMonth,
-  selected,
-  onSelectDay,
-  onPrevMonth,
-  onNextMonth,
-  plannedByDate,
-  logsByDate,
-  onLogWorkout,
-}: {
-  viewYear:      number;
-  viewMonth:     number;
-  selected:      Date;
-  onSelectDay:   (d: Date) => void;
-  onPrevMonth:   () => void;
-  onNextMonth:   () => void;
-  plannedByDate: Map<string, CalendarEntry[]>;
-  logsByDate:    Map<string, CustomWorkoutLog[]>;
-  onLogWorkout:  () => void;
-}) {
-  const weeks      = useMemo(() => weeksInMonth(viewYear, viewMonth), [viewYear, viewMonth]);
-  const todayStr   = toYMD(new Date());
-  const selectedStr = toYMD(selected);
-
-  return (
-    <View style={{ flex: 1 }}>
-      {/* Month navigation */}
-      <View style={s.monthNav}>
-        <Pressable onPress={onPrevMonth} style={s.navBtn} hitSlop={12}>
-          <Text style={s.navArrow}>‹</Text>
-        </Pressable>
-        <Text style={s.monthTitle}>{MONTH_NAMES[viewMonth]} {viewYear}</Text>
-        <Pressable onPress={onNextMonth} style={s.navBtn} hitSlop={12}>
-          <Text style={s.navArrow}>›</Text>
-        </Pressable>
-      </View>
-
-      {/* Weekday headers */}
-      <View style={s.dowRow}>
-        {DOW_SHORT.map(d => (
-          <Text key={d} style={s.dowLabel}>{d}</Text>
-        ))}
-      </View>
-
-      {/* Calendar grid */}
-      {weeks.map((week, wi) => (
-        <View key={wi} style={s.weekRow}>
-          {week.map((day, di) => {
-            const dStr    = toYMD(day);
-            const planned = plannedByDate.get(dStr) ?? [];
-            const logged  = logsByDate.get(dStr) ?? [];
-            const dots: { color: string }[] = [
-              ...planned.map(e => ({ color: e.color })),
-              ...logged.map(l => ({ color: categoryColor(l.category) })),
-            ];
+        <View style={styles.monthGrid}>
+          {monthCells.map(cell => {
+            const isToday = cell.date ? sameDay(cell.date, today) : false;
+            const isSelected = cell.date ? sameDay(cell.date, selectedDate) : false;
+            const dotColor = cell.type ? sessionColors[cell.type] : 'transparent';
             return (
-              <DayCell
-                key={di}
-                date={day}
-                isToday={dStr === todayStr}
-                isCurrentMonth={day.getMonth() === viewMonth}
-                dots={dots}
-                selected={dStr === selectedStr}
-                onPress={() => onSelectDay(day)}
-              />
+              <TouchableOpacity
+                key={cell.key}
+                style={styles.monthCell}
+                onPress={() => cell.date && selectDate(cell.date)}
+                disabled={!cell.date}
+                activeOpacity={0.75}
+              >
+                <View
+                  style={[
+                    styles.monthDateBubble,
+                    {
+                      backgroundColor: isSelected || isToday ? C.primaryDim : 'transparent',
+                      borderColor: isSelected || isToday ? C.primary : 'transparent',
+                    },
+                  ]}
+                >
+                  <Text style={[styles.monthDateText, { color: isSelected || isToday ? C.primary : C.text }]}>
+                    {cell.date ? cell.date.getDate() : ''}
+                  </Text>
+                </View>
+                <View style={[styles.monthDot, { backgroundColor: dotColor }]} />
+              </TouchableOpacity>
             );
           })}
         </View>
-      ))}
-
-      {/* Legend */}
-      <View style={s.legend}>
-        {[
-          { color: '#2563EB', label: 'Running'  },
-          { color: '#A855F7', label: 'Strength' },
-          { color: '#F97316', label: 'Cross'    },
-          { color: '#4ADE80', label: 'Mobility' },
-        ].map(item => (
-          <View key={item.label} style={s.legendItem}>
-            <View style={[s.legendDot, { backgroundColor: item.color }]} />
-            <Text style={s.legendTxt}>{item.label}</Text>
-          </View>
-        ))}
+        <View style={[styles.legendRow, { borderTopColor: C.border }]}>
+          {[
+            ['Run', C.primary],
+            ['Long Run', C.positive],
+            ['Intervals', C.warning],
+            ['Strength', C.accent],
+          ].map(([label, color]) => (
+            <View key={label} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: color }]} />
+              <Text style={[styles.legendText, { color: C.textMuted }]}>{label}</Text>
+            </View>
+          ))}
+        </View>
       </View>
-
-      {/* Selected day detail */}
-      <DayDetail
-        date={selected}
-        plannedEntries={plannedByDate.get(selectedStr) ?? []}
-        customLogs={logsByDate.get(selectedStr) ?? []}
-        onLogWorkout={onLogWorkout}
-      />
-    </View>
-  );
-}
-
-// ─── Main Screen ──────────────────────────────────────────────────────────────
-
-export default function CalendarScreen() {
-  const today = new Date();
-
-  const [view,      setView]      = useState<CalView>('month');
-  const [viewYear,  setViewYear]  = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
-  const [selected,  setSelected]  = useState<Date>(today);
-
-  const [showLog,      setShowLog]      = useState(false);
-  const [showOverride, setShowOverride] = useState(false);
-  const [pendingOverrideId, setPendingOverrideId] = useState<string | undefined>();
-
-  const {
-    fatigueScore, recoveryScore,
-    setFatigueScore, setRecentEasyLoad, recentEasyLoad,
-  } = useAthleteStore();
-
-  const { addLog: addCustomLog, addOverride, getLogsForDate, getLogsForRange } = useCustomWorkoutStore();
-  const { calendarMap: plannedByDate } = useWeekPlan();
-
-  // Month-range logs for the dot indicators
-  const firstDay  = toYMD(new Date(viewYear, viewMonth, 1));
-  const lastDay   = toYMD(new Date(viewYear, viewMonth + 1, 0));
-  const monthLogs = getLogsForRange(firstDay, lastDay);
-
-  const logsByDate = useMemo(() => {
-    const map = new Map<string, CustomWorkoutLog[]>();
-    for (const log of monthLogs) {
-      const arr = map.get(log.date) ?? [];
-      arr.push(log);
-      map.set(log.date, arr);
-    }
-    return map;
-  }, [monthLogs]);
-
-  const selectedStr = toYMD(selected);
-
-  function prevMonth() {
-    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
-    else setViewMonth(m => m - 1);
-  }
-  function nextMonth() {
-    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
-    else setViewMonth(m => m + 1);
+    );
   }
 
-  function handleChangeWeek(delta: number) {
-    const next = addDays(selected, delta * 7);
-    setSelected(next);
+  function renderWeekView() {
+    const weekItems = weekDays.map(day => {
+      const type = getSessionType(day);
+      const isToday = sameDay(day, today);
+      const isPast = day < today;
+      const titleByType: Record<SessionType, string> = {
+        run: `Easy ${easy4}`,
+        long: `Long Run ${long12}`,
+        intervals: 'Intervals 8x400m',
+        strength: day.getDay() === 4 ? `Easy ${easy6}` : 'Easy & Strides',
+        rest: 'Rest & Recovery',
+      };
+      const zoneByType: Record<SessionType, string> = {
+        run: 'Zone 2',
+        long: 'Zone 2',
+        intervals: 'Zone 4',
+        strength: day.getDay() === 4 ? 'Zone 2' : 'Zone 3',
+        rest: '',
+      };
+
+      return { day, type, isToday, isPast, title: titleByType[type], zone: zoneByType[type] };
+    });
+
+    return (
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <View style={styles.weekList}>
+          {weekItems.map(item => (
+            <TouchableOpacity
+              key={item.day.toISOString()}
+              style={[
+                styles.weekItem,
+                {
+                  backgroundColor: item.isToday ? C.primaryDim : C.cardAlt,
+                  borderColor: item.isToday ? C.primary : 'transparent',
+                  opacity: item.day > today && !item.isToday ? 0.65 : 1,
+                },
+              ]}
+              onPress={() => selectDate(item.day)}
+              activeOpacity={0.75}
+            >
+              <Text style={[styles.weekDay, { color: item.isToday ? C.primary : item.isPast ? C.positive : C.textDim }]}>
+                {item.day.toLocaleDateString('en-US', { weekday: 'short' })}
+              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.weekTitle, { color: C.text }]}>{item.title}{item.isToday ? ' · Today' : ''}</Text>
+                {item.zone ? <Text style={[styles.weekZone, { color: C.textMuted }]}>{item.zone}</Text> : null}
+              </View>
+              {item.isToday ? (
+                <View style={[styles.todayBadge, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
+                  <Text style={[styles.todayBadgeText, { color: C.primary }]}>TODAY</Text>
+                </View>
+              ) : item.isPast ? (
+                <Text style={[styles.doneText, { color: C.positive }]}>Done</Text>
+              ) : null}
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={[styles.weekProgress, { borderTopColor: C.border }]}>
+          <Text style={[styles.weekProgressText, { color: C.textMuted }]}>Weekly Progress · {completedThisWeek} / 7</Text>
+          <View style={[styles.progressTrack, { backgroundColor: C.border }]}>
+            <View style={[styles.progressFill, { backgroundColor: C.primary, width: `${Math.round((completedThisWeek / 7) * 100)}%` }]} />
+          </View>
+        </View>
+      </View>
+    );
   }
 
-  function handleLogPress() {
-    const isLowReadiness = fatigueScore > 60 || recoveryScore < 50;
-    if (isLowReadiness) {
-      setShowOverride(true);
-    } else {
-      setShowLog(true);
-    }
-  }
+  function renderDayView() {
+    const isToday = sameDay(selectedDate, today);
+    const isPast = selectedDate < today && !isToday;
+    const isFuture = selectedDate > today && !isToday;
+    const monthShort = selectedDate.toLocaleDateString('en-US', { month: 'short' });
 
-  function handleOverrideConfirmed(overrideId: string) {
-    setShowOverride(false);
-    setPendingOverrideId(overrideId);
-    setShowLog(true);
+    return (
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.dayMeta, { color: C.textDim }]}>{monthShort} {selectedDate.getDate()} · {selectedDate.getFullYear()}</Text>
+        <Text style={[styles.dayTitle, { color: C.text }]}>{formatDayTitle(selectedDate)}</Text>
+
+        {isToday ? (
+          <>
+            <View style={styles.dayStatRow}>
+              {[
+                ['DISTANCE', easy6],
+                ['ZONE', 'Z2'],
+                ['MAX HR', '152'],
+              ].map(([label, value]) => (
+                <View key={label} style={[styles.dayStatBox, { backgroundColor: C.cardAlt }]}>
+                  <Text style={[styles.dayStatLabel, { color: C.textDim }]}>{label}</Text>
+                  <Text style={[styles.dayStatValue, { color: C.text }]}>{value}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={[styles.targetCard, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
+              <Text style={[styles.targetLabel, { color: C.text }]}>Target Pace</Text>
+              <Text style={[styles.targetPace, { color: C.text }]}>9'14"<Text style={[styles.targetUnit, { color: C.textMuted }]}> {paceUnit}</Text></Text>
+            </View>
+          </>
+        ) : null}
+
+        {isPast ? (
+          <>
+            <View style={[styles.summaryBox, { backgroundColor: C.cardAlt }]}>
+              <Text style={[styles.summaryLabel, { color: C.textDim }]}>SESSION SUMMARY</Text>
+              <View style={styles.summaryStats}>
+                <View>
+                  <Text style={[styles.summaryTiny, { color: C.textDim }]}>Duration</Text>
+                  <Text style={[styles.summaryValue, { color: C.text }]}>42 min</Text>
+                </View>
+                <View>
+                  <Text style={[styles.summaryTiny, { color: C.textDim }]}>Avg RPE</Text>
+                  <Text style={[styles.summaryValue, { color: C.text }]}>7.5</Text>
+                </View>
+                <View>
+                  <Text style={[styles.summaryTiny, { color: C.textDim }]}>Volume</Text>
+                  <Text style={[styles.summaryValue, { color: C.text }]}>3,840 {weightUnit}</Text>
+                </View>
+              </View>
+            </View>
+            <Text style={[styles.exerciseLabel, { color: C.textDim }]}>EXERCISES LOGGED</Text>
+            {[
+              ['Goblet Squat', '3x12 · RPE 7'],
+              ['Squat', '4x8 · RPE 8'],
+              ['Romanian Deadlift', '3x10 · RPE 7'],
+              ['Push-up', '3x15 · RPE 6'],
+            ].map(([name, detail]) => (
+              <View key={name} style={[styles.exerciseRow, { backgroundColor: C.cardAlt }]}>
+                <Text style={[styles.exerciseName, { color: C.text }]}>{name}</Text>
+                <Text style={[styles.exerciseDetail, { color: C.textMuted }]}>{detail}</Text>
+              </View>
+            ))}
+          </>
+        ) : null}
+
+        {isFuture ? (
+          <>
+            <View style={[styles.summaryBox, { backgroundColor: C.cardAlt }]}>
+              <Text style={[styles.futureText, { color: C.textMuted }]}>Upcoming - tap Start when ready to begin this session.</Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.startButton, { backgroundColor: C.primary }]}
+              onPress={() => router.push('/(tabs)/strength')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.startButtonText, { color: C.onPrimary }]}>Start This Workout →</Text>
+            </TouchableOpacity>
+          </>
+        ) : null}
+      </View>
+    );
   }
 
   return (
-    <ScreenLayout
-      title="Calendar"
-      fab={<FloatingActionButton icon="add" onPress={handleLogPress} />}
+    <ScrollView
+      style={{ flex: 1, backgroundColor: C.bg }}
+      contentContainerStyle={{ paddingHorizontal: 18, paddingTop: insets.top + 6, paddingBottom: LAYOUT.screenPadBottom }}
+      showsVerticalScrollIndicator={false}
     >
-      {/* View switcher */}
-      <View style={s.viewSwitcher}>
-        {(['day', 'week', 'month'] as CalView[]).map(v => (
-          <Pressable
-            key={v}
-            style={[s.switcherPill, view === v && s.switcherPillActive]}
-            onPress={() => setView(v)}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
+          <Ionicons name="arrow-back" size={20} color={C.primary} />
+        </TouchableOpacity>
+        <View style={styles.headerText}>
+          <Text style={[styles.headerLabel, { color: C.textDim }]}>CALENDAR</Text>
+          <Text style={[styles.headerTitle, { color: C.text }]}>{formatMonth(view === 'month' ? displayedMonth : selectedDate)}</Text>
+        </View>
+        <View style={styles.arrowGroup}>
+          <TouchableOpacity
+            style={[styles.arrowButton, { backgroundColor: C.card, borderColor: C.border }]}
+            onPress={() => changePeriod(-1)}
+            activeOpacity={0.75}
           >
-            <Text style={[s.switcherText, view === v && s.switcherTextActive]}>
-              {v.charAt(0).toUpperCase() + v.slice(1)}
-            </Text>
-          </Pressable>
-        ))}
+            <Text style={[styles.arrowText, { color: C.text }]}>‹</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.arrowButton, { backgroundColor: C.card, borderColor: C.border }]}
+            onPress={() => changePeriod(1)}
+            activeOpacity={0.75}
+          >
+            <Text style={[styles.arrowText, { color: C.text }]}>›</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {view === 'day' && (
-        <DayView
-          selected={selected}
-          onChangeDay={setSelected}
-          plannedByDate={plannedByDate}
-          getLogsForDate={getLogsForDate}
-          onLogWorkout={handleLogPress}
-        />
-      )}
+      <View style={[styles.segmentWrap, { backgroundColor: C.card, borderColor: C.border }]}>
+        {renderSegment('Month', 'month')}
+        {renderSegment('Week', 'week')}
+        {renderSegment('Day', 'day')}
+      </View>
 
-      {view === 'week' && (
-        <WeekView
-          selected={selected}
-          onChangeDay={setSelected}
-          onChangeWeek={handleChangeWeek}
-          plannedByDate={plannedByDate}
-          getLogsForDate={getLogsForDate}
-          onLogWorkout={handleLogPress}
-        />
-      )}
-
-      {view === 'month' && (
-        <MonthView
-          viewYear={viewYear}
-          viewMonth={viewMonth}
-          selected={selected}
-          onSelectDay={d => {
-            setSelected(d);
-            setViewYear(d.getFullYear());
-            setViewMonth(d.getMonth());
-          }}
-          onPrevMonth={prevMonth}
-          onNextMonth={nextMonth}
-          plannedByDate={plannedByDate}
-          logsByDate={logsByDate}
-          onLogWorkout={handleLogPress}
-        />
-      )}
-
-      {/* Override modal */}
-      <OverrideModal
-        visible={showOverride}
-        onClose={() => setShowOverride(false)}
-        onConfirmed={handleOverrideConfirmed}
-        fatigueScore={fatigueScore}
-        recoveryScore={recoveryScore}
-        addOverride={addOverride}
-      />
-
-      {/* Log workout modal */}
-      <LogWorkoutModal
-        visible={showLog}
-        onClose={() => { setShowLog(false); setPendingOverrideId(undefined); }}
-        onSaved={() => { setShowLog(false); setPendingOverrideId(undefined); }}
-        onAddLog={addCustomLog}
-        currentFatigue={fatigueScore}
-        currentRecovery={recoveryScore}
-        recentEasyLoad={recentEasyLoad}
-        setFatigueScore={setFatigueScore}
-        setRecentEasyLoad={setRecentEasyLoad}
-        defaultDate={selectedStr}
-        overrideId={pendingOverrideId}
-      />
-    </ScreenLayout>
+      {view === 'month' ? renderMonthView() : null}
+      {view === 'week' ? renderWeekView() : null}
+      {view === 'day' ? renderDayView() : null}
+    </ScrollView>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const s = StyleSheet.create({
-  // View switcher
-  viewSwitcher: {
-    flexDirection:     'row',
-    marginHorizontal:  spacing.lg,
-    marginBottom:      spacing.md,
-    backgroundColor:   colors.card,
-    borderRadius:      Radius.md,
-    borderWidth:       1,
-    borderColor:       colors.border,
-    padding:           3,
-    gap:               3,
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
   },
-  switcherPill: {
-    flex:              1,
-    paddingVertical:   spacing.sm,
-    borderRadius:      Radius.sm,
-    alignItems:        'center',
+  headerText: {
+    flex: 1,
   },
-  switcherPillActive: {
-    backgroundColor: colors.primary,
+  headerLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.9,
   },
-  switcherText: {
-    color:      colors.textDim,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.medium,
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: '700',
+    fontFamily: 'CormorantGaramond_700Bold',
   },
-  switcherTextActive: {
-    color:      colors.text,
-    fontWeight: FontWeight.bold,
+  arrowGroup: {
+    flexDirection: 'row',
+    gap: 6,
   },
-
-  // Day view nav
-  dayNavRow: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    justifyContent:    'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical:   spacing.md,
+  arrowButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  dayNavTitle: {
-    color:      colors.text,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.bold,
+  arrowText: {
+    fontSize: 20,
+    lineHeight: 22,
   },
-
-  // Month / week nav
-  monthNav: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    justifyContent:    'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical:   spacing.md,
+  segmentWrap: {
+    flexDirection: 'row',
+    gap: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 4,
+    marginBottom: 14,
   },
-  navBtn:     { padding: spacing.sm },
-  navArrow:   { color: colors.text, fontSize: 24, fontWeight: FontWeight.bold },
-  monthTitle: { color: colors.text, fontSize: FontSize.md, fontWeight: FontWeight.bold },
-
-  // Weekday header row (month view)
-  dowRow: {
-    flexDirection:     'row',
-    paddingHorizontal: spacing.xs,
-    paddingBottom:     spacing.xs,
+  segment: {
+    flex: 1,
+    height: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  dowLabel: {
-    flex:          1,
-    textAlign:     'center',
-    color:         colors.textMuted,
-    fontSize:      FontSize.xs,
-    fontWeight:    FontWeight.black,
-    letterSpacing: 0.3,
+  segmentText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
-
-  // Month grid
-  weekRow: {
-    flexDirection:     'row',
-    paddingHorizontal: spacing.xs,
-    marginBottom:      2,
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 10,
   },
-  dayCell: {
-    flex:            1,
-    alignItems:      'center',
-    paddingVertical: 5,
-    borderRadius:    Radius.sm,
-    minHeight:       46,
-    gap:             3,
+  monthHeaderGrid: {
+    flexDirection: 'row',
+    marginBottom: 8,
   },
-  dayCellToday:    { backgroundColor: colors.primaryDim, borderWidth: 1, borderColor: colors.primary },
-  dayCellSelected: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-  dayNum:          { color: colors.text,    fontSize: FontSize.sm, fontWeight: FontWeight.medium },
-  dayNumFaded:     { color: colors.textDim },
-  dayNumToday:     { color: colors.primary, fontWeight: FontWeight.black },
-  dayNumSelected:  { fontWeight: FontWeight.black },
-
-  // Week view columns
-  weekGridRow: {
-    flexDirection:     'row',
-    paddingHorizontal: spacing.xs,
-    marginBottom:      spacing.sm,
+  monthDow: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 10,
+    fontWeight: '700',
   },
-  weekDayCol: {
-    flex:            1,
-    alignItems:      'center',
-    paddingVertical: 8,
-    borderRadius:    Radius.sm,
-    gap:             4,
+  monthGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
-  weekDayColToday:    { backgroundColor: colors.primaryDim, borderWidth: 1, borderColor: colors.primary },
-  weekDayColSelected: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-  weekDowLabel:        { color: colors.textMuted, fontSize: 10, fontWeight: FontWeight.black },
-  weekDowLabelToday:   { color: colors.primary },
-  weekDayNum:          { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  weekDayNumToday:     { color: colors.primary, fontWeight: FontWeight.black },
-  weekDayNumSelected:  { fontWeight: FontWeight.black },
-
-  // Dots
-  dotRow: { flexDirection: 'row', gap: 2, minHeight: 6 },
-  dot:    { width: 5, height: 5, borderRadius: 3 },
-
-  // Legend
-  legend: {
-    flexDirection:     'row',
-    gap:               spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical:   spacing.sm,
-    justifyContent:    'center',
+  monthCell: {
+    width: `${100 / 7}%`,
+    alignItems: 'center',
+    paddingVertical: 1,
+    marginBottom: 4,
   },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  legendDot:  { width: 8, height: 8, borderRadius: 4 },
-  legendTxt:  { color: colors.textMuted, fontSize: FontSize.xs },
-
-  // Detail panel
-  detailPanel: {
-    marginHorizontal: spacing.lg,
-    marginTop:        spacing.sm,
-    backgroundColor:  colors.card,
-    borderRadius:     Radius.md,
-    borderWidth:      1,
-    borderColor:      colors.border,
-    padding:          spacing.lg,
-    gap:              spacing.md,
-    marginBottom:     spacing.lg,
+  monthDateBubble: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  detailHeader: {
-    flexDirection:  'row',
-    alignItems:     'flex-start',
-    justifyContent: 'space-between',
+  monthDateText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
-  detailDate: { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  detailMeta: { color: colors.textMuted, fontSize: FontSize.xs, marginTop: 2 },
-  logDayBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical:   spacing.xs,
-    backgroundColor:   colors.primaryDim,
-    borderRadius:      Radius.sm,
-    borderWidth:       1,
-    borderColor:       colors.primary,
+  monthDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    marginTop: 2,
   },
-  logDayTxt: { color: colors.primary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
-
-  sectionGroup: { gap: spacing.sm },
-  groupLabel: {
-    color:         colors.textMuted,
-    fontSize:      9,
-    fontWeight:    FontWeight.black,
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendText: {
+    fontSize: 10,
+  },
+  weekList: {
+    gap: 6,
+  },
+  weekItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1.5,
+  },
+  weekDay: {
+    width: 28,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  weekTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  weekZone: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  doneText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  todayBadge: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  todayBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  weekProgress: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+  },
+  weekProgressText: {
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  progressTrack: {
+    height: 7,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+  dayMeta: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  dayTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  dayStatRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  dayStatBox: {
+    flex: 1,
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+  },
+  dayStatLabel: {
+    fontSize: 10,
+    marginBottom: 3,
+  },
+  dayStatValue: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  targetCard: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  targetLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  targetPace: {
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  targetUnit: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  summaryBox: {
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 8,
+  },
+  summaryLabel: {
+    fontSize: 11,
+    fontWeight: '700',
     letterSpacing: 0.6,
+    marginBottom: 6,
   },
-
-  entryRow:   { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
-  entryDot:   { width: 10, height: 10, borderRadius: 5, marginTop: 3, flexShrink: 0 },
-  entryInfo:  { flex: 1, gap: 2 },
-  entryLabel: { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
-  entryMeta:  { color: colors.textMuted, fontSize: FontSize.xs },
-  entryNotes: { color: colors.textMuted, fontSize: FontSize.xs, fontStyle: 'italic' },
-  entryDone:  { color: colors.positive, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
-
-  emptyTxt: {
-    color:          colors.textMuted,
-    fontSize:       FontSize.sm,
-    textAlign:      'center',
-    paddingVertical: spacing.md,
+  summaryStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  summaryTiny: {
+    fontSize: 10,
+  },
+  summaryValue: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  exerciseLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    marginBottom: 6,
+  },
+  exerciseRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 5,
+  },
+  exerciseName: {
+    fontSize: 12,
+  },
+  exerciseDetail: {
+    fontSize: 11,
+  },
+  futureText: {
+    fontSize: 11,
+    lineHeight: 18,
+  },
+  startButton: {
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  startButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

@@ -242,7 +242,7 @@ function buildEasyRun(ctx: BuildContext): BuiltWorkout {
       'Focus on even effort over even pace — hills naturally slow you down.',
       'Check form: slight forward lean, foot strike under hips, relaxed shoulders.',
     ],
-    executionCues: ['If you can\'t finish a sentence, slow down.', 'Nose breathing as the primary metric.', 'Aim for 170–180 spm cadence.'],
+    executionCues: ['If you can\'t finish a sentence, slow down.', 'Nose breathing as the primary metric.', 'Aim for 160–180 spm cadence.'],
     failureConditions: ['HR > Zone 3 for 5+ consecutive minutes → reduce pace.', 'Pain (not soreness) in joints → stop.'],
     modifications: mods,
     rationale,

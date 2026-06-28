@@ -49,7 +49,9 @@ export default function IntervalStructureCard({ intervals }: Props) {
       <View style={styles.intensityRow}>
         <View style={styles.intensityCell}>
           <Text style={styles.intensityLabel}>Target Pace</Text>
-          <Text style={styles.intensityValue}>{workPaceGuide}</Text>
+          <Text style={styles.intensityValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+            {workPaceGuide.split(' (')[0]}
+          </Text>
         </View>
         <View style={styles.intensityCell}>
           <Text style={styles.intensityLabel}>HR Zone</Text>
@@ -75,9 +77,14 @@ export default function IntervalStructureCard({ intervals }: Props) {
         </View>
       </View>
 
-      {progressionNote && (
+      {(workPaceGuide.includes('(') || progressionNote) && (
         <View style={styles.progressionRow}>
-          <Text style={styles.progressionText}>{progressionNote}</Text>
+          {workPaceGuide.includes('(') && (
+            <Text style={styles.progressionText}>
+              {workPaceGuide.split(' (')[1]?.replace(')', '') ?? ''}
+            </Text>
+          )}
+          {progressionNote ? <Text style={styles.progressionText}>{progressionNote}</Text> : null}
         </View>
       )}
     </Card>

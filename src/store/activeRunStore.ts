@@ -17,6 +17,8 @@ export type Coordinate = {
 
 // Rolling window for pace calculation (seconds of data to average)
 const PACE_WINDOW_SEC = 30;
+const MAX_ALLOWED_ACCURACY_METERS = 80;
+const MAX_REASONABLE_RUNNING_SPEED_MPS = 8.5; // ~5:02/mi, lets fast intervals through while rejecting GPS jumps.
 
 function haversineMiles(a: Coordinate, b: Coordinate): number {
   const R   = 3958.8;
@@ -33,6 +35,8 @@ type ActiveRunStore = {
   isActive:               boolean;
   isPaused:               boolean;
   startTime:              number | null;
+  pausedAt:               number | null;
+  pausedDurationMs:       number;
   distanceMiles:          number;
   currentPaceSecPerMile:  number;
   coordinates:            Coordinate[];
@@ -52,6 +56,8 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
   isActive:               false,
   isPaused:               false,
   startTime:              null,
+  pausedAt:               null,
+  pausedDurationMs:       0,
   distanceMiles:          0,
   currentPaceSecPerMile:  0,
   coordinates:            [],
@@ -63,6 +69,8 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       isActive:               true,
       isPaused:               false,
       startTime:              Date.now(),
+      pausedAt:               null,
+      pausedDurationMs:       0,
       distanceMiles:          0,
       currentPaceSecPerMile:  0,
       coordinates:            [],
@@ -71,13 +79,27 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
     });
   },
 
-  pauseRun: () => set({ isPaused: true }),
+  pauseRun: () => {
+    const state = get();
+    if (!state.isActive || state.isPaused) return;
+    set({ isPaused: true, pausedAt: Date.now() });
+  },
 
-  resumeRun: () => set({ isPaused: false }),
+  resumeRun: () => {
+    const state = get();
+    if (!state.isActive || !state.isPaused) return;
+    const pausedFor = state.pausedAt ? Date.now() - state.pausedAt : 0;
+    set({
+      isPaused: false,
+      pausedAt: null,
+      pausedDurationMs: state.pausedDurationMs + pausedFor,
+    });
+  },
 
   addLocationUpdate: (loc) => {
     const state = get();
     if (!state.isActive || state.isPaused) return;
+    if (typeof loc.coords.accuracy === 'number' && loc.coords.accuracy > MAX_ALLOWED_ACCURACY_METERS) return;
 
     const coord: Coordinate = {
       lat:       loc.coords.latitude,
@@ -85,12 +107,18 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       timestamp: loc.timestamp,
     };
 
+    const previousCoord = state.coordinates.at(-1);
+    if (previousCoord && coord.timestamp <= previousCoord.timestamp) return;
+
     const coords  = [...state.coordinates, coord];
     let totalDist = state.distanceMiles;
 
-    if (coords.length >= 2) {
-      const prev = coords[coords.length - 2];
-      totalDist += haversineMiles(prev, coord);
+    if (previousCoord) {
+      const deltaMiles = haversineMiles(previousCoord, coord);
+      const deltaSeconds = (coord.timestamp - previousCoord.timestamp) / 1000;
+      const speedMps = deltaSeconds > 0 ? (deltaMiles * 1609.344) / deltaSeconds : 0;
+      if (speedMps > MAX_REASONABLE_RUNNING_SPEED_MPS) return;
+      totalDist += deltaMiles;
     }
 
     // Rolling 30-second pace
@@ -113,7 +141,14 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
   },
 
   finishRun: () => {
-    set({ isActive: false, isPaused: false });
+    const state = get();
+    const pausedFor = state.isPaused && state.pausedAt ? Date.now() - state.pausedAt : 0;
+    set({
+      isActive: false,
+      isPaused: false,
+      pausedAt: null,
+      pausedDurationMs: state.pausedDurationMs + pausedFor,
+    });
   },
 
   cancelRun: () => {
@@ -121,6 +156,8 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       isActive:               false,
       isPaused:               false,
       startTime:              null,
+      pausedAt:               null,
+      pausedDurationMs:       0,
       distanceMiles:          0,
       currentPaceSecPerMile:  0,
       coordinates:            [],

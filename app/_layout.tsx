@@ -5,15 +5,21 @@ import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import { router, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
-import { useEffect } from 'react';
+import * as Notifications from 'expo-notifications';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import 'react-native-reanimated';
 
 import { useOnboardingStore } from '../src/store/onboardingStore';
 import { useAuthStore }       from '../src/store/authStore';
-import { supabase }           from '../src/lib/supabase';
+import { useThemeStore }      from '../src/store/themeStore';
+import { completeSupabaseAuthFromUrl } from '../src/lib/authRedirect';
+import { AppLogo } from '../src/components/ui/AppLogo';
 
 // Register GPS background task at module level (required by expo-task-manager)
 import '../src/lib/gpsTracking';
+import '../src/lib/notifications';
 
 export {
   ErrorBoundary,
@@ -24,9 +30,12 @@ export const unstable_settings = {
 };
 
 SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({ duration: 500, fade: true });
 
 export default function RootLayout() {
   const initialize = useAuthStore(s => s.initialize);
+  const mode = useThemeStore(s => s.mode);
+  const [showBrandSplash, setShowBrandSplash] = useState(true);
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     CormorantGaramond_700Bold,
@@ -35,22 +44,20 @@ export default function RootLayout() {
 
   useEffect(() => { if (error) console.warn('[fonts]', error); }, [error]);
   useEffect(() => {
-    if (loaded) {
+    if (loaded || error) {
       SplashScreen.hideAsync();
       initialize();
+      const timer = setTimeout(() => setShowBrandSplash(false), 850);
+      return () => clearTimeout(timer);
     }
-  }, [loaded]);
+    return undefined;
+  }, [loaded, error, initialize]);
 
-  // Handle password-reset deep links (strideos://auth/new-password#access_token=...&type=recovery)
+  // Handle Supabase auth deep links for OAuth, email confirmation, and password reset.
   useEffect(() => {
     async function handleUrl(url: string) {
-      if (!url.includes('type=recovery')) return;
-      const fragment = url.split('#')[1] ?? url.split('?')[1] ?? '';
-      const params = new URLSearchParams(fragment);
-      const accessToken  = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-      if (accessToken && refreshToken) {
-        await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      const result = await completeSupabaseAuthFromUrl(url);
+      if (result.recovery && !result.error) {
         router.push('/auth/new-password' as never);
       }
     }
@@ -60,10 +67,35 @@ export default function RootLayout() {
     return () => sub.remove();
   }, []);
 
+  useEffect(() => {
+    function redirect(notification: Notifications.Notification) {
+      const url = notification.request.content.data?.url;
+      if (typeof url === 'string') router.push(url as never);
+    }
+
+    Notifications.getLastNotificationResponseAsync().then(response => {
+      if (response?.notification) redirect(response.notification);
+    });
+
+    const sub = Notifications.addNotificationResponseReceivedListener(response => {
+      redirect(response.notification);
+    });
+    return () => sub.remove();
+  }, []);
+
   if (!loaded && !error) return null;
+  if (showBrandSplash) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#2E2620', alignItems: 'center', justifyContent: 'center' }}>
+        <StatusBar style="light" />
+        <AppLogo size="lg" textColor="#F3F1E9" taglineColor="#A9AD98" />
+      </View>
+    );
+  }
 
   return (
     <ThemeProvider value={DarkTheme}>
+      <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
       <Stack>
         <Stack.Screen name="(tabs)"     options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />

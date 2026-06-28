@@ -379,6 +379,7 @@ export default function VideoDetailScreen() {
     );
   }
 
+  const currentVideo = video;
   const gait     = session?.gaitAnalysis;
   const findings = session?.gaitFindings ?? [];
   const flags    = session?.riskFlags    ?? [];
@@ -393,8 +394,8 @@ export default function VideoDetailScreen() {
   function handleDelete() {
     const doDelete = () => {
       // Remove from Supabase Storage if we have a path
-      if (video.storagePath) {
-        supabase.storage.from('movement-videos').remove([video.storagePath]);
+      if (currentVideo.storagePath) {
+        supabase.storage.from('movement-videos').remove([currentVideo.storagePath]);
       }
       deleteVideo(videoId!);
       router.back();
@@ -454,8 +455,8 @@ export default function VideoDetailScreen() {
 
       {/* Title */}
       <View style={s.titleSection}>
-        <Text style={s.videoTitle}>{video.title}</Text>
-        <Text style={s.videoMeta}>{video.date} · {video.activity}</Text>
+        <Text style={s.videoTitle}>{currentVideo.title}</Text>
+        <Text style={s.videoMeta}>{currentVideo.date} · {currentVideo.activity}</Text>
       </View>
 
       {/* Tab bar */}

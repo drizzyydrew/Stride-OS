@@ -10,39 +10,55 @@ type Props = {
   size?:        Size;
   accentColor?: string;
   dark?:        boolean;
+  textColor?:   string;
+  taglineColor?: string;
 };
 
-const CONFIG: Record<Size, { chevH: number; fontSz: number; tag: boolean }> = {
-  sm: { chevH:  28, fontSz:  0, tag: false },
-  md: { chevH:  40, fontSz: 26, tag: false },
-  lg: { chevH: 120, fontSz: 52, tag:  true },
+const CONFIG: Record<Size, { chevH: number; fontSz: number; tag: boolean; fullLockup: boolean }> = {
+  sm: { chevH:  28, fontSz:  0, tag: false, fullLockup: false },
+  md: { chevH:  40, fontSz: 26, tag: false, fullLockup: true },
+  lg: { chevH: 120, fontSz: 52, tag:  true, fullLockup: true },
 };
 
-const CHEVRON_PATHS = [
+const ICON_CHEVRON_PATHS = [
   'M60 50 L120 110 L60 170',
   'M130 50 L190 110 L130 170',
   'M200 50 L260 110 L200 170',
 ];
+const LOCKUP_CHEVRON_PATHS = [
+  'M42 50 L102 110 L42 170',
+  'M112 50 L172 110 L112 170',
+  'M182 50 L242 110 L182 170',
+  'M252 50 L312 110 L252 170',
+  'M322 50 L382 110 L322 170',
+];
 
 const OS_ACCENT = '#5E7E92';
+const SAGE2 = '#9DB2A0';
+const SAND = '#DCC0A7';
+const BROWN = '#6E8BA0';
 
-export function AppLogo({ size = 'md', accentColor, dark }: Props) {
+export function AppLogo({ size = 'md', accentColor, dark, textColor, taglineColor }: Props) {
   const c   = useColors();
   const cfg = CONFIG[size];
 
   const accent   = accentColor ?? OS_ACCENT;
-  const textCol  = dark ? '#2B2A24' : c.text;
+  const textCol  = textColor ?? (dark ? '#2B2A24' : c.text);
   const scale    = cfg.chevH / 220;
-  const chevW    = 300 * scale;
+  const viewW    = cfg.fullLockup ? 424 : 300;
+  const chevW    = viewW * scale;
   const strokeW  = Math.round(30 * scale);
 
-  const chevColors = [c.primary, '#DCC0A7', accent];
+  const chevPaths = cfg.fullLockup ? LOCKUP_CHEVRON_PATHS : ICON_CHEVRON_PATHS;
+  const chevColors = cfg.fullLockup
+    ? [c.primary, SAGE2, SAND, accent, BROWN]
+    : [c.primary, SAND, accent];
 
   return (
     <View style={styles.wrapper}>
-      <Svg width={chevW} height={cfg.chevH} viewBox="0 0 300 220">
+      <Svg width={chevW} height={cfg.chevH} viewBox={`0 0 ${viewW} 220`}>
         <G fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth={strokeW}>
-          {CHEVRON_PATHS.map((d, i) => (
+          {chevPaths.map((d, i) => (
             <Path key={i} d={d} stroke={chevColors[i]} />
           ))}
         </G>
@@ -66,7 +82,7 @@ export function AppLogo({ size = 'md', accentColor, dark }: Props) {
       )}
 
       {cfg.tag && (
-        <Text style={[styles.tagline, { color: c.textDim }]}>
+        <Text style={[styles.tagline, { color: taglineColor ?? c.textDim }]}>
           MOVE NOW · AGE GRACEFULLY
         </Text>
       )}

@@ -14,7 +14,7 @@ type LocationTaskData = {
   locations: Location.LocationObject[];
 };
 
-TaskManager.defineTask(BACKGROUND_LOCATION_TASK, ({ data, error }) => {
+TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
   if (error) {
     console.warn('[GPS]', error.message);
     return;
@@ -26,10 +26,14 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, ({ data, error }) => {
 
 export async function startLocationTracking(): Promise<void> {
   const { status } = await Location.requestForegroundPermissionsAsync();
-  if (status !== 'granted') return;
+  if (status !== 'granted') {
+    throw new Error('Location permission is required to track a GPS run.');
+  }
 
   const bgStatus = await Location.requestBackgroundPermissionsAsync();
-  if (bgStatus.status !== 'granted') return;
+  if (bgStatus.status !== 'granted') {
+    throw new Error('Background location is required so GPS tracking continues when the screen locks.');
+  }
 
   const already = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
   if (already) return;

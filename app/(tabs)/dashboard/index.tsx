@@ -1,297 +1,315 @@
-import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-import { useAthleteStore }       from '../../../src/store/athleteStore';
-import { useWorkoutStore }       from '../../../src/store/workoutStore';
-import { useCheckInStore }       from '../../../src/store/checkInStore';
-import { useAdaptationStore }    from '../../../src/store/adaptationStore';
-import { useReadinessThresholds } from '../../../src/store/profileStore';
-import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
+import { useColors } from '../../../src/theme/useColors';
+import { useAthleteStore } from '../../../src/store/athleteStore';
+import { useCheckInStore } from '../../../src/store/checkInStore';
+import { LAYOUT } from '../../../src/constants/layout';
 
-import LogWorkoutModal from '../../../src/components/shared/LogWorkoutModal';
-import OverrideModal   from '../../../src/components/shared/OverrideModal';
-import FloatingActionButton from '../../../src/layout/FloatingActionButton';
+function getDayLabel(): string {
+  const now = new Date();
+  const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
+  const monthDay = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 
-import { generateTrainingWeek, generateWorkout } from '../../../src/utils/workoutGenerator';
-import { generateRecommendation, calculateACWR } from '../../../src/utils/training';
-import { ID_TO_GENERATABLE } from '../../../src/utils/training/adaptWeek';
-import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
-import { todayDateKey } from '../../../src/types/checkin';
-import {
-  getWeeklyMileage,
-  getTrainingDistribution,
-  getWeeklyFatigueTrend,
-  getWeeklyRecoveryTrend,
-} from '../../../src/utils/historyUtils';
-import {
-  computeSlope,
-  computeConsistency,
-} from '../../../src/utils/analyticsEngine';
-import { generateCoachingOutput } from '../../../src/utils/coachEngine';
-import { buildPerformanceProfile } from '../../../src/utils/performanceEngine';
-import { useMovementStore } from '../../../src/store/movementStore';
-import type { GeneratableWorkoutType } from '../../../src/types/training';
-
-import ScreenLayout from '../../../src/layout/ScreenLayout';
-import WorkoutCard from '../../../src/components/ui/WorkoutCard';
-import PreCheckInCard from '../../../src/components/today/PreCheckInCard';
-import ReadinessCard from '../../../src/components/today/ReadinessCard';
-import PostWorkoutCard from '../../../src/components/today/PostWorkoutCard';
-import RecommendationCard from '../../../src/components/today/RecommendationCard';
-import CoachInsightsCard from '../../../src/components/coaching/CoachInsightsCard';
-import ActionPlanCard from '../../../src/components/today/ActionPlanCard';
-import PerformanceScoreCard from '../../../src/components/performance/PerformanceScoreCard';
-import { generateActionPlan } from '../../../src/utils/actionPlanEngine';
-
-function formatDate(): string {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month:   'long',
-    day:     'numeric',
-  });
+  return `${weekday} · ${monthDay}`;
 }
 
 export default function TodayScreen() {
-  const [showLog,          setShowLog]          = useState(false);
-  const [showOverride,     setShowOverride]      = useState(false);
-  const [pendingOverrideId, setPendingOverrideId] = useState<string | undefined>();
-
-  const {
-    goalRace,
-    weeklyMileage,
-    recoveryScore,
-    fatigueScore,
-    setFatigueScore,
-    setRecentEasyLoad,
-    recentEasyLoad,
-    currentWeek,
-    trainingPhase,
-    progressionLevel,
-    vo2Estimate,
-  } = useAthleteStore();
-
-  const { addLog: addCustomLog, addOverride } = useCustomWorkoutStore();
-  const getActiveRiskFlags = useMovementStore(s => s.getActiveRiskFlags);
-  const postWorkoutNotes   = useCheckInStore(s => s.postWorkoutNotes);
-
-  function handleLogPress() {
-    const isLowReadiness = fatigueScore > 60 || recoveryScore < 50;
-    if (isLowReadiness) {
-      setShowOverride(true);
-    } else {
-      setShowLog(true);
-    }
-  }
-
-  function handleOverrideConfirmed(overrideId: string) {
-    setShowOverride(false);
-    setPendingOverrideId(overrideId);
-    setShowLog(true);
-  }
-
-  const { completedWorkouts, completeWorkout, history } = useWorkoutStore();
-
+  const C = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { recoveryScore, fatigueScore } = useAthleteStore();
   const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
-  const checkedIn    = todayCheckIn?.date === todayDateKey();
 
-  const adaptation          = useAdaptationStore(s => s.getAdaptation(currentWeek));
-  const readinessThresholds = useReadinessThresholds();
-  const { weeksToRace }     = useWeekPlan();
-
-  const generatorInput = {
-    weeklyMileage, recoveryScore, fatigueScore,
-    goalRace, currentWeek, trainingPhase, progressionLevel,
-  };
-
-  const canonicalWeek = generateTrainingWeek(generatorInput);
-
-  // Build the effective workout list — adapted if an adaptation exists, canonical otherwise.
-  const effectiveWorkouts = adaptation
-    ? adaptation.dayTypes.map(type =>
-        generateWorkout(type as GeneratableWorkoutType, generatorInput),
-      )
-    : canonicalWeek.plannedWorkouts;
-
-  // First uncompleted workout is "today's". Fall back to index 0 when all done.
-  // Completion keys always reference the CANONICAL workout id so they survive
-  // adaptation recalculations without orphaning prior completions.
-  const rawIndex = effectiveWorkouts.findIndex((_, i) => {
-    const canonicalId = canonicalWeek.plannedWorkouts[i]?.id ?? effectiveWorkouts[i]!.id;
-    return !completedWorkouts.includes(`w${currentWeek}_${canonicalId}_${i}`);
-  });
-  const todayIndex    = rawIndex === -1 ? 0 : rawIndex;
-  const todayWorkout  = effectiveWorkouts[todayIndex]!;
-  const canonicalId   = canonicalWeek.plannedWorkouts[todayIndex]?.id ?? todayWorkout.id;
-  const completionKey = `w${currentWeek}_${canonicalId}_${todayIndex}`;
-  const isComplete    = completedWorkouts.includes(completionKey);
-  const isRestDay     = todayWorkout.type === 'rest';
-
-  // ── Coach intelligence inputs ──────────────────────────────────────────────
-  const acwrResult         = calculateACWR(history);
-  const weeklySummaries    = getWeeklyMileage(history);
-  const dist               = getTrainingDistribution(history, 30);
-  const weeklyFatigueTrend = getWeeklyFatigueTrend(history);
-  const weeklyRecovery     = getWeeklyRecoveryTrend(history);
-
-  const fatigueSlope  = weeklyFatigueTrend.length >= 2
-    ? computeSlope(weeklyFatigueTrend.map(p => p.value))
-    : 0;
-  const recoverySlope = weeklyRecovery.length >= 2
-    ? computeSlope(weeklyRecovery.map(p => p.value))
-    : 0;
-
-  const totalIntensity =
-    (dist.byIntensity.easy      ?? 0) +
-    (dist.byIntensity.very_easy ?? 0) +
-    (dist.byIntensity.moderate  ?? 0) +
-    (dist.byIntensity.hard      ?? 0) +
-    (dist.byIntensity.max       ?? 0);
-  const easyCount = (dist.byIntensity.easy ?? 0) + (dist.byIntensity.very_easy ?? 0);
-  const easyProportion = totalIntensity > 0 ? easyCount / totalIntensity : 0.80;
-
-  const weeksWithLongRun = new Set(
-    history.filter(r => r.type === 'long_run').map(r => r.week),
-  ).size;
-  const longRunConsistency = currentWeek > 0 ? weeksWithLongRun / currentWeek : 0;
-
-  const adherenceRate      = Math.min(1, history.length / Math.max(1, currentWeek * 6));
-  const consistencyScore   = computeConsistency(weeklySummaries.map(s => s.totalMiles));
-
-  const { todayInsights } = generateCoachingOutput({
-    athleteName:       'Athlete',
-    goalRace,
-    currentWeek,
-    trainingPhase,
-    progressionLevel,
-    weeklyMileage,
-    fatigueScore,
-    recoveryScore,
-    soreness:          checkedIn ? todayCheckIn!.soreness   : null,
-    motivation:        checkedIn ? todayCheckIn!.motivation : null,
-    checkedIn,
-    todayWorkoutType:  todayWorkout.type,
-    isRestDay,
-    isTodayComplete:   isComplete,
-    acwr:              acwrResult.acwr,
-    adherenceRate,
-    longRunConsistency,
-    easyProportion,
-    historyWeeks:      weeklySummaries.length,
-    consistencyScore,
-    fatigueSlope,
-    recoverySlope,
-    weeksRemaining:    weeksToRace,
-  });
-
-  const actionPlan = generateActionPlan(todayInsights, {
-    currentWeek,
-    fatigueScore,
-    recoveryScore,
-    acwr:            acwrResult.acwr,
-    trainingPhase,
-    isRestDay,
-    checkedIn,
-    isTodayComplete: isComplete,
-  });
-
-  const recommendation = generateRecommendation({
-    recoveryScore,
-    fatigueScore,
-    weeklyMileage,
-    trainingPhase,
-    progressionLevel,
-    soreness:             checkedIn ? todayCheckIn!.soreness   : null,
-    motivation:           checkedIn ? todayCheckIn!.motivation : null,
-    plannedType:          todayWorkout.type,
-    plannedIntensity:     todayWorkout.intensity,
-    plannedDuration:      todayWorkout.durationMinutes,
-    history,
-    readinessThresholds,
-  });
-
-  const activeRiskFlags = getActiveRiskFlags().map(f => ({
-    severity:      f.severity,
-    affectsScores: f.affectsScores as string[],
-  }));
-
-  const performanceProfile = buildPerformanceProfile({
-    history,
-    fatigueScore,
-    recoveryScore,
-    weeklyMileage,
-    vdot:           vo2Estimate > 0 ? vo2Estimate : undefined,
-    activeRiskFlags,
-    checkInCount:   postWorkoutNotes.length,
-  });
+  const readiness = todayCheckIn ? Math.round((recoveryScore * 0.6) + ((100 - fatigueScore) * 0.4)) : 84;
+  const readinessLabel = readiness >= 80 ? 'PRIMED' : readiness >= 65 ? 'READY' : readiness >= 50 ? 'MODERATE' : 'RECOVERY';
 
   return (
-    <ScreenLayout
-      title="Today"
-      meta={formatDate()}
-      fab={<FloatingActionButton icon="add" onPress={handleLogPress} />}
+    <ScrollView
+      style={{ flex: 1, backgroundColor: C.bg }}
+      contentContainerStyle={{ paddingHorizontal: 18, paddingTop: insets.top + 6, paddingBottom: LAYOUT.screenPadBottom }}
+      showsVerticalScrollIndicator={false}
     >
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={[styles.headerDate, { color: C.textDim }]}>{getDayLabel()}</Text>
+          <Text style={[styles.headerGreeting, { color: C.text }]}>Good morning, Drew.</Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.avatarBtn, { backgroundColor: C.card, borderColor: C.border }]}
+          onPress={() => router.push('/(tabs)/profile')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="person-outline" size={18} color={C.textMuted} />
+        </TouchableOpacity>
+      </View>
 
-      {checkedIn ? (
-        <ReadinessCard
-          recoveryScore={recoveryScore}
-          fatigueScore={fatigueScore}
-          trainingPhase={trainingPhase}
-          soreness={todayCheckIn!.soreness}
-          motivation={todayCheckIn!.motivation}
-        />
-      ) : (
-        <PreCheckInCard />
-      )}
+      {/* Weather */}
+      <View style={[styles.weatherCard, { backgroundColor: C.card, borderColor: C.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Ionicons name="sunny" size={22} color={C.warning} />
+          <View>
+            <Text style={[styles.weatherTemp, { color: C.text }]}>62°F · Partly Cloudy</Text>
+            <Text style={[styles.weatherSub, { color: C.textMuted }]}>Humidity 45% · Great running conditions</Text>
+          </View>
+        </View>
+        <Text style={[styles.localLabel, { color: C.textDim }]}>LOCAL</Text>
+      </View>
 
-      <RecommendationCard rec={recommendation} checkedIn={checkedIn} />
+      {/* Readiness */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <View style={styles.cardHeaderRow}>
+          <Text style={[styles.cardLabel, { color: C.textDim }]}>READINESS</Text>
+          <View style={[styles.badge, { backgroundColor: C.primaryDim }]}>
+            <Text style={[styles.badgeText, { color: C.primary }]}>{readinessLabel}</Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
+          <Text style={[styles.bigNum, { color: C.text }]}>{readiness}</Text>
+          <Text style={[styles.bigNumSub, { color: C.textMuted }]}>/ 100</Text>
+          <Text style={[{ marginLeft: 'auto', fontSize: 12, fontWeight: '700', color: C.positive }]}>▲ 6 pts</Text>
+        </View>
+        <View style={[styles.progressBar, { backgroundColor: C.border }]}>
+          <View style={[styles.progressFill, { width: `${readiness}%`, backgroundColor: C.primary }]} />
+        </View>
+        <View style={styles.statsRow}>
+          <View style={[styles.statCol, { borderRightWidth: 1, borderRightColor: C.border }]}>
+            <Text style={[styles.statLabel, { color: C.textDim }]}>HRV</Text>
+            <Text style={[styles.statVal, { color: C.text }]}>62 ms</Text>
+          </View>
+          <View style={[styles.statCol, { borderRightWidth: 1, borderRightColor: C.border }]}>
+            <Text style={[styles.statLabel, { color: C.textDim }]}>Sleep</Text>
+            <Text style={[styles.statVal, { color: C.text }]}>7h 41m</Text>
+          </View>
+          <View style={styles.statCol}>
+            <Text style={[styles.statLabel, { color: C.textDim }]}>RHR</Text>
+            <Text style={[styles.statVal, { color: C.text }]}>48 bpm</Text>
+          </View>
+        </View>
+      </View>
 
-      <CoachInsightsCard insights={todayInsights} />
+      {/* Today's Workout */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <View style={styles.cardHeaderRow}>
+          <Text style={[styles.workoutTitle, { color: C.text }]}>Today's Workout</Text>
+          <View style={[styles.badge, { backgroundColor: C.accentDim }]}>
+            <Text style={[styles.badgeText, { color: C.accent }]}>Z2 RUN</Text>
+          </View>
+        </View>
+        <Text style={[styles.workoutMeta, { color: C.textMuted }]}>Easy 6 mi · Zone 2 · HR under 155 bpm</Text>
+        <View style={styles.workoutBtns}>
+          <TouchableOpacity
+            style={[styles.workoutBtn, styles.workoutBtnPrimary, { backgroundColor: C.primary }]}
+            onPress={() => router.push('/(tabs)/training')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>Start Run</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.workoutBtn, { backgroundColor: C.border }]}
+            onPress={() => router.push('/(tabs)/strength')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.workoutBtnText, { color: C.textMuted }]}>Strength</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      <ActionPlanCard actions={actionPlan} />
-
-      <WorkoutCard
-        workout={todayWorkout}
-        isComplete={isComplete}
-        onComplete={() =>
-          completeWorkout(
-            completionKey,
-            todayWorkout,
-            currentWeek,
-            fatigueScore,
-            recoveryScore,
-            setFatigueScore,
-            setRecentEasyLoad,
-          )
-        }
-      />
-
-      {isComplete && !isRestDay && (
-        <PostWorkoutCard completionKey={completionKey} />
-      )}
-
-      <PerformanceScoreCard profile={performanceProfile} compact />
-
-      <OverrideModal
-        visible={showOverride}
-        onClose={() => setShowOverride(false)}
-        onConfirmed={handleOverrideConfirmed}
-        fatigueScore={fatigueScore}
-        recoveryScore={recoveryScore}
-        addOverride={addOverride}
-      />
-
-      <LogWorkoutModal
-        visible={showLog}
-        onClose={() => { setShowLog(false); setPendingOverrideId(undefined); }}
-        onSaved={() => { setShowLog(false); setPendingOverrideId(undefined); }}
-        onAddLog={addCustomLog}
-        currentFatigue={fatigueScore}
-        currentRecovery={recoveryScore}
-        recentEasyLoad={recentEasyLoad}
-        setFatigueScore={setFatigueScore}
-        setRecentEasyLoad={setRecentEasyLoad}
-        overrideId={pendingOverrideId}
-      />
-
-    </ScreenLayout>
+      {/* Performance Forecast */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.cardLabel, { color: C.textDim }]}>PERFORMANCE FORECAST</Text>
+        <View style={styles.forecastRow}>
+          <View style={[styles.forecastCell, { backgroundColor: C.cardAlt }]}>
+            <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>Peak Window</Text>
+            <Text style={[styles.forecastCellNum, { color: C.text }]}>63</Text>
+            <Text style={[styles.forecastCellUnit, { color: C.textMuted }]}>days</Text>
+          </View>
+          <View style={[styles.forecastCell, { backgroundColor: C.cardAlt }]}>
+            <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>Race Ready</Text>
+            <Text style={[styles.forecastCellDate, { color: C.positive }]}>Aug 3</Text>
+            <Text style={[styles.forecastCellUnit, { color: C.textMuted }]}>est.</Text>
+          </View>
+          <View style={[styles.forecastCell, { backgroundColor: C.cardAlt }]}>
+            <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>Load</Text>
+            <Text style={[styles.forecastCellArrow, { color: C.warning }]}>↑</Text>
+            <Text style={[styles.forecastCellUnit, { color: C.textMuted }]}>Ramping</Text>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  headerDate: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.9,
+  },
+  headerGreeting: {
+    fontSize: 26,
+    fontWeight: '700',
+    fontFamily: 'CormorantGaramond_700Bold',
+    lineHeight: 32,
+  },
+  avatarBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  card: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 10,
+  },
+  weatherCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  cardLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  bigNum: {
+    fontSize: 52,
+    fontWeight: '800',
+    lineHeight: 56,
+  },
+  bigNumSub: {
+    fontSize: 13,
+  },
+  progressBar: {
+    height: 7,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+  statsRow: {
+    flexDirection: 'row',
+  },
+  statCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 10,
+    marginBottom: 2,
+  },
+  statVal: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  weatherTemp: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'DMSans_400Regular',
+  },
+  weatherSub: {
+    fontSize: 11,
+    marginTop: 2,
+    fontFamily: 'DMSans_400Regular',
+  },
+  localLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  workoutTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'DMSans_400Regular',
+  },
+  workoutMeta: {
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 12,
+    fontFamily: 'DMSans_400Regular',
+  },
+  workoutBtns: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  workoutBtn: {
+    flex: 1,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  workoutBtnPrimary: {},
+  workoutBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  forecastRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  forecastCell: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 12,
+    minWidth: 0,
+  },
+  forecastCellLabel: {
+    fontSize: 10,
+    marginBottom: 6,
+  },
+  forecastCellNum: {
+    fontSize: 30,
+    fontWeight: '800',
+    lineHeight: 34,
+  },
+  forecastCellDate: {
+    fontSize: 22,
+    fontWeight: '800',
+    lineHeight: 28,
+  },
+  forecastCellArrow: {
+    fontSize: 22,
+    fontWeight: '800',
+    lineHeight: 28,
+  },
+  forecastCellUnit: {
+    fontSize: 10,
+    marginTop: 2,
+  },
+});

@@ -19,6 +19,9 @@ export type Palette = {
   criticalDim: string;
   neutral: string;
   danger: string;
+  cardAlt: string;
+  accent: string;
+  accentDim: string;
 };
 
 export const darkColors: Palette = {
@@ -40,6 +43,9 @@ export const darkColors: Palette = {
   criticalDim: '#33190F',
   neutral:     '#A9AD98',
   danger:      '#C06A52',
+  cardAlt:     '#262A1E',
+  accent:      '#DCC0A7',
+  accentDim:   'rgba(220,192,167,0.15)',
 };
 
 export const lightColors: Palette = {
@@ -61,6 +67,9 @@ export const lightColors: Palette = {
   criticalDim: '#F2DED9',
   neutral:     '#6E7261',
   danger:      '#B05036',
+  cardAlt:     '#EFE7DA',
+  accent:      '#C29A6E',
+  accentDim:   'rgba(194,154,110,0.16)',
 };
 
 export const strideColors: Palette = {
@@ -82,16 +91,17 @@ export const strideColors: Palette = {
   criticalDim: '#450A0A',
   neutral:     '#8B9AAF',
   danger:      '#DC2626',
+  cardAlt:     '#1E293B',
+  accent:      '#60A5FA',
+  accentDim:   'rgba(96,165,250,0.15)',
 };
 
 export function getColors(mode: ThemeMode): Palette {
   return mode === 'light' ? lightColors : darkColors;
 }
 
-// Dynamic reactive colors — reads the current theme from the Zustand store at
-// access time. Lazy require() breaks the circular dependency (themeStore imports
-// ThemeMode from this file). Every existing `import { colors }` keeps working
-// without any component changes; they just need to re-render to see the update.
+// Dynamic reactive colors - keeps all existing `import { colors }` working while
+// still reflecting theme changes after components re-render.
 export const colors: Palette = new Proxy(darkColors, {
   get(_target, prop: string) {
     try {

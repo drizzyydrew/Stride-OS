@@ -1,98 +1,115 @@
+import { View, StyleSheet, Text } from 'react-native';
 import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-import TabIcon from '../../src/navigation/TabIcon';
+import { useColors } from '../../src/theme/useColors';
 import { LAYOUT } from '../../src/constants/layout';
-import { useThemeMode } from '../../src/store/themeStore';
-import { getColors } from '../../src/theme/colors';
+
+function TabBtn({
+  name,
+  label,
+  focused,
+}: {
+  name: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  focused: boolean;
+}) {
+  const C = useColors();
+  return (
+    <View style={styles.tabBtn}>
+      <Ionicons name={name} size={22} color={focused ? C.primary : C.textMuted} />
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.85}
+        style={[styles.tabLabel, { color: focused ? C.primary : C.textMuted }]}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
 
 export default function TabsLayout() {
-  const mode   = useThemeMode();
-  const colors = getColors(mode);
+  const C = useColors();
 
   return (
     <Tabs
       screenOptions={{
-        headerShown:             false,
-        tabBarShowLabel:         false,
-        tabBarActiveTintColor:   colors.text,
-        tabBarInactiveTintColor: colors.textDim,
+        headerShown: false,
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: C.primary,
+        tabBarInactiveTintColor: C.textMuted,
         tabBarStyle: {
-          backgroundColor: colors.card,
-          borderTopColor:  colors.border,
-          borderTopWidth:  1,
-          height:          LAYOUT.tabBarHeight,
-          paddingBottom:   LAYOUT.tabBarPadBottom,
-          paddingTop:      LAYOUT.tabBarPadTop,
+          backgroundColor: C.bg,
+          borderTopColor: C.border,
+          borderTopWidth: 1,
+          height: LAYOUT.tabBarHeight,
+          paddingBottom: LAYOUT.tabBarPadBottom,
+          paddingTop: LAYOUT.tabBarPadTop,
         },
       }}
     >
-      {/* ── Visible tabs (4) ─────────────────────────────────── */}
       <Tabs.Screen
         name="dashboard/index"
         options={{
           title: 'Today',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="today-outline"
-              label="Today"
-              focused={focused}
-              color={color}
-            />
+          tabBarIcon: ({ focused }) => (
+            <TabBtn name="grid-outline" label="Today" focused={focused} />
           ),
         }}
       />
-
       <Tabs.Screen
         name="calendar"
         options={{
           title: 'Calendar',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="calendar-outline"
-              label="Calendar"
-              focused={focused}
-              color={color}
-            />
+          tabBarIcon: ({ focused }) => (
+            <TabBtn name="calendar-outline" label="Calendar" focused={focused} />
           ),
         }}
       />
-
       <Tabs.Screen
         name="coach"
         options={{
-          title: 'Coach',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="chatbubble-ellipses-outline"
-              label="Coach"
-              focused={focused}
-              color={color}
-            />
+          title: 'AI Coach',
+          tabBarIcon: ({ focused }) => (
+            <TabBtn name="chatbubble-ellipses-outline" label="AI Coach" focused={focused} />
           ),
         }}
       />
-
       <Tabs.Screen
         name="more/index"
         options={{
           title: 'More',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="menu-outline"
-              label="More"
-              focused={focused}
-              color={color}
-            />
+          tabBarStyle: { display: 'none' },
+          tabBarIcon: ({ focused }) => (
+            <TabBtn name="menu-outline" label="More" focused={focused} />
           ),
         }}
       />
 
-      {/* ── Hidden tabs — routes still accessible via router.push ── */}
-      <Tabs.Screen name="training"        options={{ href: null }} />
-      <Tabs.Screen name="strength"        options={{ href: null }} />
+      <Tabs.Screen name="index" options={{ href: null }} />
+      <Tabs.Screen name="training" options={{ href: null }} />
+      <Tabs.Screen name="strength" options={{ href: null }} />
       <Tabs.Screen name="analytics/index" options={{ href: null }} />
-      <Tabs.Screen name="movement"        options={{ href: null }} />
-      <Tabs.Screen name="profile/index"   options={{ href: null }} />
+      <Tabs.Screen name="performance" options={{ href: null }} />
+      <Tabs.Screen name="profile/index" options={{ href: null }} />
+      <Tabs.Screen name="movement" options={{ href: null }} />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBtn: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 3,
+    paddingVertical: 4,
+    minWidth: 64,
+  },
+  tabLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+});

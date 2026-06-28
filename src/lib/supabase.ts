@@ -20,3 +20,14 @@ export const supabase = createClient(
     },
   },
 );
+
+export async function getSupabaseFunctionHeaders(): Promise<Record<string, string>> {
+  const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+  const { data } = await supabase.auth.getSession();
+  const bearer = data.session?.access_token ?? anonKey;
+
+  return {
+    apikey: anonKey,
+    authorization: `Bearer ${bearer}`,
+  };
+}

@@ -11,6 +11,7 @@ import type {
 } from '../types/strength';
 import { estimateSessionLoad } from '../utils/strengthEngine';
 import { syncStrengthLog, deleteStrengthLog } from '../lib/syncService';
+import { syncStrengthSessionToExternalServices } from '../lib/externalIntegrations';
 
 type StrengthLogEdits = Partial<Pick<StrengthLogRecord,
   'actualDuration' | 'overallRpe' | 'notes' | 'exercises'>>;
@@ -146,6 +147,7 @@ export const useStrengthStore = create<StrengthStore>()(
         }));
 
         syncStrengthLog(record).catch(console.warn);
+        syncStrengthSessionToExternalServices(record).catch(console.warn);
       },
 
       // ── Skip session ──────────────────────────────────────────────────────────
@@ -180,6 +182,7 @@ export const useStrengthStore = create<StrengthStore>()(
         }));
 
         syncStrengthLog(record).catch(console.warn);
+        syncStrengthSessionToExternalServices(record).catch(console.warn);
       },
 
       // ── Edit a logged record ──────────────────────────────────────────────────
@@ -237,6 +240,7 @@ export const useStrengthStore = create<StrengthStore>()(
         }));
 
         syncStrengthLog(record).catch(console.warn);
+        syncStrengthSessionToExternalServices(record).catch(console.warn);
       },
 
       // ── Hydrate from Supabase ─────────────────────────────────────────────────

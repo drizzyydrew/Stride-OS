@@ -233,25 +233,27 @@ export default function HydrationScreen() {
           </View>
         </View>
 
-        {/* Per-interval breakdown */}
+        {/* Per-interval summary - single line, no repeating table */}
         <View style={st.card}>
           <Text style={st.sectionLabel}>EVERY 20 MINUTES</Text>
-          <View style={st.tableHeader}>
-            <Text style={[st.colHead, { flex: 1.4 }]}>TIME</Text>
-            <Text style={[st.colHead, { flex: 1 }]}>FLUID</Text>
-            <Text style={[st.colHead, { flex: 1.4 }]}>CARBS</Text>
-            <Text style={[st.colHead, { flex: 1.2 }]}>SODIUM</Text>
-          </View>
-          {Array.from({ length: result.intervalCount }, (_, i) => (
-            <View key={i} style={[st.tableRow, i % 2 === 0 && st.tableRowAlt]}>
-              <Text style={[st.cellTxt, { flex: 1.4 }]}>{intervalLabel(i)}</Text>
-              <Text style={[st.cellTxt, { flex: 1 }]}>{fluidLabel(result.perInterval.waterOz)}</Text>
-              <Text style={[st.cellTxt, { flex: 1.4 }]}>
+          <View style={st.totalsRow}>
+            <View style={st.totalCell}>
+              <Text style={st.totalValue}>{fluidLabel(result.perInterval.waterOz)}</Text>
+              <Text style={st.totalUnit}>Fluid</Text>
+            </View>
+            <View style={st.totalDivider} />
+            <View style={st.totalCell}>
+              <Text style={st.totalValue}>
                 {fmt(result.perInterval.carbsMinG, 0)}–{fmt(result.perInterval.carbsMaxG, 0)}g
               </Text>
-              <Text style={[st.cellTxt, { flex: 1.2 }]}>{fmt(result.perInterval.sodiumMg, 0)}mg</Text>
+              <Text style={st.totalUnit}>Carbs</Text>
             </View>
-          ))}
+            <View style={st.totalDivider} />
+            <View style={st.totalCell}>
+              <Text style={st.totalValue}>{fmt(result.perInterval.sodiumMg, 0)}mg</Text>
+              <Text style={st.totalUnit}>Sodium</Text>
+            </View>
+          </View>
         </View>
 
         <View style={{ height: spacing.screenPadBottom }} />

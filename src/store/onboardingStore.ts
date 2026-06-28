@@ -58,6 +58,9 @@ export type OnboardingData = {
 
   // Step 9: Style
   trainingStyle:   TrainingStyle;
+
+  // Profile
+  profilePhotoUri: string | null;
 };
 
 const DEFAULT_DATA: OnboardingData = {
@@ -83,6 +86,7 @@ const DEFAULT_DATA: OnboardingData = {
   hasCurrentInjury: false,
   injuryNotes:      '',
   trainingStyle:    'mixed',
+  profilePhotoUri:  null,
 };
 
 // ─── Store shape ──────────────────────────────────────────────────────────────

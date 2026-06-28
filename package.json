@@ -7,15 +7,17 @@
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@shopify/react-native-skia": "2.6.2",
     "@supabase/supabase-js": "^2.48.0",
     "expo": "~56.0.12",
-    "expo-apple-authentication": "~7.2.2",
+    "expo-apple-authentication": "~56.0.4",
     "expo-constants": "~56.0.15",
     "expo-file-system": "~56.0.8",
     "expo-font": "~56.0.5",
     "expo-image-picker": "~56.0.18",
     "expo-linking": "~56.0.14",
     "expo-location": "~56.0.18",
+    "expo-notifications": "~56.0.18",
     "expo-router": "~56.2.11",
     "expo-secure-store": "~56.0.4",
     "expo-speech": "~56.0.3",
@@ -28,6 +30,9 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
+    "react-native-gesture-handler": "~2.31.1",
+    "react-native-health": "^1.19.0",
+    "react-native-maps": "1.27.2",
     "react-native-reanimated": "4.3.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
@@ -45,7 +50,23 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "node scripts/patch-react-native-health.js",
+    "typecheck": "tsc --noEmit --pretty false",
+    "expo:check": "expo install --check",
+    "check": "npm run typecheck && npm run expo:check"
+  },
+  "overrides": {
+    "@expo/config-plugins": "56.0.9"
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-health"
+        ]
+      }
+    }
   },
   "private": true
 }

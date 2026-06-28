@@ -7,42 +7,121 @@
 
 import type { CompletedWorkoutRecord } from '../types/training';
 import type { StrengthLogRecord } from '../types/strength';
+import type { AppleHealthKit } from 'react-native-health';
 
-let Health: typeof import('react-native-health') | null = null;
+let Health: AppleHealthKit | null = null;
+const SHARING_AUTHORIZED = 2;
 
 try {
   // Dynamic require so the app doesn't crash on Expo Go / Android
-  Health = require('react-native-health');
+  const healthModule = require('react-native-health');
+  Health = healthModule.default ?? healthModule.HealthKit ?? healthModule;
 } catch {
   // react-native-health not available in this build
 }
 
-export async function requestPermissions(): Promise<boolean> {
+export async function isAppleHealthAvailable(): Promise<boolean> {
   if (!Health) return false;
 
-  const permissions = {
+  return new Promise(resolve => {
+    Health!.isAvailable((_error: object, available: boolean) => resolve(Boolean(available)));
+  });
+}
+
+function healthPermissions() {
+  if (!Health) return null;
+  return {
     permissions: {
       read: [
         Health.Constants.Permissions.HeartRate,
+        Health.Constants.Permissions.RestingHeartRate,
+        Health.Constants.Permissions.HeartRateVariability,
+        Health.Constants.Permissions.SleepAnalysis,
         Health.Constants.Permissions.ActiveEnergyBurned,
         Health.Constants.Permissions.StepCount,
+        Health.Constants.Permissions.DistanceWalkingRunning,
+        Health.Constants.Permissions.Workout,
       ],
       write: [
         Health.Constants.Permissions.Workout,
         Health.Constants.Permissions.ActiveEnergyBurned,
+        Health.Constants.Permissions.DistanceWalkingRunning,
       ],
     },
   };
+}
+
+export async function requestPermissions(): Promise<boolean> {
+  if (!Health) return false;
+  const available = await isAppleHealthAvailable();
+  if (!available) return false;
+
+  const permissions = healthPermissions();
+  if (!permissions) return false;
 
   return new Promise(resolve => {
-    Health!.initHealthKit(permissions, (err) => resolve(!err));
+    Health!.initHealthKit(permissions, (err: string) => resolve(!err));
+  });
+}
+
+export async function getAppleHealthWriteStatus(): Promise<boolean> {
+  if (!Health) return false;
+  const available = await isAppleHealthAvailable();
+  if (!available) return false;
+
+  const permissions = healthPermissions();
+  if (!permissions) return false;
+
+  return new Promise(resolve => {
+    Health!.getAuthStatus(permissions, (_err, result) => {
+      const writeStatuses = result?.permissions?.write ?? [];
+      resolve(writeStatuses.length > 0 && writeStatuses.every(status => status === SHARING_AUTHORIZED));
+    });
+  });
+}
+
+export async function getLatestHeartRateBpm(maxAgeMinutes = 10): Promise<number | null> {
+  if (!Health) return null;
+  const available = await isAppleHealthAvailable();
+  if (!available) return null;
+
+  const endDate = new Date();
+  const startDate = new Date(endDate.getTime() - maxAgeMinutes * 60 * 1000);
+
+  return new Promise(resolve => {
+    const api = Health as unknown as {
+      getHeartRateSamples?: (
+        options: Record<string, unknown>,
+        callback: (error: unknown, results?: Array<{ value?: number }>) => void,
+      ) => void;
+    };
+
+    if (!api.getHeartRateSamples) {
+      resolve(null);
+      return;
+    }
+
+    api.getHeartRateSamples(
+      {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        unit: 'bpm',
+        ascending: false,
+        limit: 1,
+      },
+      (_error, results) => {
+        const value = results?.[0]?.value;
+        resolve(typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : null);
+      },
+    );
   });
 }
 
 export async function writeWorkout(workout: CompletedWorkoutRecord): Promise<void> {
   if (!Health) return;
 
-  const startDate = new Date(workout.timestamp - workout.durationMinutes * 60 * 1000);
+  const durationMin = workout.actualDurationMinutes ?? workout.durationMinutes;
+  const startDate = new Date(workout.timestamp - durationMin * 60 * 1000);
   const endDate   = new Date(workout.timestamp);
 
   const options = {
@@ -55,7 +134,7 @@ export async function writeWorkout(workout: CompletedWorkoutRecord): Promise<voi
   };
 
   return new Promise((resolve, reject) => {
-    Health!.saveWorkout(options, (err) => err ? reject(err) : resolve());
+    Health!.saveWorkout(options, (err: string) => err ? reject(err) : resolve());
   });
 }
 
@@ -73,6 +152,6 @@ export async function writeStrengthSession(session: StrengthLogRecord): Promise<
   };
 
   return new Promise((resolve, reject) => {
-    Health!.saveWorkout(options, (err) => err ? reject(err) : resolve());
+    Health!.saveWorkout(options, (err: string) => err ? reject(err) : resolve());
   });
 }

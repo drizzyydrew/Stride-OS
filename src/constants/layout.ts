@@ -3,13 +3,13 @@
 
 export const LAYOUT = {
   // Tab bar
-  tabBarHeight:    84,
-  tabBarPadBottom: 20,
-  tabBarPadTop:    12,
+  tabBarHeight:    94,
+  tabBarPadBottom: 26,
+  tabBarPadTop:    10,
 
   // Screen
   screenPadH:      20,
-  screenPadBottom: 120,  // scroll room above tab bar
+  screenPadBottom: 148,  // scroll room above tab bar
 
   // Header
   headerPadV: 20,  // vertical padding around the title block

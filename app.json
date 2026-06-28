@@ -7,26 +7,40 @@
     "icon": "./assets/images/icon.png",
     "scheme": "strideos",
     "userInterfaceStyle": "automatic",
+    "backgroundColor": "#14160F",
+    "primaryColor": "#8B927C",
     "ios": {
       "supportsTablet": false,
+      "usesAppleSignIn": true,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "5",
+      "buildNumber": "8",
+      "backgroundColor": "#14160F",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "StrideOS uses your location to track distance and pace during GPS runs.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "StrideOS tracks your location in the background so your run continues recording when the screen is locked.",
-        "NSMotionUsageDescription": "StrideOS uses motion data to improve step counting accuracy."
+        "NSLocationAlwaysUsageDescription": "StrideOS tracks your location in the background so your run continues recording when the screen is locked.",
+        "NSMotionUsageDescription": "StrideOS uses motion data to improve step counting accuracy.",
+        "NSHealthShareUsageDescription": "StrideOS reads Apple Health data such as heart rate, sleep, HRV, and steps to personalize training recommendations.",
+        "NSHealthUpdateUsageDescription": "StrideOS writes completed workouts to Apple Health when you connect Apple Health.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#2E2620",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "backgroundColor": "#14160F",
       "predictiveBackGestureEnabled": false,
       "package": "com.mooremovement.strideos",
-      "versionCode": 1
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -39,7 +53,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "StrideOS needs access to your photo library to select movement videos.",
+          "photosPermission": "StrideOS needs access to your photo library to select movement videos and your profile photo.",
           "cameraPermission": "StrideOS needs camera access to record movement videos."
         }
       ],
@@ -53,21 +67,48 @@
       [
         "expo-location",
         {
+          "locationWhenInUsePermission": "StrideOS uses your location to track distance and pace during GPS runs.",
           "locationAlwaysAndWhenInUsePermission": "StrideOS tracks your location in the background so your run continues recording when the screen is locked.",
           "isIosBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "enableBackgroundRemoteNotifications": false
+        }
+      ],
+      "./plugins/withHealthKitAccessCleanup",
+      [
+        "react-native-health",
+        {
+          "isClinicalDataEnabled": false,
+          "healthSharePermission": "StrideOS reads Apple Health data such as heart rate, sleep, HRV, and steps to personalize training recommendations.",
+          "healthUpdatePermission": "StrideOS writes completed workouts to Apple Health when you connect Apple Health."
         }
       ],
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
+          "imageWidth": 220,
           "resizeMode": "contain",
-          "backgroundColor": "#14160F"
+          "backgroundColor": "#2E2620",
+          "dark": {
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#2E2620"
+          }
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f32ed63a-a22a-4360-8b1d-3ed4d2c329d9"
+      }
     }
   }
 }

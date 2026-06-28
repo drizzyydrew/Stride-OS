@@ -2,9 +2,12 @@ import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 import { supabase } from '../lib/supabase';
-import { hydrateFromSupabase } from '../lib/syncService';
+import {
+  authRedirectUrl,
+  completeSupabaseAuthFromUrl,
+  hydrateUserData,
+} from '../lib/authRedirect';
 import { useWorkoutStore } from './workoutStore';
 import { useStrengthStore } from './strengthStore';
 import { useCustomWorkoutStore } from './customWorkoutStore';
@@ -19,6 +22,7 @@ type AuthStore = {
   signUp:          (email: string, password: string) => Promise<string | null>;
   signOut:         () => Promise<void>;
   resetPassword:   (email: string) => Promise<string | null>;
+  resendConfirmation: (email: string) => Promise<string | null>;
   updatePassword:  (newPassword: string) => Promise<string | null>;
   signInWithApple: () => Promise<string | null>;
   signInWithGoogle:() => Promise<string | null>;
@@ -33,26 +37,31 @@ export const useAuthStore = create<AuthStore>((set) => ({
     const { data: { session } } = await supabase.auth.getSession();
     set({ session, user: session?.user ?? null, loading: false });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange((event, session) => {
       set({ session, user: session?.user ?? null });
+      if (event === 'SIGNED_IN') {
+        hydrateUserData().catch(console.warn);
+      }
     });
   },
 
   signIn: async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     if (!error) {
-      hydrateFromSupabase().then(result => {
-        useWorkoutStore.getState().hydrateWorkouts(result.workoutLogs);
-        useStrengthStore.getState().hydrateStrength(result.strengthLogs);
-        useCustomWorkoutStore.getState().hydrateLogs(result.customLogs);
-        useCheckInStore.getState().hydrateCheckIns(result.checkIns);
-      }).catch(console.warn);
+      hydrateUserData().catch(console.warn);
     }
     return error?.message ?? null;
   },
 
   signUp: async (email, password) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const normalizedEmail = email.trim().toLowerCase();
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: {
+        emailRedirectTo: authRedirectUrl(),
+      },
+    });
     if (error) return error.message;
     // If session is immediately set, email confirmation is disabled — auto-login happened
     if (data.session) set({ session: data.session, user: data.session.user });
@@ -60,8 +69,19 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   resetPassword: async (email) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: 'strideos://auth/new-password',
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: authRedirectUrl(),
+    });
+    return error?.message ?? null;
+  },
+
+  resendConfirmation: async (email) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email.trim().toLowerCase(),
+      options: {
+        emailRedirectTo: authRedirectUrl(),
+      },
     });
     return error?.message ?? null;
   },
@@ -84,6 +104,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         provider: 'apple',
         token: credential.identityToken,
       });
+      if (!error) hydrateUserData().catch(console.warn);
       return error?.message ?? null;
     } catch (e: any) {
       if (e.code === 'ERR_REQUEST_CANCELED') return null;
@@ -93,16 +114,22 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   signInWithGoogle: async () => {
     try {
-      const redirectTo = Linking.createURL('auth/callback');
+      const redirectTo = authRedirectUrl();
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo, skipBrowserRedirect: true },
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+          queryParams: {
+            prompt: 'select_account',
+          },
+        },
       });
       if (error || !data.url) return error?.message ?? 'Google sign in failed.';
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
       if (result.type === 'success') {
-        const { error: sessionError } = await supabase.auth.exchangeCodeForSession(result.url);
-        return sessionError?.message ?? null;
+        const completion = await completeSupabaseAuthFromUrl(result.url);
+        return completion.error;
       }
       return null;
     } catch (e: any) {

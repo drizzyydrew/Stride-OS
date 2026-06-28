@@ -1,3 +1,16 @@
 .env
 .env.*
 node_modules
+
+# Claude Design handoff artifacts - keep local, never upload to EAS Build
+StrideOs-handoff*.zip
+old-StrideOs-handoff*.zip
+*.z01
+strideos/
+strideos 2/
+strideos_Full_Project_LLM/
+
+# Local Expo/dev artifacts
+.expo/
+dist/
+web-build/

@@ -11,9 +11,8 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import * as AppleAuthentication from 'expo-apple-authentication';
-import { AntDesign } from '@expo/vector-icons';
 
+import { SocialAuthButtons } from '../../src/components/auth/SocialAuthButtons';
 import { useAuthStore } from '../../src/store/authStore';
 import { colors }  from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
@@ -21,33 +20,41 @@ import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 
 export default function SignInScreen() {
   const signIn          = useAuthStore(s => s.signIn);
-  const signInWithApple  = useAuthStore(s => s.signInWithApple);
-  const signInWithGoogle = useAuthStore(s => s.signInWithGoogle);
+  const resendConfirmation = useAuthStore(s => s.resendConfirmation);
 
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState<string | null>(null);
+  const [notice,   setNotice]   = useState<string | null>(null);
   const [loading,  setLoading]  = useState(false);
+  const [resending, setResending] = useState(false);
+
+  const canResendConfirmation = Boolean(
+    email.trim() && error && /confirm|verified|verification|not valid/i.test(error),
+  );
 
   async function handleSignIn() {
     if (!email.trim() || !password.trim()) return;
     setLoading(true);
     setError(null);
+    setNotice(null);
     const err = await signIn(email.trim(), password);
     setLoading(false);
     if (err) setError(err);
   }
 
-  async function handleApple() {
+  async function handleResendConfirmation() {
+    if (!email.trim() || resending) return;
+    setResending(true);
     setError(null);
-    const err = await signInWithApple();
-    if (err) setError(err);
-  }
-
-  async function handleGoogle() {
-    setError(null);
-    const err = await signInWithGoogle();
-    if (err) setError(err);
+    setNotice(null);
+    const err = await resendConfirmation(email.trim());
+    setResending(false);
+    if (err) {
+      setError(err);
+    } else {
+      setNotice('Confirmation email sent. Open the link on this iPhone, then come back to sign in.');
+    }
   }
 
   return (
@@ -66,6 +73,7 @@ export default function SignInScreen() {
           <Text style={s.heading}>Sign in</Text>
 
           {error ? <Text style={s.error}>{error}</Text> : null}
+          {notice ? <Text style={s.notice}>{notice}</Text> : null}
 
           <View style={s.field}>
             <Text style={s.label}>EMAIL</Text>
@@ -108,26 +116,20 @@ export default function SignInScreen() {
             <Text style={s.forgotTxt}>Forgot password?</Text>
           </Pressable>
 
-          <View style={s.dividerRow}>
-            <View style={s.dividerLine} />
-            <Text style={s.dividerTxt}>or</Text>
-            <View style={s.dividerLine} />
-          </View>
+          {canResendConfirmation ? (
+            <Pressable
+              style={[s.resendBtn, resending && s.btnDisabled]}
+              onPress={handleResendConfirmation}
+              disabled={resending}
+            >
+              {resending
+                ? <ActivityIndicator color={colors.primary} />
+                : <Text style={s.resendTxt}>Resend confirmation email</Text>
+              }
+            </Pressable>
+          ) : null}
 
-          {Platform.OS === 'ios' && (
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-              cornerRadius={Radius.sm}
-              style={s.appleBtn}
-              onPress={handleApple}
-            />
-          )}
-
-          <Pressable style={s.googleBtn} onPress={handleGoogle}>
-            <AntDesign name="google" size={18} color="#4285F4" />
-            <Text style={s.googleBtnTxt}>Continue with Google</Text>
-          </Pressable>
+          <SocialAuthButtons mode="sign-in" onError={setError} />
         </View>
 
         <Pressable style={s.toggle} onPress={() => router.replace('/auth/sign-up' as never)}>
@@ -188,6 +190,13 @@ const s = StyleSheet.create({
     borderRadius:    Radius.sm,
     padding:         spacing.sm,
   },
+  notice: {
+    color:           colors.positive,
+    fontSize:        FontSize.sm,
+    backgroundColor: colors.positive + '18',
+    borderRadius:    Radius.sm,
+    padding:         spacing.sm,
+  },
   field: {
     gap: spacing.xs,
   },
@@ -229,38 +238,16 @@ const s = StyleSheet.create({
     color:    colors.primary,
     fontSize: FontSize.sm,
   },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           spacing.sm,
-  },
-  dividerLine: {
-    flex:            1,
-    height:          1,
-    backgroundColor: colors.border,
-  },
-  dividerTxt: {
-    color:    colors.textMuted,
-    fontSize: FontSize.sm,
-  },
-  appleBtn: {
-    height: 50,
-    width:  '100%',
-  },
-  googleBtn: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'center',
-    gap:             spacing.sm,
-    backgroundColor: colors.bg,
+  resendBtn: {
     borderWidth:     1,
-    borderColor:     colors.border,
+    borderColor:     colors.primary,
     borderRadius:    Radius.sm,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
+    alignItems:      'center',
   },
-  googleBtnTxt: {
-    color:      colors.text,
-    fontSize:   FontSize.base,
+  resendTxt: {
+    color:      colors.primary,
+    fontSize:   FontSize.sm,
     fontWeight: FontWeight.bold,
   },
   toggle: {

@@ -18,7 +18,7 @@ import {
 import { router } from 'expo-router';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem  from 'expo-file-system';
+import * as FileSystem  from 'expo-file-system/legacy';
 
 import { useMovementStore } from '../../../src/store/movementStore';
 import { useAuthStore }     from '../../../src/store/authStore';
@@ -267,10 +267,10 @@ function AddVideoModal({
           </View>
 
           <View style={m.aiNote}>
-            <Text style={m.aiNoteTitle}>Automatic marker tracking coming soon</Text>
+            <Text style={m.aiNoteTitle}>Structured video analysis</Text>
             <Text style={m.aiNoteSub}>
-              Future releases will auto-detect joint angles and gait events from video
-              using on-device pose estimation. Today, all analysis is entered manually.
+              Upload a clip, tag the movement context, then open the analysis to record
+              gait, lifting, and joint-angle findings in one place.
             </Text>
           </View>
         </ScrollView>
@@ -375,10 +375,10 @@ export default function MovementIndexScreen() {
 
       <ScrollView style={s.list} contentContainerStyle={s.listContent} showsVerticalScrollIndicator={false}>
         <View style={s.aiBanner}>
-          <Text style={s.aiBannerTitle}>Manual analysis · AI marker tracking coming soon</Text>
+          <Text style={s.aiBannerTitle}>Video analysis workspace</Text>
           <Text style={s.aiBannerSub}>
-            Record video in your camera app, then log observations here. Automatic pose
-            estimation will be available in a future update.
+            Record video in your camera app, upload it here, and keep gait, lift, and
+            joint-angle notes tied to the athlete profile.
           </Text>
         </View>
 

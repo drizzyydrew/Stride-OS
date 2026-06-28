@@ -1,136 +1,139 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { LAYOUT } from '../../../src/constants/layout';
 import { useColors } from '../../../src/theme/useColors';
-import { spacing } from '../../../src/theme/spacing';
-import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 
 type NavItem = {
   label:       string;
-  description: string;
   icon:        keyof typeof Ionicons.glyphMap;
   route:       string;
 };
 
-const NAV_ITEMS: NavItem[] = [
+const ITEMS: NavItem[] = [
   {
     label:       'Running',
-    description: 'Training plans, pace targets, GPS runs',
     icon:        'footsteps-outline',
     route:       '/(tabs)/training',
   },
   {
     label:       'Strength',
-    description: 'Concurrent strength sessions',
     icon:        'fitness-outline',
     route:       '/(tabs)/strength',
   },
   {
     label:       'Analytics',
-    description: 'Load, readiness, and performance trends',
     icon:        'stats-chart-outline',
     route:       '/(tabs)/analytics',
   },
   {
-    label:       'Movement Lab',
-    description: 'Gait analysis and video library',
-    icon:        'scan-outline',
-    route:       '/(tabs)/movement',
+    label:       'Adaptive Performance',
+    icon:        'speedometer-outline',
+    route:       '/(tabs)/performance',
   },
   {
     label:       'Profile & Settings',
-    description: 'Athlete profile, zones, appearance',
     icon:        'person-outline',
     route:       '/(tabs)/profile',
   },
 ];
 
 export default function MoreScreen() {
-  const c      = useColors();
   const insets = useSafeAreaInsets();
+  const C = useColors();
 
   return (
-    <View style={[styles.root, { backgroundColor: c.bg }]}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={[styles.title, { color: c.text }]}>More</Text>
-        <Text style={[styles.subtitle, { color: c.textMuted }]}>All sections</Text>
+    <View style={s.root}>
+      <Pressable
+        style={s.backdrop}
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        accessibilityLabel="Close More"
+      />
+      <View
+        style={[
+          s.sheet,
+          {
+            backgroundColor: C.card,
+            paddingBottom: Math.max(insets.bottom + 28, LAYOUT.screenPadBottom),
+          },
+        ]}
+      >
+        <View style={[s.sheetHandle, { backgroundColor: C.border }]} />
+        <Text style={[s.headerLabel, { color: C.textDim }]}>MORE</Text>
+        <View style={s.grid}>
+          {ITEMS.map(item => (
+            <Pressable
+              key={item.route}
+              style={({ pressed }) => [
+                s.card,
+                { backgroundColor: C.bg, borderColor: C.border },
+                pressed && s.cardPressed,
+              ]}
+              onPress={() => router.push(item.route as any)}
+            >
+              <Ionicons name={item.icon} size={20} color={C.primary} />
+              <Text style={[s.label, { color: C.text }]}>{item.label}</Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
-
-      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {NAV_ITEMS.map(item => (
-          <Pressable
-            key={item.route}
-            style={({ pressed }) => [
-              styles.row,
-              { backgroundColor: c.card, borderColor: c.border },
-              pressed && { opacity: 0.7 },
-            ]}
-            onPress={() => router.push(item.route as never)}
-          >
-            <View style={[styles.iconWrap, { backgroundColor: c.primaryDim }]}>
-              <Ionicons name={item.icon} size={22} color={c.primary} />
-            </View>
-            <View style={styles.rowText}>
-              <Text style={[styles.rowLabel, { color: c.text }]}>{item.label}</Text>
-              <Text style={[styles.rowDesc, { color: c.textMuted }]}>{item.description}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={c.textSubtle} />
-          </Pressable>
-        ))}
-        <View style={{ height: spacing.screenPadBottom }} />
-      </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   root: {
     flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
-  header: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom:     spacing.lg,
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
-  title: {
-    fontSize:   42,
-    fontWeight: FontWeight.black,
+  sheet: {
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
   },
-  subtitle: {
-    fontSize:  FontSize.sm,
-    marginTop: 2,
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 18,
   },
-  list: {
-    paddingHorizontal: spacing.xl,
-    gap:               spacing.sm,
+  headerLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    marginBottom: 12,
   },
-  row: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    gap:            spacing.md,
-    borderRadius:   Radius.md,
-    borderWidth:    1,
-    padding:        spacing.md,
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
-  iconWrap: {
-    width:          44,
-    height:         44,
-    borderRadius:   Radius.sm,
-    alignItems:     'center',
-    justifyContent: 'center',
-    flexShrink:     0,
+  card: {
+    width: '48%',
+    minHeight: 84,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    gap: 6,
   },
-  rowText: {
-    flex: 1,
-    gap:  2,
+  cardPressed: {
+    opacity: 0.7,
   },
-  rowLabel: {
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.bold,
-  },
-  rowDesc: {
-    fontSize:   FontSize.xs,
-    lineHeight: 16,
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

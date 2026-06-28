@@ -1,336 +1,278 @@
-import { useAthleteStore } from '../../../src/store/athleteStore';
-import { useWorkoutStore } from '../../../src/store/workoutStore';
-import { useCheckInStore } from '../../../src/store/checkInStore';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-import {
-  getLast7DaysLoad,
-  getLast30DaysLoad,
-  getWeeklyMileage,
-  getTrainingDistribution,
-  getWeeklyFatigueTrend,
-  getWeeklyRecoveryTrend,
-} from '../../../src/utils/historyUtils';
-import { calculateACWR } from '../../../src/utils/training';
-import {
-  computeAnalytics,
-  computeSlope,
-  computeTrendDirection,
-  computeConsistency,
-  classifyACWR,
-} from '../../../src/utils/analyticsEngine';
-import { generateForecast } from '../../../src/utils/forecastEngine';
-import { generateCoachingOutput } from '../../../src/utils/coachEngine';
-import { analyzeTimeline } from '../../../src/utils/timelineEngine';
-import { computePeriodization } from '../../../src/utils/periodizationEngine';
+import { useColors } from '../../../src/theme/useColors';
+import { useSettingsStore } from '../../../src/store/settingsStore';
+import { LAYOUT } from '../../../src/constants/layout';
 
-import ScreenLayout from '../../../src/layout/ScreenLayout';
-import TrendCard from '../../../src/components/analytics/TrendCard';
-import BarChartCard from '../../../src/components/analytics/BarChartCard';
-import LoadBalanceCard from '../../../src/components/analytics/LoadBalanceCard';
-import PhaseProgressCard from '../../../src/components/analytics/PhaseProgressCard';
-import LoadWindowCard from '../../../src/components/analytics/LoadWindowCard';
-import IntensityDistributionCard from '../../../src/components/analytics/IntensityDistributionCard';
-import RaceForecastCard from '../../../src/components/analytics/RaceForecastCard';
-import ReadinessForecastCard from '../../../src/components/analytics/ReadinessForecastCard';
-import RaceReadinessCard from '../../../src/components/coaching/RaceReadinessCard';
-import ReadinessTimelineCard from '../../../src/components/analytics/ReadinessTimelineCard';
-import TrendInterpretationCard from '../../../src/components/analytics/TrendInterpretationCard';
-import TimelineSignalsCard from '../../../src/components/analytics/TimelineSignalsCard';
-import MacrocycleTimelineCard from '../../../src/components/analytics/MacrocycleTimelineCard';
-import WeeklyLoadTargetsCard from '../../../src/components/analytics/WeeklyLoadTargetsCard';
-import PeriodizationSummaryCard from '../../../src/components/analytics/PeriodizationSummaryCard';
-
-import type { MetricTrend, TrendSeverity, DataPoint } from '../../../src/types/analytics';
-
-// ─── Local helpers ────────────────────────────────────────────────────────────
-
-function buildMetricTrend(
-  series:   DataPoint[],
-  current:  number,
-  severity: TrendSeverity,
-): MetricTrend {
-  const values   = series.map(p => p.value);
-  const slope    = computeSlope(values);
-  const previous = values.at(-2) ?? current;
-  return {
-    current,
-    previous,
-    direction:     computeTrendDirection(slope),
-    severity,
-    slope:         Math.round(slope * 100) / 100,
-    changePercent: previous !== 0
-      ? Math.round(((current - previous) / previous) * 1000) / 10
-      : 0,
-  };
-}
-
-function fatigueSeverity(f: number): TrendSeverity {
-  return f > 75 ? 'critical' : f > 55 ? 'warning' : f > 35 ? 'neutral' : 'positive';
-}
-
-function recoverySeverity(r: number): TrendSeverity {
-  return r >= 80 ? 'positive' : r >= 60 ? 'neutral' : r >= 40 ? 'warning' : 'critical';
-}
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
+const WEEK_HEIGHTS = [52, 62, 57, 71, 75, 68, 85, 100];
+const WEEK_OPACITIES = [0.35, 0.44, 0.52, 0.62, 0.70, 0.78, 0.88, 1];
 
 export default function AnalyticsScreen() {
-  const {
-    weeklyMileage,
-    fatigueScore,
-    recoveryScore,
-    currentWeek,
-    trainingPhase,
-    progressionLevel,
-    goalRace,
-    vo2Estimate,
-  } = useAthleteStore();
+  const C = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { units } = useSettingsStore();
+  const imp = units === 'imperial';
+  const pace = imp ? "9'14\"" : "5'44\"";
+  const pUnit = imp ? '/mi' : '/km';
+  const totalDist = imp ? '18.4 mi' : '29.6 km';
 
-  const { history } = useWorkoutStore();
-  const postWorkoutNotes = useCheckInStore(s => s.postWorkoutNotes);
-
-  // Plan-level metrics — phase progress, plan length, consistency projection.
-  // These are always derived from the periodization engine (no history required).
-  const analytics = computeAnalytics({
-    weeklyMileage,
-    fatigueScore,
-    recoveryScore,
-    currentWeek,
-    trainingPhase,
-    progressionLevel,
-    goalRace,
-  });
-
-  // ── History-derived data ────────────────────────────────────────────────────
-
-  const load7d  = getLast7DaysLoad(history);
-  const load30d = getLast30DaysLoad(history);
-  const dist    = getTrainingDistribution(history, 30);
-
-  // Weekly mileage from actual completed workouts
-  const weeklySummaries = getWeeklyMileage(history);
-  const mileagePoints   = weeklySummaries.map(s => ({ week: s.week, value: s.totalMiles }));
-
-  // ACWR from real history using ATL (7-day) / CTL (42-day) time constants
-  const acwrResult = calculateACWR(history);
-  const trainingLoad = {
-    acute:        acwrResult.acute,
-    chronic:      acwrResult.chronic,
-    acwr:         acwrResult.acwr,
-    acwrSeverity: classifyACWR(acwrResult.acwr),
-  };
-
-  // ── Trend series ────────────────────────────────────────────────────────────
-  // When ≥ 2 weeks of history exist, build real trends from stored snapshots.
-  // Fall back to synthetic projections for first-run experience.
-
-  const weeklyFatigue  = getWeeklyFatigueTrend(history);
-  const weeklyRecovery = getWeeklyRecoveryTrend(history);
-  const hasRealTrend   = weeklyFatigue.length >= 2;
-
-  const fatigueTrend = hasRealTrend
-    ? buildMetricTrend(weeklyFatigue,  fatigueScore,  fatigueSeverity(fatigueScore))
-    : analytics.fatigueMetric;
-
-  const recoveryTrend = hasRealTrend
-    ? buildMetricTrend(weeklyRecovery, recoveryScore, recoverySeverity(recoveryScore))
-    : analytics.recoveryMetric;
-
-  // ── Forecast inputs ─────────────────────────────────────────────────────────
-
-  // Adherence: completed sessions / (currentWeek × 6 expected sessions per week).
-  // Capped at 1.0 — can't exceed 100% even if some weeks had bonus sessions.
-  const adherenceRate = Math.min(
-    1,
-    history.length / Math.max(1, currentWeek * 6),
-  );
-
-  // Long run consistency: fraction of training weeks that included a long_run.
-  const weeksWithLongRun = new Set(
-    history.filter(r => r.type === 'long_run').map(r => r.week),
-  ).size;
-  const longRunConsistency = currentWeek > 0 ? weeksWithLongRun / currentWeek : 0;
-
-  // Easy proportion from intensity distribution (last 30 days).
-  const totalIntensity =
-    (dist.byIntensity.easy      ?? 0) +
-    (dist.byIntensity.very_easy ?? 0) +
-    (dist.byIntensity.moderate  ?? 0) +
-    (dist.byIntensity.hard      ?? 0) +
-    (dist.byIntensity.max       ?? 0);
-  const easyProportion = totalIntensity > 0
-    ? ((dist.byIntensity.easy ?? 0) + (dist.byIntensity.very_easy ?? 0)) / totalIntensity
-    : 0.80;
-
-  const consistencyScore = computeConsistency(weeklySummaries.map(s => s.totalMiles));
-
-  const { raceReadiness } = generateCoachingOutput({
-    athleteName:       'Athlete',
-    goalRace,
-    currentWeek,
-    trainingPhase,
-    progressionLevel,
-    weeklyMileage,
-    fatigueScore,
-    recoveryScore,
-    soreness:          null,
-    motivation:        null,
-    checkedIn:         false,
-    todayWorkoutType:  'easy_run',
-    isRestDay:         false,
-    isTodayComplete:   false,
-    acwr:              acwrResult.acwr,
-    adherenceRate,
-    longRunConsistency,
-    easyProportion,
-    historyWeeks:      weeklySummaries.length,
-    consistencyScore,
-    fatigueSlope:      fatigueTrend.slope,
-    recoverySlope:     recoveryTrend.slope,
-    weeksRemaining:    analytics.weeksRemaining,
-  });
-
-  // ── Longitudinal timeline analysis ─────────────────────────────────────────
-  const timeline = analyzeTimeline(history, postWorkoutNotes, {
-    trainingPhase,
-    currentWeek,
-    fatigueScore,
-    recoveryScore,
-  });
-
-  const forecast = generateForecast({
-    vdot:               vo2Estimate,
-    weeklyMileage,
-    fatigueScore,
-    recoveryScore,
-    currentWeek,
-    trainingPhase,
-    progressionLevel,
-    acwr:               acwrResult.acwr,
-    adherenceRate,
-    longRunConsistency,
-    easyProportion,
-    fatigueSlope:       fatigueTrend.slope,
-    recoverySlope:      recoveryTrend.slope,
-    historyWeeks:       weeklySummaries.length,
-  });
-
-  // ── Periodization engine ────────────────────────────────────────────────────
-
-  const previousWeekMiles = weeklySummaries.length >= 2
-    ? weeklySummaries[weeklySummaries.length - 2].totalMiles
-    : 0;
-
-  const oneWeekAgo           = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const recentHardSessions   = history.filter(
-    r => r.timestamp >= oneWeekAgo && (r.intensity === 'hard' || r.intensity === 'max'),
-  ).length;
-
-  const periodization = computePeriodization({
-    weeklyMileage,
-    currentWeek,
-    trainingPhase,
-    progressionLevel,
-    goalRace,
-    acwr:               acwrResult.acwr,
-    fatigueScore,
-    recoveryScore,
-    adherenceRate,
-    weeksRemaining:     analytics.weeksRemaining,
-    previousWeekMiles,
-    recentHardSessions,
-  });
+  const hrZones = [
+    { width: 8,  color: '#8B9080' },
+    { width: 62, color: C.primary },
+    { width: 18, color: C.warning },
+    { width: 10, color: C.accent },
+    { width: 2,  color: C.critical },
+  ];
 
   return (
-    <ScreenLayout title="Analytics">
+    <ScrollView
+      style={{ flex: 1, backgroundColor: C.bg }}
+      contentContainerStyle={{ paddingHorizontal: 18, paddingTop: insets.top + 6, paddingBottom: LAYOUT.screenPadBottom }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
+          <Ionicons name="arrow-back" size={20} color={C.primary} />
+        </TouchableOpacity>
+        <View style={{ marginLeft: 10 }}>
+          <Text style={[styles.headerLabel, { color: C.textDim }]}>ANALYTICS</Text>
+          <Text style={[styles.headerTitle, { color: C.text }]}>Last 8 Weeks</Text>
+        </View>
+      </View>
 
-      {/* ── Plan ─────────────────────────────────────────────────────────── */}
-      <PhaseProgressCard
-        phase={trainingPhase}
-        planProgress={analytics.planProgress}
-        currentWeek={currentWeek}
-        totalWeeks={analytics.totalWeeks}
-        weeksRemaining={analytics.weeksRemaining}
-      />
+      {/* Training Load */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <View style={styles.cardHeaderRow}>
+          <Text style={[styles.metaText, { color: C.textMuted }]}>Training Load</Text>
+          <Text style={[{ fontSize: 12, fontWeight: '700', color: C.positive }]}>↑ Progressing</Text>
+        </View>
+        <View style={[styles.barChart]}>
+          {WEEK_HEIGHTS.map((h, i) => (
+            <View
+              key={i}
+              style={[
+                styles.bar,
+                {
+                  height: `${h}%`,
+                  backgroundColor: C.primary,
+                  opacity: WEEK_OPACITIES[i],
+                },
+              ]}
+            />
+          ))}
+        </View>
+        <View style={[{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }]}>
+          {['W1','W2','W3','W4','W5','W6','W7','W8'].map(w => (
+            <Text key={w} style={[{ fontSize: 10, color: C.textDim }]}>{w}</Text>
+          ))}
+        </View>
+      </View>
 
-      {/* ── Load ─────────────────────────────────────────────────────────── */}
-      <LoadWindowCard load7d={load7d} load30d={load30d} />
+      {/* Avg Pace */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+        <View>
+          <Text style={[styles.metaText, { color: C.textDim, marginBottom: 4 }]}>Avg Pace · Last 4 Weeks</Text>
+          <Text style={[{ fontSize: 36, fontWeight: '800', color: C.text, lineHeight: 40 }]}>
+            {pace}<Text style={[{ fontSize: 14, fontWeight: '400', color: C.textMuted }]}> {pUnit}</Text>
+          </Text>
+        </View>
+        <Text style={[{ fontSize: 13, fontWeight: '700', color: C.positive }]}>↓ 0:22 faster</Text>
+      </View>
 
-      {/* ── Readiness ────────────────────────────────────────────────────── */}
-      <TrendCard
-        label="Recovery"
-        value={recoveryScore}
-        trend={recoveryTrend}
-      />
+      {/* Stats row */}
+      <View style={styles.statRow}>
+        <View style={[styles.statCard, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[styles.statCardLabel, { color: C.textDim }]}>TOTAL</Text>
+          <Text style={[styles.statCardVal, { color: C.text }]}>{totalDist}</Text>
+        </View>
+        <View style={[styles.statCard, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[styles.statCardLabel, { color: C.textDim }]}>RUNS</Text>
+          <Text style={[styles.statCardVal, { color: C.text }]}>42</Text>
+        </View>
+        <View style={[styles.statCard, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[styles.statCardLabel, { color: C.textDim }]}>PR 5K</Text>
+          <Text style={[styles.statCardVal, { color: C.text }]}>24:12</Text>
+        </View>
+      </View>
 
-      <TrendCard
-        label="Fatigue"
-        value={fatigueScore}
-        trend={fatigueTrend}
-      />
+      {/* HR Zone Distribution */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.metaText, { color: C.textMuted, marginBottom: 10 }]}>HR Zone Distribution · Last 4 Weeks</Text>
+        <View style={[{ flexDirection: 'row', height: 18, borderRadius: 6, overflow: 'hidden', marginBottom: 8 }]}>
+          {hrZones.map((z, i) => (
+            <View key={i} style={[{ width: `${z.width}%`, backgroundColor: z.color }]} />
+          ))}
+        </View>
+        <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18, marginBottom: 10 }]}>
+          Aerobic base solid at 70% Z1–Z2. Ready for quality work.
+        </Text>
+      </View>
 
-      <LoadBalanceCard load={trainingLoad} />
-
-      {/* ── Volume ───────────────────────────────────────────────────────── */}
-      {mileagePoints.length > 0 ? (
-        <BarChartCard
-          label="Weekly Mileage"
-          data={mileagePoints}
-          unit=" mi"
-          barColor="#1E3A8A"
-          highlightColor="#2563EB"
-          helper="Miles per training week from completed workouts."
-        />
-      ) : null}
-
-      {/* ── Distribution ─────────────────────────────────────────────────── */}
-      <IntensityDistributionCard distribution={dist} />
-
-      {/* ── Forecast ─────────────────────────────────────────────────────── */}
-      <RaceForecastCard
-        predictions={forecast.racePredictions}
-        confidence={forecast.overallConfidence}
-      />
-
-      <ReadinessForecastCard
-        readiness={forecast.readinessForecast}
-        fatigue={forecast.fatigueTrajectory}
-        risk={forecast.overreachingRisk}
-      />
-
-      {/* ── Race readiness ────────────────────────────────────────────────── */}
-      <RaceReadinessCard readiness={raceReadiness} />
-
-      {/* ── Periodization ────────────────────────────────────────────────── */}
-      <MacrocycleTimelineCard
-        currentWeek={currentWeek}
-        totalWeeks={periodization.totalWeeks}
-        planPhases={periodization.planPhases}
-        raceDistance={periodization.raceDistance}
-        mesocycle={periodization.mesocycle}
-        baseMileage={weeklyMileage}
-      />
-
-      <WeeklyLoadTargetsCard
-        targets={periodization.weeklyTargets}
-        trainingPhase={trainingPhase}
-        currentMiles={weeklyMileage}
-      />
-
-      <PeriodizationSummaryCard
-        rationale={periodization.rationale}
-        safeguards={periodization.safeguards}
-        integrityFlags={periodization.integrityFlags}
-        mesocycle={periodization.mesocycle}
-        trainingPhase={trainingPhase}
-        weeksRemaining={analytics.weeksRemaining}
-      />
-
-      {/* ── Longitudinal timeline ─────────────────────────────────────────── */}
-      <ReadinessTimelineCard analysis={timeline} />
-      <TrendInterpretationCard analysis={timeline} />
-      <TimelineSignalsCard signals={timeline.signals} />
-
-    </ScreenLayout>
+      {/* Adaptive Performance */}
+      <TouchableOpacity
+        style={[styles.card, styles.adaptiveCard, { backgroundColor: C.card, borderColor: C.border }]}
+        onPress={() => router.push('/(tabs)/performance' as any)}
+        activeOpacity={0.84}
+      >
+        <View style={styles.cardHeaderRow}>
+          <Text style={[styles.metaText, { color: C.textMuted }]}>Adaptive Performance</Text>
+          <Text style={[{ fontSize: 12, fontWeight: '700', color: C.primary }]}>Open →</Text>
+        </View>
+        <View style={styles.adaptiveTopRow}>
+          <View>
+            <Text style={[styles.adaptiveLabel, { color: C.textDim }]}>OVERALL SCORE</Text>
+            <Text style={[styles.adaptiveScore, { color: C.text }]}>82</Text>
+          </View>
+          <Text style={[styles.adaptiveCopy, { color: C.textMuted }]}>
+            Updates as you train and improve.
+          </Text>
+        </View>
+        <View style={[styles.adaptiveBar, { backgroundColor: C.border }]}>
+          <View style={[styles.adaptiveBarFill, { backgroundColor: C.primary, width: '82%' }]} />
+        </View>
+        <View style={styles.adaptiveMetricRow}>
+          {[
+            { label: 'Aerobic', value: 82, color: C.positive },
+            { label: 'Anaerobic', value: 71, color: C.warning },
+            { label: 'Processing', value: 88, color: C.accent },
+          ].map(metric => (
+            <View key={metric.label} style={[styles.adaptiveMetric, { backgroundColor: C.cardAlt }]}>
+              <Text style={[styles.adaptiveMetricLabel, { color: C.textDim }]}>{metric.label}</Text>
+              <Text style={[styles.adaptiveMetricValue, { color: metric.color }]}>{metric.value}</Text>
+            </View>
+          ))}
+        </View>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  headerLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.9,
+    textTransform: 'uppercase',
+  },
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: '700',
+    fontFamily: 'CormorantGaramond_700Bold',
+  },
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 10,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  metaText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  barChart: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 80,
+    gap: 5,
+  },
+  bar: {
+    flex: 1,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+  },
+  statRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  statCard: {
+    flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    alignItems: 'center',
+  },
+  statCardLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statCardVal: {
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  adaptiveCard: {
+    paddingBottom: 14,
+  },
+  adaptiveTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+    alignItems: 'flex-end',
+    marginBottom: 12,
+  },
+  adaptiveLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  adaptiveScore: {
+    fontSize: 54,
+    fontWeight: '800',
+    lineHeight: 58,
+  },
+  adaptiveCopy: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'right',
+    marginBottom: 7,
+  },
+  adaptiveBar: {
+    height: 8,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  adaptiveBarFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+  adaptiveMetricRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  adaptiveMetric: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  adaptiveMetricLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  adaptiveMetricValue: {
+    fontSize: 22,
+    fontWeight: '800',
+  },
+});

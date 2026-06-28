@@ -4,7 +4,17 @@
 // Product IDs are configured in App Store Connect after Apple Developer account
 // is active. Guarded with try/catch so the app runs on Expo Go without crashing.
 
-let Purchases: typeof import('react-native-purchases') | null = null;
+type OptionalPurchasesModule = {
+  default: {
+    configure: (options: { apiKey: string }) => Promise<void> | void;
+    logIn: (userId: string) => Promise<unknown> | unknown;
+    getCustomerInfo: () => Promise<{ entitlements: { active: Record<string, unknown> } }>;
+    getOfferings: () => Promise<{ current?: { availablePackages: unknown[] } | null }>;
+    purchasePackage: (pkg: unknown) => Promise<unknown>;
+  };
+};
+
+let Purchases: OptionalPurchasesModule | null = null;
 
 try {
   Purchases = require('react-native-purchases');

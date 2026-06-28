@@ -7,6 +7,7 @@ import { calculateTrainingLoad } from '../utils/training';
 import { calculateUpdatedFatigue } from '../utils/calculateFatigue';
 import { estimateDistanceMiles } from '../utils/historyUtils';
 import { syncWorkoutLog, deleteWorkoutLog } from '../lib/syncService';
+import { syncCompletedWorkoutToExternalServices } from '../lib/externalIntegrations';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -195,6 +196,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }));
 
         syncWorkoutLog(record).catch(console.warn);
+        syncCompletedWorkoutToExternalServices(record).catch(console.warn);
       },
 
       // ── Skip ─────────────────────────────────────────────────────────────────
@@ -320,6 +322,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }));
 
         syncWorkoutLog(record).catch(console.warn);
+        syncCompletedWorkoutToExternalServices(record).catch(console.warn);
       },
     }),
     {
