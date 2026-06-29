@@ -13,7 +13,7 @@
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "8",
+      "buildNumber": "9",
       "backgroundColor": "#14160F",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "StrideOS uses your location to track distance and pace during GPS runs.",
@@ -78,13 +78,12 @@
           "enableBackgroundRemoteNotifications": false
         }
       ],
-      "./plugins/withHealthKitAccessCleanup",
       [
-        "react-native-health",
+        "@kingstinct/react-native-healthkit",
         {
-          "isClinicalDataEnabled": false,
-          "healthSharePermission": "StrideOS reads Apple Health data such as heart rate, sleep, HRV, and steps to personalize training recommendations.",
-          "healthUpdatePermission": "StrideOS writes completed workouts to Apple Health when you connect Apple Health."
+          "NSHealthShareUsageDescription": "StrideOS reads Apple Health data such as heart rate, sleep, HRV, and steps to personalize training recommendations.",
+          "NSHealthUpdateUsageDescription": "StrideOS writes completed workouts to Apple Health when you connect Apple Health.",
+          "background": false
         }
       ],
       [

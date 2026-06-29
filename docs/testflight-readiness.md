@@ -65,7 +65,7 @@ Confirm these capabilities for bundle id `com.mooremovement.strideos`:
 - `ios.usesAppleSignIn`
 - HealthKit usage descriptions
 - foreground/background location usage descriptions
-- `expo-location`, `expo-notifications`, `expo-apple-authentication`, and `react-native-health` plugins
+- `expo-location`, `expo-notifications`, `expo-apple-authentication`, and `@kingstinct/react-native-healthkit` plugins
 
 ## Strava App Settings
 

@@ -14,3 +14,5 @@ strideos_Full_Project_LLM/
 .expo/
 dist/
 web-build/
+ios/
+android/
