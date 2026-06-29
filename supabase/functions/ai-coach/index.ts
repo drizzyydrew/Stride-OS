@@ -94,7 +94,10 @@ serve(async (req) => {
 
     const data = await res.json();
     if (!res.ok) {
-      const message = data?.error?.message ?? data?.error ?? `Anthropic request failed with HTTP ${res.status}`;
+      const rawMessage = data?.error?.message ?? data?.error ?? `Anthropic request failed with HTTP ${res.status}`;
+      const message = typeof rawMessage === 'string' && rawMessage.toLowerCase().includes('invalid x-api-key')
+        ? 'Anthropic rejected the ANTHROPIC_API_KEY Supabase secret. Create a fresh Anthropic API key, set it as the Supabase secret, then try again.'
+        : rawMessage;
       return json({ error: message }, res.status);
     }
 

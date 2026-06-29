@@ -18,11 +18,10 @@ import {
 import { router } from 'expo-router';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem  from 'expo-file-system/legacy';
 
 import { useMovementStore } from '../../../src/store/movementStore';
 import { useAuthStore }     from '../../../src/store/authStore';
-import { supabase }         from '../../../src/lib/supabase';
+import { copyVideoToMovementStorage, uploadMovementVideo } from '../../../src/lib/movementVideoStorage';
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
@@ -324,31 +323,23 @@ export default function MovementIndexScreen() {
 
     setShowAdd(false);
 
-    if (!form.localUri || !user) return;
+    if (!form.localUri) return;
 
     setUploading(true);
     try {
-      const destDir = `${FileSystem.documentDirectory}movement-videos/`;
-      await FileSystem.makeDirectoryAsync(destDir, { intermediates: true });
-      const ext       = form.fileName?.split('.').pop() ?? 'mp4';
-      const localDest = `${destDir}${videoId}.${ext}`;
-      await FileSystem.copyAsync({ from: form.localUri, to: localDest });
-
-      const storagePath = `${user.id}/${videoId}.${ext}`;
-      const response    = await fetch(localDest);
-      const blob        = await response.blob();
+      const { localUri, ext, contentType } = await copyVideoToMovementStorage(form.localUri, videoId, form.fileName);
 
       // Save local URI immediately so video is playable even if cloud upload fails
-      updateVideo(videoId, { uri: localDest });
+      updateVideo(videoId, { uri: localUri });
 
-      const { error: uploadError } = await supabase.storage
-        .from('movement-videos')
-        .upload(storagePath, blob, { contentType: `video/${ext}`, upsert: false });
+      if (!user) return;
 
-      if (uploadError) {
-        console.warn('Supabase upload error:', uploadError.message);
-      } else {
+      const storagePath = `${user.id}/${videoId}.${ext}`;
+      try {
+        await uploadMovementVideo(localUri, storagePath, contentType);
         updateVideo(videoId, { storagePath });
+      } catch (uploadError) {
+        console.warn('Supabase upload error:', uploadError);
       }
     } catch (err) {
       console.warn('Video upload failed:', err);

@@ -21,7 +21,6 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
@@ -34,7 +33,7 @@ import {
   type AiCoachHealth,
   type CoachMessage,
 } from '../../../src/lib/aiCoach';
-import { supabase } from '../../../src/lib/supabase';
+import { copyVideoToMovementStorage, uploadMovementVideo } from '../../../src/lib/movementVideoStorage';
 import { colors }   from '../../../src/theme/colors';
 import { spacing }  from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
@@ -211,7 +210,6 @@ export default function CoachScreen() {
     setVideoBusy(true);
 
     const asset = result.assets[0];
-    const ext = asset.uri.split('.').pop()?.split('?')[0] || 'mp4';
     const videoId = addVideo({
       uri: asset.uri,
       title: `Coach review ${todayISO()}`,
@@ -227,30 +225,27 @@ export default function CoachScreen() {
     setSelectedVideoUri(asset.uri);
 
     try {
-      const destDir = `${FileSystem.documentDirectory}movement-videos/`;
-      await FileSystem.makeDirectoryAsync(destDir, { intermediates: true });
-      const localDest = `${destDir}${videoId}.${ext}`;
-      await FileSystem.copyAsync({ from: asset.uri, to: localDest });
-      setSelectedVideoUri(localDest);
+      const { localUri, ext, contentType } = await copyVideoToMovementStorage(asset.uri, videoId, asset.fileName ?? asset.uri);
+      setSelectedVideoUri(localUri);
+      updateVideo(videoId, {
+        uri: localUri,
+        submittedForAnalysis: true,
+        analysisStatus: 'pending',
+      });
 
       let storagePath: string | undefined;
       if (user) {
         storagePath = `${user.id}/${videoId}.${ext}`;
-        const response = await fetch(localDest);
-        const blob = await response.blob();
-
-        const { error: uploadError } = await supabase.storage
-          .from('movement-videos')
-          .upload(storagePath, blob, { contentType: `video/${ext}`, upsert: false });
-
-        if (uploadError) {
-          console.warn('Coach video upload error:', uploadError.message);
+        try {
+          await uploadMovementVideo(localUri, storagePath, contentType);
+        } catch (uploadError) {
+          console.warn('Coach video upload error:', uploadError);
           storagePath = undefined;
         }
       }
 
       updateVideo(videoId, {
-        uri: localDest,
+        uri: localUri,
         storagePath,
         submittedForAnalysis: true,
         analysisStatus: 'pending',

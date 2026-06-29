@@ -13,7 +13,7 @@
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "9",
+      "buildNumber": "10",
       "backgroundColor": "#14160F",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "StrideOS uses your location to track distance and pace during GPS runs.",

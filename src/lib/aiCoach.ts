@@ -35,7 +35,12 @@ function coachEndpoint(): string {
 }
 
 function errorMessage(body: CoachResponse, status: number): string {
-  if (typeof body.error === 'string') return body.error;
+  if (typeof body.error === 'string') {
+    if (body.error.toLowerCase().includes('invalid x-api-key')) {
+      return 'AI Coach backend is connected, but Anthropic rejected the API key stored in Supabase. Replace the ANTHROPIC_API_KEY secret and redeploy/check again.';
+    }
+    return body.error;
+  }
   if (body.error?.message) return body.error.message;
   return `AI coach request failed with HTTP ${status}.`;
 }
