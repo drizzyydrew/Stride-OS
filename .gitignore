@@ -50,3 +50,6 @@ strideos_Full_Project_LLM/
 # generated native folders
 /ios
 /android
+
+# Supabase CLI local state
+supabase/.temp/
