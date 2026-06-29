@@ -181,6 +181,7 @@ export type StrengthEngineInput = {
   acwr:             number;
   weeksToRace:      number;
   availableTimeMin: number;         // max session duration in minutes (default 60)
+  liftDays?:        import('./athlete').TrainingDay[];
   strengthHistory:  StrengthLogRecord[];
 };
 

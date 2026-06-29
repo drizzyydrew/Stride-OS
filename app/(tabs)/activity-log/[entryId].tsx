@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import MapView, { Polyline, type Region } from 'react-native-maps';
 
 import { useColors } from '../../../src/theme/useColors';
 import { useSettingsStore } from '../../../src/store/settingsStore';
@@ -33,7 +34,36 @@ function runTitle(record: CompletedWorkoutRecord) {
 
 function strengthTitle(record: StrengthLogRecord) {
   if (record.skipped) return 'Skipped strength';
+  if (record.sessionId.includes('prototype-strength-lower')) return 'Lower Body & Core';
+  if (record.sessionId.includes('prototype-strength-upper')) return 'Upper Body & Core';
   return record.sessionId.replace(/^strength_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Strength session';
+}
+
+const DARK_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#1a1c15' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8B927C' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#14160F' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2E3127' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111827' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#22281A' }] },
+];
+
+function routeRegion(points: { latitude: number; longitude: number }[]): Region {
+  if (points.length === 0) {
+    return { latitude: 44.0582, longitude: -121.3153, latitudeDelta: 0.045, longitudeDelta: 0.045 };
+  }
+  const lats = points.map(p => p.latitude);
+  const lngs = points.map(p => p.longitude);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+  return {
+    latitude: (minLat + maxLat) / 2,
+    longitude: (minLng + maxLng) / 2,
+    latitudeDelta: Math.max((maxLat - minLat) * 1.6, 0.01),
+    longitudeDelta: Math.max((maxLng - minLng) * 1.6, 0.01),
+  };
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -55,8 +85,25 @@ function RunSummary({ record }: { record: CompletedWorkoutRecord }) {
     ? `${(distanceMiles * 1.609344).toFixed(1)} km`
     : `${distanceMiles.toFixed(1)} mi`;
 
+  const routeCoords = (record.routeCoordinates ?? []).map(point => ({ latitude: point.lat, longitude: point.lng }));
+
   return (
     <>
+      {routeCoords.length > 1 ? (
+        <View style={[s.mapCard, { borderColor: C.border }]}>
+          <MapView
+            style={s.map}
+            initialRegion={routeRegion(routeCoords)}
+            customMapStyle={DARK_MAP_STYLE}
+            scrollEnabled={false}
+            zoomEnabled={false}
+            rotateEnabled={false}
+            pitchEnabled={false}
+          >
+            <Polyline coordinates={routeCoords} strokeColor={C.primary} strokeWidth={5} />
+          </MapView>
+        </View>
+      ) : null}
       <View style={s.statGrid}>
         <Stat label="Duration" value={`${durationMin} min`} />
         <Stat label="Distance" value={distance} />
@@ -190,6 +237,8 @@ const s = StyleSheet.create({
   statValue: { fontSize: 21, fontWeight: '900' },
   statLabel: { fontSize: 12, marginTop: 4 },
   card: { borderWidth: 1, borderRadius: 12, padding: 16, marginBottom: 14 },
+  mapCard: { borderWidth: 1, borderRadius: 12, overflow: 'hidden', marginBottom: 14 },
+  map: { height: 190, width: '100%' },
   sectionLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 2, marginBottom: 12 },
   body: { fontSize: 13, lineHeight: 20 },
   note: { fontSize: 13, lineHeight: 20, marginTop: 12, fontWeight: '700' },

@@ -38,6 +38,7 @@ export type Exercise = {
   primaryMuscles:  string[];
   isCustom:        boolean;
   notes?:          string;
+  photoUri?:        string;
 };
 
 type ExerciseStore = {

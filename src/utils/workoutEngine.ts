@@ -208,6 +208,38 @@ function applyTrainingStyle(
   });
 }
 
+function limitRunDays(types: RichWorkoutType[], desiredRunDays?: number): RichWorkoutType[] {
+  if (!desiredRunDays || desiredRunDays >= types.filter(t => t !== 'rest' && t !== 'mobility').length) {
+    return types;
+  }
+
+  const keepPriority: Partial<Record<RichWorkoutType, number>> = {
+    long_run: 100,
+    progression_run: 90,
+    threshold: 85,
+    tempo: 80,
+    vo2: 78,
+    fartlek: 74,
+    hill_repeats: 72,
+    marathon_pace: 70,
+    easy_run: 55,
+    strides: 50,
+    recovery_run: 40,
+    deload_session: 35,
+    taper_session: 35,
+    cross_training: 25,
+  };
+
+  const candidates = types
+    .map((type, index) => ({ type, index, priority: keepPriority[type] ?? 0 }))
+    .filter(item => item.type !== 'rest' && item.type !== 'mobility')
+    .sort((a, b) => b.priority - a.priority || a.index - b.index)
+    .slice(0, Math.max(1, desiredRunDays));
+
+  const keepIndexes = new Set(candidates.map(item => item.index));
+  return types.map((type, index) => keepIndexes.has(index) ? type : 'rest');
+}
+
 // ─── Helper exported for screens that need to rebuild a single day ─────────────
 
 export function buildRichDay(
@@ -253,6 +285,7 @@ export function generateRichWeek(input: WorkoutEngineInput): RichWeek {
 
   const adaptedTypes = applyAdaptiveModifiers(baseTemplate, input, weekInBlock);
   const styledTypes  = applyTrainingStyle(adaptedTypes, input.trainingStyle);
+  const plannedTypes = limitRunDays(styledTypes, input.runDays?.length);
 
   const multiplier = isAutoDeload
     ? PHASE_MULTIPLIER['deload']!
@@ -269,7 +302,7 @@ export function generateRichWeek(input: WorkoutEngineInput): RichWeek {
     calibration,
   };
 
-  const workouts: RichWorkout[] = styledTypes.map((richType, dayIndex) => {
+  const workouts: RichWorkout[] = plannedTypes.map((richType, dayIndex) => {
     const workout = buildRichWorkout(richType, ctx, dayIndex);
     const envAdj  = computeEnvAdjustment(
       workout.paceRange,

@@ -262,6 +262,8 @@ export type AthleteProfile = {
 
   // Scheduling preferences
   availableDays:  TrainingDay[];
+  runDays?:       TrainingDay[];
+  liftDays?:      TrainingDay[];
   targetSessions: number;
 
   // Current calibration

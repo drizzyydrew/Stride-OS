@@ -48,6 +48,8 @@ export type EngineInput = {
 
   // ── Onboarding preferences ──────────────────────────────────────────────────
   availableDays:    TrainingDay[];
+  runDays?:         TrainingDay[];
+  liftDays?:        TrainingDay[];
   trainingStyle:    TrainingStyle;
   primaryGoal:      GoalType;
   hasCurrentInjury: boolean;
@@ -126,6 +128,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
     longRunConsistency:     input.longRunConsistency,
     trainingStyle:          input.trainingStyle,
     availableDays:          input.availableDays,
+    runDays:                input.runDays,
     temperatureCelsius:     input.temperatureCelsius,
     altitudeMeters:         input.altitudeMeters,
   };
@@ -145,6 +148,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
     acwr:             input.acwr,
     weeksToRace,
     availableTimeMin: 60,
+    liftDays:        input.liftDays,
     strengthHistory:  input.strengthHistory,
   };
 
@@ -156,7 +160,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   // RichWorkout extends Workout — fully compatible with mapWorkoutsToDates
   const runPlans = mapWorkoutsToDates(
     richWeek.workouts,
-    input.availableDays,
+    input.runDays?.length ? input.runDays : input.availableDays,
     weekStartDate,
     input.completedWorkoutKeys,
     input.currentWeek,
@@ -165,7 +169,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   const runDates      = runPlans.map(p => p.date);
   const strengthPlans = mapStrengthToDates(
     strengthWeek.sessions,
-    input.availableDays,
+    input.liftDays?.length ? input.liftDays : input.availableDays,
     runDates,
     weekStartDate,
     input.completedStrengthKeys,

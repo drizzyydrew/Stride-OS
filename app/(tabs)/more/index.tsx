@@ -34,9 +34,14 @@ const ITEMS: NavItem[] = [
     route:       '/(tabs)/performance',
   },
   {
-    label:       'Profile & Settings',
+    label:       'Profile',
     icon:        'person-outline',
     route:       '/(tabs)/profile',
+  },
+  {
+    label:       'Settings',
+    icon:        'settings-outline',
+    route:       '/(tabs)/settings',
   },
 ];
 

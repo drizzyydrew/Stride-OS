@@ -139,3 +139,17 @@ export async function scheduleTrainingNotifications(prefs: NotificationPrefs) {
     });
   }
 }
+
+export async function sendRunAlertNotification(body: string) {
+  const granted = await requestNotificationAccess();
+  if (!granted) return;
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'StrideOS run alert',
+      body,
+      data: { url: '/(tabs)/training' },
+    },
+    trigger: null,
+  });
+}

@@ -17,8 +17,9 @@ export type Coordinate = {
 
 // Rolling window for pace calculation (seconds of data to average)
 const PACE_WINDOW_SEC = 30;
-const MAX_ALLOWED_ACCURACY_METERS = 80;
+const MAX_ALLOWED_ACCURACY_METERS = 65;
 const MAX_REASONABLE_RUNNING_SPEED_MPS = 8.5; // ~5:02/mi, lets fast intervals through while rejecting GPS jumps.
+const MIN_DISTANCE_DELTA_METERS = 2.5;
 
 function haversineMiles(a: Coordinate, b: Coordinate): number {
   const R   = 3958.8;
@@ -39,7 +40,9 @@ type ActiveRunStore = {
   pausedDurationMs:       number;
   distanceMiles:          number;
   currentPaceSecPerMile:  number;
+  averagePaceSecPerMile:  number;
   coordinates:            Coordinate[];
+  lastRunCoordinates:     Coordinate[];
   currentIntervalIndex:   number;
   plannedWorkout:         RichWorkout | null;
 
@@ -60,7 +63,9 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
   pausedDurationMs:       0,
   distanceMiles:          0,
   currentPaceSecPerMile:  0,
+  averagePaceSecPerMile:  0,
   coordinates:            [],
+  lastRunCoordinates:     [],
   currentIntervalIndex:   0,
   plannedWorkout:         null,
 
@@ -73,6 +78,7 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       pausedDurationMs:       0,
       distanceMiles:          0,
       currentPaceSecPerMile:  0,
+      averagePaceSecPerMile:  0,
       coordinates:            [],
       currentIntervalIndex:   0,
       plannedWorkout,
@@ -115,10 +121,13 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
 
     if (previousCoord) {
       const deltaMiles = haversineMiles(previousCoord, coord);
+      const deltaMeters = deltaMiles * 1609.344;
       const deltaSeconds = (coord.timestamp - previousCoord.timestamp) / 1000;
       const speedMps = deltaSeconds > 0 ? (deltaMiles * 1609.344) / deltaSeconds : 0;
       if (speedMps > MAX_REASONABLE_RUNNING_SPEED_MPS) return;
-      totalDist += deltaMiles;
+      if (deltaMeters >= MIN_DISTANCE_DELTA_METERS) {
+        totalDist += deltaMiles;
+      }
     }
 
     // Rolling 30-second pace
@@ -132,8 +141,19 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       ? (windowCoords[windowCoords.length - 1].timestamp - windowCoords[0].timestamp) / 1000
       : 0;
     const pace = windowDist > 0 && windowSec > 0 ? windowSec / windowDist : state.currentPaceSecPerMile;
+    const elapsedMovingSec = state.startTime
+      ? Math.max(0, (coord.timestamp - state.startTime - state.pausedDurationMs) / 1000)
+      : 0;
+    const averagePace = totalDist > 0.005 && elapsedMovingSec > 0
+      ? elapsedMovingSec / totalDist
+      : state.averagePaceSecPerMile;
 
-    set({ coordinates: coords, distanceMiles: totalDist, currentPaceSecPerMile: pace });
+    set({
+      coordinates: coords,
+      distanceMiles: totalDist,
+      currentPaceSecPerMile: pace,
+      averagePaceSecPerMile: averagePace,
+    });
   },
 
   advanceInterval: () => {
@@ -148,6 +168,7 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       isPaused: false,
       pausedAt: null,
       pausedDurationMs: state.pausedDurationMs + pausedFor,
+      lastRunCoordinates: state.coordinates,
     });
   },
 
@@ -160,6 +181,7 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       pausedDurationMs:       0,
       distanceMiles:          0,
       currentPaceSecPerMile:  0,
+      averagePaceSecPerMile:  0,
       coordinates:            [],
       currentIntervalIndex:   0,
       plannedWorkout:         null,

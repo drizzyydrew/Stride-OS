@@ -307,6 +307,8 @@ export const useProfileStore = create<ProfileStore>()(
             thresholdTest:    profile.thresholdTest    ?? null,
             mafTests:         profile.mafTests         ?? [],
             activeZoneMethod: profile.activeZoneMethod ?? 'vdot',
+            runDays:          profile.runDays          ?? profile.availableDays,
+            liftDays:         profile.liftDays         ?? [],
           };
         }
         state.profiles = migrated;

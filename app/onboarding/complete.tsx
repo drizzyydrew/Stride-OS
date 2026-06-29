@@ -151,6 +151,8 @@ export default function CompleteScreen() {
       hrMaxManual:           false,
       trainingAgeYears:      data.yearsRunning,
       availableDays:         data.availableDays,
+      runDays:               data.runDays,
+      liftDays:              data.liftDays,
       targetSessions:        data.targetSessions,
       vo2Estimate:           vdotFinal,
       vdot:                  vdotFinal,

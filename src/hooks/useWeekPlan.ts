@@ -116,6 +116,8 @@ export function useWeekPlan(): WeekPlan {
 
     // Onboarding preferences
     availableDays:    onboardingData.availableDays,
+    runDays:          onboardingData.runDays?.length ? onboardingData.runDays : profile?.runDays,
+    liftDays:         onboardingData.liftDays?.length ? onboardingData.liftDays : profile?.liftDays,
     trainingStyle:    onboardingData.trainingStyle,
     primaryGoal:      onboardingData.primaryGoal,
     hasCurrentInjury: onboardingData.hasCurrentInjury,

@@ -529,8 +529,12 @@ export function generateStrengthWeek(input: StrengthEngineInput): StrengthWeek {
     ?? PHASE_CONFIG['base']!['intermediate']!;
 
   const config = applyStrengthAdaptations(baseConfig, input);
+  const maxLiftDays = input.liftDays?.length;
+  const sessionTypes = maxLiftDays
+    ? config.sessionTypes.slice(0, Math.max(1, maxLiftDays))
+    : config.sessionTypes;
 
-  const sessions = config.sessionTypes.map((sessionType, i) =>
+  const sessions = sessionTypes.map((sessionType, i) =>
     buildSession(sessionType, i, weekInBlock, trainingPhase, input),
   );
 

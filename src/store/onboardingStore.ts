@@ -47,6 +47,8 @@ export type OnboardingData = {
 
   // Step 6: Availability
   availableDays:   TrainingDay[];
+  runDays:         TrainingDay[];
+  liftDays:        TrainingDay[];
   targetSessions:  number;
 
   // Step 7: Strength
@@ -81,6 +83,8 @@ const DEFAULT_DATA: OnboardingData = {
   hrMax:            null,
   hrMaxManual:      false,
   availableDays:    ['Mon', 'Wed', 'Fri', 'Sat'],
+  runDays:          ['Mon', 'Wed', 'Fri', 'Sat'],
+  liftDays:         ['Tue', 'Thu'],
   targetSessions:   4,
   strengthLevel:    'beginner',
   hasCurrentInjury: false,

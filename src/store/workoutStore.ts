@@ -23,7 +23,7 @@ function rpeToIntensity(rpe: number): WorkoutIntensity {
 }
 
 type LogEdits = Partial<Pick<CompletedWorkoutRecord,
-  'actualDurationMinutes' | 'actualDistanceMiles' | 'rpe' | 'notes'>>;
+  'actualDurationMinutes' | 'actualDistanceMiles' | 'routeCoordinates' | 'rpe' | 'notes'>>;
 
 type ManualLogEntry = {
   completionKey: string;
@@ -96,6 +96,7 @@ function migrateRecord(r: Partial<CompletedWorkoutRecord>): CompletedWorkoutReco
     // Optional extended fields — preserved if present
     actualDurationMinutes: r.actualDurationMinutes,
     actualDistanceMiles:   r.actualDistanceMiles,
+    routeCoordinates:      r.routeCoordinates,
     rpe:                   r.rpe,
     notes:                 r.notes,
     source:                r.source,

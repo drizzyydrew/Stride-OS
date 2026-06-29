@@ -14,14 +14,26 @@ import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useIntegrationsStore } from '../../../src/store/integrationsStore';
 import { useActiveRunStore } from '../../../src/store/activeRunStore';
+import { useAthleteStore } from '../../../src/store/athleteStore';
+import { useWorkoutStore } from '../../../src/store/workoutStore';
+import { useCalibration } from '../../../src/store/profileStore';
 import { useRouteStore, routeDistanceMiles, type RunRoute, type RoutePoint } from '../../../src/store/routeStore';
 import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
-import { calcHydration } from '../../../src/utils/hydrationEngine';
+import { sendRunAlertNotification } from '../../../src/lib/notifications';
+import {
+  calculateHydrationPlan,
+  weatherBandForTemp,
+  type CrampingFrequency,
+  type FluidComfort,
+  type HydrationGoal,
+  type Saltiness,
+  type Sweatiness,
+} from '../../../src/utils/hydrationEngine';
 import { LAYOUT } from '../../../src/constants/layout';
 
 // ─── Sub-tab types ─────────────────────────────────────────────────────────────
-type RunTab = 'plan' | 'active' | 'gps' | 'hydration' | 'routes';
+type RunTab = 'plan' | 'active' | 'hydration' | 'routes';
 type RunState = 'idle' | 'active' | 'paused';
 type TrackingPermissionState = {
   foreground: Location.PermissionStatus | 'unknown';
@@ -225,6 +237,40 @@ function speakCue(text: string): void {
   Speech.speak(text, { rate: 0.92, pitch: 1 });
 }
 
+type LiveZoneStatus = {
+  label: string;
+  detail: string;
+  tone: 'in' | 'near' | 'out' | 'unknown';
+  guidance: 'high' | 'low' | null;
+};
+
+function zoneStatusForHeartRate(
+  heartRateBpm: number | null,
+  targetZone: number,
+  zones?: { zone: number; label: string; minBPM: number | null; maxBPM: number | null }[] | null,
+): LiveZoneStatus {
+  const target = zones?.find(z => z.zone === targetZone);
+  if (!heartRateBpm || !target || target.minBPM == null || target.maxBPM == null) {
+    return { label: `Z${targetZone}`, detail: 'TARGET', tone: 'unknown', guidance: null };
+  }
+
+  const current = zones?.find(z =>
+    (z.minBPM == null || heartRateBpm >= z.minBPM) &&
+    (z.maxBPM == null || heartRateBpm <= z.maxBPM),
+  );
+  const below = heartRateBpm < target.minBPM;
+  const above = heartRateBpm > target.maxBPM;
+  const delta = below ? target.minBPM - heartRateBpm : above ? heartRateBpm - target.maxBPM : 0;
+  const tone: LiveZoneStatus['tone'] = delta === 0 ? 'in' : delta <= 5 ? 'near' : 'out';
+
+  return {
+    label: current ? `Z${current.zone}` : `Z${targetZone}`,
+    detail: delta === 0 ? target.label : `${delta} bpm ${above ? 'high' : 'low'}`,
+    tone,
+    guidance: above ? 'high' : below ? 'low' : null,
+  };
+}
+
 // ─── Plan Tab ─────────────────────────────────────────────────────────────────
 function PlanTab() {
   const C = useColors();
@@ -371,6 +417,16 @@ function ActiveTab() {
   const C = useColors();
   const { units } = useSettingsStore();
   const healthKitEnabled = useIntegrationsStore(s => s.healthKitEnabled);
+  const calibration = useCalibration();
+  const {
+    fatigueScore,
+    recoveryScore,
+    currentWeek,
+    setFatigueScore,
+    setRecentEasyLoad,
+  } = useAthleteStore();
+  const manualLogRun = useWorkoutStore(s => s.manualLog);
+  const editRunLog = useWorkoutStore(s => s.editLog);
   const imp = units === 'imperial';
   const {
     isActive,
@@ -380,6 +436,7 @@ function ActiveTab() {
     pausedDurationMs,
     distanceMiles,
     currentPaceSecPerMile,
+    averagePaceSecPerMile,
     coordinates,
     startRun,
     pauseRun,
@@ -391,10 +448,18 @@ function ActiveTab() {
   const selectedRoute = useRouteStore(s => s.routes.find(r => r.id === selectedRouteId) ?? null);
   const [elapsed, setElapsed] = useState(0);
   const [heartRateBpm, setHeartRateBpm] = useState<number | null>(null);
+  const [permission, setPermission] = useState<TrackingPermissionState>({ foreground: 'unknown', background: 'unknown' });
   const [routeSegmentIndex, setRouteSegmentIndex] = useState(0);
   const segmentStartRef = useRef<{ index: number; time: number } | null>(null);
   const maxRouteProgressRef = useRef(0);
+  const lastHrAlertRef = useRef(0);
   const runState: RunState = !isActive ? 'idle' : isPaused ? 'paused' : 'active';
+
+  useEffect(() => {
+    getTrackingPermissionState()
+      .then(setPermission)
+      .catch(() => setPermission({ foreground: 'unknown', background: 'unknown' }));
+  }, []);
 
   useEffect(() => {
     const tick = () => {
@@ -435,6 +500,15 @@ function ActiveTab() {
 
   async function start() {
     try {
+      const nextPermission = await requestTrackingPermissionState();
+      setPermission(nextPermission);
+      if (nextPermission.foreground !== 'granted' || nextPermission.background !== 'granted') {
+        Alert.alert(
+          'Background location needed',
+          'StrideOS needs Always/background location to keep recording the route when the phone locks.',
+        );
+        return;
+      }
       setRouteSegmentIndex(0);
       maxRouteProgressRef.current = 0;
       segmentStartRef.current = { index: 0, time: Date.now() };
@@ -461,11 +535,39 @@ function ActiveTab() {
   }
 
   async function stop() {
+    const finalDurationMin = Math.max(1, Math.round(elapsed / 60));
+    const finalDistanceMiles = Math.round(distanceMiles * 100) / 100;
+    const routeCoordinates = [...coordinates];
     finishRun();
     setRouteSegmentIndex(0);
     maxRouteProgressRef.current = 0;
     segmentStartRef.current = null;
     await stopLocationTracking().catch(console.warn);
+
+    if (elapsed >= 30 || finalDistanceMiles >= 0.05) {
+      const id = `gps_run_${Date.now()}`;
+      manualLogRun(
+        {
+          completionKey: id,
+          type: 'easy_run',
+          intensity: 'easy',
+          durationMinutes: finalDurationMin,
+          distanceMiles: Math.max(0, finalDistanceMiles),
+          notes: `Saved from live GPS tracking${selectedRoute ? ` · Route: ${selectedRoute.name}` : ''}.`,
+        },
+        currentWeek,
+        fatigueScore,
+        recoveryScore,
+        setFatigueScore,
+        setRecentEasyLoad,
+      );
+      editRunLog(id, {
+        actualDurationMinutes: finalDurationMin,
+        actualDistanceMiles: finalDistanceMiles,
+        routeCoordinates,
+      });
+      Alert.alert('Run saved', 'Your run was added to Training History.');
+    }
   }
 
   async function cancel() {
@@ -480,8 +582,17 @@ function ActiveTab() {
   const distStr = dist.toFixed(2);
   const distUnit = imp ? 'mi' : 'km';
   const pace = imp ? paceLabel(currentPaceSecPerMile) : paceLabel(currentPaceSecPerMile / 1.609344);
-  const avgPaceSecPerMile = distanceMiles > 0 && elapsed > 0 ? elapsed / distanceMiles : 0;
+  const avgPaceSecPerMile = averagePaceSecPerMile || (distanceMiles > 0 && elapsed > 0 ? elapsed / distanceMiles : 0);
   const avgPace = imp ? paceLabel(avgPaceSecPerMile) : paceLabel(avgPaceSecPerMile / 1.609344);
+  const targetZone = 2;
+  const zoneStatus = zoneStatusForHeartRate(heartRateBpm, targetZone, calibration?.hrZones);
+  const zoneToneColor = zoneStatus.tone === 'in'
+    ? C.positive
+    : zoneStatus.tone === 'near'
+      ? C.warning
+      : zoneStatus.tone === 'out'
+        ? C.critical
+        : C.accent;
   const routeCoords = selectedRoute ? routePointsToLatLng(selectedRoute.points) : [];
   const liveCoords = coordinates.map(c => ({ latitude: c.lat, longitude: c.lng }));
   const region = liveCoords.length ? routeRegion(liveCoords) : selectedRoute ? routeRegion(selectedRoute.points) : BEND_REGION;
@@ -514,6 +625,16 @@ function ActiveTab() {
     setRouteSegmentIndex(nextIndex);
     segmentStartRef.current = { index: nextIndex, time: now };
   }, [selectedRoute?.id, currentPoint?.latitude, currentPoint?.longitude, nextSegment?.label, nextSegment?.distanceMiles, isActive, isPaused, routeProgress, routeSegmentIndex, startTime]);
+
+  useEffect(() => {
+    if (!isActive || isPaused || !heartRateBpm || zoneStatus.guidance !== 'high' || zoneStatus.tone !== 'out') return;
+    const now = Date.now();
+    if (now - lastHrAlertRef.current < 2 * 60 * 1000) return;
+    lastHrAlertRef.current = now;
+    const message = `Heart rate is ${zoneStatus.detail}. Slow down slightly to return to Zone ${targetZone}.`;
+    speakCue(message);
+    sendRunAlertNotification(message).catch(() => undefined);
+  }, [heartRateBpm, isActive, isPaused, zoneStatus.detail, zoneStatus.guidance, zoneStatus.tone]);
 
   return (
     <ScrollView contentContainerStyle={styles.runScrollContent} showsVerticalScrollIndicator={false}>
@@ -559,14 +680,16 @@ function ActiveTab() {
               </Text>
             </View>
           </View>
-          <View style={[styles.metricCell, { backgroundColor: C.accentDim, borderWidth: 1, borderColor: C.accent }]}>
+          <View style={[styles.metricCell, { backgroundColor: zoneToneColor + '22', borderWidth: 1, borderColor: zoneToneColor }]}>
             <Text style={[styles.metricLabel, { color: C.textDim }]}>ZONE</Text>
-            <Text style={[{ fontSize: 17, fontWeight: '800', color: C.accent }]}>Z2</Text>
-            <Text style={[styles.metricUnit, { color: C.textMuted }]}>TARGET</Text>
+            <Text style={[{ fontSize: 17, fontWeight: '800', color: zoneToneColor }]}>{zoneStatus.label}</Text>
+            <Text style={[styles.metricUnit, { color: C.textMuted }]} numberOfLines={1}>{zoneStatus.detail}</Text>
           </View>
           <View style={[styles.metricCell, { backgroundColor: C.cardAlt }]}>
-            <Text style={[styles.metricLabel, { color: C.textDim }]}>CADENCE</Text>
-            <Text style={[{ fontSize: 12, fontWeight: '800', color: C.text }]}>172</Text>
+            <Text style={[styles.metricLabel, { color: C.textDim }]}>GPS</Text>
+            <Text style={[{ fontSize: 12, fontWeight: '800', color: permission.background === 'granted' ? C.positive : C.warning }]}>
+              {permission.background === 'granted' ? 'Ready' : 'Setup'}
+            </Text>
           </View>
         </View>
         {runState === 'idle' && (
@@ -630,22 +753,40 @@ function ActiveTab() {
             <Marker coordinate={liveCoords[liveCoords.length - 1]} title="Current position" />
           ) : null}
         </MapView>
+        {permission.background !== 'granted' ? (
+          <View style={[styles.mapOverlay, { backgroundColor: C.card + 'E6' }]}>
+            <Ionicons name="location-outline" size={32} color={C.primary} />
+            <Text style={[{ fontSize: 13, fontWeight: '700', color: C.text, marginTop: 10 }]}>
+              Enable background location
+            </Text>
+            <Text style={[{ fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 4, lineHeight: 16 }]}>
+              This lets StrideOS keep recording your route and distance when the phone locks.
+            </Text>
+            <TouchableOpacity
+              style={[styles.mapOverlayBtn, { backgroundColor: C.primary }]}
+              onPress={async () => setPermission(await requestTrackingPermissionState())}
+              activeOpacity={0.8}
+            >
+              <Text style={[{ fontSize: 12, fontWeight: '800', color: C.onPrimary }]}>Enable GPS Tracking</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </View>
 
       {/* Lock screen widget preview */}
       <View style={[styles.lockWidget, { backgroundColor: '#0f0f14' }]}>
-        <Text style={[styles.lockLabel]}>Lock Screen Widget Preview</Text>
+        <Text style={[styles.lockLabel]}>Live Activity Layout Preview</Text>
         <View style={styles.lockRow}>
           <View style={styles.lockStat}>
-            <Text style={styles.lockStatLabel}>PACE</Text>
-            <Text style={styles.lockStatVal}>{pace}</Text>
-            <Text style={styles.lockStatUnit}>{imp ? '/mi' : '/km'}</Text>
+            <Text style={styles.lockStatLabel}>TIME</Text>
+            <Text style={styles.lockStatVal}>{fmt(elapsed)}</Text>
+            <Text style={styles.lockStatUnit}>elapsed</Text>
           </View>
           <View style={styles.lockDivider} />
           <View style={styles.lockStat}>
-            <Text style={styles.lockStatLabel}>HR</Text>
-            <Text style={[styles.lockStatVal, { color: '#FF6B6B' }]}>{heartRateBpm ?? '--'}</Text>
-            <Text style={styles.lockStatUnit}>bpm</Text>
+            <Text style={styles.lockStatLabel}>AVG</Text>
+            <Text style={styles.lockStatVal}>{avgPace}</Text>
+            <Text style={styles.lockStatUnit}>{imp ? '/mi' : '/km'}</Text>
           </View>
           <View style={styles.lockDivider} />
           <View style={styles.lockStat}>
@@ -653,8 +794,14 @@ function ActiveTab() {
             <Text style={styles.lockStatVal}>{distStr}</Text>
             <Text style={styles.lockStatUnit}>{distUnit}</Text>
           </View>
+          <View style={styles.lockDivider} />
+          <View style={styles.lockStat}>
+            <Text style={styles.lockStatLabel}>HR</Text>
+            <Text style={[styles.lockStatVal, { color: zoneToneColor }]}>{heartRateBpm ?? '--'} {zoneStatus.label}</Text>
+            <Text style={styles.lockStatUnit}>bpm</Text>
+          </View>
         </View>
-        <Text style={styles.lockCaption}>Requires Apple Watch · StrideOS Live Activity</Text>
+        <Text style={styles.lockCaption}>Actual Lock Screen support requires a native iOS Live Activity build step.</Text>
       </View>
       {isActive ? (
         <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.cardAlt }]} onPress={cancel} activeOpacity={0.8}>
@@ -671,28 +818,98 @@ function HydrationTab() {
   const { units } = useSettingsStore();
   const weightKg = useOnboardingStore(s => s.data.weightKg || 70);
   const imp = units === 'imperial';
-  const waterUnit = imp ? 'oz' : 'mL';
   const wtUnit = imp ? 'lbs' : 'kg';
+  const distUnit = imp ? 'mi' : 'km';
+  const [runType, setRunType] = useState<'Easy' | 'Long' | 'Workout' | 'Race'>('Long');
+  const [goal, setGoal] = useState<HydrationGoal>('strong');
+  const [distanceInput, setDistanceInput] = useState('8');
   const [durationInput, setDurationInput] = useState('90');
   const [tempInput, setTempInput] = useState('65');
   const [humidity, setHumidity] = useState<number | null>(null);
   const [weatherBusy, setWeatherBusy] = useState(false);
   const [weatherNote, setWeatherNote] = useState('Manual temp');
+  const [effort, setEffort] = useState(5);
+  const [sweatiness, setSweatiness] = useState<Sweatiness>('average');
+  const [saltiness, setSaltiness] = useState<Saltiness>('moderate');
+  const [cramping, setCramping] = useState<CrampingFrequency>('rarely');
+  const [fluidComfort, setFluidComfort] = useState<FluidComfort>('moderate');
+  const [carbTolerance, setCarbTolerance] = useState('60');
+  const [sweatRate, setSweatRate] = useState('');
+  const [sweatSodium, setSweatSodium] = useState('');
   const [preWt, setPreWt] = useState('');
   const [postWt, setPostWt] = useState('');
   const [waterOz, setWaterOz] = useState('');
   const [result, setResult] = useState<string | null>(null);
 
+  const distance = Math.max(0, Number(distanceInput) || 0);
+  const distanceMiles = imp ? distance : distance / 1.609344;
   const durationMin = Math.max(10, Math.round(Number(durationInput) || 90));
   const tempF = Math.max(20, Math.min(115, Math.round(Number(tempInput) || 65)));
-  const fuelPlan = useMemo(
-    () => calcHydration(weightKg, durationMin, tempF),
-    [durationMin, tempF, weightKg],
-  );
-  const tempPct = Math.round((fuelPlan.tempMultiplier - 1) * 100);
+  const fuelPlan = useMemo(() => calculateHydrationPlan({
+    distanceMiles,
+    durationMin,
+    bodyWeightKg: weightKg,
+    effort,
+    weatherBand: weatherBandForTemp(tempF),
+    temperatureF: tempF,
+    humidityBand: humidity === null ? 'moderate' : humidity >= 80 ? 'very_high' : humidity >= 60 ? 'high' : humidity <= 35 ? 'low' : 'moderate',
+    sunExposure: 'mixed',
+    sweatiness,
+    saltiness,
+    cramping,
+    fluidComfort,
+    carbToleranceGh: Number(carbTolerance) || undefined,
+    sweatRateTestLh: Number(sweatRate) || undefined,
+    sweatSodiumMgL: Number(sweatSodium) || undefined,
+    goal,
+  }), [
+    carbTolerance, cramping, distanceMiles, durationMin, effort, fluidComfort,
+    goal, humidity, saltiness, sweatRate, sweatiness, sweatSodium, tempF, weightKg,
+  ]);
 
-  function fluidLabel(oz: number) {
-    return imp ? `${Math.round(oz)} oz` : `${Math.round(oz * 29.5735)} mL`;
+  function fluidRangeLabel(lowL: number, highL: number) {
+    return imp
+      ? `${Math.round(lowL * 33.814)}-${Math.round(highL * 33.814)} oz/hr`
+      : `${Math.round(lowL * 1000)}-${Math.round(highL * 1000)} mL/hr`;
+  }
+
+  function fluidTotalLabel(liters: number) {
+    return imp ? `${Math.round(liters * 33.814)} oz` : `${liters.toFixed(1)} L`;
+  }
+
+  function SelectPills<T extends string>({
+    value, options, onChange,
+  }: {
+    value: T;
+    options: { label: string; value: T }[];
+    onChange: (value: T) => void;
+  }) {
+    return (
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 }}>
+        {options.map(option => {
+          const active = option.value === value;
+          return (
+            <TouchableOpacity
+              key={option.value}
+              onPress={() => onChange(option.value)}
+              style={{
+                paddingHorizontal: 9,
+                paddingVertical: 7,
+                borderRadius: 999,
+                borderWidth: 1,
+                borderColor: active ? C.primary : C.border,
+                backgroundColor: active ? C.primaryDim : C.cardAlt,
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={{ fontSize: 11, fontWeight: '800', color: active ? C.primary : C.textMuted }}>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
   }
 
   async function useCurrentWeather() {
@@ -734,14 +951,16 @@ function HydrationTab() {
     if (!pre || !post) return;
     const lostLbs = (pre - post) * (imp ? 1 : 2.205);
     const netLost = Math.max(0, lostLbs * 16 - water);
-    setResult(`Sweat loss: ${Math.round(netLost)} ${waterUnit}/hr · Replace ${Math.round(netLost * 0.5)} ${waterUnit} within 2 hrs`);
+    const sweatLh = Math.max(0, (netLost / 33.814) / Math.max(0.25, durationMin / 60));
+    setSweatRate(sweatLh.toFixed(2));
+    setResult(`Estimated sweat rate: ${sweatLh.toFixed(2)} L/hr. The plan above now uses this value as a stronger personalization input.`);
   }
 
   return (
     <ScrollView contentContainerStyle={styles.runScrollContent} showsVerticalScrollIndicator={false}>
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <View style={styles.cardHeaderRow}>
-          <Text style={[styles.cardLabel, { color: C.textDim }]}>RUN FUEL PLANNER</Text>
+          <Text style={[styles.cardLabel, { color: C.textDim }]}>RUN HYDRATION PLANNER</Text>
           <TouchableOpacity onPress={useCurrentWeather} disabled={weatherBusy} activeOpacity={0.8}>
             <Text style={[{ fontSize: 11, fontWeight: '800', color: C.primary }]}>
               {weatherBusy ? 'Loading...' : 'Use location'}
@@ -749,6 +968,31 @@ function HydrationTab() {
           </TouchableOpacity>
         </View>
         <View style={{ gap: 8 }}>
+          <View style={styles.inputRow}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Run type</Text>
+            <SelectPills
+              value={runType}
+              onChange={setRunType}
+              options={[
+                { label: 'Easy', value: 'Easy' },
+                { label: 'Long', value: 'Long' },
+                { label: 'Workout', value: 'Workout' },
+                { label: 'Race', value: 'Race' },
+              ]}
+            />
+          </View>
+          <View style={styles.inputRow}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Distance</Text>
+            <TextInput
+              value={distanceInput}
+              onChangeText={setDistanceInput}
+              keyboardType="numeric"
+              placeholder="8"
+              placeholderTextColor={C.textDim}
+              style={[styles.input, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
+            />
+            <Text style={[{ fontSize: 12, color: C.textDim }]}>{distUnit}</Text>
+          </View>
           <View style={styles.inputRow}>
             <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Run duration</Text>
             <TextInput
@@ -775,55 +1019,178 @@ function HydrationTab() {
           </View>
         </View>
         <Text style={[{ fontSize: 11, color: C.textDim, lineHeight: 17, marginTop: 8 }]}>
-          {weatherNote}{humidity !== null ? ` · Humidity ${humidity}%` : ''}{tempPct > 0 ? ` · +${tempPct}% heat adjustment` : ''}
+          {weatherNote}{humidity !== null ? ` · Humidity ${humidity}%` : ''} · {fuelPlan.confidence.label}
         </Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Text style={[styles.cardLabel, { color: C.textDim }]}>TARGETS FOR THIS RUN</Text>
-        <View style={styles.fuelGrid}>
-          <View style={[styles.fuelCell, { backgroundColor: C.cardAlt }]}>
-            <Text style={[styles.metricLabel, { color: C.textDim }]}>FLUID</Text>
-            <Text style={[styles.fuelValue, { color: C.text }]}>{fluidLabel(fuelPlan.totalWaterOz)}</Text>
-            <Text style={[styles.metricUnit, { color: C.textMuted }]}>{fluidLabel(fuelPlan.totalWaterOz / Math.max(0.25, durationMin / 60))}/hr</Text>
+        <Text style={[styles.cardLabel, { color: C.textDim }]}>EFFORT + CONDITIONS</Text>
+        <View style={{ gap: 10, marginTop: 8 }}>
+          <View style={styles.inputRow}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Effort</Text>
+            <TouchableOpacity style={[styles.stepBtn, { backgroundColor: C.cardAlt }]} onPress={() => setEffort(v => Math.max(1, v - 1))}>
+              <Ionicons name="remove" size={16} color={C.text} />
+            </TouchableOpacity>
+            <Text style={[{ minWidth: 44, textAlign: 'center', fontSize: 16, fontWeight: '900', color: C.text }]}>{effort}/10</Text>
+            <TouchableOpacity style={[styles.stepBtn, { backgroundColor: C.cardAlt }]} onPress={() => setEffort(v => Math.min(10, v + 1))}>
+              <Ionicons name="add" size={16} color={C.text} />
+            </TouchableOpacity>
           </View>
-          <View style={[styles.fuelCell, { backgroundColor: C.cardAlt }]}>
-            <Text style={[styles.metricLabel, { color: C.textDim }]}>SODIUM</Text>
-            <Text style={[styles.fuelValue, { color: C.text }]}>{Math.round(fuelPlan.sodiumMg)} mg</Text>
-            <Text style={[styles.metricUnit, { color: C.textMuted }]}>{Math.round(fuelPlan.sodiumMg / Math.max(0.25, durationMin / 60))} mg/hr</Text>
-          </View>
-          <View style={[styles.fuelCell, { backgroundColor: C.primaryDim, borderWidth: 1, borderColor: C.primary }]}>
-            <Text style={[styles.metricLabel, { color: C.textDim }]}>CARBS</Text>
-            <Text style={[styles.fuelValue, { color: C.primary }]}>{Math.round(fuelPlan.carbsRecommendedG)} g</Text>
-            <Text style={[styles.metricUnit, { color: C.textMuted }]}>
-              {fuelPlan.carbRate.recommendedGPerHr} g/hr target
-            </Text>
+          <View style={styles.inputRow}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Goal</Text>
+            <SelectPills
+              value={goal}
+              onChange={setGoal}
+              options={[
+                { label: 'Finish', value: 'finish' },
+                { label: 'Strong', value: 'strong' },
+                { label: 'Race', value: 'race_limit' },
+              ]}
+            />
           </View>
         </View>
-        <View style={[styles.paceBox, { backgroundColor: C.cardAlt, marginTop: 10 }]}>
-          <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>
-            Carb range: {Math.round(fuelPlan.carbsMinG)}-{Math.round(fuelPlan.carbsMaxG)} g total
-            ({fuelPlan.carbRate.minGPerHr}-{fuelPlan.carbRate.maxGPerHr} g/hr). Practice higher targets before race day.
+      </View>
+
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.cardLabel, { color: C.textDim }]}>YOUR SWEAT PROFILE</Text>
+        <View style={{ gap: 10, marginTop: 8 }}>
+          <View style={styles.inputRow}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Sweatiness</Text>
+            <SelectPills
+              value={sweatiness}
+              onChange={setSweatiness}
+              options={[
+                { label: 'Low', value: 'low' },
+                { label: 'Average', value: 'average' },
+                { label: 'High', value: 'high' },
+                { label: 'Very high', value: 'very_high' },
+              ]}
+            />
+          </View>
+          <View style={styles.inputRow}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Saltiness</Text>
+            <SelectPills
+              value={saltiness}
+              onChange={setSaltiness}
+              options={[
+                { label: 'Low', value: 'low' },
+                { label: 'Moderate', value: 'moderate' },
+                { label: 'Salty', value: 'salty' },
+                { label: 'Very salty', value: 'very_salty' },
+              ]}
+            />
+          </View>
+          <View style={styles.inputRow}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Cramping</Text>
+            <SelectPills
+              value={cramping}
+              onChange={setCramping}
+              options={[
+                { label: 'Never', value: 'never' },
+                { label: 'Rarely', value: 'rarely' },
+                { label: 'Sometimes', value: 'sometimes' },
+                { label: 'Often', value: 'often' },
+              ]}
+            />
+          </View>
+          <View style={styles.inputRow}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Sweat rate</Text>
+            <TextInput
+              value={sweatRate}
+              onChangeText={setSweatRate}
+              keyboardType="numeric"
+              placeholder="optional"
+              placeholderTextColor={C.textDim}
+              style={[styles.input, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
+            />
+            <Text style={[{ fontSize: 12, color: C.textDim }]}>L/hr</Text>
+          </View>
+          <View style={styles.inputRow}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Sweat sodium</Text>
+            <TextInput
+              value={sweatSodium}
+              onChangeText={setSweatSodium}
+              keyboardType="numeric"
+              placeholder="optional"
+              placeholderTextColor={C.textDim}
+              style={[styles.input, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
+            />
+            <Text style={[{ fontSize: 12, color: C.textDim }]}>mg/L</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.cardLabel, { color: C.textDim }]}>GUT + CARRY PLAN</Text>
+        <View style={{ gap: 10, marginTop: 8 }}>
+          <View style={styles.inputRow}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Carb tolerance</Text>
+            <TextInput
+              value={carbTolerance}
+              onChangeText={setCarbTolerance}
+              keyboardType="number-pad"
+              placeholder="60"
+              placeholderTextColor={C.textDim}
+              style={[styles.input, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
+            />
+            <Text style={[{ fontSize: 12, color: C.textDim }]}>g/hr</Text>
+          </View>
+          <View style={styles.inputRow}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Fluid comfort</Text>
+            <SelectPills
+              value={fluidComfort}
+              onChange={setFluidComfort}
+              options={[
+                { label: 'Small sips', value: 'low' },
+                { label: 'Moderate', value: 'moderate' },
+                { label: 'Drink well', value: 'high' },
+              ]}
+            />
+          </View>
+          <Text style={[{ fontSize: 11, color: C.textDim, lineHeight: 17 }]}>
+            Use bottles, gels, drink mix, or aid stations. Count carbs and sodium separately even when one product contains both.
           </Text>
         </View>
       </View>
 
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Text style={[styles.subTitle, { color: C.text, marginBottom: 10 }]}>Every 20 Minutes</Text>
+        <Text style={[styles.cardLabel, { color: C.textDim }]}>TARGET RANGES FOR THIS RUN</Text>
         <View style={styles.fuelGrid}>
           <View style={[styles.fuelCell, { backgroundColor: C.cardAlt }]}>
-            <Text style={[styles.metricLabel, { color: C.textDim }]}>FLUID</Text>
-            <Text style={[styles.fuelValue, { color: C.text }]}>{fluidLabel(fuelPlan.perInterval.waterOz)}</Text>
-          </View>
-          <View style={[styles.fuelCell, { backgroundColor: C.cardAlt }]}>
-            <Text style={[styles.metricLabel, { color: C.textDim }]}>SODIUM</Text>
-            <Text style={[styles.fuelValue, { color: C.text }]}>{Math.round(fuelPlan.perInterval.sodiumMg)} mg</Text>
-          </View>
-          <View style={[styles.fuelCell, { backgroundColor: C.cardAlt }]}>
             <Text style={[styles.metricLabel, { color: C.textDim }]}>CARBS</Text>
-            <Text style={[styles.fuelValue, { color: C.text }]}>{Math.round(fuelPlan.perInterval.carbsRecommendedG)} g</Text>
+            <Text style={[styles.fuelValue, { color: C.text }]}>{fuelPlan.range.carbsLowG}-{fuelPlan.range.carbsHighG} g/hr</Text>
+            <Text style={[styles.metricUnit, { color: C.textMuted }]}>{fuelPlan.totals.carbsG} g total</Text>
+          </View>
+          <View style={[styles.fuelCell, { backgroundColor: C.cardAlt }]}>
+            <Text style={[styles.metricLabel, { color: C.textDim }]}>FLUID</Text>
+            <Text style={[styles.fuelValue, { color: C.text }]}>{fluidRangeLabel(fuelPlan.range.fluidLowL, fuelPlan.range.fluidHighL)}</Text>
+            <Text style={[styles.metricUnit, { color: C.textMuted }]}>{fluidTotalLabel(fuelPlan.totals.fluidL)} total</Text>
+          </View>
+          <View style={[styles.fuelCell, { backgroundColor: C.primaryDim, borderWidth: 1, borderColor: C.primary }]}>
+            <Text style={[styles.metricLabel, { color: C.textDim }]}>SODIUM</Text>
+            <Text style={[styles.fuelValue, { color: C.primary }]}>{fuelPlan.range.sodiumLowMg}-{fuelPlan.range.sodiumHighMg} mg/hr</Text>
+            <Text style={[styles.metricUnit, { color: C.textMuted }]}>{fuelPlan.totals.sodiumMg} mg total</Text>
           </View>
         </View>
+        <View style={[styles.paceBox, { backgroundColor: C.cardAlt, marginTop: 10 }]}>
+          <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>
+            Start target: {fuelPlan.hourly.carbsG} g carbs/hr · {fuelPlan.hourly.fluidOz} oz fluid/hr · {fuelPlan.hourly.sodiumMg} mg sodium/hr.
+            Drink sodium concentration: {fuelPlan.hourly.sodiumMgPerL} mg/L.
+          </Text>
+        </View>
+      </View>
+
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.subTitle, { color: C.text, marginBottom: 10 }]}>Before, During, After</Text>
+        <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 19 }]}>
+          Before: {fuelPlan.preRun ? `${fuelPlan.preRun.fluidMl[0]}-${fuelPlan.preRun.fluidMl[1]} mL with sodium ${fuelPlan.preRun.timing}` : 'Start normally hydrated. No special preload needed.'}
+        </Text>
+        <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 19, marginTop: 6 }]}>
+          During: {fuelPlan.execution.join(' ')}
+        </Text>
+        <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 19, marginTop: 6 }]}>
+          After: Rehydrate about {fuelPlan.postRun.estimatedFluidL[0]}-{fuelPlan.postRun.estimatedFluidL[1]} L over the next few hours. Include sodium or salty food.
+        </Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
@@ -857,6 +1224,19 @@ function HydrationTab() {
             <Text style={[{ fontSize: 12, color: C.text, lineHeight: 18 }]}>{result}</Text>
           </View>
         )}
+      </View>
+
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.subTitle, { color: C.text, marginBottom: 6 }]}>Warnings + Confidence</Text>
+        <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 19 }]}>
+          Sweat rate: {fuelPlan.physiology.sweatRateLh} L/hr · Sweat sodium: {fuelPlan.physiology.sweatSodiumMgL} mg/L · Confidence: {fuelPlan.confidence.score}/100
+        </Text>
+        {[...fuelPlan.warnings, ...fuelPlan.notes].slice(0, 5).map(item => (
+          <Text key={item} style={[{ fontSize: 12, color: C.textMuted, lineHeight: 19, marginTop: 6 }]}>• {item}</Text>
+        ))}
+        <Text style={[{ fontSize: 11, color: C.textDim, lineHeight: 17, marginTop: 8 }]}>
+          This is a performance-planning estimate, not medical advice. Test it in training and do not force fluid beyond thirst or gut comfort.
+        </Text>
       </View>
     </ScrollView>
   );
@@ -1442,7 +1822,6 @@ export default function RunningScreen() {
   const TABS: { key: RunTab; label: string }[] = [
     { key: 'plan',      label: 'Plan' },
     { key: 'active',    label: 'Active' },
-    { key: 'gps',       label: 'GPS' },
     { key: 'hydration', label: 'Hydration' },
     { key: 'routes',    label: 'Routes' },
   ];
@@ -1478,7 +1857,6 @@ export default function RunningScreen() {
       <View style={{ flex: 1, paddingHorizontal: 18, paddingBottom: LAYOUT.tabBarPadBottom }}>
         {tab === 'plan'      && <PlanTab />}
         {tab === 'active'    && <ActiveTab />}
-        {tab === 'gps'       && <GPSTab />}
         {tab === 'hydration' && <HydrationTab />}
         {tab === 'routes'    && <RoutesTab onStartRoute={() => setTab('active')} />}
       </View>
@@ -1760,6 +2138,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     fontSize: 13,
     fontFamily: 'System',
+  },
+  stepBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   elevationProfile: {
     height: 60,

@@ -208,6 +208,7 @@ export type WorkoutEngineInput = {
   // Training preferences (from onboarding)
   trainingStyle?:        TrainingStyle;
   availableDays?:        TrainingDay[];
+  runDays?:              TrainingDay[];
 
   // Environment (optional — omit if unknown)
   temperatureCelsius?:   number;
