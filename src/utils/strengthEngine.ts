@@ -27,7 +27,7 @@ import type { TrainingPhase, ProgressionLevel } from '../types/training';
 // IDs are prefixed with their movement pattern so strengthHistory.ts can derive
 // pattern from ID without needing the full Exercise object.
 
-const EXERCISES: Record<string, Exercise> = {
+export const STRENGTH_EXERCISES: Record<string, Exercise> = {
 
   // ── Squat ──────────────────────────────────────────────────────────────────
   squat_goblet: {
@@ -428,7 +428,7 @@ function buildExercise(
   template: SessionTemplate,
   isDeload: boolean,
 ): PlannedExercise {
-  const ex   = EXERCISES[id];
+  const ex   = STRENGTH_EXERCISES[id];
   if (!ex) throw new Error(`Unknown exercise id: ${id}`);
 
   const sets     = isDeload ? Math.max(1, template.sets - 1) : template.sets;
@@ -551,7 +551,7 @@ export function generateStrengthWeek(input: StrengthEngineInput): StrengthWeek {
 // ─── Utility: look up exercise by ID ─────────────────────────────────────────
 
 export function getExercise(id: string): Exercise | undefined {
-  return EXERCISES[id];
+  return STRENGTH_EXERCISES[id];
 }
 
 // ─── Utility: strength load for a completed session ──────────────────────────

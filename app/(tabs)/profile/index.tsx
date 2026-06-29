@@ -560,15 +560,27 @@ export default function ProfileScreen() {
 
       {/* Training history */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Text style={[styles.sectionLabel, { color: C.textDim }]}>TRAINING HISTORY</Text>
+        <TouchableOpacity
+          style={styles.historyHeader}
+          activeOpacity={0.75}
+          onPress={() => router.push('/(tabs)/activity-log' as any)}
+        >
+          <Text style={[styles.sectionLabel, { color: C.textDim, marginBottom: 0 }]}>TRAINING HISTORY</Text>
+          <View style={styles.historyHeaderLink}>
+            <Text style={[styles.historyHeaderText, { color: C.primary }]}>Activity log</Text>
+            <Ionicons name="chevron-forward" size={16} color={C.primary} />
+          </View>
+        </TouchableOpacity>
         {recentTrainingHistory.length > 0 ? (
           recentTrainingHistory.map((item, index) => (
-            <View
+            <TouchableOpacity
               key={item.id}
               style={[
                 styles.historyRow,
                 index < recentTrainingHistory.length - 1 && { borderBottomColor: C.border, borderBottomWidth: 1 },
               ]}
+              activeOpacity={0.75}
+              onPress={() => router.push('/(tabs)/activity-log' as any)}
             >
               <View style={[styles.historyIcon, { backgroundColor: item.skipped ? C.cardAlt : C.primaryDim }]}>
                 <Ionicons name={item.skipped ? 'remove-circle-outline' : 'checkmark-circle-outline'} size={18} color={item.skipped ? C.textMuted : C.primary} />
@@ -577,7 +589,8 @@ export default function ProfileScreen() {
                 <Text style={[styles.settingTitle, { color: C.text }]}>{item.title}</Text>
                 <Text style={[styles.settingCaption, { color: C.textMuted }]}>{item.meta}</Text>
               </View>
-            </View>
+              <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+            </TouchableOpacity>
           ))
         ) : (
           <Text style={[styles.settingCaption, { color: C.textMuted }]}>
@@ -764,6 +777,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     paddingVertical: 10,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 8,
+  },
+  historyHeaderLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  historyHeaderText: {
+    fontSize: 12,
+    fontWeight: '800',
   },
   historyIcon: {
     width: 34,

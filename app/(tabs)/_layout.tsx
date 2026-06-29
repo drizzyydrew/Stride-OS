@@ -95,6 +95,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="performance" options={{ href: null }} />
       <Tabs.Screen name="profile/index" options={{ href: null }} />
       <Tabs.Screen name="movement" options={{ href: null }} />
+      <Tabs.Screen name="activity-log" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -1,452 +1,383 @@
-// ─── Hydration Calculator ──────────────────────────────────────────────────────
-
-import { useState, useMemo, useEffect } from 'react';
-import {
-  ScrollView, StyleSheet, Text, TouchableOpacity, View,
-} from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
+import { useColors } from '../../../src/theme/useColors';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
-import { useSettingsStore }   from '../../../src/store/settingsStore';
-import { useProfileStore }    from '../../../src/store/profileStore';
-import { useWeather }         from '../../../src/hooks/useWeather';
+import { useSettingsStore } from '../../../src/store/settingsStore';
+import { useProfileStore } from '../../../src/store/profileStore';
+import { useWeather } from '../../../src/hooks/useWeather';
+import { LAYOUT } from '../../../src/constants/layout';
 import {
-  calcHydration,
+  calculateHydrationPlan,
   estimateEasyPaceSecPerMi,
+  weatherBandForTemp,
+  type CrampingFrequency,
+  type FluidComfort,
+  type HydrationGoal,
+  type Saltiness,
+  type Sweatiness,
 } from '../../../src/utils/hydrationEngine';
 
-import { colors }                   from '../../../src/theme/colors';
-import { spacing }                  from '../../../src/theme/spacing';
-import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
-
-const OZ_TO_ML = 29.5735;
-
-function fmt(n: number, decimals = 0): string {
+function fmt(n: number, decimals = 0) {
   return n.toFixed(decimals);
 }
 
-function intervalLabel(index: number): string {
-  const startMin = index * 20;
-  const endMin   = startMin + 20;
-  const toHhMm   = (m: number) => `${Math.floor(m / 60)}:${(m % 60).toString().padStart(2, '0')}`;
-  return `${toHhMm(startMin)}–${toHhMm(endMin)}`;
-}
-
-// ─── Stepper ──────────────────────────────────────────────────────────────────
-
 function Stepper({
-  label, value, onDecrement, onIncrement, unit,
+  label,
+  value,
+  unit,
+  onMinus,
+  onPlus,
+  hint,
 }: {
-  label: string; value: number; onDecrement: () => void; onIncrement: () => void; unit: string;
+  label: string;
+  value: string | number;
+  unit?: string;
+  onMinus: () => void;
+  onPlus: () => void;
+  hint?: string;
 }) {
+  const C = useColors();
   return (
-    <View style={st.stepperRow}>
-      <Text style={st.stepperLabel}>{label}</Text>
-      <View style={st.stepperControls}>
-        <TouchableOpacity style={st.stepBtn} onPress={onDecrement}>
-          <Ionicons name="remove" size={18} color={colors.text} />
+    <View style={s.inputRow}>
+      <View style={s.inputCopy}>
+        <Text style={[s.inputLabel, { color: C.text }]}>{label}</Text>
+        {hint ? <Text style={[s.inputHint, { color: C.textMuted }]}>{hint}</Text> : null}
+      </View>
+      <View style={s.stepControls}>
+        <TouchableOpacity onPress={onMinus} style={[s.stepBtn, { backgroundColor: C.cardAlt }]}>
+          <Ionicons name="remove" size={18} color={C.text} />
         </TouchableOpacity>
-        <Text style={st.stepperValue}>{value} <Text style={st.stepperUnit}>{unit}</Text></Text>
-        <TouchableOpacity style={st.stepBtn} onPress={onIncrement}>
-          <Ionicons name="add" size={18} color={colors.text} />
+        <Text style={[s.stepValue, { color: C.text }]}>
+          {value}{unit ? <Text style={[s.stepUnit, { color: C.textMuted }]}> {unit}</Text> : null}
+        </Text>
+        <TouchableOpacity onPress={onPlus} style={[s.stepBtn, { backgroundColor: C.cardAlt }]}>
+          <Ionicons name="add" size={18} color={C.text} />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
+function ChoiceRow<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  const C = useColors();
+  return (
+    <View style={s.choiceBlock}>
+      <Text style={[s.inputLabel, { color: C.text }]}>{label}</Text>
+      <View style={s.choiceWrap}>
+        {options.map(option => {
+          const active = option.value === value;
+          return (
+            <TouchableOpacity
+              key={option.value}
+              onPress={() => onChange(option.value)}
+              style={[
+                s.choicePill,
+                { backgroundColor: active ? C.primary : C.cardAlt, borderColor: active ? C.primary : C.border },
+              ]}
+            >
+              <Text style={[s.choiceText, { color: active ? C.onPrimary : C.textMuted }]}>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function ResultCard({ label, value, range, note }: { label: string; value: string; range: string; note: string }) {
+  const C = useColors();
+  return (
+    <View style={[s.resultCard, { backgroundColor: C.card, borderColor: C.border }]}>
+      <Text style={[s.resultLabel, { color: C.textDim }]}>{label}</Text>
+      <Text style={[s.resultValue, { color: C.text }]}>{value}</Text>
+      <Text style={[s.resultRange, { color: C.primary }]}>{range}</Text>
+      <Text style={[s.resultNote, { color: C.textMuted }]}>{note}</Text>
+    </View>
+  );
+}
 
 export default function HydrationScreen() {
+  const C = useColors();
   const router = useRouter();
-
-  const weightKg      = useOnboardingStore(s => s.data.weightKg);
-  const weeklyMileage = useOnboardingStore(s => s.data.weeklyMileage);
-  const units         = useSettingsStore(s => s.units);
-  const profile       = useProfileStore(s => s.getActiveProfile());
-
-  // Resolve easy pace: prefer calibrated zone, fall back to mileage-based estimate
-  const easyPaceSecPerMi = useMemo(() => {
-    const calibration = profile?.calibration;
-    if (calibration?.paceZones) {
-      const easyZone = Object.values(calibration.paceZones).find(z =>
-        z.label.toLowerCase().includes('easy'),
-      );
-      if (easyZone) return easyZone.maxSecPerMi;
-    }
-    return estimateEasyPaceSecPerMi(weeklyMileage);
-  }, [profile, weeklyMileage]);
-
+  const units = useSettingsStore(st => st.units);
+  const weightKg = useOnboardingStore(st => st.data.weightKg) || 70;
+  const weeklyMileage = useOnboardingStore(st => st.data.weeklyMileage);
+  const profile = useProfileStore(st => st.getActiveProfile());
   const { weather } = useWeather();
-  const [liveTemp,   setLiveTemp]   = useState(false);
 
-  const [distanceMi, setDistanceMi] = useState(5);
-  const [tempF,      setTempF]      = useState(65);
-  const [manualMin,  setManualMin]  = useState<number | null>(null);
+  const [distanceMi, setDistanceMi] = useState(6);
+  const [durationMin, setDurationMin] = useState<number | null>(null);
+  const [tempF, setTempF] = useState(65);
+  const [liveTemp, setLiveTemp] = useState(false);
+  const [effort, setEffort] = useState(5);
+  const [sweatiness, setSweatiness] = useState<Sweatiness>('average');
+  const [saltiness, setSaltiness] = useState<Saltiness>('moderate');
+  const [cramping, setCramping] = useState<CrampingFrequency>('rarely');
+  const [fluidComfort, setFluidComfort] = useState<FluidComfort>('moderate');
+  const [goal, setGoal] = useState<HydrationGoal>('strong');
 
-  // Auto-fill temperature from live weather once on mount
   useEffect(() => {
     if (weather && !liveTemp) {
       setTempF(weather.tempF);
       setLiveTemp(true);
     }
-  }, [weather]);
+  }, [liveTemp, weather]);
 
-  const autoDuration = useMemo(
-    () => Math.round(distanceMi * easyPaceSecPerMi / 60),
-    [distanceMi, easyPaceSecPerMi],
-  );
-  const durationMin = manualMin ?? autoDuration;
+  const easyPaceSecPerMi = useMemo(() => {
+    const zones = profile?.calibration?.paceZones;
+    const easy = zones ? Object.values(zones).find(zone => zone.label.toLowerCase().includes('easy')) : undefined;
+    return easy?.maxSecPerMi ?? estimateEasyPaceSecPerMi(weeklyMileage);
+  }, [profile, weeklyMileage]);
 
-  const result = useMemo(
-    () => calcHydration(weightKg, durationMin, tempF),
-    [weightKg, durationMin, tempF],
-  );
+  const autoDuration = Math.round(distanceMi * easyPaceSecPerMi / 60);
+  const actualDuration = durationMin ?? autoDuration;
 
-  const isMetric    = units === 'metric';
-  const weightLabel = isMetric
-    ? `${fmt(weightKg, 1)} kg`
-    : `${fmt(weightKg * 2.20462, 0)} lb`;
+  const plan = useMemo(() => calculateHydrationPlan({
+    distanceMiles: distanceMi,
+    durationMin: actualDuration,
+    bodyWeightKg: weightKg,
+    effort,
+    weatherBand: weatherBandForTemp(tempF),
+    temperatureF: tempF,
+    humidityBand: 'moderate',
+    sunExposure: 'mixed',
+    sweatiness,
+    saltiness,
+    cramping,
+    fluidComfort,
+    goal,
+  }), [actualDuration, cramping, distanceMi, effort, fluidComfort, goal, saltiness, sweatiness, tempF, weightKg]);
 
-  function fluidLabel(oz: number) {
-    return isMetric
-      ? `${fmt(oz * OZ_TO_ML, 0)} ml`
-      : `${fmt(oz, 1)} oz`;
-  }
-
-  const tempPct = Math.round((result.tempMultiplier - 1) * 100);
+  const weightLabel = units === 'metric' ? `${fmt(weightKg, 1)} kg` : `${fmt(weightKg * 2.20462)} lb`;
+  const distanceLabel = units === 'metric' ? `${fmt(distanceMi * 1.609344, 1)} km` : `${distanceMi} mi`;
+  const fluidHour = units === 'metric'
+    ? `${fmt(plan.range.fluidLowL * 1000)}-${fmt(plan.range.fluidHighL * 1000)} ml/h`
+    : `${fmt(plan.range.fluidLowL * 33.814)}-${fmt(plan.range.fluidHighL * 33.814)} oz/h`;
+  const fluidTotal = units === 'metric'
+    ? `${fmt(plan.totals.fluidL, 1)} L total`
+    : `${fmt(plan.totals.fluidOz)} oz total`;
 
   return (
-    <SafeAreaView style={st.safe} edges={['top']}>
-      {/* Header */}
-      <View style={st.header}>
-        <TouchableOpacity onPress={() => router.back()} style={st.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+    <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.iconBtn} hitSlop={12}>
+          <Ionicons name="chevron-back" size={24} color={C.text} />
         </TouchableOpacity>
-        <Text style={st.title}>Hydration Calculator</Text>
-        <View style={{ width: 40 }} />
+        <View style={s.headerCopy}>
+          <Text style={[s.eyebrow, { color: C.textDim }]}>RUNNING</Text>
+          <Text style={[s.title, { color: C.text }]}>Hydration Plan</Text>
+        </View>
+        <View style={s.iconBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: LAYOUT.screenPadBottom }]} showsVerticalScrollIndicator={false}>
+        <View style={[s.summaryCard, { backgroundColor: C.primaryDim, borderColor: C.border }]}>
+          <Text style={[s.summaryTitle, { color: C.text }]}>
+            {distanceLabel} · {actualDuration} min · {tempF} F
+          </Text>
+          <Text style={[s.summaryMeta, { color: C.textMuted }]}>
+            Body weight {weightLabel} · {plan.confidence.label} ({plan.confidence.score}/100)
+          </Text>
+        </View>
 
-        {/* Inputs */}
-        <View style={st.card}>
-          <Text style={st.sectionLabel}>INPUTS</Text>
+        <View style={s.resultGrid}>
+          <ResultCard
+            label="CARBS"
+            value={`${plan.hourly.carbsG} g/h`}
+            range={`${plan.range.carbsLowG}-${plan.range.carbsHighG} g/h`}
+            note={`${plan.totals.carbsG} g total`}
+          />
+          <ResultCard
+            label="FLUID"
+            value={`${plan.hourly.fluidOz} oz/h`}
+            range={fluidHour}
+            note={fluidTotal}
+          />
+          <ResultCard
+            label="SODIUM"
+            value={`${plan.hourly.sodiumMg} mg/h`}
+            range={`${plan.range.sodiumLowMg}-${plan.range.sodiumHighMg} mg/h`}
+            note={`${plan.hourly.sodiumMgPerL} mg/L drink`}
+          />
+        </View>
 
-          <View style={st.weightRow}>
-            <Ionicons name="person-outline" size={16} color={colors.textMuted} />
-            <Text style={st.weightTxt}>Body weight: {weightLabel}</Text>
-          </View>
-
-          <View style={st.divider} />
-
+        <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[s.sectionLabel, { color: C.textDim }]}>QUICK INPUTS</Text>
           <Stepper
             label="Distance"
-            value={distanceMi}
-            unit="mi"
-            onDecrement={() => setDistanceMi(v => Math.max(1, v - 1))}
-            onIncrement={() => setDistanceMi(v => v + 1)}
+            value={distanceLabel}
+            onMinus={() => setDistanceMi(v => Math.max(1, v - 1))}
+            onPlus={() => setDistanceMi(v => v + 1)}
           />
-
-          <View style={st.divider} />
-
-          <View>
-            <Stepper
-              label="Temperature"
-              value={tempF}
-              unit="°F"
-              onDecrement={() => { setTempF(v => Math.max(32, v - 5)); setLiveTemp(false); }}
-              onIncrement={() => { setTempF(v => Math.min(115, v + 5)); setLiveTemp(false); }}
-            />
-            {liveTemp && (
-              <View style={st.liveBadgeRow}>
-                <View style={st.liveDot} />
-                <Text style={st.liveLabel}>Live weather — tap +/− to override</Text>
-              </View>
-            )}
-          </View>
-
-          <View style={st.divider} />
-
-          {/* Duration row with auto/manual toggle */}
-          <View style={st.durationRow}>
-            <View>
-              <Text style={st.stepperLabel}>Duration</Text>
-              {manualMin === null && (
-                <Text style={st.autoNote}>auto-estimated from pace</Text>
-              )}
-            </View>
-            <View style={st.stepperControls}>
-              {manualMin !== null && (
-                <TouchableOpacity style={st.stepBtn} onPress={() => setManualMin(v => Math.max(10, (v ?? autoDuration) - 5))}>
-                  <Ionicons name="remove" size={18} color={colors.text} />
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                onPress={() => setManualMin(v => v === null ? autoDuration : null)}
-                style={st.durationValueBtn}
-              >
-                <Text style={st.stepperValue}>
-                  {durationMin} <Text style={st.stepperUnit}>min</Text>
-                </Text>
-                <Text style={st.editHint}>{manualMin === null ? 'tap to edit' : 'tap to reset'}</Text>
-              </TouchableOpacity>
-              {manualMin !== null && (
-                <TouchableOpacity style={st.stepBtn} onPress={() => setManualMin(v => (v ?? autoDuration) + 5)}>
-                  <Ionicons name="add" size={18} color={colors.text} />
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
+          <Stepper
+            label="Duration"
+            value={actualDuration}
+            unit="min"
+            hint={durationMin === null ? 'Auto-estimated from easy pace. Tap +/- to set manually.' : 'Manual duration.'}
+            onMinus={() => setDurationMin(v => Math.max(20, (v ?? autoDuration) - 5))}
+            onPlus={() => setDurationMin(v => (v ?? autoDuration) + 5)}
+          />
+          <Stepper
+            label="Temperature"
+            value={tempF}
+            unit="F"
+            hint={liveTemp ? 'Using current weather until adjusted.' : 'Manual temperature.'}
+            onMinus={() => { setTempF(v => Math.max(20, v - 5)); setLiveTemp(false); }}
+            onPlus={() => { setTempF(v => Math.min(115, v + 5)); setLiveTemp(false); }}
+          />
+          <Stepper
+            label="Effort"
+            value={effort}
+            unit="/10"
+            onMinus={() => setEffort(v => Math.max(1, v - 1))}
+            onPlus={() => setEffort(v => Math.min(10, v + 1))}
+          />
         </View>
 
-        {/* Temperature note */}
-        {tempPct > 0 && (
-          <View style={st.tempNote}>
-            <Ionicons name="sunny-outline" size={14} color={colors.warning} />
-            <Text style={st.tempNoteTxt}>
-              +{tempPct}% adjustment for warm conditions
-            </Text>
-          </View>
-        )}
-
-        {/* Summary totals */}
-        <View style={st.card}>
-          <Text style={st.sectionLabel}>TOTALS FOR YOUR RUN</Text>
-          <View style={st.totalsRow}>
-            <View style={st.totalCell}>
-              <Text style={st.totalValue}>{fluidLabel(result.totalWaterOz)}</Text>
-              <Text style={st.totalUnit}>Fluid</Text>
-            </View>
-            <View style={st.totalDivider} />
-            <View style={st.totalCell}>
-              <Text style={st.totalValue}>{fmt(result.carbsMinG, 0)}–{fmt(result.carbsMaxG, 0)}g</Text>
-              <Text style={st.totalUnit}>Carbs</Text>
-            </View>
-            <View style={st.totalDivider} />
-            <View style={st.totalCell}>
-              <Text style={st.totalValue}>{fmt(result.sodiumMg, 0)}mg</Text>
-              <Text style={st.totalUnit}>Sodium</Text>
-            </View>
-          </View>
+        <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[s.sectionLabel, { color: C.textDim }]}>PERSONALIZATION</Text>
+          <ChoiceRow
+            label="Sweatiness"
+            value={sweatiness}
+            onChange={setSweatiness}
+            options={[
+              { value: 'very_low', label: 'Very low' },
+              { value: 'low', label: 'Low' },
+              { value: 'average', label: 'Average' },
+              { value: 'high', label: 'High' },
+              { value: 'very_high', label: 'Very high' },
+            ]}
+          />
+          <ChoiceRow
+            label="Saltiness"
+            value={saltiness}
+            onChange={setSaltiness}
+            options={[
+              { value: 'low', label: 'Low' },
+              { value: 'moderate', label: 'Moderate' },
+              { value: 'salty', label: 'Salty' },
+              { value: 'very_salty', label: 'Very salty' },
+            ]}
+          />
+          <ChoiceRow
+            label="Cramping"
+            value={cramping}
+            onChange={setCramping}
+            options={[
+              { value: 'never', label: 'Never' },
+              { value: 'rarely', label: 'Rarely' },
+              { value: 'sometimes', label: 'Sometimes' },
+              { value: 'often', label: 'Often' },
+            ]}
+          />
+          <ChoiceRow
+            label="Fluid comfort"
+            value={fluidComfort}
+            onChange={setFluidComfort}
+            options={[
+              { value: 'low', label: 'Small sips' },
+              { value: 'moderate', label: 'Moderate' },
+              { value: 'high', label: 'Drink well' },
+            ]}
+          />
+          <ChoiceRow
+            label="Goal"
+            value={goal}
+            onChange={setGoal}
+            options={[
+              { value: 'finish', label: 'Finish' },
+              { value: 'strong', label: 'Strong' },
+              { value: 'race_limit', label: 'Race' },
+            ]}
+          />
         </View>
 
-        {/* Per-interval summary - single line, no repeating table */}
-        <View style={st.card}>
-          <Text style={st.sectionLabel}>EVERY 20 MINUTES</Text>
-          <View style={st.totalsRow}>
-            <View style={st.totalCell}>
-              <Text style={st.totalValue}>{fluidLabel(result.perInterval.waterOz)}</Text>
-              <Text style={st.totalUnit}>Fluid</Text>
-            </View>
-            <View style={st.totalDivider} />
-            <View style={st.totalCell}>
-              <Text style={st.totalValue}>
-                {fmt(result.perInterval.carbsMinG, 0)}–{fmt(result.perInterval.carbsMaxG, 0)}g
-              </Text>
-              <Text style={st.totalUnit}>Carbs</Text>
-            </View>
-            <View style={st.totalDivider} />
-            <View style={st.totalCell}>
-              <Text style={st.totalValue}>{fmt(result.perInterval.sodiumMg, 0)}mg</Text>
-              <Text style={st.totalUnit}>Sodium</Text>
-            </View>
-          </View>
+        <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[s.sectionLabel, { color: C.textDim }]}>EXECUTION</Text>
+          {plan.execution.map(item => (
+            <Text key={item} style={[s.body, { color: C.textMuted }]}>- {item}</Text>
+          ))}
+          <Text style={[s.dividerText, { color: C.text }]}>Before</Text>
+          <Text style={[s.body, { color: C.textMuted }]}>
+            {plan.preRun
+              ? `${plan.preRun.fluidMl[0]}-${plan.preRun.fluidMl[1]} ml with sodium ${plan.preRun.timing}`
+              : 'Start normally hydrated. No special preload needed for this run.'}
+          </Text>
+          <Text style={[s.dividerText, { color: C.text }]}>After</Text>
+          <Text style={[s.body, { color: C.textMuted }]}>
+            Rehydrate about {plan.postRun.estimatedFluidL[0]}-{plan.postRun.estimatedFluidL[1]} L over the next few hours. {plan.postRun.sodiumGuidance}
+          </Text>
         </View>
 
-        <View style={{ height: spacing.screenPadBottom }} />
+        <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[s.sectionLabel, { color: C.textDim }]}>SAFETY + CONFIDENCE</Text>
+          <Text style={[s.body, { color: C.textMuted }]}>
+            Estimated sweat rate: {plan.physiology.sweatRateLh} L/h · Sweat sodium: {plan.physiology.sweatSodiumMgL} mg/L · Projected bodyweight loss: {plan.totals.projectedBodyWeightLossPct}%
+          </Text>
+          {plan.warnings.map(item => (
+            <Text key={item} style={[s.warning, { color: C.critical }]}>- {item}</Text>
+          ))}
+          {plan.notes.map(item => (
+            <Text key={item} style={[s.body, { color: C.textMuted }]}>- {item}</Text>
+          ))}
+          <Text style={[s.disclaimer, { color: C.textMuted }]}>
+            This is a performance-planning estimate, not medical advice. Test it in training and do not force fluid beyond thirst or gut comfort.
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const st = StyleSheet.create({
-  safe: {
-    flex:            1,
-    backgroundColor: colors.bg,
-  },
-  header: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical:   spacing.sm,
-  },
-  backBtn: {
-    width: 40, height: 40,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  title: {
-    color:      colors.text,
-    fontSize:   FontSize.md,
-    fontWeight: FontWeight.bold,
-  },
-  scroll: {
-    paddingHorizontal: spacing.lg,
-    paddingTop:        spacing.sm,
-  },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius:    Radius.md,
-    padding:         spacing.lg,
-    marginBottom:    spacing.cardGap,
-  },
-  sectionLabel: {
-    color:         colors.textMuted,
-    fontSize:      10,
-    fontWeight:    FontWeight.black,
-    letterSpacing: 0.7,
-    marginBottom:  spacing.md,
-  },
-  weightRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           spacing.xs,
-    marginBottom:  spacing.md,
-  },
-  weightTxt: {
-    color:    colors.textMuted,
-    fontSize: FontSize.sm,
-  },
-  divider: {
-    height:          1,
-    backgroundColor: colors.border,
-    marginVertical:  spacing.md,
-  },
-  stepperRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-  },
-  stepperLabel: {
-    color:      colors.text,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.medium,
-  },
-  stepperControls: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           spacing.md,
-  },
-  stepBtn: {
-    width:           32,
-    height:          32,
-    borderRadius:    16,
-    backgroundColor: colors.border,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  stepperValue: {
-    color:      colors.text,
-    fontSize:   FontSize.md,
-    fontWeight: FontWeight.bold,
-    minWidth:   60,
-    textAlign:  'center',
-  },
-  stepperUnit: {
-    color:      colors.textMuted,
-    fontSize:   FontSize.sm,
-    fontWeight: '400',
-  },
-  durationRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-  },
-  autoNote: {
-    color:    colors.textMuted,
-    fontSize: FontSize.xs,
-    marginTop: 2,
-  },
-  durationValueBtn: {
-    alignItems: 'center',
-  },
-  editHint: {
-    color:    colors.textDim,
-    fontSize: FontSize.xs,
-    marginTop: 1,
-  },
-  tempNote: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    gap:            spacing.xs,
-    backgroundColor: colors.warningDim,
-    borderRadius:   Radius.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical:   spacing.sm,
-    marginBottom:   spacing.cardGap,
-  },
-  tempNoteTxt: {
-    color:    colors.warning,
-    fontSize: FontSize.sm,
-  },
-  totalsRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-around',
-  },
-  totalCell: {
-    flex:       1,
-    alignItems: 'center',
-    gap:        spacing.xs,
-  },
-  totalValue: {
-    color:      colors.text,
-    fontSize:   FontSize.lg,
-    fontWeight: FontWeight.bold,
-  },
-  totalUnit: {
-    color:    colors.textMuted,
-    fontSize: FontSize.xs,
-  },
-  totalDivider: {
-    width:           1,
-    height:          36,
-    backgroundColor: colors.border,
-  },
-  tableHeader: {
-    flexDirection:  'row',
-    paddingBottom:  spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    marginBottom:   spacing.xs,
-  },
-  colHead: {
-    color:         colors.textMuted,
-    fontSize:      10,
-    fontWeight:    FontWeight.black,
-    letterSpacing: 0.5,
-  },
-  tableRow: {
-    flexDirection:  'row',
-    paddingVertical: spacing.sm,
-  },
-  tableRowAlt: {
-    backgroundColor: colors.bg,
-    borderRadius:    4,
-  },
-  cellTxt: {
-    color:    colors.text,
-    fontSize: FontSize.sm,
-  },
-  liveBadgeRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           spacing.xs,
-    marginTop:     4,
-  },
-  liveDot: {
-    width:           6,
-    height:          6,
-    borderRadius:    3,
-    backgroundColor: colors.positive,
-  },
-  liveLabel: {
-    color:    colors.positive,
-    fontSize: 10,
-  },
+const s = StyleSheet.create({
+  safe: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingBottom: 12, gap: 8 },
+  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  headerCopy: { flex: 1 },
+  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 2 },
+  title: { fontSize: 32, fontFamily: 'CormorantGaramond_700Bold' },
+  scroll: { paddingHorizontal: 18, paddingTop: 8 },
+  summaryCard: { borderWidth: 1, borderRadius: 12, padding: 16, marginBottom: 14 },
+  summaryTitle: { fontSize: 18, fontWeight: '900' },
+  summaryMeta: { fontSize: 12, lineHeight: 18, marginTop: 4 },
+  resultGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
+  resultCard: { width: '31%', minWidth: 104, flexGrow: 1, borderWidth: 1, borderRadius: 12, padding: 12, minHeight: 138 },
+  resultLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1.3 },
+  resultValue: { fontSize: 20, fontWeight: '900', marginTop: 8 },
+  resultRange: { fontSize: 12, fontWeight: '900', marginTop: 5 },
+  resultNote: { fontSize: 11, lineHeight: 15, marginTop: 5 },
+  card: { borderWidth: 1, borderRadius: 12, padding: 16, marginBottom: 14 },
+  sectionLabel: { fontSize: 11, fontWeight: '900', letterSpacing: 2, marginBottom: 12 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 12 },
+  inputCopy: { flex: 1, minWidth: 0 },
+  inputLabel: { fontSize: 14, fontWeight: '900' },
+  inputHint: { fontSize: 11, lineHeight: 16, marginTop: 2 },
+  stepControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  stepBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  stepValue: { minWidth: 66, textAlign: 'center', fontSize: 15, fontWeight: '900' },
+  stepUnit: { fontSize: 11, fontWeight: '700' },
+  choiceBlock: { paddingVertical: 10 },
+  choiceWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  choicePill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 8 },
+  choiceText: { fontSize: 12, fontWeight: '800' },
+  body: { fontSize: 13, lineHeight: 21, marginBottom: 6 },
+  dividerText: { fontSize: 14, fontWeight: '900', marginTop: 10, marginBottom: 4 },
+  warning: { fontSize: 13, lineHeight: 20, marginTop: 8, fontWeight: '800' },
+  disclaimer: { fontSize: 12, lineHeight: 18, marginTop: 12 },
 });
