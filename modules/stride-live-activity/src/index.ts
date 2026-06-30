@@ -13,6 +13,16 @@ export type StrideRunLiveActivityPayload = {
   isPaused?: boolean;
 };
 
+export type StrideStrengthLiveActivityPayload = {
+  workoutName: string;
+  elapsedSeconds: number;
+  currentExercise: string;
+  nextExercise: string;
+  setsCompleted: number;
+  totalSets: number;
+  isPaused?: boolean;
+};
+
 type StrideLiveActivityModule = {
   isAvailable: () => boolean;
   start: (
@@ -45,6 +55,23 @@ type StrideLiveActivityModule = {
     zoneStatus: string,
     status: string,
   ) => Promise<void>;
+  startStrength: (
+    workoutName: string,
+    elapsedSeconds: number,
+    currentExercise: string,
+    nextExercise: string,
+    setsCompleted: number,
+    totalSets: number,
+  ) => Promise<string | null>;
+  updateStrength: (
+    elapsedSeconds: number,
+    currentExercise: string,
+    nextExercise: string,
+    setsCompleted: number,
+    totalSets: number,
+    isPaused: boolean,
+  ) => Promise<void>;
+  endStrength: () => Promise<void>;
 };
 
 let cachedNativeModule: StrideLiveActivityModule | null | undefined;
@@ -129,9 +156,52 @@ export async function endStrideRunLiveActivity(payload: StrideRunLiveActivityPay
   );
 }
 
-// Phase 2: Subscribe to lock screen button intents
+// Phase 2: Run lock screen intent listeners
 export function addRunIntentListener(
   event: 'onPauseIntent' | 'onResumeIntent' | 'onStopIntent',
+  listener: () => void,
+) {
+  const emitter = getEmitter();
+  if (!emitter) return { remove: () => {} };
+  return emitter.addListener(event, listener) as { remove: () => void };
+}
+
+// Phase 3: Strength Live Activity
+export async function startStrengthLiveActivity(payload: StrideStrengthLiveActivityPayload): Promise<string | null> {
+  const nativeModule = getNativeModule();
+  if (!nativeModule || !isStrideRunLiveActivityAvailable()) return null;
+  return nativeModule.startStrength(
+    payload.workoutName,
+    Math.max(0, payload.elapsedSeconds),
+    payload.currentExercise,
+    payload.nextExercise,
+    Math.max(0, payload.setsCompleted),
+    Math.max(1, payload.totalSets),
+  );
+}
+
+export async function updateStrengthLiveActivity(payload: StrideStrengthLiveActivityPayload): Promise<void> {
+  const nativeModule = getNativeModule();
+  if (!nativeModule || !isStrideRunLiveActivityAvailable()) return;
+  await nativeModule.updateStrength(
+    Math.max(0, payload.elapsedSeconds),
+    payload.currentExercise,
+    payload.nextExercise,
+    Math.max(0, payload.setsCompleted),
+    Math.max(1, payload.totalSets),
+    payload.isPaused ?? false,
+  );
+}
+
+export async function endStrengthLiveActivity(): Promise<void> {
+  const nativeModule = getNativeModule();
+  if (!nativeModule) return;
+  await nativeModule.endStrength();
+}
+
+// Phase 3: Strength lock screen intent listeners
+export function addStrengthIntentListener(
+  event: 'onPauseStrengthIntent' | 'onResumeStrengthIntent' | 'onMarkSetCompleteIntent',
   listener: () => void,
 ) {
   const emitter = getEmitter();

@@ -39,12 +39,48 @@ struct StopRunIntent: LiveActivityIntent {
   }
 }
 
+// ─── Phase 3: Strength App Intents ───────────────────────────────────────────
+
+struct PauseStrengthIntent: LiveActivityIntent {
+  static var title: LocalizedStringResource = "Pause Workout"
+  static var description = IntentDescription("Pause the current strength session")
+  static var isDiscoverable: Bool = false
+
+  func perform() async throws -> some IntentResult {
+    NotificationCenter.default.post(name: Notification.Name("StrideOS.pauseStrength"), object: nil)
+    return .result()
+  }
+}
+
+struct ResumeStrengthIntent: LiveActivityIntent {
+  static var title: LocalizedStringResource = "Resume Workout"
+  static var description = IntentDescription("Resume the strength session")
+  static var isDiscoverable: Bool = false
+
+  func perform() async throws -> some IntentResult {
+    NotificationCenter.default.post(name: Notification.Name("StrideOS.resumeStrength"), object: nil)
+    return .result()
+  }
+}
+
+struct MarkSetCompleteIntent: LiveActivityIntent {
+  static var title: LocalizedStringResource = "Mark Set Complete"
+  static var description = IntentDescription("Mark the current set as complete")
+  static var isDiscoverable: Bool = false
+
+  func perform() async throws -> some IntentResult {
+    NotificationCenter.default.post(name: Notification.Name("StrideOS.markSetComplete"), object: nil)
+    return .result()
+  }
+}
+
 // ─── Widget bundle ────────────────────────────────────────────────────────────
 
 @main
 struct StrideRunLiveActivityBundle: WidgetBundle {
   var body: some Widget {
     StrideRunLiveActivity()
+    StrideStrengthLiveActivity()
   }
 }
 
@@ -258,4 +294,174 @@ private func formatElapsed(_ seconds: Int) -> String {
   return h > 0
     ? String(format: "%d:%02d:%02d", h, m, sec)
     : String(format: "%02d:%02d", m, sec)
+}
+
+// ─── Phase 3: Strength Live Activity ─────────────────────────────────────────
+
+struct StrideStrengthLiveActivity: Widget {
+  var body: some WidgetConfiguration {
+    ActivityConfiguration(for: StrideStrengthActivityAttributes.self) { context in
+      LockScreenStrengthView(context: context)
+        .activityBackgroundTint(Color(red: 0.08, green: 0.09, blue: 0.06))
+        .activitySystemActionForegroundColor(.white)
+    } dynamicIsland: { context in
+      DynamicIsland {
+        DynamicIslandExpandedRegion(.leading) {
+          VStack(alignment: .leading, spacing: 2) {
+            Text("NOW")
+              .font(.system(size: 9, weight: .bold))
+              .foregroundStyle(Color(red: 0.66, green: 0.69, blue: 0.58))
+            Text(context.state.currentExercise)
+              .font(.caption.weight(.bold))
+              .foregroundStyle(.white)
+              .lineLimit(1)
+          }
+        }
+        DynamicIslandExpandedRegion(.trailing) {
+          Text("\(context.state.setsCompleted)/\(context.state.totalSets)")
+            .font(.system(.title3, design: .rounded).weight(.heavy))
+            .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
+        }
+        DynamicIslandExpandedRegion(.bottom) {
+          HStack {
+            Text(formatStrengthElapsed(context.state.elapsedSeconds))
+              .font(.system(.body, design: .rounded).weight(.bold))
+              .monospacedDigit()
+              .foregroundStyle(.white)
+            Spacer()
+            Button(intent: MarkSetCompleteIntent()) {
+              Label("Done", systemImage: "checkmark")
+                .font(.caption.weight(.bold))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.3), in: Capsule())
+            .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
+          }
+        }
+      } compactLeading: {
+        HStack(spacing: 3) {
+          Image(systemName: "dumbbell.fill")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
+          Text("\(context.state.setsCompleted)/\(context.state.totalSets)")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(.white)
+        }
+      } compactTrailing: {
+        Text(formatStrengthElapsed(context.state.elapsedSeconds))
+          .font(.caption.weight(.bold))
+          .monospacedDigit()
+          .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
+      } minimal: {
+        Image(systemName: "dumbbell.fill")
+          .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
+      }
+    }
+  }
+}
+
+private struct LockScreenStrengthView: View {
+  let context: ActivityViewContext<StrideStrengthActivityAttributes>
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      // Header
+      HStack {
+        VStack(alignment: .leading, spacing: 2) {
+          Text("StrideOS Strength")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
+          Text(context.state.isPaused ? "Paused" : context.attributes.workoutName)
+            .font(.title3.weight(.bold))
+            .foregroundStyle(context.state.isPaused ? Color(red: 0.91, green: 0.69, blue: 0.34) : .white)
+        }
+        Spacer()
+        // Progress badge
+        Text("\(context.state.setsCompleted)/\(context.state.totalSets) sets")
+          .font(.caption.weight(.heavy))
+          .padding(.horizontal, 10)
+          .padding(.vertical, 6)
+          .background(Color(red: 0.72, green: 0.75, blue: 0.64).opacity(0.2), in: Capsule())
+          .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
+      }
+
+      // Timer
+      Text(formatStrengthElapsed(context.state.elapsedSeconds))
+        .font(.system(size: 36, weight: .heavy, design: .rounded))
+        .monospacedDigit()
+        .foregroundStyle(Color(red: 0.96, green: 0.95, blue: 0.90))
+
+      // Current & next exercise
+      HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 2) {
+          Text("NOW")
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(Color(red: 0.66, green: 0.69, blue: 0.58))
+          Text(context.state.currentExercise)
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(.white)
+            .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+
+        if !context.state.nextExercise.isEmpty {
+          VStack(alignment: .leading, spacing: 2) {
+            Text("NEXT")
+              .font(.system(size: 9, weight: .bold))
+              .foregroundStyle(Color(red: 0.66, green: 0.69, blue: 0.58))
+            Text(context.state.nextExercise)
+              .font(.subheadline.weight(.semibold))
+              .foregroundStyle(Color(red: 0.82, green: 0.82, blue: 0.76))
+              .lineLimit(1)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+        }
+      }
+
+      // Control buttons
+      HStack(spacing: 10) {
+        if context.state.isPaused {
+          Button(intent: ResumeStrengthIntent()) {
+            Label("Resume", systemImage: "play.fill")
+              .font(.subheadline.weight(.bold))
+              .frame(maxWidth: .infinity)
+              .padding(.vertical, 9)
+              .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
+              .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
+          }
+          .buttonStyle(.plain)
+        } else {
+          Button(intent: MarkSetCompleteIntent()) {
+            Label("Mark Complete", systemImage: "checkmark.circle.fill")
+              .font(.subheadline.weight(.bold))
+              .frame(maxWidth: .infinity)
+              .padding(.vertical, 9)
+              .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
+              .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
+          }
+          .buttonStyle(.plain)
+
+          Button(intent: PauseStrengthIntent()) {
+            Label("Pause", systemImage: "pause.fill")
+              .font(.subheadline.weight(.bold))
+              .frame(maxWidth: .infinity)
+              .padding(.vertical, 9)
+              .background(Color(red: 0.91, green: 0.69, blue: 0.34).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
+              .foregroundStyle(Color(red: 0.91, green: 0.69, blue: 0.34))
+          }
+          .buttonStyle(.plain)
+        }
+      }
+    }
+    .padding(16)
+  }
+}
+
+private func formatStrengthElapsed(_ seconds: Int) -> String {
+  let s = max(0, seconds)
+  let m = s / 60
+  let sec = s % 60
+  return String(format: "%02d:%02d", m, sec)
 }

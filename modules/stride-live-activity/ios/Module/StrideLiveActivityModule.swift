@@ -10,12 +10,14 @@ private enum StrideLiveActivityStatus {
 
 public final class StrideLiveActivityModule: Module {
   private static var currentActivityId: String?
+  private static var currentStrengthActivityId: String?
   private var observers: [NSObjectProtocol] = []
 
   public func definition() -> ModuleDefinition {
     Name("StrideLiveActivity")
 
-    Events("onPauseIntent", "onResumeIntent", "onStopIntent")
+    Events("onPauseIntent", "onResumeIntent", "onStopIntent",
+           "onPauseStrengthIntent", "onResumeStrengthIntent", "onMarkSetCompleteIntent")
 
     OnStartObserving {
       let center = NotificationCenter.default
@@ -32,6 +34,21 @@ public final class StrideLiveActivityModule: Module {
       self.observers.append(
         center.addObserver(forName: Notification.Name("StrideOS.stopRun"), object: nil, queue: .main) { [weak self] _ in
           self?.sendEvent("onStopIntent", [:])
+        }
+      )
+      self.observers.append(
+        center.addObserver(forName: Notification.Name("StrideOS.pauseStrength"), object: nil, queue: .main) { [weak self] _ in
+          self?.sendEvent("onPauseStrengthIntent", [:])
+        }
+      )
+      self.observers.append(
+        center.addObserver(forName: Notification.Name("StrideOS.resumeStrength"), object: nil, queue: .main) { [weak self] _ in
+          self?.sendEvent("onResumeStrengthIntent", [:])
+        }
+      )
+      self.observers.append(
+        center.addObserver(forName: Notification.Name("StrideOS.markSetComplete"), object: nil, queue: .main) { [weak self] _ in
+          self?.sendEvent("onMarkSetCompleteIntent", [:])
         }
       )
     }
@@ -192,6 +209,117 @@ public final class StrideLiveActivityModule: Module {
         promise.resolve(nil)
       }
     }
+
+    // ─── Strength Live Activity ───────────────────────────────────────────────
+
+    AsyncFunction("startStrength") {
+      (
+        workoutName: String,
+        elapsedSeconds: Int,
+        currentExercise: String,
+        nextExercise: String,
+        setsCompleted: Int,
+        totalSets: Int,
+        promise: Promise
+      ) in
+      guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
+      Task {
+        do {
+          await Self.endExistingStrengthActivityIfNeeded()
+          let attributes = StrideStrengthActivityAttributes(workoutName: workoutName)
+          let state = StrideStrengthActivityAttributes.ContentState(
+            elapsedSeconds: max(0, elapsedSeconds),
+            currentExercise: currentExercise,
+            nextExercise: nextExercise,
+            setsCompleted: max(0, setsCompleted),
+            totalSets: max(1, totalSets),
+            isPaused: false
+          )
+          let activity: Activity<StrideStrengthActivityAttributes>
+          if #available(iOS 16.2, *) {
+            activity = try Activity.request(
+              attributes: attributes,
+              content: ActivityContent(state: state, staleDate: Date().addingTimeInterval(90), relevanceScore: 0.9),
+              pushType: nil
+            )
+          } else {
+            activity = try Activity.request(attributes: attributes, contentState: state, pushType: nil)
+          }
+          Self.currentStrengthActivityId = activity.id
+          promise.resolve(activity.id)
+        } catch {
+          promise.reject("ERR_STRIDE_STRENGTH_START", error.localizedDescription)
+        }
+      }
+    }
+
+    AsyncFunction("updateStrength") {
+      (
+        elapsedSeconds: Int,
+        currentExercise: String,
+        nextExercise: String,
+        setsCompleted: Int,
+        totalSets: Int,
+        isPaused: Bool,
+        promise: Promise
+      ) in
+      guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
+      Task {
+        guard let activity = Self.currentStrengthActivity() else { promise.resolve(nil); return }
+        let state = StrideStrengthActivityAttributes.ContentState(
+          elapsedSeconds: max(0, elapsedSeconds),
+          currentExercise: currentExercise,
+          nextExercise: nextExercise,
+          setsCompleted: max(0, setsCompleted),
+          totalSets: max(1, totalSets),
+          isPaused: isPaused
+        )
+        if #available(iOS 16.2, *) {
+          await activity.update(ActivityContent(state: state, staleDate: Date().addingTimeInterval(90), relevanceScore: 0.9))
+        } else {
+          await activity.update(using: state)
+        }
+        promise.resolve(nil)
+      }
+    }
+
+    AsyncFunction("endStrength") { (promise: Promise) in
+      guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
+      Task {
+        guard let activity = Self.currentStrengthActivity() else { promise.resolve(nil); return }
+        let state = activity.contentState
+        if #available(iOS 16.2, *) {
+          await activity.end(
+            ActivityContent(state: state, staleDate: nil, relevanceScore: 0.1),
+            dismissalPolicy: .after(Date().addingTimeInterval(60 * 5))
+          )
+        } else {
+          await activity.end(using: state, dismissalPolicy: .after(Date().addingTimeInterval(60 * 5)))
+        }
+        Self.currentStrengthActivityId = nil
+        promise.resolve(nil)
+      }
+    }
+  }
+
+  @available(iOS 16.1, *)
+  private static func currentStrengthActivity() -> Activity<StrideStrengthActivityAttributes>? {
+    if let id = currentStrengthActivityId {
+      return Activity<StrideStrengthActivityAttributes>.activities.first(where: { $0.id == id })
+    }
+    return Activity<StrideStrengthActivityAttributes>.activities.first
+  }
+
+  @available(iOS 16.1, *)
+  private static func endExistingStrengthActivityIfNeeded() async {
+    for activity in Activity<StrideStrengthActivityAttributes>.activities {
+      if #available(iOS 16.2, *) {
+        await activity.end(ActivityContent(state: activity.contentState, staleDate: nil), dismissalPolicy: .immediate)
+      } else {
+        await activity.end(using: activity.contentState, dismissalPolicy: .immediate)
+      }
+    }
+    currentStrengthActivityId = nil
   }
 
   @available(iOS 16.1, *)

@@ -19,6 +19,12 @@ import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
 import { LAYOUT } from '../../../src/constants/layout';
 import type { CompletedExercise } from '../../../src/types/strength';
+import {
+  addStrengthIntentListener,
+  endStrengthLiveActivity,
+  startStrengthLiveActivity,
+  updateStrengthLiveActivity,
+} from '../../../src/lib/strengthLiveActivity';
 
 type ExDef = {
   id: string;
@@ -84,20 +90,90 @@ export default function StrengthScreen() {
 
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
+  const exercises = workout === 'lower' ? LOWER_WORKOUT : UPPER_WORKOUT;
+  const wDef = { title: workout === 'lower' ? 'Lower Body & Core' : 'Upper Body & Core', label: workout === 'lower' ? 'Strength · Today' : 'Strength · Tomorrow' };
+
+  const totalSets = exercises.reduce((acc, ex) => acc + ex.sets, 0);
+  const setsCompleted = exercises.filter(ex => done[ex.id]).reduce((acc, ex) => acc + ex.sets, 0);
+
+  function currentExerciseName(): string {
+    return exercises.find(ex => !done[ex.id])?.name ?? exercises[exercises.length - 1]?.name ?? '';
+  }
+  function nextExerciseName(): string {
+    const idx = exercises.findIndex(ex => !done[ex.id]);
+    return idx >= 0 && idx + 1 < exercises.length ? exercises[idx + 1].name : '';
+  }
+
   function start() {
     intervalRef.current = setInterval(() => setTimer(t => t + 1), 1000);
     setStrState('active');
+    startStrengthLiveActivity({
+      workoutName: wDef.title,
+      elapsedSeconds: 0,
+      currentExercise: currentExerciseName(),
+      nextExercise: nextExerciseName(),
+      setsCompleted: 0,
+      totalSets,
+    }).catch(console.warn);
   }
   function pause() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setStrState('paused');
+    updateStrengthLiveActivity({
+      workoutName: wDef.title,
+      elapsedSeconds: timer,
+      currentExercise: currentExerciseName(),
+      nextExercise: nextExerciseName(),
+      setsCompleted,
+      totalSets,
+      isPaused: true,
+    }).catch(console.warn);
   }
   function resume() {
     intervalRef.current = setInterval(() => setTimer(t => t + 1), 1000);
     setStrState('active');
+    updateStrengthLiveActivity({
+      workoutName: wDef.title,
+      elapsedSeconds: timer,
+      currentExercise: currentExerciseName(),
+      nextExercise: nextExerciseName(),
+      setsCompleted,
+      totalSets,
+      isPaused: false,
+    }).catch(console.warn);
   }
+
+  // Phase 3: respond to lock screen intent buttons
+  useEffect(() => {
+    if (strState === 'idle') return;
+    const subs = [
+      addStrengthIntentListener('onPauseStrengthIntent',   () => { if (strState === 'active') pause(); }),
+      addStrengthIntentListener('onResumeStrengthIntent',  () => { if (strState === 'paused') resume(); }),
+      addStrengthIntentListener('onMarkSetCompleteIntent', () => {
+        const next = exercises.find(ex => !done[ex.id]);
+        if (next) setDone(d => ({ ...d, [next.id]: true }));
+      }),
+    ];
+    return () => subs.forEach(s => s.remove());
+  }, [strState, done, exercises]);
+
+  // Update Live Activity whenever sets completed changes
+  useEffect(() => {
+    if (strState === 'idle') return;
+    updateStrengthLiveActivity({
+      workoutName: wDef.title,
+      elapsedSeconds: timer,
+      currentExercise: currentExerciseName(),
+      nextExercise: nextExerciseName(),
+      setsCompleted,
+      totalSets,
+      isPaused: strState === 'paused',
+    }).catch(console.warn);
+  }, [setsCompleted]);
+
   function finishSession() {
     if (intervalRef.current) clearInterval(intervalRef.current);
+    endStrengthLiveActivity().catch(console.warn);
 
     const selectedRpes = exercises.map(ex => rpe[ex.id]).filter((value): value is number => typeof value === 'number');
     const overallRpe = selectedRpes.length
@@ -138,9 +214,6 @@ export default function StrengthScreen() {
     setStrState('idle');
     Alert.alert('Strength logged', `${wDef.title} was saved to your training history.`);
   }
-
-  const exercises = workout === 'lower' ? LOWER_WORKOUT : UPPER_WORKOUT;
-  const wDef = { title: workout === 'lower' ? 'Lower Body & Core' : 'Upper Body & Core', label: workout === 'lower' ? 'Strength · Today' : 'Strength · Tomorrow' };
 
   function getWeight(ex: ExDef): number {
     return weights[ex.id] !== undefined ? weights[ex.id] : ex.weight;
