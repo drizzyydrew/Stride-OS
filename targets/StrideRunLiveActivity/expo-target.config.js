@@ -4,7 +4,7 @@ module.exports = {
   name: 'StrideRunLiveActivity',
   displayName: 'StrideOS Run',
   bundleIdentifier: '.liveactivity',
-  deploymentTarget: '16.4',
+  deploymentTarget: '17.0',
   frameworks: ['ActivityKit', 'SwiftUI', 'WidgetKit'],
   colors: {
     $accent: '#A8B094',
