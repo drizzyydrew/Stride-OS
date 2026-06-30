@@ -1,0 +1,8 @@
+{
+  "platforms": ["apple"],
+  "apple": {
+    "modules": ["StrideLiveActivityModule"],
+    "podspecPath": "ios/StrideLiveActivity.podspec",
+    "swiftModuleName": "StrideLiveActivity"
+  }
+}

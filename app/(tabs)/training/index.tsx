@@ -21,6 +21,7 @@ import { useRouteStore, routeDistanceMiles, type RunRoute, type RoutePoint } fro
 import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
 import { sendRunAlertNotification } from '../../../src/lib/notifications';
+import { endRunLiveActivity, startRunLiveActivity, updateRunLiveActivity } from '../../../src/lib/runLiveActivity';
 import {
   calculateHydrationPlan,
   weatherBandForTemp,
@@ -513,6 +514,15 @@ function ActiveTab() {
       maxRouteProgressRef.current = 0;
       segmentStartRef.current = { index: 0, time: Date.now() };
       startRun(null);
+      await startRunLiveActivity({
+        elapsedSeconds: 0,
+        distanceMiles: 0,
+        averagePace: '--:--',
+        heartRateBpm: null,
+        zoneLabel: 'Zone --',
+        zoneStatus: 'unknown',
+        isPaused: false,
+      }).catch(console.warn);
       await startLocationTracking();
       if (selectedRoute) {
         speakCue(`Starting route: ${selectedRoute.name}. ${selectedRoute.segments.length} interval markers set.`);
@@ -538,6 +548,7 @@ function ActiveTab() {
     const finalDurationMin = Math.max(1, Math.round(elapsed / 60));
     const finalDistanceMiles = Math.round(distanceMiles * 100) / 100;
     const routeCoordinates = [...coordinates];
+    await endRunLiveActivity({ ...liveActivitySnapshot, isPaused: false }).catch(console.warn);
     finishRun();
     setRouteSegmentIndex(0);
     maxRouteProgressRef.current = 0;
@@ -571,6 +582,7 @@ function ActiveTab() {
   }
 
   async function cancel() {
+    await endRunLiveActivity({ ...liveActivitySnapshot, isPaused: false }).catch(console.warn);
     cancelRun();
     setRouteSegmentIndex(0);
     maxRouteProgressRef.current = 0;
@@ -593,6 +605,15 @@ function ActiveTab() {
       : zoneStatus.tone === 'out'
         ? C.critical
         : C.accent;
+  const liveActivitySnapshot = {
+    elapsedSeconds: elapsed,
+    distanceMiles,
+    averagePace: avgPace,
+    heartRateBpm,
+    zoneLabel: zoneStatus.label,
+    zoneStatus: zoneStatus.tone,
+    isPaused,
+  };
   const routeCoords = selectedRoute ? routePointsToLatLng(selectedRoute.points) : [];
   const liveCoords = coordinates.map(c => ({ latitude: c.lat, longitude: c.lng }));
   const region = liveCoords.length ? routeRegion(liveCoords) : selectedRoute ? routeRegion(selectedRoute.points) : BEND_REGION;
@@ -635,6 +656,20 @@ function ActiveTab() {
     speakCue(message);
     sendRunAlertNotification(message).catch(() => undefined);
   }, [heartRateBpm, isActive, isPaused, zoneStatus.detail, zoneStatus.guidance, zoneStatus.tone]);
+
+  useEffect(() => {
+    if (!isActive) return;
+    updateRunLiveActivity(liveActivitySnapshot).catch(() => undefined);
+  }, [
+    isActive,
+    isPaused,
+    elapsed,
+    distanceMiles,
+    avgPace,
+    heartRateBpm,
+    zoneStatus.label,
+    zoneStatus.tone,
+  ]);
 
   return (
     <ScrollView contentContainerStyle={styles.runScrollContent} showsVerticalScrollIndicator={false}>

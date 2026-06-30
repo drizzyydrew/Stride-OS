@@ -11,11 +11,14 @@
     "primaryColor": "#8B927C",
     "ios": {
       "supportsTablet": false,
+      "appleTeamId": "QBAVJD9497",
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.mooremovement.strideos",
       "buildNumber": "11",
       "backgroundColor": "#14160F",
       "infoPlist": {
+        "NSSupportsLiveActivities": true,
+        "NSSupportsLiveActivitiesFrequentUpdates": true,
         "NSLocationWhenInUseUsageDescription": "StrideOS uses your location to track distance and pace during GPS runs.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "StrideOS tracks your location in the background so your run continues recording when the screen is locked.",
         "NSLocationAlwaysUsageDescription": "StrideOS tracks your location in the background so your run continues recording when the screen is locked.",
@@ -49,6 +52,7 @@
     },
     "plugins": [
       "expo-router",
+      "@bacons/apple-targets",
       "expo-apple-authentication",
       [
         "expo-image-picker",
