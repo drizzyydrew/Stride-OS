@@ -21,7 +21,7 @@ import { useRouteStore, routeDistanceMiles, type RunRoute, type RoutePoint } fro
 import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
 import { sendRunAlertNotification } from '../../../src/lib/notifications';
-import { endRunLiveActivity, startRunLiveActivity, updateRunLiveActivity } from '../../../src/lib/runLiveActivity';
+import { addRunIntentListener, endRunLiveActivity, startRunLiveActivity, updateRunLiveActivity } from '../../../src/lib/runLiveActivity';
 import {
   calculateHydrationPlan,
   weatherBandForTemp,
@@ -414,7 +414,7 @@ function PlanTab() {
 }
 
 // ─── Active Tab ────────────────────────────────────────────────────────────────
-function ActiveTab() {
+function ActiveTab({ onFinished }: { onFinished?: () => void }) {
   const C = useColors();
   const { units } = useSettingsStore();
   const healthKitEnabled = useIntegrationsStore(s => s.healthKitEnabled);
@@ -499,6 +499,16 @@ function ActiveTab() {
     segmentStartRef.current = isActive ? { index: 0, time: Date.now() } : null;
   }, [isActive, selectedRoute?.id]);
 
+  // Phase 2: respond to lock screen button intents
+  useEffect(() => {
+    const subs = [
+      addRunIntentListener('onPauseIntent',  () => { if (isActive && !isPaused) pauseRun(); }),
+      addRunIntentListener('onResumeIntent', () => { if (isActive && isPaused) resumeRun(); }),
+      addRunIntentListener('onStopIntent',   () => { if (isActive) stop(); }),
+    ];
+    return () => subs.forEach(s => s.remove());
+  }, [isActive, isPaused]);
+
   async function start() {
     try {
       const nextPermission = await requestTrackingPermissionState();
@@ -545,17 +555,21 @@ function ActiveTab() {
   }
 
   async function stop() {
-    const finalDurationMin = Math.max(1, Math.round(elapsed / 60));
+    const finalElapsed = elapsed;
+    const finalDurationMin = Math.max(1, Math.round(finalElapsed / 60));
     const finalDistanceMiles = Math.round(distanceMiles * 100) / 100;
     const routeCoordinates = [...coordinates];
+
     await endRunLiveActivity({ ...liveActivitySnapshot, isPaused: false }).catch(console.warn);
     finishRun();
+    setElapsed(0);
     setRouteSegmentIndex(0);
     maxRouteProgressRef.current = 0;
     segmentStartRef.current = null;
     await stopLocationTracking().catch(console.warn);
+    onFinished?.();
 
-    if (elapsed >= 30 || finalDistanceMiles >= 0.05) {
+    if (finalElapsed >= 300) {
       const id = `gps_run_${Date.now()}`;
       manualLogRun(
         {
@@ -577,7 +591,9 @@ function ActiveTab() {
         actualDistanceMiles: finalDistanceMiles,
         routeCoordinates,
       });
-      Alert.alert('Run saved', 'Your run was added to Training History.');
+      Alert.alert('Run saved', `${finalDurationMin} min · ${finalDistanceMiles.toFixed(2)} mi saved to Activity Log.`);
+    } else {
+      Alert.alert('Run discarded', 'Runs under 5 minutes are not saved.');
     }
   }
 
@@ -1891,7 +1907,7 @@ export default function RunningScreen() {
       {/* Content */}
       <View style={{ flex: 1, paddingHorizontal: 18, paddingBottom: LAYOUT.tabBarPadBottom }}>
         {tab === 'plan'      && <PlanTab />}
-        {tab === 'active'    && <ActiveTab />}
+        {tab === 'active'    && <ActiveTab onFinished={() => setTab('plan')} />}
         {tab === 'hydration' && <HydrationTab />}
         {tab === 'routes'    && <RoutesTab onStartRoute={() => setTab('active')} />}
       </View>

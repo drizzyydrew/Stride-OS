@@ -119,16 +119,73 @@ function RiskFlagCard({ flag, onDismiss }: { flag: MovementRiskFlag; onDismiss: 
 
 // ─── Gait checklist modal ─────────────────────────────────────────────────────
 
-type BoolField = 'overstride' | 'crossoverGait';
-
-const GAIT_BOOL_FIELDS: { key: BoolField; label: string }[] = [
-  { key: 'overstride',    label: 'Overstriding'   },
-  { key: 'crossoverGait', label: 'Crossover gait' },
-];
-
+const SEV_OPTS: SeverityOrNull[] = [null, 'none', 'mild', 'moderate', 'severe'];
 const FOOT_STRIKE_OPTIONS: FootStrikePattern[] = ['heel', 'midfoot', 'forefoot', 'unknown'];
-const HIP_DROP_OPTIONS:    SeverityOrNull[]    = [null, 'none', 'mild', 'moderate', 'severe'];
-const KNEE_VALGUS_OPTIONS: SeverityOrNull[]    = [null, 'none', 'mild', 'moderate', 'severe'];
+const TRI_OPTS = [null, false, true] as const;
+
+type LREntry = { left: string; right: string };
+
+function sevLabel(v: SeverityOrNull) {
+  return v === null ? '—' : v.charAt(0).toUpperCase() + v.slice(1);
+}
+
+function SevPicker({ value, onChange }: { value: SeverityOrNull; onChange: (v: SeverityOrNull) => void }) {
+  return (
+    <View style={gc.pills}>
+      {SEV_OPTS.map(v => (
+        <Pressable key={String(v)} style={[gc.pill, value === v && gc.pillOn]} onPress={() => onChange(v)}>
+          <Text style={[gc.pillTxt, value === v && gc.pillOnTxt]}>{sevLabel(v)}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function TriPicker({ value, onChange }: { value: boolean | null; onChange: (v: boolean | null) => void }) {
+  return (
+    <View style={gc.pills}>
+      {TRI_OPTS.map(v => (
+        <Pressable key={String(v)} style={[gc.pill, value === v && gc.pillOn]} onPress={() => onChange(v)}>
+          <Text style={[gc.pillTxt, value === v && gc.pillOnTxt]}>{v === null ? '—' : v ? 'Yes' : 'No'}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function LRTextRow({ label, value, onChange, placeholder }: { label: string; value: LREntry; onChange: (v: LREntry) => void; placeholder?: string }) {
+  return (
+    <View style={gc.lrRow}>
+      <Text style={gc.lrLabel}>{label}</Text>
+      <TextInput
+        style={[gc.lrInput, { marginRight: 6 }]}
+        value={value.left}
+        onChangeText={t => onChange({ ...value, left: t })}
+        placeholder={placeholder ?? '—'}
+        placeholderTextColor={colors.textSubtle}
+      />
+      <TextInput
+        style={gc.lrInput}
+        value={value.right}
+        onChangeText={t => onChange({ ...value, right: t })}
+        placeholder={placeholder ?? '—'}
+        placeholderTextColor={colors.textSubtle}
+      />
+    </View>
+  );
+}
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <View style={gc.sectionHeader}>
+      <Text style={gc.sectionTitle}>{title}</Text>
+      <View style={gc.lrLabels}>
+        <Text style={gc.lrHeaderLabel}>LEFT</Text>
+        <Text style={gc.lrHeaderLabel}>RIGHT</Text>
+      </View>
+    </View>
+  );
+}
 
 function GaitChecklistModal({
   visible,
@@ -149,6 +206,35 @@ function GaitChecklistModal({
   const [crossover,  setCrossover] = useState<boolean | null>(existing.crossoverGait ?? null);
   const [hipDrop,    setHipDrop]   = useState<SeverityOrNull>(existing.hipDrop ?? null);
   const [kneeValgus, setKneeValgus]= useState<SeverityOrNull>(existing.kneeValgus ?? null);
+  const [notes,      setNotes]     = useState('');
+
+  // Alignment
+  const [hipRotation,       setHipRotation]      = useState<LREntry>({ left: '', right: '' });
+  const [pelvicTilt,        setPelvicTilt]        = useState<LREntry>({ left: '', right: '' });
+  const [headPosition,      setHeadPosition]      = useState('');
+  const [forwardLean,       setForwardLean]       = useState('');
+  const [shoulderPosition,  setShoulderPosition]  = useState<LREntry>({ left: '', right: '' });
+  const [lateralPosition,   setLateralPosition]   = useState<LREntry>({ left: '', right: '' });
+
+  // Frontal Run View
+  const [hipPath,           setHipPath]           = useState('');
+  const [hipDropFR,         setHipDropFR]         = useState<LREntry>({ left: '', right: '' });
+  const [armCrossover,      setArmCrossover]      = useState<boolean | null>(null);
+  const [armMobility,       setArmMobility]       = useState<LREntry>({ left: '', right: '' });
+  const [abdAdduction,      setAbdAdduction]      = useState<LREntry>({ left: '', right: '' });
+
+  // Top Run View
+  const [footWidth,         setFootWidth]         = useState('');
+  const [trunkRotation,     setTrunkRotation]     = useState<LREntry>({ left: '', right: '' });
+  const [armSwingTop,       setArmSwingTop]       = useState<LREntry>({ left: '', right: '' });
+
+  // Lateral Run View
+  const [ankleDorsiflexion, setAnkleDorsiflexion]= useState<LREntry>({ left: '', right: '' });
+  const [kneeDrive,         setKneeDrive]         = useState<LREntry>({ left: '', right: '' });
+  const [hipExtension,      setHipExtension]      = useState<LREntry>({ left: '', right: '' });
+  const [footStrikePos,     setFootStrikePos]     = useState<LREntry>({ left: '', right: '' });
+  const [initialContact,    setInitialContact]    = useState<LREntry>({ left: '', right: '' });
+  const [gaitContact,       setGaitContact]       = useState<LREntry>({ left: '', right: '' });
 
   function handleSave() {
     const cad = parseInt(cadence, 10);
@@ -171,10 +257,12 @@ function GaitChecklistModal({
       <View style={gc.root}>
         <View style={gc.header}>
           <Pressable onPress={onClose}><Text style={gc.cancel}>Cancel</Text></Pressable>
-          <Text style={gc.title}>Gait Checklist</Text>
+          <Text style={gc.title}>Gait Assessment</Text>
           <Pressable onPress={handleSave}><Text style={gc.save}>Save</Text></Pressable>
         </View>
-        <ScrollView>
+        <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+
+          {/* Cadence */}
           <View style={gc.row}>
             <Text style={gc.label}>Cadence (spm)</Text>
             <TextInput
@@ -187,78 +275,91 @@ function GaitChecklistModal({
             />
           </View>
 
+          {/* ALIGNMENT */}
+          <SectionHeader title="Alignment" />
+          <LRTextRow label="Hip rotation angle" value={hipRotation} onChange={setHipRotation} placeholder="°" />
+          <LRTextRow label="Pelvic tilt" value={pelvicTilt} onChange={setPelvicTilt} />
+          <View style={gc.row}>
+            <Text style={gc.label}>Head position</Text>
+            <TextInput style={gc.numInput} value={headPosition} onChangeText={setHeadPosition} placeholder="—" placeholderTextColor={colors.textSubtle} />
+          </View>
+          <View style={gc.row}>
+            <Text style={gc.label}>Forward lean</Text>
+            <TextInput style={gc.numInput} value={forwardLean} onChangeText={setForwardLean} placeholder="—" placeholderTextColor={colors.textSubtle} />
+          </View>
+          <LRTextRow label="Shoulder position" value={shoulderPosition} onChange={setShoulderPosition} />
+          <LRTextRow label="Lateral position" value={lateralPosition} onChange={setLateralPosition} />
+
+          {/* FRONTAL RUN VIEW */}
+          <SectionHeader title="Frontal Run View" />
+          <View style={gc.row}>
+            <Text style={gc.label}>Hip path</Text>
+            <TextInput style={gc.numInput} value={hipPath} onChangeText={setHipPath} placeholder="—" placeholderTextColor={colors.textSubtle} />
+          </View>
+          <LRTextRow label="Hip drop" value={hipDropFR} onChange={setHipDropFR} />
+          <View style={gc.groupRow}>
+            <Text style={gc.label}>Arm crossover</Text>
+            <TriPicker value={armCrossover} onChange={setArmCrossover} />
+          </View>
           <View style={gc.groupRow}>
             <Text style={gc.label}>Foot strike</Text>
             <View style={gc.pills}>
               {FOOT_STRIKE_OPTIONS.map(opt => (
-                <Pressable
-                  key={opt}
-                  style={[gc.pill, footStrike === opt && gc.pillOn]}
-                  onPress={() => setFootStrike(opt)}
-                >
-                  <Text style={[gc.pillTxt, footStrike === opt && gc.pillOnTxt]}>
-                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                  </Text>
+                <Pressable key={opt} style={[gc.pill, footStrike === opt && gc.pillOn]} onPress={() => setFootStrike(opt)}>
+                  <Text style={[gc.pillTxt, footStrike === opt && gc.pillOnTxt]}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</Text>
                 </Pressable>
               ))}
             </View>
           </View>
+          <LRTextRow label="Arm mobility" value={armMobility} onChange={setArmMobility} />
+          <LRTextRow label="Abduction/adduction" value={abdAdduction} onChange={setAbdAdduction} />
 
-          {GAIT_BOOL_FIELDS.map(f => {
-            const val = f.key === 'overstride' ? overstride : crossover;
-            const set = f.key === 'overstride' ? setOverstride : setCrossover;
-            return (
-              <View key={f.key} style={gc.row}>
-                <Text style={gc.label}>{f.label}</Text>
-                <View style={gc.pills}>
-                  {([null, false, true] as const).map(v => (
-                    <Pressable
-                      key={String(v)}
-                      style={[gc.pill, val === v && gc.pillOn]}
-                      onPress={() => set(v)}
-                    >
-                      <Text style={[gc.pillTxt, val === v && gc.pillOnTxt]}>
-                        {v === null ? 'Unknown' : v ? 'Yes' : 'No'}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-            );
-          })}
+          {/* TOP RUN VIEW */}
+          <SectionHeader title="Top Run View" />
+          <View style={gc.row}>
+            <Text style={gc.label}>Foot width</Text>
+            <TextInput style={gc.numInput} value={footWidth} onChangeText={setFootWidth} placeholder="—" placeholderTextColor={colors.textSubtle} />
+          </View>
+          <LRTextRow label="Rotation" value={trunkRotation} onChange={setTrunkRotation} />
+          <LRTextRow label="Arm swing" value={armSwingTop} onChange={setArmSwingTop} />
 
+          {/* LATERAL RUN VIEW */}
+          <SectionHeader title="Lateral Run View" />
+          <LRTextRow label="Ankle dorsiflexion" value={ankleDorsiflexion} onChange={setAnkleDorsiflexion} />
+          <LRTextRow label="Knee drive" value={kneeDrive} onChange={setKneeDrive} />
+          <LRTextRow label="Hip extension at toe-off" value={hipExtension} onChange={setHipExtension} />
+          <LRTextRow label="Foot strike position" value={footStrikePos} onChange={setFootStrikePos} />
+          <LRTextRow label="Initial contact" value={initialContact} onChange={setInitialContact} />
+          <LRTextRow label="Gait sign of contact" value={gaitContact} onChange={setGaitContact} />
+
+          {/* Overstriding & crossover (existing flags) */}
+          <View style={[gc.sectionHeader, { marginTop: 10 }]}>
+            <Text style={gc.sectionTitle}>Flags</Text>
+          </View>
           <View style={gc.groupRow}>
-            <Text style={gc.label}>Hip drop</Text>
-            <View style={gc.pills}>
-              {HIP_DROP_OPTIONS.map(v => (
-                <Pressable
-                  key={String(v)}
-                  style={[gc.pill, hipDrop === v && gc.pillOn]}
-                  onPress={() => setHipDrop(v)}
-                >
-                  <Text style={[gc.pillTxt, hipDrop === v && gc.pillOnTxt]}>
-                    {v === null ? 'Unknown' : v.charAt(0).toUpperCase() + v.slice(1)}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <Text style={gc.label}>Overstriding</Text>
+            <TriPicker value={overstride} onChange={setOverstride} />
           </View>
-
+          <View style={gc.groupRow}>
+            <Text style={gc.label}>Hip drop severity</Text>
+            <SevPicker value={hipDrop} onChange={setHipDrop} />
+          </View>
           <View style={gc.groupRow}>
             <Text style={gc.label}>Knee valgus</Text>
-            <View style={gc.pills}>
-              {KNEE_VALGUS_OPTIONS.map(v => (
-                <Pressable
-                  key={String(v)}
-                  style={[gc.pill, kneeValgus === v && gc.pillOn]}
-                  onPress={() => setKneeValgus(v)}
-                >
-                  <Text style={[gc.pillTxt, kneeValgus === v && gc.pillOnTxt]}>
-                    {v === null ? 'Unknown' : v.charAt(0).toUpperCase() + v.slice(1)}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <SevPicker value={kneeValgus} onChange={setKneeValgus} />
+          </View>
+
+          {/* Notes */}
+          <View style={{ paddingHorizontal: 16, marginTop: 10 }}>
+            <Text style={gc.label}>Notes</Text>
+            <TextInput
+              style={[gc.numInput, { height: 80, textAlignVertical: 'top', paddingTop: 8 }]}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Additional observations…"
+              placeholderTextColor={colors.textSubtle}
+              multiline
+            />
           </View>
         </ScrollView>
       </View>
@@ -863,6 +964,62 @@ const gc = StyleSheet.create({
     paddingVertical:   spacing.xs,
     minWidth:          64,
     textAlign:         'right',
+  },
+  sectionHeader: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical:   spacing.sm,
+    backgroundColor:   colors.cardAlt,
+    borderTopWidth:    1,
+    borderBottomWidth: 1,
+    borderColor:       colors.border,
+    marginTop:         8,
+  },
+  sectionTitle: {
+    color:      colors.primary,
+    fontSize:   FontSize.sm,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  lrLabels: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  lrHeaderLabel: {
+    color:      colors.textDim,
+    fontSize:   FontSize.xs,
+    fontWeight: FontWeight.bold,
+    width:      72,
+    textAlign:  'center',
+  },
+  lrRow: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical:   spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    gap:               8,
+  },
+  lrLabel: {
+    flex:     1,
+    color:    colors.text,
+    fontSize: FontSize.sm,
+  },
+  lrInput: {
+    width:             72,
+    backgroundColor:   colors.card,
+    borderRadius:      Radius.sm,
+    borderWidth:       1,
+    borderColor:       colors.border,
+    color:             colors.text,
+    fontSize:          FontSize.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical:   4,
+    textAlign:         'center',
   },
 });
 

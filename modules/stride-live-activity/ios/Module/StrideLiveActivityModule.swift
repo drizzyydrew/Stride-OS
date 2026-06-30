@@ -10,9 +10,36 @@ private enum StrideLiveActivityStatus {
 
 public final class StrideLiveActivityModule: Module {
   private static var currentActivityId: String?
+  private var observers: [NSObjectProtocol] = []
 
   public func definition() -> ModuleDefinition {
     Name("StrideLiveActivity")
+
+    Events("onPauseIntent", "onResumeIntent", "onStopIntent")
+
+    OnStartObserving {
+      let center = NotificationCenter.default
+      self.observers.append(
+        center.addObserver(forName: Notification.Name("StrideOS.pauseRun"), object: nil, queue: .main) { [weak self] _ in
+          self?.sendEvent("onPauseIntent", [:])
+        }
+      )
+      self.observers.append(
+        center.addObserver(forName: Notification.Name("StrideOS.resumeRun"), object: nil, queue: .main) { [weak self] _ in
+          self?.sendEvent("onResumeIntent", [:])
+        }
+      )
+      self.observers.append(
+        center.addObserver(forName: Notification.Name("StrideOS.stopRun"), object: nil, queue: .main) { [weak self] _ in
+          self?.sendEvent("onStopIntent", [:])
+        }
+      )
+    }
+
+    OnStopObserving {
+      self.observers.forEach { NotificationCenter.default.removeObserver($0) }
+      self.observers = []
+    }
 
     Function("isAvailable") { () -> Bool in
       if #available(iOS 16.1, *) {
@@ -31,6 +58,7 @@ public final class StrideLiveActivityModule: Module {
         zoneLabel: String,
         zoneStatus: String,
         status: String,
+        isPaused: Bool,
         promise: Promise
       ) in
       guard #available(iOS 16.1, *) else {
@@ -49,7 +77,8 @@ public final class StrideLiveActivityModule: Module {
             heartRate: heartRate,
             zoneLabel: zoneLabel,
             zoneStatus: zoneStatus,
-            status: status
+            status: status,
+            isPaused: isPaused
           )
 
           let activity: Activity<StrideRunActivityAttributes>
@@ -81,6 +110,7 @@ public final class StrideLiveActivityModule: Module {
         zoneLabel: String,
         zoneStatus: String,
         status: String,
+        isPaused: Bool,
         promise: Promise
       ) in
       guard #available(iOS 16.1, *) else {
@@ -101,7 +131,8 @@ public final class StrideLiveActivityModule: Module {
           heartRate: heartRate,
           zoneLabel: zoneLabel,
           zoneStatus: zoneStatus,
-          status: status
+          status: status,
+          isPaused: isPaused
         )
 
         if #available(iOS 16.2, *) {
@@ -147,15 +178,12 @@ public final class StrideLiveActivityModule: Module {
           heartRate: heartRate,
           zoneLabel: zoneLabel,
           zoneStatus: zoneStatus,
-          status: status.isEmpty ? StrideLiveActivityStatus.finished : status
+          status: status.isEmpty ? StrideLiveActivityStatus.finished : status,
+          isPaused: false
         )
 
         if #available(iOS 16.2, *) {
-          let content = ActivityContent(
-            state: state,
-            staleDate: nil,
-            relevanceScore: 0.1
-          )
+          let content = ActivityContent(state: state, staleDate: nil, relevanceScore: 0.1)
           await activity.end(content, dismissalPolicy: .after(Date().addingTimeInterval(60 * 10)))
         } else {
           await activity.end(using: state, dismissalPolicy: .after(Date().addingTimeInterval(60 * 10)))
@@ -174,7 +202,8 @@ public final class StrideLiveActivityModule: Module {
     heartRate: Int,
     zoneLabel: String,
     zoneStatus: String,
-    status: String
+    status: String,
+    isPaused: Bool = false
   ) -> StrideRunActivityAttributes.ContentState {
     StrideRunActivityAttributes.ContentState(
       elapsedSeconds: max(0, elapsedSeconds),
@@ -183,7 +212,8 @@ public final class StrideLiveActivityModule: Module {
       heartRate: max(0, heartRate),
       zoneLabel: zoneLabel,
       zoneStatus: zoneStatus,
-      status: status.isEmpty ? StrideLiveActivityStatus.running : status
+      status: status.isEmpty ? StrideLiveActivityStatus.running : status,
+      isPaused: isPaused
     )
   }
 
@@ -205,7 +235,8 @@ public final class StrideLiveActivityModule: Module {
         heartRate: activity.contentState.heartRate,
         zoneLabel: activity.contentState.zoneLabel,
         zoneStatus: activity.contentState.zoneStatus,
-        status: StrideLiveActivityStatus.finished
+        status: StrideLiveActivityStatus.finished,
+        isPaused: false
       )
       if #available(iOS 16.2, *) {
         await activity.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: .immediate)

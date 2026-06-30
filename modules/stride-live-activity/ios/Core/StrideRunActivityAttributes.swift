@@ -10,6 +10,7 @@ public struct StrideRunActivityAttributes: ActivityAttributes {
     public var zoneLabel: String
     public var zoneStatus: String
     public var status: String
+    public var isPaused: Bool
 
     public init(
       elapsedSeconds: Int,
@@ -18,7 +19,8 @@ public struct StrideRunActivityAttributes: ActivityAttributes {
       heartRate: Int,
       zoneLabel: String,
       zoneStatus: String,
-      status: String
+      status: String,
+      isPaused: Bool = false
     ) {
       self.elapsedSeconds = elapsedSeconds
       self.distanceMiles = distanceMiles
@@ -27,6 +29,7 @@ public struct StrideRunActivityAttributes: ActivityAttributes {
       self.zoneLabel = zoneLabel
       self.zoneStatus = zoneStatus
       self.status = status
+      self.isPaused = isPaused
     }
   }
 

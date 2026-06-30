@@ -1,4 +1,5 @@
 import {
+  addRunIntentListener,
   endStrideRunLiveActivity,
   startStrideRunLiveActivity,
   updateStrideRunLiveActivity,
@@ -25,6 +26,7 @@ function payloadFromSnapshot(snapshot: RunLiveActivitySnapshot, status?: string)
     zoneLabel: snapshot.zoneLabel || 'Zone --',
     zoneStatus: snapshot.zoneStatus || 'unknown',
     status: status ?? (snapshot.isPaused ? 'Paused' : 'Running'),
+    isPaused: snapshot.isPaused,
   };
 }
 
@@ -39,3 +41,5 @@ export async function updateRunLiveActivity(snapshot: RunLiveActivitySnapshot): 
 export async function endRunLiveActivity(snapshot: RunLiveActivitySnapshot): Promise<void> {
   await endStrideRunLiveActivity(payloadFromSnapshot(snapshot, 'Finished'));
 }
+
+export { addRunIntentListener };

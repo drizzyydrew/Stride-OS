@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
 import { requireNativeModule } from 'expo-modules-core';
 
 export type StrideRunLiveActivityPayload = {
@@ -10,6 +10,7 @@ export type StrideRunLiveActivityPayload = {
   zoneLabel: string;
   zoneStatus: 'in' | 'near' | 'out' | 'unknown' | string;
   status: 'Running' | 'Paused' | 'Finished' | string;
+  isPaused?: boolean;
 };
 
 type StrideLiveActivityModule = {
@@ -23,6 +24,7 @@ type StrideLiveActivityModule = {
     zoneLabel: string,
     zoneStatus: string,
     status: string,
+    isPaused: boolean,
   ) => Promise<string | null>;
   update: (
     elapsedSeconds: number,
@@ -32,6 +34,7 @@ type StrideLiveActivityModule = {
     zoneLabel: string,
     zoneStatus: string,
     status: string,
+    isPaused: boolean,
   ) => Promise<void>;
   end: (
     elapsedSeconds: number,
@@ -45,6 +48,7 @@ type StrideLiveActivityModule = {
 };
 
 let cachedNativeModule: StrideLiveActivityModule | null | undefined;
+let cachedEmitter: NativeEventEmitter | null | undefined;
 
 function getNativeModule(): StrideLiveActivityModule | null {
   if (Platform.OS !== 'ios') return null;
@@ -55,6 +59,19 @@ function getNativeModule(): StrideLiveActivityModule | null {
     cachedNativeModule = null;
   }
   return cachedNativeModule;
+}
+
+function getEmitter(): NativeEventEmitter | null {
+  if (Platform.OS !== 'ios') return null;
+  if (cachedEmitter !== undefined) return cachedEmitter;
+  try {
+    const nativeMod = NativeModules['StrideLiveActivity'];
+    if (!nativeMod) { cachedEmitter = null; return null; }
+    cachedEmitter = new NativeEventEmitter(nativeMod);
+  } catch {
+    cachedEmitter = null;
+  }
+  return cachedEmitter;
 }
 
 export function isStrideRunLiveActivityAvailable(): boolean {
@@ -79,6 +96,7 @@ export async function startStrideRunLiveActivity(payload: StrideRunLiveActivityP
     payload.zoneLabel,
     payload.zoneStatus,
     payload.status,
+    payload.isPaused ?? false,
   );
 }
 
@@ -93,6 +111,7 @@ export async function updateStrideRunLiveActivity(payload: StrideRunLiveActivity
     payload.zoneLabel,
     payload.zoneStatus,
     payload.status,
+    payload.isPaused ?? false,
   );
 }
 
@@ -108,4 +127,14 @@ export async function endStrideRunLiveActivity(payload: StrideRunLiveActivityPay
     payload.zoneStatus,
     payload.status,
   );
+}
+
+// Phase 2: Subscribe to lock screen button intents
+export function addRunIntentListener(
+  event: 'onPauseIntent' | 'onResumeIntent' | 'onStopIntent',
+  listener: () => void,
+) {
+  const emitter = getEmitter();
+  if (!emitter) return { remove: () => {} };
+  return emitter.addListener(event, listener) as { remove: () => void };
 }
