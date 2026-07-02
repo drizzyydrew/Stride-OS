@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, zoneTint, zoneTintBg, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { HRZoneEntry, CalibrationOutput } from '../../types/athlete';
@@ -12,21 +13,9 @@ type Props = {
   useKarvonen?: boolean;
 };
 
-const ZONE_COLOR: Record<number, string> = {
-  1: '#4ADE80',
-  2: '#60A5FA',
-  3: '#818CF8',
-  4: '#F59E0B',
-  5: '#F87171',
-};
-
-const ZONE_BG: Record<number, string> = {
-  1: '#052E16',
-  2: '#0C1A3D',
-  3: '#1E0A4A',
-  4: '#451A03',
-  5: '#450A0A',
-};
+// StrideOS never color-codes intensity zones with a red→green ramp (§3.7,
+// §3.9) — all 5 zones use a single Sage accent at increasing opacity.
+const ZONE_COUNT = 5;
 
 function HRZoneRow({
   entry,
@@ -37,8 +26,10 @@ function HRZoneRow({
   isLast:   boolean;
   hasHRMax: boolean;
 }) {
-  const color = ZONE_COLOR[entry.zone] ?? colors.textDim;
-  const bg    = ZONE_BG[entry.zone]    ?? colors.border;
+  const colors = useThemeColors();
+  const row    = useMemo(() => createRowStyles(colors), [colors]);
+  const color  = zoneTint(colors, entry.zone - 1, ZONE_COUNT);
+  const bg     = zoneTintBg(colors, entry.zone - 1, ZONE_COUNT);
 
   const bpmLabel = hasHRMax && entry.minBPM !== null && entry.maxBPM !== null
     ? `${entry.minBPM}–${entry.maxBPM} bpm`
@@ -69,7 +60,8 @@ function HRZoneRow({
   );
 }
 
-const row = StyleSheet.create({
+function createRowStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     flexDirection:   'row',
     gap:             spacing.sm,
@@ -128,9 +120,12 @@ const row = StyleSheet.create({
     color:    colors.textMuted,
     fontSize: 9,
   },
-});
+  });
+}
 
 export default function HRZoneCard({ calibration, useKarvonen }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const zones   = useKarvonen && calibration.karvonenZones
     ? calibration.karvonenZones
     : calibration.hrZones;
@@ -190,7 +185,8 @@ export default function HRZoneCard({ calibration, useKarvonen }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card: {
     padding:  0,
     overflow: 'hidden',
@@ -267,4 +263,5 @@ const styles = StyleSheet.create({
     fontSize:  9,
     textAlign: 'center',
   },
-});
+  });
+}

@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, zoneTint, zoneTintBg, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import { formatPace } from '../../utils/calibrationEngine';
@@ -9,24 +10,6 @@ import type { PaceZoneEntry, CalibrationOutput } from '../../types/athlete';
 
 type Props = {
   calibration: CalibrationOutput;
-};
-
-const ZONE_COLOR: Record<string, string> = {
-  recovery:  '#4ADE80',
-  easy:      '#60A5FA',
-  marathon:  '#818CF8',
-  threshold: '#F59E0B',
-  vo2:       '#F87171',
-  rep:       '#FCA5A5',
-};
-
-const ZONE_BG: Record<string, string> = {
-  recovery:  '#052E16',
-  easy:      '#0C1A3D',
-  marathon:  '#1E0A4A',
-  threshold: '#451A03',
-  vo2:       '#450A0A',
-  rep:       '#3B0404',
 };
 
 const ZONE_ORDER = ['recovery', 'easy', 'marathon', 'threshold', 'vo2', 'rep'];
@@ -40,8 +23,11 @@ function PaceZoneRow({
   entry:   PaceZoneEntry;
   isLast:  boolean;
 }) {
-  const color = ZONE_COLOR[zoneKey] ?? colors.textDim;
-  const bg    = ZONE_BG[zoneKey]    ?? colors.border;
+  const colors = useThemeColors();
+  const row    = useMemo(() => createRowStyles(colors), [colors]);
+  const idx    = Math.max(ZONE_ORDER.indexOf(zoneKey), 0);
+  const color  = zoneTint(colors, idx, ZONE_ORDER.length);
+  const bg     = zoneTintBg(colors, idx, ZONE_ORDER.length);
 
   return (
     <View style={[row.wrap, !isLast && row.bordered]}>
@@ -66,7 +52,8 @@ function PaceZoneRow({
   );
 }
 
-const row = StyleSheet.create({
+function createRowStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     flexDirection:   'row',
     gap:             spacing.sm,
@@ -122,7 +109,8 @@ const row = StyleSheet.create({
     color:    colors.textMuted,
     fontSize: 9,
   },
-});
+  });
+}
 
 const SOURCE_LABELS: Record<string, string> = {
   race_pr:        'Race/TT-derived VDOT · Jack Daniels / Daniels\' Running Formula',
@@ -131,17 +119,21 @@ const SOURCE_LABELS: Record<string, string> = {
   default:        'Population estimate · Enter race PR to improve accuracy',
 };
 
-const CONFIDENCE_COLORS: Record<string, string> = {
-  high:      colors.positive,
-  moderate:  colors.primary,
-  low:       colors.warning,
-  estimated: colors.textDim,
-};
+function confidenceColorMap(colors: ThemeColors): Record<string, string> {
+  return {
+    high:      colors.positive,
+    moderate:  colors.primary,
+    low:       colors.warning,
+    estimated: colors.textDim,
+  };
+}
 
 export default function PaceZoneCard({ calibration }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const orderedKeys    = ZONE_ORDER.filter(k => calibration.paceZones[k]);
   const sourceLabel    = SOURCE_LABELS[calibration.primarySource] ?? calibration.primarySource;
-  const confidenceColor = CONFIDENCE_COLORS[calibration.confidenceLabel] ?? colors.textDim;
+  const confidenceColor = confidenceColorMap(colors)[calibration.confidenceLabel] ?? colors.textDim;
 
   return (
     <Card style={styles.card}>
@@ -190,7 +182,8 @@ export default function PaceZoneCard({ calibration }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card: {
     padding:  0,
     overflow: 'hidden',
@@ -258,4 +251,5 @@ const styles = StyleSheet.create({
     fontSize:  9,
     textAlign: 'center',
   },
-});
+  });
+}

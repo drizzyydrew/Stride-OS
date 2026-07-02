@@ -46,4 +46,4 @@ export function useThemeColors(): ThemeColors {
 }
 
 export type { ThemeColors } from './colors';
-export { zoneTint } from './colors';
+export { zoneTint, zoneTintBg, overlay } from './colors';

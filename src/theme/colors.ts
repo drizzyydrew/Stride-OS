@@ -129,3 +129,21 @@ export function zoneTint(colors: ThemeColors, index: number, count: number): str
   const hex   = Math.round(alpha * 255).toString(16).padStart(2, '0').toUpperCase();
   return `${colors.sage}${hex}`;
 }
+
+/** Low-alpha companion to `zoneTint`, for a zone badge/row's tonal fill
+ *  behind the full-strength `zoneTint` foreground (§13 Badges: "tonal fill"). */
+export function zoneTintBg(colors: ThemeColors, index: number, count: number): string {
+  const steps = Math.max(count - 1, 1);
+  const t     = Math.min(Math.max(index / steps, 0), 1);
+  const alpha = 0.10 + t * 0.12;                          // 10%..22% of sage
+  const hex   = Math.round(alpha * 255).toString(16).padStart(2, '0').toUpperCase();
+  return `${colors.sage}${hex}`;
+}
+
+// ─── Overlay ────────────────────────────────────────────────────────────────
+//
+// A mode-invariant translucent black scrim behind bottom sheets / modals
+// (§3.3 surface.overlay). Not tinted per-theme like other surfaces because
+// its job is purely to dim whatever photo/map/content sits behind it.
+
+export const overlay = 'rgba(0,0,0,0.7)';
