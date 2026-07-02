@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 
@@ -22,6 +23,9 @@ export default function FieldPicker<T extends string>({
   options,
   onChange,
 }: Props<T>) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View>
       <Text style={styles.label}>{label}</Text>
@@ -45,38 +49,40 @@ export default function FieldPicker<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
-  label: {
-    color:         colors.textMuted,
-    fontSize:      11,
-    fontWeight:    FontWeight.medium,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    marginBottom:  spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    gap:           spacing.sm,
-  },
-  pill: {
-    flex:            1,
-    paddingVertical: spacing.md,
-    borderRadius:    Radius.sm,
-    backgroundColor: colors.border,
-    alignItems:      'center',
-  },
-  pillActive: {
-    backgroundColor: colors.primaryDim,
-    borderWidth:     1,
-    borderColor:     colors.primary,
-  },
-  pillText: {
-    color:      colors.textDim,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.medium,
-  },
-  pillTextActive: {
-    color:      colors.text,
-    fontWeight: FontWeight.bold,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    label: {
+      color:         colors.textMuted,
+      fontSize:      11,
+      fontWeight:    FontWeight.medium,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+      marginBottom:  spacing.sm,
+    },
+    row: {
+      flexDirection: 'row',
+      gap:           spacing.sm,
+    },
+    pill: {
+      flex:            1,
+      paddingVertical: spacing.md,
+      borderRadius:    Radius.sm,
+      backgroundColor: colors.border,
+      alignItems:      'center',
+    },
+    pillActive: {
+      backgroundColor: colors.primaryDim,
+      borderWidth:     1,
+      borderColor:     colors.primary,
+    },
+    pillText: {
+      color:      colors.textDim,
+      fontSize:   FontSize.sm,
+      fontWeight: FontWeight.medium,
+    },
+    pillTextActive: {
+      color:      colors.text,
+      fontWeight: FontWeight.bold,
+    },
+  });
+}

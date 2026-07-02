@@ -2,18 +2,21 @@ import { Tabs } from 'expo-router';
 
 import TabIcon from '../../src/navigation/TabIcon';
 import { LAYOUT } from '../../src/constants/layout';
+import { useThemeColors } from '../../src/theme/ThemeContext';
 
 export default function TabsLayout() {
+  const colors = useThemeColors();
+
   return (
     <Tabs
       screenOptions={{
         headerShown:             false,
         tabBarShowLabel:         false,
-        tabBarActiveTintColor:   '#FFFFFF',
-        tabBarInactiveTintColor: '#3D4A5C',
+        tabBarActiveTintColor:   colors.primary,
+        tabBarInactiveTintColor: colors.textDim,
         tabBarStyle: {
-          backgroundColor: '#050B14',
-          borderTopColor:  '#0D1520',
+          backgroundColor: colors.card,
+          borderTopColor:  colors.border,
           borderTopWidth:  1,
           height:          LAYOUT.tabBarHeight,
           paddingBottom:   LAYOUT.tabBarPadBottom,

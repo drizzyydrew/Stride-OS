@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import Button from '../components/ui/Button';
-import { colors } from '../theme/colors';
+import { useThemeColors, type ThemeColors } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { FontSize, FontWeight } from '../theme/tokens';
 
@@ -16,6 +17,9 @@ type Props = {
 };
 
 export default function EmptyState({ icon, title, description, action }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <View style={styles.iconWrap}>
@@ -36,32 +40,34 @@ export default function EmptyState({ icon, title, description, action }: Props) 
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems:        'center',
-    paddingVertical:   spacing.xxl,
-    paddingHorizontal: spacing.xl,
-  },
-  iconWrap: {
-    width:           72,
-    height:          72,
-    borderRadius:    36,
-    backgroundColor: colors.card,
-    alignItems:      'center',
-    justifyContent:  'center',
-    marginBottom:    spacing.xl,
-  },
-  title: {
-    color:        colors.text,
-    fontSize:     FontSize.md,
-    fontWeight:   FontWeight.bold,
-    marginBottom: spacing.sm,
-    textAlign:    'center',
-  },
-  description: {
-    color:      colors.textMuted,
-    fontSize:   FontSize.sm,
-    textAlign:  'center',
-    lineHeight: 20,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      alignItems:        'center',
+      paddingVertical:   spacing.xxl,
+      paddingHorizontal: spacing.xl,
+    },
+    iconWrap: {
+      width:           72,
+      height:          72,
+      borderRadius:    36,
+      backgroundColor: colors.card,
+      alignItems:      'center',
+      justifyContent:  'center',
+      marginBottom:    spacing.xl,
+    },
+    title: {
+      color:        colors.text,
+      fontSize:     FontSize.md,
+      fontWeight:   FontWeight.bold,
+      marginBottom: spacing.sm,
+      textAlign:    'center',
+    },
+    description: {
+      color:      colors.textMuted,
+      fontSize:   FontSize.sm,
+      textAlign:  'center',
+      lineHeight: 20,
+    },
+  });
+}

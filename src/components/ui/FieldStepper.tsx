@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 
@@ -12,6 +13,9 @@ type Props = {
 };
 
 export default function FieldStepper({ label, display, onIncrease, onDecrease }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.row}>
       <View style={styles.left}>
@@ -31,45 +35,47 @@ export default function FieldStepper({ label, display, onIncrease, onDecrease }:
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-  },
-  left: {
-    flex: 1,
-  },
-  label: {
-    color:         colors.textMuted,
-    fontSize:      11,
-    fontWeight:    FontWeight.medium,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    marginBottom:  4,
-  },
-  display: {
-    color:      colors.text,
-    fontSize:   FontSize.xl,
-    fontWeight: FontWeight.bold,
-  },
-  controls: {
-    flexDirection: 'row',
-    gap:           spacing.sm,
-    marginLeft:    spacing.lg,
-  },
-  btn: {
-    width:           40,
-    height:          40,
-    borderRadius:    Radius.sm,
-    backgroundColor: colors.border,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  btnText: {
-    color:      colors.text,
-    fontSize:   FontSize.md,
-    fontWeight: FontWeight.bold,
-    lineHeight: 20,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    row: {
+      flexDirection:  'row',
+      alignItems:     'center',
+      justifyContent: 'space-between',
+    },
+    left: {
+      flex: 1,
+    },
+    label: {
+      color:         colors.textMuted,
+      fontSize:      11,
+      fontWeight:    FontWeight.medium,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+      marginBottom:  4,
+    },
+    display: {
+      color:      colors.text,
+      fontSize:   FontSize.xl,
+      fontWeight: FontWeight.bold,
+    },
+    controls: {
+      flexDirection: 'row',
+      gap:           spacing.sm,
+      marginLeft:    spacing.lg,
+    },
+    btn: {
+      width:           40,
+      height:          40,
+      borderRadius:    Radius.sm,
+      backgroundColor: colors.border,
+      alignItems:      'center',
+      justifyContent:  'center',
+    },
+    btnText: {
+      color:      colors.text,
+      fontSize:   FontSize.md,
+      fontWeight: FontWeight.bold,
+      lineHeight: 20,
+    },
+  });
+}

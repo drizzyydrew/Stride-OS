@@ -1,6 +1,6 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { FontSize } from '../theme/tokens';
 
@@ -9,10 +9,12 @@ type Props = {
 };
 
 export default function LoadingState({ message }: Props) {
+  const colors = useThemeColors();
+
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color={colors.primary} />
-      {message ? <Text style={styles.message}>{message}</Text> : null}
+      {message ? <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text> : null}
     </View>
   );
 }
@@ -25,7 +27,6 @@ const styles = StyleSheet.create({
     gap:            spacing.lg,
   },
   message: {
-    color:    colors.textMuted,
     fontSize: FontSize.sm,
   },
 });

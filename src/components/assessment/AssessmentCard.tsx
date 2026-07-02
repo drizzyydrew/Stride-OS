@@ -7,7 +7,7 @@
 // All calculation logic lives in assessmentEngine.ts + assessmentStore.ts.
 // This component only renders — no scoring logic here.
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 
 import NumberInput from '../ui/NumberInput';
-import { colors }  from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { AssessmentTestDef, AssessmentRating, AssessmentConfidence, AssessmentSide } from '../../types/assessment';
@@ -39,7 +39,7 @@ export type AssessmentCardProps = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function ratingColor(r: AssessmentRating): string {
+function ratingColor(r: AssessmentRating, colors: ThemeColors): string {
   if (r === 'above_expected') return colors.positive;
   if (r === 'expected')       return colors.warning;
   return colors.critical;
@@ -51,7 +51,7 @@ function ratingLabel(r: AssessmentRating): string {
   return 'Below Expected';
 }
 
-function confidenceColor(c: AssessmentConfidence): string {
+function confidenceColor(c: AssessmentConfidence, colors: ThemeColors): string {
   if (c === 'high')     return colors.positive;
   if (c === 'moderate') return colors.warning;
   return colors.textDim;
@@ -66,6 +66,9 @@ function unitLabel(unit: AssessmentTestDef['unit']): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AssessmentCard({ def, latestResult, onSave }: AssessmentCardProps) {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
+
   const isBilateral    = def.sides === 'bilateral';
   const isQuality      = def.unit === 'quality_1_5';
 
@@ -94,8 +97,8 @@ export default function AssessmentCard({ def, latestResult, onSave }: Assessment
         <View style={s.headerLeft}>
           <Text style={s.testName}>{def.label}</Text>
           <View style={s.badgeRow}>
-            <View style={[s.confBadge, { backgroundColor: confidenceColor(def.confidence) + '22' }]}>
-              <Text style={[s.confTxt, { color: confidenceColor(def.confidence) }]}>
+            <View style={[s.confBadge, { backgroundColor: confidenceColor(def.confidence, colors) + '22' }]}>
+              <Text style={[s.confTxt, { color: confidenceColor(def.confidence, colors) }]}>
                 {def.confidence} evidence
               </Text>
             </View>
@@ -104,8 +107,8 @@ export default function AssessmentCard({ def, latestResult, onSave }: Assessment
         </View>
         <View style={s.headerRight}>
           {latestResult ? (
-            <View style={[s.ratingBadge, { backgroundColor: ratingColor(latestResult.rating) + '22' }]}>
-              <Text style={[s.ratingTxt, { color: ratingColor(latestResult.rating) }]}>
+            <View style={[s.ratingBadge, { backgroundColor: ratingColor(latestResult.rating, colors) + '22' }]}>
+              <Text style={[s.ratingTxt, { color: ratingColor(latestResult.rating, colors) }]}>
                 {ratingLabel(latestResult.rating)}
               </Text>
             </View>
@@ -252,7 +255,8 @@ export default function AssessmentCard({ def, latestResult, onSave }: Assessment
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius:    Radius.md,
@@ -409,4 +413,5 @@ const s = StyleSheet.create({
     paddingLeft:     spacing.md,
   },
   interpretTxt: { color: colors.text, fontSize: FontSize.sm, lineHeight: 19 },
-});
+  });
+}

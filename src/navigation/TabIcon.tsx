@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../theme/ThemeContext';
 import { FontWeight } from '../theme/tokens';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -20,6 +20,7 @@ type Props = {
 };
 
 export default function TabIcon({ name, label, focused, color }: Props) {
+  const colors  = useThemeColors();
   const scale   = useSharedValue(focused ? 1 : 0.88);
   const opacity = useSharedValue(focused ? 1 : 0.65);
 
@@ -36,7 +37,7 @@ export default function TabIcon({ name, label, focused, color }: Props) {
   return (
     <Animated.View style={[styles.container, animStyle]}>
       <Ionicons name={name} size={22} color={color} />
-      <View style={[styles.dot, { opacity: focused ? 1 : 0 }]} />
+      <View style={[styles.dot, { backgroundColor: colors.primary, opacity: focused ? 1 : 0 }]} />
       <Text style={[styles.label, { color }]}>{label}</Text>
     </Animated.View>
   );
@@ -49,11 +50,10 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   dot: {
-    width:           3,
-    height:          3,
-    borderRadius:    1.5,
-    backgroundColor: colors.primary,
-    marginTop:       1,
+    width:        3,
+    height:       3,
+    borderRadius: 1.5,
+    marginTop:    1,
   },
   label: {
     fontSize:      9,

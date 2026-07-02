@@ -9,6 +9,7 @@
 import type { Workout }         from '../types/training';
 import type { StrengthSession } from '../types/strength';
 import type { TrainingDay }     from '../types/athlete';
+import { sage, steel }          from '../theme/colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,7 +108,7 @@ export function mapWorkoutsToDates(
       date:     dateStr,
       type:     'run',
       label:    workout.title,
-      color:    '#2563EB',
+      color:    sage,
       workout,
       completed,
     };
@@ -161,7 +162,7 @@ export function mapStrengthToDates(
       date:     dateStr,
       type:     'strength',
       label:    session.title,
-      color:    '#A855F7',
+      color:    steel,
       session,
       completed,
     };

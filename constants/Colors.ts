@@ -1,19 +1,21 @@
-const tintColorLight = '#2f95dc';
-const tintColorDark = '#fff';
+// Default color lookup for the (legacy) `components/Themed` helpers.
+// Values are sourced from the StrideOS V2 design tokens — see
+// docs/design/v2/DESIGN_SYSTEM.md and src/theme/colors.ts.
+import { darkColors, lightColors } from '@/src/theme/colors';
 
 export default {
   light: {
-    text: '#000',
-    background: '#fff',
-    tint: tintColorLight,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorLight,
+    text:            lightColors.text,
+    background:      lightColors.bg,
+    tint:            lightColors.primary,
+    tabIconDefault:  lightColors.textDim,
+    tabIconSelected: lightColors.primary,
   },
   dark: {
-    text: '#fff',
-    background: '#000',
-    tint: tintColorDark,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorDark,
+    text:            darkColors.text,
+    background:      darkColors.bg,
+    tint:            darkColors.primary,
+    tabIconDefault:  darkColors.textDim,
+    tabIconSelected: darkColors.primary,
   },
 };

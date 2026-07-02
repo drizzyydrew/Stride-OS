@@ -6,7 +6,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../theme/ThemeContext';
 import { LAYOUT } from '../constants/layout';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -19,7 +19,8 @@ type Props = {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function FloatingActionButton({ icon, onPress }: Props) {
-  const scale = useSharedValue(1);
+  const colors = useThemeColors();
+  const scale  = useSharedValue(1);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -27,7 +28,7 @@ export default function FloatingActionButton({ icon, onPress }: Props) {
 
   return (
     <AnimatedPressable
-      style={[styles.fab, animStyle]}
+      style={[styles.fab, { backgroundColor: colors.primary, shadowColor: colors.primary }, animStyle]}
       onPress={onPress}
       onPressIn={() => { scale.value = withSpring(0.9, { damping: 12 }); }}
       onPressOut={() => { scale.value = withSpring(1,   { damping: 12 }); }}
@@ -42,10 +43,8 @@ const styles = StyleSheet.create({
     width:           LAYOUT.fabSize,
     height:          LAYOUT.fabSize,
     borderRadius:    LAYOUT.fabSize / 2,
-    backgroundColor: colors.primary,
     alignItems:      'center',
     justifyContent:  'center',
-    shadowColor:     colors.primary,
     shadowOffset:    { width: 0, height: 6 },
     shadowOpacity:   0.45,
     shadowRadius:    12,

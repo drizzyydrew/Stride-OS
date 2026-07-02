@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { Radius, FontWeight } from '../../theme/tokens';
 
@@ -13,34 +14,39 @@ type Props = {
   style?:    ViewStyle;
 };
 
-const VARIANT_BG: Record<Variant, string> = {
-  primary:   colors.primary,
-  secondary: colors.border,
-  danger:    colors.danger,
-};
+function variantBg(variant: Variant, colors: ThemeColors): string {
+  if (variant === 'primary')   return colors.primary;
+  if (variant === 'secondary') return colors.border;
+  return colors.danger;
+}
 
 export default function Button({ label, onPress, variant = 'primary', disabled = false, style }: Props) {
-  const bg = disabled ? colors.border : VARIANT_BG[variant];
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
+
+  const bg = disabled ? colors.border : variantBg(variant, colors);
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={[styles.button, { backgroundColor: bg }, style]}
+      style={[s.button, { backgroundColor: bg }, style]}
     >
-      <Text style={styles.label}>{label}</Text>
+      <Text style={s.label}>{label}</Text>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    padding:      spacing.lg,
-    borderRadius: Radius.md,
-    alignItems:   'center',
-  },
-  label: {
-    color:      colors.text,
-    fontWeight: FontWeight.black,
-    fontSize:   15,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    button: {
+      padding:      spacing.lg,
+      borderRadius: Radius.md,
+      alignItems:   'center',
+    },
+    label: {
+      color:      colors.text,
+      fontWeight: FontWeight.black,
+      fontSize:   15,
+    },
+  });
+}

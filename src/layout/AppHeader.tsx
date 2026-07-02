@@ -6,7 +6,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { FontSize, FontWeight } from '../theme/tokens';
 import { LAYOUT } from '../constants/layout';
@@ -18,6 +18,7 @@ type Props = {
 };
 
 export default function AppHeader({ title, meta, rightAction }: Props) {
+  const colors     = useThemeColors();
   const translateY = useSharedValue(-8);
   const opacity    = useSharedValue(0);
 
@@ -35,10 +36,10 @@ export default function AppHeader({ title, meta, rightAction }: Props) {
     <Animated.View style={[styles.header, animStyle]}>
       <View style={styles.inner}>
         <View style={styles.row}>
-          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{title}</Text>
           {rightAction && <View style={styles.action}>{rightAction}</View>}
         </View>
-        {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+        {meta ? <Text style={[styles.meta, { color: colors.textDim }]}>{meta}</Text> : null}
       </View>
     </Animated.View>
   );
@@ -61,7 +62,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   title: {
-    color:      colors.text,
     fontSize:   FontSize.hero,
     fontWeight: FontWeight.black,
     flex:       1,
@@ -70,7 +70,6 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   meta: {
-    color:    colors.textDim,
     fontSize: FontSize.sm,
     marginTop: 4,
   },
