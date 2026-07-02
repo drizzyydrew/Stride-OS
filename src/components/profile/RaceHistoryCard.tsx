@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import { vdotFromRacePR } from '../../utils/calibrationEngine';
@@ -35,6 +36,8 @@ function PRRow({
   pr:        RacePR;
   onRemove?: (id: string) => void;
 }) {
+  const colors = useThemeColors();
+  const row    = useMemo(() => createRowStyles(colors), [colors]);
   const vdot = vdotFromRacePR(pr.distanceMeters, pr.timeSeconds);
 
   return (
@@ -76,7 +79,8 @@ function PRRow({
   );
 }
 
-const row = StyleSheet.create({
+function createRowStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -167,9 +171,12 @@ const row = StyleSheet.create({
     color:    colors.textDim,
     fontSize: 10,
   },
-});
+  });
+}
 
 export default function RaceHistoryCard({ racePRs, onAdd, onRemove }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const sorted = [...racePRs].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
@@ -220,7 +227,8 @@ export default function RaceHistoryCard({ racePRs, onAdd, onRemove }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -275,4 +283,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.sm,
   },
-});
+  });
+}

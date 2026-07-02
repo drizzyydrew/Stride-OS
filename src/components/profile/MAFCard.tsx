@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
 import { formatPace } from '../../utils/calibrationEngine';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { MAFTestRecord } from '../../types/athlete';
@@ -23,14 +24,16 @@ function formatRelativeDate(dateStr: string): string {
 }
 
 // Aerobic base quality from HR drift
-function driftQuality(drift: number): { label: string; color: string } {
+function driftQuality(drift: number, colors: ThemeColors): { label: string; color: string } {
   if (drift <= 3)  return { label: 'Excellent', color: colors.positive };
-  if (drift <= 7)  return { label: 'Good',      color: '#60A5FA'       };
+  if (drift <= 7)  return { label: 'Good',      color: colors.primary  };
   if (drift <= 12) return { label: 'Fair',       color: colors.warning  };
   return             { label: 'Poor',       color: colors.critical };
 }
 
 export default function MAFCard({ tests, mafHR, onAdd }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const sorted = [...tests].sort((a, b) =>
     new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
@@ -81,15 +84,15 @@ export default function MAFCard({ tests, mafHR, onAdd }: Props) {
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
-              <Text style={[styles.statValue, { color: driftQuality(latest.hrDriftBPM).color }]}>
+              <Text style={[styles.statValue, { color: driftQuality(latest.hrDriftBPM, colors).color }]}>
                 +{latest.hrDriftBPM} bpm
               </Text>
               <Text style={styles.statLabel}>HR drift</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
-              <Text style={[styles.statValue, { color: driftQuality(latest.hrDriftBPM).color }]}>
-                {driftQuality(latest.hrDriftBPM).label}
+              <Text style={[styles.statValue, { color: driftQuality(latest.hrDriftBPM, colors).color }]}>
+                {driftQuality(latest.hrDriftBPM, colors).label}
               </Text>
               <Text style={styles.statLabel}>base quality</Text>
             </View>
@@ -133,7 +136,8 @@ export default function MAFCard({ tests, mafHR, onAdd }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   header:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.xs },
   headerLeft:    { gap: 2 },
   title:         { color: colors.text, fontSize: FontSize.md, fontWeight: FontWeight.bold },
@@ -160,4 +164,5 @@ const styles = StyleSheet.create({
   histPace:      { color: colors.text, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   histDrift:     { color: colors.textMuted, fontSize: FontSize.xs },
   citation:      { color: colors.textSubtle, fontSize: 8, marginTop: spacing.md, fontStyle: 'italic' },
-});
+  });
+}

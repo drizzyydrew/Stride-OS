@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 
@@ -63,6 +63,8 @@ type CitationRowProps = {
 };
 
 function CitationRow({ entry }: CitationRowProps) {
+  const colors = useThemeColors();
+  const row    = useMemo(() => createRowStyles(colors), [colors]);
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -87,7 +89,8 @@ function CitationRow({ entry }: CitationRowProps) {
   );
 }
 
-const row = StyleSheet.create({
+function createRowStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap:        { borderBottomWidth: 1, borderBottomColor: colors.border },
   header:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.md },
   dot:         { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary, flexShrink: 0 },
@@ -98,9 +101,12 @@ const row = StyleSheet.create({
   formulaText: { color: colors.primary, fontSize: 9, fontFamily: 'monospace', lineHeight: 15 },
   note:        { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 16 },
   citation:    { color: colors.textSubtle, fontSize: 8, lineHeight: 13, fontStyle: 'italic' },
-});
+  });
+}
 
 export default function SourcesMethodsCard() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [open, setOpen] = useState(false);
 
   return (
@@ -132,11 +138,13 @@ export default function SourcesMethodsCard() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title:     { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
   chevron:   { color: colors.primary, fontSize: FontSize.xs },
   content:   { marginTop: spacing.md, gap: spacing.xs },
   preamble:  { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 16, marginBottom: spacing.sm },
   footer:    { color: colors.textSubtle, fontSize: 8, lineHeight: 13, marginTop: spacing.md, fontStyle: 'italic' },
-});
+  });
+}

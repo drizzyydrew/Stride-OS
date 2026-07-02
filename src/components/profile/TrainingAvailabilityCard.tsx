@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { TrainingDay } from '../../types/athlete';
@@ -23,6 +24,8 @@ const SESSION_LABEL: Record<number, string> = {
 };
 
 function DayDot({ day, active }: { day: TrainingDay; active: boolean }) {
+  const colors = useThemeColors();
+  const dot    = useMemo(() => createDotStyles(colors), [colors]);
   return (
     <View style={[dot.wrap, active && dot.active]}>
       <Text style={[dot.label, active && dot.labelActive]}>{day[0]}</Text>
@@ -30,7 +33,8 @@ function DayDot({ day, active }: { day: TrainingDay; active: boolean }) {
   );
 }
 
-const dot = StyleSheet.create({
+function createDotStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     width:          32,
     height:         32,
@@ -52,13 +56,16 @@ const dot = StyleSheet.create({
   labelActive: {
     color: colors.primary,
   },
-});
+  });
+}
 
 export default function TrainingAvailabilityCard({
   availableDays,
   targetSessions,
   onEdit,
 }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const activeSet = new Set(availableDays);
   const sessionNote = SESSION_LABEL[targetSessions] ?? `${targetSessions} sessions/week`;
 
@@ -112,7 +119,8 @@ export default function TrainingAvailabilityCard({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -182,4 +190,5 @@ const styles = StyleSheet.create({
     fontSize:  FontSize.sm,
     textAlign: 'center',
   },
-});
+  });
+}

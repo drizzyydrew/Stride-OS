@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { AthleteProfile } from '../../types/athlete';
@@ -18,6 +19,8 @@ const SEX_LABEL: Record<string, string> = {
 };
 
 function StatCell({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  const colors = useThemeColors();
+  const sc     = useMemo(() => createScStyles(colors), [colors]);
   return (
     <View style={sc.wrap}>
       <Text style={sc.value}>{value}</Text>
@@ -27,7 +30,8 @@ function StatCell({ label, value, sub }: { label: string; value: string; sub?: s
   );
 }
 
-const sc = StyleSheet.create({
+function createScStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     flex:       1,
     alignItems: 'center',
@@ -50,9 +54,12 @@ const sc = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-});
+  });
+}
 
 export default function ProfileOverviewCard({ profile }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const heightFt = profile.heightCm > 0
     ? `${Math.floor(profile.heightCm / 30.48)}'${Math.round((profile.heightCm % 30.48) / 2.54)}"`
     : '—';
@@ -123,8 +130,10 @@ export default function ProfileOverviewCard({ profile }: Props) {
 }
 
 function SensitivityBadge({ label, value }: { label: string; value: number }) {
+  const colors = useThemeColors();
+  const sb     = useMemo(() => createSbStyles(colors), [colors]);
   const text  = value < 0.8 ? 'LOW' : value > 1.2 ? 'HIGH' : 'BASELINE';
-  const color = value > 1.2 ? colors.warning : value < 0.8 ? '#60A5FA' : colors.positive;
+  const color = value > 1.2 ? colors.warning : value < 0.8 ? colors.primary : colors.positive;
   const bg    = value > 1.2 ? colors.warningDim : value < 0.8 ? colors.primaryDim : colors.positiveDim;
 
   return (
@@ -134,7 +143,8 @@ function SensitivityBadge({ label, value }: { label: string; value: number }) {
   );
 }
 
-const sb = StyleSheet.create({
+function createSbStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     paddingHorizontal: spacing.sm,
     paddingVertical:   3,
@@ -145,9 +155,11 @@ const sb = StyleSheet.create({
     fontWeight:    FontWeight.black,
     letterSpacing: 0.4,
   },
-});
+  });
+}
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -206,4 +218,5 @@ const styles = StyleSheet.create({
     color:    colors.warning,
     fontSize: FontSize.sm,
   },
-});
+  });
+}
