@@ -28,12 +28,15 @@ export default function Root({ children }: { children: ReactNode }) {
   );
 }
 
+// Matches lightColors.bg / darkColors.bg from src/theme/colors.ts. Plain CSS
+// (not the theme hook) because this runs in Node during static HTML render,
+// before React — and before the ThemeProvider — ever mounts.
 const responsiveBackground = `
 body {
-  background-color: #fff;
+  background-color: #EFE7DA;
 }
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: #000;
+    background-color: #161513;
   }
 }`;

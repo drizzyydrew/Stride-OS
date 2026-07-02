@@ -18,7 +18,7 @@ import Button from '../../../src/components/ui/Button';
 import Card from '../../../src/components/ui/Card';
 import Badge from '../../../src/components/ui/Badge';
 
-import { useThemeColors, type ThemeColors } from '../../../src/theme/ThemeContext';
+import { useThemeColors, overlay, type ThemeColors } from '../../../src/theme/ThemeContext';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../../src/theme/tokens';
 import type { WorkoutIntensity } from '../../../src/types/training';
@@ -590,7 +590,7 @@ function createStyles(colors: ThemeColors) {
   // Modal
   modalOverlay: {
     flex:            1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: overlay,
     justifyContent:  'flex-end',
   },
   modalSheet: {

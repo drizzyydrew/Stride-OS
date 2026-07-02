@@ -16,7 +16,7 @@ import Card from '../../../src/components/ui/Card';
 import Badge from '../../../src/components/ui/Badge';
 import Button from '../../../src/components/ui/Button';
 
-import { useThemeColors, type ThemeColors } from '../../../src/theme/ThemeContext';
+import { useThemeColors, overlay, type ThemeColors } from '../../../src/theme/ThemeContext';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../../src/theme/tokens';
 import { todayDateKey } from '../../../src/types/checkin';
@@ -469,7 +469,7 @@ function createStyles(colors: ThemeColors) {
   rationaleBody:  { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 18, marginBottom: spacing.sm },
   progressionNote:{ color: colors.textDim, fontSize: FontSize.xs, fontStyle: 'italic' },
   actions:        { gap: spacing.sm, marginBottom: spacing.cardGap },
-  modalOverlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalOverlay:   { flex: 1, backgroundColor: overlay, justifyContent: 'flex-end' },
   modalSheet:     { backgroundColor: colors.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.xl, paddingBottom: 40 },
   logForm:        { gap: spacing.md },
   logFormTitle:   { color: colors.text, fontSize: FontSize.lg, fontWeight: FontWeight.bold },

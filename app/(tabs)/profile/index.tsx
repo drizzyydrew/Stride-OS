@@ -35,7 +35,7 @@ import TrainingAvailabilityCard from '../../../src/components/profile/TrainingAv
 import RaceHistoryCard          from '../../../src/components/profile/RaceHistoryCard';
 
 import { formatPace }           from '../../../src/utils/calibrationEngine';
-import { useThemeColors, type ThemeColors } from '../../../src/theme/ThemeContext';
+import { useThemeColors, overlay, type ThemeColors } from '../../../src/theme/ThemeContext';
 import { spacing }              from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 
@@ -438,7 +438,7 @@ function createModalStyles(colors: ThemeColors) {
   overlay: {
     flex:            1,
     justifyContent:  'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: overlay,
   },
   sheet: {
     backgroundColor:      colors.card,
