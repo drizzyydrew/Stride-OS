@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { CalibrationOutput, CalibrationConfidence } from '../../types/athlete';
@@ -11,19 +12,23 @@ type Props = {
   onRecalibrate?: () => void;
 };
 
-const CONFIDENCE_COLOR: Record<CalibrationConfidence, string> = {
-  high:      colors.positive,
-  moderate:  '#60A5FA',
-  low:       colors.warning,
-  estimated: colors.textDim,
-};
+function confidenceColorMap(colors: ThemeColors): Record<CalibrationConfidence, string> {
+  return {
+    high:      colors.positive,
+    moderate:  colors.primary,
+    low:       colors.warning,
+    estimated: colors.textDim,
+  };
+}
 
-const CONFIDENCE_BG: Record<CalibrationConfidence, string> = {
-  high:      colors.positiveDim,
-  moderate:  colors.primaryDim,
-  low:       colors.warningDim,
-  estimated: colors.border,
-};
+function confidenceBgMap(colors: ThemeColors): Record<CalibrationConfidence, string> {
+  return {
+    high:      colors.positiveDim,
+    moderate:  colors.primaryDim,
+    low:       colors.warningDim,
+    estimated: colors.border,
+  };
+}
 
 const CONFIDENCE_LABEL: Record<CalibrationConfidence, string> = {
   high:      'HIGH CONFIDENCE',
@@ -41,6 +46,8 @@ const SOURCE_LABEL: Record<string, string> = {
 
 // Confidence ring (simple segmented arc via borders).
 function ConfidenceRing({ score, color }: { score: number; color: string }) {
+  const colors = useThemeColors();
+  const ring   = useMemo(() => createRingStyles(colors), [colors]);
   const pct = Math.round(score);
   return (
     <View style={ring.wrap}>
@@ -54,7 +61,8 @@ function ConfidenceRing({ score, color }: { score: number; color: string }) {
   );
 }
 
-const ring = StyleSheet.create({
+function createRingStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     alignItems: 'center',
   },
@@ -84,9 +92,12 @@ const ring = StyleSheet.create({
     fontSize: 8,
     lineHeight: 10,
   },
-});
+  });
+}
 
 function MissingInputRow({ text }: { text: string }) {
+  const colors = useThemeColors();
+  const mi     = useMemo(() => createMiStyles(colors), [colors]);
   return (
     <View style={mi.row}>
       <View style={mi.dot} />
@@ -95,7 +106,8 @@ function MissingInputRow({ text }: { text: string }) {
   );
 }
 
-const mi = StyleSheet.create({
+function createMiStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems:    'flex-start',
@@ -115,9 +127,13 @@ const mi = StyleSheet.create({
     fontSize:   FontSize.sm,
     lineHeight: 19,
   },
-});
+  });
+}
 
 export default function CalibrationStatusCard({ calibration, onRecalibrate }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (!calibration) {
     return (
       <Card>
@@ -136,8 +152,8 @@ export default function CalibrationStatusCard({ calibration, onRecalibrate }: Pr
     );
   }
 
-  const color  = CONFIDENCE_COLOR[calibration.confidenceLabel];
-  const bg     = CONFIDENCE_BG[calibration.confidenceLabel];
+  const color  = confidenceColorMap(colors)[calibration.confidenceLabel];
+  const bg     = confidenceBgMap(colors)[calibration.confidenceLabel];
   const label  = CONFIDENCE_LABEL[calibration.confidenceLabel];
   const isStale = calibration.staleDays > 60;
 
@@ -236,7 +252,8 @@ export default function CalibrationStatusCard({ calibration, onRecalibrate }: Pr
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   sectionLabel: {
     color:         colors.textMuted,
     fontSize:      11,
@@ -365,4 +382,5 @@ const styles = StyleSheet.create({
     fontSize:   FontSize.base,
     fontWeight: FontWeight.bold,
   },
-});
+  });
+}
