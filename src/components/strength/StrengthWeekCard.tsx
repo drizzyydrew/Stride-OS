@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, zoneTint, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { StrengthWeek } from '../../types/strength';
@@ -13,20 +14,30 @@ type Props = {
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-const GOAL_COLORS: Record<string, string> = {
-  force_production:  '#C084FC',
-  hypertrophy:       '#60A5FA',
-  tendon_capacity:   '#FB923C',
-  running_economy:   colors.positive,
-  injury_resilience: '#34D399',
-  power:             '#F472B6',
-  maintenance:       colors.textMuted,
-  deload:            colors.warning,
-  taper_support:     colors.primary,
-};
+// Goals without a dedicated semantic meaning (success/warning/CTA/neutral)
+// are categorical dots along the Sage tint ramp rather than invented hues
+// (§3.1, §3.9) — the ramp order below is arbitrary but stable, matching
+// StrengthSessionCard's goal mapping.
+const CATEGORICAL_GOAL_ORDER = ['force_production', 'hypertrophy', 'tendon_capacity', 'injury_resilience', 'power'];
+
+function goalColorFor(goal: string, colors: ThemeColors): string {
+  switch (goal) {
+    case 'running_economy': return colors.positive;
+    case 'maintenance':     return colors.textMuted;
+    case 'deload':          return colors.warning;
+    case 'taper_support':   return colors.primary;
+    default: {
+      const idx = CATEGORICAL_GOAL_ORDER.indexOf(goal);
+      return zoneTint(colors, idx === -1 ? 0 : idx, CATEGORICAL_GOAL_ORDER.length);
+    }
+  }
+}
 
 export default function StrengthWeekCard({ strengthWeek, completedSessions, currentWeek }: Props) {
-  const goalColor    = GOAL_COLORS[strengthWeek.primaryGoal] ?? colors.primary;
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const goalColor    = goalColorFor(strengthWeek.primaryGoal, colors);
   const completedSet = new Set(completedSessions);
 
   return (
@@ -86,7 +97,8 @@ export default function StrengthWeekCard({ strengthWeek, completedSessions, curr
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card:         { marginBottom: spacing.cardGap, borderLeftWidth: 3 },
   header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   title:        { color: colors.text, fontSize: FontSize.md, fontWeight: FontWeight.bold },
@@ -103,4 +115,5 @@ const styles = StyleSheet.create({
   statLabel:    { color: colors.textDim, fontSize: FontSize.xs },
   statDivider:  { width: 1, height: 28, backgroundColor: colors.border },
   phaseNote:    { color: colors.textMuted, fontSize: FontSize.xs, fontStyle: 'italic', marginTop: spacing.xs },
-});
+  });
+}

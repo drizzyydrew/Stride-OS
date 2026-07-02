@@ -1,12 +1,12 @@
 import { ReactNode } from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleSheet, View, StyleProp, ViewStyle } from 'react-native';
 import { useThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { Radius } from '../../theme/tokens';
 
 type Props = {
   children: ReactNode;
-  style?:   ViewStyle;
+  style?:   StyleProp<ViewStyle>;
 };
 
 export default function Card({ children, style }: Props) {

@@ -145,6 +145,8 @@ export default function StrengthSessionDetailScreen() {
   const { sessionIndex } = useLocalSearchParams<{ sessionIndex: string }>();
   const idx    = parseInt(sessionIndex ?? '0', 10);
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const {
     fatigueScore, recoveryScore, trainingPhase, progressionLevel,
@@ -281,6 +283,8 @@ export default function StrengthSessionDetailScreen() {
             skipped={logRecord.skipped}
             skippedReason={logRecord.skippedReason}
             source={logRecord.source}
+            colors={colors}
+            styles={styles}
           />
         )}
 
@@ -386,6 +390,8 @@ export default function StrengthSessionDetailScreen() {
                 : session.targetDuration}
               onSave={handleLogSave}
               onCancel={() => setShowLogModal(false)}
+              colors={colors}
+              styles={styles}
             />
           </View>
         </View>
@@ -409,7 +415,10 @@ export default function StrengthSessionDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+type Styles = ReturnType<typeof createStyles>;
+
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   safe:           { flex: 1, backgroundColor: colors.bg },
   scroll:         { padding: spacing.lg, paddingBottom: 120 },
   errorText:      { color: colors.critical, fontSize: FontSize.base, padding: spacing.xl },
@@ -417,7 +426,7 @@ const styles = StyleSheet.create({
   backText:       { color: colors.primary, fontSize: FontSize.sm },
   headerCard:     { marginBottom: spacing.cardGap },
   headerTop:      { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
-  sessionType:    { color: '#C084FC', fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 1 },
+  sessionType:    { color: colors.primary, fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 1 },
   duration:       { color: colors.textDim, fontSize: FontSize.sm },
   sessionTitle:   { color: colors.text, fontSize: 22, fontWeight: FontWeight.black, marginBottom: spacing.xs },
   purpose:        { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 18 },
@@ -455,8 +464,8 @@ const styles = StyleSheet.create({
   cues:           { gap: 4, marginBottom: spacing.sm },
   cue:            { color: colors.textDim, fontSize: FontSize.xs, lineHeight: 16 },
   progressionRule:{ color: colors.primary, fontSize: FontSize.xs, lineHeight: 16 },
-  rationaleCard:  { marginBottom: spacing.cardGap, borderLeftWidth: 3, borderLeftColor: '#C084FC' },
-  rationaleTitle: { color: '#C084FC', fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.5, marginBottom: spacing.sm, textTransform: 'uppercase' },
+  rationaleCard:  { marginBottom: spacing.cardGap, borderLeftWidth: 3, borderLeftColor: colors.primary },
+  rationaleTitle: { color: colors.primary, fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.5, marginBottom: spacing.sm, textTransform: 'uppercase' },
   rationaleBody:  { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 18, marginBottom: spacing.sm },
   progressionNote:{ color: colors.textDim, fontSize: FontSize.xs, fontStyle: 'italic' },
   actions:        { gap: spacing.sm, marginBottom: spacing.cardGap },
@@ -476,4 +485,5 @@ const styles = StyleSheet.create({
   skipTitle:      { color: colors.text, fontSize: FontSize.lg, fontWeight: FontWeight.bold, marginBottom: spacing.md },
   skipReason:     { padding: spacing.md, backgroundColor: colors.bg, borderRadius: 10, marginBottom: spacing.sm },
   skipReasonText: { color: colors.text, fontSize: FontSize.base },
-});
+  });
+}

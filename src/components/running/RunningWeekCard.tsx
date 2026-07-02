@@ -4,10 +4,11 @@
 // Shows: focus, run count, planned miles, completion, phase, key workout, long run day.
 // Below: explanation of why this week matters.
 
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
-import { colors }  from '../../theme/colors';
+import { useThemeColors, zoneTint, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { TrainingPhase } from '../../types/training';
@@ -29,18 +30,28 @@ export type RunningWeekCardProps = {
 };
 
 // ─── Phase config ────────────────────────────────────────────────────────────
+//
+// Base → Build → Peak → Taper is a progression, not a red/green traffic
+// light (§3.1, §3.9), so it steps along the Sage tint ramp. Deload is a
+// caution/reduced-load state and gets the Amber warning token instead.
 
-const PHASE_BADGE: Record<TrainingPhase, { bg: string; text: string; label: string }> = {
-  base:   { bg: '#0C2340', text: '#60A5FA', label: 'BASE'   },
-  build:  { bg: '#1E3A8A', text: '#93C5FD', label: 'BUILD'  },
-  peak:   { bg: '#3B0764', text: '#C084FC', label: 'PEAK'   },
-  deload: { bg: '#451A03', text: '#FCD34D', label: 'DELOAD' },
-  taper:  { bg: '#052E16', text: '#4ADE80', label: 'TAPER'  },
-};
+const PHASE_ORDER: TrainingPhase[] = ['base', 'build', 'peak', 'taper'];
+
+function phaseBadge(phase: TrainingPhase, colors: ThemeColors): { bg: string; text: string; label: string } {
+  if (phase === 'deload') {
+    return { bg: colors.warningDim, text: colors.warning, label: 'DELOAD' };
+  }
+  const idx = PHASE_ORDER.indexOf(phase);
+  return {
+    bg:    zoneTint(colors, idx === -1 ? 0 : idx, PHASE_ORDER.length),
+    text:  colors.text,
+    label: phase.toUpperCase(),
+  };
+}
 
 // ─── Stat tile ───────────────────────────────────────────────────────────────
 
-function StatTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function StatTile({ label, value, sub, s }: { label: string; value: string; sub?: string; s: ReturnType<typeof createStyles> }) {
   return (
     <View style={s.tile}>
       <Text style={s.tileValue}>{value}</Text>
@@ -56,7 +67,10 @@ export default function RunningWeekCard({
   phase, currentWeek, totalMileage, sessionCount, completedCount,
   keyWorkout, longRunDay, focusSummary, phaseRationale, weekPriority, isDeloadWeek,
 }: RunningWeekCardProps) {
-  const badge       = PHASE_BADGE[phase];
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
+
+  const badge       = phaseBadge(phase, colors);
   const remaining   = sessionCount - completedCount;
   const progressPct = sessionCount > 0 ? completedCount / sessionCount : 0;
 
@@ -84,16 +98,19 @@ export default function RunningWeekCard({
             label="Runs"
             value={`${sessionCount}`}
             sub={`${completedCount} done`}
+            s={s}
           />
           <View style={s.divider} />
           <StatTile
             label="Key Workout"
             value={keyWorkout.length > 14 ? keyWorkout.split(' ').slice(0, 2).join(' ') : keyWorkout}
+            s={s}
           />
           <View style={s.divider} />
           <StatTile
             label="Long Run"
             value={longRunDay ?? '—'}
+            s={s}
           />
         </View>
 
@@ -127,7 +144,8 @@ export default function RunningWeekCard({
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card:    { marginBottom: spacing.cardGap },
   header: {
     flexDirection:  'row',
@@ -136,13 +154,13 @@ const s = StyleSheet.create({
     marginBottom:   spacing.md,
   },
   deloadBadge: {
-    backgroundColor: '#451A03',
+    backgroundColor: colors.warningDim,
     borderRadius:    Radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical:   2,
   },
   deloadTxt: {
-    color:         '#FCD34D',
+    color:         colors.warning,
     fontSize:      9,
     fontWeight:    FontWeight.black,
     letterSpacing: 0.6,
@@ -263,4 +281,5 @@ const s = StyleSheet.create({
     fontWeight: FontWeight.medium,
     lineHeight: 18,
   },
-});
+  });
+}

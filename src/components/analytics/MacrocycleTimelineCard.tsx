@@ -246,7 +246,8 @@ function createPgStyles(colors: ThemeColors) {
     color:    colors.textSubtle,
     fontSize: 8,
   },
-});
+  });
+}
 
 // ─── Week detail panel ─────────────────────────────────────────────────────────
 

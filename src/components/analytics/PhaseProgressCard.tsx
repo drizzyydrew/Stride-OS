@@ -1,10 +1,11 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import ProgressBar from '../ui/ProgressBar';
 import StatRow from '../ui/StatRow';
-import { colors } from '../../theme/colors';
+import { useThemeColors, zoneTint, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { TrainingPhase } from '../../types/training';
@@ -19,13 +20,26 @@ type Props = {
 
 type PhaseMeta = { label: string; bg: string; text: string; barColor: string };
 
-const PHASE_META: Record<TrainingPhase, PhaseMeta> = {
-  base:   { label: 'Base',   bg: '#0C2340', text: '#60A5FA', barColor: '#2563EB' },
-  build:  { label: 'Build',  bg: '#1E3A8A', text: '#93C5FD', barColor: '#3B82F6' },
-  peak:   { label: 'Peak',   bg: '#3B0764', text: '#C084FC', barColor: '#9333EA' },
-  deload: { label: 'Deload', bg: '#451A03', text: '#FCD34D', barColor: '#F59E0B' },
-  taper:  { label: 'Taper',  bg: '#052E16', text: '#4ADE80', barColor: '#22C55E' },
+// Phases never get a rainbow of hues (§3.7, §3.9) — a single Sage accent at
+// increasing opacity per phase communicates progression through the macrocycle.
+const PHASE_TINT_ORDER: TrainingPhase[] = ['base', 'build', 'peak', 'deload', 'taper'];
+const PHASE_LABELS: Record<TrainingPhase, string> = {
+  base:   'Base',
+  build:  'Build',
+  peak:   'Peak',
+  deload: 'Deload',
+  taper:  'Taper',
 };
+
+function phaseMeta(phase: TrainingPhase, colors: ThemeColors): PhaseMeta {
+  const idx   = PHASE_TINT_ORDER.indexOf(phase);
+  const text  = zoneTint(colors, idx, PHASE_TINT_ORDER.length);
+  const steps = Math.max(PHASE_TINT_ORDER.length - 1, 1);
+  const t     = Math.min(Math.max(idx / steps, 0), 1);
+  const alpha = 0.10 + t * 0.18; // 10%..28%
+  const hex   = Math.round(alpha * 255).toString(16).padStart(2, '0').toUpperCase();
+  return { label: PHASE_LABELS[phase], bg: `${colors.sage}${hex}`, text, barColor: text };
+}
 
 export default function PhaseProgressCard({
   phase,
@@ -34,7 +48,10 @@ export default function PhaseProgressCard({
   totalWeeks,
   weeksRemaining,
 }: Props) {
-  const meta       = PHASE_META[phase];
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const meta       = phaseMeta(phase, colors);
   const progressPct = Math.round(Math.min(1, Math.max(0, planProgress)) * 100);
 
   return (
@@ -58,7 +75,8 @@ export default function PhaseProgressCard({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -70,4 +88,5 @@ const styles = StyleSheet.create({
     fontSize:   FontSize.md,
     fontWeight: FontWeight.bold,
   },
-});
+  });
+}

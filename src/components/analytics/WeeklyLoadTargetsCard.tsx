@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, zoneTint, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { WeeklyLoadTargets, IntensityTargets } from '../../types/periodization';
@@ -26,6 +27,9 @@ function MileageRange({
   maxMiles:     number;
   currentMiles: number;
 }) {
+  const colors = useThemeColors();
+  const mr     = useMemo(() => createMrStyles(colors), [colors]);
+
   // Normalize current vs. max for the indicator bar.
   const fraction = maxMiles > 0 ? Math.min(currentMiles / maxMiles, 1) : 0;
   const inRange  = currentMiles >= minMiles && currentMiles <= maxMiles;
@@ -63,7 +67,8 @@ function MileageRange({
   );
 }
 
-const mr = StyleSheet.create({
+function createMrStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     gap: spacing.xs,
   },
@@ -118,7 +123,8 @@ const mr = StyleSheet.create({
     fontSize:   FontSize.sm,
     fontWeight: FontWeight.medium,
   },
-});
+  });
+}
 
 // ─── Long run target ──────────────────────────────────────────────────────────
 
@@ -133,6 +139,9 @@ function LongRunRange({
   maxMiles:    number;
   pctOfWeekly: number;
 }) {
+  const colors = useThemeColors();
+  const lr     = useMemo(() => createLrStyles(colors), [colors]);
+
   return (
     <View style={lr.wrap}>
       <View style={lr.header}>
@@ -160,7 +169,8 @@ function LongRunRange({
   );
 }
 
-const lr = StyleSheet.create({
+function createLrStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
@@ -213,15 +223,16 @@ const lr = StyleSheet.create({
     fontSize: FontSize.sm,
     width:    16,
   },
-});
+  });
+}
 
 // ─── Intensity distribution targets ───────────────────────────────────────────
 
-const INTENSITY_COLORS = {
-  easy:     '#2563EB',
-  moderate: '#7C3AED',
-  hard:     '#F59E0B',
-} as const;
+const INTENSITY_ORDER: (keyof IntensityTargets)[] = ['easy', 'moderate', 'hard'];
+
+function intensityColor(key: keyof IntensityTargets, colors: ThemeColors): string {
+  return zoneTint(colors, INTENSITY_ORDER.indexOf(key), INTENSITY_ORDER.length);
+}
 
 const INTENSITY_LABELS = {
   easy:     'EASY',
@@ -230,6 +241,9 @@ const INTENSITY_LABELS = {
 } as const;
 
 function IntensityDistributionTarget({ targets }: { targets: IntensityTargets }) {
+  const colors = useThemeColors();
+  const id     = useMemo(() => createIdStyles(colors), [colors]);
+
   const items = (
     [
       ['easy',     targets.easy],
@@ -247,7 +261,7 @@ function IntensityDistributionTarget({ targets }: { targets: IntensityTargets })
         {items.map(([key, frac]) => (
           <View
             key={key}
-            style={[id.barSegment, { flex: frac, backgroundColor: INTENSITY_COLORS[key] }]}
+            style={[id.barSegment, { flex: frac, backgroundColor: intensityColor(key, colors) }]}
           />
         ))}
       </View>
@@ -256,7 +270,7 @@ function IntensityDistributionTarget({ targets }: { targets: IntensityTargets })
       <View style={id.labelRow}>
         {items.map(([key, frac]) => (
           <View key={key} style={[id.labelItem, { flex: frac }]}>
-            <Text style={[id.labelPct, { color: INTENSITY_COLORS[key] }]}>
+            <Text style={[id.labelPct, { color: intensityColor(key, colors) }]}>
               {Math.round(frac * 100)}%
             </Text>
             <Text style={id.labelName}>{INTENSITY_LABELS[key]}</Text>
@@ -267,7 +281,8 @@ function IntensityDistributionTarget({ targets }: { targets: IntensityTargets })
   );
 }
 
-const id = StyleSheet.create({
+function createIdStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
@@ -307,15 +322,19 @@ const id = StyleSheet.create({
     fontWeight:    FontWeight.black,
     letterSpacing: 0.4,
   },
-});
+  });
+}
 
 // ─── Adaptive ceiling badge ───────────────────────────────────────────────────
 
 function CeilingBadge({ ceiling, reason }: { ceiling: number; reason?: string }) {
+  const colors = useThemeColors();
+  const cb     = useMemo(() => createCbStyles(colors), [colors]);
+
   if (ceiling >= 1.0) return null;
 
   const pct   = Math.round(ceiling * 100);
-  const color = ceiling < 0.75 ? colors.critical : ceiling < 0.88 ? colors.warning : '#60A5FA';
+  const color = ceiling < 0.75 ? colors.critical : ceiling < 0.88 ? colors.warning : colors.primary;
   const bg    = ceiling < 0.75 ? colors.criticalDim : ceiling < 0.88 ? colors.warningDim : colors.primaryDim;
 
   return (
@@ -329,7 +348,8 @@ function CeilingBadge({ ceiling, reason }: { ceiling: number; reason?: string })
   );
 }
 
-const cb = StyleSheet.create({
+function createCbStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     flexDirection:  'row',
     alignItems:     'flex-start',
@@ -358,11 +378,15 @@ const cb = StyleSheet.create({
     color:    colors.textDim,
     fontSize: FontSize.sm,
   },
-});
+  });
+}
 
 // ─── Load range strip ─────────────────────────────────────────────────────────
 
 function LoadRange({ min, max }: { min: number; max: number }) {
+  const colors = useThemeColors();
+  const lo     = useMemo(() => createLoStyles(colors), [colors]);
+
   return (
     <View style={lo.wrap}>
       <Text style={lo.label}>TARGET TSS RANGE</Text>
@@ -371,7 +395,8 @@ function LoadRange({ min, max }: { min: number; max: number }) {
   );
 }
 
-const lo = StyleSheet.create({
+function createLoStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -391,7 +416,8 @@ const lo = StyleSheet.create({
     fontSize:   FontSize.sm,
     fontWeight: FontWeight.black,
   },
-});
+  });
+}
 
 // ─── Main card ─────────────────────────────────────────────────────────────────
 
@@ -404,6 +430,9 @@ const PHASE_LABEL_MAP: Record<TrainingPhase, string> = {
 };
 
 export default function WeeklyLoadTargetsCard({ targets, trainingPhase, currentMiles }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Card>
       {/* Header */}
@@ -444,7 +473,8 @@ export default function WeeklyLoadTargetsCard({ targets, trainingPhase, currentM
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -462,4 +492,5 @@ const styles = StyleSheet.create({
     fontSize:   FontSize.sm,
     fontWeight: FontWeight.medium,
   },
-});
+  });
+}

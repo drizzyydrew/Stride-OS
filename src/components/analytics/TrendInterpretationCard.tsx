@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { TimelineInterpretation, OverallState, TimelineAnalysis } from '../../types/timeline';
@@ -12,19 +13,23 @@ type Props = {
 
 // ─── Visual config ─────────────────────────────────────────────────────────────
 
-const STATE_COLOR: Record<OverallState, string> = {
-  thriving: colors.positive,
-  adapting: '#60A5FA',
-  stressed: colors.warning,
-  at_risk:  colors.critical,
-};
+function stateColorMap(colors: ThemeColors): Record<OverallState, string> {
+  return {
+    thriving: colors.positive,
+    adapting: colors.primary,
+    stressed: colors.warning,
+    at_risk:  colors.critical,
+  };
+}
 
-const STATE_BG: Record<OverallState, string> = {
-  thriving: colors.positiveDim,
-  adapting: '#0C1A3D',
-  stressed: colors.warningDim,
-  at_risk:  colors.criticalDim,
-};
+function stateBgMap(colors: ThemeColors): Record<OverallState, string> {
+  return {
+    thriving: colors.positiveDim,
+    adapting: colors.primaryDim,
+    stressed: colors.warningDim,
+    at_risk:  colors.criticalDim,
+  };
+}
 
 const STATE_LABEL: Record<OverallState, string> = {
   thriving: 'THRIVING',
@@ -42,6 +47,9 @@ interface StatProps {
 }
 
 function StatPill({ label, value, color }: StatProps) {
+  const colors = useThemeColors();
+  const pill   = useMemo(() => createPillStyles(colors), [colors]);
+
   return (
     <View style={pill.wrap}>
       <Text style={pill.label}>{label}</Text>
@@ -50,7 +58,8 @@ function StatPill({ label, value, color }: StatProps) {
   );
 }
 
-const pill = StyleSheet.create({
+function createPillStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     flex:            1,
     backgroundColor: colors.border,
@@ -70,7 +79,8 @@ const pill = StyleSheet.create({
     fontSize:   FontSize.base,
     fontWeight: FontWeight.black,
   },
-});
+  });
+}
 
 // ─── Section block ─────────────────────────────────────────────────────────────
 
@@ -79,6 +89,9 @@ function Section({ label, body, accentColor }: {
   body:        string;
   accentColor?: string;
 }) {
+  const colors  = useThemeColors();
+  const section = useMemo(() => createSectionStyles(colors), [colors]);
+
   return (
     <View style={section.wrap}>
       <Text style={[section.label, accentColor ? { color: accentColor } : {}]}>{label}</Text>
@@ -87,7 +100,8 @@ function Section({ label, body, accentColor }: {
   );
 }
 
-const section = StyleSheet.create({
+function createSectionStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     paddingTop:     spacing.md,
     borderTopWidth: 1,
@@ -105,7 +119,8 @@ const section = StyleSheet.create({
     fontSize:   FontSize.sm,
     lineHeight: 20,
   },
-});
+  });
+}
 
 // ─── Main card ─────────────────────────────────────────────────────────────────
 
@@ -119,12 +134,16 @@ function dirLabel(direction: 'improving' | 'worsening' | 'stable'): string {
 }
 
 export default function TrendInterpretationCard({ analysis }: Props) {
+  const colors  = useThemeColors();
+  const styles  = useMemo(() => createStyles(colors), [colors]);
+  const section = useMemo(() => createSectionStyles(colors), [colors]);
+
   if (!analysis.hasEnoughData && analysis.snapshots.length === 0) return null;
 
   const { interpretation, fatigue, recovery, adherence, snapshots } = analysis;
   const interp = interpretation;
-  const stateColor = STATE_COLOR[interp.overallState];
-  const stateBg    = STATE_BG[interp.overallState];
+  const stateColor = stateColorMap(colors)[interp.overallState];
+  const stateBg    = stateBgMap(colors)[interp.overallState];
 
   // Latest snapshot for the stats row
   const latest = snapshots[snapshots.length - 1];
@@ -168,12 +187,12 @@ export default function TrendInterpretationCard({ analysis }: Props) {
           <StatPill
             label="ADHERENCE"
             value={`${Math.round(latest.adherence * 100)}%`}
-            color={adherenceColor(latest.adherence)}
+            color={adherenceColor(latest.adherence, colors)}
           />
           <StatPill
             label="ACWR"
             value={latest.acwr.toFixed(2)}
-            color={acwrColor(latest.acwr)}
+            color={acwrColor(latest.acwr, colors)}
           />
         </View>
       )}
@@ -227,14 +246,14 @@ export default function TrendInterpretationCard({ analysis }: Props) {
 
 // ─── Inline color helpers (avoid circular import) ─────────────────────────────
 
-function adherenceColor(v: number): string {
+function adherenceColor(v: number, colors: ThemeColors): string {
   if (v >= 0.85) return colors.positive;
-  if (v >= 0.65) return '#60A5FA';
+  if (v >= 0.65) return colors.primary;
   if (v >= 0.50) return colors.warning;
   return colors.critical;
 }
 
-function acwrColor(v: number): string {
+function acwrColor(v: number, colors: ThemeColors): string {
   if (v < 0.8)  return colors.warning;
   if (v <= 1.3) return colors.positive;
   if (v <= 1.5) return colors.warning;
@@ -243,7 +262,8 @@ function acwrColor(v: number): string {
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -320,4 +340,5 @@ const styles = StyleSheet.create({
     fontSize:   FontSize.sm,
     lineHeight: 20,
   },
-});
+  });
+}

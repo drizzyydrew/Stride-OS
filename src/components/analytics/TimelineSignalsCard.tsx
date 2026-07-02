@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { TimelineSignal, TimelineSignalSeverity, TimelineSignalType } from '../../types/timeline';
@@ -13,19 +13,23 @@ type Props = {
 
 // ─── Visual config ─────────────────────────────────────────────────────────────
 
-const SEV_COLOR: Record<TimelineSignalSeverity, string> = {
-  critical: colors.critical,
-  warning:  colors.warning,
-  positive: colors.positive,
-  info:     colors.textDim,
-};
+function sevColor(colors: ThemeColors): Record<TimelineSignalSeverity, string> {
+  return {
+    critical: colors.critical,
+    warning:  colors.warning,
+    positive: colors.positive,
+    info:     colors.textDim,
+  };
+}
 
-const SEV_BG: Record<TimelineSignalSeverity, string> = {
-  critical: colors.criticalDim,
-  warning:  colors.warningDim,
-  positive: colors.positiveDim,
-  info:     colors.border,
-};
+function sevBg(colors: ThemeColors): Record<TimelineSignalSeverity, string> {
+  return {
+    critical: colors.criticalDim,
+    warning:  colors.warningDim,
+    positive: colors.positiveDim,
+    info:     colors.border,
+  };
+}
 
 const SEV_LABEL: Record<TimelineSignalSeverity, string> = {
   critical: 'URGENT',
@@ -47,10 +51,12 @@ const TYPE_ICON: Record<TimelineSignalType, string> = {
 // ─── Single signal row (expandable) ───────────────────────────────────────────
 
 function SignalRow({ signal, isLast }: { signal: TimelineSignal; isLast: boolean }) {
+  const colors = useThemeColors();
+  const row    = useMemo(() => createRowStyles(colors), [colors]);
   const [open, setOpen] = useState(false);
 
-  const color = SEV_COLOR[signal.severity];
-  const bg    = SEV_BG[signal.severity];
+  const color = sevColor(colors)[signal.severity];
+  const bg    = sevBg(colors)[signal.severity];
   const icon  = TYPE_ICON[signal.type];
 
   return (
@@ -113,7 +119,8 @@ function SignalRow({ signal, isLast }: { signal: TimelineSignal; isLast: boolean
   );
 }
 
-const row = StyleSheet.create({
+function createRowStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     overflow: 'hidden',
   },
@@ -213,11 +220,15 @@ const row = StyleSheet.create({
     borderRadius: Radius.sm,
     padding:      spacing.md,
   },
-});
+  });
+}
 
 // ─── Main card ─────────────────────────────────────────────────────────────────
 
 export default function TimelineSignalsCard({ signals }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (signals.length === 0) return null;
 
   const criticalCount = signals.filter(s => s.severity === 'critical').length;
@@ -265,7 +276,8 @@ export default function TimelineSignalsCard({ signals }: Props) {
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card: {
     padding: 0,
     overflow: 'hidden',
@@ -306,4 +318,5 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-});
+  });
+}

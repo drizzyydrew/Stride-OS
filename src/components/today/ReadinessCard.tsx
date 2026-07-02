@@ -167,4 +167,5 @@ function createStyles(colors: ThemeColors) {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
   },
-});
+  });
+}

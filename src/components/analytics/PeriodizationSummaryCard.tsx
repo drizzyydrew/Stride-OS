@@ -83,7 +83,8 @@ function SafeguardRow({ sg, isLast }: { sg: ProgressionSafeguard; isLast: boolea
   );
 }
 
-const sgr = StyleSheet.create({
+function createSgrStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     gap: spacing.xs,
   },
@@ -132,13 +133,19 @@ const sgr = StyleSheet.create({
     fontSize:   FontSize.sm,
     lineHeight: 20,
   },
-});
+  });
+}
 
 // ─── Integrity flag row ───────────────────────────────────────────────────────
 
 function IntegrityFlagRow({ flag }: { flag: PhaseIntegrityFlag }) {
+  const colors = useThemeColors();
+  const ifr    = useMemo(() => createIfrStyles(colors), [colors]);
+
   const isProtected = flag.protected;
-  const color       = isProtected ? colors.positive : '#60A5FA';
+  // "Protected" phase segments use Positive (locked/safe); flexible/active
+  // segments use Sage — the state/progress accent, never a stray blue hue.
+  const color       = isProtected ? colors.positive : colors.sage;
   const bg          = isProtected ? colors.positiveDim : colors.primaryDim;
   const icon        = isProtected ? '🔒' : '⚡';
 
@@ -150,7 +157,8 @@ function IntegrityFlagRow({ flag }: { flag: PhaseIntegrityFlag }) {
   );
 }
 
-const ifr = StyleSheet.create({
+function createIfrStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems:    'flex-start',
@@ -168,7 +176,8 @@ const ifr = StyleSheet.create({
     fontSize:   FontSize.sm,
     lineHeight: 20,
   },
-});
+  });
+}
 
 // ─── Rationale section ────────────────────────────────────────────────────────
 
@@ -177,6 +186,9 @@ function RationaleSection({ label, body, accentColor }: {
   body:        string;
   accentColor?: string;
 }) {
+  const colors = useThemeColors();
+  const rs     = useMemo(() => createRsStyles(colors), [colors]);
+
   return (
     <View style={rs.wrap}>
       <Text style={[rs.label, accentColor ? { color: accentColor } : {}]}>{label}</Text>
@@ -185,7 +197,8 @@ function RationaleSection({ label, body, accentColor }: {
   );
 }
 
-const rs = StyleSheet.create({
+function createRsStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
@@ -203,7 +216,8 @@ const rs = StyleSheet.create({
     fontSize:   FontSize.sm,
     lineHeight: 20,
   },
-});
+  });
+}
 
 // ─── Main card ─────────────────────────────────────────────────────────────────
 
@@ -215,8 +229,11 @@ export default function PeriodizationSummaryCard({
   trainingPhase,
   weeksRemaining,
 }: Props) {
-  const phaseColor = PHASE_COLOR[trainingPhase];
-  const phaseBg    = PHASE_BG[trainingPhase];
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const phaseAccent  = phaseColor(trainingPhase, colors);
+  const phaseTileBg  = phaseBg(trainingPhase, colors);
 
   return (
     <Card>
@@ -225,8 +242,8 @@ export default function PeriodizationSummaryCard({
         <View style={styles.headerLeft}>
           <Text style={styles.sectionLabel}>PERIODIZATION SUMMARY</Text>
           <View style={styles.titleRow}>
-            <View style={[styles.phaseBadge, { backgroundColor: phaseBg }]}>
-              <Text style={[styles.phaseText, { color: phaseColor }]}>{PHASE_NAME[trainingPhase]}</Text>
+            <View style={[styles.phaseBadge, { backgroundColor: phaseTileBg }]}>
+              <Text style={[styles.phaseText, { color: phaseAccent }]}>{PHASE_NAME[trainingPhase]}</Text>
             </View>
             <Text style={styles.title}>
               Block {mesocycle.blockNumber}  ·  W{mesocycle.weekInBlock}/4
@@ -269,8 +286,8 @@ export default function PeriodizationSummaryCard({
 
       {/* Rationale: key focus highlighted first */}
       <View style={styles.rationaleSection}>
-        <View style={[styles.keyFocusBox, { borderColor: phaseColor + '40' }]}>
-          <Text style={[styles.keyFocusLabel, { color: phaseColor }]}>KEY FOCUS THIS WEEK</Text>
+        <View style={[styles.keyFocusBox, { borderColor: phaseAccent + '40' }]}>
+          <Text style={[styles.keyFocusLabel, { color: phaseAccent }]}>KEY FOCUS THIS WEEK</Text>
           <Text style={[styles.keyFocusBody, { color: colors.text }]}>{rationale.keyFocus}</Text>
         </View>
 
@@ -279,7 +296,7 @@ export default function PeriodizationSummaryCard({
         <RationaleSection
           label="SUCCESS CRITERIA"
           body={rationale.successCriteria}
-          accentColor={phaseColor}
+          accentColor={phaseAccent}
         />
       </View>
     </Card>
@@ -288,7 +305,8 @@ export default function PeriodizationSummaryCard({
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -397,4 +415,5 @@ const styles = StyleSheet.create({
     fontSize:   FontSize.sm,
     lineHeight: 20,
   },
-});
+  });
+}

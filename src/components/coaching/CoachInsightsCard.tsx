@@ -45,7 +45,8 @@ export default function CoachInsightsCard({ insights, maxVisible = 3 }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   header: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -69,4 +70,5 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontStyle:  'italic',
   },
-});
+  });
+}

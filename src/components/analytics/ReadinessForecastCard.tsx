@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { ReadinessForecast, FatigueTrajectory, OverreachingRisk } from '../../types/forecast';
@@ -12,25 +13,34 @@ type Props = {
   risk:      OverreachingRisk;
 };
 
-const RISK_COLOR: Record<OverreachingRisk['level'], string> = {
-  low:      colors.positive,
-  moderate: colors.warning,
-  high:     colors.critical,
-};
+function riskColor(level: OverreachingRisk['level'], colors: ThemeColors): string {
+  const RISK_COLOR: Record<OverreachingRisk['level'], string> = {
+    low:      colors.positive,
+    moderate: colors.warning,
+    high:     colors.critical,
+  };
+  return RISK_COLOR[level];
+}
 
-const RISK_BG: Record<OverreachingRisk['level'], string> = {
-  low:      colors.positiveDim,
-  moderate: colors.warningDim,
-  high:     colors.criticalDim,
-};
+function riskBg(level: OverreachingRisk['level'], colors: ThemeColors): string {
+  const RISK_BG: Record<OverreachingRisk['level'], string> = {
+    low:      colors.positiveDim,
+    moderate: colors.warningDim,
+    high:     colors.criticalDim,
+  };
+  return RISK_BG[level];
+}
 
-function dotColor(value: number): string {
+function dotColor(value: number, colors: ThemeColors): string {
   if (value > 70) return colors.critical;
   if (value > 50) return colors.warning;
   return colors.positive;
 }
 
 export default function ReadinessForecastCard({ readiness, fatigue, risk }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Card>
       <Text style={styles.cardTitle}>PERFORMANCE FORECAST</Text>
@@ -59,7 +69,7 @@ export default function ReadinessForecastCard({ readiness, fatigue, risk }: Prop
             {fatigue.trajectory.map(pt => (
               <View
                 key={pt.weeksFromNow}
-                style={[styles.dot, { backgroundColor: dotColor(pt.value) }]}
+                style={[styles.dot, { backgroundColor: dotColor(pt.value, colors) }]}
               />
             ))}
           </View>
@@ -68,11 +78,11 @@ export default function ReadinessForecastCard({ readiness, fatigue, risk }: Prop
       </View>
 
       {/* Overreaching risk */}
-      <View style={[styles.riskBanner, { backgroundColor: RISK_BG[risk.level] }]}>
+      <View style={[styles.riskBanner, { backgroundColor: riskBg(risk.level, colors) }]}>
         <View style={styles.riskHeader}>
           <Text style={styles.label}>Overreaching Risk</Text>
-          <View style={[styles.riskBadge, { backgroundColor: RISK_COLOR[risk.level] + '22' }]}>
-            <Text style={[styles.riskBadgeText, { color: RISK_COLOR[risk.level] }]}>
+          <View style={[styles.riskBadge, { backgroundColor: riskColor(risk.level, colors) + '22' }]}>
+            <Text style={[styles.riskBadgeText, { color: riskColor(risk.level, colors) }]}>
               {risk.level.toUpperCase()}
             </Text>
           </View>
@@ -83,7 +93,8 @@ export default function ReadinessForecastCard({ readiness, fatigue, risk }: Prop
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   cardTitle: {
     color:         colors.textMuted,
     fontSize:      11,
@@ -153,4 +164,5 @@ const styles = StyleSheet.create({
     fontWeight:    FontWeight.black,
     letterSpacing: 0.6,
   },
-});
+  });
+}

@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
 import CoachInsightCard from './CoachInsightCard';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { WeeklyCoachSummary, WeekGrade } from '../../types/coaching';
@@ -12,28 +13,37 @@ type Props = {
 };
 
 // ─── Grade styling ────────────────────────────────────────────────────────────
+// A-F grade is a status signal (great week → bad week), so it maps onto the
+// same semantic scale used elsewhere: Positive/Sage/Warning/Critical — never
+// a decorative rainbow.
 
-const GRADE_COLOR: Record<WeekGrade, string> = {
-  A: '#4ADE80',   // green
-  B: '#60A5FA',   // blue
-  C: '#F59E0B',   // amber
-  D: '#F87171',   // red-light
-  F: '#DC2626',   // red
-};
+function gradeColor(colors: ThemeColors): Record<WeekGrade, string> {
+  return {
+    A: colors.positive,
+    B: colors.sage,
+    C: colors.warning,
+    D: colors.critical,
+    F: colors.critical,
+  };
+}
 
-const GRADE_BG: Record<WeekGrade, string> = {
-  A: '#052E16',
-  B: '#0C1A3D',
-  C: '#451A03',
-  D: '#450A0A',
-  F: '#450A0A',
-};
+function gradeBg(colors: ThemeColors): Record<WeekGrade, string> {
+  return {
+    A: colors.positiveDim,
+    B: colors.sage + '22',
+    C: colors.warningDim,
+    D: colors.criticalDim,
+    F: colors.criticalDim,
+  };
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function WeeklyCoachCard({ summary }: Props) {
-  const gradeColor = GRADE_COLOR[summary.grade];
-  const gradeBg    = GRADE_BG[summary.grade];
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const gradeColorVal = gradeColor(colors)[summary.grade];
+  const gradeBgVal    = gradeBg(colors)[summary.grade];
 
   return (
     <View>
@@ -45,8 +55,8 @@ export default function WeeklyCoachCard({ summary }: Props) {
             <Text style={styles.cardTitle}>WEEKLY SUMMARY</Text>
             <Text style={styles.headline}>{summary.headline}</Text>
           </View>
-          <View style={[styles.gradeBadge, { backgroundColor: gradeBg }]}>
-            <Text style={[styles.gradeText, { color: gradeColor }]}>{summary.grade}</Text>
+          <View style={[styles.gradeBadge, { backgroundColor: gradeBgVal }]}>
+            <Text style={[styles.gradeText, { color: gradeColorVal }]}>{summary.grade}</Text>
           </View>
         </View>
 
@@ -55,14 +65,14 @@ export default function WeeklyCoachCard({ summary }: Props) {
           <Text style={styles.sectionLabel}>THIS WEEK</Text>
           {summary.observations.map((obs, i) => (
             <View key={i} style={styles.obsRow}>
-              <View style={[styles.dot, { backgroundColor: gradeColor }]} />
+              <View style={[styles.dot, { backgroundColor: gradeColorVal }]} />
               <Text style={styles.obsText}>{obs}</Text>
             </View>
           ))}
         </View>
 
         {/* Next week focus */}
-        <View style={[styles.focusBanner, { borderColor: gradeColor + '33' }]}>
+        <View style={[styles.focusBanner, { borderColor: gradeColorVal + '33' }]}>
           <Text style={styles.sectionLabel}>NEXT WEEK PRIORITY</Text>
           <Text style={styles.focusText}>{summary.nextWeekFocus}</Text>
         </View>
@@ -78,7 +88,8 @@ export default function WeeklyCoachCard({ summary }: Props) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -159,4 +170,5 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontWeight: FontWeight.medium,
   },
-});
+  });
+}

@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { RaceReadinessSummary, RaceReadinessDimensions } from '../../types/coaching';
@@ -11,20 +12,26 @@ type Props = {
 };
 
 // ─── Visual config ────────────────────────────────────────────────────────────
+// "on_track" was previously a bespoke blue — Sage carries "state / in-progress"
+// meaning per the design system, sitting between Positive and Warning.
 
-const LABEL_COLOR: Record<RaceReadinessSummary['label'], string> = {
-  race_ready: colors.positive,
-  on_track:   '#60A5FA',
-  needs_work: colors.warning,
-  not_ready:  colors.critical,
-};
+function raceLabelColor(colors: ThemeColors): Record<RaceReadinessSummary['label'], string> {
+  return {
+    race_ready: colors.positive,
+    on_track:   colors.sage,
+    needs_work: colors.warning,
+    not_ready:  colors.critical,
+  };
+}
 
-const LABEL_BG: Record<RaceReadinessSummary['label'], string> = {
-  race_ready: colors.positiveDim,
-  on_track:   '#0C1A3D',
-  needs_work: colors.warningDim,
-  not_ready:  colors.criticalDim,
-};
+function raceLabelBg(colors: ThemeColors): Record<RaceReadinessSummary['label'], string> {
+  return {
+    race_ready: colors.positiveDim,
+    on_track:   colors.sage + '22',
+    needs_work: colors.warningDim,
+    not_ready:  colors.criticalDim,
+  };
+}
 
 const LABEL_TEXT: Record<RaceReadinessSummary['label'], string> = {
   race_ready: 'RACE READY',
@@ -43,10 +50,10 @@ const DIM_LABEL: Record<keyof RaceReadinessDimensions, string> = {
 
 // ─── Dimension bar row ────────────────────────────────────────────────────────
 
-function DimRow({ label, value }: { label: string; value: number }) {
+function DimRow({ label, value, colors, dimStyles }: { label: string; value: number; colors: ThemeColors; dimStyles: ReturnType<typeof createDimStyles> }) {
   const color =
     value >= 75 ? colors.positive :
-    value >= 55 ? '#60A5FA'       :
+    value >= 55 ? colors.sage     :
     value >= 40 ? colors.warning  :
     colors.critical;
 
@@ -64,7 +71,8 @@ function DimRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-const dimStyles = StyleSheet.create({
+function createDimStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   row: {
     marginBottom: spacing.sm,
     gap:          spacing.xs,
@@ -96,13 +104,18 @@ const dimStyles = StyleSheet.create({
   empty: {
     backgroundColor: 'transparent',
   },
-});
+  });
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function RaceReadinessCard({ readiness }: Props) {
-  const labelColor = LABEL_COLOR[readiness.label];
-  const labelBg    = LABEL_BG[readiness.label];
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const dimStyles = useMemo(() => createDimStyles(colors), [colors]);
+
+  const labelColorVal = raceLabelColor(colors)[readiness.label];
+  const labelBgVal    = raceLabelBg(colors)[readiness.label];
 
   return (
     <Card>
@@ -111,13 +124,13 @@ export default function RaceReadinessCard({ readiness }: Props) {
         <View>
           <Text style={styles.cardTitle}>RACE READINESS</Text>
           <View style={styles.scoreRow}>
-            <Text style={[styles.score, { color: labelColor }]}>{readiness.overallScore}</Text>
+            <Text style={[styles.score, { color: labelColorVal }]}>{readiness.overallScore}</Text>
             <Text style={styles.scoreUnit}>/100</Text>
           </View>
         </View>
         <View style={styles.headerRight}>
-          <View style={[styles.labelBadge, { backgroundColor: labelBg }]}>
-            <Text style={[styles.labelText, { color: labelColor }]}>
+          <View style={[styles.labelBadge, { backgroundColor: labelBgVal }]}>
+            <Text style={[styles.labelText, { color: labelColorVal }]}>
               {LABEL_TEXT[readiness.label]}
             </Text>
           </View>
@@ -133,7 +146,7 @@ export default function RaceReadinessCard({ readiness }: Props) {
         <Text style={styles.sectionLabel}>READINESS DIMENSIONS</Text>
         {(Object.entries(readiness.dimensions) as [keyof RaceReadinessDimensions, number][]).map(
           ([key, value]) => (
-            <DimRow key={key} label={DIM_LABEL[key]} value={value} />
+            <DimRow key={key} label={DIM_LABEL[key]} value={value} colors={colors} dimStyles={dimStyles} />
           ),
         )}
       </View>
@@ -143,7 +156,7 @@ export default function RaceReadinessCard({ readiness }: Props) {
         <Text style={styles.sectionLabel}>KEY OBSERVATIONS</Text>
         {readiness.keyInsights.map((insight, i) => (
           <View key={i} style={styles.insightRow}>
-            <View style={[styles.bullet, { backgroundColor: labelColor }]} />
+            <View style={[styles.bullet, { backgroundColor: labelColorVal }]} />
             <Text style={styles.insightText}>{insight}</Text>
           </View>
         ))}
@@ -154,7 +167,8 @@ export default function RaceReadinessCard({ readiness }: Props) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -238,4 +252,5 @@ const styles = StyleSheet.create({
     fontSize:   FontSize.sm,
     lineHeight: 19,
   },
-});
+  });
+}

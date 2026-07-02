@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { RaceTimePrediction, ForecastTrendDirection } from '../../types/forecast';
@@ -11,11 +12,14 @@ type Props = {
   confidence:  number;
 };
 
-const TREND_COLOR: Record<ForecastTrendDirection, string> = {
-  improving: colors.positive,
-  stable:    colors.textDim,
-  declining: colors.warning,
-};
+function trendColor(dir: ForecastTrendDirection, colors: ThemeColors): string {
+  const TREND_COLOR: Record<ForecastTrendDirection, string> = {
+    improving: colors.positive,
+    stable:    colors.textDim,
+    declining: colors.warning,
+  };
+  return TREND_COLOR[dir];
+}
 
 const TREND_SYMBOL: Record<ForecastTrendDirection, string> = {
   improving: '↑',
@@ -24,6 +28,9 @@ const TREND_SYMBOL: Record<ForecastTrendDirection, string> = {
 };
 
 export default function RaceForecastCard({ predictions, confidence }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const shared = predictions[0];
 
   return (
@@ -40,7 +47,7 @@ export default function RaceForecastCard({ predictions, confidence }: Props) {
           <Text style={styles.distanceLabel}>{p.distanceLabel}</Text>
           <View style={styles.right}>
             <Text style={styles.timeValue}>{p.formattedTime}</Text>
-            <Text style={[styles.trendSymbol, { color: TREND_COLOR[p.trend] }]}>
+            <Text style={[styles.trendSymbol, { color: trendColor(p.trend, colors) }]}>
               {TREND_SYMBOL[p.trend]}
             </Text>
           </View>
@@ -54,7 +61,8 @@ export default function RaceForecastCard({ predictions, confidence }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   header: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -115,4 +123,5 @@ const styles = StyleSheet.create({
     marginTop:  spacing.md,
     fontStyle:  'italic',
   },
-});
+  });
+}

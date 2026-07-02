@@ -3,9 +3,10 @@
 // Mirrors StrengthReadinessCard design for the Running/Training screen.
 // Shows fatigue, recovery, soreness bars + readiness level + today's advice.
 
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
-import { colors }  from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 
@@ -34,47 +35,53 @@ function getReadiness(
   return 'optimal';
 }
 
-const READINESS_CONFIG: Record<ReadinessLevel, {
+// "Good" narrates an in-progress/neutral state (Sage, §2.2), not a status
+// alert, so it gets a Sage tonal tint rather than an invented blue. "Low" is
+// a caution state, so it shares the Amber warning token with "moderate"
+// rather than inventing a second orange (§3.7).
+function readinessConfig(colors: ThemeColors): Record<ReadinessLevel, {
   label:  string;
   color:  string;
   bg:     string;
   advice: string;
-}> = {
-  optimal:  {
-    label:  'Optimal',
-    color:  colors.positive,
-    bg:     colors.positiveDim,
-    advice: 'Body is primed — execute today\'s session at planned intensity.',
-  },
-  good: {
-    label:  'Good',
-    color:  '#60A5FA',
-    bg:     '#0C2340',
-    advice: 'Proceed as planned. Check in mid-run and ease off if needed.',
-  },
-  moderate: {
-    label:  'Moderate',
-    color:  colors.warning,
-    bg:     colors.warningDim,
-    advice: 'Run at the easier end of your target zone. Prioritize feel over pace.',
-  },
-  low: {
-    label:  'Low',
-    color:  '#FB923C',
-    bg:     '#431407',
-    advice: 'Recovery run or rest only. Pushing hard today risks compounding fatigue.',
-  },
-  rest: {
-    label:  'Rest',
-    color:  colors.critical,
-    bg:     colors.criticalDim,
-    advice: 'Take a full rest day. Accumulated fatigue is too high to train effectively.',
-  },
-};
+}> {
+  return {
+    optimal:  {
+      label:  'Optimal',
+      color:  colors.positive,
+      bg:     colors.positiveDim,
+      advice: 'Body is primed — execute today\'s session at planned intensity.',
+    },
+    good: {
+      label:  'Good',
+      color:  colors.sage,
+      bg:     `${colors.sage}22`,
+      advice: 'Proceed as planned. Check in mid-run and ease off if needed.',
+    },
+    moderate: {
+      label:  'Moderate',
+      color:  colors.warning,
+      bg:     colors.warningDim,
+      advice: 'Run at the easier end of your target zone. Prioritize feel over pace.',
+    },
+    low: {
+      label:  'Low',
+      color:  colors.warning,
+      bg:     colors.warningDim,
+      advice: 'Recovery run or rest only. Pushing hard today risks compounding fatigue.',
+    },
+    rest: {
+      label:  'Rest',
+      color:  colors.critical,
+      bg:     colors.criticalDim,
+      advice: 'Take a full rest day. Accumulated fatigue is too high to train effectively.',
+    },
+  };
+}
 
 function BarRow({
-  label, value, max, color,
-}: { label: string; value: number; max: number; color: string }) {
+  label, value, max, color, s,
+}: { label: string; value: number; max: number; color: string; s: ReturnType<typeof createStyles> }) {
   const pct = Math.min(1, Math.max(0, value / max));
   return (
     <View style={s.barRow}>
@@ -93,8 +100,11 @@ function BarRow({
 export default function RunningReadinessCard({
   fatigue, recovery, soreness, acwr, isRestDay, weeksToRace,
 }: Props) {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
+
   const level  = getReadiness(fatigue, recovery, soreness, acwr);
-  const config = READINESS_CONFIG[level];
+  const config = readinessConfig(colors)[level];
 
   return (
     <Card style={s.card}>
@@ -113,12 +123,14 @@ export default function RunningReadinessCard({
           value={100 - fatigue}
           max={100}
           color={fatigue > 70 ? colors.critical : colors.positive}
+          s={s}
         />
         <BarRow
           label="Recovery"
           value={recovery}
           max={100}
           color={recovery < 40 ? colors.critical : colors.positive}
+          s={s}
         />
         {soreness !== null && (
           <BarRow
@@ -126,6 +138,7 @@ export default function RunningReadinessCard({
             value={10 - soreness}
             max={10}
             color={soreness >= 7 ? colors.warning : colors.positive}
+            s={s}
           />
         )}
         <BarRow
@@ -133,6 +146,7 @@ export default function RunningReadinessCard({
           value={Math.min(acwr, 2) * 50}
           max={100}
           color={acwr > 1.3 ? colors.critical : acwr > 1.1 ? colors.warning : colors.positive}
+          s={s}
         />
       </View>
 
@@ -149,7 +163,8 @@ export default function RunningReadinessCard({
   );
 }
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card:      { marginBottom: spacing.cardGap },
   header:    {
     flexDirection:  'row',
@@ -193,7 +208,7 @@ const s = StyleSheet.create({
     textAlign:  'right',
   },
   restNote: {
-    color:      '#60A5FA',
+    color:      colors.sage,
     fontSize:   FontSize.xs,
     marginTop:  spacing.sm,
     fontStyle:  'italic',
@@ -204,4 +219,5 @@ const s = StyleSheet.create({
     marginTop: spacing.sm,
     fontStyle: 'italic',
   },
-});
+  });
+}

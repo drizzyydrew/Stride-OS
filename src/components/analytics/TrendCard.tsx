@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
 import TrendPill from '../ui/TrendPill';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { MetricTrend, TrendSeverity } from '../../types/analytics';
@@ -15,15 +16,20 @@ type Props = {
   description?: string;
 };
 
-const SEVERITY_COLOR: Record<TrendSeverity, string> = {
-  positive: colors.positive,
-  neutral:  colors.neutral,
-  warning:  colors.warning,
-  critical: colors.critical,
-};
+function severityColor(severity: TrendSeverity, colors: ThemeColors): string {
+  const SEVERITY_COLOR: Record<TrendSeverity, string> = {
+    positive: colors.positive,
+    neutral:  colors.neutral,
+    warning:  colors.warning,
+    critical: colors.critical,
+  };
+  return SEVERITY_COLOR[severity];
+}
 
 export default function TrendCard({ label, value, unit, trend, description }: Props) {
-  const color = SEVERITY_COLOR[trend.severity];
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const color  = severityColor(trend.severity, colors);
 
   return (
     <Card>
@@ -52,7 +58,8 @@ export default function TrendCard({ label, value, unit, trend, description }: Pr
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -89,4 +96,5 @@ const styles = StyleSheet.create({
     color:      colors.textDim,
     lineHeight: 18,
   },
-});
+  });
+}
