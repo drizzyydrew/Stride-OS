@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { TimelineAnalysis, WeeklySnapshot } from '../../types/timeline';
@@ -10,35 +11,44 @@ type Props = {
   analysis: TimelineAnalysis;
 };
 
-// ─── Color helpers ─────────────────────────────────────────────────────────────
+// ─── Color helpers (curried on `colors` so they keep the `(v) => string` shape
+// that SparkLine/HeatStrip expect as a plain callback prop) ────────────────────
 
-function recoveryColor(v: number): string {
-  if (v >= 80) return colors.positive;
-  if (v >= 65) return '#60A5FA';
-  if (v >= 50) return colors.warning;
-  return colors.critical;
+function recoveryColor(colors: ThemeColors) {
+  return (v: number): string => {
+    if (v >= 80) return colors.positive;
+    if (v >= 65) return colors.primary;
+    if (v >= 50) return colors.warning;
+    return colors.critical;
+  };
 }
 
 // High fatigue = bad → invert scale so low is green, high is red.
-function fatigueColor(v: number): string {
-  if (v < 35) return colors.positive;
-  if (v < 55) return '#60A5FA';
-  if (v < 75) return colors.warning;
-  return colors.critical;
+function fatigueColor(colors: ThemeColors) {
+  return (v: number): string => {
+    if (v < 35) return colors.positive;
+    if (v < 55) return colors.primary;
+    if (v < 75) return colors.warning;
+    return colors.critical;
+  };
 }
 
-function acwrColor(v: number): string {
-  if (v < 0.8)  return colors.warning;   // under-training
-  if (v <= 1.3) return colors.positive;  // optimal
-  if (v <= 1.5) return colors.warning;   // elevated risk
-  return colors.critical;                // high risk
+function acwrColor(colors: ThemeColors) {
+  return (v: number): string => {
+    if (v < 0.8)  return colors.warning;   // under-training
+    if (v <= 1.3) return colors.positive;  // optimal
+    if (v <= 1.5) return colors.warning;   // elevated risk
+    return colors.critical;                // high risk
+  };
 }
 
-function adherenceColor(v: number): string {
-  if (v >= 0.85) return colors.positive;
-  if (v >= 0.65) return '#60A5FA';
-  if (v >= 0.50) return colors.warning;
-  return colors.critical;
+function adherenceColor(colors: ThemeColors) {
+  return (v: number): string => {
+    if (v >= 0.85) return colors.positive;
+    if (v >= 0.65) return colors.primary;
+    if (v >= 0.50) return colors.warning;
+    return colors.critical;
+  };
 }
 
 // ─── Sparkline dot chart ──────────────────────────────────────────────────────
@@ -146,6 +156,8 @@ const spark = StyleSheet.create({
 // ─── Week label row ───────────────────────────────────────────────────────────
 
 function WeekLabels({ snapshots }: { snapshots: WeeklySnapshot[] }) {
+  const colors = useThemeColors();
+  const wl     = useMemo(() => createWlStyles(colors), [colors]);
   const display = snapshots.slice(-MAX_WEEKS);
   const lastW   = display[display.length - 1]?.week;
 
@@ -162,7 +174,8 @@ function WeekLabels({ snapshots }: { snapshots: WeeklySnapshot[] }) {
   );
 }
 
-const wl = StyleSheet.create({
+function createWlStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap:           2,
@@ -180,7 +193,8 @@ const wl = StyleSheet.create({
   labelActive: {
     color: colors.textDim,
   },
-});
+  });
+}
 
 // ─── Heat cell strip (adherence + ACWR) ──────────────────────────────────────
 
@@ -193,6 +207,8 @@ interface HeatStripProps {
 }
 
 function HeatStrip({ snapshots, getValue, formatVal, colorFn, label }: HeatStripProps) {
+  const colors = useThemeColors();
+  const hs     = useMemo(() => createHsStyles(colors), [colors]);
   const display = snapshots.slice(-MAX_WEEKS);
 
   return (
@@ -213,7 +229,8 @@ function HeatStrip({ snapshots, getValue, formatVal, colorFn, label }: HeatStrip
   );
 }
 
-const hs = StyleSheet.create({
+function createHsStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems:    'center',
@@ -245,7 +262,8 @@ const hs = StyleSheet.create({
     fontSize:   8,
     fontWeight: FontWeight.black,
   },
-});
+  });
+}
 
 // ─── Trend direction chip ─────────────────────────────────────────────────────
 
@@ -254,6 +272,7 @@ function DirectionChip({ label, direction, color }: {
   direction: 'improving' | 'worsening' | 'stable';
   color:     string;
 }) {
+  const colors = useThemeColors();
   const arrow = direction === 'improving' ? '↑' : direction === 'worsening' ? '↓' : '→';
   const bg    = direction === 'improving' ? colors.positiveDim :
                 direction === 'worsening' ? colors.criticalDim :
@@ -281,6 +300,9 @@ const chip = StyleSheet.create({
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
 function EmptyTimeline() {
+  const colors = useThemeColors();
+  const empty  = useMemo(() => createEmptyStyles(colors), [colors]);
+
   return (
     <Card>
       <Text style={empty.label}>READINESS TIMELINE</Text>
@@ -303,7 +325,8 @@ function EmptyTimeline() {
   );
 }
 
-const empty = StyleSheet.create({
+function createEmptyStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   label: {
     color:         colors.textMuted,
     fontSize:      11,
@@ -342,11 +365,15 @@ const empty = StyleSheet.create({
     color:    colors.textDim,
     fontSize: FontSize.sm,
   },
-});
+  });
+}
 
 // ─── Main card ─────────────────────────────────────────────────────────────────
 
 export default function ReadinessTimelineCard({ analysis }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (analysis.snapshots.length === 0) return <EmptyTimeline />;
 
   const { snapshots, fatigue, recovery, adherence, acwr } = analysis;
@@ -364,18 +391,18 @@ export default function ReadinessTimelineCard({ analysis }: Props) {
         <DirectionChip
           label="Recovery"
           direction={recovery.direction}
-          color={recoveryColor(snapshots[snapshots.length - 1]?.avgRecovery ?? 70)}
+          color={recoveryColor(colors)(snapshots[snapshots.length - 1]?.avgRecovery ?? 70)}
         />
         <DirectionChip
           label="Fatigue"
           direction={fatigue.direction}
-          color={fatigueColor(snapshots[snapshots.length - 1]?.avgFatigue ?? 40)}
+          color={fatigueColor(colors)(snapshots[snapshots.length - 1]?.avgFatigue ?? 40)}
         />
         {adherence.values.length >= 2 && (
           <DirectionChip
             label="Adherence"
             direction={adherence.direction}
-            color={adherenceColor(snapshots[snapshots.length - 1]?.adherence ?? 0.8)}
+            color={adherenceColor(colors)(snapshots[snapshots.length - 1]?.adherence ?? 0.8)}
           />
         )}
       </View>
@@ -388,7 +415,7 @@ export default function ReadinessTimelineCard({ analysis }: Props) {
             snapshots={snapshots}
             getValue={s => s.avgRecovery}
             getRollAvg={recovery.rollingAvg}
-            colorFn={recoveryColor}
+            colorFn={recoveryColor(colors)}
             invert={false}
           />
         </View>
@@ -402,7 +429,7 @@ export default function ReadinessTimelineCard({ analysis }: Props) {
             snapshots={snapshots}
             getValue={s => s.avgFatigue}
             getRollAvg={fatigue.rollingAvg}
-            colorFn={fatigueColor}
+            colorFn={fatigueColor(colors)}
             invert={true}
           />
         </View>
@@ -428,7 +455,7 @@ export default function ReadinessTimelineCard({ analysis }: Props) {
           snapshots={snapshots}
           getValue={s => s.adherence}
           formatVal={v => `${Math.round(v * 100)}%`}
-          colorFn={adherenceColor}
+          colorFn={adherenceColor(colors)}
           label="ADH"
         />
         {acwr.values.length >= 2 && (
@@ -436,7 +463,7 @@ export default function ReadinessTimelineCard({ analysis }: Props) {
             snapshots={snapshots}
             getValue={s => s.acwr}
             formatVal={v => v.toFixed(1)}
-            colorFn={acwrColor}
+            colorFn={acwrColor(colors)}
             label="ACWR"
           />
         )}
@@ -456,7 +483,8 @@ export default function ReadinessTimelineCard({ analysis }: Props) {
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -538,4 +566,5 @@ const styles = StyleSheet.create({
     fontSize:   FontSize.sm,
     fontWeight: FontWeight.medium,
   },
-});
+  });
+}
