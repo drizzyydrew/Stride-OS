@@ -42,7 +42,7 @@ import WeeklyCoachCard       from '../../../src/components/coaching/WeeklyCoachC
 import RunningReadinessCard  from '../../../src/components/running/RunningReadinessCard';
 import RunningWeekCard       from '../../../src/components/running/RunningWeekCard';
 
-import { colors }  from '../../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../../src/theme/ThemeContext';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../../src/theme/tokens';
 import type { TrainingPhase, GeneratableWorkoutType } from '../../../src/types/training';
@@ -114,6 +114,8 @@ const PHASE_RATIONALE: Record<TrainingPhase, { rationale: string; priority: stri
 
 export default function RunningScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const {
     goalRace, weeklyMileage, recoveryScore, fatigueScore,
@@ -402,7 +404,8 @@ export default function RunningScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   goalCard: {
     marginBottom: spacing.cardGap,
     flexDirection: 'row',
@@ -478,4 +481,5 @@ const styles = StyleSheet.create({
     color:    colors.textDim,
     fontSize: FontSize.xs,
   },
-});
+  });
+}

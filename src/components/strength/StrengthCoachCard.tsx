@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 
@@ -17,15 +18,21 @@ type Props = {
   insights: StrengthInsight[];
 };
 
-const PRIORITY_COLORS = {
-  high:   { dot: colors.critical, bg: colors.criticalDim },
-  medium: { dot: colors.warning,  bg: colors.warningDim  },
-  low:    { dot: colors.primary,  bg: colors.primaryDim  },
-};
+function priorityColors(colors: ThemeColors) {
+  return {
+    high:   { dot: colors.critical, bg: colors.criticalDim },
+    medium: { dot: colors.warning,  bg: colors.warningDim  },
+    low:    { dot: colors.primary,  bg: colors.primaryDim  },
+  };
+}
 
 export type { StrengthInsight };
 
 export default function StrengthCoachCard({ insights }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const PRIORITY_COLORS = useMemo(() => priorityColors(colors), [colors]);
+
   if (insights.length === 0) return null;
 
   const top = insights.slice(0, 3);
@@ -55,7 +62,8 @@ export default function StrengthCoachCard({ insights }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card:        { marginBottom: spacing.cardGap },
   title:       { color: colors.text, fontSize: FontSize.md, fontWeight: FontWeight.bold, marginBottom: spacing.md },
   insights:    { gap: spacing.sm },
@@ -65,4 +73,5 @@ const styles = StyleSheet.create({
   headline:    { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.medium },
   body:        { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 18 },
   action:      { color: colors.primary, fontSize: FontSize.sm, fontWeight: FontWeight.medium, marginTop: 2 },
-});
+  });
+}

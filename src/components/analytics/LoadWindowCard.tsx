@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { HistoryWindow } from '../../types/history';
@@ -18,18 +19,20 @@ function WindowColumn({
   window: HistoryWindow;
   label: string;
 }) {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
   const hasData = win.recordCount > 0;
   return (
-    <View style={styles.column}>
-      <Text style={styles.windowLabel}>{label}</Text>
-      <Text style={[styles.loadValue, !hasData && styles.loadValueEmpty]}>
+    <View style={s.column}>
+      <Text style={s.windowLabel}>{label}</Text>
+      <Text style={[s.loadValue, !hasData && s.loadValueEmpty]}>
         {hasData ? win.totalLoad : '—'}
       </Text>
-      <Text style={styles.loadUnit}>{hasData ? 'pts load' : 'no data'}</Text>
+      <Text style={s.loadUnit}>{hasData ? 'pts load' : 'no data'}</Text>
       {hasData ? (
         <>
-          <Text style={styles.detail}>{win.totalMiles} mi</Text>
-          <Text style={styles.detail}>
+          <Text style={s.detail}>{win.totalMiles} mi</Text>
+          <Text style={s.detail}>
             {win.recordCount} session{win.recordCount !== 1 ? 's' : ''}
           </Text>
         </>
@@ -39,19 +42,23 @@ function WindowColumn({
 }
 
 export default function LoadWindowCard({ load7d, load30d }: Props) {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Card>
-      <Text style={styles.title}>Load Windows</Text>
-      <View style={styles.row}>
+      <Text style={s.title}>Load Windows</Text>
+      <View style={s.row}>
         <WindowColumn window={load7d}  label="7 DAYS"  />
-        <View style={styles.divider} />
+        <View style={s.divider} />
         <WindowColumn window={load30d} label="30 DAYS" />
       </View>
     </Card>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   title: {
     color:         colors.textMuted,
     fontSize:      FontSize.base,
@@ -102,4 +109,5 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.sm,
     alignSelf:       'center',
   },
-});
+  });
+}

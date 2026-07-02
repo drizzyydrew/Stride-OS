@@ -16,7 +16,7 @@ import Card from '../../../src/components/ui/Card';
 import Badge from '../../../src/components/ui/Badge';
 import Button from '../../../src/components/ui/Button';
 
-import { colors } from '../../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../../src/theme/ThemeContext';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../../src/theme/tokens';
 import { todayDateKey } from '../../../src/types/checkin';
@@ -32,9 +32,11 @@ type SummaryProps = {
   skipped?:       boolean;
   skippedReason?: string;
   source?:        string;
+  colors:         ThemeColors;
+  styles:         Styles;
 };
 
-function CompletionSummaryCard({ exercises, actualDuration, overallRpe, notes, skipped, skippedReason, source }: SummaryProps) {
+function CompletionSummaryCard({ exercises, actualDuration, overallRpe, notes, skipped, skippedReason, source, colors, styles }: SummaryProps) {
   const totalSets = exercises.reduce((s, e) => s + e.sets.filter(set => set.completed).length, 0);
   return (
     <Card style={styles.summaryCard}>
@@ -58,12 +60,13 @@ function CompletionSummaryCard({ exercises, actualDuration, overallRpe, notes, s
 
 // ─── Stepper control ──────────────────────────────────────────────────────────
 
-function Stepper({ label, value, onDec, onInc, display }: {
+function Stepper({ label, value, onDec, onInc, display, styles }: {
   label:   string;
   value:   number;
   onDec:   () => void;
   onInc:   () => void;
   display?: string;
+  styles:  Styles;
 }) {
   return (
     <View style={styles.stepper}>
@@ -83,9 +86,11 @@ type LogFormProps = {
   plannedDuration: number;
   onSave:   (duration: number, rpe: number, notes: string) => void;
   onCancel: () => void;
+  colors:   ThemeColors;
+  styles:   Styles;
 };
 
-function SessionLogForm({ plannedDuration, onSave, onCancel }: LogFormProps) {
+function SessionLogForm({ plannedDuration, onSave, onCancel, colors, styles }: LogFormProps) {
   const [duration, setDuration] = useState(plannedDuration);
   const [rpe, setRpe]           = useState(6);
   const [notes, setNotes]       = useState('');
@@ -102,6 +107,7 @@ function SessionLogForm({ plannedDuration, onSave, onCancel }: LogFormProps) {
         value={duration}
         onDec={() => setDuration(d => Math.max(5, d - 5))}
         onInc={() => setDuration(d => Math.min(180, d + 5))}
+        styles={styles}
       />
 
       <Stepper
@@ -109,6 +115,7 @@ function SessionLogForm({ plannedDuration, onSave, onCancel }: LogFormProps) {
         value={rpe}
         onDec={() => setRpe(r => Math.max(1, r - 1))}
         onInc={() => setRpe(r => Math.min(10, r + 1))}
+        styles={styles}
       />
 
       <Text style={styles.logLabel}>Notes (optional)</Text>

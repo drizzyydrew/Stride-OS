@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, zoneTint, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type {
@@ -23,22 +23,24 @@ type Props = {
 };
 
 // ─── Phase badge colors ────────────────────────────────────────────────────────
+//
+// Phases never get a rainbow of hues (§3.7, §3.9) — a single Sage accent at
+// increasing opacity per phase communicates progression through the macrocycle.
 
-const PHASE_COLOR: Record<TrainingPhase, string> = {
-  base:   '#2563EB',
-  build:  '#7C3AED',
-  peak:   '#9333EA',
-  deload: '#F59E0B',
-  taper:  '#22C55E',
-};
+const PHASE_TINT_ORDER: TrainingPhase[] = ['base', 'build', 'peak', 'deload', 'taper'];
 
-const PHASE_BG: Record<TrainingPhase, string> = {
-  base:   '#0C1A3D',
-  build:  '#1E0A4A',
-  peak:   '#3B0764',
-  deload: '#451A03',
-  taper:  '#052E16',
-};
+function phaseColor(phase: TrainingPhase, colors: ThemeColors): string {
+  return zoneTint(colors, PHASE_TINT_ORDER.indexOf(phase), PHASE_TINT_ORDER.length);
+}
+
+function phaseBg(phase: TrainingPhase, colors: ThemeColors): string {
+  const idx   = PHASE_TINT_ORDER.indexOf(phase);
+  const steps = Math.max(PHASE_TINT_ORDER.length - 1, 1);
+  const t     = Math.min(Math.max(idx / steps, 0), 1);
+  const alpha = 0.10 + t * 0.18; // 10%..28%
+  const hex   = Math.round(alpha * 255).toString(16).padStart(2, '0').toUpperCase();
+  return `${colors.sage}${hex}`;
+}
 
 const PHASE_NAME: Record<TrainingPhase, string> = {
   base:   'BASE',
@@ -51,6 +53,8 @@ const PHASE_NAME: Record<TrainingPhase, string> = {
 // ─── Safeguard row ────────────────────────────────────────────────────────────
 
 function SafeguardRow({ sg, isLast }: { sg: ProgressionSafeguard; isLast: boolean }) {
+  const colors = useThemeColors();
+  const sgr    = useMemo(() => createSgrStyles(colors), [colors]);
   const [open, setOpen] = useState(false);
   const color = sg.severity === 'critical' ? colors.critical : colors.warning;
   const bg    = sg.severity === 'critical' ? colors.criticalDim : colors.warningDim;

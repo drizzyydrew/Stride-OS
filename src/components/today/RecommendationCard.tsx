@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type {
@@ -29,181 +30,204 @@ const INTENSITY_LABEL: Record<WorkoutIntensity, string> = {
   max:       'Max',
 };
 
-const READINESS_COLOR: Record<TrainingRecommendation['overallReadiness'], string> = {
-  peak: colors.positive,
-  good: '#60A5FA',       // blue-400 — distinct from primary but on-brand
-  fair: colors.warning,
-  poor: colors.critical,
-};
+// "good" was previously a bespoke blue — Sage carries "state / in-progress"
+// meaning per the design system, sitting between Positive (peak) and Warning (fair).
+function readinessColor(colors: ThemeColors): Record<TrainingRecommendation['overallReadiness'], string> {
+  return {
+    peak: colors.positive,
+    good: colors.sage,
+    fair: colors.warning,
+    poor: colors.critical,
+  };
+}
 
-const READINESS_BG: Record<TrainingRecommendation['overallReadiness'], string> = {
-  peak: colors.positiveDim,
-  good: '#0C1A3D',
-  fair: colors.warningDim,
-  poor: colors.criticalDim,
-};
+function readinessBg(colors: ThemeColors): Record<TrainingRecommendation['overallReadiness'], string> {
+  return {
+    peak: colors.positiveDim,
+    good: colors.sage + '22',
+    fair: colors.warningDim,
+    poor: colors.criticalDim,
+  };
+}
 
-const RECOVERY_COLOR: Record<RecoveryRecommendation['priority'], string> = {
-  low:      colors.positive,
-  moderate: colors.warning,
-  high:     colors.critical,
-  critical: colors.critical,
-};
+function recoveryColor(colors: ThemeColors): Record<RecoveryRecommendation['priority'], string> {
+  return {
+    low:      colors.positive,
+    moderate: colors.warning,
+    high:     colors.critical,
+    critical: colors.critical,
+  };
+}
 
-const RECOVERY_BG: Record<RecoveryRecommendation['priority'], string> = {
-  low:      colors.positiveDim,
-  moderate: colors.warningDim,
-  high:     colors.criticalDim,
-  critical: colors.criticalDim,
-};
+function recoveryBg(colors: ThemeColors): Record<RecoveryRecommendation['priority'], string> {
+  return {
+    low:      colors.positiveDim,
+    moderate: colors.warningDim,
+    high:     colors.criticalDim,
+    critical: colors.criticalDim,
+  };
+}
 
-const ADJUSTMENT_CONFIG: Record<
+function adjustmentConfig(colors: ThemeColors): Record<
   IntensityRecommendation['adjustmentFromPlan'],
   { label: string; color: string; bg: string } | null
-> = {
-  as_planned:    null,
-  scale_down:    { label: 'Scale down',    color: colors.warning,  bg: colors.warningDim  },
-  scale_up:      { label: 'Room to push',  color: colors.positive, bg: colors.positiveDim },
-  swap_to_easy:  { label: 'Swap to easy',  color: colors.warning,  bg: colors.warningDim  },
-  swap_to_rest:  { label: 'Consider rest', color: colors.critical, bg: colors.criticalDim },
-};
+> {
+  return {
+    as_planned:    null,
+    scale_down:    { label: 'Scale down',    color: colors.warning,  bg: colors.warningDim  },
+    scale_up:      { label: 'Room to push',  color: colors.positive, bg: colors.positiveDim },
+    swap_to_easy:  { label: 'Swap to easy',  color: colors.warning,  bg: colors.warningDim  },
+    swap_to_rest:  { label: 'Consider rest', color: colors.critical, bg: colors.criticalDim },
+  };
+}
 
-const RISK_COLOR: Record<InjuryRiskWarning['level'], string> = {
-  none:     colors.positive,
-  elevated: colors.warning,
-  high:     colors.critical,
-};
+function riskColor(colors: ThemeColors): Record<InjuryRiskWarning['level'], string> {
+  return {
+    none:     colors.positive,
+    elevated: colors.warning,
+    high:     colors.critical,
+  };
+}
 
-const DELOAD_COLOR: Record<DeloadRecommendation['urgency'], string> = {
-  none:        colors.textDim,
-  suggested:   colors.warning,
-  recommended: colors.critical,
-  mandatory:   colors.critical,
-};
+function deloadColor(colors: ThemeColors): Record<DeloadRecommendation['urgency'], string> {
+  return {
+    none:        colors.textDim,
+    suggested:   colors.warning,
+    recommended: colors.critical,
+    mandatory:   colors.critical,
+  };
+}
 
-const DELOAD_BG: Record<DeloadRecommendation['urgency'], string> = {
-  none:        colors.border,
-  suggested:   colors.warningDim,
-  recommended: colors.criticalDim,
-  mandatory:   colors.criticalDim,
-};
+function deloadBg(colors: ThemeColors): Record<DeloadRecommendation['urgency'], string> {
+  return {
+    none:        colors.border,
+    suggested:   colors.warningDim,
+    recommended: colors.criticalDim,
+    mandatory:   colors.criticalDim,
+  };
+}
 
 // ─── Sub-sections ─────────────────────────────────────────────────────────────
 
 function ReadinessHeader({
   readinessScore,
   overallReadiness,
-}: Pick<TrainingRecommendation, 'readinessScore' | 'overallReadiness'>) {
-  const color = READINESS_COLOR[overallReadiness];
-  const bg    = READINESS_BG[overallReadiness];
+  colors,
+  s,
+}: Pick<TrainingRecommendation, 'readinessScore' | 'overallReadiness'> & {
+  colors: ThemeColors;
+  s: ReturnType<typeof createStyles>;
+}) {
+  const color = readinessColor(colors)[overallReadiness];
+  const bg    = readinessBg(colors)[overallReadiness];
   const label = overallReadiness.charAt(0).toUpperCase() + overallReadiness.slice(1);
 
   return (
-    <View style={styles.headerRow}>
+    <View style={s.headerRow}>
       <View>
-        <Text style={styles.cardTitle}>Recommendation</Text>
-        <View style={styles.scoreRow}>
-          <Text style={[styles.scoreValue, { color }]}>{readinessScore}</Text>
-          <Text style={styles.scoreUnit}>/100</Text>
+        <Text style={s.cardTitle}>Recommendation</Text>
+        <View style={s.scoreRow}>
+          <Text style={[s.scoreValue, { color }]}>{readinessScore}</Text>
+          <Text style={s.scoreUnit}>/100</Text>
         </View>
       </View>
-      <View style={[styles.badge, { backgroundColor: bg }]}>
-        <Text style={[styles.badgeText, { color }]}>{label.toUpperCase()}</Text>
+      <View style={[s.badge, { backgroundColor: bg }]}>
+        <Text style={[s.badgeText, { color }]}>{label.toUpperCase()}</Text>
       </View>
     </View>
   );
 }
 
-function IntensitySection({ rec }: { rec: IntensityRecommendation }) {
-  const adj = ADJUSTMENT_CONFIG[rec.adjustmentFromPlan];
+function IntensitySection({ rec, colors, s }: { rec: IntensityRecommendation; colors: ThemeColors; s: ReturnType<typeof createStyles> }) {
+  const adj = adjustmentConfig(colors)[rec.adjustmentFromPlan];
 
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionLabel}>TODAY'S RECOMMENDATION</Text>
+    <View style={s.section}>
+      <Text style={s.sectionLabel}>TODAY'S RECOMMENDATION</Text>
 
-      <View style={styles.intensityRow}>
-        <Text style={styles.intensityValue}>
+      <View style={s.intensityRow}>
+        <Text style={s.intensityValue}>
           {INTENSITY_LABEL[rec.recommendedIntensity]}
         </Text>
         {rec.recommendedDurationMinutes > 0 && (
-          <Text style={styles.durationText}>
+          <Text style={s.durationText}>
             {' · '}{rec.recommendedDurationMinutes} min
           </Text>
         )}
         {adj && (
-          <View style={[styles.adjustmentChip, { backgroundColor: adj.bg }]}>
-            <Text style={[styles.adjustmentText, { color: adj.color }]}>
+          <View style={[s.adjustmentChip, { backgroundColor: adj.bg }]}>
+            <Text style={[s.adjustmentText, { color: adj.color }]}>
               {adj.label.toUpperCase()}
             </Text>
           </View>
         )}
       </View>
 
-      <Text style={styles.rationale}>{rec.rationale}</Text>
+      <Text style={s.rationale}>{rec.rationale}</Text>
     </View>
   );
 }
 
-function RecoverySection({ rec }: { rec: RecoveryRecommendation }) {
-  const color = RECOVERY_COLOR[rec.priority];
-  const bg    = RECOVERY_BG[rec.priority];
+function RecoverySection({ rec, colors, s }: { rec: RecoveryRecommendation; colors: ThemeColors; s: ReturnType<typeof createStyles> }) {
+  const color = recoveryColor(colors)[rec.priority];
+  const bg    = recoveryBg(colors)[rec.priority];
   const label = rec.priority.charAt(0).toUpperCase() + rec.priority.slice(1);
 
   return (
-    <View style={[styles.section, styles.sectionBordered]}>
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionLabel}>RECOVERY</Text>
-        <View style={[styles.badge, { backgroundColor: bg }]}>
-          <Text style={[styles.badgeText, { color }]}>{label.toUpperCase()}</Text>
+    <View style={[s.section, s.sectionBordered]}>
+      <View style={s.sectionHeaderRow}>
+        <Text style={s.sectionLabel}>RECOVERY</Text>
+        <View style={[s.badge, { backgroundColor: bg }]}>
+          <Text style={[s.badgeText, { color }]}>{label.toUpperCase()}</Text>
         </View>
       </View>
       {rec.actions.map((action, i) => (
-        <View key={i} style={styles.actionRow}>
-          <View style={[styles.bullet, { backgroundColor: color }]} />
-          <Text style={styles.actionText}>{action}</Text>
+        <View key={i} style={s.actionRow}>
+          <View style={[s.bullet, { backgroundColor: color }]} />
+          <Text style={s.actionText}>{action}</Text>
         </View>
       ))}
     </View>
   );
 }
 
-function InjuryRiskSection({ risk }: { risk: InjuryRiskWarning }) {
+function InjuryRiskSection({ risk, colors, s }: { risk: InjuryRiskWarning; colors: ThemeColors; s: ReturnType<typeof createStyles> }) {
   if (risk.level === 'none') return null;
 
-  const color    = RISK_COLOR[risk.level];
+  const color    = riskColor(colors)[risk.level];
   const levelStr = risk.level === 'high' ? 'HIGH RISK' : 'ELEVATED RISK';
 
   return (
-    <View style={[styles.section, styles.sectionBordered]}>
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionLabel}>INJURY RISK</Text>
-        <Text style={[styles.riskLabel, { color }]}>{levelStr}</Text>
+    <View style={[s.section, s.sectionBordered]}>
+      <View style={s.sectionHeaderRow}>
+        <Text style={s.sectionLabel}>INJURY RISK</Text>
+        <Text style={[s.riskLabel, { color }]}>{levelStr}</Text>
       </View>
       {risk.triggers.map((t, i) => (
-        <View key={i} style={styles.actionRow}>
-          <View style={[styles.bullet, { backgroundColor: color }]} />
-          <Text style={styles.actionText}>{t}</Text>
+        <View key={i} style={s.actionRow}>
+          <View style={[s.bullet, { backgroundColor: color }]} />
+          <Text style={s.actionText}>{t}</Text>
         </View>
       ))}
-      <Text style={[styles.rationale, { marginTop: spacing.sm }]}>{risk.advice}</Text>
+      <Text style={[s.rationale, { marginTop: spacing.sm }]}>{risk.advice}</Text>
     </View>
   );
 }
 
-function DeloadBanner({ deload }: { deload: DeloadRecommendation }) {
+function DeloadBanner({ deload, colors, s }: { deload: DeloadRecommendation; colors: ThemeColors; s: ReturnType<typeof createStyles> }) {
   if (!deload.shouldDeload || deload.urgency === 'none') return null;
 
-  const color = DELOAD_COLOR[deload.urgency];
-  const bg    = DELOAD_BG[deload.urgency];
+  const color = deloadColor(colors)[deload.urgency];
+  const bg    = deloadBg(colors)[deload.urgency];
   const urgencyLabel =
     deload.urgency === 'mandatory'   ? 'DELOAD MANDATORY'   :
     deload.urgency === 'recommended' ? 'DELOAD RECOMMENDED' :
     'DELOAD SUGGESTED';
 
   return (
-    <View style={[styles.deloadBanner, { backgroundColor: bg }]}>
-      <Text style={[styles.deloadLabel, { color }]}>{urgencyLabel}</Text>
-      <Text style={[styles.deloadRationale, { color }]}>{deload.rationale}</Text>
+    <View style={[s.deloadBanner, { backgroundColor: bg }]}>
+      <Text style={[s.deloadLabel, { color }]}>{urgencyLabel}</Text>
+      <Text style={[s.deloadRationale, { color }]}>{deload.rationale}</Text>
     </View>
   );
 }
@@ -211,30 +235,36 @@ function DeloadBanner({ deload }: { deload: DeloadRecommendation }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function RecommendationCard({ rec, checkedIn }: Props) {
+  const colors = useThemeColors();
+  const s = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Card>
       <ReadinessHeader
         readinessScore={rec.readinessScore}
         overallReadiness={rec.overallReadiness}
+        colors={colors}
+        s={s}
       />
 
       {!checkedIn && (
-        <Text style={styles.checkInNote}>
+        <Text style={s.checkInNote}>
           Check in for a more accurate recommendation
         </Text>
       )}
 
-      <IntensitySection rec={rec.intensity} />
-      <RecoverySection  rec={rec.recovery}  />
-      <InjuryRiskSection risk={rec.injuryRisk} />
-      <DeloadBanner deload={rec.deload} />
+      <IntensitySection rec={rec.intensity} colors={colors} s={s} />
+      <RecoverySection  rec={rec.recovery}  colors={colors} s={s} />
+      <InjuryRiskSection risk={rec.injuryRisk} colors={colors} s={s} />
+      <DeloadBanner deload={rec.deload} colors={colors} s={s} />
     </Card>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   // Header
   headerRow: {
     flexDirection:  'row',
@@ -391,4 +421,5 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     opacity:    0.85,
   },
-});
+  });
+}

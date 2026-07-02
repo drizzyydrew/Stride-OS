@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import CoachInsightCard from './CoachInsightCard';
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { CoachInsight } from '../../types/coaching';
@@ -13,6 +14,9 @@ type Props = {
 };
 
 export default function CoachInsightsCard({ insights, maxVisible = 3 }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (insights.length === 0) {
     return (
       <Card>

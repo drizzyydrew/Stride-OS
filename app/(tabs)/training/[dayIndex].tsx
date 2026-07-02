@@ -50,6 +50,9 @@ function CompletionSummaryCard({
   durationMinutes, actualDurationMinutes, actualDistanceMiles,
   rpe, notes, skipped, skippedReason, source,
 }: SummaryProps) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Card style={styles.summaryCard}>
       <View style={styles.summaryHeader}>
@@ -103,6 +106,8 @@ type SkipModalProps = {
 };
 
 function SkipModal({ visible, onSkip, onCancel }: SkipModalProps) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [reason, setReason] = useState('');
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
@@ -144,6 +149,8 @@ function SkipModal({ visible, onSkip, onCancel }: SkipModalProps) {
 // ─── Main screen ───────────────────────────────────────────────────────────────
 
 export default function SessionDetailScreen() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
   const { dayIndex: dayIndexParam } = useLocalSearchParams<{ dayIndex: string }>();
   const dayIndex = parseInt(dayIndexParam ?? '0', 10);
@@ -451,7 +458,8 @@ export default function SessionDetailScreen() {
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   safe: {
     flex:            1,
     backgroundColor: colors.bg,
@@ -652,4 +660,5 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: colors.primary,
   },
-});
+  });
+}

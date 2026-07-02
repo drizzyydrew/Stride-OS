@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors }  from '../../theme/colors';
+import { useThemeColors, zoneTint, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { TrainingPhase, RaceDistance } from '../../types/training';
@@ -21,22 +21,26 @@ type Props = {
 };
 
 // ─── Visual config ─────────────────────────────────────────────────────────────
+//
+// Phases never get a rainbow of hues (§3.7, §3.9) — a single Sage accent at
+// increasing opacity per phase communicates progression through the macrocycle.
 
-const PHASE_COLOR: Record<TrainingPhase, string> = {
-  base:   '#2563EB',
-  build:  '#7C3AED',
-  peak:   '#9333EA',
-  deload: '#F59E0B',
-  taper:  '#22C55E',
-};
+const PHASE_TINT_ORDER: TrainingPhase[] = ['base', 'build', 'peak', 'deload', 'taper'];
 
-const PHASE_BG: Record<TrainingPhase, string> = {
-  base:   '#0C1A3D',
-  build:  '#1E0A4A',
-  peak:   '#3B0764',
-  deload: '#451A03',
-  taper:  '#052E16',
-};
+function phaseColor(phase: TrainingPhase, colors: ThemeColors): string {
+  return zoneTint(colors, PHASE_TINT_ORDER.indexOf(phase), PHASE_TINT_ORDER.length);
+}
+
+// Low-opacity Sage tint for phase tile backgrounds — same increasing-opacity
+// ramp as phaseColor(), tuned to a subtler band so text/borders stay legible.
+function phaseBg(phase: TrainingPhase, colors: ThemeColors): string {
+  const idx   = PHASE_TINT_ORDER.indexOf(phase);
+  const steps = Math.max(PHASE_TINT_ORDER.length - 1, 1);
+  const t     = Math.min(Math.max(idx / steps, 0), 1);
+  const alpha = 0.10 + t * 0.18; // 10%..28%
+  const hex   = Math.round(alpha * 255).toString(16).padStart(2, '0').toUpperCase();
+  return `${colors.sage}${hex}`;
+}
 
 const PHASE_LABEL: Record<TrainingPhase, string> = {
   base:   'BASE',
@@ -147,8 +151,11 @@ function WeekCell({
   isDeloadBoundary: boolean;
   onPress:          () => void;
 }) {
-  const color = PHASE_COLOR[phase];
-  const bg    = isSelected ? color + '33' : PHASE_BG[phase];
+  const colors = useThemeColors();
+  const cell   = useMemo(() => createCellStyles(colors), [colors]);
+
+  const color = phaseColor(phase, colors);
+  const bg    = isSelected ? color + '33' : phaseBg(phase, colors);
 
   return (
     <Pressable
@@ -170,7 +177,8 @@ function WeekCell({
   );
 }
 
-const cell = StyleSheet.create({
+function createCellStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     width:          34,
     height:         44,
@@ -192,7 +200,8 @@ const cell = StyleSheet.create({
     height:       4,
     borderRadius: 2,
   },
-});
+  });
+}
 
 // ─── Phase label group ────────────────────────────────────────────────────────
 
@@ -202,7 +211,10 @@ function PhaseGroup({ phase, startWeek, endWeek, totalWeeks }: {
   endWeek:    number;
   totalWeeks: number;
 }) {
-  const color     = PHASE_COLOR[phase];
+  const colors = useThemeColors();
+  const pg     = useMemo(() => createPgStyles(colors), [colors]);
+
+  const color     = phaseColor(phase, colors);
   const weekCount = endWeek - startWeek + 1;
 
   return (
@@ -214,7 +226,8 @@ function PhaseGroup({ phase, startWeek, endWeek, totalWeeks }: {
   );
 }
 
-const pg = StyleSheet.create({
+function createPgStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     alignItems: 'center',
     gap:        spacing.xs,
@@ -238,8 +251,11 @@ const pg = StyleSheet.create({
 // ─── Week detail panel ─────────────────────────────────────────────────────────
 
 function WeekDetailPanel({ detail }: { detail: WeekDetail }) {
-  const color = PHASE_COLOR[detail.phase];
-  const bg    = PHASE_BG[detail.phase];
+  const colors = useThemeColors();
+  const dp     = useMemo(() => createDpStyles(colors), [colors]);
+
+  const color = phaseColor(detail.phase, colors);
+  const bg    = phaseBg(detail.phase, colors);
 
   return (
     <View style={dp.wrap}>
@@ -298,7 +314,8 @@ function WeekDetailPanel({ detail }: { detail: WeekDetail }) {
   );
 }
 
-const dp = StyleSheet.create({
+function createDpStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap: {
     marginTop:       spacing.md,
     borderTopWidth:  1,
@@ -382,7 +399,8 @@ const dp = StyleSheet.create({
     fontSize:   FontSize.sm,
     fontWeight: FontWeight.bold,
   },
-});
+  });
+}
 
 // ─── Race distance label ───────────────────────────────────────────────────────
 
@@ -403,6 +421,9 @@ export default function MacrocycleTimelineCard({
   mesocycle,
   baseMileage,
 }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [selectedWeek, setSelectedWeek] = useState(currentWeek);
 
   const weeks      = Array.from({ length: totalWeeks }, (_, i) => i + 1);
@@ -490,12 +511,12 @@ export default function MacrocycleTimelineCard({
       <View style={styles.legendRow}>
         {planPhases.map(pb => (
           <View key={pb.phase} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: PHASE_COLOR[pb.phase] }]} />
+            <View style={[styles.legendDot, { backgroundColor: phaseColor(pb.phase, colors) }]} />
             <Text style={styles.legendText}>{PHASE_LABEL[pb.phase]}</Text>
           </View>
         ))}
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: PHASE_COLOR.deload }]} />
+          <View style={[styles.legendDot, { backgroundColor: phaseColor('deload', colors) }]} />
           <Text style={styles.legendText}>DLD</Text>
         </View>
       </View>
@@ -505,7 +526,8 @@ export default function MacrocycleTimelineCard({
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -633,4 +655,5 @@ const styles = StyleSheet.create({
     color:    colors.textDim,
     fontSize: 9,
   },
-});
+  });
+}

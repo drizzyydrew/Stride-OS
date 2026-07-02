@@ -1,16 +1,18 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import OnboardingShell from '../../src/components/onboarding/OnboardingShell';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
-import { colors }  from '../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../src/theme/ThemeContext';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../src/theme/tokens';
 
 function Stepper({
   label, value, display, onInc, onDec,
 }: { label: string; value: number; display: string; onInc: () => void; onDec: () => void }) {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={s.stepRow}>
       <Text style={s.stepLabel}>{label}</Text>
@@ -32,6 +34,8 @@ function Stepper({
 }
 
 export default function ExperienceScreen() {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
   const { data, updateData } = useOnboardingStore();
   const [years,  setYears]  = useState(data.yearsRunning);
   const [miles,  setMiles]  = useState(data.weeklyMileage);
@@ -71,7 +75,8 @@ export default function ExperienceScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   stepRow: {
     backgroundColor: colors.card,
     borderRadius:    12,
@@ -114,4 +119,5 @@ const s = StyleSheet.create({
     fontSize:   FontSize.xs,
     lineHeight: 18,
   },
-});
+  });
+}

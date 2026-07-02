@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { CoachInsight, InsightSeverity } from '../../types/coaching';
@@ -13,21 +13,25 @@ type Props = {
 
 // ─── Visual config ────────────────────────────────────────────────────────────
 
-const SEVERITY_COLOR: Record<InsightSeverity, string> = {
-  info:     colors.textDim,
-  positive: colors.positive,
-  caution:  colors.warning,
-  warning:  colors.warning,
-  critical: colors.critical,
-};
+function severityColor(colors: ThemeColors): Record<InsightSeverity, string> {
+  return {
+    info:     colors.textDim,
+    positive: colors.positive,
+    caution:  colors.warning,
+    warning:  colors.warning,
+    critical: colors.critical,
+  };
+}
 
-const SEVERITY_BG: Record<InsightSeverity, string> = {
-  info:     colors.border,
-  positive: colors.positiveDim,
-  caution:  colors.warningDim,
-  warning:  colors.warningDim,
-  critical: colors.criticalDim,
-};
+function severityBg(colors: ThemeColors): Record<InsightSeverity, string> {
+  return {
+    info:     colors.border,
+    positive: colors.positiveDim,
+    caution:  colors.warningDim,
+    warning:  colors.warningDim,
+    critical: colors.criticalDim,
+  };
+}
 
 const SEVERITY_LABEL: Record<InsightSeverity, string> = {
   info:     'INFO',
@@ -41,9 +45,11 @@ const SEVERITY_LABEL: Record<InsightSeverity, string> = {
 
 export default function CoachInsightCard({ insight }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const accentColor = SEVERITY_COLOR[insight.severity];
-  const badgeBg     = SEVERITY_BG[insight.severity];
+  const accentColor = severityColor(colors)[insight.severity];
+  const badgeBg     = severityBg(colors)[insight.severity];
 
   return (
     <Card style={styles.card}>
@@ -103,7 +109,8 @@ export default function CoachInsightCard({ insight }: Props) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card: {
     padding: 0,
     overflow: 'hidden',
@@ -190,4 +197,5 @@ const styles = StyleSheet.create({
   actionText: {
     color: colors.text,
   },
-});
+  });
+}

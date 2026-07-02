@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, zoneTint, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { MovementPattern } from '../../types/strength';
@@ -23,18 +24,16 @@ const PATTERN_LABELS: Record<MovementPattern, string> = {
   mobility:    'Mobility',
 };
 
-const PATTERN_COLORS: Record<MovementPattern, string> = {
-  squat:       '#818CF8',
-  hinge:       '#60A5FA',
-  lunge:       '#34D399',
-  push:        '#F472B6',
-  pull:        '#FB923C',
-  carry:       '#A78BFA',
-  trunk:       '#4ADE80',
-  calf_ankle:  '#FCD34D',
-  plyometric:  '#F87171',
-  mobility:    '#94A3B8',
-};
+// Movement patterns are categorical dots on a single chart, not a red/green
+// spectrum (§3.1, §3.9) — each pattern gets a step along the Sage tint ramp
+// rather than an invented hue.
+const PATTERN_ORDER: MovementPattern[] = [
+  'squat', 'hinge', 'lunge', 'push', 'pull', 'carry', 'trunk', 'calf_ankle', 'plyometric', 'mobility',
+];
+
+function patternColor(pattern: MovementPattern, colors: ThemeColors): string {
+  return zoneTint(colors, PATTERN_ORDER.indexOf(pattern), PATTERN_ORDER.length);
+}
 
 // Boyle-based targets for runners (% of total sets)
 const IDEAL_SPLIT: Partial<Record<MovementPattern, number>> = {
@@ -49,6 +48,9 @@ const IDEAL_SPLIT: Partial<Record<MovementPattern, number>> = {
 };
 
 export default function StrengthPatternCard({ patternBalance, days }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const total = Object.values(patternBalance).reduce((s, v) => s + (v ?? 0), 0);
   if (total === 0) {
     return (
@@ -74,7 +76,7 @@ export default function StrengthPatternCard({ patternBalance, days }: Props) {
           const pct     = sets / total;
           const ideal   = IDEAL_SPLIT[pattern] ?? 0.05;
           const ratio   = ideal > 0 ? pct / ideal : 1;
-          const color   = PATTERN_COLORS[pattern];
+          const color   = patternColor(pattern, colors);
           const warning = ratio < 0.5 && ideal > 0;
 
           return (
@@ -111,7 +113,8 @@ export default function StrengthPatternCard({ patternBalance, days }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card:         { marginBottom: spacing.cardGap },
   header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   title:        { color: colors.text, fontSize: FontSize.md, fontWeight: FontWeight.bold },
@@ -125,4 +128,5 @@ const styles = StyleSheet.create({
   barFill:      { height: '100%', borderRadius: 3 },
   setsLabel:    { color: colors.textDim, fontSize: FontSize.xs, width: 24, textAlign: 'right' },
   warning:      { color: colors.warning, fontSize: FontSize.xs, marginTop: spacing.md, lineHeight: 16 },
-});
+  });
+}

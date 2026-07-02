@@ -1,10 +1,10 @@
 import { StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import OnboardingShell from '../../src/components/onboarding/OnboardingShell';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
-import { colors }  from '../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../src/theme/ThemeContext';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 import type { GoalType } from '../../src/store/onboardingStore';
@@ -20,6 +20,8 @@ const GOALS: { key: GoalType; label: string; desc: string }[] = [
 ];
 
 export default function GoalScreen() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data, updateData } = useOnboardingStore();
   const [selected, setSelected] = useState<GoalType>(data.primaryGoal);
   const [goalLabel, setGoalLabel] = useState(data.goalRaceLabel);
@@ -66,7 +68,8 @@ export default function GoalScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   goals: {
     gap: spacing.sm,
   },
@@ -112,4 +115,5 @@ const styles = StyleSheet.create({
     fontSize:        FontSize.base,
     padding:         spacing.md,
   },
-});
+  });
+}

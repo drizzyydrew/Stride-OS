@@ -1,6 +1,12 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useThemeColors, type ThemeColors } from '../../src/theme/ThemeContext';
+
 export default function DashboardScreen() {
+  const colors = useThemeColors();
+  const styles  = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.logo}>StrideOS</Text>
@@ -33,42 +39,43 @@ export default function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: colors.bg,
     paddingTop: 100,
     paddingHorizontal: 24,
   },
 
   logo: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 42,
     fontWeight: '800',
     marginBottom: 8,
   },
 
   headline: {
-    color: '#8B9AAF',
+    color: colors.textMuted,
     fontSize: 18,
     marginBottom: 40,
   },
 
   card: {
-    backgroundColor: '#151C24',
+    backgroundColor: colors.card,
     borderRadius: 24,
     padding: 24,
     marginBottom: 18,
   },
 
   cardTitle: {
-    color: '#8B9AAF',
+    color: colors.textMuted,
     fontSize: 16,
     marginBottom: 12,
   },
 
   metric: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 40,
     fontWeight: '800',
   },
@@ -78,7 +85,8 @@ const styles = StyleSheet.create({
   },
 
   footerText: {
-    color: '#5F6B7A',
+    color: colors.textDim,
     fontSize: 14,
   },
-});
+  });
+}

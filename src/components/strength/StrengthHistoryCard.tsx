@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { StrengthLogRecord } from '../../types/strength';
@@ -29,6 +30,9 @@ function formatRelativeDate(ts: number): string {
 }
 
 export default function StrengthHistoryCard({ history, limit = 5 }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const recent = [...history]
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, limit);
@@ -84,7 +88,8 @@ export default function StrengthHistoryCard({ history, limit = 5 }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card:        { marginBottom: spacing.cardGap },
   title:       { color: colors.text, fontSize: FontSize.md, fontWeight: FontWeight.bold, marginBottom: spacing.md },
   empty:       { color: colors.textMuted, fontSize: FontSize.sm },
@@ -100,4 +105,5 @@ const styles = StyleSheet.create({
   rowDuration: { color: colors.textDim, fontSize: FontSize.xs },
   rpeBadge:    { backgroundColor: colors.primaryDim, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
   rpeText:     { color: colors.primary, fontSize: FontSize.xs, fontWeight: FontWeight.medium },
-});
+  });
+}

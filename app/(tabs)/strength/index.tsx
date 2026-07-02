@@ -198,21 +198,17 @@ const styles = StyleSheet.create({
   rationaleCard: {
     marginBottom:    spacing.cardGap,
     borderLeftWidth: 3,
-    borderLeftColor: '#C084FC',
   },
   rationaleNote: {
-    color:        '#C084FC',
     fontSize:     FontSize.sm,
     fontWeight:   FontWeight.medium,
     marginBottom: spacing.xs,
   },
   rationaleText: {
-    color:      colors.textMuted,
     fontSize:   FontSize.sm,
     lineHeight: 18,
   },
   sectionHeader: {
-    color:        colors.textDim,
     fontSize:     FontSize.xs,
     fontWeight:   FontWeight.bold,
     letterSpacing: 1,

@@ -247,4 +247,5 @@ function createStyles(colors: ThemeColors) {
     color:      colors.primary,
     fontWeight: FontWeight.bold,
   },
-});
+  });
+}

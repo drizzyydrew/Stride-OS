@@ -1,10 +1,10 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import OnboardingShell from '../../src/components/onboarding/OnboardingShell';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
-import { colors }  from '../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../src/theme/ThemeContext';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 import type { StandardDistance } from '../../src/types/athlete';
@@ -27,6 +27,8 @@ function TimeInput({
   setMinutes: (n: number) => void;
   setSeconds: (n: number) => void;
 }) {
+  const colors = useThemeColors();
+  const t = useMemo(() => createTStyles(colors), [colors]);
   const unit = (
     label: string, val: number, max: number,
     set: (n: number) => void,
@@ -55,7 +57,8 @@ function TimeInput({
   );
 }
 
-const t = StyleSheet.create({
+function createTStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   row:      { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs, justifyContent: 'center' },
   unit:     { alignItems: 'center', gap: 4 },
   val:      { color: colors.text, fontSize: 32, fontWeight: FontWeight.black, lineHeight: 36 },
@@ -64,9 +67,13 @@ const t = StyleSheet.create({
   btn:      { width: 36, height: 36, borderRadius: Radius.sm, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   btnTxt:   { color: colors.text, fontSize: FontSize.md, fontWeight: FontWeight.bold },
   sep:      { color: colors.textSubtle, fontSize: 28, fontWeight: FontWeight.black, marginTop: 4 },
-});
+  });
+}
 
 export default function RaceScreen() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const { data, updateData } = useOnboardingStore();
   const [hasPR,     setHasPR]     = useState(data.hasPR);
   const [distance,  setDistance]  = useState<StandardDistance>(data.prDistance ?? '5k');
@@ -157,7 +164,8 @@ export default function RaceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   toggle: {
     flexDirection: 'row',
     gap:           spacing.sm,
@@ -238,4 +246,5 @@ const styles = StyleSheet.create({
     borderWidth:     1,
     borderColor:     colors.border,
   },
-});
+  });
+}

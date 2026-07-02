@@ -1,8 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 
 import OnboardingShell from '../../src/components/onboarding/OnboardingShell';
-import { colors }  from '../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../src/theme/ThemeContext';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../src/theme/tokens';
 
@@ -14,6 +15,8 @@ const PILLARS = [
 ];
 
 export default function WelcomeScreen() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <OnboardingShell
       step={0}
@@ -41,7 +44,8 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   pillars: {
     gap: spacing.md,
     marginTop: spacing.md,
@@ -80,4 +84,5 @@ const styles = StyleSheet.create({
     textAlign:  'center',
     lineHeight: 18,
   },
-});
+  });
+}

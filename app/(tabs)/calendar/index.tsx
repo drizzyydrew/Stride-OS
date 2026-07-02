@@ -105,7 +105,7 @@ function DayCell({
 
 // ─── Day Detail Panel ─────────────────────────────────────────────────────────
 
-function EntryRow({ entry }: { entry: CalendarEntry }) {
+function EntryRow({ entry, s }: { entry: CalendarEntry; s: Styles }) {
   const exercises     = entry.session?.exercises ?? [];
   const exerciseCount = exercises.length;
 
@@ -133,7 +133,7 @@ function EntryRow({ entry }: { entry: CalendarEntry }) {
   );
 }
 
-function LogRow({ log }: { log: CustomWorkoutLog }) {
+function LogRow({ log, colors, s }: { log: CustomWorkoutLog; colors: ThemeColors; s: Styles }) {
   const dur =
     log.durationMinutes ??
     log.strengthDurationMin ??
@@ -143,7 +143,7 @@ function LogRow({ log }: { log: CustomWorkoutLog }) {
 
   return (
     <View style={s.entryRow}>
-      <View style={[s.entryDot, { backgroundColor: categoryColor(log.category) }]} />
+      <View style={[s.entryDot, { backgroundColor: categoryColor(log.category, colors) }]} />
       <View style={s.entryInfo}>
         <Text style={s.entryLabel}>{categoryLabel(log.category)}</Text>
         <Text style={s.entryMeta}>
@@ -159,12 +159,14 @@ function LogRow({ log }: { log: CustomWorkoutLog }) {
 }
 
 function DayDetail({
-  date, plannedEntries, customLogs, onLogWorkout,
+  date, plannedEntries, customLogs, onLogWorkout, colors, s,
 }: {
   date:           Date;
   plannedEntries: CalendarEntry[];
   customLogs:     CustomWorkoutLog[];
   onLogWorkout:   () => void;
+  colors:         ThemeColors;
+  s:              Styles;
 }) {
   const dateStr  = toYMD(date);
   const todayStr = toYMD(new Date());
@@ -195,7 +197,7 @@ function DayDetail({
       {plannedEntries.length > 0 && (
         <View style={s.sectionGroup}>
           <Text style={s.groupLabel}>PLANNED</Text>
-          {plannedEntries.map((e, i) => <EntryRow key={i} entry={e} />)}
+          {plannedEntries.map((e, i) => <EntryRow key={i} entry={e} s={s} />)}
         </View>
       )}
 
@@ -203,7 +205,7 @@ function DayDetail({
       {customLogs.length > 0 && (
         <View style={s.sectionGroup}>
           <Text style={s.groupLabel}>LOGGED</Text>
-          {customLogs.map(log => <LogRow key={log.id} log={log} />)}
+          {customLogs.map(log => <LogRow key={log.id} log={log} colors={colors} s={s} />)}
         </View>
       )}
 
@@ -220,6 +222,9 @@ function DayDetail({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function CalendarScreen() {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
+
   const today = new Date();
 
   const [viewYear,  setViewYear]  = useState(today.getFullYear());
@@ -319,7 +324,7 @@ export default function CalendarScreen() {
 
             const dots: { color: string }[] = [
               ...planned.map(e => ({ color: e.color })),
-              ...logged.map(l => ({ color: categoryColor(l.category) })),
+              ...logged.map(l => ({ color: categoryColor(l.category, colors) })),
             ];
 
             return (
@@ -331,6 +336,7 @@ export default function CalendarScreen() {
                 dots={dots}
                 selected={dStr === selectedStr}
                 onPress={() => setSelected(day)}
+                s={s}
               />
             );
           })}
@@ -340,10 +346,10 @@ export default function CalendarScreen() {
       {/* Legend */}
       <View style={s.legend}>
         {[
-          { color: '#2563EB', label: 'Running'   },
-          { color: '#A855F7', label: 'Strength'  },
-          { color: '#F97316', label: 'Cross'     },
-          { color: '#4ADE80', label: 'Mobility'  },
+          { color: categoryColor('running', colors),        label: 'Running'   },
+          { color: categoryColor('strength', colors),       label: 'Strength'  },
+          { color: categoryColor('cross_training', colors), label: 'Cross'     },
+          { color: categoryColor('mobility', colors),       label: 'Mobility'  },
         ].map(item => (
           <View key={item.label} style={s.legendItem}>
             <View style={[s.legendDot, { backgroundColor: item.color }]} />
@@ -358,6 +364,8 @@ export default function CalendarScreen() {
         plannedEntries={selectedPlanned}
         customLogs={selectedLogs}
         onLogWorkout={handleLogPress}
+        colors={colors}
+        s={s}
       />
 
       {/* Override modal */}
@@ -390,7 +398,10 @@ export default function CalendarScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
+type Styles = ReturnType<typeof createStyles>;
+
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   monthNav: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -515,4 +526,5 @@ const s = StyleSheet.create({
     textAlign:  'center',
     paddingVertical: spacing.md,
   },
-});
+  });
+}

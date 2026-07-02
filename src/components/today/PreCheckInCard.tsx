@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
@@ -9,13 +9,15 @@ import NumericRating from '../ui/NumericRating';
 import { useAthleteStore } from '../../store/athleteStore';
 import { useCheckInStore } from '../../store/checkInStore';
 
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 
 export default function PreCheckInCard() {
   const { sleepHours, restingHRDelta, setSleepHours, setRestingHRDelta } = useAthleteStore();
   const { submitPreCheckIn } = useCheckInStore();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   // Pre-populate from stored athlete values so the user is adjusting, not re-entering.
   const [sleep,      setSleep]      = useState(sleepHours);
@@ -83,7 +85,8 @@ export default function PreCheckInCard() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   title: {
     color:        colors.text,
     fontSize:     FontSize.xl,
@@ -119,4 +122,5 @@ const styles = StyleSheet.create({
     fontSize:  10,
     marginTop: spacing.xs,
   },
-});
+  });
+}

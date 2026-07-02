@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { TrainingPhase } from '../../types/training';
@@ -15,21 +16,26 @@ type Props = {
   motivation:     number;
 };
 
-const PHASE_BADGE: Record<TrainingPhase, { bg: string; text: string; label: string }> = {
-  base:   { bg: '#0C2340', text: '#60A5FA', label: 'Base'   },
-  build:  { bg: '#1E3A8A', text: '#93C5FD', label: 'Build'  },
-  peak:   { bg: '#3B0764', text: '#C084FC', label: 'Peak'   },
-  deload: { bg: '#451A03', text: '#FCD34D', label: 'Deload' },
-  taper:  { bg: '#052E16', text: '#4ADE80', label: 'Taper'  },
-};
+// Phase badges: base/build are "in motion" training states (Sage), peak is
+// the athlete's focal push (Clay), deload/taper map to their literal
+// warning/positive semantics rather than a decorative per-phase rainbow.
+function phaseBadge(colors: ThemeColors): Record<TrainingPhase, { bg: string; text: string; label: string }> {
+  return {
+    base:   { bg: colors.sage + '22',    text: colors.sage,     label: 'Base'   },
+    build:  { bg: colors.sage + '22',    text: colors.sage,     label: 'Build'  },
+    peak:   { bg: colors.primaryDim,     text: colors.primary,  label: 'Peak'   },
+    deload: { bg: colors.warningDim,     text: colors.warning,  label: 'Deload' },
+    taper:  { bg: colors.positiveDim,    text: colors.positive, label: 'Taper'  },
+  };
+}
 
-function recoveryColor(score: number): string {
+function recoveryColor(score: number, colors: ThemeColors): string {
   if (score >= 75) return colors.positive;
   if (score >= 50) return colors.warning;
   return colors.critical;
 }
 
-function fatigueColor(score: number): string {
+function fatigueColor(score: number, colors: ThemeColors): string {
   if (score > 70) return colors.critical;
   if (score > 45) return colors.warning;
   return colors.positive;
@@ -39,15 +45,17 @@ function MetricColumn({
   value,
   label,
   color,
+  s,
 }: {
   value: string | number;
   label: string;
   color?: string;
+  s: ReturnType<typeof createStyles>;
 }) {
   return (
-    <View style={styles.column}>
-      <Text style={[styles.metricValue, color ? { color } : null]}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
+    <View style={s.column}>
+      <Text style={[s.metricValue, color ? { color } : null]}>{value}</Text>
+      <Text style={s.metricLabel}>{label}</Text>
     </View>
   );
 }
@@ -59,7 +67,9 @@ export default function ReadinessCard({
   soreness,
   motivation,
 }: Props) {
-  const phase = PHASE_BADGE[trainingPhase];
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const phase  = phaseBadge(colors)[trainingPhase];
 
   return (
     <Card>
@@ -72,18 +82,21 @@ export default function ReadinessCard({
         <MetricColumn
           value={recoveryScore}
           label="RECOVERY"
-          color={recoveryColor(recoveryScore)}
+          color={recoveryColor(recoveryScore, colors)}
+          s={styles}
         />
         <View style={styles.divider} />
         <MetricColumn
           value={fatigueScore}
           label="FATIGUE"
-          color={fatigueColor(fatigueScore)}
+          color={fatigueColor(fatigueScore, colors)}
+          s={styles}
         />
         <View style={styles.divider} />
         <MetricColumn
           value={`${motivation}/10`}
           label="MOTIVATION"
+          s={styles}
         />
       </View>
 
@@ -95,7 +108,8 @@ export default function ReadinessCard({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',

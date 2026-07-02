@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 
@@ -22,15 +23,23 @@ function getReadiness(fatigue: number, recovery: number, soreness: number | null
   return 'optimal';
 }
 
-const READINESS_CONFIG: Record<ReadinessLevel, { label: string; color: string; bg: string; advice: string }> = {
-  optimal:  { label: 'Optimal',  color: colors.positive,  bg: colors.positiveDim, advice: 'Full sessions at planned intensity.' },
-  good:     { label: 'Good',     color: '#60A5FA',         bg: '#0C2340',           advice: 'Full sessions. Monitor fatigue mid-session.' },
-  moderate: { label: 'Moderate', color: colors.warning,    bg: colors.warningDim,   advice: 'Reduce load 10–15%. Focus on movement quality.' },
-  low:      { label: 'Low',      color: '#FB923C',         bg: '#431407',           advice: 'Prehab or mobility only. Avoid heavy loading.' },
-  rest:     { label: 'Rest',     color: colors.critical,   bg: colors.criticalDim,  advice: 'Skip strength today. Prioritize recovery.' },
-};
+// "Good" narrates an in-progress/neutral state (Sage, §2.2), not a status
+// alert, so it gets a Sage tonal tint rather than an invented blue. "Low" is
+// a caution state, so it shares the Amber warning token with "moderate"
+// rather than inventing a second orange (§3.7).
+function readinessConfig(colors: ThemeColors): Record<ReadinessLevel, { label: string; color: string; bg: string; advice: string }> {
+  return {
+    optimal:  { label: 'Optimal',  color: colors.positive, bg: colors.positiveDim,  advice: 'Full sessions at planned intensity.' },
+    good:     { label: 'Good',     color: colors.sage,     bg: `${colors.sage}22`,  advice: 'Full sessions. Monitor fatigue mid-session.' },
+    moderate: { label: 'Moderate', color: colors.warning,  bg: colors.warningDim,   advice: 'Reduce load 10–15%. Focus on movement quality.' },
+    low:      { label: 'Low',      color: colors.warning,  bg: colors.warningDim,   advice: 'Prehab or mobility only. Avoid heavy loading.' },
+    rest:     { label: 'Rest',     color: colors.critical, bg: colors.criticalDim,  advice: 'Skip strength today. Prioritize recovery.' },
+  };
+}
 
-function BarRow({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+function BarRow({ label, value, max, color, styles }: {
+  label: string; value: number; max: number; color: string; styles: ReturnType<typeof createStyles>;
+}) {
   const pct = Math.min(1, Math.max(0, value / max));
   return (
     <View style={styles.barRow}>
@@ -44,8 +53,11 @@ function BarRow({ label, value, max, color }: { label: string; value: number; ma
 }
 
 export default function StrengthReadinessCard({ fatigue, recovery, soreness, acwr, weeksToRace }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const level  = getReadiness(fatigue, recovery, soreness, acwr);
-  const config = READINESS_CONFIG[level];
+  const config = readinessConfig(colors)[level];
 
   return (
     <Card style={styles.card}>
@@ -59,10 +71,10 @@ export default function StrengthReadinessCard({ fatigue, recovery, soreness, acw
       <Text style={styles.advice}>{config.advice}</Text>
 
       <View style={styles.bars}>
-        <BarRow label="Fatigue"  value={100 - fatigue}  max={100} color={fatigue > 70 ? colors.critical : colors.positive} />
-        <BarRow label="Recovery" value={recovery}        max={100} color={recovery < 40 ? colors.critical : colors.positive} />
+        <BarRow label="Fatigue"  value={100 - fatigue}  max={100} color={fatigue > 70 ? colors.critical : colors.positive} styles={styles} />
+        <BarRow label="Recovery" value={recovery}        max={100} color={recovery < 40 ? colors.critical : colors.positive} styles={styles} />
         {soreness !== null && (
-          <BarRow label="Soreness" value={10 - soreness} max={10}  color={soreness >= 7 ? colors.warning : colors.positive} />
+          <BarRow label="Soreness" value={10 - soreness} max={10}  color={soreness >= 7 ? colors.warning : colors.positive} styles={styles} />
         )}
       </View>
 
@@ -73,7 +85,8 @@ export default function StrengthReadinessCard({ fatigue, recovery, soreness, acw
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card:      { marginBottom: spacing.cardGap },
   header:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   title:     { color: colors.text, fontSize: FontSize.md, fontWeight: FontWeight.bold },
@@ -87,4 +100,5 @@ const styles = StyleSheet.create({
   barFill:   { height: '100%', borderRadius: 2 },
   barValue:  { fontSize: FontSize.xs, fontWeight: FontWeight.medium, width: 28, textAlign: 'right' },
   taper:     { color: colors.warning, fontSize: FontSize.xs, marginTop: spacing.sm, fontStyle: 'italic' },
-});
+  });
+}
