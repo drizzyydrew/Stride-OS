@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View, ViewStyle } from 'react-native';
 
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { LAYOUT, responsiveContentWidth } from '../constants/layout';
 
@@ -12,12 +12,13 @@ type Props = {
 };
 
 export default function ScrollScreen({ children, style, contentStyle }: Props) {
+  const colors    = useThemeColors();
   const { width } = useWindowDimensions();
   const maxWidth   = responsiveContentWidth(width);
 
   return (
     <ScrollView
-      style={[styles.scroll, style]}
+      style={[styles.scroll, { backgroundColor: colors.bg }, style]}
       contentContainerStyle={[styles.content, contentStyle]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
@@ -31,8 +32,7 @@ export default function ScrollScreen({ children, style, contentStyle }: Props) {
 
 const styles = StyleSheet.create({
   scroll: {
-    flex:            1,
-    backgroundColor: colors.bg,
+    flex: 1,
   },
   content: {
     paddingTop:    spacing.sm,

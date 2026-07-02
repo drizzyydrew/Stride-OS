@@ -17,10 +17,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import NumberInput from '../ui/NumberInput';
-import { colors }  from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type {
@@ -87,6 +87,9 @@ function PillRow<K extends string>({
   selected: K;
   onSelect: (k: K) => void;
 }) {
+  const colors = useThemeColors();
+  const pill   = useMemo(() => createPillStyles(colors), [colors]);
+
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
       <View style={pill.row}>
@@ -104,19 +107,30 @@ function PillRow<K extends string>({
   );
 }
 
-const pill = StyleSheet.create({
-  row:       { flexDirection: 'row', gap: spacing.xs, paddingBottom: 4 },
-  item:      { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: 20, backgroundColor: colors.border },
-  itemActive:{ backgroundColor: colors.primaryDim, borderWidth: 1, borderColor: colors.primary },
-  txt:       { color: colors.textDim, fontSize: FontSize.sm },
-  txtActive: { color: colors.primary, fontWeight: FontWeight.bold },
-});
+function createPillStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    row:       { flexDirection: 'row', gap: spacing.xs, paddingBottom: 4 },
+    item:      { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: 20, backgroundColor: colors.border },
+    itemActive:{ backgroundColor: colors.primaryDim, borderWidth: 1, borderColor: colors.primary },
+    txt:       { color: colors.textDim, fontSize: FontSize.sm },
+    txtActive: { color: colors.primary, fontWeight: FontWeight.bold },
+  });
+}
 
 // ─── Section label ────────────────────────────────────────────────────────────
 
 function SLabel({ label }: { label: string }) {
-  return <Text style={s.sLabel}>{label}</Text>;
+  const colors = useThemeColors();
+  return <Text style={[sLabelStyle.text, { color: colors.textMuted }]}>{label}</Text>;
 }
+
+const sLabelStyle = StyleSheet.create({
+  text: {
+    fontSize:      10,
+    fontWeight:    FontWeight.black,
+    letterSpacing: 0.6,
+  },
+});
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -147,6 +161,9 @@ export default function LogWorkoutModal({
   currentFatigue, recentEasyLoad, setFatigueScore, setRecentEasyLoad,
   defaultDate, overrideId,
 }: LogWorkoutModalProps) {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
+
   const today = new Date().toISOString().split('T')[0];
 
   const [category,     setCategory]     = useState<CustomWorkoutCategory>('running');
@@ -402,7 +419,8 @@ export default function LogWorkoutModal({
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   root:       { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection:   'row',
@@ -509,4 +527,5 @@ const s = StyleSheet.create({
   },
   exChipTxt:    { color: colors.text,    fontSize: FontSize.sm },
   exChipRemove: { color: colors.textDim, fontSize: FontSize.sm },
-});
+  });
+}

@@ -1,5 +1,5 @@
 import { StyleSheet, View, ViewStyle } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useThemeColors } from '../../theme/ThemeContext';
 import { Radius } from '../../theme/tokens';
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
 };
 
 export default function ProgressBar({ progress, color, height = 6, trackColor, style }: Props) {
+  const colors = useThemeColors();
   const fill = `${Math.min(1, Math.max(0, progress)) * 100}%` as `${number}%`;
   return (
     <View

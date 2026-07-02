@@ -18,9 +18,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { colors }  from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { CustomWorkoutCategory } from '../../types/customWorkout';
@@ -53,7 +53,7 @@ function readinessLabel(fatigue: number, recovery: number): string {
   return 'Elevated Risk';
 }
 
-function readinessColor(fatigue: number, recovery: number): string {
+function readinessColor(fatigue: number, recovery: number, colors: ThemeColors): string {
   if (fatigue > 75 || recovery < 35) return colors.critical;
   if (fatigue > 60 || recovery < 50) return colors.warning;
   return colors.warning;
@@ -87,12 +87,15 @@ export default function OverrideModal({
   fatigueScore, recoveryScore,
   addOverride,
 }: OverrideModalProps) {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
+
   const [acknowledged, setAcknowledged] = useState(false);
   const [reason,       setReason]       = useState('');
   const [category,     setCategory]     = useState<CustomWorkoutCategory>('running');
 
   const riskLabel  = readinessLabel(fatigueScore, recoveryScore);
-  const riskColor  = readinessColor(fatigueScore, recoveryScore);
+  const riskColor  = readinessColor(fatigueScore, recoveryScore, colors);
   const riskMsg    = readinessMessage(fatigueScore, recoveryScore);
 
   function handleConfirm() {
@@ -235,7 +238,8 @@ export default function OverrideModal({
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   root:   { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection:     'row',
@@ -355,4 +359,5 @@ const s = StyleSheet.create({
   confirmBtnDisabled: { backgroundColor: colors.border },
   confirmTxt:         { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
   confirmTxtDisabled: { color: colors.textDim },
-});
+  });
+}

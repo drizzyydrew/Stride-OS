@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useThemeColors } from '../../theme/ThemeContext';
 import { FontSize } from '../../theme/tokens';
 
 type Props = {
@@ -9,10 +9,11 @@ type Props = {
 };
 
 export default function StatRow({ label, value, valueColor }: Props) {
+  const colors = useThemeColors();
   return (
     <View style={styles.row}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={[styles.value, valueColor ? { color: valueColor } : null]}>{value}</Text>
+      <Text style={[styles.label, { color: colors.textMuted }]}>{label}</Text>
+      <Text style={[styles.value, { color: valueColor ?? colors.textDim }]}>{value}</Text>
     </View>
   );
 }
@@ -24,11 +25,9 @@ const styles = StyleSheet.create({
     alignItems:     'center',
   },
   label: {
-    color:    colors.textMuted,
     fontSize: FontSize.sm,
   },
   value: {
-    color:    colors.textDim,
     fontSize: FontSize.sm,
   },
 });

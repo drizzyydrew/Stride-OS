@@ -16,11 +16,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { useMovementStore } from '../../../src/store/movementStore';
 import { suggestGaitFindings } from '../../../src/utils/movementEngine';
-import { colors }  from '../../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../../src/theme/ThemeContext';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 import type {
@@ -38,11 +38,11 @@ import type {
 
 type Tab = 'overview' | 'gait' | 'angles' | 'flags';
 
-const SEVERITY_COLOR: Record<FindingSeverity, string> = {
-  low:      colors.positive,
-  moderate: colors.warning,
-  high:     colors.critical,
-};
+function severityColor(sev: FindingSeverity, colors: ThemeColors): string {
+  if (sev === 'low')      return colors.positive;
+  if (sev === 'moderate') return colors.warning;
+  return colors.critical;
+}
 
 const SEVERITY_LABEL: Record<FindingSeverity, string> = {
   low:      'Low',
@@ -68,11 +68,14 @@ const GAIT_DEFAULTS: Omit<GaitAnalysis, 'videoId'> = {
 // ─── Finding card ─────────────────────────────────────────────────────────────
 
 function FindingCard({ finding }: { finding: GaitFinding }) {
+  const colors = useThemeColors();
+  const fc     = useMemo(() => createFcStyles(colors), [colors]);
+
   return (
     <View style={fc.card}>
       <View style={fc.row}>
-        <View style={[fc.badge, { backgroundColor: SEVERITY_COLOR[finding.severity] + '22' }]}>
-          <Text style={[fc.badgeTxt, { color: SEVERITY_COLOR[finding.severity] }]}>
+        <View style={[fc.badge, { backgroundColor: severityColor(finding.severity, colors) + '22' }]}>
+          <Text style={[fc.badgeTxt, { color: severityColor(finding.severity, colors) }]}>
             {SEVERITY_LABEL[finding.severity]}
           </Text>
         </View>
@@ -98,11 +101,14 @@ function FindingCard({ finding }: { finding: GaitFinding }) {
 // ─── Risk flag card ───────────────────────────────────────────────────────────
 
 function RiskFlagCard({ flag, onDismiss }: { flag: MovementRiskFlag; onDismiss: () => void }) {
+  const colors = useThemeColors();
+  const rf     = useMemo(() => createRfStyles(colors), [colors]);
+
   return (
     <View style={rf.card}>
       <View style={rf.row}>
-        <View style={[rf.badge, { backgroundColor: SEVERITY_COLOR[flag.severity] + '22' }]}>
-          <Text style={[rf.badgeTxt, { color: SEVERITY_COLOR[flag.severity] }]}>
+        <View style={[rf.badge, { backgroundColor: severityColor(flag.severity, colors) + '22' }]}>
+          <Text style={[rf.badgeTxt, { color: severityColor(flag.severity, colors) }]}>
             {SEVERITY_LABEL[flag.severity].toUpperCase()}
           </Text>
         </View>
@@ -145,6 +151,9 @@ function GaitChecklistModal({
   onSave:   (g: GaitAnalysis) => void;
   onClose:  () => void;
 }) {
+  const colors = useThemeColors();
+  const gc     = useMemo(() => createGcStyles(colors), [colors]);
+
   const [cadence,    setCadence]    = useState(String(existing.cadence ?? ''));
   const [footStrike, setFootStrike] = useState<FootStrikePattern>(existing.footStrike ?? 'unknown');
   const [overstride,    setOverstride]   = useState<boolean | null>(existing.overstride ?? null);
@@ -278,6 +287,8 @@ function GaitChecklistModal({
 const HIT_SLOP = { top: 12, bottom: 12, left: 16, right: 16 } as const;
 
 export default function VideoDetailScreen() {
+  const colors    = useThemeColors();
+  const s         = useMemo(() => createStyles(colors), [colors]);
   const insets    = useSafeAreaInsets();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
   const {

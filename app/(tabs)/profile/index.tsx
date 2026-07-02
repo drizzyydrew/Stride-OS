@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -35,7 +35,7 @@ import TrainingAvailabilityCard from '../../../src/components/profile/TrainingAv
 import RaceHistoryCard          from '../../../src/components/profile/RaceHistoryCard';
 
 import { formatPace }           from '../../../src/utils/calibrationEngine';
-import { colors }               from '../../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../../src/theme/ThemeContext';
 import { spacing }              from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 
@@ -80,6 +80,9 @@ type AddPRModalProps = {
 };
 
 function AddPRModal({ visible, onClose, onSubmit }: AddPRModalProps) {
+  const colors = useThemeColors();
+  const modal  = useMemo(() => createModalStyles(colors), [colors]);
+
   const [distanceKey, setDistanceKey] = useState<StandardDistance | 'custom'>('5k');
   const [hours,   setHours]   = useState(0);
   const [minutes, setMinutes] = useState(25);
@@ -202,6 +205,9 @@ type AddThresholdTestModalProps = {
 };
 
 function AddThresholdTestModal({ visible, onClose, onSubmit }: AddThresholdTestModalProps) {
+  const colors = useThemeColors();
+  const modal  = useMemo(() => createModalStyles(colors), [colors]);
+
   const [dateStr,  setDateStr]  = useState('');
   const [avgHR,    setAvgHR]    = useState(162);
   const [paceMin,  setPaceMin]  = useState(7);
@@ -312,6 +318,9 @@ type AddMAFTestModalProps = {
 };
 
 function AddMAFTestModal({ visible, mafHR, onClose, onSubmit }: AddMAFTestModalProps) {
+  const colors = useThemeColors();
+  const modal  = useMemo(() => createModalStyles(colors), [colors]);
+
   const [dateStr,      setDateStr]      = useState('');
   const [distanceTenths, setDistanceTenths] = useState(40);  // 40 tenths = 4.0 miles
   const [durationMin,  setDurationMin]  = useState(40);
@@ -424,7 +433,8 @@ function AddMAFTestModal({ visible, mafHR, onClose, onSubmit }: AddMAFTestModalP
 
 // ─── Shared modal stylesheet ──────────────────────────────────────────────────
 
-const modal = StyleSheet.create({
+function createModalStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   overlay: {
     flex:            1,
     justifyContent:  'flex-end',
@@ -602,7 +612,8 @@ const modal = StyleSheet.create({
     fontSize:   FontSize.base,
     fontWeight: FontWeight.bold,
   },
-});
+  });
+}
 
 // ─── Day selector ─────────────────────────────────────────────────────────────
 
@@ -613,6 +624,9 @@ function DaySelector({
   available: TrainingDay[];
   onChange:  (days: TrainingDay[]) => void;
 }) {
+  const colors = useThemeColors();
+  const ds     = useMemo(() => createDsStyles(colors), [colors]);
+
   const activeSet = new Set(available);
 
   function toggle(day: TrainingDay) {
@@ -645,7 +659,8 @@ function DaySelector({
   );
 }
 
-const ds = StyleSheet.create({
+function createDsStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   label: {
     color:         colors.textMuted,
     fontSize:      10,
@@ -678,11 +693,15 @@ const ds = StyleSheet.create({
   textActive: {
     color: colors.primary,
   },
-});
+  });
+}
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function ProfileScreen() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const {
     athleteName,
     goalRace,

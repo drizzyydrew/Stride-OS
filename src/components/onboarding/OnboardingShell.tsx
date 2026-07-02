@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 
-import { colors }  from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import { ONBOARDING_TOTAL_STEPS } from '../../store/onboardingStore';
@@ -41,6 +41,9 @@ export default function OnboardingShell({
   showSkip = false,
   onSkip,
 }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const DATA_STEPS = ONBOARDING_TOTAL_STEPS - 1;   // 9 data steps
   const showProgress = step > 0;
   const progress = step / DATA_STEPS;
@@ -110,7 +113,8 @@ export default function OnboardingShell({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   safe: {
     flex:            1,
     backgroundColor: colors.bg,
@@ -226,4 +230,5 @@ const styles = StyleSheet.create({
   nextTextDisabled: {
     color: colors.textSubtle,
   },
-});
+  });
+}

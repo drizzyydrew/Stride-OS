@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { Radius, FontSize, FontWeight } from '../../theme/tokens';
 
@@ -11,6 +12,9 @@ type Props = {
 };
 
 export default function StatAdjuster({ label, value, increase, decrease }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}: {value}</Text>
@@ -28,34 +32,36 @@ export default function StatAdjuster({ label, value, increase, decrease }: Props
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: spacing.xl,
-  },
-  label: {
-    color:        colors.textMuted,
-    marginBottom: spacing.md,
-    fontSize:     FontSize.md,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap:           spacing.md,
-  },
-  button: {
-    flex:         1,
-    padding:      spacing.lg,
-    borderRadius: Radius.md,
-    alignItems:   'center',
-  },
-  minus: {
-    backgroundColor: colors.danger,
-  },
-  plus: {
-    backgroundColor: colors.primary,
-  },
-  buttonText: {
-    color:      colors.text,
-    fontWeight: FontWeight.black,
-    fontSize:   20,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      marginBottom: spacing.xl,
+    },
+    label: {
+      color:        colors.textMuted,
+      marginBottom: spacing.md,
+      fontSize:     FontSize.md,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      gap:           spacing.md,
+    },
+    button: {
+      flex:         1,
+      padding:      spacing.lg,
+      borderRadius: Radius.md,
+      alignItems:   'center',
+    },
+    minus: {
+      backgroundColor: colors.danger,
+    },
+    plus: {
+      backgroundColor: colors.primary,
+    },
+    buttonText: {
+      color:      colors.text,
+      fontWeight: FontWeight.black,
+      fontSize:   20,
+    },
+  });
+}

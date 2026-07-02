@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 
 type Props = {
@@ -16,9 +17,12 @@ export default function NumericRating({
   onChange,
   min   = 1,
   max   = 10,
-  color = colors.primary,
+  color,
 }: Props) {
-  const numbers = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  const colors       = useThemeColors();
+  const styles       = useMemo(() => createStyles(colors), [colors]);
+  const activeColor  = color ?? colors.primary;
+  const numbers      = Array.from({ length: max - min + 1 }, (_, i) => min + i);
 
   return (
     <View style={styles.row}>
@@ -31,7 +35,7 @@ export default function NumericRating({
             hitSlop={4}
             style={[
               styles.btn,
-              { backgroundColor: selected ? color : colors.border },
+              { backgroundColor: selected ? activeColor : colors.border },
             ]}
           >
             <Text style={[styles.label, selected && styles.labelSelected]}>
@@ -44,24 +48,26 @@ export default function NumericRating({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    gap:           3,
-  },
-  btn: {
-    flex:           1,
-    height:         40,
-    borderRadius:   Radius.sm,
-    alignItems:     'center',
-    justifyContent: 'center',
-  },
-  label: {
-    color:      colors.textDim,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.bold,
-  },
-  labelSelected: {
-    color: colors.text,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      gap:           3,
+    },
+    btn: {
+      flex:           1,
+      height:         40,
+      borderRadius:   Radius.sm,
+      alignItems:     'center',
+      justifyContent: 'center',
+    },
+    label: {
+      color:      colors.textDim,
+      fontSize:   FontSize.sm,
+      fontWeight: FontWeight.bold,
+    },
+    labelSelected: {
+      color: colors.text,
+    },
+  });
+}

@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { Radius } from '../../theme/tokens';
 import type { TrendDirection, TrendSeverity } from '../../types/analytics';
 
@@ -9,12 +9,12 @@ type Props = {
   slope:     number;
 };
 
-const SEVERITY_COLOR: Record<TrendSeverity, string> = {
-  positive: colors.positive,
-  neutral:  colors.neutral,
-  warning:  colors.warning,
-  critical: colors.critical,
-};
+function severityColor(severity: TrendSeverity, colors: ThemeColors): string {
+  if (severity === 'positive') return colors.positive;
+  if (severity === 'neutral')  return colors.neutral;
+  if (severity === 'warning')  return colors.warning;
+  return colors.critical;
+}
 
 const DIRECTION_SYMBOL: Record<TrendDirection, string> = {
   up:   '↑',
@@ -29,7 +29,8 @@ function formatSlope(slope: number): string {
 }
 
 export default function TrendPill({ direction, severity, slope }: Props) {
-  const color  = SEVERITY_COLOR[severity];
+  const colors = useThemeColors();
+  const color  = severityColor(severity, colors);
   const symbol = DIRECTION_SYMBOL[direction];
 
   return (

@@ -7,9 +7,10 @@
 //   <NumberInput label="Sleep" value={sleepHours} onChangeValue={setSleepHours}
 //     min={0} max={12} step={0.5} unit="hrs" decimalPlaces={1} />
 
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { colors }  from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 
@@ -38,6 +39,9 @@ export default function NumberInput({
   placeholder,
   compact = false,
 }: Props) {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
+
   function clamp(n: number): number {
     return Math.min(max, Math.max(min, n));
   }
@@ -88,61 +92,63 @@ export default function NumberInput({
   );
 }
 
-const s = StyleSheet.create({
-  wrapper: {
-    gap: spacing.xs,
-  },
-  label: {
-    color:         colors.textMuted,
-    fontSize:      10,
-    fontWeight:    FontWeight.black,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
-  row: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    gap:            spacing.sm,
-    backgroundColor: colors.card,
-    borderRadius:   10,
-    padding:        spacing.md,
-    borderWidth:    1,
-    borderColor:    colors.border,
-  },
-  rowCompact: {
-    padding:    spacing.sm,
-    borderRadius: Radius.sm,
-  },
-  inputWrap: {
-    flex:          1,
-    flexDirection: 'row',
-    alignItems:    'center',
-    justifyContent:'center',
-    gap:           4,
-  },
-  input: {
-    color:      colors.text,
-    fontSize:   FontSize.xl,
-    fontWeight: FontWeight.black,
-    textAlign:  'center',
-    minWidth:   48,
-  },
-  unit: {
-    color:    colors.textMuted,
-    fontSize: FontSize.sm,
-  },
-  btn: {
-    width:           40,
-    height:          40,
-    borderRadius:    Radius.sm,
-    backgroundColor: colors.border,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  btnTxt: {
-    color:      colors.text,
-    fontSize:   FontSize.md,
-    fontWeight: FontWeight.bold,
-    lineHeight: 22,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    wrapper: {
+      gap: spacing.xs,
+    },
+    label: {
+      color:         colors.textMuted,
+      fontSize:      10,
+      fontWeight:    FontWeight.black,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+    },
+    row: {
+      flexDirection:  'row',
+      alignItems:     'center',
+      gap:            spacing.sm,
+      backgroundColor: colors.card,
+      borderRadius:   10,
+      padding:        spacing.md,
+      borderWidth:    1,
+      borderColor:    colors.border,
+    },
+    rowCompact: {
+      padding:    spacing.sm,
+      borderRadius: Radius.sm,
+    },
+    inputWrap: {
+      flex:          1,
+      flexDirection: 'row',
+      alignItems:    'center',
+      justifyContent:'center',
+      gap:           4,
+    },
+    input: {
+      color:      colors.text,
+      fontSize:   FontSize.xl,
+      fontWeight: FontWeight.black,
+      textAlign:  'center',
+      minWidth:   48,
+    },
+    unit: {
+      color:    colors.textMuted,
+      fontSize: FontSize.sm,
+    },
+    btn: {
+      width:           40,
+      height:          40,
+      borderRadius:    Radius.sm,
+      backgroundColor: colors.border,
+      alignItems:      'center',
+      justifyContent:  'center',
+    },
+    btnTxt: {
+      color:      colors.text,
+      fontSize:   FontSize.md,
+      fontWeight: FontWeight.bold,
+      lineHeight: 22,
+    },
+  });
+}

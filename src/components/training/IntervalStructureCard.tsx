@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { IntervalBlock } from '../../types/workout';
@@ -14,6 +15,9 @@ const REST_LABEL: Record<IntervalBlock['restType'], string> = {
 };
 
 export default function IntervalStructureCard({ intervals }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const {
     setCount, repsPerSet, workLabel, restLabel, workPaceGuide,
     workHRZone, workRPE, restType, totalWorkMin, progressionNote,
@@ -84,7 +88,8 @@ export default function IntervalStructureCard({ intervals }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   heading: {
     color:         colors.textDim,
     fontSize:      11,
@@ -175,4 +180,5 @@ const styles = StyleSheet.create({
     color:    colors.primary,
     fontSize: FontSize.sm,
   },
-});
+  });
+}

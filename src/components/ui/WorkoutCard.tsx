@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -5,7 +6,7 @@ import Card from './Card';
 import Badge from './Badge';
 import Button from './Button';
 
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors, zoneTint } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { Workout, WorkoutIntensity } from '../../types/training';
@@ -18,17 +19,35 @@ type Props = {
 
 type BadgeStyle = { bg: string; text: string; label: string };
 
-const INTENSITY_BADGE: Record<WorkoutIntensity, BadgeStyle> = {
-  rest:      { bg: '#1E293B', text: '#64748B', label: 'Rest'      },
-  very_easy: { bg: '#022C22', text: '#4ADE80', label: 'Very Easy' },
-  easy:      { bg: '#0C1A3D', text: '#60A5FA', label: 'Easy'      },
-  moderate:  { bg: '#2E1065', text: '#C084FC', label: 'Moderate'  },
-  hard:      { bg: '#450A0A', text: '#F87171', label: 'Hard'      },
-  max:       { bg: '#3B0404', text: '#FCA5A5', label: 'Max'       },
+// StrideOS never encodes intensity as a red/green/purple traffic-light ramp
+// (§3.7, §3.9) — "hard"/"max" is not a destructive state. Non-rest intensities
+// map to a single Sage accent at increasing opacity via `zoneTint`; "rest" is
+// a distinct neutral state, not part of the intensity ramp.
+const INTENSITY_STEPS = ['very_easy', 'easy', 'moderate', 'hard', 'max'] as const;
+
+const INTENSITY_LABEL: Record<WorkoutIntensity, string> = {
+  rest:      'Rest',
+  very_easy: 'Very Easy',
+  easy:      'Easy',
+  moderate:  'Moderate',
+  hard:      'Hard',
+  max:       'Max',
 };
 
+function intensityBadge(intensity: WorkoutIntensity, colors: ThemeColors): BadgeStyle {
+  const label = INTENSITY_LABEL[intensity];
+  if (intensity === 'rest') {
+    return { bg: colors.sunken, text: colors.textMuted, label };
+  }
+  const idx = INTENSITY_STEPS.indexOf(intensity as typeof INTENSITY_STEPS[number]);
+  return { bg: zoneTint(colors, idx, INTENSITY_STEPS.length), text: colors.text, label };
+}
+
 export default function WorkoutCard({ workout, isComplete, onComplete }: Props) {
-  const badge  = INTENSITY_BADGE[workout.intensity];
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const badge  = intensityBadge(workout.intensity, colors);
   const isRest = workout.type === 'rest';
 
   const buttonLabel = isComplete
@@ -76,69 +95,71 @@ export default function WorkoutCard({ workout, isComplete, onComplete }: Props) 
   );
 }
 
-const styles = StyleSheet.create({
-  cardComplete: {
-    opacity: 0.55,
-  },
-  headerRow: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'center',
-    marginBottom:   14,
-  },
-  durationWrap: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           6,
-  },
-  duration: {
-    color:      colors.text,
-    fontSize:   FontSize.xl,
-    fontWeight: FontWeight.bold,
-  },
-  durationDone: {
-    color:    colors.textMuted,
-    fontSize: FontSize.lg,
-  },
-  title: {
-    color:        colors.text,
-    fontSize:     24,
-    fontWeight:   FontWeight.black,
-    marginBottom: 10,
-  },
-  description: {
-    color:        colors.textMuted,
-    fontSize:     FontSize.base,
-    lineHeight:   21,
-    marginBottom: spacing.xl,
-  },
-  divider: {
-    height:          1,
-    backgroundColor: colors.border,
-    marginBottom:    spacing.lg,
-  },
-  paceRow: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'flex-end',
-    marginBottom:   6,
-  },
-  paceLabel: {
-    color:         colors.textDim,
-    fontSize:      12,
-    fontWeight:    FontWeight.medium,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  paceTarget: {
-    color:      colors.text,
-    fontSize:   FontSize.lg,
-    fontWeight: FontWeight.bold,
-  },
-  paceDescription: {
-    color:        colors.textDim,
-    fontSize:     FontSize.sm,
-    lineHeight:   18,
-    marginBottom: spacing.xl,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    cardComplete: {
+      opacity: 0.55,
+    },
+    headerRow: {
+      flexDirection:  'row',
+      justifyContent: 'space-between',
+      alignItems:     'center',
+      marginBottom:   14,
+    },
+    durationWrap: {
+      flexDirection: 'row',
+      alignItems:    'center',
+      gap:           6,
+    },
+    duration: {
+      color:      colors.text,
+      fontSize:   FontSize.xl,
+      fontWeight: FontWeight.bold,
+    },
+    durationDone: {
+      color:    colors.textMuted,
+      fontSize: FontSize.lg,
+    },
+    title: {
+      color:        colors.text,
+      fontSize:     24,
+      fontWeight:   FontWeight.black,
+      marginBottom: 10,
+    },
+    description: {
+      color:        colors.textMuted,
+      fontSize:     FontSize.base,
+      lineHeight:   21,
+      marginBottom: spacing.xl,
+    },
+    divider: {
+      height:          1,
+      backgroundColor: colors.border,
+      marginBottom:    spacing.lg,
+    },
+    paceRow: {
+      flexDirection:  'row',
+      justifyContent: 'space-between',
+      alignItems:     'flex-end',
+      marginBottom:   6,
+    },
+    paceLabel: {
+      color:         colors.textDim,
+      fontSize:      12,
+      fontWeight:    FontWeight.medium,
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+    },
+    paceTarget: {
+      color:      colors.text,
+      fontSize:   FontSize.lg,
+      fontWeight: FontWeight.bold,
+    },
+    paceDescription: {
+      color:        colors.textDim,
+      fontSize:     FontSize.sm,
+      lineHeight:   18,
+      marginBottom: spacing.xl,
+    },
+  });
+}

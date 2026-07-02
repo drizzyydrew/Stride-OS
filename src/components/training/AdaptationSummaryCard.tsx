@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type {
@@ -64,13 +65,22 @@ function deriveSeverity(triggers: AdaptationTrigger[]): 0 | 1 | 2 | 3 {
   return 0;
 }
 
-const SEVERITY_LABEL  = ['On Track', 'Mild', 'Moderate', 'High'] as const;
-const SEVERITY_COLOR  = [colors.positive, colors.warning, colors.warning, colors.critical] as const;
-const SEVERITY_BG     = [colors.positiveDim, colors.warningDim, colors.warningDim, colors.criticalDim] as const;
+const SEVERITY_LABEL = ['On Track', 'Mild', 'Moderate', 'High'] as const;
+
+function getSeverityColors(colors: ThemeColors) {
+  return {
+    color: [colors.positive, colors.warning, colors.warning, colors.critical] as const,
+    bg:    [colors.positiveDim, colors.warningDim, colors.warningDim, colors.criticalDim] as const,
+  };
+}
 
 // ─── Trigger chip ─────────────────────────────────────────────────────────────
 
-function TriggerChip({ trigger }: { trigger: AdaptationTrigger }) {
+function TriggerChip({ trigger, colors, styles }: {
+  trigger: AdaptationTrigger;
+  colors:  ThemeColors;
+  styles:  ReturnType<typeof createStyles>;
+}) {
   const color =
     trigger.severity === 'severe'   ? colors.critical :
     trigger.severity === 'moderate' ? colors.warning   :
@@ -91,8 +101,10 @@ function TriggerChip({ trigger }: { trigger: AdaptationTrigger }) {
 
 // ─── Change row ───────────────────────────────────────────────────────────────
 
-function ChangeRow({ entry }: {
-  entry: AdaptationResult['entries'][number];
+function ChangeRow({ entry, colors, styles }: {
+  entry:  AdaptationResult['entries'][number];
+  colors: ThemeColors;
+  styles: ReturnType<typeof createStyles>;
 }) {
   if (entry.change === 'as_planned' || entry.originalType === entry.adaptedType) return null;
 
@@ -122,8 +134,12 @@ function ChangeRow({ entry }: {
 // ─── Main card ────────────────────────────────────────────────────────────────
 
 export default function AdaptationSummaryCard({ result, onRecalculate, isLoading }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const severity      = deriveSeverity(result.triggers);
   const severityLabel = SEVERITY_LABEL[severity];
+  const { color: SEVERITY_COLOR, bg: SEVERITY_BG } = getSeverityColors(colors);
   const severityColor = SEVERITY_COLOR[severity];
   const severityBg    = SEVERITY_BG[severity];
 
@@ -157,7 +173,7 @@ export default function AdaptationSummaryCard({ result, onRecalculate, isLoading
           <Text style={styles.sectionLabel}>TRIGGERS</Text>
           <View style={styles.chipRow}>
             {displayTriggers.map((t, i) => (
-              <TriggerChip key={i} trigger={t} />
+              <TriggerChip key={i} trigger={t} colors={colors} styles={styles} />
             ))}
           </View>
         </View>
@@ -168,7 +184,7 @@ export default function AdaptationSummaryCard({ result, onRecalculate, isLoading
         <View style={styles.changesSection}>
           <Text style={styles.sectionLabel}>CHANGES</Text>
           {changedEntries.map((entry, i) => (
-            <ChangeRow key={i} entry={entry} />
+            <ChangeRow key={i} entry={entry} colors={colors} styles={styles} />
           ))}
         </View>
       )}
@@ -200,7 +216,8 @@ export default function AdaptationSummaryCard({ result, onRecalculate, isLoading
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -345,4 +362,5 @@ const styles = StyleSheet.create({
     fontWeight:    FontWeight.medium,
     letterSpacing: 0.3,
   },
-});
+  });
+}
