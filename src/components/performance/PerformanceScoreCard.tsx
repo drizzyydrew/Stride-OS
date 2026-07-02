@@ -1,14 +1,14 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { colors }  from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { PerformanceDimension, PerformanceProfile } from '../../types/performance';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function scoreColor(score: number): string {
+function scoreColor(score: number, colors: ThemeColors): string {
   if (score >= 75) return colors.positive;
   if (score >= 50) return colors.warning;
   return colors.critical;
@@ -41,7 +41,9 @@ function DimensionRow({
   expanded: boolean;
   onPress:  () => void;
 }) {
-  const color = scoreColor(dim.score);
+  const colors  = useThemeColors();
+  const d       = useMemo(() => createDStyles(colors), [colors]);
+  const color   = scoreColor(dim.score, colors);
   const fillPct = `${Math.round(dim.score)}%` as const;
 
   return (
@@ -102,9 +104,11 @@ type Props = {
 };
 
 export default function PerformanceScoreCard({ profile, compact = false }: Props) {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
-  const overallColor = scoreColor(profile.overallScore);
+  const overallColor = scoreColor(profile.overallScore, colors);
 
   const qualityColor = {
     high:         colors.positive,
@@ -166,7 +170,8 @@ export default function PerformanceScoreCard({ profile, compact = false }: Props
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius:    12,
@@ -220,9 +225,11 @@ const s = StyleSheet.create({
     fontSize:   FontSize.xs,
     lineHeight: 17,
   },
-});
+  });
+}
 
-const d = StyleSheet.create({
+function createDStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrapper: {
     gap: spacing.xs,
   },
@@ -277,4 +284,5 @@ const d = StyleSheet.create({
   missingBox: { gap: 2 },
   missingLabel:{ color: colors.primary, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   missingItem: { color: colors.textMuted, fontSize: FontSize.xs },
-});
+  });
+}
