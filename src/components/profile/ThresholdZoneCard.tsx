@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
 import { formatPace } from '../../utils/calibrationEngine';
-import { colors } from '../../theme/colors';
+import { useThemeColors, zoneTint, zoneTintBg, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { ThresholdZoneEntry } from '../../types/athlete';
@@ -12,25 +13,7 @@ type Props = {
   lthr:               number;   // for display
 };
 
-const ZONE_COLOR: Record<string, string> = {
-  '1':  '#4ADE80',
-  '2':  '#60A5FA',
-  '3':  '#818CF8',
-  '4':  '#F59E0B',
-  '5a': '#FB923C',
-  '5b': '#F87171',
-  '5c': '#FCA5A5',
-};
-
-const ZONE_BG: Record<string, string> = {
-  '1':  '#052E16',
-  '2':  '#0C1A3D',
-  '3':  '#1E0A4A',
-  '4':  '#451A03',
-  '5a': '#431407',
-  '5b': '#450A0A',
-  '5c': '#3B0404',
-};
+const ZONE_ORDER = ['1', '2', '3', '4', '5a', '5b', '5c'];
 
 function ThresholdZoneRow({
   entry,
@@ -39,8 +22,11 @@ function ThresholdZoneRow({
   entry:  ThresholdZoneEntry;
   isLast: boolean;
 }) {
-  const color = ZONE_COLOR[entry.zone] ?? colors.textDim;
-  const bg    = ZONE_BG[entry.zone]    ?? colors.border;
+  const colors = useThemeColors();
+  const row    = useMemo(() => createRowStyles(colors), [colors]);
+  const idx    = Math.max(ZONE_ORDER.indexOf(entry.zone), 0);
+  const color  = zoneTint(colors, idx, ZONE_ORDER.length);
+  const bg     = zoneTintBg(colors, idx, ZONE_ORDER.length);
 
   // Build pace display string
   let paceStr = '';
@@ -93,7 +79,8 @@ function ThresholdZoneRow({
   );
 }
 
-const row = StyleSheet.create({
+function createRowStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   wrap:      { flexDirection: 'row', gap: spacing.sm, paddingVertical: spacing.md },
   bordered:  { borderBottomWidth: 1, borderBottomColor: colors.border },
   colorBar:  { width: 3, borderRadius: 2, alignSelf: 'stretch', flexShrink: 0 },
@@ -108,9 +95,13 @@ const row = StyleSheet.create({
   value:     { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.black },
   desc:      { color: colors.textDim, fontSize: 9, lineHeight: 14 },
   rpe:       { color: colors.textMuted, fontSize: 9 },
-});
+  });
+}
 
 export default function ThresholdZoneCard({ zones, thresholdPaceSec, lthr }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Card style={styles.card}>
       <View style={styles.headerRow}>
@@ -156,12 +147,13 @@ export default function ThresholdZoneCard({ zones, thresholdPaceSec, lthr }: Pro
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card:       { padding: 0, overflow: 'hidden' },
   headerRow:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.xl, paddingBottom: spacing.sm },
   sectionLabel: { color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.medium, letterSpacing: 0.6 },
-  badge:      { backgroundColor: '#2D1B69', borderRadius: Radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 3 },
-  badgeText:  { color: '#C084FC', fontSize: 10, fontWeight: FontWeight.black, letterSpacing: 0.4 },
+  badge:      { backgroundColor: colors.primaryDim, borderRadius: Radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 3 },
+  badgeText:  { color: colors.primary, fontSize: 10, fontWeight: FontWeight.black, letterSpacing: 0.4 },
   refRow:     { flexDirection: 'row', paddingHorizontal: spacing.xl, marginBottom: spacing.sm, gap: spacing.lg, alignItems: 'center' },
   refItem:    { gap: 2 },
   refLabel:   { color: colors.textDim, fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.4 },
@@ -169,8 +161,9 @@ const styles = StyleSheet.create({
   divider:    { width: 1, height: 28, backgroundColor: colors.border },
   helper:     { color: colors.textSubtle, fontSize: 9, lineHeight: 13, paddingHorizontal: spacing.xl, marginBottom: spacing.xs },
   sourceRow:  { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.xl, marginBottom: spacing.sm },
-  sourceDot:  { width: 5, height: 5, borderRadius: 3, backgroundColor: '#C084FC', flexShrink: 0 },
-  sourceLabel:{ color: '#C084FC', fontSize: 9, flex: 1 },
+  sourceDot:  { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.primary, flexShrink: 0 },
+  sourceLabel:{ color: colors.primary, fontSize: 9, flex: 1 },
   footer:     { borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: spacing.sm, paddingHorizontal: spacing.xl, marginTop: spacing.xs },
   footerText: { color: colors.textSubtle, fontSize: 9, textAlign: 'center' },
-});
+  });
+}

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
 import { formatPace, formatRaceTime } from '../../utils/calibrationEngine';
-import { colors } from '../../theme/colors';
+import { useThemeColors, zoneTint, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { CalibrationOutput, ZoneMethod } from '../../types/athlete';
@@ -26,10 +26,11 @@ const METHODS: MethodTab[] = [
   { key: 'race_prediction',  label: 'Race Predictions',  short: 'Races' },
 ];
 
-const ZONE_COLORS = ['#4ADE80', '#60A5FA', '#818CF8', '#F59E0B', '#F87171'];
-const ZONE_BG_COLORS = ['#052E16', '#0C1A3D', '#1E0A4A', '#451A03', '#450A0A'];
+const ZONE_STEPS = 5;
 
 function PaceRow({ label, pace, color }: { label: string; pace: string; color: string }) {
+  const colors  = useThemeColors();
+  const compare = useMemo(() => createCompareStyles(colors), [colors]);
   return (
     <View style={compare.row}>
       <Text style={compare.rowLabel}>{label}</Text>
@@ -39,6 +40,8 @@ function PaceRow({ label, pace, color }: { label: string; pace: string; color: s
 }
 
 function HRRow({ label, bpm, color }: { label: string; bpm: string; color: string }) {
+  const colors  = useThemeColors();
+  const compare = useMemo(() => createCompareStyles(colors), [colors]);
   return (
     <View style={compare.row}>
       <Text style={compare.rowLabel}>{label}</Text>
@@ -48,6 +51,8 @@ function HRRow({ label, bpm, color }: { label: string; bpm: string; color: strin
 }
 
 function VDOTPaceContent({ calibration }: { calibration: CalibrationOutput }) {
+  const colors  = useThemeColors();
+  const compare = useMemo(() => createCompareStyles(colors), [colors]);
   const keys = ['recovery', 'easy', 'marathon', 'threshold', 'vo2', 'rep'];
   return (
     <View style={compare.content}>
@@ -55,7 +60,7 @@ function VDOTPaceContent({ calibration }: { calibration: CalibrationOutput }) {
       {keys.map((k, i) => {
         const z = calibration.paceZones[k];
         if (!z) return null;
-        const color = ZONE_COLORS[Math.min(i, ZONE_COLORS.length - 1)];
+        const color = zoneTint(colors, Math.min(i, ZONE_STEPS - 1), ZONE_STEPS);
         return (
           <PaceRow
             key={k}
@@ -71,6 +76,8 @@ function VDOTPaceContent({ calibration }: { calibration: CalibrationOutput }) {
 }
 
 function KarvonenContent({ calibration, isManual }: { calibration: CalibrationOutput; isManual: boolean }) {
+  const colors  = useThemeColors();
+  const compare = useMemo(() => createCompareStyles(colors), [colors]);
   const zones = calibration.karvonenZones;
   if (!zones) {
     return (
@@ -92,7 +99,7 @@ function KarvonenContent({ calibration, isManual }: { calibration: CalibrationOu
       </Text>
       <Text style={compare.subTitle}>{calibration.hrMaxSource}</Text>
       {zones.map((z, i) => {
-        const color = ZONE_COLORS[Math.min(i, ZONE_COLORS.length - 1)];
+        const color = zoneTint(colors, Math.min(i, ZONE_STEPS - 1), ZONE_STEPS);
         const bpmStr = z.minBPM !== null && z.maxBPM !== null
           ? `${z.minBPM}–${z.maxBPM} bpm`
           : `${Math.round(z.minPct * 100)}–${Math.round(z.maxPct * 100)}% HRR`;
@@ -106,6 +113,8 @@ function KarvonenContent({ calibration, isManual }: { calibration: CalibrationOu
 }
 
 function ThresholdContent({ calibration }: { calibration: CalibrationOutput }) {
+  const colors  = useThemeColors();
+  const compare = useMemo(() => createCompareStyles(colors), [colors]);
   const zones = calibration.thresholdZones;
   if (!zones) {
     return (
@@ -118,12 +127,11 @@ function ThresholdContent({ calibration }: { calibration: CalibrationOutput }) {
     );
   }
 
-  const THRESH_COLORS = ['#4ADE80', '#60A5FA', '#818CF8', '#F59E0B', '#FB923C', '#F87171', '#FCA5A5'];
   return (
     <View style={compare.content}>
       <Text style={compare.sectionTitle}>Friel 7-Zone · Threshold-Based</Text>
       {zones.map((z, i) => {
-        const color = THRESH_COLORS[i] ?? colors.textDim;
+        const color = zoneTint(colors, i, zones.length);
         let paceStr = '';
         if (z.paceMinSecPerMi !== null && z.paceMaxSecPerMi !== null)
           paceStr = `${formatPace(z.paceMinSecPerMi)}–${formatPace(z.paceMaxSecPerMi)}/mi`;
@@ -150,6 +158,8 @@ function ThresholdContent({ calibration }: { calibration: CalibrationOutput }) {
 }
 
 function RacePredictionContent({ calibration }: { calibration: CalibrationOutput }) {
+  const colors  = useThemeColors();
+  const compare = useMemo(() => createCompareStyles(colors), [colors]);
   const preds = calibration.racePredictions;
   if (!preds) {
     return (
@@ -163,7 +173,7 @@ function RacePredictionContent({ calibration }: { calibration: CalibrationOutput
     <View style={compare.content}>
       <Text style={compare.sectionTitle}>Race Time Predictions · VDOT {calibration.vdot.toFixed(1)}</Text>
       {preds.map((p, i) => {
-        const color = ZONE_COLORS[Math.min(i, ZONE_COLORS.length - 1)];
+        const color = zoneTint(colors, Math.min(i, ZONE_STEPS - 1), ZONE_STEPS);
         const pace  = p.predictedSeconds > 0
           ? `${formatRaceTime(p.predictedSeconds)} (${formatPace(p.predictedSeconds / (p.distanceMeters / 1609.344))}/mi)`
           : '—';
@@ -174,7 +184,8 @@ function RacePredictionContent({ calibration }: { calibration: CalibrationOutput
   );
 }
 
-const compare = StyleSheet.create({
+function createCompareStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   content:      { paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
   sectionTitle: { color: colors.textMuted, fontSize: 10, fontWeight: FontWeight.medium, letterSpacing: 0.5, marginBottom: spacing.sm },
   subTitle:     { color: colors.textDim, fontSize: 9, marginBottom: spacing.sm },
@@ -183,7 +194,8 @@ const compare = StyleSheet.create({
   rowValue:     { fontSize: FontSize.xs, fontWeight: FontWeight.bold, flex: 1, textAlign: 'right' },
   unavailable:  { color: colors.textDim, fontSize: FontSize.sm, lineHeight: 18, marginBottom: spacing.sm },
   citation:     { color: colors.textSubtle, fontSize: 8, marginTop: spacing.md, fontStyle: 'italic' },
-});
+  });
+}
 
 function isMethodAvailable(method: ZoneMethod, calibration: CalibrationOutput): boolean {
   if (method === 'threshold' && !calibration.thresholdZones) return false;
@@ -193,6 +205,8 @@ function isMethodAvailable(method: ZoneMethod, calibration: CalibrationOutput): 
 }
 
 export default function ZoneComparisonCard({ calibration, onMethodChange }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [active, setActive] = useState<ZoneMethod>(calibration.activeZoneMethod);
 
   function handleSelect(method: ZoneMethod) {
@@ -249,7 +263,8 @@ export default function ZoneComparisonCard({ calibration, onMethodChange }: Prop
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card:              { padding: 0, overflow: 'hidden' },
   title:             { color: colors.text, fontSize: FontSize.md, fontWeight: FontWeight.bold, padding: spacing.xl, paddingBottom: spacing.xs },
   subtitle:          { color: colors.textMuted, fontSize: 9, paddingHorizontal: spacing.xl, marginBottom: spacing.sm },
@@ -264,4 +279,5 @@ const styles = StyleSheet.create({
   lockDot:           { color: colors.textSubtle, fontSize: 6 },
   footer:            { borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: spacing.sm, paddingHorizontal: spacing.xl },
   footerText:        { color: colors.textSubtle, fontSize: 9, textAlign: 'center' },
-});
+  });
+}
