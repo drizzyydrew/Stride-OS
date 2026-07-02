@@ -14,14 +14,14 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { useOnboardingStore } from '../../src/store/onboardingStore';
 import { useProfileStore }    from '../../src/store/profileStore';
 import { useAthleteStore }    from '../../src/store/athleteStore';
 import { vdotFromRacePR, estimateHRMax } from '../../src/utils/calibrationEngine';
 import { buildGoalRaceLabel } from '../../src/utils/goalRaceEngine';
-import { colors }  from '../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../src/theme/ThemeContext';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 import type { RacePR } from '../../src/types/athlete';
@@ -65,6 +65,8 @@ function estimateVdotFromProfile(weeklyMiles: number, yearsRunning: number): num
 // ─── Summary row ─────────────────────────────────────────────────────────────
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
+  const colors = useThemeColors();
+  const s = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={s.summaryRow}>
       <Text style={s.summaryLabel}>{label}</Text>
@@ -100,6 +102,9 @@ const STRENGTH_LABELS: Record<string, string> = {
 };
 
 export default function CompleteScreen() {
+  const colors = useThemeColors();
+  const s = useMemo(() => createStyles(colors), [colors]);
+
   const { data, completeOnboarding } = useOnboardingStore();
   const {
     initDefaultProfile,
@@ -299,7 +304,8 @@ export default function CompleteScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   root: {
     flex:            1,
     backgroundColor: colors.bg,
@@ -430,4 +436,5 @@ const s = StyleSheet.create({
     textAlign:  'center',
     paddingBottom: spacing.xl,
   },
-});
+  });
+}

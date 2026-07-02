@@ -151,4 +151,5 @@ function createStyles(colors: ThemeColors) {
     marginTop:  spacing.md,
     lineHeight: 17,
   },
-});
+  });
+}

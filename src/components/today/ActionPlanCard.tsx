@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Card from '../ui/Card';
 import { useActionPlanStore } from '../../store/actionPlanStore';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { PlannedAction, ActionCategory, ActionDueWindow, ActionPriority } from '../../types/actionPlan';
@@ -12,26 +13,35 @@ type Props = {
 };
 
 // ─── Visual config ────────────────────────────────────────────────────────────
+// Category chips: only categories with a genuine physiological/status meaning
+// (recovery, load) get a semantic status color; purely categorical tags
+// (training, race prep) borrow Sage/Clay per the brand's state-vs-action split.
 
-const CATEGORY_CONFIG: Record<ActionCategory, { label: string; color: string; bg: string }> = {
-  recovery:        { label: 'RECOVERY',     color: colors.positive, bg: colors.positiveDim },
-  training:        { label: 'TRAINING',     color: '#60A5FA',       bg: '#0C1A3D' },
-  load_management: { label: 'LOAD',         color: colors.warning,  bg: colors.warningDim  },
-  race_prep:       { label: 'RACE PREP',    color: '#C084FC',       bg: '#3B0764' },
-  habit:           { label: 'HABIT',        color: colors.textMuted, bg: colors.border },
-};
+function categoryConfig(colors: ThemeColors): Record<ActionCategory, { label: string; color: string; bg: string }> {
+  return {
+    recovery:        { label: 'RECOVERY',     color: colors.positive, bg: colors.positiveDim },
+    training:        { label: 'TRAINING',     color: colors.sage,     bg: colors.sage + '22' },
+    load_management: { label: 'LOAD',         color: colors.warning,  bg: colors.warningDim  },
+    race_prep:       { label: 'RACE PREP',    color: colors.primary,  bg: colors.primaryDim  },
+    habit:           { label: 'HABIT',        color: colors.textMuted, bg: colors.border },
+  };
+}
 
-const DUE_CONFIG: Record<ActionDueWindow, { label: string; color: string }> = {
-  today:     { label: 'TODAY',     color: colors.critical },
-  this_week: { label: 'THIS WEEK', color: colors.warning  },
-  next_week: { label: 'NEXT WEEK', color: colors.textDim  },
-};
+function dueConfig(colors: ThemeColors): Record<ActionDueWindow, { label: string; color: string }> {
+  return {
+    today:     { label: 'TODAY',     color: colors.critical },
+    this_week: { label: 'THIS WEEK', color: colors.warning  },
+    next_week: { label: 'NEXT WEEK', color: colors.textDim  },
+  };
+}
 
-const PRIORITY_DOT: Record<ActionPriority, string> = {
-  high:   colors.critical,
-  medium: colors.warning,
-  low:    colors.positive,
-};
+function priorityDot(colors: ThemeColors): Record<ActionPriority, string> {
+  return {
+    high:   colors.critical,
+    medium: colors.warning,
+    low:    colors.positive,
+  };
+}
 
 // ─── Single action row ────────────────────────────────────────────────────────
 
@@ -39,9 +49,12 @@ function ActionRow({ action, isLast }: { action: PlannedAction; isLast: boolean 
   const { isCompleted, completeAction } = useActionPlanStore();
   const completed = isCompleted(action.id);
 
-  const category = CATEGORY_CONFIG[action.category];
-  const due      = DUE_CONFIG[action.dueWindow];
-  const dotColor = PRIORITY_DOT[action.priority];
+  const colors = useThemeColors();
+  const rowStyles = useMemo(() => createRowStyles(colors), [colors]);
+
+  const category = categoryConfig(colors)[action.category];
+  const due      = dueConfig(colors)[action.dueWindow];
+  const dotColor = priorityDot(colors)[action.priority];
 
   return (
     <View style={[rowStyles.container, !isLast && rowStyles.bordered]}>
@@ -83,7 +96,8 @@ function ActionRow({ action, isLast }: { action: PlannedAction; isLast: boolean 
   );
 }
 
-const rowStyles = StyleSheet.create({
+function createRowStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flexDirection:  'row',
     alignItems:     'flex-start',
@@ -156,16 +170,19 @@ const rowStyles = StyleSheet.create({
     borderColor:     colors.positive,
   },
   checkmark: {
-    color:      '#000',
+    color:      colors.onAccent,
     fontSize:   11,
     fontWeight: FontWeight.black,
   },
-});
+  });
+}
 
 // ─── Main card ────────────────────────────────────────────────────────────────
 
 export default function ActionPlanCard({ actions }: Props) {
   const { isCompleted } = useActionPlanStore();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   if (actions.length === 0) {
     return (
@@ -204,7 +221,8 @@ export default function ActionPlanCard({ actions }: Props) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   header: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -229,4 +247,5 @@ const styles = StyleSheet.create({
     fontStyle:  'italic',
     marginTop:  spacing.xs,
   },
-});
+  });
+}

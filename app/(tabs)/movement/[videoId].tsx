@@ -523,7 +523,8 @@ export default function VideoDetailScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   root:           { flex: 1, backgroundColor: colors.bg },
   notFound:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
   notFoundTxt:    { color: colors.textMuted, fontSize: FontSize.base },
@@ -651,9 +652,11 @@ const s = StyleSheet.create({
   },
   angleLabel: { color: colors.textMuted, fontSize: FontSize.sm, textTransform: 'capitalize' },
   angleVal:   { color: colors.text,      fontSize: FontSize.base, fontWeight: FontWeight.black },
-});
+  });
+}
 
-const fc = StyleSheet.create({
+function createFcStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius:    10,
@@ -675,9 +678,11 @@ const fc = StyleSheet.create({
   },
   recLabel: { color: colors.textMuted, fontSize: 10, fontWeight: FontWeight.black },
   recTxt:   { color: colors.textSubtle, fontSize: FontSize.xs, lineHeight: 16 },
-});
+  });
+}
 
-const rf = StyleSheet.create({
+function createRfStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius:    10,
@@ -700,9 +705,11 @@ const rf = StyleSheet.create({
     paddingVertical:   spacing.xs,
   },
   dismissTxt:{ color: colors.textMuted, fontSize: FontSize.xs },
-});
+  });
+}
 
-const gc = StyleSheet.create({
+function createGcStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   root:    { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection:   'row',
@@ -760,4 +767,5 @@ const gc = StyleSheet.create({
     minWidth:          64,
     textAlign:         'right',
   },
-});
+  });
+}

@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, zoneTint, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { TrainingDistribution } from '../../types/history';
@@ -16,53 +17,67 @@ const INTENSITY_ORDER: WorkoutIntensity[] = [
   'very_easy', 'easy', 'moderate', 'hard', 'max', 'rest',
 ];
 
-const INTENSITY_META: Record<WorkoutIntensity, { label: string; color: string }> = {
-  very_easy: { label: 'Very Easy', color: '#4ADE80' },
-  easy:      { label: 'Easy',      color: '#60A5FA' },
-  moderate:  { label: 'Moderate',  color: '#C084FC' },
-  hard:      { label: 'Hard',      color: '#F87171' },
-  max:       { label: 'Max',       color: '#FCA5A5' },
-  rest:      { label: 'Rest',      color: '#5F6B7A' },
+// Intensity spectrum (excluding 'rest', which is not a training intensity)
+// gets a single Sage accent at increasing opacity — never a rainbow (§3.7, §3.9).
+const INTENSITY_TINT_ORDER: WorkoutIntensity[] = ['very_easy', 'easy', 'moderate', 'hard', 'max'];
+
+const INTENSITY_LABEL: Record<WorkoutIntensity, string> = {
+  very_easy: 'Very Easy',
+  easy:      'Easy',
+  moderate:  'Moderate',
+  hard:      'Hard',
+  max:       'Max',
+  rest:      'Rest',
 };
 
+function intensityColor(intensity: WorkoutIntensity, colors: ThemeColors): string {
+  if (intensity === 'rest') return colors.textDim;
+  const idx = INTENSITY_TINT_ORDER.indexOf(intensity);
+  return zoneTint(colors, idx, INTENSITY_TINT_ORDER.length);
+}
+
 export default function IntensityDistributionCard({ distribution }: Props) {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
+
   const { byIntensity, totalCount } = distribution;
   const active = INTENSITY_ORDER.filter(i => (byIntensity[i] ?? 0) > 0);
 
   return (
     <Card>
-      <Text style={styles.title}>Intensity Distribution</Text>
-      <Text style={styles.subtitle}>Last 30 days</Text>
+      <Text style={s.title}>Intensity Distribution</Text>
+      <Text style={s.subtitle}>Last 30 days</Text>
 
       {totalCount === 0 ? (
-        <Text style={styles.empty}>
+        <Text style={s.empty}>
           Complete workouts to see your training distribution.
         </Text>
       ) : (
         active.map(intensity => {
           const count = byIntensity[intensity] ?? 0;
           const pct   = Math.round((count / totalCount) * 100);
-          const meta  = INTENSITY_META[intensity];
+          const label = INTENSITY_LABEL[intensity];
+          const color = intensityColor(intensity, colors);
           // Flex-ratio bar: colored child fills count/totalCount of the track.
           // The remaining flex shows the track's background — no percentage widths needed.
           const emptyFlex = Math.max(0, totalCount - count);
 
           return (
-            <View key={intensity} style={styles.row}>
-              <Text style={styles.intensityLabel}>{meta.label}</Text>
-              <View style={styles.barTrack}>
+            <View key={intensity} style={s.row}>
+              <Text style={s.intensityLabel}>{label}</Text>
+              <View style={s.barTrack}>
                 <View
                   style={{
                     flex:            count,
                     height:          8,
-                    backgroundColor: meta.color,
+                    backgroundColor: color,
                     borderRadius:    Radius.sm,
                   }}
                 />
                 {emptyFlex > 0 ? <View style={{ flex: emptyFlex }} /> : null}
               </View>
-              <Text style={styles.pct}>{pct}%</Text>
-              <Text style={styles.count}>{count}</Text>
+              <Text style={s.pct}>{pct}%</Text>
+              <Text style={s.count}>{count}</Text>
             </View>
           );
         })
@@ -71,7 +86,8 @@ export default function IntensityDistributionCard({ distribution }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   title: {
     color:         colors.textMuted,
     fontSize:      FontSize.base,
@@ -123,4 +139,5 @@ const styles = StyleSheet.create({
     fontSize:  FontSize.xs,
     textAlign: 'right',
   },
-});
+  });
+}

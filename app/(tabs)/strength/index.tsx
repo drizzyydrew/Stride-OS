@@ -23,7 +23,7 @@ import StrengthCoachCard from '../../../src/components/strength/StrengthCoachCar
 import type { StrengthInsight } from '../../../src/components/strength/StrengthCoachCard';
 import Card from '../../../src/components/ui/Card';
 
-import { colors } from '../../../src/theme/colors';
+import { useThemeColors } from '../../../src/theme/ThemeContext';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../../src/theme/tokens';
 import { todayDateKey } from '../../../src/types/checkin';
@@ -93,6 +93,7 @@ function buildStrengthInsights(
 
 export default function StrengthScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
 
   const {
     fatigueScore, recoveryScore, trainingPhase, progressionLevel,
@@ -159,13 +160,13 @@ export default function StrengthScreen() {
       />
 
       {/* Phase rationale */}
-      <Card style={styles.rationaleCard}>
-        <Text style={styles.rationaleNote}>{strengthWeek.phaseNote}</Text>
-        <Text style={styles.rationaleText}>{strengthWeek.phaseRationale}</Text>
+      <Card style={[styles.rationaleCard, { borderLeftColor: colors.primary }]}>
+        <Text style={[styles.rationaleNote, { color: colors.primary }]}>{strengthWeek.phaseNote}</Text>
+        <Text style={[styles.rationaleText, { color: colors.textMuted }]}>{strengthWeek.phaseRationale}</Text>
       </Card>
 
       {/* Sessions */}
-      <Text style={styles.sectionHeader}>This Week's Sessions</Text>
+      <Text style={[styles.sectionHeader, { color: colors.textDim }]}>This Week's Sessions</Text>
       {strengthWeek.sessions.map((session, index) => {
         const key        = `sw${currentWeek}_${session.id}_${index}`;
         const isComplete = completedSessions.includes(key);

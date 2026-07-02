@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Alert, Modal, Pressable, SafeAreaView,
   ScrollView, StyleSheet, Text, View,
@@ -18,7 +18,7 @@ import Button from '../../../src/components/ui/Button';
 import Card from '../../../src/components/ui/Card';
 import Badge from '../../../src/components/ui/Badge';
 
-import { colors } from '../../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../../src/theme/ThemeContext';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../../src/theme/tokens';
 import type { WorkoutIntensity } from '../../../src/types/training';

@@ -1,6 +1,7 @@
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
+import { useThemeColors } from '../../../src/theme/ThemeContext';
 
 import {
   getLast7DaysLoad,
@@ -75,6 +76,7 @@ function recoverySeverity(r: number): TrendSeverity {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function AnalyticsScreen() {
+  const colors = useThemeColors();
   const {
     weeklyMileage,
     fatigueScore,
@@ -277,8 +279,8 @@ export default function AnalyticsScreen() {
           label="Weekly Mileage"
           data={mileagePoints}
           unit=" mi"
-          barColor="#1E3A8A"
-          highlightColor="#2563EB"
+          barColor={colors.sage}
+          highlightColor={colors.primary}
           helper="Miles per training week from completed workouts."
         />
       ) : null}

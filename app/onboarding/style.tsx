@@ -1,10 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import OnboardingShell from '../../src/components/onboarding/OnboardingShell';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
-import { colors }  from '../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../src/theme/ThemeContext';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../src/theme/tokens';
 import type { TrainingStyle } from '../../src/store/onboardingStore';
@@ -42,6 +42,8 @@ const STYLE_OPTIONS: {
 ];
 
 export default function StyleScreen() {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
   const { data, updateData } = useOnboardingStore();
   const [style, setStyle] = useState<TrainingStyle>(data.trainingStyle);
 
@@ -90,7 +92,8 @@ export default function StyleScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   options: {
     gap: spacing.sm,
   },
@@ -150,4 +153,5 @@ const s = StyleSheet.create({
     fontSize:   FontSize.xs,
     lineHeight: 18,
   },
-});
+  });
+}

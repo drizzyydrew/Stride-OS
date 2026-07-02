@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { RichWorkout } from '../../types/workout';
@@ -9,6 +9,8 @@ import type { RichWorkout } from '../../types/workout';
 type Props = { workout: RichWorkout };
 
 export default function WorkoutRationaleCard({ workout }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [showScience, setShowScience] = useState(false);
 
   const { rationale, instructions, executionCues, failureConditions, modifications } = workout;
@@ -95,7 +97,8 @@ export default function WorkoutRationaleCard({ workout }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   adaptationRow: {
     marginBottom: spacing.lg,
   },
@@ -224,4 +227,5 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: spacing.xs,
   },
-});
+  });
+}

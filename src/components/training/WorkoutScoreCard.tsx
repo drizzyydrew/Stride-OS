@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
 import ProgressBar from '../ui/ProgressBar';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { WorkoutScore } from '../../types/workout';
@@ -23,6 +24,9 @@ const RECOVERY_LABEL: Record<number, string> = {
 };
 
 export default function WorkoutScoreCard({ score }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const rows: ScoreRow[] = [
     {
       label:       'Training Load',
@@ -89,7 +93,8 @@ export default function WorkoutScoreCard({ score }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   heading: {
     color:         colors.textDim,
     fontSize:      11,
@@ -149,4 +154,5 @@ const styles = StyleSheet.create({
     fontSize:   FontSize.lg,
     fontWeight: FontWeight.bold,
   },
-});
+  });
+}

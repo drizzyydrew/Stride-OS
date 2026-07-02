@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import Card from '../ui/Card';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { TrainingLoad, TrendSeverity } from '../../types/analytics';
@@ -10,12 +11,15 @@ type Props = {
   load: TrainingLoad;
 };
 
-const ACWR_COLOR: Record<TrendSeverity, string> = {
-  positive: colors.positive,
-  neutral:  colors.neutral,
-  warning:  colors.warning,
-  critical: colors.critical,
-};
+function acwrColorFor(sev: TrendSeverity, colors: ThemeColors): string {
+  const ACWR_COLOR: Record<TrendSeverity, string> = {
+    positive: colors.positive,
+    neutral:  colors.neutral,
+    warning:  colors.warning,
+    critical: colors.critical,
+  };
+  return ACWR_COLOR[sev];
+}
 
 const ACWR_LABEL: Record<TrendSeverity, string> = {
   positive: 'Optimal Zone',
@@ -24,46 +28,50 @@ const ACWR_LABEL: Record<TrendSeverity, string> = {
   critical: 'High Risk',
 };
 
-function MetricColumn({ value, label }: { value: string; label: string }) {
+function MetricColumn({ value, label, s }: { value: string; label: string; s: ReturnType<typeof createStyles> }) {
   return (
-    <View style={styles.column}>
-      <Text style={styles.columnValue}>{value}</Text>
-      <Text style={styles.columnLabel}>{label}</Text>
+    <View style={s.column}>
+      <Text style={s.columnValue}>{value}</Text>
+      <Text style={s.columnLabel}>{label}</Text>
     </View>
   );
 }
 
 export default function LoadBalanceCard({ load }: Props) {
-  const acwrColor = ACWR_COLOR[load.acwrSeverity];
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
+
+  const acwrColor = acwrColorFor(load.acwrSeverity, colors);
   const acwrLabel = ACWR_LABEL[load.acwrSeverity];
 
   return (
     <Card>
-      <Text style={styles.title}>Training Load</Text>
+      <Text style={s.title}>Training Load</Text>
 
-      <View style={styles.metricsRow}>
-        <MetricColumn value={`${load.acute}`}   label="ACUTE (ATL)"   />
-        <View style={styles.divider} />
-        <MetricColumn value={`${load.chronic}`} label="CHRONIC (CTL)" />
-        <View style={styles.divider} />
-        <View style={styles.column}>
-          <Text style={[styles.columnValue, { color: acwrColor }]}>
+      <View style={s.metricsRow}>
+        <MetricColumn value={`${load.acute}`}   label="ACUTE (ATL)"   s={s} />
+        <View style={s.divider} />
+        <MetricColumn value={`${load.chronic}`} label="CHRONIC (CTL)" s={s} />
+        <View style={s.divider} />
+        <View style={s.column}>
+          <Text style={[s.columnValue, { color: acwrColor }]}>
             {load.acwr.toFixed(2)}
           </Text>
-          <Text style={styles.columnLabel}>ACWR</Text>
+          <Text style={s.columnLabel}>ACWR</Text>
         </View>
       </View>
 
-      <View style={[styles.acwrBadge, { backgroundColor: acwrColor + '18' }]}>
-        <View style={[styles.acwrDot, { backgroundColor: acwrColor }]} />
-        <Text style={[styles.acwrBadgeText, { color: acwrColor }]}>{acwrLabel}</Text>
-        <Text style={styles.acwrRange}> · Sweet spot: 0.8 – 1.3</Text>
+      <View style={[s.acwrBadge, { backgroundColor: acwrColor + '18' }]}>
+        <View style={[s.acwrDot, { backgroundColor: acwrColor }]} />
+        <Text style={[s.acwrBadgeText, { color: acwrColor }]}>{acwrLabel}</Text>
+        <Text style={s.acwrRange}> · Sweet spot: 0.8 – 1.3</Text>
       </View>
     </Card>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   title: {
     color:         colors.textMuted,
     fontSize:      FontSize.base,
@@ -121,4 +129,5 @@ const styles = StyleSheet.create({
     color:    colors.textDim,
     fontSize: 12,
   },
-});
+  });
+}

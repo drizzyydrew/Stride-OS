@@ -1,10 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import OnboardingShell from '../../src/components/onboarding/OnboardingShell';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
-import { colors }  from '../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../src/theme/ThemeContext';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 import type { TrainingDay } from '../../src/types/athlete';
@@ -15,6 +15,8 @@ const DAY_LABELS: Record<TrainingDay, string> = {
 };
 
 export default function AvailabilityScreen() {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
   const { data, updateData } = useOnboardingStore();
   const [days,     setDays]     = useState<TrainingDay[]>(data.availableDays);
   const [sessions, setSessions] = useState(data.targetSessions);
@@ -88,7 +90,8 @@ export default function AvailabilityScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   section: {
     gap: spacing.sm,
   },
@@ -175,4 +178,5 @@ const s = StyleSheet.create({
     fontSize:   FontSize.xs,
     lineHeight: 18,
   },
-});
+  });
+}

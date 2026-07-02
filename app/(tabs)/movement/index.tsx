@@ -15,10 +15,10 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { useMovementStore } from '../../../src/store/movementStore';
-import { colors }  from '../../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../../src/theme/ThemeContext';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 import type { MovementAnalysisType, MovementActivity, MovementViewAngle } from '../../../src/types/movement';
@@ -96,6 +96,8 @@ function AddVideoModal({
   onClose: () => void;
   onAdd:   (form: AddVideoForm) => void;
 }) {
+  const colors = useThemeColors();
+  const m       = useMemo(() => createModalStyles(colors), [colors]);
   const today = new Date().toISOString().split('T')[0];
   const [form, setForm] = useState<AddVideoForm>({
     title:        '',
@@ -252,6 +254,8 @@ function AddVideoModal({
 // ─── Video card ───────────────────────────────────────────────────────────────
 
 function VideoCard({ video }: { video: { id: string; title: string; date: string; analysisType: MovementAnalysisType; activity: MovementActivity } }) {
+  const colors = useThemeColors();
+  const vc      = useMemo(() => createVideoCardStyles(colors), [colors]);
   return (
     <Pressable
       style={vc.card}
@@ -275,6 +279,8 @@ function VideoCard({ video }: { video: { id: string; title: string; date: string
 export default function MovementIndexScreen() {
   const { videos, addVideo } = useMovementStore();
   const [showAdd, setShowAdd] = useState(false);
+  const colors = useThemeColors();
+  const s       = useMemo(() => createStyles(colors), [colors]);
 
   function handleAdd(form: AddVideoForm) {
     addVideo({
@@ -335,7 +341,8 @@ export default function MovementIndexScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   root: {
     flex:            1,
     backgroundColor: colors.bg,
@@ -424,9 +431,11 @@ const s = StyleSheet.create({
   cards: {
     gap: spacing.sm,
   },
-});
+  });
+}
 
-const vc = StyleSheet.create({
+function createVideoCardStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius:    12,
@@ -469,9 +478,11 @@ const vc = StyleSheet.create({
     color:    colors.textSubtle,
     fontSize: 22,
   },
-});
+  });
+}
 
-const m = StyleSheet.create({
+function createModalStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   root: {
     flex:            1,
     backgroundColor: colors.bg,
@@ -573,4 +584,5 @@ const m = StyleSheet.create({
     fontSize:   FontSize.xs,
     lineHeight: 17,
   },
-});
+  });
+}

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Button from '../ui/Button';
 import FieldStepper from '../ui/FieldStepper';
-import { colors } from '../../theme/colors';
+import { useThemeColors, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 
@@ -26,6 +26,9 @@ export default function WorkoutLogForm({
   onSave,
   onCancel,
 }: Props) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [duration, setDuration] = useState(plannedDurationMinutes);
   const [distance, setDistance] = useState(
     parseFloat(plannedDistanceMiles.toFixed(1)),
@@ -102,7 +105,8 @@ export default function WorkoutLogForm({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     paddingVertical: spacing.xl,
   },
@@ -148,4 +152,5 @@ const styles = StyleSheet.create({
   actions: {
     marginTop: spacing.xl,
   },
-});
+  });
+}

@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
-import { colors } from '../../theme/colors';
+import { useThemeColors, zoneTint, type ThemeColors } from '../../theme/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { RichWorkout } from '../../types/workout';
@@ -11,18 +12,34 @@ type Props = { workout: RichWorkout };
 
 type BadgeStyle = { bg: string; text: string; label: string };
 
-const INTENSITY_BADGE: Record<WorkoutIntensity, BadgeStyle> = {
-  rest:      { bg: '#1E293B', text: '#64748B', label: 'Rest'      },
-  very_easy: { bg: '#022C22', text: '#4ADE80', label: 'Very Easy' },
-  easy:      { bg: '#0C1A3D', text: '#60A5FA', label: 'Easy'      },
-  moderate:  { bg: '#2E1065', text: '#C084FC', label: 'Moderate'  },
-  hard:      { bg: '#450A0A', text: '#F87171', label: 'Hard'      },
-  max:       { bg: '#3B0404', text: '#FCA5A5', label: 'Max'       },
+// Intensity is a single-accent ramp (rest → max), never a red/green traffic
+// light (§3.7, §3.9 of the design system) — Sage at increasing opacity via
+// `zoneTint`. "Rest" sits outside the effort ramp entirely (neutral tone).
+const INTENSITY_ORDER: WorkoutIntensity[] = ['very_easy', 'easy', 'moderate', 'hard', 'max'];
+const INTENSITY_LABEL: Record<WorkoutIntensity, string> = {
+  rest:      'Rest',
+  very_easy: 'Very Easy',
+  easy:      'Easy',
+  moderate:  'Moderate',
+  hard:      'Hard',
+  max:       'Max',
 };
 
-const HR_ZONE_COLOR = ['#4ADE80', '#60A5FA', '#C084FC', '#F59E0B', '#F87171'];
+function intensityBadge(intensity: WorkoutIntensity, colors: ThemeColors): BadgeStyle {
+  if (intensity === 'rest') {
+    return { bg: colors.border, text: colors.textDim, label: INTENSITY_LABEL.rest };
+  }
+  const idx = INTENSITY_ORDER.indexOf(intensity);
+  return {
+    bg:    zoneTint(colors, idx, INTENSITY_ORDER.length),
+    text:  colors.text,
+    label: INTENSITY_LABEL[intensity],
+  };
+}
 
-function StatCell({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function StatCell({ label, value, sub, styles }: {
+  label: string; value: string; sub?: string; styles: ReturnType<typeof createStyles>;
+}) {
   return (
     <View style={styles.statCell}>
       <Text style={styles.statLabel}>{label}</Text>
@@ -33,8 +50,11 @@ function StatCell({ label, value, sub }: { label: string; value: string; sub?: s
 }
 
 export default function WorkoutDetailCard({ workout }: Props) {
-  const badge     = INTENSITY_BADGE[workout.intensity];
-  const zoneColor = HR_ZONE_COLOR[(workout.hrZoneTarget - 1) % 5] ?? colors.neutral;
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const badge     = intensityBadge(workout.intensity, colors);
+  const zoneColor = zoneTint(colors, (workout.hrZoneTarget - 1) % 5, 5);
   const isRest    = workout.type === 'rest';
 
   return (
@@ -59,11 +79,13 @@ export default function WorkoutDetailCard({ workout }: Props) {
             <StatCell
               label="Pace Target"
               value={workout.paceGuidance.targetPace}
+              styles={styles}
             />
             <StatCell
               label={`HR Zone ${workout.hrZoneTarget}`}
               value={`Zone ${workout.hrZoneTarget}`}
               sub={`RPE ${workout.rpeRange[0]}–${workout.rpeRange[1]}`}
+              styles={styles}
             />
           </View>
 
@@ -112,7 +134,8 @@ export default function WorkoutDetailCard({ workout }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   headerRow: {
     flexDirection:  'row',
     justifyContent: 'space-between',
@@ -228,4 +251,5 @@ const styles = StyleSheet.create({
     color:    colors.primary,
     fontSize: FontSize.sm,
   },
-});
+  });
+}

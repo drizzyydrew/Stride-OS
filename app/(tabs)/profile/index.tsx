@@ -1169,6 +1169,9 @@ export default function ProfileScreen() {
 }
 
 function ResetDataSection() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const resetOnboarding = useOnboardingStore(s => s.resetOnboarding);
 
   function handleReset() {
@@ -1206,10 +1209,14 @@ function ResetDataSection() {
 }
 
 function SectionLabel({ label }: { label: string }) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return <Text style={styles.sectionLabel}>{label}</Text>;
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   sectionLabel: {
     color:         colors.textDim,
     fontSize:      FontSize.xs,
@@ -1325,7 +1332,7 @@ const styles = StyleSheet.create({
   testActionBtnDanger: {
     flex:            0,
     paddingHorizontal: spacing.lg,
-    backgroundColor:   '#1F0707',
+    backgroundColor:   colors.criticalDim,
     borderWidth:       1,
     borderColor:       colors.critical,
   },
@@ -1384,7 +1391,7 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   resetBtn: {
-    backgroundColor: '#1F0707',
+    backgroundColor: colors.criticalDim,
     borderWidth:     1,
     borderColor:     colors.danger,
     borderRadius:    Radius.sm,
@@ -1396,4 +1403,5 @@ const styles = StyleSheet.create({
     fontSize:   FontSize.base,
     fontWeight: FontWeight.bold,
   },
-});
+  });
+}

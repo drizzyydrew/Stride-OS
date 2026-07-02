@@ -1,10 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import OnboardingShell from '../../src/components/onboarding/OnboardingShell';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
-import { colors }  from '../../src/theme/colors';
+import { useThemeColors, type ThemeColors } from '../../src/theme/ThemeContext';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 import type { StrengthLevel } from '../../src/store/onboardingStore';
@@ -42,6 +42,8 @@ const STRENGTH_OPTIONS: {
 ];
 
 export default function StrengthScreen() {
+  const colors = useThemeColors();
+  const s      = useMemo(() => createStyles(colors), [colors]);
   const { data, updateData } = useOnboardingStore();
   const [level, setLevel] = useState<StrengthLevel>(data.strengthLevel);
 
@@ -88,7 +90,8 @@ export default function StrengthScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   options: {
     gap: spacing.sm,
   },
@@ -151,4 +154,5 @@ const s = StyleSheet.create({
     fontSize:   FontSize.xs,
     lineHeight: 18,
   },
-});
+  });
+}

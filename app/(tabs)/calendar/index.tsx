@@ -30,7 +30,7 @@ import FloatingActionButton from '../../../src/layout/FloatingActionButton';
 import LogWorkoutModal      from '../../../src/components/shared/LogWorkoutModal';
 import OverrideModal        from '../../../src/components/shared/OverrideModal';
 
-import { colors }  from '../../../src/theme/colors';
+import { useThemeColors, zoneTint, type ThemeColors } from '../../../src/theme/ThemeContext';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 
@@ -43,13 +43,13 @@ const MONTH_NAMES = [
   'July','August','September','October','November','December',
 ];
 
-function categoryColor(cat: string): string {
+function categoryColor(cat: string, colors: ThemeColors): string {
   switch (cat) {
-    case 'running':        return '#2563EB';
-    case 'strength':       return '#A855F7';
-    case 'cross_training': return '#F97316';
-    case 'mobility':       return '#4ADE80';
-    default:               return '#8B9AAF';
+    case 'running':        return zoneTint(colors, 0, 4);
+    case 'strength':       return zoneTint(colors, 1, 4);
+    case 'cross_training': return zoneTint(colors, 2, 4);
+    case 'mobility':       return zoneTint(colors, 3, 4);
+    default:               return colors.neutral;
   }
 }
 
@@ -66,7 +66,7 @@ function categoryLabel(cat: string): string {
 // ─── Day Cell ─────────────────────────────────────────────────────────────────
 
 function DayCell({
-  date, isToday, isCurrentMonth, dots, selected, onPress,
+  date, isToday, isCurrentMonth, dots, selected, onPress, s,
 }: {
   date:           Date;
   isToday:        boolean;
@@ -74,6 +74,7 @@ function DayCell({
   dots:           { color: string }[];
   selected:       boolean;
   onPress:        () => void;
+  s:              Styles;
 }) {
   return (
     <Pressable
