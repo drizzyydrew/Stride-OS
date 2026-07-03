@@ -24,21 +24,35 @@ type Props = {
 
 // ─── Phase badge colors ────────────────────────────────────────────────────────
 
-const PHASE_COLOR: Record<TrainingPhase, string> = {
-  base:   '#2563EB',
-  build:  '#7C3AED',
-  peak:   '#9333EA',
-  deload: '#F59E0B',
-  taper:  '#22C55E',
-};
+function phaseColor(phase: TrainingPhase): string {
+  switch (phase) {
+    case 'base':
+      return colors.chartSeriesPrimary;
+    case 'build':
+      return colors.chartSeriesSecondary;
+    case 'peak':
+      return colors.warning;
+    case 'deload':
+      return colors.positive;
+    case 'taper':
+      return colors.critical;
+  }
+}
 
-const PHASE_BG: Record<TrainingPhase, string> = {
-  base:   '#0C1A3D',
-  build:  '#1E0A4A',
-  peak:   '#3B0764',
-  deload: '#451A03',
-  taper:  '#052E16',
-};
+function phaseBg(phase: TrainingPhase): string {
+  switch (phase) {
+    case 'base':
+      return colors.primaryDim;
+    case 'build':
+      return colors.accentDim;
+    case 'peak':
+      return colors.warningDim;
+    case 'deload':
+      return colors.positiveDim;
+    case 'taper':
+      return colors.criticalDim;
+  }
+}
 
 const PHASE_NAME: Record<TrainingPhase, string> = {
   base:   'BASE',
@@ -134,7 +148,7 @@ const sgr = StyleSheet.create({
 
 function IntegrityFlagRow({ flag }: { flag: PhaseIntegrityFlag }) {
   const isProtected = flag.protected;
-  const color       = isProtected ? colors.positive : '#60A5FA';
+  const color       = isProtected ? colors.positive : colors.primary;
   const bg          = isProtected ? colors.positiveDim : colors.primaryDim;
   const icon        = isProtected ? '🔒' : '⚡';
 
@@ -211,8 +225,8 @@ export default function PeriodizationSummaryCard({
   trainingPhase,
   weeksRemaining,
 }: Props) {
-  const phaseColor = PHASE_COLOR[trainingPhase];
-  const phaseBg    = PHASE_BG[trainingPhase];
+  const phaseColorValue = phaseColor(trainingPhase);
+  const phaseBgValue    = phaseBg(trainingPhase);
 
   return (
     <Card>
@@ -221,8 +235,8 @@ export default function PeriodizationSummaryCard({
         <View style={styles.headerLeft}>
           <Text style={styles.sectionLabel}>PERIODIZATION SUMMARY</Text>
           <View style={styles.titleRow}>
-            <View style={[styles.phaseBadge, { backgroundColor: phaseBg }]}>
-              <Text style={[styles.phaseText, { color: phaseColor }]}>{PHASE_NAME[trainingPhase]}</Text>
+            <View style={[styles.phaseBadge, { backgroundColor: phaseBgValue }]}>
+              <Text style={[styles.phaseText, { color: phaseColorValue }]}>{PHASE_NAME[trainingPhase]}</Text>
             </View>
             <Text style={styles.title}>
               Block {mesocycle.blockNumber}  ·  W{mesocycle.weekInBlock}/4
@@ -265,8 +279,8 @@ export default function PeriodizationSummaryCard({
 
       {/* Rationale: key focus highlighted first */}
       <View style={styles.rationaleSection}>
-        <View style={[styles.keyFocusBox, { borderColor: phaseColor + '40' }]}>
-          <Text style={[styles.keyFocusLabel, { color: phaseColor }]}>KEY FOCUS THIS WEEK</Text>
+        <View style={[styles.keyFocusBox, { borderColor: phaseColorValue + '40' }]}>
+          <Text style={[styles.keyFocusLabel, { color: phaseColorValue }]}>KEY FOCUS THIS WEEK</Text>
           <Text style={[styles.keyFocusBody, { color: colors.text }]}>{rationale.keyFocus}</Text>
         </View>
 
@@ -275,7 +289,7 @@ export default function PeriodizationSummaryCard({
         <RationaleSection
           label="SUCCESS CRITERIA"
           body={rationale.successCriteria}
-          accentColor={phaseColor}
+          accentColor={phaseColorValue}
         />
       </View>
     </Card>

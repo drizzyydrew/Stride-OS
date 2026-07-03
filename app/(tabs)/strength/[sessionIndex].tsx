@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
   backText:    { color: colors.primary, fontSize: FontSize.sm },
   headerCard:  { marginBottom: spacing.cardGap },
   headerTop:   { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
-  sessionType: { color: '#C084FC', fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 1 },
+  sessionType: { color: colors.accent, fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 1 },
   duration:    { color: colors.textDim, fontSize: FontSize.sm },
   sessionTitle:{ color: colors.text, fontSize: 22, fontWeight: FontWeight.black, marginBottom: spacing.xs },
   purpose:     { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 18 },
@@ -755,8 +755,8 @@ const styles = StyleSheet.create({
   exSkipBtnText:        { color: colors.textDim, fontSize: FontSize.xs },
   exSkipBtnTextActive:  { color: colors.warning },
 
-  rationaleCard:   { marginBottom: spacing.cardGap, borderLeftWidth: 3, borderLeftColor: '#C084FC' },
-  rationaleTitle:  { color: '#C084FC', fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.5, marginBottom: spacing.sm, textTransform: 'uppercase' },
+  rationaleCard:   { marginBottom: spacing.cardGap, borderLeftWidth: 3, borderLeftColor: colors.accent },
+  rationaleTitle:  { color: colors.accent, fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.5, marginBottom: spacing.sm, textTransform: 'uppercase' },
   rationaleBody:   { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 18, marginBottom: spacing.sm },
   progressionNote: { color: colors.textDim, fontSize: FontSize.xs, fontStyle: 'italic' },
 

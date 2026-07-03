@@ -13,23 +13,23 @@ type Props = {
 };
 
 const ZONE_COLOR: Record<string, string> = {
-  '1':  '#4ADE80',
-  '2':  '#60A5FA',
-  '3':  '#818CF8',
-  '4':  '#F59E0B',
-  '5a': '#FB923C',
-  '5b': '#F87171',
-  '5c': '#FCA5A5',
+  '1':  colors.positive,
+  '2':  colors.primary,
+  '3':  colors.accent,
+  '4':  colors.warning,
+  '5a': colors.warning,
+  '5b': colors.critical,
+  '5c': colors.critical,
 };
 
 const ZONE_BG: Record<string, string> = {
-  '1':  '#052E16',
-  '2':  '#0C1A3D',
-  '3':  '#1E0A4A',
-  '4':  '#451A03',
-  '5a': '#431407',
-  '5b': '#450A0A',
-  '5c': '#3B0404',
+  '1':  colors.positiveDim,
+  '2':  colors.primaryDim,
+  '3':  colors.accentDim,
+  '4':  colors.warningDim,
+  '5a': colors.warningDim,
+  '5b': colors.criticalDim,
+  '5c': colors.criticalDim,
 };
 
 function ThresholdZoneRow({
@@ -160,8 +160,8 @@ const styles = StyleSheet.create({
   card:       { padding: 0, overflow: 'hidden' },
   headerRow:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.xl, paddingBottom: spacing.sm },
   sectionLabel: { color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.medium, letterSpacing: 0.6 },
-  badge:      { backgroundColor: '#2D1B69', borderRadius: Radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 3 },
-  badgeText:  { color: '#C084FC', fontSize: 10, fontWeight: FontWeight.black, letterSpacing: 0.4 },
+  badge:      { backgroundColor: colors.accentDim, borderRadius: Radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 3 },
+  badgeText:  { color: colors.accent, fontSize: 10, fontWeight: FontWeight.black, letterSpacing: 0.4 },
   refRow:     { flexDirection: 'row', paddingHorizontal: spacing.xl, marginBottom: spacing.sm, gap: spacing.lg, alignItems: 'center' },
   refItem:    { gap: 2 },
   refLabel:   { color: colors.textDim, fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.4 },
@@ -169,8 +169,8 @@ const styles = StyleSheet.create({
   divider:    { width: 1, height: 28, backgroundColor: colors.border },
   helper:     { color: colors.textSubtle, fontSize: 9, lineHeight: 13, paddingHorizontal: spacing.xl, marginBottom: spacing.xs },
   sourceRow:  { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.xl, marginBottom: spacing.sm },
-  sourceDot:  { width: 5, height: 5, borderRadius: 3, backgroundColor: '#C084FC', flexShrink: 0 },
-  sourceLabel:{ color: '#C084FC', fontSize: 9, flex: 1 },
+  sourceDot:  { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.accent, flexShrink: 0 },
+  sourceLabel:{ color: colors.accent, fontSize: 9, flex: 1 },
   footer:     { borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: spacing.sm, paddingHorizontal: spacing.xl, marginTop: spacing.xs },
   footerText: { color: colors.textSubtle, fontSize: 9, textAlign: 'center' },
 });

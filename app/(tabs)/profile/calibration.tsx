@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { LAYOUT } from '../../../src/constants/layout';
+import { colors } from '../../../src/theme/colors';
 import { useColors } from '../../../src/theme/useColors';
 import { useActiveProfile, useProfileStore } from '../../../src/store/profileStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
@@ -429,7 +430,7 @@ const styles = StyleSheet.create({
   metricsRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   metric: { flex: 1, minHeight: 58, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.12)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   metricValue: { fontSize: 16, fontWeight: '900', textTransform: 'capitalize' },
-  metricLabel: { fontSize: 9, fontWeight: '800', color: '#8B927F', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 3 },
+  metricLabel: { fontSize: 9, fontWeight: '800', color: colors.textDim, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 3 },
   methodRow: { flexDirection: 'row', gap: 10, alignItems: 'center', borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 8 },
   methodTitle: { fontSize: 14, fontWeight: '900' },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },

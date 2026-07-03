@@ -14,12 +14,12 @@ type Props = {
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 const GOAL_COLORS: Record<string, string> = {
-  force_production:  '#C084FC',
-  hypertrophy:       '#60A5FA',
-  tendon_capacity:   '#FB923C',
+  force_production:  colors.accent,
+  hypertrophy:       colors.primary,
+  tendon_capacity:   colors.warning,
   running_economy:   colors.positive,
-  injury_resilience: '#34D399',
-  power:             '#F472B6',
+  injury_resilience: colors.positive,
+  power:             colors.critical,
   maintenance:       colors.textMuted,
   deload:            colors.warning,
   taper_support:     colors.primary,

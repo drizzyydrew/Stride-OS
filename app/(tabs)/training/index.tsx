@@ -10,6 +10,9 @@ import * as Speech from 'expo-speech';
 import MapView, { Marker, Polyline, type LatLng, type Region } from 'react-native-maps';
 
 import { useColors } from '../../../src/theme/useColors';
+import { spacing } from '../../../src/theme/spacing';
+import { radiusTokens, typographyTokens } from '../../../src/theme/tokens';
+import { useThemeMode } from '../../../src/store/themeStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useIntegrationsStore } from '../../../src/store/integrationsStore';
@@ -58,13 +61,32 @@ const BEND_REGION: Region = {
 };
 
 const DARK_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#1a1c15' }] },
+  { elementType: 'geometry', stylers: [{ color: '#141614' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#8B927C' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#14160F' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2E3127' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111827' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#22281A' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#101010' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2C2F2A' }] },
+  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111817' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1F261D' }] },
 ];
+
+const LIGHT_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#EFE7DA' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#708489' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#F8F5EF' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFFFF' }] },
+  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#DDE7E2' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#DCE7CF' }] },
+];
+
+const ACTIVE_RUN_MAP_HEIGHT = 390;
+const ACTIVE_RUN_MIN_HEIGHT = 660;
+const ACTIVE_RUN_MAP_MIN_HEIGHT = 360;
+const MAP_TOOL_SIZE = 44;
+const RUN_PRIMARY_CONTROL_SIZE = 68;
+const RUN_DOT_SIZE = 6;
+const PAUSED_RUN_MIN_HEIGHT = 236;
 
 function paceLabel(secPerMile: number): string {
   if (!secPerMile || !Number.isFinite(secPerMile)) return '--:--';
@@ -229,6 +251,29 @@ function ElevationProfile({ profile, color }: { profile: number[]; color: string
           />
         );
       })}
+    </View>
+  );
+}
+
+function RunStat({
+  label,
+  value,
+  unit,
+  color,
+  muted,
+}: {
+  label: string;
+  value: string;
+  unit: string;
+  color: string;
+  muted: string;
+}) {
+  return (
+    <View style={styles.runStatCell}>
+      <Text style={[styles.runSecondaryValue, { color }]}>
+        {value} <Text style={[styles.runSecondaryUnit, { color: muted }]}>{unit}</Text>
+      </Text>
+      <Text style={[styles.runMetricLabel, { color: muted }]}>{label}</Text>
     </View>
   );
 }
@@ -416,6 +461,7 @@ function PlanTab() {
 // ─── Active Tab ────────────────────────────────────────────────────────────────
 function ActiveTab({ onFinished }: { onFinished?: () => void }) {
   const C = useColors();
+  const mode = useThemeMode();
   const { units } = useSettingsStore();
   const healthKitEnabled = useIntegrationsStore(s => s.healthKitEnabled);
   const calibration = useCalibration();
@@ -633,12 +679,26 @@ function ActiveTab({ onFinished }: { onFinished?: () => void }) {
   const routeCoords = selectedRoute ? routePointsToLatLng(selectedRoute.points) : [];
   const liveCoords = coordinates.map(c => ({ latitude: c.lat, longitude: c.lng }));
   const region = liveCoords.length ? routeRegion(liveCoords) : selectedRoute ? routeRegion(selectedRoute.points) : BEND_REGION;
+  const mapStyle = mode === 'light' ? LIGHT_MAP_STYLE : DARK_MAP_STYLE;
   const currentPoint = coordinates.length ? {
     latitude: coordinates[coordinates.length - 1].lat,
     longitude: coordinates[coordinates.length - 1].lng,
   } : null;
   const routeProgress = selectedRoute && currentPoint ? routeProgressForLocation(selectedRoute, currentPoint) : 0;
   const nextSegment = selectedRoute?.segments[routeSegmentIndex] ?? null;
+  const elevationDisplay = selectedRoute
+    ? Math.round(imp ? selectedRoute.elevationGainFt : selectedRoute.elevationGainFt * 0.3048).toString()
+    : '--';
+  const elevationUnit = imp ? 'ft' : 'm';
+  const secondaryMetrics = [
+    { label: 'Avg Pace', value: avgPace, unit: imp ? '/mi' : '/km' },
+    { label: 'Heart Rate', value: heartRateBpm ? String(heartRateBpm) : '--', unit: 'bpm' },
+    { label: 'Elev Gain', value: elevationDisplay, unit: elevationUnit },
+  ];
+  const mapLineColor = C.chartSeriesPrimary;
+  const plannedRouteColor = C.chartSeriesSecondary;
+  const panelBg = mode === 'light' ? C.cardAlt : C.bg;
+  const softPanelBg = mode === 'light' ? C.card : C.cardElevated;
 
   useEffect(() => {
     if (!selectedRoute || !currentPoint || !nextSegment || !isActive || isPaused) return;
@@ -688,177 +748,223 @@ function ActiveTab({ onFinished }: { onFinished?: () => void }) {
   ]);
 
   return (
-    <ScrollView contentContainerStyle={styles.runScrollContent} showsVerticalScrollIndicator={false}>
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border, alignItems: 'center' }]}>
-        <Text style={[styles.cardLabel, { color: C.textDim }]}>ELAPSED TIME</Text>
-        <Text style={[styles.timerDisplay, { color: C.text }]}>{fmt(elapsed)}</Text>
-        {selectedRoute ? (
-          <Text style={[{ fontSize: 12, color: C.textMuted, marginTop: -8, marginBottom: 12 }]}>
-            Route: {selectedRoute.name}
-          </Text>
-        ) : null}
-        {selectedRoute && nextSegment ? (
-          <View style={[styles.routeProgressCard, { backgroundColor: C.cardAlt }]}>
-            <Text style={[styles.metricLabel, { color: C.textDim }]}>NEXT SEGMENT</Text>
-            <Text style={[styles.routeProgressTitle, { color: C.text }]}>
-              Segment {nextSegment.label} · {Math.max(0, nextSegment.distanceMiles - routeProgress).toFixed(2)} mi away
-            </Text>
-            <Text style={[styles.metricUnit, { color: C.textMuted }]}>
-              {routeProgress.toFixed(2)} / {selectedRoute.distanceMiles.toFixed(1)} mi route progress
-            </Text>
-          </View>
-        ) : null}
-        <View style={styles.metricRow}>
-          {[
-            { label: 'MILE PACE', value: pace, unit: imp ? '/mi' : '/km' },
-            { label: 'AVG PACE',  value: avgPace, unit: imp ? '/mi' : '/km' },
-            { label: 'DISTANCE',  value: distStr, unit: distUnit },
-          ].map(m => (
-            <View key={m.label} style={[styles.metricCell, { backgroundColor: C.cardAlt }]}>
-              <Text style={[styles.metricLabel, { color: C.textDim }]}>{m.label}</Text>
-              <Text style={[styles.metricVal, { color: C.text }]}>{m.value}</Text>
-              <Text style={[styles.metricUnit, { color: C.textMuted }]}>{m.unit}</Text>
+    <ScrollView contentContainerStyle={styles.activeRunScrollContent} showsVerticalScrollIndicator={false}>
+      {runState === 'paused' ? (
+        <View style={[styles.pausedRunCard, { backgroundColor: C.card, borderColor: C.border }]}>
+          <MapView
+            style={styles.pausedMap}
+            initialRegion={region}
+            region={liveCoords.length > 0 ? region : undefined}
+            customMapStyle={mapStyle}
+            showsUserLocation
+            followsUserLocation={false}
+            scrollEnabled={false}
+            zoomEnabled={false}
+            pitchEnabled={false}
+            rotateEnabled={false}
+          >
+            {routeCoords.length > 1 ? (
+              <Polyline coordinates={routeCoords} strokeColor={plannedRouteColor} strokeWidth={3} lineDashPattern={[8, 8]} />
+            ) : null}
+            {liveCoords.length > 1 ? (
+              <Polyline coordinates={liveCoords} strokeColor={mapLineColor} strokeWidth={5} />
+            ) : null}
+            {liveCoords.length > 0 ? <Marker coordinate={liveCoords[liveCoords.length - 1]} title="Current position" /> : null}
+          </MapView>
+          <View style={styles.pausedStatsPanel}>
+            <Text style={[styles.pausedStateLabel, { color: C.accent }]}>PAUSED</Text>
+            <View style={styles.pausedPrimaryRow}>
+              <View>
+                <Text style={[styles.pausedPrimaryValue, { color: C.text }]}>{fmt(elapsed)}</Text>
+                <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Time</Text>
+              </View>
+              <View>
+                <Text style={[styles.pausedPrimaryValue, { color: C.accent }]}>{distStr}<Text style={styles.pausedUnit}> {distUnit}</Text></Text>
+                <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Distance</Text>
+              </View>
             </View>
-          ))}
-        </View>
-        <View style={styles.metricRow}>
-          <View style={[styles.hrCell, { backgroundColor: C.cardAlt }]}>
-            <Ionicons name="heart" size={16} color={C.critical} />
-            <View>
-              <Text style={[styles.metricLabel, { color: C.textDim }]}>HEART RATE</Text>
-              <Text style={[{ fontSize: 17, fontWeight: '800', color: C.text }]}>
-                {heartRateBpm ?? '--'} <Text style={[{ fontSize: 10, color: C.textMuted }]}>bpm</Text>
-              </Text>
+            <View style={[styles.runDivider, { backgroundColor: C.border }]} />
+            <View style={styles.runSecondaryRow}>
+              {secondaryMetrics.map(metric => (
+                <RunStat key={metric.label} {...metric} color={C.text} muted={C.textMuted} />
+              ))}
             </View>
-          </View>
-          <View style={[styles.metricCell, { backgroundColor: zoneToneColor + '22', borderWidth: 1, borderColor: zoneToneColor }]}>
-            <Text style={[styles.metricLabel, { color: C.textDim }]}>ZONE</Text>
-            <Text style={[{ fontSize: 17, fontWeight: '800', color: zoneToneColor }]}>{zoneStatus.label}</Text>
-            <Text style={[styles.metricUnit, { color: C.textMuted }]} numberOfLines={1}>{zoneStatus.detail}</Text>
-          </View>
-          <View style={[styles.metricCell, { backgroundColor: C.cardAlt }]}>
-            <Text style={[styles.metricLabel, { color: C.textDim }]}>GPS</Text>
-            <Text style={[{ fontSize: 12, fontWeight: '800', color: permission.background === 'granted' ? C.positive : C.warning }]}>
-              {permission.background === 'granted' ? 'Ready' : 'Setup'}
-            </Text>
-          </View>
-        </View>
-        {runState === 'idle' && (
-          <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.primary }]} onPress={start} activeOpacity={0.8}>
-            <Text style={[styles.bigBtnText, { color: C.onPrimary }]}>Start Run</Text>
-          </TouchableOpacity>
-        )}
-        {runState === 'active' && (
-          <View style={styles.btnRow}>
-            <TouchableOpacity style={[styles.halfBtn, { backgroundColor: C.warning }]} onPress={pause} activeOpacity={0.8}>
-              <Text style={[styles.bigBtnText, { color: '#14160F' }]}>Pause</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.halfBtn, { backgroundColor: C.critical }]} onPress={stop} activeOpacity={0.8}>
-              <Text style={[styles.bigBtnText, { color: '#F3F1E9' }]}>Stop</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        {runState === 'paused' && (
-          <View style={styles.btnRow}>
-            <TouchableOpacity style={[styles.halfBtn, { backgroundColor: C.positive }]} onPress={resume} activeOpacity={0.8}>
-              <Text style={[styles.bigBtnText, { color: '#14160F' }]}>Resume</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.halfBtn, { backgroundColor: C.critical }]} onPress={stop} activeOpacity={0.8}>
-              <Text style={[styles.bigBtnText, { color: '#F3F1E9' }]}>Finish</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border, padding: 0, overflow: 'hidden' }]}>
-        <View style={[{ padding: 10, paddingHorizontal: 14 }, styles.cardHeaderRow]}>
-          <Text style={[styles.subTitle, { color: C.text }]}>Live Map</Text>
-          <Text style={[{ fontSize: 11, color: isActive ? C.positive : C.textMuted }]}>
-            {isActive ? isPaused ? 'Paused' : 'Tracking' : 'Ready'}
-          </Text>
-        </View>
-        <MapView
-          style={styles.map}
-          initialRegion={region}
-          region={liveCoords.length > 0 ? region : undefined}
-          customMapStyle={DARK_MAP_STYLE}
-          showsUserLocation
-          followsUserLocation={isActive}
-        >
-          {routeCoords.length > 1 ? (
-            <Polyline coordinates={routeCoords} strokeColor={C.textMuted} strokeWidth={3} lineDashPattern={[8, 8]} />
-          ) : null}
-          {selectedRoute?.segments.map(segment => (
-            <Marker
-              key={segment.label}
-              coordinate={segment.point}
-              title={`Segment ${segment.label}`}
-              description={`${segment.distanceMiles.toFixed(2)} mi from start`}
-              pinColor={C.warning}
-            />
-          ))}
-          {liveCoords.length > 1 ? (
-            <Polyline coordinates={liveCoords} strokeColor={C.primary} strokeWidth={5} />
-          ) : null}
-          {liveCoords.length > 0 ? (
-            <Marker coordinate={liveCoords[liveCoords.length - 1]} title="Current position" />
-          ) : null}
-        </MapView>
-        {permission.background !== 'granted' ? (
-          <View style={[styles.mapOverlay, { backgroundColor: C.card + 'E6' }]}>
-            <Ionicons name="location-outline" size={32} color={C.primary} />
-            <Text style={[{ fontSize: 13, fontWeight: '700', color: C.text, marginTop: 10 }]}>
-              Enable background location
-            </Text>
-            <Text style={[{ fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 4, lineHeight: 16 }]}>
-              This lets StrideOS keep recording your route and distance when the phone locks.
-            </Text>
+            <View style={styles.runStatusChipRow}>
+              <View style={[styles.runStatusChip, { backgroundColor: zoneToneColor + '22', borderColor: zoneToneColor }]}>
+                <Text style={[styles.runStatusChipText, { color: zoneToneColor }]}>{zoneStatus.label} · {zoneStatus.detail}</Text>
+              </View>
+              <View style={[styles.runStatusChip, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+                <Text style={[styles.runStatusChipText, { color: permission.background === 'granted' ? C.positive : C.warning }]}>
+                  GPS {permission.background === 'granted' ? 'Ready' : 'Setup'}
+                </Text>
+              </View>
+            </View>
             <TouchableOpacity
-              style={[styles.mapOverlayBtn, { backgroundColor: C.primary }]}
-              onPress={async () => setPermission(await requestTrackingPermissionState())}
-              activeOpacity={0.8}
+              style={[styles.resumePill, { backgroundColor: C.positive }]}
+              onPress={resume}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityLabel="Resume run"
             >
-              <Text style={[{ fontSize: 12, fontWeight: '800', color: C.onPrimary }]}>Enable GPS Tracking</Text>
+              <Ionicons name="play" size={18} color={C.onPrimary} />
+              <Text style={[styles.resumePillText, { color: C.onPrimary }]}>RESUME RUN</Text>
             </TouchableOpacity>
-          </View>
-        ) : null}
-      </View>
-
-      {/* Lock screen widget preview */}
-      <View style={[styles.lockWidget, { backgroundColor: '#0f0f14' }]}>
-        <Text style={[styles.lockLabel]}>Live Activity Layout Preview</Text>
-        <View style={styles.lockRow}>
-          <View style={styles.lockStat}>
-            <Text style={styles.lockStatLabel}>TIME</Text>
-            <Text style={styles.lockStatVal}>{fmt(elapsed)}</Text>
-            <Text style={styles.lockStatUnit}>elapsed</Text>
-          </View>
-          <View style={styles.lockDivider} />
-          <View style={styles.lockStat}>
-            <Text style={styles.lockStatLabel}>AVG</Text>
-            <Text style={styles.lockStatVal}>{avgPace}</Text>
-            <Text style={styles.lockStatUnit}>{imp ? '/mi' : '/km'}</Text>
-          </View>
-          <View style={styles.lockDivider} />
-          <View style={styles.lockStat}>
-            <Text style={styles.lockStatLabel}>DIST</Text>
-            <Text style={styles.lockStatVal}>{distStr}</Text>
-            <Text style={styles.lockStatUnit}>{distUnit}</Text>
-          </View>
-          <View style={styles.lockDivider} />
-          <View style={styles.lockStat}>
-            <Text style={styles.lockStatLabel}>HR</Text>
-            <Text style={[styles.lockStatVal, { color: zoneToneColor }]}>{heartRateBpm ?? '--'} {zoneStatus.label}</Text>
-            <Text style={styles.lockStatUnit}>bpm</Text>
+            <View style={styles.secondaryActionRow}>
+              <TouchableOpacity onPress={stop} hitSlop={10}>
+                <Text style={[styles.secondaryActionText, { color: C.warning }]}>Finish</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={cancel} hitSlop={10}>
+                <Text style={[styles.secondaryActionText, { color: C.textMuted }]}>Discard</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-        <Text style={styles.lockCaption}>Actual Lock Screen support requires a native iOS Live Activity build step.</Text>
-      </View>
-      {isActive ? (
-        <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.cardAlt }]} onPress={cancel} activeOpacity={0.8}>
-          <Text style={[styles.bigBtnText, { color: C.textMuted }]}>Cancel Run</Text>
-        </TouchableOpacity>
-      ) : null}
+      ) : (
+        <View style={[styles.activeRunSurface, { backgroundColor: panelBg }]}>
+          <View style={styles.activeMapShell}>
+            <MapView
+              style={styles.activeRunMap}
+              initialRegion={region}
+              region={liveCoords.length > 0 ? region : undefined}
+              customMapStyle={mapStyle}
+              showsUserLocation
+              followsUserLocation={isActive}
+            >
+              {routeCoords.length > 1 ? (
+                <Polyline coordinates={routeCoords} strokeColor={plannedRouteColor} strokeWidth={3} lineDashPattern={[8, 8]} />
+              ) : null}
+              {selectedRoute?.segments.map(segment => (
+                <Marker
+                  key={segment.label}
+                  coordinate={segment.point}
+                  title={`Segment ${segment.label}`}
+                  description={`${segment.distanceMiles.toFixed(2)} mi from start`}
+                  pinColor={C.warning}
+                />
+              ))}
+              {liveCoords.length > 1 ? (
+                <Polyline coordinates={liveCoords} strokeColor={mapLineColor} strokeWidth={5} />
+              ) : null}
+              {liveCoords.length > 0 ? (
+                <Marker coordinate={liveCoords[liveCoords.length - 1]} title="Current position" />
+              ) : null}
+            </MapView>
+            <View style={styles.mapToolStack}>
+              <View style={[styles.mapToolButton, { backgroundColor: softPanelBg, borderColor: C.border }]}>
+                <Ionicons name="navigate-outline" size={19} color={C.text} />
+              </View>
+              <View style={[styles.mapToolButton, { backgroundColor: softPanelBg, borderColor: C.border }]}>
+                <Ionicons name="layers-outline" size={19} color={C.text} />
+              </View>
+            </View>
+            {permission.background !== 'granted' ? (
+              <View style={[styles.mapOverlay, { backgroundColor: mode === 'light' ? C.card : C.cardElevated }]}>
+                <Ionicons name="location-outline" size={32} color={C.accent} />
+                <Text style={[styles.mapOverlayTitle, { color: C.text }]}>
+                  Enable background location
+                </Text>
+                <Text style={[styles.mapOverlayCopy, { color: C.textMuted }]}>
+                  This lets StrideOS keep recording your route and distance when the phone locks.
+                </Text>
+                <TouchableOpacity
+                  style={[styles.mapOverlayBtn, { backgroundColor: C.primary }]}
+                  onPress={async () => setPermission(await requestTrackingPermissionState())}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.mapOverlayButtonText, { color: C.onPrimary }]}>Enable GPS Tracking</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </View>
+
+          <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border }]}>
+            <View style={styles.runPrimaryRow}>
+              <View>
+                <Text style={[styles.runPrimaryValue, { color: C.text }]}>{fmt(elapsed)}</Text>
+                <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Time</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={[styles.runPrimaryValue, { color: C.accent }]}>{distStr}<Text style={styles.runPrimaryUnit}> {distUnit}</Text></Text>
+                <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Distance</Text>
+              </View>
+            </View>
+            <View style={[styles.runDivider, { backgroundColor: C.border }]} />
+            <View style={styles.runSecondaryRow}>
+              {secondaryMetrics.map(metric => (
+                <RunStat key={metric.label} {...metric} color={C.text} muted={C.textMuted} />
+              ))}
+            </View>
+            <View style={styles.paginationDots}>
+              <View style={[styles.paginationDot, { backgroundColor: C.accent }]} />
+              <View style={[styles.paginationDot, { backgroundColor: C.textSubtle }]} />
+              <View style={[styles.paginationDot, { backgroundColor: C.textSubtle }]} />
+            </View>
+            {runState === 'idle' ? (
+              <TouchableOpacity
+                style={[styles.startRunPill, { backgroundColor: C.primary }]}
+                onPress={start}
+                activeOpacity={0.82}
+                accessibilityRole="button"
+                accessibilityLabel="Start run"
+              >
+                <Ionicons name="play" size={20} color={C.onPrimary} />
+                <Text style={[styles.resumePillText, { color: C.onPrimary }]}>START RUN</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.pauseCircle, { backgroundColor: C.primary }]}
+                onPress={pause}
+                activeOpacity={0.82}
+                accessibilityRole="button"
+                accessibilityLabel="Pause run"
+              >
+                <Ionicons name="pause" size={28} color={C.onPrimary} />
+              </TouchableOpacity>
+            )}
+            <View style={[styles.musicRow, { backgroundColor: mode === 'light' ? C.card : C.cardElevated, borderColor: C.border }]}>
+              <Ionicons name="musical-note" size={18} color={C.text} />
+              <Text style={[styles.musicText, { color: C.text }]}>Connect Music</Text>
+              <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+            </View>
+            <View style={styles.activeMetaRow}>
+              {!isActive ? (
+                <Text style={[styles.activeMetaText, { color: C.textMuted }]}>
+                  GPS ready when background permission is enabled.
+                </Text>
+              ) : null}
+              {isActive ? (
+                <View style={styles.secondaryActionRow}>
+                  <TouchableOpacity onPress={stop} hitSlop={10}>
+                    <Text style={[styles.secondaryActionText, { color: C.warning }]}>Finish</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={cancel} hitSlop={10}>
+                    <Text style={[styles.secondaryActionText, { color: C.textMuted }]}>Discard</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+            </View>
+            {selectedRoute && nextSegment ? (
+              <View style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+                <Text style={[styles.metricLabel, { color: C.textDim }]}>NEXT SEGMENT</Text>
+                <Text style={[styles.routeProgressTitle, { color: C.text }]}>
+                  Segment {nextSegment.label} · {Math.max(0, nextSegment.distanceMiles - routeProgress).toFixed(2)} mi away
+                </Text>
+                <Text style={[styles.metricUnit, { color: C.textMuted }]}>
+                  {routeProgress.toFixed(2)} / {selectedRoute.distanceMiles.toFixed(1)} mi route progress
+                </Text>
+              </View>
+            ) : selectedRoute ? (
+              <View style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+                <Text style={[styles.metricLabel, { color: C.textDim }]}>SELECTED ROUTE</Text>
+                <Text style={[styles.routeProgressTitle, { color: C.text }]}>{selectedRoute.name}</Text>
+                <Text style={[styles.metricUnit, { color: C.textMuted }]}>
+                  {selectedRoute.distanceMiles.toFixed(1)} mi · +{selectedRoute.elevationGainFt} ft · {selectedRoute.estimatedMinutes} min
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -1961,6 +2067,240 @@ const styles = StyleSheet.create({
   },
   runScrollContent: {
     paddingBottom: LAYOUT.screenPadBottom,
+  },
+  activeRunScrollContent: {
+    paddingBottom: LAYOUT.screenPadBottom,
+    marginHorizontal: -spacing.cardGap,
+  },
+  activeRunSurface: {
+    minHeight: ACTIVE_RUN_MIN_HEIGHT,
+    overflow: 'hidden',
+  },
+  activeMapShell: {
+    minHeight: ACTIVE_RUN_MAP_MIN_HEIGHT,
+  },
+  activeRunMap: {
+    height: ACTIVE_RUN_MAP_HEIGHT,
+    width: '100%',
+  },
+  mapToolStack: {
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.lg,
+    gap: spacing.sm,
+  },
+  mapToolButton: {
+    width: MAP_TOOL_SIZE,
+    height: MAP_TOOL_SIZE,
+    borderRadius: MAP_TOOL_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  runControlPanel: {
+    marginTop: -radiusTokens.xl,
+    borderTopLeftRadius: radiusTokens.xl,
+    borderTopRightRadius: radiusTokens.xl,
+    borderTopWidth: 1,
+    paddingTop: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
+  },
+  runPrimaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    gap: spacing.xl,
+  },
+  runPrimaryValue: {
+    fontSize: typographyTokens.sizes.metricPrimary,
+    lineHeight: Math.round(typographyTokens.sizes.metricPrimary * 1.12),
+    fontWeight: typographyTokens.weights.black,
+    fontVariant: typographyTokens.variants.tabular,
+  },
+  runPrimaryUnit: {
+    fontSize: typographyTokens.sizes.rowLabel,
+    fontWeight: typographyTokens.weights.bold,
+  },
+  runMetricLabel: {
+    fontSize: typographyTokens.sizes.metricLabel,
+    fontWeight: typographyTokens.weights.bold,
+    marginTop: spacing.xs / 2,
+  },
+  runDivider: {
+    height: 1,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  runSecondaryRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  runStatCell: {
+    flex: 1,
+    minWidth: 0,
+  },
+  runSecondaryValue: {
+    fontSize: typographyTokens.sizes.rowLabel,
+    lineHeight: Math.round(typographyTokens.sizes.rowLabel * typographyTokens.lineHeights.normal),
+    fontWeight: typographyTokens.weights.black,
+    fontVariant: typographyTokens.variants.tabular,
+  },
+  runSecondaryUnit: {
+    fontSize: typographyTokens.sizes.metricLabel,
+    fontWeight: typographyTokens.weights.bold,
+  },
+  runStatusChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  runStatusChip: {
+    borderWidth: 1,
+    borderRadius: radiusTokens.pill,
+    paddingHorizontal: spacing.sm + spacing.xs / 2,
+    paddingVertical: spacing.xs + 1,
+  },
+  runStatusChipText: {
+    fontSize: typographyTokens.sizes.metricLabel,
+    fontWeight: typographyTokens.weights.black,
+  },
+  paginationDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.xs + spacing.xs / 2,
+    marginTop: spacing.lg,
+  },
+  paginationDot: {
+    width: RUN_DOT_SIZE,
+    height: RUN_DOT_SIZE,
+    borderRadius: RUN_DOT_SIZE / 2,
+  },
+  pauseCircle: {
+    width: RUN_PRIMARY_CONTROL_SIZE,
+    height: RUN_PRIMARY_CONTROL_SIZE,
+    borderRadius: RUN_PRIMARY_CONTROL_SIZE / 2,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  startRunPill: {
+    height: 56,
+    borderRadius: radiusTokens.lg,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  musicRow: {
+    height: 48,
+    borderRadius: radiusTokens.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+  },
+  musicText: {
+    flex: 1,
+    fontSize: typographyTokens.sizes.caption,
+    fontWeight: typographyTokens.weights.bold,
+  },
+  activeMetaRow: {
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  activeMetaText: {
+    fontSize: typographyTokens.sizes.metricLabel,
+    lineHeight: Math.round(typographyTokens.sizes.metricLabel * typographyTokens.lineHeights.body),
+  },
+  secondaryActionRow: {
+    flexDirection: 'row',
+    gap: spacing.cardGap,
+    alignItems: 'center',
+  },
+  secondaryActionText: {
+    fontSize: typographyTokens.sizes.caption,
+    fontWeight: typographyTokens.weights.black,
+  },
+  relocatedRoutePanel: {
+    borderWidth: 1,
+    borderRadius: radiusTokens.md,
+    padding: spacing.md,
+    marginTop: spacing.md,
+  },
+  pausedRunCard: {
+    marginHorizontal: spacing.cardGap,
+    marginTop: spacing.sm,
+    borderRadius: radiusTokens.xl,
+    borderWidth: 1,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    minHeight: PAUSED_RUN_MIN_HEIGHT,
+  },
+  pausedMap: {
+    width: '42%',
+    minHeight: PAUSED_RUN_MIN_HEIGHT,
+  },
+  pausedStatsPanel: {
+    flex: 1,
+    padding: spacing.lg,
+  },
+  pausedStateLabel: {
+    fontSize: typographyTokens.sizes.metricLabel,
+    fontWeight: typographyTokens.weights.black,
+    letterSpacing: 0.8,
+    marginBottom: spacing.xs,
+  },
+  pausedPrimaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  pausedPrimaryValue: {
+    fontSize: typographyTokens.sizes.metricSecondary,
+    lineHeight: Math.round(typographyTokens.sizes.metricSecondary * typographyTokens.lineHeights.normal),
+    fontWeight: typographyTokens.weights.black,
+    fontVariant: typographyTokens.variants.tabular,
+  },
+  pausedUnit: {
+    fontSize: typographyTokens.sizes.metricLabel,
+    fontWeight: typographyTokens.weights.bold,
+  },
+  resumePill: {
+    height: 52,
+    borderRadius: radiusTokens.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  resumePillText: {
+    fontSize: typographyTokens.sizes.rowLabel,
+    fontWeight: typographyTokens.weights.black,
+  },
+  mapOverlayTitle: {
+    fontSize: typographyTokens.sizes.helper,
+    fontWeight: typographyTokens.weights.bold,
+    marginTop: spacing.sm,
+  },
+  mapOverlayCopy: {
+    fontSize: typographyTokens.sizes.metricLabel,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+    lineHeight: Math.round(typographyTokens.sizes.metricLabel * typographyTokens.lineHeights.body),
+  },
+  mapOverlayButtonText: {
+    fontSize: typographyTokens.sizes.caption,
+    fontWeight: typographyTokens.weights.black,
   },
   cardHeaderRow: {
     flexDirection: 'row',

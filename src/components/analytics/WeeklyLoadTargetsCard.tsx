@@ -218,9 +218,9 @@ const lr = StyleSheet.create({
 // ─── Intensity distribution targets ───────────────────────────────────────────
 
 const INTENSITY_COLORS = {
-  easy:     '#2563EB',
-  moderate: '#7C3AED',
-  hard:     '#F59E0B',
+  easy:     colors.primary,
+  moderate: colors.accent,
+  hard:     colors.warning,
 } as const;
 
 const INTENSITY_LABELS = {
@@ -315,7 +315,7 @@ function CeilingBadge({ ceiling, reason }: { ceiling: number; reason?: string })
   if (ceiling >= 1.0) return null;
 
   const pct   = Math.round(ceiling * 100);
-  const color = ceiling < 0.75 ? colors.critical : ceiling < 0.88 ? colors.warning : '#60A5FA';
+  const color = ceiling < 0.75 ? colors.critical : ceiling < 0.88 ? colors.warning : colors.primary;
   const bg    = ceiling < 0.75 ? colors.criticalDim : ceiling < 0.88 ? colors.warningDim : colors.primaryDim;
 
   return (

@@ -14,14 +14,14 @@ type Props = {
 
 const LABEL_COLOR: Record<RaceReadinessSummary['label'], string> = {
   race_ready: colors.positive,
-  on_track:   '#60A5FA',
+  on_track:   colors.primary,
   needs_work: colors.warning,
   not_ready:  colors.critical,
 };
 
 const LABEL_BG: Record<RaceReadinessSummary['label'], string> = {
   race_ready: colors.positiveDim,
-  on_track:   '#0C1A3D',
+  on_track:   colors.primaryDim,
   needs_work: colors.warningDim,
   not_ready:  colors.criticalDim,
 };
@@ -46,7 +46,7 @@ const DIM_LABEL: Record<keyof RaceReadinessDimensions, string> = {
 function DimRow({ label, value }: { label: string; value: number }) {
   const color =
     value >= 75 ? colors.positive :
-    value >= 55 ? '#60A5FA'       :
+    value >= 55 ? colors.primary  :
     value >= 40 ? colors.warning  :
     colors.critical;
 

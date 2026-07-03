@@ -34,7 +34,8 @@ import {
   type CoachMessage,
 } from '../../../src/lib/aiCoach';
 import { copyVideoToMovementStorage, uploadMovementVideo } from '../../../src/lib/movementVideoStorage';
-import { colors }   from '../../../src/theme/colors';
+import { useColors } from '../../../src/theme/useColors';
+import type { Palette } from '../../../src/theme/colors';
 import { spacing }  from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 
@@ -87,6 +88,8 @@ INSTRUCTIONS
 // ─── Message bubble ───────────────────────────────────────────────────────────
 
 function Bubble({ msg }: { msg: Message }) {
+  const C = useColors();
+  const b = useMemo(() => makeBubbleStyles(C), [C]);
   const isUser = msg.role === 'user';
   return (
     <View style={[b.wrap, isUser ? b.userWrap : b.assistantWrap]}>
@@ -120,6 +123,7 @@ function buildContextSummary(data: ReturnType<typeof useOnboardingStore.getState
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function CoachScreen() {
+  const C = useColors();
   const insets = useSafeAreaInsets();
   const data      = useOnboardingStore(s => s.data);
   const riskFlags = useMovementStore(s => s.getActiveRiskFlags);
@@ -146,6 +150,8 @@ export default function CoachScreen() {
   const isConfigured = isAiCoachConfigured();
   const coachReady = isConfigured && coachHealth?.ok;
   const contextSummary = buildContextSummary(data);
+  const s = useMemo(() => makeStyles(C), [C]);
+  const b = useMemo(() => makeBubbleStyles(C), [C]);
 
   useEffect(() => {
     let cancelled = false;
@@ -269,7 +275,7 @@ export default function CoachScreen() {
     >
       <View style={[s.header, { paddingTop: insets.top + 6 }]}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={20} color={colors.primary} />
+          <Ionicons name="arrow-back" size={20} color={C.primary} />
         </Pressable>
         <View>
           <Text style={s.headerLabel}>AI COACH</Text>
@@ -317,7 +323,7 @@ export default function CoachScreen() {
         </View>
       ) : tab === 'chat' && (healthLoading || !coachHealth) ? (
         <View style={s.noKey}>
-          <ActivityIndicator size="small" color={colors.primary} />
+          <ActivityIndicator size="small" color={C.primary} />
           <Text style={s.noKeyTitle}>Checking coach connection</Text>
           <Text style={s.noKeyDesc}>Verifying the Supabase Edge Function and model setup.</Text>
         </View>
@@ -361,7 +367,7 @@ export default function CoachScreen() {
               <View style={[b.wrap, b.assistantWrap]}>
                 <Text style={b.avatar}>🏃</Text>
                 <View style={[b.bubble, b.assistantBubble]}>
-                  <ActivityIndicator size="small" color={colors.primary} />
+                  <ActivityIndicator size="small" color={C.primary} />
                 </View>
               </View>
             )}
@@ -379,7 +385,7 @@ export default function CoachScreen() {
               value={input}
               onChangeText={setInput}
               placeholder="Ask your coach..."
-              placeholderTextColor={colors.textSubtle}
+              placeholderTextColor={C.textSubtle}
               multiline
               maxLength={1000}
               onSubmitEditing={sendMessage}
@@ -483,8 +489,9 @@ export default function CoachScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+function makeStyles(C: Palette) {
+  return StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -493,13 +500,13 @@ const s = StyleSheet.create({
     paddingBottom: 12,
   },
   headerLabel: {
-    color: colors.textDim,
+    color: C.textDim,
     fontSize: 11,
     fontWeight: FontWeight.bold,
     letterSpacing: 0.9,
   },
   headerTitle: {
-    color: colors.text,
+    color: C.text,
     fontSize: 26,
     fontWeight: FontWeight.bold,
     fontFamily: 'CormorantGaramond_700Bold',
@@ -512,10 +519,10 @@ const s = StyleSheet.create({
     marginTop: spacing.md,
     marginBottom: 14,
     padding: 4,
-    backgroundColor: colors.card,
+    backgroundColor: C.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: C.border,
   },
   segmentBtn: {
     flex: 1,
@@ -524,9 +531,9 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  segmentBtnActive: { backgroundColor: colors.primaryDim },
-  segmentTxt: { color: colors.textDim, fontSize: 11, fontWeight: FontWeight.bold },
-  segmentTxtActive: { color: colors.primary },
+  segmentBtnActive: { backgroundColor: C.primaryDim },
+  segmentTxt: { color: C.textDim, fontSize: 11, fontWeight: FontWeight.bold },
+  segmentTxtActive: { color: C.primary },
 
   noKey: {
     flex:           1,
@@ -536,23 +543,23 @@ const s = StyleSheet.create({
     gap:            spacing.md,
   },
   noKeyIcon:  { fontSize: 40 },
-  noKeyTitle: { color: colors.text, fontSize: FontSize.lg, fontWeight: FontWeight.bold, textAlign: 'center' },
-  noKeyDesc:  { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 20, textAlign: 'center' },
+  noKeyTitle: { color: C.text, fontSize: FontSize.lg, fontWeight: FontWeight.bold, textAlign: 'center' },
+  noKeyDesc:  { color: C.textMuted, fontSize: FontSize.sm, lineHeight: 20, textAlign: 'center' },
   retryBtn: {
-    backgroundColor: colors.primary,
+    backgroundColor: C.primary,
     borderRadius: 10,
     paddingHorizontal: 18,
     paddingVertical: 10,
   },
-  retryTxt: { color: colors.onPrimary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  retryTxt: { color: C.onPrimary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
 
   messages:        { flex: 1 },
   messagesContent: { paddingHorizontal: 18, paddingBottom: spacing.xxl, gap: 8 },
   videoContent: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
 
   contextCard: {
-    backgroundColor: colors.primaryDim,
-    borderColor: colors.primary,
+    backgroundColor: C.primaryDim,
+    borderColor: C.primary,
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: spacing.md,
@@ -560,101 +567,101 @@ const s = StyleSheet.create({
     gap: 4,
   },
   contextEyebrow: {
-    color: colors.primary,
+    color: C.primary,
     fontSize: 10,
     fontWeight: FontWeight.bold,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
-  contextTxt: { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 18 },
+  contextTxt: { color: C.textMuted, fontSize: FontSize.xs, lineHeight: 18 },
 
   empty: {
     alignItems: 'center',
-    backgroundColor: colors.card,
-    borderColor: colors.border,
+    backgroundColor: C.card,
+    borderColor: C.border,
     borderRadius: 12,
     borderWidth: 1,
     padding: 16,
     gap: 4,
   },
-  emptyTitle: { color: colors.text, fontSize: 13, fontWeight: FontWeight.bold },
-  emptyDesc:  { color: colors.textMuted, fontSize: 12, lineHeight: 18, textAlign: 'center' },
+  emptyTitle: { color: C.text, fontSize: 13, fontWeight: FontWeight.bold },
+  emptyDesc:  { color: C.textMuted, fontSize: 12, lineHeight: 18, textAlign: 'center' },
   suggestions: { gap: spacing.xs, width: '100%', marginTop: spacing.sm },
   suggestion: {
-    backgroundColor:   colors.card,
+    backgroundColor:   C.card,
     borderRadius:      Radius.sm,
     borderWidth:       1,
-    borderColor:       colors.border,
+    borderColor:       C.border,
     paddingHorizontal: spacing.md,
     paddingVertical:   spacing.sm,
   },
-  suggestionTxt: { color: colors.primary, fontSize: FontSize.sm },
+  suggestionTxt: { color: C.primary, fontSize: FontSize.sm },
 
   errorBox: {
-    backgroundColor: colors.critical + '22',
+    backgroundColor: C.critical + '22',
     borderRadius:    Radius.sm,
     padding:         spacing.md,
     borderWidth:     1,
-    borderColor:     colors.critical + '44',
+    borderColor:     C.critical + '44',
   },
-  errorTxt: { color: colors.critical, fontSize: FontSize.sm },
+  errorTxt: { color: C.critical, fontSize: FontSize.sm },
 
   videoDrop: {
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: colors.border,
+    borderColor: C.border,
     borderRadius: 14,
-    backgroundColor: colors.card,
+    backgroundColor: C.card,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xl,
     alignItems: 'center',
     gap: spacing.xs,
   },
   videoIcon: { fontSize: 30 },
-  videoTitle: { color: colors.textMuted, fontSize: FontSize.base, fontWeight: FontWeight.bold, textAlign: 'center' },
-  videoDesc: { color: colors.textDim, fontSize: FontSize.xs, textAlign: 'center', marginBottom: spacing.sm },
+  videoTitle: { color: C.textMuted, fontSize: FontSize.base, fontWeight: FontWeight.bold, textAlign: 'center' },
+  videoDesc: { color: C.textDim, fontSize: FontSize.xs, textAlign: 'center', marginBottom: spacing.sm },
   videoBtn: {
-    backgroundColor: colors.primary,
+    backgroundColor: C.primary,
     borderRadius: 10,
     paddingHorizontal: 22,
     paddingVertical: 10,
   },
-  videoBtnTxt: { color: colors.onPrimary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  videoBtnTxt: { color: C.onPrimary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   videoPreviewCard: {
     overflow: 'hidden',
     borderRadius: 16,
-    backgroundColor: '#000',
+    backgroundColor: C.bg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: C.border,
   },
   videoPreview: {
     width: '100%',
     height: 220,
-    backgroundColor: '#000',
+    backgroundColor: C.bg,
   },
   replaceVideoBtn: {
-    backgroundColor: colors.card,
+    backgroundColor: C.card,
     paddingVertical: spacing.sm,
     alignItems: 'center',
   },
   replaceVideoTxt: {
-    color: colors.primary,
+    color: C.primary,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
   },
   reviewCard: {
-    backgroundColor: colors.card,
+    backgroundColor: C.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: C.border,
     borderRadius: 16,
     padding: spacing.md,
     gap: spacing.sm,
   },
   reviewHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  reviewTitle: { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  reviewTitle: { color: C.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
   reviewPill: {
-    color: colors.accent,
-    backgroundColor: colors.accentDim,
+    color: C.accent,
+    backgroundColor: C.accentDim,
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -662,30 +669,30 @@ const s = StyleSheet.create({
     fontWeight: FontWeight.bold,
     letterSpacing: 0.5,
   },
-  reviewTxt: { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 22 },
-  recentTitle: { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  reviewTxt: { color: C.textMuted, fontSize: FontSize.sm, lineHeight: 22 },
+  recentTitle: { color: C.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   videoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: C.border,
     gap: spacing.sm,
   },
-  videoRowTitle: { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold, maxWidth: 260 },
-  videoRowMeta: { color: colors.textMuted, fontSize: FontSize.xs, marginTop: 2 },
-  videoRowChevron: { color: colors.primary, fontSize: 22 },
+  videoRowTitle: { color: C.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold, maxWidth: 260 },
+  videoRowMeta: { color: C.textMuted, fontSize: FontSize.xs, marginTop: 2 },
+  videoRowChevron: { color: C.primary, fontSize: 22 },
   secondaryBtn: {
     height: 44,
     borderRadius: 12,
-    backgroundColor: colors.card,
+    backgroundColor: C.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: C.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  secondaryBtnTxt: { color: colors.primary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  secondaryBtnTxt: { color: C.primary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
 
   inputRow: {
     flexDirection:     'row',
@@ -693,17 +700,17 @@ const s = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical:   10,
     gap:               8,
-    backgroundColor:   colors.bg,
+    backgroundColor:   C.bg,
   },
   input: {
     flex:              1,
-    backgroundColor:   colors.card,
+    backgroundColor:   C.card,
     borderRadius:      10,
     borderWidth:       1,
-    borderColor:       colors.border,
+    borderColor:       C.border,
     paddingHorizontal: 12,
     paddingVertical:   10,
-    color:             colors.text,
+    color:             C.text,
     fontSize:          13,
     maxHeight:         120,
   },
@@ -711,15 +718,17 @@ const s = StyleSheet.create({
     width:           44,
     height:          44,
     borderRadius:    10,
-    backgroundColor: colors.primary,
+    backgroundColor: C.primary,
     alignItems:      'center',
     justifyContent:  'center',
   },
   sendBtnDisabled: { opacity: 0.4 },
-  sendTxt: { color: '#000', fontSize: 18, fontWeight: FontWeight.black, lineHeight: 22 },
-});
+  sendTxt: { color: C.onPrimary, fontSize: 18, fontWeight: FontWeight.black, lineHeight: 22 },
+  });
+}
 
-const b = StyleSheet.create({
+function makeBubbleStyles(C: Palette) {
+  return StyleSheet.create({
   wrap:          { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs },
   userWrap:      { justifyContent: 'flex-end' },
   assistantWrap: { justifyContent: 'flex-start' },
@@ -730,9 +739,10 @@ const b = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical:   spacing.sm,
   },
-  userBubble:      { backgroundColor: colors.primary, borderBottomRightRadius: 4 },
-  assistantBubble: { backgroundColor: colors.card, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: colors.border },
+  userBubble:      { backgroundColor: C.primary, borderBottomRightRadius: 4 },
+  assistantBubble: { backgroundColor: C.card, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: C.border },
   txt:         { fontSize: FontSize.base, lineHeight: 22 },
-  userTxt:     { color: '#000' },
-  assistantTxt:{ color: colors.text },
-});
+  userTxt:     { color: C.onPrimary },
+  assistantTxt:{ color: C.text },
+  });
+}

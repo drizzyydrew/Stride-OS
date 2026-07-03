@@ -1,7 +1,8 @@
 import { useFonts } from 'expo-font';
 import { CormorantGaramond_700Bold } from '@expo-google-fonts/cormorant-garamond';
 import { DMSans_400Regular } from '@expo-google-fonts/dm-sans';
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { Stack } from 'expo-router';
+import { ThemeProvider as NavigationThemeProvider } from 'expo-router/react-navigation';
 import { router, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
@@ -16,6 +17,9 @@ import { useAuthStore }       from '../src/store/authStore';
 import { useThemeStore }      from '../src/store/themeStore';
 import { completeSupabaseAuthFromUrl } from '../src/lib/authRedirect';
 import { AppLogo } from '../src/components/ui/AppLogo';
+import { ToastProvider } from '../src/components/ui/Toast';
+import { ThemeProvider as StrideThemeProvider } from '../src/theme/ThemeProvider';
+import { getNavigationTheme, getTheme } from '../src/theme/theme';
 
 // Register GPS background task at module level (required by expo-task-manager)
 import '../src/lib/gpsTracking';
@@ -85,16 +89,19 @@ export default function RootLayout() {
 
   if (!loaded && !error) return null;
   if (showBrandSplash) {
+    const theme = getTheme(mode);
     return (
-      <View style={{ flex: 1, backgroundColor: '#2E2620', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.bg, alignItems: 'center', justifyContent: 'center' }}>
         <StatusBar style="light" />
-        <AppLogo size="lg" textColor="#F3F1E9" taglineColor="#A9AD98" />
+        <AppLogo size="lg" textColor={theme.colors.text} taglineColor={theme.colors.accent} />
       </View>
     );
   }
 
   return (
-    <ThemeProvider value={DarkTheme}>
+    <StrideThemeProvider>
+      <NavigationThemeProvider value={getNavigationTheme(mode)}>
+        <ToastProvider>
       <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
       <Stack>
         <Stack.Screen name="(tabs)"     options={{ headerShown: false }} />
@@ -103,7 +110,9 @@ export default function RootLayout() {
         <Stack.Screen name="modal"      options={{ presentation: 'modal' }} />
       </Stack>
       <NavigationGate />
-    </ThemeProvider>
+        </ToastProvider>
+      </NavigationThemeProvider>
+    </StrideThemeProvider>
   );
 }
 

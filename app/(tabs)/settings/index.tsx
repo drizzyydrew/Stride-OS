@@ -637,7 +637,7 @@ export default function SettingsScreen() {
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>HEALTH DATA SYNC</Text>
         <View style={styles.settingRow}>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 12 }}>
-            <View style={[{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ff3b30' }]}>
+            <View style={[{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: C.criticalDim }]}>
               <Text style={[{ fontSize: 17 }]}>♥</Text>
             </View>
             <View style={{ flex: 1 }}>
@@ -646,12 +646,12 @@ export default function SettingsScreen() {
             </View>
           </View>
           <TouchableOpacity
-            style={[styles.connectBtn, integrations.healthKitEnabled ? { backgroundColor: C.cardAlt } : { backgroundColor: '#ff3b30' }, busy === 'health' && { opacity: 0.6 }]}
+            style={[styles.connectBtn, integrations.healthKitEnabled ? { backgroundColor: C.cardAlt } : { backgroundColor: C.critical }, busy === 'health' && { opacity: 0.6 }]}
             onPress={connectAppleHealth}
             disabled={busy === 'health'}
             activeOpacity={0.8}
           >
-            <Text style={[{ fontSize: 12, fontWeight: '700', color: integrations.healthKitEnabled ? C.positive : '#fff' }]}>
+            <Text style={[{ fontSize: 12, fontWeight: '700', color: integrations.healthKitEnabled ? C.positive : C.onPrimary }]}>
               {busy === 'health' ? 'Connecting...' : integrations.healthKitEnabled ? '✓ Connected' : 'Connect'}
             </Text>
           </TouchableOpacity>
@@ -670,7 +670,7 @@ export default function SettingsScreen() {
             value={integrations.locationEnabled}
             onValueChange={setLocationEnabled}
             trackColor={{ false: C.cardAlt, true: C.primary }}
-            thumbColor="#fff"
+            thumbColor={C.card}
           />
         </View>
       </View>
@@ -689,7 +689,7 @@ export default function SettingsScreen() {
             value={integrations.notificationsEnabled}
             onValueChange={updateNotificationEnabled}
             trackColor={{ false: C.cardAlt, true: C.primary }}
-            thumbColor="#fff"
+            thumbColor={C.card}
           />
         </View>
         {integrations.notificationsEnabled && (
@@ -713,7 +713,7 @@ export default function SettingsScreen() {
                 value={integrations.workoutNotifications}
                 onValueChange={updateWorkoutNotifications}
                 trackColor={{ false: C.cardAlt, true: C.primary }}
-                thumbColor="#fff"
+                thumbColor={C.card}
               />
             </View>
             <View style={styles.settingRow}>
@@ -722,7 +722,7 @@ export default function SettingsScreen() {
                 value={integrations.readinessNotifications}
                 onValueChange={updateReadinessNotifications}
                 trackColor={{ false: C.cardAlt, true: C.primary }}
-                thumbColor="#fff"
+                thumbColor={C.card}
               />
             </View>
           </>

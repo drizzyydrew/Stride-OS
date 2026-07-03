@@ -22,21 +22,35 @@ type Props = {
 
 // ─── Visual config ─────────────────────────────────────────────────────────────
 
-const PHASE_COLOR: Record<TrainingPhase, string> = {
-  base:   '#2563EB',
-  build:  '#7C3AED',
-  peak:   '#9333EA',
-  deload: '#F59E0B',
-  taper:  '#22C55E',
-};
+function phaseColor(phase: TrainingPhase): string {
+  switch (phase) {
+    case 'base':
+      return colors.chartSeriesPrimary;
+    case 'build':
+      return colors.chartSeriesSecondary;
+    case 'peak':
+      return colors.warning;
+    case 'deload':
+      return colors.positive;
+    case 'taper':
+      return colors.critical;
+  }
+}
 
-const PHASE_BG: Record<TrainingPhase, string> = {
-  base:   '#0C1A3D',
-  build:  '#1E0A4A',
-  peak:   '#3B0764',
-  deload: '#451A03',
-  taper:  '#052E16',
-};
+function phaseBackground(phase: TrainingPhase): string {
+  switch (phase) {
+    case 'base':
+      return colors.primaryDim;
+    case 'build':
+      return colors.accentDim;
+    case 'peak':
+      return colors.warningDim;
+    case 'deload':
+      return colors.positiveDim;
+    case 'taper':
+      return colors.criticalDim;
+  }
+}
 
 const PHASE_LABEL: Record<TrainingPhase, string> = {
   base:   'BASE',
@@ -147,8 +161,8 @@ function WeekCell({
   isDeloadBoundary: boolean;
   onPress:          () => void;
 }) {
-  const color = PHASE_COLOR[phase];
-  const bg    = isSelected ? color + '33' : PHASE_BG[phase];
+  const color = phaseColor(phase);
+  const bg    = isSelected ? phaseBackground(phase) : colors.cardAlt;
 
   return (
     <Pressable
@@ -202,7 +216,7 @@ function PhaseGroup({ phase, startWeek, endWeek, totalWeeks }: {
   endWeek:    number;
   totalWeeks: number;
 }) {
-  const color     = PHASE_COLOR[phase];
+  const color     = phaseColor(phase);
   const weekCount = endWeek - startWeek + 1;
 
   return (
@@ -239,8 +253,8 @@ const pg = StyleSheet.create({
 // ─── Week detail panel ─────────────────────────────────────────────────────────
 
 function WeekDetailPanel({ detail }: { detail: WeekDetail }) {
-  const color = PHASE_COLOR[detail.phase];
-  const bg    = PHASE_BG[detail.phase];
+  const color = phaseColor(detail.phase);
+  const bg    = phaseBackground(detail.phase);
 
   return (
     <View style={dp.wrap}>
@@ -491,12 +505,12 @@ export default function MacrocycleTimelineCard({
       <View style={styles.legendRow}>
         {planPhases.map(pb => (
           <View key={pb.phase} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: PHASE_COLOR[pb.phase] }]} />
+            <View style={[styles.legendDot, { backgroundColor: phaseColor(pb.phase) }]} />
             <Text style={styles.legendText}>{PHASE_LABEL[pb.phase]}</Text>
           </View>
         ))}
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: PHASE_COLOR.deload }]} />
+          <View style={[styles.legendDot, { backgroundColor: phaseColor('deload') }]} />
           <Text style={styles.legendText}>DLD</Text>
         </View>
       </View>

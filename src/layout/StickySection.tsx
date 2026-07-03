@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
     backgroundColor:   colors.bg,
     paddingBottom:     LAYOUT.headerPadV,
     borderBottomWidth: 1,
-    borderBottomColor: '#0D1520',
+    borderBottomColor: colors.separator,
     alignItems:        'center',
   },
   inner: {

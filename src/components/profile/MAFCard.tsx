@@ -25,7 +25,7 @@ function formatRelativeDate(dateStr: string): string {
 // Aerobic base quality from HR drift
 function driftQuality(drift: number): { label: string; color: string } {
   if (drift <= 3)  return { label: 'Excellent', color: colors.positive };
-  if (drift <= 7)  return { label: 'Good',      color: '#60A5FA'       };
+  if (drift <= 7)  return { label: 'Good',      color: colors.primary  };
   if (drift <= 12) return { label: 'Fair',       color: colors.warning  };
   return             { label: 'Poor',       color: colors.critical };
 }

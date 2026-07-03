@@ -16,11 +16,11 @@ type Props = {
 };
 
 const PHASE_BADGE: Record<TrainingPhase, { bg: string; text: string; label: string }> = {
-  base:   { bg: '#0C2340', text: '#60A5FA', label: 'Base'   },
-  build:  { bg: '#1E3A8A', text: '#93C5FD', label: 'Build'  },
-  peak:   { bg: '#3B0764', text: '#C084FC', label: 'Peak'   },
-  deload: { bg: '#451A03', text: '#FCD34D', label: 'Deload' },
-  taper:  { bg: '#052E16', text: '#4ADE80', label: 'Taper'  },
+  base:   { bg: colors.primaryDim,  text: colors.primary,  label: 'Base'   },
+  build:  { bg: colors.accentDim,   text: colors.accent,   label: 'Build'  },
+  peak:   { bg: colors.warningDim,  text: colors.warning,  label: 'Peak'   },
+  deload: { bg: colors.criticalDim, text: colors.critical, label: 'Deload' },
+  taper:  { bg: colors.positiveDim, text: colors.positive, label: 'Taper'  },
 };
 
 function recoveryColor(score: number): string {

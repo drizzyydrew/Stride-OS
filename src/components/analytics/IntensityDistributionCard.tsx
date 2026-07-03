@@ -17,12 +17,12 @@ const INTENSITY_ORDER: WorkoutIntensity[] = [
 ];
 
 const INTENSITY_META: Record<WorkoutIntensity, { label: string; color: string }> = {
-  very_easy: { label: 'Very Easy', color: '#4ADE80' },
-  easy:      { label: 'Easy',      color: '#60A5FA' },
-  moderate:  { label: 'Moderate',  color: '#C084FC' },
-  hard:      { label: 'Hard',      color: '#F87171' },
-  max:       { label: 'Max',       color: '#FCA5A5' },
-  rest:      { label: 'Rest',      color: '#5F6B7A' },
+  very_easy: { label: 'Very Easy', color: colors.positive },
+  easy:      { label: 'Easy',      color: colors.primary },
+  moderate:  { label: 'Moderate',  color: colors.accent },
+  hard:      { label: 'Hard',      color: colors.warning },
+  max:       { label: 'Max',       color: colors.critical },
+  rest:      { label: 'Rest',      color: colors.textDim },
 };
 
 export default function IntensityDistributionCard({ distribution }: Props) {

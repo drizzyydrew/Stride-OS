@@ -19,12 +19,12 @@ type Props = {
 type BadgeStyle = { bg: string; text: string; label: string };
 
 const INTENSITY_BADGE: Record<WorkoutIntensity, BadgeStyle> = {
-  rest:      { bg: '#1E293B', text: '#64748B', label: 'Rest'      },
-  very_easy: { bg: '#022C22', text: '#4ADE80', label: 'Very Easy' },
-  easy:      { bg: '#0C1A3D', text: '#60A5FA', label: 'Easy'      },
-  moderate:  { bg: '#2E1065', text: '#C084FC', label: 'Moderate'  },
-  hard:      { bg: '#450A0A', text: '#F87171', label: 'Hard'      },
-  max:       { bg: '#3B0404', text: '#FCA5A5', label: 'Max'       },
+  rest:      { bg: colors.cardAlt,     text: colors.textDim,  label: 'Rest'      },
+  very_easy: { bg: colors.positiveDim, text: colors.positive, label: 'Very Easy' },
+  easy:      { bg: colors.primaryDim,  text: colors.primary,  label: 'Easy'      },
+  moderate:  { bg: colors.accentDim,   text: colors.accent,   label: 'Moderate'  },
+  hard:      { bg: colors.warningDim,  text: colors.warning,  label: 'Hard'      },
+  max:       { bg: colors.criticalDim, text: colors.critical, label: 'Max'       },
 };
 
 export default function WorkoutCard({ workout, isComplete, onComplete }: Props) {

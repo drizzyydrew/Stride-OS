@@ -26,8 +26,8 @@ const METHODS: MethodTab[] = [
   { key: 'race_prediction',  label: 'Race Predictions',  short: 'Races' },
 ];
 
-const ZONE_COLORS = ['#4ADE80', '#60A5FA', '#818CF8', '#F59E0B', '#F87171'];
-const ZONE_BG_COLORS = ['#052E16', '#0C1A3D', '#1E0A4A', '#451A03', '#450A0A'];
+const ZONE_COLORS = [colors.positive, colors.primary, colors.accent, colors.warning, colors.critical];
+const ZONE_BG_COLORS = [colors.positiveDim, colors.primaryDim, colors.accentDim, colors.warningDim, colors.criticalDim];
 
 function PaceRow({ label, pace, color }: { label: string; pace: string; color: string }) {
   return (
@@ -118,7 +118,7 @@ function ThresholdContent({ calibration }: { calibration: CalibrationOutput }) {
     );
   }
 
-  const THRESH_COLORS = ['#4ADE80', '#60A5FA', '#818CF8', '#F59E0B', '#FB923C', '#F87171', '#FCA5A5'];
+  const THRESH_COLORS = [colors.positive, colors.primary, colors.accent, colors.warning, colors.warning, colors.critical, colors.critical];
   return (
     <View style={compare.content}>
       <Text style={compare.sectionTitle}>Friel 7-Zone · Threshold-Based</Text>

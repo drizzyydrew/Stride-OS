@@ -1,10 +1,12 @@
+import { spacingTokens } from './tokens';
+
 export const spacing = {
-  xs:   4,
-  sm:   8,
-  md:   12,
-  lg:   16,
-  xl:   24,
-  xxl:  32,
+  xs:   spacingTokens.space1,
+  sm:   spacingTokens.space2,
+  md:   spacingTokens.space3,
+  lg:   spacingTokens.space4,
+  xl:   spacingTokens.space6,
+  xxl:  spacingTokens.space8,
   xxxl: 48,
 
   // Semantic
@@ -13,3 +15,5 @@ export const spacing = {
   screenPadTop:    48,
   screenPadBottom: 120,
 } as const;
+
+export { spacingTokens };

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
 import { LAYOUT } from '../../../src/constants/layout';
+import { colors } from '../../../src/theme/colors';
 import { useColors } from '../../../src/theme/useColors';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
@@ -266,7 +267,7 @@ const styles = StyleSheet.create({
   metricsRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   metric: { flex: 1, minHeight: 58, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.12)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   metricValue: { fontSize: 16, fontWeight: '900', textTransform: 'capitalize' },
-  metricLabel: { fontSize: 9, fontWeight: '800', color: '#8B927F', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 3 },
+  metricLabel: { fontSize: 9, fontWeight: '800', color: colors.textDim, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 3 },
   body: { fontSize: 13, lineHeight: 19 },
   warning: { fontSize: 12, fontWeight: '700', marginTop: 10, lineHeight: 18 },
   predRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, paddingVertical: 9, borderBottomWidth: 1 },

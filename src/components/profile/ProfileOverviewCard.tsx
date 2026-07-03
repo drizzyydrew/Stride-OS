@@ -124,7 +124,7 @@ export default function ProfileOverviewCard({ profile }: Props) {
 
 function SensitivityBadge({ label, value }: { label: string; value: number }) {
   const text  = value < 0.8 ? 'LOW' : value > 1.2 ? 'HIGH' : 'BASELINE';
-  const color = value > 1.2 ? colors.warning : value < 0.8 ? '#60A5FA' : colors.positive;
+  const color = value > 1.2 ? colors.warning : value < 0.8 ? colors.primary : colors.positive;
   const bg    = value > 1.2 ? colors.warningDim : value < 0.8 ? colors.primaryDim : colors.positiveDim;
 
   return (

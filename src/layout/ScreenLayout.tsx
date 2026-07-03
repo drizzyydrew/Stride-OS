@@ -3,6 +3,7 @@ import { SafeAreaView, StyleSheet, View, ViewStyle } from 'react-native';
 
 import AppHeader from './AppHeader';
 import ScrollScreen from './ScrollScreen';
+import { colors } from '../theme/colors';
 import { useColors } from '../theme/useColors';
 import { spacing } from '../theme/spacing';
 import { LAYOUT } from '../constants/layout';
@@ -53,7 +54,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingBottom:     spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#0D1520',
+    borderBottomColor: colors.separator,
   },
   fab: {
     position: 'absolute',

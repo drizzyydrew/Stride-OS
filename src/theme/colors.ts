@@ -2,9 +2,14 @@ export type ThemeMode = 'light' | 'dark';
 
 export type Palette = {
   bg: string;
+  surface: string;
   card: string;
+  cardElevated: string;
   border: string;
+  separator: string;
   text: string;
+  textPrimary: string;
+  textSecondary: string;
   textMuted: string;
   textDim: string;
   textSubtle: string;
@@ -22,79 +27,94 @@ export type Palette = {
   cardAlt: string;
   accent: string;
   accentDim: string;
+  icon: string;
+  overlay: string;
+  skeletonBase: string;
+  skeletonHighlight: string;
+  chartGrid: string;
+  chartAxis: string;
+  chartSeriesPrimary: string;
+  chartSeriesSecondary: string;
 };
 
 export const darkColors: Palette = {
-  bg:          '#14160F',
-  card:        '#1E2018',
-  border:      '#4B5240',
-  text:        '#F3F1E9',
-  textMuted:   '#D4D7C9',
-  textDim:     '#B8BFA8',
-  textSubtle:  '#9EA78C',
-  primary:     '#C7D0A8',
-  primaryDim:  '#262A1E',
-  onPrimary:   '#14160F',
-  positive:    '#98B06B',
-  positiveDim: '#22281A',
-  warning:     '#D9A857',
-  warningDim:  '#33270F',
-  critical:    '#CE7E6D',
-  criticalDim: '#33190F',
-  neutral:     '#A9AD98',
-  danger:      '#C06A52',
-  cardAlt:     '#262A1E',
+  bg:          '#101010',
+  surface:     '#101010',
+  card:        '#181818',
+  cardElevated:'#24211F',
+  border:      '#30302C',
+  separator:   '#30302C',
+  text:        '#F4EEE7',
+  textPrimary: '#F4EEE7',
+  textSecondary:'#CFC7BB',
+  textMuted:   '#CFC7BB',
+  textDim:     '#8F8A80',
+  textSubtle:  '#625E56',
+  primary:     '#8B927C',
+  primaryDim:  'rgba(139,146,124,0.18)',
+  onPrimary:   '#FFFFFF',
+  positive:    '#6F8A63',
+  positiveDim: 'rgba(111,138,99,0.18)',
+  warning:     '#C79B57',
+  warningDim:  'rgba(199,155,87,0.18)',
+  critical:    '#8A332D',
+  criticalDim: 'rgba(138,51,45,0.2)',
+  neutral:     '#CFC7BB',
+  danger:      '#8A332D',
+  cardAlt:     '#24211F',
   accent:      '#DCC0A7',
-  accentDim:   'rgba(220,192,167,0.15)',
+  accentDim:   'rgba(220,192,167,0.18)',
+  icon:         '#CFC7BB',
+  overlay:      'rgba(0,0,0,0.54)',
+  skeletonBase: '#24211F',
+  skeletonHighlight: '#30302C',
+  chartGrid:    'rgba(207,199,187,0.14)',
+  chartAxis:    '#8F8A80',
+  chartSeriesPrimary: '#8B927C',
+  chartSeriesSecondary: '#DCC0A7',
 };
 
 export const lightColors: Palette = {
-  bg:          '#EDE9DF',
-  card:        '#F8F5EE',
-  border:      '#DCD5C6',
-  text:        '#2B2A24',
-  textMuted:   '#6E7261',
-  textDim:     '#8A8F79',
-  textSubtle:  '#B4B2A4',
-  primary:     '#8B927C',
-  primaryDim:  '#E4E6DB',
-  onPrimary:   '#FBFAF6',
-  positive:    '#6E8B3D',
-  positiveDim: '#E7EDD9',
-  warning:     '#B9842B',
-  warningDim:  '#F4E9D4',
-  critical:    '#B85A48',
-  criticalDim: '#F2DED9',
-  neutral:     '#6E7261',
-  danger:      '#B05036',
-  cardAlt:     '#EFE7DA',
-  accent:      '#C29A6E',
-  accentDim:   'rgba(194,154,110,0.16)',
+  bg:          '#EFE7DA',
+  surface:     '#F8F5EF',
+  card:        '#FFFFFF',
+  cardElevated:'#FFFFFF',
+  border:      '#E7DED4',
+  separator:   '#E7DED4',
+  text:        '#111111',
+  textPrimary: '#111111',
+  textSecondary:'#4D4A45',
+  textMuted:   '#4D4A45',
+  textDim:     '#8B877F',
+  textSubtle:  '#B9B1A6',
+  primary:     '#DCC0A7',
+  primaryDim:  'rgba(220,192,167,0.28)',
+  onPrimary:   '#111111',
+  positive:    '#8B927C',
+  positiveDim: 'rgba(139,146,124,0.2)',
+  warning:     '#C79B57',
+  warningDim:  'rgba(199,155,87,0.18)',
+  critical:    '#8A332D',
+  criticalDim: 'rgba(138,51,45,0.16)',
+  neutral:     '#4D4A45',
+  danger:      '#8A332D',
+  cardAlt:     '#F8F5EF',
+  accent:      '#8B927C',
+  accentDim:   'rgba(139,146,124,0.18)',
+  icon:         '#4D4A45',
+  overlay:      'rgba(17,17,17,0.32)',
+  skeletonBase: '#E7DED4',
+  skeletonHighlight: '#F8F5EF',
+  chartGrid:    'rgba(77,74,69,0.14)',
+  chartAxis:    '#8B877F',
+  chartSeriesPrimary: '#6F7F6D',
+  chartSeriesSecondary: '#708489',
 };
 
-export const strideColors: Palette = {
-  bg:          '#0B0F14',
-  card:        '#151C24',
-  border:      '#1E293B',
-  text:        '#FFFFFF',
-  textMuted:   '#8B9AAF',
-  textDim:     '#5F6B7A',
-  textSubtle:  '#334155',
-  primary:     '#2563EB',
-  primaryDim:  '#0C1A3D',
-  onPrimary:   '#FFFFFF',
-  positive:    '#4ADE80',
-  positiveDim: '#052E16',
-  warning:     '#F59E0B',
-  warningDim:  '#451A03',
-  critical:    '#F87171',
-  criticalDim: '#450A0A',
-  neutral:     '#8B9AAF',
-  danger:      '#DC2626',
-  cardAlt:     '#1E293B',
-  accent:      '#60A5FA',
-  accentDim:   'rgba(96,165,250,0.15)',
-};
+// Backwards-compatible export for older imports. Keep this aligned with the
+// approved Moore Movement dark palette so legacy usage cannot reintroduce the
+// previous blue/green Stride palette.
+export const strideColors: Palette = darkColors;
 
 export function getColors(mode: ThemeMode): Palette {
   return mode === 'light' ? lightColors : darkColors;

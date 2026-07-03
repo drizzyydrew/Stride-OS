@@ -14,19 +14,19 @@ type Props = {
 // ─── Grade styling ────────────────────────────────────────────────────────────
 
 const GRADE_COLOR: Record<WeekGrade, string> = {
-  A: '#4ADE80',   // green
-  B: '#60A5FA',   // blue
-  C: '#F59E0B',   // amber
-  D: '#F87171',   // red-light
-  F: '#DC2626',   // red
+  A: colors.positive,
+  B: colors.primary,
+  C: colors.warning,
+  D: colors.critical,
+  F: colors.critical,
 };
 
 const GRADE_BG: Record<WeekGrade, string> = {
-  A: '#052E16',
-  B: '#0C1A3D',
-  C: '#451A03',
-  D: '#450A0A',
-  F: '#450A0A',
+  A: colors.positiveDim,
+  B: colors.primaryDim,
+  C: colors.warningDim,
+  D: colors.criticalDim,
+  F: colors.criticalDim,
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────

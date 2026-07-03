@@ -24,9 +24,9 @@ function getReadiness(fatigue: number, recovery: number, soreness: number | null
 
 const READINESS_CONFIG: Record<ReadinessLevel, { label: string; color: string; bg: string; advice: string }> = {
   optimal:  { label: 'Optimal',  color: colors.positive,  bg: colors.positiveDim, advice: 'Full sessions at planned intensity.' },
-  good:     { label: 'Good',     color: '#60A5FA',         bg: '#0C2340',           advice: 'Full sessions. Monitor fatigue mid-session.' },
+  good:     { label: 'Good',     color: colors.primary,   bg: colors.primaryDim,   advice: 'Full sessions. Monitor fatigue mid-session.' },
   moderate: { label: 'Moderate', color: colors.warning,    bg: colors.warningDim,   advice: 'Reduce load 10–15%. Focus on movement quality.' },
-  low:      { label: 'Low',      color: '#FB923C',         bg: '#431407',           advice: 'Prehab or mobility only. Avoid heavy loading.' },
+  low:      { label: 'Low',      color: colors.warning,    bg: colors.warningDim,   advice: 'Prehab or mobility only. Avoid heavy loading.' },
   rest:     { label: 'Rest',     color: colors.critical,   bg: colors.criticalDim,  advice: 'Skip strength today. Prioritize recovery.' },
 };
 

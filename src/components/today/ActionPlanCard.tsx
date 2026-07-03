@@ -15,9 +15,9 @@ type Props = {
 
 const CATEGORY_CONFIG: Record<ActionCategory, { label: string; color: string; bg: string }> = {
   recovery:        { label: 'RECOVERY',     color: colors.positive, bg: colors.positiveDim },
-  training:        { label: 'TRAINING',     color: '#60A5FA',       bg: '#0C1A3D' },
+  training:        { label: 'TRAINING',     color: colors.primary,  bg: colors.primaryDim },
   load_management: { label: 'LOAD',         color: colors.warning,  bg: colors.warningDim  },
-  race_prep:       { label: 'RACE PREP',    color: '#C084FC',       bg: '#3B0764' },
+  race_prep:       { label: 'RACE PREP',    color: colors.accent,   bg: colors.accentDim },
   habit:           { label: 'HABIT',        color: colors.textMuted, bg: colors.border },
 };
 
@@ -156,7 +156,7 @@ const rowStyles = StyleSheet.create({
     borderColor:     colors.positive,
   },
   checkmark: {
-    color:      '#000',
+    color:      colors.onPrimary,
     fontSize:   11,
     fontWeight: FontWeight.black,
   },

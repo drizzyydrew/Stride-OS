@@ -21,7 +21,7 @@ export default function AnalyticsScreen() {
   const totalDist = imp ? '18.4 mi' : '29.6 km';
 
   const hrZones = [
-    { width: 8,  color: '#8B9080' },
+    { width: 8,  color: C.textDim },
     { width: 62, color: C.primary },
     { width: 18, color: C.warning },
     { width: 10, color: C.accent },

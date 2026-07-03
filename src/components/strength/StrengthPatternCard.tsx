@@ -24,16 +24,16 @@ const PATTERN_LABELS: Record<MovementPattern, string> = {
 };
 
 const PATTERN_COLORS: Record<MovementPattern, string> = {
-  squat:       '#818CF8',
-  hinge:       '#60A5FA',
-  lunge:       '#34D399',
-  push:        '#F472B6',
-  pull:        '#FB923C',
-  carry:       '#A78BFA',
-  trunk:       '#4ADE80',
-  calf_ankle:  '#FCD34D',
-  plyometric:  '#F87171',
-  mobility:    '#94A3B8',
+  squat:       colors.accent,
+  hinge:       colors.primary,
+  lunge:       colors.positive,
+  push:        colors.warning,
+  pull:        colors.warning,
+  carry:       colors.accent,
+  trunk:       colors.positive,
+  calf_ankle:  colors.warning,
+  plyometric:  colors.critical,
+  mobility:    colors.textDim,
 };
 
 // Boyle-based targets for runners (% of total sets)

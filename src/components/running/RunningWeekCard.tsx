@@ -33,11 +33,11 @@ export type RunningWeekCardProps = {
 // ─── Phase config ────────────────────────────────────────────────────────────
 
 const PHASE_BADGE: Record<TrainingPhase, { bg: string; text: string; label: string }> = {
-  base:   { bg: '#0C2340', text: '#60A5FA', label: 'BASE'   },
-  build:  { bg: '#1E3A8A', text: '#93C5FD', label: 'BUILD'  },
-  peak:   { bg: '#3B0764', text: '#C084FC', label: 'PEAK'   },
-  deload: { bg: '#451A03', text: '#FCD34D', label: 'DELOAD' },
-  taper:  { bg: '#052E16', text: '#4ADE80', label: 'TAPER'  },
+  base:   { bg: colors.primaryDim,  text: colors.primary,  label: 'BASE'   },
+  build:  { bg: colors.accentDim,   text: colors.accent,   label: 'BUILD'  },
+  peak:   { bg: colors.warningDim,  text: colors.warning,  label: 'PEAK'   },
+  deload: { bg: colors.criticalDim, text: colors.critical, label: 'DELOAD' },
+  taper:  { bg: colors.positiveDim, text: colors.positive, label: 'TAPER'  },
 };
 
 // ─── Stat tile ───────────────────────────────────────────────────────────────
@@ -139,13 +139,13 @@ const s = StyleSheet.create({
     marginBottom:   spacing.md,
   },
   deloadBadge: {
-    backgroundColor: '#451A03',
+    backgroundColor: colors.warningDim,
     borderRadius:    Radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical:   2,
   },
   deloadTxt: {
-    color:         '#FCD34D',
+    color:         colors.warning,
     fontSize:      9,
     fontWeight:    FontWeight.black,
     letterSpacing: 0.6,

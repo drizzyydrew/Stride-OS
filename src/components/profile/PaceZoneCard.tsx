@@ -14,21 +14,21 @@ type Props = {
 };
 
 const ZONE_COLOR: Record<string, string> = {
-  recovery:  '#4ADE80',
-  easy:      '#60A5FA',
-  marathon:  '#818CF8',
-  threshold: '#F59E0B',
-  vo2:       '#F87171',
-  rep:       '#FCA5A5',
+  recovery:  colors.positive,
+  easy:      colors.primary,
+  marathon:  colors.accent,
+  threshold: colors.warning,
+  vo2:       colors.critical,
+  rep:       colors.critical,
 };
 
 const ZONE_BG: Record<string, string> = {
-  recovery:  '#052E16',
-  easy:      '#0C1A3D',
-  marathon:  '#1E0A4A',
-  threshold: '#451A03',
-  vo2:       '#450A0A',
-  rep:       '#3B0404',
+  recovery:  colors.positiveDim,
+  easy:      colors.primaryDim,
+  marathon:  colors.accentDim,
+  threshold: colors.warningDim,
+  vo2:       colors.criticalDim,
+  rep:       colors.criticalDim,
 };
 
 const ZONE_ORDER = ['recovery', 'easy', 'marathon', 'threshold', 'vo2', 'rep'];

@@ -31,14 +31,14 @@ const INTENSITY_LABEL: Record<WorkoutIntensity, string> = {
 
 const READINESS_COLOR: Record<TrainingRecommendation['overallReadiness'], string> = {
   peak: colors.positive,
-  good: '#60A5FA',       // blue-400 — distinct from primary but on-brand
+  good: colors.primary,
   fair: colors.warning,
   poor: colors.critical,
 };
 
 const READINESS_BG: Record<TrainingRecommendation['overallReadiness'], string> = {
   peak: colors.positiveDim,
-  good: '#0C1A3D',
+  good: colors.primaryDim,
   fair: colors.warningDim,
   poor: colors.criticalDim,
 };

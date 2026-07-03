@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
-import { colors } from '../../theme/colors';
+import { ScrollView, StyleSheet, View } from 'react-native';
+
+import { useTheme } from '../../theme';
 import { spacing } from '../../theme/spacing';
 
 type Props = {
@@ -8,27 +9,28 @@ type Props = {
 };
 
 export default function ScreenContainer({ children }: Props) {
+  const theme = useTheme();
+
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={[styles.safe, { backgroundColor: theme.colors.bg }]}>
       <ScrollView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: theme.colors.bg }]}
         contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
       >
         {children}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.bg,
   },
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
   },
   content: {
     padding:       spacing.xl,

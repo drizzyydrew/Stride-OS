@@ -1,46 +1,110 @@
-import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
-import { colors } from '../../theme/colors';
-import { spacing } from '../../theme/spacing';
-import { Radius, FontWeight } from '../../theme/tokens';
+import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 
-type Variant = 'primary' | 'secondary' | 'danger';
+import { useTheme } from '../../theme';
+import Icon, { type IconName } from './Icon';
+
+type Variant = 'primary' | 'secondary' | 'tertiary' | 'danger';
+type Size = 'sm' | 'md' | 'lg' | 'icon';
 
 type Props = {
   label:     string;
   onPress:   () => void;
   variant?:  Variant;
+  size?:     Size;
+  icon?:     IconName;
   disabled?: boolean;
-  style?:    ViewStyle;
+  style?:    StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
 };
 
-const VARIANT_BG: Record<Variant, string> = {
-  primary:   colors.primary,
-  secondary: colors.border,
-  danger:    colors.danger,
-};
+export default function Button({
+  label,
+  onPress,
+  variant = 'primary',
+  size = 'md',
+  icon,
+  disabled = false,
+  style,
+  accessibilityLabel,
+}: Props) {
+  const theme = useTheme();
+  const bg = getBackground(variant, disabled, theme);
+  const fg = getForeground(variant, disabled, theme);
 
-export default function Button({ label, onPress, variant = 'primary', disabled = false, style }: Props) {
-  const bg = disabled ? colors.border : VARIANT_BG[variant];
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={[styles.button, { backgroundColor: bg }, style]}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled }}
+      style={({ pressed }) => [
+        styles.button,
+        sizeStyles[size],
+        {
+          backgroundColor: bg,
+          borderColor: variant === 'tertiary' ? theme.colors.border : bg,
+          opacity: disabled ? 0.58 : pressed ? 0.82 : 1,
+          transform: [{ scale: pressed && !disabled ? theme.motion.scale.press : 1 }],
+        },
+        style,
+      ]}
     >
-      <Text style={styles.label}>{label}</Text>
+      {icon ? <Icon name={icon} size={size === 'sm' ? 16 : 18} color={fg} /> : null}
+      {size !== 'icon' ? <Text style={[styles.label, { color: fg }]}>{label}</Text> : null}
     </Pressable>
   );
 }
 
+function getBackground(variant: Variant, disabled: boolean, theme: ReturnType<typeof useTheme>) {
+  if (disabled) return theme.colors.border;
+  if (variant === 'primary') return theme.colors.primary;
+  if (variant === 'danger') return theme.colors.danger;
+  if (variant === 'tertiary') return 'transparent';
+  return theme.colors.border;
+}
+
+function getForeground(variant: Variant, disabled: boolean, theme: ReturnType<typeof useTheme>) {
+  if (disabled) return theme.colors.textDim;
+  if (variant === 'primary') return theme.colors.onPrimary;
+  if (variant === 'danger') return '#FFFFFF';
+  return theme.colors.text;
+}
+
 const styles = StyleSheet.create({
   button: {
-    padding:      spacing.lg,
-    borderRadius: Radius.md,
-    alignItems:   'center',
+    minHeight:      44,
+    paddingHorizontal: 16,
+    borderRadius:   18,
+    alignItems:     'center',
+    justifyContent: 'center',
+    flexDirection:  'row',
+    gap:            8,
+    borderWidth:    1,
   },
   label: {
-    color:      colors.text,
-    fontWeight: FontWeight.black,
+    fontWeight: '800',
     fontSize:   15,
+  },
+});
+
+const sizeStyles = StyleSheet.create({
+  sm: {
+    minHeight: 40,
+    paddingHorizontal: 12,
+  },
+  md: {
+    minHeight: 48,
+    paddingHorizontal: 16,
+  },
+  lg: {
+    minHeight: 56,
+    paddingHorizontal: 20,
+  },
+  icon: {
+    width: 44,
+    height: 44,
+    paddingHorizontal: 0,
+    borderRadius: 999,
   },
 });

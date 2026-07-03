@@ -19,13 +19,30 @@ type Props = {
 
 type PhaseMeta = { label: string; bg: string; text: string; barColor: string };
 
-const PHASE_META: Record<TrainingPhase, PhaseMeta> = {
-  base:   { label: 'Base',   bg: '#0C2340', text: '#60A5FA', barColor: '#2563EB' },
-  build:  { label: 'Build',  bg: '#1E3A8A', text: '#93C5FD', barColor: '#3B82F6' },
-  peak:   { label: 'Peak',   bg: '#3B0764', text: '#C084FC', barColor: '#9333EA' },
-  deload: { label: 'Deload', bg: '#451A03', text: '#FCD34D', barColor: '#F59E0B' },
-  taper:  { label: 'Taper',  bg: '#052E16', text: '#4ADE80', barColor: '#22C55E' },
-};
+function getPhaseMeta(phase: TrainingPhase): PhaseMeta {
+  const phaseColor = getPhaseColor(phase);
+  return {
+    label: phase === 'deload' ? 'Deload' : phase[0].toUpperCase() + phase.slice(1),
+    bg: phaseColor.bg,
+    text: phaseColor.text,
+    barColor: phaseColor.accent,
+  };
+}
+
+function getPhaseColor(phase: TrainingPhase) {
+  switch (phase) {
+    case 'base':
+      return { accent: colors.chartSeriesPrimary, bg: colors.primaryDim, text: colors.primary };
+    case 'build':
+      return { accent: colors.chartSeriesSecondary, bg: colors.accentDim, text: colors.accent };
+    case 'peak':
+      return { accent: colors.warning, bg: colors.warningDim, text: colors.warning };
+    case 'deload':
+      return { accent: colors.positive, bg: colors.positiveDim, text: colors.positive };
+    case 'taper':
+      return { accent: colors.critical, bg: colors.criticalDim, text: colors.critical };
+  }
+}
 
 export default function PhaseProgressCard({
   phase,
@@ -34,7 +51,7 @@ export default function PhaseProgressCard({
   totalWeeks,
   weeksRemaining,
 }: Props) {
-  const meta       = PHASE_META[phase];
+  const meta       = getPhaseMeta(phase);
   const progressPct = Math.round(Math.min(1, Math.max(0, planProgress)) * 100);
 
   return (

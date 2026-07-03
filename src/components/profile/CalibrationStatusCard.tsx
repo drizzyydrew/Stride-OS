@@ -13,7 +13,7 @@ type Props = {
 
 const CONFIDENCE_COLOR: Record<CalibrationConfidence, string> = {
   high:      colors.positive,
-  moderate:  '#60A5FA',
+  moderate:  colors.primary,
   low:       colors.warning,
   estimated: colors.textDim,
 };

@@ -14,7 +14,7 @@ type Props = {
 
 function recoveryColor(v: number): string {
   if (v >= 80) return colors.positive;
-  if (v >= 65) return '#60A5FA';
+  if (v >= 65) return colors.primary;
   if (v >= 50) return colors.warning;
   return colors.critical;
 }
@@ -22,7 +22,7 @@ function recoveryColor(v: number): string {
 // High fatigue = bad → invert scale so low is green, high is red.
 function fatigueColor(v: number): string {
   if (v < 35) return colors.positive;
-  if (v < 55) return '#60A5FA';
+  if (v < 55) return colors.primary;
   if (v < 75) return colors.warning;
   return colors.critical;
 }
@@ -36,7 +36,7 @@ function acwrColor(v: number): string {
 
 function adherenceColor(v: number): string {
   if (v >= 0.85) return colors.positive;
-  if (v >= 0.65) return '#60A5FA';
+  if (v >= 0.65) return colors.primary;
   if (v >= 0.50) return colors.warning;
   return colors.critical;
 }

@@ -20,12 +20,12 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
 };
 
 const GOAL_COLORS: Record<string, { color: string; bg: string }> = {
-  force_production: { color: '#C084FC', bg: '#2D1B69' },
-  hypertrophy:      { color: '#60A5FA', bg: '#0C2340' },
-  tendon_capacity:  { color: '#FB923C', bg: '#431407' },
+  force_production: { color: colors.accent, bg: colors.accentDim },
+  hypertrophy:      { color: colors.primary, bg: colors.primaryDim },
+  tendon_capacity:  { color: colors.warning, bg: colors.warningDim },
   running_economy:  { color: colors.positive, bg: colors.positiveDim },
-  injury_resilience:{ color: '#34D399', bg: '#022C22' },
-  power:            { color: '#F472B6', bg: '#500724' },
+  injury_resilience:{ color: colors.positive, bg: colors.positiveDim },
+  power:            { color: colors.critical, bg: colors.criticalDim },
   maintenance:      { color: colors.textMuted, bg: colors.border },
   deload:           { color: colors.warning, bg: colors.warningDim },
   taper_support:    { color: colors.primary, bg: colors.primaryDim },

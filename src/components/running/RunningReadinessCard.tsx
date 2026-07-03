@@ -48,8 +48,8 @@ const READINESS_CONFIG: Record<ReadinessLevel, {
   },
   good: {
     label:  'Good',
-    color:  '#60A5FA',
-    bg:     '#0C2340',
+    color:  colors.primary,
+    bg:     colors.primaryDim,
     advice: 'Proceed as planned. Check in mid-run and ease off if needed.',
   },
   moderate: {
@@ -60,8 +60,8 @@ const READINESS_CONFIG: Record<ReadinessLevel, {
   },
   low: {
     label:  'Low',
-    color:  '#FB923C',
-    bg:     '#431407',
+    color:  colors.warning,
+    bg:     colors.warningDim,
     advice: 'Recovery run or rest only. Pushing hard today risks compounding fatigue.',
   },
   rest: {
@@ -193,7 +193,7 @@ const s = StyleSheet.create({
     textAlign:  'right',
   },
   restNote: {
-    color:      '#60A5FA',
+    color:      colors.primary,
     fontSize:   FontSize.xs,
     marginTop:  spacing.sm,
     fontStyle:  'italic',

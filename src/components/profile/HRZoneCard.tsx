@@ -13,19 +13,19 @@ type Props = {
 };
 
 const ZONE_COLOR: Record<number, string> = {
-  1: '#4ADE80',
-  2: '#60A5FA',
-  3: '#818CF8',
-  4: '#F59E0B',
-  5: '#F87171',
+  1: colors.positive,
+  2: colors.primary,
+  3: colors.accent,
+  4: colors.warning,
+  5: colors.critical,
 };
 
 const ZONE_BG: Record<number, string> = {
-  1: '#052E16',
-  2: '#0C1A3D',
-  3: '#1E0A4A',
-  4: '#451A03',
-  5: '#450A0A',
+  1: colors.positiveDim,
+  2: colors.primaryDim,
+  3: colors.accentDim,
+  4: colors.warningDim,
+  5: colors.criticalDim,
 };
 
 function HRZoneRow({

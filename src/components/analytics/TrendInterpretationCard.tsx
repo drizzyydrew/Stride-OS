@@ -14,14 +14,14 @@ type Props = {
 
 const STATE_COLOR: Record<OverallState, string> = {
   thriving: colors.positive,
-  adapting: '#60A5FA',
+  adapting: colors.primary,
   stressed: colors.warning,
   at_risk:  colors.critical,
 };
 
 const STATE_BG: Record<OverallState, string> = {
   thriving: colors.positiveDim,
-  adapting: '#0C1A3D',
+  adapting: colors.primaryDim,
   stressed: colors.warningDim,
   at_risk:  colors.criticalDim,
 };
@@ -229,7 +229,7 @@ export default function TrendInterpretationCard({ analysis }: Props) {
 
 function adherenceColor(v: number): string {
   if (v >= 0.85) return colors.positive;
-  if (v >= 0.65) return '#60A5FA';
+  if (v >= 0.65) return colors.primary;
   if (v >= 0.50) return colors.warning;
   return colors.critical;
 }
