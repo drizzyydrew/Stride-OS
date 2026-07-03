@@ -23,8 +23,16 @@ export type StrideStrengthLiveActivityPayload = {
   isPaused?: boolean;
 };
 
+export type StrideRunControlCommand = {
+  id: string;
+  action: 'pause' | 'resume' | 'stop';
+  createdAt: number;
+};
+
 type StrideLiveActivityModule = {
   isAvailable: () => boolean;
+  getPendingRunControlCommand?: () => StrideRunControlCommand | null;
+  clearPendingRunControlCommand?: (id: string) => void;
   start: (
     runName: string,
     elapsedSeconds: number,
@@ -108,6 +116,34 @@ export function isStrideRunLiveActivityAvailable(): boolean {
     return nativeModule.isAvailable();
   } catch {
     return false;
+  }
+}
+
+export function getPendingRunControlCommand(): StrideRunControlCommand | null {
+  const nativeModule = getNativeModule();
+  if (!nativeModule?.getPendingRunControlCommand) return null;
+  try {
+    const command = nativeModule.getPendingRunControlCommand();
+    if (
+      command &&
+      typeof command.id === 'string' &&
+      (command.action === 'pause' || command.action === 'resume' || command.action === 'stop')
+    ) {
+      return command;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+export function clearPendingRunControlCommand(id: string): void {
+  const nativeModule = getNativeModule();
+  if (!nativeModule?.clearPendingRunControlCommand) return;
+  try {
+    nativeModule.clearPendingRunControlCommand(id);
+  } catch {
+    // Command cleanup is best-effort. The JS run state remains the source of truth.
   }
 }
 

@@ -1,8 +1,11 @@
 import {
   addRunIntentListener,
+  clearPendingRunControlCommand,
   endStrideRunLiveActivity,
+  getPendingRunControlCommand,
   startStrideRunLiveActivity,
   updateStrideRunLiveActivity,
+  type StrideRunControlCommand,
   type StrideRunLiveActivityPayload,
 } from 'stride-live-activity';
 
@@ -42,4 +45,9 @@ export async function endRunLiveActivity(snapshot: RunLiveActivitySnapshot): Pro
   await endStrideRunLiveActivity(payloadFromSnapshot(snapshot, 'Finished'));
 }
 
-export { addRunIntentListener };
+export {
+  addRunIntentListener,
+  clearPendingRunControlCommand,
+  getPendingRunControlCommand,
+  type StrideRunControlCommand,
+};

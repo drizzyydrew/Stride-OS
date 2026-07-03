@@ -1,5 +1,7 @@
 # StrideOS — App Store Copy
 
+Responsibility: public App Store metadata and review-copy guidance.
+
 ## App Name (30 chars max)
 StrideOS: Run, Lift, Recover
 
@@ -75,3 +77,14 @@ Your plan. Your pace.
   `"NSHealthShareUsageDescription"` and `"NSHealthUpdateUsageDescription"`
 - Location usage: already in app.json for GPS tracking
 - Screenshots required: 6.7" iPhone (iPhone 15 Pro Max size) — at least 3 screens
+
+## When To Update
+
+- Update when App Store copy, metadata, screenshots, or review notes change.
+- Keep implementation status in `CHANGELOG.md` or `CURRENT_SPRINT.md`.
+
+## Do NOT Put Here
+
+- Active bugs.
+- Internal architecture.
+- Release build logs.

@@ -4,76 +4,6 @@ import StrideLiveActivityCore
 import SwiftUI
 import WidgetKit
 
-// ─── App Intents (Phase 2 interactive buttons) ────────────────────────────────
-
-struct PauseRunIntent: LiveActivityIntent {
-  static var title: LocalizedStringResource = "Pause Run"
-  static var description = IntentDescription("Pause the current run")
-  static var isDiscoverable: Bool = false
-
-  func perform() async throws -> some IntentResult {
-    NotificationCenter.default.post(name: Notification.Name("StrideOS.pauseRun"), object: nil)
-    return .result()
-  }
-}
-
-struct ResumeRunIntent: LiveActivityIntent {
-  static var title: LocalizedStringResource = "Resume Run"
-  static var description = IntentDescription("Resume a paused run")
-  static var isDiscoverable: Bool = false
-
-  func perform() async throws -> some IntentResult {
-    NotificationCenter.default.post(name: Notification.Name("StrideOS.resumeRun"), object: nil)
-    return .result()
-  }
-}
-
-struct StopRunIntent: LiveActivityIntent {
-  static var title: LocalizedStringResource = "Stop Run"
-  static var description = IntentDescription("Stop and save the current run")
-  static var isDiscoverable: Bool = false
-
-  func perform() async throws -> some IntentResult {
-    NotificationCenter.default.post(name: Notification.Name("StrideOS.stopRun"), object: nil)
-    return .result()
-  }
-}
-
-// ─── Phase 3: Strength App Intents ───────────────────────────────────────────
-
-struct PauseStrengthIntent: LiveActivityIntent {
-  static var title: LocalizedStringResource = "Pause Workout"
-  static var description = IntentDescription("Pause the current strength session")
-  static var isDiscoverable: Bool = false
-
-  func perform() async throws -> some IntentResult {
-    NotificationCenter.default.post(name: Notification.Name("StrideOS.pauseStrength"), object: nil)
-    return .result()
-  }
-}
-
-struct ResumeStrengthIntent: LiveActivityIntent {
-  static var title: LocalizedStringResource = "Resume Workout"
-  static var description = IntentDescription("Resume the strength session")
-  static var isDiscoverable: Bool = false
-
-  func perform() async throws -> some IntentResult {
-    NotificationCenter.default.post(name: Notification.Name("StrideOS.resumeStrength"), object: nil)
-    return .result()
-  }
-}
-
-struct MarkSetCompleteIntent: LiveActivityIntent {
-  static var title: LocalizedStringResource = "Mark Set Complete"
-  static var description = IntentDescription("Mark the current set as complete")
-  static var isDiscoverable: Bool = false
-
-  func perform() async throws -> some IntentResult {
-    NotificationCenter.default.post(name: Notification.Name("StrideOS.markSetComplete"), object: nil)
-    return .result()
-  }
-}
-
 // ─── Widget bundle ────────────────────────────────────────────────────────────
 
 @main
@@ -88,22 +18,19 @@ struct StrideRunLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: StrideRunActivityAttributes.self) { context in
       LockScreenRunView(context: context)
-        .activityBackgroundTint(Color(red: 0.08, green: 0.09, blue: 0.06))
-        .activitySystemActionForegroundColor(.white)
+        .activityBackgroundTint(StrideDesign.ink)
+        .activitySystemActionForegroundColor(StrideDesign.textPrimaryDark)
     } dynamicIsland: { context in
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
-          RunMetric(label: "DIST", value: String(format: "%.2f", context.state.distanceMiles), unit: "mi")
+          IslandMetric(label: "TIME", value: formatElapsed(context.state.elapsedSeconds), unit: "")
         }
         DynamicIslandExpandedRegion(.trailing) {
-          RunMetric(label: "PACE", value: context.state.averagePace, unit: "/mi")
+          IslandMetric(label: "DISTANCE", value: String(format: "%.2f", context.state.distanceMiles), unit: "mi")
         }
         DynamicIslandExpandedRegion(.bottom) {
-          HStack(spacing: 8) {
-            Text(formatElapsed(context.state.elapsedSeconds))
-              .font(.system(.title3, design: .rounded).weight(.bold))
-              .monospacedDigit()
-              .foregroundStyle(.white)
+          HStack(spacing: 10) {
+            IslandMetric(label: "AVG PACE", value: context.state.averagePace, unit: "/mi")
             Spacer()
             ZoneBadge(label: context.state.zoneLabel, status: context.state.zoneStatus)
             if context.state.isPaused {
@@ -113,9 +40,8 @@ struct StrideRunLiveActivity: Widget {
                   .foregroundStyle(.white)
               }
               .buttonStyle(.plain)
-              .padding(.horizontal, 8)
-              .padding(.vertical, 4)
-              .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.3), in: Capsule())
+              .frame(width: 34, height: 28)
+              .background(StrideDesign.sage.opacity(0.28), in: Capsule())
             } else {
               Button(intent: PauseRunIntent()) {
                 Image(systemName: "pause.fill")
@@ -123,9 +49,8 @@ struct StrideRunLiveActivity: Widget {
                   .foregroundStyle(.white)
               }
               .buttonStyle(.plain)
-              .padding(.horizontal, 8)
-              .padding(.vertical, 4)
-              .background(Color(red: 0.91, green: 0.69, blue: 0.34).opacity(0.3), in: Capsule())
+              .frame(width: 34, height: 28)
+              .background(StrideDesign.clay.opacity(0.28), in: Capsule())
             }
           }
         }
@@ -133,18 +58,18 @@ struct StrideRunLiveActivity: Widget {
         HStack(spacing: 4) {
           Image(systemName: context.state.isPaused ? "pause.circle.fill" : "figure.run")
             .font(.caption.weight(.bold))
-            .foregroundStyle(context.state.isPaused ? Color(red: 0.91, green: 0.69, blue: 0.34) : zoneColor(context.state.zoneStatus))
-          Text(String(format: "%.1f", context.state.distanceMiles))
+            .foregroundStyle(context.state.isPaused ? StrideDesign.clay : StrideDesign.sage)
+          Text(formatElapsed(context.state.elapsedSeconds))
             .font(.caption.weight(.bold))
             .foregroundStyle(.white)
         }
       } compactTrailing: {
-        Text(context.state.zoneLabel)
+        Text(String(format: "%.1f mi", context.state.distanceMiles))
           .font(.caption.weight(.bold))
-          .foregroundStyle(zoneColor(context.state.zoneStatus))
+          .foregroundStyle(StrideDesign.clay)
       } minimal: {
         Image(systemName: context.state.isPaused ? "pause.circle.fill" : "figure.run")
-          .foregroundStyle(zoneColor(context.state.zoneStatus))
+          .foregroundStyle(context.state.isPaused ? StrideDesign.clay : StrideDesign.sage)
       }
     }
   }
@@ -154,88 +79,124 @@ struct StrideRunLiveActivity: Widget {
 
 private struct LockScreenRunView: View {
   let context: ActivityViewContext<StrideRunActivityAttributes>
+  @Environment(\.colorScheme) private var colorScheme
+
+  private var isLight: Bool { colorScheme == .light }
+  private var cardBackground: Color { isLight ? StrideDesign.cardLight : StrideDesign.inkRaised }
+  private var primaryText: Color { isLight ? StrideDesign.textPrimaryLight : StrideDesign.textPrimaryDark }
+  private var secondaryText: Color { isLight ? StrideDesign.textSecondaryLight : StrideDesign.textSecondaryDark }
+  private var borderColor: Color { isLight ? StrideDesign.lightBorder : StrideDesign.inkBorder }
+  private var actionColor: Color {
+    if context.state.isPaused {
+      return isLight ? StrideDesign.clay : StrideDesign.sage
+    }
+    return isLight ? StrideDesign.clay : StrideDesign.sage
+  }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      // Header row
+    VStack(alignment: .leading, spacing: 12) {
       HStack {
-        VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 8) {
+          Text("MM")
+            .font(.system(size: 13, weight: .bold, design: .serif))
+            .foregroundStyle(StrideDesign.clay)
           Text("StrideOS Run")
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
-          Text(context.state.isPaused ? "Paused" : context.state.status)
-            .font(.title3.weight(.bold))
-            .foregroundStyle(context.state.isPaused ? Color(red: 0.91, green: 0.69, blue: 0.34) : .white)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(primaryText)
         }
         Spacer()
         ZoneBadge(label: context.state.zoneLabel, status: context.state.zoneStatus)
       }
 
-      // Elapsed time
-      Text(formatElapsed(context.state.elapsedSeconds))
-        .font(.system(size: 42, weight: .heavy, design: .rounded))
-        .monospacedDigit()
-        .foregroundStyle(Color(red: 0.96, green: 0.95, blue: 0.90))
+      HStack(alignment: .center, spacing: 18) {
+        VStack(alignment: .leading, spacing: 12) {
+          VStack(alignment: .leading, spacing: 2) {
+            Text(formatElapsed(context.state.elapsedSeconds))
+              .font(.system(size: 56, weight: .heavy, design: .rounded))
+              .monospacedDigit()
+              .minimumScaleFactor(0.68)
+              .foregroundStyle(primaryText)
+            Text("TIME")
+              .font(.system(size: 10, weight: .bold))
+              .foregroundStyle(secondaryText)
+          }
+          VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+              Text(String(format: "%.2f", context.state.distanceMiles))
+                .font(.system(size: 52, weight: .heavy, design: .rounded))
+                .monospacedDigit()
+                .minimumScaleFactor(0.68)
+                .foregroundStyle(primaryText)
+              Text("mi")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(secondaryText)
+            }
+            Text("DISTANCE")
+              .font(.system(size: 10, weight: .bold))
+              .foregroundStyle(secondaryText)
+          }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
 
-      // Stats row
-      HStack(spacing: 10) {
-        RunMetric(label: "DISTANCE", value: String(format: "%.2f", context.state.distanceMiles), unit: "mi")
-        RunMetric(label: "AVG PACE", value: context.state.averagePace, unit: "/mi")
-        RunMetric(label: "HEART RATE", value: context.state.heartRate > 0 ? "\(context.state.heartRate)" : "--", unit: "bpm")
+        Rectangle()
+          .fill(borderColor)
+          .frame(width: 1, height: 132)
+
+        VStack(alignment: .leading, spacing: 14) {
+          WidgetMetric(icon: "gauge.with.dots.needle.50percent", label: "AVG PACE", value: context.state.averagePace, unit: "/mi", primary: primaryText, secondary: secondaryText)
+          WidgetMetric(icon: "heart.fill", label: "HEART RATE", value: context.state.heartRate > 0 ? "\(context.state.heartRate)" : "--", unit: "bpm", primary: primaryText, secondary: secondaryText)
+          WidgetMetric(icon: "mountain.2.fill", label: "ELEV GAIN", value: "--", unit: "ft", primary: primaryText, secondary: secondaryText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
       }
 
-      // Phase 2: Control buttons
-      HStack(spacing: 10) {
-        if context.state.isPaused {
-          // Paused state: Resume + Stop
-          Button(intent: ResumeRunIntent()) {
-            Label("Resume", systemImage: "play.fill")
-              .font(.subheadline.weight(.bold))
-              .frame(maxWidth: .infinity)
-              .padding(.vertical, 10)
-              .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
-              .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
-          }
-          .buttonStyle(.plain)
-
-          Button(intent: StopRunIntent()) {
-            Label("Stop", systemImage: "stop.fill")
-              .font(.subheadline.weight(.bold))
-              .frame(maxWidth: .infinity)
-              .padding(.vertical, 10)
-              .background(Color(red: 0.84, green: 0.42, blue: 0.36).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
-              .foregroundStyle(Color(red: 0.84, green: 0.42, blue: 0.36))
-          }
-          .buttonStyle(.plain)
-        } else {
-          // Active state: Pause + Stop
-          Button(intent: PauseRunIntent()) {
-            Label("Pause", systemImage: "pause.fill")
-              .font(.subheadline.weight(.bold))
-              .frame(maxWidth: .infinity)
-              .padding(.vertical, 10)
-              .background(Color(red: 0.91, green: 0.69, blue: 0.34).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
-              .foregroundStyle(Color(red: 0.91, green: 0.69, blue: 0.34))
-          }
-          .buttonStyle(.plain)
-
-          Button(intent: StopRunIntent()) {
-            Label("Stop", systemImage: "stop.fill")
-              .font(.subheadline.weight(.bold))
-              .frame(maxWidth: .infinity)
-              .padding(.vertical, 10)
-              .background(Color(red: 0.84, green: 0.42, blue: 0.36).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
-              .foregroundStyle(Color(red: 0.84, green: 0.42, blue: 0.36))
-          }
-          .buttonStyle(.plain)
+      if context.state.isPaused {
+        Button(intent: ResumeRunIntent()) {
+          Label("RESUME", systemImage: "play.fill")
+            .font(.system(size: 16, weight: .heavy))
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .background(actionColor, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .foregroundStyle(isLight ? StrideDesign.textPrimaryLight : .white)
         }
+        .buttonStyle(.plain)
+      } else {
+        Button(intent: PauseRunIntent()) {
+          Label("PAUSE", systemImage: "pause.fill")
+            .font(.system(size: 16, weight: .heavy))
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .background(actionColor, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .foregroundStyle(isLight ? StrideDesign.textPrimaryLight : .white)
+        }
+        .buttonStyle(.plain)
       }
     }
-    .padding(16)
+    .padding(18)
+    .background(cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+    .overlay(
+      RoundedRectangle(cornerRadius: 24, style: .continuous)
+        .stroke(borderColor.opacity(0.9), lineWidth: 1)
+    )
   }
 }
 
 // ─── Shared sub-views ─────────────────────────────────────────────────────────
+
+private enum StrideDesign {
+  static let sage = Color(red: 0.545, green: 0.573, blue: 0.486)
+  static let clay = Color(red: 0.863, green: 0.753, blue: 0.655)
+  static let steel = Color(red: 0.439, green: 0.518, blue: 0.537)
+  static let brown = Color(red: 0.302, green: 0.263, blue: 0.243)
+  static let critical = Color(red: 0.541, green: 0.200, blue: 0.176)
+  static let ink = Color(red: 0.063, green: 0.063, blue: 0.063)
+  static let inkRaised = Color(red: 0.094, green: 0.094, blue: 0.094)
+  static let inkBorder = Color(red: 0.188, green: 0.188, blue: 0.173)
+  static let textPrimaryDark = Color(red: 0.957, green: 0.933, blue: 0.906)
+  static let textSecondaryDark = Color(red: 0.812, green: 0.780, blue: 0.733)
+  static let cardLight = Color.white
+  static let lightBorder = Color(red: 0.906, green: 0.871, blue: 0.831)
+  static let textPrimaryLight = Color(red: 0.067, green: 0.067, blue: 0.067)
+  static let textSecondaryLight = Color(red: 0.302, green: 0.290, blue: 0.271)
+}
 
 private struct RunMetric: View {
   let label: String
@@ -245,11 +206,11 @@ private struct RunMetric: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 2) {
       Text(label)
-        .font(.system(size: 10, weight: .bold))
+        .font(.system(size: 8, weight: .bold))
         .foregroundStyle(Color(red: 0.66, green: 0.69, blue: 0.58))
       HStack(alignment: .firstTextBaseline, spacing: 2) {
         Text(value)
-          .font(.system(.headline, design: .rounded).weight(.heavy))
+          .font(.system(.subheadline, design: .rounded).weight(.heavy))
           .monospacedDigit()
           .foregroundStyle(.white)
         Text(unit)
@@ -261,17 +222,68 @@ private struct RunMetric: View {
   }
 }
 
+private struct WidgetMetric: View {
+  let icon: String
+  let label: String
+  let value: String
+  let unit: String
+  let primary: Color
+  let secondary: Color
+
+  var body: some View {
+    HStack(alignment: .center, spacing: 8) {
+      Image(systemName: icon)
+        .font(.system(size: 14, weight: .bold))
+        .foregroundStyle(StrideDesign.clay)
+        .frame(width: 18)
+      VStack(alignment: .leading, spacing: 2) {
+        HStack(alignment: .firstTextBaseline, spacing: 3) {
+          Text(value)
+            .font(.system(size: 22, weight: .heavy, design: .rounded))
+            .monospacedDigit()
+            .minimumScaleFactor(0.72)
+            .foregroundStyle(primary)
+          Text(unit)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(secondary)
+        }
+        Text(label)
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(secondary)
+      }
+    }
+  }
+}
+
+private struct IslandMetric: View {
+  let label: String
+  let value: String
+  let unit: String
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 2) {
+      Text(value)
+        .font(.system(.headline, design: .rounded).weight(.heavy))
+        .monospacedDigit()
+        .foregroundStyle(StrideDesign.textPrimaryDark)
+      Text(unit.isEmpty ? label : "\(label) \(unit)")
+        .font(.system(size: 9, weight: .bold))
+        .foregroundStyle(StrideDesign.textSecondaryDark)
+    }
+  }
+}
+
 private struct ZoneBadge: View {
   let label: String
   let status: String
 
   var body: some View {
-    Text(label.isEmpty ? "Zone --" : label)
+    Text(shortZoneLabel(label))
       .font(.caption.weight(.heavy))
       .padding(.horizontal, 10)
       .padding(.vertical, 6)
-      .background(zoneColor(status).opacity(0.22), in: Capsule())
-      .foregroundStyle(zoneColor(status))
+      .background(StrideDesign.sage.opacity(0.28), in: Capsule())
+      .foregroundStyle(StrideDesign.textPrimaryDark)
   }
 }
 
@@ -279,11 +291,20 @@ private struct ZoneBadge: View {
 
 private func zoneColor(_ status: String) -> Color {
   switch status {
-  case "in":    return Color(red: 0.56, green: 0.72, blue: 0.41)
-  case "near":  return Color(red: 0.91, green: 0.69, blue: 0.34)
-  case "out":   return Color(red: 0.84, green: 0.42, blue: 0.36)
-  default:      return Color(red: 0.72, green: 0.75, blue: 0.64)
+  case "in":    return StrideDesign.sage
+  case "near":  return StrideDesign.clay
+  case "out":   return StrideDesign.critical
+  default:      return StrideDesign.sage
   }
+}
+
+private func shortZoneLabel(_ label: String) -> String {
+  let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+  if trimmed.isEmpty || trimmed == "Zone --" { return "Z2" }
+  if trimmed.hasPrefix("Zone ") {
+    return "Z" + trimmed.replacingOccurrences(of: "Zone ", with: "")
+  }
+  return trimmed
 }
 
 private func formatElapsed(_ seconds: Int) -> String {

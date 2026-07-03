@@ -1,5 +1,7 @@
 # StrideOS TestFlight Readiness
 
+Responsibility: release-readiness checklist for signed iPhone builds.
+
 Use this checklist before sending a build to testers. Keep private keys in Supabase or EAS secrets, not in the app bundle.
 
 ## Local App Environment
@@ -90,3 +92,14 @@ Run these on a signed iPhone build, not Expo Go:
 - Enable GPS, start a route, lock the screen briefly, then confirm distance and map route continue.
 - Enable notifications, set a near-future reminder time, and verify notification tap opens the intended app screen.
 - Upload a Movement Lab or AI Coach video and verify local playback plus cloud storage path when signed in.
+
+## When To Update
+
+- Update when release requirements, smoke tests, secrets, or external service setup changes.
+- Keep build-specific outcomes in `CHANGELOG.md` or `CODEX_HANDOFF.md`.
+
+## Do NOT Put Here
+
+- App Store marketing copy.
+- General architecture notes.
+- Long debugging histories.

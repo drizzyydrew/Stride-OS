@@ -8,6 +8,38 @@ private enum StrideLiveActivityStatus {
   static let finished = "Finished"
 }
 
+private enum StrideRunControlCommandStore {
+  static let appGroupIdentifier = "group.com.mooremovement.strideos"
+  static let idKey = "StrideOS.pendingRunControlCommand.id"
+  static let actionKey = "StrideOS.pendingRunControlCommand.action"
+  static let createdAtKey = "StrideOS.pendingRunControlCommand.createdAt"
+
+  static func read() -> [String: Any]? {
+    guard
+      let defaults = UserDefaults(suiteName: appGroupIdentifier),
+      let id = defaults.string(forKey: idKey),
+      let action = defaults.string(forKey: actionKey)
+    else {
+      return nil
+    }
+
+    return [
+      "id": id,
+      "action": action,
+      "createdAt": defaults.double(forKey: createdAtKey),
+    ]
+  }
+
+  static func clear(id: String) {
+    guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else { return }
+    guard defaults.string(forKey: idKey) == id else { return }
+    defaults.removeObject(forKey: idKey)
+    defaults.removeObject(forKey: actionKey)
+    defaults.removeObject(forKey: createdAtKey)
+    defaults.synchronize()
+  }
+}
+
 public final class StrideLiveActivityModule: Module {
   private static var currentActivityId: String?
   private static var currentStrengthActivityId: String?
@@ -63,6 +95,14 @@ public final class StrideLiveActivityModule: Module {
         return ActivityAuthorizationInfo().areActivitiesEnabled
       }
       return false
+    }
+
+    Function("getPendingRunControlCommand") { () -> [String: Any]? in
+      StrideRunControlCommandStore.read()
+    }
+
+    Function("clearPendingRunControlCommand") { (id: String) -> Void in
+      StrideRunControlCommandStore.clear(id: id)
     }
 
     AsyncFunction("start") {
