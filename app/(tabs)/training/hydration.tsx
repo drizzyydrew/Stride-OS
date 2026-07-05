@@ -13,9 +13,12 @@ import { LAYOUT } from '../../../src/constants/layout';
 import {
   calculateHydrationPlan,
   estimateEasyPaceSecPerMi,
+  explainPlan,
   weatherBandForTemp,
+  GI_TOLERANCE_CARBS_GH,
   type CrampingFrequency,
   type FluidComfort,
+  type GiTolerance,
   type HydrationGoal,
   type Saltiness,
   type Sweatiness,
@@ -131,6 +134,9 @@ export default function HydrationScreen() {
   const [cramping, setCramping] = useState<CrampingFrequency>('rarely');
   const [fluidComfort, setFluidComfort] = useState<FluidComfort>('moderate');
   const [goal, setGoal] = useState<HydrationGoal>('strong');
+  const [giTolerance, setGiTolerance] = useState<GiTolerance | 'unsure'>('unsure');
+  const [sweatRateMode, setSweatRateMode] = useState<'estimate' | 'known'>('estimate');
+  const [sweatRateLh, setSweatRateLh] = useState(0.8);
 
   useEffect(() => {
     if (weather && !liveTemp) {
@@ -162,7 +168,26 @@ export default function HydrationScreen() {
     cramping,
     fluidComfort,
     goal,
-  }), [actualDuration, cramping, distanceMi, effort, fluidComfort, goal, saltiness, sweatiness, tempF, weightKg]);
+    carbToleranceGh: giTolerance === 'unsure' ? undefined : GI_TOLERANCE_CARBS_GH[giTolerance],
+    sweatRateTestLh: sweatRateMode === 'known' ? sweatRateLh : undefined,
+  }), [
+    actualDuration, cramping, distanceMi, effort, fluidComfort, giTolerance,
+    goal, saltiness, sweatiness, sweatRateMode, sweatRateLh, tempF, weightKg,
+  ]);
+
+  const planExplanation = useMemo(() => explainPlan({
+    distanceMiles: distanceMi,
+    durationMin: actualDuration,
+    bodyWeightKg: weightKg,
+    effort,
+    weatherBand: weatherBandForTemp(tempF),
+    temperatureF: tempF,
+    sweatiness,
+    saltiness,
+    cramping,
+    fluidComfort,
+    goal,
+  }, plan), [actualDuration, cramping, distanceMi, effort, fluidComfort, goal, plan, saltiness, sweatiness, tempF, weightKg]);
 
   const weightLabel = units === 'metric' ? `${fmt(weightKg, 1)} kg` : `${fmt(weightKg * 2.20462)} lb`;
   const distanceLabel = units === 'metric' ? `${fmt(distanceMi * 1.609344, 1)} km` : `${distanceMi} mi`;
@@ -194,6 +219,7 @@ export default function HydrationScreen() {
           <Text style={[s.summaryMeta, { color: C.textMuted }]}>
             Body weight {weightLabel} · {plan.confidence.label} ({plan.confidence.score}/100)
           </Text>
+          <Text style={[s.summaryWhy, { color: C.text }]}>{planExplanation}</Text>
         </View>
 
         <View style={s.resultGrid}>
@@ -253,17 +279,37 @@ export default function HydrationScreen() {
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.sectionLabel, { color: C.textDim }]}>PERSONALIZATION</Text>
           <ChoiceRow
-            label="Sweatiness"
-            value={sweatiness}
-            onChange={setSweatiness}
+            label="Sweat rate"
+            value={sweatRateMode}
+            onChange={setSweatRateMode}
             options={[
-              { value: 'very_low', label: 'Very low' },
-              { value: 'low', label: 'Low' },
-              { value: 'average', label: 'Average' },
-              { value: 'high', label: 'High' },
-              { value: 'very_high', label: 'Very high' },
+              { value: 'estimate', label: 'Estimate for me' },
+              { value: 'known', label: 'I know mine' },
             ]}
           />
+          {sweatRateMode === 'known' ? (
+            <Stepper
+              label="Sweat rate"
+              value={fmt(sweatRateLh, 1)}
+              unit="L/h"
+              hint="From a sweat test or pre/post-run weigh-in."
+              onMinus={() => setSweatRateLh(v => Math.max(0.2, Math.round((v - 0.1) * 10) / 10))}
+              onPlus={() => setSweatRateLh(v => Math.min(2.5, Math.round((v + 0.1) * 10) / 10))}
+            />
+          ) : (
+            <ChoiceRow
+              label="Sweatiness"
+              value={sweatiness}
+              onChange={setSweatiness}
+              options={[
+                { value: 'very_low', label: 'Very low' },
+                { value: 'low', label: 'Low' },
+                { value: 'average', label: 'Average' },
+                { value: 'high', label: 'High' },
+                { value: 'very_high', label: 'Very high' },
+              ]}
+            />
+          )}
           <ChoiceRow
             label="Saltiness"
             value={saltiness}
@@ -294,6 +340,17 @@ export default function HydrationScreen() {
               { value: 'low', label: 'Small sips' },
               { value: 'moderate', label: 'Moderate' },
               { value: 'high', label: 'Drink well' },
+            ]}
+          />
+          <ChoiceRow
+            label="GI tolerance"
+            value={giTolerance}
+            onChange={setGiTolerance}
+            options={[
+              { value: 'unsure', label: 'Not sure' },
+              { value: 'low', label: 'Sensitive' },
+              { value: 'typical', label: 'Typical' },
+              { value: 'high', label: 'Handles a lot' },
             ]}
           />
           <ChoiceRow
@@ -328,7 +385,7 @@ export default function HydrationScreen() {
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.sectionLabel, { color: C.textDim }]}>SAFETY + CONFIDENCE</Text>
           <Text style={[s.body, { color: C.textMuted }]}>
-            Estimated sweat rate: {plan.physiology.sweatRateLh} L/h · Sweat sodium: {plan.physiology.sweatSodiumMgL} mg/L · Projected bodyweight loss: {plan.totals.projectedBodyWeightLossPct}%
+            {sweatRateMode === 'known' ? 'Measured' : 'Estimated'} sweat rate: {plan.physiology.sweatRateLh} L/h · Sweat sodium: {plan.physiology.sweatSodiumMgL} mg/L · Projected bodyweight loss: {plan.totals.projectedBodyWeightLossPct}%
           </Text>
           {plan.warnings.map(item => (
             <Text key={item} style={[s.warning, { color: C.critical }]}>- {item}</Text>
@@ -356,6 +413,7 @@ const s = StyleSheet.create({
   summaryCard: { borderWidth: 1, borderRadius: 12, padding: 16, marginBottom: 14 },
   summaryTitle: { fontSize: 18, fontWeight: '900' },
   summaryMeta: { fontSize: 12, lineHeight: 18, marginTop: 4 },
+  summaryWhy: { fontSize: 13, lineHeight: 19, marginTop: 10, fontWeight: '600' },
   resultGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
   resultCard: { width: '31%', minWidth: 104, flexGrow: 1, borderWidth: 1, borderRadius: 12, padding: 12, minHeight: 138 },
   resultLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1.3 },

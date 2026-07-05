@@ -9,6 +9,16 @@ export type CrampingFrequency = 'never' | 'rarely' | 'sometimes' | 'often';
 export type FluidComfort = 'low' | 'moderate' | 'high';
 export type HydrationGoal = 'finish' | 'strong' | 'race_limit';
 
+// Qualitative GI-tolerance self-report, mapped to a conservative carbToleranceGh
+// ceiling. Not a diagnosis — just a practical carb-intake starting point.
+export type GiTolerance = 'low' | 'typical' | 'high';
+
+export const GI_TOLERANCE_CARBS_GH: Record<GiTolerance, number> = {
+  low:     40,
+  typical: 60,
+  high:    85,
+};
+
 export type HydrationCalculatorInput = {
   distanceMiles?: number;
   durationMin: number;
@@ -372,6 +382,32 @@ export function calculateHydrationPlan(input: HydrationCalculatorInput): Hydrati
     warnings,
     notes,
   };
+}
+
+// One short, plain-language sentence naming the biggest real driver behind
+// this plan — coaching context, not a restatement of the numbers above it.
+export function explainPlan(input: HydrationCalculatorInput, plan: HydrationPlan): string {
+  const hot = input.weatherBand === 'hot' || input.weatherBand === 'very_hot';
+  const long = input.durationMin >= 150;
+  const hard = input.effort >= 8;
+  const highSweat = plan.physiology.sweatRateLh >= 1.1;
+
+  if (hot && (long || highSweat)) {
+    return "It's warm and this is a longer effort, so sweat losses add up — plan for more fluid and sodium per hour than an easy day.";
+  }
+  if (hot) {
+    return "It's warm out, which raises sweat losses even at an easy effort — fluid and sodium needs are a bit higher than a cool-weather run.";
+  }
+  if (long) {
+    return 'This is a long effort, so getting fluid, sodium, and carbs in steadily matters more than hitting an exact number.';
+  }
+  if (hard) {
+    return 'This is a hard effort, so sweat and fuel use run higher per hour than an easy day.';
+  }
+  if (input.goal === 'race_limit') {
+    return "You're planning for race conditions, so this plan leans toward the higher end of what's typically tolerated.";
+  }
+  return 'This is a moderate effort in mild conditions — the plan below is a reasonable starting point to test in training.';
 }
 
 export function calcHydration(

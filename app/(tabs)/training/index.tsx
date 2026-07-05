@@ -946,6 +946,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 // ─── Hydration Tab ────────────────────────────────────────────────────────────
 function HydrationTab() {
   const C = useColors();
+  const router = useRouter();
   const { units } = useSettingsStore();
   const weightKg = useOnboardingStore(s => s.data.weightKg || 70);
   const imp = units === 'imperial';
@@ -1098,6 +1099,15 @@ function HydrationTab() {
             </Text>
           </TouchableOpacity>
         </View>
+        <TouchableOpacity
+          onPress={() => router.push('/(tabs)/training/hydration' as any)}
+          activeOpacity={0.8}
+          style={{ marginBottom: 10 }}
+        >
+          <Text style={[{ fontSize: 12, fontWeight: '800', color: C.primary }]}>
+            Open full hydration planner →
+          </Text>
+        </TouchableOpacity>
         <View style={{ gap: 8 }}>
           <View style={styles.inputRow}>
             <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Run type</Text>
