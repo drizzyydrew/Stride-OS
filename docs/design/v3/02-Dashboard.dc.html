@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StrideOS V3 Dashboard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Avenir:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap');
+    
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; background: #0a0a0a; color: #fff; font-family: Avenir, sans-serif; }
+    
+    .phone { width: 390px; height: 844px; background: #0a0a0a; border-radius: 40px; border: 12px solid #1a1a1a; box-shadow: 0 20px 60px rgba(0,0,0,0.6); overflow: hidden; display: flex; flex-direction: column; }
+    .status-bar { height: 44px; background: #0a0a0a; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; font-size: 12px; border-bottom: 1px solid #1a1a1a; }
+    .status-bar-time { font-weight: 600; }
+    .status-bar-icons { display: flex; gap: 4px; }
+    
+    .screen { flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 60px; }
+    .screen::-webkit-scrollbar { width: 4px; }
+    .screen::-webkit-scrollbar-track { background: transparent; }
+    .screen::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+    
+    .header { padding: 20px 16px 12px; }
+    .header-title { font-size: 28px; font-weight: 700; font-family: 'Crimson Text', serif; margin: 0; }
+    .header-subtitle { font-size: 13px; color: #999; margin: 4px 0 0 0; }
+    
+    .content { padding: 0 16px; display: flex; flex-direction: column; gap: 16px; }
+    
+    /* READINESS CARD */
+    .readiness-card { padding: 20px; background: linear-gradient(135deg, #1a1a1a 0%, #141414 100%); border: 1px solid #2a2a2a; border-radius: 16px; }
+    .readiness-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .readiness-label { font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .readiness-status { font-size: 12px; font-weight: 600; color: #DCC0A7; }
+    .readiness-body { display: flex; align-items: center; gap: 16px; }
+    .readiness-ring { position: relative; width: 100px; height: 100px; flex-shrink: 0; }
+    .readiness-ring svg { transform: rotate(-90deg); }
+    .readiness-ring-circle { fill: none; stroke: #2a2a2a; stroke-width: 5; }
+    .readiness-ring-circle-fill { fill: none; stroke: #DCC0A7; stroke-width: 5; stroke-linecap: round; }
+    .readiness-ring-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+    .readiness-ring-value { font-size: 24px; font-weight: 700; }
+    .readiness-ring-label { font-size: 10px; color: #999; margin-top: 2px; }
+    .readiness-text { flex: 1; }
+    .readiness-text h3 { margin: 0 0 8px 0; font-size: 16px; font-weight: 600; }
+    .readiness-text p { margin: 0; font-size: 13px; color: #999; line-height: 1.4; }
+    
+    /* ACTION BUTTONS */
+    .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .action-btn { padding: 16px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; text-align: center; cursor: pointer; transition: all 200ms; }
+    .action-btn:hover { background: #242424; border-color: #333; }
+    .action-btn-icon { font-size: 24px; margin-bottom: 8px; }
+    .action-btn-label { font-size: 12px; font-weight: 600; color: #fff; }
+    
+    /* SECTION */
+    .section { padding: 0 16px; }
+    .section-title { font-size: 14px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0; }
+    
+    /* WORKOUT CARDS */
+    .workout-card { padding: 16px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; }
+    .workout-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .workout-title { font-size: 14px; font-weight: 600; margin: 0; }
+    .workout-time { font-size: 11px; color: #999; margin: 0; }
+    .workout-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .stat-item { }
+    .stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .stat-value { font-size: 16px; font-weight: 700; color: #fff; }
+    
+    /* BOTTOM NAV */
+    .bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: #0a0a0a; border-top: 1px solid #1a1a1a; display: flex; justify-content: space-around; align-items: center; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; transition: all 200ms; color: #666; }
+    .nav-item.active { color: #DCC0A7; }
+    .nav-item-icon { font-size: 20px; }
+    .nav-item-label { font-size: 10px; font-weight: 600; }
+  </style>
+</helmet>
+
+<div style="display: flex; justify-content: center; align-items: flex-start; gap: 40px; padding: 40px 20px; background: #000;">
+  <!-- DARK MODE -->
+  <div>
+    <div style="font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; text-align: center;">Dark Mode</div>
+    <div class="phone">
+      <div class="status-bar">
+        <span class="status-bar-time">9:41</span>
+        <div class="status-bar-icons">📶 🔋</div>
+      </div>
+      
+      <div class="screen">
+        <div class="header">
+          <h1 class="header-title">Dashboard</h1>
+          <p class="header-subtitle">{{ date }}</p>
+        </div>
+        
+        <div class="content">
+          <!-- READINESS CARD -->
+          <div class="readiness-card">
+            <div class="readiness-header">
+              <span class="readiness-label">Ready to Train</span>
+              <span class="readiness-status">Good Day</span>
+            </div>
+            <div class="readiness-body">
+              <div class="readiness-ring">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                  <circle class="readiness-ring-circle" cx="50" cy="50" r="45"></circle>
+                  <circle class="readiness-ring-circle-fill" cx="50" cy="50" r="45" style="stroke-dasharray: 282.7; stroke-dashoffset: 70.68;"></circle>
+                </svg>
+                <div class="readiness-ring-center">
+                  <div class="readiness-ring-value">75</div>
+                  <div class="readiness-ring-label">Ready</div>
+                </div>
+              </div>
+              <div class="readiness-text">
+                <h3>You're ready to train</h3>
+                <p>Your HRV shows good recovery. Perfect for a tempo or threshold workout today.</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- ACTION BUTTONS -->
+          <div class="action-buttons">
+            <div class="action-btn">
+              <div class="action-btn-icon">▶</div>
+              <div class="action-btn-label">Start Run</div>
+            </div>
+            <div class="action-btn">
+              <div class="action-btn-icon">💪</div>
+              <div class="action-btn-label">Strength</div>
+            </div>
+          </div>
+          
+          <!-- TODAY'S PLAN -->
+          <div class="section">
+            <h4 class="section-title">Today's Plan</h4>
+            <div class="workout-card">
+              <div class="workout-header">
+                <div>
+                  <p class="workout-title">Tempo Run</p>
+                  <p class="workout-time">Suggested · 45 min</p>
+                </div>
+              </div>
+              <div class="workout-stats">
+                <div class="stat-item">
+                  <div class="stat-label">Distance</div>
+                  <div class="stat-value">8 km</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-label">Pace</div>
+                  <div class="stat-value">4:45</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-label">Intensity</div>
+                  <div class="stat-value">Hard</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- RECENT WORKOUTS -->
+          <div class="section">
+            <h4 class="section-title">Recent</h4>
+            <div class="workout-card">
+              <div class="workout-header">
+                <div>
+                  <p class="workout-title">Easy Run</p>
+                  <p class="workout-time">Yesterday · 6:32 am</p>
+                </div>
+              </div>
+              <div class="workout-stats">
+                <div class="stat-item">
+                  <div class="stat-label">Distance</div>
+                  <div class="stat-value">5.2 km</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-label">Time</div>
+                  <div class="stat-value">28:34</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-label">Avg HR</div>
+                  <div class="stat-value">148</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bottom-nav">
+        <div class="nav-item active">
+          <div class="nav-item-icon">🏠</div>
+          <div class="nav-item-label">Dashboard</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">📅</div>
+          <div class="nav-item-label">Training</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">📊</div>
+          <div class="nav-item-label">Analytics</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">⚙</div>
+          <div class="nav-item-label">Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGHT MODE -->
+  <div>
+    <div style="font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; text-align: center;">Light Mode</div>
+    <div class="phone" style="background: #EFE7DA;">
+      <div class="status-bar" style="background: #EFE7DA; border-bottom-color: #ddd;">
+        <span class="status-bar-time" style="color: #333;">9:41</span>
+        <div class="status-bar-icons" style="color: #333;">📶 🔋</div>
+      </div>
+      
+      <div class="screen" style="background: #EFE7DA;">
+        <div class="header" style="color: #333;">
+          <h1 class="header-title" style="color: #333;">Dashboard</h1>
+          <p class="header-subtitle" style="color: #999;">Today</p>
+        </div>
+        
+        <div class="content">
+          <div class="readiness-card" style="background: linear-gradient(135deg, #f5ede0 0%, #ede5d8 100%); border-color: #ddd;">
+            <div class="readiness-header">
+              <span class="readiness-label" style="color: #666;">Ready to Train</span>
+              <span class="readiness-status" style="color: #8B927C;">Good Day</span>
+            </div>
+            <div class="readiness-body">
+              <div class="readiness-ring">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                  <circle class="readiness-ring-circle" cx="50" cy="50" r="45" stroke="#ddd"></circle>
+                  <circle class="readiness-ring-circle-fill" cx="50" cy="50" r="45" stroke="#8B927C" style="stroke-dasharray: 282.7; stroke-dashoffset: 70.68;"></circle>
+                </svg>
+                <div class="readiness-ring-center" style="color: #333;">
+                  <div class="readiness-ring-value">75</div>
+                  <div class="readiness-ring-label" style="color: #666;">Ready</div>
+                </div>
+              </div>
+              <div class="readiness-text" style="color: #333;">
+                <h3 style="color: #333;">You're ready to train</h3>
+                <p style="color: #666;">Your HRV shows good recovery. Perfect for a tempo or threshold workout today.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="action-buttons" style="color: #333;">
+            <div class="action-btn" style="background: #f5ede0; border-color: #ddd; color: #333;">
+              <div class="action-btn-icon">▶</div>
+              <div class="action-btn-label">Start Run</div>
+            </div>
+            <div class="action-btn" style="background: #f5ede0; border-color: #ddd; color: #333;">
+              <div class="action-btn-icon">💪</div>
+              <div class="action-btn-label">Strength</div>
+            </div>
+          </div>
+          
+          <div class="section" style="color: #333;">
+            <h4 class="section-title" style="color: #666;">Today's Plan</h4>
+            <div class="workout-card" style="background: #f5ede0; border-color: #ddd; color: #333;">
+              <div class="workout-header">
+                <div>
+                  <p class="workout-title" style="color: #333;">Tempo Run</p>
+                  <p class="workout-time" style="color: #999;">Suggested · 45 min</p>
+                </div>
+              </div>
+              <div class="workout-stats">
+                <div class="stat-item">
+                  <div class="stat-label" style="color: #999;">Distance</div>
+                  <div class="stat-value" style="color: #333;">8 km</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-label" style="color: #999;">Pace</div>
+                  <div class="stat-value" style="color: #333;">4:45</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-label" style="color: #999;">Intensity</div>
+                  <div class="stat-value" style="color: #333;">Hard</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bottom-nav" style="background: #EFE7DA; border-top-color: #ddd;">
+        <div class="nav-item active" style="color: #8B927C;">
+          <div class="nav-item-icon">🏠</div>
+          <div class="nav-item-label">Dashboard</div>
+        </div>
+        <div class="nav-item" style="color: #999;">
+          <div class="nav-item-icon">📅</div>
+          <div class="nav-item-label">Training</div>
+        </div>
+        <div class="nav-item" style="color: #999;">
+          <div class="nav-item-icon">📊</div>
+          <div class="nav-item-label">Analytics</div>
+        </div>
+        <div class="nav-item" style="color: #999;">
+          <div class="nav-item-icon">⚙</div>
+          <div class="nav-item-label">Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    date: new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  };
+  
+  renderVals() {
+    return {
+      date: this.state.date
+    };
+  }
+}
+</script>
+</body>
+</html>

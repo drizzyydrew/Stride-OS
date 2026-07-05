@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="design_doc_mode" content="canvas">
+  <title>StrideOS V3 Component Library</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Avenir:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap');
+    
+    body { margin: 0; padding: 40px; background: #0a0a0a; color: #fff; font-family: Avenir, sans-serif; line-height: 1.6; }
+    .section { margin-bottom: 80px; }
+    h1 { font-size: 48px; font-weight: 700; margin: 0 0 8px 0; font-family: 'Crimson Text', serif; }
+    h2 { font-size: 32px; font-weight: 600; margin: 40px 0 24px 0; font-family: 'Crimson Text', serif; }
+    h3 { font-size: 16px; font-weight: 600; margin: 20px 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px; color: #999; }
+    .subtitle { font-size: 16px; color: #999; margin: 0 0 32px 0; }
+    
+    .component-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin: 24px 0; }
+    .component-card { padding: 24px; background: #141414; border: 1px solid #2a2a2a; border-radius: 12px; }
+    .demo-area { padding: 20px; background: #0a0a0a; border-radius: 8px; margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    
+    /* BUTTONS */
+    .btn { padding: 12px 20px; border-radius: 6px; border: none; font-family: Avenir, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1); }
+    .btn-primary { background: #DCC0A7; color: #0a0a0a; }
+    .btn-primary:hover { background: #e5cdb5; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(220, 192, 167, 0.2); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-secondary { background: #8B927C; color: #fff; }
+    .btn-secondary:hover { background: #96a089; transform: translateY(-2px); }
+    .btn-secondary:active { transform: translateY(0); }
+    .btn-tertiary { background: transparent; color: #DCC0A7; border: 1.5px solid #DCC0A7; }
+    .btn-tertiary:hover { background: rgba(220, 192, 167, 0.1); }
+    .btn-ghost { background: transparent; color: #999; }
+    .btn-ghost:hover { color: #fff; }
+    .btn-sm { padding: 8px 16px; font-size: 12px; }
+    .btn-lg { padding: 14px 28px; font-size: 16px; }
+    .btn-icon { width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #1a1a1a; color: #999; }
+    .btn-icon:hover { background: #2a2a2a; color: #fff; }
+    
+    /* CARDS */
+    .card { padding: 20px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; }
+    .card-stat { text-align: center; }
+    .card-stat-value { font-size: 32px; font-weight: 700; color: #DCC0A7; margin-bottom: 4px; }
+    .card-stat-label { font-size: 12px; font-weight: 500; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    /* INPUTS */
+    .input-group { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 300px; }
+    .input { width: 100%; padding: 12px 16px; background: #141414; border: 1px solid #2a2a2a; border-radius: 8px; color: #fff; font-family: Avenir, sans-serif; font-size: 14px; transition: border-color 200ms; }
+    .input:focus { outline: none; border-color: #DCC0A7; }
+    .input::placeholder { color: #666; }
+    .input-label { font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    /* BADGES */
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge-success { background: rgba(107, 179, 136, 0.2); color: #6BB388; }
+    .badge-warning { background: rgba(220, 192, 167, 0.2); color: #DCC0A7; }
+    .badge-error { background: rgba(217, 119, 87, 0.2); color: #D97757; }
+    .badge-info { background: rgba(91, 159, 184, 0.2); color: #5B9FB8; }
+    
+    /* PROGRESS RING */
+    .progress-ring { position: relative; width: 120px; height: 120px; }
+    .progress-ring-svg { transform: rotate(-90deg); }
+    .progress-ring-circle { fill: none; stroke: #2a2a2a; stroke-width: 6; }
+    .progress-ring-circle-fill { fill: none; stroke: #DCC0A7; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .progress-ring-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+    .progress-ring-value { font-size: 28px; font-weight: 700; color: #fff; }
+    .progress-ring-label { font-size: 11px; color: #999; margin-top: 4px; }
+    
+    /* METRIC DISPLAY */
+    .metric { display: flex; align-items: center; gap: 12px; }
+    .metric-icon { width: 40px; height: 40px; background: #2a2a2a; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .metric-content { }
+    .metric-label { font-size: 12px; color: #999; }
+    .metric-value { font-size: 18px; font-weight: 700; color: #fff; }
+    
+    .max-width { max-width: 1200px; margin: 0 auto; }
+  </style>
+</helmet>
+
+<div class="max-width">
+  <div style="margin-bottom: 60px;">
+    <h1>Component Library</h1>
+    <p class="subtitle">Reusable UI components for StrideOS V3.</p>
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="section">
+    <h2>Buttons</h2>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <h3>Primary Button</h3>
+        <div class="demo-area">
+          <button class="btn btn-primary">Start Run</button>
+          <button class="btn btn-primary" style="opacity: 0.5;">Disabled</button>
+        </div>
+        <p style="font-size: 13px; color: #999;">Warm clay color. Main call-to-action.</p>
+      </div>
+      
+      <div class="component-card">
+        <h3>Secondary Button</h3>
+        <div class="demo-area">
+          <button class="btn btn-secondary">Resume</button>
+          <button class="btn btn-secondary" style="opacity: 0.5;">Disabled</button>
+        </div>
+        <p style="font-size: 13px; color: #999;">Sage green. Secondary actions.</p>
+      </div>
+      
+      <div class="component-card">
+        <h3>Tertiary Button</h3>
+        <div class="demo-area">
+          <button class="btn btn-tertiary">View Details</button>
+          <button class="btn btn-tertiary" style="opacity: 0.5;">Disabled</button>
+        </div>
+        <p style="font-size: 13px; color: #999;">Outlined, lower emphasis.</p>
+      </div>
+
+      <div class="component-card">
+        <h3>Ghost Button</h3>
+        <div class="demo-area">
+          <button class="btn btn-ghost">Learn More</button>
+          <button class="btn btn-ghost" style="opacity: 0.5;">Disabled</button>
+        </div>
+        <p style="font-size: 13px; color: #999;">Minimal, text-only link.</p>
+      </div>
+
+      <div class="component-card">
+        <h3>Button Sizes</h3>
+        <div class="demo-area" style="flex-direction: column; gap: 8px;">
+          <button class="btn btn-primary btn-sm">Small</button>
+          <button class="btn btn-primary">Regular</button>
+          <button class="btn btn-primary btn-lg">Large</button>
+        </div>
+        <p style="font-size: 13px; color: #999;">Three button sizes: sm, md, lg.</p>
+      </div>
+
+      <div class="component-card">
+        <h3>Icon Button</h3>
+        <div class="demo-area">
+          <button class="btn-icon">↺</button>
+          <button class="btn-icon">⚙</button>
+          <button class="btn-icon">◀</button>
+          <button class="btn-icon">▶</button>
+        </div>
+        <p style="font-size: 13px; color: #999;">Square, 44px hit target.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARDS -->
+  <div class="section">
+    <h2>Cards</h2>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <h3>Stat Card</h3>
+        <div class="demo-area">
+          <div class="card card-stat">
+            <div class="card-stat-value">28:34</div>
+            <div class="card-stat-label">Total Time</div>
+          </div>
+        </div>
+        <p style="font-size: 13px; color: #999;">Centered stat display.</p>
+      </div>
+
+      <div class="component-card">
+        <h3>Metric Card</h3>
+        <div class="demo-area">
+          <div class="card" style="width: 100%; max-width: 100%;">
+            <div class="metric">
+              <div class="metric-icon">♥</div>
+              <div class="metric-content">
+                <div class="metric-label">Avg Heart Rate</div>
+                <div class="metric-value">152 bpm</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 13px; color: #999;">Icon + value + label.</p>
+      </div>
+
+      <div class="component-card">
+        <h3>Content Card</h3>
+        <div class="demo-area">
+          <div class="card" style="width: 100%; max-width: 100%;">
+            <div style="font-weight: 600; margin-bottom: 8px;">Today's Training Load</div>
+            <div style="font-size: 14px; color: #999; line-height: 1.5;">Moderate intensity. Good for aerobic base work. Rest day recommended tomorrow.</div>
+          </div>
+        </div>
+        <p style="font-size: 13px; color: #999;">Text-heavy, coaching-oriented.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="section">
+    <h2>Form Inputs</h2>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <h3>Text Input</h3>
+        <div class="demo-area" style="flex-direction: column; gap: 12px;">
+          <div class="input-group">
+            <label class="input-label">Workout Name</label>
+            <input class="input" type="text" placeholder="e.g., Morning Run">
+          </div>
+        </div>
+        <p style="font-size: 13px; color: #999;">Standard text input with label.</p>
+      </div>
+
+      <div class="component-card">
+        <h3>Numeric Input</h3>
+        <div class="demo-area" style="flex-direction: column; gap: 12px;">
+          <div class="input-group">
+            <label class="input-label">Distance (km)</label>
+            <input class="input" type="number" placeholder="5.2" value="5.2">
+          </div>
+        </div>
+        <p style="font-size: 13px; color: #999;">For numeric entry (distance, time, etc).</p>
+      </div>
+
+      <div class="component-card">
+        <h3>Checkbox</h3>
+        <div class="demo-area" style="flex-direction: column; gap: 12px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" style="width: 18px; height: 18px; cursor: pointer;" checked>
+            <span style="font-size: 14px;">Include GPS route</span>
+          </label>
+        </div>
+        <p style="font-size: 13px; color: #999;">Toggle options.</p>
+      </div>
+
+      <div class="component-card">
+        <h3>Radio Group</h3>
+        <div class="demo-area" style="flex-direction: column; gap: 12px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="radio" name="type" style="width: 18px; height: 18px; cursor: pointer;" checked>
+            <span style="font-size: 14px;">Run</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="radio" name="type" style="width: 18px; height: 18px; cursor: pointer;">
+            <span style="font-size: 14px;">Walk</span>
+          </label>
+        </div>
+        <p style="font-size: 13px; color: #999;">Single selection from group.</p>
+      </div>
+
+      <div class="component-card">
+        <h3>Toggle Switch</h3>
+        <div class="demo-area" style="flex-direction: column; gap: 12px;">
+          <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+            <div style="width: 50px; height: 28px; background: #DCC0A7; border-radius: 14px; position: relative; transition: background 200ms;">
+              <div style="width: 24px; height: 24px; background: #fff; border-radius: 12px; position: absolute; right: 2px; top: 2px;"></div>
+            </div>
+            <span style="font-size: 14px;">Dark Mode</span>
+          </label>
+        </div>
+        <p style="font-size: 13px; color: #999;">On/off toggle.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BADGES -->
+  <div class="section">
+    <h2>Badges & Status</h2>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <h3>Status Badges</h3>
+        <div class="demo-area" style="flex-wrap: wrap; gap: 8px;">
+          <span class="badge badge-success">✓ Ready</span>
+          <span class="badge badge-warning">⚠ Caution</span>
+          <span class="badge badge-error">✕ Rest Day</span>
+          <span class="badge badge-info">ℹ Training</span>
+        </div>
+        <p style="font-size: 13px; color: #999;">Color-coded status indicators.</p>
+      </div>
+
+      <div class="component-card">
+        <h3>Tag Badges</h3>
+        <div class="demo-area" style="flex-wrap: wrap; gap: 8px;">
+          <span class="badge" style="background: rgba(139, 146, 124, 0.2); color: #8B927C;">Long Run</span>
+          <span class="badge" style="background: rgba(107, 179, 136, 0.2); color: #6BB388;">Recovery</span>
+          <span class="badge" style="background: rgba(91, 159, 184, 0.2); color: #5B9FB8;">Tempo</span>
+        </div>
+        <p style="font-size: 13px; color: #999;">Categorical labels.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRESS RINGS -->
+  <div class="section">
+    <h2>Progress Rings</h2>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <h3>Readiness Ring</h3>
+        <div class="demo-area" style="justify-content: center;">
+          <div class="progress-ring">
+            <svg class="progress-ring-svg" width="120" height="120" viewBox="0 0 120 120">
+              <circle class="progress-ring-circle" cx="60" cy="60" r="54"></circle>
+              <circle class="progress-ring-circle-fill" cx="60" cy="60" r="54" style="stroke-dasharray: 339.29; stroke-dashoffset: 84.82;"></circle>
+            </svg>
+            <div class="progress-ring-center">
+              <div class="progress-ring-value">75</div>
+              <div class="progress-ring-label">Ready</div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 13px; color: #999;">Animated progress ring. 75% ready to train.</p>
+      </div>
+
+      <div class="component-card">
+        <h3>Recovery Ring</h3>
+        <div class="demo-area" style="justify-content: center;">
+          <div class="progress-ring">
+            <svg class="progress-ring-svg" width="120" height="120" viewBox="0 0 120 120">
+              <circle class="progress-ring-circle" cx="60" cy="60" r="54"></circle>
+              <circle class="progress-ring-circle-fill" cx="60" cy="60" r="54" style="stroke: #6BB388; stroke-dasharray: 339.29; stroke-dashoffset: 50.89;"></circle>
+            </svg>
+            <div class="progress-ring-center">
+              <div class="progress-ring-value">85</div>
+              <div class="progress-ring-label">Recovered</div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 13px; color: #999;">Success state (green).</p>
+      </div>
+
+      <div class="component-card">
+        <h3>Fatigued Ring</h3>
+        <div class="demo-area" style="justify-content: center;">
+          <div class="progress-ring">
+            <svg class="progress-ring-svg" width="120" height="120" viewBox="0 0 120 120">
+              <circle class="progress-ring-circle" cx="60" cy="60" r="54"></circle>
+              <circle class="progress-ring-circle-fill" cx="60" cy="60" r="54" style="stroke: #D97757; stroke-dasharray: 339.29; stroke-dashoffset: 271.43;"></circle>
+            </svg>
+            <div class="progress-ring-center">
+              <div class="progress-ring-value">35</div>
+              <div class="progress-ring-label">Fatigued</div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 13px; color: #999;">Warning state (red).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- METRICS DISPLAY -->
+  <div class="section">
+    <h2>Metric Displays</h2>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <h3>Heart Rate Metric</h3>
+        <div class="demo-area">
+          <div class="card" style="width: 100%;">
+            <div class="metric">
+              <div class="metric-icon" style="background: rgba(217, 119, 87, 0.2); color: #D97757;">❤</div>
+              <div class="metric-content">
+                <div class="metric-label">Current HR</div>
+                <div class="metric-value">157 bpm</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="component-card">
+        <h3>Pace Metric</h3>
+        <div class="demo-area">
+          <div class="card" style="width: 100%;">
+            <div class="metric">
+              <div class="metric-icon" style="background: rgba(220, 192, 167, 0.2); color: #DCC0A7;">⚡</div>
+              <div class="metric-content">
+                <div class="metric-label">Current Pace</div>
+                <div class="metric-value">4:52 min/km</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="component-card">
+        <h3>Distance Metric</h3>
+        <div class="demo-area">
+          <div class="card" style="width: 100%;">
+            <div class="metric">
+              <div class="metric-icon" style="background: rgba(139, 146, 124, 0.2); color: #8B927C;">⊙</div>
+              <div class="metric-content">
+                <div class="metric-label">Distance</div>
+                <div class="metric-value">4.2 km</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

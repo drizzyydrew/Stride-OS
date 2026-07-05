@@ -1,11 +1,15 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useColors } from '../../../src/theme/useColors';
-import { useAthleteStore } from '../../../src/store/athleteStore';
-import { useCheckInStore } from '../../../src/store/checkInStore';
+import { useReadinessStore } from '../../../src/store/readinessStore';
+import { todayDateKey } from '../../../src/types/checkin';
+import { readinessTier, READINESS_INTERPRETATION } from '../../../src/utils/readinessScore';
+import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckInCard';
+import { cancelDailyReadinessReminder, scheduleDailyReadinessReminder } from '../../../src/lib/notifications';
 import { LAYOUT } from '../../../src/constants/layout';
 
 function getDayLabel(): string {
@@ -20,16 +24,37 @@ export default function TodayScreen() {
   const C = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { recoveryScore, fatigueScore } = useAthleteStore();
-  const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
+  const todayReadiness = useReadinessStore(s => s.todayReadiness);
+  const reminderEnabled = useReadinessStore(s => s.reminderEnabled);
+  const setReminderEnabled = useReadinessStore(s => s.setReminderEnabled);
+  const [editingCheckIn, setEditingCheckIn] = useState(false);
 
-  const readiness = todayCheckIn ? Math.round((recoveryScore * 0.6) + ((100 - fatigueScore) * 0.4)) : 84;
-  const readinessLabel = readiness >= 80 ? 'PRIMED' : readiness >= 65 ? 'READY' : readiness >= 50 ? 'MODERATE' : 'RECOVERY';
+  const hasCheckedInToday = todayReadiness?.date === todayDateKey();
+  const readiness = hasCheckedInToday ? todayReadiness!.score : null;
+  const tier = readiness !== null ? readinessTier(readiness) : null;
+  const showCheckInForm = !hasCheckedInToday || editingCheckIn;
+
+  async function handleToggleReminder(enabled: boolean) {
+    if (enabled) {
+      const scheduled = await scheduleDailyReadinessReminder();
+      if (!scheduled) {
+        Alert.alert(
+          'Notifications disabled',
+          'Enable notifications for StrideOS in system settings to get a daily readiness reminder.',
+        );
+        return;
+      }
+      setReminderEnabled(true);
+    } else {
+      await cancelDailyReadinessReminder();
+      setReminderEnabled(false);
+    }
+  }
 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: C.bg }}
-      contentContainerStyle={{ paddingHorizontal: 18, paddingTop: insets.top + 6, paddingBottom: LAYOUT.screenPadBottom }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top + 20, paddingBottom: LAYOUT.screenPadBottom }}
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
@@ -50,7 +75,7 @@ export default function TodayScreen() {
       {/* Weather */}
       <View style={[styles.weatherCard, { backgroundColor: C.card, borderColor: C.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Ionicons name="sunny" size={22} color={C.warning} />
+          <Ionicons name="sunny" size={22} color={C.primary} />
           <View>
             <Text style={[styles.weatherTemp, { color: C.text }]}>62°F · Partly Cloudy</Text>
             <Text style={[styles.weatherSub, { color: C.textMuted }]}>Humidity 45% · Great running conditions</Text>
@@ -60,60 +85,72 @@ export default function TodayScreen() {
       </View>
 
       {/* Readiness */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <View style={styles.cardHeaderRow}>
-          <Text style={[styles.cardLabel, { color: C.textDim }]}>READINESS</Text>
-          <View style={[styles.badge, { backgroundColor: C.primaryDim }]}>
-            <Text style={[styles.badgeText, { color: C.primary }]}>{readinessLabel}</Text>
+      {showCheckInForm ? (
+        <ReadinessCheckInCard
+          initialValues={todayReadiness ?? undefined}
+          onSaved={() => setEditingCheckIn(false)}
+        />
+      ) : (
+        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <View style={styles.cardHeaderRow}>
+            <Text style={[styles.cardLabel, { color: C.textDim }]}>READINESS</Text>
+            <View style={[styles.badge, { backgroundColor: C.primary }]}>
+              <Text style={[styles.badgeText, { color: C.onPrimary }]}>{READINESS_INTERPRETATION[tier!].label}</Text>
+            </View>
           </View>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
-          <Text style={[styles.bigNum, { color: C.text }]}>{readiness}</Text>
-          <Text style={[styles.bigNumSub, { color: C.textMuted }]}>/ 100</Text>
-          <Text style={[{ marginLeft: 'auto', fontSize: 12, fontWeight: '700', color: C.positive }]}>▲ 6 pts</Text>
-        </View>
-        <View style={[styles.progressBar, { backgroundColor: C.border }]}>
-          <View style={[styles.progressFill, { width: `${readiness}%`, backgroundColor: C.primary }]} />
-        </View>
-        <View style={styles.statsRow}>
-          <View style={[styles.statCol, { borderRightWidth: 1, borderRightColor: C.border }]}>
-            <Text style={[styles.statLabel, { color: C.textDim }]}>HRV</Text>
-            <Text style={[styles.statVal, { color: C.text }]}>62 ms</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
+            <Text style={[styles.bigNum, { color: C.text }]}>{readiness}</Text>
+            <Text style={[styles.bigNumSub, { color: C.textMuted }]}>/ 100</Text>
           </View>
-          <View style={[styles.statCol, { borderRightWidth: 1, borderRightColor: C.border }]}>
-            <Text style={[styles.statLabel, { color: C.textDim }]}>Sleep</Text>
-            <Text style={[styles.statVal, { color: C.text }]}>7h 41m</Text>
+          <View style={[styles.progressBar, { backgroundColor: C.border }]}>
+            <View style={[styles.progressFill, { width: `${readiness ?? 0}%`, backgroundColor: C.primary }]} />
           </View>
-          <View style={styles.statCol}>
-            <Text style={[styles.statLabel, { color: C.textDim }]}>RHR</Text>
-            <Text style={[styles.statVal, { color: C.text }]}>48 bpm</Text>
-          </View>
+          <Text style={[styles.readinessInterpretation, { color: C.textMuted }]}>
+            {READINESS_INTERPRETATION[tier!].message}
+          </Text>
+          <TouchableOpacity onPress={() => setEditingCheckIn(true)} style={{ marginTop: 10 }} hitSlop={8}>
+            <Text style={[styles.updateCheckInText, { color: C.primary }]}>Update check-in</Text>
+          </TouchableOpacity>
         </View>
+      )}
+
+      {/* Readiness reminder */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+        <View style={{ flex: 1, marginRight: 12 }}>
+          <Text style={[styles.cardLabel, { color: C.textDim }]}>MORNING REMINDER</Text>
+          <Text style={[styles.reminderSub, { color: C.textMuted }]}>Daily readiness nudge at 5:00 AM</Text>
+        </View>
+        <Switch
+          value={reminderEnabled}
+          onValueChange={handleToggleReminder}
+          trackColor={{ false: C.border, true: C.primary }}
+          thumbColor={C.onPrimary}
+        />
       </View>
 
       {/* Today's Workout */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <View style={styles.cardHeaderRow}>
           <Text style={[styles.workoutTitle, { color: C.text }]}>Today's Workout</Text>
-          <View style={[styles.badge, { backgroundColor: C.accentDim }]}>
-            <Text style={[styles.badgeText, { color: C.accent }]}>Z2 RUN</Text>
+          <View style={[styles.badge, { backgroundColor: C.primaryDim }]}>
+            <Text style={[styles.badgeText, { color: C.primary }]}>Z2 RUN</Text>
           </View>
         </View>
         <Text style={[styles.workoutMeta, { color: C.textMuted }]}>Easy 6 mi · Zone 2 · HR under 155 bpm</Text>
         <View style={styles.workoutBtns}>
           <TouchableOpacity
-            style={[styles.workoutBtn, styles.workoutBtnPrimary, { backgroundColor: C.primary }]}
+            style={[styles.workoutBtn, styles.workoutBtnPrimary, { backgroundColor: C.primary, borderColor: C.primary }]}
             onPress={() => router.push('/(tabs)/training')}
             activeOpacity={0.8}
           >
             <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>Start Run</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.workoutBtn, { backgroundColor: C.border }]}
+            style={[styles.workoutBtn, styles.workoutBtnSecondary, { backgroundColor: 'transparent', borderColor: C.primary }]}
             onPress={() => router.push('/(tabs)/strength')}
             activeOpacity={0.8}
           >
-            <Text style={[styles.workoutBtnText, { color: C.textMuted }]}>Strength</Text>
+            <Text style={[styles.workoutBtnText, { color: C.primary }]}>Strength</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -147,40 +184,42 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
   headerDate: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 0.9,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   headerGreeting: {
-    fontSize: 26,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     fontFamily: 'CormorantGaramond_700Bold',
-    lineHeight: 32,
+    lineHeight: 24,
+    marginTop: 4,
   },
   avatarBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   card: {
-    borderRadius: 18,
+    borderRadius: 12,
     borderWidth: 1,
     padding: 16,
-    marginBottom: 10,
+    marginBottom: 16,
   },
   weatherCard: {
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 1,
-    paddingVertical: 11,
+    paddingVertical: 14,
     paddingHorizontal: 14,
-    marginBottom: 10,
+    marginBottom: 16,
   },
   cardHeaderRow: {
     flexDirection: 'row',
@@ -191,17 +230,18 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   badge: {
     paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 999,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   badgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
   bigNum: {
     fontSize: 52,
@@ -221,24 +261,21 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 999,
   },
-  statsRow: {
-    flexDirection: 'row',
+  readinessInterpretation: {
+    fontSize: 13,
+    fontWeight: '600',
   },
-  statCol: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statLabel: {
-    fontSize: 10,
-    marginBottom: 2,
-  },
-  statVal: {
-    fontSize: 14,
+  updateCheckInText: {
+    fontSize: 12,
     fontWeight: '700',
+  },
+  reminderSub: {
+    fontSize: 12,
+    marginTop: 2,
   },
   weatherTemp: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
     fontFamily: 'DMSans_400Regular',
   },
   weatherSub: {
@@ -268,12 +305,14 @@ const styles = StyleSheet.create({
   },
   workoutBtn: {
     flex: 1,
-    height: 40,
+    height: 44,
     borderRadius: 10,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   workoutBtnPrimary: {},
+  workoutBtnSecondary: {},
   workoutBtnText: {
     fontSize: 13,
     fontWeight: '700',

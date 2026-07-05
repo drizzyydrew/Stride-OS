@@ -17,6 +17,7 @@ export { default as ListRow } from './ListRow';
 export { default as MetricCard } from './MetricCard';
 export { default as NumberInput } from './NumberInput';
 export { default as NumericRating } from './NumericRating';
+export { default as PickerWheel } from './PickerWheel';
 export { default as ProgressBar } from './ProgressBar';
 export { default as ProgressRing } from './ProgressRing';
 export { default as ScreenContainer } from './ScreenContainer';

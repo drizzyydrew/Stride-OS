@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StrideOS V3 Design System Reference</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Avenir:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap');
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; background: #0a0a0a; color: #fff; font-family: Avenir, sans-serif; line-height: 1.6; }
+    
+    .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+    h1 { font-size: 48px; font-weight: 600; font-family: 'Crimson Text', serif; margin: 0 0 8px 0; }
+    .subtitle { font-size: 16px; color: #999; margin: 0 0 40px 0; }
+    h2 { font-size: 28px; font-weight: 600; font-family: 'Crimson Text', serif; margin: 40px 0 20px 0; border-bottom: 1px solid #1a1a1a; padding-bottom: 12px; }
+    h3 { font-size: 16px; font-weight: 600; margin: 20px 0 12px 0; }
+    
+    .color-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 20px; margin: 20px 0; }
+    .color-swatch { }
+    .color-box { width: 100%; height: 100px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #1a1a1a; }
+    .color-name { font-size: 12px; font-weight: 700; margin: 0 0 4px 0; }
+    .color-code { font-size: 11px; color: #999; font-family: 'Courier New', monospace; margin: 0; }
+    
+    .type-sample { padding: 20px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; margin: 16px 0; }
+    .type-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px 0; }
+    
+    .component-showcase { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0; }
+    .component-card { padding: 20px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; }
+    .component-title { font-size: 14px; font-weight: 600; margin: 0 0 12px 0; }
+    
+    .button { display: inline-block; padding: 12px 20px; background: #DCC0A7; color: #0a0a0a; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; margin-right: 10px; margin-bottom: 10px; }
+    .button.secondary { background: transparent; color: #DCC0A7; border: 1px solid #DCC0A7; }
+    .button.tertiary { background: #1a1a1a; color: #DCC0A7; border: 1px solid #2a2a2a; }
+    
+    .spacing-demo { display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap; }
+    .spacing-box { background: #DCC0A7; color: #0a0a0a; padding: 8px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .spacing-16 { width: 16px; height: 16px; background: #2a2a2a; border-radius: 2px; display: inline-block; margin-right: 8px; }
+    
+    .grid-demo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+    .grid-item { padding: 16px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; text-align: center; font-size: 12px; }
+    
+    .token-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    .token-table th { background: #1a1a1a; padding: 12px; text-align: left; font-size: 12px; font-weight: 700; border-bottom: 1px solid #2a2a2a; }
+    .token-table td { padding: 12px; border-bottom: 1px solid #2a2a2a; font-size: 12px; }
+    .token-table tr:hover { background: #0f0f0f; }
+    
+    .code-block { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 11px; color: #ccc; margin: 16px 0; }
+    
+    .section { margin-bottom: 40px; }
+    .principle { padding: 16px; background: linear-gradient(135deg, #1a2a1a, #1a1a2a); border: 1px solid #2a3a2a; border-radius: 8px; margin: 12px 0; }
+    .principle-title { font-size: 13px; font-weight: 600; color: #DCC0A7; margin: 0 0 6px 0; }
+    .principle-text { font-size: 12px; color: #ccc; margin: 0; line-height: 1.4; }
+  </style>
+</helmet>
+
+<div class="container">
+  <h1>StrideOS V3</h1>
+  <p class="subtitle">Design System & Component Reference</p>
+  
+  <div class="section">
+    <h2>Color Palette</h2>
+    <p>V3 uses a warm, endurance-focused palette grounded in natural earth tones and premium metals.</p>
+    
+    <h3>Primary Colors</h3>
+    <div class="color-grid">
+      <div class="color-swatch">
+        <div class="color-box" style="background: #DCC0A7;"></div>
+        <p class="color-name">Sand (Primary)</p>
+        <p class="color-code">#DCC0A7</p>
+      </div>
+      <div class="color-swatch">
+        <div class="color-box" style="background: #8B927C;"></div>
+        <p class="color-name">Sage (Secondary)</p>
+        <p class="color-code">#8B927C</p>
+      </div>
+      <div class="color-swatch">
+        <div class="color-box" style="background: #A67B60;"></div>
+        <p class="color-name">Clay (Accent)</p>
+        <p class="color-code">#A67B60</p>
+      </div>
+      <div class="color-swatch">
+        <div class="color-box" style="background: #6BB388;"></div>
+        <p class="color-name">Green (Success)</p>
+        <p class="color-code">#6BB388</p>
+      </div>
+    </div>
+    
+    <h3>Neutral Colors (Dark Mode)</h3>
+    <div class="color-grid">
+      <div class="color-swatch">
+        <div class="color-box" style="background: #0a0a0a; border: 1px solid #2a2a2a;"></div>
+        <p class="color-name">Base</p>
+        <p class="color-code">#0a0a0a</p>
+      </div>
+      <div class="color-swatch">
+        <div class="color-box" style="background: #1a1a1a;"></div>
+        <p class="color-name">Surface</p>
+        <p class="color-code">#1a1a1a</p>
+      </div>
+      <div class="color-swatch">
+        <div class="color-box" style="background: #2a2a2a;"></div>
+        <p class="color-name">Border</p>
+        <p class="color-code">#2a2a2a</p>
+      </div>
+      <div class="color-swatch">
+        <div class="color-box" style="background: #999;"></div>
+        <p class="color-name">Secondary Text</p>
+        <p class="color-code">#999999</p>
+      </div>
+    </div>
+
+    <h3>Light Mode Palette</h3>
+    <div class="color-grid">
+      <div class="color-swatch">
+        <div class="color-box" style="background: #EFE7DA;"></div>
+        <p class="color-name">Background</p>
+        <p class="color-code">#EFE7DA</p>
+      </div>
+      <div class="color-swatch">
+        <div class="color-box" style="background: #f5ede0;"></div>
+        <p class="color-name">Surface</p>
+        <p class="color-code">#f5ede0</p>
+      </div>
+      <div class="color-swatch">
+        <div class="color-box" style="background: #ddd;"></div>
+        <p class="color-name">Border</p>
+        <p class="color-code">#dddddd</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Typography</h2>
+    <p>V3 uses Avenir for UI and Crimson Text for headlines. A clear hierarchy supports both dense information and breathing space.</p>
+    
+    <h3>Font Families</h3>
+    <div class="type-sample">
+      <p class="type-label">Avenir (UI, Body, Labels)</p>
+      <p style="font-family: Avenir; font-size: 16px; margin: 0;">The quick brown fox jumps over the lazy dog. 0123456789</p>
+    </div>
+    
+    <div class="type-sample">
+      <p class="type-label">Crimson Text (Headlines, Emphasis)</p>
+      <p style="font-family: 'Crimson Text', serif; font-size: 28px; font-weight: 600; margin: 0;">The quick brown fox jumps over the lazy dog</p>
+    </div>
+    
+    <h3>Scale</h3>
+    <table class="token-table">
+      <thead>
+        <tr>
+          <th>Usage</th>
+          <th>Size</th>
+          <th>Weight</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Page Heading</td>
+          <td>28px</td>
+          <td>600</td>
+          <td style="font-family: 'Crimson Text', serif; font-size: 28px; font-weight: 600;">Training</td>
+        </tr>
+        <tr>
+          <td>Section Heading</td>
+          <td>18px</td>
+          <td>600</td>
+          <td style="font-size: 18px; font-weight: 600;">Today's Plan</td>
+        </tr>
+        <tr>
+          <td>Card Title</td>
+          <td>15px</td>
+          <td>600</td>
+          <td style="font-size: 15px; font-weight: 600;">Tempo Run</td>
+        </tr>
+        <tr>
+          <td>Body Text</td>
+          <td>13px</td>
+          <td>400</td>
+          <td style="font-size: 13px;">Regular text for descriptions</td>
+        </tr>
+        <tr>
+          <td>Label</td>
+          <td>11px</td>
+          <td>700</td>
+          <td style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">HEART RATE</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Components</h2>
+    
+    <h3>Buttons</h3>
+    <div class="component-showcase">
+      <div class="component-card">
+        <p class="component-title">Primary</p>
+        <button class="button">Start Run</button>
+      </div>
+      <div class="component-card">
+        <p class="component-title">Secondary</p>
+        <button class="button secondary">Learn More</button>
+      </div>
+      <div class="component-card">
+        <p class="component-title">Tertiary</p>
+        <button class="button tertiary">Cancel</button>
+      </div>
+    </div>
+    
+    <h3>Cards</h3>
+    <div class="grid-demo">
+      <div class="grid-item">
+        <div style="font-size: 20px; margin-bottom: 8px;">🏃</div>
+        <p style="margin: 0 0 8px 0; font-weight: 600;">Workout Card</p>
+        <p style="font-size: 11px; color: #999; margin: 0;">Padding: 16px · Border: 1px solid #2a2a2a</p>
+      </div>
+      <div class="grid-item">
+        <div style="font-size: 20px; margin-bottom: 8px;">📊</div>
+        <p style="margin: 0 0 8px 0; font-weight: 600;">Data Card</p>
+        <p style="font-size: 11px; color: #999; margin: 0;">Radius: 12px · Background: #1a1a1a</p>
+      </div>
+      <div class="grid-item">
+        <div style="font-size: 20px; margin-bottom: 8px;">💡</div>
+        <p style="margin: 0 0 8px 0; font-weight: 600;">Insight Card</p>
+        <p style="font-size: 11px; color: #999; margin: 0;">Gradient: Green/Blue · Accent border</p>
+      </div>
+    </div>
+    
+    <h3>Spacing Scale</h3>
+    <p>All spacing uses multiples of 4px for consistency and predictability.</p>
+    <div class="spacing-demo">
+      <div><span class="spacing-box">4px</span></div>
+      <div><span class="spacing-box">8px</span></div>
+      <div><span class="spacing-box">12px</span></div>
+      <div><span class="spacing-box">16px</span></div>
+      <div><span class="spacing-box">20px</span></div>
+      <div><span class="spacing-box">24px</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Design Principles</h2>
+    
+    <div class="principle">
+      <p class="principle-title">🎯 Coaching-First</p>
+      <p class="principle-text">Every interaction surfaces actionable advice. The AI coach's insights are as prominent as the data itself.</p>
+    </div>
+    
+    <div class="principle">
+      <p class="principle-title">📈 Progressive Complexity</p>
+      <p class="principle-text">Dashboard is simple and welcoming. Detail screens support power users. Defaults to data you care about today.</p>
+    </div>
+    
+    <div class="principle">
+      <p class="principle-title">🌍 Warmth & Trust</p>
+      <p class="principle-text">Sand, Sage, and Clay create an approachable, premium feel. Not cold. Not corporate. Like a real coach.</p>
+    </div>
+    
+    <div class="principle">
+      <p class="principle-title">⚡ Performance Clarity</p>
+      <p class="principle-text">Key metrics are always visible. No hunting for numbers. Every readiness score, every HR zone, every insight is one tap away.</p>
+    </div>
+    
+    <div class="principle">
+      <p class="principle-title">🔄 Responsive to Intent</p>
+      <p class="principle-text">Live tracking shows the map and pace, not settings. Post-run shows celebration and insight. Context matters.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Implementation Notes</h2>
+    
+    <h3>Dark Mode (Primary)</h3>
+    <p>V3 is built dark-first. This is the default experience. All screens use #0a0a0a base with #1a1a1a surfaces.</p>
+    
+    <h3>Light Mode</h3>
+    <p>Light mode follows the same structure but uses warm beige (#EFE7DA) and muted earth tones. The same information hierarchy and spacing apply.</p>
+    
+    <h3>Border Radius</h3>
+    <table class="token-table">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>Radius</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Phone Frame</td><td>40px</td></tr>
+        <tr><td>Large Card</td><td>12px</td></tr>
+        <tr><td>Standard Card</td><td>10px</td></tr>
+        <tr><td>Button</td><td>8px–10px</td></tr>
+        <tr><td>Input / Chip</td><td>6px–8px</td></tr>
+      </tbody>
+    </table>
+    
+    <h3>Shadows</h3>
+    <p>V3 uses minimal shadows. Hierarchy is created through color and borders, not depth.</p>
+    <ul>
+      <li><strong>Phone:</strong> <code>0 20px 60px rgba(0,0,0,0.6)</code></li>
+      <li><strong>Elevation:</strong> Border + subtle background color shift</li>
+      <li><strong>Live Elements:</strong> Glow: <code>0 0 8px rgba(220, 192, 167, 0.4)</code></li>
+    </ul>
+    
+    <h3>Motion</h3>
+    <ul>
+      <li><strong>Standard Transition:</strong> 200ms ease-in-out</li>
+      <li><strong>State Changes:</strong> Opacity + slight scale (toggle, button press)</li>
+      <li><strong>Live Metrics:</strong> Smooth number transitions (no jarring jumps)</li>
+      <li><strong>Navigation:</strong> Fade between major screens, slide for overlays</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Component Inventory</h2>
+    <p>Complete list of all screens and states in the V3 design system.</p>
+    
+    <h3>Core Screens (10)</h3>
+    <ul>
+      <li><strong>Dashboard</strong> — Home screen with readiness, weather, action buttons, upcoming workout, recent activity</li>
+      <li><strong>Training Calendar</strong> — Week view, upcoming workouts, intervals, form tips</li>
+      <li><strong>Live Tracking</strong> — Timer, map, metrics, controls (Lap, Pause, Stop)</li>
+      <li><strong>Strength Workouts</strong> — Exercise list with sets/reps, form tips, start button</li>
+      <li><strong>Analytics</strong> — Charts, key metrics, performance insights</li>
+      <li><strong>AI Coach</strong> — Chat interface, coaching bubbles, user messages</li>
+      <li><strong>Movement Lab</strong> — Form recording, gait analysis, cadence, ground contact time</li>
+      <li><strong>Activity Log</strong> — Workout history, filterable by type, detailed per-workout stats</li>
+      <li><strong>Profile</strong> — User stats, training zones, achievement badges</li>
+      <li><strong>Settings</strong> — Dark mode, training toggles, notifications, preferences</li>
+    </ul>
+    
+    <h3>Onboarding (4 screens)</h3>
+    <ul>
+      <li>Welcome screen (Goals setting)</li>
+      <li>Training level assessment</li>
+      <li>Device setup (GPS, wearables)</li>
+      <li>Coach intro & feature tour</li>
+    </ul>
+    
+    <h3>States Per Screen</h3>
+    <ul>
+      <li><strong>Empty:</strong> No workouts yet, loading states</li>
+      <li><strong>Loading:</strong> Skeleton cards, pulsing metrics</li>
+      <li><strong>Live:</strong> Animated metrics, pulsing GPS marker</li>
+      <li><strong>Error:</strong> Connection lost, data sync issues</li>
+      <li><strong>Completed:</strong> Post-workout summary, celebration state</li>
+    </ul>
+  </div>
+
+  <div style="margin-top: 60px; padding-top: 40px; border-top: 1px solid #1a1a1a;">
+    <p style="font-size: 12px; color: #666; margin: 0;">StrideOS V3 Design System · Last Updated July 2025 · Engineering-Ready</p>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

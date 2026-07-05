@@ -1,6 +1,6 @@
 import { StyleSheet, View, ViewStyle } from 'react-native';
 import { colors } from '../../theme/colors';
-import { Radius } from '../../theme/tokens';
+import { radiusTokens } from '../../theme/tokens';
 
 type Props = {
   progress:    number;   // 0–1
@@ -16,11 +16,11 @@ export default function ProgressBar({ progress, color, height = 6, trackColor, s
     <View
       style={[
         styles.track,
-        { height, backgroundColor: trackColor ?? colors.border, borderRadius: Radius.sm },
+        { height, backgroundColor: trackColor ?? colors.border, borderRadius: radiusTokens.pill },
         style,
       ]}
     >
-      <View style={{ width: fill, height, backgroundColor: color, borderRadius: Radius.sm }} />
+      <View style={{ width: fill, height, backgroundColor: color, borderRadius: radiusTokens.pill }} />
     </View>
   );
 }

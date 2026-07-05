@@ -7,12 +7,12 @@ export const spacing = {
   lg:   spacingTokens.space4,
   xl:   spacingTokens.space6,
   xxl:  spacingTokens.space8,
-  xxxl: 48,
+  xxxl: 40,
 
   // Semantic
-  cardGap:         18,
-  sectionGap:      28,
-  screenPadTop:    48,
+  cardGap:         16,
+  sectionGap:      24,
+  screenPadTop:    32,
   screenPadBottom: 120,
 } as const;
 

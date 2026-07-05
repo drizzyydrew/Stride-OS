@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StrideOS V3 Run Tracking</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Avenir:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap');
+    
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; background: #0a0a0a; color: #fff; font-family: Avenir, sans-serif; }
+    
+    .phone { width: 390px; height: 844px; background: #0a0a0a; border-radius: 40px; border: 12px solid #1a1a1a; box-shadow: 0 20px 60px rgba(0,0,0,0.6); overflow: hidden; display: flex; flex-direction: column; }
+    .status-bar { height: 44px; background: #0a0a0a; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; font-size: 12px; border-bottom: 1px solid #1a1a1a; }
+    .status-bar-time { font-weight: 600; }
+    
+    .screen { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .screen::-webkit-scrollbar { width: 4px; }
+    .screen::-webkit-scrollbar-thumb { background: #2a2a2a; }
+    
+    /* LIVE RUN SCREEN */
+    .live-run-bg { background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%); }
+    
+    .live-timer { text-align: center; padding: 40px 16px 24px; }
+    .live-timer-value { font-size: 64px; font-weight: 700; font-family: 'Courier New', monospace; margin: 0; }
+    .live-timer-label { font-size: 12px; color: #999; margin: 8px 0 0 0; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .live-map { width: 100%; height: 200px; background: linear-gradient(135deg, #1a1a1a, #242424); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .map-route { position: absolute; width: 100%; height: 100%; opacity: 0.3; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200"><path d="M 50,100 Q 100,50 150,80 T 250,120 T 350,100" stroke="%23DCC0A7" stroke-width="2" fill="none"/></svg>'); background-size: cover; }
+    .map-marker { position: absolute; width: 16px; height: 16px; background: #DCC0A7; border-radius: 50%; top: 50%; left: 60%; transform: translate(-50%, -50%); box-shadow: 0 0 12px rgba(220, 192, 167, 0.4); }
+    
+    .live-metrics { padding: 24px 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; background: #0a0a0a; }
+    .metric-box { text-align: center; }
+    .metric-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .metric-value { font-size: 20px; font-weight: 700; }
+    .metric-unit { font-size: 12px; color: #999; }
+    
+    .live-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 16px; }
+    .control-btn { padding: 14px; background: #1a1a1a; border: none; border-radius: 10px; color: #DCC0A7; font-weight: 600; cursor: pointer; transition: all 200ms; }
+    .control-btn:hover { background: #2a2a2a; }
+    .control-btn-primary { background: #DCC0A7; color: #0a0a0a; font-size: 18px; }
+    .control-btn-primary:hover { background: #e5cdb5; }
+    
+    /* SUMMARY SCREEN */
+    .summary-header { padding: 24px 16px 16px; }
+    .summary-title { font-size: 28px; font-weight: 700; font-family: 'Crimson Text', serif; margin: 0 0 4px 0; }
+    .summary-subtitle { font-size: 13px; color: #999; margin: 0; }
+    
+    .summary-stats { padding: 0 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .stat-card { padding: 16px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; }
+    .stat-card-label { font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .stat-card-value { font-size: 24px; font-weight: 700; }
+    
+    .coaching-card { margin: 16px; padding: 16px; background: linear-gradient(135deg, #1a2a1a, #1a1a2a); border: 1px solid #2a3a2a; border-radius: 12px; }
+    .coaching-title { font-size: 14px; font-weight: 600; margin: 0 0 8px 0; }
+    .coaching-text { font-size: 13px; line-height: 1.5; color: #ccc; margin: 0; }
+    
+    .action-bar { padding: 16px; display: flex; gap: 12px; }
+    .action-btn { flex: 1; padding: 12px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; color: #DCC0A7; font-weight: 600; cursor: pointer; transition: all 200ms; font-size: 13px; }
+    .action-btn:hover { background: #2a2a2a; }
+    .action-btn-primary { background: #DCC0A7; color: #0a0a0a; border: none; }
+    .action-btn-primary:hover { background: #e5cdb5; }
+    
+    .container { max-width: 1400px; margin: 0 auto; display: flex; justify-content: center; gap: 40px; padding: 40px 20px; background: #000; }
+  </style>
+</helmet>
+
+<div class="container">
+  <!-- LIVE RUN SCREEN -->
+  <div>
+    <div style="font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; text-align: center;">Live Run</div>
+    <div class="phone">
+      <div class="status-bar">
+        <span class="status-bar-time">10:28</span>
+        <div style="display: flex; gap: 4px;">📶 🔋</div>
+      </div>
+      
+      <div class="screen live-run-bg">
+        <div class="live-timer">
+          <p class="live-timer-value">10:28</p>
+          <p class="live-timer-label">Elapsed Time</p>
+        </div>
+        
+        <div class="live-map">
+          <div class="map-route"></div>
+          <div class="map-marker"></div>
+        </div>
+        
+        <div class="live-metrics">
+          <div class="metric-box">
+            <div class="metric-label">Distance</div>
+            <div class="metric-value">2.5<span class="metric-unit">km</span></div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Heart Rate</div>
+            <div class="metric-value">157<span class="metric-unit">bpm</span></div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Pace</div>
+            <div class="metric-value">4:15<span class="metric-unit">min/km</span></div>
+          </div>
+        </div>
+        
+        <div class="live-controls">
+          <button class="control-btn">⊞ Lap</button>
+          <button class="control-btn control-btn-primary">⏸</button>
+          <button class="control-btn">✕ Stop</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POST-RUN SUMMARY -->
+  <div>
+    <div style="font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; text-align: center;">Post-Run Summary</div>
+    <div class="phone">
+      <div class="status-bar">
+        <span class="status-bar-time">11:14</span>
+        <div style="display: flex; gap: 4px;">📶 🔋</div>
+      </div>
+      
+      <div class="screen" style="overflow-y: auto; padding-bottom: 60px;">
+        <div class="summary-header">
+          <h1 class="summary-title">Great Run</h1>
+          <p class="summary-subtitle">Tempo · 44 min ago</p>
+        </div>
+        
+        <div class="summary-stats">
+          <div class="stat-card">
+            <div class="stat-card-label">Distance</div>
+            <div class="stat-card-value">10.5<span style="font-size: 16px; color: #999;">km</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Time</div>
+            <div class="stat-card-value">48:32</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Avg Pace</div>
+            <div class="stat-card-value">4:37<span style="font-size: 12px; color: #999;">/km</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Avg HR</div>
+            <div class="stat-card-value">152<span style="font-size: 12px; color: #999;">bpm</span></div>
+          </div>
+        </div>
+        
+        <div class="coaching-card">
+          <p class="coaching-title">💡 Coach's Notes</p>
+          <p class="coaching-text">Strong effort. Your pace stayed steady throughout—good pacing discipline. Recovery pace was 30s faster than yesterday; watch for fatigue creep. Tomorrow: easy run or rest.</p>
+        </div>
+        
+        <div class="action-bar">
+          <button class="action-btn">Edit</button>
+          <button class="action-btn action-btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

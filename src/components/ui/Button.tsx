@@ -43,7 +43,11 @@ export default function Button({
         sizeStyles[size],
         {
           backgroundColor: bg,
-          borderColor: variant === 'tertiary' ? theme.colors.border : bg,
+          borderColor: variant === 'primary' || variant === 'danger'
+            ? bg
+            : variant === 'secondary'
+              ? theme.colors.primary
+              : theme.colors.border,
           opacity: disabled ? 0.58 : pressed ? 0.82 : 1,
           transform: [{ scale: pressed && !disabled ? theme.motion.scale.press : 1 }],
         },
@@ -61,13 +65,14 @@ function getBackground(variant: Variant, disabled: boolean, theme: ReturnType<ty
   if (variant === 'primary') return theme.colors.primary;
   if (variant === 'danger') return theme.colors.danger;
   if (variant === 'tertiary') return 'transparent';
-  return theme.colors.border;
+  return 'transparent';
 }
 
 function getForeground(variant: Variant, disabled: boolean, theme: ReturnType<typeof useTheme>) {
   if (disabled) return theme.colors.textDim;
   if (variant === 'primary') return theme.colors.onPrimary;
   if (variant === 'danger') return '#FFFFFF';
+  if (variant === 'secondary' || variant === 'tertiary') return theme.colors.primary;
   return theme.colors.text;
 }
 
@@ -75,7 +80,7 @@ const styles = StyleSheet.create({
   button: {
     minHeight:      44,
     paddingHorizontal: 16,
-    borderRadius:   18,
+    borderRadius:   10,
     alignItems:     'center',
     justifyContent: 'center',
     flexDirection:  'row',
@@ -83,22 +88,22 @@ const styles = StyleSheet.create({
     borderWidth:    1,
   },
   label: {
-    fontWeight: '800',
-    fontSize:   15,
+    fontWeight: '700',
+    fontSize:   13,
   },
 });
 
 const sizeStyles = StyleSheet.create({
   sm: {
-    minHeight: 40,
+    minHeight: 36,
     paddingHorizontal: 12,
   },
   md: {
-    minHeight: 48,
+    minHeight: 44,
     paddingHorizontal: 16,
   },
   lg: {
-    minHeight: 56,
+    minHeight: 48,
     paddingHorizontal: 20,
   },
   icon: {

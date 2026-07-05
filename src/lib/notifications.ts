@@ -140,6 +140,41 @@ export async function scheduleTrainingNotifications(prefs: NotificationPrefs) {
   }
 }
 
+// Fixed 5:00 AM daily readiness reminder — separate from the user-configurable
+// workout/readiness reminders above (scheduleTrainingNotifications), which share
+// a single toggle+time in Settings. This one is dedicated to the Dashboard's
+// daily readiness check-in and always fires at 5:00 AM device-local time.
+const DAILY_READINESS_REMINDER_ID = 'strideos-daily-readiness-5am';
+
+export async function scheduleDailyReadinessReminder(): Promise<boolean> {
+  const granted = await requestNotificationAccess();
+  if (!granted) return false;
+
+  // Cancel any existing schedule under this identifier first so re-enabling
+  // (or calling this more than once) never results in duplicate reminders.
+  await Notifications.cancelScheduledNotificationAsync(DAILY_READINESS_REMINDER_ID).catch(() => undefined);
+
+  await Notifications.scheduleNotificationAsync({
+    identifier: DAILY_READINESS_REMINDER_ID,
+    content: {
+      title: 'Morning readiness check',
+      body: 'Log how you’re feeling so StrideOS can adjust today’s training.',
+      data: { url: '/(tabs)/dashboard' },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
+      hour: 5,
+      minute: 0,
+    },
+  });
+
+  return true;
+}
+
+export async function cancelDailyReadinessReminder(): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(DAILY_READINESS_REMINDER_ID).catch(() => undefined);
+}
+
 export async function sendRunAlertNotification(body: string) {
   const granted = await requestNotificationAccess();
   if (!granted) return;

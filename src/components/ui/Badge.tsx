@@ -18,12 +18,12 @@ export default function Badge({ label, bg, color }: Props) {
 const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
-    paddingVertical:    5,
+    paddingVertical:    4,
     borderRadius:      Radius.sm,
   },
   label: {
-    fontSize:      11,
+    fontSize:      10,
     fontWeight:    '700',
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
   },
 });

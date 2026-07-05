@@ -15,8 +15,8 @@ type ProgressRingProps = {
 
 export default function ProgressRing({
   progress,
-  size = 88,
-  strokeWidth = 8,
+  size = 90,
+  strokeWidth = 5,
   label,
   color,
   trackColor,
@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
   },
   label: {
     position: 'absolute',
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
 });

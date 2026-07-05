@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StrideOS V3 Analytics</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Avenir:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap');
+    
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; background: #0a0a0a; color: #fff; font-family: Avenir, sans-serif; }
+    
+    .phone { width: 390px; height: 844px; background: #0a0a0a; border-radius: 40px; border: 12px solid #1a1a1a; box-shadow: 0 20px 60px rgba(0,0,0,0.6); overflow: hidden; display: flex; flex-direction: column; }
+    .status-bar { height: 44px; background: #0a0a0a; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; font-size: 12px; border-bottom: 1px solid #1a1a1a; }
+    .status-bar-time { font-weight: 600; }
+    
+    .screen { flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 60px; }
+    .screen::-webkit-scrollbar { width: 4px; }
+    .screen::-webkit-scrollbar-thumb { background: #2a2a2a; }
+    
+    .header { padding: 20px 16px 12px; }
+    .header-title { font-size: 28px; font-weight: 700; font-family: 'Crimson Text', serif; margin: 0; }
+    .header-subtitle { font-size: 13px; color: #999; margin: 4px 0 0 0; }
+    
+    .content { padding: 0 16px; display: flex; flex-direction: column; gap: 16px; }
+    
+    .time-selector { display: flex; gap: 8px; margin-bottom: 16px; }
+    .time-btn { flex: 1; padding: 8px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; font-size: 11px; font-weight: 600; color: #999; cursor: pointer; transition: all 200ms; }
+    .time-btn.active { background: #DCC0A7; color: #0a0a0a; border-color: #DCC0A7; }
+    
+    .chart-card { padding: 16px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; }
+    .chart-title { font-size: 13px; font-weight: 600; margin: 0 0 12px 0; }
+    .chart-area { width: 100%; height: 140px; background: linear-gradient(180deg, rgba(220, 192, 167, 0.1) 0%, transparent 100%); border-radius: 6px; position: relative; overflow: hidden; }
+    .chart-bar { position: absolute; bottom: 0; width: 12%; background: #DCC0A7; border-radius: 4px 4px 0 0; }
+    
+    .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat-box { padding: 12px; background: #141414; border-radius: 8px; }
+    .stat-box-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .stat-box-value { font-size: 18px; font-weight: 700; color: #DCC0A7; }
+    .stat-box-change { font-size: 10px; color: #6BB388; margin-top: 4px; }
+    
+    .metric-card { padding: 14px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .metric-info h4 { margin: 0 0 4px 0; font-size: 13px; }
+    .metric-info p { margin: 0; font-size: 11px; color: #999; }
+    .metric-value { font-size: 18px; font-weight: 700; color: #DCC0A7; }
+    
+    .insights-card { padding: 14px; background: linear-gradient(135deg, #1a2a1a, #1a1a2a); border: 1px solid #2a3a2a; border-radius: 10px; }
+    .insights-card-title { font-size: 12px; font-weight: 600; margin: 0 0 6px 0; }
+    .insights-card-text { font-size: 12px; color: #ccc; line-height: 1.4; margin: 0; }
+    
+    .bottom-nav { position: absolute; bottom: 0; left: 12px; right: 12px; height: 60px; display: flex; justify-content: space-around; align-items: center; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; color: #666; }
+    .nav-item.active { color: #DCC0A7; }
+    .nav-item-icon { font-size: 20px; }
+    .nav-item-label { font-size: 10px; font-weight: 600; }
+    
+    .container { max-width: 1400px; margin: 0 auto; display: flex; justify-content: center; gap: 40px; padding: 40px 20px; background: #000; }
+  </style>
+</helmet>
+
+<div class="container">
+  <!-- ANALYTICS OVERVIEW -->
+  <div>
+    <div style="font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; text-align: center;">Analytics</div>
+    <div class="phone">
+      <div class="status-bar">
+        <span class="status-bar-time">9:41</span>
+        <div style="display: flex; gap: 4px;">📶 🔋</div>
+      </div>
+      
+      <div class="screen">
+        <div class="header">
+          <h1 class="header-title">Analytics</h1>
+          <p class="header-subtitle">Performance trends</p>
+        </div>
+        
+        <div class="content">
+          <div class="time-selector">
+            <button class="time-btn">Week</button>
+            <button class="time-btn active">Month</button>
+            <button class="time-btn">Year</button>
+          </div>
+          
+          <div class="chart-card">
+            <p class="chart-title">Distance by Week</p>
+            <div class="chart-area">
+              <div class="chart-bar" style="left: 5%; height: 60%;"></div>
+              <div class="chart-bar" style="left: 20%; height: 75%;"></div>
+              <div class="chart-bar" style="left: 35%; height: 85%;"></div>
+              <div class="chart-bar" style="left: 50%; height: 70%;"></div>
+              <div class="chart-bar" style="left: 65%; height: 90%;"></div>
+              <div class="chart-bar" style="left: 80%; height: 55%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 10px; color: #999;">
+              <span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>W5</span><span>W6</span>
+            </div>
+          </div>
+          
+          <div class="stat-row">
+            <div class="stat-box">
+              <div class="stat-box-label">Avg Distance</div>
+              <div class="stat-box-value">8.2<span style="font-size: 12px;">km</span></div>
+              <div class="stat-box-change">↑ 5% from last month</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-box-label">Total Workouts</div>
+              <div class="stat-box-value">24</div>
+              <div class="stat-box-change">↑ 3 more this month</div>
+            </div>
+          </div>
+          
+          <div style="font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 12px;">Key Metrics</div>
+          
+          <div class="metric-card">
+            <div class="metric-info">
+              <h4>Avg Pace</h4>
+              <p>Getting faster</p>
+            </div>
+            <div class="metric-value">4:45</div>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-info">
+              <h4>Avg Heart Rate</h4>
+              <p>Building aerobic base</p>
+            </div>
+            <div class="metric-value">151</div>
+          </div>
+          
+          <div class="insights-card">
+            <p class="insights-card-title">💡 Insight</p>
+            <p class="insights-card-text">Your recovery has improved 12% this month. Threshold pace is now 15 seconds faster than 4 weeks ago.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bottom-nav">
+        <div class="nav-item">
+          <div class="nav-item-icon">🏠</div>
+          <div class="nav-item-label">Dashboard</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">📅</div>
+          <div class="nav-item-label">Training</div>
+        </div>
+        <div class="nav-item active">
+          <div class="nav-item-icon">📊</div>
+          <div class="nav-item-label">Analytics</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">⚙</div>
+          <div class="nav-item-label">Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOVEMENT LAB -->
+  <div>
+    <div style="font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; text-align: center;">Movement Lab</div>
+    <div class="phone">
+      <div class="status-bar">
+        <span class="status-bar-time">9:41</span>
+        <div style="display: flex; gap: 4px;">📶 🔋</div>
+      </div>
+      
+      <div class="screen">
+        <div class="header">
+          <h1 class="header-title">Movement Lab</h1>
+          <p class="header-subtitle">Form & injury prevention</p>
+        </div>
+        
+        <div class="content">
+          <div style="padding: 16px; background: linear-gradient(135deg, #1a2a1a, #1a1a2a); border: 1px solid #2a3a2a; border-radius: 12px; text-align: center;">
+            <div style="font-size: 32px; margin-bottom: 8px;">📹</div>
+            <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">Record Your Form</div>
+            <div style="font-size: 11px; color: #999; line-height: 1.4; margin-bottom: 12px;">Take a 15s video of your run. AI analyzes your stride for improvement opportunities.</div>
+            <button style="padding: 10px 16px; background: #DCC0A7; color: #0a0a0a; border: none; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer;">Start Recording</button>
+          </div>
+          
+          <div style="font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 16px;">Recent Analysis</div>
+          
+          <div class="metric-card">
+            <div class="metric-info">
+              <h4>Cadence</h4>
+              <p>Optimal range</p>
+            </div>
+            <div class="metric-value" style="color: #6BB388;">178</div>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-info">
+              <h4>Ground Contact</h4>
+              <p>Good, slight overstride</p>
+            </div>
+            <div class="metric-value">0.24s</div>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-info">
+              <h4>Vertical Oscillation</h4>
+              <p>Efficient</p>
+            </div>
+            <div class="metric-value" style="color: #6BB388;">8.2cm</div>
+          </div>
+          
+          <div class="insights-card">
+            <p class="insights-card-title">🎯 Recommendation</p>
+            <p class="insights-card-text">You have a slight overstride on your right side. Try focusing on landing closer to your body center during easy runs to reduce impact.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bottom-nav">
+        <div class="nav-item">
+          <div class="nav-item-icon">🏠</div>
+          <div class="nav-item-label">Dashboard</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">📅</div>
+          <div class="nav-item-label">Training</div>
+        </div>
+        <div class="nav-item active">
+          <div class="nav-item-icon">📊</div>
+          <div class="nav-item-label">Analytics</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">⚙</div>
+          <div class="nav-item-label">Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

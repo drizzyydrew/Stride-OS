@@ -6,14 +6,14 @@ export const textStyles = StyleSheet.create({
   screenTitle: {
     color:        colors.text,
     fontSize:     FontSize.hero,
-    fontWeight:   FontWeight.black,
+    fontWeight:   FontWeight.medium,
     marginBottom: 8,
   },
   cardLabel: {
     color:         colors.textMuted,
-    fontSize:      FontSize.base,
-    fontWeight:    FontWeight.medium,
-    letterSpacing: 0.4,
+    fontSize:      FontSize.xs,
+    fontWeight:    FontWeight.bold,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   sectionLabel: {
@@ -27,7 +27,7 @@ export const textStyles = StyleSheet.create({
     color:      colors.text,
     fontSize:   FontSize.display,
     fontWeight: FontWeight.black,
-    lineHeight: 52,
+    lineHeight: 58,
   },
   valueLarge: {
     color:      colors.text,

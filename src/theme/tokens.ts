@@ -11,27 +11,28 @@ export const spacingTokens = {
 } as const;
 
 export const radiusTokens = {
-  xs: 6,
-  sm: 10,
-  md: 14,
-  lg: 24,
-  xl: 28,
+  xs: 4,
+  sm: 8,
+  md: 10,
+  lg: 12,
+  xl: 16,
   pill: 999,
 } as const;
 
 export const typographyTokens = {
   sizes: {
-    metricHero: 60,
-    metricPrimary: 34,
-    metricSecondary: 22,
-    cardTitle: 17,
-    rowLabel: 15,
+    metricHero: 52,
+    metricPrimary: 28,
+    metricSecondary: 20,
+    cardTitle: 15,
+    rowLabel: 13,
     metricLabel: 11,
     helper: 13,
-    button: 16,
-    body: 14,
+    button: 13,
+    body: 13,
     caption: 12,
-    screenTitle: 42,
+    sectionTitle: 18,
+    screenTitle: 28,
   },
   lineHeights: {
     tight: 1.05,
@@ -54,27 +55,27 @@ export const elevationTokens = {
     boxShadow: '0 0 0 rgba(0, 0, 0, 0)',
   },
   sm: {
-    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.08)',
+    boxShadow: '0 0 0 rgba(0, 0, 0, 0)',
   },
   md: {
-    boxShadow: '0 8px 20px rgba(16, 16, 16, 0.12)',
+    boxShadow: '0 0 0 rgba(0, 0, 0, 0)',
   },
   lg: {
-    boxShadow: '0 16px 36px rgba(16, 16, 16, 0.18)',
+    boxShadow: '0 0 8px rgba(220, 192, 167, 0.18)',
   },
 } as const;
 
 export const motionTokens = {
   duration: {
-    quick: 120,
-    base: 180,
-    slow: 280,
+    quick: 160,
+    base: 200,
+    slow: 320,
   },
   scale: {
     press: 0.98,
   },
   easing: {
-    standard: 'ease-out',
+    standard: 'ease-in-out',
   },
 } as const;
 
@@ -90,11 +91,11 @@ export const FontSize = {
   sm: typographyTokens.sizes.helper,
   base: typographyTokens.sizes.body,
   md: typographyTokens.sizes.button,
-  lg: typographyTokens.sizes.cardTitle + 1,
+  lg: typographyTokens.sizes.sectionTitle,
   xl: typographyTokens.sizes.metricSecondary,
-  xxl: typographyTokens.sizes.metricPrimary + 2,
+  xxl: typographyTokens.sizes.metricPrimary,
   hero: typographyTokens.sizes.screenTitle,
-  display: 48,
+  display: typographyTokens.sizes.metricHero,
 } as const;
 
 export const FontWeight = {

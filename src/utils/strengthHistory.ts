@@ -118,3 +118,45 @@ export function getRecentStrengthLoad(
     .filter(r => r.timestamp >= cutoff && !r.skipped)
     .reduce((s, r) => s + r.estimatedLoad, 0);
 }
+
+// ─── Previous set reference ───────────────────────────────────────────────────
+//
+// Most recent logged performance for a given exerciseId, so the active-session
+// UI can show "Last time: 3x10 @ 35 lb - RPE 7" while the user works the same
+// exercise today. Returns null when there's no prior completed set for it.
+
+export type LastExercisePerformance = {
+  timestamp:    number;
+  completedSets: number;
+  reps:         number;
+  load?:        string;
+  rpe?:         number;
+};
+
+export function getLastLoggedExercise(
+  history:    StrengthLogRecord[],
+  exerciseId: string,
+): LastExercisePerformance | null {
+  const matches = history
+    .filter(r => !r.skipped)
+    .flatMap(r => {
+      const match = r.exercises.find(e => e.exerciseId === exerciseId);
+      if (!match) return [];
+      const completed = match.sets.filter(s => s.completed);
+      if (completed.length === 0) return [];
+      return [{ timestamp: r.timestamp, match, completed }];
+    })
+    .sort((a, b) => b.timestamp - a.timestamp);
+
+  const latest = matches[0];
+  if (!latest) return null;
+
+  const first = latest.completed[0];
+  return {
+    timestamp:     latest.timestamp,
+    completedSets: latest.completed.length,
+    reps:          first.reps,
+    load:          first.load,
+    rpe:           first.rpe,
+  };
+}

@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -19,6 +17,8 @@ import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
 import { LAYOUT } from '../../../src/constants/layout';
 import type { CompletedExercise } from '../../../src/types/strength';
+import { getLastLoggedExercise } from '../../../src/utils/strengthHistory';
+import PickerWheel from '../../../src/components/ui/PickerWheel';
 import {
   addStrengthIntentListener,
   endStrengthLiveActivity,
@@ -33,6 +33,7 @@ type ExDef = {
   sets: number;
   reps: string;
   weight: number;
+  restSeconds: number;
   muscles: string;
   desc: string;
   cue: string;
@@ -40,18 +41,30 @@ type ExDef = {
 };
 
 const LOWER_WORKOUT: ExDef[] = [
-  { id: 'gs',  name: 'Goblet Squat',        shortName: 'Goblet Sq',  sets: 3, reps: '10–12', weight: 35, muscles: 'Quads · Glutes',           desc: 'Hold dumbbell at chest, feet shoulder-width, squat until thighs parallel.', cue: 'Drive knees out over toes; keep chest tall throughout descent.' },
-  { id: 'rdl', name: 'Romanian Deadlift',    shortName: 'RDL',        sets: 3, reps: '10–12', weight: 65, muscles: 'Hamstrings · Glutes',       desc: 'Hinge at hips with soft knees, lower bar until hamstring stretch.', cue: 'Imagine pushing the floor away — feel glutes fire at lockout.' },
-  { id: 'gb',  name: 'Glute Bridge',         shortName: 'Glute Bdg',  sets: 3, reps: '15',    weight: 0,  muscles: 'Glutes · Core',             desc: 'Lie on back, feet flat, drive hips up until body is straight.', cue: 'Squeeze glutes hard at the top; hold one full second.' },
-  { id: 'pl',  name: 'Plank',                shortName: 'Plank',      sets: 3, reps: '45 sec', weight: 0,  muscles: 'Core · Shoulders',          desc: 'Forearm plank, body rigid from head to heels.', cue: 'Breathe normally; brace abs as if absorbing a punch.' },
+  { id: 'gs',  name: 'Goblet Squat',        shortName: 'Goblet Sq',  sets: 3, reps: '10–12', weight: 35, restSeconds: 90, muscles: 'Quads · Glutes',           desc: 'Hold dumbbell at chest, feet shoulder-width, squat until thighs parallel.', cue: 'Drive knees out over toes; keep chest tall throughout descent.' },
+  { id: 'rdl', name: 'Romanian Deadlift',    shortName: 'RDL',        sets: 3, reps: '10–12', weight: 65, restSeconds: 90, muscles: 'Hamstrings · Glutes',       desc: 'Hinge at hips with soft knees, lower bar until hamstring stretch.', cue: 'Imagine pushing the floor away — feel glutes fire at lockout.' },
+  { id: 'gb',  name: 'Glute Bridge',         shortName: 'Glute Bdg',  sets: 3, reps: '15',    weight: 0,  restSeconds: 60, muscles: 'Glutes · Core',             desc: 'Lie on back, feet flat, drive hips up until body is straight.', cue: 'Squeeze glutes hard at the top; hold one full second.' },
+  { id: 'pl',  name: 'Plank',                shortName: 'Plank',      sets: 3, reps: '45 sec', weight: 0,  restSeconds: 45, muscles: 'Core · Shoulders',          desc: 'Forearm plank, body rigid from head to heels.', cue: 'Breathe normally; brace abs as if absorbing a punch.' },
 ];
 
 const UPPER_WORKOUT: ExDef[] = [
-  { id: 'dbr', name: 'Dumbbell Row',         shortName: 'DB Row',     sets: 3, reps: '10',    weight: 45, muscles: 'Lats · Rear Delt · Biceps', desc: 'Single-arm row, brace on bench, pull dumbbell to hip.', cue: 'Initiate with elbow — think "elbow to back pocket."', pr: true },
-  { id: 'pu',  name: 'Push-Up',              shortName: 'Push-Up',    sets: 3, reps: '12',    weight: 0,  muscles: 'Chest · Triceps · Core',    desc: 'High plank, lower chest to 1 inch from floor, press back up.', cue: 'Screw hands into the floor — engages chest, protects shoulders.' },
-  { id: 'ohp', name: 'Overhead Press',       shortName: 'OHP',        sets: 3, reps: '8',     weight: 30, muscles: 'Shoulders · Triceps',       desc: 'Standing, press dumbbells from shoulder height to overhead.', cue: 'Squeeze glutes at top to protect lower back.' },
-  { id: 'db2', name: 'Dead Bug',             shortName: 'Dead Bug',   sets: 3, reps: '8 each', weight: 0, muscles: 'Deep Core',                desc: 'Lying on back, extend opposite arm and leg, keep low back flat.', cue: 'Press lower back firmly into floor the entire time — no arching.' },
+  { id: 'dbr', name: 'Dumbbell Row',         shortName: 'DB Row',     sets: 3, reps: '10',    weight: 45, restSeconds: 75, muscles: 'Lats · Rear Delt · Biceps', desc: 'Single-arm row, brace on bench, pull dumbbell to hip.', cue: 'Initiate with elbow — think "elbow to back pocket."', pr: true },
+  { id: 'pu',  name: 'Push-Up',              shortName: 'Push-Up',    sets: 3, reps: '12',    weight: 0,  restSeconds: 60, muscles: 'Chest · Triceps · Core',    desc: 'High plank, lower chest to 1 inch from floor, press back up.', cue: 'Screw hands into the floor — engages chest, protects shoulders.' },
+  { id: 'ohp', name: 'Overhead Press',       shortName: 'OHP',        sets: 3, reps: '8',     weight: 30, restSeconds: 75, muscles: 'Shoulders · Triceps',       desc: 'Standing, press dumbbells from shoulder height to overhead.', cue: 'Squeeze glutes at top to protect lower back.' },
+  { id: 'db2', name: 'Dead Bug',             shortName: 'Dead Bug',   sets: 3, reps: '8 each', weight: 0, restSeconds: 45, muscles: 'Deep Core',                desc: 'Lying on back, extend opposite arm and leg, keep low back flat.', cue: 'Press lower back firmly into floor the entire time — no arching.' },
 ];
+
+const WARMUP_MIN   = 5;
+const COOLDOWN_MIN = 5;
+const SECONDS_PER_REP = 3; // rough eccentric+concentric average for a controlled tempo
+
+function buildWeightValues(maxValue: number, step: number): number[] {
+  const list: number[] = [];
+  for (let v = 0; v <= maxValue; v += step) list.push(Math.round(v * 10) / 10);
+  return list;
+}
+const WEIGHT_VALUES_LB = buildWeightValues(500, 2.5);
+const WEIGHT_VALUES_KG = buildWeightValues(220, 2.5);
 
 function fmt(s: number): string {
   const m = Math.floor(s / 60), sec = s % 60;
@@ -63,6 +76,29 @@ function primaryRepCount(reps: string): number {
   return match ? Number(match[0]) : 10;
 }
 
+// Estimated total session length from this workout's actual exercises: each
+// exercise's own set count, rep/time load, and rest between sets — not a
+// single flat guess. Mirrors the "X min" already shown for warm-up/cool-down.
+function estimateWorkoutDurationMin(exercises: ExDef[]): number {
+  let totalSeconds = WARMUP_MIN * 60 + COOLDOWN_MIN * 60;
+  let lastRest = 0;
+
+  for (const ex of exercises) {
+    const isTimeBased = /sec/.test(ex.reps);
+    const workSecondsPerSet = isTimeBased
+      ? primaryRepCount(ex.reps)
+      : primaryRepCount(ex.reps) * SECONDS_PER_REP;
+
+    totalSeconds += ex.sets * (workSecondsPerSet + ex.restSeconds);
+    lastRest = ex.restSeconds;
+  }
+
+  // No rest needed after the very last set of the workout.
+  totalSeconds -= lastRest;
+
+  return Math.max(1, Math.round(totalSeconds / 60));
+}
+
 export default function StrengthScreen() {
   const C = useColors();
   const insets = useSafeAreaInsets();
@@ -70,8 +106,10 @@ export default function StrengthScreen() {
   const { units } = useSettingsStore();
   const { currentWeek, fatigueScore } = useAthleteStore();
   const logStrengthSession = useStrengthStore(s => s.manualLog);
+  const strengthHistory = useStrengthStore(s => s.history);
   const imp = units === 'imperial';
   const wtUnit = imp ? 'lb' : 'kg';
+  const WEIGHT_VALUES = imp ? WEIGHT_VALUES_LB : WEIGHT_VALUES_KG;
 
   const [workout, setWorkout] = useState<'lower' | 'upper'>('lower');
   const [strState, setStrState] = useState<'idle' | 'active' | 'paused'>('idle');
@@ -79,29 +117,51 @@ export default function StrengthScreen() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [weights, setWeights] = useState<Record<string, number>>({});
-  const [done,    setDone]    = useState<Record<string, boolean>>({});
+  const [completedSets, setCompletedSets] = useState<Record<string, number>>({});
   const [rpe,     setRpe]     = useState<Record<string, number>>({});
   const [howOpen, setHowOpen] = useState<Record<string, boolean>>({});
   const [warmupOpen, setWarmupOpen] = useState(false);
   const [cooldownOpen, setCooldownOpen] = useState(false);
   const [weekOpen, setWeekOpen] = useState(false);
-  const [editEx, setEditEx] = useState<ExDef | null>(null);
-  const [tempWt, setTempWt] = useState('');
+  const [weightPickerFor, setWeightPickerFor] = useState<ExDef | null>(null);
 
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
   const exercises = workout === 'lower' ? LOWER_WORKOUT : UPPER_WORKOUT;
   const wDef = { title: workout === 'lower' ? 'Lower Body & Core' : 'Upper Body & Core', label: workout === 'lower' ? 'Strength · Today' : 'Strength · Tomorrow' };
 
+  const estimatedDurationMin = estimateWorkoutDurationMin(exercises);
+
+  function doneCount(ex: ExDef): number {
+    return Math.min(ex.sets, completedSets[ex.id] ?? 0);
+  }
+  function isExerciseDone(ex: ExDef): boolean {
+    return doneCount(ex) >= ex.sets;
+  }
+
   const totalSets = exercises.reduce((acc, ex) => acc + ex.sets, 0);
-  const setsCompleted = exercises.filter(ex => done[ex.id]).reduce((acc, ex) => acc + ex.sets, 0);
+  const setsCompleted = exercises.reduce((acc, ex) => acc + doneCount(ex), 0);
+  const currentExercise = exercises.find(ex => !isExerciseDone(ex)) ?? null;
 
   function currentExerciseName(): string {
-    return exercises.find(ex => !done[ex.id])?.name ?? exercises[exercises.length - 1]?.name ?? '';
+    return currentExercise?.name ?? exercises[exercises.length - 1]?.name ?? '';
   }
   function nextExerciseName(): string {
-    const idx = exercises.findIndex(ex => !done[ex.id]);
+    const idx = currentExercise ? exercises.indexOf(currentExercise) : -1;
     return idx >= 0 && idx + 1 < exercises.length ? exercises[idx + 1].name : '';
+  }
+
+  function completeSet(ex: ExDef) {
+    setCompletedSets(prev => ({
+      ...prev,
+      [ex.id]: Math.min(ex.sets, (prev[ex.id] ?? 0) + 1),
+    }));
+  }
+  function undoLastSet(ex: ExDef) {
+    setCompletedSets(prev => ({
+      ...prev,
+      [ex.id]: Math.max(0, (prev[ex.id] ?? 0) - 1),
+    }));
   }
 
   function start() {
@@ -150,12 +210,11 @@ export default function StrengthScreen() {
       addStrengthIntentListener('onPauseStrengthIntent',   () => { if (strState === 'active') pause(); }),
       addStrengthIntentListener('onResumeStrengthIntent',  () => { if (strState === 'paused') resume(); }),
       addStrengthIntentListener('onMarkSetCompleteIntent', () => {
-        const next = exercises.find(ex => !done[ex.id]);
-        if (next) setDone(d => ({ ...d, [next.id]: true }));
+        if (currentExercise) completeSet(currentExercise);
       }),
     ];
     return () => subs.forEach(s => s.remove());
-  }, [strState, done, exercises]);
+  }, [strState, currentExercise, exercises]);
 
   // Update Live Activity whenever sets completed changes
   useEffect(() => {
@@ -182,17 +241,18 @@ export default function StrengthScreen() {
     const durationMinutes = Math.max(1, Math.round(timer / 60));
     const completionKey = `prototype-strength-${workout}-${new Date().toISOString().slice(0, 10)}`;
 
-    const anyExerciseMarked = Object.values(done).some(Boolean);
+    const anySetMarked = Object.values(completedSets).some(count => count > 0);
     const completedExercises: CompletedExercise[] = exercises.map(ex => {
       const reps = primaryRepCount(ex.reps);
       const load = getWeight(ex) > 0 ? `${getWeight(ex)} ${wtUnit}` : 'BW';
+      const done = doneCount(ex);
       return {
         exerciseId: ex.id,
-        sets: Array.from({ length: ex.sets }, () => ({
+        sets: Array.from({ length: ex.sets }, (_, i) => ({
           reps,
           load,
           rpe: rpe[ex.id] ?? overallRpe,
-          completed: anyExerciseMarked ? Boolean(done[ex.id]) : true,
+          completed: anySetMarked ? i < done : true,
         })),
       };
     });
@@ -202,14 +262,14 @@ export default function StrengthScreen() {
       sessionType: workout === 'lower' ? 'lower_power' : 'full_body',
       goal: 'force_production',
       week: currentWeek,
-      plannedDuration: 45,
+      plannedDuration: estimatedDurationMin,
       actualDuration: durationMinutes,
       exercises: completedExercises,
       overallRpe,
       notes: `${wDef.title} completed from the prototype-style Strength screen.`,
     }, fatigueScore);
 
-    setDone({});
+    setCompletedSets({});
     setTimer(0);
     setStrState('idle');
     Alert.alert('Strength logged', `${wDef.title} was saved to your training history.`);
@@ -252,6 +312,22 @@ export default function StrengthScreen() {
           <Text style={[styles.timerDisplay, { color: C.text }]}>{fmt(timer)}</Text>
           {strState === 'idle' && (
             <>
+              <View style={[styles.previewRow, { borderColor: C.border }]}>
+                <View style={styles.previewStat}>
+                  <Text style={[styles.previewValue, { color: C.text }]}>{exercises.length}</Text>
+                  <Text style={[styles.previewLabel, { color: C.textDim }]}>Exercises</Text>
+                </View>
+                <View style={[styles.previewDivider, { backgroundColor: C.border }]} />
+                <View style={styles.previewStat}>
+                  <Text style={[styles.previewValue, { color: C.text }]}>{totalSets}</Text>
+                  <Text style={[styles.previewLabel, { color: C.textDim }]}>Total Sets</Text>
+                </View>
+                <View style={[styles.previewDivider, { backgroundColor: C.border }]} />
+                <View style={styles.previewStat}>
+                  <Text style={[styles.previewValue, { color: C.text }]}>~{estimatedDurationMin}</Text>
+                  <Text style={[styles.previewLabel, { color: C.textDim }]}>Est. Min</Text>
+                </View>
+              </View>
               <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.primary, marginBottom: 8 }]} onPress={start} activeOpacity={0.8}>
                 <Text style={[styles.bigBtnText, { color: C.onPrimary }]}>Start {wDef.title}</Text>
               </TouchableOpacity>
@@ -319,10 +395,13 @@ export default function StrengthScreen() {
         <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8 }]}>EXERCISES</Text>
         {exercises.map((ex, i) => {
           const w = getWeight(ex);
-          const isDone = !!done[ex.id];
+          const setsDone = doneCount(ex);
+          const isDone = isExerciseDone(ex);
+          const isCurrent = !isDone && currentExercise?.id === ex.id;
           const htOpen = !!howOpen[ex.id];
           const rpeVal = rpe[ex.id];
           const wDisplay = w > 0 ? `${w} ${wtUnit}` : 'BW';
+          const lastPerformance = getLastLoggedExercise(strengthHistory, ex.id);
           return (
             <View
               key={ex.id}
@@ -330,14 +409,22 @@ export default function StrengthScreen() {
                 styles.exCard,
                 {
                   backgroundColor: isDone ? C.primaryDim : C.card,
-                  borderColor: isDone ? C.primary : C.border,
+                  borderColor: isDone ? C.primary : isCurrent ? C.accent : C.border,
                 },
+                isCurrent && { borderWidth: 2 },
               ]}
             >
               <View style={{ padding: 14 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={[{ fontSize: 10, fontWeight: '700', color: C.accent, letterSpacing: 0.4, marginBottom: 3 }]}>{ex.muscles}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                      <Text style={[{ fontSize: 10, fontWeight: '700', color: C.accent, letterSpacing: 0.4 }]}>{ex.muscles}</Text>
+                      {isCurrent && (
+                        <View style={[{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, backgroundColor: C.accent }]}>
+                          <Text style={[{ fontSize: 8, fontWeight: '700', color: C.onPrimary, letterSpacing: 0.4 }]}>CURRENT</Text>
+                        </View>
+                      )}
+                    </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Text style={[styles.subTitle, { color: C.text }]}>{ex.name}</Text>
                       {ex.pr && (
@@ -347,10 +434,17 @@ export default function StrengthScreen() {
                       )}
                     </View>
                     <Text style={[{ fontSize: 12, color: C.textMuted }]}>{ex.sets} × {ex.reps}{w > 0 ? ` · ${wDisplay}` : ''}</Text>
+                    {lastPerformance && (
+                      <Text style={[{ fontSize: 11, color: C.textDim, marginTop: 2 }]}>
+                        Last time: {lastPerformance.completedSets}×{lastPerformance.reps}
+                        {lastPerformance.load ? ` @ ${lastPerformance.load}` : ''}
+                        {lastPerformance.rpe !== undefined ? ` · RPE ${lastPerformance.rpe}` : ''}
+                      </Text>
+                    )}
                   </View>
                   <TouchableOpacity
                     style={[{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: C.cardAlt }]}
-                    onPress={() => { setEditEx(ex); setTempWt(String(w)); }}
+                    onPress={() => setWeightPickerFor(ex)}
                     activeOpacity={0.7}
                   >
                     <Text style={[{ fontSize: 11, fontWeight: '700', color: C.text }]}>{wDisplay}</Text>
@@ -400,20 +494,37 @@ export default function StrengthScreen() {
                 <Text style={[{ fontSize: 10, color: C.textDim, lineHeight: 15 }]}>6=easy (4+ left in tank) · 8=hard (2 left) · 10=max effort</Text>
               </View>
 
-              {/* Mark Complete */}
+              {/* Set completion */}
               <View style={{ paddingHorizontal: 16, paddingBottom: 14 }}>
-                <TouchableOpacity
-                  style={[
-                    { height: 38, borderRadius: 9, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
-                    { backgroundColor: isDone ? C.primary : C.cardAlt },
-                  ]}
-                  onPress={() => setDone(p => ({ ...p, [ex.id]: !p[ex.id] }))}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[{ fontSize: 12, fontWeight: '700', color: isDone ? C.onPrimary : C.textMuted }]}>
-                    {isDone ? '✓ Completed' : 'Mark Complete'}
-                  </Text>
-                </TouchableOpacity>
+                {isDone ? (
+                  <View style={[{ height: 38, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primary }]}>
+                    <Text style={[{ fontSize: 12, fontWeight: '700', color: C.onPrimary }]}>✓ All {ex.sets} Sets Completed</Text>
+                  </View>
+                ) : (
+                  <View style={{ gap: 6 }}>
+                    <Text style={[{ fontSize: 11, color: C.textMuted, textAlign: 'center' }]}>Set {setsDone + 1} of {ex.sets}</Text>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <TouchableOpacity
+                        style={[{ flex: 1, height: 44, borderRadius: 9, alignItems: 'center', justifyContent: 'center' }, { backgroundColor: isCurrent ? C.accent : C.cardAlt }]}
+                        onPress={() => completeSet(ex)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[{ fontSize: 13, fontWeight: '700', color: isCurrent ? C.onPrimary : C.textMuted }]}>
+                          Complete Set {setsDone + 1}
+                        </Text>
+                      </TouchableOpacity>
+                      {setsDone > 0 && (
+                        <TouchableOpacity
+                          style={[{ paddingHorizontal: 14, height: 44, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: C.cardAlt }]}
+                          onPress={() => undoLastSet(ex)}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[{ fontSize: 12, fontWeight: '700', color: C.textMuted }]}>Undo</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                )}
               </View>
             </View>
           );
@@ -469,41 +580,19 @@ export default function StrengthScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Weight Input Modal */}
-      <Modal visible={!!editEx} transparent animationType="slide">
-        <TouchableOpacity style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.6)' }]} onPress={() => setEditEx(null)} />
-        {editEx && (
-          <View style={[styles.modal, { backgroundColor: C.card }]}>
-            <Text style={[{ fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 4 }]}>Set weight for {editEx.name}</Text>
-            <Text style={[{ fontSize: 12, color: C.textMuted, marginBottom: 16 }]}>This will be tracked in your exercise log.</Text>
-            <TextInput
-              value={tempWt}
-              onChangeText={setTempWt}
-              keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor={C.textDim}
-              style={[{ fontSize: 28, fontWeight: '800', color: C.text, backgroundColor: C.cardAlt, borderWidth: 1.5, borderColor: C.border, borderRadius: 12, padding: 14, width: '100%' }]}
-            />
-            <Text style={[{ fontSize: 12, color: C.textDim, textAlign: 'right', marginTop: 6 }]}>{wtUnit}</Text>
-            <View style={styles.btnRow}>
-              <TouchableOpacity style={[styles.halfBtn, { backgroundColor: C.border }]} onPress={() => setEditEx(null)} activeOpacity={0.8}>
-                <Text style={[styles.bigBtnText, { color: C.textMuted }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[{ flex: 2, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primary }]}
-                onPress={() => {
-                  const v = parseFloat(tempWt);
-                  if (!isNaN(v) && editEx) setWeights(p => ({ ...p, [editEx.id]: v }));
-                  setEditEx(null);
-                }}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.bigBtnText, { color: C.onPrimary }]}>Save Weight</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </Modal>
+      {/* Weight Picker */}
+      <PickerWheel
+        visible={weightPickerFor !== null}
+        title={weightPickerFor ? `Set weight for ${weightPickerFor.name}` : 'Set weight'}
+        values={WEIGHT_VALUES}
+        selectedValue={weightPickerFor ? getWeight(weightPickerFor) : 0}
+        formatValue={v => v === 0 ? 'Bodyweight' : `${v % 5 === 0 ? v : v.toFixed(1)} ${wtUnit}`}
+        onConfirm={v => {
+          if (weightPickerFor) setWeights(p => ({ ...p, [weightPickerFor.id]: v }));
+          setWeightPickerFor(null);
+        }}
+        onClose={() => setWeightPickerFor(null)}
+      />
     </View>
   );
 }
@@ -617,15 +706,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  modal: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 40,
-    alignItems: 'flex-start',
+  previewRow: {
+    flexDirection: 'row',
+    width: '100%',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  previewStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  previewValue: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  previewLabel: {
+    fontSize: 10,
+    marginTop: 2,
+  },
+  previewDivider: {
+    width: 1,
   },
 });

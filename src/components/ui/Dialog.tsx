@@ -68,19 +68,19 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   dialog: {
-    borderRadius: 24,
+    borderRadius: 12,
     borderWidth: 1,
     padding: 20,
     gap: 14,
     borderCurve: 'continuous',
   },
   title: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '600',
   },
   message: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
   },
   actions: {
     flexDirection: 'row',

@@ -81,20 +81,20 @@ export default function ListRow({
 
 const styles = StyleSheet.create({
   row: {
-    minHeight: 52,
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 14,
+    gap: 10,
+    paddingHorizontal: 12,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderCurve: 'continuous',
   },
   iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -103,15 +103,15 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
   },
   subtitle: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 17,
   },
   value: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
 });

@@ -49,18 +49,18 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '600',
     textAlign: 'center',
   },
   message: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
     textAlign: 'center',
   },
 });

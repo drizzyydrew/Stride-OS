@@ -116,13 +116,13 @@ export function BarChartPrimitive({
 const styles = StyleSheet.create({
   frame: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 16,
     gap: 12,
     borderCurve: 'continuous',
   },
   title: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
   },
 });

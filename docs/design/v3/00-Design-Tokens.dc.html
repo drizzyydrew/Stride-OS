@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="design_doc_mode" content="canvas">
+  <title>StrideOS V3 Design Tokens</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Avenir:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap');
+    
+    body { margin: 0; padding: 40px; background: #0a0a0a; color: #fff; font-family: Avenir, sans-serif; line-height: 1.6; }
+    .section { margin-bottom: 60px; }
+    h1 { font-size: 48px; font-weight: 700; margin: 0 0 8px 0; }
+    h2 { font-size: 32px; font-weight: 600; margin: 32px 0 16px 0; font-family: 'Crimson Text', serif; }
+    h3 { font-size: 18px; font-weight: 600; margin: 16px 0 12px 0; }
+    .subtitle { font-size: 16px; color: #999; margin: 0 0 24px 0; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 16px 0; }
+    .card { padding: 20px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+    .color-swatch { width: 100%; height: 80px; border-radius: 6px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.1); }
+    .token-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    .token-table th, .token-table td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .token-table th { background: rgba(255,255,255,0.05); font-weight: 600; }
+    .mono { font-family: 'Courier New', monospace; font-size: 13px; color: #aaa; }
+    .highlight { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 3px; }
+  </style>
+</helmet>
+
+<div style="max-width: 1400px; margin: 0 auto;">
+  <!-- HERO -->
+  <div style="margin-bottom: 80px;">
+    <h1>StrideOS V3 Design System</h1>
+    <p class="subtitle">Warm, approachable, coaching-led. Dark-first, premium endurance aesthetic.</p>
+  </div>
+
+  <!-- COLORS -->
+  <div class="section">
+    <h2>Color Palette</h2>
+    
+    <h3>Brand Colors (Primary)</h3>
+    <div class="grid">
+      <div class="card">
+        <div class="color-swatch" style="background: #8B927C;"></div>
+        <strong>Sage</strong><br><span class="mono">#8B927C</span><br>Primary, trust, balance
+      </div>
+      <div class="card">
+        <div class="color-swatch" style="background: #DCC0A7;"></div>
+        <strong>Clay</strong><br><span class="mono">#DCC0A7</span><br>Warmth, action, progress
+      </div>
+      <div class="card">
+        <div class="color-swatch" style="background: #708489;"></div>
+        <strong>Steel</strong><br><span class="mono">#708489</span><br>Secondary, data, structure
+      </div>
+      <div class="card">
+        <div class="color-swatch" style="background: #4D433E;"></div>
+        <strong>Brown</strong><br><span class="mono">#4D433E</span><br>Depth, warmth, grounding
+      </div>
+      <div class="card">
+        <div class="color-swatch" style="background: #EFE7DA;"></div>
+        <strong>Sand</strong><br><span class="mono">#EFE7DA</span><br>Light mode bg, high contrast
+      </div>
+      <div class="card">
+        <div class="color-swatch" style="background: #FFFFFF;"></div>
+        <strong>White</strong><br><span class="mono">#FFFFFF</span><br>Pure white, highlights
+      </div>
+    </div>
+
+    <h3>Semantic Colors (Dark Mode)</h3>
+    <table class="token-table">
+      <tr>
+        <th>Usage</th>
+        <th>Color</th>
+        <th>Value</th>
+      </tr>
+      <tr>
+        <td>Background (Primary)</td>
+        <td style="background: #0a0a0a;"></td>
+        <td><span class="mono">#0a0a0a</span></td>
+      </tr>
+      <tr>
+        <td>Background (Secondary)</td>
+        <td style="background: #141414;"></td>
+        <td><span class="mono">#141414</span></td>
+      </tr>
+      <tr>
+        <td>Surface (Cards)</td>
+        <td style="background: #1a1a1a;"></td>
+        <td><span class="mono">#1a1a1a</span></td>
+      </tr>
+      <tr>
+        <td>Border</td>
+        <td style="background: #2a2a2a;"></td>
+        <td><span class="mono">#2a2a2a</span></td>
+      </tr>
+      <tr>
+        <td>Text (Primary)</td>
+        <td style="background: #fff;"></td>
+        <td><span class="mono">#FFFFFF</span></td>
+      </tr>
+      <tr>
+        <td>Text (Secondary)</td>
+        <td style="background: #999;"></td>
+        <td><span class="mono">#999999</span></td>
+      </tr>
+      <tr>
+        <td>Text (Tertiary)</td>
+        <td style="background: #666;"></td>
+        <td><span class="mono">#666666</span></td>
+      </tr>
+      <tr>
+        <td>Success</td>
+        <td style="background: #6BB388;"></td>
+        <td><span class="mono">#6BB388</span></td>
+      </tr>
+      <tr>
+        <td>Warning</td>
+        <td style="background: #DCC0A7;"></td>
+        <td><span class="mono">#DCC0A7</span></td>
+      </tr>
+      <tr>
+        <td>Error</td>
+        <td style="background: #D97757;"></td>
+        <td><span class="mono">#D97757</span></td>
+      </tr>
+      <tr>
+        <td>Info</td>
+        <td style="background: #5B9FB8;"></td>
+        <td><span class="mono">#5B9FB8</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- TYPOGRAPHY -->
+  <div class="section">
+    <h2>Typography</h2>
+    <p class="subtitle">Humanist sans-serif (Avenir) for UI, serif (Crimson Text) for headlines and coaching copy.</p>
+    
+    <table class="token-table">
+      <tr>
+        <th>Scale</th>
+        <th>Font</th>
+        <th>Size</th>
+        <th>Weight</th>
+        <th>Line Height</th>
+        <th>Example</th>
+      </tr>
+      <tr>
+        <td><strong>H1 Display</strong></td>
+        <td>Crimson Text</td>
+        <td>48px</td>
+        <td>600</td>
+        <td>1.2</td>
+        <td style="font-family: 'Crimson Text', serif; font-size: 32px;">Dashboard</td>
+      </tr>
+      <tr>
+        <td><strong>H2 Headline</strong></td>
+        <td>Crimson Text</td>
+        <td>32px</td>
+        <td>600</td>
+        <td>1.3</td>
+        <td style="font-family: 'Crimson Text', serif; font-size: 24px;">Today's Plan</td>
+      </tr>
+      <tr>
+        <td><strong>H3 Section</strong></td>
+        <td>Avenir</td>
+        <td>18px</td>
+        <td>600</td>
+        <td>1.4</td>
+        <td style="font-weight: 600;">Ready Status</td>
+      </tr>
+      <tr>
+        <td><strong>Body Large</strong></td>
+        <td>Avenir</td>
+        <td>16px</td>
+        <td>400</td>
+        <td>1.5</td>
+        <td>You're 89% recovered. Good day for a tempo run.</td>
+      </tr>
+      <tr>
+        <td><strong>Body</strong></td>
+        <td>Avenir</td>
+        <td>14px</td>
+        <td>400</td>
+        <td>1.5</td>
+        <td>Avg HR: 152 bpm</td>
+      </tr>
+      <tr>
+        <td><strong>Label</strong></td>
+        <td>Avenir</td>
+        <td>12px</td>
+        <td>500</td>
+        <td>1.4</td>
+        <td style="font-weight: 500; font-size: 12px;">HEART RATE</td>
+      </tr>
+      <tr>
+        <td><strong>Caption</strong></td>
+        <td>Avenir</td>
+        <td>11px</td>
+        <td>400</td>
+        <td>1.4</td>
+        <td style="font-size: 11px; color: #999;">Last updated 2 min ago</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- SPACING -->
+  <div class="section">
+    <h2>Spacing Scale</h2>
+    <p class="subtitle">4px base unit. Used for padding, gaps, margins.</p>
+    
+    <table class="token-table">
+      <tr>
+        <th>Token</th>
+        <th>Value</th>
+        <th>Usage</th>
+      </tr>
+      <tr><td>xs</td><td>4px</td><td>Tight spacing, icon padding</td></tr>
+      <tr><td>sm</td><td>8px</td><td>Component internal spacing</td></tr>
+      <tr><td>md</td><td>12px</td><td>Standard padding, gaps</td></tr>
+      <tr><td>lg</td><td>16px</td><td>Large padding, section spacing</td></tr>
+      <tr><td>xl</td><td>24px</td><td>Card padding, major spacing</td></tr>
+      <tr><td>2xl</td><td>32px</td><td>Section separation</td></tr>
+      <tr><td>3xl</td><td>48px</td><td>Large section spacing</td></tr>
+      <tr><td>4xl</td><td>64px</td><td>Page-level spacing</td></tr>
+    </table>
+  </div>
+
+  <!-- RADIUS -->
+  <div class="section">
+    <h2>Border Radius</h2>
+    
+    <table class="token-table">
+      <tr>
+        <th>Token</th>
+        <th>Value</th>
+        <th>Usage</th>
+      </tr>
+      <tr><td>sm</td><td>4px</td><td>Buttons, small components</td></tr>
+      <tr><td>md</td><td>8px</td><td>Cards, modals, inputs</td></tr>
+      <tr><td>lg</td><td>12px</td><td>Larger cards, progress rings</td></tr>
+      <tr><td>xl</td><td>16px</td><td>Major containers</td></tr>
+      <tr><td>full</td><td>9999px</td><td>Pills, circles</td></tr>
+    </table>
+  </div>
+
+  <!-- SHADOWS -->
+  <div class="section">
+    <h2>Elevation & Shadows</h2>
+    
+    <table class="token-table">
+      <tr>
+        <th>Level</th>
+        <th>Box Shadow</th>
+        <th>Usage</th>
+      </tr>
+      <tr>
+        <td>Flat</td>
+        <td><span class="mono">none</span></td>
+        <td>Flush surfaces, cards on dark bg</td>
+      </tr>
+      <tr>
+        <td>Sm</td>
+        <td><span class="mono">0 2px 8px rgba(0,0,0,0.2)</span></td>
+        <td>Subtle elevation, hover states</td>
+      </tr>
+      <tr>
+        <td>Md</td>
+        <td><span class="mono">0 4px 16px rgba(0,0,0,0.3)</span></td>
+        <td>Card surfaces, modals</td>
+      </tr>
+      <tr>
+        <td>Lg</td>
+        <td><span class="mono">0 8px 32px rgba(0,0,0,0.4)</span></td>
+        <td>Bottom sheets, prominent overlays</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- MOTION -->
+  <div class="section">
+    <h2>Motion & Animation</h2>
+    <p class="subtitle">Smooth, deliberate transitions (200–400ms). Minimal unnecessary motion.</p>
+    
+    <table class="token-table">
+      <tr>
+        <th>Curve</th>
+        <th>Duration</th>
+        <th>Usage</th>
+      </tr>
+      <tr>
+        <td><span class="mono">cubic-bezier(0.4, 0, 0.2, 1)</span></td>
+        <td>200ms</td>
+        <td>Snappy interactions (button press, toggle)</td>
+      </tr>
+      <tr>
+        <td><span class="mono">cubic-bezier(0.34, 1.56, 0.64, 1)</span></td>
+        <td>300ms</td>
+        <td>Spring-like feedback (expand, pop-in)</td>
+      </tr>
+      <tr>
+        <td><span class="mono">cubic-bezier(0.2, 0, 0.2, 1)</span></td>
+        <td>300ms</td>
+        <td>Smooth transitions (fade, slide)</td>
+      </tr>
+      <tr>
+        <td><span class="mono">cubic-bezier(0.4, 0, 1, 1)</span></td>
+        <td>400ms</td>
+        <td>Deliberate entrance (page loads, modals)</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- HAPTICS -->
+  <div class="section">
+    <h2>Haptics & Feedback</h2>
+    
+    <div class="grid">
+      <div class="card">
+        <strong>Light</strong><br>
+        <span class="mono">20ms, 0.5 intensity</span><br>
+        Tap feedback, toggles
+      </div>
+      <div class="card">
+        <strong>Medium</strong><br>
+        <span class="mono">30ms, 0.7 intensity</span><br>
+        Button press, action completion
+      </div>
+      <div class="card">
+        <strong>Strong</strong><br>
+        <span class="mono">50ms, 1.0 intensity</span><br>
+        Milestone reached, error state
+      </div>
+      <div class="card">
+        <strong>Double Tap</strong><br>
+        <span class="mono">2x light, 50ms apart</span><br>
+        Pause/resume, critical confirmation
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

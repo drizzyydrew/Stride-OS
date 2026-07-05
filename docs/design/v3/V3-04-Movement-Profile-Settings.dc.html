@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StrideOS V3 Movement, Profile, Settings</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Avenir:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap');
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; background: #0a0a0a; color: #fff; font-family: Avenir, sans-serif; }
+    .phone { width: 390px; height: 844px; background: #0a0a0a; border-radius: 40px; border: 12px solid #1a1a1a; box-shadow: 0 20px 60px rgba(0,0,0,0.6); overflow: hidden; display: flex; flex-direction: column; position: relative; }
+    .status-bar { height: 47px; background: #0a0a0a; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; font-size: 12px; border-bottom: 1px solid #1a1a1a; font-weight: 600; }
+    .screen { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .screen::-webkit-scrollbar { width: 4px; }
+    .screen::-webkit-scrollbar-thumb { background: #2a2a2a; }
+    .header { padding: 20px 16px 12px; }
+    .header-title { font-size: 28px; font-weight: 600; font-family: 'Crimson Text', serif; margin: 0 0 4px 0; }
+    .header-subtitle { font-size: 13px; color: #999; margin: 0; }
+    .content { padding: 0 16px 80px 16px; display: flex; flex-direction: column; gap: 16px; }
+    .section-title { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 10px 0; }
+    .card { padding: 16px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; }
+    .profile-card { padding: 20px; background: linear-gradient(135deg, #1a2a1a, #1a1a2a); border: 1px solid #2a3a2a; border-radius: 12px; display: flex; gap: 16px; }
+    .avatar { width: 60px; height: 60px; background: linear-gradient(135deg, #DCC0A7, #8B927C); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+    .profile-info h3 { font-size: 15px; font-weight: 600; color: #fff; margin: 0 0 2px 0; }
+    .profile-info p { font-size: 11px; color: #999; margin: 2px 0 0 0; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat-tile { padding: 14px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; text-align: center; }
+    .stat-label { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0; }
+    .stat-value { font-size: 18px; font-weight: 700; color: #DCC0A7; margin: 0; }
+    .list-item { padding: 14px 0; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center; }
+    .list-item:last-child { border-bottom: none; }
+    .list-label { font-size: 13px; color: #fff; }
+    .list-value { font-size: 12px; color: #999; }
+    .toggle { width: 44px; height: 26px; background: #2a2a2a; border-radius: 13px; position: relative; cursor: pointer; }
+    .toggle.on { background: #DCC0A7; }
+    .toggle-dot { width: 22px; height: 22px; background: #fff; border-radius: 11px; position: absolute; top: 2px; left: 2px; transition: left 200ms; }
+    .toggle.on .toggle-dot { left: 20px; }
+    .action-btn { width: 100%; padding: 12px; background: #DCC0A7; color: #0a0a0a; border: none; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; margin-top: 12px; }
+    .bottom-nav { position: absolute; bottom: 0; left: 12px; right: 12px; height: 60px; background: #0a0a0a; border-top: 1px solid #1a1a1a; display: flex; justify-content: space-around; align-items: center; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; color: #666; }
+    .nav-item.active { color: #DCC0A7; }
+    .nav-item-icon { font-size: 20px; }
+    .nav-item-label { font-size: 9px; font-weight: 600; }
+    .container { max-width: 1600px; margin: 0 auto; display: flex; justify-content: center; gap: 40px; padding: 40px 20px; background: #000; flex-wrap: wrap; }
+    .label { text-align: center; font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  </style>
+</helmet>
+
+<div class="container">
+  <!-- MOVEMENT LAB -->
+  <div>
+    <div class="label">Movement Lab</div>
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+      <div class="screen">
+        <div class="header">
+          <p class="header-title">Movement</p>
+          <p class="header-subtitle">Form & gait analysis</p>
+        </div>
+        <div class="content">
+          <div class="card" style="text-align: center; background: linear-gradient(135deg, #1a2a1a, #1a1a2a); border-color: #2a3a2a;">
+            <div style="font-size: 32px; margin-bottom: 8px;">📹</div>
+            <p style="font-size: 13px; font-weight: 600; margin: 0 0 4px 0;">Record Your Form</p>
+            <p style="font-size: 11px; color: #999; margin: 0 0 12px 0;">15 seconds of your run. AI analyzes stride for improvement.</p>
+            <button class="action-btn">Start Recording</button>
+          </div>
+          
+          <div>
+            <p class="section-title">Recent Analysis</p>
+            <div class="card">
+              <p style="font-size: 12px; font-weight: 600; color: #fff; margin: 0 0 10px 0;">Last Run · 2 days ago</p>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                  <p style="font-size: 9px; color: #999; margin: 0 0 3px 0;">Cadence</p>
+                  <p style="font-size: 16px; font-weight: 700; color: #6BB388; margin: 0;">178</p>
+                </div>
+                <div>
+                  <p style="font-size: 9px; color: #999; margin: 0 0 3px 0;">GCT</p>
+                  <p style="font-size: 16px; font-weight: 700; color: #fff; margin: 0;">0.24s</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-item-icon">🏠</div><div class="nav-item-label">Dashboard</div></div>
+        <div class="nav-item"><div class="nav-item-icon">💪</div><div class="nav-item-label">Strength</div></div>
+        <div class="nav-item active"><div class="nav-item-icon">🎯</div><div class="nav-item-label">Movement</div></div>
+        <div class="nav-item"><div class="nav-item-icon">⚙️</div><div class="nav-item-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div>
+    <div class="label">Profile</div>
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+      <div class="screen">
+        <div class="header">
+          <p class="header-title">Profile</p>
+          <p class="header-subtitle">Your stats</p>
+        </div>
+        <div class="content">
+          <div class="profile-card">
+            <div class="avatar">👤</div>
+            <div class="profile-info">
+              <h3>Alex Johnson</h3>
+              <p>Intermediate Runner</p>
+              <p style="margin-top: 6px;">Member since Jul 2024</p>
+            </div>
+          </div>
+          
+          <div class="stat-grid">
+            <div class="stat-tile">
+              <p class="stat-label">Total Runs</p>
+              <p class="stat-value">128</p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-label">Total Distance</p>
+              <p class="stat-value">847<span style="font-size: 12px;">km</span></p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-label">Avg Pace</p>
+              <p class="stat-value">4:52</p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-label">Streak</p>
+              <p class="stat-value">12<span style="font-size: 12px;">d</span></p>
+            </div>
+          </div>
+          
+          <div>
+            <p class="section-title">Training Zones</p>
+            <div class="card">
+              <div class="list-item">
+                <span class="list-label">Easy Pace</span>
+                <span class="list-value">5:30–6:00</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Tempo Pace</span>
+                <span class="list-value">4:45–5:00</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Threshold</span>
+                <span class="list-value">4:30–4:45</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-item-icon">🏠</div><div class="nav-item-label">Dashboard</div></div>
+        <div class="nav-item"><div class="nav-item-icon">💪</div><div class="nav-item-label">Strength</div></div>
+        <div class="nav-item"><div class="nav-item-icon">🎯</div><div class="nav-item-label">Movement</div></div>
+        <div class="nav-item active"><div class="nav-item-icon">⚙️</div><div class="nav-item-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div>
+    <div class="label">Settings</div>
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+      <div class="screen">
+        <div class="header">
+          <p class="header-title">Settings</p>
+          <p class="header-subtitle">Customize experience</p>
+        </div>
+        <div class="content">
+          <div>
+            <p class="section-title">Appearance</p>
+            <div class="card">
+              <div class="list-item">
+                <span class="list-label">Dark Mode</span>
+                <div class="toggle on"><div class="toggle-dot"></div></div>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <p class="section-title">Training</p>
+            <div class="card">
+              <div class="list-item">
+                <span class="list-label">Auto-start GPS</span>
+                <div class="toggle on"><div class="toggle-dot"></div></div>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Voice Cues</span>
+                <div class="toggle on"><div class="toggle-dot"></div></div>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Real-time Coaching</span>
+                <div class="toggle on"><div class="toggle-dot"></div></div>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <p class="section-title">Notifications</p>
+            <div class="card">
+              <div class="list-item">
+                <span class="list-label">Workout Reminders</span>
+                <div class="toggle on"><div class="toggle-dot"></div></div>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Coach Insights</span>
+                <div class="toggle on"><div class="toggle-dot"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-item-icon">🏠</div><div class="nav-item-label">Dashboard</div></div>
+        <div class="nav-item"><div class="nav-item-icon">💪</div><div class="nav-item-label">Strength</div></div>
+        <div class="nav-item"><div class="nav-item-icon">🎯</div><div class="nav-item-label">Movement</div></div>
+        <div class="nav-item active"><div class="nav-item-icon">⚙️</div><div class="nav-item-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

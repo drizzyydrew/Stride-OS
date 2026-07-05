@@ -3,7 +3,7 @@ import {
   Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
@@ -61,32 +61,27 @@ const BEND_REGION: Region = {
 };
 
 const DARK_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#141614' }] },
+  { elementType: 'geometry', stylers: [{ color: '#141414' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#8B927C' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#101010' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2C2F2A' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#0a0a0a' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2a2a2a' }] },
   { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111817' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1F261D' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111820' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1a241a' }] },
 ];
 
 const LIGHT_MAP_STYLE = [
   { elementType: 'geometry', stylers: [{ color: '#EFE7DA' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#708489' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#F8F5EF' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFFFF' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#f5ede0' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFF9EF' }] },
   { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
   { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#DDE7E2' }] },
   { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#DCE7CF' }] },
 ];
 
-const ACTIVE_RUN_MAP_HEIGHT = 390;
-const ACTIVE_RUN_MIN_HEIGHT = 660;
-const ACTIVE_RUN_MAP_MIN_HEIGHT = 360;
 const MAP_TOOL_SIZE = 44;
 const RUN_PRIMARY_CONTROL_SIZE = 68;
-const RUN_DOT_SIZE = 6;
-const PAUSED_RUN_MIN_HEIGHT = 236;
 
 function paceLabel(secPerMile: number): string {
   if (!secPerMile || !Number.isFinite(secPerMile)) return '--:--';
@@ -320,6 +315,7 @@ function zoneStatusForHeartRate(
 // ─── Plan Tab ─────────────────────────────────────────────────────────────────
 function PlanTab() {
   const C = useColors();
+  const mode = useThemeMode();
   const { units } = useSettingsStore();
   const imp = units === 'imperial';
   const ex6 = imp ? '6 mi' : '9.7 km';
@@ -359,19 +355,19 @@ function PlanTab() {
               key={d.label}
               style={[
                 styles.dayCol,
-                d.today && { backgroundColor: C.primaryDim, borderRadius: 8, paddingVertical: 2 },
+                d.today && { backgroundColor: C.primary, borderRadius: 8, paddingVertical: 8 },
                 d.future && { opacity: 0.5 },
               ]}
             >
-              <Text style={[styles.dayLabel, { color: d.today ? C.primary : d.done ? C.positive : C.textDim }]}>{d.label}</Text>
-              <Text style={[styles.dayName, { color: C.text, fontSize: 10 }]}>{d.name}</Text>
-              <View style={[styles.dayZoneBadge, { backgroundColor: d.today ? C.primaryDim : C.cardAlt }]}>
-                <Text style={[{ fontSize: 8, fontWeight: '700', color: d.today ? C.primary : C.textDim }]}>{d.zone}</Text>
+              <Text style={[styles.dayLabel, { color: d.today ? C.onPrimary : d.done ? C.positive : C.textDim }]}>{d.label}</Text>
+              <Text style={[styles.dayName, { color: d.today ? C.onPrimary : C.text, fontSize: 10 }]}>{d.name}</Text>
+              <View style={[styles.dayZoneBadge, { backgroundColor: d.today ? 'rgba(10,10,10,0.14)' : C.cardAlt }]}>
+                <Text style={[{ fontSize: 8, fontWeight: '700', color: d.today ? C.onPrimary : C.textDim }]}>{d.zone}</Text>
               </View>
               {d.done ? (
                 <Text style={[{ fontSize: 12, color: C.positive }]}>✓</Text>
               ) : d.today ? (
-                <Text style={[{ fontSize: 8, fontWeight: '700', color: C.primary }]}>NOW</Text>
+                <Text style={[{ fontSize: 8, fontWeight: '700', color: C.onPrimary }]}>NOW</Text>
               ) : (
                 <Text style={[{ fontSize: 12, color: C.textDim }]}>–</Text>
               )}
@@ -391,6 +387,11 @@ function PlanTab() {
           <View style={[{ marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: C.border }]}>
             <Text style={[{ fontSize: 11, color: C.textMuted, lineHeight: 16 }]}>Relaxed conversational effort — not sprinting.</Text>
           </View>
+        </View>
+        <View style={[styles.musicRow, { backgroundColor: mode === 'light' ? C.card : C.cardElevated, borderColor: C.border, marginTop: 10 }]}>
+          <Ionicons name="musical-note" size={18} color={C.text} />
+          <Text style={[styles.musicText, { color: C.text }]}>Connect Music</Text>
+          <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
         </View>
       </View>
 
@@ -459,9 +460,10 @@ function PlanTab() {
 }
 
 // ─── Active Tab ────────────────────────────────────────────────────────────────
-function ActiveTab({ onFinished }: { onFinished?: () => void }) {
+function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void; fullScreen?: boolean }) {
   const C = useColors();
   const mode = useThemeMode();
+  const insets = useSafeAreaInsets();
   const { units } = useSettingsStore();
   const healthKitEnabled = useIntegrationsStore(s => s.healthKitEnabled);
   const calibration = useCalibration();
@@ -643,15 +645,6 @@ function ActiveTab({ onFinished }: { onFinished?: () => void }) {
     }
   }
 
-  async function cancel() {
-    await endRunLiveActivity({ ...liveActivitySnapshot, isPaused: false }).catch(console.warn);
-    cancelRun();
-    setRouteSegmentIndex(0);
-    maxRouteProgressRef.current = 0;
-    segmentStartRef.current = null;
-    await stopLocationTracking().catch(console.warn);
-  }
-
   const dist = imp ? distanceMiles : distanceMiles * 1.609344;
   const distStr = dist.toFixed(2);
   const distUnit = imp ? 'mi' : 'km';
@@ -747,225 +740,206 @@ function ActiveTab({ onFinished }: { onFinished?: () => void }) {
     zoneStatus.tone,
   ]);
 
-  return (
-    <ScrollView contentContainerStyle={styles.activeRunScrollContent} showsVerticalScrollIndicator={false}>
-      {runState === 'paused' ? (
-        <View style={[styles.pausedRunCard, { backgroundColor: C.card, borderColor: C.border }]}>
-          <MapView
-            style={styles.pausedMap}
-            initialRegion={region}
-            region={liveCoords.length > 0 ? region : undefined}
-            customMapStyle={mapStyle}
-            showsUserLocation
-            followsUserLocation={false}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            pitchEnabled={false}
-            rotateEnabled={false}
+  const mapNode = (followsUser: boolean) => (
+    <MapView
+      style={styles.activeRunMapFill}
+      initialRegion={region}
+      region={liveCoords.length > 0 ? region : undefined}
+      customMapStyle={mapStyle}
+      showsUserLocation
+      followsUserLocation={followsUser}
+    >
+      {routeCoords.length > 1 ? (
+        <Polyline coordinates={routeCoords} strokeColor={plannedRouteColor} strokeWidth={3} lineDashPattern={[8, 8]} />
+      ) : null}
+      {selectedRoute?.segments.map(segment => (
+        <Marker
+          key={segment.label}
+          coordinate={segment.point}
+          title={`Segment ${segment.label}`}
+          description={`${segment.distanceMiles.toFixed(2)} mi from start`}
+          pinColor={C.warning}
+        />
+      ))}
+      {liveCoords.length > 1 ? (
+        <Polyline coordinates={liveCoords} strokeColor={mapLineColor} strokeWidth={5} />
+      ) : null}
+      {liveCoords.length > 0 ? (
+        <Marker coordinate={liveCoords[liveCoords.length - 1]} title="Current position" />
+      ) : null}
+    </MapView>
+  );
+
+  if (runState === 'paused') {
+    return (
+      <View style={[styles.activeRunRoot, { paddingTop: insets.top, backgroundColor: panelBg }]}>
+        <View style={styles.activeMapShellFill}>
+          {mapNode(false)}
+        </View>
+        <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: insets.bottom + spacing.md }]}>
+          <Text style={[styles.pausedStateLabel, { color: C.accent }]}>PAUSED</Text>
+          <View style={styles.runPrimaryRow}>
+            <View>
+              <Text style={[styles.runPrimaryValue, { color: C.text }]}>{fmt(elapsed)}</Text>
+              <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Time</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={[styles.runPrimaryValue, { color: C.accent }]}>{distStr}<Text style={styles.runPrimaryUnit}> {distUnit}</Text></Text>
+              <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Distance</Text>
+            </View>
+          </View>
+          <View style={[styles.runDivider, { backgroundColor: C.border }]} />
+          <View style={styles.runSecondaryRow}>
+            {secondaryMetrics.map(metric => (
+              <RunStat key={metric.label} {...metric} color={C.text} muted={C.textMuted} />
+            ))}
+          </View>
+          <View style={styles.runStatusChipRow}>
+            <View style={[styles.runStatusChip, { backgroundColor: zoneToneColor + '22', borderColor: zoneToneColor }]}>
+              <Text style={[styles.runStatusChipText, { color: zoneToneColor }]}>{zoneStatus.label} · {zoneStatus.detail}</Text>
+            </View>
+            <View style={[styles.runStatusChip, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+              <Text style={[styles.runStatusChipText, { color: permission.background === 'granted' ? C.positive : C.warning }]}>
+                GPS {permission.background === 'granted' ? 'Ready' : 'Setup'}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.resumePill, { backgroundColor: C.positive }]}
+            onPress={resume}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel="Resume run"
           >
-            {routeCoords.length > 1 ? (
-              <Polyline coordinates={routeCoords} strokeColor={plannedRouteColor} strokeWidth={3} lineDashPattern={[8, 8]} />
-            ) : null}
-            {liveCoords.length > 1 ? (
-              <Polyline coordinates={liveCoords} strokeColor={mapLineColor} strokeWidth={5} />
-            ) : null}
-            {liveCoords.length > 0 ? <Marker coordinate={liveCoords[liveCoords.length - 1]} title="Current position" /> : null}
-          </MapView>
-          <View style={styles.pausedStatsPanel}>
-            <Text style={[styles.pausedStateLabel, { color: C.accent }]}>PAUSED</Text>
-            <View style={styles.pausedPrimaryRow}>
-              <View>
-                <Text style={[styles.pausedPrimaryValue, { color: C.text }]}>{fmt(elapsed)}</Text>
-                <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Time</Text>
-              </View>
-              <View>
-                <Text style={[styles.pausedPrimaryValue, { color: C.accent }]}>{distStr}<Text style={styles.pausedUnit}> {distUnit}</Text></Text>
-                <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Distance</Text>
-              </View>
-            </View>
-            <View style={[styles.runDivider, { backgroundColor: C.border }]} />
-            <View style={styles.runSecondaryRow}>
-              {secondaryMetrics.map(metric => (
-                <RunStat key={metric.label} {...metric} color={C.text} muted={C.textMuted} />
-              ))}
-            </View>
-            <View style={styles.runStatusChipRow}>
-              <View style={[styles.runStatusChip, { backgroundColor: zoneToneColor + '22', borderColor: zoneToneColor }]}>
-                <Text style={[styles.runStatusChipText, { color: zoneToneColor }]}>{zoneStatus.label} · {zoneStatus.detail}</Text>
-              </View>
-              <View style={[styles.runStatusChip, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
-                <Text style={[styles.runStatusChipText, { color: permission.background === 'granted' ? C.positive : C.warning }]}>
-                  GPS {permission.background === 'granted' ? 'Ready' : 'Setup'}
-                </Text>
-              </View>
-            </View>
+            <Ionicons name="play" size={18} color={C.onPrimary} />
+            <Text style={[styles.resumePillText, { color: C.onPrimary }]}>RESUME RUN</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.stopRunPill, { backgroundColor: C.critical }]}
+            onPress={stop}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel="Stop run"
+          >
+            <Ionicons name="stop-circle" size={18} color="#FFFFFF" />
+            <Text style={styles.stopRunPillText}>STOP RUN</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.activeRunRoot, { paddingTop: fullScreen ? insets.top : 0, backgroundColor: panelBg }]}>
+      <View style={styles.activeMapShellFill}>
+        {mapNode(isActive)}
+        <View style={styles.mapToolStack}>
+          <View style={[styles.mapToolButton, { backgroundColor: softPanelBg, borderColor: C.border }]}>
+            <Ionicons name="navigate-outline" size={19} color={C.text} />
+          </View>
+          <View style={[styles.mapToolButton, { backgroundColor: softPanelBg, borderColor: C.border }]}>
+            <Ionicons name="layers-outline" size={19} color={C.text} />
+          </View>
+        </View>
+        {permission.background !== 'granted' ? (
+          <View style={[styles.mapOverlay, { backgroundColor: mode === 'light' ? C.card : C.cardElevated }]}>
+            <Ionicons name="location-outline" size={32} color={C.accent} />
+            <Text style={[styles.mapOverlayTitle, { color: C.text }]}>
+              Enable background location
+            </Text>
+            <Text style={[styles.mapOverlayCopy, { color: C.textMuted }]}>
+              This lets StrideOS keep recording your route and distance when the phone locks.
+            </Text>
             <TouchableOpacity
-              style={[styles.resumePill, { backgroundColor: C.positive }]}
-              onPress={resume}
+              style={[styles.mapOverlayBtn, { backgroundColor: C.primary }]}
+              onPress={async () => setPermission(await requestTrackingPermissionState())}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.mapOverlayButtonText, { color: C.onPrimary }]}>Enable GPS Tracking</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+      </View>
+
+      <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: (fullScreen ? insets.bottom : 0) + spacing.md }]}>
+        <View style={styles.runPrimaryRow}>
+          <View>
+            <Text style={[styles.runPrimaryValue, { color: C.text }]}>{fmt(elapsed)}</Text>
+            <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Time</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={[styles.runPrimaryValue, { color: C.accent }]}>{distStr}<Text style={styles.runPrimaryUnit}> {distUnit}</Text></Text>
+            <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Distance</Text>
+          </View>
+        </View>
+        <View style={[styles.runDivider, { backgroundColor: C.border }]} />
+        <View style={styles.runSecondaryRow}>
+          {secondaryMetrics.map(metric => (
+            <RunStat key={metric.label} {...metric} color={C.text} muted={C.textMuted} />
+          ))}
+        </View>
+        {runState === 'idle' ? (
+          <TouchableOpacity
+            style={[styles.startRunPill, { backgroundColor: C.primary }]}
+            onPress={start}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel="Start run"
+          >
+            <Ionicons name="play" size={20} color={C.onPrimary} />
+            <Text style={[styles.resumePillText, { color: C.onPrimary }]}>START RUN</Text>
+          </TouchableOpacity>
+        ) : (
+          <>
+            <TouchableOpacity
+              style={[styles.pauseCircle, { backgroundColor: C.primary }]}
+              onPress={pause}
               activeOpacity={0.82}
               accessibilityRole="button"
-              accessibilityLabel="Resume run"
+              accessibilityLabel="Pause run"
             >
-              <Ionicons name="play" size={18} color={C.onPrimary} />
-              <Text style={[styles.resumePillText, { color: C.onPrimary }]}>RESUME RUN</Text>
+              <Ionicons name="pause" size={28} color={C.onPrimary} />
             </TouchableOpacity>
-            <View style={styles.secondaryActionRow}>
-              <TouchableOpacity onPress={stop} hitSlop={10}>
-                <Text style={[styles.secondaryActionText, { color: C.warning }]}>Finish</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={cancel} hitSlop={10}>
-                <Text style={[styles.secondaryActionText, { color: C.textMuted }]}>Discard</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      ) : (
-        <View style={[styles.activeRunSurface, { backgroundColor: panelBg }]}>
-          <View style={styles.activeMapShell}>
-            <MapView
-              style={styles.activeRunMap}
-              initialRegion={region}
-              region={liveCoords.length > 0 ? region : undefined}
-              customMapStyle={mapStyle}
-              showsUserLocation
-              followsUserLocation={isActive}
+            <TouchableOpacity
+              style={[styles.stopRunPill, { backgroundColor: C.critical }]}
+              onPress={stop}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityLabel="Stop run"
             >
-              {routeCoords.length > 1 ? (
-                <Polyline coordinates={routeCoords} strokeColor={plannedRouteColor} strokeWidth={3} lineDashPattern={[8, 8]} />
-              ) : null}
-              {selectedRoute?.segments.map(segment => (
-                <Marker
-                  key={segment.label}
-                  coordinate={segment.point}
-                  title={`Segment ${segment.label}`}
-                  description={`${segment.distanceMiles.toFixed(2)} mi from start`}
-                  pinColor={C.warning}
-                />
-              ))}
-              {liveCoords.length > 1 ? (
-                <Polyline coordinates={liveCoords} strokeColor={mapLineColor} strokeWidth={5} />
-              ) : null}
-              {liveCoords.length > 0 ? (
-                <Marker coordinate={liveCoords[liveCoords.length - 1]} title="Current position" />
-              ) : null}
-            </MapView>
-            <View style={styles.mapToolStack}>
-              <View style={[styles.mapToolButton, { backgroundColor: softPanelBg, borderColor: C.border }]}>
-                <Ionicons name="navigate-outline" size={19} color={C.text} />
-              </View>
-              <View style={[styles.mapToolButton, { backgroundColor: softPanelBg, borderColor: C.border }]}>
-                <Ionicons name="layers-outline" size={19} color={C.text} />
-              </View>
-            </View>
-            {permission.background !== 'granted' ? (
-              <View style={[styles.mapOverlay, { backgroundColor: mode === 'light' ? C.card : C.cardElevated }]}>
-                <Ionicons name="location-outline" size={32} color={C.accent} />
-                <Text style={[styles.mapOverlayTitle, { color: C.text }]}>
-                  Enable background location
-                </Text>
-                <Text style={[styles.mapOverlayCopy, { color: C.textMuted }]}>
-                  This lets StrideOS keep recording your route and distance when the phone locks.
-                </Text>
-                <TouchableOpacity
-                  style={[styles.mapOverlayBtn, { backgroundColor: C.primary }]}
-                  onPress={async () => setPermission(await requestTrackingPermissionState())}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.mapOverlayButtonText, { color: C.onPrimary }]}>Enable GPS Tracking</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
+              <Ionicons name="stop-circle" size={18} color="#FFFFFF" />
+              <Text style={styles.stopRunPillText}>STOP RUN</Text>
+            </TouchableOpacity>
+          </>
+        )}
+        {!isActive ? (
+          <View style={styles.activeMetaRow}>
+            <Text style={[styles.activeMetaText, { color: C.textMuted }]}>
+              GPS ready when background permission is enabled.
+            </Text>
           </View>
-
-          <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border }]}>
-            <View style={styles.runPrimaryRow}>
-              <View>
-                <Text style={[styles.runPrimaryValue, { color: C.text }]}>{fmt(elapsed)}</Text>
-                <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Time</Text>
-              </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={[styles.runPrimaryValue, { color: C.accent }]}>{distStr}<Text style={styles.runPrimaryUnit}> {distUnit}</Text></Text>
-                <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Distance</Text>
-              </View>
-            </View>
-            <View style={[styles.runDivider, { backgroundColor: C.border }]} />
-            <View style={styles.runSecondaryRow}>
-              {secondaryMetrics.map(metric => (
-                <RunStat key={metric.label} {...metric} color={C.text} muted={C.textMuted} />
-              ))}
-            </View>
-            <View style={styles.paginationDots}>
-              <View style={[styles.paginationDot, { backgroundColor: C.accent }]} />
-              <View style={[styles.paginationDot, { backgroundColor: C.textSubtle }]} />
-              <View style={[styles.paginationDot, { backgroundColor: C.textSubtle }]} />
-            </View>
-            {runState === 'idle' ? (
-              <TouchableOpacity
-                style={[styles.startRunPill, { backgroundColor: C.primary }]}
-                onPress={start}
-                activeOpacity={0.82}
-                accessibilityRole="button"
-                accessibilityLabel="Start run"
-              >
-                <Ionicons name="play" size={20} color={C.onPrimary} />
-                <Text style={[styles.resumePillText, { color: C.onPrimary }]}>START RUN</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={[styles.pauseCircle, { backgroundColor: C.primary }]}
-                onPress={pause}
-                activeOpacity={0.82}
-                accessibilityRole="button"
-                accessibilityLabel="Pause run"
-              >
-                <Ionicons name="pause" size={28} color={C.onPrimary} />
-              </TouchableOpacity>
-            )}
-            <View style={[styles.musicRow, { backgroundColor: mode === 'light' ? C.card : C.cardElevated, borderColor: C.border }]}>
-              <Ionicons name="musical-note" size={18} color={C.text} />
-              <Text style={[styles.musicText, { color: C.text }]}>Connect Music</Text>
-              <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
-            </View>
-            <View style={styles.activeMetaRow}>
-              {!isActive ? (
-                <Text style={[styles.activeMetaText, { color: C.textMuted }]}>
-                  GPS ready when background permission is enabled.
-                </Text>
-              ) : null}
-              {isActive ? (
-                <View style={styles.secondaryActionRow}>
-                  <TouchableOpacity onPress={stop} hitSlop={10}>
-                    <Text style={[styles.secondaryActionText, { color: C.warning }]}>Finish</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={cancel} hitSlop={10}>
-                    <Text style={[styles.secondaryActionText, { color: C.textMuted }]}>Discard</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : null}
-            </View>
-            {selectedRoute && nextSegment ? (
-              <View style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
-                <Text style={[styles.metricLabel, { color: C.textDim }]}>NEXT SEGMENT</Text>
-                <Text style={[styles.routeProgressTitle, { color: C.text }]}>
-                  Segment {nextSegment.label} · {Math.max(0, nextSegment.distanceMiles - routeProgress).toFixed(2)} mi away
-                </Text>
-                <Text style={[styles.metricUnit, { color: C.textMuted }]}>
-                  {routeProgress.toFixed(2)} / {selectedRoute.distanceMiles.toFixed(1)} mi route progress
-                </Text>
-              </View>
-            ) : selectedRoute ? (
-              <View style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
-                <Text style={[styles.metricLabel, { color: C.textDim }]}>SELECTED ROUTE</Text>
-                <Text style={[styles.routeProgressTitle, { color: C.text }]}>{selectedRoute.name}</Text>
-                <Text style={[styles.metricUnit, { color: C.textMuted }]}>
-                  {selectedRoute.distanceMiles.toFixed(1)} mi · +{selectedRoute.elevationGainFt} ft · {selectedRoute.estimatedMinutes} min
-                </Text>
-              </View>
-            ) : null}
+        ) : null}
+        {selectedRoute && nextSegment ? (
+          <View style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+            <Text style={[styles.metricLabel, { color: C.textDim }]}>NEXT SEGMENT</Text>
+            <Text style={[styles.routeProgressTitle, { color: C.text }]}>
+              Segment {nextSegment.label} · {Math.max(0, nextSegment.distanceMiles - routeProgress).toFixed(2)} mi away
+            </Text>
+            <Text style={[styles.metricUnit, { color: C.textMuted }]}>
+              {routeProgress.toFixed(2)} / {selectedRoute.distanceMiles.toFixed(1)} mi route progress
+            </Text>
           </View>
-        </View>
-      )}
-    </ScrollView>
+        ) : selectedRoute ? (
+          <View style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+            <Text style={[styles.metricLabel, { color: C.textDim }]}>SELECTED ROUTE</Text>
+            <Text style={[styles.routeProgressTitle, { color: C.text }]}>{selectedRoute.name}</Text>
+            <Text style={[styles.metricUnit, { color: C.textMuted }]}>
+              {selectedRoute.distanceMiles.toFixed(1)} mi · +{selectedRoute.elevationGainFt} ft · {selectedRoute.estimatedMinutes} min
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
@@ -1974,7 +1948,11 @@ export default function RunningScreen() {
   const C = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const navigation = useNavigation();
   const [tab, setTab] = useState<RunTab>('plan');
+  const isActive = useActiveRunStore(s => s.isActive);
+  const isPaused = useActiveRunStore(s => s.isPaused);
+  const isRunning = isActive || isPaused;
 
   const TABS: { key: RunTab; label: string }[] = [
     { key: 'plan',      label: 'Plan' },
@@ -1982,6 +1960,24 @@ export default function RunningScreen() {
     { key: 'hydration', label: 'Hydration' },
     { key: 'routes',    label: 'Routes' },
   ];
+
+  // While a run is active/paused, hand the whole screen over to the tracking
+  // UI: hide this screen's own header/sub-tab chrome and the app's bottom
+  // tab bar so it behaves like a native full-screen run tracker.
+  useEffect(() => {
+    const parent = navigation.getParent();
+    if (!parent) return;
+    parent.setOptions({ tabBarStyle: isRunning ? { display: 'none' } : undefined });
+    return () => parent.setOptions({ tabBarStyle: undefined });
+  }, [isRunning, navigation]);
+
+  if (isRunning) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg }}>
+        <ActiveTab onFinished={() => setTab('plan')} fullScreen />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -2011,7 +2007,7 @@ export default function RunningScreen() {
       </View>
 
       {/* Content */}
-      <View style={{ flex: 1, paddingHorizontal: 18, paddingBottom: LAYOUT.tabBarPadBottom }}>
+      <View style={{ flex: 1, paddingHorizontal: 16, paddingBottom: LAYOUT.tabBarPadBottom }}>
         {tab === 'plan'      && <PlanTab />}
         {tab === 'active'    && <ActiveTab onFinished={() => setTab('plan')} />}
         {tab === 'hydration' && <HydrationTab />}
@@ -2025,68 +2021,65 @@ const styles = StyleSheet.create({
   screenHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingBottom: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   headerLabel: {
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.9,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   headerTitle: {
-    fontSize: 26,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '600',
     fontFamily: 'CormorantGaramond_700Bold',
   },
   subTabBar: {
     flexDirection: 'row',
-    marginHorizontal: 18,
-    borderRadius: 12,
+    marginHorizontal: 16,
+    borderRadius: 10,
     borderWidth: 1,
     padding: 4,
     gap: 4,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   subTab: {
     flex: 1,
     height: 30,
-    borderRadius: 8,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   subTabText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
   card: {
-    borderRadius: 18,
+    borderRadius: 12,
     borderWidth: 1,
     padding: 16,
-    marginBottom: 10,
+    marginBottom: 16,
   },
   runScrollContent: {
     paddingBottom: LAYOUT.screenPadBottom,
   },
-  activeRunScrollContent: {
-    paddingBottom: LAYOUT.screenPadBottom,
-    marginHorizontal: -spacing.cardGap,
-  },
-  activeRunSurface: {
-    minHeight: ACTIVE_RUN_MIN_HEIGHT,
+  activeRunRoot: {
+    flex: 1,
     overflow: 'hidden',
   },
-  activeMapShell: {
-    minHeight: ACTIVE_RUN_MAP_MIN_HEIGHT,
+  activeMapShellFill: {
+    flex: 1,
   },
-  activeRunMap: {
-    height: ACTIVE_RUN_MAP_HEIGHT,
+  activeRunMapFill: {
+    flex: 1,
     width: '100%',
   },
   mapToolStack: {
     position: 'absolute',
-    top: spacing.lg,
-    right: spacing.lg,
+    top: spacing.md,
+    right: spacing.md,
     gap: spacing.sm,
   },
   mapToolButton: {
@@ -2098,13 +2091,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   runControlPanel: {
-    marginTop: -radiusTokens.xl,
+    marginTop: -radiusTokens.lg,
     borderTopLeftRadius: radiusTokens.xl,
     borderTopRightRadius: radiusTokens.xl,
     borderTopWidth: 1,
-    paddingTop: spacing.xl,
+    paddingTop: spacing.lg,
     paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.lg,
   },
   runPrimaryRow: {
     flexDirection: 'row',
@@ -2129,8 +2122,8 @@ const styles = StyleSheet.create({
   },
   runDivider: {
     height: 1,
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
   },
   runSecondaryRow: {
     flexDirection: 'row',
@@ -2166,17 +2159,6 @@ const styles = StyleSheet.create({
     fontSize: typographyTokens.sizes.metricLabel,
     fontWeight: typographyTokens.weights.black,
   },
-  paginationDots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.xs + spacing.xs / 2,
-    marginTop: spacing.lg,
-  },
-  paginationDot: {
-    width: RUN_DOT_SIZE,
-    height: RUN_DOT_SIZE,
-    borderRadius: RUN_DOT_SIZE / 2,
-  },
   pauseCircle: {
     width: RUN_PRIMARY_CONTROL_SIZE,
     height: RUN_PRIMARY_CONTROL_SIZE,
@@ -2184,23 +2166,23 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.lg,
-    marginBottom: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
   },
   startRunPill: {
-    height: 56,
-    borderRadius: radiusTokens.lg,
+    height: 48,
+    borderRadius: radiusTokens.md,
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
     paddingHorizontal: spacing.xl,
-    marginTop: spacing.lg,
-    marginBottom: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
   },
   musicRow: {
-    height: 48,
+    height: 44,
     borderRadius: radiusTokens.md,
     borderWidth: 1,
     flexDirection: 'row',
@@ -2221,37 +2203,11 @@ const styles = StyleSheet.create({
     fontSize: typographyTokens.sizes.metricLabel,
     lineHeight: Math.round(typographyTokens.sizes.metricLabel * typographyTokens.lineHeights.body),
   },
-  secondaryActionRow: {
-    flexDirection: 'row',
-    gap: spacing.cardGap,
-    alignItems: 'center',
-  },
-  secondaryActionText: {
-    fontSize: typographyTokens.sizes.caption,
-    fontWeight: typographyTokens.weights.black,
-  },
   relocatedRoutePanel: {
     borderWidth: 1,
     borderRadius: radiusTokens.md,
     padding: spacing.md,
     marginTop: spacing.md,
-  },
-  pausedRunCard: {
-    marginHorizontal: spacing.cardGap,
-    marginTop: spacing.sm,
-    borderRadius: radiusTokens.xl,
-    borderWidth: 1,
-    overflow: 'hidden',
-    flexDirection: 'row',
-    minHeight: PAUSED_RUN_MIN_HEIGHT,
-  },
-  pausedMap: {
-    width: '42%',
-    minHeight: PAUSED_RUN_MIN_HEIGHT,
-  },
-  pausedStatsPanel: {
-    flex: 1,
-    padding: spacing.lg,
   },
   pausedStateLabel: {
     fontSize: typographyTokens.sizes.metricLabel,
@@ -2259,33 +2215,32 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: spacing.xs,
   },
-  pausedPrimaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  pausedPrimaryValue: {
-    fontSize: typographyTokens.sizes.metricSecondary,
-    lineHeight: Math.round(typographyTokens.sizes.metricSecondary * typographyTokens.lineHeights.normal),
-    fontWeight: typographyTokens.weights.black,
-    fontVariant: typographyTokens.variants.tabular,
-  },
-  pausedUnit: {
-    fontSize: typographyTokens.sizes.metricLabel,
-    fontWeight: typographyTokens.weights.bold,
-  },
   resumePill: {
-    height: 52,
-    borderRadius: radiusTokens.lg,
+    height: 48,
+    borderRadius: radiusTokens.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
   },
   resumePillText: {
     fontSize: typographyTokens.sizes.rowLabel,
     fontWeight: typographyTokens.weights.black,
+  },
+  stopRunPill: {
+    height: 48,
+    borderRadius: radiusTokens.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  stopRunPillText: {
+    fontSize: typographyTokens.sizes.rowLabel,
+    fontWeight: typographyTokens.weights.black,
+    color: '#FFFFFF',
   },
   mapOverlayTitle: {
     fontSize: typographyTokens.sizes.helper,
@@ -2311,12 +2266,12 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   subTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
   },
   paceBox: {
     borderRadius: 10,
@@ -2324,13 +2279,14 @@ const styles = StyleSheet.create({
   },
   dayRow: {
     flexDirection: 'row',
-    gap: 4,
-    marginTop: 6,
+    gap: 6,
+    marginTop: 10,
   },
   dayCol: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 2,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   dayLabel: {
     fontSize: 9,
@@ -2376,7 +2332,7 @@ const styles = StyleSheet.create({
   },
   metricCellWide: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 1,
     padding: 14,
     alignItems: 'center',
@@ -2434,7 +2390,7 @@ const styles = StyleSheet.create({
   },
   bigBtn: {
     height: 48,
-    borderRadius: 14,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
@@ -2451,12 +2407,12 @@ const styles = StyleSheet.create({
   halfBtn: {
     flex: 1,
     height: 48,
-    borderRadius: 14,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lockWidget: {
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 10,
   },
@@ -2471,7 +2427,7 @@ const styles = StyleSheet.create({
   },
   lockRow: {
     backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 14,
+    borderRadius: 10,
     padding: 14,
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -2533,7 +2489,7 @@ const styles = StyleSheet.create({
   stepBtn: {
     width: 34,
     height: 34,
-    borderRadius: 17,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2604,7 +2560,7 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     top: 68,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },

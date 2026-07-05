@@ -162,13 +162,19 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
 
   finishRun: () => {
     const state = get();
-    const pausedFor = state.isPaused && state.pausedAt ? Date.now() - state.pausedAt : 0;
     set({
-      isActive: false,
-      isPaused: false,
-      pausedAt: null,
-      pausedDurationMs: state.pausedDurationMs + pausedFor,
-      lastRunCoordinates: state.coordinates,
+      isActive:               false,
+      isPaused:               false,
+      startTime:              null,
+      pausedAt:               null,
+      pausedDurationMs:       0,
+      distanceMiles:          0,
+      currentPaceSecPerMile:  0,
+      averagePaceSecPerMile:  0,
+      coordinates:            [],
+      currentIntervalIndex:   0,
+      plannedWorkout:         null,
+      lastRunCoordinates:     state.coordinates,
     });
   },
 

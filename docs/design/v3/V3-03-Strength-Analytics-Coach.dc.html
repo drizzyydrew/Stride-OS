@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StrideOS V3 Strength, Analytics, Coach</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Avenir:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap');
+    
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; background: #0a0a0a; color: #fff; font-family: Avenir, sans-serif; }
+    
+    .phone { width: 390px; height: 844px; background: #0a0a0a; border-radius: 40px; border: 12px solid #1a1a1a; box-shadow: 0 20px 60px rgba(0,0,0,0.6); overflow: hidden; display: flex; flex-direction: column; position: relative; }
+    .status-bar { height: 47px; background: #0a0a0a; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; font-size: 12px; border-bottom: 1px solid #1a1a1a; font-weight: 600; }
+    .screen { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .screen::-webkit-scrollbar { width: 4px; }
+    .screen::-webkit-scrollbar-thumb { background: #2a2a2a; }
+    
+    .header { padding: 20px 16px 12px; }
+    .header-title { font-size: 28px; font-weight: 600; font-family: 'Crimson Text', serif; margin: 0 0 4px 0; }
+    .header-subtitle { font-size: 13px; color: #999; margin: 0; }
+    
+    .content { padding: 0 16px 80px 16px; display: flex; flex-direction: column; gap: 16px; }
+    .section-title { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 10px 0; }
+    
+    .strength-card { padding: 16px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; }
+    .strength-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .strength-title { font-size: 15px; font-weight: 600; color: #fff; margin: 0; }
+    .strength-badge { background: #DCC0A7; color: #0a0a0a; padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 700; }
+    
+    .exercise-item { padding: 12px 0; border-bottom: 1px solid #2a2a2a; }
+    .exercise-item:last-child { border-bottom: none; }
+    .exercise-name { font-size: 13px; font-weight: 600; color: #fff; margin: 0 0 6px 0; }
+    .exercise-meta { font-size: 11px; color: #999; margin: 0; }
+    
+    .action-button { width: 100%; padding: 12px; background: #DCC0A7; color: #0a0a0a; border: none; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; margin-top: 12px; }
+    
+    .chart-card { padding: 16px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; }
+    .chart-title { font-size: 13px; font-weight: 600; color: #fff; margin: 0 0 12px 0; }
+    .chart-container { width: 100%; height: 120px; background: linear-gradient(180deg, rgba(220, 192, 167, 0.1) 0%, transparent 100%); border-radius: 8px; position: relative; }
+    .chart-bar { position: absolute; bottom: 0; width: 8%; background: #DCC0A7; border-radius: 4px 4px 0 0; }
+    
+    .insight-card { padding: 16px; background: linear-gradient(135deg, #1a2a1a, #1a1a2a); border: 1px solid #2a3a2a; border-radius: 12px; }
+    .insight-title { font-size: 13px; font-weight: 600; color: #DCC0A7; margin: 0 0 8px 0; }
+    .insight-text { font-size: 12px; color: #ccc; line-height: 1.4; margin: 0; }
+    
+    .coach-msg { margin-bottom: 12px; }
+    .coach-bubble { padding: 12px 14px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px; font-size: 12px; color: #ccc; line-height: 1.4; margin: 0; }
+    .user-bubble { padding: 12px 14px; background: #DCC0A7; color: #0a0a0a; border-radius: 14px; font-size: 12px; line-height: 1.4; margin: 0; margin-left: auto; max-width: 80%; }
+    
+    .bottom-nav { position: absolute; bottom: 0; left: 12px; right: 12px; height: 60px; background: #0a0a0a; border-top: 1px solid #1a1a1a; display: flex; justify-content: space-around; align-items: center; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; color: #666; }
+    .nav-item.active { color: #DCC0A7; }
+    .nav-item-icon { font-size: 20px; }
+    .nav-item-label { font-size: 9px; font-weight: 600; }
+    
+    .container { max-width: 1600px; margin: 0 auto; display: flex; justify-content: center; gap: 40px; padding: 40px 20px; background: #000; flex-wrap: wrap; }
+    .label { text-align: center; font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  </style>
+</helmet>
+
+<div class="container">
+  <!-- STRENGTH WORKOUT -->
+  <div>
+    <div class="label">Strength Workout</div>
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+      <div class="screen">
+        <div class="header">
+          <p class="header-title">Strength</p>
+          <p class="header-subtitle">Lower Body & Core</p>
+        </div>
+        <div class="content">
+          <div class="strength-card">
+            <div class="strength-header">
+              <p class="strength-title">Workout</p>
+              <div class="strength-badge">Today</div>
+            </div>
+            <p style="font-size: 12px; color: #999; margin: 0 0 12px 0;">3 exercises · ~25 minutes · Focus on form</p>
+            
+            <div class="exercise-item">
+              <p class="exercise-name">Goblet Squat</p>
+              <p class="exercise-meta">3 sets × 10–12 reps · 35 lb</p>
+            </div>
+            <div class="exercise-item">
+              <p class="exercise-name">Romanian Deadlift</p>
+              <p class="exercise-meta">3 sets × 10–12 reps · 65 lb</p>
+            </div>
+            <div class="exercise-item">
+              <p class="exercise-name">Glute Bridge</p>
+              <p class="exercise-meta">3 sets × 15 reps · Bodyweight</p>
+            </div>
+            
+            <button class="action-button">Start Workout</button>
+          </div>
+          
+          <div>
+            <p class="section-title">Form Tips</p>
+            <div class="insight-card">
+              <p class="insight-title">💡 Goblet Squat</p>
+              <p class="insight-text">Drive knees out over toes. Keep chest tall throughout descent. Full range of motion.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-item-icon">🏠</div><div class="nav-item-label">Dashboard</div></div>
+        <div class="nav-item active"><div class="nav-item-icon">💪</div><div class="nav-item-label">Strength</div></div>
+        <div class="nav-item"><div class="nav-item-icon">📊</div><div class="nav-item-label">Analytics</div></div>
+        <div class="nav-item"><div class="nav-item-icon">💭</div><div class="nav-item-label">Coach</div></div>
+        <div class="nav-item"><div class="nav-item-icon">⚙️</div><div class="nav-item-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div>
+    <div class="label">Analytics Dashboard</div>
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+      <div class="screen">
+        <div class="header">
+          <p class="header-title">Analytics</p>
+          <p class="header-subtitle">Performance trends</p>
+        </div>
+        <div class="content">
+          <div>
+            <p class="section-title">This Month</p>
+            <div class="chart-card">
+              <p class="chart-title">Distance by Week</p>
+              <div class="chart-container">
+                <div class="chart-bar" style="left: 5%; height: 60%;"></div>
+                <div class="chart-bar" style="left: 20%; height: 75%;"></div>
+                <div class="chart-bar" style="left: 35%; height: 85%;"></div>
+                <div class="chart-bar" style="left: 50%; height: 70%;"></div>
+                <div class="chart-bar" style="left: 65%; height: 90%;"></div>
+                <div class="chart-bar" style="left: 80%; height: 55%;"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 9px; color: #999;">
+                <span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>W5</span><span>W6</span>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <p class="section-title">Key Metrics</p>
+            <div class="strength-card">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <p style="font-size: 10px; color: #999; margin: 0 0 4px 0;">Avg Pace</p>
+                  <p style="font-size: 16px; font-weight: 700; color: #fff; margin: 0;">4:45</p>
+                </div>
+                <div>
+                  <p style="font-size: 10px; color: #999; margin: 0 0 4px 0;">Avg HR</p>
+                  <p style="font-size: 16px; font-weight: 700; color: #fff; margin: 0;">151</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="insight-card">
+            <p class="insight-title">📈 Insight</p>
+            <p class="insight-text">Your recovery improved 12% this month. Threshold pace is 15 seconds faster than 4 weeks ago.</p>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-item-icon">🏠</div><div class="nav-item-label">Dashboard</div></div>
+        <div class="nav-item"><div class="nav-item-icon">💪</div><div class="nav-item-label">Strength</div></div>
+        <div class="nav-item active"><div class="nav-item-icon">📊</div><div class="nav-item-label">Analytics</div></div>
+        <div class="nav-item"><div class="nav-item-icon">💭</div><div class="nav-item-label">Coach</div></div>
+        <div class="nav-item"><div class="nav-item-icon">⚙️</div><div class="nav-item-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI COACH -->
+  <div>
+    <div class="label">AI Coach Chat</div>
+    <div class="phone">
+      <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+      <div class="screen">
+        <div class="header">
+          <p class="header-title">Coach</p>
+          <p class="header-subtitle">Ask anything</p>
+        </div>
+        <div class="content" style="padding-bottom: 120px;">
+          <div class="coach-msg">
+            <div class="coach-bubble">How did your run feel this morning?</div>
+          </div>
+          <div class="coach-msg" style="text-align: right;">
+            <div class="user-bubble">Felt great, legs a bit tight</div>
+          </div>
+          <div class="coach-msg">
+            <div class="coach-bubble">That's normal after yesterday's tempo work. Recommend: 10 min easy warmup, 5 min light dynamic stretching, then your run. Add 10 min stretching after.</div>
+          </div>
+          <div class="coach-msg" style="text-align: right;">
+            <div class="user-bubble">How many km should I run?</div>
+          </div>
+          <div class="coach-msg">
+            <div class="coach-bubble">Aim for 6–8 km easy pace (HR under 140 bpm). This preps you for threshold work Thursday.</div>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-item-icon">🏠</div><div class="nav-item-label">Dashboard</div></div>
+        <div class="nav-item"><div class="nav-item-icon">💪</div><div class="nav-item-label">Strength</div></div>
+        <div class="nav-item"><div class="nav-item-icon">📊</div><div class="nav-item-label">Analytics</div></div>
+        <div class="nav-item active"><div class="nav-item-icon">💭</div><div class="nav-item-label">Coach</div></div>
+        <div class="nav-item"><div class="nav-item-icon">⚙️</div><div class="nav-item-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

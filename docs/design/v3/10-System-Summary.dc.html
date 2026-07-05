@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="design_doc_mode" content="canvas">
+  <title>StrideOS V3 System Summary</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Avenir:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap');
+    
+    body { margin: 0; padding: 40px; background: #0a0a0a; color: #fff; font-family: Avenir, sans-serif; line-height: 1.6; }
+    .max-width { max-width: 1200px; margin: 0 auto; }
+    h1 { font-size: 48px; font-weight: 700; font-family: 'Crimson Text', serif; margin: 0 0 8px 0; }
+    h2 { font-size: 32px; font-weight: 600; font-family: 'Crimson Text', serif; margin: 40px 0 20px 0; }
+    h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px 0; }
+    .subtitle { font-size: 16px; color: #999; margin: 0 0 32px 0; }
+    
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin: 32px 0; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 24px 0; }
+    .card { padding: 24px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; }
+    .card-title { font-size: 14px; font-weight: 600; margin: 0 0 12px 0; }
+    .card-content { font-size: 13px; line-height: 1.6; color: #ccc; margin: 0; }
+    
+    .highlight { background: rgba(220, 192, 167, 0.1); padding: 20px; border-left: 3px solid #DCC0A7; border-radius: 4px; margin: 20px 0; }
+    .highlight-title { font-weight: 600; margin: 0 0 8px 0; }
+    
+    .file-list { list-style: none; padding: 0; margin: 16px 0; }
+    .file-list li { padding: 8px 0; font-size: 13px; border-bottom: 1px solid #2a2a2a; }
+    .file-list li:last-child { border-bottom: none; }
+    .file-name { font-weight: 600; color: #DCC0A7; font-family: 'Courier New', monospace; }
+    .file-desc { color: #999; font-size: 12px; margin-left: 8px; }
+    
+    .principle { padding: 12px; background: #141414; border-left: 3px solid #8B927C; margin: 8px 0; }
+    .principle-title { font-weight: 600; margin: 0; }
+    .principle-desc { font-size: 12px; color: #999; margin: 4px 0 0 0; }
+    
+    .color-swatch { display: inline-block; width: 40px; height: 40px; border-radius: 6px; margin: 4px; border: 1px solid #2a2a2a; vertical-align: middle; }
+  </style>
+</helmet>
+
+<div class="max-width">
+  <div style="margin-bottom: 60px;">
+    <h1>StrideOS V3 Design System</h1>
+    <p class="subtitle">Complete visual foundation for production-ready running & recovery coaching.</p>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div>
+    <h2>System Overview</h2>
+    <div class="grid-2">
+      <div>
+        <h3>Design Principles</h3>
+        <div class="principle">
+          <p class="principle-title">Calm, Confident, Intelligent</p>
+          <p class="principle-desc">Warm, approachable interface that coaches rather than overwhelms.</p>
+        </div>
+        <div class="principle">
+          <p class="principle-title">Coach, Not Scoreboard</p>
+          <p class="principle-desc">Insights over raw data. Actionable guidance grounded in physiology.</p>
+        </div>
+        <div class="principle">
+          <p class="principle-title">Performance Without Anxiety</p>
+          <p class="principle-desc">Strength training, recovery, and injury prevention integrated into daily flow.</p>
+        </div>
+        <div class="principle">
+          <p class="principle-title">Dark-First, Premium Aesthetic</p>
+          <p class="principle-desc">Sophisticated visual language inspired by Apple Fitness, Garmin depth, WHOOP intelligence.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Brand Attributes</h3>
+        <div class="card">
+          <p class="card-content"><strong>Intelligent, Data-Driven</strong> — Leverages HRV, recovery, movement analysis.</p>
+          <p class="card-content" style="margin-top: 12px;"><strong>Supportive, Coaching-Like</strong> — Explains what to do, why it matters, how to progress safely.</p>
+          <p class="card-content" style="margin-top: 12px;"><strong>Authoritative, Professional</strong> — Combines Garmin training depth with PT expertise.</p>
+          <p class="card-content" style="margin-top: 12px;"><strong>Minimalist, Purposeful</strong> — Every element earns its place. No clutter.</p>
+          <p class="card-content" style="margin-top: 12px;"><strong>Premium, Aspirational</strong> — Endurance athlete aesthetic. Outdoor heritage. Serious training.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLOR SYSTEM -->
+  <div>
+    <h2>Color System</h2>
+    <div class="grid-2">
+      <div>
+        <h3>Brand Colors</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; margin: 16px 0;">
+          <div style="text-align: center;">
+            <div class="color-swatch" style="background: #8B927C; width: 60px; height: 60px;"></div>
+            <div style="font-size: 11px; font-weight: 600; margin-top: 8px;">Sage<br><span style="color: #999;">#8B927C</span></div>
+          </div>
+          <div style="text-align: center;">
+            <div class="color-swatch" style="background: #DCC0A7; width: 60px; height: 60px;"></div>
+            <div style="font-size: 11px; font-weight: 600; margin-top: 8px;">Clay<br><span style="color: #999;">#DCC0A7</span></div>
+          </div>
+          <div style="text-align: center;">
+            <div class="color-swatch" style="background: #708489; width: 60px; height: 60px;"></div>
+            <div style="font-size: 11px; font-weight: 600; margin-top: 8px;">Steel<br><span style="color: #999;">#708489</span></div>
+          </div>
+          <div style="text-align: center;">
+            <div class="color-swatch" style="background: #4D433E; width: 60px; height: 60px;"></div>
+            <div style="font-size: 11px; font-weight: 600; margin-top: 8px;">Brown<br><span style="color: #999;">#4D433E</span></div>
+          </div>
+          <div style="text-align: center;">
+            <div class="color-swatch" style="background: #EFE7DA; width: 60px; height: 60px;"></div>
+            <div style="font-size: 11px; font-weight: 600; margin-top: 8px;">Sand<br><span style="color: #999;">#EFE7DA</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3>Usage Guidelines</h3>
+        <div class="card">
+          <p class="card-content"><strong>Sage</strong> — Primary, trust, secondary buttons, inactive states.</p>
+          <p class="card-content" style="margin-top: 8px;"><strong>Clay</strong> — Action, progress, primary CTA, positive states, success indicators.</p>
+          <p class="card-content" style="margin-top: 8px;"><strong>Steel</strong> — Secondary data, structure, dividers, subtle hierarchy.</p>
+          <p class="card-content" style="margin-top: 8px;"><strong>Brown</strong> — Depth, warmth, grounding. Use sparingly for emphasis.</p>
+          <p class="card-content" style="margin-top: 8px;"><strong>Light Mode</strong> — Sand (#EFE7DA) as primary background with dark text. All brand colors adapt.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TYPOGRAPHY -->
+  <div>
+    <h2>Typography</h2>
+    <p style="color: #999; margin: 0 0 20px 0;">Humanist sans-serif (Avenir) for UI. Serif (Crimson Text) for headlines and coaching copy.</p>
+    <div class="grid-3">
+      <div class="card">
+        <p class="card-title">Headlines (Crimson)</p>
+        <p style="font-family: 'Crimson Text', serif; font-size: 32px; font-weight: 600; margin: 0;">Dashboard</p>
+        <p class="card-content" style="margin-top: 12px; font-size: 11px;">Used for screen titles, coaching messages, and prominent content.</p>
+      </div>
+      <div class="card">
+        <p class="card-title">Body (Avenir)</p>
+        <p style="font-size: 14px; margin: 12px 0 0 0;">You're ready to train. Your HRV shows good recovery.</p>
+        <p class="card-content" style="margin-top: 12px; font-size: 11px;">Primary UI text, descriptions, coaching guidance.</p>
+      </div>
+      <div class="card">
+        <p class="card-title">Labels (Avenir)</p>
+        <p style="font-size: 12px; font-weight: 600; margin: 12px 0 0 0; text-transform: uppercase; letter-spacing: 0.5px;">HEART RATE</p>
+        <p class="card-content" style="margin-top: 12px; font-size: 11px;">Metric labels, section headers, category tags.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPONENTS & SCREENS -->
+  <div>
+    <h2>Delivered Design Assets</h2>
+    <div class="highlight">
+      <p class="highlight-title">9 Complete Design Components + 1 Summary</p>
+      <p style="margin: 8px 0 0 0; color: #ccc;">Every component ships with dark mode, light mode, and state variations (empty, loading, error).</p>
+    </div>
+    
+    <h3>Design Tokens & Foundation</h3>
+    <ul class="file-list">
+      <li><span class="file-name">00-Design-Tokens.dc.html</span> <span class="file-desc">— Color palette, typography scale, spacing, radius, shadows, motion, haptics</span></li>
+      <li><span class="file-name">01-Component-Library.dc.html</span> <span class="file-desc">— 30+ reusable UI components (buttons, cards, inputs, badges, progress rings, metrics)</span></li>
+    </ul>
+
+    <h3>Core User Flows</h3>
+    <ul class="file-list">
+      <li><span class="file-name">02-Dashboard.dc.html</span> <span class="file-desc">— Home screen with readiness status, action buttons, today's plan, recent workouts</span></li>
+      <li><span class="file-name">03-Run-Tracking.dc.html</span> <span class="file-desc">— Live run screen with timer, map, metrics. Post-run summary with AI coaching notes</span></li>
+      <li><span class="file-name">04-AI-Coach.dc.html</span> <span class="file-desc">— Coach home with insights. Real-time chat interface for Q&A</span></li>
+      <li><span class="file-name">05-Training-Calendar.dc.html</span> <span class="file-desc">— Month calendar view. Week view with workout plan and summary metrics</span></li>
+      <li><span class="file-name">06-Analytics.dc.html</span> <span class="file-desc">— Performance trends by week/month. Movement Lab form analysis</span></li>
+    </ul>
+
+    <h3>Onboarding & Settings</h3>
+    <ul class="file-list">
+      <li><span class="file-name">07-Onboarding.dc.html</span> <span class="file-desc">— 3-step onboarding: welcome, profile setup, device sync</span></li>
+      <li><span class="file-name">08-Settings-Profile.dc.html</span> <span class="file-desc">— User profile with stats. Settings for appearance, training, recovery, notifications</span></li>
+    </ul>
+
+    <h3>Recovery & Strength</h3>
+    <ul class="file-list">
+      <li><span class="file-name">09-Recovery-Strength.dc.html</span> <span class="file-desc">— Recovery hub with HRV, sleep, stress metrics. Guided strength workouts</span></li>
+      <li><span class="file-name">10-System-Summary.dc.html</span> <span class="file-desc">— This document. Design system overview and implementation guide</span></li>
+    </ul>
+  </div>
+
+  <!-- IMPLEMENTATION NOTES -->
+  <div>
+    <h2>Implementation for Engineering</h2>
+    <div class="grid-2">
+      <div class="card">
+        <p class="card-title">Design Consistency</p>
+        <ul style="margin: 12px 0 0 0; padding-left: 16px; color: #ccc; font-size: 13px;">
+          <li>All inline styles. No CSS classes or external stylesheets.</li>
+          <li>Dark mode default. Light mode as variant (all colors inverted appropriately).</li>
+          <li>Spacing via 4px base unit (xs: 4, sm: 8, md: 12, lg: 16, xl: 24, etc).</li>
+          <li>Radius: sm (4px), md (8px), lg (12px), xl (16px), full (9999px).</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="card-title">Animation & Interaction</p>
+        <ul style="margin: 12px 0 0 0; padding-left: 16px; color: #ccc; font-size: 13px;">
+          <li>Smooth, deliberate transitions (200–400ms cubic-bezier).</li>
+          <li>Minimal unnecessary motion.</li>
+          <li>Progress rings use SVG with stroke-dasharray for smooth animations.</li>
+          <li>Haptic feedback: light (20ms), medium (30ms), strong (50ms).</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="card-title">Component Architecture</p>
+        <ul style="margin: 12px 0 0 0; padding-left: 16px; color: #ccc; font-size: 13px;">
+          <li>Each screen is a self-contained Design Component (.dc.html).</li>
+          <li>Minimal dependencies. Portable across projects.</li>
+          <li>Ready for React/Vue/Svelte translation.</li>
+          <li>No build tools required. Render in browser immediately.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="card-title">Navigation & State</p>
+        <ul style="margin: 12px 0 0 0; padding-left: 16px; color: #ccc; font-size: 13px;">
+          <li>Bottom tab navigation on all main screens (4 tabs).</li>
+          <li>Header back button for modal/detail views.</li>
+          <li>Persistent state via localStorage (run playback, settings, etc).</li>
+          <li>No external routing; use HTML anchor links (#1a, #2b).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEXT STEPS -->
+  <div>
+    <h2>Next Steps for Engineering</h2>
+    <div class="highlight">
+      <p class="highlight-title">Ready for Development Handoff</p>
+      <ul style="margin: 12px 0 0 0; padding-left: 16px; color: #ccc; font-size: 13px; line-height: 1.8;">
+        <li><strong>Phase 1:</strong> Implement design system tokens in your theme provider. Map colors, typography, spacing scales to CSS variables or design tokens.</li>
+        <li><strong>Phase 2:</strong> Build reusable components (buttons, cards, inputs, progress rings) matching the library. Test dark/light modes thoroughly.</li>
+        <li><strong>Phase 3:</strong> Integrate with your V2 backend. Connect readiness endpoints, live tracking, training plan APIs to each screen.</li>
+        <li><strong>Phase 4:</strong> Implement animations, haptic feedback, and real-time data streams (GPS, heart rate, HRV).</li>
+        <li><strong>Phase 5:</strong> Comprehensive testing on device. Verify motion feels smooth, dark mode is easy on eyes at night, light mode is readable outdoors.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- BRAND VOICE -->
+  <div>
+    <h2>Brand Voice & Tone</h2>
+    <div class="grid-2">
+      <div class="card">
+        <p class="card-title">In Coaching Copy</p>
+        <p class="card-content">Expert. Supportive. Science-backed. Explain the "why" behind recommendations. Use clear, confident language. Avoid jargon unless teaching it.</p>
+        <p class="card-content" style="margin-top: 12px; font-style: italic;">✓ "Your HRV shows good recovery. Perfect for a tempo run today."</p>
+        <p class="card-content" style="margin-top: 8px; font-style: italic;">✗ "Your metrics look optimal bro. Send it."</p>
+      </div>
+      <div class="card">
+        <p class="card-title">In UI Labels & CTAs</p>
+        <p class="card-content">Direct. Action-oriented. Avoid cute or flippant language. Respect user's time and intelligence.</p>
+        <p class="card-content" style="margin-top: 12px; font-style: italic;">✓ "Start Run" · "View Details" · "Edit Workout"</p>
+        <p class="card-content" style="margin-top: 8px; font-style: italic;">✗ "Let's Go!" · "Tap Me!" · "More Info Plz"</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 80px; padding-top: 40px; border-top: 1px solid #2a2a2a; text-align: center;">
+    <p style="color: #999; font-size: 12px;">StrideOS V3 Design System · Warm, approachable, coaching-led · Dark-first, premium endurance aesthetic</p>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

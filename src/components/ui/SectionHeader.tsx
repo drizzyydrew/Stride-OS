@@ -14,7 +14,7 @@ const styles = StyleSheet.create({
   title: {
     color:        colors.text,
     fontSize:     FontSize.hero,
-    fontWeight:   FontWeight.black,
+    fontWeight:   FontWeight.medium,
     marginBottom: 8,
   },
 });

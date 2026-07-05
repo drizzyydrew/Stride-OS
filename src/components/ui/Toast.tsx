@@ -81,15 +81,15 @@ const styles = StyleSheet.create({
     bottom: 28,
   },
   toast: {
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1,
     padding: 14,
     gap: 4,
     borderCurve: 'continuous',
   },
   title: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
   },
   message: {
     fontSize: 13,

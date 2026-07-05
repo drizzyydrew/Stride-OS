@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StrideOS V3 Training — Complete</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Avenir:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap');
+    
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; background: #0a0a0a; color: #fff; font-family: Avenir, sans-serif; }
+    
+    .phone { width: 390px; height: 844px; background: #0a0a0a; border-radius: 40px; border: 12px solid #1a1a1a; box-shadow: 0 20px 60px rgba(0,0,0,0.6); overflow: hidden; display: flex; flex-direction: column; position: relative; }
+    .status-bar { height: 47px; background: #0a0a0a; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; font-size: 12px; border-bottom: 1px solid #1a1a1a; font-weight: 600; }
+    
+    .screen { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .screen::-webkit-scrollbar { width: 4px; }
+    .screen::-webkit-scrollbar-thumb { background: #2a2a2a; }
+    
+    .header { padding: 20px 16px 12px; }
+    .header-title { font-size: 28px; font-weight: 600; font-family: 'Crimson Text', serif; margin: 0 0 4px 0; }
+    .header-subtitle { font-size: 13px; color: #999; margin: 0; }
+    
+    .content { padding: 0 16px 80px 16px; display: flex; flex-direction: column; gap: 16px; }
+    
+    .section-title { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 10px 0; }
+    
+    .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .day-btn { padding: 12px 4px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; text-align: center; font-size: 9px; cursor: pointer; transition: all 200ms; }
+    .day-btn:hover { border-color: #DCC0A7; }
+    .day-btn.today { background: #DCC0A7; color: #0a0a0a; border-color: #DCC0A7; font-weight: 700; }
+    .day-btn.completed { background: #8B927C; border-color: #8B927C; color: #fff; }
+    .day-label { font-weight: 700; font-size: 10px; margin-bottom: 3px; }
+    .day-workout { font-size: 9px; color: #999; margin-bottom: 2px; }
+    
+    .workout-detail { padding: 16px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; }
+    .workout-type { font-size: 12px; font-weight: 700; color: #DCC0A7; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px 0; }
+    .workout-title { font-size: 18px; font-weight: 600; color: #fff; margin: 0 0 12px 0; }
+    .workout-stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .stat-item-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0; }
+    .stat-item-value { font-size: 16px; font-weight: 700; color: #fff; margin: 0; }
+    
+    .interval-card { padding: 14px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 10px; margin-top: 10px; }
+    .interval-header { font-size: 12px; font-weight: 600; color: #fff; margin: 0 0 6px 0; }
+    .interval-detail { font-size: 11px; color: #999; margin: 0 0 3px 0; }
+    
+    .action-button { width: 100%; padding: 14px; background: #DCC0A7; color: #0a0a0a; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 16px; transition: all 200ms; }
+    .action-button:hover { background: #e5cdb5; }
+    
+    .live-run-screen { padding: 20px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+    .timer-display { text-align: center; }
+    .timer-value { font-size: 64px; font-weight: 700; font-family: 'Courier New', monospace; color: #DCC0A7; margin: 0; }
+    .timer-label { font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin: 4px 0 0 0; }
+    
+    .live-map { width: 100%; height: 140px; background: linear-gradient(135deg, #1a1a1a, #242424); border-radius: 10px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .map-marker { width: 12px; height: 12px; background: #DCC0A7; border-radius: 50%; box-shadow: 0 0 8px rgba(220, 192, 167, 0.4); }
+    
+    .live-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .metric-box { padding: 12px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; text-align: center; }
+    .metric-label { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0; }
+    .metric-value { font-size: 18px; font-weight: 700; color: #fff; margin: 0; }
+    
+    .live-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 16px; }
+    .control-btn { padding: 12px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; color: #DCC0A7; font-weight: 600; font-size: 12px; cursor: pointer; }
+    .control-btn-primary { background: #DCC0A7; color: #0a0a0a; border: none; font-size: 20px; }
+    
+    .bottom-nav { position: absolute; bottom: 0; left: 12px; right: 12px; height: 60px; background: #0a0a0a; border-top: 1px solid #1a1a1a; display: flex; justify-content: space-around; align-items: center; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; color: #666; }
+    .nav-item.active { color: #DCC0A7; }
+    .nav-item-icon { font-size: 20px; }
+    .nav-item-label { font-size: 9px; font-weight: 600; }
+    
+    .container { max-width: 1600px; margin: 0 auto; display: flex; justify-content: center; gap: 40px; padding: 40px 20px; background: #000; flex-wrap: wrap; }
+    .label-section { text-align: center; font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  </style>
+</helmet>
+
+<div class="container">
+  <!-- TRAINING WEEK VIEW - DARK -->
+  <div>
+    <div class="label-section">Training Week View</div>
+    <div class="phone">
+      <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 🔋</div>
+      </div>
+      
+      <div class="screen">
+        <div class="header">
+          <p class="header-title">Training</p>
+          <p class="header-subtitle">Week of Jul 7</p>
+        </div>
+        
+        <div class="content">
+          <div>
+            <p class="section-title">This Week</p>
+            <div class="week-grid">
+              <div class="day-btn completed">
+                <div class="day-label">M</div>
+                <div class="day-workout">Easy</div>
+              </div>
+              <div class="day-btn completed">
+                <div class="day-label">T</div>
+                <div class="day-workout">Tempo</div>
+              </div>
+              <div class="day-btn today">
+                <div class="day-label">W</div>
+                <div class="day-workout">Rest</div>
+              </div>
+              <div class="day-btn">
+                <div class="day-label">Th</div>
+                <div class="day-workout">Threshold</div>
+              </div>
+              <div class="day-btn">
+                <div class="day-label">F</div>
+                <div class="day-workout">Easy</div>
+              </div>
+              <div class="day-btn">
+                <div class="day-label">Sa</div>
+                <div class="day-workout">Long</div>
+              </div>
+              <div class="day-btn">
+                <div class="day-label">Su</div>
+                <div class="day-workout">Recovery</div>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <p class="section-title">Today's Recommendation</p>
+            <div class="workout-detail">
+              <p class="workout-type">Rest Day</p>
+              <p class="workout-title">Recovery Focus</p>
+              <p style="font-size: 12px; color: #ccc; margin: 0 0 12px 0;">Your fatigue is elevated. Use today for mobility, stretching, or light cross-training.</p>
+              <div class="workout-stat-row">
+                <div>
+                  <p class="stat-item-label">Status</p>
+                  <p class="stat-item-value" style="color: #6BB388;">Suggested</p>
+                </div>
+                <div>
+                  <p class="stat-item-label">Type</p>
+                  <p class="stat-item-value">Recovery</p>
+                </div>
+                <div>
+                  <p class="stat-item-label">Duration</p>
+                  <p class="stat-item-value">Flexible</p>
+                </div>
+              </div>
+              <button class="action-button">View Options</button>
+            </div>
+          </div>
+          
+          <div>
+            <p class="section-title">Upcoming</p>
+            <div class="workout-detail">
+              <p class="workout-type">Thursday · Running</p>
+              <p class="workout-title">Threshold Run</p>
+              <div class="workout-stat-row">
+                <div>
+                  <p class="stat-item-label">Distance</p>
+                  <p class="stat-item-value">7 km</p>
+                </div>
+                <div>
+                  <p class="stat-item-label">Duration</p>
+                  <p class="stat-item-value">~42 min</p>
+                </div>
+                <div>
+                  <p class="stat-item-label">Intensity</p>
+                  <p class="stat-item-value">Hard</p>
+                </div>
+              </div>
+              <div class="interval-card">
+                <p class="interval-header">Warm-up</p>
+                <p class="interval-detail">15 min easy to warm</p>
+              </div>
+              <div class="interval-card">
+                <p class="interval-header">Main Set</p>
+                <p class="interval-detail">3 × 6 min at threshold · 2 min recovery jog</p>
+              </div>
+              <div class="interval-card">
+                <p class="interval-header">Cool-down</p>
+                <p class="interval-detail">10 min easy</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bottom-nav">
+        <div class="nav-item">
+          <div class="nav-item-icon">🏠</div>
+          <div class="nav-item-label">Dashboard</div>
+        </div>
+        <div class="nav-item active">
+          <div class="nav-item-icon">📅</div>
+          <div class="nav-item-label">Training</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">📊</div>
+          <div class="nav-item-label">Analytics</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">💭</div>
+          <div class="nav-item-label">Coach</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">⚙️</div>
+          <div class="nav-item-label">Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE RUN TRACKING - DARK -->
+  <div>
+    <div class="label-section">Live Run Tracking</div>
+    <div class="phone">
+      <div class="status-bar">
+        <span>10:28</span>
+        <div>📶 🔋</div>
+      </div>
+      
+      <div class="screen">
+        <div class="live-run-screen">
+          <div class="timer-display">
+            <p class="timer-value">10:28</p>
+            <p class="timer-label">Elapsed</p>
+          </div>
+          
+          <div class="live-map">
+            <div class="map-marker"></div>
+          </div>
+          
+          <div class="live-metrics">
+            <div class="metric-box">
+              <p class="metric-label">Distance</p>
+              <p class="metric-value">2.5 km</p>
+            </div>
+            <div class="metric-box">
+              <p class="metric-label">Pace</p>
+              <p class="metric-value">4:15</p>
+            </div>
+            <div class="metric-box">
+              <p class="metric-label">Heart Rate</p>
+              <p class="metric-value">157</p>
+            </div>
+          </div>
+          
+          <div class="live-controls">
+            <button class="control-btn">⊞ Lap</button>
+            <button class="control-btn control-btn-primary">⏸</button>
+            <button class="control-btn">✕ Stop</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bottom-nav">
+        <div class="nav-item">
+          <div class="nav-item-icon">🏠</div>
+          <div class="nav-item-label">Dashboard</div>
+        </div>
+        <div class="nav-item active">
+          <div class="nav-item-icon">📅</div>
+          <div class="nav-item-label">Training</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">📊</div>
+          <div class="nav-item-label">Analytics</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">💭</div>
+          <div class="nav-item-label">Coach</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-item-icon">⚙️</div>
+          <div class="nav-item-label">Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

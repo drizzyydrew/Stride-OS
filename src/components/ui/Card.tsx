@@ -19,7 +19,9 @@ export default function Card({
   const theme = useTheme();
   const paddingValue = padding === 'none'
     ? 0
-    : theme.spacing[padding === 'lg' ? 'xl' : padding];
+    : padding === 'lg'
+      ? theme.spacing.lg
+      : theme.spacing[padding];
 
   return (
     <View
@@ -28,8 +30,9 @@ export default function Card({
         {
           backgroundColor: variant === 'muted' ? theme.colors.cardAlt : theme.colors.card,
           borderColor: theme.colors.border,
+          borderWidth: 1,
           padding: paddingValue,
-          boxShadow: variant === 'elevated' ? theme.elevation.md.boxShadow : theme.elevation.none.boxShadow,
+          boxShadow: variant === 'elevated' ? theme.elevation.lg.boxShadow : theme.elevation.none.boxShadow,
         },
         variant === 'outlined' && styles.outlined,
         style,
@@ -42,8 +45,8 @@ export default function Card({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
-    marginBottom: 18,
+    borderRadius: 12,
+    marginBottom: 16,
     borderCurve: 'continuous',
   },
   outlined: {
