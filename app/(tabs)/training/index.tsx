@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  Alert, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRouter } from 'expo-router';
@@ -39,6 +39,16 @@ import { LAYOUT } from '../../../src/constants/layout';
 // ─── Sub-tab types ─────────────────────────────────────────────────────────────
 type RunTab = 'plan' | 'active' | 'hydration' | 'routes';
 type RunState = 'idle' | 'active' | 'paused';
+
+// Planning-only labels — none of these change how the route line is drawn or
+// calculated. There is no real per-mode routing (road/trail/turn) yet.
+type TravelMode = 'run_walk' | 'bike' | 'drive' | 'manual';
+const TRAVEL_MODES: { key: TravelMode; label: string }[] = [
+  { key: 'run_walk', label: 'Run/Walk' },
+  { key: 'bike',     label: 'Bike' },
+  { key: 'drive',    label: 'Drive' },
+  { key: 'manual',   label: 'Manual' },
+];
 type TrackingPermissionState = {
   foreground: Location.PermissionStatus | 'unknown';
   background: Location.PermissionStatus | 'unknown';
@@ -184,15 +194,6 @@ function routeProgressForLocation(route: RunRoute, point: RoutePoint): number {
   return closest?.distanceMiles ?? 0;
 }
 
-function estimatedElevationProfile(gainFt: number, count = 14): number[] {
-  const baseFt = 3445;
-  const gain = Math.max(gainFt, 30);
-  return Array.from({ length: count }, (_, index) => {
-    const t = count <= 1 ? 0 : index / (count - 1);
-    return Math.round(baseFt + Math.sin(t * Math.PI) * gain * 0.7 + t * gain * 0.3);
-  });
-}
-
 function elevationGainFt(profileFt: number[]): number {
   return profileFt.reduce((total, point, index) => {
     if (index === 0) return total;
@@ -246,6 +247,15 @@ function ElevationProfile({ profile, color }: { profile: number[]; color: string
           />
         );
       })}
+    </View>
+  );
+}
+
+function ElevationPlaceholder({ label }: { label?: string }) {
+  const C = useColors();
+  return (
+    <View style={[styles.elevationPlaceholder, { backgroundColor: C.bg, borderColor: C.border }]}>
+      <Text style={[{ fontSize: 12, color: C.textMuted }]}>{label ?? 'Elevation profile coming soon'}</Text>
     </View>
   );
 }
@@ -1405,15 +1415,15 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
   const [builderSegments, setBuilderSegments] = useState<RunRoute['segments']>([]);
   const [builderElevationProfile, setBuilderElevationProfile] = useState<number[]>([]);
   const [builderElevationGainFt, setBuilderElevationGainFt] = useState(0);
+  const [travelMode, setTravelMode] = useState<TravelMode>('run_walk');
+  const [pointMenuIndex, setPointMenuIndex] = useState<number | null>(null);
 
   const filteredRoutes = routes.filter(route => folderFilter === 'all' || route.folder === folderFilter);
   const builderDistance = routeDistanceMiles(builderPoints);
+  // Rough distance-based ballpark only — shown as a clearly labeled estimate,
+  // never used to fabricate a hill-shape profile (no real elevation data implies none is drawn).
   const builderFallbackGainFt = Math.round(builderDistance * 48);
-  const builderProfile = builderElevationProfile.length >= 2
-    ? builderElevationProfile
-    : builderPoints.length >= 2
-      ? estimatedElevationProfile(builderFallbackGainFt)
-      : [];
+  const builderProfile = builderElevationProfile.length >= 2 ? builderElevationProfile : [];
   const builderGainFt = builderElevationProfile.length >= 2 ? builderElevationGainFt : builderFallbackGainFt;
 
   useEffect(() => {
@@ -1478,14 +1488,14 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
         elevation = null;
       }
     }
-    const elevationProfileFt = elevation?.profileFt ?? estimatedElevationProfile(fallbackGainFt);
+    // Only persist a real, fetched elevation profile — never a fabricated shape.
     const id = addRoute({
       name: builderName.trim() || 'Custom Route',
       folder: builderFolder,
       difficulty: 'Custom',
       distanceMiles: miles,
       elevationGainFt: elevation?.gainFt ?? fallbackGainFt,
-      elevationProfileFt,
+      elevationProfileFt: elevation?.profileFt,
       estimatedMinutes: Math.max(1, Math.round(miles * 9.5)),
       segments: builderSegments,
       points: builderPoints,
@@ -1529,6 +1539,14 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
     const nextDistance = routeDistanceMiles(nextPoints);
     setBuilderPoints(nextPoints);
     setBuilderSegments(segments => segments.filter(segment => segment.distanceMiles <= nextDistance));
+  }
+
+  function removeBuilderPoint(index: number) {
+    const nextPoints = builderPoints.filter((_, i) => i !== index);
+    const nextDistance = routeDistanceMiles(nextPoints);
+    setBuilderPoints(nextPoints);
+    setBuilderSegments(segments => segments.filter(segment => segment.distanceMiles <= nextDistance));
+    setPointMenuIndex(null);
   }
 
   function clearBuilderRoute() {
@@ -1665,7 +1683,11 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
               ) : null}
               <View style={{ marginBottom: 10 }}>
                 <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 6 }]}>ELEVATION PROFILE</Text>
-                <ElevationProfile profile={r.elevationProfileFt ?? estimatedElevationProfile(r.elevationGainFt)} color={C.primary} />
+                {r.elevationProfileFt && r.elevationProfileFt.length >= 2 ? (
+                  <ElevationProfile profile={r.elevationProfileFt} color={C.primary} />
+                ) : (
+                  <ElevationPlaceholder />
+                )}
               </View>
               <TouchableOpacity
                 style={[styles.bigBtn, { backgroundColor: C.primary }]}
@@ -1686,6 +1708,24 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
             <View style={[{ padding: 12 }, styles.cardHeaderRow]}>
               <Text style={[styles.subTitle, { color: C.text }]}>Build Route</Text>
               <Text style={[{ fontSize: 11, color: C.textMuted }]}>{builderPoints.length} points · {builderSegments.length} intervals</Text>
+            </View>
+            <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
+              <View style={{ flexDirection: 'row', gap: 6, marginBottom: 6 }}>
+                {TRAVEL_MODES.map(m => (
+                  <TouchableOpacity
+                    key={m.key}
+                    style={[styles.travelModePill, { backgroundColor: travelMode === m.key ? C.primaryDim : C.cardAlt, borderColor: travelMode === m.key ? C.primary : 'transparent' }]}
+                    onPress={() => setTravelMode(m.key)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[{ fontSize: 11, fontWeight: '800', color: travelMode === m.key ? C.primary : C.textMuted }]}>{m.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={[{ fontSize: 10, color: C.textDim, lineHeight: 14 }]}>
+                Planning mode only — doesn't change the route line or distance yet.{'\n'}
+                Estimated point-to-point route · road/path snapping not available yet.
+              </Text>
             </View>
             <View style={[styles.builderToolbar, { backgroundColor: C.cardAlt }]}>
               <TouchableOpacity
@@ -1716,9 +1756,21 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
               onPress={(event) => handleBuilderMapPress(event.nativeEvent.coordinate)}
               showsUserLocation
             >
-              {builderPoints.map((point, index) => (
-                <Marker key={`${point.latitude}-${point.longitude}-${index}`} coordinate={point} title={`Point ${index + 1}`} />
-              ))}
+              {builderPoints.map((point, index) => {
+                const isStart = index === 0;
+                const isEnd = index === builderPoints.length - 1 && builderPoints.length > 1;
+                const pinColor = isStart ? C.positive : isEnd ? C.critical : undefined;
+                const title = isStart ? 'Start' : isEnd ? 'End' : `Point ${index + 1}`;
+                return (
+                  <Marker
+                    key={`${point.latitude}-${point.longitude}-${index}`}
+                    coordinate={point}
+                    title={title}
+                    pinColor={pinColor}
+                    onPress={() => setPointMenuIndex(index)}
+                  />
+                );
+              })}
               {builderPoints.length > 1 ? (
                 <Polyline coordinates={routePointsToLatLng(builderPoints)} strokeColor={C.primary} strokeWidth={4} />
               ) : null}
@@ -1754,10 +1806,14 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
                 <Text style={[styles.metricUnit, { color: C.textMuted }]}>markers</Text>
               </View>
             </View>
-            {builderProfile.length >= 2 ? (
+            {builderPoints.length >= 2 ? (
               <View style={[styles.intervalPanel, { backgroundColor: C.cardAlt }]}>
                 <Text style={[styles.cardLabel, { color: C.textDim }]}>ELEVATION PROFILE</Text>
-                <ElevationProfile profile={builderProfile} color={C.primary} />
+                {builderProfile.length >= 2 ? (
+                  <ElevationProfile profile={builderProfile} color={C.primary} />
+                ) : (
+                  <ElevationPlaceholder />
+                )}
               </View>
             ) : null}
             {builderSegments.length ? (
@@ -1813,9 +1869,59 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
             <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.primary, marginTop: 8 }]} onPress={saveBuilderRoute} activeOpacity={0.8}>
               <Text style={[styles.bigBtnText, { color: C.onPrimary }]}>Save Route</Text>
             </TouchableOpacity>
+            <View style={[styles.futureActionRow, { borderColor: C.border }]}>
+              <Text style={[{ fontSize: 12, color: C.textDim }]}>Export as GPX</Text>
+              <Text style={[{ fontSize: 11, color: C.textDim, fontStyle: 'italic' }]}>Coming later</Text>
+            </View>
           </View>
         </>
       )}
+
+      <Modal visible={pointMenuIndex !== null} transparent animationType="fade" onRequestClose={() => setPointMenuIndex(null)}>
+        <TouchableOpacity
+          style={styles.pointMenuOverlay}
+          activeOpacity={1}
+          onPress={() => setPointMenuIndex(null)}
+        >
+          <View style={[styles.pointMenuSheet, { backgroundColor: C.card, borderColor: C.border }]}>
+            {pointMenuIndex !== null && builderPoints[pointMenuIndex] ? (
+              <>
+                <Text style={[styles.subTitle, { color: C.text, marginBottom: 2 }]}>
+                  Point {pointMenuIndex + 1}
+                </Text>
+                <Text style={[{ fontSize: 12, color: C.textMuted, marginBottom: 12 }]}>
+                  {builderPoints[pointMenuIndex].latitude.toFixed(5)}, {builderPoints[pointMenuIndex].longitude.toFixed(5)}
+                </Text>
+                <View style={[styles.pointMenuRow, { borderColor: C.border }]}>
+                  <Text style={[{ fontSize: 13, color: C.text }]}>Straight line to here</Text>
+                  <Text style={[{ fontSize: 11, color: C.primary, fontWeight: '700' }]}>Current method</Text>
+                </View>
+                <View style={[styles.pointMenuRow, { borderColor: C.border }]}>
+                  <Text style={[{ fontSize: 13, color: C.textDim }]}>Follow roads to here</Text>
+                  <Text style={[{ fontSize: 11, color: C.textDim, fontStyle: 'italic' }]}>Not available yet</Text>
+                </View>
+                <View style={[styles.pointMenuRow, { borderColor: C.border }]}>
+                  <Text style={[{ fontSize: 13, color: C.textDim }]}>Export as GPX</Text>
+                  <Text style={[{ fontSize: 11, color: C.textDim, fontStyle: 'italic' }]}>Coming later</Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.pointMenuRow, { borderColor: C.border, borderBottomWidth: 0 }]}
+                  onPress={() => removeBuilderPoint(pointMenuIndex)}
+                >
+                  <Text style={[{ fontSize: 13, color: C.critical, fontWeight: '700' }]}>Remove this point</Text>
+                </TouchableOpacity>
+              </>
+            ) : null}
+            <TouchableOpacity
+              style={[styles.bigBtn, { backgroundColor: C.cardAlt, marginTop: 12 }]}
+              onPress={() => setPointMenuIndex(null)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.bigBtnText, { color: C.text }]}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 }
@@ -2515,6 +2621,47 @@ const styles = StyleSheet.create({
     flex: 1,
     borderTopLeftRadius: 2,
     borderTopRightRadius: 2,
+  },
+  elevationPlaceholder: {
+    height: 60,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  travelModePill: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 7,
+    alignItems: 'center',
+  },
+  futureActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    marginTop: 10,
+    paddingTop: 10,
+  },
+  pointMenuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  pointMenuSheet: {
+    borderWidth: 1,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 18,
+  },
+  pointMenuRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    paddingVertical: 12,
   },
   map: {
     height: 240,
