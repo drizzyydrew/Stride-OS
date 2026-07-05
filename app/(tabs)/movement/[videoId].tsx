@@ -23,7 +23,8 @@ import * as FileSystem from 'expo-file-system';
 
 import { useMovementStore } from '../../../src/store/movementStore';
 import { supabase }         from '../../../src/lib/supabase';
-import { suggestGaitFindings } from '../../../src/utils/movementEngine';
+import { suggestGaitFindings, getMovementTrainingInfluences } from '../../../src/utils/movementEngine';
+import PickerWheel from '../../../src/components/ui/PickerWheel';
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
@@ -48,6 +49,18 @@ const SEVERITY_LABEL: Record<FindingSeverity, string> = {
   low:      'Low',
   moderate: 'Moderate',
   high:     'High',
+};
+
+const FOCUS_COLOR: Record<'caution' | 'modification' | 'focus', string> = {
+  caution:      colors.critical,
+  modification: colors.warning,
+  focus:        colors.primary,
+};
+
+const FOCUS_LABEL: Record<'caution' | 'modification' | 'focus', string> = {
+  caution:      'Caution',
+  modification: 'Modify',
+  focus:        'Focus',
 };
 
 const GAIT_DEFAULTS: Omit<GaitAnalysis, 'videoId'> = {
@@ -122,8 +135,8 @@ function RiskFlagCard({ flag, onDismiss }: { flag: MovementRiskFlag; onDismiss: 
 const SEV_OPTS: SeverityOrNull[] = [null, 'none', 'mild', 'moderate', 'severe'];
 const FOOT_STRIKE_OPTIONS: FootStrikePattern[] = ['heel', 'midfoot', 'forefoot', 'unknown'];
 const TRI_OPTS = [null, false, true] as const;
-
-type LREntry = { left: string; right: string };
+const CADENCE_NOT_MEASURED = 0;
+const CADENCE_VALUES = [CADENCE_NOT_MEASURED, ...Array.from({ length: 71 }, (_, i) => 150 + i)]; // 0 = "Not measured", 150–220 spm
 
 function sevLabel(v: SeverityOrNull) {
   return v === null ? '—' : v.charAt(0).toUpperCase() + v.slice(1);
@@ -153,40 +166,6 @@ function TriPicker({ value, onChange }: { value: boolean | null; onChange: (v: b
   );
 }
 
-function LRTextRow({ label, value, onChange, placeholder }: { label: string; value: LREntry; onChange: (v: LREntry) => void; placeholder?: string }) {
-  return (
-    <View style={gc.lrRow}>
-      <Text style={gc.lrLabel}>{label}</Text>
-      <TextInput
-        style={[gc.lrInput, { marginRight: 6 }]}
-        value={value.left}
-        onChangeText={t => onChange({ ...value, left: t })}
-        placeholder={placeholder ?? '—'}
-        placeholderTextColor={colors.textSubtle}
-      />
-      <TextInput
-        style={gc.lrInput}
-        value={value.right}
-        onChangeText={t => onChange({ ...value, right: t })}
-        placeholder={placeholder ?? '—'}
-        placeholderTextColor={colors.textSubtle}
-      />
-    </View>
-  );
-}
-
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <View style={gc.sectionHeader}>
-      <Text style={gc.sectionTitle}>{title}</Text>
-      <View style={gc.lrLabels}>
-        <Text style={gc.lrHeaderLabel}>LEFT</Text>
-        <Text style={gc.lrHeaderLabel}>RIGHT</Text>
-      </View>
-    </View>
-  );
-}
-
 function GaitChecklistModal({
   visible,
   existing,
@@ -200,44 +179,25 @@ function GaitChecklistModal({
   onSave:   (g: GaitAnalysis) => void;
   onClose:  () => void;
 }) {
-  const [cadence,    setCadence]   = useState(String(existing.cadence ?? ''));
+  const [cadence,    setCadence]   = useState(existing.cadence ?? CADENCE_NOT_MEASURED);
   const [footStrike, setFootStrike]= useState<FootStrikePattern>(existing.footStrike ?? 'unknown');
   const [overstride, setOverstride]= useState<boolean | null>(existing.overstride ?? null);
   const [crossover,  setCrossover] = useState<boolean | null>(existing.crossoverGait ?? null);
   const [hipDrop,    setHipDrop]   = useState<SeverityOrNull>(existing.hipDrop ?? null);
   const [kneeValgus, setKneeValgus]= useState<SeverityOrNull>(existing.kneeValgus ?? null);
-  const [notes,      setNotes]     = useState('');
+  const [notes,      setNotes]     = useState(existing.additionalNotes ?? '');
+  const [showCadencePicker, setShowCadencePicker] = useState(false);
 
-  // Alignment
-  const [hipRotation,       setHipRotation]      = useState<LREntry>({ left: '', right: '' });
-  const [pelvicTilt,        setPelvicTilt]        = useState<LREntry>({ left: '', right: '' });
-  const [headPosition,      setHeadPosition]      = useState('');
-  const [forwardLean,       setForwardLean]       = useState('');
-  const [shoulderPosition,  setShoulderPosition]  = useState<LREntry>({ left: '', right: '' });
-  const [lateralPosition,   setLateralPosition]   = useState<LREntry>({ left: '', right: '' });
-
-  // Frontal Run View
-  const [hipPath,           setHipPath]           = useState('');
-  const [hipDropFR,         setHipDropFR]         = useState<LREntry>({ left: '', right: '' });
-  const [armCrossover,      setArmCrossover]      = useState<boolean | null>(null);
-  const [armMobility,       setArmMobility]       = useState<LREntry>({ left: '', right: '' });
-  const [abdAdduction,      setAbdAdduction]      = useState<LREntry>({ left: '', right: '' });
-
-  // Top Run View
-  const [footWidth,         setFootWidth]         = useState('');
-  const [trunkRotation,     setTrunkRotation]     = useState<LREntry>({ left: '', right: '' });
-  const [armSwingTop,       setArmSwingTop]       = useState<LREntry>({ left: '', right: '' });
-
-  // Lateral Run View
-  const [ankleDorsiflexion, setAnkleDorsiflexion]= useState<LREntry>({ left: '', right: '' });
-  const [kneeDrive,         setKneeDrive]         = useState<LREntry>({ left: '', right: '' });
-  const [hipExtension,      setHipExtension]      = useState<LREntry>({ left: '', right: '' });
-  const [footStrikePos,     setFootStrikePos]     = useState<LREntry>({ left: '', right: '' });
-  const [initialContact,    setInitialContact]    = useState<LREntry>({ left: '', right: '' });
-  const [gaitContact,       setGaitContact]       = useState<LREntry>({ left: '', right: '' });
+  const answeredCount = [
+    cadence !== CADENCE_NOT_MEASURED,
+    footStrike !== 'unknown',
+    overstride !== null,
+    crossover !== null,
+    hipDrop !== null,
+    kneeValgus !== null,
+  ].filter(Boolean).length;
 
   function handleSave() {
-    const cad = parseInt(cadence, 10);
     const g: GaitAnalysis = {
       ...GAIT_DEFAULTS,
       videoId,
@@ -246,7 +206,8 @@ function GaitChecklistModal({
       crossoverGait: crossover,
       hipDrop,
       kneeValgus,
-      cadence: Number.isNaN(cad) ? undefined : cad,
+      cadence: cadence === CADENCE_NOT_MEASURED ? undefined : cadence,
+      additionalNotes: notes.trim() || undefined,
     };
     onSave(g);
     onClose();
@@ -257,50 +218,25 @@ function GaitChecklistModal({
       <View style={gc.root}>
         <View style={gc.header}>
           <Pressable onPress={onClose}><Text style={gc.cancel}>Cancel</Text></Pressable>
-          <Text style={gc.title}>Gait Assessment</Text>
+          <View style={gc.headerCenter}>
+            <Text style={gc.title}>Gait Checklist</Text>
+            <Text style={gc.progress}>{answeredCount} of 6 answered</Text>
+          </View>
           <Pressable onPress={handleSave}><Text style={gc.save}>Save</Text></Pressable>
         </View>
         <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
 
           {/* Cadence */}
-          <View style={gc.row}>
+          <Pressable style={gc.row} onPress={() => setShowCadencePicker(true)}>
             <Text style={gc.label}>Cadence (spm)</Text>
-            <TextInput
-              style={gc.numInput}
-              value={cadence}
-              onChangeText={setCadence}
-              keyboardType="number-pad"
-              placeholder="—"
-              placeholderTextColor={colors.textSubtle}
-            />
-          </View>
+            <View style={gc.valueRow}>
+              <Text style={gc.valueTxt}>
+                {cadence === CADENCE_NOT_MEASURED ? 'Not measured' : `${cadence} spm`}
+              </Text>
+              <Text style={gc.chevron}>›</Text>
+            </View>
+          </Pressable>
 
-          {/* ALIGNMENT */}
-          <SectionHeader title="Alignment" />
-          <LRTextRow label="Hip rotation angle" value={hipRotation} onChange={setHipRotation} placeholder="°" />
-          <LRTextRow label="Pelvic tilt" value={pelvicTilt} onChange={setPelvicTilt} />
-          <View style={gc.row}>
-            <Text style={gc.label}>Head position</Text>
-            <TextInput style={gc.numInput} value={headPosition} onChangeText={setHeadPosition} placeholder="—" placeholderTextColor={colors.textSubtle} />
-          </View>
-          <View style={gc.row}>
-            <Text style={gc.label}>Forward lean</Text>
-            <TextInput style={gc.numInput} value={forwardLean} onChangeText={setForwardLean} placeholder="—" placeholderTextColor={colors.textSubtle} />
-          </View>
-          <LRTextRow label="Shoulder position" value={shoulderPosition} onChange={setShoulderPosition} />
-          <LRTextRow label="Lateral position" value={lateralPosition} onChange={setLateralPosition} />
-
-          {/* FRONTAL RUN VIEW */}
-          <SectionHeader title="Frontal Run View" />
-          <View style={gc.row}>
-            <Text style={gc.label}>Hip path</Text>
-            <TextInput style={gc.numInput} value={hipPath} onChangeText={setHipPath} placeholder="—" placeholderTextColor={colors.textSubtle} />
-          </View>
-          <LRTextRow label="Hip drop" value={hipDropFR} onChange={setHipDropFR} />
-          <View style={gc.groupRow}>
-            <Text style={gc.label}>Arm crossover</Text>
-            <TriPicker value={armCrossover} onChange={setArmCrossover} />
-          </View>
           <View style={gc.groupRow}>
             <Text style={gc.label}>Foot strike</Text>
             <View style={gc.pills}>
@@ -311,34 +247,14 @@ function GaitChecklistModal({
               ))}
             </View>
           </View>
-          <LRTextRow label="Arm mobility" value={armMobility} onChange={setArmMobility} />
-          <LRTextRow label="Abduction/adduction" value={abdAdduction} onChange={setAbdAdduction} />
 
-          {/* TOP RUN VIEW */}
-          <SectionHeader title="Top Run View" />
-          <View style={gc.row}>
-            <Text style={gc.label}>Foot width</Text>
-            <TextInput style={gc.numInput} value={footWidth} onChangeText={setFootWidth} placeholder="—" placeholderTextColor={colors.textSubtle} />
-          </View>
-          <LRTextRow label="Rotation" value={trunkRotation} onChange={setTrunkRotation} />
-          <LRTextRow label="Arm swing" value={armSwingTop} onChange={setArmSwingTop} />
-
-          {/* LATERAL RUN VIEW */}
-          <SectionHeader title="Lateral Run View" />
-          <LRTextRow label="Ankle dorsiflexion" value={ankleDorsiflexion} onChange={setAnkleDorsiflexion} />
-          <LRTextRow label="Knee drive" value={kneeDrive} onChange={setKneeDrive} />
-          <LRTextRow label="Hip extension at toe-off" value={hipExtension} onChange={setHipExtension} />
-          <LRTextRow label="Foot strike position" value={footStrikePos} onChange={setFootStrikePos} />
-          <LRTextRow label="Initial contact" value={initialContact} onChange={setInitialContact} />
-          <LRTextRow label="Gait sign of contact" value={gaitContact} onChange={setGaitContact} />
-
-          {/* Overstriding & crossover (existing flags) */}
-          <View style={[gc.sectionHeader, { marginTop: 10 }]}>
-            <Text style={gc.sectionTitle}>Flags</Text>
-          </View>
           <View style={gc.groupRow}>
             <Text style={gc.label}>Overstriding</Text>
             <TriPicker value={overstride} onChange={setOverstride} />
+          </View>
+          <View style={gc.groupRow}>
+            <Text style={gc.label}>Crossover gait</Text>
+            <TriPicker value={crossover} onChange={setCrossover} />
           </View>
           <View style={gc.groupRow}>
             <Text style={gc.label}>Hip drop severity</Text>
@@ -363,6 +279,16 @@ function GaitChecklistModal({
           </View>
         </ScrollView>
       </View>
+
+      <PickerWheel
+        visible={showCadencePicker}
+        title="Cadence"
+        values={CADENCE_VALUES}
+        selectedValue={cadence}
+        formatValue={v => v === CADENCE_NOT_MEASURED ? 'Not measured' : `${v} spm`}
+        onConfirm={v => { setCadence(v); setShowCadencePicker(false); }}
+        onClose={() => setShowCadencePicker(false)}
+      />
     </Modal>
   );
 }
@@ -520,6 +446,7 @@ export default function VideoDetailScreen() {
   ];
 
   const activeFlags = flags.filter(f => f.active);
+  const trainingInfluences = getMovementTrainingInfluences(flags);
 
   return (
     <View style={s.root}>
@@ -609,6 +536,28 @@ export default function VideoDetailScreen() {
               </View>
             </View>
 
+            <View style={s.focusCard}>
+              <Text style={s.cardLabel}>TRAINING FOCUS — WHAT THIS MEANS</Text>
+              {trainingInfluences.length === 0 ? (
+                <Text style={s.emptyNote}>
+                  Run the gait checklist to get personalized coaching focus areas here.
+                </Text>
+              ) : (
+                <View style={{ gap: spacing.sm }}>
+                  {trainingInfluences.map((influence, i) => (
+                    <View key={i} style={s.focusRow}>
+                      <View style={[s.focusBadge, { backgroundColor: FOCUS_COLOR[influence.category] + '22' }]}>
+                        <Text style={[s.focusBadgeTxt, { color: FOCUS_COLOR[influence.category] }]}>
+                          {FOCUS_LABEL[influence.category]}
+                        </Text>
+                      </View>
+                      <Text style={s.focusMsg}>{influence.message}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+
             <SubmitForAnalysisCard
               videoId={videoId!}
               submitted={video.submittedForAnalysis ?? false}
@@ -627,6 +576,17 @@ export default function VideoDetailScreen() {
         {/* ── Gait ── */}
         {tab === 'gait' && (
           <View style={s.section}>
+            {!gait && (
+              <View style={s.introCard}>
+                <Text style={s.introTitle}>Gait Checklist</Text>
+                <Text style={s.introMeta}>~1 minute · 6 quick taps</Text>
+                <Text style={s.introDesc}>
+                  Rate footstrike, cadence, and hip/knee control from this video — no measuring or
+                  diagnosis required. These answers drive the coaching findings and training focus below.
+                </Text>
+              </View>
+            )}
+
             <Pressable style={s.actionBtn} onPress={() => setShowGaitModal(true)}>
               <Text style={s.actionBtnTxt}>{gait ? 'Update Gait Checklist' : 'Run Gait Checklist'}</Text>
             </Pressable>
@@ -817,6 +777,29 @@ const s = StyleSheet.create({
     borderColor:     colors.border,
   },
   disclaimerTxt:  { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
+  focusCard: {
+    backgroundColor: colors.card,
+    borderRadius:    12,
+    padding:         spacing.md,
+    borderWidth:     1,
+    borderColor:     colors.border,
+    gap:             spacing.sm,
+  },
+  focusRow:      { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  focusBadge:    { borderRadius: Radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
+  focusBadgeTxt: { fontSize: 10, fontWeight: FontWeight.black },
+  focusMsg:      { flex: 1, color: colors.text, fontSize: FontSize.sm, lineHeight: 19 },
+  introCard: {
+    backgroundColor: colors.primaryDim,
+    borderRadius:    12,
+    padding:         spacing.md,
+    borderWidth:     1,
+    borderColor:     colors.primary + '44',
+    gap:             2,
+  },
+  introTitle: { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  introMeta:  { color: colors.primary, fontSize: FontSize.xs, fontWeight: FontWeight.bold, marginBottom: 4 },
+  introDesc:  { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
   actionBtn: {
     backgroundColor: colors.primary,
     borderRadius:    Radius.sm,
@@ -922,6 +905,11 @@ const gc = StyleSheet.create({
   cancel:   { color: colors.textMuted, fontSize: FontSize.base },
   title:    { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
   save:     { color: colors.primary, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  headerCenter: { alignItems: 'center' },
+  progress: { color: colors.textMuted, fontSize: FontSize.xs, marginTop: 2 },
+  valueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  valueTxt: { color: colors.textMuted, fontSize: FontSize.sm },
+  chevron:  { color: colors.textSubtle, fontSize: FontSize.base },
   row: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -964,62 +952,6 @@ const gc = StyleSheet.create({
     paddingVertical:   spacing.xs,
     minWidth:          64,
     textAlign:         'right',
-  },
-  sectionHeader: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    justifyContent:    'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical:   spacing.sm,
-    backgroundColor:   colors.cardAlt,
-    borderTopWidth:    1,
-    borderBottomWidth: 1,
-    borderColor:       colors.border,
-    marginTop:         8,
-  },
-  sectionTitle: {
-    color:      colors.primary,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.bold,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
-  lrLabels: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  lrHeaderLabel: {
-    color:      colors.textDim,
-    fontSize:   FontSize.xs,
-    fontWeight: FontWeight.bold,
-    width:      72,
-    textAlign:  'center',
-  },
-  lrRow: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical:   spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    gap:               8,
-  },
-  lrLabel: {
-    flex:     1,
-    color:    colors.text,
-    fontSize: FontSize.sm,
-  },
-  lrInput: {
-    width:             72,
-    backgroundColor:   colors.card,
-    borderRadius:      Radius.sm,
-    borderWidth:       1,
-    borderColor:       colors.border,
-    color:             colors.text,
-    fontSize:          FontSize.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical:   4,
-    textAlign:         'center',
   },
 });
 
