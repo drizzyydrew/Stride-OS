@@ -5,6 +5,14 @@ import SwiftUI
 import WidgetKit
 
 // ─── Widget bundle ────────────────────────────────────────────────────────────
+//
+// Apple Watch: audited for Build 28 — no watch target or watch-compatible
+// infrastructure exists in this project. These Live Activities already mirror
+// to a paired Apple Watch automatically via the system's built-in Live
+// Activity support (no extra code required for that baseline). A dedicated
+// WatchKit app (independent UI/controls on-wrist) is a separate, larger
+// effort — new target, own signing/provisioning, own build — deferred rather
+// than started here to avoid signing/build risk on an unreviewed addition.
 
 @main
 struct StrideRunLiveActivityBundle: WidgetBundle {
@@ -52,6 +60,14 @@ struct StrideRunLiveActivity: Widget {
               .frame(width: 34, height: 28)
               .background(StrideDesign.clay.opacity(0.28), in: Capsule())
             }
+            Button(intent: StopRunIntent()) {
+              Image(systemName: "stop.fill")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+            .frame(width: 34, height: 28)
+            .background(StrideDesign.critical.opacity(0.28), in: Capsule())
           }
         }
       } compactLeading: {
@@ -94,25 +110,25 @@ private struct LockScreenRunView: View {
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
+    VStack(alignment: .leading, spacing: 10) {
       HStack {
         HStack(spacing: 8) {
           Text("MM")
-            .font(.system(size: 13, weight: .bold, design: .serif))
+            .font(.system(size: 12, weight: .bold, design: .serif))
             .foregroundStyle(StrideDesign.clay)
           Text("StrideOS Run")
-            .font(.system(size: 15, weight: .semibold))
+            .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(primaryText)
         }
         Spacer()
         ZoneBadge(label: context.state.zoneLabel, status: context.state.zoneStatus)
       }
 
-      HStack(alignment: .center, spacing: 18) {
-        VStack(alignment: .leading, spacing: 12) {
+      HStack(alignment: .center, spacing: 16) {
+        VStack(alignment: .leading, spacing: 10) {
           VStack(alignment: .leading, spacing: 2) {
             Text(formatElapsed(context.state.elapsedSeconds))
-              .font(.system(size: 56, weight: .heavy, design: .rounded))
+              .font(.system(size: 46, weight: .heavy, design: .rounded))
               .monospacedDigit()
               .minimumScaleFactor(0.68)
               .foregroundStyle(primaryText)
@@ -123,12 +139,12 @@ private struct LockScreenRunView: View {
           VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
               Text(String(format: "%.2f", context.state.distanceMiles))
-                .font(.system(size: 52, weight: .heavy, design: .rounded))
+                .font(.system(size: 42, weight: .heavy, design: .rounded))
                 .monospacedDigit()
                 .minimumScaleFactor(0.68)
                 .foregroundStyle(primaryText)
               Text("mi")
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(secondaryText)
             }
             Text("DISTANCE")
@@ -140,40 +156,49 @@ private struct LockScreenRunView: View {
 
         Rectangle()
           .fill(borderColor)
-          .frame(width: 1, height: 132)
+          .frame(width: 1, height: 92)
 
         VStack(alignment: .leading, spacing: 14) {
           WidgetMetric(icon: "gauge.with.dots.needle.50percent", label: "AVG PACE", value: context.state.averagePace, unit: "/mi", primary: primaryText, secondary: secondaryText)
           WidgetMetric(icon: "heart.fill", label: "HEART RATE", value: context.state.heartRate > 0 ? "\(context.state.heartRate)" : "--", unit: "bpm", primary: primaryText, secondary: secondaryText)
-          WidgetMetric(icon: "mountain.2.fill", label: "ELEV GAIN", value: "--", unit: "ft", primary: primaryText, secondary: secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
       }
 
-      if context.state.isPaused {
-        Button(intent: ResumeRunIntent()) {
-          Label("RESUME", systemImage: "play.fill")
-            .font(.system(size: 16, weight: .heavy))
-            .frame(maxWidth: .infinity, minHeight: 48)
-            .background(actionColor, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .foregroundStyle(isLight ? StrideDesign.textPrimaryLight : .white)
+      HStack(spacing: 10) {
+        if context.state.isPaused {
+          Button(intent: ResumeRunIntent()) {
+            Label("RESUME", systemImage: "play.fill")
+              .font(.system(size: 15, weight: .heavy))
+              .frame(maxWidth: .infinity, minHeight: 44)
+              .background(actionColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+              .foregroundStyle(isLight ? StrideDesign.textPrimaryLight : .white)
+          }
+          .buttonStyle(.plain)
+        } else {
+          Button(intent: PauseRunIntent()) {
+            Label("PAUSE", systemImage: "pause.fill")
+              .font(.system(size: 15, weight: .heavy))
+              .frame(maxWidth: .infinity, minHeight: 44)
+              .background(actionColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+              .foregroundStyle(isLight ? StrideDesign.textPrimaryLight : .white)
+          }
+          .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
-      } else {
-        Button(intent: PauseRunIntent()) {
-          Label("PAUSE", systemImage: "pause.fill")
-            .font(.system(size: 16, weight: .heavy))
-            .frame(maxWidth: .infinity, minHeight: 48)
-            .background(actionColor, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .foregroundStyle(isLight ? StrideDesign.textPrimaryLight : .white)
+        Button(intent: StopRunIntent()) {
+          Image(systemName: "stop.fill")
+            .font(.system(size: 15, weight: .heavy))
+            .frame(width: 52, height: 44)
+            .background(StrideDesign.critical.opacity(0.18), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .foregroundStyle(StrideDesign.critical)
         }
         .buttonStyle(.plain)
       }
     }
-    .padding(18)
-    .background(cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+    .padding(16)
+    .background(cardBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     .overlay(
-      RoundedRectangle(cornerRadius: 24, style: .continuous)
+      RoundedRectangle(cornerRadius: 22, style: .continuous)
         .stroke(borderColor.opacity(0.9), lineWidth: 1)
     )
   }
