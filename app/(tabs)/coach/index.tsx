@@ -26,6 +26,20 @@ import * as ImagePicker from 'expo-image-picker';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useMovementStore }   from '../../../src/store/movementStore';
 import { useAuthStore } from '../../../src/store/authStore';
+import { useWorkoutStore } from '../../../src/store/workoutStore';
+import { useStrengthStore } from '../../../src/store/strengthStore';
+import { useReadinessStore } from '../../../src/store/readinessStore';
+import { useAthleteStore } from '../../../src/store/athleteStore';
+import { useCheckInStore } from '../../../src/store/checkInStore';
+import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
+import { buildCoachingInput } from '../../../src/utils/coachingInputBuilder';
+import { generateCoachingOutput } from '../../../src/utils/coachEngine';
+import WeeklyCoachCard from '../../../src/components/coaching/WeeklyCoachCard';
+import CoachInsightsCard from '../../../src/components/coaching/CoachInsightsCard';
+import RaceReadinessCard from '../../../src/components/coaching/RaceReadinessCard';
+import { todayDateKey } from '../../../src/types/checkin';
+import type { CompletedWorkoutRecord } from '../../../src/types/training';
+import type { StrengthLogRecord } from '../../../src/types/strength';
 import {
   checkAiCoachHealth,
   isAiCoachConfigured,
@@ -43,13 +57,61 @@ import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 
 type Role    = 'user' | 'assistant';
 type Message = CoachMessage & { role: Role };
-type CoachTab = 'chat' | 'video';
+type CoachTab = 'chat' | 'insights' | 'video';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// Real training context so answers are grounded in what the athlete actually
+// did — never generic advice when app data exists.
+export type CoachTrainingContext = {
+  runHistory:      CompletedWorkoutRecord[];
+  strengthHistory: StrengthLogRecord[];
+  readinessLine:   string;
+  fatigueScore:    number;
+  recoveryScore:   number;
+  currentWeek:     number;
+  trainingPhase:   string;
+};
+
+function shortDate(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function buildTrainingContextBlock(ctx: CoachTrainingContext): string {
+  const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  const runs = ctx.runHistory
+    .filter(r => !r.skipped && r.timestamp >= cutoff)
+    .sort((a, b) => b.timestamp - a.timestamp);
+  const strength = ctx.strengthHistory
+    .filter(r => !r.skipped && r.timestamp >= cutoff)
+    .sort((a, b) => b.timestamp - a.timestamp);
+
+  const totalMiles = runs.reduce((s, r) => s + (r.actualDistanceMiles ?? r.estimatedDistanceMiles ?? 0), 0);
+  const runLines = runs.slice(0, 5).map(r => {
+    const miles = r.actualDistanceMiles ?? r.estimatedDistanceMiles;
+    const minutes = r.actualDurationMinutes ?? r.durationMinutes;
+    return `  - ${shortDate(r.timestamp)}: ${r.type.replace(/_/g, ' ')}, ${miles ? `${miles.toFixed(1)} mi` : 'distance n/a'}, ${minutes} min${r.rpe ? `, RPE ${r.rpe}` : ''}`;
+  });
+  const strengthLines = strength.slice(0, 3).map(r =>
+    `  - ${shortDate(r.timestamp)}: ${r.sessionType.replace(/_/g, ' ')}${r.actualDuration ? `, ${r.actualDuration} min` : ''}${r.overallRpe ? `, RPE ${r.overallRpe}` : ''}`,
+  );
+
+  return `RECENT TRAINING (last 14 days)
+- Runs: ${runs.length} totaling ${totalMiles.toFixed(1)} miles.
+${runLines.length ? runLines.join('\n') : '  - No runs logged in this window.'}
+- Strength sessions: ${strength.length}.
+${strengthLines.length ? strengthLines.join('\n') : '  - No strength sessions logged in this window.'}
+
+CURRENT STATE
+- Training week ${ctx.currentWeek}, phase: ${ctx.trainingPhase}
+- Fatigue ${ctx.fatigueScore}/100 · Recovery ${ctx.recoveryScore}/100
+- ${ctx.readinessLine}`;
+}
+
 function buildSystemPrompt(
-  data:      ReturnType<typeof useOnboardingStore.getState>['data'],
-  riskFlags: ReturnType<typeof useMovementStore.getState>['getActiveRiskFlags'],
+  data:        ReturnType<typeof useOnboardingStore.getState>['data'],
+  riskFlags:   ReturnType<typeof useMovementStore.getState>['getActiveRiskFlags'],
+  trainingCtx: CoachTrainingContext,
 ): string {
   const flags   = riskFlags();
   const flagTxt = flags.length
@@ -76,8 +138,12 @@ ${data.hrMax ? `- HR max: ${data.hrMax} bpm` : ''}${data.hrResting ? `  Resting 
 MOVEMENT RISK FLAGS
 ${flagTxt}
 
+${buildTrainingContextBlock(trainingCtx)}
+
 INSTRUCTIONS
 - Give personalised, actionable advice grounded in this athlete's specific data.
+- Structure meaningful answers as: what the data shows (observation), what it means (interpretation), what to do (recommendation).
+- Reference the athlete's actual recent training, readiness, fatigue, and recovery numbers above whenever relevant. Never give generic advice when this data can ground the answer.
 - Be direct and concise. Use dashes for bullet points.
 - When giving training, recovery, or injury-risk guidance, cite credible sports science sources such as PubMed-indexed research, ACSM, NSCA, or consensus guidelines in plain text.
 - Do NOT use markdown: no # headers, no ## headers, no **bold**, no *italics*. Plain text only.
@@ -131,6 +197,67 @@ export default function CoachScreen() {
   const updateVideo = useMovementStore(s => s.updateVideo);
   const videos = useMovementStore(s => s.videos);
   const user = useAuthStore(s => s.user);
+  const runHistory = useWorkoutStore(s => s.history);
+  const strengthHistory = useStrengthStore(s => s.history);
+  const todayReadiness = useReadinessStore(s => s.todayReadiness);
+  const fatigueScore = useAthleteStore(s => s.fatigueScore);
+  const recoveryScore = useAthleteStore(s => s.recoveryScore);
+  const currentWeek = useAthleteStore(s => s.currentWeek);
+  const trainingPhase = useAthleteStore(s => s.trainingPhase);
+
+  const trainingCtx: CoachTrainingContext = useMemo(() => ({
+    runHistory,
+    strengthHistory,
+    readinessLine: todayReadiness?.date === todayDateKey()
+      ? `Today's readiness check-in: ${todayReadiness.score}/100`
+      : 'No readiness check-in yet today.',
+    fatigueScore,
+    recoveryScore,
+    currentWeek,
+    trainingPhase,
+  }), [runHistory, strengthHistory, todayReadiness, fatigueScore, recoveryScore, currentWeek, trainingPhase]);
+
+  // ── Insights (deterministic coach engine over real history) ────────────────
+  const goalRace = useAthleteStore(s => s.goalRace);
+  const progressionLevel = useAthleteStore(s => s.progressionLevel);
+  const weeklyMileage = useAthleteStore(s => s.weeklyMileage);
+  const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
+  const completedWorkouts = useWorkoutStore(s => s.completedWorkouts);
+  const { richWeek, weeksToRace } = useWeekPlan();
+
+  const coaching = useMemo(() => {
+    const checkedIn = todayCheckIn?.date === todayDateKey();
+    const todayIdx = (new Date().getDay() + 6) % 7; // richWeek.workouts is Monday-indexed
+    const todayWorkout = richWeek.workouts[todayIdx] ?? null;
+    const todayKey = todayWorkout ? `w${currentWeek}_${todayWorkout.id}_${todayIdx}` : '';
+    return generateCoachingOutput(buildCoachingInput({
+      athleteName: data.name || 'Athlete',
+      goalRace,
+      currentWeek,
+      trainingPhase,
+      progressionLevel,
+      weeklyMileage,
+      fatigueScore,
+      recoveryScore,
+      soreness: checkedIn ? (todayCheckIn?.soreness ?? null) : null,
+      motivation: checkedIn ? (todayCheckIn?.motivation ?? null) : null,
+      checkedIn,
+      todayWorkoutType: todayWorkout?.type ?? 'rest',
+      isRestDay: !todayWorkout || todayWorkout.type === 'rest',
+      isTodayComplete: todayKey ? completedWorkouts.includes(todayKey) : false,
+      weeksRemaining: weeksToRace,
+      plannedSessionsPerWeek: data.targetSessions || 4,
+      history: runHistory,
+    }));
+  }, [
+    completedWorkouts, currentWeek, data.name, data.targetSessions, fatigueScore, goalRace,
+    progressionLevel, recoveryScore, richWeek, runHistory, todayCheckIn, trainingPhase,
+    weeklyMileage, weeksToRace,
+  ]);
+  const historyWeekCount = useMemo(
+    () => new Set(runHistory.filter(r => !r.skipped).map(r => r.week)).size,
+    [runHistory],
+  );
 
   const [tab,       setTab]       = useState<CoachTab>('chat');
   const [messages,  setMessages]  = useState<Message[]>([]);
@@ -185,7 +312,7 @@ export default function CoachScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
-      const system  = buildSystemPrompt(data, riskFlags);
+      const system  = buildSystemPrompt(data, riskFlags, trainingCtx);
       const reply = await sendCoachMessage(updated, system);
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
@@ -288,13 +415,19 @@ export default function CoachScreen() {
           style={[s.segmentBtn, tab === 'chat' && s.segmentBtnActive]}
           onPress={() => setTab('chat')}
         >
-          <Text style={[s.segmentTxt, tab === 'chat' && s.segmentTxtActive]}>AI Coaching</Text>
+          <Text style={[s.segmentTxt, tab === 'chat' && s.segmentTxtActive]}>Ask Coach</Text>
+        </Pressable>
+        <Pressable
+          style={[s.segmentBtn, tab === 'insights' && s.segmentBtnActive]}
+          onPress={() => setTab('insights')}
+        >
+          <Text style={[s.segmentTxt, tab === 'insights' && s.segmentTxtActive]}>Insights</Text>
         </Pressable>
         <Pressable
           style={[s.segmentBtn, tab === 'video' && s.segmentBtnActive]}
           onPress={() => setTab('video')}
         >
-          <Text style={[s.segmentTxt, tab === 'video' && s.segmentTxtActive]}>Video Analysis</Text>
+          <Text style={[s.segmentTxt, tab === 'video' && s.segmentTxtActive]}>Video</Text>
         </Pressable>
       </View>
 
@@ -400,6 +533,20 @@ export default function CoachScreen() {
             </Pressable>
           </View>
         </>
+      ) : tab === 'insights' ? (
+        <ScrollView style={s.messages} contentContainerStyle={s.videoContent} showsVerticalScrollIndicator={false}>
+          <View style={s.contextCard}>
+            <Text style={s.contextEyebrow}>Training Insights</Text>
+            <Text style={s.contextTxt}>
+              {historyWeekCount >= 2
+                ? 'Generated from your real training history, recovery, and load — every insight explains what it sees, why it matters, and what to do.'
+                : `Based on ${historyWeekCount === 0 ? 'no' : 'limited'} logged training so far — treat these as low-confidence until more sessions are logged.`}
+            </Text>
+          </View>
+          <WeeklyCoachCard summary={coaching.weeklySummary} />
+          <CoachInsightsCard insights={coaching.allInsights} maxVisible={4} />
+          <RaceReadinessCard readiness={coaching.raceReadiness} />
+        </ScrollView>
       ) : (
         <ScrollView style={s.messages} contentContainerStyle={s.videoContent} showsVerticalScrollIndicator={false}>
           <View style={s.contextCard}>

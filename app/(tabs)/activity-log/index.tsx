@@ -20,6 +20,7 @@ import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
 import { useExerciseStore, type Exercise as LibraryExercise } from '../../../src/store/exerciseStore';
 import { STRENGTH_EXERCISES } from '../../../src/utils/strengthEngine';
+import { getExerciseGuide } from '../../../src/constants/exerciseGuides';
 import { LAYOUT } from '../../../src/constants/layout';
 import type { CompletedWorkoutRecord } from '../../../src/types/training';
 import type { StrengthLogRecord } from '../../../src/types/strength';
@@ -363,7 +364,39 @@ export default function ActivityLogScreen() {
                 {expanded ? (
                   <View style={[s.exerciseDetailBox, { backgroundColor: C.cardAlt }]}>
                     {custom?.photoUri ? <Image source={{ uri: custom.photoUri }} style={s.expandedPhoto} /> : null}
-                    <Text style={[s.exerciseExplain, { color: C.textMuted }]}>{explainExercise(row.id, custom)}</Text>
+                    {(() => {
+                      const guide = getExerciseGuide(row.id);
+                      if (!guide) {
+                        return <Text style={[s.exerciseExplain, { color: C.textMuted }]}>{explainExercise(row.id, custom)}</Text>;
+                      }
+                      return (
+                        <View style={{ gap: 8 }}>
+                          {[
+                            { label: 'START POSITION', body: guide.startPosition },
+                            { label: 'FINISH POSITION', body: guide.finishPosition },
+                            { label: 'HOW TO PERFORM', body: guide.howTo },
+                            { label: 'WHEN TO USE IT', body: guide.whenToUse },
+                          ].map(section => (
+                            <View key={section.label}>
+                              <Text style={[s.guideLabel, { color: C.textDim }]}>{section.label}</Text>
+                              <Text style={[s.exerciseExplain, { color: C.textMuted, marginTop: 2 }]}>{section.body}</Text>
+                            </View>
+                          ))}
+                          <View>
+                            <Text style={[s.guideLabel, { color: C.textDim }]}>COACHING TIPS</Text>
+                            {guide.tips.map(tip => (
+                              <Text key={tip} style={[s.exerciseExplain, { color: C.textMuted, marginTop: 2 }]}>• {tip}</Text>
+                            ))}
+                          </View>
+                          <View>
+                            <Text style={[s.guideLabel, { color: C.textDim }]}>COMMON MISTAKES</Text>
+                            {guide.mistakes.map(mistake => (
+                              <Text key={mistake} style={[s.exerciseExplain, { color: C.textMuted, marginTop: 2 }]}>• {mistake}</Text>
+                            ))}
+                          </View>
+                        </View>
+                      );
+                    })()}
                     {row.entries.length > 0 ? (
                       <ScrollView style={s.historyScroller} nestedScrollEnabled showsVerticalScrollIndicator>
                         {row.entries.map((entry, index) => (
@@ -432,6 +465,7 @@ const s = StyleSheet.create({
   exerciseHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   exerciseDetailBox: { borderRadius: 12, padding: 12, marginTop: 10, gap: 8 },
   exerciseExplain: { fontSize: 12, lineHeight: 18, marginTop: 6 },
+  guideLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.8 },
   expandedPhoto: { width: '100%', height: 150, borderRadius: 10, marginBottom: 4 },
   historyScroller: { maxHeight: 180 },
   historyLine: { paddingVertical: 8, borderBottomWidth: 1 },

@@ -17,7 +17,8 @@ import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
 import { LAYOUT } from '../../../src/constants/layout';
 import type { CompletedExercise } from '../../../src/types/strength';
-import { getLastLoggedExercise } from '../../../src/utils/strengthHistory';
+import { getLastLoggedExercise, suggestProgression } from '../../../src/utils/strengthHistory';
+import { getExerciseGuide } from '../../../src/constants/exerciseGuides';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
 import {
   addStrengthIntentListener,
@@ -104,7 +105,8 @@ export default function StrengthScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { units } = useSettingsStore();
-  const { currentWeek, fatigueScore } = useAthleteStore();
+  const { currentWeek, fatigueScore, recoveryScore } = useAthleteStore();
+  const readinessLimited = fatigueScore > 70 || recoveryScore < 45;
   const logStrengthSession = useStrengthStore(s => s.manualLog);
   const strengthHistory = useStrengthStore(s => s.history);
   const imp = units === 'imperial';
@@ -402,6 +404,8 @@ export default function StrengthScreen() {
           const rpeVal = rpe[ex.id];
           const wDisplay = w > 0 ? `${w} ${wtUnit}` : 'BW';
           const lastPerformance = getLastLoggedExercise(strengthHistory, ex.id);
+          const progression = suggestProgression(lastPerformance, ex.sets, readinessLimited, wtUnit);
+          const guide = getExerciseGuide(ex.id);
           return (
             <View
               key={ex.id}
@@ -441,6 +445,11 @@ export default function StrengthScreen() {
                         {lastPerformance.rpe !== undefined ? ` · RPE ${lastPerformance.rpe}` : ''}
                       </Text>
                     )}
+                    {progression && (
+                      <Text style={[{ fontSize: 11, fontWeight: '700', color: C.primary, marginTop: 2 }]}>
+                        ↑ {progression.headline}
+                      </Text>
+                    )}
                   </View>
                   <TouchableOpacity
                     style={[{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: C.cardAlt }]}
@@ -464,11 +473,43 @@ export default function StrengthScreen() {
                 </TouchableOpacity>
                 {htOpen && (
                   <View style={{ paddingBottom: 14 }}>
-                    <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 19, marginBottom: 10 }]}>{ex.desc}</Text>
+                    {guide ? (
+                      <View style={{ gap: 8, marginBottom: 10 }}>
+                        <View>
+                          <Text style={[{ fontSize: 9, fontWeight: '700', color: C.textDim, letterSpacing: 0.8, marginBottom: 2 }]}>START POSITION</Text>
+                          <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{guide.startPosition}</Text>
+                        </View>
+                        <View>
+                          <Text style={[{ fontSize: 9, fontWeight: '700', color: C.textDim, letterSpacing: 0.8, marginBottom: 2 }]}>FINISH POSITION</Text>
+                          <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{guide.finishPosition}</Text>
+                        </View>
+                        <View>
+                          <Text style={[{ fontSize: 9, fontWeight: '700', color: C.textDim, letterSpacing: 0.8, marginBottom: 2 }]}>HOW TO PERFORM</Text>
+                          <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{guide.howTo}</Text>
+                        </View>
+                        <View>
+                          <Text style={[{ fontSize: 9, fontWeight: '700', color: C.textDim, letterSpacing: 0.8, marginBottom: 2 }]}>COMMON MISTAKES</Text>
+                          {guide.mistakes.map(m => (
+                            <Text key={m} style={[{ fontSize: 11, color: C.textMuted, lineHeight: 17 }]}>• {m}</Text>
+                          ))}
+                        </View>
+                      </View>
+                    ) : (
+                      <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 19, marginBottom: 10 }]}>{ex.desc}</Text>
+                    )}
                     <View style={[{ backgroundColor: C.primaryDim, borderRadius: 8, padding: 10 }]}>
                       <Text style={[{ fontSize: 9, fontWeight: '700', color: C.primary, letterSpacing: 0.8, marginBottom: 3 }]}>CLINICAL PEARL</Text>
-                      <Text style={[{ fontSize: 11, color: C.textMuted, lineHeight: 16 }]}>{ex.cue}</Text>
+                      <Text style={[{ fontSize: 11, color: C.textMuted, lineHeight: 16 }]}>{guide?.tips[0] ?? ex.cue}</Text>
+                      {guide?.tips[1] ? (
+                        <Text style={[{ fontSize: 11, color: C.textMuted, lineHeight: 16, marginTop: 3 }]}>{guide.tips[1]}</Text>
+                      ) : null}
                     </View>
+                    {progression && (
+                      <View style={[{ backgroundColor: C.cardAlt, borderRadius: 8, padding: 10, marginTop: 8 }]}>
+                        <Text style={[{ fontSize: 9, fontWeight: '700', color: C.accent, letterSpacing: 0.8, marginBottom: 3 }]}>PROGRESSION</Text>
+                        <Text style={[{ fontSize: 11, color: C.textMuted, lineHeight: 16 }]}>{progression.reason}</Text>
+                      </View>
+                    )}
                   </View>
                 )}
               </View>

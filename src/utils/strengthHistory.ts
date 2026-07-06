@@ -133,6 +133,74 @@ export type LastExercisePerformance = {
   rpe?:         number;
 };
 
+// ─── Progression suggestion ───────────────────────────────────────────────────
+//
+// Simple 5/3/1-style double-progression heuristic over the last logged
+// performance, gated by today's readiness. Deterministic, explainable, and
+// deliberately conservative: runners should win reps before winning weight,
+// and should never chase load on a compromised day.
+
+export type ProgressionSuggestion = {
+  headline: string;   // e.g. "Try 40 lb today"
+  reason:   string;   // one-sentence why
+};
+
+function parseLoadValue(load?: string): number | null {
+  if (!load) return null;
+  if (/^bw$/i.test(load.trim())) return 0;
+  const match = load.match(/([\d.]+)/);
+  return match ? Number(match[1]) : null;
+}
+
+export function suggestProgression(
+  last:             LastExercisePerformance | null,
+  targetSets:       number,
+  readinessLimited: boolean,
+  unitLabel:        string,
+): ProgressionSuggestion | null {
+  if (!last) return null;
+
+  const loadValue = parseLoadValue(last.load);
+  const isBodyweight = loadValue === null || loadValue === 0;
+  const loadLabel = isBodyweight ? 'bodyweight' : (last.load ?? '');
+  const finishedAllSets = last.completedSets >= targetSets;
+
+  if (readinessLimited) {
+    return {
+      headline: `Hold at ${loadLabel}`,
+      reason:   'Readiness is limited today — repeat last session\'s load and bank quality reps instead of chasing progression.',
+    };
+  }
+
+  if (last.rpe !== undefined && last.rpe >= 9) {
+    return {
+      headline: `Repeat ${loadLabel} (or drop ~5%)`,
+      reason:   `Last time was RPE ${last.rpe} — near max. Own this load with 1–2 reps in reserve before moving up.`,
+    };
+  }
+
+  if (finishedAllSets && (last.rpe === undefined || last.rpe <= 7)) {
+    if (isBodyweight) {
+      return {
+        headline: 'Add 1–2 reps per set',
+        reason:   `All ${last.completedSets} sets done${last.rpe !== undefined ? ` at RPE ${last.rpe}` : ''} — progress bodyweight work by adding reps or slowing the tempo.`,
+      };
+    }
+    const increment = loadValue >= 50 ? 5 : 2.5;
+    return {
+      headline: `Try ${loadValue + increment} ${unitLabel} today`,
+      reason:   `All sets completed${last.rpe !== undefined ? ` at RPE ${last.rpe}` : ''} last time — a small +${increment} ${unitLabel} step keeps progressive overload on track.`,
+    };
+  }
+
+  return {
+    headline: `Repeat ${loadLabel}`,
+    reason:   last.rpe !== undefined
+      ? `Last session was RPE ${last.rpe}${finishedAllSets ? '' : ' with sets left on the table'} — win all sets at this load first, then add weight.`
+      : 'Complete all planned sets at this load, then progress next session.',
+  };
+}
+
 export function getLastLoggedExercise(
   history:    StrengthLogRecord[],
   exerciseId: string,

@@ -307,7 +307,7 @@ private struct ZoneBadge: View {
       .font(.caption.weight(.heavy))
       .padding(.horizontal, 10)
       .padding(.vertical, 6)
-      .background(StrideDesign.sage.opacity(0.28), in: Capsule())
+      .background(zoneColor(status).opacity(0.28), in: Capsule())
       .foregroundStyle(StrideDesign.textPrimaryDark)
   }
 }

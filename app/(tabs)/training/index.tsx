@@ -16,10 +16,12 @@ import { useThemeMode } from '../../../src/store/themeStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useIntegrationsStore } from '../../../src/store/integrationsStore';
-import { useActiveRunStore } from '../../../src/store/activeRunStore';
+import { useActiveRunStore, type RunMode, type RunModeConfig } from '../../../src/store/activeRunStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useCalibration } from '../../../src/store/profileStore';
+import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
+import PickerWheel from '../../../src/components/ui/PickerWheel';
 import { useRouteStore, routeDistanceMiles, type RunRoute, type RoutePoint } from '../../../src/store/routeStore';
 import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
@@ -27,6 +29,7 @@ import { sendRunAlertNotification } from '../../../src/lib/notifications';
 import { addRunIntentListener, endRunLiveActivity, startRunLiveActivity, updateRunLiveActivity } from '../../../src/lib/runLiveActivity';
 import {
   calculateHydrationPlan,
+  explainPlan,
   weatherBandForTemp,
   type CrampingFrequency,
   type FluidComfort,
@@ -53,6 +56,39 @@ type TrackingPermissionState = {
   foreground: Location.PermissionStatus | 'unknown';
   background: Location.PermissionStatus | 'unknown';
 };
+
+// ─── Run modes ─────────────────────────────────────────────────────────────────
+const RUN_MODE_OPTIONS: { key: RunMode; label: string; icon: keyof typeof Ionicons.glyphMap; desc: string }[] = [
+  { key: 'quick',    label: 'Quick Start', icon: 'flash-outline',   desc: 'GPS tracking starts immediately — no target.' },
+  { key: 'time',     label: 'Time Goal',   icon: 'time-outline',    desc: 'Run for a set duration.' },
+  { key: 'distance', label: 'Distance',    icon: 'flag-outline',    desc: 'Run to a set distance.' },
+  { key: 'workout',  label: 'Workout',     icon: 'list-outline',    desc: "Follow today's structured plan." },
+  { key: 'race',     label: 'Race',        icon: 'trophy-outline',  desc: 'Target pace, predicted finish, fueling cues.' },
+];
+
+const TIME_GOAL_VALUES = Array.from({ length: 35 }, (_, i) => 10 + i * 5);            // 10–180 min
+const DISTANCE_GOAL_VALUES = (() => {
+  const list: number[] = [];
+  for (let v = 1; v <= 30; v += 0.5) list.push(Math.round(v * 10) / 10);
+  for (const race of [3.1, 6.2, 13.1, 26.2]) if (!list.includes(race)) list.push(race);
+  return list.sort((a, b) => a - b);
+})();
+const RACE_PACE_VALUES = Array.from({ length: 121 }, (_, i) => 300 + i * 5);           // 5:00–15:00 /mi
+
+const FUEL_REMINDER_INTERVAL_SEC = 20 * 60;
+
+function todayWorkoutIndex(): number {
+  // richWeek.workouts is Monday-indexed (see [dayIndex].tsx DAY_NAMES)
+  return (new Date().getDay() + 6) % 7;
+}
+
+function fmtClockDuration(totalSec: number): string {
+  const s = Math.max(0, Math.round(totalSec));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${m}:${String(sec).padStart(2, '0')}`;
+}
 
 function fmt(s: number): string {
   const h = Math.floor(s / 3600);
@@ -496,22 +532,38 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     distanceMiles,
     currentPaceSecPerMile,
     averagePaceSecPerMile,
+    elevationGainFt,
     coordinates,
+    runMode,
+    goalMinutes,
+    goalMiles,
+    targetPaceSecPerMile,
+    plannedWorkout,
     startRun,
     pauseRun,
     resumeRun,
     finishRun,
     cancelRun,
   } = useActiveRunStore();
+  const { richWeek } = useWeekPlan();
+  const todayPlannedWorkout = richWeek.workouts[todayWorkoutIndex()] ?? null;
   const selectedRouteId = useRouteStore(s => s.selectedRouteId);
   const selectedRoute = useRouteStore(s => s.routes.find(r => r.id === selectedRouteId) ?? null);
   const [elapsed, setElapsed] = useState(0);
   const [heartRateBpm, setHeartRateBpm] = useState<number | null>(null);
   const [permission, setPermission] = useState<TrackingPermissionState>({ foreground: 'unknown', background: 'unknown' });
   const [routeSegmentIndex, setRouteSegmentIndex] = useState(0);
+  const [pendingMode, setPendingMode] = useState<RunMode>('quick');
+  const [goalMinutesInput, setGoalMinutesInput] = useState(45);
+  const [goalMilesInput, setGoalMilesInput] = useState(5);
+  const [raceMilesInput, setRaceMilesInput] = useState(13.1);
+  const [racePaceSecInput, setRacePaceSecInput] = useState(540);
+  const [goalPickerFor, setGoalPickerFor] = useState<null | 'time' | 'distance' | 'raceDist' | 'racePace'>(null);
   const segmentStartRef = useRef<{ index: number; time: number } | null>(null);
   const maxRouteProgressRef = useRef(0);
   const lastHrAlertRef = useRef(0);
+  const lastFuelCueRef = useRef(0);
+  const goalDoneRef = useRef(false);
   const runState: RunState = !isActive ? 'idle' : isPaused ? 'paused' : 'active';
 
   useEffect(() => {
@@ -581,7 +633,20 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       setRouteSegmentIndex(0);
       maxRouteProgressRef.current = 0;
       segmentStartRef.current = { index: 0, time: Date.now() };
-      startRun(null);
+      lastFuelCueRef.current = 0;
+      goalDoneRef.current = false;
+
+      const startWorkout = pendingMode === 'workout' ? todayPlannedWorkout : null;
+      // Picker values are in display units; the store always holds miles and sec/mi.
+      const toMiles = (v: number) => imp ? v : v / 1.609344;
+      const toSecPerMile = (v: number) => imp ? v : v * 1.609344;
+      const config: RunModeConfig =
+        pendingMode === 'time'     ? { mode: 'time', goalMinutes: goalMinutesInput } :
+        pendingMode === 'distance' ? { mode: 'distance', goalMiles: toMiles(goalMilesInput) } :
+        pendingMode === 'race'     ? { mode: 'race', goalMiles: toMiles(raceMilesInput), targetPaceSecPerMile: toSecPerMile(racePaceSecInput) } :
+        pendingMode === 'workout' && startWorkout ? { mode: 'workout' } :
+        { mode: 'quick' };
+      startRun(startWorkout, config);
       await startRunLiveActivity({
         elapsedSeconds: 0,
         distanceMiles: 0,
@@ -592,7 +657,16 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         isPaused: false,
       }).catch(console.warn);
       await startLocationTracking();
-      if (selectedRoute) {
+      const unitWord = imp ? 'mile' : 'kilometer';
+      if (config.mode === 'time') {
+        speakCue(`Starting a ${goalMinutesInput} minute run. Settle into a rhythm.`);
+      } else if (config.mode === 'distance') {
+        speakCue(`Starting a ${goalMilesInput} ${unitWord} run. Start easy.`);
+      } else if (config.mode === 'race') {
+        speakCue(`Race mode. Target pace ${paceLabel(racePaceSecInput)} per ${unitWord} over ${raceMilesInput} ${unitWord}s. Hold back the first ${unitWord}.`);
+      } else if (config.mode === 'workout' && startWorkout) {
+        speakCue(`Starting ${startWorkout.title}. ${startWorkout.purpose ?? ''}`);
+      } else if (selectedRoute) {
         speakCue(`Starting route: ${selectedRoute.name}. ${selectedRoute.segments.length} interval markers set.`);
       }
     } catch (error) {
@@ -629,14 +703,20 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
     if (finalElapsed >= 300) {
       const id = `gps_run_${Date.now()}`;
+      const modeNote =
+        runMode === 'time' && goalMinutes ? ` · Time goal ${goalMinutes} min` :
+        runMode === 'distance' && goalMiles ? ` · Distance goal ${goalMiles.toFixed(1)} mi` :
+        runMode === 'race' && goalMiles ? ` · Race ${goalMiles.toFixed(1)} mi${targetPaceSecPerMile ? ` @ target ${paceLabel(targetPaceSecPerMile)}/mi` : ''}` :
+        runMode === 'workout' && plannedWorkout ? ` · Workout: ${plannedWorkout.title}` :
+        '';
       manualLogRun(
         {
           completionKey: id,
-          type: 'easy_run',
-          intensity: 'easy',
+          type: runMode === 'race' ? 'tempo' : runMode === 'workout' && plannedWorkout ? plannedWorkout.type : 'easy_run',
+          intensity: runMode === 'race' ? 'hard' : 'easy',
           durationMinutes: finalDurationMin,
           distanceMiles: Math.max(0, finalDistanceMiles),
-          notes: `Saved from live GPS tracking${selectedRoute ? ` · Route: ${selectedRoute.name}` : ''}.`,
+          notes: `Saved from live GPS tracking${modeNote}${selectedRoute ? ` · Route: ${selectedRoute.name}` : ''}.`,
         },
         currentWeek,
         fatigueScore,
@@ -689,10 +769,36 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   } : null;
   const routeProgress = selectedRoute && currentPoint ? routeProgressForLocation(selectedRoute, currentPoint) : 0;
   const nextSegment = selectedRoute?.segments[routeSegmentIndex] ?? null;
-  const elevationDisplay = selectedRoute
-    ? Math.round(imp ? selectedRoute.elevationGainFt : selectedRoute.elevationGainFt * 0.3048).toString()
-    : '--';
+  // Live GPS climb while running; planned-route gain as the idle preview.
+  const elevationDisplay = isActive
+    ? Math.round(imp ? elevationGainFt : elevationGainFt * 0.3048).toString()
+    : selectedRoute
+      ? Math.round(imp ? selectedRoute.elevationGainFt : selectedRoute.elevationGainFt * 0.3048).toString()
+      : '--';
   const elevationUnit = imp ? 'ft' : 'm';
+
+  // ── Goal progress (mode-specific) ────────────────────────────────────────────
+  const goalRemainingSec = runMode === 'time' && goalMinutes ? Math.max(0, goalMinutes * 60 - elapsed) : null;
+  const goalRemainingMiles = (runMode === 'distance' || runMode === 'race') && goalMiles
+    ? Math.max(0, goalMiles - distanceMiles)
+    : null;
+  const effectivePaceSec = averagePaceSecPerMile > 0
+    ? averagePaceSecPerMile
+    : runMode === 'race' && targetPaceSecPerMile ? targetPaceSecPerMile : 0;
+  const predictedFinishSec = runMode === 'race' && goalMiles && effectivePaceSec > 0
+    ? goalMiles * effectivePaceSec
+    : null;
+  const estRemainingSec = runMode === 'distance' && goalRemainingMiles !== null && effectivePaceSec > 0
+    ? goalRemainingMiles * effectivePaceSec
+    : null;
+  const racePaceDeltaSec = runMode === 'race' && targetPaceSecPerMile && averagePaceSecPerMile > 0
+    ? Math.round(averagePaceSecPerMile - targetPaceSecPerMile)
+    : null;
+  const goalProgressPct = runMode === 'time' && goalMinutes
+    ? Math.min(100, (elapsed / (goalMinutes * 60)) * 100)
+    : (runMode === 'distance' || runMode === 'race') && goalMiles
+      ? Math.min(100, (distanceMiles / goalMiles) * 100)
+      : null;
   const secondaryMetrics = [
     { label: 'Avg Pace', value: avgPace, unit: imp ? '/mi' : '/km' },
     { label: 'Heart Rate', value: heartRateBpm ? String(heartRateBpm) : '--', unit: 'bpm' },
@@ -702,6 +808,75 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const plannedRouteColor = C.chartSeriesSecondary;
   const panelBg = mode === 'light' ? C.cardAlt : C.bg;
   const softPanelBg = mode === 'light' ? C.card : C.cardElevated;
+
+  const distDisplayFactor = imp ? 1 : 1.609344;
+  const goalPanel = isActive && runMode !== 'quick' ? (
+    <View style={[styles.goalPanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+      <View style={styles.goalPanelHeader}>
+        <Text style={[styles.metricLabel, { color: C.textDim }]}>
+          {runMode === 'time' ? 'TIME GOAL' : runMode === 'distance' ? 'DISTANCE GOAL' : runMode === 'race' ? 'RACE PLAN' : 'STRUCTURED WORKOUT'}
+        </Text>
+        {goalProgressPct !== null ? (
+          <Text style={[styles.goalPanelPct, { color: C.primary }]}>{Math.round(goalProgressPct)}%</Text>
+        ) : null}
+      </View>
+      {goalProgressPct !== null ? (
+        <View style={[styles.goalProgressTrack, { backgroundColor: C.border }]}>
+          <View style={[styles.goalProgressFill, { backgroundColor: C.primary, width: `${goalProgressPct}%` }]} />
+        </View>
+      ) : null}
+      {runMode === 'time' && goalRemainingSec !== null ? (
+        <Text style={[styles.goalPanelLine, { color: C.text }]}>
+          {fmtClockDuration(goalRemainingSec)} <Text style={{ color: C.textMuted }}>remaining of {goalMinutes} min</Text>
+        </Text>
+      ) : null}
+      {runMode === 'distance' && goalRemainingMiles !== null ? (
+        <Text style={[styles.goalPanelLine, { color: C.text }]}>
+          {(goalRemainingMiles * distDisplayFactor).toFixed(2)} {distUnit} to go
+          <Text style={{ color: C.textMuted }}>
+            {estRemainingSec !== null ? ` · ~${fmtClockDuration(estRemainingSec)} at current pace` : ' · pace settling in'}
+          </Text>
+        </Text>
+      ) : null}
+      {runMode === 'race' ? (
+        <>
+          <Text style={[styles.goalPanelLine, { color: C.text }]}>
+            Target {targetPaceSecPerMile ? paceLabel(imp ? targetPaceSecPerMile : targetPaceSecPerMile / 1.609344) : '--:--'} {imp ? '/mi' : '/km'}
+            <Text style={{
+              color: racePaceDeltaSec === null ? C.textMuted : Math.abs(racePaceDeltaSec) <= 10 ? C.positive : racePaceDeltaSec > 0 ? C.warning : C.accent,
+            }}>
+              {racePaceDeltaSec === null
+                ? ' · pace settling in'
+                : Math.abs(racePaceDeltaSec) <= 10
+                  ? ' · on pace'
+                  : racePaceDeltaSec > 0
+                    ? ` · ${Math.round(Math.abs(racePaceDeltaSec) / distDisplayFactor)}s/${distUnit} behind`
+                    : ` · ${Math.round(Math.abs(racePaceDeltaSec) / distDisplayFactor)}s/${distUnit} ahead`}
+            </Text>
+          </Text>
+          <Text style={[styles.goalPanelLine, { color: C.textMuted }]}>
+            {predictedFinishSec !== null ? `Predicted finish ${fmtClockDuration(predictedFinishSec)}` : 'Predicted finish pending'}
+            {goalRemainingMiles !== null ? ` · ${(goalRemainingMiles * distDisplayFactor).toFixed(2)} ${distUnit} to go` : ''}
+          </Text>
+        </>
+      ) : null}
+      {runMode === 'workout' && plannedWorkout ? (
+        <>
+          <Text style={[styles.goalPanelLine, { color: C.text }]}>{plannedWorkout.title}</Text>
+          <Text style={[styles.goalPanelLine, { color: C.textMuted }]} numberOfLines={2}>
+            {plannedWorkout.paceRange
+              ? `Target ${paceLabel(plannedWorkout.paceRange.minSecPerMi)}–${paceLabel(plannedWorkout.paceRange.maxSecPerMi)} /mi · Zone ${plannedWorkout.hrZoneTarget}`
+              : plannedWorkout.purpose}
+          </Text>
+          {plannedWorkout.intervals ? (
+            <Text style={[styles.goalPanelLine, { color: C.textMuted }]}>
+              {plannedWorkout.intervals.setCount}× {plannedWorkout.intervals.workLabel} · rest {plannedWorkout.intervals.restLabel}
+            </Text>
+          ) : null}
+        </>
+      ) : null}
+    </View>
+  ) : null;
 
   useEffect(() => {
     if (!selectedRoute || !currentPoint || !nextSegment || !isActive || isPaused) return;
@@ -735,6 +910,32 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     speakCue(message);
     sendRunAlertNotification(message).catch(() => undefined);
   }, [heartRateBpm, isActive, isPaused, zoneStatus.detail, zoneStatus.guidance, zoneStatus.tone]);
+
+  // Race mode: fueling reminder every 20 minutes of moving time
+  useEffect(() => {
+    if (!isActive || isPaused || runMode !== 'race') return;
+    if (elapsed > 0 && elapsed - lastFuelCueRef.current >= FUEL_REMINDER_INTERVAL_SEC) {
+      lastFuelCueRef.current = elapsed;
+      const message = 'Fuel check: take carbs and a few sips of fluid now, before you feel like you need them.';
+      speakCue(message);
+      sendRunAlertNotification(message).catch(() => undefined);
+    }
+  }, [elapsed, isActive, isPaused, runMode]);
+
+  // Goal completion announcements (once per run)
+  useEffect(() => {
+    if (!isActive || goalDoneRef.current) return;
+    if (runMode === 'time' && goalMinutes && elapsed >= goalMinutes * 60) {
+      goalDoneRef.current = true;
+      speakCue(`Time goal complete: ${goalMinutes} minutes. Finish whenever you're ready.`);
+    } else if ((runMode === 'distance' || runMode === 'race') && goalMiles && distanceMiles >= goalMiles) {
+      goalDoneRef.current = true;
+      const goalDisplay = imp ? goalMiles : goalMiles * 1.609344;
+      speakCue(runMode === 'race'
+        ? 'Race distance complete. Strong execution.'
+        : `Distance goal reached: ${Math.round(goalDisplay * 10) / 10} ${imp ? 'miles' : 'kilometers'}. Nice work.`);
+    }
+  }, [elapsed, distanceMiles, isActive, runMode, goalMinutes, goalMiles, imp]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -804,6 +1005,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
               <RunStat key={metric.label} {...metric} color={C.text} muted={C.textMuted} />
             ))}
           </View>
+          {goalPanel}
           <View style={styles.runStatusChipRow}>
             <View style={[styles.runStatusChip, { backgroundColor: zoneToneColor + '22', borderColor: zoneToneColor }]}>
               <Text style={[styles.runStatusChipText, { color: zoneToneColor }]}>{zoneStatus.label} · {zoneStatus.detail}</Text>
@@ -888,17 +1090,119 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             <RunStat key={metric.label} {...metric} color={C.text} muted={C.textMuted} />
           ))}
         </View>
+        {goalPanel}
+        {runState === 'active' && heartRateBpm ? (
+          <View style={styles.runStatusChipRow}>
+            <View style={[styles.runStatusChip, { backgroundColor: zoneToneColor + '22', borderColor: zoneToneColor }]}>
+              <Text style={[styles.runStatusChipText, { color: zoneToneColor }]}>{zoneStatus.label} · {zoneStatus.detail}</Text>
+            </View>
+          </View>
+        ) : null}
         {runState === 'idle' ? (
-          <TouchableOpacity
-            style={[styles.startRunPill, { backgroundColor: C.primary }]}
-            onPress={start}
-            activeOpacity={0.82}
-            accessibilityRole="button"
-            accessibilityLabel="Start run"
-          >
-            <Ionicons name="play" size={20} color={C.onPrimary} />
-            <Text style={[styles.resumePillText, { color: C.onPrimary }]}>START RUN</Text>
-          </TouchableOpacity>
+          <>
+            {/* Run mode selector */}
+            <View style={styles.modeRow}>
+              {RUN_MODE_OPTIONS.map(option => {
+                const active = pendingMode === option.key;
+                return (
+                  <TouchableOpacity
+                    key={option.key}
+                    style={[
+                      styles.modeChip,
+                      {
+                        backgroundColor: active ? C.primaryDim : C.cardAlt,
+                        borderColor: active ? C.primary : C.border,
+                      },
+                    ]}
+                    onPress={() => setPendingMode(option.key)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${option.label} run mode`}
+                  >
+                    <Ionicons name={option.icon} size={16} color={active ? C.primary : C.textMuted} />
+                    <Text style={[styles.modeChipText, { color: active ? C.primary : C.textMuted }]}>{option.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <Text style={[styles.modeDesc, { color: C.textDim }]}>
+              {RUN_MODE_OPTIONS.find(o => o.key === pendingMode)?.desc}
+            </Text>
+
+            {/* Mode configuration */}
+            {pendingMode === 'time' ? (
+              <TouchableOpacity
+                style={[styles.goalConfigRow, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+                onPress={() => setGoalPickerFor('time')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.goalConfigLabel, { color: C.textMuted }]}>Duration</Text>
+                <Text style={[styles.goalConfigValue, { color: C.text }]}>{goalMinutesInput} min ›</Text>
+              </TouchableOpacity>
+            ) : null}
+            {pendingMode === 'distance' ? (
+              <TouchableOpacity
+                style={[styles.goalConfigRow, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+                onPress={() => setGoalPickerFor('distance')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.goalConfigLabel, { color: C.textMuted }]}>Distance</Text>
+                <Text style={[styles.goalConfigValue, { color: C.text }]}>{goalMilesInput} {distUnit} ›</Text>
+              </TouchableOpacity>
+            ) : null}
+            {pendingMode === 'race' ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.goalConfigRow, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+                  onPress={() => setGoalPickerFor('raceDist')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.goalConfigLabel, { color: C.textMuted }]}>Race distance</Text>
+                  <Text style={[styles.goalConfigValue, { color: C.text }]}>{raceMilesInput} {distUnit} ›</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.goalConfigRow, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+                  onPress={() => setGoalPickerFor('racePace')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.goalConfigLabel, { color: C.textMuted }]}>Target pace</Text>
+                  <Text style={[styles.goalConfigValue, { color: C.text }]}>{paceLabel(racePaceSecInput)} {imp ? '/mi' : '/km'} ›</Text>
+                </TouchableOpacity>
+                <Text style={[styles.modeDesc, { color: C.textDim }]}>
+                  Goal finish ~{fmtClockDuration(raceMilesInput * racePaceSecInput)} · fueling reminders every 20 min
+                </Text>
+              </>
+            ) : null}
+            {pendingMode === 'workout' ? (
+              todayPlannedWorkout ? (
+                <View style={[styles.goalConfigRow, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.goalConfigValue, { color: C.text }]}>{todayPlannedWorkout.title}</Text>
+                    <Text style={[styles.goalConfigLabel, { color: C.textMuted }]} numberOfLines={2}>
+                      {todayPlannedWorkout.purpose}
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <Text style={[styles.modeDesc, { color: C.textDim }]}>
+                  No structured workout planned today — starting will track a free run instead.
+                </Text>
+              )
+            ) : null}
+
+            <TouchableOpacity
+              style={[styles.startRunPill, { backgroundColor: C.primary }]}
+              onPress={start}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityLabel="Start run"
+            >
+              <Ionicons name="play" size={20} color={C.onPrimary} />
+              <Text style={[styles.resumePillText, { color: C.onPrimary }]}>
+                {pendingMode === 'race' ? 'START RACE' : 'START RUN'}
+              </Text>
+            </TouchableOpacity>
+          </>
         ) : (
           <>
             <TouchableOpacity
@@ -949,6 +1253,44 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
           </View>
         ) : null}
       </View>
+
+      {/* Goal pickers */}
+      <PickerWheel
+        visible={goalPickerFor === 'time'}
+        title="Run duration (minutes)"
+        values={TIME_GOAL_VALUES}
+        selectedValue={goalMinutesInput}
+        formatValue={v => `${v} min`}
+        onConfirm={v => { setGoalMinutesInput(v); setGoalPickerFor(null); }}
+        onClose={() => setGoalPickerFor(null)}
+      />
+      <PickerWheel
+        visible={goalPickerFor === 'distance'}
+        title={`Run distance (${distUnit})`}
+        values={DISTANCE_GOAL_VALUES}
+        selectedValue={goalMilesInput}
+        formatValue={v => `${v} ${distUnit}`}
+        onConfirm={v => { setGoalMilesInput(v); setGoalPickerFor(null); }}
+        onClose={() => setGoalPickerFor(null)}
+      />
+      <PickerWheel
+        visible={goalPickerFor === 'raceDist'}
+        title={`Race distance (${distUnit})`}
+        values={DISTANCE_GOAL_VALUES}
+        selectedValue={raceMilesInput}
+        formatValue={v => `${v} ${distUnit}`}
+        onConfirm={v => { setRaceMilesInput(v); setGoalPickerFor(null); }}
+        onClose={() => setGoalPickerFor(null)}
+      />
+      <PickerWheel
+        visible={goalPickerFor === 'racePace'}
+        title={`Target pace (${imp ? 'per mile' : 'per km'})`}
+        values={RACE_PACE_VALUES}
+        selectedValue={racePaceSecInput}
+        formatValue={v => `${paceLabel(v)} ${imp ? '/mi' : '/km'}`}
+        onConfirm={v => { setRacePaceSecInput(v); setGoalPickerFor(null); }}
+        onClose={() => setGoalPickerFor(null)}
+      />
     </View>
   );
 }
@@ -987,15 +1329,15 @@ function HydrationTab() {
   const distanceMiles = imp ? distance : distance / 1.609344;
   const durationMin = Math.max(10, Math.round(Number(durationInput) || 90));
   const tempF = Math.max(20, Math.min(115, Math.round(Number(tempInput) || 65)));
-  const fuelPlan = useMemo(() => calculateHydrationPlan({
+  const hydrationInput = useMemo(() => ({
     distanceMiles,
     durationMin,
     bodyWeightKg: weightKg,
     effort,
     weatherBand: weatherBandForTemp(tempF),
     temperatureF: tempF,
-    humidityBand: humidity === null ? 'moderate' : humidity >= 80 ? 'very_high' : humidity >= 60 ? 'high' : humidity <= 35 ? 'low' : 'moderate',
-    sunExposure: 'mixed',
+    humidityBand: (humidity === null ? 'moderate' : humidity >= 80 ? 'very_high' : humidity >= 60 ? 'high' : humidity <= 35 ? 'low' : 'moderate') as 'moderate' | 'very_high' | 'high' | 'low',
+    sunExposure: 'mixed' as const,
     sweatiness,
     saltiness,
     cramping,
@@ -1008,6 +1350,8 @@ function HydrationTab() {
     carbTolerance, cramping, distanceMiles, durationMin, effort, fluidComfort,
     goal, humidity, saltiness, sweatRate, sweatiness, sweatSodium, tempF, weightKg,
   ]);
+  const fuelPlan = useMemo(() => calculateHydrationPlan(hydrationInput), [hydrationInput]);
+  const planWhy = useMemo(() => explainPlan(hydrationInput, fuelPlan), [hydrationInput, fuelPlan]);
 
   function fluidRangeLabel(lowL: number, highL: number) {
     return imp
@@ -1328,6 +1672,10 @@ function HydrationTab() {
             Start target: {fuelPlan.hourly.carbsG} g carbs/hr · {fuelPlan.hourly.fluidOz} oz fluid/hr · {fuelPlan.hourly.sodiumMg} mg sodium/hr.
             Drink sodium concentration: {fuelPlan.hourly.sodiumMgPerL} mg/L.
           </Text>
+        </View>
+        <View style={[styles.paceBox, { backgroundColor: C.primaryDim, borderWidth: 1, borderColor: C.primary, marginTop: 10 }]}>
+          <Text style={[{ fontSize: 10, fontWeight: '700', color: C.primary, letterSpacing: 0.7, marginBottom: 4 }]}>WHY THESE TARGETS</Text>
+          <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{planWhy}</Text>
         </View>
       </View>
 
@@ -2274,6 +2622,81 @@ const styles = StyleSheet.create({
   runStatusChipText: {
     fontSize: typographyTokens.sizes.metricLabel,
     fontWeight: typographyTokens.weights.black,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs + 2,
+    marginTop: spacing.md,
+  },
+  modeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderRadius: radiusTokens.pill,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs + 2,
+  },
+  modeChipText: {
+    fontSize: typographyTokens.sizes.metricLabel,
+    fontWeight: typographyTokens.weights.black,
+  },
+  modeDesc: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: spacing.xs + 2,
+  },
+  goalConfigRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderRadius: radiusTokens.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    marginTop: spacing.sm,
+  },
+  goalConfigLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  goalConfigValue: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  goalPanel: {
+    borderWidth: 1,
+    borderRadius: radiusTokens.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    marginTop: spacing.md,
+    gap: 6,
+  },
+  goalPanelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  goalPanelPct: {
+    fontSize: 12,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
+  goalProgressTrack: {
+    height: 5,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  goalProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  goalPanelLine: {
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 19,
   },
   pauseCircle: {
     width: RUN_PRIMARY_CONTROL_SIZE,

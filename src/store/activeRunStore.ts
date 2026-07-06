@@ -13,6 +13,18 @@ export type Coordinate = {
   lat:       number;
   lng:       number;
   timestamp: number;
+  altitudeM?: number;
+};
+
+// Run modes: how the athlete wants this run framed. 'quick' is plain GPS
+// tracking; the goal fields only apply to their matching mode.
+export type RunMode = 'quick' | 'time' | 'distance' | 'workout' | 'race';
+
+export type RunModeConfig = {
+  mode:                   RunMode;
+  goalMinutes?:           number;  // time mode
+  goalMiles?:             number;  // distance + race modes
+  targetPaceSecPerMile?:  number;  // race mode
 };
 
 // Rolling window for pace calculation (seconds of data to average)
@@ -20,6 +32,9 @@ const PACE_WINDOW_SEC = 30;
 const MAX_ALLOWED_ACCURACY_METERS = 65;
 const MAX_REASONABLE_RUNNING_SPEED_MPS = 8.5; // ~5:02/mi, lets fast intervals through while rejecting GPS jumps.
 const MIN_DISTANCE_DELTA_METERS = 2.5;
+// GPS altitude is noisy (±3-10 m); only count climb once the smoothed gain
+// between accepted points exceeds this, so flat runs don't accumulate fake feet.
+const MIN_ELEVATION_CLIMB_METERS = 2;
 
 function haversineMiles(a: Coordinate, b: Coordinate): number {
   const R   = 3958.8;
@@ -41,12 +56,18 @@ type ActiveRunStore = {
   distanceMiles:          number;
   currentPaceSecPerMile:  number;
   averagePaceSecPerMile:  number;
+  elevationGainFt:        number;
+  elevationRefM:          number | null;
   coordinates:            Coordinate[];
   lastRunCoordinates:     Coordinate[];
   currentIntervalIndex:   number;
   plannedWorkout:         RichWorkout | null;
+  runMode:                RunMode;
+  goalMinutes:            number | null;
+  goalMiles:              number | null;
+  targetPaceSecPerMile:   number | null;
 
-  startRun:          (plannedWorkout: RichWorkout | null) => void;
+  startRun:          (plannedWorkout: RichWorkout | null, config?: RunModeConfig) => void;
   pauseRun:          () => void;
   resumeRun:         () => void;
   addLocationUpdate: (loc: LocationObject) => void;
@@ -64,12 +85,18 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
   distanceMiles:          0,
   currentPaceSecPerMile:  0,
   averagePaceSecPerMile:  0,
+  elevationGainFt:        0,
+  elevationRefM:          null,
   coordinates:            [],
   lastRunCoordinates:     [],
   currentIntervalIndex:   0,
   plannedWorkout:         null,
+  runMode:                'quick',
+  goalMinutes:            null,
+  goalMiles:              null,
+  targetPaceSecPerMile:   null,
 
-  startRun: (plannedWorkout) => {
+  startRun: (plannedWorkout, config) => {
     set({
       isActive:               true,
       isPaused:               false,
@@ -79,9 +106,15 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       distanceMiles:          0,
       currentPaceSecPerMile:  0,
       averagePaceSecPerMile:  0,
+      elevationGainFt:        0,
+      elevationRefM:          null,
       coordinates:            [],
       currentIntervalIndex:   0,
       plannedWorkout,
+      runMode:                config?.mode ?? (plannedWorkout ? 'workout' : 'quick'),
+      goalMinutes:            config?.goalMinutes ?? null,
+      goalMiles:              config?.goalMiles ?? null,
+      targetPaceSecPerMile:   config?.targetPaceSecPerMile ?? null,
     });
   },
 
@@ -111,6 +144,7 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       lat:       loc.coords.latitude,
       lng:       loc.coords.longitude,
       timestamp: loc.timestamp,
+      altitudeM: typeof loc.coords.altitude === 'number' ? loc.coords.altitude : undefined,
     };
 
     const previousCoord = state.coordinates.at(-1);
@@ -118,6 +152,7 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
 
     const coords  = [...state.coordinates, coord];
     let totalDist = state.distanceMiles;
+    let elevationGainFt = state.elevationGainFt;
 
     if (previousCoord) {
       const deltaMiles = haversineMiles(previousCoord, coord);
@@ -127,6 +162,21 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       if (speedMps > MAX_REASONABLE_RUNNING_SPEED_MPS) return;
       if (deltaMeters >= MIN_DISTANCE_DELTA_METERS) {
         totalDist += deltaMiles;
+      }
+    }
+
+    // Elevation gain vs a low-water reference: accumulate only when the climb
+    // above the reference clears the noise threshold, then move the reference
+    // up; descending moves the reference down without subtracting.
+    let elevationRefM = state.elevationRefM;
+    if (coord.altitudeM !== undefined) {
+      if (elevationRefM === null) {
+        elevationRefM = coord.altitudeM;
+      } else if (coord.altitudeM >= elevationRefM + MIN_ELEVATION_CLIMB_METERS) {
+        elevationGainFt += (coord.altitudeM - elevationRefM) * 3.28084;
+        elevationRefM = coord.altitudeM;
+      } else if (coord.altitudeM < elevationRefM) {
+        elevationRefM = coord.altitudeM;
       }
     }
 
@@ -153,6 +203,8 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       distanceMiles: totalDist,
       currentPaceSecPerMile: pace,
       averagePaceSecPerMile: averagePace,
+      elevationGainFt,
+      elevationRefM,
     });
   },
 
@@ -171,9 +223,15 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       distanceMiles:          0,
       currentPaceSecPerMile:  0,
       averagePaceSecPerMile:  0,
+      elevationGainFt:        0,
+      elevationRefM:          null,
       coordinates:            [],
       currentIntervalIndex:   0,
       plannedWorkout:         null,
+      runMode:                'quick',
+      goalMinutes:            null,
+      goalMiles:              null,
+      targetPaceSecPerMile:   null,
       lastRunCoordinates:     state.coordinates,
     });
   },
@@ -188,9 +246,15 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       distanceMiles:          0,
       currentPaceSecPerMile:  0,
       averagePaceSecPerMile:  0,
+      elevationGainFt:        0,
+      elevationRefM:          null,
       coordinates:            [],
       currentIntervalIndex:   0,
       plannedWorkout:         null,
+      runMode:                'quick',
+      goalMinutes:            null,
+      goalMiles:              null,
+      targetPaceSecPerMile:   null,
     });
   },
 }));

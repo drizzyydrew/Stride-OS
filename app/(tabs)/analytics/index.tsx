@@ -11,6 +11,7 @@ import { useStrengthStore } from '../../../src/store/strengthStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { LAYOUT } from '../../../src/constants/layout';
 import TrendPill from '../../../src/components/ui/TrendPill';
+import { calculateACWR } from '../../../src/utils/training/calculateACWR';
 import {
   RANGE_DAYS,
   RANGE_LABEL,
@@ -45,6 +46,7 @@ export default function AnalyticsScreen() {
   const workoutHistory   = useWorkoutStore(s => s.history);
   const strengthHistory  = useStrengthStore(s => s.history);
   const todayReadiness   = useReadinessStore(s => s.todayReadiness);
+  const readinessHistory = useReadinessStore(s => s.history);
 
   const days = RANGE_DAYS[range];
   const unit = bucketUnitFor(range);
@@ -72,6 +74,35 @@ export default function AnalyticsScreen() {
   const strengthBuckets     = buildBuckets(strengthInRange, range, () => 1);
   const strengthAdherence   = computeAdherencePct(strengthBuckets);
   const strengthTrend       = summarizeTrend(strengthBuckets);
+
+  // ── Training load (ACWR) ────────────────────────────────────────────────────
+  const acwrResult = calculateACWR(completedRuns);
+  const hasLoadHistory = completedRuns.some(r => Date.now() - r.timestamp <= 42 * 24 * 60 * 60 * 1000);
+  const acwrZone = acwrResult.acwr > 1.5 ? 'spike' : acwrResult.acwr > 1.3 ? 'elevated' : acwrResult.acwr >= 0.8 ? 'optimal' : 'low';
+  const acwrColor = acwrZone === 'optimal' ? C.positive : acwrZone === 'low' ? C.textMuted : acwrZone === 'elevated' ? C.warning : C.critical;
+  const acwrCopy: Record<typeof acwrZone, { meaning: string; action: string }> = {
+    spike:    { meaning: 'The last 7 days are far heavier than your 6-week base — this is the zone where soft-tissue injury risk climbs fastest.', action: 'Cut this week\'s volume and keep every run easy until the ratio drops below 1.3.' },
+    elevated: { meaning: 'Recent load is outpacing the base your tissues are conditioned for.', action: 'Hold this week at or below last week\'s volume. No new intensity until the ratio settles.' },
+    optimal:  { meaning: 'Acute load is well matched to your chronic base — this is where fitness is built with the least injury risk.', action: 'Keep progressing conservatively (≤10% per week) and protect the long run.' },
+    low:      { meaning: 'The last 7 days are lighter than your recent norm — fine for a planned deload or taper, otherwise fitness will slowly decay.', action: 'If this isn\'t a planned down week, nudge volume back up 10–15% with easy mileage.' },
+  };
+
+  // ── Readiness trend ─────────────────────────────────────────────────────────
+  const readinessInRange = readinessHistory.filter(r => {
+    const t = new Date(`${r.date}T12:00:00`).getTime();
+    return Date.now() - t <= days * 24 * 60 * 60 * 1000;
+  });
+  const readinessAvg = readinessInRange.length
+    ? Math.round(readinessInRange.reduce((s, r) => s + r.score, 0) / readinessInRange.length)
+    : null;
+  const half = Math.floor(readinessInRange.length / 2);
+  const readinessDelta = readinessInRange.length >= 4
+    ? Math.round(
+        readinessInRange.slice(half).reduce((s, r) => s + r.score, 0) / (readinessInRange.length - half) -
+        readinessInRange.slice(0, half).reduce((s, r) => s + r.score, 0) / half,
+      )
+    : null;
+  const maxReadiness = Math.max(1, ...readinessInRange.map(r => r.score));
 
   return (
     <ScrollView
@@ -213,22 +244,74 @@ export default function AnalyticsScreen() {
         </View>
       )}
 
-      {/* Readiness */}
+      {/* Training load (ACWR) */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Text style={[styles.metaText, { color: C.textMuted, marginBottom: 4 }]}>Readiness Trend</Text>
-        <Text style={[styles.emptyText, { color: C.textMuted }]}>
-          {todayReadiness
-            ? "Readiness is only tracked day-to-day right now — check back after more daily check-ins to see a trend here."
-            : 'No readiness check-ins yet. Complete a daily check-in on the Dashboard to start building this trend.'}
-        </Text>
+        <View style={styles.cardHeaderRow}>
+          <Text style={[styles.metaText, { color: C.textMuted }]}>Training Load</Text>
+          {hasLoadHistory && (
+            <Text style={[{ fontSize: 13, fontWeight: '800', color: acwrColor }]}>
+              ACWR {acwrResult.acwr.toFixed(2)}
+            </Text>
+          )}
+        </View>
+        {!hasLoadHistory ? (
+          <Text style={[styles.emptyText, { color: C.textMuted }]}>
+            Log a few weeks of runs to see your acute-to-chronic load ratio — the best simple predictor of doing too much too soon.
+          </Text>
+        ) : (
+          <>
+            <Text style={[styles.coachText, { color: C.textMuted, marginTop: 0 }]}>
+              Last 7 days vs your 6-week base: {acwrCopy[acwrZone].meaning}
+            </Text>
+            <Text style={[styles.coachText, { color: C.textMuted }]}>
+              What to do: {acwrCopy[acwrZone].action}
+            </Text>
+          </>
+        )}
       </View>
 
-      {/* Heart Rate Zones — not tracked yet */}
+      {/* Readiness */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Text style={[styles.metaText, { color: C.textMuted, marginBottom: 4 }]}>Heart Rate Zones</Text>
-        <Text style={[styles.emptyText, { color: C.textMuted }]}>
-          Heart rate zone analysis needs per-run HR data, which isn't tracked yet.
-        </Text>
+        <View style={styles.cardHeaderRow}>
+          <Text style={[styles.metaText, { color: C.textMuted }]}>Readiness Trend</Text>
+          {readinessAvg !== null && (
+            <Text style={[{ fontSize: 13, fontWeight: '800', color: C.text }]}>avg {readinessAvg}/100</Text>
+          )}
+        </View>
+        {readinessInRange.length === 0 ? (
+          <Text style={[styles.emptyText, { color: C.textMuted }]}>
+            {todayReadiness
+              ? 'Your check-ins are now being tracked over time — come back after a few days to see the trend.'
+              : 'No readiness check-ins yet. Complete a daily check-in on the Dashboard to start building this trend.'}
+          </Text>
+        ) : (
+          <>
+            <View style={[styles.barChart, { height: 56 }]}>
+              {readinessInRange.slice(-21).map((r, i) => (
+                <View
+                  key={`${r.date}-${i}`}
+                  style={[
+                    styles.bar,
+                    {
+                      height: `${Math.max(6, (r.score / maxReadiness) * 100)}%`,
+                      backgroundColor: r.score >= 70 ? C.positive : r.score >= 50 ? C.primary : C.warning,
+                      opacity: 0.9,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+            <Text style={[styles.coachText, { color: C.textMuted }]}>
+              {readinessInRange.length < 4
+                ? `${readinessInRange.length} check-in${readinessInRange.length === 1 ? '' : 's'} so far — low confidence until there's about a week of data.`
+                : readinessDelta !== null && readinessDelta <= -8
+                  ? `Readiness has dropped ${Math.abs(readinessDelta)} points across this range — recovery isn't keeping up with stress. Bias the next few days easy and protect sleep.`
+                  : readinessDelta !== null && readinessDelta >= 8
+                    ? `Readiness is up ${readinessDelta} points across this range — you're absorbing training well. A good window for planned quality work.`
+                    : 'Readiness is holding steady across this range — keep the current balance of stress and recovery.'}
+            </Text>
+          </>
+        )}
       </View>
 
       {/* Adaptive Performance */}

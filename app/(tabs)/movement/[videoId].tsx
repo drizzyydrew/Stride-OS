@@ -89,10 +89,15 @@ function FindingCard({ finding }: { finding: GaitFinding }) {
         </View>
         <Text style={fc.title} numberOfLines={2}>{finding.finding}</Text>
       </View>
-      {Boolean(finding.implication) && <Text style={fc.desc}>{finding.implication}</Text>}
+      {Boolean(finding.implication) && (
+        <View style={fc.rec}>
+          <Text style={fc.recLabel}>What it means</Text>
+          <Text style={fc.desc}>{finding.implication}</Text>
+        </View>
+      )}
       {Boolean(finding.drill) && (
         <View style={fc.rec}>
-          <Text style={fc.recLabel}>Drill</Text>
+          <Text style={fc.recLabel}>What to do</Text>
           <Text style={fc.recTxt}>{finding.drill}</Text>
         </View>
       )}
@@ -100,6 +105,12 @@ function FindingCard({ finding }: { finding: GaitFinding }) {
         <View style={fc.rec}>
           <Text style={fc.recLabel}>Strength focus</Text>
           <Text style={fc.recTxt}>{finding.strengthFocus}</Text>
+        </View>
+      )}
+      {Boolean(finding.retestNote) && (
+        <View style={fc.rec}>
+          <Text style={fc.recLabel}>Retest</Text>
+          <Text style={fc.recTxt}>{finding.retestNote}</Text>
         </View>
       )}
     </View>
