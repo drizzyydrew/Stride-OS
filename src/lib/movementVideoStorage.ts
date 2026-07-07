@@ -65,6 +65,30 @@ export async function copyVideoToMovementStorage(
   };
 }
 
+// ─── Analysis media (Movement Lab V1.5 stills/clips) ─────────────────────────
+//
+// ImagePicker and VideoThumbnails write into the OS cache directory, which the
+// system may purge at any time. Saved analyses must keep their media, so the
+// analyzed still (or clip) is copied into the app's document directory.
+
+const ANALYSIS_DIR = `${FileSystem.documentDirectory}movement-analyses/`;
+
+export async function copyAnalysisMediaToStorage(sourceUri: string, analysisKey: string): Promise<string> {
+  const ext = extensionFrom(sourceUri);
+  const localUri = `${ANALYSIS_DIR}${analysisKey}.${ext}`;
+
+  await FileSystem.makeDirectoryAsync(ANALYSIS_DIR, { intermediates: true });
+  await FileSystem.copyAsync({ from: sourceUri, to: localUri });
+
+  return localUri;
+}
+
+// Only removes files this module created — never touches library/cache URIs.
+export async function deleteAnalysisMediaIfStored(uri: string): Promise<void> {
+  if (!uri.startsWith(ANALYSIS_DIR)) return;
+  await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+}
+
 export async function uploadMovementVideo(
   localUri: string,
   storagePath: string,

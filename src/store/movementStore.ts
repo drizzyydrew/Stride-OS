@@ -17,6 +17,7 @@ import type {
   LiftingAnalysis,
   MovementRiskFlag,
   MovementActivity,
+  MovementAnalysis,
 } from '../types/movement';
 
 // ─── Store shape ──────────────────────────────────────────────────────────────
@@ -24,6 +25,12 @@ import type {
 type MovementStore = {
   videos:   MovementVideo[];
   sessions: MovementAnalysisSession[];   // one per videoId (lazy-created)
+  analyses: MovementAnalysis[];          // V1.5 still-frame analyses
+
+  // ── Still-frame analyses (V1.5) ───────────────────────────────────────────
+  addAnalysis:    (a: Omit<MovementAnalysis, 'id' | 'createdAt' | 'updatedAt'>) => string;
+  updateAnalysis: (id: string, patch: Partial<MovementAnalysis>) => void;
+  removeAnalysis: (id: string) => void;
 
   // ── Video CRUD ────────────────────────────────────────────────────────────
   addVideo:    (video: Omit<MovementVideo, 'id' | 'createdAt'>) => string;
@@ -111,6 +118,30 @@ export const useMovementStore = create<MovementStore>()(
     (set, get) => ({
       videos:   [],
       sessions: [],
+      analyses: [],
+
+      // ── Still-frame analyses (V1.5) ──────────────────────────────────────────
+
+      addAnalysis: (a) => {
+        const id  = uid();
+        const now = nowMs();
+        set(state => ({
+          analyses: [...state.analyses, { ...a, id, createdAt: now, updatedAt: now }],
+        }));
+        return id;
+      },
+
+      updateAnalysis: (id, patch) =>
+        set(state => ({
+          analyses: state.analyses.map(a =>
+            a.id === id ? { ...a, ...patch, id: a.id, createdAt: a.createdAt, updatedAt: nowMs() } : a,
+          ),
+        })),
+
+      removeAnalysis: (id) =>
+        set(state => ({
+          analyses: state.analyses.filter(a => a.id !== id),
+        })),
 
       // ── Video CRUD ──────────────────────────────────────────────────────────
 
@@ -316,11 +347,22 @@ export const useMovementStore = create<MovementStore>()(
 
       // ── Reset ───────────────────────────────────────────────────────────────
 
-      resetMovement: () => set({ videos: [], sessions: [] }),
+      resetMovement: () => set({ videos: [], sessions: [], analyses: [] }),
     }),
     {
       name:    'movement-store',
       storage: createJSONStorage(() => AsyncStorage),
+      // Older persisted stores predate `analyses` — default it to [] on rehydrate.
+      merge: (persisted, current) => {
+        const state = persisted as Partial<MovementStore> | undefined;
+        return {
+          ...current,
+          ...state,
+          videos:   state?.videos   ?? current.videos,
+          sessions: state?.sessions ?? current.sessions,
+          analyses: state?.analyses ?? current.analyses,
+        };
+      },
     },
   ),
 );

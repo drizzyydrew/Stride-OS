@@ -33,6 +33,8 @@ import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { buildCoachingInput } from '../../../src/utils/coachingInputBuilder';
+import { buildCoachHandoff } from '../../../src/utils/movementEngine';
+import type { MovementAnalysis } from '../../../src/types/movement';
 import { generateCoachingOutput } from '../../../src/utils/coachEngine';
 import WeeklyCoachCard from '../../../src/components/coaching/WeeklyCoachCard';
 import CoachInsightsCard from '../../../src/components/coaching/CoachInsightsCard';
@@ -108,10 +110,37 @@ CURRENT STATE
 - ${ctx.readinessLine}`;
 }
 
+// Recent Movement Lab still-frame analyses, serialized via the coach handoff
+// contract so the coach can discuss actual findings, not vague summaries.
+function buildMovementLabBlock(analyses: MovementAnalysis[]): string {
+  const recent = analyses.slice(-3).reverse();
+  if (recent.length === 0) return 'MOVEMENT LAB ANALYSES\nNone recorded yet.';
+
+  const lines = recent.map(a => {
+    const h = buildCoachHandoff(a);
+    const angles = h.detectedAngles.length
+      ? h.detectedAngles.map(x => `${x.name} ${Math.round(x.degrees)}°`).join(', ')
+      : 'none detected';
+    const findings = h.checklistFindings.length
+      ? h.checklistFindings.map(f => `${f.label}: ${f.value}${f.severity ? ` (${f.severity})` : ''}`).join('; ')
+      : 'none recorded';
+    const recs = h.recommendations.map(r => r.finding).join('; ') || 'none';
+    return `- ${shortDate(a.createdAt)} · ${h.analysisType.replace(/_/g, ' ')} (${h.cameraView.replace(/_/g, ' ')} view, ${h.mediaType.replace(/_/g, ' ')})
+  Detection quality: ${h.detectionQuality}. Overall confidence: ${h.confidence.replace(/_/g, ' ')}.
+  Estimated angles (camera-view estimates, not clinical measurements): ${angles}
+  Checklist findings: ${findings}
+  Flagged: ${recs}${h.userNotes ? `\n  Athlete notes: ${h.userNotes}` : ''}`;
+  });
+
+  return `MOVEMENT LAB ANALYSES (most recent first — joint angles are estimates from photos/video frames, not clinical measurements)
+${lines.join('\n')}`;
+}
+
 function buildSystemPrompt(
   data:        ReturnType<typeof useOnboardingStore.getState>['data'],
   riskFlags:   ReturnType<typeof useMovementStore.getState>['getActiveRiskFlags'],
   trainingCtx: CoachTrainingContext,
+  analyses:    MovementAnalysis[],
 ): string {
   const flags   = riskFlags();
   const flagTxt = flags.length
@@ -137,6 +166,8 @@ ${data.hrMax ? `- HR max: ${data.hrMax} bpm` : ''}${data.hrResting ? `  Resting 
 
 MOVEMENT RISK FLAGS
 ${flagTxt}
+
+${buildMovementLabBlock(analyses)}
 
 ${buildTrainingContextBlock(trainingCtx)}
 
@@ -196,6 +227,7 @@ export default function CoachScreen() {
   const addVideo = useMovementStore(s => s.addVideo);
   const updateVideo = useMovementStore(s => s.updateVideo);
   const videos = useMovementStore(s => s.videos);
+  const movementAnalyses = useMovementStore(s => s.analyses);
   const user = useAuthStore(s => s.user);
   const runHistory = useWorkoutStore(s => s.history);
   const strengthHistory = useStrengthStore(s => s.history);
@@ -312,7 +344,7 @@ export default function CoachScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
-      const system  = buildSystemPrompt(data, riskFlags, trainingCtx);
+      const system  = buildSystemPrompt(data, riskFlags, trainingCtx, movementAnalyses);
       const reply = await sendCoachMessage(updated, system);
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);

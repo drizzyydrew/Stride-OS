@@ -22,10 +22,18 @@ import * as ImagePicker from 'expo-image-picker';
 import { useMovementStore } from '../../../src/store/movementStore';
 import { useAuthStore }     from '../../../src/store/authStore';
 import { copyVideoToMovementStorage, uploadMovementVideo } from '../../../src/lib/movementVideoStorage';
+import { ANALYSIS_KIND_INFO } from '../../../src/utils/movementEngine';
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
-import type { MovementAnalysisType, MovementActivity, MovementViewAngle } from '../../../src/types/movement';
+import type {
+  AnalysisConfidence,
+  MovementAnalysis,
+  MovementAnalysisKind,
+  MovementAnalysisType,
+  MovementActivity,
+  MovementViewAngle,
+} from '../../../src/types/movement';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -87,6 +95,30 @@ const TYPE_LABELS: Record<MovementAnalysisType, string> = {
   lifting_mechanics: 'Lifting',
   mobility:          'Mobility',
   other:             'Other',
+};
+
+// V1.5 analysis kinds — order matches the Movement Lab home cards.
+const ANALYSIS_KINDS: { kind: MovementAnalysisKind; icon: string }[] = [
+  { kind: 'running_gait',     icon: '🏃' },
+  { kind: 'squat',            icon: '🏋️' },
+  { kind: 'deadlift',         icon: '🏋️' },
+  { kind: 'lunge_single_leg', icon: '🦵' },
+  { kind: 'general',          icon: '📐' },
+];
+
+const KIND_ICON: Record<MovementAnalysisKind, string> = {
+  running_gait:     '🏃',
+  squat:            '🏋️',
+  deadlift:         '🏋️',
+  lunge_single_leg: '🦵',
+  general:          '📐',
+};
+
+const CONFIDENCE_META: Record<AnalysisConfidence, { label: string; color: string }> = {
+  high:          { label: 'High',          color: colors.positive },
+  moderate:      { label: 'Moderate',      color: colors.warning },
+  low:           { label: 'Low',           color: colors.critical },
+  manual_review: { label: 'Manual review', color: colors.textMuted },
 };
 
 
@@ -301,10 +333,42 @@ function VideoCard({ video }: { video: { id: string; title: string; date: string
   );
 }
 
+// ─── Saved analysis card ──────────────────────────────────────────────────────
+
+function AnalysisCard({ analysis }: { analysis: MovementAnalysis }) {
+  const info = ANALYSIS_KIND_INFO[analysis.type];
+  const conf = CONFIDENCE_META[analysis.confidence];
+  const date = new Date(analysis.createdAt).toLocaleDateString(undefined, {
+    month: 'short', day: 'numeric', year: 'numeric',
+  });
+  return (
+    <Pressable
+      style={vc.card}
+      onPress={() => router.push({ pathname: '/(tabs)/movement/analysis-detail', params: { analysisId: analysis.id } } as never)}
+    >
+      <View style={vc.iconBox}>
+        <Text style={vc.icon}>{KIND_ICON[analysis.type]}</Text>
+      </View>
+      <View style={vc.info}>
+        <Text style={vc.title}>{info.title}</Text>
+        <Text style={vc.sub}>
+          {analysis.landmarks?.length ? 'Pose detected' : 'Manual analysis'}
+          {analysis.checklistFindings.length ? ` · ${analysis.checklistFindings.length} findings` : ''}
+        </Text>
+        <Text style={vc.date}>{date}</Text>
+      </View>
+      <View style={[vc.confChip, { backgroundColor: conf.color + '22' }]}>
+        <Text style={[vc.confChipTxt, { color: conf.color }]}>{conf.label}</Text>
+      </View>
+      <Text style={vc.chevron}>›</Text>
+    </Pressable>
+  );
+}
+
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function MovementIndexScreen() {
-  const { videos, addVideo, updateVideo } = useMovementStore();
+  const { videos, addVideo, updateVideo, analyses } = useMovementStore();
   const user = useAuthStore(s => s.user);
   const [showAdd,   setShowAdd]   = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -365,6 +429,45 @@ export default function MovementIndexScreen() {
       )}
 
       <ScrollView style={s.list} contentContainerStyle={s.listContent} showsVerticalScrollIndicator={false}>
+        {/* Markerless analysis — pick a movement type */}
+        <Text style={s.sectionLabel}>ANALYZE A MOVEMENT</Text>
+        <View style={s.cards}>
+          {ANALYSIS_KINDS.map(({ kind, icon }) => {
+            const info = ANALYSIS_KIND_INFO[kind];
+            return (
+              <Pressable
+                key={kind}
+                style={s.kindCard}
+                onPress={() => router.push({ pathname: '/(tabs)/movement/analyze', params: { kind } } as never)}
+              >
+                <View style={s.kindIconBox}>
+                  <Text style={s.kindIcon}>{icon}</Text>
+                </View>
+                <View style={s.kindInfo}>
+                  <Text style={s.kindTitle}>{info.title}</Text>
+                  <Text style={s.kindCamera}>{info.cameraAngle}</Text>
+                  <Text style={s.kindAnalyzes} numberOfLines={2}>
+                    {info.analyzes.slice(0, 3).join(' · ')}
+                  </Text>
+                </View>
+                <Text style={vc.chevron}>›</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Saved still-frame analyses */}
+        {analyses.length > 0 && (
+          <>
+            <Text style={s.sectionLabel}>SAVED ANALYSES</Text>
+            <View style={s.cards}>
+              {[...analyses].reverse().map(a => <AnalysisCard key={a.id} analysis={a} />)}
+            </View>
+          </>
+        )}
+
+        {/* Existing video workspace */}
+        <Text style={s.sectionLabel}>VIDEO WORKSPACE</Text>
         <View style={s.aiBanner}>
           <Text style={s.aiBannerTitle}>Video analysis workspace</Text>
           <Text style={s.aiBannerSub}>
@@ -376,13 +479,13 @@ export default function MovementIndexScreen() {
         {videos.length === 0 ? (
           <View style={s.empty}>
             <Text style={s.emptyIcon}>📹</Text>
-            <Text style={s.emptyTitle}>No analyses yet</Text>
+            <Text style={s.emptyTitle}>No video sessions yet</Text>
             <Text style={s.emptyDesc}>
-              Add your first movement analysis to start tracking gait patterns,
-              lifting mechanics, and joint angles.
+              Add a video session to keep longer clips and structured notes tied to
+              your athlete profile.
             </Text>
             <Pressable style={s.emptyBtn} onPress={() => setShowAdd(true)}>
-              <Text style={s.emptyBtnTxt}>Add First Analysis</Text>
+              <Text style={s.emptyBtnTxt}>Add Video Session</Text>
             </Pressable>
           </View>
         ) : (
@@ -435,6 +538,36 @@ const s = StyleSheet.create({
   uploadBannerTxt: { color: colors.primary, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   list:        { flex: 1 },
   listContent: { padding: spacing.lg, paddingBottom: 120, gap: spacing.md },
+  sectionLabel: {
+    color:         colors.textMuted,
+    fontSize:      10,
+    fontWeight:    FontWeight.black,
+    letterSpacing: 0.6,
+    marginTop:     spacing.xs,
+  },
+  kindCard: {
+    backgroundColor: colors.card,
+    borderRadius:    12,
+    padding:         spacing.md,
+    borderWidth:     1,
+    borderColor:     colors.border,
+    flexDirection:   'row',
+    alignItems:      'center',
+    gap:             spacing.md,
+  },
+  kindIconBox: {
+    width:           44,
+    height:          44,
+    borderRadius:    10,
+    backgroundColor: colors.border,
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
+  kindIcon:     { fontSize: 22 },
+  kindInfo:     { flex: 1, gap: 2 },
+  kindTitle:    { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  kindCamera:   { color: colors.primary, fontSize: FontSize.xs },
+  kindAnalyzes: { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 15 },
   aiBanner: {
     backgroundColor: colors.card,
     borderRadius:    12,
@@ -485,6 +618,8 @@ const vc = StyleSheet.create({
   sub:     { color: colors.textMuted, fontSize: FontSize.xs },
   date:    { color: colors.textSubtle, fontSize: FontSize.xs },
   chevron: { color: colors.textSubtle, fontSize: 22 },
+  confChip:    { borderRadius: Radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
+  confChipTxt: { fontSize: 10, fontWeight: FontWeight.black },
 });
 
 const m = StyleSheet.create({

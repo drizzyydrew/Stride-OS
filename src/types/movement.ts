@@ -325,3 +325,34 @@ export type VideoFrameAnnotation = {
   color?:     string;
   data?:      Record<string, number | string>;
 };
+
+// ─── Movement Lab V1.5 — markerless still analysis ────────────────────────────
+//
+// One MovementAnalysis per analyzed still (photo or extracted video frame).
+// Landmarks come from on-device Apple Vision pose detection (stride-pose).
+// All fields are honest: undefined landmarks = pose never ran / unavailable.
+
+export type MovementAnalysisKind = 'running_gait' | 'squat' | 'deadlift' | 'lunge_single_leg' | 'general';
+export type AnalysisMediaType = 'photo' | 'video_frame' | 'video';
+export type AnalysisConfidence = 'high' | 'moderate' | 'low' | 'manual_review';
+export type PoseLandmarkRecord = { name: string; x: number; y: number; confidence: number };
+export type EstimatedAngle = { name: string; joint: string; side: 'left' | 'right' | 'center'; degrees: number; confidence: number; note?: string };
+export type ChecklistFinding = { itemId: string; label: string; value: string; severity?: FindingSeverity; note?: string };
+export type MovementAnalysis = {
+  id: string; createdAt: number; updatedAt: number;
+  type: MovementAnalysisKind;
+  mediaUri: string;               // the analyzed still (photo or extracted frame)
+  sourceVideoUri?: string;        // original video when mediaType === 'video_frame'
+  mediaType: AnalysisMediaType;
+  cameraView: MovementViewAngle;
+  landmarks?: PoseLandmarkRecord[];   // undefined = pose not run/unavailable
+  imageAspectRatio?: number;          // width/height of analyzed image
+  estimatedAngles?: EstimatedAngle[];
+  checklistFindings: ChecklistFinding[];
+  confidence: AnalysisConfidence;
+  notes?: string;
+  recommendations: { finding: string; meaning: string; recommendation: string }[];
+  limitations: string[];
+  linkedWorkoutId?: string; linkedRunId?: string;
+  status: 'draft' | 'complete' | 'needs_review';
+};

@@ -28,6 +28,7 @@
     "expo-symbols": "~56.0.6",
     "expo-task-manager": "~56.0.20",
     "expo-video": "~56.1.4",
+    "expo-video-thumbnails": "~56.0.3",
     "expo-web-browser": "~56.0.5",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -42,6 +43,7 @@
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.8.3",
     "stride-live-activity": "file:modules/stride-live-activity",
+    "stride-pose": "file:modules/stride-pose",
     "victory-native": "^41.20.3",
     "zustand": "^5.0.13"
   },

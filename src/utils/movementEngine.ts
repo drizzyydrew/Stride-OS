@@ -18,6 +18,9 @@ import type {
   GaitAnalysis,
   LiftingAnalysis,
   JointAngleEstimate,
+  MovementAnalysisKind,
+  MovementAnalysis,
+  ChecklistFinding,
 } from '../types/movement';
 
 // ─── Gait interpretation templates ───────────────────────────────────────────
@@ -354,5 +357,417 @@ export function assessJointAngle(
   return {
     withinNorm: true,
     note:       `${degrees}° is within the ${norm.min}–${norm.max}° reference range. ${norm.note}`,
+  };
+}
+
+// ═══ Movement Lab V1.5 — still-frame analysis engine ══════════════════════════
+
+// ─── Disclaimers ──────────────────────────────────────────────────────────────
+
+export const MOVEMENT_SAFETY_DISCLAIMER =
+  'Movement Lab is a training analysis tool, not a medical evaluation. Nothing here is a diagnosis. If you have pain, numbness, or an injury concern, see a qualified clinician.';
+
+export const ANGLE_ESTIMATE_DISCLAIMER =
+  'Angles are estimates based on camera view and landmark detection. They are not exact clinical measurements.';
+
+export const DETECTION_LIMITATIONS_NOTE =
+  "Camera angle, lighting, baggy clothing, and busy backgrounds reduce detection accuracy. Side-view items can't be judged from a rear view (and vice versa).";
+
+// ─── Analysis kind info ───────────────────────────────────────────────────────
+
+export const ANALYSIS_KIND_INFO: Record<MovementAnalysisKind, { title: string; cameraAngle: string; setup: string[]; analyzes: string[] }> = {
+  running_gait: {
+    title:       'Running Gait',
+    cameraAngle: 'Side view, camera at hip height, 3–5 m away',
+    setup: [
+      'Film from the side with the camera steady at hip height, 3–5 m away',
+      'Use a treadmill or make repeated passes past the camera at your normal pace',
+      'Wear shorts or leggings so your hips, knees, and ankles are visible',
+      'Good lighting, plain background, whole body in frame',
+    ],
+    analyzes: [
+      'Overstride at initial contact',
+      'Trunk lean',
+      'Pelvic drop (hip control)',
+      'Knee alignment',
+      'Arm swing symmetry',
+    ],
+  },
+  squat: {
+    title:       'Squat',
+    cameraAngle: 'Front 45° or pure side view',
+    setup: [
+      'Film from a front 45° angle or straight from the side',
+      'Whole body in frame, including feet, through the full rep',
+      'Use a light or moderate load you can pause safely',
+      'Fitted clothing so hip and knee positions are visible',
+    ],
+    analyzes: [
+      'Squat depth',
+      'Trunk angle',
+      'Knee tracking',
+      'Hip shift (left/right)',
+      'Ankle strategy (heels)',
+    ],
+  },
+  deadlift: {
+    title:       'Deadlift',
+    cameraAngle: 'Pure side view, bar path fully visible',
+    setup: [
+      'Film straight from the side so the bar path is visible for the whole pull',
+      'Camera at roughly hip height, whole body plus bar in frame',
+      'Film your working sets, not a deliberately slowed demo',
+      'Avoid backlighting — the bar and your spine line must be visible',
+    ],
+    analyzes: [
+      'Hip hinge quality',
+      'Trunk and knee angles',
+      'Bar path',
+      'Lockout position',
+      'Start position setup',
+    ],
+  },
+  lunge_single_leg: {
+    title:       'Lunge / Single-Leg',
+    cameraAngle: 'Front view, square to the camera',
+    setup: [
+      'Film from directly in front, square to the camera',
+      'Whole body in frame including the feet',
+      'Perform 3–5 slow, controlled reps per side',
+      'Fitted shorts or leggings so knee and pelvis position are visible',
+    ],
+    analyzes: [
+      'Knee valgus (knee caving in)',
+      'Pelvic drop',
+      'Balance strategy',
+      'Trunk control',
+    ],
+  },
+  general: {
+    title:       'General Upload',
+    cameraAngle: 'Any view — pick what shows the movement best',
+    setup: [
+      'Frame the whole body and keep the camera steady',
+      'Good lighting and a plain background improve detection',
+      'Capture 3–5 reps or a continuous 10–20 s clip',
+    ],
+    analyzes: [
+      'Any movement — reviewed manually',
+      'Pose landmarks and joint angles where detectable',
+    ],
+  },
+};
+
+// ─── Analysis checklists ──────────────────────────────────────────────────────
+
+export const ANALYSIS_CHECKLISTS: Record<MovementAnalysisKind, { id: string; label: string; options: string[] }[]> = {
+  running_gait: [
+    { id: 'overstride',           label: 'Overstride',            options: ['No', 'Mild', 'Marked', 'Unclear'] },
+    { id: 'trunk_lean',           label: 'Trunk lean',            options: ['Upright', 'Slight forward', 'Excessive', 'Unclear'] },
+    { id: 'pelvic_drop',          label: 'Pelvic drop',           options: ['None', 'Mild', 'Moderate', 'Severe', 'Unclear'] },
+    { id: 'knee_valgus',          label: 'Knee valgus',           options: ['None', 'Mild', 'Moderate', 'Severe', 'Unclear'] },
+    { id: 'crossover',            label: 'Crossover gait',        options: ['No', 'Yes', 'Unclear'] },
+    { id: 'arm_swing',            label: 'Arm swing symmetry',    options: ['Symmetric', 'Asymmetric', 'Unclear'] },
+    { id: 'vertical_oscillation', label: 'Vertical oscillation',  options: ['Low', 'Moderate', 'High', 'Unclear'] },
+  ],
+  squat: [
+    { id: 'depth',          label: 'Depth',          options: ['Above parallel', 'Parallel', 'Below parallel', 'Unclear'] },
+    { id: 'trunk_angle',    label: 'Trunk angle',    options: ['Upright', 'Moderate', 'Excessive lean', 'Unclear'] },
+    { id: 'knee_tracking',  label: 'Knee tracking',  options: ['Over toes', 'Caving in', 'Out', 'Unclear'] },
+    { id: 'hip_shift',      label: 'Hip shift',      options: ['None', 'Left', 'Right', 'Unclear'] },
+    { id: 'ankle_strategy', label: 'Ankle strategy', options: ['Heels down', 'Heels rising', 'Unclear'] },
+    { id: 'symmetry',       label: 'Symmetry',       options: ['Symmetric', 'Asymmetric', 'Unclear'] },
+  ],
+  deadlift: [
+    { id: 'hip_hinge',      label: 'Hip hinge',      options: ['Good hinge', 'Squatty', 'Stiff-legged', 'Unclear'] },
+    { id: 'trunk_position', label: 'Trunk position', options: ['Neutral', 'Rounded', 'Overextended', 'Unclear'] },
+    { id: 'bar_path',       label: 'Bar path',       options: ['Close', 'Drifts away', 'Not visible'] },
+    { id: 'lockout',        label: 'Lockout',        options: ['Complete', 'Incomplete', 'Hyperextended', 'Unclear'] },
+    { id: 'start_position', label: 'Start position', options: ['Set', 'Rushed', 'Unclear'] },
+  ],
+  lunge_single_leg: [
+    { id: 'knee_valgus',   label: 'Knee valgus',   options: ['None', 'Mild', 'Moderate', 'Severe', 'Unclear'] },
+    { id: 'pelvic_drop',   label: 'Pelvic drop',   options: ['None', 'Mild', 'Moderate', 'Severe', 'Unclear'] },
+    { id: 'trunk_control', label: 'Trunk control', options: ['Stable', 'Some sway', 'Collapsing', 'Unclear'] },
+    { id: 'balance',       label: 'Balance',       options: ['Steady', 'Occasional wobble', 'Frequent loss', 'Unclear'] },
+  ],
+  general: [
+    { id: 'movement_quality', label: 'Movement quality', options: ['Smooth', 'Hesitant', 'Compensated', 'Unclear'] },
+    { id: 'symmetry',         label: 'Left/right symmetry', options: ['Symmetric', 'Asymmetric', 'Unclear'] },
+    { id: 'control',          label: 'Control and tempo', options: ['Controlled', 'Rushed', 'Unstable', 'Unclear'] },
+  ],
+};
+
+// ─── Checklist → recommendations ──────────────────────────────────────────────
+
+type AnalysisRecommendation = { finding: string; meaning: string; recommendation: string };
+
+/** Values that count as a "normal" (non-notable) answer per checklist item. */
+export const NORMAL_CHECKLIST_VALUES = new Set([
+  'No', 'None', 'Upright', 'Symmetric', 'Low', 'Moderate',
+  'Parallel', 'Below parallel', 'Over toes', 'Heels down',
+  'Good hinge', 'Neutral', 'Close', 'Complete', 'Set',
+  'Stable', 'Steady', 'Smooth', 'Controlled', 'Slight forward',
+]);
+
+function gaitTemplateToRec(t: GaitFindingTemplate): AnalysisRecommendation {
+  const parts = [t.drill && `Drills: ${t.drill}.`, t.strengthFocus && `Strength focus: ${t.strengthFocus}.`, t.retestNote && `Retest: ${t.retestNote}.`]
+    .filter(Boolean)
+    .join(' ');
+  return { finding: t.finding, meaning: t.implication ?? '', recommendation: parts };
+}
+
+function liftingTemplateToRec(t: (typeof LIFTING_TEMPLATES)[string]): AnalysisRecommendation {
+  const parts = [t.cue && `Cue: ${t.cue}`, t.regression && `Regression: ${t.regression}`, t.retestNote && `Retest: ${t.retestNote}`]
+    .filter(Boolean)
+    .join(' ');
+  return { finding: t.finding, meaning: t.implication ?? '', recommendation: parts };
+}
+
+export function buildAnalysisRecommendations(
+  kind:     MovementAnalysisKind,
+  findings: ChecklistFinding[],
+): AnalysisRecommendation[] {
+  const recs: AnalysisRecommendation[] = [];
+  const get = (itemId: string) => findings.find(f => f.itemId === itemId)?.value;
+
+  if (kind === 'running_gait') {
+    const overstride = get('overstride');
+    if (overstride === 'Mild' || overstride === 'Marked') {
+      recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.overstride));
+    }
+    if (get('crossover') === 'Yes') {
+      recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.crossover));
+    }
+    const drop = get('pelvic_drop');
+    if (drop === 'Mild')     recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.hip_drop_mild));
+    if (drop === 'Moderate') recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.hip_drop_moderate));
+    if (drop === 'Severe')   recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.hip_drop_severe));
+    const valgus = get('knee_valgus');
+    if (valgus === 'Mild')     recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.knee_valgus_mild));
+    if (valgus === 'Moderate') recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.knee_valgus_moderate));
+    if (valgus === 'Severe')   recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.knee_valgus_severe));
+    if (get('trunk_lean') === 'Excessive') {
+      recs.push({
+        finding:        'Excessive forward trunk lean while running',
+        meaning:        'Shifts load to the calves and low back and often reflects weak hip extensors or breaking at the waist rather than leaning from the ankles.',
+        recommendation: 'Cue: "run tall, lean from the ankles, not the waist." Strength focus: glute bridges, back extensions, and hill strides to groove hip extension. Refilm from the side after 3–4 weeks.',
+      });
+    }
+    if (get('arm_swing') === 'Asymmetric') {
+      recs.push({
+        finding:        'Asymmetric arm swing',
+        meaning:        'Arm swing asymmetry often mirrors a trunk-rotation or leg-drive asymmetry rather than an arm problem — it can hint at a side that isn\'t contributing equally.',
+        recommendation: 'Cue: relaxed shoulders, elbows around 90°, hands driving "hip to lip" on both sides. Add single-arm carries and single-leg strength work; refilm from the front and rear to check whether the asymmetry follows the legs.',
+      });
+    }
+    if (get('vertical_oscillation') === 'High') {
+      recs.push({
+        finding:        'High vertical oscillation (bouncy stride)',
+        meaning:        'Energy spent moving up and down instead of forward. Often paired with low cadence and overstriding, and it raises impact loading per step.',
+        recommendation: 'Cue: "run quiet, push back, not up." Add cadence work (metronome strides at +5–10% of current step rate) and short hill repeats for horizontal drive. Reassess after 3–4 weeks of cadence-focused strides.',
+      });
+    }
+  }
+
+  if (kind === 'squat') {
+    if (get('depth') === 'Above parallel') {
+      recs.push(liftingTemplateToRec(LIFTING_TEMPLATES.poor_depth));
+    }
+    if (get('trunk_angle') === 'Excessive lean') {
+      recs.push(liftingTemplateToRec(LIFTING_TEMPLATES.forward_lean));
+    }
+    if (get('knee_tracking') === 'Caving in') {
+      recs.push(liftingTemplateToRec(LIFTING_TEMPLATES.knee_valgus));
+    }
+    const shift = get('hip_shift');
+    if (shift === 'Left' || shift === 'Right') {
+      recs.push({
+        finding:        `Hip shift toward the ${shift.toLowerCase()} during the squat`,
+        meaning:        'A lateral shift usually means one side is doing more work — from a strength or mobility asymmetry, or an old-injury guarding pattern. Under load it concentrates stress on one hip and knee.',
+        recommendation: 'Cue: "spread the floor, drive both feet evenly." Reduce load 10–20% and add single-leg work (split squats, step-ups) for the under-working side. Film front-on every 2 weeks; if the shift persists or is painful, get it assessed.',
+      });
+    }
+    if (get('ankle_strategy') === 'Heels rising') {
+      recs.push({
+        finding:        'Heels rising during the squat descent',
+        meaning:        'Usually a sign of limited ankle dorsiflexion — the body borrows range by lifting the heels, which shifts load to the forefoot and knees and makes depth unstable.',
+        recommendation: 'Cue: "big toe and heel stay glued down." Add ankle mobility work (knee-to-wall rocks, calf stretching/soft tissue) and squat with heel-elevated shoes or small plates under the heels while range improves. Retest barefoot depth in 4–6 weeks.',
+      });
+    }
+    if (get('symmetry') === 'Asymmetric') {
+      recs.push({
+        finding:        'Left/right asymmetry during the squat',
+        meaning:        'Uneven loading between sides — one leg, hip, or ankle is contributing more. Over time this compounds into strength imbalances and localized overuse.',
+        recommendation: 'Add 2 sets of unilateral lower-body work (rear-foot-elevated split squat or single-leg press) per session, starting with the weaker side and matching reps. Keep bilateral loads moderate until sides look even on video.',
+      });
+    }
+  }
+
+  if (kind === 'deadlift') {
+    if (get('bar_path') === 'Drifts away') {
+      recs.push(liftingTemplateToRec(LIFTING_TEMPLATES.bar_drift));
+    }
+    const hinge = get('hip_hinge');
+    if (hinge === 'Squatty') {
+      recs.push({
+        finding:        'Squat-style pull — hips too low at the start',
+        meaning:        'Starting with the hips too low turns the deadlift into a stiff squat: the knees block the bar path and the first pull becomes inefficient, often forcing the hips to shoot up early.',
+        recommendation: 'Cue: "hips higher than knees, shoulders slightly ahead of the bar, load the hamstrings before you pull." Practice Romanian deadlifts and paused pulls from below the knee to groove the hinge. Refilm the first pull from the side at a moderate load.',
+      });
+    }
+    if (hinge === 'Stiff-legged') {
+      recs.push({
+        finding:        'Stiff-legged pull — hips too high, knees barely bent',
+        meaning:        'With the hips too high the legs contribute little off the floor, so the low back and hamstrings take the whole load — a common setup for lumbar strain as weights climb.',
+        recommendation: 'Cue: "drop the hips until the shins touch the bar, chest up, push the floor away." Use blocks or rack pulls at knee height to rebuild the pattern, then lower the start position over 2–3 weeks. Keep loads at ~70% while the setup changes.',
+      });
+    }
+    const trunk = get('trunk_position');
+    if (trunk === 'Rounded') {
+      recs.push({
+        finding:        'Rounded trunk during the pull',
+        meaning:        'Spinal flexion under load increases shear stress on the lumbar discs and ligaments — the highest-priority deadlift fault to correct before adding weight.',
+        recommendation: 'Cue: "chest up, lats on — bend the bar around your shins." Reduce load 20–30% immediately, add front-loaded core work (front squat holds, ab wheel) and paused deadlifts at a load where the spine stays neutral. Refilm weekly; if rounding continues or the back aches, get coached in person.',
+      });
+    }
+    if (trunk === 'Overextended') {
+      recs.push({
+        finding:        'Overextended (hyperlordotic) trunk position',
+        meaning:        'Arching hard into extension compresses the facet joints and usually means the ribs are flaring instead of the core bracing — stability is coming from the spine, not the trunk muscles.',
+        recommendation: 'Cue: "ribs down, brace 360° like taking a punch." Practice dead-bug and bird-dog breathing drills, and set the brace before each rep rather than pulling into an arch. Retest at working load after 2 weeks of brace practice.',
+      });
+    }
+    const lockout = get('lockout');
+    if (lockout === 'Incomplete') {
+      recs.push({
+        finding:        'Incomplete lockout — hips never finish under the bar',
+        meaning:        'Stopping short of full hip extension leaves the glutes out of the lift and keeps the low back loaded in a leaned-forward position at the top.',
+        recommendation: 'Cue: "stand tall, squeeze the glutes, finish with hips — not by leaning back." Add barbell hip thrusts and heavy kettlebell swings to train terminal hip extension. Practice deliberate 2-second lockout holds at moderate loads.',
+      });
+    }
+    if (lockout === 'Hyperextended') {
+      recs.push({
+        finding:        'Hyperextended lockout — leaning back at the top',
+        meaning:        'Leaning back past vertical loads the lumbar facets instead of finishing with the glutes. The lift is complete when hips and knees are straight — anything past that is spine, not hips.',
+        recommendation: 'Cue: "finish tall, glutes squeezed, ribs stacked over pelvis — don\'t lean back." Rehearse the finish position unloaded against a wall, then at ~50% load with a 2-second hold at the top.',
+      });
+    }
+    if (get('start_position') === 'Rushed') {
+      recs.push({
+        finding:        'Rushed setup before the pull',
+        meaning:        'Pulling before tension is set (slack in the arms, hips finding position mid-rep) makes every rep slightly different and is where most technique faults start.',
+        recommendation: 'Build a repeatable ritual: feet set → grip → pull the slack out of the bar → brace → pull. Count one full second of tension before the bar leaves the floor. Film the first rep of each set to confirm consistency.',
+      });
+    }
+  }
+
+  if (kind === 'lunge_single_leg') {
+    const valgus = get('knee_valgus');
+    if (valgus === 'Mild')     recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.knee_valgus_mild));
+    if (valgus === 'Moderate') recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.knee_valgus_moderate));
+    if (valgus === 'Severe')   recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.knee_valgus_severe));
+    const drop = get('pelvic_drop');
+    if (drop === 'Mild')     recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.hip_drop_mild));
+    if (drop === 'Moderate') recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.hip_drop_moderate));
+    if (drop === 'Severe')   recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.hip_drop_severe));
+    const trunkCtrl = get('trunk_control');
+    if (trunkCtrl === 'Some sway' || trunkCtrl === 'Collapsing') {
+      recs.push({
+        finding:        trunkCtrl === 'Collapsing' ? 'Trunk collapses during single-leg work' : 'Trunk sway during single-leg work',
+        meaning:        'The trunk leaning or collapsing over the stance leg is a compensation for weak lateral hip and core stabilizers — the body substitutes a lean for pelvic control.',
+        recommendation: 'Cue: "ribs stacked over pelvis, belt buckle level." Regress to a shorter/supported lunge (hand on wall) until the trunk stays quiet, and add side planks and suitcase carries 2×/week. Refilm front-on in 4 weeks.',
+      });
+    }
+    const balance = get('balance');
+    if (balance === 'Occasional wobble' || balance === 'Frequent loss') {
+      recs.push({
+        finding:        balance === 'Frequent loss' ? 'Frequent balance loss on single leg' : 'Occasional balance wobble on single leg',
+        meaning:        'Balance strategy under single-leg load reflects foot/ankle stability and hip control — both matter for running, where every stride is a single-leg landing.',
+        recommendation: 'Add daily single-leg balance holds (30–60 s per side, eyes forward), progressing to unstable surfaces or eyes-closed. Strength focus: single-leg calf raises and step-downs with a slow 3-second lowering. Expect visible improvement in 2–3 weeks.',
+      });
+    }
+  }
+
+  if (kind === 'general') {
+    if (get('movement_quality') === 'Compensated') {
+      recs.push({
+        finding:        'Compensation patterns visible during the movement',
+        meaning:        'The movement is being completed by working around a restriction or weakness rather than through the intended pattern — the compensating tissue quietly absorbs extra load.',
+        recommendation: 'Reduce the load or range until the movement looks smooth, then rebuild gradually. Note in your log which segment compensates (trunk, hip, knee, ankle) and film the same movement every 2 weeks to track it.',
+      });
+    }
+    if (get('symmetry') === 'Asymmetric') {
+      recs.push({
+        finding:        'Left/right asymmetry during the movement',
+        meaning:        'One side is moving or loading differently. Small asymmetries are normal; visible ones under load tend to grow into strength imbalances and localized overuse.',
+        recommendation: 'Add unilateral versions of this movement, leading with and matching reps to the weaker side. Refilm side-by-side in 4 weeks to compare.',
+      });
+    }
+    if (get('control') === 'Rushed' || get('control') === 'Unstable') {
+      recs.push({
+        finding:        'Movement performed with limited control',
+        meaning:        'Speed is masking control — the positions between start and finish are where quality is won or lost, and rushing hides instability.',
+        recommendation: 'Apply a tempo (3 seconds down, 1 second pause) at a lighter load until every rep looks identical, then restore speed. Control first, then load, then speed.',
+      });
+    }
+  }
+
+  // Clean report: everything normal and enough of the checklist actually answered.
+  if (recs.length === 0) {
+    const normals = findings.filter(f => NORMAL_CHECKLIST_VALUES.has(f.value)).length;
+    if (normals >= 3) {
+      recs.push({
+        finding:        'No notable movement faults identified',
+        meaning:        'Everything assessed on this checklist looked within normal ranges for this camera view. A clean screen is a valid, useful result.',
+        recommendation: 'Keep training as planned. Refilm periodically (every 8–12 weeks, or when fatigue/injury changes how things feel) to keep a baseline for comparison.',
+      });
+    }
+  }
+
+  return recs;
+}
+
+// ─── Coach handoff ────────────────────────────────────────────────────────────
+//
+// Plain serializable summary of an analysis for the AI coach / export layer.
+// No consumer wiring yet — this defines the contract.
+
+export type CoachHandoff = {
+  analysisType:     MovementAnalysisKind;
+  mediaType:        MovementAnalysis['mediaType'];
+  cameraView:       MovementAnalysis['cameraView'];
+  detectedAngles:   { name: string; degrees: number; confidence: number }[];
+  checklistFindings: ChecklistFinding[];
+  confidence:       MovementAnalysis['confidence'];
+  userNotes:        string | undefined;
+  recommendations:  MovementAnalysis['recommendations'];
+  limitations:      string[];
+  detectionQuality: 'good' | 'partial' | 'none';
+};
+
+export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
+  const landmarks = analysis.landmarks ?? [];
+  let detectionQuality: CoachHandoff['detectionQuality'] = 'none';
+  if (landmarks.length > 0) {
+    const mean = landmarks.reduce((sum, l) => sum + l.confidence, 0) / landmarks.length;
+    detectionQuality = mean >= 0.6 && landmarks.length >= 10 ? 'good' : 'partial';
+  }
+
+  return {
+    analysisType:      analysis.type,
+    mediaType:         analysis.mediaType,
+    cameraView:        analysis.cameraView,
+    detectedAngles:    (analysis.estimatedAngles ?? []).map(a => ({
+      name:       `${a.name}${a.side !== 'center' ? ` (${a.side})` : ''}`,
+      degrees:    a.degrees,
+      confidence: a.confidence,
+    })),
+    checklistFindings: analysis.checklistFindings,
+    confidence:        analysis.confidence,
+    userNotes:         analysis.notes,
+    recommendations:   analysis.recommendations,
+    limitations:       analysis.limitations,
+    detectionQuality,
   };
 }
