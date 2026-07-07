@@ -1744,6 +1744,7 @@ function HydrationTab() {
 // ─── Routes Tab ───────────────────────────────────────────────────────────────
 function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
   const C = useColors();
+  const router = useRouter();
   const { units } = useSettingsStore();
   const imp = units === 'imperial';
   const isActive = useActiveRunStore(s => s.isActive);
@@ -1945,6 +1946,24 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
 
       {subTab === 'list' ? (
         <>
+          {/* Full-screen Route Builder: snap-to-path routing, draggable
+              waypoints, live elevation. The inline builder below remains for
+              interval-marker routes until the new builder absorbs that (V2). */}
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: C.primaryDim, borderColor: C.primary, flexDirection: 'row', alignItems: 'center', gap: 12 }]}
+            onPress={() => router.push('/(tabs)/training/route-builder' as any)}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="map-outline" size={22} color={C.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.subTitle, { color: C.text }]}>Route Builder</Text>
+              <Text style={[{ fontSize: 11, color: C.textMuted, marginTop: 2 }]}>
+                Snap-to-path routing, draggable points, elevation, and saved route details.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={C.primary} />
+          </TouchableOpacity>
+
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 10 }}>
             {[
               { key: 'all' as const, label: 'All' },
@@ -2043,6 +2062,13 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
                 activeOpacity={0.8}
               >
                 <Text style={[styles.bigBtnText, { color: C.onPrimary }]}>Start on This Route</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.bigBtn, { backgroundColor: C.cardAlt, marginTop: 8 }]}
+                onPress={() => router.push({ pathname: '/(tabs)/training/route-detail', params: { routeId: r.id } } as any)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.bigBtnText, { color: C.text }]}>View Details</Text>
               </TouchableOpacity>
             </View>
           )}

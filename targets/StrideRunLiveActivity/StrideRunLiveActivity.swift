@@ -93,114 +93,109 @@ struct StrideRunLiveActivity: Widget {
 
 // ─── Lock screen view ─────────────────────────────────────────────────────────
 
+// Lock Screen presentations are capped at 160pt by ActivityKit — anything
+// taller is clipped by the system. This layout budgets ~140pt: one compact
+// header, ONE row of four metrics (never stacked numerals), one action row.
+// The system draws the rounded, tinted container itself
+// (activityBackgroundTint), so there is deliberately no inner card here.
 private struct LockScreenRunView: View {
   let context: ActivityViewContext<StrideRunActivityAttributes>
   @Environment(\.colorScheme) private var colorScheme
 
   private var isLight: Bool { colorScheme == .light }
-  private var cardBackground: Color { isLight ? StrideDesign.cardLight : StrideDesign.inkRaised }
   private var primaryText: Color { isLight ? StrideDesign.textPrimaryLight : StrideDesign.textPrimaryDark }
   private var secondaryText: Color { isLight ? StrideDesign.textSecondaryLight : StrideDesign.textSecondaryDark }
-  private var borderColor: Color { isLight ? StrideDesign.lightBorder : StrideDesign.inkBorder }
-  private var actionColor: Color {
-    if context.state.isPaused {
-      return isLight ? StrideDesign.clay : StrideDesign.sage
-    }
-    return isLight ? StrideDesign.clay : StrideDesign.sage
-  }
+  private var actionColor: Color { isLight ? StrideDesign.clay : StrideDesign.sage }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack {
-        HStack(spacing: 8) {
-          Text("MM")
-            .font(.system(size: 12, weight: .bold, design: .serif))
-            .foregroundStyle(StrideDesign.clay)
-          Text("StrideOS Run")
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(primaryText)
-        }
-        Spacer()
+    VStack(alignment: .leading, spacing: 9) {
+      // Header: brand + run status + zone
+      HStack(spacing: 6) {
+        Text("MM")
+          .font(.system(size: 11, weight: .bold, design: .serif))
+          .foregroundStyle(StrideDesign.clay)
+        Text(context.state.isPaused ? "StrideOS · Paused" : "StrideOS Run")
+          .font(.system(size: 12, weight: .semibold))
+          .foregroundStyle(context.state.isPaused ? StrideDesign.clay : primaryText)
+        Spacer(minLength: 4)
         ZoneBadge(label: context.state.zoneLabel, status: context.state.zoneStatus)
       }
 
-      HStack(alignment: .center, spacing: 16) {
-        VStack(alignment: .leading, spacing: 10) {
-          VStack(alignment: .leading, spacing: 2) {
-            Text(formatElapsed(context.state.elapsedSeconds))
-              .font(.system(size: 46, weight: .heavy, design: .rounded))
-              .monospacedDigit()
-              .minimumScaleFactor(0.68)
-              .foregroundStyle(primaryText)
-            Text("TIME")
-              .font(.system(size: 10, weight: .bold))
-              .foregroundStyle(secondaryText)
-          }
-          VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-              Text(String(format: "%.2f", context.state.distanceMiles))
-                .font(.system(size: 42, weight: .heavy, design: .rounded))
-                .monospacedDigit()
-                .minimumScaleFactor(0.68)
-                .foregroundStyle(primaryText)
-              Text("mi")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(secondaryText)
-            }
-            Text("DISTANCE")
-              .font(.system(size: 10, weight: .bold))
-              .foregroundStyle(secondaryText)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-
-        Rectangle()
-          .fill(borderColor)
-          .frame(width: 1, height: 92)
-
-        VStack(alignment: .leading, spacing: 14) {
-          WidgetMetric(icon: "gauge.with.dots.needle.50percent", label: "AVG PACE", value: context.state.averagePace, unit: "/mi", primary: primaryText, secondary: secondaryText)
-          WidgetMetric(icon: "heart.fill", label: "HEART RATE", value: context.state.heartRate > 0 ? "\(context.state.heartRate)" : "--", unit: "bpm", primary: primaryText, secondary: secondaryText)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+      // Single metrics row — four cells, equal width, no vertical stacking
+      HStack(alignment: .top, spacing: 8) {
+        LockMetricCell(value: formatElapsed(context.state.elapsedSeconds), unit: nil, label: "TIME", primary: primaryText, secondary: secondaryText)
+        LockMetricCell(value: String(format: "%.2f", context.state.distanceMiles), unit: "mi", label: "DISTANCE", primary: primaryText, secondary: secondaryText)
+        LockMetricCell(value: context.state.averagePace, unit: "/mi", label: "PACE", primary: primaryText, secondary: secondaryText)
+        LockMetricCell(value: context.state.heartRate > 0 ? "\(context.state.heartRate)" : "--", unit: "bpm", label: "HEART RATE", primary: primaryText, secondary: secondaryText)
       }
 
-      HStack(spacing: 10) {
+      // Single primary action + compact stop
+      HStack(spacing: 8) {
         if context.state.isPaused {
           Button(intent: ResumeRunIntent()) {
             Label("RESUME", systemImage: "play.fill")
-              .font(.system(size: 15, weight: .heavy))
-              .frame(maxWidth: .infinity, minHeight: 44)
-              .background(actionColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-              .foregroundStyle(isLight ? StrideDesign.textPrimaryLight : .white)
+              .font(.system(size: 14, weight: .heavy))
+              .frame(maxWidth: .infinity, minHeight: 38)
+              .background(actionColor, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+              .foregroundStyle(isLight ? .white : StrideDesign.ink)
           }
           .buttonStyle(.plain)
         } else {
           Button(intent: PauseRunIntent()) {
             Label("PAUSE", systemImage: "pause.fill")
-              .font(.system(size: 15, weight: .heavy))
-              .frame(maxWidth: .infinity, minHeight: 44)
-              .background(actionColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-              .foregroundStyle(isLight ? StrideDesign.textPrimaryLight : .white)
+              .font(.system(size: 14, weight: .heavy))
+              .frame(maxWidth: .infinity, minHeight: 38)
+              .background(actionColor, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+              .foregroundStyle(isLight ? .white : StrideDesign.ink)
           }
           .buttonStyle(.plain)
         }
         Button(intent: StopRunIntent()) {
           Image(systemName: "stop.fill")
-            .font(.system(size: 15, weight: .heavy))
-            .frame(width: 52, height: 44)
-            .background(StrideDesign.critical.opacity(0.18), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .font(.system(size: 14, weight: .heavy))
+            .frame(width: 46, height: 38)
+            .background(StrideDesign.critical.opacity(0.22), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             .foregroundStyle(StrideDesign.critical)
         }
         .buttonStyle(.plain)
       }
     }
-    .padding(16)
-    .background(cardBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-    .overlay(
-      RoundedRectangle(cornerRadius: 22, style: .continuous)
-        .stroke(borderColor.opacity(0.9), lineWidth: 1)
-    )
+    .padding(.horizontal, 14)
+    .padding(.vertical, 12)
+  }
+}
+
+// One metric in the lock-screen row: value on top (scales down before
+// truncating — 1:23:45 must stay readable), tiny label beneath.
+private struct LockMetricCell: View {
+  let value: String
+  let unit: String?
+  let label: String
+  let primary: Color
+  let secondary: Color
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 2) {
+      HStack(alignment: .firstTextBaseline, spacing: 2) {
+        Text(value)
+          .font(.system(size: 22, weight: .heavy, design: .rounded))
+          .monospacedDigit()
+          .lineLimit(1)
+          .minimumScaleFactor(0.62)
+          .foregroundStyle(primary)
+        if let unit {
+          Text(unit)
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(secondary)
+        }
+      }
+      Text(label)
+        .font(.system(size: 8, weight: .bold))
+        .foregroundStyle(secondary)
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 }
 
@@ -221,63 +216,6 @@ private enum StrideDesign {
   static let lightBorder = Color(red: 0.906, green: 0.871, blue: 0.831)
   static let textPrimaryLight = Color(red: 0.067, green: 0.067, blue: 0.067)
   static let textSecondaryLight = Color(red: 0.302, green: 0.290, blue: 0.271)
-}
-
-private struct RunMetric: View {
-  let label: String
-  let value: String
-  let unit: String
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 2) {
-      Text(label)
-        .font(.system(size: 8, weight: .bold))
-        .foregroundStyle(Color(red: 0.66, green: 0.69, blue: 0.58))
-      HStack(alignment: .firstTextBaseline, spacing: 2) {
-        Text(value)
-          .font(.system(.subheadline, design: .rounded).weight(.heavy))
-          .monospacedDigit()
-          .foregroundStyle(.white)
-        Text(unit)
-          .font(.caption2.weight(.semibold))
-          .foregroundStyle(Color(red: 0.82, green: 0.82, blue: 0.76))
-      }
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-}
-
-private struct WidgetMetric: View {
-  let icon: String
-  let label: String
-  let value: String
-  let unit: String
-  let primary: Color
-  let secondary: Color
-
-  var body: some View {
-    HStack(alignment: .center, spacing: 8) {
-      Image(systemName: icon)
-        .font(.system(size: 14, weight: .bold))
-        .foregroundStyle(StrideDesign.clay)
-        .frame(width: 18)
-      VStack(alignment: .leading, spacing: 2) {
-        HStack(alignment: .firstTextBaseline, spacing: 3) {
-          Text(value)
-            .font(.system(size: 22, weight: .heavy, design: .rounded))
-            .monospacedDigit()
-            .minimumScaleFactor(0.72)
-            .foregroundStyle(primary)
-          Text(unit)
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(secondary)
-        }
-        Text(label)
-          .font(.system(size: 10, weight: .bold))
-          .foregroundStyle(secondary)
-      }
-    }
-  }
 }
 
 private struct IslandMetric: View {
@@ -408,66 +346,62 @@ struct StrideStrengthLiveActivity: Widget {
   }
 }
 
+// Same 160pt Lock Screen budget as the run view: single header line with the
+// timer inline, one exercise row, one action row (~130pt total).
 private struct LockScreenStrengthView: View {
   let context: ActivityViewContext<StrideStrengthActivityAttributes>
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      // Header
-      HStack {
-        VStack(alignment: .leading, spacing: 2) {
-          Text("StrideOS Strength")
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
-          Text(context.state.isPaused ? "Paused" : context.attributes.workoutName)
-            .font(.title3.weight(.bold))
-            .foregroundStyle(context.state.isPaused ? Color(red: 0.91, green: 0.69, blue: 0.34) : .white)
-        }
-        Spacer()
-        // Progress badge
-        Text("\(context.state.setsCompleted)/\(context.state.totalSets) sets")
-          .font(.caption.weight(.heavy))
-          .padding(.horizontal, 10)
-          .padding(.vertical, 6)
-          .background(Color(red: 0.72, green: 0.75, blue: 0.64).opacity(0.2), in: Capsule())
-          .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
+    VStack(alignment: .leading, spacing: 8) {
+      // Header: name + status, timer right-aligned
+      HStack(alignment: .firstTextBaseline, spacing: 8) {
+        Text(context.state.isPaused ? "Paused · \(context.attributes.workoutName)" : context.attributes.workoutName)
+          .font(.system(size: 14, weight: .bold))
+          .foregroundStyle(context.state.isPaused ? Color(red: 0.91, green: 0.69, blue: 0.34) : .white)
+          .lineLimit(1)
+        Spacer(minLength: 4)
+        Text(formatStrengthElapsed(context.state.elapsedSeconds))
+          .font(.system(size: 22, weight: .heavy, design: .rounded))
+          .monospacedDigit()
+          .foregroundStyle(Color(red: 0.96, green: 0.95, blue: 0.90))
       }
 
-      // Timer
-      Text(formatStrengthElapsed(context.state.elapsedSeconds))
-        .font(.system(size: 36, weight: .heavy, design: .rounded))
-        .monospacedDigit()
-        .foregroundStyle(Color(red: 0.96, green: 0.95, blue: 0.90))
-
-      // Current & next exercise
+      // Current & next exercise + set progress
       HStack(spacing: 10) {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 1) {
           Text("NOW")
-            .font(.system(size: 9, weight: .bold))
+            .font(.system(size: 8, weight: .bold))
             .foregroundStyle(Color(red: 0.66, green: 0.69, blue: 0.58))
           Text(context.state.currentExercise)
-            .font(.subheadline.weight(.bold))
+            .font(.system(size: 13, weight: .bold))
             .foregroundStyle(.white)
             .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
 
         if !context.state.nextExercise.isEmpty {
-          VStack(alignment: .leading, spacing: 2) {
+          VStack(alignment: .leading, spacing: 1) {
             Text("NEXT")
-              .font(.system(size: 9, weight: .bold))
+              .font(.system(size: 8, weight: .bold))
               .foregroundStyle(Color(red: 0.66, green: 0.69, blue: 0.58))
             Text(context.state.nextExercise)
-              .font(.subheadline.weight(.semibold))
+              .font(.system(size: 13, weight: .semibold))
               .foregroundStyle(Color(red: 0.82, green: 0.82, blue: 0.76))
               .lineLimit(1)
           }
           .frame(maxWidth: .infinity, alignment: .leading)
         }
+
+        Text("\(context.state.setsCompleted)/\(context.state.totalSets)")
+          .font(.system(size: 12, weight: .heavy))
+          .padding(.horizontal, 8)
+          .padding(.vertical, 4)
+          .background(Color(red: 0.72, green: 0.75, blue: 0.64).opacity(0.2), in: Capsule())
+          .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
       }
 
       // Control buttons
-      HStack(spacing: 10) {
+      HStack(spacing: 8) {
         if context.state.isPaused {
           Button(intent: ResumeStrengthIntent()) {
             Label("Resume", systemImage: "play.fill")
@@ -501,7 +435,8 @@ private struct LockScreenStrengthView: View {
         }
       }
     }
-    .padding(16)
+    .padding(.horizontal, 14)
+    .padding(.vertical, 12)
   }
 }
 

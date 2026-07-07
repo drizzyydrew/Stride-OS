@@ -13,6 +13,8 @@ export type RouteInterval = {
   point: RoutePoint;
 };
 
+export type RouteSurface = 'road' | 'trail' | 'mixed' | 'unknown';
+
 export type RunRoute = {
   id: string;
   name: string;
@@ -23,13 +25,30 @@ export type RunRoute = {
   elevationProfileFt?: number[];
   estimatedMinutes: number;
   segments: RouteInterval[];
+  // Full route line (snapped geometry when the router produced one). This is
+  // the polyline every consumer draws and measures — GeoJSON-convertible via
+  // routeToGeoJSON() in src/lib/routing.ts.
   points: RoutePoint[];
+
+  // ── Route Builder fields (all optional — legacy stored routes stay valid) ──
+  createdAt?:           number;
+  updatedAt?:           number;
+  waypoints?:           RoutePoint[];  // the user's control points, distinct from snapped geometry
+  distanceMeters?:      number;
+  elevationGainMeters?: number;
+  elevationLossMeters?: number;
+  estimatedDurationMin?: number;       // canonical; `estimatedMinutes` kept for legacy consumers
+  surfaceType?:         RouteSurface;
+  routingProvider?:     'osrm_foot' | 'direct';
+  notes?:               string;
+  linkedWorkoutId?:     string;
 };
 
 type RouteStore = {
   routes: RunRoute[];
   selectedRouteId: string | null;
   addRoute: (route: Omit<RunRoute, 'id'>) => string;
+  updateRoute: (id: string, patch: Partial<Omit<RunRoute, 'id'>>) => void;
   removeRoute: (id: string) => void;
   selectRoute: (id: string | null) => void;
 };
@@ -172,12 +191,18 @@ export const useRouteStore = create<RouteStore>()(
       selectedRouteId: null,
       addRoute: (route) => {
         const id = `route-${Date.now()}`;
+        const now = Date.now();
         set((state) => ({
-          routes: [{ ...route, id }, ...state.routes],
+          routes: [{ createdAt: now, updatedAt: now, ...route, id }, ...state.routes],
           selectedRouteId: id,
         }));
         return id;
       },
+      updateRoute: (id, patch) => set((state) => ({
+        routes: state.routes.map((route) =>
+          route.id === id ? { ...route, ...patch, updatedAt: Date.now() } : route,
+        ),
+      })),
       removeRoute: (id) => set((state) => ({
         routes: state.routes.filter((route) => route.id !== id),
         selectedRouteId: state.selectedRouteId === id ? null : state.selectedRouteId,
