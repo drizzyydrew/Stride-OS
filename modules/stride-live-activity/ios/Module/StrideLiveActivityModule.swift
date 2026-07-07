@@ -239,11 +239,12 @@ public final class StrideLiveActivityModule: Module {
           isPaused: false
         )
 
+        // .immediate: finished runs must not linger on the Lock Screen.
         if #available(iOS 16.2, *) {
           let content = ActivityContent(state: state, staleDate: nil, relevanceScore: 0.1)
-          await activity.end(content, dismissalPolicy: .after(Date().addingTimeInterval(60 * 10)))
+          await activity.end(content, dismissalPolicy: .immediate)
         } else {
-          await activity.end(using: state, dismissalPolicy: .after(Date().addingTimeInterval(60 * 10)))
+          await activity.end(using: state, dismissalPolicy: .immediate)
         }
         Self.currentActivityId = nil
         promise.resolve(nil)
@@ -331,10 +332,10 @@ public final class StrideLiveActivityModule: Module {
         if #available(iOS 16.2, *) {
           await activity.end(
             ActivityContent(state: state, staleDate: nil, relevanceScore: 0.1),
-            dismissalPolicy: .after(Date().addingTimeInterval(60 * 5))
+            dismissalPolicy: .immediate
           )
         } else {
-          await activity.end(using: state, dismissalPolicy: .after(Date().addingTimeInterval(60 * 5)))
+          await activity.end(using: state, dismissalPolicy: .immediate)
         }
         Self.currentStrengthActivityId = nil
         promise.resolve(nil)

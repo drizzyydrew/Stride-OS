@@ -23,11 +23,23 @@ export type StrideStrengthLiveActivityPayload = {
   isPaused?: boolean;
 };
 
+export type StrideControlAction =
+  | 'pause'
+  | 'resume'
+  | 'stop'
+  | 'strength_pause'
+  | 'strength_resume'
+  | 'strength_complete';
+
 export type StrideRunControlCommand = {
   id: string;
-  action: 'pause' | 'resume' | 'stop';
+  action: StrideControlAction;
   createdAt: number;
 };
+
+const VALID_CONTROL_ACTIONS: readonly StrideControlAction[] = [
+  'pause', 'resume', 'stop', 'strength_pause', 'strength_resume', 'strength_complete',
+];
 
 type StrideLiveActivityModule = {
   isAvailable: () => boolean;
@@ -127,7 +139,7 @@ export function getPendingRunControlCommand(): StrideRunControlCommand | null {
     if (
       command &&
       typeof command.id === 'string' &&
-      (command.action === 'pause' || command.action === 'resume' || command.action === 'stop')
+      VALID_CONTROL_ACTIONS.includes(command.action)
     ) {
       return command;
     }

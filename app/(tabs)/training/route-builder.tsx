@@ -23,7 +23,7 @@ import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useRouteStore, routeDistanceMiles, type RoutePoint, type RunRoute } from '../../../src/store/routeStore';
 import {
-  fetchRouteElevation, snapRouteToPaths, TANGENTS_EDUCATION_COPY,
+  buildDirectPath, fetchRouteElevation, snapRouteToPaths, TANGENTS_EDUCATION_COPY,
   type ElevationSummary, type RoutedPath,
 } from '../../../src/lib/routing';
 import { estimateEasyPaceSecPerMi } from '../../../src/utils/hydrationEngine';
@@ -56,6 +56,8 @@ export default function RouteBuilderScreen() {
   const [routed, setRouted] = useState<RoutedPath | null>(null);
   const [elevation, setElevation] = useState<ElevationSummary | null>(null);
   const [routingBusy, setRoutingBusy] = useState(false);
+  const [snapFailed, setSnapFailed] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [showSave, setShowSave] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -65,6 +67,7 @@ export default function RouteBuilderScreen() {
   const requestIdRef = useRef(0);
   const mapRef = useRef<MapView>(null);
 
+  const snapUnresolved = snapEnabled && snapFailed && waypoints.length >= 2 && !routingBusy;
   const geometry = routed?.geometry ?? waypoints;
   const distanceMeters = routed?.distanceMeters ?? routeDistanceMiles(waypoints) * 1609.344;
   const distanceMiles = distanceMeters / 1609.344;
@@ -75,36 +78,42 @@ export default function RouteBuilderScreen() {
   const gainDisplay = elevation ? Math.round(imp ? elevation.gainMeters * 3.28084 : elevation.gainMeters) : null;
   const lossDisplay = elevation ? Math.round(imp ? elevation.lossMeters * 3.28084 : elevation.lossMeters) : null;
   const elevUnit = imp ? 'ft' : 'm';
-  const snapFellBack = snapEnabled && waypoints.length >= 2 && routed?.provider === 'direct' && !routingBusy;
+  const canSave = waypoints.length >= 2 && !routingBusy && (routed !== null) && !(snapEnabled && snapFailed);
 
   // Re-route + re-fetch elevation whenever the control points change.
   // Debounced, and guarded with a request id so a stale response can never
-  // overwrite a newer route.
+  // overwrite a newer route. Snap failure is a first-class state — the
+  // athlete sees an error and can retry or explicitly switch to Direct;
+  // there is no silent straight-line substitution.
   useEffect(() => {
     const requestId = ++requestIdRef.current;
     if (waypoints.length < 2) {
       setRouted(null);
       setElevation(null);
       setRoutingBusy(false);
+      setSnapFailed(false);
       return;
     }
 
     setRoutingBusy(true);
     const timer = setTimeout(async () => {
-      const path = snapEnabled
-        ? await snapRouteToPaths(waypoints)
-        : { provider: 'direct' as const, geometry: [...waypoints], distanceMeters: routeDistanceMiles(waypoints) * 1609.344 };
+      const path = snapEnabled ? await snapRouteToPaths(waypoints) : buildDirectPath(waypoints);
       if (requestId !== requestIdRef.current) return;
       setRouted(path);
+      setSnapFailed(snapEnabled && path === null);
       setRoutingBusy(false);
 
-      const elev = await fetchRouteElevation(path.geometry);
-      if (requestId !== requestIdRef.current) return;
-      setElevation(elev);
+      if (path) {
+        const elev = await fetchRouteElevation(path.geometry);
+        if (requestId !== requestIdRef.current) return;
+        setElevation(elev);
+      } else {
+        setElevation(null);
+      }
     }, 450);
 
     return () => clearTimeout(timer);
-  }, [waypoints, snapEnabled]);
+  }, [waypoints, snapEnabled, retryNonce]);
 
   function addWaypoint(point: RoutePoint) {
     setWaypoints(prev => [...prev, point]);
@@ -170,7 +179,7 @@ export default function RouteBuilderScreen() {
   }
 
   function saveRoute() {
-    if (waypoints.length < 2) return;
+    if (!canSave) return;
     const name = routeName.trim() || 'Custom Route';
     const gainFt = elevation ? Math.round(elevation.gainMeters * 3.28084) : Math.round(distanceMiles * 48);
     const id = addRoute({
@@ -206,9 +215,11 @@ export default function RouteBuilderScreen() {
       ? 'Routing…'
       : routed?.provider === 'osrm_foot'
         ? 'Snapped to roads & paths · OpenStreetMap'
-        : snapEnabled
-          ? 'Direct lines — path routing unreachable'
-          : 'Direct lines';
+        : routed?.provider === 'osrm_road'
+          ? 'Snapped to roads · trail data unavailable'
+          : snapEnabled
+            ? 'Snap failed — retry or switch to Direct'
+            : 'Direct lines (manual mode)';
 
   const statCells = useMemo(() => ([
     { label: 'ELEV GAIN', value: gainDisplay !== null ? `+${gainDisplay}` : '—', unit: gainDisplay !== null ? elevUnit : '' },
@@ -230,7 +241,12 @@ export default function RouteBuilderScreen() {
           onPress={event => addWaypoint(event.nativeEvent.coordinate)}
         >
           {geometry.length > 1 ? (
-            <Polyline coordinates={geometry} strokeColor={lineColor} strokeWidth={4} />
+            <Polyline
+              coordinates={geometry}
+              strokeColor={snapUnresolved ? C.textMuted : lineColor}
+              strokeWidth={snapUnresolved ? 3 : 4}
+              lineDashPattern={snapUnresolved || (!snapEnabled && routed?.provider === 'direct') ? [10, 8] : undefined}
+            />
           ) : null}
           {waypoints.map((point, index) => {
             const isStart = index === 0;
@@ -294,7 +310,7 @@ export default function RouteBuilderScreen() {
 
         {/* Route helpers */}
         {waypoints.length >= 2 ? (
-          <View style={[s.helperStack, { bottom: snapFellBack ? 56 : 12 }]}>
+          <View style={[s.helperStack, { bottom: snapUnresolved ? 64 : 12 }]}>
             <TouchableOpacity
               style={[s.helperChip, { backgroundColor: panelBg, borderColor: C.border }]}
               onPress={makeOutAndBack}
@@ -323,12 +339,19 @@ export default function RouteBuilderScreen() {
           </View>
         ) : null}
 
-        {snapFellBack ? (
-          <View style={[s.fallbackBanner, { backgroundColor: C.warningDim ?? C.cardAlt, borderColor: C.warning }]}>
-            <Ionicons name="cloud-offline-outline" size={14} color={C.warning} />
-            <Text style={[s.fallbackText, { color: C.warning }]}>
-              Path routing unreachable — showing direct lines. Distance is approximate.
+        {snapUnresolved ? (
+          <View style={[s.fallbackBanner, { backgroundColor: C.criticalDim ?? C.cardAlt, borderColor: C.critical }]}>
+            <Ionicons name="cloud-offline-outline" size={14} color={C.critical} />
+            <Text style={[s.fallbackText, { color: C.critical }]}>
+              Couldn't snap to roads or paths. This is not a valid route yet.
             </Text>
+            <TouchableOpacity
+              style={[s.retryBtn, { backgroundColor: C.critical }]}
+              onPress={() => setRetryNonce(n => n + 1)}
+              activeOpacity={0.85}
+            >
+              <Text style={[s.retryBtnText, { color: '#FFFFFF' }]}>Retry</Text>
+            </TouchableOpacity>
           </View>
         ) : null}
       </View>
@@ -390,9 +413,9 @@ export default function RouteBuilderScreen() {
             <Text style={[s.secondaryBtnText, { color: C.text }]}>Clear</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[s.primaryBtn, { backgroundColor: C.primary, opacity: waypoints.length >= 2 ? 1 : 0.45 }]}
+            style={[s.primaryBtn, { backgroundColor: C.primary, opacity: canSave ? 1 : 0.45 }]}
             onPress={() => setShowSave(true)}
-            disabled={waypoints.length < 2}
+            disabled={!canSave}
             activeOpacity={0.85}
           >
             <Ionicons name="bookmark-outline" size={16} color={C.onPrimary} />
@@ -562,6 +585,12 @@ const s = StyleSheet.create({
     paddingVertical: 8,
   },
   fallbackText: { fontSize: 11, fontWeight: '700', flex: 1 },
+  retryBtn: {
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  retryBtnText: { fontSize: 11, fontWeight: '800' },
   sheet: {
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,

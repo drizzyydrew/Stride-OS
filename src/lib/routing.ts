@@ -19,7 +19,7 @@
 import type { RoutePoint } from '../store/routeStore';
 import { milesBetween } from '../store/routeStore';
 
-export type RoutingProvider = 'osrm_foot' | 'direct';
+export type RoutingProvider = 'osrm_foot' | 'osrm_road' | 'direct';
 
 export type RoutedPath = {
   provider:       RoutingProvider;
@@ -33,8 +33,18 @@ export type ElevationSummary = {
   lossMeters:  number;
 };
 
-const OSRM_FOOT_BASE = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot';
-const ROUTING_TIMEOUT_MS = 8000;
+// Provider chain, tried in order. FOSSGIS is the true pedestrian profile
+// (footpaths + trails). The OSRM demo server is a *road-network* failover —
+// its "foot" endpoint actually routes on the driving graph, so it's labeled
+// 'osrm_road' and the UI says so. Both are keyless. Their usage policies
+// expect an identifying User-Agent, and un-identified mobile requests are a
+// plausible cause of on-device drops that curl testing never reproduces.
+const PROVIDERS: { name: Exclude<RoutingProvider, 'direct'>; base: string }[] = [
+  { name: 'osrm_foot', base: 'https://routing.openstreetmap.de/routed-foot/route/v1/foot' },
+  { name: 'osrm_road', base: 'https://router.project-osrm.org/route/v1/foot' },
+];
+const ROUTING_USER_AGENT = 'StrideOS/1.0 (training app; route builder)';
+const ROUTING_TIMEOUT_MS = 12000;
 const MAX_ELEVATION_SAMPLES = 40;
 // Same hysteresis idea as live-run elevation: ignore sub-threshold jitter so
 // a flat route doesn't report phantom climbing.
@@ -58,54 +68,74 @@ async function fetchWithTimeout(url: string): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ROUTING_TIMEOUT_MS);
   try {
-    return await fetch(url, { signal: controller.signal });
+    return await fetch(url, {
+      signal: controller.signal,
+      headers: { 'User-Agent': ROUTING_USER_AGENT, Accept: 'application/json' },
+    });
   } finally {
     clearTimeout(timer);
   }
 }
 
-// Routes through ALL waypoints in order with one OSRM call, so the whole
-// line stays consistent. Falls back to direct lines on any failure.
-export async function snapRouteToPaths(waypoints: RoutePoint[]): Promise<RoutedPath> {
-  if (waypoints.length < 2) return directPath(waypoints);
-
+async function requestProvider(
+  provider: { name: Exclude<RoutingProvider, 'direct'>; base: string },
+  waypoints: RoutePoint[],
+): Promise<RoutedPath | null> {
   const coords = waypoints
     .map(p => `${p.longitude.toFixed(6)},${p.latitude.toFixed(6)}`)
     .join(';');
-  const url = `${OSRM_FOOT_BASE}/${coords}?overview=full&geometries=geojson&steps=false&continue_straight=false`;
+  const url = `${provider.base}/${coords}?overview=full&geometries=geojson&steps=false&continue_straight=false`;
 
-  try {
-    const response = await fetchWithTimeout(url);
-    if (!response.ok) return directPath(waypoints);
+  const response = await fetchWithTimeout(url);
+  if (!response.ok) return null;
 
-    const json = await response.json() as {
-      code?: string;
-      routes?: { distance?: number; geometry?: { coordinates?: [number, number][] } }[];
-    };
-    const route = json.routes?.[0];
-    const coordinates = route?.geometry?.coordinates;
-    if (json.code !== 'Ok' || !coordinates || coordinates.length < 2) {
-      return directPath(waypoints);
+  const json = await response.json() as {
+    code?: string;
+    routes?: { distance?: number; geometry?: { coordinates?: [number, number][] } }[];
+  };
+  const route = json.routes?.[0];
+  const coordinates = route?.geometry?.coordinates;
+  if (json.code !== 'Ok' || !coordinates || coordinates.length < 2) return null;
+
+  const geometry: RoutePoint[] = coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
+  const distanceMeters = typeof route?.distance === 'number' ? route.distance : metersFromPolyline(geometry);
+
+  // Degenerate-result guard: for unroutable input OSRM can return code "Ok"
+  // with a zero-length route snapped to the nearest road — sometimes hundreds
+  // of km from the request. Reject any result whose start snapped absurdly
+  // far from the first waypoint, or that claims ~0 m for separated waypoints.
+  const directMeters = metersFromPolyline(waypoints);
+  const startSnapDeviation = milesBetween(geometry[0], waypoints[0]) * 1609.344;
+  if (startSnapDeviation > 1000 || (distanceMeters < 1 && directMeters > 100)) return null;
+
+  return { provider: provider.name, geometry, distanceMeters };
+}
+
+// Routes through ALL waypoints in order with one call so the line stays
+// consistent. Tries each provider up to twice. Returns **null when no
+// provider produced a snapped route** — snapping failure is surfaced to the
+// user, never silently replaced with a straight line (the athlete must opt
+// into Direct mode explicitly).
+export async function snapRouteToPaths(waypoints: RoutePoint[]): Promise<RoutedPath | null> {
+  if (waypoints.length < 2) return null;
+
+  for (const provider of PROVIDERS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const path = await requestProvider(provider, waypoints);
+        if (path) return path;
+        break; // provider answered but had no usable route — try next provider
+      } catch {
+        // network error/timeout — retry once, then next provider
+      }
     }
-
-    const geometry: RoutePoint[] = coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
-    const distanceMeters = typeof route?.distance === 'number' ? route.distance : metersFromPolyline(geometry);
-
-    // Degenerate-result guard (found in audit): for unroutable input OSRM can
-    // return code "Ok" with a zero-length route snapped to the nearest road —
-    // sometimes hundreds of km from the request. Reject any result whose
-    // start snapped absurdly far from the first waypoint, or that claims ~0 m
-    // for clearly separated waypoints, and fall back to honest direct lines.
-    const directMeters = metersFromPolyline(waypoints);
-    const startSnapDeviation = milesBetween(geometry[0], waypoints[0]) * 1609.344;
-    if (startSnapDeviation > 1000 || (distanceMeters < 1 && directMeters > 100)) {
-      return directPath(waypoints);
-    }
-
-    return { provider: 'osrm_foot', geometry, distanceMeters };
-  } catch {
-    return directPath(waypoints);
   }
+  return null;
+}
+
+// Explicit direct-line path — only for the user-chosen Direct mode.
+export function buildDirectPath(waypoints: RoutePoint[]): RoutedPath {
+  return directPath(waypoints);
 }
 
 // Elevation along a geometry via Open-Meteo (keyless; already used by the

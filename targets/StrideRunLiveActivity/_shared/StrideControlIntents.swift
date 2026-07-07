@@ -68,6 +68,7 @@ struct PauseStrengthIntent: LiveActivityIntent {
   static var openAppWhenRun: Bool = false
 
   func perform() async throws -> some IntentResult {
+    StrideRunControlCommand.write("strength_pause")
     await updateStrength(isPaused: true)
     return .result()
   }
@@ -81,6 +82,7 @@ struct ResumeStrengthIntent: LiveActivityIntent {
   static var openAppWhenRun: Bool = false
 
   func perform() async throws -> some IntentResult {
+    StrideRunControlCommand.write("strength_resume")
     await updateStrength(isPaused: false)
     return .result()
   }
@@ -88,12 +90,13 @@ struct ResumeStrengthIntent: LiveActivityIntent {
 
 @available(iOS 18.0, *)
 struct MarkSetCompleteIntent: LiveActivityIntent {
-  static var title: LocalizedStringResource = "Mark Set Complete"
-  static var description = IntentDescription("Mark the current set as complete")
+  static var title: LocalizedStringResource = "Mark Complete"
+  static var description = IntentDescription("Complete the current exercise")
   static var isDiscoverable: Bool = false
   static var openAppWhenRun: Bool = false
 
   func perform() async throws -> some IntentResult {
+    StrideRunControlCommand.write("strength_complete")
     await advanceStrengthSet()
     return .result()
   }
@@ -130,7 +133,9 @@ private func endRun() async {
     status: "Finished",
     isPaused: false
   )
-  await activity.end(ActivityContent(state: state, staleDate: nil, relevanceScore: 0.1), dismissalPolicy: .after(Date().addingTimeInterval(60 * 10)))
+  // .immediate: a stopped run must leave the Lock Screen right away — a
+  // deferred dismissal leaves finished workouts pinned there for minutes.
+  await activity.end(ActivityContent(state: state, staleDate: nil, relevanceScore: 0.1), dismissalPolicy: .immediate)
 }
 
 @available(iOS 18.0, *)
@@ -163,6 +168,6 @@ private func advanceStrengthSet() async {
   )
   await activity.update(ActivityContent(state: state, staleDate: Date().addingTimeInterval(90), relevanceScore: 0.9))
   if nextCompleted >= current.totalSets {
-    await activity.end(ActivityContent(state: state, staleDate: nil, relevanceScore: 0.1), dismissalPolicy: .after(Date().addingTimeInterval(60 * 5)))
+    await activity.end(ActivityContent(state: state, staleDate: nil, relevanceScore: 0.1), dismissalPolicy: .immediate)
   }
 }

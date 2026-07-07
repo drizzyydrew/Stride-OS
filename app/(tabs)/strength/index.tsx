@@ -26,6 +26,7 @@ import {
   startStrengthLiveActivity,
   updateStrengthLiveActivity,
 } from '../../../src/lib/strengthLiveActivity';
+import { startControlCommandPolling } from '../../../src/lib/runLiveActivity';
 
 type ExDef = {
   id: string;
@@ -66,6 +67,15 @@ function buildWeightValues(maxValue: number, step: number): number[] {
 }
 const WEIGHT_VALUES_LB = buildWeightValues(500, 2.5);
 const WEIGHT_VALUES_KG = buildWeightValues(220, 2.5);
+
+const RPE_VALUES = [6, 7, 8, 9, 10];
+const RPE_LABELS: Record<number, string> = {
+  6: 'easy (4+ in tank)',
+  7: 'moderate',
+  8: 'hard (2 left)',
+  9: 'very hard',
+  10: 'max effort',
+};
 
 function fmt(s: number): string {
   const m = Math.floor(s / 60), sec = s % 60;
@@ -119,13 +129,14 @@ export default function StrengthScreen() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [weights, setWeights] = useState<Record<string, number>>({});
-  const [completedSets, setCompletedSets] = useState<Record<string, number>>({});
+  const [completedExercises, setCompletedExercises] = useState<Record<string, boolean>>({});
   const [rpe,     setRpe]     = useState<Record<string, number>>({});
   const [howOpen, setHowOpen] = useState<Record<string, boolean>>({});
   const [warmupOpen, setWarmupOpen] = useState(false);
   const [cooldownOpen, setCooldownOpen] = useState(false);
   const [weekOpen, setWeekOpen] = useState(false);
   const [weightPickerFor, setWeightPickerFor] = useState<ExDef | null>(null);
+  const [rpePickerFor, setRpePickerFor] = useState<ExDef | null>(null);
 
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
@@ -134,36 +145,33 @@ export default function StrengthScreen() {
 
   const estimatedDurationMin = estimateWorkoutDurationMin(exercises);
 
-  function doneCount(ex: ExDef): number {
-    return Math.min(ex.sets, completedSets[ex.id] ?? 0);
-  }
+  // Completion is per EXERCISE, not per set: 4 exercises = 4 completions,
+  // in the app and from the Lock Screen alike.
   function isExerciseDone(ex: ExDef): boolean {
-    return doneCount(ex) >= ex.sets;
+    return completedExercises[ex.id] === true;
   }
 
-  const totalSets = exercises.reduce((acc, ex) => acc + ex.sets, 0);
-  const setsCompleted = exercises.reduce((acc, ex) => acc + doneCount(ex), 0);
+  const totalExercises = exercises.length;
+  const exercisesCompleted = exercises.reduce((acc, ex) => acc + (isExerciseDone(ex) ? 1 : 0), 0);
   const currentExercise = exercises.find(ex => !isExerciseDone(ex)) ?? null;
 
-  function currentExerciseName(): string {
-    return currentExercise?.name ?? exercises[exercises.length - 1]?.name ?? '';
+  // Lock-screen line: name + prescription so the athlete never has to unlock
+  // to remember the set scheme.
+  function exerciseDetail(ex: ExDef | null): string {
+    if (!ex) return exercises[exercises.length - 1]?.name ?? '';
+    const w = getWeight(ex);
+    return `${ex.name} · ${ex.sets}×${ex.reps}${w > 0 ? ` @ ${w} ${wtUnit}` : ''}`;
   }
   function nextExerciseName(): string {
     const idx = currentExercise ? exercises.indexOf(currentExercise) : -1;
     return idx >= 0 && idx + 1 < exercises.length ? exercises[idx + 1].name : '';
   }
 
-  function completeSet(ex: ExDef) {
-    setCompletedSets(prev => ({
-      ...prev,
-      [ex.id]: Math.min(ex.sets, (prev[ex.id] ?? 0) + 1),
-    }));
+  function completeExercise(ex: ExDef) {
+    setCompletedExercises(prev => ({ ...prev, [ex.id]: true }));
   }
-  function undoLastSet(ex: ExDef) {
-    setCompletedSets(prev => ({
-      ...prev,
-      [ex.id]: Math.max(0, (prev[ex.id] ?? 0) - 1),
-    }));
+  function undoExercise(ex: ExDef) {
+    setCompletedExercises(prev => ({ ...prev, [ex.id]: false }));
   }
 
   function start() {
@@ -172,65 +180,71 @@ export default function StrengthScreen() {
     startStrengthLiveActivity({
       workoutName: wDef.title,
       elapsedSeconds: 0,
-      currentExercise: currentExerciseName(),
+      currentExercise: exerciseDetail(currentExercise),
       nextExercise: nextExerciseName(),
       setsCompleted: 0,
-      totalSets,
+      totalSets: totalExercises,
     }).catch(console.warn);
   }
   function pause() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setStrState('paused');
-    updateStrengthLiveActivity({
-      workoutName: wDef.title,
-      elapsedSeconds: timer,
-      currentExercise: currentExerciseName(),
-      nextExercise: nextExerciseName(),
-      setsCompleted,
-      totalSets,
-      isPaused: true,
-    }).catch(console.warn);
   }
   function resume() {
     intervalRef.current = setInterval(() => setTimer(t => t + 1), 1000);
     setStrState('active');
-    updateStrengthLiveActivity({
-      workoutName: wDef.title,
-      elapsedSeconds: timer,
-      currentExercise: currentExerciseName(),
-      nextExercise: nextExerciseName(),
-      setsCompleted,
-      totalSets,
-      isPaused: false,
-    }).catch(console.warn);
   }
 
-  // Phase 3: respond to lock screen intent buttons
+  // Lock-screen completion of the FINAL exercise: offer to finish the whole
+  // workout so the session doesn't sit open after the last lift.
+  function completeFromLockScreen() {
+    if (!currentExercise) return;
+    const isLast = exercisesCompleted === totalExercises - 1;
+    completeExercise(currentExercise);
+    if (isLast) {
+      Alert.alert('All exercises complete', 'Finish the workout and save it to your history?', [
+        { text: 'Keep Going', style: 'cancel' },
+        { text: 'Finish & Save', onPress: finishSession },
+      ]);
+    }
+  }
+
+  // Lock-screen intents: native event listeners (in-process case) plus App
+  // Group command polling — the widget runs in its own process, so polling
+  // the shared store is the path that actually works from the Lock Screen.
   useEffect(() => {
     if (strState === 'idle') return;
     const subs = [
       addStrengthIntentListener('onPauseStrengthIntent',   () => { if (strState === 'active') pause(); }),
       addStrengthIntentListener('onResumeStrengthIntent',  () => { if (strState === 'paused') resume(); }),
-      addStrengthIntentListener('onMarkSetCompleteIntent', () => {
-        if (currentExercise) completeSet(currentExercise);
-      }),
+      addStrengthIntentListener('onMarkSetCompleteIntent', completeFromLockScreen),
     ];
-    return () => subs.forEach(s => s.remove());
-  }, [strState, currentExercise, exercises]);
+    const stopPolling = startControlCommandPolling({
+      strength_pause:    () => { if (strState === 'active') pause(); },
+      strength_resume:   () => { if (strState === 'paused') resume(); },
+      strength_complete: completeFromLockScreen,
+    });
+    return () => {
+      subs.forEach(s => s.remove());
+      stopPolling();
+    };
+  }, [strState, currentExercise, exercisesCompleted, exercises]);
 
-  // Update Live Activity whenever sets completed changes
+  // Keep the Live Activity in lockstep with the in-app session: every timer
+  // tick, exercise completion, and pause/resume pushes authoritative state
+  // (mirrors how the run activity stays current).
   useEffect(() => {
     if (strState === 'idle') return;
     updateStrengthLiveActivity({
       workoutName: wDef.title,
       elapsedSeconds: timer,
-      currentExercise: currentExerciseName(),
+      currentExercise: exerciseDetail(currentExercise),
       nextExercise: nextExerciseName(),
-      setsCompleted,
-      totalSets,
+      setsCompleted: exercisesCompleted,
+      totalSets: totalExercises,
       isPaused: strState === 'paused',
     }).catch(console.warn);
-  }, [setsCompleted]);
+  }, [timer, exercisesCompleted, strState]);
 
   function finishSession() {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -243,18 +257,21 @@ export default function StrengthScreen() {
     const durationMinutes = Math.max(1, Math.round(timer / 60));
     const completionKey = `prototype-strength-${workout}-${new Date().toISOString().slice(0, 10)}`;
 
-    const anySetMarked = Object.values(completedSets).some(count => count > 0);
-    const completedExercises: CompletedExercise[] = exercises.map(ex => {
+    // Exercise-level completion: a completed exercise logs all of its
+    // prescribed sets as done. With nothing marked, treat the whole session
+    // as completed (the athlete finished without ticking boxes).
+    const anyMarked = Object.values(completedExercises).some(Boolean);
+    const loggedExercises: CompletedExercise[] = exercises.map(ex => {
       const reps = primaryRepCount(ex.reps);
       const load = getWeight(ex) > 0 ? `${getWeight(ex)} ${wtUnit}` : 'BW';
-      const done = doneCount(ex);
+      const done = anyMarked ? isExerciseDone(ex) : true;
       return {
         exerciseId: ex.id,
-        sets: Array.from({ length: ex.sets }, (_, i) => ({
+        sets: Array.from({ length: ex.sets }, () => ({
           reps,
           load,
           rpe: rpe[ex.id] ?? overallRpe,
-          completed: anySetMarked ? i < done : true,
+          completed: done,
         })),
       };
     });
@@ -266,12 +283,12 @@ export default function StrengthScreen() {
       week: currentWeek,
       plannedDuration: estimatedDurationMin,
       actualDuration: durationMinutes,
-      exercises: completedExercises,
+      exercises: loggedExercises,
       overallRpe,
       notes: `${wDef.title} completed from the prototype-style Strength screen.`,
     }, fatigueScore);
 
-    setCompletedSets({});
+    setCompletedExercises({});
     setTimer(0);
     setStrState('idle');
     Alert.alert('Strength logged', `${wDef.title} was saved to your training history.`);
@@ -318,11 +335,6 @@ export default function StrengthScreen() {
                 <View style={styles.previewStat}>
                   <Text style={[styles.previewValue, { color: C.text }]}>{exercises.length}</Text>
                   <Text style={[styles.previewLabel, { color: C.textDim }]}>Exercises</Text>
-                </View>
-                <View style={[styles.previewDivider, { backgroundColor: C.border }]} />
-                <View style={styles.previewStat}>
-                  <Text style={[styles.previewValue, { color: C.text }]}>{totalSets}</Text>
-                  <Text style={[styles.previewLabel, { color: C.textDim }]}>Total Sets</Text>
                 </View>
                 <View style={[styles.previewDivider, { backgroundColor: C.border }]} />
                 <View style={styles.previewStat}>
@@ -397,7 +409,6 @@ export default function StrengthScreen() {
         <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8 }]}>EXERCISES</Text>
         {exercises.map((ex, i) => {
           const w = getWeight(ex);
-          const setsDone = doneCount(ex);
           const isDone = isExerciseDone(ex);
           const isCurrent = !isDone && currentExercise?.id === ex.id;
           const htOpen = !!howOpen[ex.id];
@@ -514,57 +525,47 @@ export default function StrengthScreen() {
                 )}
               </View>
 
-              {/* RPE */}
+              {/* RPE — compact picker-wheel row, consistent with the weight selector */}
               <View style={{ paddingHorizontal: 16, paddingBottom: 10 }}>
-                <Text style={[{ fontSize: 10, fontWeight: '700', color: C.textDim, letterSpacing: 0.6, marginBottom: 5 }]}>EFFORT · RPE</Text>
-                <View style={{ flexDirection: 'row', gap: 4, marginBottom: 5 }}>
-                  {[6, 7, 8, 9, 10].map(v => (
-                    <TouchableOpacity
-                      key={v}
-                      style={[
-                        { flex: 1, height: 32, borderRadius: 7, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
-                        rpeVal === v ? { backgroundColor: C.primary } : { backgroundColor: C.cardAlt },
-                      ]}
-                      onPress={() => setRpe(p => ({ ...p, [ex.id]: v }))}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[{ fontSize: 12, fontWeight: '700', color: rpeVal === v ? C.onPrimary : C.textMuted }]}>{v}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <Text style={[{ fontSize: 10, color: C.textDim, lineHeight: 15 }]}>6=easy (4+ left in tank) · 8=hard (2 left) · 10=max effort</Text>
+                <TouchableOpacity
+                  style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 9, borderWidth: 1, borderColor: C.border, backgroundColor: C.cardAlt, paddingHorizontal: 12, paddingVertical: 9 }]}
+                  onPress={() => setRpePickerFor(ex)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Set effort for ${ex.name}`}
+                >
+                  <Text style={[{ fontSize: 11, fontWeight: '700', color: C.textDim, letterSpacing: 0.5 }]}>EFFORT · RPE</Text>
+                  <Text style={[{ fontSize: 13, fontWeight: '800', color: rpeVal !== undefined ? C.primary : C.textMuted }]}>
+                    {rpeVal !== undefined ? `${rpeVal} · ${RPE_LABELS[rpeVal] ?? ''}` : 'Tap to set ›'}
+                  </Text>
+                </TouchableOpacity>
               </View>
 
-              {/* Set completion */}
+              {/* Exercise completion — one action per exercise */}
               <View style={{ paddingHorizontal: 16, paddingBottom: 14 }}>
                 {isDone ? (
-                  <View style={[{ height: 38, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primary }]}>
-                    <Text style={[{ fontSize: 12, fontWeight: '700', color: C.onPrimary }]}>✓ All {ex.sets} Sets Completed</Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <View style={[{ flex: 1, height: 40, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primary }]}>
+                      <Text style={[{ fontSize: 12, fontWeight: '700', color: C.onPrimary }]}>✓ Exercise Complete</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={[{ paddingHorizontal: 14, height: 40, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: C.cardAlt }]}
+                      onPress={() => undoExercise(ex)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[{ fontSize: 12, fontWeight: '700', color: C.textMuted }]}>Undo</Text>
+                    </TouchableOpacity>
                   </View>
                 ) : (
-                  <View style={{ gap: 6 }}>
-                    <Text style={[{ fontSize: 11, color: C.textMuted, textAlign: 'center' }]}>Set {setsDone + 1} of {ex.sets}</Text>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                      <TouchableOpacity
-                        style={[{ flex: 1, height: 44, borderRadius: 9, alignItems: 'center', justifyContent: 'center' }, { backgroundColor: isCurrent ? C.accent : C.cardAlt }]}
-                        onPress={() => completeSet(ex)}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={[{ fontSize: 13, fontWeight: '700', color: isCurrent ? C.onPrimary : C.textMuted }]}>
-                          Complete Set {setsDone + 1}
-                        </Text>
-                      </TouchableOpacity>
-                      {setsDone > 0 && (
-                        <TouchableOpacity
-                          style={[{ paddingHorizontal: 14, height: 44, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: C.cardAlt }]}
-                          onPress={() => undoLastSet(ex)}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={[{ fontSize: 12, fontWeight: '700', color: C.textMuted }]}>Undo</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </View>
+                  <TouchableOpacity
+                    style={[{ height: 44, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: isCurrent ? C.accent : C.cardAlt }]}
+                    onPress={() => completeExercise(ex)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[{ fontSize: 13, fontWeight: '700', color: isCurrent ? C.onPrimary : C.textMuted }]}>
+                      Complete Exercise
+                    </Text>
+                  </TouchableOpacity>
                 )}
               </View>
             </View>
@@ -633,6 +634,20 @@ export default function StrengthScreen() {
           setWeightPickerFor(null);
         }}
         onClose={() => setWeightPickerFor(null)}
+      />
+
+      {/* RPE Picker */}
+      <PickerWheel
+        visible={rpePickerFor !== null}
+        title={rpePickerFor ? `Effort for ${rpePickerFor.name}` : 'Effort · RPE'}
+        values={RPE_VALUES}
+        selectedValue={rpePickerFor ? (rpe[rpePickerFor.id] ?? 7) : 7}
+        formatValue={v => `RPE ${v} · ${RPE_LABELS[v] ?? ''}`}
+        onConfirm={v => {
+          if (rpePickerFor) setRpe(p => ({ ...p, [rpePickerFor.id]: v }));
+          setRpePickerFor(null);
+        }}
+        onClose={() => setRpePickerFor(null)}
       />
     </View>
   );

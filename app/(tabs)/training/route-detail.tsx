@@ -72,9 +72,11 @@ export default function RouteDetailScreen() {
   const mapStyle = mode === 'light' ? MAP_STYLE_LIGHT : MAP_STYLE_DARK;
   const providerLabel = route.routingProvider === 'osrm_foot'
     ? 'Snapped to roads & paths · OpenStreetMap'
-    : route.routingProvider === 'direct'
-      ? 'Direct-line route (not snapped to paths)'
-      : 'Route line as drawn';
+    : route.routingProvider === 'osrm_road'
+      ? 'Snapped to roads · trail data unavailable'
+      : route.routingProvider === 'direct'
+        ? 'Direct-line route (not snapped to paths)'
+        : 'Route line as drawn';
 
   function commitName() {
     const next = nameDraft.trim();

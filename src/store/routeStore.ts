@@ -39,7 +39,7 @@ export type RunRoute = {
   elevationLossMeters?: number;
   estimatedDurationMin?: number;       // canonical; `estimatedMinutes` kept for legacy consumers
   surfaceType?:         RouteSurface;
-  routingProvider?:     'osrm_foot' | 'direct';
+  routingProvider?:     'osrm_foot' | 'osrm_road' | 'direct';
   notes?:               string;
   linkedWorkoutId?:     string;
 };

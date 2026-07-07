@@ -26,7 +26,7 @@ import { useRouteStore, routeDistanceMiles, type RunRoute, type RoutePoint } fro
 import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
 import { sendRunAlertNotification } from '../../../src/lib/notifications';
-import { addRunIntentListener, endRunLiveActivity, startRunLiveActivity, updateRunLiveActivity } from '../../../src/lib/runLiveActivity';
+import { addRunIntentListener, endRunLiveActivity, startControlCommandPolling, startRunLiveActivity, updateRunLiveActivity } from '../../../src/lib/runLiveActivity';
 import {
   calculateHydrationPlan,
   explainPlan,
@@ -43,15 +43,6 @@ import { LAYOUT } from '../../../src/constants/layout';
 type RunTab = 'plan' | 'active' | 'hydration' | 'routes';
 type RunState = 'idle' | 'active' | 'paused';
 
-// Planning-only labels — none of these change how the route line is drawn or
-// calculated. There is no real per-mode routing (road/trail/turn) yet.
-type TravelMode = 'run_walk' | 'bike' | 'drive' | 'manual';
-const TRAVEL_MODES: { key: TravelMode; label: string }[] = [
-  { key: 'run_walk', label: 'Run/Walk' },
-  { key: 'bike',     label: 'Bike' },
-  { key: 'drive',    label: 'Drive' },
-  { key: 'manual',   label: 'Manual' },
-];
 type TrackingPermissionState = {
   foreground: Location.PermissionStatus | 'unknown';
   background: Location.PermissionStatus | 'unknown';
@@ -228,35 +219,6 @@ function closestRoutePoint(points: RoutePoint[], tap: RoutePoint): { point: Rout
 function routeProgressForLocation(route: RunRoute, point: RoutePoint): number {
   const closest = closestRoutePoint(route.points, point);
   return closest?.distanceMiles ?? 0;
-}
-
-function elevationGainFt(profileFt: number[]): number {
-  return profileFt.reduce((total, point, index) => {
-    if (index === 0) return total;
-    return total + Math.max(0, point - profileFt[index - 1]);
-  }, 0);
-}
-
-async function fetchElevationProfile(points: RoutePoint[]): Promise<{ profileFt: number[]; gainFt: number } | null> {
-  if (points.length < 2) return null;
-  const step = Math.max(1, Math.ceil(points.length / 15));
-  const sample = points.filter((_, index) => index % step === 0);
-  const last = points[points.length - 1];
-  if (sample[sample.length - 1] !== last) sample.push(last);
-
-  const latitudes = sample.map(point => point.latitude.toFixed(6)).join(',');
-  const longitudes = sample.map(point => point.longitude.toFixed(6)).join(',');
-  const response = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${latitudes}&longitude=${longitudes}`);
-  if (!response.ok) return null;
-
-  const json = await response.json() as { elevation?: number[] };
-  if (!Array.isArray(json.elevation) || json.elevation.length < 2) return null;
-
-  const profileFt = json.elevation.map(meters => Math.round(meters * 3.28084));
-  return {
-    profileFt,
-    gainFt: Math.round(elevationGainFt(profileFt)),
-  };
 }
 
 function ElevationProfile({ profile, color }: { profile: number[]; color: string }) {
@@ -564,7 +526,22 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const lastHrAlertRef = useRef(0);
   const lastFuelCueRef = useRef(0);
   const goalDoneRef = useRef(false);
+  const activeMapRef = useRef<MapView>(null);
+  const [mapType, setMapType] = useState<'standard' | 'hybrid'>('standard');
   const runState: RunState = !isActive ? 'idle' : isPaused ? 'paused' : 'active';
+
+  async function centerOnMyLocation() {
+    const lastCoord = coordinates.at(-1);
+    let target = lastCoord ? { latitude: lastCoord.lat, longitude: lastCoord.lng } : null;
+    if (!target) {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null);
+      if (!location) return;
+      target = { latitude: location.coords.latitude, longitude: location.coords.longitude };
+    }
+    activeMapRef.current?.animateToRegion({ ...target, latitudeDelta: 0.012, longitudeDelta: 0.012 }, 350);
+  }
 
   useEffect(() => {
     getTrackingPermissionState()
@@ -609,14 +586,30 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     segmentStartRef.current = isActive ? { index: 0, time: Date.now() } : null;
   }, [isActive, selectedRoute?.id]);
 
-  // Phase 2: respond to lock screen button intents
+  // Lock screen button intents. Two channels:
+  // 1. Native event listeners — fire only if an intent ever executes in the
+  //    app's own process.
+  // 2. App Group command polling — the reliable path. Intents run in the
+  //    WIDGET process and can only leave a command in the shared store;
+  //    without this poll the app never hears lock-screen presses and its
+  //    per-second Live Activity updates immediately revert the widget state.
   useEffect(() => {
     const subs = [
       addRunIntentListener('onPauseIntent',  () => { if (isActive && !isPaused) pauseRun(); }),
       addRunIntentListener('onResumeIntent', () => { if (isActive && isPaused) resumeRun(); }),
       addRunIntentListener('onStopIntent',   () => { if (isActive) stop(); }),
     ];
-    return () => subs.forEach(s => s.remove());
+    const stopPolling = isActive
+      ? startControlCommandPolling({
+          pause:  () => { if (isActive && !isPaused) pauseRun(); },
+          resume: () => { if (isActive && isPaused) resumeRun(); },
+          stop:   () => { if (isActive) stop(); },
+        })
+      : null;
+    return () => {
+      subs.forEach(s => s.remove());
+      stopPolling?.();
+    };
   }, [isActive, isPaused]);
 
   async function start() {
@@ -953,10 +946,12 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
   const mapNode = (followsUser: boolean) => (
     <MapView
+      ref={activeMapRef}
       style={styles.activeRunMapFill}
       initialRegion={region}
       region={liveCoords.length > 0 ? region : undefined}
       customMapStyle={mapStyle}
+      mapType={mapType}
       showsUserLocation
       followsUserLocation={followsUser}
     >
@@ -1046,12 +1041,24 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       <View style={styles.activeMapShellFill}>
         {mapNode(isActive)}
         <View style={styles.mapToolStack}>
-          <View style={[styles.mapToolButton, { backgroundColor: softPanelBg, borderColor: C.border }]}>
+          <TouchableOpacity
+            style={[styles.mapToolButton, { backgroundColor: softPanelBg, borderColor: C.border }]}
+            onPress={centerOnMyLocation}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Center map on my location"
+          >
             <Ionicons name="navigate-outline" size={19} color={C.text} />
-          </View>
-          <View style={[styles.mapToolButton, { backgroundColor: softPanelBg, borderColor: C.border }]}>
-            <Ionicons name="layers-outline" size={19} color={C.text} />
-          </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.mapToolButton, { backgroundColor: mapType === 'hybrid' ? C.primaryDim : softPanelBg, borderColor: mapType === 'hybrid' ? C.primary : C.border }]}
+            onPress={() => setMapType(t => (t === 'standard' ? 'hybrid' : 'standard'))}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Toggle satellite map"
+          >
+            <Ionicons name="layers-outline" size={19} color={mapType === 'hybrid' ? C.primary : C.text} />
+          </TouchableOpacity>
         </View>
         {permission.background !== 'granted' ? (
           <View style={[styles.mapOverlay, { backgroundColor: mode === 'light' ? C.card : C.cardElevated }]}>
@@ -1753,158 +1760,10 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
   const routes = useRouteStore(s => s.routes);
   const selectedRouteId = useRouteStore(s => s.selectedRouteId);
   const selectRoute = useRouteStore(s => s.selectRoute);
-  const addRoute = useRouteStore(s => s.addRoute);
   const [expanded, setExpanded] = useState<string | null>(selectedRouteId);
-  const [subTab, setSubTab] = useState<'list' | 'build'>('list');
   const [folderFilter, setFolderFilter] = useState<RunRoute['folder'] | 'all'>('all');
-  const [builderName, setBuilderName] = useState('');
-  const [builderFolder, setBuilderFolder] = useState<RunRoute['folder']>('custom');
-  const [builderPoints, setBuilderPoints] = useState<RoutePoint[]>([]);
-  const [builderMode, setBuilderMode] = useState<'point' | 'interval'>('point');
-  const [builderSegments, setBuilderSegments] = useState<RunRoute['segments']>([]);
-  const [builderElevationProfile, setBuilderElevationProfile] = useState<number[]>([]);
-  const [builderElevationGainFt, setBuilderElevationGainFt] = useState(0);
-  const [travelMode, setTravelMode] = useState<TravelMode>('run_walk');
-  const [pointMenuIndex, setPointMenuIndex] = useState<number | null>(null);
 
   const filteredRoutes = routes.filter(route => folderFilter === 'all' || route.folder === folderFilter);
-  const builderDistance = routeDistanceMiles(builderPoints);
-  // Rough distance-based ballpark only — shown as a clearly labeled estimate,
-  // never used to fabricate a hill-shape profile (no real elevation data implies none is drawn).
-  const builderFallbackGainFt = Math.round(builderDistance * 48);
-  const builderProfile = builderElevationProfile.length >= 2 ? builderElevationProfile : [];
-  const builderGainFt = builderElevationProfile.length >= 2 ? builderElevationGainFt : builderFallbackGainFt;
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (builderPoints.length < 2) {
-      setBuilderElevationProfile([]);
-      setBuilderElevationGainFt(0);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    fetchElevationProfile(builderPoints).then(elevation => {
-      if (cancelled) return;
-      if (elevation) {
-        setBuilderElevationProfile(elevation.profileFt);
-        setBuilderElevationGainFt(elevation.gainFt);
-      } else {
-        setBuilderElevationProfile([]);
-        setBuilderElevationGainFt(0);
-      }
-    }).catch(() => {
-      if (!cancelled) {
-        setBuilderElevationProfile([]);
-        setBuilderElevationGainFt(0);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [builderPoints]);
-
-  async function addCurrentPoint() {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Location needed', 'Enable location to add your current point to this route.');
-      return;
-    }
-    const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-    setBuilderPoints(points => [...points, {
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-    }]);
-  }
-
-  async function saveBuilderRoute() {
-    if (builderPoints.length < 2) {
-      Alert.alert('Add at least two points', 'Tap the map or use your current location to build a route.');
-      return;
-    }
-    const miles = routeDistanceMiles(builderPoints);
-    const fallbackGainFt = Math.round(miles * 48);
-    let elevation = builderElevationProfile.length >= 2
-      ? { profileFt: builderElevationProfile, gainFt: builderElevationGainFt }
-      : null;
-    if (!elevation) {
-      try {
-        elevation = await fetchElevationProfile(builderPoints);
-      } catch {
-        elevation = null;
-      }
-    }
-    // Only persist a real, fetched elevation profile — never a fabricated shape.
-    const id = addRoute({
-      name: builderName.trim() || 'Custom Route',
-      folder: builderFolder,
-      difficulty: 'Custom',
-      distanceMiles: miles,
-      elevationGainFt: elevation?.gainFt ?? fallbackGainFt,
-      elevationProfileFt: elevation?.profileFt,
-      estimatedMinutes: Math.max(1, Math.round(miles * 9.5)),
-      segments: builderSegments,
-      points: builderPoints,
-    });
-    setExpanded(id);
-    setBuilderName('');
-    setBuilderPoints([]);
-    setBuilderSegments([]);
-    setBuilderElevationProfile([]);
-    setBuilderElevationGainFt(0);
-    setBuilderMode('point');
-    setSubTab('list');
-  }
-
-  function handleBuilderMapPress(point: RoutePoint) {
-    if (builderMode === 'point') {
-      setBuilderPoints(points => [...points, point]);
-      return;
-    }
-
-    if (builderPoints.length < 2) {
-      Alert.alert('Add route points first', 'Add at least two route points before placing interval markers.');
-      return;
-    }
-
-    const closest = closestRoutePoint(builderPoints, point);
-    if (!closest) return;
-    const label = String.fromCharCode(65 + builderSegments.length);
-    setBuilderSegments(segments => [
-      ...segments,
-      {
-        label,
-        distanceMiles: closest.distanceMiles,
-        point: closest.point,
-      },
-    ]);
-  }
-
-  function undoBuilderPoint() {
-    const nextPoints = builderPoints.slice(0, -1);
-    const nextDistance = routeDistanceMiles(nextPoints);
-    setBuilderPoints(nextPoints);
-    setBuilderSegments(segments => segments.filter(segment => segment.distanceMiles <= nextDistance));
-  }
-
-  function removeBuilderPoint(index: number) {
-    const nextPoints = builderPoints.filter((_, i) => i !== index);
-    const nextDistance = routeDistanceMiles(nextPoints);
-    setBuilderPoints(nextPoints);
-    setBuilderSegments(segments => segments.filter(segment => segment.distanceMiles <= nextDistance));
-    setPointMenuIndex(null);
-  }
-
-  function clearBuilderRoute() {
-    setBuilderPoints([]);
-    setBuilderSegments([]);
-    setBuilderElevationProfile([]);
-    setBuilderElevationGainFt(0);
-    setBuilderMode('point');
-  }
 
   async function startRoute(route: RunRoute) {
     selectRoute(route.id);
@@ -1928,28 +1787,9 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
 
   return (
     <ScrollView contentContainerStyle={styles.runScrollContent} showsVerticalScrollIndicator={false}>
-      <View style={[styles.subTabBar, { marginHorizontal: 0, backgroundColor: C.card, borderColor: C.border }]}>
-        {[
-          { key: 'list' as const, label: 'My Routes' },
-          { key: 'build' as const, label: 'Build Route' },
-        ].map(tab => (
-          <TouchableOpacity
-            key={tab.key}
-            style={[styles.subTab, subTab === tab.key && { backgroundColor: C.primaryDim }]}
-            onPress={() => setSubTab(tab.key)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.subTabText, { color: subTab === tab.key ? C.primary : C.textDim }]}>{tab.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {subTab === 'list' ? (
-        <>
-          {/* Full-screen Route Builder: snap-to-path routing, draggable
-              waypoints, live elevation. The inline builder below remains for
-              interval-marker routes until the new builder absorbs that (V2). */}
-          <TouchableOpacity
+      {/* Full-screen Route Builder: the single route-creation entry point.
+          (The old inline builder was removed as redundant — Build 31.) */}
+      <TouchableOpacity
             style={[styles.card, { backgroundColor: C.primaryDim, borderColor: C.primary, flexDirection: 'row', alignItems: 'center', gap: 12 }]}
             onPress={() => router.push('/(tabs)/training/route-builder' as any)}
             activeOpacity={0.85}
@@ -2075,227 +1915,6 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
         </TouchableOpacity>
             );
           })}
-        </>
-      ) : (
-        <>
-          <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border, padding: 0, overflow: 'hidden' }]}>
-            <View style={[{ padding: 12 }, styles.cardHeaderRow]}>
-              <Text style={[styles.subTitle, { color: C.text }]}>Build Route</Text>
-              <Text style={[{ fontSize: 11, color: C.textMuted }]}>{builderPoints.length} points · {builderSegments.length} intervals</Text>
-            </View>
-            <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
-              <View style={{ flexDirection: 'row', gap: 6, marginBottom: 6 }}>
-                {TRAVEL_MODES.map(m => (
-                  <TouchableOpacity
-                    key={m.key}
-                    style={[styles.travelModePill, { backgroundColor: travelMode === m.key ? C.primaryDim : C.cardAlt, borderColor: travelMode === m.key ? C.primary : 'transparent' }]}
-                    onPress={() => setTravelMode(m.key)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[{ fontSize: 11, fontWeight: '800', color: travelMode === m.key ? C.primary : C.textMuted }]}>{m.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <Text style={[{ fontSize: 10, color: C.textDim, lineHeight: 14 }]}>
-                Planning mode only — doesn't change the route line or distance yet.{'\n'}
-                Estimated point-to-point route · road/path snapping not available yet.
-              </Text>
-            </View>
-            <View style={[styles.builderToolbar, { backgroundColor: C.cardAlt }]}>
-              <TouchableOpacity
-                style={[styles.builderModeBtn, { backgroundColor: builderMode === 'point' ? C.primary : 'transparent' }]}
-                onPress={() => setBuilderMode('point')}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.builderModeTxt, { color: builderMode === 'point' ? C.onPrimary : C.textMuted }]}>Add Point</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.builderModeBtn, { backgroundColor: builderMode === 'interval' ? C.warning : 'transparent' }]}
-                onPress={() => setBuilderMode('interval')}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.builderModeTxt, { color: builderMode === 'interval' ? '#14160F' : C.textMuted }]}>Add Interval</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.builderIconBtn, { backgroundColor: C.card }]} onPress={undoBuilderPoint}>
-                <Text style={[styles.builderModeTxt, { color: C.textMuted }]}>←</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.builderIconBtn, { backgroundColor: C.card }]} onPress={clearBuilderRoute}>
-                <Text style={[styles.builderModeTxt, { color: C.textMuted }]}>Clr</Text>
-              </TouchableOpacity>
-            </View>
-            <MapView
-              style={styles.builderMap}
-              initialRegion={builderPoints.length ? routeRegion(builderPoints) : BEND_REGION}
-              customMapStyle={DARK_MAP_STYLE}
-              onPress={(event) => handleBuilderMapPress(event.nativeEvent.coordinate)}
-              showsUserLocation
-            >
-              {builderPoints.map((point, index) => {
-                const isStart = index === 0;
-                const isEnd = index === builderPoints.length - 1 && builderPoints.length > 1;
-                const pinColor = isStart ? C.positive : isEnd ? C.critical : undefined;
-                const title = isStart ? 'Start' : isEnd ? 'End' : `Point ${index + 1}`;
-                return (
-                  <Marker
-                    key={`${point.latitude}-${point.longitude}-${index}`}
-                    coordinate={point}
-                    title={title}
-                    pinColor={pinColor}
-                    onPress={() => setPointMenuIndex(index)}
-                  />
-                );
-              })}
-              {builderPoints.length > 1 ? (
-                <Polyline coordinates={routePointsToLatLng(builderPoints)} strokeColor={C.primary} strokeWidth={4} />
-              ) : null}
-              {builderSegments.map(segment => (
-                <Marker
-                  key={segment.label}
-                  coordinate={segment.point}
-                  title={`Segment ${segment.label}`}
-                  description={`${segment.distanceMiles.toFixed(2)} mi from start`}
-                  pinColor={C.warning}
-                />
-              ))}
-            </MapView>
-          </View>
-
-          <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-            <View style={styles.metricRow}>
-              <View style={[styles.metricCell, { backgroundColor: C.cardAlt }]}>
-                <Text style={[styles.metricLabel, { color: C.textDim }]}>DISTANCE</Text>
-                <Text style={[styles.metricVal, { color: C.text }]}>
-                  {(imp ? builderDistance : builderDistance * 1.609344).toFixed(2)}
-                </Text>
-                <Text style={[styles.metricUnit, { color: C.textMuted }]}>{imp ? 'mi' : 'km'}</Text>
-              </View>
-              <View style={[styles.metricCell, { backgroundColor: C.cardAlt }]}>
-                <Text style={[styles.metricLabel, { color: C.textDim }]}>ELEV GAIN</Text>
-                <Text style={[styles.metricVal, { color: C.text }]}>+{Math.round(imp ? builderGainFt : builderGainFt * 0.3048)}</Text>
-                <Text style={[styles.metricUnit, { color: C.textMuted }]}>{imp ? 'ft' : 'm'} {builderElevationProfile.length >= 2 ? '' : 'est.'}</Text>
-              </View>
-              <View style={[styles.metricCell, { backgroundColor: C.cardAlt }]}>
-                <Text style={[styles.metricLabel, { color: C.textDim }]}>INTERVALS</Text>
-                <Text style={[styles.metricVal, { color: C.text }]}>{builderSegments.length}</Text>
-                <Text style={[styles.metricUnit, { color: C.textMuted }]}>markers</Text>
-              </View>
-            </View>
-            {builderPoints.length >= 2 ? (
-              <View style={[styles.intervalPanel, { backgroundColor: C.cardAlt }]}>
-                <Text style={[styles.cardLabel, { color: C.textDim }]}>ELEVATION PROFILE</Text>
-                {builderProfile.length >= 2 ? (
-                  <ElevationProfile profile={builderProfile} color={C.primary} />
-                ) : (
-                  <ElevationPlaceholder />
-                )}
-              </View>
-            ) : null}
-            {builderSegments.length ? (
-              <View style={[styles.intervalPanel, { backgroundColor: C.cardAlt }]}>
-                <Text style={[styles.cardLabel, { color: C.textDim }]}>INTERVAL MARKERS</Text>
-                {builderSegments.map(segment => (
-                  <View key={segment.label} style={styles.intervalRow}>
-                    <Text style={[{ fontSize: 12, fontWeight: '700', color: C.text }]}>Segment {segment.label}</Text>
-                    <TouchableOpacity onPress={() => setBuilderSegments(segments => segments.filter(item => item.label !== segment.label))}>
-                      <Text style={[{ fontSize: 11, fontWeight: '700', color: C.primary }]}>
-                        {segment.distanceMiles.toFixed(2)} mi · Remove
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-            ) : null}
-            <TextInput
-              value={builderName}
-              onChangeText={setBuilderName}
-              placeholder="Route name..."
-              placeholderTextColor={C.textDim}
-              style={[styles.input, { width: '100%', marginBottom: 10, backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
-            />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 10 }}>
-              {[
-                { key: 'easy' as const, label: 'Easy' },
-                { key: 'tempo' as const, label: 'Tempo' },
-                { key: 'long' as const, label: 'Long' },
-                { key: 'custom' as const, label: 'Custom' },
-              ].map(folder => (
-                <TouchableOpacity
-                  key={folder.key}
-                  style={[styles.routeChip, { backgroundColor: builderFolder === folder.key ? C.primaryDim : C.cardAlt, borderColor: builderFolder === folder.key ? C.primary : 'transparent' }]}
-                  onPress={() => setBuilderFolder(folder.key)}
-                >
-                  <Text style={[styles.routeChipText, { color: builderFolder === folder.key ? C.primary : C.textMuted }]}>{folder.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <View style={styles.btnRow}>
-              <TouchableOpacity style={[styles.halfBtn, { backgroundColor: C.cardAlt }]} onPress={addCurrentPoint} activeOpacity={0.8}>
-                <Text style={[styles.bigBtnText, { color: C.text }]}>Add Point</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.halfBtn, { backgroundColor: C.cardAlt }]}
-                onPress={undoBuilderPoint}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.bigBtnText, { color: C.text }]}>Undo</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.primary, marginTop: 8 }]} onPress={saveBuilderRoute} activeOpacity={0.8}>
-              <Text style={[styles.bigBtnText, { color: C.onPrimary }]}>Save Route</Text>
-            </TouchableOpacity>
-            <View style={[styles.futureActionRow, { borderColor: C.border }]}>
-              <Text style={[{ fontSize: 12, color: C.textDim }]}>Export as GPX</Text>
-              <Text style={[{ fontSize: 11, color: C.textDim, fontStyle: 'italic' }]}>Coming later</Text>
-            </View>
-          </View>
-        </>
-      )}
-
-      <Modal visible={pointMenuIndex !== null} transparent animationType="fade" onRequestClose={() => setPointMenuIndex(null)}>
-        <TouchableOpacity
-          style={styles.pointMenuOverlay}
-          activeOpacity={1}
-          onPress={() => setPointMenuIndex(null)}
-        >
-          <View style={[styles.pointMenuSheet, { backgroundColor: C.card, borderColor: C.border }]}>
-            {pointMenuIndex !== null && builderPoints[pointMenuIndex] ? (
-              <>
-                <Text style={[styles.subTitle, { color: C.text, marginBottom: 2 }]}>
-                  Point {pointMenuIndex + 1}
-                </Text>
-                <Text style={[{ fontSize: 12, color: C.textMuted, marginBottom: 12 }]}>
-                  {builderPoints[pointMenuIndex].latitude.toFixed(5)}, {builderPoints[pointMenuIndex].longitude.toFixed(5)}
-                </Text>
-                <View style={[styles.pointMenuRow, { borderColor: C.border }]}>
-                  <Text style={[{ fontSize: 13, color: C.text }]}>Straight line to here</Text>
-                  <Text style={[{ fontSize: 11, color: C.primary, fontWeight: '700' }]}>Current method</Text>
-                </View>
-                <View style={[styles.pointMenuRow, { borderColor: C.border }]}>
-                  <Text style={[{ fontSize: 13, color: C.textDim }]}>Follow roads to here</Text>
-                  <Text style={[{ fontSize: 11, color: C.textDim, fontStyle: 'italic' }]}>Not available yet</Text>
-                </View>
-                <View style={[styles.pointMenuRow, { borderColor: C.border }]}>
-                  <Text style={[{ fontSize: 13, color: C.textDim }]}>Export as GPX</Text>
-                  <Text style={[{ fontSize: 11, color: C.textDim, fontStyle: 'italic' }]}>Coming later</Text>
-                </View>
-                <TouchableOpacity
-                  style={[styles.pointMenuRow, { borderColor: C.border, borderBottomWidth: 0 }]}
-                  onPress={() => removeBuilderPoint(pointMenuIndex)}
-                >
-                  <Text style={[{ fontSize: 13, color: C.critical, fontWeight: '700' }]}>Remove this point</Text>
-                </TouchableOpacity>
-              </>
-            ) : null}
-            <TouchableOpacity
-              style={[styles.bigBtn, { backgroundColor: C.cardAlt, marginTop: 12 }]}
-              onPress={() => setPointMenuIndex(null)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.bigBtnText, { color: C.text }]}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </ScrollView>
   );
 }
