@@ -8,24 +8,103 @@ import { colors }  from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 import type { GoalType } from '../../src/store/onboardingStore';
+import type { TrainingGoalType, RacePriority } from '../../src/types/plan';
+import type { RaceDistance } from '../../src/types/training';
+import { toYMD, parseYMD } from '../../src/utils/calendarEngine';
 
-const GOALS: { key: GoalType; label: string; desc: string }[] = [
-  { key: 'marathon',          label: 'Marathon',          desc: 'Train for 26.2 miles'         },
-  { key: 'half_marathon',     label: 'Half Marathon',     desc: 'Train for 13.1 miles'         },
-  { key: '10k',               label: '10K',               desc: 'Race-pace 10 kilometers'      },
-  { key: '5k',                label: '5K',                desc: 'Speed-focused 5K training'    },
-  { key: 'general_fitness',   label: 'General Fitness',   desc: 'Stay fit, run consistently'   },
-  { key: 'health',            label: 'Health & Wellness', desc: 'Low-stress aerobic base'      },
-  { key: 'return_to_running', label: 'Return to Running', desc: 'Rebuilding after a break'     },
+const GOAL_TYPES: { key: TrainingGoalType; label: string; desc: string }[] = [
+  { key: 'general_running',  label: 'General Running',        desc: 'Build aerobic fitness and consistency — no race on the calendar.' },
+  { key: 'general_strength', label: 'General Strength',       desc: 'Strength-first program, with running to support it.' },
+  { key: 'race_prep',        label: 'Race Preparation',       desc: 'Train toward a specific race with a periodized build.' },
+  { key: 'hybrid',           label: 'Hybrid — Run + Lift',    desc: 'Balance meaningful mileage with real strength work.' },
 ];
+
+const RACE_DISTANCES: { key: RaceDistance; label: string }[] = [
+  { key: '5k',            label: '5K' },
+  { key: '10k',           label: '10K' },
+  { key: 'half_marathon', label: 'Half Marathon' },
+  { key: 'marathon',      label: 'Marathon' },
+];
+
+const PRIORITIES: { key: RacePriority; label: string }[] = [
+  { key: 'A',        label: 'A — Goal Race' },
+  { key: 'B',        label: 'B — Secondary' },
+  { key: 'tune_up',  label: 'Tune-Up' },
+];
+
+function isValidYMD(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = parseYMD(s);
+  return !Number.isNaN(d.getTime());
+}
+
+function isTodayOrFuture(s: string): boolean {
+  const d = parseYMD(s);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return d.getTime() >= today.getTime();
+}
+
+// Maps the new plan-spine goal type to the legacy GoalType so downstream
+// code that still reads onboardingData.primaryGoal keeps working.
+function toLegacyGoal(goalType: TrainingGoalType, raceDistance: RaceDistance): GoalType {
+  if (goalType === 'race_prep') return raceDistance;
+  return 'general_fitness';
+}
 
 export default function GoalScreen() {
   const { data, updateData } = useOnboardingStore();
-  const [selected, setSelected] = useState<GoalType>(data.primaryGoal);
+  const [selected, setSelected]   = useState<TrainingGoalType>(data.goalType);
   const [goalLabel, setGoalLabel] = useState(data.goalRaceLabel);
 
+  const [raceName, setRaceName]         = useState(data.raceName);
+  const [raceDistance, setRaceDistance] = useState<RaceDistance>(data.raceDistance);
+  const [raceDate, setRaceDate]         = useState(data.raceDate);
+  const [racePriority, setRacePriority] = useState<RacePriority>(data.racePriority);
+  const [raceDateError, setRaceDateError] = useState('');
+  const [raceNameError, setRaceNameError] = useState('');
+
+  const [programStartDate, setProgramStartDate] = useState(data.programStartDate || toYMD(new Date()));
+  const [startDateError, setStartDateError] = useState('');
+
   function handleNext() {
-    updateData({ primaryGoal: selected, goalRaceLabel: goalLabel });
+    setRaceDateError('');
+    setRaceNameError('');
+    setStartDateError('');
+
+    const startDate = programStartDate.trim();
+    if (!isValidYMD(startDate)) {
+      setStartDateError('Enter a valid date as YYYY-MM-DD.');
+      return;
+    }
+
+    let raceDateFinal = '';
+    if (selected === 'race_prep') {
+      if (!raceName.trim()) {
+        setRaceNameError('Give your race a name.');
+        return;
+      }
+      if (!isValidYMD(raceDate)) {
+        setRaceDateError('Enter a valid date as YYYY-MM-DD.');
+        return;
+      }
+      if (!isTodayOrFuture(raceDate)) {
+        setRaceDateError('Race date must be today or in the future.');
+        return;
+      }
+      raceDateFinal = raceDate;
+    }
+
+    updateData({
+      primaryGoal:      toLegacyGoal(selected, raceDistance),
+      goalRaceLabel:    goalLabel,
+      goalType:         selected,
+      raceName:         selected === 'race_prep' ? raceName.trim() : '',
+      raceDistance,
+      raceDate:         raceDateFinal,
+      racePriority,
+      programStartDate: startDate,
+    });
     router.push('/onboarding/experience');
   }
 
@@ -38,7 +117,7 @@ export default function GoalScreen() {
       onBack={() => router.back()}
     >
       <View style={styles.goals}>
-        {GOALS.map(g => (
+        {GOAL_TYPES.map(g => (
           <Pressable
             key={g.key}
             style={[styles.goal, selected === g.key && styles.goalActive]}
@@ -52,15 +131,90 @@ export default function GoalScreen() {
         ))}
       </View>
 
+      {selected === 'race_prep' && (
+        <View style={styles.raceSection}>
+          <View style={styles.customRow}>
+            <Text style={styles.customLabel}>RACE NAME</Text>
+            <TextInput
+              style={styles.input}
+              value={raceName}
+              onChangeText={setRaceName}
+              placeholder="e.g. Portland Marathon"
+              placeholderTextColor={colors.textSubtle}
+            />
+            {raceNameError ? <Text style={styles.errorText}>{raceNameError}</Text> : null}
+          </View>
+
+          <View style={styles.customRow}>
+            <Text style={styles.customLabel}>DISTANCE</Text>
+            <View style={styles.pillRow}>
+              {RACE_DISTANCES.map(d => (
+                <Pressable
+                  key={d.key}
+                  style={[styles.pill, raceDistance === d.key && styles.pillActive]}
+                  onPress={() => setRaceDistance(d.key)}
+                >
+                  <Text style={[styles.pillText, raceDistance === d.key && styles.pillTextActive]}>{d.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.customRow}>
+            <Text style={styles.customLabel}>RACE DATE (YYYY-MM-DD)</Text>
+            <TextInput
+              style={styles.input}
+              value={raceDate}
+              onChangeText={setRaceDate}
+              placeholder={toYMD(new Date())}
+              placeholderTextColor={colors.textSubtle}
+              keyboardType="numbers-and-punctuation"
+            />
+            {raceDateError ? <Text style={styles.errorText}>{raceDateError}</Text> : null}
+          </View>
+
+          <View style={styles.customRow}>
+            <Text style={styles.customLabel}>PRIORITY</Text>
+            <View style={styles.pillRow}>
+              {PRIORITIES.map(p => (
+                <Pressable
+                  key={p.key}
+                  style={[styles.pill, racePriority === p.key && styles.pillActive]}
+                  onPress={() => setRacePriority(p.key)}
+                >
+                  <Text style={[styles.pillText, racePriority === p.key && styles.pillTextActive]}>{p.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </View>
+      )}
+
+      {selected !== 'race_prep' && (
+        <View style={styles.customRow}>
+          <Text style={styles.customLabel}>GOAL RACE OR MILESTONE (OPTIONAL)</Text>
+          <TextInput
+            style={styles.input}
+            value={goalLabel}
+            onChangeText={setGoalLabel}
+            placeholder="e.g. Sub 4-hour marathon, Spring 5K PR"
+            placeholderTextColor={colors.textSubtle}
+          />
+        </View>
+      )}
+
       <View style={styles.customRow}>
-        <Text style={styles.customLabel}>GOAL RACE OR MILESTONE (OPTIONAL)</Text>
+        <Text style={styles.customLabel}>PROGRAM START DATE</Text>
         <TextInput
           style={styles.input}
-          value={goalLabel}
-          onChangeText={setGoalLabel}
-          placeholder="e.g. Sub 4-hour marathon, Spring 5K PR"
+          value={programStartDate}
+          onChangeText={setProgramStartDate}
+          placeholder={toYMD(new Date())}
           placeholderTextColor={colors.textSubtle}
+          keyboardType="numbers-and-punctuation"
         />
+        {startDateError ? <Text style={styles.errorText}>{startDateError}</Text> : null}
+        <Text style={styles.note}>Defaults to today. Set a future date if you want your plan to start later.</Text>
       </View>
     </OnboardingShell>
   );
@@ -94,6 +248,9 @@ const styles = StyleSheet.create({
     color:    colors.textMuted,
     fontSize: FontSize.xs,
   },
+  raceSection: {
+    gap: spacing.md,
+  },
   customRow: {
     gap: spacing.xs,
   },
@@ -111,5 +268,38 @@ const styles = StyleSheet.create({
     color:           colors.text,
     fontSize:        FontSize.base,
     padding:         spacing.md,
+  },
+  note: {
+    color:    colors.textSubtle,
+    fontSize: FontSize.xs,
+    lineHeight: 16,
+  },
+  errorText: {
+    color:    colors.critical,
+    fontSize: FontSize.xs,
+  },
+  pillRow: {
+    flexDirection: 'row',
+    flexWrap:      'wrap',
+    gap:           spacing.xs,
+  },
+  pill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical:   spacing.sm,
+    borderRadius:      Radius.sm,
+    backgroundColor:   colors.border,
+  },
+  pillActive: {
+    backgroundColor: colors.primaryDim,
+    borderWidth:     1,
+    borderColor:     colors.primary,
+  },
+  pillText: {
+    color:    colors.textDim,
+    fontSize: FontSize.sm,
+  },
+  pillTextActive: {
+    color:      colors.primary,
+    fontWeight: FontWeight.bold,
   },
 });

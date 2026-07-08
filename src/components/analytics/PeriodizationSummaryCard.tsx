@@ -26,6 +26,8 @@ type Props = {
 
 function phaseColor(phase: TrainingPhase): string {
   switch (phase) {
+    case 'foundation':
+      return colors.chartSeriesPrimary;
     case 'base':
       return colors.chartSeriesPrimary;
     case 'build':
@@ -41,6 +43,8 @@ function phaseColor(phase: TrainingPhase): string {
 
 function phaseBg(phase: TrainingPhase): string {
   switch (phase) {
+    case 'foundation':
+      return colors.primaryDim;
     case 'base':
       return colors.primaryDim;
     case 'build':
@@ -55,6 +59,7 @@ function phaseBg(phase: TrainingPhase): string {
 }
 
 const PHASE_NAME: Record<TrainingPhase, string> = {
+  foundation: 'FOUNDATION',
   base:   'BASE',
   build:  'BUILD',
   peak:   'PEAK',

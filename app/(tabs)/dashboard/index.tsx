@@ -11,6 +11,8 @@ import { readinessTier, READINESS_INTERPRETATION } from '../../../src/utils/read
 import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckInCard';
 import { cancelDailyReadinessReminder, scheduleDailyReadinessReminder } from '../../../src/lib/notifications';
 import { LAYOUT } from '../../../src/constants/layout';
+import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
+import { toYMD } from '../../../src/utils/calendarEngine';
 
 function getDayLabel(): string {
   const now = new Date();
@@ -28,6 +30,13 @@ export default function TodayScreen() {
   const reminderEnabled = useReadinessStore(s => s.reminderEnabled);
   const setReminderEnabled = useReadinessStore(s => s.setReminderEnabled);
   const [editingCheckIn, setEditingCheckIn] = useState(false);
+  const weekPlan = useWeekPlan();
+  const beforeStart = weekPlan.metadata.currentWeek === 0;
+  const todayYMD = toYMD(new Date());
+  const todayEntries = weekPlan.calendarMap.get(todayYMD) ?? [];
+  const primaryEntry = todayEntries.find(e => e.type === 'race') ?? todayEntries.find(e => e.type === 'run') ?? todayEntries[0] ?? null;
+  const hasStrengthToday = todayEntries.some(e => e.type === 'strength');
+  const phaseLabel = weekPlan.metadata.trainingPhase.charAt(0).toUpperCase() + weekPlan.metadata.trainingPhase.slice(1);
 
   const hasCheckedInToday = todayReadiness?.date === todayDateKey();
   const readiness = hasCheckedInToday ? todayReadiness!.score : null;
@@ -128,31 +137,49 @@ export default function TodayScreen() {
         />
       </View>
 
-      {/* Today's Workout */}
+      {/* Today's Plan */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <View style={styles.cardHeaderRow}>
-          <Text style={[styles.workoutTitle, { color: C.text }]}>Today's Workout</Text>
-          <View style={[styles.badge, { backgroundColor: C.primaryDim }]}>
-            <Text style={[styles.badgeText, { color: C.primary }]}>Z2 RUN</Text>
-          </View>
+          <Text style={[styles.workoutTitle, { color: C.text }]}>Today's Plan</Text>
+          {!beforeStart && (
+            <View style={[styles.badge, { backgroundColor: C.primaryDim }]}>
+              <Text style={[styles.badgeText, { color: C.primary }]}>{phaseLabel.toUpperCase()}</Text>
+            </View>
+          )}
         </View>
-        <Text style={[styles.workoutMeta, { color: C.textMuted }]}>Easy 6 mi · Zone 2 · HR under 155 bpm</Text>
-        <View style={styles.workoutBtns}>
-          <TouchableOpacity
-            style={[styles.workoutBtn, styles.workoutBtnPrimary, { backgroundColor: C.primary, borderColor: C.primary }]}
-            onPress={() => router.push('/(tabs)/training')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>Start Run</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.workoutBtn, styles.workoutBtnSecondary, { backgroundColor: 'transparent', borderColor: C.primary }]}
-            onPress={() => router.push('/(tabs)/strength')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.workoutBtnText, { color: C.primary }]}>Strength</Text>
-          </TouchableOpacity>
-        </View>
+        {beforeStart ? (
+          <Text style={[styles.workoutMeta, { color: C.textMuted, marginBottom: 0 }]}>
+            {weekPlan.metadata.startsOn
+              ? `Your plan starts ${weekPlan.metadata.startsOn}.`
+              : 'Set a program start date in Settings to see your plan here.'}
+          </Text>
+        ) : (
+          <>
+            <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
+              {primaryEntry ? primaryEntry.label : 'Rest day — no structured session.'}
+            </Text>
+            <View style={styles.workoutBtns}>
+              <TouchableOpacity
+                style={[styles.workoutBtn, styles.workoutBtnPrimary, { backgroundColor: C.primary, borderColor: C.primary }]}
+                onPress={() => router.push('/(tabs)/training')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>
+                  {primaryEntry && primaryEntry.type !== 'strength' ? 'Start Run' : 'View Training'}
+                </Text>
+              </TouchableOpacity>
+              {hasStrengthToday && (
+                <TouchableOpacity
+                  style={[styles.workoutBtn, styles.workoutBtnSecondary, { backgroundColor: 'transparent', borderColor: C.primary }]}
+                  onPress={() => router.push('/(tabs)/strength')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.workoutBtnText, { color: C.primary }]}>Strength</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </>
+        )}
       </View>
 
       {/* Performance Forecast */}

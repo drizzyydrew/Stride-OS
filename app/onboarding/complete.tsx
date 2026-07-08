@@ -16,9 +16,11 @@ import {
 import { router } from 'expo-router';
 import { useState } from 'react';
 
-import { useOnboardingStore } from '../../src/store/onboardingStore';
-import { useProfileStore }    from '../../src/store/profileStore';
-import { useAthleteStore }    from '../../src/store/athleteStore';
+import { useOnboardingStore }    from '../../src/store/onboardingStore';
+import { useProfileStore }       from '../../src/store/profileStore';
+import { useAthleteStore }       from '../../src/store/athleteStore';
+import { useTrainingPlanStore }  from '../../src/store/trainingPlanStore';
+import { toYMD }                 from '../../src/utils/calendarEngine';
 import { vdotFromRacePR, estimateHRMax } from '../../src/utils/calibrationEngine';
 import { buildGoalRaceLabel } from '../../src/utils/goalRaceEngine';
 import { colors }  from '../../src/theme/colors';
@@ -113,6 +115,10 @@ export default function CompleteScreen() {
     setWeeklyMileage: setAthleteWeeklyMileage,
     setAthleteName,
   } = useAthleteStore();
+  const {
+    setGoalType, setProgramStartDate, addRace, races,
+    initialized: planInitialized,
+  } = useTrainingPlanStore();
 
   const [name,     setName]     = useState('');
   const [building, setBuilding] = useState(false);
@@ -192,6 +198,31 @@ export default function CompleteScreen() {
     setGoalRace(goalRaceStr);
     setAthleteWeeklyMileage(data.weeklyMileage);
     setAthleteName(displayName);
+
+    // 5b. Write the plan spine (goal type, program start date, race calendar).
+    // ensureInitialized is a no-op after the first call — call it first so the
+    // `initialized` flag flips true, then override with the real onboarding
+    // choices so the tabs-layout migration effect never clobbers them.
+    const startDate = data.programStartDate || toYMD(new Date());
+    if (!planInitialized) {
+      useTrainingPlanStore.getState().ensureInitialized({
+        goalType:         data.goalType,
+        programStartDate: startDate,
+      });
+    }
+    setGoalType(data.goalType);
+    setProgramStartDate(startDate);
+    if (data.goalType === 'race_prep' && data.raceName && data.raceDate) {
+      const alreadyAdded = races.some(r => r.name === data.raceName && r.date === data.raceDate);
+      if (!alreadyAdded) {
+        addRace({
+          name:     data.raceName,
+          date:     data.raceDate,
+          distance: data.raceDistance,
+          priority: data.racePriority,
+        });
+      }
+    }
 
     // 6. Mark onboarding complete — root layout will redirect to tabs
     completeOnboarding();

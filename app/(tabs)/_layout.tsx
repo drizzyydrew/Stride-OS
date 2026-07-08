@@ -1,9 +1,20 @@
+import { useEffect } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useColors } from '../../src/theme/useColors';
 import { LAYOUT } from '../../src/constants/layout';
+import { useOnboardingStore } from '../../src/store/onboardingStore';
+import { useTrainingPlanStore } from '../../src/store/trainingPlanStore';
+import { sundayOf, toYMD } from '../../src/utils/calendarEngine';
+import type { TrainingGoalType } from '../../src/types/plan';
+
+const RACE_GOALS = new Set(['marathon', 'half_marathon', '10k', '5k']);
+
+function inferGoalType(primaryGoal: string): TrainingGoalType {
+  return RACE_GOALS.has(primaryGoal) ? 'race_prep' : 'general_running';
+}
 
 function TabBtn({
   name,
@@ -32,6 +43,21 @@ function TabBtn({
 
 export default function TabsLayout() {
   const C = useColors();
+
+  // Build 33 migration: give existing users (pre-plan-spine) a valid training
+  // plan on first launch. `ensureInitialized` is a no-op after the first call
+  // — programStartDate is pinned to THIS week's Sunday so the derived
+  // currentWeek stays 1, keeping existing completion keys (`w1_…`) matching.
+  const primaryGoal      = useOnboardingStore(s => s.data.primaryGoal);
+  const ensureInitialized = useTrainingPlanStore(s => s.ensureInitialized);
+
+  useEffect(() => {
+    ensureInitialized({
+      goalType:         inferGoalType(primaryGoal),
+      programStartDate: toYMD(sundayOf(new Date())),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Tabs

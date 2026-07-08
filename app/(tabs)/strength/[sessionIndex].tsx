@@ -7,17 +7,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 
 import { useAthleteStore }  from '../../../src/store/athleteStore';
-import { useCheckInStore }  from '../../../src/store/checkInStore';
-import { useProfileStore }  from '../../../src/store/profileStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 
-import { generateStrengthWeek } from '../../../src/utils/strengthEngine';
+import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import {
   formatExerciseWeightLb,
   weightUnitLabel,
-  lbToDisplayWeight,
-  displayWeightToLb,
 } from '../../../src/lib/units';
 
 import Card   from '../../../src/components/ui/Card';
@@ -27,9 +23,8 @@ import Button from '../../../src/components/ui/Button';
 import { colors }   from '../../../src/theme/colors';
 import { spacing }  from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
-import { todayDateKey } from '../../../src/types/checkin';
 import type {
-  StrengthEngineInput, CompletedExercise, CompletedSet,
+  CompletedExercise, CompletedSet,
   ExerciseSessionDetail,
 } from '../../../src/types/strength';
 
@@ -263,36 +258,16 @@ export default function StrengthSessionDetailScreen() {
   const router    = useRouter();
   const navigation = useNavigation();
 
-  const {
-    fatigueScore, recoveryScore, trainingPhase, progressionLevel,
-    weeklyMileage, currentWeek,
-  } = useAthleteStore();
+  const weekPlan  = useWeekPlan();
+  const currentWeek = weekPlan.metadata.currentWeek;
+  const fatigueScore = useAthleteStore(s => s.fatigueScore);
 
-  const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
-  const checkedIn    = todayCheckIn?.date === todayDateKey();
-  const soreness     = checkedIn ? (todayCheckIn?.soreness ?? null) : null;
-
-  const profile = useProfileStore(s => s.getActiveProfile());
   const units   = useSettingsStore(s => s.units);
   const unitLbl = weightUnitLabel(units);
 
   const { completedSessions, history, logSession, skipSession, deleteLog } = useStrengthStore();
 
-  const engineInput: StrengthEngineInput = {
-    trainingPhase, progressionLevel, weeklyMileage, currentWeek,
-    fatigueScore, recoveryScore, soreness,
-    injuryRisk:       profile?.returningFromInjury ?? false,
-    acwr:             1.0,
-    weeksToRace:      0,
-    availableTimeMin: 60,
-    strengthHistory:  history,
-  };
-
-  const strengthWeek = useMemo(() => generateStrengthWeek(engineInput), [
-    trainingPhase, progressionLevel, weeklyMileage, currentWeek, fatigueScore, recoveryScore, soreness,
-  ]);
-
-  const session = strengthWeek.sessions[idx];
+  const session = weekPlan.strengthWeek.sessions[idx];
 
   // ── Timer ──────────────────────────────────────────────────────────────────
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);

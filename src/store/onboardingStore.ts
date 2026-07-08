@@ -11,7 +11,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { Sex, TrainingDay, StandardDistance } from '../types/athlete';
-import type { ProgressionLevel, GoalType, StrengthLevel, TrainingStyle } from '../types/training';
+import type { ProgressionLevel, GoalType, StrengthLevel, TrainingStyle, RaceDistance } from '../types/training';
+import type { TrainingGoalType, RacePriority } from '../types/plan';
 
 // Re-export so existing consumers importing from onboardingStore don't break.
 export type { GoalType, StrengthLevel, TrainingStyle };
@@ -63,6 +64,14 @@ export type OnboardingData = {
 
   // Profile
   profilePhotoUri: string | null;
+
+  // Build 33 plan spine — Step 2 (goal.tsx)
+  goalType:         TrainingGoalType;
+  raceName:         string;
+  raceDistance:     RaceDistance;
+  raceDate:         string;          // "YYYY-MM-DD", '' = unset
+  racePriority:     RacePriority;
+  programStartDate: string;          // "YYYY-MM-DD", '' = default to today at completion
 };
 
 const DEFAULT_DATA: OnboardingData = {
@@ -91,6 +100,13 @@ const DEFAULT_DATA: OnboardingData = {
   injuryNotes:      '',
   trainingStyle:    'mixed',
   profilePhotoUri:  null,
+
+  goalType:         'general_running',
+  raceName:         '',
+  raceDistance:     'half_marathon',
+  raceDate:         '',
+  racePriority:     'A',
+  programStartDate: '',
 };
 
 // ─── Store shape ──────────────────────────────────────────────────────────────
@@ -131,6 +147,18 @@ export const useOnboardingStore = create<OnboardingStore>()(
     {
       name:    'onboarding-store',
       storage: createJSONStorage(() => AsyncStorage),
+      // Older persisted stores predate the Build 33 plan-spine fields on
+      // `data` (goalType/raceName/raceDistance/raceDate/racePriority/
+      // programStartDate) — merge onto DEFAULT_DATA so existing users get
+      // sensible defaults instead of `undefined`.
+      merge: (persisted, current) => {
+        const state = persisted as Partial<OnboardingStore> | undefined;
+        return {
+          ...current,
+          ...state,
+          data: { ...DEFAULT_DATA, ...current.data, ...state?.data },
+        };
+      },
     },
   ),
 );

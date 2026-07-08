@@ -24,6 +24,7 @@ import type { CalibrationOutput, TrainingDay } from './athlete';
 export type RichWorkoutType =
   | 'easy_run'
   | 'recovery_run'
+  | 'run_walk'
   | 'long_run'
   | 'progression_run'
   | 'threshold'
@@ -44,6 +45,7 @@ export type RichWorkoutType =
 export const RICH_TO_GENERATABLE: Record<RichWorkoutType, GeneratableWorkoutType> = {
   easy_run:        'easy_run',
   recovery_run:    'recovery_run',
+  run_walk:        'easy_run',
   long_run:        'long_run',
   progression_run: 'threshold',
   threshold:       'threshold',

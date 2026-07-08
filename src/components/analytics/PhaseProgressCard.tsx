@@ -31,6 +31,8 @@ function getPhaseMeta(phase: TrainingPhase): PhaseMeta {
 
 function getPhaseColor(phase: TrainingPhase) {
   switch (phase) {
+    case 'foundation':
+      return { accent: colors.chartSeriesPrimary, bg: colors.primaryDim, text: colors.primary };
     case 'base':
       return { accent: colors.chartSeriesPrimary, bg: colors.primaryDim, text: colors.primary };
     case 'build':

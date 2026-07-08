@@ -21,6 +21,7 @@ export type TrainingZone =
 export type WorkoutType =
   | 'easy_run'
   | 'recovery_run'
+  | 'run_walk'
   | 'long_run'
   | 'progression_run'
   | 'tempo'
@@ -57,6 +58,7 @@ export type WorkoutIntensity =
 // ─── Progression & Periodization Types ───────────────────────────────────────
 
 export type TrainingPhase =
+  | 'foundation'
   | 'base'
   | 'build'
   | 'peak'

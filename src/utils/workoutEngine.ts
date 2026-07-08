@@ -22,6 +22,7 @@ import { formatPace } from './calibrationEngine';
 // ─── Phase intensity multipliers ──────────────────────────────────────────────
 
 const PHASE_MULTIPLIER: Record<TrainingPhase, number> = {
+  foundation: 0.55,
   base:   0.70,
   build:  1.00,
   peak:   1.15,
@@ -35,6 +36,11 @@ const PHASE_MULTIPLIER: Record<TrainingPhase, number> = {
 // DELOAD_OVERRIDE (unless the phase itself is already deload or taper).
 
 const WEEK_TEMPLATES: Record<TrainingPhase, Record<ProgressionLevel, RichWorkoutType[]>> = {
+  foundation: {
+    beginner:     ['run_walk', 'rest',      'run_walk', 'rest',      'run_walk', 'easy_run', 'rest'],
+    intermediate: ['run_walk', 'mobility',  'run_walk', 'rest',      'run_walk', 'easy_run', 'rest'],
+    advanced:     ['run_walk', 'mobility',  'run_walk', 'rest',      'run_walk', 'easy_run', 'rest'],
+  },
   base: {
     beginner:     ['easy_run', 'strides',    'easy_run',  'rest',     'easy_run',  'long_run', 'recovery_run'],
     intermediate: ['easy_run', 'strides',    'threshold', 'easy_run', 'rest',      'long_run', 'recovery_run'],
@@ -100,6 +106,7 @@ function computeWeekScore(workouts: RichWorkout[]): RichWeek['weekScore'] {
 // ─── Progression note + phase rationale ───────────────────────────────────────
 
 const PHASE_RATIONALE: Record<TrainingPhase, string> = {
+  foundation: 'Building the aerobic engine from the ground up. Run/walk intervals let tendons, bones, and the cardiovascular system adapt gradually — the safest, most durable way to start a running habit before any structured intensity is introduced.',
   base:   'Establishing aerobic base via 80/20 polarized distribution. High easy volume primes mitochondrial density before structured intensity is introduced.',
   build:  'Progressive intensity loading — threshold and VO2max sessions target lactate threshold elevation and maximal oxygen uptake improvement.',
   peak:   'Race-specific sharpening. Reduced volume concentrates quality; sessions mirror target race demands to maximise neuromuscular specificity.',
@@ -113,6 +120,7 @@ function buildProgressionNote(
   currentWeek:   number,
 ): string {
   const blockLabel: Record<TrainingPhase, string> = {
+    foundation: 'Foundation — building the habit',
     base:   'Base block — aerobic foundation',
     build:  'Build block — intensity loading',
     peak:   'Peak block — race sharpening',
@@ -208,6 +216,52 @@ function applyTrainingStyle(
   });
 }
 
+// ─── Beginner / foundation safety filter ──────────────────────────────────────
+//
+// Two independent guards:
+//   1. Foundation phase, or a beginner in base phase, is not ready for any
+//      threshold-or-harder quality — everything downgrades to easy_run,
+//      except the first offender in base phase becomes strides (a small,
+//      low-risk taste of quality rather than pure easy running).
+//   2. Beginners never get vo2/hill_repeats in ANY phase — those convert to
+//      the gentler fartlek in build/peak (still some speed stimulus) or
+//      easy_run everywhere else.
+
+const QUALITY_OFFENDERS: RichWorkoutType[] = [
+  'vo2', 'hill_repeats', 'tempo', 'threshold', 'progression_run', 'fartlek',
+];
+
+export function applyExperienceSafety(
+  types:            RichWorkoutType[],
+  progressionLevel: ProgressionLevel,
+  phase:            TrainingPhase,
+): RichWorkoutType[] {
+  let result = [...types];
+
+  const gatePhase = phase === 'foundation' || (progressionLevel === 'beginner' && phase === 'base');
+  if (gatePhase) {
+    let firstHandled = false;
+    result = result.map(t => {
+      if (!QUALITY_OFFENDERS.includes(t)) return t;
+      if (!firstHandled) {
+        firstHandled = true;
+        return phase === 'base' ? 'strides' : 'easy_run';
+      }
+      return 'easy_run';
+    });
+  }
+
+  if (progressionLevel === 'beginner') {
+    const gentler = phase === 'build' || phase === 'peak';
+    result = result.map(t => {
+      if (t === 'vo2' || t === 'hill_repeats') return gentler ? 'fartlek' : 'easy_run';
+      return t;
+    });
+  }
+
+  return result;
+}
+
 function limitRunDays(types: RichWorkoutType[], desiredRunDays?: number): RichWorkoutType[] {
   if (!desiredRunDays || desiredRunDays >= types.filter(t => t !== 'rest' && t !== 'mobility').length) {
     return types;
@@ -266,6 +320,31 @@ export function buildRichDay(
   return buildRichWorkout(richType, ctx, dayIndex);
 }
 
+// ─── Baseline template lookup ─────────────────────────────────────────────────
+//
+// Exposes the raw phase/level template (before adaptive modifiers, style, and
+// safety filtering) so trainingEngine.ts can diff it against the final week
+// and surface human-readable adaptation notes ("Downgraded Tuesday...").
+
+// Lighter-weight variant taking explicit phase/level/weekInBlock — used by the
+// calendar screen to preview future/past weeks without assembling a full
+// WorkoutEngineInput (titles only, no rich generation).
+export function getPhaseTypesForWeek(
+  phase:            TrainingPhase,
+  progressionLevel: ProgressionLevel,
+  weekInBlock:       number,
+): RichWorkoutType[] {
+  const isAutoDeload = weekInBlock === 4 && phase !== 'deload' && phase !== 'taper';
+  return isAutoDeload
+    ? (DELOAD_OVERRIDE[progressionLevel] ?? DELOAD_OVERRIDE['intermediate'])
+    : (WEEK_TEMPLATES[phase]?.[progressionLevel] ?? WEEK_TEMPLATES['base']!['intermediate']!);
+}
+
+export function getBaseTemplate(input: WorkoutEngineInput): RichWorkoutType[] {
+  const weekInBlock = ((input.currentWeek - 1) % 4) + 1;
+  return getPhaseTypesForWeek(input.trainingPhase, input.progressionLevel, weekInBlock);
+}
+
 // ─── Main engine ───────────────────────────────────────────────────────────────
 
 export function generateRichWeek(input: WorkoutEngineInput): RichWeek {
@@ -285,7 +364,8 @@ export function generateRichWeek(input: WorkoutEngineInput): RichWeek {
 
   const adaptedTypes = applyAdaptiveModifiers(baseTemplate, input, weekInBlock);
   const styledTypes  = applyTrainingStyle(adaptedTypes, input.trainingStyle);
-  const plannedTypes = limitRunDays(styledTypes, input.runDays?.length);
+  const safeTypes     = applyExperienceSafety(styledTypes, progressionLevel, trainingPhase);
+  const plannedTypes = limitRunDays(safeTypes, input.runDays?.length);
 
   const multiplier = isAutoDeload
     ? PHASE_MULTIPLIER['deload']!

@@ -31,6 +31,10 @@ import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
 import { useMovementStore } from '../../../src/store/movementStore';
 import { useActionPlanStore } from '../../../src/store/actionPlanStore';
+import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
+import { toYMD, parseYMD } from '../../../src/utils/calendarEngine';
+import type { TrainingGoalType, Race, RacePriority } from '../../../src/types/plan';
+import type { RaceDistance } from '../../../src/types/training';
 import { getAppleHealthWriteStatus, isAppleHealthAvailable, requestPermissions as requestHealthPermissions } from '../../../src/lib/healthKit';
 import {
   clearTrainingNotifications,
@@ -95,6 +99,41 @@ function formatHistoryDate(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(timestamp));
 }
 
+function isValidPlanDate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  return !Number.isNaN(parseYMD(s).getTime());
+}
+
+const GOAL_TYPE_OPTIONS: { key: TrainingGoalType; label: string }[] = [
+  { key: 'general_running',  label: 'General Running' },
+  { key: 'general_strength', label: 'General Strength' },
+  { key: 'race_prep',        label: 'Race Prep' },
+  { key: 'hybrid',           label: 'Hybrid' },
+];
+
+const RACE_DISTANCE_OPTIONS: { key: RaceDistance; label: string }[] = [
+  { key: '5k',            label: '5K' },
+  { key: '10k',           label: '10K' },
+  { key: 'half_marathon', label: 'Half' },
+  { key: 'marathon',      label: 'Full' },
+];
+
+const RACE_PRIORITY_OPTIONS: { key: RacePriority; label: string }[] = [
+  { key: 'A',       label: 'A' },
+  { key: 'B',       label: 'B' },
+  { key: 'tune_up', label: 'Tune-Up' },
+];
+
+type RaceFormState = {
+  id:       string | null; // null = adding a new race
+  name:     string;
+  date:     string;
+  distance: RaceDistance;
+  priority: RacePriority;
+};
+
+const EMPTY_RACE_FORM: RaceFormState = { id: null, name: '', date: '', distance: 'half_marathon', priority: 'A' };
+
 export default function SettingsScreen() {
   const C = useColors();
   const insets = useSafeAreaInsets();
@@ -107,6 +146,19 @@ export default function SettingsScreen() {
   const workoutHistory = useWorkoutStore(state => state.history);
   const strengthHistory = useStrengthStore(state => state.history);
 
+  const planGoalType     = useTrainingPlanStore(s => s.goalType);
+  const planStartDate    = useTrainingPlanStore(s => s.programStartDate);
+  const planRaces        = useTrainingPlanStore(s => s.races);
+  const setPlanGoalType  = useTrainingPlanStore(s => s.setGoalType);
+  const setPlanStartDate = useTrainingPlanStore(s => s.setProgramStartDate);
+  const addPlanRace      = useTrainingPlanStore(s => s.addRace);
+  const updatePlanRace   = useTrainingPlanStore(s => s.updateRace);
+  const removePlanRace   = useTrainingPlanStore(s => s.removeRace);
+
+  const [startDateDraft, setStartDateDraft] = useState(planStartDate ?? toYMD(new Date()));
+  const [raceForm, setRaceForm] = useState<RaceFormState | null>(null);
+  const [raceFormError, setRaceFormError] = useState('');
+
   const imp = units === 'imperial';
   const [busy, setBusy] = useState<string | null>(null);
   const [notificationSchedule, setNotificationSchedule] = useState<TrainingNotificationScheduleStatus | null>(null);
@@ -114,6 +166,80 @@ export default function SettingsScreen() {
   const [heightInput, setHeightInput] = useState('');
   const [weightInput, setWeightInput] = useState('');
   const [notificationTimeDraft, setNotificationTimeDraft] = useState(integrations.notificationTime);
+
+  function saveRaceForm() {
+    if (!raceForm) return;
+    if (!raceForm.name.trim()) { setRaceFormError('Give the race a name.'); return; }
+    if (!isValidPlanDate(raceForm.date)) { setRaceFormError('Enter a valid date as YYYY-MM-DD.'); return; }
+
+    if (raceForm.id) {
+      updatePlanRace(raceForm.id, {
+        name: raceForm.name.trim(), date: raceForm.date,
+        distance: raceForm.distance, priority: raceForm.priority,
+      });
+    } else {
+      addPlanRace({
+        name: raceForm.name.trim(), date: raceForm.date,
+        distance: raceForm.distance, priority: raceForm.priority,
+      });
+    }
+    setRaceForm(null);
+    setRaceFormError('');
+  }
+
+  function renderRaceForm() {
+    if (!raceForm) return null;
+    return (
+      <View style={{ gap: 10, marginTop: 8, padding: 12, borderRadius: 10, backgroundColor: C.cardAlt }}>
+        <TextInput
+          value={raceForm.name}
+          onChangeText={v => setRaceForm(f => f && { ...f, name: v })}
+          placeholder="Race name"
+          placeholderTextColor={C.textDim}
+          style={[styles.profileInput, { backgroundColor: C.card, borderColor: C.border, color: C.text }]}
+        />
+        <View style={styles.pillRow}>
+          {RACE_DISTANCE_OPTIONS.map(d => (
+            <TouchableOpacity
+              key={d.key}
+              style={[styles.pill, { backgroundColor: raceForm.distance === d.key ? C.primaryDim : C.card, borderColor: raceForm.distance === d.key ? C.primary : C.border }]}
+              onPress={() => setRaceForm(f => f && { ...f, distance: d.key })}
+            >
+              <Text style={{ fontSize: 12, fontWeight: '700', color: raceForm.distance === d.key ? C.primary : C.textDim }}>{d.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TextInput
+          value={raceForm.date}
+          onChangeText={v => setRaceForm(f => f && { ...f, date: v })}
+          placeholder={toYMD(new Date())}
+          placeholderTextColor={C.textDim}
+          keyboardType="numbers-and-punctuation"
+          style={[styles.profileInput, { backgroundColor: C.card, borderColor: C.border, color: C.text }]}
+        />
+        <View style={styles.pillRow}>
+          {RACE_PRIORITY_OPTIONS.map(p => (
+            <TouchableOpacity
+              key={p.key}
+              style={[styles.pill, { backgroundColor: raceForm.priority === p.key ? C.primaryDim : C.card, borderColor: raceForm.priority === p.key ? C.primary : C.border }]}
+              onPress={() => setRaceForm(f => f && { ...f, priority: p.key })}
+            >
+              <Text style={{ fontSize: 12, fontWeight: '700', color: raceForm.priority === p.key ? C.primary : C.textDim }}>{p.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {raceFormError ? <Text style={{ fontSize: 11, color: C.critical }}>{raceFormError}</Text> : null}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity style={[styles.connectBtn, { backgroundColor: C.cardAlt, flex: 1 }]} onPress={() => { setRaceForm(null); setRaceFormError(''); }}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: C.textMuted }}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.connectBtn, { backgroundColor: C.primary, flex: 1 }]} onPress={saveRaceForm}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: C.onPrimary }}>Save</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   const currentNotificationPrefs = {
     enabled: integrations.notificationsEnabled,
@@ -591,6 +717,86 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {/* Training Plan */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.sectionLabel, { color: C.textDim }]}>TRAINING PLAN</Text>
+
+        <View style={[styles.settingRow, { borderBottomColor: C.border, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>
+          <Text style={[styles.settingTitle, { color: C.text }]}>Goal</Text>
+          <View style={styles.pillRow}>
+            {GOAL_TYPE_OPTIONS.map(g => (
+              <TouchableOpacity
+                key={g.key}
+                style={[styles.pill, { backgroundColor: planGoalType === g.key ? C.primaryDim : C.cardAlt, borderColor: planGoalType === g.key ? C.primary : C.border }]}
+                onPress={() => setPlanGoalType(g.key)}
+                activeOpacity={0.75}
+              >
+                <Text style={{ fontSize: 12, fontWeight: '700', color: planGoalType === g.key ? C.primary : C.textDim }}>{g.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={[styles.settingCaption, { color: C.textMuted }]}>Changing your goal reshapes the plan immediately — no regeneration needed.</Text>
+        </View>
+
+        <View style={[styles.settingRow, { borderBottomColor: C.border, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>
+          <Text style={[styles.settingTitle, { color: C.text }]}>Program Start Date</Text>
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+            <TextInput
+              value={startDateDraft}
+              onChangeText={setStartDateDraft}
+              placeholder={toYMD(new Date())}
+              placeholderTextColor={C.textDim}
+              keyboardType="numbers-and-punctuation"
+              style={[styles.profileInput, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text, flex: 1 }]}
+            />
+            {startDateDraft !== (planStartDate ?? '') && isValidPlanDate(startDateDraft) && (
+              <TouchableOpacity style={[styles.connectBtn, { backgroundColor: C.primary }]} onPress={() => setPlanStartDate(startDateDraft)} activeOpacity={0.8}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: C.onPrimary }}>Save</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {startDateDraft && !isValidPlanDate(startDateDraft) && (
+            <Text style={{ fontSize: 11, color: C.critical }}>Use YYYY-MM-DD format.</Text>
+          )}
+        </View>
+
+        <View style={{ paddingTop: 12 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Races</Text>
+            <TouchableOpacity onPress={() => { setRaceForm(raceForm ? null : { ...EMPTY_RACE_FORM }); setRaceFormError(''); }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: C.primary }}>{raceForm ? 'Cancel' : '+ Add Race'}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {planRaces.length === 0 && !raceForm && (
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>No races on your calendar yet.</Text>
+          )}
+
+          {planRaces.map((race: Race) => (
+            raceForm?.id === race.id ? (
+              <View key={race.id}>{renderRaceForm()}</View>
+            ) : (
+              <View key={race.id} style={[styles.settingRow, { borderBottomColor: C.border }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.settingTitle, { color: C.text }]}>{race.name}</Text>
+                  <Text style={[styles.settingCaption, { color: C.textMuted }]}>
+                    {RACE_DISTANCE_OPTIONS.find(d => d.key === race.distance)?.label ?? race.distance} · {race.date} · Priority {race.priority === 'tune_up' ? 'Tune-Up' : race.priority}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => { setRaceForm({ id: race.id, name: race.name, date: race.date, distance: race.distance, priority: race.priority }); setRaceFormError(''); }} style={{ padding: 6 }}>
+                  <Ionicons name="pencil-outline" size={16} color={C.textMuted} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => removePlanRace(race.id)} style={{ padding: 6 }}>
+                  <Ionicons name="trash-outline" size={16} color={C.critical} />
+                </TouchableOpacity>
+              </View>
+            )
+          ))}
+
+          {raceForm && raceForm.id === null && renderRaceForm()}
+        </View>
+      </View>
+
       {/* Training history */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <TouchableOpacity
@@ -881,6 +1087,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
+    alignItems: 'center',
+  },
+  pillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  pill: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
   },
   userRow: {
     flexDirection: 'row',

@@ -31,6 +31,7 @@ const WEEKLY_INCREASE_RATE: Record<ProgressionLevel, number> = {
 // Peak mileage target as a multiplier of base, per phase.
 // Build exceeds base by 25%; peak backs off slightly for quality; deload/taper reduce load.
 const PHASE_MILEAGE_CEILING: Record<TrainingPhase, number> = {
+  foundation: 0.85,
   base:   1.00,
   build:  1.25,
   peak:   1.15,
@@ -66,6 +67,7 @@ export function computeProgressedMileage({
 // Scales recoveryCost and fatigueScore on generated workouts.
 // < 1.0 = lower physiological stress; > 1.0 = higher.
 const PHASE_INTENSITY_MULTIPLIER: Record<TrainingPhase, number> = {
+  foundation: 0.55,
   base:   0.70,
   build:  1.00,
   peak:   1.15,
@@ -97,6 +99,9 @@ export function selectPhaseWorkouts({
   }
 
   switch (phase) {
+    case 'foundation':
+      return   ['easy_run', 'rest',      'easy_run', 'rest',     'easy_run', 'rest',      'rest'];
+
     case 'base':
       if (progressionLevel === 'beginner') {
         return ['easy_run', 'rest',      'easy_run', 'rest',     'long_run', 'strides',  'rest'];

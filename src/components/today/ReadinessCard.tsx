@@ -16,6 +16,7 @@ type Props = {
 };
 
 const PHASE_BADGE: Record<TrainingPhase, { bg: string; text: string; label: string }> = {
+  foundation: { bg: colors.primaryDim, text: colors.primary, label: 'Foundation' },
   base:   { bg: colors.primaryDim,  text: colors.primary,  label: 'Base'   },
   build:  { bg: colors.accentDim,   text: colors.accent,   label: 'Build'  },
   peak:   { bg: colors.warningDim,  text: colors.warning,  label: 'Peak'   },

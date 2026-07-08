@@ -31,7 +31,11 @@ import { useStrengthStore } from '../../../src/store/strengthStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
+import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
+import { pickTargetRace } from '../../../src/utils/plan/macroPlanner';
+import { toYMD } from '../../../src/utils/calendarEngine';
+import type { RichWorkout } from '../../../src/types/workout';
 import { buildCoachingInput } from '../../../src/utils/coachingInputBuilder';
 import { buildCoachHandoff } from '../../../src/utils/movementEngine';
 import type { MovementAnalysis } from '../../../src/types/movement';
@@ -65,6 +69,14 @@ type CoachTab = 'chat' | 'insights' | 'video';
 
 // Real training context so answers are grounded in what the athlete actually
 // did — never generic advice when app data exists.
+export type CoachRaceContext = {
+  name:     string;
+  date:     string;
+  distance: string;
+  priority: string;
+  weeksOut: number;
+};
+
 export type CoachTrainingContext = {
   runHistory:      CompletedWorkoutRecord[];
   strengthHistory: StrengthLogRecord[];
@@ -73,6 +85,15 @@ export type CoachTrainingContext = {
   recoveryScore:   number;
   currentWeek:     number;
   trainingPhase:   string;
+
+  // Build 33 plan spine — grounds the coach in the actual macro plan rather
+  // than letting it infer or invent one.
+  goalType:         string;
+  programStartDate: string | null;
+  focus:            string;
+  race:             CoachRaceContext | 'none';
+  adaptations:      string[];
+  todayWorkout:     { title: string; rationale: string } | null;
 };
 
 function shortDate(timestamp: number): string {
@@ -108,6 +129,32 @@ CURRENT STATE
 - Training week ${ctx.currentWeek}, phase: ${ctx.trainingPhase}
 - Fatigue ${ctx.fatigueScore}/100 · Recovery ${ctx.recoveryScore}/100
 - ${ctx.readinessLine}`;
+}
+
+// Grounds the coach in the actual macro plan — goal, phase, race timeline,
+// this week's focus, any adaptations applied, and today's session + why.
+function buildTrainingPlanBlock(ctx: CoachTrainingContext): string {
+  const raceLine = ctx.race === 'none'
+    ? 'No race currently scheduled.'
+    : `${ctx.race.name} (${ctx.race.distance}) on ${ctx.race.date} — priority ${ctx.race.priority === 'tune_up' ? 'Tune-Up' : ctx.race.priority}, ${ctx.race.weeksOut} week(s) out.`;
+
+  const adaptLines = ctx.adaptations.length
+    ? ctx.adaptations.map(a => `  - ${a}`).join('\n')
+    : '  - None this week.';
+
+  const todayLine = ctx.todayWorkout
+    ? `Today's session and why: ${ctx.todayWorkout.title} — ${ctx.todayWorkout.rationale}`
+    : "Today's session and why: Rest day — no structured session today.";
+
+  return `TRAINING PLAN
+- Goal type: ${ctx.goalType}
+- Program start date: ${ctx.programStartDate ?? 'not set yet'}
+- Current phase: ${ctx.trainingPhase}, week ${ctx.currentWeek}
+- This week's focus: ${ctx.focus || 'n/a'}
+- Race: ${raceLine}
+- This week's adaptations:
+${adaptLines}
+- ${todayLine}`;
 }
 
 // Recent Movement Lab still-frame analyses, serialized via the coach handoff
@@ -169,12 +216,15 @@ ${flagTxt}
 
 ${buildMovementLabBlock(analyses)}
 
+${buildTrainingPlanBlock(trainingCtx)}
+
 ${buildTrainingContextBlock(trainingCtx)}
 
 INSTRUCTIONS
 - Give personalised, actionable advice grounded in this athlete's specific data.
 - Structure meaningful answers as: what the data shows (observation), what it means (interpretation), what to do (recommendation).
 - Reference the athlete's actual recent training, readiness, fatigue, and recovery numbers above whenever relevant. Never give generic advice when this data can ground the answer.
+- When asked why a workout exists, answer from the TRAINING PLAN block (goal, phase, race timeline, recent readiness) — never invent a different plan.
 - Be direct and concise. Use dashes for bullet points.
 - When giving training, recovery, or injury-risk guidance, cite credible sports science sources such as PubMed-indexed research, ACSM, NSCA, or consensus guidelines in plain text.
 - Do NOT use markdown: no # headers, no ## headers, no **bold**, no *italics*. Plain text only.
@@ -237,6 +287,34 @@ export default function CoachScreen() {
   const currentWeek = useAthleteStore(s => s.currentWeek);
   const trainingPhase = useAthleteStore(s => s.trainingPhase);
 
+  // ── Plan spine — grounds the coach in the real macro plan ──────────────────
+  const weekPlan          = useWeekPlan();
+  const { richWeek, weeksToRace } = weekPlan;
+  const planGoalType      = useTrainingPlanStore(s => s.goalType);
+  const planStartDate     = useTrainingPlanStore(s => s.programStartDate);
+  const planRaces         = useTrainingPlanStore(s => s.races);
+
+  const targetRaceCtx: CoachRaceContext | 'none' = useMemo(() => {
+    if (planGoalType !== 'race_prep' || !planStartDate) return 'none';
+    const race = pickTargetRace(planRaces, planStartDate);
+    if (!race) return 'none';
+    return {
+      name: race.name, date: race.date, distance: race.distance,
+      priority: race.priority, weeksOut: weekPlan.weeksToRace,
+    };
+  }, [planGoalType, planStartDate, planRaces, weekPlan.weeksToRace]);
+
+  const todayWorkoutCtx = useMemo(() => {
+    const todayYMD = toYMD(new Date());
+    const todayEntries = weekPlan.calendarMap.get(todayYMD) ?? [];
+    const todayRunEntry = todayEntries.find(e => e.type === 'run');
+    const workout = (todayRunEntry?.workout as RichWorkout | undefined)
+      ?? weekPlan.richWeek.workouts[(new Date().getDay() + 6) % 7]
+      ?? null;
+    if (!workout || workout.type === 'rest') return null;
+    return { title: workout.title, rationale: workout.purpose };
+  }, [weekPlan.calendarMap, weekPlan.richWeek]);
+
   const trainingCtx: CoachTrainingContext = useMemo(() => ({
     runHistory,
     strengthHistory,
@@ -247,7 +325,16 @@ export default function CoachScreen() {
     recoveryScore,
     currentWeek,
     trainingPhase,
-  }), [runHistory, strengthHistory, todayReadiness, fatigueScore, recoveryScore, currentWeek, trainingPhase]);
+    goalType:         planGoalType,
+    programStartDate: planStartDate,
+    focus:            weekPlan.metadata.focus,
+    race:             targetRaceCtx,
+    adaptations:      weekPlan.adaptations,
+    todayWorkout:     todayWorkoutCtx,
+  }), [
+    runHistory, strengthHistory, todayReadiness, fatigueScore, recoveryScore, currentWeek, trainingPhase,
+    planGoalType, planStartDate, weekPlan.metadata.focus, targetRaceCtx, weekPlan.adaptations, todayWorkoutCtx,
+  ]);
 
   // ── Insights (deterministic coach engine over real history) ────────────────
   const goalRace = useAthleteStore(s => s.goalRace);
@@ -255,7 +342,6 @@ export default function CoachScreen() {
   const weeklyMileage = useAthleteStore(s => s.weeklyMileage);
   const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
   const completedWorkouts = useWorkoutStore(s => s.completedWorkouts);
-  const { richWeek, weeksToRace } = useWeekPlan();
 
   const coaching = useMemo(() => {
     const checkedIn = todayCheckIn?.date === todayDateKey();

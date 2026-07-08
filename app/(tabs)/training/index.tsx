@@ -21,6 +21,8 @@ import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useCalibration } from '../../../src/store/profileStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
+import { addDays as addCalendarDays, toYMD } from '../../../src/utils/calendarEngine';
+import type { RichWorkout } from '../../../src/types/workout';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
 import { useRouteStore, routeDistanceMiles, type RunRoute, type RoutePoint } from '../../../src/store/routeStore';
 import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
@@ -326,27 +328,55 @@ function PlanTab() {
   const mode = useThemeMode();
   const { units } = useSettingsStore();
   const imp = units === 'imperial';
-  const ex6 = imp ? '6 mi' : '9.7 km';
-  const pace = imp ? "9'14\"" : "5'44\"";
   const pUnit = imp ? '/mi' : '/km';
 
-  const paceZones = [
-    { zone: 'Recovery', label: 'Zone 1', pace: imp ? ">11'00\"" : ">6'50\"", active: false },
-    { zone: 'Easy Aerobic', label: 'Zone 2 · Today', pace: pace, active: true },
-    { zone: 'Moderate', label: 'Zone 3', pace: imp ? "8'40\"" : "5'23\"", active: false },
-    { zone: 'Threshold', label: 'Zone 4', pace: imp ? "7'30\"" : "4'39\"", active: false },
-    { zone: 'VO₂ Max', label: 'Zone 5', pace: imp ? "6'20\"" : "3'56\"", active: false },
-    { zone: 'Anaerobic', label: 'Zone 6', pace: imp ? "<5'50\"" : "<3'37\"", active: false },
-  ];
+  const weekPlan = useWeekPlan();
+  const beforeStart = weekPlan.metadata.currentWeek === 0;
+  const todayYMD = toYMD(new Date());
 
-  const days = [
-    { label: 'Mo', name: imp ? '4 mi' : '6.4 km', zone: 'Z2', done: true },
-    { label: 'Tu', name: 'Int', zone: 'Z4', done: true },
-    { label: 'We', name: 'Rest', zone: 'Off', done: true },
-    { label: 'Th', name: ex6, zone: 'Z2', today: true },
-    { label: 'Fr', name: 'Str', zone: 'Z3', future: true },
-    { label: 'Sa', name: imp ? '12 mi' : '19.3 km', zone: 'Z2', future: true },
-    { label: 'Su', name: 'Rest', zone: 'Off', future: true },
+  // Single source of truth for "today's workout": the calendar map's real
+  // date entry, falling back to the Monday-indexed richWeek slot only if the
+  // date lookup comes up empty.
+  const todayEntries = weekPlan.calendarMap.get(todayYMD) ?? [];
+  const todayRunEntry = todayEntries.find(e => e.type === 'run');
+  const todayRaceEntry = todayEntries.find(e => e.type === 'race');
+  const todayWorkout: RichWorkout | null =
+    (todayRunEntry?.workout as RichWorkout | undefined)
+    ?? weekPlan.richWeek.workouts[todayWorkoutIndex()]
+    ?? null;
+  const isRestToday = !todayRaceEntry && todayEntries.length === 0;
+
+  const weekDays = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = addCalendarDays(weekPlan.weekStartDate, i);
+      const dateYMD = toYMD(date);
+      const entries = weekPlan.calendarMap.get(dateYMD) ?? [];
+      const primary = entries[0];
+      const isToday = dateYMD === todayYMD;
+      const isPast = dateYMD < todayYMD;
+      return {
+        key: dateYMD,
+        label: date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2),
+        name: primary ? primary.label : 'Rest',
+        zone: primary ? (primary.type === 'strength' ? 'Lift' : primary.type === 'race' ? 'Race' : 'Run') : 'Off',
+        done: isPast && (primary ? primary.completed : true),
+        missed: !!primary?.missed,
+        today: isToday,
+        future: dateYMD > todayYMD,
+      };
+    });
+  }, [weekPlan.calendarMap, weekPlan.weekStartDate, todayYMD]);
+
+  const activeZoneKey  = !beforeStart && todayWorkout ? todayWorkout.zone : null;
+  const activeHrZone   = !beforeStart && todayWorkout ? todayWorkout.hrZoneTarget : null;
+
+  const paceZones: { zone: string; label: string; pace: string; zoneKey: string }[] = [
+    { zone: 'Recovery',     label: 'Zone 1', pace: imp ? ">11'00\"" : ">6'50\"", zoneKey: 'recovery'  },
+    { zone: 'Easy Aerobic', label: 'Zone 2', pace: imp ? "9'14\""   : "5'44\"",  zoneKey: 'easy'      },
+    { zone: 'Moderate',     label: 'Zone 3', pace: imp ? "8'40\""   : "5'23\"",  zoneKey: 'aerobic'   },
+    { zone: 'Threshold',    label: 'Zone 4', pace: imp ? "7'30\""   : "4'39\"",  zoneKey: 'threshold' },
+    { zone: 'VO₂ Max',      label: 'Zone 5', pace: imp ? "6'20\""   : "3'56\"",  zoneKey: 'vo2'       },
+    { zone: 'Anaerobic',    label: 'Zone 6', pace: imp ? "<5'50\""  : "<3'37\"", zoneKey: 'anaerobic' },
   ];
 
   return (
@@ -355,82 +385,130 @@ function PlanTab() {
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <View style={styles.cardHeaderRow}>
           <Text style={[styles.cardLabel, { color: C.textDim }]}>THIS WEEK</Text>
-          <Text style={[{ fontSize: 11, color: C.textMuted }]}>Jun 22–28</Text>
+          <Text style={[{ fontSize: 11, color: C.textMuted }]}>
+            {weekPlan.weekStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            {' – '}
+            {addCalendarDays(weekPlan.weekStartDate, 6).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          </Text>
         </View>
-        <View style={styles.dayRow}>
-          {days.map(d => (
-            <View
-              key={d.label}
-              style={[
-                styles.dayCol,
-                d.today && { backgroundColor: C.primary, borderRadius: 8, paddingVertical: 8 },
-                d.future && { opacity: 0.5 },
-              ]}
-            >
-              <Text style={[styles.dayLabel, { color: d.today ? C.onPrimary : d.done ? C.positive : C.textDim }]}>{d.label}</Text>
-              <Text style={[styles.dayName, { color: d.today ? C.onPrimary : C.text, fontSize: 10 }]}>{d.name}</Text>
-              <View style={[styles.dayZoneBadge, { backgroundColor: d.today ? 'rgba(10,10,10,0.14)' : C.cardAlt }]}>
-                <Text style={[{ fontSize: 8, fontWeight: '700', color: d.today ? C.onPrimary : C.textDim }]}>{d.zone}</Text>
-              </View>
-              {d.done ? (
-                <Text style={[{ fontSize: 12, color: C.positive }]}>✓</Text>
-              ) : d.today ? (
-                <Text style={[{ fontSize: 8, fontWeight: '700', color: C.onPrimary }]}>NOW</Text>
-              ) : (
-                <Text style={[{ fontSize: 12, color: C.textDim }]}>–</Text>
-              )}
+        {beforeStart ? (
+          <Text style={[{ fontSize: 12, color: C.textMuted, marginTop: 8, lineHeight: 17 }]}>
+            {weekPlan.metadata.startsOn
+              ? `Your plan starts ${weekPlan.metadata.startsOn}.`
+              : 'Set a program start date in Settings to see your week here.'}
+          </Text>
+        ) : (
+          <>
+            <View style={styles.dayRow}>
+              {weekDays.map(d => (
+                <View
+                  key={d.key}
+                  style={[
+                    styles.dayCol,
+                    d.today && { backgroundColor: C.primary, borderRadius: 8, paddingVertical: 8 },
+                    d.future && { opacity: 0.5 },
+                  ]}
+                >
+                  <Text style={[styles.dayLabel, { color: d.today ? C.onPrimary : d.done ? C.positive : d.missed ? C.critical : C.textDim }]}>{d.label}</Text>
+                  <Text style={[styles.dayName, { color: d.today ? C.onPrimary : C.text, fontSize: 10 }]} numberOfLines={1}>{d.name}</Text>
+                  <View style={[styles.dayZoneBadge, { backgroundColor: d.today ? 'rgba(10,10,10,0.14)' : C.cardAlt }]}>
+                    <Text style={[{ fontSize: 8, fontWeight: '700', color: d.today ? C.onPrimary : C.textDim }]}>{d.zone}</Text>
+                  </View>
+                  {d.done ? (
+                    <Text style={[{ fontSize: 12, color: C.positive }]}>✓</Text>
+                  ) : d.missed ? (
+                    <Text style={[{ fontSize: 10, color: C.critical }]}>✕</Text>
+                  ) : d.today ? (
+                    <Text style={[{ fontSize: 8, fontWeight: '700', color: C.onPrimary }]}>NOW</Text>
+                  ) : (
+                    <Text style={[{ fontSize: 12, color: C.textDim }]}>–</Text>
+                  )}
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
+            {weekPlan.metadata.focus ? (
+              <View style={{ marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.border }}>
+                <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 17 }]}>{weekPlan.metadata.focus}</Text>
+                {weekPlan.adaptations.length > 0 && (
+                  <View style={{ marginTop: 8, gap: 4 }}>
+                    {weekPlan.adaptations.map((note, i) => (
+                      <Text key={i} style={[{ fontSize: 11, color: C.textDim, lineHeight: 15 }]}>· {note}</Text>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ) : null}
+          </>
+        )}
       </View>
 
       {/* Today's Run */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S RUN</Text>
-        <Text style={[styles.subTitle, { color: C.text, marginTop: 8 }]}>Easy Run · Zone 2</Text>
-        <Text style={[{ fontSize: 13, color: C.textMuted, marginBottom: 10 }]}>{ex6} · HR under 155 bpm</Text>
-        <View style={[styles.paceBox, { backgroundColor: C.cardAlt }]}>
-          <Text style={[{ fontSize: 10, fontWeight: '700', color: C.textDim, letterSpacing: 0.7, marginBottom: 6 }]}>TARGET PACE</Text>
-          <Text style={[{ fontSize: 26, fontWeight: '800', color: C.text }]}>{pace}<Text style={[{ fontSize: 13, color: C.textMuted }]}> {pUnit}</Text></Text>
-          <View style={[{ marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: C.border }]}>
-            <Text style={[{ fontSize: 11, color: C.textMuted, lineHeight: 16 }]}>Relaxed conversational effort — not sprinting.</Text>
+      {beforeStart ? (
+        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S RUN</Text>
+          <Text style={[styles.subTitle, { color: C.text, marginTop: 8 }]}>
+            {weekPlan.metadata.startsOn ? `Your plan starts ${weekPlan.metadata.startsOn}` : 'Your plan hasn\'t started yet'}
+          </Text>
+          <Text style={[{ fontSize: 13, color: C.textMuted, marginTop: 6, lineHeight: 18 }]}>
+            Set a goal and program start date in onboarding or Settings to see a personalized week here.
+          </Text>
+        </View>
+      ) : todayRaceEntry ? (
+        <View style={[styles.card, { backgroundColor: C.card, borderColor: '#DCC0A7', borderWidth: 1.5 }]}>
+          <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S RUN</Text>
+          <Text style={[styles.subTitle, { color: C.text, marginTop: 8 }]}>{todayRaceEntry.label}</Text>
+          <Text style={[{ fontSize: 13, color: C.textMuted, marginTop: 6 }]}>Good luck out there — trust your training.</Text>
+        </View>
+      ) : isRestToday || !todayWorkout || todayWorkout.type === 'rest' ? (
+        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S RUN</Text>
+          <Text style={[styles.subTitle, { color: C.text, marginTop: 8 }]}>Rest Day</Text>
+          <Text style={[{ fontSize: 13, color: C.textMuted, marginTop: 6 }]}>No structured session today — prioritize sleep and recovery.</Text>
+        </View>
+      ) : (
+        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S RUN</Text>
+          <Text style={[styles.subTitle, { color: C.text, marginTop: 8 }]}>{todayWorkout.title}</Text>
+          <Text style={[{ fontSize: 13, color: C.textMuted, marginBottom: 10 }]}>{todayWorkout.purpose}</Text>
+          <View style={[styles.paceBox, { backgroundColor: C.cardAlt }]}>
+            <Text style={[{ fontSize: 10, fontWeight: '700', color: C.textDim, letterSpacing: 0.7, marginBottom: 6 }]}>TARGET PACE</Text>
+            <Text style={[{ fontSize: 26, fontWeight: '800', color: C.text }]}>{todayWorkout.paceGuidance.targetPace}</Text>
+            <View style={[{ marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: C.border }]}>
+              <Text style={[{ fontSize: 11, color: C.textMuted, lineHeight: 16 }]}>{todayWorkout.paceGuidance.description}</Text>
+            </View>
+          </View>
+          <View style={[styles.musicRow, { backgroundColor: mode === 'light' ? C.card : C.cardElevated, borderColor: C.border, marginTop: 10 }]}>
+            <Ionicons name="musical-note" size={18} color={C.text} />
+            <Text style={[styles.musicText, { color: C.text }]}>Connect Music</Text>
+            <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
           </View>
         </View>
-        <View style={[styles.musicRow, { backgroundColor: mode === 'light' ? C.card : C.cardElevated, borderColor: C.border, marginTop: 10 }]}>
-          <Ionicons name="musical-note" size={18} color={C.text} />
-          <Text style={[styles.musicText, { color: C.text }]}>Connect Music</Text>
-          <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
-        </View>
-      </View>
-
-      {/* Cadence */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Text style={[styles.cardLabel, { color: C.textDim }]}>CADENCE TARGET</Text>
-        <Text style={[{ fontSize: 22, fontWeight: '800', color: C.text, marginTop: 6 }]}>172 spm</Text>
-        <Text style={[{ fontSize: 11, color: C.textMuted, marginTop: 4 }]}>160+ is efficient; 170–180 is optimal for most runners.</Text>
-      </View>
+      )}
 
       {/* Pace zones */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.cardLabel, { color: C.textDim }]}>V·DOT PACE ZONES</Text>
         <View style={{ gap: 6, marginTop: 10 }}>
-          {paceZones.map(z => (
-            <View
-              key={z.zone}
-              style={[
-                styles.zoneRow,
-                z.active
-                  ? { backgroundColor: C.primaryDim, borderWidth: 1.5, borderColor: C.primary }
-                  : { backgroundColor: C.cardAlt },
-              ]}
-            >
-              <View>
-                <Text style={[{ fontSize: 13, fontWeight: '700', color: C.text }]}>{z.zone}</Text>
-                <Text style={[{ fontSize: 11, color: C.textMuted }]}>{z.label}</Text>
+          {paceZones.map(z => {
+            const active = z.zoneKey === activeZoneKey;
+            return (
+              <View
+                key={z.zone}
+                style={[
+                  styles.zoneRow,
+                  active
+                    ? { backgroundColor: C.primaryDim, borderWidth: 1.5, borderColor: C.primary }
+                    : { backgroundColor: C.cardAlt },
+                ]}
+              >
+                <View>
+                  <Text style={[{ fontSize: 13, fontWeight: '700', color: C.text }]}>{z.zone}</Text>
+                  <Text style={[{ fontSize: 11, color: C.textMuted }]}>{z.label}{active ? ' · Today' : ''}</Text>
+                </View>
+                <Text style={[{ fontSize: 13, fontWeight: '700', color: active ? C.primary : C.textMuted }]}>{z.pace} {pUnit}</Text>
               </View>
-              <Text style={[{ fontSize: 13, fontWeight: '700', color: z.active ? C.primary : C.textMuted }]}>{z.pace} {pUnit}</Text>
-            </View>
-          ))}
+            );
+          })}
         </View>
       </View>
 
@@ -439,28 +517,31 @@ function PlanTab() {
         <Text style={[styles.cardLabel, { color: C.textDim }]}>HEART RATE ZONES</Text>
         <View style={{ gap: 6, marginTop: 10 }}>
           {[
-            { name: 'Zone 1 · Recovery', range: '< 114 bpm', dot: '#8B9080', active: false },
-            { name: 'Zone 2 · Easy Aerobic', range: '114–133 bpm · Today\'s target', dot: C.primary, active: true },
-            { name: 'Zone 3 · Moderate', range: '133–152 bpm', dot: C.warning, active: false },
-            { name: 'Zone 4 · Threshold', range: '152–171 bpm', dot: C.critical, active: false },
-            { name: 'Zone 5 · Max', range: '171+ bpm', dot: '#B84040', active: false },
-          ].map(z => (
-            <View
-              key={z.name}
-              style={[
-                styles.zoneRow,
-                z.active
-                  ? { backgroundColor: C.primaryDim, borderWidth: 1.5, borderColor: C.primary }
-                  : { backgroundColor: C.cardAlt },
-              ]}
-            >
-              <View>
-                <Text style={[{ fontSize: 13, fontWeight: '700', color: C.text }]}>{z.name}</Text>
-                <Text style={[{ fontSize: 11, color: C.textMuted }]}>{z.range}</Text>
+            { name: 'Zone 1 · Recovery', range: '< 114 bpm', dot: '#8B9080', hrZone: 1 },
+            { name: 'Zone 2 · Easy Aerobic', range: '114–133 bpm', dot: C.primary, hrZone: 2 },
+            { name: 'Zone 3 · Moderate', range: '133–152 bpm', dot: C.warning, hrZone: 3 },
+            { name: 'Zone 4 · Threshold', range: '152–171 bpm', dot: C.critical, hrZone: 4 },
+            { name: 'Zone 5 · Max', range: '171+ bpm', dot: '#B84040', hrZone: 5 },
+          ].map(z => {
+            const active = z.hrZone === activeHrZone;
+            return (
+              <View
+                key={z.name}
+                style={[
+                  styles.zoneRow,
+                  active
+                    ? { backgroundColor: C.primaryDim, borderWidth: 1.5, borderColor: C.primary }
+                    : { backgroundColor: C.cardAlt },
+                ]}
+              >
+                <View>
+                  <Text style={[{ fontSize: 13, fontWeight: '700', color: C.text }]}>{z.name}</Text>
+                  <Text style={[{ fontSize: 11, color: C.textMuted }]}>{z.range}{active ? " · Today's target" : ''}</Text>
+                </View>
+                <View style={[{ width: 10, height: 10, borderRadius: 5, backgroundColor: z.dot }]} />
               </View>
-              <View style={[{ width: 10, height: 10, borderRadius: 5, backgroundColor: z.dot }]} />
-            </View>
-          ))}
+            );
+          })}
         </View>
       </View>
     </ScrollView>

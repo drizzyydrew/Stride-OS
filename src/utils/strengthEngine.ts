@@ -19,6 +19,7 @@
 import type {
   Exercise, PlannedExercise, StrengthSession, StrengthWeek,
   StrengthGoal, StrengthSessionType, MovementPattern, StrengthEngineInput,
+  StrengthProgressionState,
 } from '../types/strength';
 import type { TrainingPhase, ProgressionLevel } from '../types/training';
 
@@ -332,6 +333,11 @@ type PhaseConfig = {
 };
 
 const PHASE_CONFIG: Record<TrainingPhase, Record<ProgressionLevel, PhaseConfig>> = {
+  foundation: {
+    beginner:     { sessionTypes: ['prehab'], sessionDays: [1], goal: 'injury_resilience', phaseNote: 'Foundation: 1×/week movement quality', phaseRationale: 'Brand new to structured training — a single low-load, low-RPE session builds movement quality and joint resilience while the aerobic engine develops. Simple progressions only; no heavy loading yet.' },
+    intermediate: { sessionTypes: ['prehab'], sessionDays: [1], goal: 'injury_resilience', phaseNote: 'Foundation: 1×/week movement quality', phaseRationale: 'Foundation phase prioritises movement quality over load. One low-intensity session keeps CNS fatigue minimal while the running base is establishing itself.' },
+    advanced:     { sessionTypes: ['prehab', 'prehab'], sessionDays: [1, 4], goal: 'injury_resilience', phaseNote: 'Foundation: 2×/week movement quality', phaseRationale: 'Even for experienced lifters returning to running, foundation phase stays light — two low-RPE movement-quality sessions protect the tendons and joints adapting to new running volume.' },
+  },
   base: {
     beginner:     { sessionTypes: ['full_body'], sessionDays: [1], goal: 'force_production', phaseNote: 'Base: 1×/week full body', phaseRationale: 'New to strength training — one full-body session builds structural foundation without interference with running adaptation.' },
     intermediate: { sessionTypes: ['full_body', 'prehab'], sessionDays: [1, 4], goal: 'force_production', phaseNote: 'Base: 2×/week — strength + prehab', phaseRationale: 'Two sessions per week in base phase: one compound strength session and one prehab/accessory session. This is when the largest strength gains occur before race-specific running volume climbs.' },
@@ -358,6 +364,22 @@ const PHASE_CONFIG: Record<TrainingPhase, Record<ProgressionLevel, PhaseConfig>>
     advanced:     { sessionTypes: ['activation'], sessionDays: [1], goal: 'taper_support', phaseNote: 'Taper: 1×/week early-week activation', phaseRationale: 'Single activation session early in the week preserves neuromuscular potentiation with full recovery before race day.' },
   },
 };
+
+export function getSessionTypeTitle(sessionType: StrengthSessionType): string {
+  return SESSION_TEMPLATES[sessionType].title;
+}
+
+// Lightweight preview used by the calendar screen for future/past weeks —
+// which day indices (0=Mon) carry a strength session for a given phase/level,
+// without building full StrengthSession objects.
+export function getPhaseSessionPreview(
+  phase:            TrainingPhase,
+  progressionLevel: ProgressionLevel,
+): { sessionDays: number[]; title: string } {
+  const config = PHASE_CONFIG[phase]?.[progressionLevel] ?? PHASE_CONFIG['base']!['intermediate']!;
+  const title  = SESSION_TEMPLATES[config.sessionTypes[0] ?? 'prehab']!.title;
+  return { sessionDays: config.sessionDays, title };
+}
 
 // ─── Adaptive overrides ───────────────────────────────────────────────────────
 
@@ -416,6 +438,12 @@ function applyStrengthAdaptations(
   if (input.availableTimeMin < 30 && sessionTypes.length > 1) {
     sessionTypes = sessionTypes.slice(0, 1);
     sessionDays  = sessionDays.slice(0, 1);
+  }
+
+  // Hybrid goal: cap CNS load so lifting doesn't compound with running-quality
+  // fatigue — the only session template above RPE 7 is lower_power (RPE 8).
+  if (input.hybridBalance) {
+    sessionTypes = sessionTypes.map(t => t === 'lower_power' ? 'full_body' : t);
   }
 
   return { ...config, sessionTypes, sessionDays, goal };
@@ -485,6 +513,7 @@ function buildSession(
   const id = `strength_${sessionType}_${weekInBlock}_${index}`;
 
   const progressionNote =
+    phase === 'foundation' ? 'Foundation: movement quality — simple progressions, low RPE, no heavy loading yet' :
     phase === 'base'   ? `Block week ${weekInBlock}/4 — ${weekInBlock < 3 ? 'progressive loading' : 'peak volume week'}` :
     phase === 'build'  ? `Build phase — convert strength to power (${weekInBlock}/4)` :
     phase === 'peak'   ? 'Peak: maintenance — protect fitness, no new stimuli' :
@@ -505,6 +534,97 @@ function buildSession(
     rationale:        template.rationale,
     progressionNote,
   };
+}
+
+// ─── Earned progression ───────────────────────────────────────────────────────
+//
+// Looks at the last 21 days of logged strength sessions to decide whether the
+// athlete has EARNED the right to push load higher, needs to hold steady, or
+// should pull back. This never touches programmed weight directly — actual
+// load targets always come from suggestProgression() at log time using the
+// athlete's own last-logged performance. This is purely: "should the plan
+// nudge harder, hold, or protect recovery this week?"
+
+export type ProgressionDecision = {
+  progressionState:  StrengthProgressionState;
+  progressionReason: string;
+};
+
+const PROGRESSION_WINDOW_DAYS = 21;
+
+function computeProgressionDecision(input: StrengthEngineInput): ProgressionDecision {
+  const cutoff = Date.now() - PROGRESSION_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+  const recent = input.strengthHistory.filter(r => r.timestamp >= cutoff && !r.skipped);
+
+  // No logged sessions in the window — a fresh start, not a failure. Never
+  // read an empty log as "0% completion" and pull back on a new athlete.
+  if (recent.length === 0) {
+    return {
+      progressionState:  'maintain',
+      progressionReason: 'Starting from the programmed baseline — log your sessions and the plan will progress from what you actually do.',
+    };
+  }
+
+  // Expected sessions over the window: liftDays/week × ~3 weeks in the window.
+  const sessionsPerWeek  = Math.max(1, input.liftDays?.length ?? 2);
+  const expectedSessions = sessionsPerWeek * 3;
+  const completionRate   = Math.min(1, recent.length / expectedSessions);
+
+  const rpeValues = recent
+    .map(r => r.overallRpe)
+    .filter((v): v is number => v !== undefined);
+  const avgRpe = rpeValues.length > 0
+    ? rpeValues.reduce((s, v) => s + v, 0) / rpeValues.length
+    : null;
+
+  const soreness = input.soreness ?? 0;
+
+  if ((avgRpe !== null && avgRpe >= 8.5) || soreness >= 8 || completionRate < 0.4) {
+    const reasons: string[] = [];
+    if (avgRpe !== null && avgRpe >= 8.5) reasons.push(`recent sessions averaging RPE ${avgRpe.toFixed(1)}`);
+    if (soreness >= 8) reasons.push(`soreness at ${soreness}/10`);
+    if (completionRate < 0.4) reasons.push(`only ${Math.round(completionRate * 100)}% of planned sessions completed recently`);
+    return {
+      progressionState:  'regress',
+      progressionReason: `Pulling back this week — ${reasons.join(' and ')}. Sets and RPE are reduced to protect recovery while the block resets.`,
+    };
+  }
+
+  if (completionRate >= 0.75 && (avgRpe === null || avgRpe <= 7) && input.recoveryScore >= 55) {
+    return {
+      progressionState:  'progress',
+      progressionReason: `Consistent execution (${Math.round(completionRate * 100)}% of sessions)${avgRpe !== null ? ` at a manageable RPE (avg ${avgRpe.toFixed(1)})` : ''} — loads may increase next session. Your logged performance still decides the actual weight.`,
+    };
+  }
+
+  return {
+    progressionState:  'maintain',
+    progressionReason: 'Holding steady — recent execution is solid but not yet consistent enough to justify pushing load higher.',
+  };
+}
+
+// Applies the earned-progression decision to a built week: 'regress' trims
+// one set (min 2) and one RPE point (min 3) per exercise; 'progress'/'maintain'
+// leave the programmed sets/RPE untouched (the note alone communicates intent).
+export function applyEarnedProgression(
+  sessions: StrengthSession[],
+  input:    StrengthEngineInput,
+): { sessions: StrengthSession[]; decision: ProgressionDecision } {
+  const decision = computeProgressionDecision(input);
+
+  if (decision.progressionState !== 'regress') {
+    return { sessions, decision };
+  }
+
+  const adjusted = sessions.map(s => ({
+    ...s,
+    exercises: s.exercises.map(ex => {
+      const rpe = Math.max(3, ex.rpe - 1);
+      return { ...ex, sets: Math.max(2, ex.sets - 1), rpe, rir: 10 - rpe };
+    }),
+  }));
+
+  return { sessions: adjusted, decision };
 }
 
 // ─── Strength week scoring ────────────────────────────────────────────────────
@@ -534,9 +654,11 @@ export function generateStrengthWeek(input: StrengthEngineInput): StrengthWeek {
     ? config.sessionTypes.slice(0, Math.max(1, maxLiftDays))
     : config.sessionTypes;
 
-  const sessions = sessionTypes.map((sessionType, i) =>
+  const builtSessions = sessionTypes.map((sessionType, i) =>
     buildSession(sessionType, i, weekInBlock, trainingPhase, input),
   );
+
+  const { sessions, decision } = applyEarnedProgression(builtSessions, input);
 
   const weeklyVolumeSets = sessions.reduce((s, sess) =>
     s + sess.exercises.reduce((es, ex) => es + ex.sets, 0), 0);
@@ -549,6 +671,8 @@ export function generateStrengthWeek(input: StrengthEngineInput): StrengthWeek {
     phaseNote:        config.phaseNote,
     phaseRationale:   config.phaseRationale,
     generatedAt:      Date.now(),
+    progressionState:  decision.progressionState,
+    progressionReason: decision.progressionReason,
   };
 }
 

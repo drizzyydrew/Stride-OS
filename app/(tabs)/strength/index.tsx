@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -16,9 +16,11 @@ import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
 import { LAYOUT } from '../../../src/constants/layout';
-import type { CompletedExercise } from '../../../src/types/strength';
+import type { CompletedExercise, MovementPattern, StrengthSession } from '../../../src/types/strength';
 import { getLastLoggedExercise, suggestProgression } from '../../../src/utils/strengthHistory';
 import { getExerciseGuide } from '../../../src/constants/exerciseGuides';
+import { toYMD } from '../../../src/utils/calendarEngine';
+import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
 import {
   addStrengthIntentListener,
@@ -31,7 +33,6 @@ import { startControlCommandPolling } from '../../../src/lib/runLiveActivity';
 type ExDef = {
   id: string;
   name: string;
-  shortName: string;
   sets: number;
   reps: string;
   weight: number;
@@ -39,22 +40,38 @@ type ExDef = {
   muscles: string;
   desc: string;
   cue: string;
-  pr?: boolean;
 };
 
-const LOWER_WORKOUT: ExDef[] = [
-  { id: 'gs',  name: 'Goblet Squat',        shortName: 'Goblet Sq',  sets: 3, reps: '10–12', weight: 35, restSeconds: 90, muscles: 'Quads · Glutes',           desc: 'Hold dumbbell at chest, feet shoulder-width, squat until thighs parallel.', cue: 'Drive knees out over toes; keep chest tall throughout descent.' },
-  { id: 'rdl', name: 'Romanian Deadlift',    shortName: 'RDL',        sets: 3, reps: '10–12', weight: 65, restSeconds: 90, muscles: 'Hamstrings · Glutes',       desc: 'Hinge at hips with soft knees, lower bar until hamstring stretch.', cue: 'Imagine pushing the floor away — feel glutes fire at lockout.' },
-  { id: 'gb',  name: 'Glute Bridge',         shortName: 'Glute Bdg',  sets: 3, reps: '15',    weight: 0,  restSeconds: 60, muscles: 'Glutes · Core',             desc: 'Lie on back, feet flat, drive hips up until body is straight.', cue: 'Squeeze glutes hard at the top; hold one full second.' },
-  { id: 'pl',  name: 'Plank',                shortName: 'Plank',      sets: 3, reps: '45 sec', weight: 0,  restSeconds: 45, muscles: 'Core · Shoulders',          desc: 'Forearm plank, body rigid from head to heels.', cue: 'Breathe normally; brace abs as if absorbing a punch.' },
-];
+const PATTERN_MUSCLES: Record<MovementPattern, string> = {
+  squat:       'Quads · Glutes',
+  hinge:       'Hamstrings · Glutes',
+  lunge:       'Quads · Glutes · Balance',
+  push:        'Chest · Shoulders · Triceps',
+  pull:        'Back · Biceps',
+  carry:       'Core · Grip',
+  trunk:       'Core',
+  calf_ankle:  'Calves · Ankles',
+  plyometric:  'Power · Reactivity',
+  mobility:    'Mobility',
+};
 
-const UPPER_WORKOUT: ExDef[] = [
-  { id: 'dbr', name: 'Dumbbell Row',         shortName: 'DB Row',     sets: 3, reps: '10',    weight: 45, restSeconds: 75, muscles: 'Lats · Rear Delt · Biceps', desc: 'Single-arm row, brace on bench, pull dumbbell to hip.', cue: 'Initiate with elbow — think "elbow to back pocket."', pr: true },
-  { id: 'pu',  name: 'Push-Up',              shortName: 'Push-Up',    sets: 3, reps: '12',    weight: 0,  restSeconds: 60, muscles: 'Chest · Triceps · Core',    desc: 'High plank, lower chest to 1 inch from floor, press back up.', cue: 'Screw hands into the floor — engages chest, protects shoulders.' },
-  { id: 'ohp', name: 'Overhead Press',       shortName: 'OHP',        sets: 3, reps: '8',     weight: 30, restSeconds: 75, muscles: 'Shoulders · Triceps',       desc: 'Standing, press dumbbells from shoulder height to overhead.', cue: 'Squeeze glutes at top to protect lower back.' },
-  { id: 'db2', name: 'Dead Bug',             shortName: 'Dead Bug',   sets: 3, reps: '8 each', weight: 0, restSeconds: 45, muscles: 'Deep Core',                desc: 'Lying on back, extend opposite arm and leg, keep low back flat.', cue: 'Press lower back firmly into floor the entire time — no arching.' },
-];
+function sessionToExDefs(session: StrengthSession, strengthHistory: ReturnType<typeof useStrengthStore.getState>['history']): ExDef[] {
+  return session.exercises.map(ex => {
+    const last = getLastLoggedExercise(strengthHistory, ex.exerciseId);
+    const parsedWeight = last?.load ? parseFloat(last.load) : NaN;
+    return {
+      id: ex.exerciseId,
+      name: ex.exercise.name,
+      sets: ex.sets,
+      reps: `${ex.repRange[0]}–${ex.repRange[1]}`,
+      weight: Number.isFinite(parsedWeight) ? parsedWeight : 0,
+      restSeconds: ex.restSeconds,
+      muscles: PATTERN_MUSCLES[ex.exercise.pattern] ?? ex.exercise.pattern.replace(/_/g, ' '),
+      desc: ex.exercise.rationale,
+      cue: ex.exercise.coachingCues[0] ?? ex.rationale,
+    };
+  });
+}
 
 const WARMUP_MIN   = 5;
 const COOLDOWN_MIN = 5;
@@ -110,20 +127,65 @@ function estimateWorkoutDurationMin(exercises: ExDef[]): number {
   return Math.max(1, Math.round(totalSeconds / 60));
 }
 
+function dayLabelFor(dateYMD: string, todayYMD: string): string {
+  if (dateYMD === todayYMD) return 'Today';
+  const [y, m, d] = dateYMD.split('-').map(Number);
+  const date = new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  if (toYMD(tomorrow) === dateYMD) return 'Tomorrow';
+  return date.toLocaleDateString('en-US', { weekday: 'long' });
+}
+
 export default function StrengthScreen() {
   const C = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { units } = useSettingsStore();
-  const { currentWeek, fatigueScore, recoveryScore } = useAthleteStore();
-  const readinessLimited = fatigueScore > 70 || recoveryScore < 45;
+  const weekPlan = useWeekPlan();
+  const fatigueScore = useAthleteStore(s => s.fatigueScore);
+  const readinessLimited = weekPlan.strengthWeek.progressionState === 'regress';
   const logStrengthSession = useStrengthStore(s => s.manualLog);
   const strengthHistory = useStrengthStore(s => s.history);
   const imp = units === 'imperial';
   const wtUnit = imp ? 'lb' : 'kg';
   const WEIGHT_VALUES = imp ? WEIGHT_VALUES_LB : WEIGHT_VALUES_KG;
 
-  const [workout, setWorkout] = useState<'lower' | 'upper'>('lower');
+  const todayYMD = useMemo(() => toYMD(new Date()), []);
+
+  // ── Real sessions for this week, date-sorted ───────────────────────────────
+  const strengthEntries = useMemo(() => {
+    const list: { date: string; session: StrengthSession }[] = [];
+    for (const [date, entries] of weekPlan.calendarMap.entries()) {
+      for (const e of entries) {
+        if (e.type === 'strength' && e.session) list.push({ date, session: e.session });
+      }
+    }
+    return list.sort((a, b) => a.date.localeCompare(b.date));
+  }, [weekPlan.calendarMap]);
+
+  const autoIndex = useMemo(() => {
+    if (strengthEntries.length === 0) return -1;
+    const todayIdx = strengthEntries.findIndex(e => e.date === todayYMD);
+    if (todayIdx !== -1) return todayIdx;
+    const nextIdx = strengthEntries.findIndex(e => e.date > todayYMD);
+    if (nextIdx !== -1) return nextIdx;
+    return strengthEntries.length - 1;
+  }, [strengthEntries, todayYMD]);
+
+  const [manualIndex, setManualIndex] = useState<number | null>(null);
+  const activeIndex = manualIndex !== null && strengthEntries.length > 0
+    ? ((manualIndex % strengthEntries.length) + strengthEntries.length) % strengthEntries.length
+    : autoIndex;
+  const activeEntry = activeIndex >= 0 ? strengthEntries[activeIndex] : null;
+  const session = activeEntry?.session ?? null;
+
+  const sessionIndexInWeek = session ? weekPlan.strengthWeek.sessions.indexOf(session) : -1;
+  const currentWeek = weekPlan.metadata.currentWeek;
+
+  const wDef = session
+    ? { title: session.title, label: `Strength · ${dayLabelFor(activeEntry!.date, todayYMD)}` }
+    : { title: 'Strength', label: 'STRENGTH' };
+
   const [strState, setStrState] = useState<'idle' | 'active' | 'paused'>('idle');
   const [timer, setTimer] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -134,18 +196,25 @@ export default function StrengthScreen() {
   const [howOpen, setHowOpen] = useState<Record<string, boolean>>({});
   const [warmupOpen, setWarmupOpen] = useState(false);
   const [cooldownOpen, setCooldownOpen] = useState(false);
-  const [weekOpen, setWeekOpen] = useState(false);
   const [weightPickerFor, setWeightPickerFor] = useState<ExDef | null>(null);
   const [rpePickerFor, setRpePickerFor] = useState<ExDef | null>(null);
 
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
-  const exercises = workout === 'lower' ? LOWER_WORKOUT : UPPER_WORKOUT;
-  const wDef = { title: workout === 'lower' ? 'Lower Body & Core' : 'Upper Body & Core', label: workout === 'lower' ? 'Strength · Today' : 'Strength · Tomorrow' };
+  // Reset in-progress UI state whenever the active session changes.
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setStrState('idle');
+    setTimer(0);
+    setWeights({});
+    setCompletedExercises({});
+    setRpe({});
+  }, [session?.id]);
 
-  const estimatedDurationMin = estimateWorkoutDurationMin(exercises);
+  const exercises = useMemo(() => session ? sessionToExDefs(session, strengthHistory) : [], [session, strengthHistory]);
+  const estimatedDurationMin = exercises.length > 0 ? estimateWorkoutDurationMin(exercises) : 0;
 
-  // Completion is per EXERCISE, not per set: 4 exercises = 4 completions,
+  // Completion is per EXERCISE, not per set: N exercises = N completions,
   // in the app and from the Lock Screen alike.
   function isExerciseDone(ex: ExDef): boolean {
     return completedExercises[ex.id] === true;
@@ -247,6 +316,7 @@ export default function StrengthScreen() {
   }, [timer, exercisesCompleted, strState]);
 
   function finishSession() {
+    if (!session || sessionIndexInWeek === -1) return;
     if (intervalRef.current) clearInterval(intervalRef.current);
     endStrengthLiveActivity().catch(console.warn);
 
@@ -255,7 +325,7 @@ export default function StrengthScreen() {
       ? Math.round(selectedRpes.reduce((sum, value) => sum + value, 0) / selectedRpes.length)
       : 7;
     const durationMinutes = Math.max(1, Math.round(timer / 60));
-    const completionKey = `prototype-strength-${workout}-${new Date().toISOString().slice(0, 10)}`;
+    const completionKey = `strength_w${currentWeek}_s${sessionIndexInWeek}`;
 
     // Exercise-level completion: a completed exercise logs all of its
     // prescribed sets as done. With nothing marked, treat the whole session
@@ -278,14 +348,14 @@ export default function StrengthScreen() {
 
     logStrengthSession({
       completionKey,
-      sessionType: workout === 'lower' ? 'lower_power' : 'full_body',
-      goal: 'force_production',
+      sessionType: session.sessionType,
+      goal: session.goal,
       week: currentWeek,
       plannedDuration: estimatedDurationMin,
       actualDuration: durationMinutes,
       exercises: loggedExercises,
       overallRpe,
-      notes: `${wDef.title} completed from the prototype-style Strength screen.`,
+      notes: `${wDef.title} completed from the Strength screen.`,
     }, fatigueScore);
 
     setCompletedExercises({});
@@ -304,6 +374,57 @@ export default function StrengthScreen() {
   }, 0);
   const totalVolStr = totalVol > 0 ? `${Math.round(totalVol).toLocaleString()} ${wtUnit}` : '—';
 
+  // ── Before program start ────────────────────────────────────────────────────
+  if (weekPlan.metadata.currentWeek === 0) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg }}>
+        <View style={[styles.screenHeader, { paddingTop: insets.top + 6, backgroundColor: C.bg }]}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
+            <Ionicons name="arrow-back" size={20} color={C.primary} />
+          </TouchableOpacity>
+          <View style={{ marginLeft: 10, flex: 1 }}>
+            <Text style={[styles.headerLabel, { color: C.textDim }]}>STRENGTH</Text>
+            <Text style={[styles.headerTitle, { color: C.text }]}>Strength</Text>
+          </View>
+        </View>
+        <View style={{ paddingHorizontal: 18 }}>
+          <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+            <Text style={[styles.subTitle, { color: C.text, marginBottom: 6 }]}>Your plan hasn't started yet</Text>
+            <Text style={[{ fontSize: 13, color: C.textMuted, lineHeight: 19 }]}>
+              {weekPlan.metadata.startsOn
+                ? `Strength sessions begin the week of ${weekPlan.metadata.startsOn}.`
+                : 'Set a program start date in Settings to see your strength sessions here.'}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // ── No session available this week ─────────────────────────────────────────
+  if (!session) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg }}>
+        <View style={[styles.screenHeader, { paddingTop: insets.top + 6, backgroundColor: C.bg }]}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
+            <Ionicons name="arrow-back" size={20} color={C.primary} />
+          </TouchableOpacity>
+          <View style={{ marginLeft: 10, flex: 1 }}>
+            <Text style={[styles.headerLabel, { color: C.textDim }]}>STRENGTH</Text>
+            <Text style={[styles.headerTitle, { color: C.text }]}>Strength</Text>
+          </View>
+        </View>
+        <View style={{ paddingHorizontal: 18 }}>
+          <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+            <Text style={[{ fontSize: 13, color: C.textMuted, lineHeight: 19 }]}>
+              No strength session is scheduled this week — {weekPlan.strengthWeek.phaseNote || 'check back next week.'}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       {/* Header */}
@@ -315,9 +436,11 @@ export default function StrengthScreen() {
           <Text style={[styles.headerLabel, { color: C.textDim }]}>{wDef.label.toUpperCase()}</Text>
           <Text style={[styles.headerTitle, { color: C.text }]}>{wDef.title}</Text>
         </View>
-        <TouchableOpacity onPress={() => setWorkout(w => w === 'lower' ? 'upper' : 'lower')} style={{ padding: 4 }}>
-          <Ionicons name="swap-horizontal-outline" size={20} color={C.primary} />
-        </TouchableOpacity>
+        {strengthEntries.length > 1 && (
+          <TouchableOpacity onPress={() => setManualIndex((manualIndex ?? autoIndex) + 1)} style={{ padding: 4 }}>
+            <Ionicons name="swap-horizontal-outline" size={20} color={C.primary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView
@@ -325,6 +448,28 @@ export default function StrengthScreen() {
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: LAYOUT.screenPadBottom }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Progression banner */}
+        <View style={[
+          styles.progressionBanner,
+          {
+            backgroundColor: weekPlan.strengthWeek.progressionState === 'progress' ? C.positiveDim
+              : weekPlan.strengthWeek.progressionState === 'regress' ? C.criticalDim : C.cardAlt,
+            borderColor: weekPlan.strengthWeek.progressionState === 'progress' ? C.positive
+              : weekPlan.strengthWeek.progressionState === 'regress' ? C.critical : C.border,
+          },
+        ]}>
+          <Text style={[styles.progressionLabel, {
+            color: weekPlan.strengthWeek.progressionState === 'progress' ? C.positive
+              : weekPlan.strengthWeek.progressionState === 'regress' ? C.critical : C.textMuted,
+          }]}>
+            Strength: {weekPlan.strengthWeek.progressionState === 'progress' ? 'progressing'
+              : weekPlan.strengthWeek.progressionState === 'regress' ? 'pulling back' : 'holding steady'}
+          </Text>
+          <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 17, marginTop: 2 }]}>
+            {weekPlan.strengthWeek.progressionReason}
+          </Text>
+        </View>
+
         {/* Session Timer */}
         <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border, alignItems: 'center' }]}>
           <Text style={[styles.cardLabel, { color: C.textDim }]}>SESSION TIME</Text>
@@ -351,16 +496,14 @@ export default function StrengthScreen() {
             </>
           )}
           {strState === 'active' && (
-            <>
-              <View style={styles.btnRow}>
-                <TouchableOpacity style={[styles.halfBtn, { backgroundColor: C.warning }]} onPress={pause} activeOpacity={0.8}>
-                  <Text style={[styles.bigBtnText, { color: '#14160F' }]}>Pause</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.halfBtn, { backgroundColor: C.critical }]} onPress={finishSession} activeOpacity={0.8}>
-                  <Text style={[styles.bigBtnText, { color: '#F3F1E9' }]}>Finish</Text>
-                </TouchableOpacity>
-              </View>
-            </>
+            <View style={styles.btnRow}>
+              <TouchableOpacity style={[styles.halfBtn, { backgroundColor: C.warning }]} onPress={pause} activeOpacity={0.8}>
+                <Text style={[styles.bigBtnText, { color: '#14160F' }]}>Pause</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.halfBtn, { backgroundColor: C.critical }]} onPress={finishSession} activeOpacity={0.8}>
+                <Text style={[styles.bigBtnText, { color: '#F3F1E9' }]}>Finish</Text>
+              </TouchableOpacity>
+            </View>
           )}
           {strState === 'paused' && (
             <View style={styles.btnRow}>
@@ -386,28 +529,20 @@ export default function StrengthScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.subTitle, { color: C.text }]}>Warm-Up</Text>
-              <Text style={[{ fontSize: 11, color: C.textMuted }]}>5 min · Dynamic mobility</Text>
+              <Text style={[{ fontSize: 11, color: C.textMuted }]}>{WARMUP_MIN} min · Dynamic mobility</Text>
             </View>
             <Text style={[{ fontSize: 13, color: C.textDim }]}>{warmupOpen ? '▲' : '▼'}</Text>
           </View>
           {warmupOpen && (
-            <View style={[{ borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10, gap: 5 }]}>
-              {['Leg Swings · 10 each · 1 min', 'Hip Circles · 10 each way · 1 min', 'Bodyweight Squat · 15 reps · 1 min', 'Glute Bridges · 15 reps · 1 min', 'Inchworm · 5 reps · 1 min'].map(item => {
-                const [name, ...rest] = item.split(' · ');
-                return (
-                  <View key={item} style={[styles.listRow, { backgroundColor: C.cardAlt }]}>
-                    <Text style={[{ fontSize: 12, fontWeight: '600', color: C.text }]}>{name}</Text>
-                    <Text style={[{ fontSize: 11, color: C.textMuted }]}>{rest.join(' · ')}</Text>
-                  </View>
-                );
-              })}
+            <View style={[{ borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10 }]}>
+              <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{session.warmupProtocol}</Text>
             </View>
           )}
         </TouchableOpacity>
 
         {/* Exercises */}
         <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8 }]}>EXERCISES</Text>
-        {exercises.map((ex, i) => {
+        {exercises.map(ex => {
           const w = getWeight(ex);
           const isDone = isExerciseDone(ex);
           const isCurrent = !isDone && currentExercise?.id === ex.id;
@@ -440,14 +575,7 @@ export default function StrengthScreen() {
                         </View>
                       )}
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={[styles.subTitle, { color: C.text }]}>{ex.name}</Text>
-                      {ex.pr && (
-                        <View style={[{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: C.warning }]}>
-                          <Text style={[{ fontSize: 9, fontWeight: '700', color: '#14160F' }]}>PR</Text>
-                        </View>
-                      )}
-                    </View>
+                    <Text style={[styles.subTitle, { color: C.text }]}>{ex.name}</Text>
                     <Text style={[{ fontSize: 12, color: C.textMuted }]}>{ex.sets} × {ex.reps}{w > 0 ? ` · ${wDisplay}` : ''}</Text>
                     {lastPerformance && (
                       <Text style={[{ fontSize: 11, color: C.textDim, marginTop: 2 }]}>
@@ -602,21 +730,13 @@ export default function StrengthScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.subTitle, { color: C.text }]}>Cool-Down</Text>
-              <Text style={[{ fontSize: 11, color: C.textMuted }]}>5 min · Static stretching</Text>
+              <Text style={[{ fontSize: 11, color: C.textMuted }]}>{COOLDOWN_MIN} min · Static stretching</Text>
             </View>
             <Text style={[{ fontSize: 13, color: C.textDim }]}>{cooldownOpen ? '▲' : '▼'}</Text>
           </View>
           {cooldownOpen && (
-            <View style={[{ borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10, gap: 5 }]}>
-              {["Quad Stretch · 30s each · 1 min", "Hamstring Stretch · 30s each · 1 min", "Hip Flexor Stretch · 45s each · 1.5 min", "Child's Pose · 60s · 1 min", "Pigeon Pose · 45s each · 1.5 min"].map(item => {
-                const [name, ...rest] = item.split(' · ');
-                return (
-                  <View key={item} style={[styles.listRow, { backgroundColor: C.cardAlt }]}>
-                    <Text style={[{ fontSize: 12, fontWeight: '600', color: C.text }]}>{name}</Text>
-                    <Text style={[{ fontSize: 11, color: C.textMuted }]}>{rest.join(' · ')}</Text>
-                  </View>
-                );
-              })}
+            <View style={[{ borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10 }]}>
+              <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{session.cooldownProtocol}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -677,6 +797,18 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 10,
   },
+  progressionBanner: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 10,
+  },
+  progressionLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
   accordionCard: {
     borderRadius: 14,
     borderWidth: 1,
@@ -712,13 +844,6 @@ const styles = StyleSheet.create({
   subTitle: {
     fontSize: 15,
     fontWeight: '700',
-  },
-  listRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
   },
   timerDisplay: {
     fontSize: 58,

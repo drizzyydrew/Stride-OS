@@ -21,7 +21,7 @@ export function resolveRaceDistance(goalRace: string): RaceDistance {
 // Phase week ranges are static per distance. Deload weeks are resolved dynamically
 // (every 4th week) by resolveTrainingPhase rather than encoded in the template,
 // which means the phase boundaries here reflect the gross training shape.
-type PlanTemplate = {
+export type PlanTemplate = {
   totalWeeks: number;
   phases: { phase: TrainingPhase; startWeek: number; endWeek: number }[];
 };
@@ -64,6 +64,16 @@ const PLAN_TEMPLATES: Record<RaceDistance, PlanTemplate> = {
     ],
   },
 };
+
+// ─── Plan Template Access ─────────────────────────────────────────────────────
+//
+// Exposes the static phase-shape template for a distance so the macro planner
+// (src/utils/plan/macroPlanner.ts) can proportionally scale phase boundaries
+// to fit a specific weeks-to-race window without duplicating the templates.
+
+export function getPlanTemplateForDistance(distance: RaceDistance): PlanTemplate {
+  return PLAN_TEMPLATES[distance];
+}
 
 // ─── Plan Builder ─────────────────────────────────────────────────────────────
 

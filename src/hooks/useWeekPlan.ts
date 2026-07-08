@@ -6,6 +6,10 @@
 // All UI screens (training, calendar, dashboard) read from this hook so they
 // share a consistent plan without duplicating engine calls.
 //
+// Build 33: the plan is now date-anchored via trainingPlanStore + macroPlanner.
+// `currentWeek`/`trainingPhase` no longer come from athleteStore — they're
+// derived from the macro plan's current MacroWeek for today's date.
+//
 // STABILITY RULES — must obey to avoid infinite render loops:
 //   1. Every useStore() call must use a selector that returns a STABLE reference
 //      (primitive, or the exact same object/array reference from the store).
@@ -17,16 +21,18 @@
 
 import { useMemo } from 'react';
 
-import { useAthleteStore }    from '../store/athleteStore';
-import { useOnboardingStore } from '../store/onboardingStore';
-import { useWorkoutStore }    from '../store/workoutStore';
-import { useCheckInStore }    from '../store/checkInStore';
-import { useStrengthStore }   from '../store/strengthStore';
-import { useProfileStore }    from '../store/profileStore';
+import { useAthleteStore }      from '../store/athleteStore';
+import { useOnboardingStore }   from '../store/onboardingStore';
+import { useWorkoutStore }      from '../store/workoutStore';
+import { useCheckInStore }      from '../store/checkInStore';
+import { useStrengthStore }     from '../store/strengthStore';
+import { useProfileStore }      from '../store/profileStore';
+import { useTrainingPlanStore } from '../store/trainingPlanStore';
 
 import { calculateACWR }                     from '../utils/training';
 import { getWeeklyMileage }                  from '../utils/historyUtils';
 import { computeConsistency }                from '../utils/analyticsEngine';
+import { buildMacroPlan, macroWeekForDate }  from '../utils/plan/macroPlanner';
 
 import { buildWeekPlan }   from '../utils/trainingEngine';
 import type { WeekPlan }   from '../utils/trainingEngine';
@@ -45,6 +51,11 @@ export function useWeekPlan(): WeekPlan {
 
   const onboardingData = useOnboardingStore(s => s.data);
 
+  // ── Plan spine ────────────────────────────────────────────────────────────
+  const goalType         = useTrainingPlanStore(s => s.goalType);
+  const programStartDate = useTrainingPlanStore(s => s.programStartDate);
+  const races            = useTrainingPlanStore(s => s.races);
+
   // CRITICAL: separate selectors, never `s => ({ a: s.a, b: s.b })`.
   // That pattern creates a new object on every evaluation and causes
   // useSyncExternalStore's consistency check to loop infinitely.
@@ -54,7 +65,8 @@ export function useWeekPlan(): WeekPlan {
   const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
   const checkedIn    = todayCheckIn?.date === todayDateKey();
 
-  const strengthHistory = useStrengthStore(s => s.history);
+  const strengthHistory     = useStrengthStore(s => s.history);
+  const completedStrength   = useStrengthStore(s => s.completedSessions);
 
   const profile     = useProfileStore(s => s.getActiveProfile());
   const calibration = profile?.calibration ?? null;
@@ -97,6 +109,35 @@ export function useWeekPlan(): WeekPlan {
     [weeklySummaries],
   );
 
+  // ── Macro plan — date-anchored phase/week derivation ────────────────────
+  const todayKey = todayDateKey();
+
+  const macroPlan = useMemo(() => {
+    if (!programStartDate) return null;
+    return buildMacroPlan({
+      goalType,
+      startDate:     programStartDate,
+      races,
+      progressionLevel,
+      yearsRunning:  onboardingData.yearsRunning,
+      weeklyMileage: onboardingData.weeklyMileage,
+    });
+  }, [
+    goalType, programStartDate, races, progressionLevel,
+    onboardingData.yearsRunning, onboardingData.weeklyMileage,
+  ]);
+
+  const macroWeek = useMemo(() => {
+    if (!macroPlan) return null;
+    return macroWeekForDate(macroPlan, new Date());
+    // todayKey deliberately included so this recomputes once per day even
+    // though `new Date()` itself isn't a stable dependency.
+  }, [macroPlan, todayKey]);
+
+  // Strictly before the chosen start DATE — not just the start week's Sunday.
+  // A Wednesday start must show nothing on Sunday–Tuesday of that same week.
+  const beforeStart = !programStartDate || todayKey < programStartDate || !macroWeek;
+
   // ── Stable engine input — only recalculated when a real value changes ──
   const engineInput = useMemo(() => ({
     // Athlete state
@@ -107,6 +148,13 @@ export function useWeekPlan(): WeekPlan {
     currentWeek,
     trainingPhase,
     progressionLevel,
+
+    // Plan spine
+    goalType,
+    macroWeek,
+    beforeStart,
+    programStartDate,
+    races,
 
     // Physiological profile
     calibration,
@@ -137,20 +185,21 @@ export function useWeekPlan(): WeekPlan {
 
     // Completion keys
     completedWorkoutKeys:  completedWorkouts,
-    completedStrengthKeys: [] as string[],
+    completedStrengthKeys: completedStrength,
 
     // Strength history
     strengthHistory,
   }), [
     goalRace, weeklyMileage, fatigueScore, recoveryScore,
     currentWeek, trainingPhase, progressionLevel,
+    goalType, macroWeek, beforeStart, programStartDate, races,
     calibration, profile,
     onboardingData,
     checkedIn, todayCheckIn,
     acwrResult.acwr,
     recentIntensityDist, recentHardSessions,
     adherenceRate, consistencyScore, longRunConsistency,
-    completedWorkouts, strengthHistory,
+    completedWorkouts, strengthHistory, completedStrength,
   ]);
 
   // ── Build and return the plan — re-runs only when engineInput changes ──

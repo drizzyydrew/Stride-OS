@@ -102,6 +102,8 @@ export type StrengthSession = {
 
 // ─── Weekly strength plan ─────────────────────────────────────────────────────
 
+export type StrengthProgressionState = 'progress' | 'maintain' | 'regress';
+
 export type StrengthWeek = {
   sessions:         StrengthSession[];
   sessionDays:      number[];          // day indices (0=Mon) where sessions are scheduled
@@ -110,6 +112,13 @@ export type StrengthWeek = {
   phaseNote:        string;
   phaseRationale:   string;
   generatedAt:      number;
+
+  // Earned-progression decision (src/utils/strengthEngine.ts applyEarnedProgression).
+  // Programmed weights never auto-increase — this only reflects whether the
+  // athlete's recent execution has earned the RIGHT to push load higher next
+  // time they log a session (see suggestProgression in strengthHistory.ts).
+  progressionState:  StrengthProgressionState;
+  progressionReason: string;
 };
 
 // ─── Completed set ────────────────────────────────────────────────────────────
@@ -183,6 +192,9 @@ export type StrengthEngineInput = {
   availableTimeMin: number;         // max session duration in minutes (default 60)
   liftDays?:        import('./athlete').TrainingDay[];
   strengthHistory:  StrengthLogRecord[];
+  // Hybrid goal type: cap RPE on run-quality weeks so lifting doesn't compound
+  // with running-intensity fatigue.
+  hybridBalance?:   boolean;
 };
 
 // ─── Strength coach insight input ─────────────────────────────────────────────

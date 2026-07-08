@@ -396,6 +396,7 @@ const lo = StyleSheet.create({
 // ─── Main card ─────────────────────────────────────────────────────────────────
 
 const PHASE_LABEL_MAP: Record<TrainingPhase, string> = {
+  foundation: 'Foundation Phase Targets',
   base:   'Base Phase Targets',
   build:  'Build Phase Targets',
   peak:   'Peak Phase Targets',

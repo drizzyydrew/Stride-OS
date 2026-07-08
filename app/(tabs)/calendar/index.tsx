@@ -5,16 +5,27 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { LAYOUT } from '../../../src/constants/layout';
-import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useColors } from '../../../src/theme/useColors';
 
+import { useWeekPlan }      from '../../../src/hooks/useWeekPlan';
+import { usePlanTimeline }  from '../../../src/hooks/usePlanTimeline';
+import { useWorkoutStore }  from '../../../src/store/workoutStore';
+import { useStrengthStore } from '../../../src/store/strengthStore';
+import { useAthleteStore }  from '../../../src/store/athleteStore';
+
+import { addDays, toYMD }           from '../../../src/utils/calendarEngine';
+import type { CalendarEntry }       from '../../../src/utils/calendarEngine';
+import { getPhaseTypesForWeek }     from '../../../src/utils/workoutEngine';
+import { getPhaseSessionPreview, getSessionTypeTitle } from '../../../src/utils/strengthEngine';
+import { RICH_TYPE_LABEL }          from '../../../src/utils/trainingEngine';
+import type { RichWorkoutType }     from '../../../src/types/workout';
+import type { MacroWeek, Race }     from '../../../src/types/plan';
+
 type CalendarView = 'month' | 'week' | 'day';
-type SessionType = 'run' | 'long' | 'intervals' | 'strength' | 'rest';
 
 type CalendarCell = {
   date: Date | null;
-  key: string;
-  type: SessionType | null;
+  key:  string;
 };
 
 const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -22,12 +33,6 @@ const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 function startOfDay(date: Date): Date {
   const next = new Date(date);
   next.setHours(0, 0, 0, 0);
-  return next;
-}
-
-function addDays(date: Date, days: number): Date {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
   return next;
 }
 
@@ -39,35 +44,23 @@ function sameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-function getSessionType(date: Date): SessionType {
-  const day = date.getDay();
-  if (day === 0 || day === 3) return 'rest';
-  if (day === 1) return 'run';
-  if (day === 2) return 'intervals';
-  if (day === 4 || day === 5) return 'strength';
-  return 'long';
-}
-
 function buildMonthCells(monthDate: Date): CalendarCell[] {
-  const year = monthDate.getFullYear();
+  const year  = monthDate.getFullYear();
   const month = monthDate.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay     = new Date(year, month, 1);
+  const daysInMonth  = new Date(year, month + 1, 0).getDate();
   const cells: CalendarCell[] = [];
 
   for (let i = 0; i < firstDay.getDay(); i += 1) {
-    cells.push({ date: null, key: `blank-${i}`, type: null });
+    cells.push({ date: null, key: `blank-${i}` });
   }
-
   for (let day = 1; day <= daysInMonth; day += 1) {
     const date = new Date(year, month, day);
-    cells.push({ date, key: date.toISOString(), type: getSessionType(date) });
+    cells.push({ date, key: date.toISOString() });
   }
-
   while (cells.length % 7 !== 0) {
-    cells.push({ date: null, key: `blank-end-${cells.length}`, type: null });
+    cells.push({ date: null, key: `blank-end-${cells.length}` });
   }
-
   return cells;
 }
 
@@ -79,34 +72,153 @@ function formatDayTitle(date: Date): string {
   return date.toLocaleDateString('en-US', { weekday: 'long' });
 }
 
+function formatFriendlyDate(dateYMD: string): string {
+  const [y, m, d] = dateYMD.split('-').map(Number);
+  return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1)
+    .toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+// Mon-first template index (0=Mon…6=Sun) for a JS Date (0=Sun…6=Sat).
+function templateIndexFor(date: Date): number {
+  return (date.getDay() + 6) % 7;
+}
+
+function weekBadge(mw: MacroWeek | null): { label: string; kind: 'race' | 'taper' | 'deload' } | null {
+  if (!mw) return null;
+  if (mw.isRaceWeek) return { label: 'RACE WEEK', kind: 'race' };
+  if (mw.isTaper)    return { label: 'TAPER',     kind: 'taper' };
+  if (mw.isDeload)   return { label: 'DELOAD',    kind: 'deload' };
+  return null;
+}
+
 export default function CalendarScreen() {
   const C = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { units } = useSettingsStore();
-  const today = useMemo(() => startOfDay(new Date()), []);
+
+  const weekPlan  = useWeekPlan();
+  const timeline  = usePlanTimeline();
+  const workoutHistory  = useWorkoutStore(s => s.history);
+  const strengthHistory = useStrengthStore(s => s.history);
+  const progressionLevel = useAthleteStore(s => s.progressionLevel);
+
+  const today    = useMemo(() => startOfDay(new Date()), []);
+  const todayYMD = useMemo(() => toYMD(today), [today]);
+
   const [view, setView] = useState<CalendarView>('week');
   const [selectedDate, setSelectedDate] = useState(today);
   const [displayedMonth, setDisplayedMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-  const imp = units === 'imperial';
-  const easy4 = imp ? '4 mi' : '6.4 km';
-  const easy6 = imp ? '6 mi' : '9.7 km';
-  const long12 = imp ? '12 mi' : '19.3 km';
-  const paceUnit = imp ? '/mi' : '/km';
-  const weightUnit = imp ? 'lb' : 'kg';
-
-  const sessionColors: Record<SessionType, string> = {
-    run: C.primary,
-    long: C.positive,
-    intervals: C.warning,
-    strength: C.accent,
-    rest: 'transparent',
-  };
 
   const monthCells = useMemo(() => buildMonthCells(displayedMonth), [displayedMonth]);
-  const weekStart = startOfWeek(selectedDate);
-  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)), [weekStart.getTime()]);
-  const completedThisWeek = weekDays.filter(day => day < today).length;
+  const weekStart  = startOfWeek(selectedDate);
+  const weekDays   = useMemo(
+    () => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)),
+    [weekStart.getTime()],
+  );
+
+  // ── Real entries for any date ──────────────────────────────────────────────
+
+  function completedEntriesForDate(dateYMD: string): CalendarEntry[] {
+    const entries: CalendarEntry[] = [];
+    for (const r of workoutHistory) {
+      if (toYMD(new Date(r.timestamp)) === dateYMD && !r.skipped) {
+        entries.push({
+          date: dateYMD, type: 'run',
+          label: RICH_TYPE_LABEL[r.type as RichWorkoutType] ?? r.type.replace(/_/g, ' '),
+          color: C.primary, completed: true,
+        });
+      }
+    }
+    for (const r of strengthHistory) {
+      if (toYMD(new Date(r.timestamp)) === dateYMD) {
+        entries.push({
+          date: dateYMD, type: 'strength',
+          label: getSessionTypeTitle(r.sessionType),
+          color: C.accent, completed: !r.skipped, missed: r.skipped,
+        });
+      }
+    }
+    return entries;
+  }
+
+  function raceEntry(race: Race): CalendarEntry {
+    return { date: race.date, type: 'race', label: `Race Day: ${race.name}`, color: '#DCC0A7', completed: false };
+  }
+
+  function entriesForDate(date: Date): { entries: CalendarEntry[]; macroWeek: MacroWeek | null; beforeStart: boolean } {
+    const dateYMD = toYMD(date);
+
+    if (!timeline.programStartDate || dateYMD < timeline.programStartDate) {
+      return { entries: [], macroWeek: null, beforeStart: true };
+    }
+
+    const macroWeek = timeline.weekForDate(date);
+    const race = timeline.races.find(r => r.date === dateYMD);
+
+    if (!macroWeek) {
+      return { entries: race ? [raceEntry(race)] : [], macroWeek: null, beforeStart: false };
+    }
+
+    const isCurrentWeek = weekPlan.metadata.currentWeek > 0 && macroWeek.weekNumber === weekPlan.metadata.currentWeek;
+
+    // Current week is fully authoritative — whatever the real calendarMap says
+    // (including "nothing", i.e. a genuine rest day) is final. Never fall back
+    // to a template guess here, or a rest day could show a fabricated workout.
+    if (isCurrentWeek) {
+      return { entries: weekPlan.calendarMap.get(dateYMD) ?? [], macroWeek, beforeStart: false };
+    }
+
+    if (race) return { entries: [raceEntry(race)], macroWeek, beforeStart: false };
+
+    const logged = completedEntriesForDate(dateYMD);
+    if (logged.length > 0) return { entries: logged, macroWeek, beforeStart: false };
+
+    // Template preview — titles only, no rich generation.
+    const isPast = dateYMD < todayYMD;
+    const weekInBlock = ((macroWeek.weekNumber - 1) % 4) + 1;
+    const templateTypes = getPhaseTypesForWeek(macroWeek.phase, progressionLevel, weekInBlock);
+    const templateIdx = templateIndexFor(date);
+    const runType = templateTypes[templateIdx];
+
+    const entries: CalendarEntry[] = [];
+    if (runType && runType !== 'rest') {
+      entries.push({
+        date: dateYMD, type: 'run',
+        label: RICH_TYPE_LABEL[runType] ?? runType,
+        color: C.primary, completed: false, missed: isPast,
+      });
+    }
+    const strengthPreview = getPhaseSessionPreview(macroWeek.phase, progressionLevel);
+    if (strengthPreview.sessionDays.includes(templateIdx)) {
+      entries.push({
+        date: dateYMD, type: 'strength',
+        label: strengthPreview.title,
+        color: C.accent, completed: false, missed: isPast,
+      });
+    }
+
+    return { entries, macroWeek, beforeStart: false };
+  }
+
+  function rowState(date: Date, entries: CalendarEntry[], beforeStart: boolean): 'empty' | 'race' | 'completed' | 'missed' | 'today' | 'rest' | 'upcoming' {
+    if (beforeStart) return 'empty';
+    if (entries.some(e => e.type === 'race')) return 'race';
+    if (sameDay(date, today)) return 'today';
+    if (entries.length === 0) return 'rest';
+    if (entries.some(e => e.missed)) return 'missed';
+    if (entries.every(e => e.completed)) return 'completed';
+    return toYMD(date) < todayYMD ? 'missed' : 'upcoming';
+  }
+
+  const STATE_COLOR: Record<string, string> = {
+    empty:     C.textMuted,
+    race:      '#DCC0A7',
+    completed: C.positive,
+    missed:    C.critical,
+    today:     C.primary,
+    rest:      C.textMuted,
+    upcoming:  C.textDim,
+  };
 
   function changePeriod(direction: -1 | 1) {
     if (view === 'month') {
@@ -116,7 +228,6 @@ export default function CalendarScreen() {
       setSelectedDate(new Date(next.getFullYear(), next.getMonth(), Math.min(selectedDate.getDate(), 28)));
       return;
     }
-
     const offset = view === 'week' ? direction * 7 : direction;
     const next = addDays(selectedDate, offset);
     setSelectedDate(next);
@@ -154,7 +265,9 @@ export default function CalendarScreen() {
           {monthCells.map(cell => {
             const isToday = cell.date ? sameDay(cell.date, today) : false;
             const isSelected = cell.date ? sameDay(cell.date, selectedDate) : false;
-            const dotColor = cell.type ? sessionColors[cell.type] : 'transparent';
+            const info = cell.date ? entriesForDate(cell.date) : null;
+            const state = cell.date ? rowState(cell.date, info!.entries, info!.beforeStart) : 'empty';
+            const dotColor = cell.date && info!.entries.length > 0 ? STATE_COLOR[state] : 'transparent';
             return (
               <TouchableOpacity
                 key={cell.key}
@@ -183,10 +296,11 @@ export default function CalendarScreen() {
         </View>
         <View style={[styles.legendRow, { borderTopColor: C.border }]}>
           {[
-            ['Run', C.primary],
-            ['Long Run', C.positive],
-            ['Intervals', C.warning],
-            ['Strength', C.accent],
+            ['Upcoming', C.textDim],
+            ['Completed', C.positive],
+            ['Missed', C.critical],
+            ['Race', '#DCC0A7'],
+            ['Deload/Taper', C.warning],
           ].map(([label, color]) => (
             <View key={label} style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: color }]} />
@@ -200,150 +314,151 @@ export default function CalendarScreen() {
 
   function renderWeekView() {
     const weekItems = weekDays.map(day => {
-      const type = getSessionType(day);
-      const isToday = sameDay(day, today);
-      const isPast = day < today;
-      const titleByType: Record<SessionType, string> = {
-        run: `Easy ${easy4}`,
-        long: `Long Run ${long12}`,
-        intervals: 'Intervals 8x400m',
-        strength: day.getDay() === 4 ? `Easy ${easy6}` : 'Easy & Strides',
-        rest: 'Rest & Recovery',
-      };
-      const zoneByType: Record<SessionType, string> = {
-        run: 'Zone 2',
-        long: 'Zone 2',
-        intervals: 'Zone 4',
-        strength: day.getDay() === 4 ? 'Zone 2' : 'Zone 3',
-        rest: '',
-      };
-
-      return { day, type, isToday, isPast, title: titleByType[type], zone: zoneByType[type] };
+      const info  = entriesForDate(day);
+      const state = rowState(day, info.entries, info.beforeStart);
+      const title = info.beforeStart
+        ? 'Not started yet'
+        : info.entries.length > 0
+          ? info.entries.map(e => e.label).join('  +  ')
+          : 'Rest';
+      return { day, info, state, title };
     });
+
+    const completedCount = weekItems.filter(i => i.state === 'completed').length;
+    const totalPlanned   = weekItems.filter(i => i.info.entries.length > 0).length;
+    const badge = weekBadge(weekItems.find(i => i.info.macroWeek)?.info.macroWeek ?? null);
+    const focus = weekItems.find(i => i.info.macroWeek)?.info.macroWeek?.focus;
 
     return (
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <View style={styles.weekList}>
-          {weekItems.map(item => (
-            <TouchableOpacity
-              key={item.day.toISOString()}
-              style={[
-                styles.weekItem,
-                {
-                  backgroundColor: item.isToday ? C.primaryDim : C.cardAlt,
-                  borderColor: item.isToday ? C.primary : 'transparent',
-                  opacity: item.day > today && !item.isToday ? 0.65 : 1,
-                },
-              ]}
-              onPress={() => selectDate(item.day)}
-              activeOpacity={0.75}
-            >
-              <Text style={[styles.weekDay, { color: item.isToday ? C.primary : item.isPast ? C.positive : C.textDim }]}>
-                {item.day.toLocaleDateString('en-US', { weekday: 'short' })}
-              </Text>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.weekTitle, { color: C.text }]}>{item.title}{item.isToday ? ' · Today' : ''}</Text>
-                {item.zone ? <Text style={[styles.weekZone, { color: C.textMuted }]}>{item.zone}</Text> : null}
+        {focus ? (
+          <View style={styles.weekFocusRow}>
+            <Text style={[styles.weekFocusText, { color: C.textMuted }]}>{focus}</Text>
+            {badge ? (
+              <View style={[styles.badge, { backgroundColor: badgeBg(badge.kind, C), borderColor: badgeFg(badge.kind, C) }]}>
+                <Text style={[styles.badgeText, { color: badgeFg(badge.kind, C) }]}>{badge.label}</Text>
               </View>
-              {item.isToday ? (
-                <View style={[styles.todayBadge, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
-                  <Text style={[styles.todayBadgeText, { color: C.primary }]}>TODAY</Text>
-                </View>
-              ) : item.isPast ? (
-                <Text style={[styles.doneText, { color: C.positive }]}>Done</Text>
-              ) : null}
-            </TouchableOpacity>
-          ))}
-        </View>
-        <View style={[styles.weekProgress, { borderTopColor: C.border }]}>
-          <Text style={[styles.weekProgressText, { color: C.textMuted }]}>Weekly Progress · {completedThisWeek} / 7</Text>
-          <View style={[styles.progressTrack, { backgroundColor: C.border }]}>
-            <View style={[styles.progressFill, { backgroundColor: C.primary, width: `${Math.round((completedThisWeek / 7) * 100)}%` }]} />
+            ) : null}
           </View>
+        ) : null}
+
+        <View style={styles.weekList}>
+          {weekItems.map(item => {
+            const isToday = sameDay(item.day, today);
+            return (
+              <TouchableOpacity
+                key={item.day.toISOString()}
+                style={[
+                  styles.weekItem,
+                  {
+                    backgroundColor: isToday ? C.primaryDim : C.cardAlt,
+                    borderColor: isToday ? C.primary : 'transparent',
+                    opacity: item.info.beforeStart ? 0.55 : 1,
+                  },
+                ]}
+                onPress={() => selectDate(item.day)}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.weekDay, { color: STATE_COLOR[item.state] }]}>
+                  {item.day.toLocaleDateString('en-US', { weekday: 'short' })}
+                </Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.weekTitle, { color: C.text }]} numberOfLines={1}>
+                    {item.title}{isToday ? ' · Today' : ''}
+                  </Text>
+                </View>
+                {item.state === 'completed' ? (
+                  <Text style={[styles.doneText, { color: C.positive }]}>Done</Text>
+                ) : item.state === 'missed' ? (
+                  <Text style={[styles.doneText, { color: C.critical }]}>Missed</Text>
+                ) : item.state === 'race' ? (
+                  <Ionicons name="flag" size={16} color="#DCC0A7" />
+                ) : isToday ? (
+                  <View style={[styles.todayBadge, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
+                    <Text style={[styles.todayBadgeText, { color: C.primary }]}>TODAY</Text>
+                  </View>
+                ) : null}
+              </TouchableOpacity>
+            );
+          })}
         </View>
+
+        {totalPlanned > 0 ? (
+          <View style={[styles.weekProgress, { borderTopColor: C.border }]}>
+            <Text style={[styles.weekProgressText, { color: C.textMuted }]}>
+              Weekly Progress · {completedCount} / {totalPlanned}
+            </Text>
+            <View style={[styles.progressTrack, { backgroundColor: C.border }]}>
+              <View style={[styles.progressFill, { backgroundColor: C.primary, width: `${Math.round((completedCount / totalPlanned) * 100)}%` }]} />
+            </View>
+          </View>
+        ) : null}
       </View>
     );
   }
 
   function renderDayView() {
-    const isToday = sameDay(selectedDate, today);
-    const isPast = selectedDate < today && !isToday;
-    const isFuture = selectedDate > today && !isToday;
+    const isToday   = sameDay(selectedDate, today);
+    const isFuture  = toYMD(selectedDate) > todayYMD;
     const monthShort = selectedDate.toLocaleDateString('en-US', { month: 'short' });
+    const info  = entriesForDate(selectedDate);
+    const state = rowState(selectedDate, info.entries, info.beforeStart);
+    const isCurrentWeek = info.macroWeek && weekPlan.metadata.currentWeek > 0 && info.macroWeek.weekNumber === weekPlan.metadata.currentWeek;
 
     return (
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.dayMeta, { color: C.textDim }]}>{monthShort} {selectedDate.getDate()} · {selectedDate.getFullYear()}</Text>
         <Text style={[styles.dayTitle, { color: C.text }]}>{formatDayTitle(selectedDate)}</Text>
 
-        {isToday ? (
-          <>
-            <View style={styles.dayStatRow}>
-              {[
-                ['DISTANCE', easy6],
-                ['ZONE', 'Z2'],
-                ['MAX HR', '152'],
-              ].map(([label, value]) => (
-                <View key={label} style={[styles.dayStatBox, { backgroundColor: C.cardAlt }]}>
-                  <Text style={[styles.dayStatLabel, { color: C.textDim }]}>{label}</Text>
-                  <Text style={[styles.dayStatValue, { color: C.text }]}>{value}</Text>
-                </View>
-              ))}
+        {info.beforeStart ? (
+          <View style={[styles.summaryBox, { backgroundColor: C.cardAlt }]}>
+            <Text style={[styles.futureText, { color: C.textMuted }]}>
+              Your plan hasn't started yet{weekPlan.metadata.startsOn ? ` — it begins ${formatFriendlyDate(weekPlan.metadata.startsOn)}.` : '.'}
+            </Text>
+          </View>
+        ) : info.entries.length === 0 ? (
+          <View style={[styles.summaryBox, { backgroundColor: C.cardAlt }]}>
+            <Text style={[styles.futureText, { color: C.textMuted }]}>Rest day. No structured session planned.</Text>
+          </View>
+        ) : (
+          info.entries.map((entry, i) => (
+            <View key={`${entry.type}-${i}`} style={[styles.summaryBox, { backgroundColor: C.cardAlt }]}>
+              <Text style={[styles.summaryLabel, { color: C.textDim }]}>
+                {entry.type === 'race' ? 'RACE DAY' : entry.type === 'strength' ? 'STRENGTH' : 'RUN'}
+              </Text>
+              <Text style={[styles.dayEntryTitle, { color: C.text }]}>{entry.label}</Text>
+              {entry.workout ? (
+                <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>
+                  {(entry.workout as any).purpose ?? entry.workout.description}
+                </Text>
+              ) : null}
+              {entry.session ? (
+                <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>{entry.session.purpose}</Text>
+              ) : null}
+              <Text style={[styles.futureText, { color: entry.completed ? C.positive : entry.missed ? C.critical : C.textMuted, marginTop: 6, fontWeight: '700' }]}>
+                {entry.completed ? 'Completed' : entry.missed ? 'Missed' : isFuture ? 'Upcoming' : 'Planned'}
+              </Text>
             </View>
-            <View style={[styles.targetCard, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
-              <Text style={[styles.targetLabel, { color: C.text }]}>Target Pace</Text>
-              <Text style={[styles.targetPace, { color: C.text }]}>9'14"<Text style={[styles.targetUnit, { color: C.textMuted }]}> {paceUnit}</Text></Text>
-            </View>
-          </>
-        ) : null}
+          ))
+        )}
 
-        {isPast ? (
-          <>
-            <View style={[styles.summaryBox, { backgroundColor: C.cardAlt }]}>
-              <Text style={[styles.summaryLabel, { color: C.textDim }]}>SESSION SUMMARY</Text>
-              <View style={styles.summaryStats}>
-                <View>
-                  <Text style={[styles.summaryTiny, { color: C.textDim }]}>Duration</Text>
-                  <Text style={[styles.summaryValue, { color: C.text }]}>42 min</Text>
-                </View>
-                <View>
-                  <Text style={[styles.summaryTiny, { color: C.textDim }]}>Avg RPE</Text>
-                  <Text style={[styles.summaryValue, { color: C.text }]}>7.5</Text>
-                </View>
-                <View>
-                  <Text style={[styles.summaryTiny, { color: C.textDim }]}>Volume</Text>
-                  <Text style={[styles.summaryValue, { color: C.text }]}>3,840 {weightUnit}</Text>
-                </View>
-              </View>
-            </View>
-            <Text style={[styles.exerciseLabel, { color: C.textDim }]}>EXERCISES LOGGED</Text>
-            {[
-              ['Goblet Squat', '3x12 · RPE 7'],
-              ['Squat', '4x8 · RPE 8'],
-              ['Romanian Deadlift', '3x10 · RPE 7'],
-              ['Push-up', '3x15 · RPE 6'],
-            ].map(([name, detail]) => (
-              <View key={name} style={[styles.exerciseRow, { backgroundColor: C.cardAlt }]}>
-                <Text style={[styles.exerciseName, { color: C.text }]}>{name}</Text>
-                <Text style={[styles.exerciseDetail, { color: C.textMuted }]}>{detail}</Text>
-              </View>
+        {isCurrentWeek && weekPlan.adaptations.length > 0 ? (
+          <View style={[styles.summaryBox, { backgroundColor: C.cardAlt }]}>
+            <Text style={[styles.summaryLabel, { color: C.textDim }]}>THIS WEEK'S ADAPTATIONS</Text>
+            {weekPlan.adaptations.map((note, i) => (
+              <Text key={i} style={[styles.futureText, { color: C.textMuted, marginTop: i === 0 ? 0 : 4 }]}>{note}</Text>
             ))}
-          </>
+          </View>
         ) : null}
 
-        {isFuture ? (
-          <>
-            <View style={[styles.summaryBox, { backgroundColor: C.cardAlt }]}>
-              <Text style={[styles.futureText, { color: C.textMuted }]}>Upcoming - tap Start when ready to begin this session.</Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.startButton, { backgroundColor: C.primary }]}
-              onPress={() => router.push('/(tabs)/strength')}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.startButtonText, { color: C.onPrimary }]}>Start This Workout →</Text>
-            </TouchableOpacity>
-          </>
+        {!info.beforeStart && info.entries.some(e => !e.completed && e.type !== 'race') && (isToday || (isFuture && isCurrentWeek)) ? (
+          <TouchableOpacity
+            style={[styles.startButton, { backgroundColor: C.primary }]}
+            onPress={() => router.push(info.entries.some(e => e.type === 'strength') && !info.entries.some(e => e.type === 'run') ? '/(tabs)/strength' : '/(tabs)/training')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.startButtonText, { color: C.onPrimary }]}>{isToday ? "Go to Today's Session →" : 'Preview Session →'}</Text>
+          </TouchableOpacity>
         ) : null}
       </View>
     );
@@ -392,6 +507,17 @@ export default function CalendarScreen() {
       {view === 'day' ? renderDayView() : null}
     </ScrollView>
   );
+}
+
+function badgeBg(kind: 'race' | 'taper' | 'deload', C: ReturnType<typeof useColors>): string {
+  if (kind === 'race') return 'rgba(220,192,167,0.18)';
+  if (kind === 'taper') return C.warningDim;
+  return C.positiveDim;
+}
+function badgeFg(kind: 'race' | 'taper' | 'deload', C: ReturnType<typeof useColors>): string {
+  if (kind === 'race') return '#DCC0A7';
+  if (kind === 'taper') return C.warning;
+  return C.positive;
 }
 
 const styles = StyleSheet.create({
@@ -515,6 +641,29 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 10,
   },
+  weekFocusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 10,
+  },
+  weekFocusText: {
+    fontSize: 12,
+    flex: 1,
+    lineHeight: 17,
+  },
+  badge: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
   weekList: {
     gap: 6,
   },
@@ -535,10 +684,6 @@ const styles = StyleSheet.create({
   weekTitle: {
     fontSize: 13,
     fontWeight: '700',
-  },
-  weekZone: {
-    fontSize: 11,
-    marginTop: 2,
   },
   doneText: {
     fontSize: 11,
@@ -584,43 +729,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 12,
   },
-  dayStatRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  dayStatBox: {
-    flex: 1,
-    borderRadius: 10,
-    padding: 10,
-    alignItems: 'center',
-  },
-  dayStatLabel: {
-    fontSize: 10,
-    marginBottom: 3,
-  },
-  dayStatValue: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  targetCard: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-  },
-  targetLabel: {
-    fontSize: 12,
+  dayEntryTitle: {
+    fontSize: 15,
     fontWeight: '700',
-    marginBottom: 2,
-  },
-  targetPace: {
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  targetUnit: {
-    fontSize: 13,
-    fontWeight: '400',
   },
   summaryBox: {
     borderRadius: 10,
@@ -633,38 +744,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.6,
     marginBottom: 6,
-  },
-  summaryStats: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  summaryTiny: {
-    fontSize: 10,
-  },
-  summaryValue: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  exerciseLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-    marginBottom: 6,
-  },
-  exerciseRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginBottom: 5,
-  },
-  exerciseName: {
-    fontSize: 12,
-  },
-  exerciseDetail: {
-    fontSize: 11,
   },
   futureText: {
     fontSize: 11,

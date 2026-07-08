@@ -251,6 +251,46 @@ function buildEasyRun(ctx: BuildContext): BuiltWorkout {
   };
 }
 
+function buildRunWalk(ctx: BuildContext): BuiltWorkout {
+  const { paceCtx, mileage, multiplier, calibration } = ctx;
+  const pace = paceCtx.recovery;
+  const dur  = Math.max(25, Math.min(35, Math.round((25 + mileage * 0.3) * Math.max(0.6, multiplier))));
+  const dist = mileage * 0.10;
+
+  const rationale: PhysiologicalRationale = {
+    adaptation:   'Aerobic capacity + connective-tissue adaptation with low injury risk',
+    mechanism:    'Alternating jogging and walking keeps heart rate in an aerobic range while limiting continuous impact load on tendons, bones, and joints that haven\'t yet adapted to running. This builds the cardiovascular base and musculoskeletal durability new runners need before continuous running volume increases.',
+    timeframe:    '3–6 weeks of consistent run/walk practice before continuous running feels easy',
+    scienceBasis: 'Galloway (1974) run-walk method; Fokkema et al. (2014) novice runner injury prevention',
+  };
+
+  return {
+    ...base('run_walk', 'run_walk', 'recovery', 'very_easy', 'aerobic_power',
+      'Run/Walk Intervals',
+      'Alternate 2 min easy jogging with 1 min walking. Walk breaks are completely fine — today is about building consistency and aerobic capacity, not speed.',
+      pace, 2, [3, 5], dur, dist, ctx),
+    warmup:  seg('Warmup', '5 min', 'Walk', 1, [1, 2], 'Start with a 5 min brisk walk to ease into the session.'),
+    mainSet: [seg('Run/Walk', `${Math.max(15, dur - 10)} min`, fmtRange(pace), 2, [3, 5], 'Jog easy for 2 min, then walk for 1 min. Repeat for the full session — every walk break is part of the plan, not a setback.')],
+    cooldown: seg('Cooldown', '5 min', 'Walk', 1, [1, 2], '5 min walk, then a few gentle calf and hip stretches.'),
+    purpose: 'Build the aerobic engine and running habit gradually — walk breaks let your body adapt safely while you build real, lasting consistency.',
+    instructions: [
+      'Jog at a pace where you could hold a full conversation.',
+      'Walk breaks are not a failure — they\'re how the plan protects your joints and tendons while you build fitness.',
+      'Aim for the same easy effort on both the jog and walk segments — this is about time on feet, not intensity.',
+      'It is completely normal for this to feel easy. That is exactly the point right now.',
+    ],
+    executionCues: ['Every walk break counts as training.', 'Relaxed shoulders, easy breathing.', 'Consistency beats speed at this stage.'],
+    failureConditions: ['Any joint pain (not general fatigue) → stop and walk the rest.', 'Breathing becomes labored → slow down or extend the walk segment.'],
+    modifications: [
+      { condition: 'Feeling great and want to run more', action: 'Stick to the plan — the walk breaks are building durability for the next phase, not holding you back.' },
+      { condition: 'Struggling to complete the jog segments', action: 'Extend walk breaks to 90 sec and shorten jogs to 90 sec — same total time, more walking.' },
+    ],
+    rationale,
+    score: scoreWorkout('very_easy', dur, multiplier, false, calibration !== null),
+    progressionNote: 'Building block: consistency first. Jog segments lengthen gradually as this becomes comfortable.',
+  };
+}
+
 function buildRecoveryRun(ctx: BuildContext): BuiltWorkout {
   const { paceCtx, mileage, multiplier, calibration } = ctx;
   const pace = paceCtx.recovery;
@@ -975,6 +1015,7 @@ export function buildRichWorkout(
   const builders: Record<RichWorkoutType, (ctx: BuildContext) => BuiltWorkout> = {
     easy_run:        buildEasyRun,
     recovery_run:    buildRecoveryRun,
+    run_walk:        buildRunWalk,
     long_run:        buildLongRun,
     progression_run: buildProgressionRun,
     threshold:       buildThreshold,

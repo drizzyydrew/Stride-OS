@@ -35,6 +35,7 @@ export function getMesocyclePosition(currentWeek: number, phase: TrainingPhase):
 // Seiler (2010): 80/20 polarized distribution — base skews easier, peak skews harder.
 // Deload: near-pure aerobic/recovery. Taper: maintain neuromuscular sharpness.
 const INTENSITY_TARGETS: Record<TrainingPhase, IntensityTargets> = {
+  foundation: { easy: 1.00, moderate: 0.00, hard: 0.00 },
   base:   { easy: 0.85, moderate: 0.00, hard: 0.15 },
   build:  { easy: 0.80, moderate: 0.05, hard: 0.15 },
   peak:   { easy: 0.75, moderate: 0.05, hard: 0.20 },
@@ -51,6 +52,7 @@ export function getIntensityTargets(phase: TrainingPhase): IntensityTargets {
 // Jack Daniels (2005): long run ≤ 30% of weekly mileage or 2.5h (whichever is shorter).
 // Absolute caps by race distance ensure specificity without excessive loading.
 const LONG_RUN_PCT: Record<TrainingPhase, [number, number]> = {
+  foundation: [0.20, 0.25],
   base:   [0.24, 0.30],
   build:  [0.27, 0.33],
   peak:   [0.30, 0.35],
@@ -244,6 +246,11 @@ export function getPhaseIntegrityFlags(
 // ─── Phase Rationale ──────────────────────────────────────────────────────────
 
 const PHASE_RATIONALE: Record<TrainingPhase, Omit<PhaseRationale, 'keyFocus'>> = {
+  foundation: {
+    whyThisPhase:     'Foundation phase builds the running habit from zero. Run/walk intervals let tendons, bones, and the cardiovascular system adapt gradually before any continuous running volume or intensity is introduced.',
+    adaptationTarget: 'Basic aerobic capacity, musculoskeletal adaptation to impact, and a consistent training habit — the prerequisites for everything that follows.',
+    successCriteria:  'Sessions feel manageable and repeatable. No new aches or pains. Walk breaks feel like part of the plan, not a setback.',
+  },
   base: {
     whyThisPhase:     'The base phase lays the aerobic foundation. Easy, high-volume running builds mitochondrial density and capillary networks in slow-twitch muscle fibers.',
     adaptationTarget: 'Aerobic base development, fat oxidation efficiency, musculoskeletal durability, and movement economy at easy paces.',
@@ -272,6 +279,7 @@ const PHASE_RATIONALE: Record<TrainingPhase, Omit<PhaseRationale, 'keyFocus'>> =
 };
 
 const PHASE_KEY_FOCUS: Record<TrainingPhase, string> = {
+  foundation: 'Show up consistently. Walk breaks are part of the plan — the goal is building the habit, not speed.',
   base:   'Build your long run and keep the vast majority of miles genuinely easy — conversational pace throughout.',
   build:  'Execute threshold and quality sessions precisely; protect recovery days to absorb the adaptation.',
   peak:   'Hit the peak long run and key race-pace workouts. This is the hardest week of the plan — trust the process.',
@@ -290,6 +298,7 @@ export function getPhaseRationale(phase: TrainingPhase): PhaseRationale {
 
 // Rough TSS estimate: miles × intensity factor × 10
 const INTENSITY_LOAD_FACTOR: Record<TrainingPhase, number> = {
+  foundation: 4.0,
   base:   6.5,
   build:  8.5,
   peak:   9.5,

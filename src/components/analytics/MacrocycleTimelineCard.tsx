@@ -24,6 +24,8 @@ type Props = {
 
 function phaseColor(phase: TrainingPhase): string {
   switch (phase) {
+    case 'foundation':
+      return colors.chartSeriesPrimary;
     case 'base':
       return colors.chartSeriesPrimary;
     case 'build':
@@ -39,6 +41,8 @@ function phaseColor(phase: TrainingPhase): string {
 
 function phaseBackground(phase: TrainingPhase): string {
   switch (phase) {
+    case 'foundation':
+      return colors.primaryDim;
     case 'base':
       return colors.primaryDim;
     case 'build':
@@ -53,6 +57,7 @@ function phaseBackground(phase: TrainingPhase): string {
 }
 
 const PHASE_LABEL: Record<TrainingPhase, string> = {
+  foundation: 'FDN',
   base:   'BASE',
   build:  'BUILD',
   peak:   'PEAK',
@@ -63,6 +68,7 @@ const PHASE_LABEL: Record<TrainingPhase, string> = {
 // ─── Key workout by phase ──────────────────────────────────────────────────────
 
 const PHASE_KEY_WORKOUT: Record<TrainingPhase, string> = {
+  foundation: 'Run/Walk Intervals',
   base:   'Aerobic Base Run',
   build:  'Tempo / Threshold',
   peak:   'VO₂max Intervals',
@@ -73,6 +79,7 @@ const PHASE_KEY_WORKOUT: Record<TrainingPhase, string> = {
 // ─── Run session counts by phase ──────────────────────────────────────────────
 
 const PHASE_RUN_SESSIONS: Record<TrainingPhase, number> = {
+  foundation: 3,
   base:   4,
   build:  5,
   peak:   5,

@@ -14,12 +14,13 @@ import type { TrainingDay }     from '../types/athlete';
 
 export type CalendarEntry = {
   date:       string;       // "YYYY-MM-DD"
-  type:       'run' | 'strength' | 'rest' | 'custom';
+  type:       'run' | 'strength' | 'rest' | 'custom' | 'race';
   label:      string;
   color:      string;
   workout?:   Workout;
   session?:   StrengthSession;
   completed:  boolean;
+  missed?:    boolean;      // set by reconcileMissedSessions for past, incomplete entries
 };
 
 export type DayPlan = {
@@ -37,6 +38,16 @@ const DOW_TO_IDX: Record<TrainingDay, number> = {
 
 export function toYMD(d: Date): string {
   return d.toISOString().split('T')[0]!;
+}
+
+// Parses a "YYYY-MM-DD" string as a LOCAL midnight Date (avoids the UTC-shift
+// pitfall of `new Date("YYYY-MM-DD")`, which parses as UTC).
+export function parseYMD(s: string): Date {
+  const parts = s.split('-').map(Number);
+  const y = parts[0] ?? 1970;
+  const m = parts[1] ?? 1;
+  const d = parts[2] ?? 1;
+  return new Date(y, m - 1, d);
 }
 
 export function sundayOf(d: Date): Date {

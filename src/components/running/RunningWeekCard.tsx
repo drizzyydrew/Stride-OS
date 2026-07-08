@@ -33,6 +33,7 @@ export type RunningWeekCardProps = {
 // ─── Phase config ────────────────────────────────────────────────────────────
 
 const PHASE_BADGE: Record<TrainingPhase, { bg: string; text: string; label: string }> = {
+  foundation: { bg: colors.primaryDim, text: colors.primary, label: 'FOUNDATION' },
   base:   { bg: colors.primaryDim,  text: colors.primary,  label: 'BASE'   },
   build:  { bg: colors.accentDim,   text: colors.accent,   label: 'BUILD'  },
   peak:   { bg: colors.warningDim,  text: colors.warning,  label: 'PEAK'   },
