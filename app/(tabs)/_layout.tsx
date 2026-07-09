@@ -122,7 +122,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="profile/index" options={{ href: null }} />
       <Tabs.Screen name="profile/calibration" options={{ href: null }} />
       <Tabs.Screen name="profile/availability" options={{ href: null }} />
-      <Tabs.Screen name="settings/index" options={{ href: null }} />
+      <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="movement" options={{ href: null }} />
       <Tabs.Screen name="activity-log/index" options={{ href: null }} />
       <Tabs.Screen name="activity-log/[entryId]" options={{ href: null }} />

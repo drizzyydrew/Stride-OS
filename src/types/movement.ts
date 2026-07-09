@@ -355,4 +355,78 @@ export type MovementAnalysis = {
   limitations: string[];
   linkedWorkoutId?: string; linkedRunId?: string;
   status: 'draft' | 'complete' | 'needs_review';
+
+  // ── Movement Lab V2 — video sequence analysis (all optional, see below) ────
+  poseSequenceUri?:     string;             // full frame-by-frame landmarks file (see poseSequenceStorage)
+  angleSeries?:         AngleSeries[];      // smoothed + downsampled, inline
+  keyFrames?:           KeyFrameRecord[];   // inline landmarks so detail screens work offline
+  repSummaries?:        RepSummary[];       // strength kinds only
+  symmetryEstimates?:   SequenceSymmetryEstimate[]; // gait kinds only
+  sequenceConfidence?:  AnalysisConfidence;
+  sequenceLimitations?: string[];
+  analyzedDurationMs?:  number;
+  videoDurationMs?:     number;
+};
+
+// ─── Movement Lab V2 — video sequence analysis ────────────────────────────────
+//
+// Frame-by-frame joint-angle tracking over a full recorded video clip, built
+// on top of the same 2D Apple Vision landmarks as V1.5. Same honesty rules:
+// a missing angle means the contributing landmarks weren't confidently
+// detected that frame — never interpolated/guessed silently (see
+// src/utils/poseSequence.ts). Full per-frame raw landmarks are file-backed
+// (movement-pose/<analysisId>.json); only smoothed/downsampled series and
+// key frames are kept inline on MovementAnalysis so persisted state (and
+// AsyncStorage rehydrate) stays small.
+
+/** One sample in an angle-over-time series. `degrees: null` is an honest gap — the
+ *  contributing landmarks weren't confidently detected in that frame, never guessed. */
+export type AngleSeriesPoint = {
+  timeMs:     number;
+  degrees:    number | null;
+  confidence: number;   // 0 when degrees is null
+};
+
+export type AngleSeries = {
+  name:   string;                          // e.g. "Knee flexion"
+  joint:  string;                          // e.g. "knee"
+  side:   'left' | 'right' | 'center';
+  points: AngleSeriesPoint[];
+};
+
+/** A single labeled moment in the clip, with an inline landmark/angle snapshot
+ *  so the Key Frames tab and skeleton overlay work without loading the full
+ *  per-frame pose file. */
+export type KeyFrameRecord = {
+  id:         string;
+  label:      string;    // e.g. "Setup", "Deepest position", "Estimated contact (approximate) — left"
+  timeMs:     number;
+  landmarks?: PoseLandmarkRecord[];
+  angles?:    EstimatedAngle[];
+};
+
+/** One detected rep for strength kinds (squat / deadlift / lunge_single_leg).
+ *  Rep segmentation is threshold-crossing on smoothed knee-flexion — an
+ *  estimate, not a force-plate or barbell-tracking measurement. */
+export type RepSummary = {
+  index:              number;   // 0-based
+  startMs:            number;
+  bottomMs:           number;
+  endMs:              number;
+  durationMs:         number;
+  peakFlexionDeg:     number;
+  hipAngleAtBottom?:   number;
+  trunkAngleAtBottom?: number;
+};
+
+/** Left vs right comparison over the clip (gait kinds). Differences under
+ *  ~10-15% are described as within measurement noise for 2D single-camera
+ *  video, never presented as a clinical asymmetry finding. */
+export type SequenceSymmetryEstimate = {
+  metric:      string;    // e.g. "Knee flexion range"
+  leftValue:   number;
+  rightValue:  number;
+  ratio:       number;    // smaller / larger, 0..1
+  withinNoise: boolean;
+  note:        string;
 };

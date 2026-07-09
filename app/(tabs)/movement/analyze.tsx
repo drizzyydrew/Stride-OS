@@ -24,10 +24,11 @@ import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import { detectPose, isPoseEstimationAvailable } from 'stride-pose';
+import { detectPose, detectPoseSequence, isPoseEstimationAvailable } from 'stride-pose';
 
 import { useMovementStore } from '../../../src/store/movementStore';
 import { copyAnalysisMediaToStorage } from '../../../src/lib/movementVideoStorage';
+import { savePoseSequence } from '../../../src/lib/poseSequenceStorage';
 import {
   ANALYSIS_CHECKLISTS,
   ANALYSIS_KIND_INFO,
@@ -39,6 +40,7 @@ import {
   buildAnalysisRecommendations,
 } from '../../../src/utils/movementEngine';
 import { classifyPoseConfidence, computeEstimatedAngles } from '../../../src/utils/poseAngles';
+import { analyzeSequence } from '../../../src/utils/poseSequence';
 import PoseOverlay from '../../../src/components/assessment/PoseOverlay';
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
@@ -135,7 +137,8 @@ export default function AnalyzeScreen() {
 
   const info      = ANALYSIS_KIND_INFO[kind];
   const checklist = ANALYSIS_CHECKLISTS[kind];
-  const addAnalysis = useMovementStore(s => s.addAnalysis);
+  const addAnalysis    = useMovementStore(s => s.addAnalysis);
+  const updateAnalysis = useMovementStore(s => s.updateAnalysis);
 
   const [setupOpen, setSetupOpen] = useState(false);
 
@@ -155,6 +158,9 @@ export default function AnalyzeScreen() {
   const [notes,      setNotes]      = useState('');
   const [confidenceOverride, setConfidenceOverride] = useState<AnalysisConfidence | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const [analyzingVideo, setAnalyzingVideo] = useState(false);
+  const [seqProgress, setSeqProgress] = useState<{ processed: number; total: number } | null>(null);
 
   const videoPlayer = useVideoPlayer(media?.type === 'video' ? media.uri : null);
 
@@ -284,6 +290,77 @@ export default function AnalyzeScreen() {
       }
     } finally {
       setDetecting(false);
+    }
+  }
+
+  // ── Full video sequence analysis (beta) ─────────────────────────────────────
+  //
+  // Analyzes every sampled frame of the clip (instead of a single extracted
+  // still): joint-angle series over time, key moments, reps, and symmetry.
+  // Saves the full per-frame result to disk and routes straight to the new
+  // video-analysis detail screen.
+
+  async function handleAnalyzeVideo() {
+    if (!media || media.type !== 'video' || analyzingVideo) return;
+    setAnalyzingVideo(true);
+    setSeqProgress({ processed: 0, total: 1 });
+    try {
+      let storedVideoUri = media.uri;
+      try {
+        storedVideoUri = await copyAnalysisMediaToStorage(media.uri, `analysis_${Date.now()}`);
+      } catch {
+        // keep original URI
+      }
+
+      const result = await detectPoseSequence(storedVideoUri, {
+        fps: 12,
+        maxDurationMs: 60_000,
+        onProgress: (processed, total) => setSeqProgress({ processed, total }),
+      });
+
+      if (!result || result.frames.length === 0) {
+        Alert.alert(
+          'Video analysis failed',
+          'Could not analyze this video on-device. Try a shorter or steadier clip, or use frame extraction instead.',
+        );
+        return;
+      }
+
+      const view = KIND_CAMERA_VIEW[kind];
+      const seq = analyzeSequence(result, kind, view);
+
+      const id = addAnalysis({
+        type:                kind,
+        mediaUri:            storedVideoUri,
+        mediaType:           'video',
+        cameraView:          view,
+        checklistFindings:   [],
+        confidence:          seq.confidence,
+        recommendations:     [],
+        limitations:         seq.limitations,
+        status:              seq.confidence === 'manual_review' ? 'needs_review' : 'complete',
+        angleSeries:         seq.angleSeries,
+        keyFrames:           seq.keyFrames,
+        repSummaries:        seq.repSummaries,
+        symmetryEstimates:   seq.symmetryEstimates,
+        sequenceConfidence:  seq.confidence,
+        sequenceLimitations: seq.limitations,
+        analyzedDurationMs:  result.analyzedMs,
+        videoDurationMs:     result.durationMs,
+      });
+
+      try {
+        const poseUri = await savePoseSequence(id, result);
+        updateAnalysis(id, { poseSequenceUri: poseUri });
+      } catch {
+        // Angle series / key frames are already saved inline — the skeleton
+        // overlay just won't be available for this analysis.
+      }
+
+      router.replace({ pathname: '/(tabs)/movement/video-analysis', params: { id } } as never);
+    } finally {
+      setAnalyzingVideo(false);
+      setSeqProgress(null);
     }
   }
 
@@ -461,6 +538,40 @@ export default function AnalyzeScreen() {
             {frame && !pose ? (
               <Image source={{ uri: frame.uri }} style={[s.photoPreview, { aspectRatio: frame.width / frame.height }]} resizeMode="cover" />
             ) : null}
+          </View>
+        )}
+
+        {/* Full video analysis (beta) */}
+        {media?.type === 'video' && poseAvailable && (
+          <View style={s.card}>
+            <Text style={s.cardLabel}>FULL VIDEO ANALYSIS · BETA</Text>
+            <Text style={s.helper}>
+              Tracks joint angles across the entire clip instead of one frame — angle-over-time
+              charts, key moments, and (for strength kinds) rep detection.
+            </Text>
+            {analyzingVideo ? (
+              <View style={{ gap: spacing.xs }}>
+                <View style={s.progressTrack}>
+                  <View
+                    style={[
+                      s.progressFill,
+                      { width: `${seqProgress ? Math.min(100, (seqProgress.processed / Math.max(1, seqProgress.total)) * 100) : 0}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={s.helper}>
+                  Analyzing frame {seqProgress?.processed ?? 0}{seqProgress?.total ? ` of ~${seqProgress.total}` : ''}…
+                </Text>
+              </View>
+            ) : (
+              <Pressable
+                style={[s.primaryBtn, (detecting || frameBusy !== null) && { opacity: 0.5 }]}
+                onPress={handleAnalyzeVideo}
+                disabled={detecting || frameBusy !== null}
+              >
+                <Text style={s.primaryBtnTxt}>Analyze Full Video (Beta)</Text>
+              </Pressable>
+            )}
           </View>
         )}
 
@@ -737,6 +848,17 @@ const s = StyleSheet.create({
   primaryBtnTxt: { color: colors.onPrimary, fontSize: FontSize.base, fontWeight: FontWeight.bold },
   btnRow:        { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   poseMessage:   { color: colors.warning, fontSize: FontSize.xs, lineHeight: 17 },
+  progressTrack: {
+    height:          6,
+    borderRadius:    3,
+    backgroundColor: colors.border,
+    overflow:        'hidden',
+  },
+  progressFill: {
+    height:          6,
+    borderRadius:    3,
+    backgroundColor: colors.primary,
+  },
   toggleRow:  { flexDirection: 'row', gap: spacing.lg },
   toggleItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   toggleLabel: { color: colors.textMuted, fontSize: FontSize.sm },

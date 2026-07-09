@@ -7,6 +7,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { deletePoseSequence } from '../lib/poseSequenceStorage';
+
 import type {
   MovementVideo,
   MovementAnalysisSession,
@@ -19,6 +21,7 @@ import type {
   MovementActivity,
   MovementAnalysis,
 } from '../types/movement';
+import type { ReadinessAssessment } from '../types/movementReadiness';
 
 // ─── Store shape ──────────────────────────────────────────────────────────────
 
@@ -26,11 +29,17 @@ type MovementStore = {
   videos:   MovementVideo[];
   sessions: MovementAnalysisSession[];   // one per videoId (lazy-created)
   analyses: MovementAnalysis[];          // V1.5 still-frame analyses
+  readinessAssessments: ReadinessAssessment[]; // Wave 2 — running/walking readiness
 
   // ── Still-frame analyses (V1.5) ───────────────────────────────────────────
   addAnalysis:    (a: Omit<MovementAnalysis, 'id' | 'createdAt' | 'updatedAt'>) => string;
   updateAnalysis: (id: string, patch: Partial<MovementAnalysis>) => void;
   removeAnalysis: (id: string) => void;
+
+  // ── Readiness assessments (Wave 2) ────────────────────────────────────────
+  addReadinessAssessment:    (a: Omit<ReadinessAssessment, 'id' | 'createdAt' | 'updatedAt'>) => string;
+  updateReadinessAssessment: (id: string, patch: Partial<ReadinessAssessment>) => void;
+  removeReadinessAssessment: (id: string) => void;
 
   // ── Video CRUD ────────────────────────────────────────────────────────────
   addVideo:    (video: Omit<MovementVideo, 'id' | 'createdAt'>) => string;
@@ -119,6 +128,7 @@ export const useMovementStore = create<MovementStore>()(
       videos:   [],
       sessions: [],
       analyses: [],
+      readinessAssessments: [],
 
       // ── Still-frame analyses (V1.5) ──────────────────────────────────────────
 
@@ -138,9 +148,38 @@ export const useMovementStore = create<MovementStore>()(
           ),
         })),
 
-      removeAnalysis: (id) =>
+      removeAnalysis: (id) => {
+        // Best-effort: the full frame-by-frame pose file (if any) lives
+        // outside the persisted store, so it never gets cleaned up on its
+        // own. Fire-and-forget — never blocks or throws into the caller.
+        const uri = get().analyses.find(a => a.id === id)?.poseSequenceUri;
+        if (uri) void deletePoseSequence(uri);
         set(state => ({
           analyses: state.analyses.filter(a => a.id !== id),
+        }));
+      },
+
+      // ── Readiness assessments (Wave 2) ───────────────────────────────────────
+
+      addReadinessAssessment: (a) => {
+        const id  = uid();
+        const now = nowMs();
+        set(state => ({
+          readinessAssessments: [...state.readinessAssessments, { ...a, id, createdAt: now, updatedAt: now }],
+        }));
+        return id;
+      },
+
+      updateReadinessAssessment: (id, patch) =>
+        set(state => ({
+          readinessAssessments: state.readinessAssessments.map(a =>
+            a.id === id ? { ...a, ...patch, id: a.id, createdAt: a.createdAt, updatedAt: nowMs() } : a,
+          ),
+        })),
+
+      removeReadinessAssessment: (id) =>
+        set(state => ({
+          readinessAssessments: state.readinessAssessments.filter(a => a.id !== id),
         })),
 
       // ── Video CRUD ──────────────────────────────────────────────────────────
@@ -347,12 +386,13 @@ export const useMovementStore = create<MovementStore>()(
 
       // ── Reset ───────────────────────────────────────────────────────────────
 
-      resetMovement: () => set({ videos: [], sessions: [], analyses: [] }),
+      resetMovement: () => set({ videos: [], sessions: [], analyses: [], readinessAssessments: [] }),
     }),
     {
       name:    'movement-store',
       storage: createJSONStorage(() => AsyncStorage),
-      // Older persisted stores predate `analyses` — default it to [] on rehydrate.
+      // Older persisted stores predate `analyses`/`readinessAssessments` —
+      // default them to [] on rehydrate.
       merge: (persisted, current) => {
         const state = persisted as Partial<MovementStore> | undefined;
         return {
@@ -361,6 +401,7 @@ export const useMovementStore = create<MovementStore>()(
           videos:   state?.videos   ?? current.videos,
           sessions: state?.sessions ?? current.sessions,
           analyses: state?.analyses ?? current.analyses,
+          readinessAssessments: state?.readinessAssessments ?? current.readinessAssessments,
         };
       },
     },

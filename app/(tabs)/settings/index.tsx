@@ -717,6 +717,24 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {/* Training Definitions */}
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}
+        activeOpacity={0.75}
+        onPress={() => router.push('/(tabs)/settings/training-definitions' as any)}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={[{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primaryDim }]}>
+            <Ionicons name="book-outline" size={18} color={C.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Training Definitions</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>What terms like "Strides" or "Zone 2" mean and how to do them</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+        </View>
+      </TouchableOpacity>
+
       {/* Training Plan */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>TRAINING PLAN</Text>

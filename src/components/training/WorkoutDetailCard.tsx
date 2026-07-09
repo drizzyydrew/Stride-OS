@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
+import InfoButton from '../shared/InfoButton';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
@@ -47,7 +48,10 @@ export default function WorkoutDetailCard({ workout }: Props) {
         </Text>
       </View>
 
-      <Text style={styles.title}>{workout.title}</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{workout.title}</Text>
+        {!isRest && <InfoButton term={workout.type} />}
+      </View>
       <Text style={styles.purpose}>{workout.purpose}</Text>
 
       {!isRest && (
@@ -124,11 +128,16 @@ const styles = StyleSheet.create({
     fontSize:   FontSize.xl,
     fontWeight: FontWeight.bold,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
   title: {
     color:        colors.text,
     fontSize:     24,
     fontWeight:   FontWeight.black,
-    marginBottom: 8,
   },
   purpose: {
     color:        colors.textMuted,

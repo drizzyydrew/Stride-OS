@@ -73,7 +73,7 @@ export const GAIT_FINDING_TEMPLATES: Record<string, GaitFindingTemplate> = {
   hip_drop_moderate: {
     finding:        'Moderate pelvic drop (contralateral hip drops >5cm)',
     severity:       'moderate',
-    implication:    'Significant hip abductor weakness. High risk for IT band syndrome, knee pain, and low back issues.',
+    implication:    'May reflect reduced hip abductor capacity, commonly associated with IT band, knee, and low back complaints — worth addressing.',
     drill:          'Single-leg deadlift, lateral band walks, Copenhagen plank',
     strengthFocus:  'Glute medius, hip abductors, core lateral stability',
     retestNote:     'Refilm every 4 weeks. Stop heavy load if pain increases.',
@@ -83,7 +83,7 @@ export const GAIT_FINDING_TEMPLATES: Record<string, GaitFindingTemplate> = {
   hip_drop_severe: {
     finding:        'Severe pelvic drop — clinical assessment recommended',
     severity:       'high',
-    implication:    'Significant functional deficit. High injury risk. May need clinical movement assessment.',
+    implication:    'A pronounced control finding worth addressing. Consider a clinical movement assessment for a precise evaluation.',
     drill:          'Regress to supported hip abductor exercises first',
     strengthFocus:  'Hip abductors, core, and proximal stability',
     retestNote:     'Consult sports physio before returning to high training load',
@@ -744,6 +744,13 @@ export type CoachHandoff = {
   recommendations:  MovementAnalysis['recommendations'];
   limitations:      string[];
   detectionQuality: 'good' | 'partial' | 'none';
+
+  // ── V2 — video sequence analysis (present only for mediaType 'video') ──────
+  sequenceConfidence?: MovementAnalysis['sequenceConfidence'];
+  repSummary?: { count: number; depthRangeDeg: [number, number]; consistencyDeg: number | undefined } | null;
+  symmetryNote?: string | null;
+  keyFrameLabels?: string[];
+  sequenceLimitations?: string[];
 };
 
 export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
@@ -753,6 +760,21 @@ export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
     const mean = landmarks.reduce((sum, l) => sum + l.confidence, 0) / landmarks.length;
     detectionQuality = mean >= 0.6 && landmarks.length >= 10 ? 'good' : 'partial';
   }
+
+  const isVideo = analysis.mediaType === 'video';
+  const reps = analysis.repSummaries ?? [];
+  const repSummary = isVideo && reps.length > 0
+    ? {
+        count: reps.length,
+        depthRangeDeg: [
+          Math.min(...reps.map(r => r.peakFlexionDeg)),
+          Math.max(...reps.map(r => r.peakFlexionDeg)),
+        ] as [number, number],
+        consistencyDeg: reps.length >= 2
+          ? Math.round((Math.max(...reps.map(r => r.peakFlexionDeg)) - Math.min(...reps.map(r => r.peakFlexionDeg))) * 10) / 10
+          : undefined,
+      }
+    : null;
 
   return {
     analysisType:      analysis.type,
@@ -769,5 +791,11 @@ export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
     recommendations:   analysis.recommendations,
     limitations:       analysis.limitations,
     detectionQuality,
+
+    sequenceConfidence:  isVideo ? analysis.sequenceConfidence : undefined,
+    repSummary,
+    symmetryNote:        isVideo ? (analysis.symmetryEstimates?.[0]?.note ?? null) : null,
+    keyFrameLabels:       isVideo ? (analysis.keyFrames ?? []).map(k => k.label) : undefined,
+    sequenceLimitations: isVideo ? analysis.sequenceLimitations : undefined,
   };
 }

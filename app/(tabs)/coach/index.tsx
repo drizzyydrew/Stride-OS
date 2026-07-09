@@ -17,7 +17,7 @@ import {
   View,
 } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -25,6 +25,8 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useMovementStore }   from '../../../src/store/movementStore';
+import { useMobilityStore, weeklyCompletionCount } from '../../../src/store/mobilityStore';
+import { getMobilityWorkout } from '../../../src/constants/mobilityBank';
 import { useAuthStore } from '../../../src/store/authStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
@@ -39,6 +41,8 @@ import type { RichWorkout } from '../../../src/types/workout';
 import { buildCoachingInput } from '../../../src/utils/coachingInputBuilder';
 import { buildCoachHandoff } from '../../../src/utils/movementEngine';
 import type { MovementAnalysis } from '../../../src/types/movement';
+import type { ReadinessAssessment } from '../../../src/types/movementReadiness';
+import type { MobilityCompletion } from '../../../src/types/mobility';
 import { generateCoachingOutput } from '../../../src/utils/coachEngine';
 import WeeklyCoachCard from '../../../src/components/coaching/WeeklyCoachCard';
 import CoachInsightsCard from '../../../src/components/coaching/CoachInsightsCard';
@@ -157,8 +161,9 @@ ${adaptLines}
 - ${todayLine}`;
 }
 
-// Recent Movement Lab still-frame analyses, serialized via the coach handoff
-// contract so the coach can discuss actual findings, not vague summaries.
+// Recent Movement Lab still-frame + video analyses, serialized via the coach
+// handoff contract so the coach can discuss actual findings, not vague
+// summaries. Capped to the last 3 analyses to keep the prompt compact.
 function buildMovementLabBlock(analyses: MovementAnalysis[]): string {
   const recent = analyses.slice(-3).reverse();
   if (recent.length === 0) return 'MOVEMENT LAB ANALYSES\nNone recorded yet.';
@@ -172,15 +177,74 @@ function buildMovementLabBlock(analyses: MovementAnalysis[]): string {
       ? h.checklistFindings.map(f => `${f.label}: ${f.value}${f.severity ? ` (${f.severity})` : ''}`).join('; ')
       : 'none recorded';
     const recs = h.recommendations.map(r => r.finding).join('; ') || 'none';
+
+    const videoExtra = h.mediaType === 'video'
+      ? [
+          `\n  Sequence confidence: ${h.sequenceConfidence?.replace(/_/g, ' ') ?? 'n/a'}.`,
+          h.repSummary
+            ? ` Reps: ${h.repSummary.count}, depth range ${Math.round(h.repSummary.depthRangeDeg[0])}–${Math.round(h.repSummary.depthRangeDeg[1])}°${h.repSummary.consistencyDeg !== undefined ? `, consistency spread ${h.repSummary.consistencyDeg}°` : ''}.`
+            : '',
+          h.symmetryNote ? `\n  Symmetry estimate: ${h.symmetryNote}` : '',
+          h.keyFrameLabels?.length ? `\n  Key frames: ${h.keyFrameLabels.slice(0, 6).join(', ')}` : '',
+          h.sequenceLimitations?.length ? `\n  Sequence limitations: ${h.sequenceLimitations.join(' ')}` : '',
+        ].join('')
+      : '';
+
     return `- ${shortDate(a.createdAt)} · ${h.analysisType.replace(/_/g, ' ')} (${h.cameraView.replace(/_/g, ' ')} view, ${h.mediaType.replace(/_/g, ' ')})
   Detection quality: ${h.detectionQuality}. Overall confidence: ${h.confidence.replace(/_/g, ' ')}.
   Estimated angles (camera-view estimates, not clinical measurements): ${angles}
   Checklist findings: ${findings}
-  Flagged: ${recs}${h.userNotes ? `\n  Athlete notes: ${h.userNotes}` : ''}`;
+  Flagged: ${recs}${h.userNotes ? `\n  Athlete notes: ${h.userNotes}` : ''}${videoExtra}`;
   });
 
   return `MOVEMENT LAB ANALYSES (most recent first — joint angles are estimates from photos/video frames, not clinical measurements)
 ${lines.join('\n')}`;
+}
+
+// Latest Running/Walking Readiness Assessment — summary only, never raw data.
+function buildReadinessBlock(assessment: ReadinessAssessment | undefined): string {
+  if (!assessment) return 'RUNNING/WALKING READINESS ASSESSMENT\nNone recorded yet.';
+
+  const domainLines = assessment.domainResults.map(d => {
+    const sides = d.leftValue !== undefined || d.rightValue !== undefined
+      ? ` (L ${d.leftValue ?? 'n/a'}${d.unit ?? ''} / R ${d.rightValue ?? 'n/a'}${d.unit ?? ''})`
+      : '';
+    return `  - ${d.domain.replace(/_/g, ' ')}: ${d.category.replace(/_/g, ' ')}${sides} — ${d.note}`;
+  });
+
+  const workoutTitles = assessment.recommendedMobilityWorkoutIds
+    .map(id => getMobilityWorkout(id)?.title)
+    .filter((t): t is string => Boolean(t));
+
+  return `RUNNING/WALKING READINESS ASSESSMENT (${shortDate(assessment.createdAt)}, focus: ${assessment.activityFocus})
+- Overall: ${assessment.overall.replace(/_/g, ' ')}
+- Pain reported: ${assessment.painReported ? 'Yes — consult-a-clinician messaging was shown to the athlete' : 'No'}
+- Domains:
+${domainLines.length ? domainLines.join('\n') : '  - none scored'}
+- Key findings: ${assessment.keyFindings.length ? assessment.keyFindings.join('; ') : 'none'}
+- Capture quality: ${assessment.captureQualitySummary}
+- Recommended mobility work: ${workoutTitles.length ? workoutTitles.join(', ') : 'none'}`;
+}
+
+// Mobility recommendations + recent completions (last 14 days, capped to 5 lines).
+function buildMobilityBlock(recommendedIds: string[], completions: MobilityCompletion[]): string {
+  const recTitles = recommendedIds
+    .map(id => getMobilityWorkout(id)?.title)
+    .filter((t): t is string => Boolean(t));
+
+  const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  const recent = completions
+    .filter(c => c.completedAt >= cutoff)
+    .sort((a, b) => b.completedAt - a.completedAt);
+  const recentLines = recent.slice(0, 5).map(c =>
+    `  - ${shortDate(c.completedAt)}: ${getMobilityWorkout(c.workoutId)?.title ?? c.workoutId}`,
+  );
+
+  return `MOBILITY
+- Recommended workouts: ${recTitles.length ? recTitles.join(', ') : 'none currently recommended'}
+- Completions in last 14 days: ${recent.length}
+${recentLines.length ? recentLines.join('\n') : '  - none'}
+- This week's completion count: ${weeklyCompletionCount(completions)}`;
 }
 
 function buildSystemPrompt(
@@ -188,6 +252,9 @@ function buildSystemPrompt(
   riskFlags:   ReturnType<typeof useMovementStore.getState>['getActiveRiskFlags'],
   trainingCtx: CoachTrainingContext,
   analyses:    MovementAnalysis[],
+  readinessAssessment: ReadinessAssessment | undefined,
+  mobilityRecommendedIds: string[],
+  mobilityCompletions: MobilityCompletion[],
 ): string {
   const flags   = riskFlags();
   const flagTxt = flags.length
@@ -216,6 +283,10 @@ ${flagTxt}
 
 ${buildMovementLabBlock(analyses)}
 
+${buildReadinessBlock(readinessAssessment)}
+
+${buildMobilityBlock(mobilityRecommendedIds, mobilityCompletions)}
+
 ${buildTrainingPlanBlock(trainingCtx)}
 
 ${buildTrainingContextBlock(trainingCtx)}
@@ -229,6 +300,7 @@ INSTRUCTIONS
 - When giving training, recovery, or injury-risk guidance, cite credible sports science sources such as PubMed-indexed research, ACSM, NSCA, or consensus guidelines in plain text.
 - Do NOT use markdown: no # headers, no ## headers, no **bold**, no *italics*. Plain text only.
 - Never give medical diagnoses. Recommend professional care for pain or injury concerns.
+- Movement findings are estimates from phone video. Use language like "may affect" or "worth monitoring". Never diagnose, never claim injury causation, never invent findings that are not listed above.
 - If asked about paces or zones, calculate from their profile data.`;
 }
 
@@ -272,12 +344,20 @@ function buildContextSummary(data: ReturnType<typeof useOnboardingStore.getState
 export default function CoachScreen() {
   const C = useColors();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ ask?: string }>();
   const data      = useOnboardingStore(s => s.data);
   const riskFlags = useMovementStore(s => s.getActiveRiskFlags);
   const addVideo = useMovementStore(s => s.addVideo);
   const updateVideo = useMovementStore(s => s.updateVideo);
   const videos = useMovementStore(s => s.videos);
   const movementAnalyses = useMovementStore(s => s.analyses);
+  const readinessAssessments = useMovementStore(s => s.readinessAssessments);
+  const latestReadinessAssessment = useMemo(
+    () => (readinessAssessments.length ? [...readinessAssessments].sort((a, b) => b.createdAt - a.createdAt)[0] : undefined),
+    [readinessAssessments],
+  );
+  const mobilityRecommendedIds = useMobilityStore(s => s.recommendedWorkoutIds);
+  const mobilityCompletions = useMobilityStore(s => s.completions);
   const user = useAuthStore(s => s.user);
   const runHistory = useWorkoutStore(s => s.history);
   const strengthHistory = useStrengthStore(s => s.history);
@@ -398,6 +478,16 @@ export default function CoachScreen() {
   const s = useMemo(() => makeStyles(C), [C]);
   const b = useMemo(() => makeBubbleStyles(C), [C]);
 
+  // Deep-link handoff (e.g. TermDefinitionModal, readiness report "Ask AI
+  // Coach"): prefill the ask param into the input without auto-sending, then
+  // clear it from the route so it doesn't refire on the next render.
+  useEffect(() => {
+    if (!params.ask) return;
+    setTab('chat');
+    setInput(params.ask);
+    router.setParams({ ask: undefined });
+  }, [params.ask]);
+
   useEffect(() => {
     let cancelled = false;
     if (!isConfigured || tab !== 'chat') return;
@@ -430,7 +520,10 @@ export default function CoachScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
-      const system  = buildSystemPrompt(data, riskFlags, trainingCtx, movementAnalyses);
+      const system  = buildSystemPrompt(
+        data, riskFlags, trainingCtx, movementAnalyses,
+        latestReadinessAssessment, mobilityRecommendedIds, mobilityCompletions,
+      );
       const reply = await sendCoachMessage(updated, system);
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);

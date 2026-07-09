@@ -29,6 +29,203 @@ import {
   updateStrengthLiveActivity,
 } from '../../../src/lib/strengthLiveActivity';
 import { startControlCommandPolling } from '../../../src/lib/runLiveActivity';
+import InfoButton from '../../../src/components/shared/InfoButton';
+import { useMobilityStore, weeklyCompletionCount, lastCompletedAt } from '../../../src/store/mobilityStore';
+import {
+  MOBILITY_WORKOUTS,
+  MOBILITY_CATEGORY_LABELS,
+  getMobilityWorkoutsByCategory,
+} from '../../../src/constants/mobilityBank';
+import type { MobilityCategory } from '../../../src/types/mobility';
+
+type Segment = 'strength' | 'mobility';
+
+function SegmentedControl({ segment, setSegment, C }: {
+  segment: Segment;
+  setSegment: (s: Segment) => void;
+  C: ReturnType<typeof useColors>;
+}) {
+  const options: { label: string; value: Segment }[] = [
+    { label: 'Strength', value: 'strength' },
+    { label: 'Mobility', value: 'mobility' },
+  ];
+  return (
+    <View style={[segStyles.wrap, { backgroundColor: C.cardAlt }]}>
+      {options.map(opt => {
+        const active = segment === opt.value;
+        return (
+          <TouchableOpacity
+            key={opt.value}
+            style={[segStyles.btn, active && { backgroundColor: C.card }]}
+            onPress={() => setSegment(opt.value)}
+            activeOpacity={0.75}
+          >
+            <Text style={[segStyles.btnText, { color: active ? C.text : C.textMuted, fontWeight: active ? '700' : '500' }]}>
+              {opt.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+const segStyles = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    borderRadius: 10,
+    padding: 4,
+    gap: 4,
+    marginHorizontal: 18,
+    marginBottom: 12,
+  },
+  btn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  btnText: {
+    fontSize: 13,
+  },
+});
+
+// ─── Mobility segment ──────────────────────────────────────────────────────────
+
+const CATEGORY_FILTERS: (MobilityCategory | 'all')[] = [
+  'all', 'full_body', 'problem_areas', 'ankle', 'hip', 'back_spine',
+  'pre_run', 'post_run', 'upper_body', 'lower_body', 'running_readiness', 'walking_readiness',
+];
+
+function formatLastDone(ts: number | null): string {
+  if (ts === null) return 'Not done yet';
+  const days = Math.floor((Date.now() - ts) / (24 * 60 * 60 * 1000));
+  if (days <= 0) return 'Last done today';
+  if (days === 1) return 'Last done yesterday';
+  if (days < 7) return `Last done ${days}d ago`;
+  const weeks = Math.floor(days / 7);
+  return `Last done ${weeks}w ago`;
+}
+
+function MobilityTabContent({ segment, setSegment, C }: {
+  segment: Segment;
+  setSegment: (s: Segment) => void;
+  C: ReturnType<typeof useColors>;
+}) {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const completions = useMobilityStore(s => s.completions);
+  const recommendedWorkoutIds = useMobilityStore(s => s.recommendedWorkoutIds);
+  const [categoryFilter, setCategoryFilter] = useState<MobilityCategory | 'all'>('all');
+
+  const weekCount = useMemo(() => weeklyCompletionCount(completions), [completions]);
+  const recommended = useMemo(
+    () => MOBILITY_WORKOUTS.filter(w => recommendedWorkoutIds.includes(w.id)),
+    [recommendedWorkoutIds],
+  );
+  const filteredWorkouts = useMemo(
+    () => categoryFilter === 'all' ? MOBILITY_WORKOUTS : getMobilityWorkoutsByCategory(categoryFilter),
+    [categoryFilter],
+  );
+
+  function openWorkout(id: string) {
+    router.push({ pathname: '/(tabs)/strength/mobility-workout', params: { id } } as any);
+  }
+
+  function renderWorkoutCard(workoutId: string, key: string) {
+    const workout = MOBILITY_WORKOUTS.find(w => w.id === workoutId);
+    if (!workout) return null;
+    const lastDone = lastCompletedAt(completions, workout.id);
+    return (
+      <TouchableOpacity
+        key={key}
+        style={[styles.card, { backgroundColor: C.card, borderColor: C.border, marginBottom: 10 }]}
+        activeOpacity={0.8}
+        onPress={() => openWorkout(workout.id)}
+      >
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1, paddingRight: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={[styles.subTitle, { color: C.text }]}>{workout.title}</Text>
+              <InfoButton term="mobility" />
+            </View>
+            <Text style={[{ fontSize: 12, color: C.textMuted, marginTop: 3 }]}>{workout.targetAreas.join(' · ')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+        </View>
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+          <Text style={[{ fontSize: 11, color: C.textDim }]}>{workout.durationMin} min</Text>
+          <Text style={[{ fontSize: 11, color: C.textDim }]}>·</Text>
+          <Text style={[{ fontSize: 11, color: C.textDim }]}>{workout.recommendedFrequency}</Text>
+        </View>
+        <Text style={[{ fontSize: 11, color: lastDone ? C.primary : C.textDim, marginTop: 4, fontWeight: '600' }]}>
+          {formatLastDone(lastDone)}
+        </Text>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <View style={[styles.screenHeader, { paddingTop: insets.top + 6, backgroundColor: C.bg }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.headerLabel, { color: C.textDim }]}>MOBILITY</Text>
+          <Text style={[styles.headerTitle, { color: C.text }]}>Mobility</Text>
+        </View>
+      </View>
+
+      <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: LAYOUT.screenPadBottom }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <Text style={[{ fontSize: 13, fontWeight: '700', color: C.text }]}>This week: {weekCount} session{weekCount === 1 ? '' : 's'}</Text>
+        </View>
+
+        {/* Recommended for you */}
+        <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8, marginTop: 4 }]}>RECOMMENDED FOR YOU</Text>
+        {recommended.length > 0 ? (
+          recommended.map(w => renderWorkoutCard(w.id, `rec_${w.id}`))
+        ) : (
+          <View style={[styles.card, { backgroundColor: C.cardAlt, borderColor: C.border, marginBottom: 10 }]}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>
+              Complete a Movement Lab readiness assessment to get personalized mobility recommendations.
+            </Text>
+          </View>
+        )}
+
+        {/* Category filter chips */}
+        <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8, marginTop: 10 }]}>ALL MOBILITY WORKOUTS</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {CATEGORY_FILTERS.map(cat => {
+              const active = categoryFilter === cat;
+              const label = cat === 'all' ? 'All' : MOBILITY_CATEGORY_LABELS[cat];
+              return (
+                <TouchableOpacity
+                  key={cat}
+                  style={[
+                    { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1 },
+                    { backgroundColor: active ? C.primaryDim : C.card, borderColor: active ? C.primary : C.border },
+                  ]}
+                  onPress={() => setCategoryFilter(cat)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: active ? C.primary : C.textDim }}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </ScrollView>
+
+        {filteredWorkouts.map(w => renderWorkoutCard(w.id, w.id))}
+      </ScrollView>
+    </View>
+  );
+}
 
 type ExDef = {
   id: string;
@@ -140,6 +337,7 @@ export default function StrengthScreen() {
   const C = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const [segment, setSegment] = useState<Segment>('strength');
   const { units } = useSettingsStore();
   const weekPlan = useWeekPlan();
   const fatigueScore = useAthleteStore(s => s.fatigueScore);
@@ -374,6 +572,11 @@ export default function StrengthScreen() {
   }, 0);
   const totalVolStr = totalVol > 0 ? `${Math.round(totalVol).toLocaleString()} ${wtUnit}` : '—';
 
+  // ── Mobility segment ─────────────────────────────────────────────────────────
+  if (segment === 'mobility') {
+    return <MobilityTabContent segment={segment} setSegment={setSegment} C={C} />;
+  }
+
   // ── Before program start ────────────────────────────────────────────────────
   if (weekPlan.metadata.currentWeek === 0) {
     return (
@@ -387,6 +590,7 @@ export default function StrengthScreen() {
             <Text style={[styles.headerTitle, { color: C.text }]}>Strength</Text>
           </View>
         </View>
+        <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
         <View style={{ paddingHorizontal: 18 }}>
           <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[styles.subTitle, { color: C.text, marginBottom: 6 }]}>Your plan hasn't started yet</Text>
@@ -414,6 +618,7 @@ export default function StrengthScreen() {
             <Text style={[styles.headerTitle, { color: C.text }]}>Strength</Text>
           </View>
         </View>
+        <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
         <View style={{ paddingHorizontal: 18 }}>
           <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[{ fontSize: 13, color: C.textMuted, lineHeight: 19 }]}>
@@ -442,6 +647,8 @@ export default function StrengthScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
 
       <ScrollView
         style={{ flex: 1 }}

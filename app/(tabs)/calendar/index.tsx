@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { LAYOUT } from '../../../src/constants/layout';
 import { useColors } from '../../../src/theme/useColors';
+import InfoButton from '../../../src/components/shared/InfoButton';
 
 import { useWeekPlan }      from '../../../src/hooks/useWeekPlan';
 import { usePlanTimeline }  from '../../../src/hooks/usePlanTimeline';
@@ -426,7 +427,12 @@ export default function CalendarScreen() {
               <Text style={[styles.summaryLabel, { color: C.textDim }]}>
                 {entry.type === 'race' ? 'RACE DAY' : entry.type === 'strength' ? 'STRENGTH' : 'RUN'}
               </Text>
-              <Text style={[styles.dayEntryTitle, { color: C.text }]}>{entry.label}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={[styles.dayEntryTitle, { color: C.text }]}>{entry.label}</Text>
+                {entry.type !== 'race' && (
+                  <InfoButton term={entry.workout?.type ?? (entry.type === 'strength' ? 'strength' : 'rest')} />
+                )}
+              </View>
               {entry.workout ? (
                 <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>
                   {(entry.workout as any).purpose ?? entry.workout.description}

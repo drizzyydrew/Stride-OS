@@ -18,6 +18,7 @@ import {
 import { router } from 'expo-router';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 
 import { useMovementStore } from '../../../src/store/movementStore';
 import { useAuthStore }     from '../../../src/store/authStore';
@@ -34,6 +35,7 @@ import type {
   MovementActivity,
   MovementViewAngle,
 } from '../../../src/types/movement';
+import type { ReadinessCategory } from '../../../src/types/movementReadiness';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -120,6 +122,42 @@ const CONFIDENCE_META: Record<AnalysisConfidence, { label: string; color: string
   low:           { label: 'Low',           color: colors.critical },
   manual_review: { label: 'Manual review', color: colors.textMuted },
 };
+
+const READINESS_CATEGORY_META: Record<ReadinessCategory, { label: string; color: string }> = {
+  good:            { label: 'Good',                    color: colors.positive },
+  monitor:         { label: 'Monitor',                 color: colors.warning },
+  needs_attention: { label: 'Needs attention',          color: colors.critical },
+  manual_review:   { label: 'Manual review',            color: colors.textMuted },
+};
+
+// ─── Readiness entry card ─────────────────────────────────────────────────────
+
+function ReadinessEntryCard() {
+  const readinessAssessments = useMovementStore(s => s.readinessAssessments);
+  const latest = readinessAssessments.length
+    ? [...readinessAssessments].sort((a, b) => b.createdAt - a.createdAt)[0]
+    : undefined;
+
+  return (
+    <Pressable style={vc.card} onPress={() => router.push('/(tabs)/movement/readiness' as never)}>
+      <View style={vc.iconBox}>
+        <Ionicons name="body" size={22} color={colors.primary} />
+      </View>
+      <View style={vc.info}>
+        <Text style={vc.title}>Running/Walking Readiness</Text>
+        <Text style={vc.sub}>Ankle, hip, squat, and control checks built for gait and training readiness</Text>
+      </View>
+      {latest && (
+        <View style={[vc.confChip, { backgroundColor: READINESS_CATEGORY_META[latest.overall].color + '22' }]}>
+          <Text style={[vc.confChipTxt, { color: READINESS_CATEGORY_META[latest.overall].color }]}>
+            {READINESS_CATEGORY_META[latest.overall].label}
+          </Text>
+        </View>
+      )}
+      <Text style={vc.chevron}>›</Text>
+    </Pressable>
+  );
+}
 
 
 // ─── Add Video Modal ──────────────────────────────────────────────────────────
@@ -337,23 +375,37 @@ function VideoCard({ video }: { video: { id: string; title: string; date: string
 
 function AnalysisCard({ analysis }: { analysis: MovementAnalysis }) {
   const info = ANALYSIS_KIND_INFO[analysis.type];
-  const conf = CONFIDENCE_META[analysis.confidence];
+  const isVideo = analysis.mediaType === 'video';
+  const conf = CONFIDENCE_META[isVideo ? (analysis.sequenceConfidence ?? analysis.confidence) : analysis.confidence];
   const date = new Date(analysis.createdAt).toLocaleDateString(undefined, {
     month: 'short', day: 'numeric', year: 'numeric',
   });
   return (
     <Pressable
       style={vc.card}
-      onPress={() => router.push({ pathname: '/(tabs)/movement/analysis-detail', params: { analysisId: analysis.id } } as never)}
+      onPress={() => isVideo
+        ? router.push({ pathname: '/(tabs)/movement/video-analysis', params: { id: analysis.id } } as never)
+        : router.push({ pathname: '/(tabs)/movement/analysis-detail', params: { analysisId: analysis.id } } as never)
+      }
     >
       <View style={vc.iconBox}>
         <Text style={vc.icon}>{KIND_ICON[analysis.type]}</Text>
       </View>
       <View style={vc.info}>
-        <Text style={vc.title}>{info.title}</Text>
+        <View style={vc.titleRow}>
+          <Text style={vc.title}>{info.title}</Text>
+          {isVideo && (
+            <View style={vc.videoBadge}>
+              <Ionicons name="videocam" size={10} color={colors.primary} />
+              <Text style={vc.videoBadgeTxt}>VIDEO</Text>
+            </View>
+          )}
+        </View>
         <Text style={vc.sub}>
-          {analysis.landmarks?.length ? 'Pose detected' : 'Manual analysis'}
-          {analysis.checklistFindings.length ? ` · ${analysis.checklistFindings.length} findings` : ''}
+          {isVideo
+            ? `${analysis.keyFrames?.length ?? 0} key frames${analysis.repSummaries?.length ? ` · ${analysis.repSummaries.length} reps` : ''}`
+            : analysis.landmarks?.length ? 'Pose detected' : 'Manual analysis'}
+          {!isVideo && analysis.checklistFindings.length ? ` · ${analysis.checklistFindings.length} findings` : ''}
         </Text>
         <Text style={vc.date}>{date}</Text>
       </View>
@@ -429,6 +481,9 @@ export default function MovementIndexScreen() {
       )}
 
       <ScrollView style={s.list} contentContainerStyle={s.listContent} showsVerticalScrollIndicator={false}>
+        {/* Running/Walking Readiness — single clean entry point */}
+        <ReadinessEntryCard />
+
         {/* Markerless analysis — pick a movement type */}
         <Text style={s.sectionLabel}>ANALYZE A MOVEMENT</Text>
         <View style={s.cards}>
@@ -614,7 +669,18 @@ const vc = StyleSheet.create({
   },
   icon:    { fontSize: 22 },
   info:    { flex: 1, gap: 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   title:   { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  videoBadge: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               3,
+    paddingHorizontal: 6,
+    paddingVertical:   2,
+    borderRadius:      Radius.sm,
+    backgroundColor:   colors.primaryDim,
+  },
+  videoBadgeTxt: { color: colors.primary, fontSize: 9, fontWeight: FontWeight.black, letterSpacing: 0.4 },
   sub:     { color: colors.textMuted, fontSize: FontSize.xs },
   date:    { color: colors.textSubtle, fontSize: FontSize.xs },
   chevron: { color: colors.textSubtle, fontSize: 22 },

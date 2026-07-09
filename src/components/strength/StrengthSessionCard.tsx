@@ -1,5 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Card from '../ui/Card';
+import InfoButton from '../shared/InfoButton';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
@@ -55,7 +56,10 @@ export default function StrengthSessionCard({ session, isComplete, onPress }: Pr
           <Text style={styles.setCount}>{setCount} sets</Text>
         </View>
 
-        <Text style={styles.title}>{session.title}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>{session.title}</Text>
+          <InfoButton term="strength" />
+        </View>
         <Text style={styles.purpose}>{session.purpose}</Text>
 
         <View style={styles.patterns}>
@@ -85,7 +89,8 @@ const styles = StyleSheet.create({
   typeBadgeText:    { fontSize: FontSize.xs, fontWeight: FontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
   duration:         { color: colors.textDim, fontSize: FontSize.sm },
   setCount:         { color: colors.textMuted, fontSize: FontSize.sm },
-  title:            { color: colors.text, fontSize: FontSize.md, fontWeight: FontWeight.bold, marginBottom: 4 },
+  titleRow:         { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  title:            { color: colors.text, fontSize: FontSize.md, fontWeight: FontWeight.bold },
   purpose:          { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 18, marginBottom: spacing.sm },
   patterns:         { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm },
   patternChip:      { backgroundColor: colors.border, borderRadius: 4, paddingHorizontal: spacing.sm, paddingVertical: 2 },
