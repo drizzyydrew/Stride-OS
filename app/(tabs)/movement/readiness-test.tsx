@@ -12,7 +12,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
@@ -31,9 +30,11 @@ import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 import { LAYOUT } from '../../../src/constants/layout';
 import { useMovementStore } from '../../../src/store/movementStore';
 import { useMobilityStore } from '../../../src/store/mobilityStore';
+import { resolveDocumentUri } from '../../../src/lib/mediaPaths';
 import { copyAnalysisMediaToStorage } from '../../../src/lib/movementVideoStorage';
 import { savePoseSequence } from '../../../src/lib/poseSequenceStorage';
 import { analyzeSequence } from '../../../src/utils/poseSequence';
+import { buildSequenceFindings } from '../../../src/utils/movementEngine';
 import { assessSequenceCaptureQuality, type CaptureIssue, type CaptureQualityRating } from '../../../src/utils/captureQuality';
 import { assessReadiness } from '../../../src/utils/readinessEngine';
 import CaptureGuidanceCard from '../../../src/components/movement/CaptureGuidanceCard';
@@ -54,6 +55,12 @@ type StepDef = {
   optional?:     boolean;
   instructions:  string[];
   mustBeVisible: string[];
+};
+
+type SingleLegChecklist = {
+  pelvisLevel?: boolean;
+  kneeTracksOverFoot?: boolean;
+  trunkSteady?: boolean;
 };
 
 const STEPS: StepDef[] = [
@@ -163,7 +170,7 @@ function VideoCaptureBlock({
         // keep original URI
       }
 
-      const seqResult = await detectPoseSequence(storedUri, {
+      const seqResult = await detectPoseSequence(resolveDocumentUri(storedUri) ?? storedUri, {
         fps: 12, maxDurationMs: 30_000,
         onProgress: (processed, total) => setProgress({ processed, total }),
       });
@@ -175,10 +182,21 @@ function VideoCaptureBlock({
 
       const quality = assessSequenceCaptureQuality(seqResult, view === 'front' ? 'front' : 'side');
       const seq = analyzeSequence(seqResult, analysisKind, view);
+      const recommendations = buildSequenceFindings(
+        {
+          estimatedAngles: seq.keyFrames[0]?.angles,
+          angleSeries: seq.angleSeries,
+          keyFrames: seq.keyFrames,
+          repSummaries: seq.repSummaries,
+          symmetryEstimates: seq.symmetryEstimates,
+          sequenceConfidence: seq.confidence,
+        },
+        analysisKind,
+      );
 
       const id = addAnalysis({
         type: analysisKind, mediaUri: storedUri, mediaType: 'video', cameraView: view,
-        checklistFindings: [], confidence: seq.confidence, recommendations: [],
+        checklistFindings: [], confidence: seq.confidence, recommendations,
         limitations: seq.limitations, status: seq.confidence === 'manual_review' ? 'needs_review' : 'complete',
         angleSeries: seq.angleSeries, keyFrames: seq.keyFrames, repSummaries: seq.repSummaries,
         symmetryEstimates: seq.symmetryEstimates, sequenceConfidence: seq.confidence,
@@ -263,16 +281,7 @@ export default function ReadinessTestScreen() {
   const [videoResults, setVideoResults] = useState<Record<string, VideoResult | null>>({});
   const [cmLeft, setCmLeft] = useState<Record<string, string>>({});
   const [cmRight, setCmRight] = useState<Record<string, string>>({});
-  // Pre-seed every checklist step with the default (all-good) values so a
-  // step the athlete never touches still records an intentional answer,
-  // rather than silently dropping to "skipped" because no switch changed.
-  const [checklist, setChecklist] = useState<Record<string, { pelvisLevel: boolean; kneeTracksOverFoot: boolean; trunkSteady: boolean }>>(() => {
-    const initial: Record<string, { pelvisLevel: boolean; kneeTracksOverFoot: boolean; trunkSteady: boolean }> = {};
-    for (const st of STEPS) {
-      if (st.kind === 'video_checklist') initial[st.key] = { pelvisLevel: true, kneeTracksOverFoot: true, trunkSteady: true };
-    }
-    return initial;
-  });
+  const [checklist, setChecklist] = useState<Record<string, SingleLegChecklist>>({});
   const [painReported, setPainReported] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -314,7 +323,7 @@ export default function ReadinessTestScreen() {
   function handleContinueVideoChecklist(current: StepDef) {
     const vr = videoResults[current.key] ?? null;
     const list = checklist[current.key];
-    const hasChecklist = Boolean(list);
+    const hasChecklist = Boolean(list && Object.values(list).some(value => value !== undefined));
     commitStepResults(current.key, current.testIds.map(testId => ({
       testId, method: 'manual',
       analysisId: vr?.analysisId,
@@ -408,23 +417,36 @@ export default function ReadinessTestScreen() {
                   { key: 'kneeTracksOverFoot', label: 'Knee tracked over the foot' },
                   { key: 'trunkSteady', label: 'Trunk stayed steady' },
                 ] as const).map(item => {
-                  const current = checklist[step.key]?.[item.key] ?? true;
+                  const current = checklist[step.key]?.[item.key];
                   return (
                     <View key={item.key} style={s.checklistRow}>
-                      <Text style={s.checklistLabel}>{item.label}</Text>
-                      <Switch
-                        value={current}
-                        onValueChange={v => setChecklist(prev => ({
-                          ...prev,
-                          [step.key]: {
-                            pelvisLevel: prev[step.key]?.pelvisLevel ?? true,
-                            kneeTracksOverFoot: prev[step.key]?.kneeTracksOverFoot ?? true,
-                            trunkSteady: prev[step.key]?.trunkSteady ?? true,
-                            [item.key]: v,
-                          },
-                        }))}
-                        trackColor={{ true: C.primary }}
-                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.checklistLabel}>{item.label}</Text>
+                        {current === undefined ? <Text style={s.unansweredTxt}>Unanswered</Text> : null}
+                      </View>
+                      <View style={s.choiceRow}>
+                        {[
+                          { label: 'Yes', value: true },
+                          { label: 'No', value: false },
+                        ].map(choice => {
+                          const active = current === choice.value;
+                          return (
+                            <Pressable
+                              key={choice.label}
+                              style={[s.choiceBtn, active && s.choiceBtnActive]}
+                              onPress={() => setChecklist(prev => ({
+                                ...prev,
+                                [step.key]: {
+                                  ...(prev[step.key] ?? {}),
+                                  [item.key]: choice.value,
+                                },
+                              }))}
+                            >
+                              <Text style={[s.choiceTxt, active && s.choiceTxtActive]}>{choice.label}</Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
                     </View>
                   );
                 })}
@@ -578,6 +600,12 @@ function makeStyles(C: Palette) {
 
     checklistRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
     checklistLabel: { color: C.text, fontSize: FontSize.sm, flex: 1 },
+    unansweredTxt: { color: C.textSubtle, fontSize: FontSize.xs, marginTop: 2 },
+    choiceRow: { flexDirection: 'row', gap: spacing.xs },
+    choiceBtn: { backgroundColor: C.border, borderRadius: Radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 6 },
+    choiceBtnActive: { backgroundColor: C.primaryDim, borderWidth: 1, borderColor: C.primary },
+    choiceTxt: { color: C.textDim, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+    choiceTxtActive: { color: C.primary },
 
     pairRow: { flexDirection: 'row', gap: spacing.md },
     pairCol: { flex: 1, gap: 4 },

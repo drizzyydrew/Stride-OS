@@ -22,17 +22,20 @@ import { useState } from 'react';
 import { VideoView, useVideoPlayer } from 'expo-video';
 
 import { useMovementStore } from '../../../src/store/movementStore';
+import { resolveDocumentUri } from '../../../src/lib/mediaPaths';
 import { deleteAnalysisMediaIfStored } from '../../../src/lib/movementVideoStorage';
 import {
   ANALYSIS_KIND_INFO,
   ANGLE_ESTIMATE_DISCLAIMER,
   MOVEMENT_SAFETY_DISCLAIMER,
 } from '../../../src/utils/movementEngine';
+import { computeEstimatedAngles } from '../../../src/utils/poseAngles';
 import PoseOverlay from '../../../src/components/assessment/PoseOverlay';
+import LandmarkEditor from '../../../src/components/movement/LandmarkEditor';
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
-import type { AnalysisConfidence, FindingSeverity } from '../../../src/types/movement';
+import type { AnalysisConfidence, FindingSeverity, PoseLandmarkRecord } from '../../../src/types/movement';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -71,11 +74,15 @@ export default function AnalysisDetailScreen() {
   const { analysisId } = useLocalSearchParams<{ analysisId?: string }>();
   const analysis = useMovementStore(s => s.analyses.find(a => a.id === analysisId));
   const removeAnalysis = useMovementStore(s => s.removeAnalysis);
+  const updateAnalysis = useMovementStore(s => s.updateAnalysis);
 
   const [showSkeleton, setShowSkeleton] = useState(true);
   const [showAngles,   setShowAngles]   = useState(true);
+  const [editingMarkers, setEditingMarkers] = useState(false);
 
-  const videoPlayer = useVideoPlayer(analysis?.mediaType === 'video' ? analysis.mediaUri : null);
+  const mediaUri = resolveDocumentUri(analysis?.mediaUri) ?? analysis?.mediaUri;
+  const referenceFrameUri = resolveDocumentUri(analysis?.referenceFrameUri) ?? mediaUri;
+  const videoPlayer = useVideoPlayer(analysis?.mediaType === 'video' ? mediaUri ?? null : null);
 
   if (!analysis) {
     return (
@@ -94,6 +101,18 @@ export default function AnalysisDetailScreen() {
   const hasPose = (analysis.landmarks?.length ?? 0) > 0;
   const angles = analysis.estimatedAngles ?? [];
   const aspectRatio = analysis.imageAspectRatio ?? 3 / 4;
+  const overlayUri = referenceFrameUri ?? mediaUri ?? analysis.mediaUri;
+
+  function saveLandmarkCorrections(nextLandmarks: PoseLandmarkRecord[], corrected: boolean) {
+    updateAnalysis(analysis!.id, {
+      landmarks: nextLandmarks,
+      autoLandmarks: analysis!.autoLandmarks ?? analysis!.landmarks,
+      correctedLandmarks: corrected ? nextLandmarks : undefined,
+      landmarkSource: corrected ? 'user_corrected' : 'auto',
+      estimatedAngles: computeEstimatedAngles(nextLandmarks as never, analysis!.type),
+    });
+    setEditingMarkers(false);
+  }
 
   function handleDelete() {
     Alert.alert('Delete analysis?', 'This removes the analysis record. The photo or video stays in your library.', [
@@ -141,24 +160,40 @@ export default function AnalysisDetailScreen() {
           <Text style={s.cardLabel}>{hasPose ? 'DETECTED POSE' : 'ANALYZED MEDIA'}</Text>
           {hasPose ? (
             <>
-              <PoseOverlay
-                imageUri={analysis.mediaUri}
-                aspectRatio={aspectRatio}
-                landmarks={analysis.landmarks}
-                angles={angles}
-                showSkeleton={showSkeleton}
-                showAngles={showAngles}
-              />
-              <View style={s.toggleRow}>
-                <View style={s.toggleItem}>
-                  <Text style={s.toggleLabel}>Skeleton</Text>
-                  <Switch value={showSkeleton} onValueChange={setShowSkeleton} trackColor={{ true: colors.primary }} />
-                </View>
-                <View style={s.toggleItem}>
-                  <Text style={s.toggleLabel}>Angles</Text>
-                  <Switch value={showAngles} onValueChange={setShowAngles} trackColor={{ true: colors.primary }} />
-                </View>
-              </View>
+              {editingMarkers ? (
+                <LandmarkEditor
+                  imageUri={overlayUri}
+                  aspectRatio={aspectRatio}
+                  autoLandmarks={analysis.autoLandmarks ?? analysis.landmarks ?? []}
+                  landmarks={analysis.landmarks ?? []}
+                  onCancel={() => setEditingMarkers(false)}
+                  onSave={saveLandmarkCorrections}
+                />
+              ) : (
+                <>
+                  <PoseOverlay
+                    imageUri={overlayUri}
+                    aspectRatio={aspectRatio}
+                    landmarks={analysis.landmarks}
+                    angles={angles}
+                    showSkeleton={showSkeleton}
+                    showAngles={showAngles}
+                  />
+                  <View style={s.toggleRow}>
+                    <View style={s.toggleItem}>
+                      <Text style={s.toggleLabel}>Skeleton</Text>
+                      <Switch value={showSkeleton} onValueChange={setShowSkeleton} trackColor={{ true: colors.primary }} />
+                    </View>
+                    <View style={s.toggleItem}>
+                      <Text style={s.toggleLabel}>Angles</Text>
+                      <Switch value={showAngles} onValueChange={setShowAngles} trackColor={{ true: colors.primary }} />
+                    </View>
+                  </View>
+                  <Pressable style={s.secondaryActionBtn} onPress={() => setEditingMarkers(true)}>
+                    <Text style={s.secondaryActionTxt}>Adjust Markers</Text>
+                  </Pressable>
+                </>
+              )}
             </>
           ) : analysis.mediaType === 'video' ? (
             <>
@@ -167,7 +202,7 @@ export default function AnalysisDetailScreen() {
             </>
           ) : (
             <>
-              <Image source={{ uri: analysis.mediaUri }} style={[s.photo, { aspectRatio }]} resizeMode="cover" />
+              <Image source={{ uri: overlayUri }} style={[s.photo, { aspectRatio }]} resizeMode="cover" />
               <Text style={s.helper}>No pose landmarks on this analysis — assessed manually.</Text>
             </>
           )}
@@ -321,6 +356,14 @@ const s = StyleSheet.create({
   toggleRow:   { flexDirection: 'row', gap: spacing.lg },
   toggleItem:  { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   toggleLabel: { color: colors.textMuted, fontSize: FontSize.sm },
+  secondaryActionBtn: {
+    alignSelf:         'flex-start',
+    backgroundColor:   colors.border,
+    borderRadius:      Radius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical:   spacing.xs,
+  },
+  secondaryActionTxt: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   angleRow:    { gap: 2, paddingVertical: spacing.xs, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   angleTopRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   angleName:   { color: colors.text, fontSize: FontSize.sm, flex: 1, textTransform: 'capitalize' },

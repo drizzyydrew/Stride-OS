@@ -21,6 +21,10 @@ import type {
   MovementAnalysisKind,
   MovementAnalysis,
   ChecklistFinding,
+  AnalysisRecommendation,
+  AnalysisConfidence,
+  AngleSeries,
+  EstimatedAngle,
 } from '../types/movement';
 
 // ─── Gait interpretation templates ───────────────────────────────────────────
@@ -500,8 +504,6 @@ export const ANALYSIS_CHECKLISTS: Record<MovementAnalysisKind, { id: string; lab
 
 // ─── Checklist → recommendations ──────────────────────────────────────────────
 
-type AnalysisRecommendation = { finding: string; meaning: string; recommendation: string };
-
 /** Values that count as a "normal" (non-notable) answer per checklist item. */
 export const NORMAL_CHECKLIST_VALUES = new Set([
   'No', 'None', 'Upright', 'Symmetric', 'Low', 'Moderate',
@@ -522,6 +524,98 @@ function liftingTemplateToRec(t: (typeof LIFTING_TEMPLATES)[string]): AnalysisRe
     .filter(Boolean)
     .join(' ');
   return { finding: t.finding, meaning: t.implication ?? '', recommendation: parts };
+}
+
+function findingConfidence(confidence: AnalysisConfidence | undefined): AnalysisRecommendation['confidence'] {
+  if (confidence === 'high') return 'high';
+  if (confidence === 'moderate') return 'moderate';
+  return 'low';
+}
+
+function angleValues(series: AngleSeries): number[] {
+  return series.points.map(p => p.degrees).filter((value): value is number => value !== null);
+}
+
+function formatSeriesRange(series: AngleSeries): string | null {
+  const values = angleValues(series);
+  if (values.length < 2) return null;
+  const min = Math.round(Math.min(...values));
+  const max = Math.round(Math.max(...values));
+  return `${series.name}${series.side !== 'center' ? ` (${series.side})` : ''}: ${min}–${max}° Estimated`;
+}
+
+export function buildSequenceFindings(
+  sequence: Pick<
+    MovementAnalysis,
+    'estimatedAngles' | 'angleSeries' | 'keyFrames' | 'repSummaries' | 'symmetryEstimates' | 'sequenceConfidence'
+  >,
+  kind: MovementAnalysisKind,
+): AnalysisRecommendation[] {
+  // Only findings that add signal beyond what the screens already show:
+  // reference-frame angles and key-frame lists live in the UI (and in
+  // estimatedAngles/keyFrames on the record), so repeating them here would
+  // just bury the rep/symmetry findings and bloat the AI Coach context.
+  const recs: AnalysisRecommendation[] = [];
+  const confidence = findingConfidence(sequence.sequenceConfidence);
+
+  const rangeSummaries = (sequence.angleSeries ?? [])
+    .filter(series => ['hip', 'knee', 'shoulder', 'elbow', 'trunk'].includes(series.joint))
+    .map(formatSeriesRange)
+    .filter((value): value is string => Boolean(value))
+    .slice(0, 8);
+
+  if (rangeSummaries.length > 0) {
+    recs.push({
+      finding: 'Estimated joint-angle ranges over the clip',
+      meaning: rangeSummaries.join('; '),
+      confidence,
+      recommendation: 'Review the min/max ranges together with the key frames and any user-corrected landmarks before changing training load or technique cues.',
+    });
+  }
+
+  const reps = sequence.repSummaries ?? [];
+  if (reps.length > 0) {
+    const depths = reps.map(r => r.peakFlexionDeg);
+    const minDepth = Math.round(Math.min(...depths));
+    const maxDepth = Math.round(Math.max(...depths));
+    recs.push({
+      finding: `Estimated ${reps.length} rep${reps.length === 1 ? '' : 's'} detected`,
+      meaning: `Peak knee-flexion estimates ranged from ${minDepth}° to ${maxDepth}° across the detected reps.`,
+      confidence,
+      recommendation: 'Use the detected reps to find the deepest and most consistent positions, then confirm with manual review when lighting, camera angle, or clothing reduces marker confidence.',
+    });
+  }
+
+  const symmetry = sequence.symmetryEstimates?.[0];
+  if (symmetry) {
+    recs.push({
+      finding: symmetry.withinNoise
+        ? 'Estimated left/right knee range difference within 2D measurement noise'
+        : 'Estimated left/right knee range difference observed',
+      meaning: symmetry.withinNoise
+        ? symmetry.note
+        : `${symmetry.note} This may influence movement strategy, but it should be confirmed with a repeat clip and human review.`,
+      confidence,
+      recommendation: symmetry.withinNoise
+        ? 'Keep this as a baseline trend point and compare future clips from the same camera view.'
+        : 'Retest with matched side-view clips and consider single-leg strength or mobility review if the pattern repeats across sessions.',
+    });
+  }
+
+  // The "needs human review" fallback only applies when detection produced
+  // nothing at all. A photo with a good pose legitimately has zero sequence
+  // findings — its angles ARE the result — and must not be flagged.
+  const hasAnyAutomatedResult = (sequence.estimatedAngles ?? []).length > 0;
+  if (recs.length === 0 && !hasAnyAutomatedResult && kind) {
+    recs.push({
+      finding: 'Automated pose analysis needs human review',
+      meaning: 'The detector did not capture enough confident landmarks to generate reliable estimated findings for this media.',
+      confidence: 'low',
+      recommendation: 'Use the manual checklist fallback and consider refilming with the full body visible, steady camera position, and better lighting.',
+    });
+  }
+
+  return recs;
 }
 
 export function buildAnalysisRecommendations(
@@ -751,6 +845,9 @@ export type CoachHandoff = {
   symmetryNote?: string | null;
   keyFrameLabels?: string[];
   sequenceLimitations?: string[];
+  landmarkSource?: MovementAnalysis['landmarkSource'];
+  referenceFrameTimeMs?: number;
+  referenceFrameUri?: string;
 };
 
 export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
@@ -797,5 +894,8 @@ export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
     symmetryNote:        isVideo ? (analysis.symmetryEstimates?.[0]?.note ?? null) : null,
     keyFrameLabels:       isVideo ? (analysis.keyFrames ?? []).map(k => k.label) : undefined,
     sequenceLimitations: isVideo ? analysis.sequenceLimitations : undefined,
+    landmarkSource:       analysis.landmarkSource,
+    referenceFrameTimeMs: analysis.referenceFrameTimeMs,
+    referenceFrameUri:    analysis.referenceFrameUri,
   };
 }

@@ -11,6 +11,8 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import type { PoseSequenceResult } from 'stride-pose';
 
+import { resolveDocumentUri, toRelativeDocumentPath } from './mediaPaths';
+
 const POSE_SEQUENCE_DIR = `${FileSystem.documentDirectory}movement-pose/`;
 
 function uriFor(analysisId: string): string {
@@ -22,7 +24,7 @@ export async function savePoseSequence(analysisId: string, result: PoseSequenceR
   await FileSystem.makeDirectoryAsync(POSE_SEQUENCE_DIR, { intermediates: true }).catch(() => {});
   const uri = uriFor(analysisId);
   await FileSystem.writeAsStringAsync(uri, JSON.stringify(result));
-  return uri;
+  return toRelativeDocumentPath(uri) ?? uri;
 }
 
 /** Loads a previously saved pose sequence. Resolves null (never throws) when
@@ -31,9 +33,10 @@ export async function savePoseSequence(analysisId: string, result: PoseSequenceR
 export async function loadPoseSequence(uri: string | undefined | null): Promise<PoseSequenceResult | null> {
   if (!uri) return null;
   try {
-    const info = await FileSystem.getInfoAsync(uri);
+    const resolvedUri = resolveDocumentUri(uri) ?? uri;
+    const info = await FileSystem.getInfoAsync(resolvedUri);
     if (!info.exists) return null;
-    const raw = await FileSystem.readAsStringAsync(uri);
+    const raw = await FileSystem.readAsStringAsync(resolvedUri);
     return JSON.parse(raw) as PoseSequenceResult;
   } catch {
     return null;
@@ -42,6 +45,8 @@ export async function loadPoseSequence(uri: string | undefined | null): Promise<
 
 /** Best-effort delete — never throws. Only removes files this module wrote. */
 export async function deletePoseSequence(uri: string | undefined | null): Promise<void> {
-  if (!uri || !uri.startsWith(POSE_SEQUENCE_DIR)) return;
-  await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+  if (!uri) return;
+  const resolvedUri = resolveDocumentUri(uri);
+  if (!resolvedUri?.startsWith(POSE_SEQUENCE_DIR)) return;
+  await FileSystem.deleteAsync(resolvedUri, { idempotent: true }).catch(() => {});
 }

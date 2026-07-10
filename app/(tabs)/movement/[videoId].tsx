@@ -22,6 +22,7 @@ import { useState, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system';
 
 import { useMovementStore } from '../../../src/store/movementStore';
+import { resolveDocumentUri } from '../../../src/lib/mediaPaths';
 import { supabase }         from '../../../src/lib/supabase';
 import { suggestGaitFindings, getMovementTrainingInfluences } from '../../../src/utils/movementEngine';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
@@ -383,7 +384,7 @@ export default function VideoDetailScreen() {
   // Try local URI first (verify file exists); fall back to Supabase signed URL
   useEffect(() => {
     if (!video) return;
-    const uri = video.uri;
+    const uri = resolveDocumentUri(video.uri) ?? video.uri;
 
     const fetchSignedUrl = () => {
       if (!video.storagePath) { setVideoUnavailable(true); return; }

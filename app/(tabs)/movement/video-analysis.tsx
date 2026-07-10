@@ -26,11 +26,14 @@ import { Ionicons } from '@expo/vector-icons';
 import type { PoseJoint, PoseSequenceResult } from 'stride-pose';
 
 import { useMovementStore } from '../../../src/store/movementStore';
+import { resolveDocumentUri } from '../../../src/lib/mediaPaths';
 import { loadPoseSequence } from '../../../src/lib/poseSequenceStorage';
 import { computeEstimatedAngles } from '../../../src/utils/poseAngles';
 import { repConsistency } from '../../../src/utils/poseSequence';
 import { ANALYSIS_KIND_INFO } from '../../../src/utils/movementEngine';
 import SkeletonOverlay from '../../../src/components/movement/SkeletonOverlay';
+import PoseOverlay from '../../../src/components/assessment/PoseOverlay';
+import LandmarkEditor from '../../../src/components/movement/LandmarkEditor';
 import AngleChart from '../../../src/components/movement/AngleChart';
 import VideoScrubBar from '../../../src/components/movement/VideoScrubBar';
 import { colors } from '../../../src/theme/colors';
@@ -102,6 +105,12 @@ function seriesFor(series: AngleSeries[], name: string, side: AngleSeries['side'
   return series.find(s => s.name === name && s.side === side) ?? { name, joint: '', side, points: [] };
 }
 
+function seriesSummary(series: AngleSeries): string | null {
+  const values = series.points.map(p => p.degrees).filter((value): value is number => value !== null);
+  if (values.length === 0) return null;
+  return `${series.name}${series.side !== 'center' ? ` — ${series.side}` : ''}: ${Math.round(Math.min(...values))}° to ${Math.round(Math.max(...values))}° Estimated`;
+}
+
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function VideoAnalysisScreen() {
@@ -109,16 +118,21 @@ export default function VideoAnalysisScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const analysis = useMovementStore(s => s.analyses.find(a => a.id === id));
   const removeAnalysis = useMovementStore(s => s.removeAnalysis);
+  const updateAnalysis = useMovementStore(s => s.updateAnalysis);
 
   const [section, setSection] = useState<Section>('overview');
   const [showSkeleton, setShowSkeleton] = useState(true);
   const [showAngleLabels, setShowAngleLabels] = useState(true);
   const [videoBox, setVideoBox] = useState<{ w: number; h: number } | null>(null);
+  const [editingReferenceMarkers, setEditingReferenceMarkers] = useState(false);
 
   const [fullSequence, setFullSequence] = useState<PoseSequenceResult | null>(null);
   const [sequenceState, setSequenceState] = useState<'idle' | 'loading' | 'loaded' | 'unavailable'>('idle');
 
-  const player = useVideoPlayer(analysis?.mediaType === 'video' ? analysis.mediaUri : null, p => {
+  const mediaUri = resolveDocumentUri(analysis?.mediaUri) ?? analysis?.mediaUri;
+  const referenceFrameUri = resolveDocumentUri(analysis?.referenceFrameUri);
+
+  const player = useVideoPlayer(analysis?.mediaType === 'video' ? mediaUri ?? null : null, p => {
     p.timeUpdateEventInterval = 0.15;
     p.loop = false;
   });
@@ -196,6 +210,17 @@ export default function VideoAnalysisScreen() {
     router.back();
   }
 
+  function saveReferenceMarkerCorrections(nextLandmarks: PoseLandmarkRecord[], corrected: boolean) {
+    updateAnalysis(analysis!.id, {
+      landmarks: nextLandmarks,
+      autoLandmarks: analysis!.autoLandmarks ?? analysis!.landmarks,
+      correctedLandmarks: corrected ? nextLandmarks : undefined,
+      landmarkSource: corrected ? 'user_corrected' : 'auto',
+      estimatedAngles: computeEstimatedAngles(nextLandmarks as never, analysis!.type),
+    });
+    setEditingReferenceMarkers(false);
+  }
+
   // ── Overlay data for the current scrub position ────────────────────────────
 
   const overlayFrame = sequenceState === 'loaded' ? nearestFrame(fullSequence, currentMs) : null;
@@ -209,9 +234,20 @@ export default function VideoAnalysisScreen() {
     ? fullSequence.imageWidth / fullSequence.imageHeight
     : analysis.imageAspectRatio ?? 9 / 16;
 
-  const currentReadout = angleSeries
-    .map(series => ({ series, degrees: nearestSeriesDegrees(series, currentMs) }))
-    .filter((r): r is { series: AngleSeries; degrees: number } => r.degrees !== null);
+  const currentReadout = overlayAngles && overlayAngles.length > 0
+    ? overlayAngles.map(angle => ({
+        label: `${angle.name}${angle.side !== 'center' ? ` — ${angle.side}` : ''}`,
+        degrees: angle.degrees,
+        source: 'current frame',
+      }))
+    : angleSeries
+        .map(series => ({ series, degrees: nearestSeriesDegrees(series, currentMs) }))
+        .filter((r): r is { series: AngleSeries; degrees: number } => r.degrees !== null)
+        .map(r => ({
+          label: `${r.series.name}${r.series.side !== 'center' ? ` — ${r.series.side}` : ''}`,
+          degrees: r.degrees,
+          source: 'smoothed series',
+        }));
 
   const reps = analysis.repSummaries ?? [];
   const consistency = repConsistency(reps);
@@ -258,6 +294,39 @@ export default function VideoAnalysisScreen() {
               <Text style={s.detailLine}>Camera view: {analysis.cameraView.replace('_', ' ')}</Text>
               {durationMs > 0 ? <Text style={s.detailLine}>Clip length analyzed: {formatTimeMs(analysis.analyzedDurationMs ?? durationMs)}{analysis.videoDurationMs && analysis.analyzedDurationMs && analysis.analyzedDurationMs < analysis.videoDurationMs ? ` of ${formatTimeMs(analysis.videoDurationMs)}` : ''}</Text> : null}
             </View>
+            {referenceFrameUri && (analysis.landmarks?.length ?? 0) > 0 ? (
+              <View style={s.card}>
+                <Text style={s.cardLabel}>{analysis.landmarkSource === 'user_corrected' ? 'USER-CORRECTED REFERENCE MARKERS' : 'REFERENCE FRAME MARKERS'}</Text>
+                {editingReferenceMarkers ? (
+                  <LandmarkEditor
+                    imageUri={referenceFrameUri}
+                    aspectRatio={analysis.imageAspectRatio ?? 3 / 4}
+                    autoLandmarks={analysis.autoLandmarks ?? analysis.landmarks ?? []}
+                    landmarks={analysis.landmarks ?? []}
+                    onCancel={() => setEditingReferenceMarkers(false)}
+                    onSave={saveReferenceMarkerCorrections}
+                  />
+                ) : (
+                  <>
+                    <PoseOverlay
+                      imageUri={referenceFrameUri}
+                      aspectRatio={analysis.imageAspectRatio ?? 3 / 4}
+                      landmarks={analysis.landmarks}
+                      angles={analysis.estimatedAngles}
+                      showSkeleton
+                      showAngles
+                    />
+                    <Text style={s.helper}>
+                      {analysis.referenceFrameTimeMs !== undefined ? `Reference frame: ${formatTimeMs(analysis.referenceFrameTimeMs)}. ` : ''}
+                      Marker confidence is stored with the saved landmarks.
+                    </Text>
+                    <Pressable style={s.secondaryActionBtn} onPress={() => setEditingReferenceMarkers(true)}>
+                      <Text style={s.secondaryActionTxt}>Adjust Markers</Text>
+                    </Pressable>
+                  </>
+                )}
+              </View>
+            ) : null}
             {limitations.length > 0 && (
               <View style={s.card}>
                 <Text style={s.cardLabel}>LIMITATIONS</Text>
@@ -334,7 +403,7 @@ export default function VideoAnalysisScreen() {
                 <Text style={s.cardLabel}>CURRENT FRAME</Text>
                 {currentReadout.map((r, i) => (
                   <Text key={i} style={s.detailLine}>
-                    {r.series.name}{r.series.side !== 'center' ? ` — ${r.series.side}` : ''}: {Math.round(r.degrees)}°
+                    {r.label}: {Math.round(r.degrees)}° Estimated ({r.source})
                   </Text>
                 ))}
               </View>
@@ -361,6 +430,23 @@ export default function VideoAnalysisScreen() {
                 seriesA={{ label: 'Trunk', color: colors.chartSeriesPrimary, points: seriesFor(angleSeries, 'Trunk lean', 'center').points }}
                 note="Deviation of the shoulder–hip line from vertical."
               />
+              <AngleChart
+                title="Shoulder angle"
+                seriesA={{ label: 'Left', color: colors.chartSeriesPrimary, points: seriesFor(angleSeries, 'Shoulder angle', 'left').points }}
+                seriesB={{ label: 'Right', color: colors.chartSeriesSecondary, points: seriesFor(angleSeries, 'Shoulder angle', 'right').points }}
+              />
+              <AngleChart
+                title="Elbow angle"
+                seriesA={{ label: 'Left', color: colors.chartSeriesPrimary, points: seriesFor(angleSeries, 'Elbow angle', 'left').points }}
+                seriesB={{ label: 'Right', color: colors.chartSeriesSecondary, points: seriesFor(angleSeries, 'Elbow angle', 'right').points }}
+              />
+              <View style={s.card}>
+                <Text style={s.cardLabel}>MIN/MAX RANGES</Text>
+                {angleSeries
+                  .map(seriesSummary)
+                  .filter((summary): summary is string => Boolean(summary))
+                  .map((summary, i) => <Text key={i} style={s.detailLine}>{summary}</Text>)}
+              </View>
               <Text style={s.smallDisclaimer}>
                 Gaps mean the landmarks needed for that angle weren't confidently detected in those frames — never guessed or interpolated.
               </Text>
@@ -380,6 +466,11 @@ export default function VideoAnalysisScreen() {
                 <Pressable key={kf.id} style={s.keyFrameCard} onPress={() => seekToMs(kf.timeMs)}>
                   <Text style={s.keyFrameLabel} numberOfLines={2}>{kf.label}</Text>
                   <Text style={s.keyFrameTime}>{formatTimeMs(kf.timeMs)}</Text>
+                  {(kf.angles ?? []).slice(0, 4).map((angle, i) => (
+                    <Text key={`${angle.side}-${angle.name}-${i}`} style={s.keyFrameAngle}>
+                      {angle.name}{angle.side !== 'center' ? ` ${angle.side}` : ''}: {Math.round(angle.degrees)}° Estimated
+                    </Text>
+                  ))}
                   <Text style={s.keyFrameTap}>Tap to seek ›</Text>
                 </Pressable>
               ))}
@@ -436,22 +527,24 @@ export default function VideoAnalysisScreen() {
                   <Text style={s.helper}>Not enough confidently-detected frames on both sides to estimate left/right symmetry for this clip.</Text>
                 </View>
               )
-            ) : analysis.recommendations.length > 0 ? (
+            ) : analysis.recommendations.length === 0 ? (
+              <View style={s.card}>
+                <Text style={s.helper}>No automated findings for this clip — review the Angles and Video tabs directly.</Text>
+              </View>
+            ) : null}
+            {analysis.recommendations.length > 0 ? (
               <View style={s.card}>
                 <Text style={s.cardLabel}>WHAT THIS MEANS</Text>
                 {analysis.recommendations.map((r, i) => (
                   <View key={i} style={s.recBlock}>
                     <Text style={s.recFinding}>{r.finding}</Text>
+                    {r.confidence ? <Text style={s.helper}>Confidence: {r.confidence}</Text> : null}
                     {r.meaning ? <Text style={s.recMeaning}>{r.meaning}</Text> : null}
                     {r.recommendation ? <Text style={s.recAction}>{r.recommendation}</Text> : null}
                   </View>
                 ))}
               </View>
-            ) : (
-              <View style={s.card}>
-                <Text style={s.helper}>No automated findings for this clip — review the Angles and Video tabs directly.</Text>
-              </View>
-            )}
+            ) : null}
           </>
         )}
 
@@ -560,6 +653,7 @@ const s = StyleSheet.create({
   },
   keyFrameLabel: { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   keyFrameTime:  { color: colors.textMuted, fontSize: FontSize.xs },
+  keyFrameAngle: { color: colors.textMuted, fontSize: 10, lineHeight: 14 },
   keyFrameTap:   { color: colors.primary, fontSize: FontSize.xs, marginTop: 2 },
   repRow:    { gap: 2, paddingVertical: spacing.xs, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   repTitle:  { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
@@ -567,6 +661,14 @@ const s = StyleSheet.create({
   recFinding: { color: colors.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   recMeaning: { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
   recAction:  { color: colors.primary, fontSize: FontSize.xs, lineHeight: 17 },
+  secondaryActionBtn: {
+    alignSelf:         'flex-start',
+    backgroundColor:   colors.border,
+    borderRadius:      Radius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical:   spacing.xs,
+  },
+  secondaryActionTxt: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   primaryBtn: {
     backgroundColor: colors.primary,
     borderRadius:    Radius.sm,

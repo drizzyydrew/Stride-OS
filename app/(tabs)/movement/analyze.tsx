@@ -20,7 +20,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -38,10 +38,12 @@ import {
   NORMAL_CHECKLIST_VALUES,
   assessJointAngle,
   buildAnalysisRecommendations,
+  buildSequenceFindings,
 } from '../../../src/utils/movementEngine';
 import { classifyPoseConfidence, computeEstimatedAngles } from '../../../src/utils/poseAngles';
 import { analyzeSequence } from '../../../src/utils/poseSequence';
 import PoseOverlay from '../../../src/components/assessment/PoseOverlay';
+import LandmarkEditor from '../../../src/components/movement/LandmarkEditor';
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
@@ -54,6 +56,7 @@ import type {
   MovementViewAngle,
   PoseLandmarkRecord,
 } from '../../../src/types/movement';
+import type { PoseSequenceResult } from 'stride-pose';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -126,6 +129,20 @@ type PoseState = {
   imageHeight: number;
 };
 
+type SequenceAnalysis = ReturnType<typeof analyzeSequence>;
+
+function poseFromLandmarks(
+  landmarks: PoseLandmarkRecord[] | undefined,
+  imageWidth: number,
+  imageHeight: number,
+): PoseState | null {
+  return landmarks && landmarks.length > 0 ? { landmarks, imageWidth, imageHeight } : null;
+}
+
+function anglesFromLandmarks(landmarks: PoseLandmarkRecord[], kind: MovementAnalysisKind): EstimatedAngle[] {
+  return computeEstimatedAngles(landmarks as never, kind);
+}
+
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function AnalyzeScreen() {
@@ -147,11 +164,15 @@ export default function AnalyzeScreen() {
   const [frameBusy, setFrameBusy] = useState<number | null>(null); // timeMs being extracted
 
   const [pose,           setPose]           = useState<PoseState | null>(null);
+  const [autoLandmarks,  setAutoLandmarks]  = useState<PoseLandmarkRecord[]>([]);
+  const [correctedLandmarks, setCorrectedLandmarks] = useState<PoseLandmarkRecord[] | null>(null);
   const [angles,         setAngles]         = useState<EstimatedAngle[]>([]);
   const [detecting,      setDetecting]      = useState(false);
   const [poseMessage,    setPoseMessage]    = useState<string | null>(null);
   const [showSkeleton,   setShowSkeleton]   = useState(true);
   const [showAngleLabels, setShowAngleLabels] = useState(true);
+  const [editingMarkers, setEditingMarkers] = useState(false);
+  const [manualReviewOpen, setManualReviewOpen] = useState(false);
 
   const [answers,    setAnswers]    = useState<Record<string, string>>({});
   const [severities, setSeverities] = useState<Record<string, FindingSeverity | null>>({});
@@ -161,6 +182,9 @@ export default function AnalyzeScreen() {
 
   const [analyzingVideo, setAnalyzingVideo] = useState(false);
   const [seqProgress, setSeqProgress] = useState<{ processed: number; total: number } | null>(null);
+  const [sequenceResult, setSequenceResult] = useState<PoseSequenceResult | null>(null);
+  const [sequenceAnalysis, setSequenceAnalysis] = useState<SequenceAnalysis | null>(null);
+  const analysisRunRef = useRef(0);
 
   const videoPlayer = useVideoPlayer(media?.type === 'video' ? media.uri : null);
 
@@ -169,7 +193,8 @@ export default function AnalyzeScreen() {
   const autoConfidence: AnalysisConfidence = pose ? classifyPoseConfidence(pose.landmarks as never) : 'manual_review';
   const confidence = confidenceOverride ?? autoConfidence;
   const answeredCount = Object.keys(answers).length;
-  const canSave = Boolean(media) && answeredCount >= 1;
+  const hasAutomatedResults = Boolean(pose || sequenceAnalysis);
+  const canSave = Boolean(media) && (hasAutomatedResults || answeredCount >= 1);
 
   const overlayAspectRatio = pose
     ? pose.imageWidth / pose.imageHeight
@@ -183,9 +208,31 @@ export default function AnalyzeScreen() {
 
   function resetPoseState() {
     setPose(null);
+    setAutoLandmarks([]);
+    setCorrectedLandmarks(null);
     setAngles([]);
     setPoseMessage(null);
     setConfidenceOverride(null);
+    setEditingMarkers(false);
+    setSequenceResult(null);
+    setSequenceAnalysis(null);
+    setManualReviewOpen(false);
+    setDetecting(false);
+    setAnalyzingVideo(false);
+    setSeqProgress(null);
+    setFrameBusy(null);
+  }
+
+  // Every analysis run (auto-started or button-started) registers a run id;
+  // async completions check it before touching state so results from a
+  // replaced media file are discarded instead of applied.
+  function beginAnalysisRun(): number {
+    analysisRunRef.current += 1;
+    return analysisRunRef.current;
+  }
+
+  function isStaleRun(runId: number): boolean {
+    return analysisRunRef.current !== runId;
   }
 
   function applyPickedAsset(asset: ImagePicker.ImagePickerAsset, type: 'photo' | 'video') {
@@ -250,7 +297,38 @@ export default function AnalyzeScreen() {
     return [0, 1000, 2000, 3000].map(t => ({ label: `${t / 1000}s`, timeMs: t }));
   })();
 
-  async function extractFrame(timeMs: number) {
+  function nearestSequenceFrame(result: PoseSequenceResult | null, timeMs: number) {
+    if (!result?.frames.length) return null;
+    let best = result.frames[0];
+    let bestDiff = Math.abs(best.timeMs - timeMs);
+    for (const frameResult of result.frames) {
+      const diff = Math.abs(frameResult.timeMs - timeMs);
+      if (diff < bestDiff) {
+        best = frameResult;
+        bestDiff = diff;
+      }
+    }
+    return best;
+  }
+
+  function preferredReferenceTime(result: PoseSequenceResult, seq: SequenceAnalysis): number {
+    const deepest = seq.keyFrames.find(item => item.label === 'Deepest position');
+    if (deepest) return deepest.timeMs;
+    if (seq.keyFrames.length > 0 && result.durationMs) {
+      const mid = result.durationMs / 2;
+      return seq.keyFrames.reduce((best, item) =>
+        Math.abs(item.timeMs - mid) < Math.abs(best.timeMs - mid) ? item : best,
+      ).timeMs;
+    }
+    return Math.floor((result.durationMs || media?.durationMs || 0) / 2);
+  }
+
+  async function extractFrame(
+    timeMs: number,
+    resultOverride?: PoseSequenceResult | null,
+    skipStandaloneDetection = false,
+    runId: number = analysisRunRef.current,
+  ) {
     if (!media || media.type !== 'video') return;
     setFrameBusy(timeMs);
     try {
@@ -258,111 +336,140 @@ export default function AnalyzeScreen() {
         time:    timeMs,
         quality: 0.9,
       });
+      if (isStaleRun(runId)) return;
       setFrame({ uri, width, height, timeMs });
-      resetPoseState();
+      const seqFrame = nearestSequenceFrame(resultOverride ?? sequenceResult, timeMs);
+      if (seqFrame?.joints.length) {
+        const landmarks = seqFrame.joints.map(j => ({ name: j.name, x: j.x, y: j.y, confidence: j.confidence }));
+        setAutoLandmarks(landmarks);
+        setCorrectedLandmarks(null);
+        setPose(poseFromLandmarks(landmarks, width, height));
+        setAngles(anglesFromLandmarks(landmarks, kind));
+        setPoseMessage(null);
+      } else if (!skipStandaloneDetection) {
+        setAutoLandmarks([]);
+        setCorrectedLandmarks(null);
+        setPose(null);
+        setAngles([]);
+        setPoseMessage(null);
+        // Automatic-first: no sequence data at this moment, so run still-pose
+        // detection on the extracted frame instead of waiting for a button tap.
+        if (poseAvailable) {
+          const result = await detectPose(uri);
+          if (isStaleRun(runId)) return;
+          if (result && result.joints.length > 0) {
+            const landmarks = result.joints.map(j => ({ name: j.name, x: j.x, y: j.y, confidence: j.confidence }));
+            setAutoLandmarks(landmarks);
+            setPose({ landmarks, imageWidth: result.imageWidth, imageHeight: result.imageHeight });
+            setAngles(computeEstimatedAngles(result.joints, kind));
+          } else {
+            setPoseMessage('No person detected in this frame — try another moment or continue manually.');
+            setManualReviewOpen(true);
+          }
+        }
+      }
     } catch {
-      Alert.alert('Frame extraction failed', 'Could not extract a frame from this video. Try a different time or clip.');
+      if (!isStaleRun(runId)) {
+        Alert.alert('Frame extraction failed', 'Could not extract a frame from this video. Try a different time or clip.');
+      }
     } finally {
-      setFrameBusy(null);
+      if (!isStaleRun(runId)) setFrameBusy(null);
     }
   }
 
   // ── Pose detection ──────────────────────────────────────────────────────────
 
-  async function handleDetectPose() {
+  async function handleDetectPose(runId: number = analysisRunRef.current) {
     if (!analyzableStillUri || detecting) return;
     setDetecting(true);
     setPoseMessage(null);
     try {
       const result = await detectPose(analyzableStillUri);
+      if (isStaleRun(runId)) return;
       if (!result || result.joints.length === 0) {
         setPose(null);
+        setAutoLandmarks([]);
+        setCorrectedLandmarks(null);
         setAngles([]);
         setPoseMessage('No person detected — check framing and lighting, or continue manually.');
+        setManualReviewOpen(true);
       } else {
-        setPose({
-          landmarks:   result.joints.map(j => ({ name: j.name, x: j.x, y: j.y, confidence: j.confidence })),
-          imageWidth:  result.imageWidth,
-          imageHeight: result.imageHeight,
-        });
+        const landmarks = result.joints.map(j => ({ name: j.name, x: j.x, y: j.y, confidence: j.confidence }));
+        setAutoLandmarks(landmarks);
+        setCorrectedLandmarks(null);
+        setPose({ landmarks, imageWidth: result.imageWidth, imageHeight: result.imageHeight });
         setAngles(computeEstimatedAngles(result.joints, kind));
         setConfidenceOverride(null);
       }
     } finally {
-      setDetecting(false);
+      if (!isStaleRun(runId)) setDetecting(false);
     }
   }
 
-  // ── Full video sequence analysis (beta) ─────────────────────────────────────
-  //
-  // Analyzes every sampled frame of the clip (instead of a single extracted
-  // still): joint-angle series over time, key moments, reps, and symmetry.
-  // Saves the full per-frame result to disk and routes straight to the new
-  // video-analysis detail screen.
-
-  async function handleAnalyzeVideo() {
-    if (!media || media.type !== 'video' || analyzingVideo) return;
+  async function handleAnalyzeVideo(runId: number = analysisRunRef.current) {
+    if (!media || media.type !== 'video') return;
+    const mediaUri = media.uri;
     setAnalyzingVideo(true);
     setSeqProgress({ processed: 0, total: 1 });
+    setPoseMessage(null);
+    setSequenceResult(null);
+    setSequenceAnalysis(null);
     try {
-      let storedVideoUri = media.uri;
-      try {
-        storedVideoUri = await copyAnalysisMediaToStorage(media.uri, `analysis_${Date.now()}`);
-      } catch {
-        // keep original URI
-      }
-
-      const result = await detectPoseSequence(storedVideoUri, {
+      const result = await detectPoseSequence(mediaUri, {
         fps: 12,
         maxDurationMs: 60_000,
-        onProgress: (processed, total) => setSeqProgress({ processed, total }),
+        onProgress: (processed, total) => {
+          if (!isStaleRun(runId)) setSeqProgress({ processed, total });
+        },
       });
+      if (isStaleRun(runId)) return;
 
       if (!result || result.frames.length === 0) {
-        Alert.alert(
-          'Video analysis failed',
-          'Could not analyze this video on-device. Try a shorter or steadier clip, or use frame extraction instead.',
-        );
+        setPoseMessage('Could not analyze this video automatically. Use the manual checklist fallback or try a shorter, steadier clip.');
+        setManualReviewOpen(true);
         return;
       }
 
       const view = KIND_CAMERA_VIEW[kind];
       const seq = analyzeSequence(result, kind, view);
-
-      const id = addAnalysis({
-        type:                kind,
-        mediaUri:            storedVideoUri,
-        mediaType:           'video',
-        cameraView:          view,
-        checklistFindings:   [],
-        confidence:          seq.confidence,
-        recommendations:     [],
-        limitations:         seq.limitations,
-        status:              seq.confidence === 'manual_review' ? 'needs_review' : 'complete',
-        angleSeries:         seq.angleSeries,
-        keyFrames:           seq.keyFrames,
-        repSummaries:        seq.repSummaries,
-        symmetryEstimates:   seq.symmetryEstimates,
-        sequenceConfidence:  seq.confidence,
-        sequenceLimitations: seq.limitations,
-        analyzedDurationMs:  result.analyzedMs,
-        videoDurationMs:     result.durationMs,
-      });
-
-      try {
-        const poseUri = await savePoseSequence(id, result);
-        updateAnalysis(id, { poseSequenceUri: poseUri });
-      } catch {
-        // Angle series / key frames are already saved inline — the skeleton
-        // overlay just won't be available for this analysis.
+      setSequenceResult(result);
+      setSequenceAnalysis(seq);
+      setConfidenceOverride(null);
+      await extractFrame(preferredReferenceTime(result, seq), result, true, runId);
+      if (isStaleRun(runId)) return;
+      if (seq.confidence === 'manual_review') {
+        setPoseMessage('Automatic video analysis needs human review. Adjust the reference markers or use the manual checklist fallback.');
+        setManualReviewOpen(true);
       }
-
-      router.replace({ pathname: '/(tabs)/movement/video-analysis', params: { id } } as never);
     } finally {
-      setAnalyzingVideo(false);
-      setSeqProgress(null);
+      if (!isStaleRun(runId)) {
+        setAnalyzingVideo(false);
+        setSeqProgress(null);
+      }
     }
   }
+
+  useEffect(() => {
+    const runId = beginAnalysisRun();
+    if (!media) return;
+    if (!poseAvailable) {
+      // No on-device detection in this build — the manual checklist IS the
+      // workflow, so open it instead of leaving the screen empty.
+      setManualReviewOpen(true);
+      return;
+    }
+
+    const run = media.type === 'photo' ? handleDetectPose(runId) : handleAnalyzeVideo(runId);
+    void run.catch(() => {
+      if (isStaleRun(runId)) return;
+      setPoseMessage('Automatic analysis did not complete. Use manual review or try a different clip.');
+      setManualReviewOpen(true);
+      setDetecting(false);
+      setAnalyzingVideo(false);
+      setSeqProgress(null);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [media?.uri]);
 
   // ── Checklist ───────────────────────────────────────────────────────────────
 
@@ -375,6 +482,15 @@ export default function AnalyzeScreen() {
         return next;
       });
     }
+  }
+
+  function saveLandmarkCorrections(nextLandmarks: PoseLandmarkRecord[], corrected: boolean) {
+    if (!pose) return;
+    const nextPose = { ...pose, landmarks: nextLandmarks };
+    setPose(nextPose);
+    setCorrectedLandmarks(corrected ? nextLandmarks : null);
+    setAngles(anglesFromLandmarks(nextLandmarks, kind));
+    setEditingMarkers(false);
   }
 
   // ── Save ────────────────────────────────────────────────────────────────────
@@ -391,15 +507,19 @@ export default function AnalyzeScreen() {
         return { itemId: item.id, label: item.label, value, severity: severity ?? undefined };
       });
 
-    const limitations: string[] = [DETECTION_LIMITATIONS_NOTE];
+    const limitations: string[] = sequenceAnalysis
+      ? [...sequenceAnalysis.limitations]
+      : [DETECTION_LIMITATIONS_NOTE];
     if (!pose) {
       limitations.push('Pose detection unavailable — manual analysis only.');
     } else {
       limitations.push('No foot landmarks — ankle angle not estimated.');
     }
 
-    const mediaType = media.type === 'photo' ? 'photo' : frame ? 'video_frame' : 'video';
-    const mediaUri  = media.type === 'photo' ? media.uri : frame ? frame.uri : media.uri;
+    const mediaType = media.type === 'photo' ? 'photo' : sequenceAnalysis ? 'video' : frame ? 'video_frame' : 'video';
+    const mediaUri  = media.type === 'photo' ? media.uri : mediaType === 'video_frame' && frame ? frame.uri : media.uri;
+    const effectiveLandmarks = correctedLandmarks ?? pose?.landmarks;
+    const effectiveAngles = effectiveLandmarks ? anglesFromLandmarks(effectiveLandmarks, kind) : angles;
 
     // Picker/thumbnail URIs live in the purgeable OS cache — copy the analyzed
     // media into documents so the saved record keeps working. On copy failure
@@ -411,25 +531,83 @@ export default function AnalyzeScreen() {
       // keep original URI
     }
 
+    let storedReferenceFrameUri: string | undefined;
+    let storedSourceVideoUri: string | undefined;
+    const referenceFrameUri = frame?.uri ?? (media.type === 'photo' ? media.uri : undefined);
+    if (referenceFrameUri) {
+      try {
+        storedReferenceFrameUri = media.type === 'photo' && referenceFrameUri === mediaUri
+          ? storedUri
+          : await copyAnalysisMediaToStorage(referenceFrameUri, `analysis_ref_${Date.now()}`);
+      } catch {
+        storedReferenceFrameUri = referenceFrameUri;
+      }
+    }
+    if (media.type === 'video' && mediaType === 'video_frame') {
+      try {
+        storedSourceVideoUri = await copyAnalysisMediaToStorage(media.uri, `analysis_source_${Date.now()}`);
+      } catch {
+        storedSourceVideoUri = media.uri;
+      }
+    }
+
+    const autoFindings = buildSequenceFindings(
+      {
+        estimatedAngles: effectiveAngles,
+        angleSeries: sequenceAnalysis?.angleSeries,
+        keyFrames: sequenceAnalysis?.keyFrames,
+        repSummaries: sequenceAnalysis?.repSummaries,
+        symmetryEstimates: sequenceAnalysis?.symmetryEstimates,
+        sequenceConfidence: sequenceAnalysis?.confidence ?? confidence,
+      },
+      kind,
+    );
+    const manualRecommendations = buildAnalysisRecommendations(kind, checklistFindings);
+
     const id = addAnalysis({
       type:              kind,
       mediaUri:          storedUri,
-      sourceVideoUri:    mediaType === 'video_frame' ? media.uri : undefined,
+      sourceVideoUri:    mediaType === 'video' ? storedUri : storedSourceVideoUri,
       mediaType,
       cameraView:        KIND_CAMERA_VIEW[kind],
-      landmarks:         pose?.landmarks,
+      landmarks:         effectiveLandmarks,
+      autoLandmarks:     autoLandmarks.length > 0 ? autoLandmarks : undefined,
+      correctedLandmarks: correctedLandmarks ?? undefined,
+      landmarkSource:    correctedLandmarks ? 'user_corrected' : pose ? 'auto' : checklistFindings.length > 0 ? 'manual_review' : undefined,
       imageAspectRatio:  pose ? pose.imageWidth / pose.imageHeight : (frame ? frame.width / frame.height : (media.width && media.height ? media.width / media.height : undefined)),
-      estimatedAngles:   pose ? angles : undefined,
+      estimatedAngles:   effectiveAngles.length > 0 ? effectiveAngles : undefined,
       checklistFindings,
-      confidence,
+      confidence:        sequenceAnalysis?.confidence ?? confidence,
       notes:             notes.trim() || undefined,
-      recommendations:   buildAnalysisRecommendations(kind, checklistFindings),
+      recommendations:   [...autoFindings, ...manualRecommendations],
       limitations,
-      status:            confidence === 'manual_review' ? 'needs_review' : 'complete',
+      status:            (sequenceAnalysis?.confidence ?? confidence) === 'manual_review' ? 'needs_review' : 'complete',
+      referenceFrameTimeMs: frame?.timeMs,
+      referenceFrameUri: storedReferenceFrameUri,
+      angleSeries:         sequenceAnalysis?.angleSeries,
+      keyFrames:           sequenceAnalysis?.keyFrames,
+      repSummaries:        sequenceAnalysis?.repSummaries,
+      symmetryEstimates:   sequenceAnalysis?.symmetryEstimates,
+      sequenceConfidence:  sequenceAnalysis?.confidence,
+      sequenceLimitations: sequenceAnalysis?.limitations,
+      analyzedDurationMs:  sequenceResult?.analyzedMs,
+      videoDurationMs:     sequenceResult?.durationMs ?? media.durationMs,
     });
 
+    if (sequenceResult) {
+      try {
+        const poseUri = await savePoseSequence(id, sequenceResult);
+        updateAnalysis(id, { poseSequenceUri: poseUri });
+      } catch {
+        // Inline angle/key-frame data remains available if the raw pose file cannot be written.
+      }
+    }
+
     setSaving(false);
-    router.replace({ pathname: '/(tabs)/movement/analysis-detail', params: { analysisId: id } } as never);
+    router.replace({
+      pathname: mediaType === 'video' ? '/(tabs)/movement/video-analysis' : '/(tabs)/movement/analysis-detail',
+      params: mediaType === 'video' ? { id } : { analysisId: id },
+    } as never);
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -514,40 +692,13 @@ export default function AnalyzeScreen() {
           )}
         </View>
 
-        {/* Frame extraction (video only) */}
-        {media?.type === 'video' && (
-          <View style={s.card}>
-            <Text style={s.cardLabel}>ANALYZE A FRAME</Text>
-            <Text style={s.helper}>Pick a moment from the clip. The extracted frame is what gets analyzed.</Text>
-            <View style={s.pills}>
-              {frameTimesMs.map(t => (
-                <Pressable
-                  key={t.timeMs}
-                  style={[s.pill, frame?.timeMs === t.timeMs && s.pillOn]}
-                  onPress={() => extractFrame(t.timeMs)}
-                  disabled={frameBusy !== null}
-                >
-                  {frameBusy === t.timeMs ? (
-                    <ActivityIndicator size="small" color={colors.primary} />
-                  ) : (
-                    <Text style={[s.pillTxt, frame?.timeMs === t.timeMs && s.pillOnTxt]}>{t.label}</Text>
-                  )}
-                </Pressable>
-              ))}
-            </View>
-            {frame && !pose ? (
-              <Image source={{ uri: frame.uri }} style={[s.photoPreview, { aspectRatio: frame.width / frame.height }]} resizeMode="cover" />
-            ) : null}
-          </View>
-        )}
-
-        {/* Full video analysis (beta) */}
+        {/* Automatic video analysis — the primary path for video clips */}
         {media?.type === 'video' && poseAvailable && (
           <View style={s.card}>
-            <Text style={s.cardLabel}>FULL VIDEO ANALYSIS · BETA</Text>
+            <Text style={s.cardLabel}>AUTOMATIC VIDEO ANALYSIS</Text>
             <Text style={s.helper}>
-              Tracks joint angles across the entire clip instead of one frame — angle-over-time
-              charts, key moments, and (for strength kinds) rep detection.
+              Runs automatically when you add a clip: joint angles across the whole video,
+              angle-over-time charts, key moments, and (for strength kinds) rep detection.
             </Text>
             {analyzingVideo ? (
               <View style={{ gap: spacing.xs }}>
@@ -565,13 +716,44 @@ export default function AnalyzeScreen() {
               </View>
             ) : (
               <Pressable
-                style={[s.primaryBtn, (detecting || frameBusy !== null) && { opacity: 0.5 }]}
-                onPress={handleAnalyzeVideo}
+                style={[sequenceAnalysis ? s.mediaActionBtn : s.primaryBtn, (detecting || frameBusy !== null) && { opacity: 0.5 }]}
+                onPress={() => handleAnalyzeVideo()}
                 disabled={detecting || frameBusy !== null}
               >
-                <Text style={s.primaryBtnTxt}>Analyze Full Video (Beta)</Text>
+                <Text style={sequenceAnalysis ? s.mediaActionTxt : s.primaryBtnTxt}>
+                  {sequenceAnalysis ? 'Re-run Automatic Analysis' : 'Analyze Full Video'}
+                </Text>
               </Pressable>
             )}
+          </View>
+        )}
+
+        {/* Reference frame (advanced, video only) */}
+        {media?.type === 'video' && (
+          <View style={s.card}>
+            <Text style={s.cardLabel}>REFERENCE FRAME · ADVANCED</Text>
+            <Text style={s.helper}>
+              Pick a different moment to use as the reference frame for still-pose markers and angles.
+            </Text>
+            <View style={s.pills}>
+              {frameTimesMs.map(t => (
+                <Pressable
+                  key={t.timeMs}
+                  style={[s.pill, frame?.timeMs === t.timeMs && s.pillOn]}
+                  onPress={() => extractFrame(t.timeMs)}
+                  disabled={frameBusy !== null || analyzingVideo}
+                >
+                  {frameBusy === t.timeMs ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <Text style={[s.pillTxt, frame?.timeMs === t.timeMs && s.pillOnTxt]}>{t.label}</Text>
+                  )}
+                </Pressable>
+              ))}
+            </View>
+            {frame && !pose ? (
+              <Image source={{ uri: frame.uri }} style={[s.photoPreview, { aspectRatio: frame.width / frame.height }]} resizeMode="cover" />
+            ) : null}
           </View>
         )}
 
@@ -579,7 +761,7 @@ export default function AnalyzeScreen() {
         {analyzableStillUri ? (
           poseAvailable ? (
             <View style={{ gap: spacing.sm }}>
-              <Pressable style={[s.primaryBtn, detecting && { opacity: 0.6 }]} onPress={handleDetectPose} disabled={detecting}>
+              <Pressable style={[s.primaryBtn, detecting && { opacity: 0.6 }]} onPress={() => handleDetectPose()} disabled={detecting}>
                 {detecting ? (
                   <View style={s.btnRow}>
                     <ActivityIndicator size="small" color={colors.onPrimary} />
@@ -603,27 +785,72 @@ export default function AnalyzeScreen() {
         {/* Overlay */}
         {pose && analyzableStillUri ? (
           <View style={s.card}>
-            <Text style={s.cardLabel}>DETECTED POSE</Text>
-            <PoseOverlay
-              imageUri={analyzableStillUri}
-              aspectRatio={overlayAspectRatio}
-              landmarks={pose.landmarks}
-              angles={angles}
-              showSkeleton={showSkeleton}
-              showAngles={showAngleLabels}
-            />
-            <View style={s.toggleRow}>
-              <View style={s.toggleItem}>
-                <Text style={s.toggleLabel}>Skeleton</Text>
-                <Switch value={showSkeleton} onValueChange={setShowSkeleton} trackColor={{ true: colors.primary }} />
-              </View>
-              <View style={s.toggleItem}>
-                <Text style={s.toggleLabel}>Angles</Text>
-                <Switch value={showAngleLabels} onValueChange={setShowAngleLabels} trackColor={{ true: colors.primary }} />
-              </View>
-            </View>
+            <Text style={s.cardLabel}>{correctedLandmarks ? 'USER-CORRECTED MARKERS' : 'DETECTED BODY MARKERS'}</Text>
+            {editingMarkers ? (
+              <LandmarkEditor
+                imageUri={analyzableStillUri}
+                aspectRatio={overlayAspectRatio}
+                autoLandmarks={autoLandmarks.length > 0 ? autoLandmarks : pose.landmarks}
+                landmarks={pose.landmarks}
+                onCancel={() => setEditingMarkers(false)}
+                onSave={saveLandmarkCorrections}
+              />
+            ) : (
+              <>
+                <PoseOverlay
+                  imageUri={analyzableStillUri}
+                  aspectRatio={overlayAspectRatio}
+                  landmarks={pose.landmarks}
+                  angles={angles}
+                  showSkeleton={showSkeleton}
+                  showAngles={showAngleLabels}
+                />
+                <View style={s.toggleRow}>
+                  <View style={s.toggleItem}>
+                    <Text style={s.toggleLabel}>Skeleton</Text>
+                    <Switch value={showSkeleton} onValueChange={setShowSkeleton} trackColor={{ true: colors.primary }} />
+                  </View>
+                  <View style={s.toggleItem}>
+                    <Text style={s.toggleLabel}>Angles</Text>
+                    <Switch value={showAngleLabels} onValueChange={setShowAngleLabels} trackColor={{ true: colors.primary }} />
+                  </View>
+                </View>
+                <Pressable style={s.secondaryActionBtn} onPress={() => setEditingMarkers(true)}>
+                  <Text style={s.secondaryActionTxt}>Adjust Markers</Text>
+                </Pressable>
+              </>
+            )}
             {angles.length > 0 && showAngleLabels ? (
               <Text style={s.smallDisclaimer}>{ANGLE_ESTIMATE_DISCLAIMER}</Text>
+            ) : null}
+          </View>
+        ) : null}
+
+        {sequenceAnalysis ? (
+          <View style={s.card}>
+            <Text style={s.cardLabel}>AUTOMATED VIDEO FINDINGS</Text>
+            <Text style={s.helper}>
+              Reference frame {frame ? `${Math.round(frame.timeMs / 100) / 10}s` : 'selected'} · {CONFIDENCE_LABEL[sequenceAnalysis.confidence]}
+            </Text>
+            <View style={s.mediaActionsRow}>
+              {sequenceAnalysis.keyFrames.slice(0, 4).map(keyFrame => (
+                <Pressable
+                  key={keyFrame.id}
+                  style={[s.mediaActionBtn, frame?.timeMs === keyFrame.timeMs && s.pillOn]}
+                  onPress={() => extractFrame(keyFrame.timeMs, sequenceResult, true)}
+                  disabled={frameBusy !== null}
+                >
+                  <Text style={[s.mediaActionTxt, frame?.timeMs === keyFrame.timeMs && s.pillOnTxt]}>
+                    {keyFrame.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            {sequenceAnalysis.repSummaries.length > 0 ? (
+              <Text style={s.helper}>{sequenceAnalysis.repSummaries.length} estimated reps detected.</Text>
+            ) : null}
+            {sequenceAnalysis.symmetryEstimates[0] ? (
+              <Text style={s.helper}>{sequenceAnalysis.symmetryEstimates[0].note}</Text>
             ) : null}
           </View>
         ) : null}
@@ -657,8 +884,14 @@ export default function AnalyzeScreen() {
 
         {/* Checklist */}
         <View style={s.card}>
-          <Text style={s.cardLabel}>CHECKLIST · {answeredCount} OF {checklist.length} ANSWERED</Text>
-          {checklist.map(item => {
+          <Pressable style={s.cardHeaderRow} onPress={() => setManualReviewOpen(open => !open)}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={s.cardLabel}>MANUAL REVIEW · {answeredCount} OF {checklist.length} ANSWERED</Text>
+              <Text style={s.helper}>Optional fallback for unclear automatic results.</Text>
+            </View>
+            <Text style={s.disclosure}>{manualReviewOpen ? '−' : '+'}</Text>
+          </Pressable>
+          {manualReviewOpen && checklist.map(item => {
             const selected = answers[item.id];
             const abnormal = selected !== undefined && isAbnormalValue(selected);
             return (
@@ -744,7 +977,7 @@ export default function AnalyzeScreen() {
         </Pressable>
         {!canSave && (
           <Text style={s.helper}>
-            {!media ? 'Add a photo or video to save.' : 'Answer at least one checklist item to save.'}
+            {!media ? 'Add a photo or video to save.' : 'Automatic analysis or one manual checklist answer is required to save.'}
           </Text>
         )}
 
@@ -819,6 +1052,14 @@ const s = StyleSheet.create({
     paddingVertical:   spacing.xs,
   },
   mediaActionTxt: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  secondaryActionBtn: {
+    alignSelf:        'flex-start',
+    backgroundColor:  colors.border,
+    borderRadius:     Radius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical:   spacing.xs,
+  },
+  secondaryActionTxt: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   pill: {
     paddingHorizontal: spacing.md,

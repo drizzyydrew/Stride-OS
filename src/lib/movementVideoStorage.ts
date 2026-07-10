@@ -1,5 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
+import { resolveDocumentUri, toRelativeDocumentPath } from './mediaPaths';
 import { supabase } from './supabase';
 
 const VIDEO_DIR = `${FileSystem.documentDirectory}movement-videos/`;
@@ -59,7 +60,7 @@ export async function copyVideoToMovementStorage(
   await FileSystem.copyAsync({ from: sourceUri, to: localUri });
 
   return {
-    localUri,
+    localUri: toRelativeDocumentPath(localUri) ?? localUri,
     ext,
     contentType: contentTypeForExtension(ext),
   };
@@ -80,13 +81,14 @@ export async function copyAnalysisMediaToStorage(sourceUri: string, analysisKey:
   await FileSystem.makeDirectoryAsync(ANALYSIS_DIR, { intermediates: true });
   await FileSystem.copyAsync({ from: sourceUri, to: localUri });
 
-  return localUri;
+  return toRelativeDocumentPath(localUri) ?? localUri;
 }
 
 // Only removes files this module created — never touches library/cache URIs.
 export async function deleteAnalysisMediaIfStored(uri: string): Promise<void> {
-  if (!uri.startsWith(ANALYSIS_DIR)) return;
-  await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+  const resolvedUri = resolveDocumentUri(uri);
+  if (!resolvedUri?.startsWith(ANALYSIS_DIR)) return;
+  await FileSystem.deleteAsync(resolvedUri, { idempotent: true }).catch(() => {});
 }
 
 export async function uploadMovementVideo(
@@ -94,7 +96,8 @@ export async function uploadMovementVideo(
   storagePath: string,
   contentType: string,
 ): Promise<void> {
-  const base64 = await FileSystem.readAsStringAsync(localUri, {
+  const resolvedUri = resolveDocumentUri(localUri) ?? localUri;
+  const base64 = await FileSystem.readAsStringAsync(resolvedUri, {
     encoding: FileSystem.EncodingType.Base64,
   });
   const arrayBuffer = base64ToArrayBuffer(base64);

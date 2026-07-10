@@ -7,6 +7,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { toRelativeDocumentPath } from '../lib/mediaPaths';
 import { deletePoseSequence } from '../lib/poseSequenceStorage';
 
 import type {
@@ -120,6 +121,23 @@ function patchSession(
   return sessions.map((s, i) => i === idx ? { ...fn(s), updatedAt: nowMs() } : s);
 }
 
+function migrateMovementVideoPaths(video: MovementVideo): MovementVideo {
+  return {
+    ...video,
+    uri: toRelativeDocumentPath(video.uri) ?? video.uri,
+  };
+}
+
+function migrateMovementAnalysisPaths(analysis: MovementAnalysis): MovementAnalysis {
+  return {
+    ...analysis,
+    mediaUri: toRelativeDocumentPath(analysis.mediaUri) ?? analysis.mediaUri,
+    sourceVideoUri: toRelativeDocumentPath(analysis.sourceVideoUri),
+    poseSequenceUri: toRelativeDocumentPath(analysis.poseSequenceUri),
+    referenceFrameUri: toRelativeDocumentPath(analysis.referenceFrameUri),
+  };
+}
+
 // ─── Implementation ───────────────────────────────────────────────────────────
 
 export const useMovementStore = create<MovementStore>()(
@@ -136,7 +154,7 @@ export const useMovementStore = create<MovementStore>()(
         const id  = uid();
         const now = nowMs();
         set(state => ({
-          analyses: [...state.analyses, { ...a, id, createdAt: now, updatedAt: now }],
+          analyses: [...state.analyses, migrateMovementAnalysisPaths({ ...a, id, createdAt: now, updatedAt: now })],
         }));
         return id;
       },
@@ -144,7 +162,9 @@ export const useMovementStore = create<MovementStore>()(
       updateAnalysis: (id, patch) =>
         set(state => ({
           analyses: state.analyses.map(a =>
-            a.id === id ? { ...a, ...patch, id: a.id, createdAt: a.createdAt, updatedAt: nowMs() } : a,
+            a.id === id
+              ? migrateMovementAnalysisPaths({ ...a, ...patch, id: a.id, createdAt: a.createdAt, updatedAt: nowMs() })
+              : a,
           ),
         })),
 
@@ -187,14 +207,14 @@ export const useMovementStore = create<MovementStore>()(
       addVideo: (video) => {
         const id = uid();
         set(state => ({
-          videos: [...state.videos, { ...video, id, createdAt: nowMs() }],
+          videos: [...state.videos, migrateMovementVideoPaths({ ...video, id, createdAt: nowMs() })],
         }));
         return id;
       },
 
       updateVideo: (id, patch) =>
         set(state => ({
-          videos: state.videos.map(v => v.id === id ? { ...v, ...patch } : v),
+          videos: state.videos.map(v => v.id === id ? migrateMovementVideoPaths({ ...v, ...patch }) : v),
         })),
 
       deleteVideo: (id) =>
@@ -398,9 +418,9 @@ export const useMovementStore = create<MovementStore>()(
         return {
           ...current,
           ...state,
-          videos:   state?.videos   ?? current.videos,
+          videos:   (state?.videos   ?? current.videos).map(migrateMovementVideoPaths),
           sessions: state?.sessions ?? current.sessions,
-          analyses: state?.analyses ?? current.analyses,
+          analyses: (state?.analyses ?? current.analyses).map(migrateMovementAnalysisPaths),
           readinessAssessments: state?.readinessAssessments ?? current.readinessAssessments,
         };
       },

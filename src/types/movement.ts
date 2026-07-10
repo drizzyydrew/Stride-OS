@@ -335,9 +335,16 @@ export type VideoFrameAnnotation = {
 export type MovementAnalysisKind = 'running_gait' | 'squat' | 'deadlift' | 'lunge_single_leg' | 'general';
 export type AnalysisMediaType = 'photo' | 'video_frame' | 'video';
 export type AnalysisConfidence = 'high' | 'moderate' | 'low' | 'manual_review';
+export type MovementLandmarkSource = 'auto' | 'user_corrected' | 'manual_review';
 export type PoseLandmarkRecord = { name: string; x: number; y: number; confidence: number };
 export type EstimatedAngle = { name: string; joint: string; side: 'left' | 'right' | 'center'; degrees: number; confidence: number; note?: string };
 export type ChecklistFinding = { itemId: string; label: string; value: string; severity?: FindingSeverity; note?: string };
+export type AnalysisRecommendation = {
+  finding: string;
+  meaning: string;
+  confidence?: FindingConfidence;
+  recommendation: string;
+};
 export type MovementAnalysis = {
   id: string; createdAt: number; updatedAt: number;
   type: MovementAnalysisKind;
@@ -348,13 +355,18 @@ export type MovementAnalysis = {
   landmarks?: PoseLandmarkRecord[];   // undefined = pose not run/unavailable
   imageAspectRatio?: number;          // width/height of analyzed image
   estimatedAngles?: EstimatedAngle[];
+  autoLandmarks?: PoseLandmarkRecord[];
+  correctedLandmarks?: PoseLandmarkRecord[];
+  landmarkSource?: MovementLandmarkSource;
   checklistFindings: ChecklistFinding[];
   confidence: AnalysisConfidence;
   notes?: string;
-  recommendations: { finding: string; meaning: string; recommendation: string }[];
+  recommendations: AnalysisRecommendation[];
   limitations: string[];
   linkedWorkoutId?: string; linkedRunId?: string;
   status: 'draft' | 'complete' | 'needs_review';
+  referenceFrameTimeMs?: number;
+  referenceFrameUri?: string;
 
   // ── Movement Lab V2 — video sequence analysis (all optional, see below) ────
   poseSequenceUri?:     string;             // full frame-by-frame landmarks file (see poseSequenceStorage)
