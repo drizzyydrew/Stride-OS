@@ -101,7 +101,7 @@ const GUIDES: Record<string, ExerciseGuide> = {
   },
   push_up: {
     startPosition:  'High plank: hands under shoulders, body rigid from head to heels, glutes and abs braced.',
-    finishPosition: 'Chest about a fist-height from the floor, elbows tracking ~45° from the torso, body still one line.',
+    finishPosition: 'Chest about a fist-height from the floor, elbows tracking about 45 degrees from the torso, body still one line.',
     howTo:          'Lower the whole body as one unit, pause briefly just off the floor, and press back to the top without the hips sagging or hiking.',
     tips:           ['Screw the hands outward into the floor — it packs the shoulders.', 'Elevate the hands on a bench to scale, rather than dropping the knees.'],
     mistakes:       ['Hips sagging into a banana at the bottom.', 'Flaring elbows straight out at 90°, which grinds the shoulders.'],
@@ -268,7 +268,7 @@ const GUIDES: Record<string, ExerciseGuide> = {
     whenToUse:      'Counters sitting time and supports the hip extension range every stride needs.',
   },
   clamshell: {
-    startPosition:  'Side-lying with hips and knees bent ~45°, heels together, band around the knees, pelvis stacked.',
+    startPosition:  'Side-lying with hips and knees bent about 45 degrees, heels together, band around the knees, pelvis stacked.',
     finishPosition: 'Top knee rotated open like a clamshell, pelvis still stacked and motionless.',
     howTo:          'Keeping heels together, open the top knee against the band without rolling the pelvis back, pause, and lower slowly.',
     tips:           ['Small strict range beats big cheated range.', 'You should feel the burn in the side of the hip, not the front.'],

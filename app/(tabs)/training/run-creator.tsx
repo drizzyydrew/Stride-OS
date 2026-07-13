@@ -5,7 +5,7 @@
 
 import { useState, useMemo } from 'react';
 import {
-  ScrollView, StyleSheet, Text, TouchableOpacity, View,
+  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -154,6 +154,7 @@ export default function RunCreatorScreen() {
   const [lrDistanceMi, setLrDistanceMi] = useState(10);
   const [lrStrides,    setLrStrides]    = useState(4);
 
+  const [customName, setCustomName] = useState('');
   const [saved, setSaved] = useState(false);
 
   const estimate: DurationEstimate = useMemo(() => {
@@ -196,6 +197,8 @@ export default function RunCreatorScreen() {
       .map(s => s.label)
       .join(' · ');
 
+    const trimmedName = customName.trim();
+
     addLog(
       {
         category:         'running',
@@ -204,7 +207,9 @@ export default function RunCreatorScreen() {
         runType:          runTypeToCustomType[runType] as never,
         durationMinutes:  estimate.estimatedMin,
         distanceMiles:    estimate.estimatedMi,
-        notes:            `${runTypeLabel[runType]}: ${segmentSummary}`,
+        notes:            trimmedName
+          ? `${trimmedName} — ${runTypeLabel[runType]}: ${segmentSummary}`
+          : `${runTypeLabel[runType]}: ${segmentSummary}`,
       },
       fatigueScore,
       setFatigueScore,
@@ -251,6 +256,21 @@ export default function RunCreatorScreen() {
               <Text style={st.typeDesc}>{rt.desc}</Text>
             </TouchableOpacity>
           ))}
+        </View>
+
+        {/* Workout name */}
+        <View style={st.card}>
+          <Text style={st.sectionLabel}>WORKOUT NAME (OPTIONAL)</Text>
+          <TextInput
+            style={st.nameInput}
+            value={customName}
+            onChangeText={setCustomName}
+            placeholder={runTypeLabel[runType]}
+            placeholderTextColor={colors.textSubtle}
+            selectionColor={colors.primary}
+            maxLength={60}
+            returnKeyType="done"
+          />
         </View>
 
         {/* Type-specific inputs */}
@@ -430,6 +450,17 @@ const st = StyleSheet.create({
     fontWeight:    FontWeight.black,
     letterSpacing: 0.7,
     marginBottom:  spacing.md,
+  },
+  nameInput: {
+    color:             colors.text,
+    backgroundColor:   colors.bg,
+    borderRadius:      Radius.sm,
+    borderWidth:       1,
+    borderColor:       colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical:   spacing.sm,
+    minHeight:          44,
+    fontSize:          FontSize.base,
   },
   divider: {
     height:          1,

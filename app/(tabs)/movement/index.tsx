@@ -24,6 +24,9 @@ import { useMovementStore } from '../../../src/store/movementStore';
 import { useAuthStore }     from '../../../src/store/authStore';
 import { copyVideoToMovementStorage, uploadMovementVideo } from '../../../src/lib/movementVideoStorage';
 import { ANALYSIS_KIND_INFO } from '../../../src/utils/movementEngine';
+import { normalizeAnalysisKind } from '../../../src/utils/measurementMatrix';
+import { dionImagesForKind } from '../../../src/constants/dionImages';
+import DionInstructionCard from '../../../src/components/movement/DionInstructionCard';
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
@@ -36,6 +39,17 @@ import type {
   MovementViewAngle,
 } from '../../../src/types/movement';
 import type { ReadinessCategory } from '../../../src/types/movementReadiness';
+
+// Default capture view per kind — used only to pick the right Dion thumbnail
+// for the home-screen cards. Actual capture view is chosen on the analyze screen.
+const KIND_DEFAULT_VIEW: Record<Exclude<MovementAnalysisKind, 'lunge_single_leg'>, MovementViewAngle> = {
+  running_gait:        'side',
+  squat:                'side',
+  deadlift:             'side',
+  single_leg_control:   'front',
+  lunge:                'side',
+  general:              'unknown',
+};
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -74,7 +88,6 @@ const VIEW_ANGLES: { key: MovementViewAngle; label: string }[] = [
   { key: 'side',      label: 'Side'    },
   { key: 'front',     label: 'Front'   },
   { key: 'rear',      label: 'Rear'    },
-  { key: '45_degree', label: '45°'     },
   { key: 'unknown',   label: 'Unknown' },
 ];
 
@@ -99,22 +112,16 @@ const TYPE_LABELS: Record<MovementAnalysisType, string> = {
   other:             'Other',
 };
 
-// V1.5 analysis kinds — order matches the Movement Lab home cards.
-const ANALYSIS_KINDS: { kind: MovementAnalysisKind; icon: string }[] = [
-  { kind: 'running_gait',     icon: '🏃' },
-  { kind: 'squat',            icon: '🏋️' },
-  { kind: 'deadlift',         icon: '🏋️' },
-  { kind: 'lunge_single_leg', icon: '🦵' },
-  { kind: 'general',          icon: '📐' },
+// Build 36 taxonomy — six standalone analyses, order matches the Movement
+// Lab home cards. Categories come from ANALYSIS_KIND_INFO (Agent A).
+const ANALYSIS_KINDS: Exclude<MovementAnalysisKind, 'lunge_single_leg'>[] = [
+  'running_gait',
+  'squat',
+  'deadlift',
+  'single_leg_control',
+  'lunge',
+  'general',
 ];
-
-const KIND_ICON: Record<MovementAnalysisKind, string> = {
-  running_gait:     '🏃',
-  squat:            '🏋️',
-  deadlift:         '🏋️',
-  lunge_single_leg: '🦵',
-  general:          '📐',
-};
 
 const CONFIDENCE_META: Record<AnalysisConfidence, { label: string; color: string }> = {
   high:          { label: 'High',          color: colors.positive },
@@ -374,7 +381,11 @@ function VideoCard({ video }: { video: { id: string; title: string; date: string
 // ─── Saved analysis card ──────────────────────────────────────────────────────
 
 function AnalysisCard({ analysis }: { analysis: MovementAnalysis }) {
-  const info = ANALYSIS_KIND_INFO[analysis.type];
+  // Legacy 'lunge_single_leg' records normalize to single_leg_control/lunge
+  // by camera view so old analyses keep rendering safely after the taxonomy split.
+  const normKind = normalizeAnalysisKind(analysis.type, analysis.cameraView);
+  const info = ANALYSIS_KIND_INFO[normKind] ?? ANALYSIS_KIND_INFO.general;
+  const dionEntry = dionImagesForKind(normKind, analysis.cameraView);
   const isVideo = analysis.mediaType === 'video';
   const conf = CONFIDENCE_META[isVideo ? (analysis.sequenceConfidence ?? analysis.confidence) : analysis.confidence];
   const date = new Date(analysis.createdAt).toLocaleDateString(undefined, {
@@ -388,9 +399,7 @@ function AnalysisCard({ analysis }: { analysis: MovementAnalysis }) {
         : router.push({ pathname: '/(tabs)/movement/analysis-detail', params: { analysisId: analysis.id } } as never)
       }
     >
-      <View style={vc.iconBox}>
-        <Text style={vc.icon}>{KIND_ICON[analysis.type]}</Text>
-      </View>
+      <DionInstructionCard dion={dionEntry} variant="compact" />
       <View style={vc.info}>
         <View style={vc.titleRow}>
           <Text style={vc.title}>{info.title}</Text>
@@ -424,6 +433,7 @@ export default function MovementIndexScreen() {
   const user = useAuthStore(s => s.user);
   const [showAdd,   setShowAdd]   = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [legacyOpen, setLegacyOpen] = useState(false);
 
   async function handleAdd(form: AddVideoForm) {
     // addVideo returns the ID it assigns — capture it so updateVideo targets the right record
@@ -487,20 +497,20 @@ export default function MovementIndexScreen() {
         {/* Markerless analysis — pick a movement type */}
         <Text style={s.sectionLabel}>ANALYZE A MOVEMENT</Text>
         <View style={s.cards}>
-          {ANALYSIS_KINDS.map(({ kind, icon }) => {
+          {ANALYSIS_KINDS.map(kind => {
             const info = ANALYSIS_KIND_INFO[kind];
+            const dionEntry = dionImagesForKind(kind, KIND_DEFAULT_VIEW[kind]);
             return (
               <Pressable
                 key={kind}
                 style={s.kindCard}
                 onPress={() => router.push({ pathname: '/(tabs)/movement/analyze', params: { kind } } as never)}
               >
-                <View style={s.kindIconBox}>
-                  <Text style={s.kindIcon}>{icon}</Text>
-                </View>
+                <DionInstructionCard dion={dionEntry} variant="compact" />
                 <View style={s.kindInfo}>
+                  <Text style={s.kindCategory}>{info.category?.toUpperCase() ?? ''}</Text>
                   <Text style={s.kindTitle}>{info.title}</Text>
-                  <Text style={s.kindCamera}>{info.cameraAngle}</Text>
+                  <Text style={s.kindCamera}>{dionEntry.viewLabel}</Text>
                   <Text style={s.kindAnalyzes} numberOfLines={2}>
                     {info.analyzes.slice(0, 3).join(' · ')}
                   </Text>
@@ -521,11 +531,16 @@ export default function MovementIndexScreen() {
           </>
         )}
 
-        {/* Existing video workspace */}
-        <Text style={s.sectionLabel}>VIDEO WORKSPACE</Text>
-        <View style={s.aiBanner}>
-          <Text style={s.aiBannerTitle}>Video analysis workspace</Text>
-          <Text style={s.aiBannerSub}>
+        {/* Legacy video workspace — pre-markerless upload flow, kept for backward
+            compatibility with existing video sessions but visually demoted. */}
+        <Pressable style={s.legacyHeaderRow} onPress={() => setLegacyOpen(o => !o)}>
+          <Text style={s.legacySectionLabel}>LEGACY VIDEO WORKSPACE</Text>
+          <Text style={s.legacyDisclosure}>{legacyOpen ? '−' : '+'}</Text>
+        </Pressable>
+        {legacyOpen && (
+        <>
+        <View style={s.legacyBanner}>
+          <Text style={s.legacyBannerSub}>
             Record video in your camera app, upload it here, and keep gait, lift, and
             joint-angle notes tied to the athlete profile.
           </Text>
@@ -547,6 +562,8 @@ export default function MovementIndexScreen() {
           <View style={s.cards}>
             {videos.map(v => <VideoCard key={v.id} video={v} />)}
           </View>
+        )}
+        </>
         )}
       </ScrollView>
 
@@ -610,16 +627,8 @@ const s = StyleSheet.create({
     alignItems:      'center',
     gap:             spacing.md,
   },
-  kindIconBox: {
-    width:           44,
-    height:          44,
-    borderRadius:    10,
-    backgroundColor: colors.border,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  kindIcon:     { fontSize: 22 },
   kindInfo:     { flex: 1, gap: 2 },
+  kindCategory: { color: colors.textSubtle, fontSize: 9, fontWeight: FontWeight.black, letterSpacing: 0.5 },
   kindTitle:    { color: colors.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
   kindCamera:   { color: colors.primary, fontSize: FontSize.xs },
   kindAnalyzes: { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 15 },
@@ -633,6 +642,27 @@ const s = StyleSheet.create({
   },
   aiBannerTitle: { color: colors.primary, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   aiBannerSub:   { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
+  legacyHeaderRow: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+    marginTop:      spacing.sm,
+  },
+  legacySectionLabel: {
+    color:         colors.textSubtle,
+    fontSize:      10,
+    fontWeight:    FontWeight.bold,
+    letterSpacing: 0.6,
+  },
+  legacyDisclosure: { color: colors.textSubtle, fontSize: 16, fontWeight: FontWeight.bold },
+  legacyBanner: {
+    backgroundColor: colors.cardAlt,
+    borderRadius:    12,
+    padding:         spacing.md,
+    borderWidth:     1,
+    borderColor:     colors.border,
+  },
+  legacyBannerSub: { color: colors.textSubtle, fontSize: FontSize.xs, lineHeight: 16 },
   empty: { alignItems: 'center', paddingTop: spacing.xxxl, gap: spacing.md },
   emptyIcon:    { fontSize: 48 },
   emptyTitle:   { color: colors.text, fontSize: FontSize.lg, fontWeight: FontWeight.bold },

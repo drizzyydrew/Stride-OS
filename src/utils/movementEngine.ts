@@ -47,7 +47,7 @@ export const GAIT_FINDING_TEMPLATES: Record<string, GaitFindingTemplate> = {
   overstride: {
     finding:        'Overstriding at initial contact',
     severity:       'moderate',
-    implication:    'Increased braking force and ground reaction stress. Associated with shin, knee, and Achilles injuries.',
+    implication:    'May increase braking force and ground-reaction loading; may be associated with shin, knee, and Achilles complaints. Estimated from 2D video — requires confirmation.',
     drill:          'Quick cadence drills (180 BPM metronome), A-skips, pop-up drill',
     strengthFocus:  'Hip extension strength (glutes), plantar flexor power',
     retestNote:     'Refilm at same pace after 4–6 weeks of cadence work',
@@ -57,7 +57,7 @@ export const GAIT_FINDING_TEMPLATES: Record<string, GaitFindingTemplate> = {
   crossover: {
     finding:        'Crossover gait pattern observed',
     severity:       'moderate',
-    implication:    'IT band and hip abductor loading. Associated with ITBS and patellofemoral pain.',
+    implication:    'May increase IT band and hip abductor loading; may be associated with ITBS and patellofemoral pain. Estimated observation, requires confirmation.',
     drill:          'Lateral band walks, single-leg balance, wide lane running drill',
     strengthFocus:  'Hip abductors (glute medius), hip external rotators',
     retestNote:     'Refilm with focus line on ground to assess crossing',
@@ -65,9 +65,9 @@ export const GAIT_FINDING_TEMPLATES: Record<string, GaitFindingTemplate> = {
     riskScores:     ['movement_capacity', 'durability'],
   },
   hip_drop_mild: {
-    finding:        'Mild pelvic drop (Trendelenburg sign)',
+    finding:        'Mild pelvic drop',
     severity:       'low',
-    implication:    'Indicates relative hip abductor weakness. Can progress to IT band or knee issues.',
+    implication:    'May reflect relative hip abductor control; may be associated with IT band or knee complaints. Worth monitoring, not a diagnosis.',
     drill:          'Single-leg stance with focus on level pelvis, hip hike exercise',
     strengthFocus:  'Glute medius, hip abductors',
     retestNote:     'Reassess after 6 weeks of hip abductor strengthening',
@@ -97,7 +97,7 @@ export const GAIT_FINDING_TEMPLATES: Record<string, GaitFindingTemplate> = {
   knee_valgus_mild: {
     finding:        'Mild knee valgus (dynamic)',
     severity:       'low',
-    implication:    'Increased patellofemoral and medial knee stress. Common in fatigue states.',
+    implication:    'May be associated with increased patellofemoral and medial knee loading; commonly more visible in fatigue states. Estimated, requires confirmation.',
     drill:          'Single-leg squat with knee tracking cue, lateral band squat',
     strengthFocus:  'Glute medius, VMO, foot intrinsics',
     riskType:       'form_fault',
@@ -106,7 +106,7 @@ export const GAIT_FINDING_TEMPLATES: Record<string, GaitFindingTemplate> = {
   knee_valgus_moderate: {
     finding:        'Moderate knee valgus — training modification recommended',
     severity:       'moderate',
-    implication:    'Patellofemoral, medial collateral, and ACL stress. Avoid deep fatigue squatting until corrected.',
+    implication:    'May be associated with increased patellofemoral and medial knee loading. Consider easing deep fatigued squatting while control work is dialed in. Manual review recommended.',
     drill:          'Box squat with band around knees, step-down with lateral cue, glute bridge with abduction',
     strengthFocus:  'Hip abductors, knee extensors (VMO), single-leg stability',
     retestNote:     'Reassess under load after 4 weeks of focused correction',
@@ -114,9 +114,9 @@ export const GAIT_FINDING_TEMPLATES: Record<string, GaitFindingTemplate> = {
     riskScores:     ['movement_capacity', 'durability'],
   },
   knee_valgus_severe: {
-    finding:        'Severe knee valgus — reduce high-impact load immediately',
+    finding:        'Pronounced knee valgus — manual review recommended',
     severity:       'high',
-    implication:    'High risk for patellofemoral syndrome, medial knee injury, and ACL stress. Consult sports physio.',
+    implication:    'A pronounced knee-in position that may be associated with increased patellofemoral and medial knee loading. Consider a clinical movement assessment for a precise evaluation.',
     drill:          'Regress to seated and supported hip abductor work',
     strengthFocus:  'Hip abductors, glutes, foot/ankle stability',
     retestNote:     'Clinical review before heavy training resumes',
@@ -192,7 +192,7 @@ export const LIFTING_TEMPLATES: Record<string, Omit<LiftingFinding, 'id' | 'vide
     finding:     'Dynamic knee valgus during lift',
     severity:    'moderate',
     confidence:  'moderate',
-    implication: 'Increased patellofemoral and knee ligament stress.',
+    implication: 'May be associated with increased patellofemoral and medial knee loading. Estimated, requires confirmation.',
     regression:  'Reduce load 20–30%. Box squat to parallel.',
     cue:         'Drive knees out over little toes.',
     retestNote:  'Reassess at lighter load after 2 weeks of correction.',
@@ -217,7 +217,7 @@ export const LIFTING_TEMPLATES: Record<string, Omit<LiftingFinding, 'id' | 'vide
     finding:     'Bar drifts forward from body during pull',
     severity:    'moderate',
     confidence:  'moderate',
-    implication: 'Increases lumbar moment arm. Associated with lower back strain.',
+    implication: 'May increase the lumbar moment arm and may be associated with lower back strain. Estimated, requires confirmation.',
     regression:  'Romanian deadlift with wall cue to maintain bar path.',
     cue:         'Bar stays in contact with body throughout pull.',
   },
@@ -280,7 +280,7 @@ export function getMovementTrainingInfluences(
   if (hasHighSeverity) {
     influences.push({
       category: 'caution',
-      message:  'High-severity movement finding active. Avoid max-effort lower body loading until addressed.',
+      message:  'A high-severity movement finding is active. Consider easing max-effort lower-body loading while it is addressed. Manual review recommended.',
       source:   'Movement Lab risk flag',
     });
   }
@@ -320,10 +320,10 @@ export const GAIT_ANGLE_NORMS: Partial<Record<string, JointAngleNorm>> = {
   trunk_lean:           { min: 0,   max: 10,  optimal: 5,  note: 'Forward lean 3–7° typical for distance running' },
   hip_flexion:          { min: 35,  max: 55,  optimal: 45, note: 'Hip flexion at initial swing (approx.)' },
   hip_extension:        { min: -10, max: 0,   optimal: -5, note: 'Terminal stance hip extension' },
-  knee_flexion:         { min: 15,  max: 40,  optimal: 25, note: 'Knee flexion at initial contact — higher = more overstride risk' },
+  knee_flexion:         { min: 15,  max: 40,  optimal: 25, note: 'Knee flexion at initial contact — higher values may be associated with more overstride' },
   ankle_dorsiflexion:   { min: 10,  max: 25,  optimal: 18, note: 'Running requires ~15–25° dynamic dorsiflexion' },
   ankle_plantarflexion: { min: 20,  max: 40,  optimal: 30, note: 'Push-off plantarflexion' },
-  pelvic_drop:          { min: 0,   max: 5,   optimal: 2,  note: '>5° considered clinically significant drop' },
+  pelvic_drop:          { min: 0,   max: 5,   optimal: 2,  note: '> ~5° is often used as a threshold worth monitoring' },
 };
 
 export const LIFTING_ANGLE_NORMS: Partial<Record<string, JointAngleNorm>> = {
@@ -379,10 +379,20 @@ export const DETECTION_LIMITATIONS_NOTE =
 
 // ─── Analysis kind info ───────────────────────────────────────────────────────
 
-export const ANALYSIS_KIND_INFO: Record<MovementAnalysisKind, { title: string; cameraAngle: string; setup: string[]; analyzes: string[] }> = {
+export type AnalysisKindCategory =
+  | 'Running Performance'
+  | 'Strength Movement'
+  | 'Athletic Movement'
+  | 'General Analysis';
+
+export const ANALYSIS_KIND_INFO: Record<
+  MovementAnalysisKind,
+  { title: string; category: AnalysisKindCategory; cameraAngle: string; setup: string[]; analyzes: string[] }
+> = {
   running_gait: {
     title:       'Running Gait',
-    cameraAngle: 'Side view, camera at hip height, 3–5 m away',
+    category:    'Running Performance',
+    cameraAngle: 'Lateral (side) view, camera at hip height, 3–5 m away',
     setup: [
       'Film from the side with the camera steady at hip height, 3–5 m away',
       'Use a treadmill or make repeated passes past the camera at your normal pace',
@@ -390,66 +400,89 @@ export const ANALYSIS_KIND_INFO: Record<MovementAnalysisKind, { title: string; c
       'Good lighting, plain background, whole body in frame',
     ],
     analyzes: [
-      'Overstride at initial contact',
-      'Trunk lean',
-      'Pelvic drop (hip control)',
-      'Knee alignment',
-      'Arm swing symmetry',
+      'Estimated overstride at initial contact',
+      'Trunk inclination',
+      'Pelvic control (hip) estimates',
+      'Closest-side knee and hip angles',
+      'Left/right comparison where both sides are visible',
     ],
   },
   squat: {
     title:       'Squat',
-    cameraAngle: 'Front 45° or pure side view',
+    category:    'Strength Movement',
+    cameraAngle: 'Lateral (side) view — a frontal view is an optional add-on',
     setup: [
-      'Film from a front 45° angle or straight from the side',
+      'Film straight from the side, camera steady at roughly hip height',
       'Whole body in frame, including feet, through the full rep',
       'Use a light or moderate load you can pause safely',
       'Fitted clothing so hip and knee positions are visible',
+      'A frontal view is optional and adds knee-position and pelvic-control estimates',
     ],
     analyzes: [
-      'Squat depth',
-      'Trunk angle',
-      'Knee tracking',
-      'Hip shift (left/right)',
-      'Ankle strategy (heels)',
+      'Squat depth (closest-side knee flexion)',
+      'Trunk inclination',
+      'Closest-side hip angle',
+      'Rep-to-rep consistency (estimated)',
+      'Frontal-plane knee position (frontal view only)',
     ],
   },
   deadlift: {
     title:       'Deadlift',
-    cameraAngle: 'Pure side view, bar path fully visible',
+    category:    'Strength Movement',
+    cameraAngle: 'Lateral (side) view, camera at roughly hip height',
     setup: [
-      'Film straight from the side so the bar path is visible for the whole pull',
-      'Camera at roughly hip height, whole body plus bar in frame',
+      'Film straight from the side, camera steady at roughly hip height',
+      'Whole body in frame for the whole pull',
       'Film your working sets, not a deliberately slowed demo',
-      'Avoid backlighting — the bar and your spine line must be visible',
+      'Avoid backlighting — your spine line must stay visible',
     ],
     analyzes: [
-      'Hip hinge quality',
-      'Trunk and knee angles',
-      'Bar path',
+      'Hip hinge quality (estimated)',
+      'Trunk inclination and closest-side knee angle',
       'Lockout position',
       'Start position setup',
+      'Bar path — only when a bar is manually marked (no automatic bar detection)',
     ],
   },
-  lunge_single_leg: {
-    title:       'Lunge / Single-Leg',
-    cameraAngle: 'Front view, square to the camera',
+  single_leg_control: {
+    title:       'Single-Leg Control',
+    category:    'Athletic Movement',
+    cameraAngle: 'Frontal (front) view, square to the camera — a lateral view is optional',
     setup: [
       'Film from directly in front, square to the camera',
       'Whole body in frame including the feet',
-      'Perform 3–5 slow, controlled reps per side',
+      'Perform controlled repetitions per side',
       'Fitted shorts or leggings so knee and pelvis position are visible',
     ],
     analyzes: [
-      'Knee valgus (knee caving in)',
-      'Pelvic drop',
-      'Balance strategy',
-      'Trunk control',
+      'Frontal-plane knee position',
+      'Pelvic control (pelvic obliquity)',
+      'Trunk strategy (lateral lean)',
+      'Balance and control',
+    ],
+  },
+  lunge: {
+    title:       'Lunge',
+    category:    'Athletic Movement',
+    cameraAngle: 'Lateral (side) view — a frontal view is an optional add-on',
+    setup: [
+      'Film from the side, camera steady at roughly hip height',
+      'Whole body in frame including the feet',
+      'Perform controlled repetitions per side',
+      'Fitted shorts or leggings so hip and knee positions are visible',
+    ],
+    analyzes: [
+      'Split-squat mechanics (closest-side knee and hip angles)',
+      'Hip extension tolerance (estimated)',
+      'Knee control',
+      'Trunk strategy',
+      'Deceleration control where visible',
     ],
   },
   general: {
     title:       'General Upload',
-    cameraAngle: 'Any view — pick what shows the movement best',
+    category:    'General Analysis',
+    cameraAngle: 'You pick the view that shows the movement best',
     setup: [
       'Frame the whole body and keep the camera steady',
       'Good lighting and a plain background improve detection',
@@ -457,7 +490,26 @@ export const ANALYSIS_KIND_INFO: Record<MovementAnalysisKind, { title: string; c
     ],
     analyzes: [
       'Any movement — reviewed manually',
-      'Pose landmarks and joint angles where detectable',
+      'Pose landmarks and joint angles valid for the chosen view',
+    ],
+  },
+  // Deprecated legacy kind — retained so Build 32/34/35 records display without
+  // crashing. New records migrate to single_leg_control | lunge on read.
+  lunge_single_leg: {
+    title:       'Single-Leg Control',
+    category:    'Athletic Movement',
+    cameraAngle: 'Frontal (front) view, square to the camera',
+    setup: [
+      'Film from directly in front, square to the camera',
+      'Whole body in frame including the feet',
+      'Perform controlled repetitions per side',
+      'Fitted shorts or leggings so knee and pelvis position are visible',
+    ],
+    analyzes: [
+      'Frontal-plane knee position',
+      'Pelvic control (pelvic obliquity)',
+      'Trunk strategy (lateral lean)',
+      'Balance and control',
     ],
   },
 };
@@ -489,6 +541,21 @@ export const ANALYSIS_CHECKLISTS: Record<MovementAnalysisKind, { id: string; lab
     { id: 'lockout',        label: 'Lockout',        options: ['Complete', 'Incomplete', 'Hyperextended', 'Unclear'] },
     { id: 'start_position', label: 'Start position', options: ['Set', 'Rushed', 'Unclear'] },
   ],
+  // Single-Leg Control — frontal-plane control focus.
+  single_leg_control: [
+    { id: 'knee_position', label: 'Frontal knee position', options: ['Tracks over foot', 'Drifts inward', 'Drifts outward', 'Unclear'] },
+    { id: 'pelvic_drop',   label: 'Pelvic control',        options: ['Level', 'Mild drop', 'Marked drop', 'Unclear'] },
+    { id: 'trunk_control', label: 'Trunk control',         options: ['Stable', 'Some sway', 'Collapsing', 'Unclear'] },
+    { id: 'balance',       label: 'Balance',               options: ['Steady', 'Occasional wobble', 'Frequent loss', 'Unclear'] },
+  ],
+  // Lunge — lateral split-squat mechanics focus.
+  lunge: [
+    { id: 'depth',         label: 'Split-squat depth', options: ['Above parallel', 'Parallel', 'Below parallel', 'Unclear'] },
+    { id: 'knee_control',  label: 'Front-knee control', options: ['Controlled', 'Travels far forward', 'Caves in', 'Unclear'] },
+    { id: 'trunk_control', label: 'Trunk control',      options: ['Stable', 'Some sway', 'Collapsing', 'Unclear'] },
+    { id: 'balance',       label: 'Balance',            options: ['Steady', 'Occasional wobble', 'Frequent loss', 'Unclear'] },
+  ],
+  // Deprecated legacy kind — kept so old records still open their checklist.
   lunge_single_leg: [
     { id: 'knee_valgus',   label: 'Knee valgus',   options: ['None', 'Mild', 'Moderate', 'Severe', 'Unclear'] },
     { id: 'pelvic_drop',   label: 'Pelvic drop',   options: ['None', 'Mild', 'Moderate', 'Severe', 'Unclear'] },
@@ -510,6 +577,8 @@ export const NORMAL_CHECKLIST_VALUES = new Set([
   'Parallel', 'Below parallel', 'Over toes', 'Heels down',
   'Good hinge', 'Neutral', 'Close', 'Complete', 'Set',
   'Stable', 'Steady', 'Smooth', 'Controlled', 'Slight forward',
+  // Build 36 — Single-Leg Control / Lunge normal answers.
+  'Tracks over foot', 'Level',
 ]);
 
 function gaitTemplateToRec(t: GaitFindingTemplate): AnalysisRecommendation {
@@ -756,6 +825,78 @@ export function buildAnalysisRecommendations(
     }
   }
 
+  if (kind === 'single_leg_control') {
+    const kneePos = get('knee_position');
+    if (kneePos === 'Drifts inward') {
+      recs.push({
+        finding:        'Knee drifts toward the midline on single-leg loading',
+        meaning:        'A knee-in (valgus) position may be associated with increased patellofemoral and medial knee loading, and often reflects lateral hip and control demands. Estimated from 2D video — worth monitoring, not a diagnosis.',
+        recommendation: 'Cue: "knee points at the second toe." Add lateral band drills, single-leg step-downs, and glute-medius work. Refilm front-on in 3–4 weeks.',
+      });
+    } else if (kneePos === 'Drifts outward') {
+      recs.push({
+        finding:        'Knee drifts outward on single-leg loading',
+        meaning:        'An outward (varus) knee position is an estimated frontal-plane observation; on its own it is a control cue, not a diagnosis.',
+        recommendation: 'Cue: "knee tracks over the middle of the foot." Add controlled single-leg work with attention to foot pressure. Refilm front-on to compare.',
+      });
+    }
+    const drop = get('pelvic_drop');
+    if (drop === 'Mild drop')   recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.hip_drop_mild));
+    if (drop === 'Marked drop') recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.hip_drop_moderate));
+    const trunkCtrl = get('trunk_control');
+    if (trunkCtrl === 'Some sway' || trunkCtrl === 'Collapsing') {
+      recs.push({
+        finding:        trunkCtrl === 'Collapsing' ? 'Trunk collapses during single-leg work' : 'Trunk sway during single-leg work',
+        meaning:        'The trunk leaning or collapsing over the stance leg may reflect lateral hip and core control — the body substitutes a lean for pelvic control. An estimated observation, worth monitoring.',
+        recommendation: 'Cue: "ribs stacked over pelvis, belt buckle level." Regress to a shorter/supported stance (hand on wall) until the trunk stays quiet, and add side planks and suitcase carries 2×/week. Refilm front-on in 4 weeks.',
+      });
+    }
+    const balance = get('balance');
+    if (balance === 'Occasional wobble' || balance === 'Frequent loss') {
+      recs.push({
+        finding:        balance === 'Frequent loss' ? 'Frequent balance loss on single leg' : 'Occasional balance wobble on single leg',
+        meaning:        'Balance strategy under single-leg load reflects foot/ankle stability and hip control — both matter for running, where every stride is a single-leg landing.',
+        recommendation: 'Add daily single-leg balance holds (30–60 s per side, eyes forward), progressing to unstable surfaces or eyes-closed. Strength focus: single-leg calf raises and step-downs with a slow 3-second lowering. Expect visible improvement in 2–3 weeks.',
+      });
+    }
+  }
+
+  if (kind === 'lunge') {
+    if (get('depth') === 'Above parallel') {
+      recs.push(liftingTemplateToRec(LIFTING_TEMPLATES.poor_depth));
+    }
+    const kneeCtrl = get('knee_control');
+    if (kneeCtrl === 'Caves in') {
+      recs.push({
+        finding:        'Front knee caves inward during the lunge',
+        meaning:        'A knee-in position may be associated with increased patellofemoral and medial knee loading. Estimated from 2D video, worth monitoring.',
+        recommendation: 'Cue: "split the floor, knee over the second toe." Add lateral band drills and controlled split squats. Refilm from the front to confirm.',
+      });
+    } else if (kneeCtrl === 'Travels far forward') {
+      recs.push({
+        finding:        'Front knee travels well past the toes',
+        meaning:        'A long forward knee travel shifts load toward the front knee and may reflect step length or ankle-strategy preferences. An estimated observation, not a fault on its own.',
+        recommendation: 'Try a slightly longer stance and a more vertical shin if the goal is to spread load; keep the pattern you can control smoothly. Refilm from the side to compare.',
+      });
+    }
+    const trunkCtrl = get('trunk_control');
+    if (trunkCtrl === 'Some sway' || trunkCtrl === 'Collapsing') {
+      recs.push({
+        finding:        trunkCtrl === 'Collapsing' ? 'Trunk collapses during the lunge' : 'Trunk sway during the lunge',
+        meaning:        'Trunk lean or collapse over the front leg may reflect lateral hip and core control. Estimated, worth monitoring.',
+        recommendation: 'Cue: "tall chest, ribs over pelvis." Regress to a supported split squat until the trunk stays quiet, and add anti-lateral-flexion core work. Refilm in 4 weeks.',
+      });
+    }
+    const balance = get('balance');
+    if (balance === 'Occasional wobble' || balance === 'Frequent loss') {
+      recs.push({
+        finding:        balance === 'Frequent loss' ? 'Frequent balance loss during the lunge' : 'Occasional balance wobble during the lunge',
+        meaning:        'Balance under split-stance load reflects foot/ankle stability and hip control, both of which carry over to single-leg running mechanics.',
+        recommendation: 'Add controlled tempo split squats and single-leg balance holds. Progress load only once each rep looks steady. Expect visible improvement in 2–3 weeks.',
+      });
+    }
+  }
+
   if (kind === 'lunge_single_leg') {
     const valgus = get('knee_valgus');
     if (valgus === 'Mild')     recs.push(gaitTemplateToRec(GAIT_FINDING_TEMPLATES.knee_valgus_mild));
@@ -831,6 +972,7 @@ export type CoachHandoff = {
   analysisType:     MovementAnalysisKind;
   mediaType:        MovementAnalysis['mediaType'];
   cameraView:       MovementAnalysis['cameraView'];
+  closestSide?:     'left' | 'right';   // lateral captures — which limb faced the camera
   detectedAngles:   { name: string; degrees: number; confidence: number }[];
   checklistFindings: ChecklistFinding[];
   confidence:       MovementAnalysis['confidence'];
@@ -877,6 +1019,7 @@ export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
     analysisType:      analysis.type,
     mediaType:         analysis.mediaType,
     cameraView:        analysis.cameraView,
+    closestSide:       analysis.closestSide,
     detectedAngles:    (analysis.estimatedAngles ?? []).map(a => ({
       name:       `${a.name}${a.side !== 'center' ? ` (${a.side})` : ''}`,
       degrees:    a.degrees,

@@ -338,9 +338,9 @@ export function calculateHydrationPlan(input: HydrationCalculatorInput): Hydrati
   const sodiumHighMg = round(sodiumTargetMgH * 1.15);
 
   const execution = [
-    `${round(fluidTargetLh * L_TO_OZ)} oz/h fluid, taken in small sips.`,
-    `${carbs.target > 0 ? `Aim for ${carbs.low}-${carbs.high} g carbs/h.` : 'Carbs optional if you start well fueled.'}`,
-    `${sodiumTargetMgH > 0 ? `${sodiumLowMg}-${sodiumHighMg} mg sodium/h across drink, food, or capsules.` : 'Sodium not required during this run unless conditions change.'}`,
+    `${round(fluidTargetLh * L_TO_OZ)} oz/hr fluid, taken in small sips.`,
+    `${carbs.target > 0 ? `Aim for ${carbs.low}-${carbs.high} g carbs/hr.` : 'Carbs optional if you start well fueled.'}`,
+    `${sodiumTargetMgH > 0 ? `${sodiumLowMg}-${sodiumHighMg} mg sodium/hr across drink, food, or capsules.` : 'Sodium not required during this run unless conditions change.'}`,
   ];
 
   return {
@@ -414,6 +414,7 @@ export function calcHydration(
   weightKg: number,
   durationMin: number,
   tempF: number,
+  reminderIntervalMin = 20,
 ): HydrationResult {
   const plan = calculateHydrationPlan({
     durationMin,
@@ -430,7 +431,7 @@ export function calcHydration(
     goal: 'strong',
   });
   const hours = durationMin / 60;
-  const intervals = Math.max(1, Math.ceil(durationMin / 20));
+  const intervals = Math.max(1, Math.ceil(durationMin / Math.max(1, reminderIntervalMin)));
   const carbRate = carbRateForDuration(durationMin);
   const totalWaterOz = plan.totals.fluidOz;
   const carbsMinG = plan.range.carbsLowG * hours;

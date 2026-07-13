@@ -150,6 +150,21 @@ export const TRAINING_DEFINITIONS: TermDefinition[] = [
     commonMistakes: ['Increasing volume and intensity at the same time.', 'Skipping recovery weeks in the pursuit of constant progression.'],
   },
   {
+    key: 'acwr',
+    label: 'ACWR (Acute:Chronic Workload Ratio)',
+    category: 'concept',
+    whatIsIt: 'A ratio comparing your recent training load ("acute," the last 7 days in StrideOS) to your longer-term average load ("chronic," a rolling 42 days in StrideOS). It is a training-load trend indicator, not a diagnostic score or injury predictor.',
+    whyDoIt: 'Watching how quickly your recent load is rising relative to what your body has been adapting to may be associated with how manageable a training block feels — it can help you decide whether to hold steady or ease off before pushing volume or intensity further.',
+    howToPerform: 'Acute workload ÷ chronic workload = ACWR. Around 1.0 means recent training roughly matches your longer-term average. Higher ratios mean load has climbed faster than your base; lower ratios mean recent training has eased off relative to your base. StrideOS surfaces this as a general zone, not a precise cutoff.',
+    howItShouldFeel: 'Use ACWR as one input alongside how you actually feel — sleep, soreness, motivation, and RPE all matter. A rising ratio paired with rising fatigue is worth noting; a rising ratio while you feel great is not automatically a problem.',
+    commonMistakes: [
+      'Treating a specific ACWR number as a hard injury threshold — the research behind it is mixed and the ratio is estimated, not exact.',
+      'Reacting to a single day\'s ratio instead of the multi-day trend.',
+      'Ignoring how you actually feel because the number looks fine.',
+    ],
+    beginnerModification: 'If you\'re new to structured training, treat ACWR as a rough guide for pacing volume increases (see Progressive Overload) rather than something to optimize precisely. ACWR does not diagnose or predict injury — it is a workload-trend estimate with real limitations, and manual review of how you feel always takes priority.',
+  },
+  {
     key: 'deload_week',
     label: 'Deload Week',
     category: 'concept',

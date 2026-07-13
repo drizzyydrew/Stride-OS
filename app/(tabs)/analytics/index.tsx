@@ -11,6 +11,7 @@ import { useStrengthStore } from '../../../src/store/strengthStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { LAYOUT } from '../../../src/constants/layout';
 import TrendPill from '../../../src/components/ui/TrendPill';
+import InfoButton from '../../../src/components/shared/InfoButton';
 import { calculateACWR } from '../../../src/utils/training/calculateACWR';
 import {
   RANGE_DAYS,
@@ -81,10 +82,10 @@ export default function AnalyticsScreen() {
   const acwrZone = acwrResult.acwr > 1.5 ? 'spike' : acwrResult.acwr > 1.3 ? 'elevated' : acwrResult.acwr >= 0.8 ? 'optimal' : 'low';
   const acwrColor = acwrZone === 'optimal' ? C.positive : acwrZone === 'low' ? C.textMuted : acwrZone === 'elevated' ? C.warning : C.critical;
   const acwrCopy: Record<typeof acwrZone, { meaning: string; action: string }> = {
-    spike:    { meaning: 'The last 7 days are far heavier than your 6-week base — this is the zone where soft-tissue injury risk climbs fastest.', action: 'Cut this week\'s volume and keep every run easy until the ratio drops below 1.3.' },
-    elevated: { meaning: 'Recent load is outpacing the base your tissues are conditioned for.', action: 'Hold this week at or below last week\'s volume. No new intensity until the ratio settles.' },
-    optimal:  { meaning: 'Acute load is well matched to your chronic base — this is where fitness is built with the least injury risk.', action: 'Keep progressing conservatively (≤10% per week) and protect the long run.' },
-    low:      { meaning: 'The last 7 days are lighter than your recent norm — fine for a planned deload or taper, otherwise fitness will slowly decay.', action: 'If this isn\'t a planned down week, nudge volume back up 10–15% with easy mileage.' },
+    spike:    { meaning: 'The last 7 days are much heavier than your 6-week average. This is a workload trend, not an injury prediction.', action: 'Review fatigue and recovery, then consider easing volume or intensity while the longer-term average catches up.' },
+    elevated: { meaning: 'Recent load is rising faster than your 6-week average. The ratio cannot determine whether the change is safe for you.', action: 'Hold steady and review sleep, soreness, motivation, and session RPE before adding more load.' },
+    optimal:  { meaning: 'Recent load is close to your 6-week average. This does not guarantee readiness or low risk.', action: 'Use this trend alongside recovery and how training feels before progressing.' },
+    low:      { meaning: 'The last 7 days are lighter than your 6-week average, which may reflect recovery, tapering, missed sessions, or a planned reduction.', action: 'Check the plan context before deciding whether to rebuild gradually or keep the lighter week.' },
   };
 
   // ── Readiness trend ─────────────────────────────────────────────────────────
@@ -218,7 +219,9 @@ export default function AnalyticsScreen() {
           <Text style={[styles.statCardVal, { color: C.text }]}>{runsInRange.length}</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: C.card, borderColor: C.border }]}>
-          <Text style={[styles.statCardLabel, { color: C.textDim }]}>CONSISTENCY</Text>
+          <Text style={styles.statCardLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} allowFontScaling={false}>
+            <Text style={{ color: C.textDim }}>CONSISTENCY</Text>
+          </Text>
           <Text style={[styles.statCardVal, { color: C.text }]}>{runsInRange.length > 0 ? `${runAdherence}%` : '—'}</Text>
         </View>
       </View>
@@ -247,7 +250,10 @@ export default function AnalyticsScreen() {
       {/* Training load (ACWR) */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <View style={styles.cardHeaderRow}>
-          <Text style={[styles.metaText, { color: C.textMuted }]}>Training Load</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={[styles.metaText, { color: C.textMuted }]}>Training Load</Text>
+            <InfoButton term="acwr" size={15} />
+          </View>
           {hasLoadHistory && (
             <Text style={[{ fontSize: 13, fontWeight: '800', color: acwrColor }]}>
               ACWR {acwrResult.acwr.toFixed(2)}
@@ -256,7 +262,7 @@ export default function AnalyticsScreen() {
         </View>
         {!hasLoadHistory ? (
           <Text style={[styles.emptyText, { color: C.textMuted }]}>
-            Log a few weeks of runs to see your acute-to-chronic load ratio — the best simple predictor of doing too much too soon.
+            Log a few weeks of runs to compare your recent 7-day load with your 6-week average. ACWR is a trend indicator, not an injury predictor.
           </Text>
         ) : (
           <>
@@ -380,6 +386,7 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     fontWeight: '700',
+    flexShrink: 1,
   },
   emptyText: {
     fontSize: 12,
@@ -410,7 +417,8 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 14,
     borderWidth: 1,
-    padding: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
     alignItems: 'center',
   },
   statCardLabel: {
@@ -418,7 +426,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 4,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
+    textAlign: 'center',
+    width: '100%',
   },
   statCardVal: {
     fontSize: 22,

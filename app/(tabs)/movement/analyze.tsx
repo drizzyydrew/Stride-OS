@@ -1,10 +1,11 @@
 // ─── Movement Lab — Analyze ───────────────────────────────────────────────────
 //
-// V1.5 markerless analysis flow: pick/capture media → (video) extract a frame →
-// on-device pose detection (Apple Vision via stride-pose) → estimated angles +
-// manual checklist → saved MovementAnalysis. Pose is best-effort: when it is
-// unavailable or finds no person, the manual path stays fully usable and the
-// record says so honestly.
+// Build 36 markerless analysis flow: Dion instruction card for the kind+view →
+// TimedCaptureCamera (countdown + auto-stop) or a validated library import →
+// automatic on-device pose analysis (Apple Vision via stride-pose) → matrix-
+// filtered estimated angles + manual checklist → saved MovementAnalysis. Pose
+// is best-effort: when it is unavailable or finds no person, the manual path
+// stays fully usable and the record says so honestly.
 
 import {
   ActivityIndicator,
@@ -40,8 +41,20 @@ import {
   buildAnalysisRecommendations,
   buildSequenceFindings,
 } from '../../../src/utils/movementEngine';
-import { classifyPoseConfidence, computeEstimatedAngles } from '../../../src/utils/poseAngles';
+import { classifyPoseConfidence, computeEstimatedAngles, computeFrontalMetrics } from '../../../src/utils/poseAngles';
 import { analyzeSequence } from '../../../src/utils/poseSequence';
+import {
+  canonicalView,
+  determineClosestSide,
+  filterAngleSeries,
+  filterEstimatedAngles,
+  normalizeAnalysisKind,
+} from '../../../src/utils/measurementMatrix';
+import { decodeFailedError, validatePickedVideo } from '../../../src/utils/mediaValidation';
+import { ANALYSIS_KIND_CAPTURE, IMPORT_LIMITS_COPY } from '../../../src/constants/captureConfig';
+import { dionImagesForKind } from '../../../src/constants/dionImages';
+import DionInstructionCard from '../../../src/components/movement/DionInstructionCard';
+import TimedCaptureCamera from '../../../src/components/movement/TimedCaptureCamera';
 import PoseOverlay from '../../../src/components/assessment/PoseOverlay';
 import LandmarkEditor from '../../../src/components/movement/LandmarkEditor';
 import { colors }  from '../../../src/theme/colors';
@@ -60,15 +73,31 @@ import type { PoseSequenceResult } from 'stride-pose';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const VALID_KINDS: MovementAnalysisKind[] = ['running_gait', 'squat', 'deadlift', 'lunge_single_leg', 'general'];
+type CurrentMovementKind = Exclude<MovementAnalysisKind, 'lunge_single_leg'>;
 
-const KIND_CAMERA_VIEW: Record<MovementAnalysisKind, MovementViewAngle> = {
-  running_gait:     'side',
-  squat:            '45_degree',
-  deadlift:         'side',
-  lunge_single_leg: 'front',
-  general:          'unknown',
+const VALID_KINDS: CurrentMovementKind[] = ['running_gait', 'squat', 'deadlift', 'single_leg_control', 'lunge', 'general'];
+
+// Default capture view per kind; angled views are not offered. 'general' starts unknown
+// until the user picks a view below.
+const KIND_CAMERA_VIEW: Record<CurrentMovementKind, MovementViewAngle> = {
+  running_gait:        'side',
+  squat:                'side',
+  deadlift:             'side',
+  single_leg_control:   'front',
+  lunge:                'side',
+  general:              'unknown',
 };
+
+// Kinds where lateral capture drives a closest-side, single-limb read —
+// mirrors the "Lateral, lower-body kinds" rule in the measurement matrix.
+const LATERAL_LOWER_BODY_KINDS = new Set<MovementAnalysisKind>(['running_gait', 'squat', 'deadlift', 'lunge', 'single_leg_control']);
+
+const GENERAL_VIEW_OPTIONS: { label: string; view: MovementViewAngle }[] = [
+  { label: 'Direct lateral',  view: 'side' },
+  { label: 'Direct frontal',  view: 'front' },
+  { label: 'Direct posterior', view: 'rear' },
+  { label: 'Unknown',         view: 'unknown' },
+];
 
 const CONFIDENCE_LABEL: Record<AnalysisConfidence, string> = {
   high:          'High confidence',
@@ -143,25 +172,46 @@ function anglesFromLandmarks(landmarks: PoseLandmarkRecord[], kind: MovementAnal
   return computeEstimatedAngles(landmarks as never, kind);
 }
 
+function anglesForView(
+  landmarks: PoseLandmarkRecord[],
+  kind: MovementAnalysisKind,
+  view: MovementViewAngle,
+): EstimatedAngle[] {
+  return view === 'front' || view === 'rear'
+    ? computeFrontalMetrics(landmarks as never)
+    : anglesFromLandmarks(landmarks, kind);
+}
+
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function AnalyzeScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ kind?: string }>();
-  const kind: MovementAnalysisKind = VALID_KINDS.includes(params.kind as MovementAnalysisKind)
-    ? (params.kind as MovementAnalysisKind)
+  const normalizedKind = normalizeAnalysisKind(params.kind ?? 'general');
+  const kind: CurrentMovementKind = VALID_KINDS.includes(normalizedKind as CurrentMovementKind)
+    ? (normalizedKind as CurrentMovementKind)
     : 'general';
 
-  const info      = ANALYSIS_KIND_INFO[kind];
-  const checklist = ANALYSIS_CHECKLISTS[kind];
+  const info      = ANALYSIS_KIND_INFO[kind] ?? ANALYSIS_KIND_INFO.general;
+  const checklist = ANALYSIS_CHECKLISTS[kind] ?? ANALYSIS_CHECKLISTS.general;
   const addAnalysis    = useMovementStore(s => s.addAnalysis);
   const updateAnalysis = useMovementStore(s => s.updateAnalysis);
 
   const [setupOpen, setSetupOpen] = useState(false);
 
+  // 'general' requires the user to pick a view before capture/analysis.
+  const [generalView, setGeneralView] = useState<MovementViewAngle>('unknown');
+  const view: MovementViewAngle = kind === 'general' ? generalView : KIND_CAMERA_VIEW[kind];
+  const dionEntry = dionImagesForKind(kind, view);
+  const captureConfig = ANALYSIS_KIND_CAPTURE[kind];
+  // Single-leg / split-stance kinds get one continuous take long enough to
+  // cover both sides (10 s/side ⇒ 20 s continuous, per the capture-duration spec).
+  const cameraDurationSec = captureConfig.perSide ? captureConfig.durationSec * 2 : captureConfig.durationSec;
+
   const [media, setMedia] = useState<MediaState | null>(null);
   const [frame, setFrame] = useState<FrameState | null>(null);
   const [frameBusy, setFrameBusy] = useState<number | null>(null); // timeMs being extracted
+  const [showCamera, setShowCamera] = useState(false);
 
   const [pose,           setPose]           = useState<PoseState | null>(null);
   const [autoLandmarks,  setAutoLandmarks]  = useState<PoseLandmarkRecord[]>([]);
@@ -186,6 +236,12 @@ export default function AnalyzeScreen() {
   const [sequenceAnalysis, setSequenceAnalysis] = useState<SequenceAnalysis | null>(null);
   const analysisRunRef = useRef(0);
 
+  // Closest-side (lateral lower-body kinds only) — auto-detected from pose
+  // confidence; the UI asks the athlete when confidence is low/absent.
+  const [closestSide, setClosestSide] = useState<'left' | 'right' | null>(null);
+  const [closestSideSource, setClosestSideSource] = useState<'auto' | 'user' | undefined>(undefined);
+  const needsClosestSide = LATERAL_LOWER_BODY_KINDS.has(kind) && canonicalView(view) === 'lateral';
+
   const videoPlayer = useVideoPlayer(media?.type === 'video' ? media.uri : null);
 
   const poseAvailable = isPoseEstimationAvailable();
@@ -204,6 +260,10 @@ export default function AnalyzeScreen() {
         ? media.width / media.height
         : 3 / 4;
 
+  const displayAngles = needsClosestSide
+    ? filterEstimatedAngles(angles, kind, view, closestSide ?? undefined)
+    : filterEstimatedAngles(angles, kind, view);
+
   // ── Media selection ─────────────────────────────────────────────────────────
 
   function resetPoseState() {
@@ -221,6 +281,8 @@ export default function AnalyzeScreen() {
     setAnalyzingVideo(false);
     setSeqProgress(null);
     setFrameBusy(null);
+    setClosestSide(null);
+    setClosestSideSource(undefined);
   }
 
   // Every analysis run (auto-started or button-started) registers a run id;
@@ -247,7 +309,7 @@ export default function AnalyzeScreen() {
     resetPoseState();
   }
 
-  async function pickMedia(source: 'camera' | 'library', type: 'photo' | 'video') {
+  async function pickPhoto(source: 'camera' | 'library') {
     if (source === 'camera') {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
@@ -262,19 +324,52 @@ export default function AnalyzeScreen() {
       }
     }
 
-    const options: ImagePicker.ImagePickerOptions = {
-      mediaTypes:    type === 'video' ? ['videos'] : ['images'],
-      allowsEditing: false,
-      quality:       0.9,
-    };
-
+    const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], allowsEditing: false, quality: 0.9 };
     const result = source === 'camera'
       ? await ImagePicker.launchCameraAsync(options)
       : await ImagePicker.launchImageLibraryAsync(options);
 
     if (!result.canceled && result.assets.length > 0) {
-      applyPickedAsset(result.assets[0], type);
+      applyPickedAsset(result.assets[0], 'photo');
     }
+  }
+
+  async function pickVideoFromLibrary() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'StrideOS needs photo library access to choose a video for analysis.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false, quality: 0.9 });
+    if (result.canceled || result.assets.length === 0) return;
+
+    const asset = result.assets[0];
+    const validationError = await validatePickedVideo({
+      uri:      asset.uri,
+      duration: asset.duration ?? undefined,
+      fileSize: asset.fileSize ?? undefined,
+      mimeType: asset.mimeType ?? undefined,
+      fileName: asset.fileName ?? undefined,
+    });
+    if (validationError) {
+      Alert.alert("This clip can't be used", validationError.message);
+      return;
+    }
+
+    applyPickedAsset(asset, 'video');
+  }
+
+  async function handleCameraCaptured({ uri }: { uri: string }) {
+    const validationError = await validatePickedVideo({ uri });
+    if (validationError) {
+      Alert.alert("This clip can't be used", validationError.message);
+      return;
+    }
+    setShowCamera(false);
+    setMedia({ uri, type: 'video' });
+    setFrame(null);
+    resetPoseState();
   }
 
   function removeMedia() {
@@ -323,6 +418,19 @@ export default function AnalyzeScreen() {
     return Math.floor((result.durationMs || media?.durationMs || 0) / 2);
   }
 
+  function applyClosestSideFromInput(input: PoseSequenceResult | PoseLandmarkRecord[]) {
+    if (!needsClosestSide) return;
+    const detected = determineClosestSide(input);
+    if (detected && detected.confidence === 'high') {
+      setClosestSide(detected.side);
+      setClosestSideSource('auto');
+    } else {
+      // Low/no confidence — leave unset so the UI prompts the athlete.
+      setClosestSide(detected?.side ?? null);
+      setClosestSideSource(undefined);
+    }
+  }
+
   async function extractFrame(
     timeMs: number,
     resultOverride?: PoseSequenceResult | null,
@@ -344,7 +452,7 @@ export default function AnalyzeScreen() {
         setAutoLandmarks(landmarks);
         setCorrectedLandmarks(null);
         setPose(poseFromLandmarks(landmarks, width, height));
-        setAngles(anglesFromLandmarks(landmarks, kind));
+        setAngles(anglesForView(landmarks, kind, view));
         setPoseMessage(null);
       } else if (!skipStandaloneDetection) {
         setAutoLandmarks([]);
@@ -361,7 +469,8 @@ export default function AnalyzeScreen() {
             const landmarks = result.joints.map(j => ({ name: j.name, x: j.x, y: j.y, confidence: j.confidence }));
             setAutoLandmarks(landmarks);
             setPose({ landmarks, imageWidth: result.imageWidth, imageHeight: result.imageHeight });
-            setAngles(computeEstimatedAngles(result.joints, kind));
+            setAngles(anglesForView(landmarks, kind, view));
+            applyClosestSideFromInput(landmarks);
           } else {
             setPoseMessage('No person detected in this frame — try another moment or continue manually.');
             setManualReviewOpen(true);
@@ -398,8 +507,9 @@ export default function AnalyzeScreen() {
         setAutoLandmarks(landmarks);
         setCorrectedLandmarks(null);
         setPose({ landmarks, imageWidth: result.imageWidth, imageHeight: result.imageHeight });
-        setAngles(computeEstimatedAngles(result.joints, kind));
+        setAngles(anglesForView(landmarks, kind, view));
         setConfidenceOverride(null);
+        applyClosestSideFromInput(landmarks);
       }
     } finally {
       if (!isStaleRun(runId)) setDetecting(false);
@@ -417,7 +527,7 @@ export default function AnalyzeScreen() {
     try {
       const result = await detectPoseSequence(mediaUri, {
         fps: 12,
-        maxDurationMs: 60_000,
+        maxDurationMs: 30_000,
         onProgress: (processed, total) => {
           if (!isStaleRun(runId)) setSeqProgress({ processed, total });
         },
@@ -430,15 +540,21 @@ export default function AnalyzeScreen() {
         return;
       }
 
-      const view = KIND_CAMERA_VIEW[kind];
       const seq = analyzeSequence(result, kind, view);
       setSequenceResult(result);
       setSequenceAnalysis(seq);
       setConfidenceOverride(null);
+      applyClosestSideFromInput(result);
       await extractFrame(preferredReferenceTime(result, seq), result, true, runId);
       if (isStaleRun(runId)) return;
       if (seq.confidence === 'manual_review') {
         setPoseMessage('Automatic video analysis needs human review. Adjust the reference markers or use the manual checklist fallback.');
+        setManualReviewOpen(true);
+      }
+    } catch {
+      if (!isStaleRun(runId)) {
+        const error = decodeFailedError();
+        setPoseMessage(error.message);
         setManualReviewOpen(true);
       }
     } finally {
@@ -489,14 +605,16 @@ export default function AnalyzeScreen() {
     const nextPose = { ...pose, landmarks: nextLandmarks };
     setPose(nextPose);
     setCorrectedLandmarks(corrected ? nextLandmarks : null);
-    setAngles(anglesFromLandmarks(nextLandmarks, kind));
+    setAngles(anglesForView(nextLandmarks, kind, view));
     setEditingMarkers(false);
   }
 
   // ── Save ────────────────────────────────────────────────────────────────────
 
+  const closestSideUnresolved = needsClosestSide && hasAutomatedResults && !closestSide;
+
   async function handleSave() {
-    if (!media || !canSave || saving) return;
+    if (!media || !canSave || saving || closestSideUnresolved) return;
     setSaving(true);
 
     const checklistFindings: ChecklistFinding[] = checklist
@@ -519,7 +637,11 @@ export default function AnalyzeScreen() {
     const mediaType = media.type === 'photo' ? 'photo' : sequenceAnalysis ? 'video' : frame ? 'video_frame' : 'video';
     const mediaUri  = media.type === 'photo' ? media.uri : mediaType === 'video_frame' && frame ? frame.uri : media.uri;
     const effectiveLandmarks = correctedLandmarks ?? pose?.landmarks;
-    const effectiveAngles = effectiveLandmarks ? anglesFromLandmarks(effectiveLandmarks, kind) : angles;
+    const rawAngles = effectiveLandmarks ? anglesForView(effectiveLandmarks, kind, view) : angles;
+    const effectiveAngles = filterEstimatedAngles(rawAngles, kind, view, closestSide ?? undefined);
+    const effectiveAngleSeries = sequenceAnalysis?.angleSeries
+      ? filterAngleSeries(sequenceAnalysis.angleSeries, kind, view, closestSide ?? undefined)
+      : undefined;
 
     // Picker/thumbnail URIs live in the purgeable OS cache — copy the analyzed
     // media into documents so the saved record keeps working. On copy failure
@@ -551,13 +673,23 @@ export default function AnalyzeScreen() {
       }
     }
 
+    const effectiveKeyFrames = sequenceAnalysis?.keyFrames.map(keyFrame => ({
+      ...keyFrame,
+      angles: keyFrame.angles
+        ? filterEstimatedAngles(keyFrame.angles, kind, view, closestSide ?? undefined)
+        : undefined,
+    }));
+    const effectiveSymmetry = canonicalView(view) === 'lateral'
+      ? undefined
+      : sequenceAnalysis?.symmetryEstimates;
+
     const autoFindings = buildSequenceFindings(
       {
         estimatedAngles: effectiveAngles,
-        angleSeries: sequenceAnalysis?.angleSeries,
-        keyFrames: sequenceAnalysis?.keyFrames,
+        angleSeries: effectiveAngleSeries,
+        keyFrames: effectiveKeyFrames,
         repSummaries: sequenceAnalysis?.repSummaries,
-        symmetryEstimates: sequenceAnalysis?.symmetryEstimates,
+        symmetryEstimates: effectiveSymmetry,
         sequenceConfidence: sequenceAnalysis?.confidence ?? confidence,
       },
       kind,
@@ -569,7 +701,9 @@ export default function AnalyzeScreen() {
       mediaUri:          storedUri,
       sourceVideoUri:    mediaType === 'video' ? storedUri : storedSourceVideoUri,
       mediaType,
-      cameraView:        KIND_CAMERA_VIEW[kind],
+      cameraView:        view,
+      closestSide:       closestSide ?? undefined,
+      closestSideSource: closestSide ? closestSideSource : undefined,
       landmarks:         effectiveLandmarks,
       autoLandmarks:     autoLandmarks.length > 0 ? autoLandmarks : undefined,
       correctedLandmarks: correctedLandmarks ?? undefined,
@@ -584,15 +718,15 @@ export default function AnalyzeScreen() {
       status:            (sequenceAnalysis?.confidence ?? confidence) === 'manual_review' ? 'needs_review' : 'complete',
       referenceFrameTimeMs: frame?.timeMs,
       referenceFrameUri: storedReferenceFrameUri,
-      angleSeries:         sequenceAnalysis?.angleSeries,
-      keyFrames:           sequenceAnalysis?.keyFrames,
+      angleSeries:         effectiveAngleSeries,
+      keyFrames:           effectiveKeyFrames,
       repSummaries:        sequenceAnalysis?.repSummaries,
-      symmetryEstimates:   sequenceAnalysis?.symmetryEstimates,
+      symmetryEstimates:   effectiveSymmetry,
       sequenceConfidence:  sequenceAnalysis?.confidence,
       sequenceLimitations: sequenceAnalysis?.limitations,
       analyzedDurationMs:  sequenceResult?.analyzedMs,
       videoDurationMs:     sequenceResult?.durationMs ?? media.durationMs,
-    });
+    } as never);
 
     if (sequenceResult) {
       try {
@@ -633,6 +767,28 @@ export default function AnalyzeScreen() {
           <Text style={s.title}>{info.title}</Text>
         </View>
 
+        {/* General upload: pick a view before anything else. */}
+        {kind === 'general' && (
+          <View style={s.card}>
+            <Text style={s.cardLabel}>CAMERA VIEW</Text>
+            <Text style={s.helper}>Pick the view that best matches how you filmed this clip.</Text>
+            <View style={s.pills}>
+              {GENERAL_VIEW_OPTIONS.map(opt => (
+                <Pressable
+                  key={opt.label}
+                  style={[s.pill, generalView === opt.view && s.pillOn]}
+                  onPress={() => setGeneralView(opt.view)}
+                >
+                  <Text style={[s.pillTxt, generalView === opt.view && s.pillOnTxt]}>{opt.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Dion instruction card for the exact kind + view */}
+        <DionInstructionCard dion={dionEntry} variant="full" />
+
         {/* Setup card */}
         <View style={s.card}>
           <Pressable style={s.cardHeaderRow} onPress={() => setSetupOpen(o => !o)}>
@@ -659,19 +815,22 @@ export default function AnalyzeScreen() {
         <View style={s.card}>
           <Text style={s.cardLabel}>MEDIA</Text>
           {!media ? (
-            <View style={s.mediaBtnGrid}>
-              <Pressable style={s.mediaBtn} onPress={() => pickMedia('camera', 'video')}>
-                <Text style={s.mediaBtnTxt}>Record Video</Text>
-              </Pressable>
-              <Pressable style={s.mediaBtn} onPress={() => pickMedia('library', 'video')}>
-                <Text style={s.mediaBtnTxt}>Choose Video</Text>
-              </Pressable>
-              <Pressable style={s.mediaBtn} onPress={() => pickMedia('camera', 'photo')}>
-                <Text style={s.mediaBtnTxt}>Take Photo</Text>
-              </Pressable>
-              <Pressable style={s.mediaBtn} onPress={() => pickMedia('library', 'photo')}>
-                <Text style={s.mediaBtnTxt}>Choose Photo</Text>
-              </Pressable>
+            <View style={{ gap: spacing.sm }}>
+              <View style={s.mediaBtnGrid}>
+                <Pressable style={s.mediaBtn} onPress={() => setShowCamera(true)}>
+                  <Text style={s.mediaBtnTxt}>Record Video</Text>
+                </Pressable>
+                <Pressable style={s.mediaBtn} onPress={pickVideoFromLibrary}>
+                  <Text style={s.mediaBtnTxt}>Choose Video</Text>
+                </Pressable>
+                <Pressable style={s.mediaBtn} onPress={() => pickPhoto('camera')}>
+                  <Text style={s.mediaBtnTxt}>Take Photo</Text>
+                </Pressable>
+                <Pressable style={s.mediaBtn} onPress={() => pickPhoto('library')}>
+                  <Text style={s.mediaBtnTxt}>Choose Photo</Text>
+                </Pressable>
+              </View>
+              <Text style={s.importLimitsTxt}>{IMPORT_LIMITS_COPY}</Text>
             </View>
           ) : (
             <View style={{ gap: spacing.sm }}>
@@ -681,7 +840,12 @@ export default function AnalyzeScreen() {
                 <Image source={{ uri: media.uri }} style={[s.photoPreview, { aspectRatio: overlayAspectRatio }]} resizeMode="cover" />
               )}
               <View style={s.mediaActionsRow}>
-                <Pressable style={s.mediaActionBtn} onPress={() => pickMedia('library', media.type)}>
+                {media.type === 'video' && (
+                  <Pressable style={s.mediaActionBtn} onPress={() => setShowCamera(true)}>
+                    <Text style={s.mediaActionTxt}>Retake</Text>
+                  </Pressable>
+                )}
+                <Pressable style={s.mediaActionBtn} onPress={() => pickPhoto(media.type === 'photo' ? 'library' : 'library')}>
                   <Text style={s.mediaActionTxt}>Replace</Text>
                 </Pressable>
                 <Pressable style={s.mediaActionBtn} onPress={removeMedia}>
@@ -725,6 +889,31 @@ export default function AnalyzeScreen() {
                 </Text>
               </Pressable>
             )}
+          </View>
+        )}
+
+        {/* Closest-side chooser — lateral lower-body kinds, low/no auto confidence */}
+        {needsClosestSide && hasAutomatedResults && (
+          <View style={s.card}>
+            <Text style={s.cardLabel}>WHICH SIDE IS CLOSEST TO THE CAMERA?</Text>
+            <Text style={s.helper}>
+              {closestSideSource === 'auto'
+                ? 'Detected automatically from this clip — change it if it looks wrong.'
+                : 'Needed to show single-limb angles correctly for a lateral view.'}
+            </Text>
+            <View style={s.pills}>
+              {(['left', 'right'] as const).map(side => (
+                <Pressable
+                  key={side}
+                  style={[s.pill, closestSide === side && s.pillOn]}
+                  onPress={() => { setClosestSide(side); setClosestSideSource('user'); }}
+                >
+                  <Text style={[s.pillTxt, closestSide === side && s.pillOnTxt]}>
+                    {side === 'left' ? 'Left' : 'Right'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
         )}
 
@@ -801,7 +990,7 @@ export default function AnalyzeScreen() {
                   imageUri={analyzableStillUri}
                   aspectRatio={overlayAspectRatio}
                   landmarks={pose.landmarks}
-                  angles={angles}
+                  angles={displayAngles}
                   showSkeleton={showSkeleton}
                   showAngles={showAngleLabels}
                 />
@@ -820,7 +1009,7 @@ export default function AnalyzeScreen() {
                 </Pressable>
               </>
             )}
-            {angles.length > 0 && showAngleLabels ? (
+            {displayAngles.length > 0 && showAngleLabels ? (
               <Text style={s.smallDisclaimer}>{ANGLE_ESTIMATE_DISCLAIMER}</Text>
             ) : null}
           </View>
@@ -856,10 +1045,10 @@ export default function AnalyzeScreen() {
         ) : null}
 
         {/* Estimated angles */}
-        {pose && angles.length > 0 ? (
+        {pose && displayAngles.length > 0 ? (
           <View style={s.card}>
             <Text style={s.cardLabel}>ESTIMATED ANGLES</Text>
-            {angles.map((a, i) => {
+            {displayAngles.map((a, i) => {
               const chip = angleConfidenceChip(a.confidence);
               const normKey = normKeys[a.name];
               const assessment = normContext && normKey ? assessJointAngle(normKey, Math.round(a.degrees), normContext) : null;
@@ -969,9 +1158,9 @@ export default function AnalyzeScreen() {
 
         {/* Save */}
         <Pressable
-          style={[s.primaryBtn, (!canSave || saving) && { opacity: 0.4 }]}
+          style={[s.primaryBtn, (!canSave || saving || closestSideUnresolved) && { opacity: 0.4 }]}
           onPress={handleSave}
-          disabled={!canSave || saving}
+          disabled={!canSave || saving || closestSideUnresolved}
         >
           <Text style={s.primaryBtnTxt}>{saving ? 'Saving…' : 'Save Analysis'}</Text>
         </Pressable>
@@ -980,10 +1169,22 @@ export default function AnalyzeScreen() {
             {!media ? 'Add a photo or video to save.' : 'Automatic analysis or one manual checklist answer is required to save.'}
           </Text>
         )}
+        {canSave && closestSideUnresolved && (
+          <Text style={s.helper}>Choose which side is closest to the camera above to save.</Text>
+        )}
 
         {/* Footer disclaimer */}
         <Text style={s.smallDisclaimer}>{MOVEMENT_SAFETY_DISCLAIMER}</Text>
       </ScrollView>
+
+      <TimedCaptureCamera
+        visible={showCamera}
+        onClose={() => setShowCamera(false)}
+        onCaptured={handleCameraCaptured}
+        dion={dionEntry}
+        title={info.title}
+        durationSec={cameraDurationSec}
+      />
     </View>
   );
 }
@@ -1022,6 +1223,7 @@ const s = StyleSheet.create({
   disclosure:  { color: colors.textSubtle, fontSize: 20, fontWeight: FontWeight.bold },
   bullet:      { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
   helper:      { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
+  importLimitsTxt: { color: colors.textSubtle, fontSize: 11, lineHeight: 16 },
   mediaBtnGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   mediaBtn: {
     flexGrow:        1,

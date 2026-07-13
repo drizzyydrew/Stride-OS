@@ -12,7 +12,7 @@
 // - No foot landmarks → no footstrike, no ankle dorsi/plantarflexion.
 
 import type { PoseJoint, PoseSequenceResult } from 'stride-pose';
-import { computeEstimatedAngles, LANDMARK_CONFIDENCE_FLOOR } from './poseAngles';
+import { computeEstimatedAngles, computeFrontalMetrics, LANDMARK_CONFIDENCE_FLOOR } from './poseAngles';
 import type {
   AngleSeries,
   AngleSeriesPoint,
@@ -48,18 +48,38 @@ function keyFrameId(): string {
   return `kf_${Date.now()}_${keyFrameSeq}`;
 }
 
+// ─── View-aware per-frame angles ────────────────────────────────────────────────
+
+/** True for a front/rear capture, where sagittal angles are unreliable and the
+ *  frontal-plane metrics (pelvic obliquity, frontal knee position, trunk lateral
+ *  lean) are the meaningful estimates instead. */
+function isFrontalView(view: MovementViewAngle): boolean {
+  return view === 'front' || view === 'rear';
+}
+
+/** The estimated angles for one frame, chosen by camera view: frontal metrics
+ *  for a front/rear clip, the existing sagittal set otherwise. */
+function frameAnglesForView(joints: PoseJoint[], kind: MovementAnalysisKind, view: MovementViewAngle): EstimatedAngle[] {
+  return isFrontalView(view) ? computeFrontalMetrics(joints) : computeEstimatedAngles(joints, kind);
+}
+
 // ─── buildAngleSeries ───────────────────────────────────────────────────────────
 
 /**
- * Runs computeEstimatedAngles per frame and reassembles the results into
- * one series per (side, angle name). Frames where an angle couldn't be
- * computed (missing/low-confidence landmarks) become an honest gap
- * (`degrees: null`) rather than being dropped or interpolated.
+ * Runs the view-appropriate per-frame angle computation and reassembles the
+ * results into one series per (side, angle name). Frontal/posterior views emit
+ * the frontal-plane metric series; lateral/unknown views emit the sagittal set.
+ * Frames where a metric couldn't be computed (missing/low-confidence landmarks)
+ * become an honest gap (`degrees: null`) rather than being dropped or interpolated.
  */
-export function buildAngleSeries(result: PoseSequenceResult, kind: MovementAnalysisKind): AngleSeries[] {
+export function buildAngleSeries(
+  result: PoseSequenceResult,
+  kind:   MovementAnalysisKind,
+  view:   MovementViewAngle = 'unknown',
+): AngleSeries[] {
   const perFrame = result.frames.map(f => ({
     timeMs: f.timeMs,
-    angles: f.joints.length > 0 ? computeEstimatedAngles(f.joints as PoseJoint[], kind) : [],
+    angles: f.joints.length > 0 ? frameAnglesForView(f.joints as PoseJoint[], kind, view) : [],
   }));
 
   type Meta = { name: string; joint: string; side: 'left' | 'right' | 'center' };
@@ -211,12 +231,12 @@ function frameLandmarks(result: PoseSequenceResult, timeMs: number): PoseLandmar
     : undefined;
 }
 
-function frameAngles(result: PoseSequenceResult, kind: MovementAnalysisKind, timeMs: number): EstimatedAngle[] | undefined {
+function frameAngles(result: PoseSequenceResult, kind: MovementAnalysisKind, timeMs: number, view: MovementViewAngle): EstimatedAngle[] | undefined {
   const frame = result.frames.find(f => f.timeMs === timeMs);
-  return frame && frame.joints.length > 0 ? computeEstimatedAngles(frame.joints as PoseJoint[], kind) : undefined;
+  return frame && frame.joints.length > 0 ? frameAnglesForView(frame.joints as PoseJoint[], kind, view) : undefined;
 }
 
-// ─── Rep segmentation (squat / deadlift / lunge_single_leg) ─────────────────────
+// ─── Rep segmentation (squat / deadlift / lunge / single_leg_control) ────────────
 
 const MIN_CYCLE_MS  = 800;   // reject jitter faster than this
 const MIN_DEPTH_DEG = 15;    // minimum peak-baseline delta to count as a rep
@@ -387,12 +407,17 @@ export type SequenceKeyMoments = {
   symmetryEstimates: SequenceSymmetryEstimate[];
 };
 
-const STRENGTH_KINDS: MovementAnalysisKind[] = ['squat', 'deadlift', 'lunge_single_leg'];
+// `lunge` (lateral split-squat) and `single_leg_control` (control kind) do knee-
+// flexion rep segmentation like the old `lunge_single_leg`. On a frontal capture
+// the knee-flexion series doesn't exist (frontal metrics are built instead), so
+// rep detection naturally yields nothing there — the honest result.
+const STRENGTH_KINDS: MovementAnalysisKind[] = ['squat', 'deadlift', 'lunge', 'single_leg_control', 'lunge_single_leg'];
 
 export function detectKeyMoments(
   kind:           MovementAnalysisKind,
   result:         PoseSequenceResult,
   smoothedSeries: AngleSeries[],
+  view:           MovementViewAngle = 'unknown',
 ): SequenceKeyMoments {
   const keyFrames: KeyFrameRecord[] = [];
   const repSummaries: RepSummary[] = [];
@@ -407,7 +432,7 @@ export function detectKeyMoments(
       label:     'Setup',
       timeMs:    firstConfident.timeMs,
       landmarks: frameLandmarks(result, firstConfident.timeMs),
-      angles:    frameAngles(result, kind, firstConfident.timeMs),
+      angles:    frameAngles(result, kind, firstConfident.timeMs, view),
     });
   }
 
@@ -432,7 +457,7 @@ export function detectKeyMoments(
         label:     'Deepest position',
         timeMs:    deepest.timeMs,
         landmarks: frameLandmarks(result, deepest.timeMs),
-        angles:    frameAngles(result, kind, deepest.timeMs),
+        angles:    frameAngles(result, kind, deepest.timeMs, view),
       });
     }
 
@@ -442,7 +467,7 @@ export function detectKeyMoments(
         label:     'Lockout / return',
         timeMs:    lastConfident.timeMs,
         landmarks: frameLandmarks(result, lastConfident.timeMs),
-        angles:    frameAngles(result, kind, lastConfident.timeMs),
+        angles:    frameAngles(result, kind, lastConfident.timeMs, view),
       });
     }
   } else if (kind === 'running_gait') {
@@ -456,7 +481,7 @@ export function detectKeyMoments(
           label:     `Peak knee flexion — ${side}`,
           timeMs:    peak.timeMs,
           landmarks: frameLandmarks(result, peak.timeMs),
-          angles:    frameAngles(result, kind, peak.timeMs),
+          angles:    frameAngles(result, kind, peak.timeMs, view),
         });
       }
 
@@ -470,13 +495,18 @@ export function detectKeyMoments(
           label:     `Estimated contact (approximate) — ${side} #${i + 1}`,
           timeMs:    c.timeMs,
           landmarks: frameLandmarks(result, c.timeMs),
-          angles:    frameAngles(result, kind, c.timeMs),
+          angles:    frameAngles(result, kind, c.timeMs, view),
         });
       });
     }
 
-    const symmetry = buildSymmetryEstimate(smoothedSeries);
-    if (symmetry) symmetryEstimates.push(symmetry);
+    // One lateral clip exposes only the limb closest to the camera. Comparing
+    // both detected sides from that view overstates precision, so symmetry is
+    // reserved for direct frontal/posterior captures.
+    if (view === 'front' || view === 'rear') {
+      const symmetry = buildSymmetryEstimate(smoothedSeries);
+      if (symmetry) symmetryEstimates.push(symmetry);
+    }
   }
 
   keyFrames.sort((a, b) => a.timeMs - b.timeMs);
@@ -501,9 +531,9 @@ export function analyzeSequence(
   kind:   MovementAnalysisKind,
   view:   MovementViewAngle,
 ): SequenceAnalysis {
-  const raw      = buildAngleSeries(result, kind);
+  const raw      = buildAngleSeries(result, kind, view);
   const smoothed = smoothAngleSeries(raw, 5);
-  const { keyFrames, repSummaries, symmetryEstimates } = detectKeyMoments(kind, result, smoothed);
+  const { keyFrames, repSummaries, symmetryEstimates } = detectKeyMoments(kind, result, smoothed, view);
 
   return {
     angleSeries:       decimateAngleSeries(smoothed, 240),

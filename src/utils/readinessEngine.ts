@@ -10,8 +10,9 @@
 // "consider addressing") and the recommendation mapping table there is the
 // single source of truth for domain → mobility workout id.
 
-import type { MovementAnalysis } from '../types/movement';
+import type { AngleSeries, MovementAnalysis } from '../types/movement';
 import { repConsistency } from './poseSequence';
+import { FRONTAL_METRIC_NAMES } from './poseAngles';
 import type {
   DomainResult,
   ReadinessAssessment,
@@ -142,21 +143,106 @@ function scoreCalfCapacity(results: ReadinessTestResult[]): DomainResult | null 
   };
 }
 
-// ─── Domain: single_leg_control + trunk_pelvic_control (checklist) ───────────
+// ─── Domain: single_leg_control + trunk_pelvic_control ───────────────────────
 //
 // Evidence doc: contralateral pelvic drop / single-leg quality is a "worth
 // monitoring" finding only (case-control, not prospective evidence) — this
 // domain is capped at 'monitor', never escalated to 'needs_attention'.
+//
+// Build 36: scored automatically first from the linked FRONTAL analysis
+// (pelvic obliquity excursion, frontal-plane knee position, trunk lateral lean)
+// when detection confidence supports it. Manual checklist answers act as a
+// confirm / override on top. Missing or low-confidence data degrades to
+// manual_review — never fabricated.
 
-function scoreSingleLegControl(results: ReadinessTestResult[]): DomainResult | null {
+/** Peak-to-trough excursion of a series' confidently-detected values. */
+function seriesExcursion(series: AngleSeries | undefined): number | undefined {
+  if (!series) return undefined;
+  const vals = series.points.map(p => p.degrees).filter((d): d is number => d !== null);
+  if (vals.length < 3) return undefined;
+  return Math.max(...vals) - Math.min(...vals);
+}
+
+function findFrontalSeries(analysis: MovementAnalysis, name: string, side: AngleSeries['side']): AngleSeries | undefined {
+  return (analysis.angleSeries ?? []).find(s => s.name === name && s.side === side);
+}
+
+// Conservative excursion thresholds (estimates from 2D video, not clinical).
+const PELVIC_OBLIQUITY_EXCURSION_DEG = 8;
+const FRONTAL_KNEE_EXCURSION_PCT     = 12;
+const TRUNK_LATERAL_LEAN_EXCURSION_DEG = 8;
+
+function scoreSingleLegControl(results: ReadinessTestResult[], analyses: MovementAnalysis[]): DomainResult | null {
   const test = getTest(results, 'single_leg_squat');
   if (!test) return null;
 
+  const analysis = findAnalysis(analyses, test.analysisId);
   const kneeTracks = boolValue(test.manualValues?.kneeTracksOverFoot);
+  const reviewStatus = typeof test.manualValues?.reviewStatus === 'string'
+    ? test.manualValues.reviewStatus
+    : undefined;
+
+  if (reviewStatus === 'unclear') {
+    return {
+      domain: 'single_leg_control', category: 'manual_review', confidence: 'low',
+      note: 'The athlete marked the automatic single-leg estimate as unclear. Review the frontal clip manually before using this result.',
+    };
+  }
+
+  // ── Automatic pass from the linked frontal analysis ──────────────────────
+  let autoCategory: ReadinessCategory | undefined;
+  let autoConfidence: 'high' | 'moderate' | 'low' | undefined;
+  const autoNotes: string[] = [];
+
+  if (analysis && reviewStatus !== 'overridden') {
+    const seqConf = analysis.sequenceConfidence ?? analysis.confidence;
+    const pelvis = seriesExcursion(findFrontalSeries(analysis, FRONTAL_METRIC_NAMES.pelvicObliquity, 'center'));
+    const kneeL  = seriesExcursion(findFrontalSeries(analysis, FRONTAL_METRIC_NAMES.frontalKnee, 'left'));
+    const kneeR  = seriesExcursion(findFrontalSeries(analysis, FRONTAL_METRIC_NAMES.frontalKnee, 'right'));
+    const trunk  = seriesExcursion(findFrontalSeries(analysis, FRONTAL_METRIC_NAMES.trunkLateralLean, 'center'));
+    const kneeMax = [kneeL, kneeR].filter((v): v is number => v !== undefined);
+    const hasAnyMetric = pelvis !== undefined || kneeMax.length > 0 || trunk !== undefined;
+
+    if (seqConf !== 'manual_review' && hasAnyMetric) {
+      autoCategory = 'good';
+      if (pelvis !== undefined && pelvis > PELVIC_OBLIQUITY_EXCURSION_DEG) {
+        autoCategory = 'monitor';
+        autoNotes.push(`Estimated pelvic obliquity swung about ${Math.round(pelvis)}° through the movement — worth monitoring.`);
+      }
+      if (kneeMax.length > 0 && Math.max(...kneeMax) > FRONTAL_KNEE_EXCURSION_PCT) {
+        autoCategory = 'monitor';
+        autoNotes.push('Estimated frontal-plane knee position moved noticeably toward/away from the midline — worth monitoring.');
+      }
+      if (trunk !== undefined && trunk > TRUNK_LATERAL_LEAN_EXCURSION_DEG) {
+        autoCategory = 'monitor';
+        autoNotes.push(`Estimated side-to-side trunk lean varied about ${Math.round(trunk)}° — worth monitoring.`);
+      }
+      if (autoNotes.length === 0) autoNotes.push('Estimated pelvic control, frontal knee position, and trunk lean all stayed within a modest range on the frontal clip.');
+      autoConfidence = seqConf === 'high' ? 'moderate' : 'low';   // capped: 2D estimate
+    }
+  }
+
+  // ── Manual confirm / override ────────────────────────────────────────────
+  if (autoCategory) {
+    let category = autoCategory;
+    const notes = [...autoNotes];
+    if (kneeTracks === false) {
+      category = 'monitor';   // manual override escalates (capped at monitor)
+      notes.push('Manual review noted the knee drifting inward — associative, worth monitoring, not a diagnosis.');
+    } else if (kneeTracks === true && category === 'monitor') {
+      notes.push('Manual review confirmed the knee tracked over the foot; the automated estimate is kept as the more cautious read.');
+    }
+    return {
+      domain: 'single_leg_control', category, confidence: autoConfidence ?? 'low',
+      note: notes.join(' '),
+    };
+  }
+
+  // ── Manual-only fallback ─────────────────────────────────────────────────
   if (kneeTracks === undefined) {
     return {
       domain: 'single_leg_control', category: 'manual_review', confidence: 'low',
-      note: "Single-leg squat quality wasn't recorded — complete the checklist for a single-leg-control read.",
+      note: "Single-leg control wasn't captured with enough confidence and wasn't recorded manually — review the frontal clip or complete the checklist.",
     };
   }
 
@@ -345,7 +431,7 @@ export function scoreDomains(testResults: ReadinessTestResult[], analyses: Movem
     scoreAnkleMobility(testResults),
     scoreHipMobility(testResults, analyses),
     scoreSquatPattern(testResults, analyses),
-    scoreSingleLegControl(testResults),
+    scoreSingleLegControl(testResults, analyses),
     scoreCalfCapacity(testResults),
     scoreTrunkPelvicControl(testResults),
     scoreSymmetry(testResults, analyses),
@@ -455,8 +541,24 @@ export function assessReadiness(
   testResults:   ReadinessTestResult[],
   analyses:      MovementAnalysis[],
   painReported?: boolean,
+  symptom?:      { intensity?: number; location?: string; notes?: string },
 ): Omit<ReadinessAssessment, 'id' | 'createdAt' | 'updatedAt'> {
   const domainResults = scoreDomains(testResults, analyses);
+
+  // Symptom Review (step 7). Stored verbatim, never interpreted or scored — it
+  // only implies painReported so the report shows consult-a-clinician messaging.
+  // A symptom is meaningful only when the athlete gave an intensity or location.
+  const hasSymptom = symptom !== undefined
+    && ((typeof symptom.intensity === 'number' && Number.isFinite(symptom.intensity))
+      || (typeof symptom.location === 'string' && symptom.location.trim().length > 0));
+  const normalizedSymptom = hasSymptom
+    ? {
+        intensity: typeof symptom!.intensity === 'number' && Number.isFinite(symptom!.intensity) ? symptom!.intensity : 0,
+        location:  symptom!.location?.trim() ?? '',
+        notes:     symptom!.notes?.trim() ? symptom!.notes.trim() : undefined,
+      }
+    : undefined;
+
   return {
     activityFocus,
     testResults,
@@ -467,6 +569,7 @@ export function assessReadiness(
     trainingModificationSuggestions: buildTrainingModifications(domainResults),
     captureQualitySummary: buildCaptureQualitySummary(domainResults),
     evidenceVersion: 1,
-    painReported: painReported || undefined,
+    painReported: (painReported || hasSymptom) || undefined,
+    symptom: normalizedSymptom,
   };
 }

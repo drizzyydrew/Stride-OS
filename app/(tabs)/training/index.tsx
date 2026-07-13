@@ -19,6 +19,7 @@ import { useIntegrationsStore } from '../../../src/store/integrationsStore';
 import { useActiveRunStore, type RunMode, type RunModeConfig } from '../../../src/store/activeRunStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
+import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
 import { useCalibration } from '../../../src/store/profileStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { addDays as addCalendarDays, toYMD } from '../../../src/utils/calendarEngine';
@@ -67,8 +68,6 @@ const DISTANCE_GOAL_VALUES = (() => {
   return list.sort((a, b) => a - b);
 })();
 const RACE_PACE_VALUES = Array.from({ length: 121 }, (_, i) => 300 + i * 5);           // 5:00–15:00 /mi
-
-const FUEL_REMINDER_INTERVAL_SEC = 20 * 60;
 
 function todayWorkoutIndex(): number {
   // richWeek.workouts is Monday-indexed (see [dayIndex].tsx DAY_NAMES)
@@ -333,6 +332,14 @@ function PlanTab() {
   const weekPlan = useWeekPlan();
   const beforeStart = weekPlan.metadata.currentWeek === 0;
   const todayYMD = toYMD(new Date());
+  const customLogs = useCustomWorkoutStore(s => s.logs);
+  const notTodayLogIds = useCustomWorkoutStore(s => s.notTodayLogIds);
+  const markNotToday = useCustomWorkoutStore(s => s.markNotToday);
+  const customRunToday = customLogs.find(log =>
+    log.date === todayYMD
+    && log.category === 'running'
+    && !notTodayLogIds.includes(log.id),
+  );
 
   // Single source of truth for "today's workout": the calendar map's real
   // date entry, falling back to the Monday-indexed richWeek slot only if the
@@ -453,6 +460,24 @@ function PlanTab() {
             Set a goal and program start date in onboarding or Settings to see a personalized week here.
           </Text>
         </View>
+      ) : customRunToday ? (
+        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.primary, borderWidth: 1.5 }]}>
+          <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S CUSTOM RUN</Text>
+          <Text style={[styles.subTitle, { color: C.text, marginTop: 8 }]}>
+            {customRunToday.notes?.split(' — ')[0] || customRunToday.runType?.replace(/_/g, ' ') || 'Custom Run'}
+          </Text>
+          <Text style={[{ fontSize: 13, color: C.textMuted, marginTop: 6 }]}>
+            {customRunToday.durationMinutes ? `${Math.round(customRunToday.durationMinutes)} min` : ''}
+            {customRunToday.durationMinutes && customRunToday.distanceMiles ? ' · ' : ''}
+            {customRunToday.distanceMiles ? `${customRunToday.distanceMiles.toFixed(2)} mi` : ''}
+          </Text>
+          <TouchableOpacity
+            style={{ alignSelf: 'flex-start', marginTop: 12, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: C.cardAlt }}
+            onPress={() => markNotToday(customRunToday.id)}
+          >
+            <Text style={{ color: C.textMuted, fontSize: 12, fontWeight: '700' }}>Not Today</Text>
+          </TouchableOpacity>
+        </View>
       ) : todayRaceEntry ? (
         <View style={[styles.card, { backgroundColor: C.card, borderColor: '#DCC0A7', borderWidth: 1.5 }]}>
           <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S RUN</Text>
@@ -476,11 +501,6 @@ function PlanTab() {
             <View style={[{ marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: C.border }]}>
               <Text style={[{ fontSize: 11, color: C.textMuted, lineHeight: 16 }]}>{todayWorkout.paceGuidance.description}</Text>
             </View>
-          </View>
-          <View style={[styles.musicRow, { backgroundColor: mode === 'light' ? C.card : C.cardElevated, borderColor: C.border, marginTop: 10 }]}>
-            <Ionicons name="musical-note" size={18} color={C.text} />
-            <Text style={[styles.musicText, { color: C.text }]}>Connect Music</Text>
-            <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
           </View>
         </View>
       )}
@@ -566,6 +586,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const manualLogRun = useWorkoutStore(s => s.manualLog);
   const editRunLog = useWorkoutStore(s => s.editLog);
   const imp = units === 'imperial';
+  const fuelingReminderIntervalMin = useSettingsStore(s => s.fuelingReminderIntervalMin);
   const {
     isActive,
     isPaused,
@@ -985,16 +1006,16 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     sendRunAlertNotification(message).catch(() => undefined);
   }, [heartRateBpm, isActive, isPaused, zoneStatus.detail, zoneStatus.guidance, zoneStatus.tone]);
 
-  // Race mode: fueling reminder every 20 minutes of moving time
+  // Race mode: fueling reminder on the athlete's persisted interval.
   useEffect(() => {
     if (!isActive || isPaused || runMode !== 'race') return;
-    if (elapsed > 0 && elapsed - lastFuelCueRef.current >= FUEL_REMINDER_INTERVAL_SEC) {
+    if (elapsed > 0 && elapsed - lastFuelCueRef.current >= fuelingReminderIntervalMin * 60) {
       lastFuelCueRef.current = elapsed;
       const message = 'Fuel check: take carbs and a few sips of fluid now, before you feel like you need them.';
       speakCue(message);
       sendRunAlertNotification(message).catch(() => undefined);
     }
-  }, [elapsed, isActive, isPaused, runMode]);
+  }, [elapsed, fuelingReminderIntervalMin, isActive, isPaused, runMode]);
 
   // Goal completion announcements (once per run)
   useEffect(() => {
@@ -1257,7 +1278,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
                   <Text style={[styles.goalConfigValue, { color: C.text }]}>{paceLabel(racePaceSecInput)} {imp ? '/mi' : '/km'} ›</Text>
                 </TouchableOpacity>
                 <Text style={[styles.modeDesc, { color: C.textDim }]}>
-                  Goal finish ~{fmtClockDuration(raceMilesInput * racePaceSecInput)} · fueling reminders every 20 min
+                  Goal finish ~{fmtClockDuration(raceMilesInput * racePaceSecInput)} · fueling reminders every {fuelingReminderIntervalMin} min
                 </Text>
               </>
             ) : null}
@@ -2445,20 +2466,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     marginTop: spacing.md,
     marginBottom: spacing.md,
-  },
-  musicRow: {
-    height: 44,
-    borderRadius: radiusTokens.md,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    gap: spacing.sm,
-  },
-  musicText: {
-    flex: 1,
-    fontSize: typographyTokens.sizes.caption,
-    fontWeight: typographyTokens.weights.bold,
   },
   activeMetaRow: {
     marginTop: spacing.sm,

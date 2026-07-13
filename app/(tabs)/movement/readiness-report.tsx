@@ -141,7 +141,21 @@ export default function ReadinessReportScreen() {
           <CategoryChip category={assessment.overall} large />
         </View>
 
-        {assessment.painReported && (
+        {assessment.symptom ? (
+          <View style={s.painCard}>
+            <Ionicons name="medkit-outline" size={18} color={C.critical} />
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text style={s.painTxt}>
+                Symptom reported — intensity {assessment.symptom.intensity}/10, location: {assessment.symptom.location}.
+                {assessment.symptom.notes ? ` Notes: ${assessment.symptom.notes}` : ''}
+              </Text>
+              <Text style={s.painTxt}>
+                This is athlete-reported and not interpreted by StrideOS. Consult a qualified clinician for pain
+                or injury concerns.
+              </Text>
+            </View>
+          </View>
+        ) : assessment.painReported ? (
           <View style={s.painCard}>
             <Ionicons name="medkit-outline" size={18} color={C.critical} />
             <Text style={s.painTxt}>
@@ -149,7 +163,7 @@ export default function ReadinessReportScreen() {
               StrideOS does not interpret pain.
             </Text>
           </View>
-        )}
+        ) : null}
 
         <Text style={s.sectionLabel}>DOMAINS</Text>
         <View style={{ gap: spacing.sm }}>

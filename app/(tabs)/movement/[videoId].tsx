@@ -576,6 +576,16 @@ export default function VideoDetailScreen() {
               status={video.analysisStatus}
             />
 
+            <Pressable
+              style={s.actionBtn}
+              onPress={() => router.push({
+                pathname: '/(tabs)/coach',
+                params: { ask: `Review my movement video: ${currentVideo.title}.` },
+              } as never)}
+            >
+              <Text style={s.actionBtnTxt}>Discuss with AI Coach</Text>
+            </Pressable>
+
             <View style={s.disclaimer}>
               <Text style={s.disclaimerTxt}>
                 Movement analysis is educational and for coaching reference only. Not a medical diagnosis.

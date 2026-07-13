@@ -5,7 +5,7 @@
 // dragging (onScrub) and on release (onScrubEnd) so the caller can seek the
 // video player live and commit the final position.
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { PanResponder, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 
 import { colors } from '../../theme/colors';
@@ -37,8 +37,8 @@ export default function VideoScrubBar({ progress, onScrub, onScrubEnd, markers }
     return Math.min(1, Math.max(0, x / w));
   }
 
-  const panResponder = useRef(
-    PanResponder.create({
+  const panResponder = useMemo(
+    () => PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (evt) => {
@@ -59,7 +59,8 @@ export default function VideoScrubBar({ progress, onScrub, onScrubEnd, markers }
       },
       onPanResponderTerminate: () => setDragging(false),
     }),
-  ).current;
+    [onScrub, onScrubEnd],
+  );
 
   const shown = dragging ? dragFraction : Math.min(1, Math.max(0, progress));
 

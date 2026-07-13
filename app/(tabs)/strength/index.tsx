@@ -37,8 +37,15 @@ import {
   getMobilityWorkoutsByCategory,
 } from '../../../src/constants/mobilityBank';
 import type { MobilityCategory } from '../../../src/types/mobility';
+import {
+  STRENGTH_PRESET_WORKOUTS,
+  STRENGTH_PRESET_CATEGORY_LABELS,
+  getStrengthPresetWorkoutsByCategory,
+  type PresetStrengthWorkout,
+  type StrengthPresetCategory,
+} from '../../../src/constants/strengthBank';
 
-type Segment = 'strength' | 'mobility';
+type Segment = 'strength' | 'presets' | 'mobility';
 
 function SegmentedControl({ segment, setSegment, C }: {
   segment: Segment;
@@ -47,6 +54,7 @@ function SegmentedControl({ segment, setSegment, C }: {
 }) {
   const options: { label: string; value: Segment }[] = [
     { label: 'Strength', value: 'strength' },
+    { label: 'Presets', value: 'presets' },
     { label: 'Mobility', value: 'mobility' },
   ];
   return (
@@ -222,6 +230,224 @@ function MobilityTabContent({ segment, setSegment, C }: {
         </ScrollView>
 
         {filteredWorkouts.map(w => renderWorkoutCard(w.id, w.id))}
+      </ScrollView>
+    </View>
+  );
+}
+
+// ─── Strength preset library segment ───────────────────────────────────────────
+//
+// Read-only presentation over STRENGTH_PRESET_WORKOUTS. Mirrors the mobility
+// library pattern above (recommended section + category filter chips + cards).
+// The adaptive Strength segment (default tab) remains the primary,
+// personalized program; this is a browsable static library alongside it.
+// Does not touch strengthStore or any engine — Codex wires launch/logging.
+
+const PRESET_CATEGORY_FILTERS: (StrengthPresetCategory | 'all')[] = [
+  'all', 'gym_barbell', 'dumbbell', 'kettlebell', 'bodyweight',
+  'full_body', 'upper_body', 'lower_body', 'runner_strength',
+  'pre_run', 'post_run_recovery', 'problem_area',
+];
+
+const EQUIPMENT_LABELS: Record<string, string> = {
+  barbell: 'Barbell',
+  squat_rack: 'Squat Rack',
+  bench: 'Bench',
+  dumbbell: 'Dumbbell',
+  kettlebell: 'Kettlebell',
+  band: 'Band',
+  bodyweight: 'Bodyweight',
+};
+
+function PresetsTabContent({ segment, setSegment, C }: {
+  segment: Segment;
+  setSegment: (s: Segment) => void;
+  C: ReturnType<typeof useColors>;
+}) {
+  const insets = useSafeAreaInsets();
+  const [categoryFilter, setCategoryFilter] = useState<StrengthPresetCategory | 'all'>('all');
+  const [openPresetId, setOpenPresetId] = useState<string | null>(null);
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [presetStartedAt, setPresetStartedAt] = useState<number | null>(null);
+  const logPreset = useStrengthStore(s => s.manualLog);
+  const completedSessions = useStrengthStore(s => s.completedSessions);
+  const fatigueScore = useAthleteStore(s => s.fatigueScore);
+  const currentWeek = useAthleteStore(s => s.currentWeek);
+
+  const recommended = useMemo(
+    () => STRENGTH_PRESET_WORKOUTS.filter(w => w.categories.includes('recommended')),
+    [],
+  );
+  const filteredPresets = useMemo(
+    () => categoryFilter === 'all' ? STRENGTH_PRESET_WORKOUTS : getStrengthPresetWorkoutsByCategory(categoryFilter),
+    [categoryFilter],
+  );
+
+  function estimatedReps(reps: string): number {
+    const match = reps.match(/\d+/);
+    return match ? Number(match[0]) : 8;
+  }
+
+  function finishPreset(preset: PresetStrengthWorkout) {
+    const startedAt = presetStartedAt ?? Date.now();
+    const completionKey = `preset_${preset.id}_${startedAt}`;
+    const exercises: CompletedExercise[] = preset.exercises.map(exercise => ({
+      exerciseId: `${preset.id}_${exercise.name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
+      sets: Array.from({ length: exercise.sets }, () => ({
+        reps: estimatedReps(exercise.reps),
+        load: exercise.equipment.includes('bodyweight') ? 'BW' : exercise.equipment.map(item => EQUIPMENT_LABELS[item] ?? item).join(', '),
+        rpe: 7,
+        completed: true,
+      })),
+      notes: exercise.notes,
+    }));
+    const sessionType = preset.categories.includes('pre_run')
+      ? 'activation'
+      : preset.categories.includes('runner_strength')
+        ? 'running_economy'
+        : 'full_body';
+    logPreset({
+      completionKey,
+      sessionType,
+      goal: preset.categories.includes('runner_strength') ? 'running_economy' : 'maintenance',
+      week: Math.max(1, currentWeek),
+      plannedDuration: preset.durationMin,
+      actualDuration: Math.max(1, Math.round((Date.now() - startedAt) / 60_000)),
+      exercises,
+      overallRpe: 7,
+      notes: `Preset: ${preset.id} · ${preset.title}`,
+    }, fatigueScore);
+    setActivePresetId(null);
+    setPresetStartedAt(null);
+    Alert.alert('Preset logged', `${preset.title} was added to Strength history.`);
+  }
+
+  function renderPresetCard(preset: PresetStrengthWorkout, key: string) {
+    const open = openPresetId === preset.id;
+    return (
+      <TouchableOpacity
+        key={key}
+        style={[styles.card, { backgroundColor: C.card, borderColor: C.border, marginBottom: 10 }]}
+        activeOpacity={0.8}
+        onPress={() => setOpenPresetId(open ? null : preset.id)}
+      >
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1, paddingRight: 10 }}>
+            <Text style={[styles.subTitle, { color: C.text }]}>{preset.title}</Text>
+            <Text style={[{ fontSize: 12, color: C.textMuted, marginTop: 3, lineHeight: 17 }]}>{preset.description}</Text>
+          </View>
+          <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={C.textMuted} />
+        </View>
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+          <Text style={[{ fontSize: 11, color: C.textDim }]}>{preset.durationMin} min</Text>
+          <Text style={[{ fontSize: 11, color: C.textDim }]}>·</Text>
+          <Text style={[{ fontSize: 11, color: C.textDim }]}>{preset.exercises.length} exercises</Text>
+          <Text style={[{ fontSize: 11, color: C.textDim }]}>·</Text>
+          <Text style={[{ fontSize: 11, color: C.textDim, flexShrink: 1 }]} numberOfLines={1}>
+            {preset.equipment.map(e => EQUIPMENT_LABELS[e] ?? e).join(', ')}
+          </Text>
+        </View>
+        {open && (
+          <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10, gap: 6 }}>
+            {preset.exercises.map(e => (
+              <View key={e.name} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+                <Text style={[{ fontSize: 12, color: C.textMuted, flex: 1 }]}>{e.name}</Text>
+                <Text style={[{ fontSize: 12, fontWeight: '700', color: C.text }]}>{e.sets} × {e.reps}</Text>
+              </View>
+            ))}
+            {activePresetId === preset.id ? (
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                <TouchableOpacity
+                  style={{ flex: 1, minHeight: 42, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primary }}
+                  onPress={event => { event.stopPropagation(); finishPreset(preset); }}
+                >
+                  <Text style={{ color: C.onPrimary, fontSize: 13, fontWeight: '700' }}>Finish & Log</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ paddingHorizontal: 14, justifyContent: 'center' }}
+                  onPress={event => { event.stopPropagation(); setActivePresetId(null); setPresetStartedAt(null); }}
+                >
+                  <Text style={{ color: C.textMuted, fontSize: 12, fontWeight: '700' }}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={{ marginTop: 8, minHeight: 42, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primary, opacity: activePresetId ? 0.45 : 1 }}
+                disabled={Boolean(activePresetId)}
+                onPress={event => {
+                  event.stopPropagation();
+                  setActivePresetId(preset.id);
+                  setPresetStartedAt(Date.now());
+                }}
+              >
+                <Text style={{ color: C.onPrimary, fontSize: 13, fontWeight: '700' }}>Start Preset</Text>
+              </TouchableOpacity>
+            )}
+            {completedSessions.some(id => id.startsWith(`preset_${preset.id}_`)) ? (
+              <Text style={{ color: C.positive, fontSize: 11, marginTop: 2 }}>Previously completed</Text>
+            ) : null}
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <View style={[styles.screenHeader, { paddingTop: insets.top + 6, backgroundColor: C.bg }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.headerLabel, { color: C.textDim }]}>STRENGTH</Text>
+          <Text style={[styles.headerTitle, { color: C.text }]}>Preset Library</Text>
+        </View>
+      </View>
+
+      <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: LAYOUT.screenPadBottom }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.card, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+          <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>
+            Your adaptive Strength plan (the Strength tab) stays your primary, personalized program. These presets
+            are a browsable library for extra sessions, travel days, or picking your own workout.
+          </Text>
+        </View>
+
+        <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8, marginTop: 4 }]}>RECOMMENDED FOR YOU</Text>
+        {recommended.length > 0 ? (
+          recommended.map(w => renderPresetCard(w, `rec_${w.id}`))
+        ) : (
+          <View style={[styles.card, { backgroundColor: C.cardAlt, borderColor: C.border, marginBottom: 10 }]}>
+            <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>No recommended presets right now.</Text>
+          </View>
+        )}
+
+        <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8, marginTop: 10 }]}>ALL PRESETS</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {PRESET_CATEGORY_FILTERS.map(cat => {
+              const active = categoryFilter === cat;
+              const label = cat === 'all' ? 'All' : STRENGTH_PRESET_CATEGORY_LABELS[cat];
+              return (
+                <TouchableOpacity
+                  key={cat}
+                  style={[
+                    { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1 },
+                    { backgroundColor: active ? C.primaryDim : C.card, borderColor: active ? C.primary : C.border },
+                  ]}
+                  onPress={() => setCategoryFilter(cat)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: active ? C.primary : C.textDim }}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </ScrollView>
+
+        {filteredPresets.map(w => renderPresetCard(w, w.id))}
       </ScrollView>
     </View>
   );
@@ -571,6 +797,11 @@ export default function StrengthScreen() {
     return acc + (ex.sets * (parseInt(ex.reps) || 10) * w);
   }, 0);
   const totalVolStr = totalVol > 0 ? `${Math.round(totalVol).toLocaleString()} ${wtUnit}` : '—';
+
+  // ── Presets segment ──────────────────────────────────────────────────────────
+  if (segment === 'presets') {
+    return <PresetsTabContent segment={segment} setSegment={setSegment} C={C} />;
+  }
 
   // ── Mobility segment ─────────────────────────────────────────────────────────
   if (segment === 'mobility') {

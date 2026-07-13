@@ -37,7 +37,12 @@ import { analyzeSequence } from '../../../src/utils/poseSequence';
 import { buildSequenceFindings } from '../../../src/utils/movementEngine';
 import { assessSequenceCaptureQuality, type CaptureIssue, type CaptureQualityRating } from '../../../src/utils/captureQuality';
 import { assessReadiness } from '../../../src/utils/readinessEngine';
+import { filterAngleSeries, filterEstimatedAngles } from '../../../src/utils/measurementMatrix';
+import { decodeFailedError, validatePickedVideo } from '../../../src/utils/mediaValidation';
 import CaptureGuidanceCard from '../../../src/components/movement/CaptureGuidanceCard';
+import TimedCaptureCamera from '../../../src/components/movement/TimedCaptureCamera';
+import { dionImagesForReadinessStep, type DionAssessmentImages } from '../../../src/constants/dionImages';
+import { READINESS_STEP_DURATION_SEC } from '../../../src/constants/captureConfig';
 import type { MovementAnalysisKind, MovementViewAngle } from '../../../src/types/movement';
 import type { ReadinessTestId, ReadinessTestMethod, ReadinessTestResult } from '../../../src/types/movementReadiness';
 
@@ -58,9 +63,12 @@ type StepDef = {
 };
 
 type SingleLegChecklist = {
+  reviewStatus?: 'confirmed' | 'unclear' | 'overridden';
   pelvisLevel?: boolean;
   kneeTracksOverFoot?: boolean;
   trunkSteady?: boolean;
+  overrideReason?: string;
+  note?: string;
 };
 
 const STEPS: StepDef[] = [
@@ -75,20 +83,20 @@ const STEPS: StepDef[] = [
     mustBeVisible: ['Whole body', 'Hips', 'Knees', 'Ankles'],
   },
   {
-    key: 'single_leg_squat', title: 'Single-Leg Squat', kind: 'video_checklist', view: 'front', analysisKind: 'lunge_single_leg',
+    key: 'single_leg_squat', title: 'Single-Leg Squat', kind: 'video_checklist', view: 'front', analysisKind: 'single_leg_control',
     testIds: ['single_leg_squat'],
     instructions: [
-      'Optional: film from directly in front for your own reference.',
-      'Perform 3–5 slow single-leg squats per side, then answer the checklist below.',
+      'Film from directly in front so StrideOS can estimate frontal-plane control.',
+      'Perform 3–5 slow single-leg squats per side.',
     ],
     mustBeVisible: ['Whole body', 'Both knees', 'Pelvis'],
   },
   {
-    key: 'split_stance_lunge', title: 'Split-Stance Lunge', kind: 'video', view: 'side', analysisKind: 'lunge_single_leg',
+    key: 'split_stance_lunge', title: 'Split-Stance Lunge', kind: 'video', view: 'side', analysisKind: 'lunge',
     testIds: ['split_stance_lunge'],
     instructions: [
       'Film from the side, camera at hip height.',
-      'Step into a long split stance and lower gently 3–5 times per side.',
+      'Perform 3–5 controlled repetitions per side.',
       'Keep your torso upright throughout.',
     ],
     mustBeVisible: ['Whole body', 'Hips', 'Knees'],
@@ -131,12 +139,15 @@ const TOTAL_SCREENS = STEPS.length + 1; // + pain/review screen
 type VideoResult = { analysisId: string; captureRating: CaptureQualityRating; issues: CaptureIssue[] };
 
 function VideoCaptureBlock({
-  analysisKind, view, result, onResult,
+  analysisKind, view, result, onResult, dion, title, durationSec,
 }: {
   analysisKind: MovementAnalysisKind;
   view:         MovementViewAngle;
   result:       VideoResult | null;
   onResult:     (r: VideoResult | null) => void;
+  dion:         DionAssessmentImages;
+  title:        string;
+  durationSec:  number;
 }) {
   const C = useColors();
   const s = useMemo(() => makeStyles(C), [C]);
@@ -145,25 +156,42 @@ function VideoCaptureBlock({
 
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
-  async function pickAndAnalyze(source: 'camera' | 'library') {
-    const perm = source === 'camera'
-      ? await ImagePicker.requestCameraPermissionsAsync()
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+  async function pickFromLibrary() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (perm.status !== 'granted') {
-      Alert.alert('Permission needed', 'StrideOS needs access to record or choose a video for this test.');
+      Alert.alert('Permission needed', 'StrideOS needs photo library access to choose a video for this test.');
       return;
     }
 
-    const picked = source === 'camera'
-      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['videos'], allowsEditing: false, quality: 0.9 })
-      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false, quality: 0.9 });
+    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false, quality: 0.9 });
     if (picked.canceled || picked.assets.length === 0) return;
+    const asset = picked.assets[0];
+    const validation = await validatePickedVideo({
+      uri: asset.uri,
+      fileName: asset.fileName,
+      duration: asset.duration,
+      fileSize: asset.fileSize,
+      mimeType: asset.mimeType,
+    });
+    if (validation) {
+      Alert.alert("This clip can't be used", validation.message);
+      return;
+    }
+    await analyzeVideo(asset.uri);
+  }
 
+  async function analyzeVideo(uri: string) {
+    const validation = await validatePickedVideo({ uri });
+    if (validation) {
+      Alert.alert("This clip can't be used", validation.message);
+      return;
+    }
     setBusy(true);
     setProgress({ processed: 0, total: 1 });
     try {
-      let storedUri = picked.assets[0].uri;
+      let storedUri = uri;
       try {
         storedUri = await copyAnalysisMediaToStorage(storedUri, `readiness_${Date.now()}`);
       } catch {
@@ -176,19 +204,24 @@ function VideoCaptureBlock({
       });
 
       if (!seqResult || seqResult.frames.length === 0) {
-        Alert.alert('Analysis failed', 'Could not analyze this video on-device. Try a shorter or steadier clip, or continue and enter this test manually.');
+        Alert.alert('Analysis failed', decodeFailedError().message);
         return;
       }
 
       const quality = assessSequenceCaptureQuality(seqResult, view === 'front' ? 'front' : 'side');
       const seq = analyzeSequence(seqResult, analysisKind, view);
+      const angleSeries = filterAngleSeries(seq.angleSeries, analysisKind, view);
+      const keyFrames = seq.keyFrames.map(keyFrame => ({
+        ...keyFrame,
+        angles: keyFrame.angles ? filterEstimatedAngles(keyFrame.angles, analysisKind, view) : undefined,
+      }));
       const recommendations = buildSequenceFindings(
         {
-          estimatedAngles: seq.keyFrames[0]?.angles,
-          angleSeries: seq.angleSeries,
-          keyFrames: seq.keyFrames,
+          estimatedAngles: keyFrames[0]?.angles,
+          angleSeries,
+          keyFrames,
           repSummaries: seq.repSummaries,
-          symmetryEstimates: seq.symmetryEstimates,
+          symmetryEstimates: [],
           sequenceConfidence: seq.confidence,
         },
         analysisKind,
@@ -198,8 +231,8 @@ function VideoCaptureBlock({
         type: analysisKind, mediaUri: storedUri, mediaType: 'video', cameraView: view,
         checklistFindings: [], confidence: seq.confidence, recommendations,
         limitations: seq.limitations, status: seq.confidence === 'manual_review' ? 'needs_review' : 'complete',
-        angleSeries: seq.angleSeries, keyFrames: seq.keyFrames, repSummaries: seq.repSummaries,
-        symmetryEstimates: seq.symmetryEstimates, sequenceConfidence: seq.confidence,
+        angleSeries, keyFrames, repSummaries: seq.repSummaries,
+        symmetryEstimates: [], sequenceConfidence: seq.confidence,
         sequenceLimitations: seq.limitations, analyzedDurationMs: seqResult.analyzedMs, videoDurationMs: seqResult.durationMs,
       });
 
@@ -211,6 +244,8 @@ function VideoCaptureBlock({
       }
 
       onResult({ analysisId: id, captureRating: quality.rating, issues: quality.issues });
+    } catch {
+      Alert.alert('Analysis failed', decodeFailedError().message);
     } finally {
       setBusy(false);
       setProgress(null);
@@ -252,14 +287,27 @@ function VideoCaptureBlock({
   }
 
   return (
-    <View style={s.mediaRow}>
-      <Pressable style={s.mediaBtn} onPress={() => pickAndAnalyze('camera')}>
-        <Text style={s.mediaBtnTxt}>Record Video</Text>
-      </Pressable>
-      <Pressable style={s.mediaBtn} onPress={() => pickAndAnalyze('library')}>
-        <Text style={s.mediaBtnTxt}>Choose Video</Text>
-      </Pressable>
-    </View>
+    <>
+      <View style={s.mediaRow}>
+        <Pressable style={s.mediaBtn} onPress={() => setCameraOpen(true)}>
+          <Text style={s.mediaBtnTxt}>Record Video</Text>
+        </Pressable>
+        <Pressable style={s.mediaBtn} onPress={pickFromLibrary}>
+          <Text style={s.mediaBtnTxt}>Choose Video</Text>
+        </Pressable>
+      </View>
+      <TimedCaptureCamera
+        visible={cameraOpen}
+        onClose={() => setCameraOpen(false)}
+        onCaptured={({ uri }) => {
+          setCameraOpen(false);
+          void analyzeVideo(uri);
+        }}
+        dion={dion}
+        title={title}
+        durationSec={durationSec}
+      />
+    </>
   );
 }
 
@@ -282,11 +330,33 @@ export default function ReadinessTestScreen() {
   const [cmLeft, setCmLeft] = useState<Record<string, string>>({});
   const [cmRight, setCmRight] = useState<Record<string, string>>({});
   const [checklist, setChecklist] = useState<Record<string, SingleLegChecklist>>({});
+  const [heelQuality, setHeelQuality] = useState({
+    leftQuality: '', rightQuality: '', leftDecline: '', rightDecline: '',
+  });
   const [painReported, setPainReported] = useState<boolean | null>(null);
+  const [symptomIntensity, setSymptomIntensity] = useState('');
+  const [symptomLocation, setSymptomLocation] = useState('');
+  const [symptomNotes, setSymptomNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
   const onFinalScreen = screenIndex >= STEPS.length;
   const step = onFinalScreen ? null : STEPS[screenIndex];
+  const displayStep = step?.key === 'gait_side_view'
+    ? { ...step, title: focus === 'walking' ? 'Walking Gait' : 'Easy Running Gait' }
+    : step;
+  const stepDion = displayStep
+    ? dionImagesForReadinessStep(displayStep.key as Parameters<typeof dionImagesForReadinessStep>[0], focus)
+    : null;
+  const symptomIncomplete = painReported === null
+    || (painReported && (!symptomLocation.trim() || symptomIntensity.trim() === '' || !Number.isFinite(Number(symptomIntensity))));
+  const singleLegReview = displayStep?.kind === 'video_checklist' ? checklist[displayStep.key] : undefined;
+  const stepCannotContinue = displayStep?.kind === 'video_checklist'
+    && Boolean(videoResults[displayStep.key])
+    && (!singleLegReview?.reviewStatus
+      || (singleLegReview.reviewStatus === 'overridden'
+        && (!singleLegReview.overrideReason?.trim()
+          || ![singleLegReview.pelvisLevel, singleLegReview.kneeTracksOverFoot, singleLegReview.trunkSteady]
+            .some(value => value !== undefined))));
 
   function commitStepResults(key: string, stepResults: ReadinessTestResult[]) {
     setResults(prev => ({ ...prev, [key]: stepResults }));
@@ -325,7 +395,7 @@ export default function ReadinessTestScreen() {
     const list = checklist[current.key];
     const hasChecklist = Boolean(list && Object.values(list).some(value => value !== undefined));
     commitStepResults(current.key, current.testIds.map(testId => ({
-      testId, method: 'manual',
+      testId, method: vr ? 'video' : 'manual',
       analysisId: vr?.analysisId,
       captureRating: vr?.captureRating,
       manualValues: hasChecklist ? { ...list } : undefined,
@@ -338,8 +408,8 @@ export default function ReadinessTestScreen() {
     const l = parseFloat(cmLeft[current.key] ?? '');
     const r = parseFloat(cmRight[current.key] ?? '');
     commitStepResults(current.key, [
-      { testId: current.testIds[0], method: 'manual', manualValues: Number.isFinite(l) ? { cm: l } : undefined, skipped: !Number.isFinite(l) },
-      { testId: current.testIds[1], method: 'manual', manualValues: Number.isFinite(r) ? { cm: r } : undefined, skipped: !Number.isFinite(r) },
+      { testId: current.testIds[0], method: 'manual', analysisId: videoResults[current.key]?.analysisId, captureRating: videoResults[current.key]?.captureRating, manualValues: Number.isFinite(l) ? { cm: l } : undefined, skipped: !Number.isFinite(l) },
+      { testId: current.testIds[1], method: 'manual', analysisId: videoResults[current.key]?.analysisId, captureRating: videoResults[current.key]?.captureRating, manualValues: Number.isFinite(r) ? { cm: r } : undefined, skipped: !Number.isFinite(r) },
     ]);
     goNext();
   }
@@ -347,9 +417,21 @@ export default function ReadinessTestScreen() {
   function handleContinueReps(current: StepDef) {
     const l = parseInt(cmLeft[current.key] ?? '', 10);
     const r = parseInt(cmRight[current.key] ?? '', 10);
+    const leftQuality = parseInt(heelQuality.leftQuality, 10);
+    const rightQuality = parseInt(heelQuality.rightQuality, 10);
+    const leftDecline = parseInt(heelQuality.leftDecline, 10);
+    const rightDecline = parseInt(heelQuality.rightDecline, 10);
     commitStepResults(current.key, [
-      { testId: current.testIds[0], method: 'manual', manualValues: Number.isFinite(l) ? { reps: l } : undefined, skipped: !Number.isFinite(l) },
-      { testId: current.testIds[1], method: 'manual', manualValues: Number.isFinite(r) ? { reps: r } : undefined, skipped: !Number.isFinite(r) },
+      { testId: current.testIds[0], method: 'manual', manualValues: Number.isFinite(l) ? {
+        reps: l,
+        ...(Number.isFinite(leftQuality) ? { qualityReps: leftQuality } : {}),
+        ...(Number.isFinite(leftDecline) ? { declineOnsetRep: leftDecline } : {}),
+      } : undefined, skipped: !Number.isFinite(l) },
+      { testId: current.testIds[1], method: 'manual', manualValues: Number.isFinite(r) ? {
+        reps: r,
+        ...(Number.isFinite(rightQuality) ? { qualityReps: rightQuality } : {}),
+        ...(Number.isFinite(rightDecline) ? { declineOnsetRep: rightDecline } : {}),
+      } : undefined, skipped: !Number.isFinite(r) },
     ]);
     goNext();
   }
@@ -359,7 +441,11 @@ export default function ReadinessTestScreen() {
     setSaving(true);
     try {
       const flatResults = Object.values(results).flat();
-      const built = assessReadiness(focus, flatResults, analyses, painReported ?? false);
+      const intensity = Math.max(0, Math.min(10, Number(symptomIntensity)));
+      const symptom = painReported && symptomLocation.trim()
+        ? { intensity: Number.isFinite(intensity) ? intensity : 0, location: symptomLocation.trim(), notes: symptomNotes.trim() || undefined }
+        : undefined;
+      const built = assessReadiness(focus, flatResults, analyses, painReported ?? false, symptom);
       const id = addReadinessAssessment(built);
       if (built.recommendedMobilityWorkoutIds.length > 0) {
         setRecommendedWorkouts(built.recommendedMobilityWorkoutIds, id);
@@ -378,7 +464,7 @@ export default function ReadinessTestScreen() {
         </Pressable>
         <View style={{ marginLeft: 10, flex: 1 }}>
           <Text style={s.eyebrow}>STEP {screenIndex + 1} OF {TOTAL_SCREENS}</Text>
-          <Text style={s.title}>{onFinalScreen ? 'Review' : step!.title}</Text>
+          <Text style={s.title}>{onFinalScreen ? 'Symptom Review' : displayStep!.title}</Text>
         </View>
       </View>
 
@@ -387,37 +473,71 @@ export default function ReadinessTestScreen() {
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: LAYOUT.screenPadBottom, gap: spacing.md }}
         showsVerticalScrollIndicator={false}
       >
-        {!onFinalScreen && step && (
+        {!onFinalScreen && displayStep && stepDion && (
           <>
-            {step.optional && (
+            {displayStep.optional && (
               <View style={s.optionalPill}>
                 <Text style={s.optionalPillTxt}>OPTIONAL</Text>
               </View>
             )}
 
-            <CaptureGuidanceCard view={step.view} instructions={step.instructions} mustBeVisible={step.mustBeVisible} />
+            <CaptureGuidanceCard dion={stepDion} instructions={displayStep.instructions} mustBeVisible={displayStep.mustBeVisible} />
 
-            {(step.kind === 'video' || step.kind === 'video_checklist') && step.analysisKind && (
+            {(displayStep.kind === 'video' || displayStep.kind === 'video_checklist') && displayStep.analysisKind && (
               <View style={s.card}>
                 <Text style={s.label}>RECORD OR IMPORT</Text>
                 <VideoCaptureBlock
-                  analysisKind={step.analysisKind}
-                  view={step.view}
-                  result={videoResults[step.key] ?? null}
-                  onResult={r => setVideoResults(prev => ({ ...prev, [step.key]: r }))}
+                  analysisKind={displayStep.analysisKind}
+                  view={displayStep.view}
+                  result={videoResults[displayStep.key] ?? null}
+                  onResult={r => setVideoResults(prev => ({ ...prev, [displayStep.key]: r }))}
+                  dion={stepDion}
+                  title={displayStep.title}
+                  durationSec={READINESS_STEP_DURATION_SEC[displayStep.key] ?? 15}
                 />
               </View>
             )}
 
-            {step.kind === 'video_checklist' && (
+            {displayStep.kind === 'video_checklist' && videoResults[displayStep.key] && (
               <View style={s.card}>
-                <Text style={s.label}>SINGLE-LEG SQUAT CHECKLIST</Text>
+                <Text style={s.label}>REVIEW THE AUTOMATIC ASSESSMENT</Text>
+                <Text style={s.explain}>Confirm the estimate, mark it unclear, or override it with a reason.</Text>
+                <View style={s.choiceRow}>
+                  {([
+                    { label: 'Confirm', value: 'confirmed' },
+                    { label: 'Unclear', value: 'unclear' },
+                    { label: 'Override', value: 'overridden' },
+                  ] as const).map(choice => (
+                    <Pressable
+                      key={choice.value}
+                      style={[s.choiceBtn, checklist[displayStep.key]?.reviewStatus === choice.value && s.choiceBtnActive]}
+                      onPress={() => setChecklist(prev => ({
+                        ...prev,
+                        [displayStep.key]: { ...(prev[displayStep.key] ?? {}), reviewStatus: choice.value },
+                      }))}
+                    >
+                      <Text style={[s.choiceTxt, checklist[displayStep.key]?.reviewStatus === choice.value && s.choiceTxtActive]}>{choice.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                {checklist[displayStep.key]?.reviewStatus === 'overridden' && (
+                  <TextInput
+                    style={s.numInput}
+                    value={checklist[displayStep.key]?.overrideReason ?? ''}
+                    onChangeText={overrideReason => setChecklist(prev => ({
+                      ...prev,
+                      [displayStep.key]: { ...(prev[displayStep.key] ?? {}), overrideReason },
+                    }))}
+                    placeholder="Reason for override"
+                    placeholderTextColor={C.textSubtle}
+                  />
+                )}
                 {([
                   { key: 'pelvisLevel', label: 'Pelvis stayed level' },
                   { key: 'kneeTracksOverFoot', label: 'Knee tracked over the foot' },
                   { key: 'trunkSteady', label: 'Trunk stayed steady' },
                 ] as const).map(item => {
-                  const current = checklist[step.key]?.[item.key];
+                  const current = checklist[displayStep.key]?.[item.key];
                   return (
                     <View key={item.key} style={s.checklistRow}>
                       <View style={{ flex: 1 }}>
@@ -436,8 +556,8 @@ export default function ReadinessTestScreen() {
                               style={[s.choiceBtn, active && s.choiceBtnActive]}
                               onPress={() => setChecklist(prev => ({
                                 ...prev,
-                                [step.key]: {
-                                  ...(prev[step.key] ?? {}),
+                                  [displayStep.key]: {
+                                  ...(prev[displayStep.key] ?? {}),
                                   [item.key]: choice.value,
                                 },
                               }))}
@@ -450,10 +570,20 @@ export default function ReadinessTestScreen() {
                     </View>
                   );
                 })}
+                <TextInput
+                  style={s.numInput}
+                  value={checklist[displayStep.key]?.note ?? ''}
+                  onChangeText={note => setChecklist(prev => ({
+                    ...prev,
+                    [displayStep.key]: { ...(prev[displayStep.key] ?? {}), note },
+                  }))}
+                  placeholder="Optional review note"
+                  placeholderTextColor={C.textSubtle}
+                />
               </View>
             )}
 
-            {step.kind === 'manual_pair_cm' && (
+            {displayStep.kind === 'manual_pair_cm' && (
               <View style={s.card}>
                 <Text style={s.label}>ENTER MANUALLY (CM)</Text>
                 <View style={s.pairRow}>
@@ -461,8 +591,8 @@ export default function ReadinessTestScreen() {
                     <Text style={s.pairLabel}>Left</Text>
                     <TextInput
                       style={s.numInput}
-                      value={cmLeft[step.key] ?? ''}
-                      onChangeText={v => setCmLeft(prev => ({ ...prev, [step.key]: v }))}
+                      value={cmLeft[displayStep.key] ?? ''}
+                      onChangeText={v => setCmLeft(prev => ({ ...prev, [displayStep.key]: v }))}
                       keyboardType="decimal-pad"
                       placeholder="cm"
                       placeholderTextColor={C.textSubtle}
@@ -472,18 +602,31 @@ export default function ReadinessTestScreen() {
                     <Text style={s.pairLabel}>Right</Text>
                     <TextInput
                       style={s.numInput}
-                      value={cmRight[step.key] ?? ''}
-                      onChangeText={v => setCmRight(prev => ({ ...prev, [step.key]: v }))}
+                      value={cmRight[displayStep.key] ?? ''}
+                      onChangeText={v => setCmRight(prev => ({ ...prev, [displayStep.key]: v }))}
                       keyboardType="decimal-pad"
                       placeholder="cm"
                       placeholderTextColor={C.textSubtle}
                     />
                   </View>
                 </View>
+                {Number.isFinite(parseFloat(cmLeft[displayStep.key] ?? '')) && Number.isFinite(parseFloat(cmRight[displayStep.key] ?? '')) && (
+                  <Text style={s.explain}>Side-to-side difference: {Math.abs(parseFloat(cmLeft[displayStep.key]) - parseFloat(cmRight[displayStep.key])).toFixed(1)} cm</Text>
+                )}
+                <Text style={s.explain}>Optional video is for visual review only. Any displayed angles are estimates; toe-to-wall distance remains the recorded measurement.</Text>
+                <VideoCaptureBlock
+                  analysisKind="general"
+                  view="side"
+                  result={videoResults[displayStep.key] ?? null}
+                  onResult={r => setVideoResults(prev => ({ ...prev, [displayStep.key]: r }))}
+                  dion={stepDion}
+                  title={displayStep.title}
+                  durationSec={10}
+                />
               </View>
             )}
 
-            {step.kind === 'manual_pair_reps' && (
+            {displayStep.kind === 'manual_pair_reps' && (
               <View style={s.card}>
                 <Text style={s.label}>ENTER MANUALLY (REPS)</Text>
                 <View style={s.pairRow}>
@@ -491,8 +634,8 @@ export default function ReadinessTestScreen() {
                     <Text style={s.pairLabel}>Left</Text>
                     <TextInput
                       style={s.numInput}
-                      value={cmLeft[step.key] ?? ''}
-                      onChangeText={v => setCmLeft(prev => ({ ...prev, [step.key]: v }))}
+                      value={cmLeft[displayStep.key] ?? ''}
+                      onChangeText={v => setCmLeft(prev => ({ ...prev, [displayStep.key]: v }))}
                       keyboardType="number-pad"
                       placeholder="reps"
                       placeholderTextColor={C.textSubtle}
@@ -502,28 +645,68 @@ export default function ReadinessTestScreen() {
                     <Text style={s.pairLabel}>Right</Text>
                     <TextInput
                       style={s.numInput}
-                      value={cmRight[step.key] ?? ''}
-                      onChangeText={v => setCmRight(prev => ({ ...prev, [step.key]: v }))}
+                      value={cmRight[displayStep.key] ?? ''}
+                      onChangeText={v => setCmRight(prev => ({ ...prev, [displayStep.key]: v }))}
                       keyboardType="number-pad"
                       placeholder="reps"
                       placeholderTextColor={C.textSubtle}
                     />
                   </View>
                 </View>
+                <Text style={s.explain}>Count only controlled, full-range repetitions. Heel height is not estimated automatically because the current pose model does not expose reliable heel and toe landmarks.</Text>
+                <Text style={s.label}>OPTIONAL CONTROLLED-QUALITY REPS</Text>
+                <View style={s.pairRow}>
+                  <TextInput
+                    style={[s.numInput, { flex: 1 }]}
+                    value={heelQuality.leftQuality}
+                    onChangeText={leftQuality => setHeelQuality(prev => ({ ...prev, leftQuality }))}
+                    keyboardType="number-pad"
+                    placeholder="Left"
+                    placeholderTextColor={C.textSubtle}
+                  />
+                  <TextInput
+                    style={[s.numInput, { flex: 1 }]}
+                    value={heelQuality.rightQuality}
+                    onChangeText={rightQuality => setHeelQuality(prev => ({ ...prev, rightQuality }))}
+                    keyboardType="number-pad"
+                    placeholder="Right"
+                    placeholderTextColor={C.textSubtle}
+                  />
+                </View>
+                <Text style={s.label}>OPTIONAL REP WHERE HEIGHT DECLINED</Text>
+                <View style={s.pairRow}>
+                  <TextInput
+                    style={[s.numInput, { flex: 1 }]}
+                    value={heelQuality.leftDecline}
+                    onChangeText={leftDecline => setHeelQuality(prev => ({ ...prev, leftDecline }))}
+                    keyboardType="number-pad"
+                    placeholder="Left"
+                    placeholderTextColor={C.textSubtle}
+                  />
+                  <TextInput
+                    style={[s.numInput, { flex: 1 }]}
+                    value={heelQuality.rightDecline}
+                    onChangeText={rightDecline => setHeelQuality(prev => ({ ...prev, rightDecline }))}
+                    keyboardType="number-pad"
+                    placeholder="Right"
+                    placeholderTextColor={C.textSubtle}
+                  />
+                </View>
               </View>
             )}
 
             <View style={s.actionRow}>
-              <Pressable style={s.skipBtn} onPress={() => handleSkipStep(step)}>
+              <Pressable style={s.skipBtn} onPress={() => handleSkipStep(displayStep)}>
                 <Text style={s.skipTxt}>Skip</Text>
               </Pressable>
               <Pressable
-                style={s.continueBtn}
+                style={[s.continueBtn, stepCannotContinue && { opacity: 0.5 }]}
+                disabled={stepCannotContinue}
                 onPress={() => {
-                  if (step.kind === 'video') handleContinueVideo(step);
-                  else if (step.kind === 'video_checklist') handleContinueVideoChecklist(step);
-                  else if (step.kind === 'manual_pair_cm') handleContinueCm(step);
-                  else handleContinueReps(step);
+                  if (displayStep.kind === 'video') handleContinueVideo(displayStep);
+                  else if (displayStep.kind === 'video_checklist') handleContinueVideoChecklist(displayStep);
+                  else if (displayStep.kind === 'manual_pair_cm') handleContinueCm(displayStep);
+                  else handleContinueReps(displayStep);
                 }}
               >
                 <Text style={s.continueTxt}>Continue</Text>
@@ -552,14 +735,40 @@ export default function ReadinessTestScreen() {
                 </Pressable>
               </View>
               {painReported && (
-                <Text style={s.painNote}>
-                  Your report will include a note to consult a clinician for pain or injury concerns.
-                  StrideOS doesn't interpret pain.
-                </Text>
+                <View style={{ gap: spacing.sm }}>
+                  <TextInput
+                    style={s.numInput}
+                    value={symptomIntensity}
+                    onChangeText={setSymptomIntensity}
+                    keyboardType="number-pad"
+                    placeholder="Intensity (0–10)"
+                    placeholderTextColor={C.textSubtle}
+                  />
+                  <TextInput
+                    style={s.numInput}
+                    value={symptomLocation}
+                    onChangeText={setSymptomLocation}
+                    placeholder="Body location"
+                    placeholderTextColor={C.textSubtle}
+                  />
+                  <TextInput
+                    style={[s.numInput, { minHeight: 72 }]}
+                    value={symptomNotes}
+                    onChangeText={setSymptomNotes}
+                    placeholder="Optional notes"
+                    placeholderTextColor={C.textSubtle}
+                    multiline
+                  />
+                  <Text style={s.painNote}>Your report will recommend consulting a clinician for pain or injury concerns. StrideOS does not interpret symptoms.</Text>
+                </View>
               )}
             </View>
 
-            <Pressable style={[s.continueBtnFull, saving && { opacity: 0.6 }]} onPress={handleFinish} disabled={saving}>
+            <Pressable
+              style={[s.continueBtnFull, (saving || symptomIncomplete) && { opacity: 0.6 }]}
+              onPress={handleFinish}
+              disabled={saving || symptomIncomplete}
+            >
               {saving ? <ActivityIndicator size="small" color={C.onPrimary} /> : <Text style={s.continueTxt}>Finish & See Report</Text>}
             </Pressable>
           </>

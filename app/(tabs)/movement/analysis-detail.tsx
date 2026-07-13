@@ -56,9 +56,14 @@ const CAMERA_VIEW_LABELS: Record<string, string> = {
   side:      'Side view',
   front:     'Front view',
   rear:      'Rear view',
-  '45_degree': '45° view',
   unknown:   'View not specified',
 };
+
+// Legacy records may persist an angled capture view; render it with a plain
+// label rather than the retired capture wording.
+function cameraViewLabel(view: string): string {
+  return CAMERA_VIEW_LABELS[view] ?? 'Angled view';
+}
 
 function formatDate(ms: number): string {
   return new Date(ms).toLocaleDateString(undefined, {
@@ -143,7 +148,7 @@ export default function AnalysisDetailScreen() {
           <Text style={s.eyebrow}>MOVEMENT LAB · ANALYSIS</Text>
           <Text style={s.title}>{info.title}</Text>
           <Text style={s.subTitle}>
-            {formatDate(analysis.createdAt)} · {CAMERA_VIEW_LABELS[analysis.cameraView] ?? analysis.cameraView}
+            {formatDate(analysis.createdAt)} · {cameraViewLabel(analysis.cameraView)}
           </Text>
         </View>
 
@@ -283,7 +288,16 @@ export default function AnalysisDetailScreen() {
         ) : null}
 
         {/* Coach handoff */}
-        <Pressable style={s.primaryBtn} onPress={() => router.push('/(tabs)/coach')}>
+        <Pressable
+          style={s.primaryBtn}
+          onPress={() => router.push({
+            pathname: '/(tabs)/coach',
+            params: {
+              ask: `Review this ${info.title} analysis. Explain the most important findings, what they may mean for my training, and the 2–3 most useful next steps.`,
+              analysisId: analysis.id,
+            },
+          })}
+        >
           <Text style={s.primaryBtnTxt}>Discuss with AI Coach</Text>
         </Pressable>
         <Text style={s.helper}>

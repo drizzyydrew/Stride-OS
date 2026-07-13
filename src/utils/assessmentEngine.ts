@@ -47,11 +47,11 @@ export const ASSESSMENT_TESTS: AssessmentTestDef[] = [
   {
     key:         'bent_knee_soleus',
     label:       'Bent-Knee Calf Raise (Soleus)',
-    description: 'Calf raise with 30–45° knee bend to isolate soleus',
+    description: 'Calf raise with roughly 30 to 45 degrees of knee bend to isolate soleus',
     unit:        'reps',
     sides:       'unilateral',
     instructions: [
-      'Stand on one foot with knee bent ~30–45°',
+      'Stand on one foot with the knee bent roughly 30 to 45 degrees',
       'Hold bend constant throughout — this isolates the soleus',
       'Rise onto toes fully, lower to heel near floor',
       'Stop when form breaks or you cannot complete the rise',

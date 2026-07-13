@@ -1,0 +1,38 @@
+{
+  "characterId": "dion",
+  "displayName": "Dion",
+  "version": 1,
+  "status": "canonical",
+  "referenceDocument": "DION_CANONICAL_REFERENCE.md",
+  "canonicalImages": {
+    "front": "dion_reference_front.png",
+    "side": "dion_reference_side.png",
+    "back": "dion_reference_back.png"
+  },
+  "defaultWardrobe": {
+    "top": "fitted black short-sleeve athletic shirt",
+    "bottom": "black athletic shorts above the knee",
+    "shoes": "white athletic running/training shoes",
+    "socks": "neutral ankle socks"
+  },
+  "approvedViews": [
+    "direct_front",
+    "direct_left_side",
+    "direct_back"
+  ],
+  "prohibitedViews": [
+    "three_quarter_presented_as_front",
+    "three_quarter_presented_as_side"
+  ],
+  "requiredChecks": [
+    "same_character_identity",
+    "consistent_skin_tone",
+    "two_arms",
+    "two_legs",
+    "realistic_hands",
+    "realistic_feet",
+    "no_external_branding",
+    "full_body_visible"
+  ],
+  "assetNamingPattern": "dion_<movement>_<view>_<position>_v<number>.png"
+}

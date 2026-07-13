@@ -1,0 +1,362 @@
+{
+  "schemaVersion": 1,
+  "status": "canonical_specification",
+  "referenceDocuments": {
+    "designSystem": "movement_lab_design_system.md",
+    "cameraRules": "camera_rules.md",
+    "measurementRules": "measurement_rules.md",
+    "brandingRules": "branding_rules.md",
+    "dionCanonicalReference": "../dion/DION_CANONICAL_REFERENCE.md"
+  },
+  "assetNamingPattern": "dion_<movement>_<view>_<position>_v<number>.png",
+  "assessments": [
+    {
+      "id": "readiness_bodyweight_squat",
+      "name": "Bodyweight Squat",
+      "category": "running_readiness_battery",
+      "status": "specified",
+      "camera": {
+        "required": "direct_lateral",
+        "allowed": ["direct_lateral", "direct_front"],
+        "analysisRule": "Analyze only the closest limb in lateral view; use a separate frontal capture for bilateral symmetry."
+      },
+      "required_images": [
+        "dion_bodyweight_squat_side_start_v1.png",
+        "dion_bodyweight_squat_side_bottom_v1.png"
+      ],
+      "measurements": [
+        "head_position_manual",
+        "trunk_inclination_estimated",
+        "closest_side_hip_angle_estimated",
+        "closest_side_knee_flexion_estimated",
+        "ankle_dorsiflexion_manual_or_future",
+        "rep_depth_duration_consistency_estimated"
+      ],
+      "future_images": [
+        "dion_bodyweight_squat_front_bottom_v1.png"
+      ]
+    },
+    {
+      "id": "readiness_single_leg_squat",
+      "name": "Single-Leg Squat",
+      "category": "running_readiness_battery",
+      "status": "specified",
+      "camera": {
+        "required": "direct_front",
+        "allowed": ["direct_front", "direct_lateral"],
+        "analysisRule": "Analyze bilateral frontal relationships from the front; use a separate lateral capture with the tested limb closest for sagittal depth."
+      },
+      "required_images": [
+        "dion_single_leg_squat_front_start_v1.png",
+        "dion_single_leg_squat_front_bottom_v1.png"
+      ],
+      "measurements": [
+        "standing_leg_frontal_knee_position_estimated",
+        "pelvic_obliquity_estimated",
+        "trunk_lateral_lean_estimated",
+        "hip_adduction_appearance_manual",
+        "balance_and_foot_stability_manual"
+      ],
+      "future_images": [
+        "dion_single_leg_squat_side_bottom_v1.png"
+      ]
+    },
+    {
+      "id": "readiness_split_stance_lunge",
+      "name": "Split-Stance Lunge",
+      "category": "running_readiness_battery",
+      "status": "specified",
+      "camera": {
+        "required": "direct_lateral",
+        "allowed": ["direct_lateral", "direct_front"],
+        "analysisRule": "Place the front tested limb closest to the lateral camera; use a separate frontal capture for symmetry."
+      },
+      "required_images": [
+        "dion_split_stance_lunge_side_start_v1.png",
+        "dion_split_stance_lunge_side_bottom_v1.png"
+      ],
+      "measurements": [
+        "front_knee_flexion_estimated",
+        "front_hip_angle_estimated",
+        "trunk_inclination_estimated",
+        "rep_depth_duration_consistency_estimated",
+        "rear_knee_clearance_manual",
+        "heel_contact_and_balance_manual"
+      ],
+      "future_images": [
+        "dion_split_stance_lunge_front_bottom_v1.png"
+      ]
+    },
+    {
+      "id": "readiness_knee_to_wall",
+      "name": "Knee-to-Wall Test",
+      "category": "running_readiness_battery",
+      "status": "specified",
+      "camera": {
+        "required": "close_direct_lateral",
+        "allowed": ["close_direct_lateral"],
+        "analysisRule": "Capture each tested limb separately; keep the foot, heel, ankle, knee, wall, and contact point visible."
+      },
+      "required_images": [
+        "dion_knee_to_wall_side_start_v1.png",
+        "dion_knee_to_wall_side_end_v1.png"
+      ],
+      "measurements": [
+        "toe_to_wall_distance_cm_manual",
+        "left_right_distance_difference_calculated",
+        "tibial_inclination_manual_optional",
+        "heel_contact_manual",
+        "knee_wall_contact_manual"
+      ],
+      "future_images": [],
+      "automaticMeasurementStatus": "none_currently"
+    },
+    {
+      "id": "readiness_single_leg_heel_raise",
+      "name": "Single-Leg Heel Raise",
+      "category": "running_readiness_battery",
+      "status": "specified",
+      "camera": {
+        "required": "close_direct_lateral",
+        "allowed": ["close_direct_lateral", "direct_back"],
+        "analysisRule": "Capture each tested limb separately; keep the complete foot, heel, ankle, calf, and relevant knee position visible."
+      },
+      "required_images": [
+        "dion_single_leg_heel_raise_side_start_v1.png",
+        "dion_single_leg_heel_raise_side_top_v1.png"
+      ],
+      "measurements": [
+        "quality_repetitions_left_right_manual",
+        "heel_height_manual_or_future",
+        "height_decline_onset_manual_or_future",
+        "tempo_consistency_manual_or_future",
+        "knee_compensation_manual",
+        "balance_support_manual"
+      ],
+      "future_images": [
+        "dion_single_leg_heel_raise_side_height_decline_v1.png",
+        "dion_single_leg_heel_raise_back_top_v1.png"
+      ],
+      "automaticMeasurementStatus": "none_currently"
+    },
+    {
+      "id": "readiness_easy_running_gait",
+      "name": "Easy Running Gait",
+      "category": "running_readiness_battery",
+      "status": "specified",
+      "camera": {
+        "required": "direct_lateral",
+        "allowed": ["direct_lateral", "direct_front", "direct_back"],
+        "analysisRule": "Analyze only the limb closest to the lateral camera; use separate front/back captures for bilateral frontal-plane metrics."
+      },
+      "required_images": [
+        "dion_easy_running_gait_side_initial_contact_v1.png",
+        "dion_easy_running_gait_side_midstance_v1.png",
+        "dion_easy_running_gait_side_toe_off_v1.png"
+      ],
+      "measurements": [
+        "closest_side_knee_flexion_estimated",
+        "closest_side_hip_angle_estimated",
+        "trunk_inclination_estimated",
+        "cadence_estimated_when_supported",
+        "contact_events_approximate",
+        "overstride_appearance_manual",
+        "crossover_appearance_manual"
+      ],
+      "future_images": [
+        "dion_easy_running_gait_front_midstance_v1.png",
+        "dion_easy_running_gait_back_midstance_v1.png"
+      ]
+    },
+    {
+      "id": "readiness_walking_gait",
+      "name": "Walking Gait",
+      "category": "running_readiness_battery",
+      "status": "specified",
+      "camera": {
+        "required": "direct_lateral",
+        "allowed": ["direct_lateral", "direct_front", "direct_back"],
+        "analysisRule": "Analyze only the limb closest to the lateral camera; use separate front/back captures for bilateral frontal-plane metrics."
+      },
+      "required_images": [
+        "dion_walking_gait_side_initial_contact_v1.png",
+        "dion_walking_gait_side_midstance_v1.png",
+        "dion_walking_gait_side_toe_off_v1.png"
+      ],
+      "measurements": [
+        "closest_side_knee_flexion_estimated",
+        "closest_side_hip_angle_estimated",
+        "trunk_inclination_estimated",
+        "cadence_estimated_when_supported",
+        "contact_events_approximate",
+        "step_symmetry_manual",
+        "balance_events_manual"
+      ],
+      "future_images": [
+        "dion_walking_gait_front_midstance_v1.png",
+        "dion_walking_gait_back_midstance_v1.png"
+      ]
+    },
+    {
+      "id": "standalone_running_gait_analysis",
+      "name": "Running Gait Analysis",
+      "category": "standalone_movement_lab",
+      "status": "specified",
+      "camera": {
+        "required": "direct_lateral",
+        "allowed": ["direct_lateral", "direct_front", "direct_back"],
+        "analysisRule": "Analyze closest-side sagittal measures laterally and use separate direct front/back captures for frontal-plane symmetry."
+      },
+      "required_images": [
+        "dion_running_gait_side_initial_contact_v1.png",
+        "dion_running_gait_side_midstance_v1.png",
+        "dion_running_gait_side_toe_off_v1.png",
+        "dion_running_gait_side_midswing_v1.png"
+      ],
+      "measurements": [
+        "closest_side_knee_flexion_series_estimated",
+        "closest_side_hip_angle_series_estimated",
+        "trunk_inclination_series_estimated",
+        "cadence_estimated_when_supported",
+        "contact_events_approximate",
+        "overstride_manual",
+        "crossover_manual",
+        "arm_swing_manual"
+      ],
+      "future_images": [
+        "dion_running_gait_front_midstance_v1.png",
+        "dion_running_gait_back_midstance_v1.png"
+      ]
+    },
+    {
+      "id": "standalone_squat_analysis",
+      "name": "Squat Analysis",
+      "category": "standalone_movement_lab",
+      "status": "specified",
+      "camera": {
+        "required": "direct_lateral",
+        "allowed": ["direct_lateral", "direct_front"],
+        "analysisRule": "Analyze only the closest limb laterally; use a separate frontal capture for bilateral knee, pelvis, and trunk relationships."
+      },
+      "required_images": [
+        "dion_squat_side_start_v1.png",
+        "dion_squat_side_bottom_v1.png"
+      ],
+      "measurements": [
+        "head_position_manual",
+        "trunk_inclination_estimated",
+        "closest_side_hip_angle_estimated",
+        "closest_side_knee_flexion_estimated",
+        "ankle_dorsiflexion_manual_or_future",
+        "rep_depth_duration_consistency_estimated"
+      ],
+      "future_images": [
+        "dion_squat_front_bottom_v1.png"
+      ]
+    },
+    {
+      "id": "standalone_deadlift_analysis",
+      "name": "Deadlift Analysis",
+      "category": "standalone_movement_lab",
+      "status": "specified",
+      "camera": {
+        "required": "direct_lateral",
+        "allowed": ["direct_lateral", "direct_front"],
+        "analysisRule": "Analyze only the closest limb laterally; use a separate frontal capture for symmetry and bar centering."
+      },
+      "required_images": [
+        "dion_deadlift_side_setup_v1.png",
+        "dion_deadlift_side_midpull_v1.png",
+        "dion_deadlift_side_lockout_v1.png"
+      ],
+      "measurements": [
+        "trunk_inclination_estimated",
+        "closest_side_hip_angle_estimated",
+        "closest_side_knee_flexion_estimated",
+        "hip_knee_timing_estimated",
+        "bar_path_manual_or_future",
+        "bar_proximity_manual_or_future",
+        "head_trunk_alignment_manual"
+      ],
+      "future_images": [
+        "dion_deadlift_front_setup_v1.png"
+      ]
+    },
+    {
+      "id": "standalone_single_leg_control",
+      "name": "Single-Leg Control Analysis",
+      "category": "standalone_movement_lab",
+      "status": "specified",
+      "camera": {
+        "required": "direct_front",
+        "allowed": ["direct_front", "direct_lateral"],
+        "analysisRule": "Use direct front for frontal-plane control and a separate lateral capture with the tested limb closest for sagittal depth."
+      },
+      "required_images": [
+        "dion_single_leg_control_front_start_v1.png",
+        "dion_single_leg_control_front_bottom_v1.png"
+      ],
+      "measurements": [
+        "standing_leg_frontal_knee_position_estimated",
+        "pelvic_obliquity_estimated",
+        "trunk_lateral_lean_estimated",
+        "hip_adduction_appearance_manual",
+        "balance_and_foot_stability_manual"
+      ],
+      "future_images": [
+        "dion_single_leg_control_side_bottom_v1.png"
+      ]
+    },
+    {
+      "id": "standalone_lunge_analysis",
+      "name": "Lunge Analysis",
+      "category": "standalone_movement_lab",
+      "status": "future",
+      "camera": {
+        "required": "direct_lateral",
+        "allowed": ["direct_lateral", "direct_front"],
+        "analysisRule": "Place the lead tested limb closest to the lateral camera; use a separate frontal capture for symmetry."
+      },
+      "required_images": [
+        "dion_lunge_side_start_v1.png",
+        "dion_lunge_side_bottom_v1.png"
+      ],
+      "measurements": [
+        "lead_knee_flexion_estimated_when_enabled",
+        "lead_hip_angle_estimated_when_enabled",
+        "trunk_inclination_estimated_when_enabled",
+        "rep_depth_duration_consistency_when_enabled",
+        "stance_length_manual",
+        "rear_knee_clearance_manual",
+        "heel_contact_and_balance_manual"
+      ],
+      "future_images": [
+        "dion_lunge_front_bottom_v1.png"
+      ]
+    },
+    {
+      "id": "standalone_custom_movement_upload",
+      "name": "Custom Movement Upload",
+      "category": "standalone_movement_lab",
+      "status": "specified",
+      "camera": {
+        "required": "user_selected_direct_view",
+        "allowed": ["direct_front", "direct_lateral", "direct_back"],
+        "analysisRule": "Require a declared movement, phase, direct view, and closest side for lateral captures; permit only the pre-approved view-valid measurement set."
+      },
+      "required_images": [
+        "dion_custom_movement_front_start_v1.png",
+        "dion_custom_movement_side_start_v1.png",
+        "dion_custom_movement_back_start_v1.png"
+      ],
+      "measurements": [
+        "declared_view_valid_measurements_only",
+        "closest_side_required_for_lateral",
+        "movement_phase_manual",
+        "equipment_context_manual",
+        "observer_notes_manual"
+      ],
+      "future_images": []
+    }
+  ]
+}

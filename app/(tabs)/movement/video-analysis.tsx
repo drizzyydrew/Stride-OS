@@ -28,9 +28,10 @@ import type { PoseJoint, PoseSequenceResult } from 'stride-pose';
 import { useMovementStore } from '../../../src/store/movementStore';
 import { resolveDocumentUri } from '../../../src/lib/mediaPaths';
 import { loadPoseSequence } from '../../../src/lib/poseSequenceStorage';
-import { computeEstimatedAngles } from '../../../src/utils/poseAngles';
+import { computeEstimatedAngles, computeFrontalMetrics } from '../../../src/utils/poseAngles';
 import { repConsistency } from '../../../src/utils/poseSequence';
 import { ANALYSIS_KIND_INFO } from '../../../src/utils/movementEngine';
+import { filterAngleSeries, filterEstimatedAngles, requiresClosestSide } from '../../../src/utils/measurementMatrix';
 import SkeletonOverlay from '../../../src/components/movement/SkeletonOverlay';
 import PoseOverlay from '../../../src/components/assessment/PoseOverlay';
 import LandmarkEditor from '../../../src/components/movement/LandmarkEditor';
@@ -51,13 +52,12 @@ import type {
 const VIDEO_ESTIMATE_DISCLAIMER =
   'Angles and scores are estimates based on camera view and landmark detection. They are not exact clinical measurements.';
 
-const STRENGTH_KINDS: MovementAnalysisKind[] = ['squat', 'deadlift', 'lunge_single_leg'];
+const STRENGTH_KINDS: MovementAnalysisKind[] = ['squat', 'deadlift', 'lunge', 'single_leg_control', 'lunge_single_leg'];
 
 type Section = 'overview' | 'video' | 'angles' | 'keyframes' | 'findings';
 
 const SECTIONS: { key: Section; label: string }[] = [
   { key: 'overview',  label: 'Overview' },
-  { key: 'video',     label: 'Video' },
   { key: 'angles',    label: 'Angles' },
   { key: 'keyframes', label: 'Key Frames' },
   { key: 'findings',  label: 'Findings' },
@@ -142,10 +142,10 @@ export default function VideoAnalysisScreen() {
   });
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: false });
 
-  // Lazy-load the full per-frame pose file only once the Video tab is opened —
-  // angle series / key frames (inline on the analysis) work without it.
+  // Load pose data once for the synchronized video workspace. Inline angle
+  // series and key frames remain usable when the file is unavailable.
   useEffect(() => {
-    if (section !== 'video' || sequenceState !== 'idle' || !analysis) return;
+    if (sequenceState !== 'idle' || !analysis) return;
     if (!analysis.poseSequenceUri) {
       setSequenceState('unavailable');
       return;
@@ -162,7 +162,7 @@ export default function VideoAnalysisScreen() {
       }
     });
     return () => { cancelled = true; };
-  }, [section, sequenceState, analysis]);
+  }, [sequenceState, analysis]);
 
   if (!analysis) {
     return (
@@ -180,8 +180,25 @@ export default function VideoAnalysisScreen() {
   const confidence = analysis.sequenceConfidence ?? analysis.confidence;
   const confidenceMeta = CONFIDENCE_META[confidence];
   const limitations = analysis.sequenceLimitations ?? analysis.limitations;
-  const angleSeries = analysis.angleSeries ?? [];
-  const keyFrames = analysis.keyFrames ?? [];
+  const closestSideRequired = requiresClosestSide(analysis.type, analysis.cameraView);
+  const angleSeries = filterAngleSeries(
+    analysis.angleSeries ?? [],
+    analysis.type,
+    analysis.cameraView,
+    analysis.closestSide,
+  );
+  const keyFrames = (analysis.keyFrames ?? [])
+    .map(keyFrame => ({
+      ...keyFrame,
+      angles: keyFrame.angles
+        ? filterEstimatedAngles(keyFrame.angles, analysis.type, analysis.cameraView, analysis.closestSide)
+        : undefined,
+    }))
+    .filter(keyFrame => {
+      if (!closestSideRequired || !analysis.closestSide) return true;
+      const farSide = analysis.closestSide === 'left' ? 'right' : 'left';
+      return !keyFrame.label.toLowerCase().includes(`— ${farSide}`);
+    });
   const isStrength = STRENGTH_KINDS.includes(analysis.type);
 
   const durationMs = analysis.videoDurationMs && analysis.videoDurationMs > 0
@@ -192,13 +209,13 @@ export default function VideoAnalysisScreen() {
 
   function seekToFraction(fraction: number) {
     if (durationMs <= 0) return;
+    player.pause();
     player.currentTime = (fraction * durationMs) / 1000;
   }
 
   function seekToMs(timeMs: number) {
     player.pause();
     player.currentTime = timeMs / 1000;
-    setSection('video');
   }
 
   function togglePlay() {
@@ -211,12 +228,15 @@ export default function VideoAnalysisScreen() {
   }
 
   function saveReferenceMarkerCorrections(nextLandmarks: PoseLandmarkRecord[], corrected: boolean) {
+    const rawAngles = analysis!.cameraView === 'front' || analysis!.cameraView === 'rear'
+      ? computeFrontalMetrics(nextLandmarks as never)
+      : computeEstimatedAngles(nextLandmarks as never, analysis!.type);
     updateAnalysis(analysis!.id, {
       landmarks: nextLandmarks,
       autoLandmarks: analysis!.autoLandmarks ?? analysis!.landmarks,
       correctedLandmarks: corrected ? nextLandmarks : undefined,
       landmarkSource: corrected ? 'user_corrected' : 'auto',
-      estimatedAngles: computeEstimatedAngles(nextLandmarks as never, analysis!.type),
+      estimatedAngles: filterEstimatedAngles(rawAngles, analysis!.type, analysis!.cameraView, analysis!.closestSide),
     });
     setEditingReferenceMarkers(false);
   }
@@ -227,8 +247,13 @@ export default function VideoAnalysisScreen() {
   const overlayLandmarks: PoseLandmarkRecord[] | undefined = overlayFrame && overlayFrame.joints.length > 0
     ? overlayFrame.joints.map(j => ({ name: j.name, x: j.x, y: j.y, confidence: j.confidence }))
     : undefined;
-  const overlayAngles = overlayFrame && overlayFrame.joints.length > 0
-    ? computeEstimatedAngles(overlayFrame.joints as PoseJoint[], analysis.type)
+  const rawOverlayAngles = overlayFrame && overlayFrame.joints.length > 0
+    ? (analysis.cameraView === 'front' || analysis.cameraView === 'rear'
+      ? computeFrontalMetrics(overlayFrame.joints as PoseJoint[])
+      : computeEstimatedAngles(overlayFrame.joints as PoseJoint[], analysis.type))
+    : undefined;
+  const overlayAngles = rawOverlayAngles
+    ? filterEstimatedAngles(rawOverlayAngles, analysis.type, analysis.cameraView, analysis.closestSide)
     : undefined;
   const mediaAspect = fullSequence
     ? fullSequence.imageWidth / fullSequence.imageHeight
@@ -251,7 +276,7 @@ export default function VideoAnalysisScreen() {
 
   const reps = analysis.repSummaries ?? [];
   const consistency = repConsistency(reps);
-  const symmetry = analysis.symmetryEstimates ?? [];
+  const symmetry = analysis.cameraView === 'side' ? [] : analysis.symmetryEstimates ?? [];
 
   return (
     <View style={s.root}>
@@ -312,7 +337,12 @@ export default function VideoAnalysisScreen() {
                       imageUri={referenceFrameUri}
                       aspectRatio={analysis.imageAspectRatio ?? 3 / 4}
                       landmarks={analysis.landmarks}
-                      angles={analysis.estimatedAngles}
+                      angles={filterEstimatedAngles(
+                        analysis.estimatedAngles ?? [],
+                        analysis.type,
+                        analysis.cameraView,
+                        analysis.closestSide,
+                      )}
                       showSkeleton
                       showAngles
                     />
@@ -336,9 +366,33 @@ export default function VideoAnalysisScreen() {
           </>
         )}
 
-        {/* ── Video ─────────────────────────────────────────────────────────── */}
-        {section === 'video' && (
+        {/* ── Synchronized video workspace ─────────────────────────────────── */}
+        {(
           <>
+            {closestSideRequired && !analysis.closestSide ? (
+              <View style={s.card}>
+                <Text style={s.cardLabel}>SIDE CLOSEST TO THE CAMERA</Text>
+                <Text style={s.helper}>Choose the visible limb before reviewing lateral joint estimates.</Text>
+                <View style={s.toggleRow}>
+                  {(['left', 'right'] as const).map(side => (
+                    <Pressable
+                      key={side}
+                      style={s.secondaryActionBtn}
+                      onPress={() => updateAnalysis(analysis.id, { closestSide: side, closestSideSource: 'user' })}
+                    >
+                      <Text style={s.secondaryActionTxt}>{side === 'left' ? 'Left side' : 'Right side'}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : closestSideRequired ? (
+              <Pressable
+                style={s.secondaryActionBtn}
+                onPress={() => updateAnalysis(analysis.id, { closestSide: analysis.closestSide === 'left' ? 'right' : 'left', closestSideSource: 'user' })}
+              >
+                <Text style={s.secondaryActionTxt}>Closest limb: {analysis.closestSide} · Change</Text>
+              </Pressable>
+            ) : null}
             <View
               style={s.videoWrap}
               onLayout={(e: LayoutChangeEvent) => setVideoBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
@@ -415,31 +469,21 @@ export default function VideoAnalysisScreen() {
         {section === 'angles' && (
           angleSeries.length > 0 ? (
             <>
-              <AngleChart
-                title="Knee flexion"
-                seriesA={{ label: 'Left', color: colors.chartSeriesPrimary, points: seriesFor(angleSeries, 'Knee flexion', 'left').points }}
-                seriesB={{ label: 'Right', color: colors.chartSeriesSecondary, points: seriesFor(angleSeries, 'Knee flexion', 'right').points }}
-              />
-              <AngleChart
-                title="Hip angle"
-                seriesA={{ label: 'Left', color: colors.chartSeriesPrimary, points: seriesFor(angleSeries, 'Hip angle', 'left').points }}
-                seriesB={{ label: 'Right', color: colors.chartSeriesSecondary, points: seriesFor(angleSeries, 'Hip angle', 'right').points }}
-              />
-              <AngleChart
-                title="Trunk lean"
-                seriesA={{ label: 'Trunk', color: colors.chartSeriesPrimary, points: seriesFor(angleSeries, 'Trunk lean', 'center').points }}
-                note="Deviation of the shoulder–hip line from vertical."
-              />
-              <AngleChart
-                title="Shoulder angle"
-                seriesA={{ label: 'Left', color: colors.chartSeriesPrimary, points: seriesFor(angleSeries, 'Shoulder angle', 'left').points }}
-                seriesB={{ label: 'Right', color: colors.chartSeriesSecondary, points: seriesFor(angleSeries, 'Shoulder angle', 'right').points }}
-              />
-              <AngleChart
-                title="Elbow angle"
-                seriesA={{ label: 'Left', color: colors.chartSeriesPrimary, points: seriesFor(angleSeries, 'Elbow angle', 'left').points }}
-                seriesB={{ label: 'Right', color: colors.chartSeriesSecondary, points: seriesFor(angleSeries, 'Elbow angle', 'right').points }}
-              />
+              {[...new Set(angleSeries.map(item => item.name))].map(name => {
+                const lines = angleSeries.filter(item => item.name === name);
+                const first = lines[0];
+                const second = lines[1];
+                return (
+                  <AngleChart
+                    key={name}
+                    title={`${name} · Estimated`}
+                    seriesA={{ label: first.side === 'center' ? 'Current' : first.side, color: colors.chartSeriesPrimary, points: first.points }}
+                    seriesB={second ? { label: second.side, color: colors.chartSeriesSecondary, points: second.points } : undefined}
+                    currentTimeMs={currentMs}
+                    onSeekMs={seekToMs}
+                  />
+                );
+              })}
               <View style={s.card}>
                 <Text style={s.cardLabel}>MIN/MAX RANGES</Text>
                 {angleSeries
@@ -549,7 +593,13 @@ export default function VideoAnalysisScreen() {
         )}
 
         {/* Coach handoff */}
-        <Pressable style={s.primaryBtn} onPress={() => router.push('/(tabs)/coach')}>
+        <Pressable
+          style={s.primaryBtn}
+          onPress={() => router.push({
+            pathname: '/(tabs)/coach',
+            params: { ask: 'Review this Movement Lab analysis.', analysisId: analysis.id },
+          } as never)}
+        >
           <Text style={s.primaryBtnTxt}>Discuss with AI Coach</Text>
         </Pressable>
 

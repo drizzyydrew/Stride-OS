@@ -5,7 +5,6 @@
 // are personalised to that specific athlete.
 
 import {
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -20,14 +19,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { VideoView, useVideoPlayer } from 'expo-video';
-import * as ImagePicker from 'expo-image-picker';
 
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useMovementStore }   from '../../../src/store/movementStore';
 import { useMobilityStore, weeklyCompletionCount } from '../../../src/store/mobilityStore';
 import { getMobilityWorkout } from '../../../src/constants/mobilityBank';
-import { useAuthStore } from '../../../src/store/authStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
@@ -39,7 +35,7 @@ import { pickTargetRace } from '../../../src/utils/plan/macroPlanner';
 import { toYMD } from '../../../src/utils/calendarEngine';
 import type { RichWorkout } from '../../../src/types/workout';
 import { buildCoachingInput } from '../../../src/utils/coachingInputBuilder';
-import { buildCoachHandoff } from '../../../src/utils/movementEngine';
+import { buildCoachHandoff, ANALYSIS_KIND_INFO } from '../../../src/utils/movementEngine';
 import type { MovementAnalysis } from '../../../src/types/movement';
 import type { ReadinessAssessment } from '../../../src/types/movementReadiness';
 import type { MobilityCompletion } from '../../../src/types/mobility';
@@ -57,7 +53,6 @@ import {
   type AiCoachHealth,
   type CoachMessage,
 } from '../../../src/lib/aiCoach';
-import { copyVideoToMovementStorage, uploadMovementVideo } from '../../../src/lib/movementVideoStorage';
 import { useColors } from '../../../src/theme/useColors';
 import type { Palette } from '../../../src/theme/colors';
 import { spacing }  from '../../../src/theme/spacing';
@@ -171,12 +166,12 @@ function buildMovementLabBlock(analyses: MovementAnalysis[]): string {
   const lines = recent.map(a => {
     const h = buildCoachHandoff(a);
     const angles = h.detectedAngles.length
-      ? h.detectedAngles.map(x => `${x.name} ${Math.round(x.degrees)}°`).join(', ')
+      ? h.detectedAngles.slice(0, 6).map(x => `${x.name} ${Math.round(x.degrees)}°`).join(', ')
       : 'none detected';
     const findings = h.checklistFindings.length
-      ? h.checklistFindings.map(f => `${f.label}: ${f.value}${f.severity ? ` (${f.severity})` : ''}`).join('; ')
+      ? h.checklistFindings.slice(0, 6).map(f => `${f.label}: ${f.value}${f.severity ? ` (${f.severity})` : ''}`).join('; ')
       : 'none recorded';
-    const recs = h.recommendations.map(r => r.finding).join('; ') || 'none';
+    const recs = h.recommendations.slice(0, 6).map(r => r.finding).join('; ') || 'none';
 
     const videoExtra = h.mediaType === 'video'
       ? [
@@ -186,7 +181,7 @@ function buildMovementLabBlock(analyses: MovementAnalysis[]): string {
             : '',
           h.symmetryNote ? `\n  Symmetry estimate: ${h.symmetryNote}` : '',
           h.keyFrameLabels?.length ? `\n  Key frames: ${h.keyFrameLabels.slice(0, 6).join(', ')}` : '',
-          h.sequenceLimitations?.length ? `\n  Sequence limitations: ${h.sequenceLimitations.join(' ')}` : '',
+          h.sequenceLimitations?.length ? `\n  Sequence limitations: ${h.sequenceLimitations.slice(0, 4).join(' ')}` : '',
         ].join('')
       : '';
 
@@ -194,11 +189,68 @@ function buildMovementLabBlock(analyses: MovementAnalysis[]): string {
   Detection quality: ${h.detectionQuality}. Overall confidence: ${h.confidence.replace(/_/g, ' ')}.
   Estimated angles (camera-view estimates, not clinical measurements): ${angles}
   Checklist findings: ${findings}
-  Flagged: ${recs}${h.userNotes ? `\n  Athlete notes: ${h.userNotes}` : ''}${videoExtra}`;
+  Flagged: ${recs}${h.userNotes ? `\n  Athlete notes: ${h.userNotes.slice(0, 500)}` : ''}${videoExtra}`;
   });
 
   return `MOVEMENT LAB ANALYSES (most recent first — joint angles are estimates from photos/video frames, not clinical measurements)
 ${lines.join('\n')}`;
+}
+
+// The specific analysis the athlete tapped "Discuss with AI Coach" on. The FULL
+// buildCoachHandoff payload is injected into the system prompt only — never the
+// visible input — so the coach can speak to this analysis in detail. Clearly
+// labeled so it never reads as context for an unrelated later question.
+function buildFocusedAnalysisBlock(analysis: MovementAnalysis): string {
+  const h = buildCoachHandoff(analysis);
+  // closestSide is added to CoachHandoff by Agent A; read defensively so this
+  // renders whether or not that field is present yet.
+  const closestSide = (h as { closestSide?: 'left' | 'right' }).closestSide;
+
+  const angles = h.detectedAngles.length
+    ? h.detectedAngles.slice(0, 10).map(x => `${x.name} ${Math.round(x.degrees)}° (landmark confidence ${Math.round(x.confidence * 100)}%)`).join(', ')
+    : 'none detected';
+  const findings = h.checklistFindings.length
+    ? h.checklistFindings.slice(0, 10).map(f => `${f.label}: ${f.value}${f.severity ? ` (${f.severity})` : ''}${f.note ? ` — ${f.note.slice(0, 240)}` : ''}`).join('; ')
+    : 'none recorded';
+  const recs = h.recommendations.length
+    ? h.recommendations.slice(0, 8).map(r => `${r.finding}${r.meaning ? ` — ${r.meaning.slice(0, 300)}` : ''}${r.recommendation ? ` Suggested: ${r.recommendation.slice(0, 300)}` : ''}${r.confidence ? ` [${r.confidence} confidence]` : ''}`).join('\n    ')
+    : 'none';
+
+  const videoExtra = h.mediaType === 'video'
+    ? [
+        `\n  Sequence confidence: ${h.sequenceConfidence?.replace(/_/g, ' ') ?? 'n/a'}.`,
+        h.repSummary
+          ? `\n  Reps detected: ${h.repSummary.count}, peak-flexion range ${Math.round(h.repSummary.depthRangeDeg[0])}–${Math.round(h.repSummary.depthRangeDeg[1])}°${h.repSummary.consistencyDeg !== undefined ? `, consistency spread ${h.repSummary.consistencyDeg}°` : ''}.`
+          : '',
+        h.symmetryNote ? `\n  Symmetry estimate: ${h.symmetryNote}` : '',
+        h.keyFrameLabels?.length ? `\n  Key frames: ${h.keyFrameLabels.slice(0, 8).join(', ')}` : '',
+        h.sequenceLimitations?.length ? `\n  Sequence limitations: ${h.sequenceLimitations.slice(0, 6).join(' ')}` : '',
+      ].join('')
+    : '';
+
+  return `FOCUSED ANALYSIS (the analysis the athlete tapped "Discuss with AI Coach" on — ${shortDate(analysis.createdAt)}. Joint angles are estimated 2D projections from a phone camera, not clinical measurements.)
+  Movement type: ${h.analysisType.replace(/_/g, ' ')}
+  Camera view: ${h.cameraView.replace(/_/g, ' ')}${closestSide ? ` · Closest side to camera: ${closestSide}` : ''}
+  Media type: ${h.mediaType.replace(/_/g, ' ')}
+  Detection quality: ${h.detectionQuality}. Overall confidence: ${h.confidence.replace(/_/g, ' ')}.
+  Landmark source: ${h.landmarkSource === 'user_corrected' ? 'user-corrected' : 'auto-detected'}.
+  Estimated angles: ${angles}
+  Checklist findings: ${findings}
+  Automated findings and recommendations:
+    ${recs}${videoExtra}${h.userNotes ? `\n  Athlete notes: ${h.userNotes.slice(0, 800)}` : ''}
+  Limitations: ${h.limitations.length ? h.limitations.slice(0, 6).join(' ') : 'none noted'}`;
+}
+
+// Legacy 'lunge_single_leg' records still carry the retired combined title in
+// ANALYSIS_KIND_INFO. Agent A's normalizeAnalysisKind
+// (src/utils/measurementMatrix) will map these to single_leg_control / lunge;
+// until that module lands this local fallback keeps the retired label out of the
+// coach list. TODO(Build36): replace with normalizeAnalysisKind once available.
+function analysisKindLabel(analysis: MovementAnalysis): string {
+  if (analysis.type === 'lunge_single_leg') {
+    return analysis.cameraView === 'side' ? 'Lunge' : 'Single-Leg Control';
+  }
+  return ANALYSIS_KIND_INFO[analysis.type]?.title ?? 'Movement Analysis';
 }
 
 // Latest Running/Walking Readiness Assessment — summary only, never raw data.
@@ -219,6 +271,7 @@ function buildReadinessBlock(assessment: ReadinessAssessment | undefined): strin
   return `RUNNING/WALKING READINESS ASSESSMENT (${shortDate(assessment.createdAt)}, focus: ${assessment.activityFocus})
 - Overall: ${assessment.overall.replace(/_/g, ' ')}
 - Pain reported: ${assessment.painReported ? 'Yes — consult-a-clinician messaging was shown to the athlete' : 'No'}
+- Athlete-reported symptom: ${assessment.symptom ? `${assessment.symptom.intensity}/10 at ${assessment.symptom.location}${assessment.symptom.notes ? ` — ${assessment.symptom.notes.slice(0, 300)}` : ''}` : 'none recorded'}
 - Domains:
 ${domainLines.length ? domainLines.join('\n') : '  - none scored'}
 - Key findings: ${assessment.keyFindings.length ? assessment.keyFindings.join('; ') : 'none'}
@@ -255,6 +308,7 @@ function buildSystemPrompt(
   readinessAssessment: ReadinessAssessment | undefined,
   mobilityRecommendedIds: string[],
   mobilityCompletions: MobilityCompletion[],
+  focusedAnalysis: MovementAnalysis | undefined,
 ): string {
   const flags   = riskFlags();
   const flagTxt = flags.length
@@ -265,7 +319,7 @@ function buildSystemPrompt(
     ? `${data.prDistance ?? ''} PR: ${Math.floor(data.prTimeSeconds / 60)}:${String(data.prTimeSeconds % 60).padStart(2, '0')}`
     : 'No PR on file';
 
-  return `You are an expert running and movement coach. You are speaking directly with ${data.name || 'the athlete'}.
+  const prompt = `You are an expert running and movement coach. You are speaking directly with ${data.name || 'the athlete'}.
 
 ATHLETE PROFILE
 - Age: ${data.age}  Sex: ${data.sex}  Height: ${data.heightCm} cm  Weight: ${data.weightKg} kg
@@ -281,7 +335,7 @@ ${data.hrMax ? `- HR max: ${data.hrMax} bpm` : ''}${data.hrResting ? `  Resting 
 MOVEMENT RISK FLAGS
 ${flagTxt}
 
-${buildMovementLabBlock(analyses)}
+${focusedAnalysis ? `${buildFocusedAnalysisBlock(focusedAnalysis)}\n\n` : ''}${buildMovementLabBlock(analyses)}
 
 ${buildReadinessBlock(readinessAssessment)}
 
@@ -302,6 +356,12 @@ INSTRUCTIONS
 - Never give medical diagnoses. Recommend professional care for pain or injury concerns.
 - Movement findings are estimates from phone video. Use language like "may affect" or "worth monitoring". Never diagnose, never claim injury causation, never invent findings that are not listed above.
 - If asked about paces or zones, calculate from their profile data.`;
+
+  const maxChars = 24_000;
+  if (prompt.length <= maxChars) return prompt;
+  const headChars = 19_000;
+  const tailChars = maxChars - headChars - 80;
+  return `${prompt.slice(0, headChars)}\n[Less-relevant historical context truncated.]\n${prompt.slice(-tailChars)}`;
 }
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
@@ -318,10 +378,6 @@ function Bubble({ msg }: { msg: Message }) {
       </View>
     </View>
   );
-}
-
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 function buildContextSummary(data: ReturnType<typeof useOnboardingStore.getState>['data']): string {
@@ -344,11 +400,9 @@ function buildContextSummary(data: ReturnType<typeof useOnboardingStore.getState
 export default function CoachScreen() {
   const C = useColors();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ ask?: string }>();
+  const params = useLocalSearchParams<{ ask?: string; analysisId?: string }>();
   const data      = useOnboardingStore(s => s.data);
   const riskFlags = useMovementStore(s => s.getActiveRiskFlags);
-  const addVideo = useMovementStore(s => s.addVideo);
-  const updateVideo = useMovementStore(s => s.updateVideo);
   const videos = useMovementStore(s => s.videos);
   const movementAnalyses = useMovementStore(s => s.analyses);
   const readinessAssessments = useMovementStore(s => s.readinessAssessments);
@@ -358,7 +412,6 @@ export default function CoachScreen() {
   );
   const mobilityRecommendedIds = useMobilityStore(s => s.recommendedWorkoutIds);
   const mobilityCompletions = useMobilityStore(s => s.completions);
-  const user = useAuthStore(s => s.user);
   const runHistory = useWorkoutStore(s => s.history);
   const strengthHistory = useStrengthStore(s => s.history);
   const todayReadiness = useReadinessStore(s => s.todayReadiness);
@@ -462,15 +515,18 @@ export default function CoachScreen() {
   const [input,     setInput]     = useState('');
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState<string | null>(null);
-  const [videoBusy, setVideoBusy] = useState(false);
-  const [videoError, setVideoError] = useState<string | null>(null);
-  const [selectedVideoUri, setSelectedVideoUri] = useState<string | null>(null);
-  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  // The analysis the athlete tapped "Discuss with AI Coach" on. Captured from
+  // the deep-link param and kept in state past the param-clear so it grounds
+  // the next question without leaking into the visible input.
+  const [focusAnalysisId, setFocusAnalysisId] = useState<string | null>(null);
   const [coachHealth, setCoachHealth] = useState<AiCoachHealth | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-  const selectedVideoPlayer = useVideoPlayer(selectedVideoUri);
   const recentVideos = useMemo(() => videos.slice(-3).reverse(), [videos]);
+  const recentAnalyses = useMemo(
+    () => [...movementAnalyses].sort((a, b) => b.createdAt - a.createdAt).slice(0, 5),
+    [movementAnalyses],
+  );
 
   const isConfigured = isAiCoachConfigured();
   const coachReady = isConfigured && coachHealth?.ok;
@@ -479,14 +535,17 @@ export default function CoachScreen() {
   const b = useMemo(() => makeBubbleStyles(C), [C]);
 
   // Deep-link handoff (e.g. TermDefinitionModal, readiness report "Ask AI
-  // Coach"): prefill the ask param into the input without auto-sending, then
-  // clear it from the route so it doesn't refire on the next render.
+  // Coach", Movement Lab "Discuss with AI Coach"): prefill the ask param into
+  // the input without auto-sending and capture any analysisId into state before
+  // clearing the params so they don't refire on the next render. analysisId is
+  // read alongside ask so a later ask-only handoff clears any stale focus.
   useEffect(() => {
-    if (!params.ask) return;
+    if (!params.ask && !params.analysisId) return;
     setTab('chat');
-    setInput(params.ask);
-    router.setParams({ ask: undefined });
-  }, [params.ask]);
+    if (params.ask) setInput(params.ask);
+    setFocusAnalysisId(params.analysisId ?? null);
+    router.setParams({ ask: undefined, analysisId: undefined });
+  }, [params.ask, params.analysisId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -520,9 +579,13 @@ export default function CoachScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
+      const focusedAnalysis = focusAnalysisId
+        ? movementAnalyses.find(a => a.id === focusAnalysisId)
+        : undefined;
       const system  = buildSystemPrompt(
         data, riskFlags, trainingCtx, movementAnalyses,
         latestReadinessAssessment, mobilityRecommendedIds, mobilityCompletions,
+        focusedAnalysis,
       );
       const reply = await sendCoachMessage(updated, system);
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
@@ -531,77 +594,6 @@ export default function CoachScreen() {
       setError(e instanceof Error ? e.message : 'Failed to reach AI coach.');
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function pickCoachVideo() {
-    setVideoError(null);
-
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'StrideOS needs access to your photo library to select a coach review video.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['videos'],
-      allowsEditing: false,
-      quality: 1,
-    });
-
-    if (result.canceled || result.assets.length === 0) return;
-
-    setVideoBusy(true);
-
-    const asset = result.assets[0];
-    const videoId = addVideo({
-      uri: asset.uri,
-      title: `Coach review ${todayISO()}`,
-      date: todayISO(),
-      analysisType: 'running_gait',
-      activity: 'running',
-      view: 'side',
-      notes: 'Uploaded from AI Coach video analysis.',
-      submittedForAnalysis: true,
-      analysisStatus: 'pending',
-    });
-    setSelectedVideoId(videoId);
-    setSelectedVideoUri(asset.uri);
-
-    try {
-      const { localUri, ext, contentType } = await copyVideoToMovementStorage(asset.uri, videoId, asset.fileName ?? asset.uri);
-      setSelectedVideoUri(localUri);
-      updateVideo(videoId, {
-        uri: localUri,
-        submittedForAnalysis: true,
-        analysisStatus: 'pending',
-      });
-
-      let storagePath: string | undefined;
-      if (user) {
-        storagePath = `${user.id}/${videoId}.${ext}`;
-        try {
-          await uploadMovementVideo(localUri, storagePath, contentType);
-        } catch (uploadError) {
-          console.warn('Coach video upload error:', uploadError);
-          storagePath = undefined;
-        }
-      }
-
-      updateVideo(videoId, {
-        uri: localUri,
-        storagePath,
-        submittedForAnalysis: true,
-        analysisStatus: 'pending',
-      });
-    } catch (e) {
-      setVideoError(e instanceof Error ? e.message : 'Video upload failed.');
-      updateVideo(videoId, {
-        submittedForAnalysis: true,
-        analysisStatus: 'pending',
-      });
-    } finally {
-      setVideoBusy(false);
     }
   }
 
@@ -761,60 +753,34 @@ export default function CoachScreen() {
       ) : (
         <ScrollView style={s.messages} contentContainerStyle={s.videoContent} showsVerticalScrollIndicator={false}>
           <View style={s.contextCard}>
-            <Text style={s.contextEyebrow}>Video Upload</Text>
+            <Text style={s.contextEyebrow}>Movement Lab</Text>
             <Text style={s.contextTxt}>
-              Upload a running or strength video for coach review. It is stored in Movement Lab so your
-              findings, risk flags, and training context stay in one place.
+              Movement Lab is the single home for recording, importing, and analyzing your movement.
+              Your saved analyses feed this chat automatically — open one below or tap "Discuss with AI
+              Coach" from any analysis to ask about it here.
             </Text>
           </View>
 
-          {selectedVideoUri ? (
-            <View style={s.videoPreviewCard}>
-              <VideoView
-                player={selectedVideoPlayer}
-                style={s.videoPreview}
-                contentFit="contain"
-                nativeControls
-              />
-              <Pressable style={s.replaceVideoBtn} onPress={pickCoachVideo} disabled={videoBusy}>
-                <Text style={s.replaceVideoTxt}>{videoBusy ? 'Uploading...' : 'Replace video'}</Text>
-              </Pressable>
+          {recentAnalyses.length > 0 ? (
+            <View style={s.reviewCard}>
+              <Text style={s.recentTitle}>Recent Saved Analyses</Text>
+              {recentAnalyses.map(a => (
+                <Pressable
+                  key={a.id}
+                  style={s.videoRow}
+                  onPress={() => a.mediaType === 'video'
+                    ? router.push({ pathname: '/(tabs)/movement/video-analysis', params: { id: a.id } } as never)
+                    : router.push({ pathname: '/(tabs)/movement/analysis-detail', params: { analysisId: a.id } } as never)
+                  }
+                >
+                  <View>
+                    <Text style={s.videoRowTitle} numberOfLines={1}>{analysisKindLabel(a)}</Text>
+                    <Text style={s.videoRowMeta}>{shortDate(a.createdAt)} · {a.mediaType.replace(/_/g, ' ')}</Text>
+                  </View>
+                  <Text style={s.videoRowChevron}>›</Text>
+                </Pressable>
+              ))}
             </View>
-          ) : (
-            <Pressable style={s.videoDrop} onPress={pickCoachVideo} disabled={videoBusy}>
-              <Text style={s.videoIcon}>🎥</Text>
-              <Text style={s.videoTitle}>Upload a running or strength video</Text>
-              <Text style={s.videoDesc}>For form analysis and feedback</Text>
-              <View style={[s.videoBtn, videoBusy && { opacity: 0.6 }]}>
-                <Text style={s.videoBtnTxt}>{videoBusy ? 'Uploading...' : 'Choose Video'}</Text>
-              </View>
-            </Pressable>
-          )}
-
-          {videoError ? (
-            <View style={s.errorBox}>
-              <Text style={s.errorTxt}>{videoError}</Text>
-            </View>
-          ) : null}
-
-          <View style={s.reviewCard}>
-            <View style={s.reviewHead}>
-              <Text style={s.reviewTitle}>Coach Video Review</Text>
-              <Text style={s.reviewPill}>COMING SOON</Text>
-            </View>
-            <Text style={s.reviewTxt}>
-              Get personalized video feedback from certified running coaches. Upload a clip and receive
-              detailed analysis of your form, pacing, and technique within the app.
-            </Text>
-          </View>
-
-          {selectedVideoId ? (
-            <Pressable
-              style={s.secondaryBtn}
-              onPress={() => router.push({ pathname: '/(tabs)/movement/[videoId]', params: { videoId: selectedVideoId } })}
-            >
-              <Text style={s.secondaryBtnTxt}>Open Full Analysis</Text>
-            </Pressable>
           ) : null}
 
           {recentVideos.length > 0 ? (
@@ -836,8 +802,8 @@ export default function CoachScreen() {
             </View>
           ) : null}
 
-          <Pressable style={s.secondaryBtn} onPress={() => router.push('/(tabs)/movement')}>
-            <Text style={s.secondaryBtnTxt}>Open Movement Lab</Text>
+          <Pressable style={s.openLabBtn} onPress={() => router.push('/(tabs)/movement')}>
+            <Text style={s.openLabBtnTxt}>Open Movement Lab</Text>
           </Pressable>
         </ScrollView>
       )}
@@ -964,49 +930,6 @@ function makeStyles(C: Palette) {
   },
   errorTxt: { color: C.critical, fontSize: FontSize.sm },
 
-  videoDrop: {
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: C.border,
-    borderRadius: 14,
-    backgroundColor: C.card,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  videoIcon: { fontSize: 30 },
-  videoTitle: { color: C.textMuted, fontSize: FontSize.base, fontWeight: FontWeight.bold, textAlign: 'center' },
-  videoDesc: { color: C.textDim, fontSize: FontSize.xs, textAlign: 'center', marginBottom: spacing.sm },
-  videoBtn: {
-    backgroundColor: C.primary,
-    borderRadius: 10,
-    paddingHorizontal: 22,
-    paddingVertical: 10,
-  },
-  videoBtnTxt: { color: C.onPrimary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
-  videoPreviewCard: {
-    overflow: 'hidden',
-    borderRadius: 16,
-    backgroundColor: C.bg,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  videoPreview: {
-    width: '100%',
-    height: 220,
-    backgroundColor: C.bg,
-  },
-  replaceVideoBtn: {
-    backgroundColor: C.card,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  replaceVideoTxt: {
-    color: C.primary,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.bold,
-  },
   reviewCard: {
     backgroundColor: C.card,
     borderWidth: 1,
@@ -1015,19 +938,6 @@ function makeStyles(C: Palette) {
     padding: spacing.md,
     gap: spacing.sm,
   },
-  reviewHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  reviewTitle: { color: C.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  reviewPill: {
-    color: C.accent,
-    backgroundColor: C.accentDim,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    fontSize: 10,
-    fontWeight: FontWeight.bold,
-    letterSpacing: 0.5,
-  },
-  reviewTxt: { color: C.textMuted, fontSize: FontSize.sm, lineHeight: 22 },
   recentTitle: { color: C.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   videoRow: {
     flexDirection: 'row',
@@ -1041,16 +951,14 @@ function makeStyles(C: Palette) {
   videoRowTitle: { color: C.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold, maxWidth: 260 },
   videoRowMeta: { color: C.textMuted, fontSize: FontSize.xs, marginTop: 2 },
   videoRowChevron: { color: C.primary, fontSize: 22 },
-  secondaryBtn: {
-    height: 44,
+  openLabBtn: {
+    height: 48,
     borderRadius: 12,
-    backgroundColor: C.card,
-    borderWidth: 1,
-    borderColor: C.border,
+    backgroundColor: C.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  secondaryBtnTxt: { color: C.primary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  openLabBtnTxt: { color: C.onPrimary, fontSize: FontSize.base, fontWeight: FontWeight.bold },
 
   inputRow: {
     flexDirection:     'row',

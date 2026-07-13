@@ -83,4 +83,14 @@ export type ReadinessAssessment = {
   evidenceVersion: 1;
 
   painReported?: boolean;   // pain reported anywhere → consult-a-clinician messaging, never interpreted
+
+  // Symptom Review (Build 36, step 7). Captured verbatim from the athlete and
+  // never interpreted, scored, or turned into a finding — it only drives the
+  // "consult a clinician for pain or injury concerns" messaging. Presence of a
+  // symptom implies painReported = true.
+  symptom?: {
+    intensity: number;      // 0–10, athlete-reported
+    location: string;       // free-text body location
+    notes?: string;
+  };
 };

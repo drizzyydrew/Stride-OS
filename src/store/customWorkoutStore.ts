@@ -14,6 +14,7 @@ import { syncCustomLog, deleteCustomLog } from '../lib/syncService';
 type CustomWorkoutStore = {
   logs:      CustomWorkoutLog[];
   overrides: OverrideRecord[];
+  notTodayLogIds: string[];
 
   addLog: (
     partial:           Omit<CustomWorkoutLog, 'id' | 'completedAt' | 'estimatedLoad' | 'fatigueImpact'>,
@@ -25,6 +26,7 @@ type CustomWorkoutStore = {
 
   editLog:   (id: string, patch: Partial<CustomWorkoutLog>) => void;
   deleteLog: (id: string) => void;
+  markNotToday: (id: string) => void;
 
   addOverride:  (override: Omit<OverrideRecord, 'id' | 'createdAt'>) => string;
   linkOverride: (overrideId: string, logId: string) => void;
@@ -44,6 +46,7 @@ export const useCustomWorkoutStore = create<CustomWorkoutStore>()(
     (set, get) => ({
       logs:      [],
       overrides: [],
+      notTodayLogIds: [],
 
       addLog: (partial, currentFatigue, setFatigueScore, setRecentEasyLoad, recentEasyLoad) => {
         const id  = `cw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -69,9 +72,18 @@ export const useCustomWorkoutStore = create<CustomWorkoutStore>()(
         })),
 
       deleteLog: (id) => {
-        set(state => ({ logs: state.logs.filter(l => l.id !== id) }));
+        set(state => ({
+          logs: state.logs.filter(l => l.id !== id),
+          notTodayLogIds: state.notTodayLogIds.filter(logId => logId !== id),
+        }));
         deleteCustomLog(id).catch(console.warn);
       },
+
+      markNotToday: (id) => set(state => ({
+        notTodayLogIds: state.notTodayLogIds.includes(id)
+          ? state.notTodayLogIds
+          : [...state.notTodayLogIds, id],
+      })),
 
       addOverride: (partial) => {
         const id = `ov_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -109,6 +121,11 @@ export const useCustomWorkoutStore = create<CustomWorkoutStore>()(
     {
       name:    'custom-workout-store',
       storage: createJSONStorage(() => AsyncStorage),
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as Partial<CustomWorkoutStore> | undefined),
+        notTodayLogIds: (persisted as Partial<CustomWorkoutStore> | undefined)?.notTodayLogIds ?? [],
+      }),
     },
   ),
 );

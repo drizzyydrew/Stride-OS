@@ -14,7 +14,7 @@
       "appleTeamId": "QBAVJD9497",
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "35",
+      "buildNumber": "36",
       "backgroundColor": "#14160F",
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -59,6 +59,14 @@
       "expo-router",
       "@bacons/apple-targets",
       "expo-apple-authentication",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "StrideOS needs camera access to record movement assessment videos.",
+          "microphonePermission": "StrideOS needs microphone access while recording movement assessment videos.",
+          "recordAudioAndroid": true
+        }
+      ],
       [
         "expo-image-picker",
         {

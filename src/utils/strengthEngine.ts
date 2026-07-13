@@ -110,7 +110,7 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
   push_pushup: {
     id: 'push_pushup', name: 'Push-Up', pattern: 'push',
     equipment: ['bodyweight'], unilateral: false, cnsLoad: 'low',
-    coachingCues: ['Body rigid — plank throughout', 'Elbows 45° from torso — not flared', 'Full ROM — chest grazes floor'],
+    coachingCues: ['Body rigid — plank throughout', 'Elbows about 45 degrees from torso — not flared', 'Full ROM — chest grazes floor'],
     contraindications: ['shoulder_impingement'],
     rationale: 'Upper body injury resilience for runners. Shoulder and chest strength protects against the postural fatigue that causes form breakdown in long races.',
   },

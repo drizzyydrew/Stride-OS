@@ -17,6 +17,20 @@ import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 import { LAYOUT } from '../../../src/constants/layout';
 import { useMovementStore } from '../../../src/store/movementStore';
 import type { ReadinessCategory } from '../../../src/types/movementReadiness';
+import { dionImagesForReadinessStep, DION_ASSESSMENT_IMAGES } from '../../../src/constants/dionImages';
+import DionInstructionCard from '../../../src/components/movement/DionInstructionCard';
+
+type ReadinessStepKey = 'squat_side' | 'single_leg_squat' | 'split_stance_lunge' | 'knee_to_wall' | 'heel_raise' | 'gait_side_view' | 'symptom_review';
+
+const STEP_OVERVIEW: { key: ReadinessStepKey; label: string; detail: string }[] = [
+  { key: 'squat_side',         label: 'Bodyweight Squat',       detail: 'Lateral video, 3–5 controlled reps' },
+  { key: 'single_leg_squat',   label: 'Single-Leg Squat',       detail: 'Frontal video, automatic assessment first, then confirm' },
+  { key: 'split_stance_lunge', label: 'Split-Stance Lunge',     detail: 'Lateral video, 3–5 controlled reps per side' },
+  { key: 'knee_to_wall',       label: 'Knee-to-Wall Test',      detail: 'Manual left/right centimeters' },
+  { key: 'heel_raise',         label: 'Single-Leg Heel Raise',  detail: 'Manual left/right rep counts' },
+  { key: 'gait_side_view',     label: 'Gait',                   detail: 'Lateral video, 10–15 seconds' },
+  { key: 'symptom_review',     label: 'Symptom Review',         detail: 'Optional intensity, location, and notes' },
+];
 
 const CATEGORY_META: Record<ReadinessCategory, { label: string; colorKey: keyof Palette }> = {
   good:            { label: 'Good',                       colorKey: 'positive' },
@@ -67,18 +81,25 @@ export default function ReadinessHubScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={s.card}>
+          <DionInstructionCard dion={DION_ASSESSMENT_IMAGES.readiness_bodyweight_squat} variant="compact" />
           <Text style={s.explain}>
-            A short set of video, photo, and manual checks across ankle mobility, hip mobility, squat pattern,
-            single-leg control, and calf capacity — built specifically around running and walking gait, durability,
-            and training readiness. It is not a generic mobility score.
+            A seven-step battery of video, manual, and reflection checks across squat pattern, single-leg control,
+            split-stance mechanics, ankle mobility, calf capacity, and gait — built specifically around running and
+            walking readiness. It is not a generic mobility score.
           </Text>
           <Text style={s.stance}>
-            StrideOS uses movement findings to guide training decisions, not to diagnose injury.
+            Findings may be associated with training-relevant movement patterns and are estimated from video or
+            manual entry. StrideOS uses them to guide training decisions, not to diagnose injury — manual review is
+            recommended whenever a result is unclear.
           </Text>
         </View>
 
         <View style={s.card}>
           <Text style={s.label}>ACTIVITY FOCUS</Text>
+          <Text style={s.focusHint}>
+            Choose whichever matches today's training. This changes only the gait step (Easy Running Gait vs.
+            Walking Gait) — every other step in the battery stays the same.
+          </Text>
           <View style={s.toggleRow}>
             {(['running', 'walking'] as const).map(opt => (
               <Pressable
@@ -91,6 +112,32 @@ export default function ReadinessHubScreen() {
                 </Text>
               </Pressable>
             ))}
+          </View>
+        </View>
+
+        <View style={s.card}>
+          <Text style={s.label}>SEVEN-STEP OVERVIEW</Text>
+          <View style={{ gap: spacing.sm }}>
+            {STEP_OVERVIEW.map((step, i) => {
+              const dion = step.key === 'symptom_review'
+                ? DION_ASSESSMENT_IMAGES.symptom_review
+                : dionImagesForReadinessStep(step.key, focus);
+              const label = step.key === 'gait_side_view'
+                ? (focus === 'walking' ? 'Walking Gait' : 'Easy Running Gait')
+                : step.label;
+              return (
+                <View key={step.key} style={s.stepRow}>
+                  <View style={s.stepNumBadge}>
+                    <Text style={s.stepNumTxt}>{i + 1}</Text>
+                  </View>
+                  <DionInstructionCard dion={dion} variant="compact" />
+                  <View style={{ flex: 1, gap: 1 }}>
+                    <Text style={s.stepLabel}>{label}</Text>
+                    <Text style={s.stepDetail}>{step.detail}</Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
         </View>
 
@@ -151,6 +198,15 @@ function makeStyles(C: Palette) {
     explain: { color: C.textMuted, fontSize: FontSize.sm, lineHeight: 20 },
     stance:  { color: C.primary, fontSize: FontSize.xs, fontStyle: 'italic', lineHeight: 17 },
     label: { color: C.textDim, fontSize: 10, fontWeight: FontWeight.black, letterSpacing: 0.6 },
+    focusHint: { color: C.textMuted, fontSize: FontSize.xs, lineHeight: 16 },
+    stepRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    stepNumBadge: {
+      width: 20, height: 20, borderRadius: 10, backgroundColor: C.primaryDim,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    stepNumTxt: { color: C.primary, fontSize: 11, fontWeight: FontWeight.black },
+    stepLabel: { color: C.text, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+    stepDetail: { color: C.textMuted, fontSize: FontSize.xs, lineHeight: 15 },
     toggleRow: { flexDirection: 'row', gap: spacing.sm },
     toggleBtn: {
       flex: 1, paddingVertical: spacing.sm, borderRadius: Radius.sm,

@@ -332,7 +332,20 @@ export type VideoFrameAnnotation = {
 // Landmarks come from on-device Apple Vision pose detection (stride-pose).
 // All fields are honest: undefined landmarks = pose never ran / unavailable.
 
-export type MovementAnalysisKind = 'running_gait' | 'squat' | 'deadlift' | 'lunge_single_leg' | 'general';
+// Build 36 taxonomy. `single_leg_control` (frontal-plane control) and `lunge`
+// (lateral split-squat mechanics) replace the old combined `lunge_single_leg`
+// kind, which is retained as **deprecated** so Build 32/34/35 persisted records
+// still typecheck and rehydrate. New records are never written with it —
+// normalizeAnalysisKind (measurementMatrix.ts) maps it on read/migration.
+export type MovementAnalysisKind =
+  | 'running_gait'
+  | 'squat'
+  | 'deadlift'
+  | 'single_leg_control'
+  | 'lunge'
+  | 'general'
+  /** @deprecated legacy Build 32/34/35 kind — migrated to single_leg_control | lunge */
+  | 'lunge_single_leg';
 export type AnalysisMediaType = 'photo' | 'video_frame' | 'video';
 export type AnalysisConfidence = 'high' | 'moderate' | 'low' | 'manual_review';
 export type MovementLandmarkSource = 'auto' | 'user_corrected' | 'manual_review';
@@ -352,6 +365,12 @@ export type MovementAnalysis = {
   sourceVideoUri?: string;        // original video when mediaType === 'video_frame'
   mediaType: AnalysisMediaType;
   cameraView: MovementViewAngle;
+  // Which limb is closest to the camera on a lateral capture. Drives the
+  // measurement matrix (lateral sagittal metrics are reported for the closest
+  // side only — never both limbs' curves). 'auto' = inferred from per-side
+  // landmark confidence; 'user' = the athlete answered the on-screen chooser.
+  closestSide?: 'left' | 'right';
+  closestSideSource?: 'auto' | 'user';
   landmarks?: PoseLandmarkRecord[];   // undefined = pose not run/unavailable
   imageAspectRatio?: number;          // width/height of analyzed image
   estimatedAngles?: EstimatedAngle[];
@@ -417,7 +436,7 @@ export type KeyFrameRecord = {
   angles?:    EstimatedAngle[];
 };
 
-/** One detected rep for strength kinds (squat / deadlift / lunge_single_leg).
+/** One detected rep for strength kinds (squat / deadlift / lunge / single_leg_control).
  *  Rep segmentation is threshold-crossing on smoothed knee-flexion — an
  *  estimate, not a force-plate or barbell-tracking measurement. */
 export type RepSummary = {

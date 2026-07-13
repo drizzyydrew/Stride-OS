@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { toRelativeDocumentPath } from '../lib/mediaPaths';
 import { deletePoseSequence } from '../lib/poseSequenceStorage';
+import { normalizeAnalysisKind } from '../utils/measurementMatrix';
 
 import type {
   MovementVideo,
@@ -131,6 +132,11 @@ function migrateMovementVideoPaths(video: MovementVideo): MovementVideo {
 function migrateMovementAnalysisPaths(analysis: MovementAnalysis): MovementAnalysis {
   return {
     ...analysis,
+    // Build 36: migrate the deprecated `lunge_single_leg` kind (and any unknown
+    // persisted kind) onto the current taxonomy, keyed by camera view. Every
+    // other field is preserved verbatim so Build 32/34/35 records rehydrate and
+    // render without loss.
+    type: normalizeAnalysisKind(analysis.type, analysis.cameraView),
     mediaUri: toRelativeDocumentPath(analysis.mediaUri) ?? analysis.mediaUri,
     sourceVideoUri: toRelativeDocumentPath(analysis.sourceVideoUri),
     poseSequenceUri: toRelativeDocumentPath(analysis.poseSequenceUri),
