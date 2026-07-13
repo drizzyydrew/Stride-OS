@@ -29,9 +29,15 @@ import { useMovementStore } from '../../../src/store/movementStore';
 import { resolveDocumentUri } from '../../../src/lib/mediaPaths';
 import { loadPoseSequence } from '../../../src/lib/poseSequenceStorage';
 import { computeEstimatedAngles, computeFrontalMetrics } from '../../../src/utils/poseAngles';
-import { repConsistency } from '../../../src/utils/poseSequence';
-import { ANALYSIS_KIND_INFO } from '../../../src/utils/movementEngine';
-import { filterAngleSeries, filterEstimatedAngles, requiresClosestSide } from '../../../src/utils/measurementMatrix';
+import { analyzeSequence, repConsistency } from '../../../src/utils/poseSequence';
+import { ANALYSIS_KIND_INFO, buildSequenceFindings } from '../../../src/utils/movementEngine';
+import {
+  filterAngleSeries,
+  filterEstimatedAngles,
+  filterLandmarksForDisplay,
+  movementOverlayConfiguration,
+  requiresClosestSide,
+} from '../../../src/utils/measurementMatrix';
 import SkeletonOverlay from '../../../src/components/movement/SkeletonOverlay';
 import PoseOverlay from '../../../src/components/assessment/PoseOverlay';
 import LandmarkEditor from '../../../src/components/movement/LandmarkEditor';
@@ -181,6 +187,11 @@ export default function VideoAnalysisScreen() {
   const confidenceMeta = CONFIDENCE_META[confidence];
   const limitations = analysis.sequenceLimitations ?? analysis.limitations;
   const closestSideRequired = requiresClosestSide(analysis.type, analysis.cameraView);
+  const processingClosestSide = analysis.closestSide && analysis.captureMetadata?.isMirrored
+    ? analysis.closestSide === 'left' ? 'right' : 'left'
+    : analysis.closestSide;
+  const referenceOverlayConfig = movementOverlayConfiguration(analysis.type, analysis.cameraView, analysis.closestSide);
+  const liveOverlayConfig = movementOverlayConfiguration(analysis.type, analysis.cameraView, processingClosestSide);
   const angleSeries = filterAngleSeries(
     analysis.angleSeries ?? [],
     analysis.type,
@@ -228,24 +239,87 @@ export default function VideoAnalysisScreen() {
   }
 
   function saveReferenceMarkerCorrections(nextLandmarks: PoseLandmarkRecord[], corrected: boolean) {
+    const rawLandmarks = analysis!.captureMetadata?.isMirrored
+      ? nextLandmarks.map(landmark => ({
+          ...landmark,
+          name: landmark.name.replace(/^left_/, '__swap_').replace(/^right_/, 'left_').replace(/^__swap_/, 'right_'),
+        }))
+      : nextLandmarks;
     const rawAngles = analysis!.cameraView === 'front' || analysis!.cameraView === 'rear'
-      ? computeFrontalMetrics(nextLandmarks as never)
-      : computeEstimatedAngles(nextLandmarks as never, analysis!.type);
+      ? computeFrontalMetrics(rawLandmarks as never)
+      : computeEstimatedAngles(rawLandmarks as never, analysis!.type);
     updateAnalysis(analysis!.id, {
-      landmarks: nextLandmarks,
+      rawLandmarks,
+      landmarks: filterLandmarksForDisplay(nextLandmarks, analysis!.type, analysis!.cameraView, analysis!.closestSide),
       autoLandmarks: analysis!.autoLandmarks ?? analysis!.landmarks,
       correctedLandmarks: corrected ? nextLandmarks : undefined,
       landmarkSource: corrected ? 'user_corrected' : 'auto',
+      rawEstimatedAngles: rawAngles,
       estimatedAngles: filterEstimatedAngles(rawAngles, analysis!.type, analysis!.cameraView, analysis!.closestSide),
     });
     setEditingReferenceMarkers(false);
+  }
+
+  function changeClosestSide(side: 'left' | 'right') {
+    const rawAngles = analysis!.rawEstimatedAngles ?? analysis!.estimatedAngles ?? [];
+    const processingSide = analysis!.captureMetadata?.isMirrored
+      ? side === 'left' ? 'right' : 'left'
+      : side;
+    const nextSequence = fullSequence
+      ? analyzeSequence(fullSequence, analysis!.type, analysis!.cameraView, processingSide)
+      : null;
+    const nextAngles = filterEstimatedAngles(rawAngles, analysis!.type, analysis!.cameraView, processingSide);
+    const nextSequenceFields = nextSequence ? {
+      angleSeries: nextSequence.angleSeries,
+      keyFrames: nextSequence.keyFrames,
+      repSummaries: nextSequence.repSummaries,
+      symmetryEstimates: undefined,
+      sequenceConfidence: nextSequence.confidence,
+      sequenceLimitations: nextSequence.limitations,
+      viewFiltersMaterialized: false,
+    } : {};
+    const manualRecommendations = analysis!.recommendations.filter(recommendation =>
+      recommendation.finding !== 'Estimated joint-angle ranges over the clip'
+      && !recommendation.finding.startsWith('Estimated ')
+      && !recommendation.finding.startsWith('Estimated left/right'),
+    );
+    const autoRecommendations = buildSequenceFindings({
+      estimatedAngles: nextAngles,
+      angleSeries: nextSequence?.angleSeries,
+      keyFrames: nextSequence?.keyFrames,
+      repSummaries: nextSequence?.repSummaries,
+      symmetryEstimates: undefined,
+      sequenceConfidence: nextSequence?.confidence ?? analysis!.sequenceConfidence,
+    }, analysis!.type);
+    const normalizeSavedSideText = (value: string) => analysis!.captureMetadata?.isMirrored
+      ? value.replace(/\bleft\b/gi, '__swap_side__').replace(/\bright\b/gi, 'left').replace(/__swap_side__/g, 'right')
+      : value;
+    const normalizedAutoRecommendations = autoRecommendations.map(recommendation => ({
+      ...recommendation,
+      finding: normalizeSavedSideText(recommendation.finding),
+      meaning: normalizeSavedSideText(recommendation.meaning),
+      recommendation: normalizeSavedSideText(recommendation.recommendation),
+    }));
+
+    updateAnalysis(analysis!.id, {
+      closestSide: side,
+      closestSideSource: 'user',
+      estimatedAngles: nextAngles,
+      ...nextSequenceFields,
+      recommendations: [...normalizedAutoRecommendations, ...manualRecommendations],
+    });
   }
 
   // ── Overlay data for the current scrub position ────────────────────────────
 
   const overlayFrame = sequenceState === 'loaded' ? nearestFrame(fullSequence, currentMs) : null;
   const overlayLandmarks: PoseLandmarkRecord[] | undefined = overlayFrame && overlayFrame.joints.length > 0
-    ? overlayFrame.joints.map(j => ({ name: j.name, x: j.x, y: j.y, confidence: j.confidence }))
+    ? filterLandmarksForDisplay(
+        overlayFrame.joints.map(j => ({ name: j.name, x: j.x, y: j.y, confidence: j.confidence })),
+        analysis.type,
+        analysis.cameraView,
+        processingClosestSide,
+      )
     : undefined;
   const rawOverlayAngles = overlayFrame && overlayFrame.joints.length > 0
     ? (analysis.cameraView === 'front' || analysis.cameraView === 'rear'
@@ -253,7 +327,7 @@ export default function VideoAnalysisScreen() {
       : computeEstimatedAngles(overlayFrame.joints as PoseJoint[], analysis.type))
     : undefined;
   const overlayAngles = rawOverlayAngles
-    ? filterEstimatedAngles(rawOverlayAngles, analysis.type, analysis.cameraView, analysis.closestSide)
+    ? filterEstimatedAngles(rawOverlayAngles, analysis.type, analysis.cameraView, processingClosestSide)
     : undefined;
   const mediaAspect = fullSequence
     ? fullSequence.imageWidth / fullSequence.imageHeight
@@ -345,6 +419,7 @@ export default function VideoAnalysisScreen() {
                       )}
                       showSkeleton
                       showAngles
+                      connections={referenceOverlayConfig.visibleConnections}
                     />
                     <Text style={s.helper}>
                       {analysis.referenceFrameTimeMs !== undefined ? `Reference frame: ${formatTimeMs(analysis.referenceFrameTimeMs)}. ` : ''}
@@ -378,7 +453,7 @@ export default function VideoAnalysisScreen() {
                     <Pressable
                       key={side}
                       style={s.secondaryActionBtn}
-                      onPress={() => updateAnalysis(analysis.id, { closestSide: side, closestSideSource: 'user' })}
+                      onPress={() => changeClosestSide(side)}
                     >
                       <Text style={s.secondaryActionTxt}>{side === 'left' ? 'Left side' : 'Right side'}</Text>
                     </Pressable>
@@ -388,7 +463,7 @@ export default function VideoAnalysisScreen() {
             ) : closestSideRequired ? (
               <Pressable
                 style={s.secondaryActionBtn}
-                onPress={() => updateAnalysis(analysis.id, { closestSide: analysis.closestSide === 'left' ? 'right' : 'left', closestSideSource: 'user' })}
+                onPress={() => changeClosestSide(analysis.closestSide === 'left' ? 'right' : 'left')}
               >
                 <Text style={s.secondaryActionTxt}>Closest limb: {analysis.closestSide} · Change</Text>
               </Pressable>
@@ -408,6 +483,7 @@ export default function VideoAnalysisScreen() {
                   angles={overlayAngles}
                   showSkeleton={showSkeleton}
                   showAngles={showAngleLabels}
+                  connections={liveOverlayConfig.visibleConnections}
                 />
               ) : null}
             </View>

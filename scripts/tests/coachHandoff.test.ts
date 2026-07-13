@@ -37,3 +37,22 @@ test('structured Coach handoff stays compact enough for the focused prompt', () 
   const serialized = JSON.stringify(buildCoachHandoff(analysis));
   assert.ok(serialized.length < 8_000, `handoff was ${serialized.length} characters`);
 });
+
+test('side-view Coach handoff excludes far-limb metrics and lateral symmetry', () => {
+  const analysis: MovementAnalysis = {
+    id: 'side', createdAt: 1, updatedAt: 1,
+    type: 'running_gait', mediaUri: 'run.mov', mediaType: 'video', cameraView: 'side',
+    closestSide: 'left', closestSideSource: 'user',
+    rawEstimatedAngles: [
+      { name: 'Knee flexion', joint: 'knee', side: 'left', degrees: 80, confidence: 0.9 },
+      { name: 'Knee flexion', joint: 'knee', side: 'right', degrees: 90, confidence: 0.9 },
+      { name: 'Elbow angle', joint: 'elbow', side: 'left', degrees: 70, confidence: 0.9 },
+    ],
+    symmetryEstimates: [{ metric: 'Knee flexion', leftValue: 80, rightValue: 90, ratio: 0.89, withinNoise: false, note: 'Estimated difference.' }],
+    checklistFindings: [], confidence: 'moderate', recommendations: [], limitations: [], status: 'complete',
+  };
+  const handoff = buildCoachHandoff(analysis);
+  assert.deepEqual(handoff.detectedAngles.map(angle => angle.name), ['Knee flexion (left)']);
+  assert.equal(handoff.symmetryNote, null);
+  assert.equal(handoff.closestSide, 'left');
+});

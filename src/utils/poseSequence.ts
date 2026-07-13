@@ -13,6 +13,7 @@
 
 import type { PoseJoint, PoseSequenceResult } from 'stride-pose';
 import { computeEstimatedAngles, computeFrontalMetrics, LANDMARK_CONFIDENCE_FLOOR } from './poseAngles';
+import { filterAngleSeries, filterEstimatedAngles, filterLandmarksForDisplay } from './measurementMatrix';
 import type {
   AngleSeries,
   AngleSeriesPoint,
@@ -244,7 +245,16 @@ const MIN_DEPTH_DEG = 15;    // minimum peak-baseline delta to count as a rep
 /** Combines left/right knee-flexion into one primary series for rep
  *  segmentation, preferring whichever side shows more range of motion
  *  (the working/visible leg for single-leg movements). */
-function primaryKneeFlexionSeries(series: AngleSeries[]): { timeMs: number; value: number }[] {
+function primaryKneeFlexionSeries(
+  series: AngleSeries[],
+  closestSide?: 'left' | 'right',
+): { timeMs: number; value: number }[] {
+  if (closestSide) {
+    const selected = findSeries(series, 'Knee flexion', closestSide);
+    return (selected?.points ?? [])
+      .filter((point): point is AngleSeriesPoint & { degrees: number } => point.degrees !== null)
+      .map(point => ({ timeMs: point.timeMs, value: point.degrees }));
+  }
   const left  = findSeries(series, 'Knee flexion', 'left');
   const right = findSeries(series, 'Knee flexion', 'right');
   if (!left && !right) return [];
@@ -418,6 +428,7 @@ export function detectKeyMoments(
   result:         PoseSequenceResult,
   smoothedSeries: AngleSeries[],
   view:           MovementViewAngle = 'unknown',
+  closestSide?:   'left' | 'right',
 ): SequenceKeyMoments {
   const keyFrames: KeyFrameRecord[] = [];
   const repSummaries: RepSummary[] = [];
@@ -431,19 +442,21 @@ export function detectKeyMoments(
       id:        keyFrameId(),
       label:     'Setup',
       timeMs:    firstConfident.timeMs,
-      landmarks: frameLandmarks(result, firstConfident.timeMs),
-      angles:    frameAngles(result, kind, firstConfident.timeMs, view),
+      landmarks: filterLandmarksForDisplay(frameLandmarks(result, firstConfident.timeMs), kind, view, closestSide),
+      angles:    filterEstimatedAngles(frameAngles(result, kind, firstConfident.timeMs, view) ?? [], kind, view, closestSide),
     });
   }
 
   if (STRENGTH_KINDS.includes(kind)) {
-    const primary = primaryKneeFlexionSeries(smoothedSeries);
+    const primary = primaryKneeFlexionSeries(smoothedSeries, closestSide);
     const reps = detectReps(primary);
 
     for (const rep of reps) {
       repSummaries.push({
         ...rep,
-        hipAngleAtBottom:   nearestBilateral(smoothedSeries, 'Hip angle', rep.bottomMs),
+        hipAngleAtBottom: closestSide
+          ? nearestValue(findSeries(smoothedSeries, 'Hip angle', closestSide), rep.bottomMs)
+          : nearestBilateral(smoothedSeries, 'Hip angle', rep.bottomMs),
         trunkAngleAtBottom: nearestValue(findSeries(smoothedSeries, 'Trunk lean', 'center'), rep.bottomMs),
       });
     }
@@ -456,8 +469,8 @@ export function detectKeyMoments(
         id:        keyFrameId(),
         label:     'Deepest position',
         timeMs:    deepest.timeMs,
-        landmarks: frameLandmarks(result, deepest.timeMs),
-        angles:    frameAngles(result, kind, deepest.timeMs, view),
+        landmarks: filterLandmarksForDisplay(frameLandmarks(result, deepest.timeMs), kind, view, closestSide),
+        angles:    filterEstimatedAngles(frameAngles(result, kind, deepest.timeMs, view) ?? [], kind, view, closestSide),
       });
     }
 
@@ -466,12 +479,13 @@ export function detectKeyMoments(
         id:        keyFrameId(),
         label:     'Lockout / return',
         timeMs:    lastConfident.timeMs,
-        landmarks: frameLandmarks(result, lastConfident.timeMs),
-        angles:    frameAngles(result, kind, lastConfident.timeMs, view),
+        landmarks: filterLandmarksForDisplay(frameLandmarks(result, lastConfident.timeMs), kind, view, closestSide),
+        angles:    filterEstimatedAngles(frameAngles(result, kind, lastConfident.timeMs, view) ?? [], kind, view, closestSide),
       });
     }
   } else if (kind === 'running_gait') {
-    for (const side of ['left', 'right'] as const) {
+    const gaitSides = view === 'side' && closestSide ? [closestSide] : ['left', 'right'] as const;
+    for (const side of gaitSides) {
       const kneeSeries = findSeries(smoothedSeries, 'Knee flexion', side);
       const vals = (kneeSeries?.points ?? []).filter(p => p.degrees !== null) as { timeMs: number; degrees: number }[];
       if (vals.length > 0) {
@@ -480,8 +494,8 @@ export function detectKeyMoments(
           id:        keyFrameId(),
           label:     `Peak knee flexion — ${side}`,
           timeMs:    peak.timeMs,
-          landmarks: frameLandmarks(result, peak.timeMs),
-          angles:    frameAngles(result, kind, peak.timeMs, view),
+          landmarks: filterLandmarksForDisplay(frameLandmarks(result, peak.timeMs), kind, view, closestSide),
+          angles:    filterEstimatedAngles(frameAngles(result, kind, peak.timeMs, view) ?? [], kind, view, closestSide),
         });
       }
 
@@ -494,8 +508,8 @@ export function detectKeyMoments(
           id:        keyFrameId(),
           label:     `Estimated contact (approximate) — ${side} #${i + 1}`,
           timeMs:    c.timeMs,
-          landmarks: frameLandmarks(result, c.timeMs),
-          angles:    frameAngles(result, kind, c.timeMs, view),
+          landmarks: filterLandmarksForDisplay(frameLandmarks(result, c.timeMs), kind, view, closestSide),
+          angles:    filterEstimatedAngles(frameAngles(result, kind, c.timeMs, view) ?? [], kind, view, closestSide),
         });
       });
     }
@@ -530,10 +544,12 @@ export function analyzeSequence(
   result: PoseSequenceResult,
   kind:   MovementAnalysisKind,
   view:   MovementViewAngle,
+  closestSide?: 'left' | 'right',
 ): SequenceAnalysis {
   const raw      = buildAngleSeries(result, kind, view);
-  const smoothed = smoothAngleSeries(raw, 5);
-  const { keyFrames, repSummaries, symmetryEstimates } = detectKeyMoments(kind, result, smoothed, view);
+  const smoothedRaw = smoothAngleSeries(raw, 5);
+  const smoothed = filterAngleSeries(smoothedRaw, kind, view, closestSide);
+  const { keyFrames, repSummaries, symmetryEstimates } = detectKeyMoments(kind, result, smoothed, view, closestSide);
 
   return {
     angleSeries:       decimateAngleSeries(smoothed, 240),

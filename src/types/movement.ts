@@ -371,9 +371,20 @@ export type MovementAnalysis = {
   // landmark confidence; 'user' = the athlete answered the on-screen chooser.
   closestSide?: 'left' | 'right';
   closestSideSource?: 'auto' | 'user';
+  captureMetadata?: {
+    cameraFacing: 'front' | 'back' | 'library' | 'unknown';
+    isMirrored: boolean;
+    orientationConfirmed: boolean;
+  };
   landmarks?: PoseLandmarkRecord[];   // undefined = pose not run/unavailable
+  rawLandmarks?: PoseLandmarkRecord[];
+  displayLandmarks?: PoseLandmarkRecord[];
   imageAspectRatio?: number;          // width/height of analyzed image
   estimatedAngles?: EstimatedAngle[];
+  rawEstimatedAngles?: EstimatedAngle[];
+  /** Internal migration guard: side labels in inline series/key frames already
+   * reflect capture mirroring and must not be swapped again on rehydrate. */
+  viewFiltersMaterialized?: boolean;
   autoLandmarks?: PoseLandmarkRecord[];
   correctedLandmarks?: PoseLandmarkRecord[];
   landmarkSource?: MovementLandmarkSource;

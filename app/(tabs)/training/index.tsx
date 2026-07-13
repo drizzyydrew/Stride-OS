@@ -14,6 +14,7 @@ import { spacing } from '../../../src/theme/spacing';
 import { radiusTokens, typographyTokens } from '../../../src/theme/tokens';
 import { useThemeMode } from '../../../src/store/themeStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
+import { evaluateRaceFuelCue } from '../../../src/utils/raceFueling';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useIntegrationsStore } from '../../../src/store/integrationsStore';
 import { useActiveRunStore, type RunMode, type RunModeConfig } from '../../../src/store/activeRunStore';
@@ -324,6 +325,7 @@ function zoneStatusForHeartRate(
 // ─── Plan Tab ─────────────────────────────────────────────────────────────────
 function PlanTab() {
   const C = useColors();
+  const router = useRouter();
   const mode = useThemeMode();
   const { units } = useSettingsStore();
   const imp = units === 'imperial';
@@ -335,11 +337,29 @@ function PlanTab() {
   const customLogs = useCustomWorkoutStore(s => s.logs);
   const notTodayLogIds = useCustomWorkoutStore(s => s.notTodayLogIds);
   const markNotToday = useCustomWorkoutStore(s => s.markNotToday);
-  const customRunToday = customLogs.find(log =>
+  const restoreLegacyLogToday = useCustomWorkoutStore(s => s.restoreLegacyLogToday);
+  const customRuns = useCustomWorkoutStore(s => s.customRuns);
+  const selectedTodayCustomRunId = useCustomWorkoutStore(s => s.selectedTodayCustomRunId);
+  const selectedTodayDate = useCustomWorkoutStore(s => s.selectedTodayDate);
+  const dismissedTodayCustomRunId = useCustomWorkoutStore(s => s.dismissedTodayCustomRunId);
+  const selectCustomRunToday = useCustomWorkoutStore(s => s.selectCustomRunToday);
+  const dismissCustomRunToday = useCustomWorkoutStore(s => s.dismissCustomRunToday);
+  const restoreCustomRunToday = useCustomWorkoutStore(s => s.restoreCustomRunToday);
+  const selectedCustomRunToday = selectedTodayDate === todayYMD
+    ? customRuns.find(run => run.id === selectedTodayCustomRunId)
+    : undefined;
+  const dismissedCustomRunToday = selectedTodayDate === todayYMD
+    ? customRuns.find(run => run.id === dismissedTodayCustomRunId)
+    : undefined;
+  const legacyCustomRunToday = customLogs.find(log =>
     log.date === todayYMD
     && log.category === 'running'
     && !notTodayLogIds.includes(log.id),
   );
+  const dismissedLegacyRun = customLogs.find(log =>
+    log.date === todayYMD && log.category === 'running' && notTodayLogIds.includes(log.id),
+  );
+  const customRunToday = selectedCustomRunToday ?? legacyCustomRunToday;
 
   // Single source of truth for "today's workout": the calendar map's real
   // date entry, falling back to the Monday-indexed richWeek slot only if the
@@ -464,7 +484,9 @@ function PlanTab() {
         <View style={[styles.card, { backgroundColor: C.card, borderColor: C.primary, borderWidth: 1.5 }]}>
           <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S CUSTOM RUN</Text>
           <Text style={[styles.subTitle, { color: C.text, marginTop: 8 }]}>
-            {customRunToday.notes?.split(' — ')[0] || customRunToday.runType?.replace(/_/g, ' ') || 'Custom Run'}
+            {'name' in customRunToday
+              ? customRunToday.name
+              : customRunToday.notes?.split(' — ')[0] || customRunToday.runType?.replace(/_/g, ' ') || 'Custom Run'}
           </Text>
           <Text style={[{ fontSize: 13, color: C.textMuted, marginTop: 6 }]}>
             {customRunToday.durationMinutes ? `${Math.round(customRunToday.durationMinutes)} min` : ''}
@@ -473,10 +495,18 @@ function PlanTab() {
           </Text>
           <TouchableOpacity
             style={{ alignSelf: 'flex-start', marginTop: 12, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: C.cardAlt }}
-            onPress={() => markNotToday(customRunToday.id)}
+            onPress={() => 'parameters' in customRunToday ? dismissCustomRunToday(todayYMD) : markNotToday(customRunToday.id)}
           >
             <Text style={{ color: C.textMuted, fontSize: 12, fontWeight: '700' }}>Not Today</Text>
           </TouchableOpacity>
+          {'parameters' in customRunToday ? (
+            <TouchableOpacity
+              style={{ alignSelf: 'flex-start', marginTop: 8, paddingVertical: 6, paddingHorizontal: 10 }}
+              onPress={() => router.push({ pathname: '/(tabs)/training/run-creator', params: { editId: customRunToday.id } } as never)}
+            >
+              <Text style={{ color: C.primary, fontSize: 12, fontWeight: '700' }}>Edit Workout</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       ) : todayRaceEntry ? (
         <View style={[styles.card, { backgroundColor: C.card, borderColor: '#DCC0A7', borderWidth: 1.5 }]}>
@@ -504,6 +534,39 @@ function PlanTab() {
           </View>
         </View>
       )}
+
+      {!customRunToday && (dismissedCustomRunToday || dismissedLegacyRun) ? (
+        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[styles.cardLabel, { color: C.textDim }]}>CUSTOM RUN SAVED</Text>
+          <Text style={[{ fontSize: 13, color: C.textMuted, marginTop: 6, lineHeight: 18 }]}>Your custom run was removed from today only. The workout, route, logs, and generated plan were not deleted.</Text>
+          <TouchableOpacity
+            style={{ alignSelf: 'flex-start', marginTop: 10, paddingVertical: 7, paddingHorizontal: 11, borderRadius: 8, backgroundColor: C.primaryDim }}
+            onPress={() => dismissedCustomRunToday
+              ? restoreCustomRunToday(todayYMD)
+              : dismissedLegacyRun ? restoreLegacyLogToday(dismissedLegacyRun.id) : undefined}
+          >
+            <Text style={{ color: C.primary, fontSize: 12, fontWeight: '700' }}>Restore for Today</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {customRuns.length > 0 ? (
+        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[styles.cardLabel, { color: C.textDim }]}>SAVED CUSTOM RUNS</Text>
+          <View style={{ gap: 8, marginTop: 8 }}>
+            {customRuns.slice(0, 5).map(run => (
+              <TouchableOpacity
+                key={run.id}
+                style={{ paddingVertical: 9, paddingHorizontal: 10, borderRadius: 8, backgroundColor: C.cardAlt }}
+                onPress={() => selectCustomRunToday(run.id, todayYMD)}
+              >
+                <Text style={{ color: C.text, fontSize: 13, fontWeight: '700' }}>{run.name}</Text>
+                <Text style={{ color: C.textMuted, fontSize: 11, marginTop: 2 }}>{run.durationMinutes} min · {run.distanceMiles.toFixed(2)} mi · Select for today</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      ) : null}
 
       {/* Pace zones */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
@@ -1008,9 +1071,16 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
   // Race mode: fueling reminder on the athlete's persisted interval.
   useEffect(() => {
-    if (!isActive || isPaused || runMode !== 'race') return;
-    if (elapsed > 0 && elapsed - lastFuelCueRef.current >= fuelingReminderIntervalMin * 60) {
-      lastFuelCueRef.current = elapsed;
+    const cue = evaluateRaceFuelCue({
+      elapsedSeconds: elapsed,
+      lastCueElapsedSeconds: lastFuelCueRef.current,
+      intervalMinutes: fuelingReminderIntervalMin,
+      isActive,
+      isPaused,
+      runMode,
+    });
+    if (cue.shouldCue) {
+      lastFuelCueRef.current = cue.nextLastCueElapsedSeconds;
       const message = 'Fuel check: take carbs and a few sips of fluid now, before you feel like you need them.';
       speakCue(message);
       sendRunAlertNotification(message).catch(() => undefined);

@@ -37,13 +37,13 @@ import { analyzeSequence } from '../../../src/utils/poseSequence';
 import { buildSequenceFindings } from '../../../src/utils/movementEngine';
 import { assessSequenceCaptureQuality, type CaptureIssue, type CaptureQualityRating } from '../../../src/utils/captureQuality';
 import { assessReadiness } from '../../../src/utils/readinessEngine';
-import { filterAngleSeries, filterEstimatedAngles } from '../../../src/utils/measurementMatrix';
+import { determineClosestSide, filterAngleSeries, filterEstimatedAngles } from '../../../src/utils/measurementMatrix';
 import { decodeFailedError, validatePickedVideo } from '../../../src/utils/mediaValidation';
 import CaptureGuidanceCard from '../../../src/components/movement/CaptureGuidanceCard';
-import TimedCaptureCamera from '../../../src/components/movement/TimedCaptureCamera';
+import TimedCaptureCamera, { type TimedCaptureResult } from '../../../src/components/movement/TimedCaptureCamera';
 import { dionImagesForReadinessStep, type DionAssessmentImages } from '../../../src/constants/dionImages';
 import { READINESS_STEP_DURATION_SEC } from '../../../src/constants/captureConfig';
-import type { MovementAnalysisKind, MovementViewAngle } from '../../../src/types/movement';
+import type { MovementAnalysis, MovementAnalysisKind, MovementViewAngle } from '../../../src/types/movement';
 import type { ReadinessTestId, ReadinessTestMethod, ReadinessTestResult } from '../../../src/types/movementReadiness';
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
@@ -137,6 +137,7 @@ const TOTAL_SCREENS = STEPS.length + 1; // + pain/review screen
 // ─── Video capture block (shared by 'video' and 'video_checklist' steps) ────
 
 type VideoResult = { analysisId: string; captureRating: CaptureQualityRating; issues: CaptureIssue[] };
+type CaptureMetadata = NonNullable<MovementAnalysis['captureMetadata']>;
 
 function VideoCaptureBlock({
   analysisKind, view, result, onResult, dion, title, durationSec,
@@ -157,6 +158,15 @@ function VideoCaptureBlock({
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
+
+  function choose<T extends string>(title: string, message: string, options: { label: string; value: T }[]): Promise<T | null> {
+    return new Promise(resolve => {
+      Alert.alert(title, message, [
+        ...options.map(option => ({ text: option.label, onPress: () => resolve(option.value) })),
+        { text: 'Cancel', style: 'cancel', onPress: () => resolve(null) },
+      ], { cancelable: false });
+    });
+  }
 
   async function pickFromLibrary() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -179,15 +189,37 @@ function VideoCaptureBlock({
       Alert.alert("This clip can't be used", validation.message);
       return;
     }
-    await analyzeVideo(asset.uri);
+    await analyzeVideo(asset.uri, {
+      cameraFacing: 'library',
+      isMirrored: false,
+      orientationConfirmed: false,
+    });
   }
 
-  async function analyzeVideo(uri: string) {
+  async function analyzeVideo(uri: string, captureMetadata: CaptureMetadata) {
     const validation = await validatePickedVideo({ uri });
     if (validation) {
       Alert.alert("This clip can't be used", validation.message);
       return;
     }
+    let effectiveMetadata = captureMetadata;
+    if (!effectiveMetadata.orientationConfirmed) {
+      const mirrorChoice = await choose(
+        'Confirm saved orientation',
+        'Was this library video saved normally or horizontally mirrored?',
+        [
+          { label: 'Saved normally', value: 'normal' },
+          { label: 'Saved mirrored', value: 'mirrored' },
+        ],
+      );
+      if (!mirrorChoice) return;
+      effectiveMetadata = {
+        ...effectiveMetadata,
+        isMirrored: mirrorChoice === 'mirrored',
+        orientationConfirmed: true,
+      };
+    }
+
     setBusy(true);
     setProgress({ processed: 0, total: 1 });
     try {
@@ -209,11 +241,35 @@ function VideoCaptureBlock({
       }
 
       const quality = assessSequenceCaptureQuality(seqResult, view === 'front' ? 'front' : 'side');
-      const seq = analyzeSequence(seqResult, analysisKind, view);
-      const angleSeries = filterAngleSeries(seq.angleSeries, analysisKind, view);
+      let closestSide: 'left' | 'right' | undefined;
+      let closestSideSource: 'auto' | 'user' | undefined;
+      if (view === 'side') {
+        const detected = effectiveMetadata.isMirrored ? null : determineClosestSide(seqResult);
+        if (detected?.confidence === 'high') {
+          closestSide = detected.side;
+          closestSideSource = 'auto';
+        } else {
+          const sideChoice = await choose(
+            'Which side was closest?',
+            'Choose the athlete’s anatomical side that faced the camera. This controls every marker, chart, key frame, and Coach measurement.',
+            [
+              { label: 'Left side closest', value: 'left' },
+              { label: 'Right side closest', value: 'right' },
+            ],
+          );
+          if (!sideChoice) return;
+          closestSide = sideChoice;
+          closestSideSource = 'user';
+        }
+      }
+      const processingSide = closestSide && effectiveMetadata.isMirrored
+        ? closestSide === 'left' ? 'right' : 'left'
+        : closestSide;
+      const seq = analyzeSequence(seqResult, analysisKind, view, processingSide);
+      const angleSeries = filterAngleSeries(seq.angleSeries, analysisKind, view, processingSide);
       const keyFrames = seq.keyFrames.map(keyFrame => ({
         ...keyFrame,
-        angles: keyFrame.angles ? filterEstimatedAngles(keyFrame.angles, analysisKind, view) : undefined,
+        angles: keyFrame.angles ? filterEstimatedAngles(keyFrame.angles, analysisKind, view, processingSide) : undefined,
       }));
       const recommendations = buildSequenceFindings(
         {
@@ -221,19 +277,31 @@ function VideoCaptureBlock({
           angleSeries,
           keyFrames,
           repSummaries: seq.repSummaries,
-          symmetryEstimates: [],
+          symmetryEstimates: view === 'side' ? undefined : seq.symmetryEstimates,
           sequenceConfidence: seq.confidence,
         },
         analysisKind,
       );
 
+      const normalizeSavedSideText = (value: string) => effectiveMetadata.isMirrored
+        ? value.replace(/\bleft\b/gi, '__swap_side__').replace(/\bright\b/gi, 'left').replace(/__swap_side__/g, 'right')
+        : value;
+      const normalizedRecommendations = recommendations.map(recommendation => ({
+        ...recommendation,
+        finding: normalizeSavedSideText(recommendation.finding),
+        meaning: normalizeSavedSideText(recommendation.meaning),
+        recommendation: normalizeSavedSideText(recommendation.recommendation),
+      }));
+
       const id = addAnalysis({
         type: analysisKind, mediaUri: storedUri, mediaType: 'video', cameraView: view,
-        checklistFindings: [], confidence: seq.confidence, recommendations,
+        closestSide, closestSideSource, captureMetadata: effectiveMetadata,
+        checklistFindings: [], confidence: seq.confidence, recommendations: normalizedRecommendations,
         limitations: seq.limitations, status: seq.confidence === 'manual_review' ? 'needs_review' : 'complete',
         angleSeries, keyFrames, repSummaries: seq.repSummaries,
-        symmetryEstimates: [], sequenceConfidence: seq.confidence,
+        symmetryEstimates: view === 'side' ? undefined : seq.symmetryEstimates, sequenceConfidence: seq.confidence,
         sequenceLimitations: seq.limitations, analyzedDurationMs: seqResult.analyzedMs, videoDurationMs: seqResult.durationMs,
+        viewFiltersMaterialized: false,
       });
 
       try {
@@ -299,9 +367,9 @@ function VideoCaptureBlock({
       <TimedCaptureCamera
         visible={cameraOpen}
         onClose={() => setCameraOpen(false)}
-        onCaptured={({ uri }) => {
+        onCaptured={(capture: TimedCaptureResult) => {
           setCameraOpen(false);
-          void analyzeVideo(uri);
+          void analyzeVideo(capture.uri, capture.captureMetadata);
         }}
         dion={dion}
         title={title}

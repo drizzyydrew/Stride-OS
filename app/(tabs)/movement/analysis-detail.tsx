@@ -29,7 +29,12 @@ import {
   ANGLE_ESTIMATE_DISCLAIMER,
   MOVEMENT_SAFETY_DISCLAIMER,
 } from '../../../src/utils/movementEngine';
-import { computeEstimatedAngles } from '../../../src/utils/poseAngles';
+import { computeEstimatedAngles, computeFrontalMetrics } from '../../../src/utils/poseAngles';
+import {
+  filterEstimatedAngles,
+  filterLandmarksForDisplay,
+  movementOverlayConfiguration,
+} from '../../../src/utils/measurementMatrix';
 import PoseOverlay from '../../../src/components/assessment/PoseOverlay';
 import LandmarkEditor from '../../../src/components/movement/LandmarkEditor';
 import { colors }  from '../../../src/theme/colors';
@@ -105,16 +110,35 @@ export default function AnalysisDetailScreen() {
   const confidenceMeta = CONFIDENCE_META[analysis.confidence];
   const hasPose = (analysis.landmarks?.length ?? 0) > 0;
   const angles = analysis.estimatedAngles ?? [];
+  const overlayConfig = movementOverlayConfiguration(analysis.type, analysis.cameraView, analysis.closestSide);
   const aspectRatio = analysis.imageAspectRatio ?? 3 / 4;
   const overlayUri = referenceFrameUri ?? mediaUri ?? analysis.mediaUri;
 
   function saveLandmarkCorrections(nextLandmarks: PoseLandmarkRecord[], corrected: boolean) {
+    const rawLandmarks = analysis!.captureMetadata?.isMirrored
+      ? nextLandmarks.map(landmark => ({
+          ...landmark,
+          name: landmark.name.replace(/^left_/, '__swap_').replace(/^right_/, 'left_').replace(/^__swap_/, 'right_'),
+        }))
+      : nextLandmarks;
+    const rawAngles = analysis!.cameraView === 'front' || analysis!.cameraView === 'rear'
+      ? computeFrontalMetrics(rawLandmarks as never)
+      : computeEstimatedAngles(rawLandmarks as never, analysis!.type);
+    const displayLandmarks = filterLandmarksForDisplay(
+      nextLandmarks,
+      analysis!.type,
+      analysis!.cameraView,
+      analysis!.closestSide,
+    );
     updateAnalysis(analysis!.id, {
-      landmarks: nextLandmarks,
+      rawLandmarks,
+      displayLandmarks,
+      landmarks: displayLandmarks,
       autoLandmarks: analysis!.autoLandmarks ?? analysis!.landmarks,
       correctedLandmarks: corrected ? nextLandmarks : undefined,
       landmarkSource: corrected ? 'user_corrected' : 'auto',
-      estimatedAngles: computeEstimatedAngles(nextLandmarks as never, analysis!.type),
+      rawEstimatedAngles: rawAngles,
+      estimatedAngles: filterEstimatedAngles(rawAngles, analysis!.type, analysis!.cameraView, analysis!.closestSide),
     });
     setEditingMarkers(false);
   }
@@ -183,6 +207,7 @@ export default function AnalysisDetailScreen() {
                     angles={angles}
                     showSkeleton={showSkeleton}
                     showAngles={showAngles}
+                    connections={overlayConfig.visibleConnections}
                   />
                   <View style={s.toggleRow}>
                     <View style={s.toggleItem}>

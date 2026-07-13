@@ -3,16 +3,15 @@
 // Builds a custom run (fartlek, tempo, intervals, long run + strides) and
 // estimates total duration before the user starts.
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useOnboardingStore }    from '../../../src/store/onboardingStore';
-import { useAthleteStore }       from '../../../src/store/athleteStore';
 import { useProfileStore }       from '../../../src/store/profileStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
 
@@ -26,6 +25,7 @@ import {
   type DurationEstimate,
 } from '../../../src/utils/hydrationEngine';
 import { todayDateKey } from '../../../src/types/checkin';
+import { useColors } from '../../../src/theme/useColors';
 
 import { colors }                       from '../../../src/theme/colors';
 import { spacing }                      from '../../../src/theme/spacing';
@@ -115,11 +115,15 @@ function SummaryCard({ estimate, easyPaceSecPerMi }: { estimate: DurationEstimat
 
 export default function RunCreatorScreen() {
   const router = useRouter();
+  const C = useColors();
+  const { editId } = useLocalSearchParams<{ editId?: string }>();
 
   const weeklyMileage  = useOnboardingStore(s => s.data.weeklyMileage);
-  const { fatigueScore, recoveryScore, setFatigueScore, setRecentEasyLoad, recentEasyLoad } = useAthleteStore();
   const profile        = useProfileStore(s => s.getActiveProfile());
-  const { addLog }     = useCustomWorkoutStore();
+  const customRuns = useCustomWorkoutStore(s => s.customRuns);
+  const saveCustomRun = useCustomWorkoutStore(s => s.saveCustomRun);
+  const selectCustomRunToday = useCustomWorkoutStore(s => s.selectCustomRunToday);
+  const editingRun = editId ? customRuns.find(run => run.id === editId) : undefined;
 
   // Resolve easy pace
   const easyPaceSecPerMi = useMemo(() => {
@@ -157,6 +161,23 @@ export default function RunCreatorScreen() {
   const [customName, setCustomName] = useState('');
   const [saved, setSaved] = useState(false);
 
+  useEffect(() => {
+    if (!editingRun) return;
+    setRunType(editingRun.runType);
+    setCustomName(editingRun.name);
+    setFartlekMin(editingRun.parameters.fartlekMin);
+    setWarmupMi(editingRun.parameters.warmupMi);
+    setTempoMi(editingRun.parameters.tempoMi);
+    setCooldownMi(editingRun.parameters.cooldownMi);
+    setIvWarmupMi(editingRun.parameters.ivWarmupMi);
+    setIvReps(editingRun.parameters.ivReps);
+    setIvWorkMi(editingRun.parameters.ivWorkMi);
+    setIvRestMin(editingRun.parameters.ivRestMin);
+    setIvCooldownMi(editingRun.parameters.ivCooldownMi);
+    setLrDistanceMi(editingRun.parameters.lrDistanceMi);
+    setLrStrides(editingRun.parameters.lrStrides);
+  }, [editingRun]);
+
   const estimate: DurationEstimate = useMemo(() => {
     switch (runType) {
       case 'fartlek':
@@ -184,38 +205,33 @@ export default function RunCreatorScreen() {
     long_run_strides: 'Long Run + Strides',
   };
 
-  const runTypeToCustomType: Record<RunType, string> = {
-    fartlek:          'fartlek',
-    tempo:            'tempo',
-    intervals:        'intervals',
-    long_run_strides: 'long_run',
-  };
-
   function handleSave() {
     const segmentSummary = estimate.segments
       .filter(s => s.distanceMi > 0 || s.durationMin > 0)
       .map(s => s.label)
       .join(' · ');
 
-    const trimmedName = customName.trim();
-
-    addLog(
-      {
-        category:         'running',
-        date:             todayDateKey(),
-        source:           'custom',
-        runType:          runTypeToCustomType[runType] as never,
-        durationMinutes:  estimate.estimatedMin,
-        distanceMiles:    estimate.estimatedMi,
-        notes:            trimmedName
-          ? `${trimmedName} — ${runTypeLabel[runType]}: ${segmentSummary}`
-          : `${runTypeLabel[runType]}: ${segmentSummary}`,
+    const id = saveCustomRun({
+      name: customName.trim() || runTypeLabel[runType],
+      runType,
+      durationMinutes: estimate.estimatedMin,
+      distanceMiles: estimate.estimatedMi,
+      segmentSummary,
+      parameters: {
+        fartlekMin,
+        warmupMi,
+        tempoMi,
+        cooldownMi,
+        ivWarmupMi,
+        ivReps,
+        ivWorkMi,
+        ivRestMin,
+        ivCooldownMi,
+        lrDistanceMi,
+        lrStrides,
       },
-      fatigueScore,
-      setFatigueScore,
-      setRecentEasyLoad,
-      recentEasyLoad,
-    );
+    }, editingRun?.id);
+    selectCustomRunToday(id, todayDateKey());
     setSaved(true);
   }
 
@@ -231,11 +247,16 @@ export default function RunCreatorScreen() {
         <TouchableOpacity onPress={() => router.back()} style={st.backBtn}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={st.title}>Build a Run</Text>
+        <Text style={st.title}>{editingRun ? 'Edit Run' : 'Build a Run'}</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={st.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+      >
 
         {/* Run type selector */}
         <View style={st.typeGrid}>
@@ -262,12 +283,13 @@ export default function RunCreatorScreen() {
         <View style={st.card}>
           <Text style={st.sectionLabel}>WORKOUT NAME (OPTIONAL)</Text>
           <TextInput
-            style={st.nameInput}
+            style={[st.nameInput, { color: C.text, backgroundColor: C.bg, borderColor: C.border }]}
             value={customName}
             onChangeText={setCustomName}
             placeholder={runTypeLabel[runType]}
-            placeholderTextColor={colors.textSubtle}
-            selectionColor={colors.primary}
+            placeholderTextColor={C.textSubtle}
+            selectionColor={C.primary}
+            cursorColor={C.primary}
             maxLength={60}
             returnKeyType="done"
           />
@@ -364,12 +386,12 @@ export default function RunCreatorScreen() {
           {saved ? (
             <View style={st.savedRow}>
               <Ionicons name="checkmark-circle" size={18} color={colors.positive} />
-              <Text style={st.savedTxt}>Saved to My Runs</Text>
+              <Text style={st.savedTxt}>Saved and selected for today</Text>
             </View>
           ) : (
             <TouchableOpacity style={st.btnSecondary} onPress={handleSave}>
               <Ionicons name="bookmark-outline" size={18} color={colors.primary} />
-              <Text style={st.btnSecondaryTxt}>Save to My Runs</Text>
+              <Text style={st.btnSecondaryTxt}>{editingRun ? 'Save Changes & Use Today' : 'Save & Use Today'}</Text>
             </TouchableOpacity>
           )}
         </View>

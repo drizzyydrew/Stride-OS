@@ -24,6 +24,7 @@ type Props = {
   angles?:         EstimatedAngle[];
   showSkeleton:    boolean;
   showAngles:      boolean;
+  connections?:    [string, string][];
 };
 
 const JOINT_RADIUS = 4;
@@ -65,6 +66,7 @@ export default function SkeletonOverlay({
   angles,
   showSkeleton,
   showAngles,
+  connections = SKELETON_CONNECTIONS,
 }: Props) {
   const hasPose = (landmarks?.length ?? 0) > 0;
   if (!hasPose || (!showSkeleton && !showAngles) || !containerWidth || !containerHeight) return null;
@@ -86,7 +88,7 @@ export default function SkeletonOverlay({
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <Svg style={StyleSheet.absoluteFill} width={containerWidth} height={containerHeight}>
-        {showSkeleton && SKELETON_CONNECTIONS.map(([a, b]) => {
+        {showSkeleton && connections.map(([a, b]) => {
           const ja = byName.get(a);
           const jb = byName.get(b);
           if (!ja || !jb) return null;
@@ -122,12 +124,13 @@ export default function SkeletonOverlay({
           const anchorName = angleAnchorName(angle);
           const anchor = anchorName ? byName.get(anchorName) : shoulderMid();
           if (!anchor) return null;
-          const label = `${angle.name.split(' ')[0]} ${Math.round(angle.degrees)}°`;
+          const label = `${angle.name.replace(' flexion', '').replace(' angle', '')} ${Math.round(angle.degrees)}°`;
+          const labelOffset = (i % 3) * 13;
           return (
             <SvgText
               key={`${angle.side}-${angle.name}-${i}`}
               x={px(anchor.x) + 8}
-              y={py(anchor.y) - 6}
+              y={py(anchor.y) - 6 - labelOffset}
               fill="#FFFFFF"
               stroke="#000000"
               strokeWidth={0.4}

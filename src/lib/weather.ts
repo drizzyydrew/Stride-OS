@@ -1,88 +1,158 @@
+// ─── Weather ──────────────────────────────────────────────────────────────────
+//
+// Real local weather for the dashboard and hydration planner. Location comes
+// from expo-location (foreground permission only), weather from Open-Meteo
+// (keyless public API — no client secret required). Canonical storage is °F;
+// display converts to the user's unit preference via formatTemp().
+//
+// Honesty rules: a result is 'ok' only when it holds real fetched weather for
+// the resolved location. Permission/location/service failures surface as
+// distinct statuses, optionally carrying the LAST REAL result flagged stale —
+// never a fabricated or placeholder reading.
+//
+// Pure logic (types, conversion, staleness, outcome merge) lives in
+// src/utils/weatherLogic.ts so it stays unit-testable without RN.
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 
-export type WeatherData = {
-  tempF:          number;
-  feelsLikeF:     number;
-  humidity:       number;
-  windMph:        number;
-  conditionCode:  number;
-  conditionLabel: string;
-  icon:           string;   // Ionicons name
-  runAdvice:      string;
-};
+import {
+  hasLocationMeaningfullyChanged,
+  isWeatherStale,
+  mergeWeatherOutcome,
+  runAdvice,
+  wmoLookup,
+  type Coords,
+  type WeatherData,
+  type WeatherReport,
+} from '../utils/weatherLogic';
 
-// WMO weather interpretation codes → label + Ionicons name
-const WMO: Record<number, { label: string; icon: string }> = {
-  0:  { label: 'Clear',           icon: 'sunny-outline'       },
-  1:  { label: 'Mostly Clear',    icon: 'sunny-outline'       },
-  2:  { label: 'Partly Cloudy',   icon: 'partly-sunny-outline'},
-  3:  { label: 'Overcast',        icon: 'cloudy-outline'      },
-  45: { label: 'Foggy',           icon: 'cloud-outline'       },
-  48: { label: 'Icy Fog',         icon: 'cloud-outline'       },
-  51: { label: 'Light Drizzle',   icon: 'rainy-outline'       },
-  53: { label: 'Drizzle',         icon: 'rainy-outline'       },
-  55: { label: 'Heavy Drizzle',   icon: 'rainy-outline'       },
-  61: { label: 'Light Rain',      icon: 'rainy-outline'       },
-  63: { label: 'Rain',            icon: 'rainy-outline'       },
-  65: { label: 'Heavy Rain',      icon: 'rainy-outline'       },
-  71: { label: 'Light Snow',      icon: 'snow-outline'        },
-  73: { label: 'Snow',            icon: 'snow-outline'        },
-  75: { label: 'Heavy Snow',      icon: 'snow-outline'        },
-  77: { label: 'Snow Grains',     icon: 'snow-outline'        },
-  80: { label: 'Showers',         icon: 'rainy-outline'       },
-  81: { label: 'Showers',         icon: 'rainy-outline'       },
-  82: { label: 'Heavy Showers',   icon: 'rainy-outline'       },
-  85: { label: 'Snow Showers',    icon: 'snow-outline'        },
-  86: { label: 'Heavy Snow',      icon: 'snow-outline'        },
-  95: { label: 'Thunderstorm',    icon: 'thunderstorm-outline'},
-  96: { label: 'Thunderstorm',    icon: 'thunderstorm-outline'},
-  99: { label: 'Thunderstorm',    icon: 'thunderstorm-outline'},
-};
+export {
+  formatTemp,
+  fToC,
+  isWeatherStale,
+  LOCATION_CHANGE_KM,
+  WEATHER_TTL_MS,
+} from '../utils/weatherLogic';
+export type { WeatherData, WeatherReport, WeatherStatus } from '../utils/weatherLogic';
 
-function runAdvice(tempF: number, code: number): string {
-  if (code >= 95) return 'Thunderstorm — run indoors today';
-  if (code >= 71 && code <= 77) return 'Snowy — watch for ice';
-  if (code >= 61 && code <= 67) return 'Rainy — dress to stay dry';
-  if (code >= 51 && code <= 57) return 'Light drizzle — gear up';
-  if (tempF > 90) return 'Extreme heat — shorten & hydrate heavily';
-  if (tempF > 80) return 'Hot — slow your pace, hydrate often';
-  if (tempF > 65) return 'Warm — hydrate well';
-  if (tempF >= 45) return 'Good running conditions';
-  if (tempF >= 32) return 'Cold — dress in layers';
-  return 'Very cold — run indoors or bundle up';
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const LOCATION_TIMEOUT_MS = 8_000;
+const FETCH_TIMEOUT_MS    = 8_000;
+const CACHE_KEY           = 'strideos-weather-cache-v1';
+
+// ─── Cache (module + AsyncStorage; minimum necessary state) ──────────────────
+
+type CacheEntry = { data: WeatherData; fetchedAt: number; coords: Coords };
+
+let memoryCache: CacheEntry | null = null;
+let storageLoaded = false;
+let inFlight: Promise<WeatherReport> | null = null;
+
+async function loadPersistedCache(): Promise<void> {
+  if (storageLoaded) return;
+  storageLoaded = true;
+  try {
+    const raw = await AsyncStorage.getItem(CACHE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as CacheEntry;
+    if (parsed?.data && typeof parsed.fetchedAt === 'number' && parsed.coords) {
+      // Only adopt if nothing fresher fetched this session.
+      if (!memoryCache || parsed.fetchedAt > memoryCache.fetchedAt) memoryCache = parsed;
+    }
+  } catch {
+    // Corrupt cache is discarded; next fetch rebuilds it.
+  }
 }
 
-// Module-level cache so Training screen and Hydration share one fetch
-let cache: { data: WeatherData; fetchedAt: number } | null = null;
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 min
-
-export async function fetchWeather(): Promise<WeatherData | null> {
-  if (cache && Date.now() - cache.fetchedAt < CACHE_TTL_MS) return cache.data;
-
+async function persistCache(entry: CacheEntry): Promise<void> {
   try {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return null;
+    await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(entry));
+  } catch {
+    // Persistence is best-effort; in-memory cache still works this session.
+  }
+}
 
-    const loc = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Low,
-    });
-    const { latitude, longitude } = loc.coords;
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then(
+      value => { clearTimeout(timer); resolve(value); },
+      err   => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
 
-    const url =
-      `https://api.open-meteo.com/v1/forecast` +
-      `?latitude=${latitude}&longitude=${longitude}` +
-      `&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code` +
-      `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
+// ─── Pipeline ─────────────────────────────────────────────────────────────────
 
-    const res  = await fetch(url);
+/** No-GPS-fix movement check: last known position only, never a prompt. */
+async function movedSinceCache(cachedCoords: Coords): Promise<boolean> {
+  try {
+    const perm = await Location.getForegroundPermissionsAsync();
+    if (!perm.granted) return false;
+    const last = await Location.getLastKnownPositionAsync();
+    return hasLocationMeaningfullyChanged(cachedCoords, last?.coords ?? null);
+  } catch {
+    return false;
+  }
+}
+
+async function resolvePermission(): Promise<boolean> {
+  const current = await Location.getForegroundPermissionsAsync();
+  if (current.granted) return true;
+  if (!current.canAskAgain) return false;
+  const requested = await Location.requestForegroundPermissionsAsync();
+  return requested.granted;
+}
+
+async function resolveCoords(): Promise<Coords | null> {
+  try {
+    const loc = await withTimeout(
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low }),
+      LOCATION_TIMEOUT_MS,
+    );
+    return loc.coords;
+  } catch {
+    try {
+      const last = await Location.getLastKnownPositionAsync();
+      return last?.coords ?? null;
+    } catch {
+      return null;
+    }
+  }
+}
+
+async function resolvePlaceName(coords: Coords): Promise<string | undefined> {
+  try {
+    const results = await withTimeout(Location.reverseGeocodeAsync(coords), LOCATION_TIMEOUT_MS);
+    const p = results[0];
+    return p?.city ?? p?.subregion ?? p?.region ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function fetchOpenMeteo(coords: Coords): Promise<Omit<WeatherData, 'placeName'>> {
+  const url =
+    `https://api.open-meteo.com/v1/forecast` +
+    `?latitude=${coords.latitude}&longitude=${coords.longitude}` +
+    `&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code` +
+    `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`weather http ${res.status}`);
     const json = await res.json();
-    const c    = json.current;
+    const c = json.current;
+    if (!c || typeof c.temperature_2m !== 'number') throw new Error('weather payload malformed');
 
-    const code  = c.weather_code as number;
-    const wmo   = WMO[code] ?? { label: 'Unknown', icon: 'cloud-outline' };
+    const code = c.weather_code as number;
+    const wmo = wmoLookup(code);
     const tempF = Math.round(c.temperature_2m);
-
-    const data: WeatherData = {
+    return {
       tempF,
       feelsLikeF:     Math.round(c.apparent_temperature),
       humidity:       Math.round(c.relative_humidity_2m),
@@ -92,10 +162,64 @@ export async function fetchWeather(): Promise<WeatherData | null> {
       icon:           wmo.icon,
       runAdvice:      runAdvice(tempF, code),
     };
-
-    cache = { data, fetchedAt: Date.now() };
-    return data;
-  } catch {
-    return null;
+  } finally {
+    clearTimeout(timer);
   }
+}
+
+/**
+ * Fetch the current local weather report.
+ * - Deduplicates concurrent calls (one shared in-flight promise).
+ * - Fresh cache (< TTL) is returned without touching location, unless `force`.
+ * - A meaningful location change (≥ 20 km) always refetches weather.
+ * - Failures return the last real result flagged stale — never fake weather.
+ */
+export async function getWeatherReport(options?: { force?: boolean }): Promise<WeatherReport> {
+  if (inFlight) return inFlight;
+
+  const run = (async (): Promise<WeatherReport> => {
+    await loadPersistedCache();
+
+    const cached = memoryCache;
+    if (!options?.force && cached && !isWeatherStale(cached.fetchedAt)) {
+      // Fresh cache short-circuits — unless a cheap last-known-position check
+      // shows the user has meaningfully moved (≥ 20 km), which invalidates it.
+      const moved = await movedSinceCache(cached.coords);
+      if (!moved) {
+        return { status: 'ok', data: cached.data, fetchedAt: cached.fetchedAt, isStale: false };
+      }
+    }
+
+    const granted = await resolvePermission();
+    if (!granted) {
+      return mergeWeatherOutcome(cached, { kind: 'failure', status: 'permission_denied' });
+    }
+
+    const coords = await resolveCoords();
+    if (!coords) {
+      return mergeWeatherOutcome(cached, { kind: 'failure', status: 'location_unavailable' });
+    }
+
+    try {
+      const [base, placeName] = await Promise.all([fetchOpenMeteo(coords), resolvePlaceName(coords)]);
+      const data: WeatherData = { ...base, placeName };
+      const fetchedAt = Date.now();
+      memoryCache = { data, fetchedAt, coords };
+      void persistCache(memoryCache);
+      return mergeWeatherOutcome(null, { kind: 'success', data, fetchedAt });
+    } catch {
+      // The cached entry is the last REAL reading — surfaced as stale under
+      // the failure status, never replaced with fake data.
+      return mergeWeatherOutcome(cached, { kind: 'failure', status: 'service_unavailable' });
+    }
+  })();
+
+  inFlight = run.finally(() => { inFlight = null; });
+  return inFlight;
+}
+
+/** Legacy shape kept for callers that only need data-or-null (hydration). */
+export async function fetchWeather(): Promise<WeatherData | null> {
+  const report = await getWeatherReport();
+  return report.status === 'ok' ? report.data : null;
 }

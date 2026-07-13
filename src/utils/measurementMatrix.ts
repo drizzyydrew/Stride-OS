@@ -19,6 +19,8 @@
 import type {
   AngleSeries,
   EstimatedAngle,
+  KeyFrameRecord,
+  MovementAnalysis,
   MovementAnalysisKind,
   MovementViewAngle,
   PoseLandmarkRecord,
@@ -52,6 +54,22 @@ export type MeasurementSpec = {
   joint:           string;
   bilateral:       boolean;  // frontal/posterior L/R-comparison metrics only
   closestSideOnly: boolean;  // lateral sagittal metrics only
+};
+
+export type MovementBodyRegion = 'lower_body' | 'upper_body' | 'whole_body' | 'custom';
+
+export type MovementOverlayConfiguration = {
+  requiredView: MovementViewAngle;
+  primaryBodyRegion: MovementBodyRegion;
+  visibleJoints: string[];
+  visibleConnections: [string, string][];
+  allowedMeasurements: MeasurementSpec[];
+  prohibitedMeasurements: string[];
+  prohibitedChecklistIds: string[];
+  bilateralDisplayAllowed: boolean;
+  closestSideRequired: boolean;
+  symmetryAllowed: boolean;
+  manualReviewRequired: boolean;
 };
 
 /** Maps a MeasurementSpec.id to the series/angle `name` string that
@@ -101,6 +119,76 @@ const UNKNOWN_FALLBACK: MeasurementSpec[] = [TRUNK_LEAN_SPEC];
  *  (single_leg_control defaults to frontal but is optionally lateral.) */
 const LOWER_BODY_KINDS: MovementAnalysisKind[] = [
   'running_gait', 'squat', 'deadlift', 'lunge', 'single_leg_control',
+];
+
+const REQUIRED_VIEW: Record<MovementAnalysisKind, MovementViewAngle> = {
+  running_gait: 'side',
+  squat: 'side',
+  deadlift: 'side',
+  single_leg_control: 'front',
+  lunge: 'side',
+  general: 'unknown',
+  lunge_single_leg: 'unknown',
+};
+
+const LOWER_BODY_PROHIBITED = [
+  'Elbow angle',
+  'Wrist angle',
+  'Hand angle',
+  'Shoulder angle',
+  'Ankle dorsiflexion without foot landmarks',
+  'Footstrike classification',
+];
+
+const UPPER_BODY_PROHIBITED = [
+  'Knee flexion',
+  'Hip angle',
+  'Ankle angle',
+  'Foot angle',
+];
+
+const LATERAL_PROHIBITED_CHECKLIST_IDS = [
+  'symmetry', 'arm_swing', 'pelvic_drop', 'knee_valgus', 'crossover', 'hip_shift',
+];
+
+const FRONTAL_PROHIBITED_CHECKLIST_IDS = [
+  'overstride', 'vertical_oscillation', 'depth', 'trunk_angle',
+  'hip_hinge', 'bar_path', 'lockout', 'start_position',
+];
+
+const CENTER_JOINTS = ['nose', 'neck', 'mid_hip'];
+const LOWER_BODY_SIDE_JOINTS = ['shoulder', 'hip', 'knee', 'ankle'];
+const FRONTAL_LOWER_BODY_JOINTS = [
+  'nose', 'neck', 'mid_hip',
+  'left_shoulder', 'right_shoulder',
+  'left_hip', 'right_hip',
+  'left_knee', 'right_knee',
+  'left_ankle', 'right_ankle',
+];
+
+function lateralJoints(closestSide?: 'left' | 'right'): string[] {
+  if (!closestSide) return CENTER_JOINTS;
+  return [
+    ...CENTER_JOINTS,
+    ...LOWER_BODY_SIDE_JOINTS.map(joint => `${closestSide}_${joint}`),
+  ];
+}
+
+function lateralConnections(closestSide?: 'left' | 'right'): [string, string][] {
+  if (!closestSide) return [];
+  return [
+    ['neck', `${closestSide}_shoulder`],
+    [`${closestSide}_shoulder`, `${closestSide}_hip`],
+    [`${closestSide}_hip`, `${closestSide}_knee`],
+    [`${closestSide}_knee`, `${closestSide}_ankle`],
+  ];
+}
+
+const FRONTAL_CONNECTIONS: [string, string][] = [
+  ['neck', 'left_shoulder'], ['neck', 'right_shoulder'],
+  ['left_shoulder', 'left_hip'], ['right_shoulder', 'right_hip'],
+  ['left_hip', 'left_knee'], ['left_knee', 'left_ankle'],
+  ['right_hip', 'right_knee'], ['right_knee', 'right_ankle'],
 ];
 
 function isLowerBody(kind: MovementAnalysisKind): boolean {
@@ -230,6 +318,141 @@ export function migrateAnalysisKind<T extends { type: string; cameraView?: Movem
  *  to decide whether to show the "which side faced the camera?" chooser. */
 export function requiresClosestSide(kind: MovementAnalysisKind, view: MovementViewAngle): boolean {
   return isLowerBody(kind) && canonicalView(view) === 'lateral';
+}
+
+/** Centralized movement/view presentation contract used by capture guidance,
+ * overlays, charts, saved records, and Coach handoffs. */
+export function movementOverlayConfiguration(
+  kind: MovementAnalysisKind,
+  view: MovementViewAngle,
+  closestSide?: 'left' | 'right',
+  bodyRegion: MovementBodyRegion = kind === 'general' ? 'custom' : 'lower_body',
+): MovementOverlayConfiguration {
+  const cv = canonicalView(view);
+  const lateral = cv === 'lateral';
+  const frontal = cv === 'frontal' || cv === 'posterior';
+  const lowerBody = bodyRegion === 'lower_body' || bodyRegion === 'whole_body';
+
+  const visibleJoints = lowerBody
+    ? lateral ? lateralJoints(closestSide) : frontal ? FRONTAL_LOWER_BODY_JOINTS : CENTER_JOINTS
+    : [];
+  const visibleConnections = lowerBody
+    ? lateral ? lateralConnections(closestSide) : frontal ? FRONTAL_CONNECTIONS : []
+    : [];
+
+  return {
+    requiredView: REQUIRED_VIEW[kind] ?? 'unknown',
+    primaryBodyRegion: bodyRegion,
+    visibleJoints,
+    visibleConnections,
+    allowedMeasurements: bodyRegion === 'upper_body' ? [] : permittedMeasurements(kind, view),
+    prohibitedMeasurements: bodyRegion === 'upper_body' ? UPPER_BODY_PROHIBITED : LOWER_BODY_PROHIBITED,
+    prohibitedChecklistIds: lateral
+      ? LATERAL_PROHIBITED_CHECKLIST_IDS
+      : frontal ? FRONTAL_PROHIBITED_CHECKLIST_IDS : [],
+    bilateralDisplayAllowed: frontal,
+    closestSideRequired: lowerBody && lateral,
+    symmetryAllowed: frontal,
+    manualReviewRequired: kind === 'general' || cv === 'unknown',
+  };
+}
+
+export function filterChecklistItemsForView<T extends { id?: string; itemId?: string }>(
+  items: T[],
+  kind: MovementAnalysisKind,
+  view: MovementViewAngle,
+): T[] {
+  const prohibited = new Set(movementOverlayConfiguration(kind, view).prohibitedChecklistIds);
+  return items.filter(item => !prohibited.has(item.id ?? item.itemId ?? ''));
+}
+
+export function filterLandmarksForDisplay(
+  landmarks: PoseLandmarkRecord[] | undefined,
+  kind: MovementAnalysisKind,
+  view: MovementViewAngle,
+  closestSide?: 'left' | 'right',
+  bodyRegion?: MovementBodyRegion,
+): PoseLandmarkRecord[] | undefined {
+  if (!landmarks) return undefined;
+  const allowed = new Set(movementOverlayConfiguration(kind, view, closestSide, bodyRegion).visibleJoints);
+  return landmarks.filter(landmark => allowed.has(landmark.name));
+}
+
+export function filterKeyFrames(
+  keyFrames: KeyFrameRecord[] | undefined,
+  kind: MovementAnalysisKind,
+  view: MovementViewAngle,
+  closestSide?: 'left' | 'right',
+): KeyFrameRecord[] | undefined {
+  if (!keyFrames) return undefined;
+  const farSide = closestSide === 'left' ? 'right' : closestSide === 'right' ? 'left' : null;
+  return keyFrames
+    .filter(frame => !farSide || !frame.label.toLowerCase().includes(`— ${farSide}`))
+    .map(frame => ({
+      ...frame,
+      landmarks: filterLandmarksForDisplay(frame.landmarks, kind, view, closestSide),
+      angles: frame.angles ? filterEstimatedAngles(frame.angles, kind, view, closestSide) : undefined,
+    }));
+}
+
+/** Preserves raw/original values while materializing the effective values the
+ * athlete is allowed to see for this movement, view, and closest-side choice. */
+export function applyAnalysisViewFilters(analysis: MovementAnalysis): MovementAnalysis {
+  const rawLandmarks = analysis.rawLandmarks ?? analysis.autoLandmarks ?? analysis.landmarks;
+  const rawEstimatedAngles = analysis.rawEstimatedAngles ?? analysis.estimatedAngles;
+  const rawAngleSeries = analysis.angleSeries;
+  const rawKeyFrames = analysis.keyFrames;
+  const rawRepSummaries = analysis.repSummaries;
+  const rawSymmetryEstimates = analysis.symmetryEstimates;
+  const config = movementOverlayConfiguration(analysis.type, analysis.cameraView, analysis.closestSide);
+  const mirrored = analysis.captureMetadata?.isMirrored === true;
+  const inlineDataAlreadyMaterialized = analysis.viewFiltersMaterialized === true;
+  const swapName = (name: string) => mirrored
+    ? name.replace(/^left_/, '__swap_').replace(/^right_/, 'left_').replace(/^__swap_/, 'right_')
+    : name;
+  const swapSide = (side: 'left' | 'right' | 'center') => !mirrored || side === 'center'
+    ? side
+    : side === 'left' ? 'right' : 'left';
+  const swapSideText = (value: string) => mirrored
+    ? value.replace(/\bleft\b/gi, '__swap_side__').replace(/\bright\b/gi, 'left').replace(/__swap_side__/g, 'right')
+    : value;
+  const normalizedLandmarks = rawLandmarks?.map(landmark => ({ ...landmark, name: swapName(landmark.name) }));
+  const normalizedAngles = rawEstimatedAngles?.map(angle => ({ ...angle, side: swapSide(angle.side) }));
+  const normalizedSeries = rawAngleSeries?.map(series => ({
+    ...series,
+    side: inlineDataAlreadyMaterialized ? series.side : swapSide(series.side),
+  }));
+  const normalizedKeyFrames = rawKeyFrames?.map(frame => ({
+    ...frame,
+    label: inlineDataAlreadyMaterialized ? frame.label : swapSideText(frame.label),
+    landmarks: frame.landmarks?.map(landmark => ({
+      ...landmark,
+      name: inlineDataAlreadyMaterialized ? landmark.name : swapName(landmark.name),
+    })),
+    angles: frame.angles?.map(angle => ({
+      ...angle,
+      side: inlineDataAlreadyMaterialized ? angle.side : swapSide(angle.side),
+    })),
+  }));
+
+  return {
+    ...analysis,
+    rawLandmarks,
+    rawEstimatedAngles,
+    viewFiltersMaterialized: true,
+    displayLandmarks: filterLandmarksForDisplay(normalizedLandmarks, analysis.type, analysis.cameraView, analysis.closestSide),
+    landmarks: filterLandmarksForDisplay(normalizedLandmarks, analysis.type, analysis.cameraView, analysis.closestSide),
+    estimatedAngles: normalizedAngles
+      ? filterEstimatedAngles(normalizedAngles, analysis.type, analysis.cameraView, analysis.closestSide)
+      : undefined,
+    checklistFindings: filterChecklistItemsForView(analysis.checklistFindings, analysis.type, analysis.cameraView),
+    angleSeries: normalizedSeries
+      ? filterAngleSeries(normalizedSeries, analysis.type, analysis.cameraView, analysis.closestSide)
+      : undefined,
+    keyFrames: filterKeyFrames(normalizedKeyFrames, analysis.type, analysis.cameraView, analysis.closestSide),
+    repSummaries: rawRepSummaries,
+    symmetryEstimates: config.symmetryAllowed ? rawSymmetryEstimates : undefined,
+  };
 }
 
 /** Re-export so consumers that only import the matrix have the sequence type. */

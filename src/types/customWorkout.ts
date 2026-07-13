@@ -124,3 +124,33 @@ export type CustomWorkoutLog = {
   estimatedLoad:  number;   // TSS-analog: 0–200+
   fatigueImpact:  number;   // fatigue score contribution: 0–20
 };
+
+export type CustomRunBuilderType = 'fartlek' | 'tempo' | 'intervals' | 'long_run_strides';
+
+export type CustomRunParameters = {
+  fartlekMin: number;
+  warmupMi: number;
+  tempoMi: number;
+  cooldownMi: number;
+  ivWarmupMi: number;
+  ivReps: number;
+  ivWorkMi: number;
+  ivRestMin: number;
+  ivCooldownMi: number;
+  lrDistanceMi: number;
+  lrStrides: number;
+};
+
+/** A reusable planned workout. Unlike CustomWorkoutLog, saving this record does
+ * not mark exercise complete or change fatigue/load history. */
+export type CustomRunDefinition = {
+  id: string;
+  name: string;
+  runType: CustomRunBuilderType;
+  durationMinutes: number;
+  distanceMiles: number;
+  segmentSummary: string;
+  parameters: CustomRunParameters;
+  createdAt: number;
+  updatedAt: number;
+};

@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { toRelativeDocumentPath } from '../lib/mediaPaths';
 import { deletePoseSequence } from '../lib/poseSequenceStorage';
-import { normalizeAnalysisKind } from '../utils/measurementMatrix';
+import { applyAnalysisViewFilters, normalizeAnalysisKind } from '../utils/measurementMatrix';
 
 import type {
   MovementVideo,
@@ -130,7 +130,7 @@ function migrateMovementVideoPaths(video: MovementVideo): MovementVideo {
 }
 
 function migrateMovementAnalysisPaths(analysis: MovementAnalysis): MovementAnalysis {
-  return {
+  return applyAnalysisViewFilters({
     ...analysis,
     // Build 36: migrate the deprecated `lunge_single_leg` kind (and any unknown
     // persisted kind) onto the current taxonomy, keyed by camera view. Every
@@ -141,7 +141,7 @@ function migrateMovementAnalysisPaths(analysis: MovementAnalysis): MovementAnaly
     sourceVideoUri: toRelativeDocumentPath(analysis.sourceVideoUri),
     poseSequenceUri: toRelativeDocumentPath(analysis.poseSequenceUri),
     referenceFrameUri: toRelativeDocumentPath(analysis.referenceFrameUri),
-  };
+  });
 }
 
 // ─── Implementation ───────────────────────────────────────────────────────────

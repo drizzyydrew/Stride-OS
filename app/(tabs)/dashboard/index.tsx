@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useColors } from '../../../src/theme/useColors';
+import { useWeather } from '../../../src/hooks/useWeather';
+import { formatTemp } from '../../../src/lib/weather';
+import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { todayDateKey } from '../../../src/types/checkin';
 import { readinessTier, READINESS_INTERPRETATION } from '../../../src/utils/readinessScore';
@@ -13,6 +16,89 @@ import { cancelDailyReadinessReminder, scheduleDailyReadinessReminder } from '..
 import { LAYOUT } from '../../../src/constants/layout';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { toYMD } from '../../../src/utils/calendarEngine';
+
+function lastUpdatedLabel(fetchedAt: number | null): string | null {
+  if (fetchedAt === null) return null;
+  const mins = Math.max(0, Math.round((Date.now() - fetchedAt) / 60000));
+  if (mins < 1) return 'Updated just now';
+  if (mins < 60) return `Updated ${mins}m ago`;
+  return `Updated ${Math.round(mins / 60)}h ago`;
+}
+
+// Live local weather card. Every displayed value is real fetched weather —
+// on failure it shows the honest failure state (plus the last real reading
+// flagged with its age) rather than substituting placeholder numbers.
+function WeatherCard() {
+  const C = useColors();
+  const units = useSettingsStore(s => s.units);
+  const { weather, status, loading, refreshing, isStale, fetchedAt, refresh } = useWeather();
+
+  const statusLine =
+    status === 'permission_denied'   ? 'Location access is off — StrideOS can’t read your local weather.'
+    : status === 'location_unavailable' ? 'Couldn’t determine your location.'
+    : status === 'service_unavailable'  ? 'Weather service unreachable.'
+    : null;
+
+  return (
+    <View style={[styles.weatherCard, { backgroundColor: C.card, borderColor: C.border }]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+          <Ionicons
+            name={(weather?.icon ?? 'cloud-outline') as keyof typeof Ionicons.glyphMap}
+            size={22}
+            color={C.primary}
+          />
+          <View style={{ flex: 1 }}>
+            {loading ? (
+              <>
+                <Text style={[styles.weatherTemp, { color: C.text }]}>Fetching local weather…</Text>
+                <Text style={[styles.weatherSub, { color: C.textMuted }]}>Using your current location</Text>
+              </>
+            ) : weather ? (
+              <>
+                <Text style={[styles.weatherTemp, { color: C.text }]}>
+                  {formatTemp(weather.tempF, units)} · {weather.conditionLabel}
+                </Text>
+                <Text style={[styles.weatherSub, { color: C.textMuted }]}>
+                  Humidity {weather.humidity}% · {weather.runAdvice}
+                </Text>
+                <Text style={[styles.weatherSub, { color: isStale ? C.warning : C.textDim }]}>
+                  {[weather.placeName, lastUpdatedLabel(fetchedAt), isStale ? 'Pull latest' : null]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </Text>
+                {statusLine ? (
+                  <Text style={[styles.weatherSub, { color: C.warning }]}>{statusLine}</Text>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <Text style={[styles.weatherTemp, { color: C.text }]}>Local weather unavailable</Text>
+                <Text style={[styles.weatherSub, { color: C.textMuted }]}>{statusLine ?? 'Try again shortly.'}</Text>
+              </>
+            )}
+          </View>
+        </View>
+        <TouchableOpacity onPress={refresh} disabled={refreshing} hitSlop={10} accessibilityLabel="Refresh weather">
+          {refreshing && !loading ? (
+            <ActivityIndicator size="small" color={C.textMuted} />
+          ) : (
+            <Ionicons name="refresh-outline" size={18} color={C.textMuted} />
+          )}
+        </TouchableOpacity>
+      </View>
+      {status === 'permission_denied' ? (
+        <TouchableOpacity
+          onPress={() => { void Linking.openSettings(); }}
+          style={{ marginTop: 8, alignSelf: 'flex-start' }}
+          hitSlop={8}
+        >
+          <Text style={[styles.localLabel, { color: C.primary }]}>OPEN SETTINGS</Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+}
 
 function getDayLabel(): string {
   const now = new Date();
@@ -81,17 +167,8 @@ export default function TodayScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Weather */}
-      <View style={[styles.weatherCard, { backgroundColor: C.card, borderColor: C.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Ionicons name="sunny" size={22} color={C.primary} />
-          <View>
-            <Text style={[styles.weatherTemp, { color: C.text }]}>62°F · Partly Cloudy</Text>
-            <Text style={[styles.weatherSub, { color: C.textMuted }]}>Humidity 45% · Great running conditions</Text>
-          </View>
-        </View>
-        <Text style={[styles.localLabel, { color: C.textDim }]}>LOCAL</Text>
-      </View>
+      {/* Weather — live local conditions (never hardcoded) */}
+      <WeatherCard />
 
       {/* Readiness */}
       {showCheckInForm ? (

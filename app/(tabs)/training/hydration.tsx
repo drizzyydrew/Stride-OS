@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,10 @@ import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useProfileStore } from '../../../src/store/profileStore';
 import { useWeather } from '../../../src/hooks/useWeather';
+import {
+  HYDRATION_PLANNER_DEFAULTS,
+  useHydrationPlannerStore,
+} from '../../../src/store/hydrationPlannerStore';
 import { LAYOUT } from '../../../src/constants/layout';
 import {
   FUELING_REMINDER_INTERVALS,
@@ -37,18 +41,7 @@ import {
 // ─── Defaults (used by Reset) ────────────────────────────────────────────────
 
 const DEFAULTS = {
-  distanceMi: 6,
-  durationMin: null as number | null,
-  tempF: 65,
-  effort: 5,
-  sweatiness: 'average' as Sweatiness,
-  saltiness: 'moderate' as Saltiness,
-  cramping: 'rarely' as CrampingFrequency,
-  fluidComfort: 'moderate' as FluidComfort,
-  goal: 'strong' as HydrationGoal,
-  giTolerance: 'unsure' as GiTolerance | 'unsure',
-  sweatRateMode: 'estimate' as 'estimate' | 'known',
-  sweatRateLh: 0.8,
+  ...HYDRATION_PLANNER_DEFAULTS,
   fuelingIntervalMin: DEFAULT_FUELING_REMINDER_INTERVAL_MIN,
 };
 
@@ -59,6 +52,13 @@ function fmt(n: number, decimals = 0) {
 function formatMi(n: number) {
   // Trim trailing zeros while still allowing hundredths precision.
   return (Math.round(n * 100) / 100).toString();
+}
+
+function humidityBandForPercent(humidityPct: number): 'low' | 'moderate' | 'high' | 'very_high' {
+  if (humidityPct < 35) return 'low';
+  if (humidityPct < 65) return 'moderate';
+  if (humidityPct < 80) return 'high';
+  return 'very_high';
 }
 
 function showInfo(key: keyof typeof HYDRATION_INFO_COPY) {
@@ -97,6 +97,7 @@ function Stepper({
   onPlus,
   hint,
   infoKey,
+  onCommitValue,
 }: {
   label: string;
   value: string | number;
@@ -105,10 +106,19 @@ function Stepper({
   onPlus: () => void;
   hint?: string;
   infoKey?: keyof typeof HYDRATION_INFO_COPY;
+  onCommitValue?: (value: number) => void;
 }) {
   const C = useColors();
+  const [draft, setDraft] = useState(String(value));
   const minusRepeat = useAutoRepeat(onMinus);
   const plusRepeat  = useAutoRepeat(onPlus);
+  useEffect(() => setDraft(String(value)), [value]);
+
+  function commitDraft() {
+    const parsed = Number(draft.replace(',', '.'));
+    if (Number.isFinite(parsed)) onCommitValue?.(parsed);
+    else setDraft(String(value));
+  }
   return (
     <View style={s.inputRow}>
       <View style={s.inputCopy}>
@@ -126,9 +136,25 @@ function Stepper({
         <TouchableOpacity {...minusRepeat} style={[s.stepBtn, { backgroundColor: C.cardAlt }]}>
           <Ionicons name="remove" size={18} color={C.text} />
         </TouchableOpacity>
-        <Text style={[s.stepValue, { color: C.text }]}>
-          {value}{unit ? <Text style={[s.stepUnit, { color: C.textMuted }]}> {unit}</Text> : null}
-        </Text>
+        {onCommitValue ? (
+          <View style={s.editableValueWrap}>
+            <TextInput
+              accessibilityLabel={`Enter ${label.toLowerCase()}`}
+              value={draft}
+              onChangeText={setDraft}
+              onBlur={commitDraft}
+              onSubmitEditing={commitDraft}
+              keyboardType="decimal-pad"
+              selectTextOnFocus
+              style={[s.stepValue, s.editableValue, { color: C.text, borderColor: C.border, backgroundColor: C.bg }]}
+            />
+            {unit ? <Text style={[s.stepUnit, { color: C.textMuted }]}>{unit}</Text> : null}
+          </View>
+        ) : (
+          <Text style={[s.stepValue, { color: C.text }]}>
+            {value}{unit ? <Text style={[s.stepUnit, { color: C.textMuted }]}> {unit}</Text> : null}
+          </Text>
+        )}
         <TouchableOpacity {...plusRepeat} style={[s.stepBtn, { backgroundColor: C.cardAlt }]}>
           <Ionicons name="add" size={18} color={C.text} />
         </TouchableOpacity>
@@ -206,31 +232,40 @@ export default function HydrationScreen() {
   const weeklyMileage = useOnboardingStore(st => st.data.weeklyMileage);
   const profile = useProfileStore(st => st.getActiveProfile());
   const { weather, loading: weatherLoading, refresh: refreshWeather } = useWeather();
-
-  const [distanceMi, setDistanceMi] = useState(DEFAULTS.distanceMi);
-  const [durationMin, setDurationMin] = useState<number | null>(DEFAULTS.durationMin);
-  const [tempF, setTempF] = useState(DEFAULTS.tempF);
-  // 'current_location' auto-applies weather.tempF whenever weather (re)loads;
-  // 'manual' means the athlete has taken over and weather updates no longer
-  // silently overwrite their entry (previously they did — a real bug: any
-  // manual +/- tap was immediately snapped back to weather.tempF on re-render).
-  const [weatherSource, setWeatherSource] = useState<'current_location' | 'manual'>('current_location');
-  const [effort, setEffort] = useState(DEFAULTS.effort);
-  const [sweatiness, setSweatiness] = useState<Sweatiness>(DEFAULTS.sweatiness);
-  const [saltiness, setSaltiness] = useState<Saltiness>(DEFAULTS.saltiness);
-  const [cramping, setCramping] = useState<CrampingFrequency>(DEFAULTS.cramping);
-  const [fluidComfort, setFluidComfort] = useState<FluidComfort>(DEFAULTS.fluidComfort);
-  const [goal, setGoal] = useState<HydrationGoal>(DEFAULTS.goal);
-  const [giTolerance, setGiTolerance] = useState<GiTolerance | 'unsure'>(DEFAULTS.giTolerance);
-  const [sweatRateMode, setSweatRateMode] = useState<'estimate' | 'known'>(DEFAULTS.sweatRateMode);
-  const [sweatRateLh, setSweatRateLh] = useState(DEFAULTS.sweatRateLh);
+  const planner = useHydrationPlannerStore();
+  const {
+    distanceMi, durationMin, tempF, humidityPct, weatherSource, effort,
+    sweatiness, saltiness, cramping, fluidComfort, goal, giTolerance,
+    sweatRateMode, sweatRateLh, updateInputs, resetInputs,
+  } = planner;
+  const setDistanceMi = (next: number | ((value: number) => number)) =>
+    updateInputs({ distanceMi: typeof next === 'function' ? next(distanceMi) : next });
+  const setDurationMin = (next: number | null | ((value: number | null) => number | null)) =>
+    updateInputs({ durationMin: typeof next === 'function' ? next(durationMin) : next });
+  const setTempF = (next: number | ((value: number) => number)) =>
+    updateInputs({ tempF: typeof next === 'function' ? next(tempF) : next });
+  const setHumidityPct = (next: number | ((value: number) => number)) =>
+    updateInputs({ humidityPct: typeof next === 'function' ? next(humidityPct) : next });
+  const setWeatherSource = (next: 'current_location' | 'manual') => updateInputs({ weatherSource: next });
+  const setEffort = (next: number | ((value: number) => number)) =>
+    updateInputs({ effort: typeof next === 'function' ? next(effort) : next });
+  const setSweatiness = (next: Sweatiness) => updateInputs({ sweatiness: next });
+  const setSaltiness = (next: Saltiness) => updateInputs({ saltiness: next });
+  const setCramping = (next: CrampingFrequency) => updateInputs({ cramping: next });
+  const setFluidComfort = (next: FluidComfort) => updateInputs({ fluidComfort: next });
+  const setGoal = (next: HydrationGoal) => updateInputs({ goal: next });
+  const setGiTolerance = (next: GiTolerance | 'unsure') => updateInputs({ giTolerance: next });
+  const setSweatRateMode = (next: 'estimate' | 'known') => updateInputs({ sweatRateMode: next });
+  const setSweatRateLh = (next: number | ((value: number) => number)) =>
+    updateInputs({ sweatRateLh: typeof next === 'function' ? next(sweatRateLh) : next });
   const [recalculatedFlash, setRecalculatedFlash] = useState(false);
 
   useEffect(() => {
     if (weather && weatherSource === 'current_location') {
       setTempF(weather.tempF);
+      setHumidityPct(weather.humidity);
     }
-  }, [weather, weatherSource]);
+  }, [weather, weatherSource]); // setters intentionally write the latest live weather into persisted inputs
 
   function useCurrentLocation() {
     setWeatherSource('current_location');
@@ -238,20 +273,12 @@ export default function HydrationScreen() {
   }
 
   function handleReset() {
-    setDistanceMi(DEFAULTS.distanceMi);
-    setDurationMin(DEFAULTS.durationMin);
-    setEffort(DEFAULTS.effort);
-    setSweatiness(DEFAULTS.sweatiness);
-    setSaltiness(DEFAULTS.saltiness);
-    setCramping(DEFAULTS.cramping);
-    setFluidComfort(DEFAULTS.fluidComfort);
-    setGoal(DEFAULTS.goal);
-    setGiTolerance(DEFAULTS.giTolerance);
-    setSweatRateMode(DEFAULTS.sweatRateMode);
-    setSweatRateLh(DEFAULTS.sweatRateLh);
+    resetInputs({
+      ...HYDRATION_PLANNER_DEFAULTS,
+      tempF: weather?.tempF ?? DEFAULTS.tempF,
+      humidityPct: weather?.humidity ?? DEFAULTS.humidityPct,
+    });
     setFuelingIntervalMin(DEFAULTS.fuelingIntervalMin);
-    setWeatherSource('current_location');
-    if (weather) setTempF(weather.tempF); else setTempF(DEFAULTS.tempF);
   }
 
   function handleRecalculate() {
@@ -276,7 +303,7 @@ export default function HydrationScreen() {
     effort,
     weatherBand: weatherBandForTemp(tempF),
     temperatureF: tempF,
-    humidityBand: 'moderate',
+    humidityBand: humidityBandForPercent(humidityPct),
     sunExposure: 'mixed',
     sweatiness,
     saltiness,
@@ -287,7 +314,7 @@ export default function HydrationScreen() {
     sweatRateTestLh: sweatRateMode === 'known' ? sweatRateLh : undefined,
   }), [
     actualDuration, cramping, distanceMi, effort, fluidComfort, giTolerance,
-    goal, saltiness, sweatiness, sweatRateMode, sweatRateLh, tempF, weightKg,
+    goal, humidityPct, saltiness, sweatiness, sweatRateMode, sweatRateLh, tempF, weightKg,
   ]);
 
   const planExplanation = useMemo(() => explainPlan({
@@ -307,8 +334,11 @@ export default function HydrationScreen() {
   const weightLabel = units === 'metric' ? `${fmt(weightKg, 1)} kg` : `${fmt(weightKg * 2.20462)} lb`;
   const distanceLabel = units === 'metric' ? `${fmt(distanceMi * 1.609344, 2)} km` : `${formatMi(distanceMi)} mi`;
   const fluidHour = units === 'metric'
-    ? `${fmt(plan.range.fluidLowL * 1000)}-${fmt(plan.range.fluidHighL * 1000)} ml${PER_HOUR_UNIT}`
+    ? `${fmt(plan.range.fluidLowL, 2)}-${fmt(plan.range.fluidHighL, 2)} L${PER_HOUR_UNIT}`
     : `${fmt(plan.range.fluidLowL * 33.814)}-${fmt(plan.range.fluidHighL * 33.814)} oz${PER_HOUR_UNIT}`;
+  const fluidHourlyValue = units === 'metric'
+    ? `${fmt(plan.hourly.fluidL, 2)} L${PER_HOUR_UNIT}`
+    : `${plan.hourly.fluidOz} oz${PER_HOUR_UNIT}`;
   const fluidTotal = units === 'metric'
     ? `${fmt(plan.totals.fluidL, 1)} L total`
     : `${fmt(plan.totals.fluidOz)} oz total`;
@@ -323,20 +353,123 @@ export default function HydrationScreen() {
           <Text style={[s.eyebrow, { color: C.textDim }]}>RUNNING</Text>
           <Text style={[s.title, { color: C.text }]}>Hydration Plan</Text>
         </View>
-        <TouchableOpacity onPress={handleReset} style={s.iconBtn} hitSlop={12}>
-          <Ionicons name="refresh-outline" size={20} color={C.textDim} />
-        </TouchableOpacity>
+        <View style={s.iconBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: LAYOUT.screenPadBottom }]} showsVerticalScrollIndicator={false}>
-        {/* ── Inputs first: quick inputs + personalization/sweat-test above the plan ── */}
+      <KeyboardAvoidingView style={s.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        contentContainerStyle={[s.scroll, { paddingBottom: LAYOUT.screenPadBottom }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+      >
+        {/* ── Known athlete data and personalization come first. ── */}
+        <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[s.sectionLabel, { color: C.textDim }]}>PERSONALIZATION + KNOWN DATA</Text>
+          <Text style={[s.inputHint, { color: C.textMuted }]}>Body weight from profile: {weightLabel}</Text>
+          <ChoiceRow
+            label="Sweat rate"
+            value={sweatRateMode}
+            onChange={setSweatRateMode}
+            infoKey="sweatRate"
+            options={[
+              { value: 'estimate', label: 'Estimate for me' },
+              { value: 'known', label: 'I know mine' },
+            ]}
+          />
+          {sweatRateMode === 'known' ? (
+            <Stepper
+              label="Sweat rate"
+              value={fmt(sweatRateLh, 1)}
+              unit={`L${PER_HOUR_UNIT}`}
+              hint="From a sweat test or pre/post-run weigh-in."
+              onMinus={() => setSweatRateLh(v => Math.max(0.2, Math.round((v - 0.1) * 10) / 10))}
+              onPlus={() => setSweatRateLh(v => Math.min(2.5, Math.round((v + 0.1) * 10) / 10))}
+              onCommitValue={value => setSweatRateLh(Math.max(0.2, Math.min(2.5, Math.round(value * 10) / 10)))}
+            />
+          ) : (
+            <ChoiceRow
+              label="Sweatiness"
+              value={sweatiness}
+              onChange={setSweatiness}
+              options={[
+                { value: 'very_low', label: 'Very low' },
+                { value: 'low', label: 'Low' },
+                { value: 'average', label: 'Average' },
+                { value: 'high', label: 'High' },
+                { value: 'very_high', label: 'Very high' },
+              ]}
+            />
+          )}
+          <ChoiceRow
+            label="Sweat saltiness"
+            value={saltiness}
+            onChange={setSaltiness}
+            infoKey="saltiness"
+            options={[
+              { value: 'low', label: 'Low' },
+              { value: 'moderate', label: 'Moderate' },
+              { value: 'salty', label: 'Salty' },
+              { value: 'very_salty', label: 'Very salty' },
+            ]}
+          />
+          <ChoiceRow
+            label="Cramping tendency"
+            value={cramping}
+            onChange={setCramping}
+            infoKey="cramping"
+            options={[
+              { value: 'never', label: 'Never' },
+              { value: 'rarely', label: 'Rarely' },
+              { value: 'sometimes', label: 'Sometimes' },
+              { value: 'often', label: 'Often' },
+            ]}
+          />
+          <ChoiceRow
+            label="Fluid comfort"
+            value={fluidComfort}
+            onChange={setFluidComfort}
+            infoKey="fluidComfort"
+            options={[
+              { value: 'low', label: 'Small sips' },
+              { value: 'moderate', label: 'Moderate' },
+              { value: 'high', label: 'Drink well' },
+            ]}
+          />
+          <ChoiceRow
+            label="Gastrointestinal tolerance"
+            value={giTolerance}
+            onChange={setGiTolerance}
+            infoKey="giTolerance"
+            options={[
+              { value: 'unsure', label: 'Not sure' },
+              { value: 'low', label: 'Sensitive' },
+              { value: 'typical', label: 'Typical' },
+              { value: 'high', label: 'Handles a lot' },
+            ]}
+          />
+          <ChoiceRow
+            label="Goal"
+            value={goal}
+            onChange={setGoal}
+            options={[
+              { value: 'finish', label: 'Finish' },
+              { value: 'strong', label: 'Strong' },
+              { value: 'race_limit', label: 'Race' },
+            ]}
+          />
+        </View>
+
+        {/* ── Run details and environment. ── */}
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.sectionLabel, { color: C.textDim }]}>QUICK INPUTS</Text>
           <Stepper
             label="Distance"
-            value={distanceLabel}
+            value={units === 'metric' ? fmt(distanceMi * 1.609344, 2) : formatMi(distanceMi)}
+            unit={units === 'metric' ? 'km' : 'mi'}
             onMinus={() => setDistanceMi(v => Math.max(0.1, Math.round((v - DISTANCE_STEP_MI) * 100) / 100))}
             onPlus={() => setDistanceMi(v => Math.round((v + DISTANCE_STEP_MI) * 100) / 100)}
+            onCommitValue={value => setDistanceMi(Math.max(0.1, Math.round((units === 'metric' ? value / 1.609344 : value) * 100) / 100))}
             hint="Hold +/- to move faster."
           />
           <Stepper
@@ -344,8 +477,9 @@ export default function HydrationScreen() {
             value={actualDuration}
             unit="min"
             hint={durationMin === null ? 'Auto-estimated from easy pace. Tap +/- to set manually.' : 'Manual duration. Hold +/- to move faster.'}
-            onMinus={() => setDurationMin(v => Math.max(10, (v ?? autoDuration) - DURATION_STEP_MIN))}
+            onMinus={() => setDurationMin(v => Math.max(1, (v ?? autoDuration) - DURATION_STEP_MIN))}
             onPlus={() => setDurationMin(v => (v ?? autoDuration) + DURATION_STEP_MIN)}
+            onCommitValue={value => setDurationMin(Math.max(1, Math.round(value)))}
           />
           <Stepper
             label="Effort"
@@ -386,102 +520,18 @@ export default function HydrationScreen() {
             value={tempF}
             unit="F"
             hint="Manual entry switches away from current-location weather."
-            onMinus={() => { setTempF(v => Math.max(20, v - 5)); setWeatherSource('manual'); }}
-            onPlus={() => { setTempF(v => Math.min(115, v + 5)); setWeatherSource('manual'); }}
+            onMinus={() => { setTempF(v => Math.max(-20, v - 1)); setWeatherSource('manual'); }}
+            onPlus={() => { setTempF(v => Math.min(130, v + 1)); setWeatherSource('manual'); }}
+            onCommitValue={value => { setTempF(Math.max(-20, Math.min(130, Math.round(value)))); setWeatherSource('manual'); }}
           />
-        </View>
-
-        <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
-          <Text style={[s.sectionLabel, { color: C.textDim }]}>PERSONALIZATION</Text>
-          <ChoiceRow
-            label="Sweat rate"
-            value={sweatRateMode}
-            onChange={setSweatRateMode}
-            infoKey="sweatRate"
-            options={[
-              { value: 'estimate', label: 'Estimate for me' },
-              { value: 'known', label: 'I know mine' },
-            ]}
-          />
-          {sweatRateMode === 'known' ? (
-            <Stepper
-              label="Sweat rate"
-              value={fmt(sweatRateLh, 1)}
-              unit={`L${PER_HOUR_UNIT}`}
-              hint="From a sweat test or pre/post-run weigh-in."
-              onMinus={() => setSweatRateLh(v => Math.max(0.2, Math.round((v - 0.1) * 10) / 10))}
-              onPlus={() => setSweatRateLh(v => Math.min(2.5, Math.round((v + 0.1) * 10) / 10))}
-            />
-          ) : (
-            <ChoiceRow
-              label="Sweatiness"
-              value={sweatiness}
-              onChange={setSweatiness}
-              options={[
-                { value: 'very_low', label: 'Very low' },
-                { value: 'low', label: 'Low' },
-                { value: 'average', label: 'Average' },
-                { value: 'high', label: 'High' },
-                { value: 'very_high', label: 'Very high' },
-              ]}
-            />
-          )}
-          <ChoiceRow
-            label="Saltiness"
-            value={saltiness}
-            onChange={setSaltiness}
-            infoKey="saltiness"
-            options={[
-              { value: 'low', label: 'Low' },
-              { value: 'moderate', label: 'Moderate' },
-              { value: 'salty', label: 'Salty' },
-              { value: 'very_salty', label: 'Very salty' },
-            ]}
-          />
-          <ChoiceRow
-            label="Cramping"
-            value={cramping}
-            onChange={setCramping}
-            infoKey="cramping"
-            options={[
-              { value: 'never', label: 'Never' },
-              { value: 'rarely', label: 'Rarely' },
-              { value: 'sometimes', label: 'Sometimes' },
-              { value: 'often', label: 'Often' },
-            ]}
-          />
-          <ChoiceRow
-            label="Fluid comfort"
-            value={fluidComfort}
-            onChange={setFluidComfort}
-            infoKey="fluidComfort"
-            options={[
-              { value: 'low', label: 'Small sips' },
-              { value: 'moderate', label: 'Moderate' },
-              { value: 'high', label: 'Drink well' },
-            ]}
-          />
-          <ChoiceRow
-            label="GI tolerance"
-            value={giTolerance}
-            onChange={setGiTolerance}
-            infoKey="giTolerance"
-            options={[
-              { value: 'unsure', label: 'Not sure' },
-              { value: 'low', label: 'Sensitive' },
-              { value: 'typical', label: 'Typical' },
-              { value: 'high', label: 'Handles a lot' },
-            ]}
-          />
-          <ChoiceRow
-            label="Goal"
-            value={goal}
-            onChange={setGoal}
-            options={[
-              { value: 'finish', label: 'Finish' },
-              { value: 'strong', label: 'Strong' },
-              { value: 'race_limit', label: 'Race' },
-            ]}
+          <Stepper
+            label="Humidity"
+            value={humidityPct}
+            unit="%"
+            hint="Live when current location is on; editable in manual mode."
+            onMinus={() => { setHumidityPct(v => Math.max(0, v - 1)); setWeatherSource('manual'); }}
+            onPlus={() => { setHumidityPct(v => Math.min(100, v + 1)); setWeatherSource('manual'); }}
+            onCommitValue={value => { setHumidityPct(Math.max(0, Math.min(100, Math.round(value)))); setWeatherSource('manual'); }}
           />
         </View>
 
@@ -496,10 +546,6 @@ export default function HydrationScreen() {
         </View>
 
         <View style={s.controlsRow}>
-          <TouchableOpacity onPress={handleReset} style={[s.controlBtn, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
-            <Ionicons name="refresh-outline" size={16} color={C.textMuted} />
-            <Text style={[s.controlBtnTxt, { color: C.textMuted }]}>Reset</Text>
-          </TouchableOpacity>
           <TouchableOpacity onPress={handleRecalculate} style={[s.controlBtn, s.controlBtnPrimary, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
             <Ionicons name={recalculatedFlash ? 'checkmark' : 'calculator-outline'} size={16} color={C.primary} />
             <Text style={[s.controlBtnTxt, { color: C.primary }]}>{recalculatedFlash ? 'Recalculated' : 'Recalculate'}</Text>
@@ -515,6 +561,9 @@ export default function HydrationScreen() {
           <Text style={[s.summaryMeta, { color: C.textMuted }]}>
             Body weight {weightLabel} · {plan.confidence.label} ({plan.confidence.score}/100)
           </Text>
+          <Text style={[s.summaryMeta, { color: C.textMuted }]}>
+            Fuel reminder every {fuelingIntervalMin} min · {weatherSource === 'current_location' ? 'Current-location' : 'Manual'} weather · {humidityPct}% humidity
+          </Text>
           <Text style={[s.summaryWhy, { color: C.text }]}>{planExplanation}</Text>
         </View>
 
@@ -527,7 +576,7 @@ export default function HydrationScreen() {
           />
           <ResultCard
             label="FLUID"
-            value={`${plan.hourly.fluidOz} oz${PER_HOUR_UNIT}`}
+            value={fluidHourlyValue}
             range={fluidHour}
             note={fluidTotal}
           />
@@ -541,6 +590,7 @@ export default function HydrationScreen() {
 
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.sectionLabel, { color: C.textDim }]}>EXECUTION</Text>
+          <Text style={[s.body, { color: C.textMuted }]}>- Take fuel on the selected {fuelingIntervalMin}-minute reminder rhythm during Race Mode.</Text>
           {plan.execution.map(item => (
             <Text key={item} style={[s.body, { color: C.textMuted }]}>- {item}</Text>
           ))}
@@ -561,6 +611,9 @@ export default function HydrationScreen() {
           <Text style={[s.body, { color: C.textMuted }]}>
             {sweatRateMode === 'known' ? 'Measured' : 'Estimated'} sweat rate: {plan.physiology.sweatRateLh} L{PER_HOUR_UNIT} · Sweat sodium: {plan.physiology.sweatSodiumMgL} {CONCENTRATION_UNIT} · Projected bodyweight loss: {plan.totals.projectedBodyWeightLossPct}%
           </Text>
+          <Text style={[s.body, { color: C.textMuted }]}>
+            mg/L describes sodium concentration in sweat or fluid. mg/hr describes the total sodium consumed each hour.
+          </Text>
           {plan.warnings.map(item => (
             <Text key={item} style={[s.warning, { color: C.critical }]}>- {item}</Text>
           ))}
@@ -570,14 +623,20 @@ export default function HydrationScreen() {
           <Text style={[s.disclaimer, { color: C.textMuted }]}>
             This is a performance-planning estimate, not medical advice. Test it in training and do not force fluid beyond thirst or gut comfort. Manual review is recommended if anything here doesn't match how you actually feel on the run.
           </Text>
+          <TouchableOpacity onPress={handleReset} style={[s.resetBtn, { borderColor: C.border, backgroundColor: C.cardAlt }]}>
+            <Ionicons name="refresh-outline" size={16} color={C.textMuted} />
+            <Text style={[s.controlBtnTxt, { color: C.textMuted }]}>Reset planner inputs</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
+  keyboardAvoid: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingBottom: 12, gap: 8 },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   headerCopy: { flex: 1 },
@@ -605,6 +664,8 @@ const s = StyleSheet.create({
   stepControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   stepBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   stepValue: { minWidth: 66, textAlign: 'center', fontSize: 15, fontWeight: '900' },
+  editableValueWrap: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  editableValue: { minWidth: 58, height: 40, borderWidth: 1, borderRadius: 8, paddingHorizontal: 8 },
   stepUnit: { fontSize: 11, fontWeight: '700' },
   choiceBlock: { paddingVertical: 10 },
   choiceWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
@@ -627,4 +688,5 @@ const s = StyleSheet.create({
   },
   controlBtnPrimary: {},
   controlBtnTxt: { fontSize: 13, fontWeight: '800' },
+  resetBtn: { marginTop: 14, minHeight: 44, borderWidth: 1, borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
 });

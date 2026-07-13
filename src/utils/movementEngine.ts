@@ -26,6 +26,7 @@ import type {
   AngleSeries,
   EstimatedAngle,
 } from '../types/movement';
+import { applyAnalysisViewFilters, movementOverlayConfiguration } from './measurementMatrix';
 
 // ─── Gait interpretation templates ───────────────────────────────────────────
 //
@@ -404,7 +405,7 @@ export const ANALYSIS_KIND_INFO: Record<
       'Trunk inclination',
       'Pelvic control (hip) estimates',
       'Closest-side knee and hip angles',
-      'Left/right comparison where both sides are visible',
+      'Closest-side joint timing and position estimates',
     ],
   },
   squat: {
@@ -990,9 +991,14 @@ export type CoachHandoff = {
   landmarkSource?: MovementAnalysis['landmarkSource'];
   referenceFrameTimeMs?: number;
   referenceFrameUri?: string;
+  captureMetadata?: MovementAnalysis['captureMetadata'];
+  manualCorrections: string[];
+  manualReviewRequired: boolean;
 };
 
 export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
+  analysis = applyAnalysisViewFilters(analysis);
+  const matrix = movementOverlayConfiguration(analysis.type, analysis.cameraView, analysis.closestSide);
   const landmarks = analysis.landmarks ?? [];
   let detectionQuality: CoachHandoff['detectionQuality'] = 'none';
   if (landmarks.length > 0) {
@@ -1014,6 +1020,14 @@ export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
           : undefined,
       }
     : null;
+  const unsupportedRecommendationTerms = matrix.symmetryAllowed ? [] : [
+    ...matrix.prohibitedMeasurements,
+    'symmetry', 'pelvic drop', 'knee valgus', 'crossover', 'hip shift', 'arm swing',
+  ];
+  const effectiveRecommendations = analysis.recommendations.filter(recommendation => {
+    const text = `${recommendation.finding} ${recommendation.meaning} ${recommendation.recommendation}`.toLowerCase();
+    return !unsupportedRecommendationTerms.some(term => text.includes(term.toLowerCase()));
+  });
 
   return {
     analysisType:      analysis.type,
@@ -1028,7 +1042,7 @@ export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
     checklistFindings: analysis.checklistFindings,
     confidence:        analysis.confidence,
     userNotes:         analysis.notes,
-    recommendations:   analysis.recommendations,
+    recommendations:   effectiveRecommendations,
     limitations:       analysis.limitations,
     detectionQuality,
 
@@ -1040,5 +1054,17 @@ export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
     landmarkSource:       analysis.landmarkSource,
     referenceFrameTimeMs: analysis.referenceFrameTimeMs,
     referenceFrameUri:    analysis.referenceFrameUri,
+    captureMetadata:      analysis.captureMetadata,
+    manualCorrections: [
+      analysis.closestSideSource === 'user' && analysis.closestSide
+        ? `Closest side confirmed by athlete: ${analysis.closestSide}`
+        : null,
+      analysis.landmarkSource === 'user_corrected' ? 'Reference landmarks corrected by athlete' : null,
+      analysis.captureMetadata?.orientationConfirmed === false ? 'Saved-media orientation is unconfirmed' : null,
+    ].filter((value): value is string => Boolean(value)),
+    manualReviewRequired: matrix.manualReviewRequired
+      || analysis.status === 'needs_review'
+      || analysis.confidence === 'manual_review'
+      || analysis.captureMetadata?.orientationConfirmed === false,
   };
 }

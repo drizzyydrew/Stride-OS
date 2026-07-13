@@ -9,17 +9,16 @@ import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { useOnboardingStore } from '../src/store/onboardingStore';
 import { useAuthStore }       from '../src/store/authStore';
 import { useThemeStore }      from '../src/store/themeStore';
 import { completeSupabaseAuthFromUrl } from '../src/lib/authRedirect';
-import { AppLogo } from '../src/components/ui/AppLogo';
 import { ToastProvider } from '../src/components/ui/Toast';
 import { ThemeProvider as StrideThemeProvider } from '../src/theme/ThemeProvider';
-import { getNavigationTheme, getTheme } from '../src/theme/theme';
+import { getNavigationTheme } from '../src/theme/theme';
 
 // Register GPS background task at module level (required by expo-task-manager)
 import '../src/lib/gpsTracking';
@@ -35,6 +34,12 @@ export const unstable_settings = {
 
 SplashScreen.preventAutoHideAsync();
 SplashScreen.setOptions({ duration: 500, fade: true });
+
+// Must stay in lockstep with app.json → plugins → expo-splash-screen
+// (backgroundColor #2E2620, imageWidth 220) so both startup frames are the
+// same visual treatment. scripts/tests/startupBranding.test.ts enforces this.
+const SPLASH_BACKGROUND  = '#2E2620';
+const SPLASH_IMAGE_WIDTH = 220;
 
 export default function RootLayout() {
   const initialize = useAuthStore(s => s.initialize);
@@ -89,11 +94,19 @@ export default function RootLayout() {
 
   if (!loaded && !error) return null;
   if (showBrandSplash) {
-    const theme = getTheme(mode);
+    // Canonical startup treatment — identical composition, scale, and
+    // background to the native Expo splash (see app.json "expo-splash-screen":
+    // splash-icon.png at 220pt on #2E2620), so the native → React handoff has
+    // no visible logo swap in either device appearance.
     return (
-      <View style={{ flex: 1, backgroundColor: theme.colors.bg, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: SPLASH_BACKGROUND, alignItems: 'center', justifyContent: 'center' }}>
         <StatusBar style="light" />
-        <AppLogo size="lg" textColor={theme.colors.text} taglineColor={theme.colors.accent} />
+        <Image
+          source={require('../assets/images/splash-icon.png')}
+          style={{ width: SPLASH_IMAGE_WIDTH, height: SPLASH_IMAGE_WIDTH }}
+          resizeMode="contain"
+          accessibilityLabel="StrideOS"
+        />
       </View>
     );
   }

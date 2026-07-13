@@ -2,12 +2,16 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
+  applyAnalysisViewFilters,
   filterAngleSeries,
+  filterChecklistItemsForView,
   filterEstimatedAngles,
+  filterLandmarksForDisplay,
   migrateAnalysisKind,
+  movementOverlayConfiguration,
   permittedMeasurements,
 } from '../../src/utils/measurementMatrix';
-import type { AngleSeries, EstimatedAngle } from '../../src/types/movement';
+import type { AngleSeries, EstimatedAngle, MovementAnalysis, PoseLandmarkRecord } from '../../src/types/movement';
 
 const angles: EstimatedAngle[] = [
   { name: 'Knee flexion', joint: 'knee', side: 'left', degrees: 80, confidence: 0.9 },
@@ -58,4 +62,99 @@ test('angle-series filtering follows the same closest-side rule', () => {
 test('legacy combined movement kinds migrate by camera view', () => {
   assert.equal(migrateAnalysisKind({ type: 'lunge_single_leg', cameraView: 'front' as const }).type, 'single_leg_control');
   assert.equal(migrateAnalysisKind({ type: 'lunge_single_leg', cameraView: 'side' as const }).type, 'lunge');
+});
+
+test('side-view lower-body overlay contains one clean closest-side chain', () => {
+  const landmarks: PoseLandmarkRecord[] = [
+    'left_shoulder', 'left_hip', 'left_knee', 'left_ankle',
+    'right_shoulder', 'right_hip', 'right_knee', 'right_ankle',
+  ].map((name, index) => ({ name, x: index / 10, y: index / 10, confidence: 0.95 }));
+  const filtered = filterLandmarksForDisplay(landmarks, 'squat', 'side', 'left') ?? [];
+  assert.deepEqual(filtered.map(item => item.name), [
+    'left_shoulder', 'left_hip', 'left_knee', 'left_ankle',
+  ]);
+  assert.equal(filtered.some(item => item.name.startsWith('right_')), false);
+
+  const config = movementOverlayConfiguration('squat', 'side', 'left');
+  assert.deepEqual(config.visibleConnections, [
+    ['neck', 'left_shoulder'],
+    ['left_shoulder', 'left_hip'],
+    ['left_hip', 'left_knee'],
+    ['left_knee', 'left_ankle'],
+  ]);
+  assert.equal(config.bilateralDisplayAllowed, false);
+  assert.equal(config.symmetryAllowed, false);
+});
+
+test('frontal configuration is bilateral but suppresses sagittal flexion', () => {
+  const config = movementOverlayConfiguration('single_leg_control', 'front');
+  assert.equal(config.bilateralDisplayAllowed, true);
+  assert.equal(config.symmetryAllowed, true);
+  assert.equal(config.visibleJoints.includes('left_knee'), true);
+  assert.equal(config.visibleJoints.includes('right_knee'), true);
+  assert.equal(filterEstimatedAngles(angles, 'single_leg_control', 'front').some(angle => angle.name === 'Knee flexion'), false);
+});
+
+test('manual checklist items obey the same camera-view rules', () => {
+  const items = [
+    { id: 'overstride' }, { id: 'trunk_lean' }, { id: 'symmetry' },
+    { id: 'arm_swing' }, { id: 'knee_valgus' },
+  ];
+  assert.deepEqual(
+    filterChecklistItemsForView(items, 'running_gait', 'side').map(item => item.id),
+    ['overstride', 'trunk_lean'],
+  );
+  assert.deepEqual(
+    filterChecklistItemsForView(items, 'running_gait', 'front').map(item => item.id),
+    ['trunk_lean', 'symmetry', 'arm_swing', 'knee_valgus'],
+  );
+});
+
+test('body-region configuration suppresses unrelated measurements', () => {
+  const lower = movementOverlayConfiguration('deadlift', 'side', 'right');
+  assert.equal(lower.prohibitedMeasurements.includes('Elbow angle'), true);
+  assert.equal(lower.prohibitedMeasurements.includes('Wrist angle'), true);
+
+  const upper = movementOverlayConfiguration('general', 'side', 'right', 'upper_body');
+  assert.equal(upper.prohibitedMeasurements.includes('Knee flexion'), true);
+  assert.equal(upper.prohibitedMeasurements.includes('Hip angle'), true);
+  assert.deepEqual(upper.allowedMeasurements, []);
+});
+
+test('saved lateral analyses filter far-side charts, key frames, and symmetry', () => {
+  const analysis: MovementAnalysis = {
+    id: 'legacy-side', createdAt: 1, updatedAt: 1,
+    type: 'squat', mediaUri: 'frame.jpg', mediaType: 'video', cameraView: 'side',
+    closestSide: 'left', checklistFindings: [], confidence: 'moderate', recommendations: [], limitations: [], status: 'complete',
+    rawEstimatedAngles: angles,
+    angleSeries: angles.map(angle => ({ name: angle.name, joint: angle.joint, side: angle.side, points: [] })),
+    keyFrames: [{ id: 'right', label: 'Peak flexion — right', timeMs: 100, angles }],
+    symmetryEstimates: [{ metric: 'Knee flexion', leftValue: 80, rightValue: 82, ratio: 0.98, withinNoise: true, note: 'Within single-camera noise.' }],
+  };
+  const filtered = applyAnalysisViewFilters(analysis);
+  assert.equal(filtered.estimatedAngles?.some(angle => angle.side === 'right'), false);
+  assert.equal(filtered.angleSeries?.some(series => series.side === 'right'), false);
+  assert.deepEqual(filtered.keyFrames, []);
+  assert.equal(filtered.symmetryEstimates, undefined);
+});
+
+test('mirrored saved media swaps anatomical left and right explicitly', () => {
+  const filtered = applyAnalysisViewFilters({
+    id: 'mirrored', createdAt: 1, updatedAt: 1,
+    type: 'squat', mediaUri: 'frame.jpg', mediaType: 'photo', cameraView: 'side',
+    closestSide: 'right', captureMetadata: { cameraFacing: 'front', isMirrored: true, orientationConfirmed: true },
+    rawLandmarks: [{ name: 'left_knee', x: 0.2, y: 0.5, confidence: 0.9 }],
+    rawEstimatedAngles: [{ name: 'Knee flexion', joint: 'knee', side: 'left', degrees: 80, confidence: 0.9 }],
+    angleSeries: [{ name: 'Knee flexion', joint: 'knee', side: 'left', points: [] }],
+    keyFrames: [{ id: 'left-peak', label: 'Peak flexion — left', timeMs: 100, angles: [{ name: 'Knee flexion', joint: 'knee', side: 'left', degrees: 80, confidence: 0.9 }] }],
+    checklistFindings: [], confidence: 'moderate', recommendations: [], limitations: [], status: 'complete',
+  });
+  assert.equal(filtered.displayLandmarks?.[0]?.name, 'right_knee');
+  assert.equal(filtered.estimatedAngles?.[0]?.side, 'right');
+  assert.equal(filtered.angleSeries?.[0]?.side, 'right');
+  assert.equal(filtered.keyFrames?.[0]?.label, 'Peak flexion — right');
+
+  const reopened = applyAnalysisViewFilters(filtered);
+  assert.equal(reopened.angleSeries?.[0]?.side, 'right');
+  assert.equal(reopened.keyFrames?.[0]?.label, 'Peak flexion — right');
 });

@@ -47,14 +47,17 @@ import {
   canonicalView,
   determineClosestSide,
   filterAngleSeries,
+  filterChecklistItemsForView,
   filterEstimatedAngles,
+  filterLandmarksForDisplay,
+  movementOverlayConfiguration,
   normalizeAnalysisKind,
 } from '../../../src/utils/measurementMatrix';
 import { decodeFailedError, validatePickedVideo } from '../../../src/utils/mediaValidation';
 import { ANALYSIS_KIND_CAPTURE, IMPORT_LIMITS_COPY } from '../../../src/constants/captureConfig';
 import { dionImagesForKind } from '../../../src/constants/dionImages';
 import DionInstructionCard from '../../../src/components/movement/DionInstructionCard';
-import TimedCaptureCamera from '../../../src/components/movement/TimedCaptureCamera';
+import TimedCaptureCamera, { type TimedCaptureResult } from '../../../src/components/movement/TimedCaptureCamera';
 import PoseOverlay from '../../../src/components/assessment/PoseOverlay';
 import LandmarkEditor from '../../../src/components/movement/LandmarkEditor';
 import { colors }  from '../../../src/theme/colors';
@@ -143,6 +146,11 @@ type MediaState = {
   width?:      number;
   height?:     number;
   durationMs?: number;
+  captureMetadata: {
+    cameraFacing: 'front' | 'back' | 'library' | 'unknown';
+    isMirrored: boolean;
+    orientationConfirmed: boolean;
+  };
 };
 
 type FrameState = {
@@ -193,7 +201,6 @@ export default function AnalyzeScreen() {
     : 'general';
 
   const info      = ANALYSIS_KIND_INFO[kind] ?? ANALYSIS_KIND_INFO.general;
-  const checklist = ANALYSIS_CHECKLISTS[kind] ?? ANALYSIS_CHECKLISTS.general;
   const addAnalysis    = useMovementStore(s => s.addAnalysis);
   const updateAnalysis = useMovementStore(s => s.updateAnalysis);
 
@@ -202,6 +209,11 @@ export default function AnalyzeScreen() {
   // 'general' requires the user to pick a view before capture/analysis.
   const [generalView, setGeneralView] = useState<MovementViewAngle>('unknown');
   const view: MovementViewAngle = kind === 'general' ? generalView : KIND_CAMERA_VIEW[kind];
+  const checklist = filterChecklistItemsForView(
+    ANALYSIS_CHECKLISTS[kind] ?? ANALYSIS_CHECKLISTS.general,
+    kind,
+    view,
+  );
   const dionEntry = dionImagesForKind(kind, view);
   const captureConfig = ANALYSIS_KIND_CAPTURE[kind];
   // Single-leg / split-stance kinds get one continuous take long enough to
@@ -212,6 +224,7 @@ export default function AnalyzeScreen() {
   const [frame, setFrame] = useState<FrameState | null>(null);
   const [frameBusy, setFrameBusy] = useState<number | null>(null); // timeMs being extracted
   const [showCamera, setShowCamera] = useState(false);
+  const [cameraMode, setCameraMode] = useState<'video' | 'photo'>('video');
 
   const [pose,           setPose]           = useState<PoseState | null>(null);
   const [autoLandmarks,  setAutoLandmarks]  = useState<PoseLandmarkRecord[]>([]);
@@ -241,6 +254,9 @@ export default function AnalyzeScreen() {
   const [closestSide, setClosestSide] = useState<'left' | 'right' | null>(null);
   const [closestSideSource, setClosestSideSource] = useState<'auto' | 'user' | undefined>(undefined);
   const needsClosestSide = LATERAL_LOWER_BODY_KINDS.has(kind) && canonicalView(view) === 'lateral';
+  const processingClosestSide = closestSide && media?.captureMetadata.isMirrored
+    ? closestSide === 'left' ? 'right' : 'left'
+    : closestSide;
 
   const videoPlayer = useVideoPlayer(media?.type === 'video' ? media.uri : null);
 
@@ -261,8 +277,10 @@ export default function AnalyzeScreen() {
         : 3 / 4;
 
   const displayAngles = needsClosestSide
-    ? filterEstimatedAngles(angles, kind, view, closestSide ?? undefined)
+    ? filterEstimatedAngles(angles, kind, view, processingClosestSide ?? undefined)
     : filterEstimatedAngles(angles, kind, view);
+  const displayLandmarks = filterLandmarksForDisplay(pose?.landmarks, kind, view, processingClosestSide ?? undefined);
+  const overlayConfig = movementOverlayConfiguration(kind, view, processingClosestSide ?? undefined);
 
   // ── Media selection ─────────────────────────────────────────────────────────
 
@@ -304,6 +322,7 @@ export default function AnalyzeScreen() {
       width:      asset.width || undefined,
       height:     asset.height || undefined,
       durationMs: asset.duration ?? undefined,
+      captureMetadata: { cameraFacing: 'library', isMirrored: false, orientationConfirmed: false },
     });
     setFrame(null);
     resetPoseState();
@@ -360,14 +379,23 @@ export default function AnalyzeScreen() {
     applyPickedAsset(asset, 'video');
   }
 
-  async function handleCameraCaptured({ uri }: { uri: string }) {
-    const validationError = await validatePickedVideo({ uri });
-    if (validationError) {
-      Alert.alert("This clip can't be used", validationError.message);
-      return;
+  async function handleCameraCaptured(result: TimedCaptureResult) {
+    const { uri } = result;
+    if (result.type === 'video') {
+      const validationError = await validatePickedVideo({ uri });
+      if (validationError) {
+        Alert.alert("This clip can't be used", validationError.message);
+        return;
+      }
     }
     setShowCamera(false);
-    setMedia({ uri, type: 'video' });
+    setMedia({
+      uri,
+      type: result.type,
+      width: result.width,
+      height: result.height,
+      captureMetadata: result.captureMetadata,
+    });
     setFrame(null);
     resetPoseState();
   }
@@ -420,6 +448,11 @@ export default function AnalyzeScreen() {
 
   function applyClosestSideFromInput(input: PoseSequenceResult | PoseLandmarkRecord[]) {
     if (!needsClosestSide) return;
+    if (!media?.captureMetadata.orientationConfirmed || media.captureMetadata.isMirrored) {
+      setClosestSide(null);
+      setClosestSideSource(undefined);
+      return;
+    }
     const detected = determineClosestSide(input);
     if (detected && detected.confidence === 'high') {
       setClosestSide(detected.side);
@@ -540,7 +573,11 @@ export default function AnalyzeScreen() {
         return;
       }
 
-      const seq = analyzeSequence(result, kind, view);
+      const detectedSide = needsClosestSide && media.captureMetadata.orientationConfirmed && !media.captureMetadata.isMirrored
+        ? determineClosestSide(result)
+        : null;
+      const trustedSide = detectedSide?.confidence === 'high' ? detectedSide.side : undefined;
+      const seq = analyzeSequence(result, kind, view, trustedSide);
       setSequenceResult(result);
       setSequenceAnalysis(seq);
       setConfidenceOverride(null);
@@ -587,6 +624,20 @@ export default function AnalyzeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [media?.uri]);
 
+  useEffect(() => {
+    if (!sequenceResult || !needsClosestSide) return;
+    setSequenceAnalysis(analyzeSequence(sequenceResult, kind, view, processingClosestSide ?? undefined));
+  }, [kind, needsClosestSide, processingClosestSide, sequenceResult, view]);
+
+  useEffect(() => {
+    if (!needsClosestSide || closestSideSource === 'user') return;
+    const input = sequenceResult ?? pose?.landmarks;
+    if (input && media?.captureMetadata.orientationConfirmed) applyClosestSideFromInput(input);
+    // Orientation confirmation is the event that makes automatic anatomical
+    // side detection safe for library media; mirrored media remains manual.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [media?.captureMetadata.isMirrored, media?.captureMetadata.orientationConfirmed, pose?.landmarks, sequenceResult]);
+
   // ── Checklist ───────────────────────────────────────────────────────────────
 
   function selectAnswer(itemId: string, value: string) {
@@ -612,9 +663,10 @@ export default function AnalyzeScreen() {
   // ── Save ────────────────────────────────────────────────────────────────────
 
   const closestSideUnresolved = needsClosestSide && hasAutomatedResults && !closestSide;
+  const orientationUnconfirmed = Boolean(media && !media.captureMetadata.orientationConfirmed);
 
   async function handleSave() {
-    if (!media || !canSave || saving || closestSideUnresolved) return;
+    if (!media || !canSave || saving || closestSideUnresolved || orientationUnconfirmed) return;
     setSaving(true);
 
     const checklistFindings: ChecklistFinding[] = checklist
@@ -637,10 +689,11 @@ export default function AnalyzeScreen() {
     const mediaType = media.type === 'photo' ? 'photo' : sequenceAnalysis ? 'video' : frame ? 'video_frame' : 'video';
     const mediaUri  = media.type === 'photo' ? media.uri : mediaType === 'video_frame' && frame ? frame.uri : media.uri;
     const effectiveLandmarks = correctedLandmarks ?? pose?.landmarks;
+    const effectiveDisplayLandmarks = filterLandmarksForDisplay(effectiveLandmarks, kind, view, processingClosestSide ?? undefined);
     const rawAngles = effectiveLandmarks ? anglesForView(effectiveLandmarks, kind, view) : angles;
-    const effectiveAngles = filterEstimatedAngles(rawAngles, kind, view, closestSide ?? undefined);
+    const effectiveAngles = filterEstimatedAngles(rawAngles, kind, view, processingClosestSide ?? undefined);
     const effectiveAngleSeries = sequenceAnalysis?.angleSeries
-      ? filterAngleSeries(sequenceAnalysis.angleSeries, kind, view, closestSide ?? undefined)
+      ? filterAngleSeries(sequenceAnalysis.angleSeries, kind, view, processingClosestSide ?? undefined)
       : undefined;
 
     // Picker/thumbnail URIs live in the purgeable OS cache — copy the analyzed
@@ -676,7 +729,7 @@ export default function AnalyzeScreen() {
     const effectiveKeyFrames = sequenceAnalysis?.keyFrames.map(keyFrame => ({
       ...keyFrame,
       angles: keyFrame.angles
-        ? filterEstimatedAngles(keyFrame.angles, kind, view, closestSide ?? undefined)
+        ? filterEstimatedAngles(keyFrame.angles, kind, view, processingClosestSide ?? undefined)
         : undefined,
     }));
     const effectiveSymmetry = canonicalView(view) === 'lateral'
@@ -694,6 +747,15 @@ export default function AnalyzeScreen() {
       },
       kind,
     );
+    const normalizeSavedSideText = (value: string) => media.captureMetadata.isMirrored
+      ? value.replace(/\bleft\b/gi, '__swap_side__').replace(/\bright\b/gi, 'left').replace(/__swap_side__/g, 'right')
+      : value;
+    const normalizedAutoFindings = autoFindings.map(recommendation => ({
+      ...recommendation,
+      finding: normalizeSavedSideText(recommendation.finding),
+      meaning: normalizeSavedSideText(recommendation.meaning),
+      recommendation: normalizeSavedSideText(recommendation.recommendation),
+    }));
     const manualRecommendations = buildAnalysisRecommendations(kind, checklistFindings);
 
     const id = addAnalysis({
@@ -704,16 +766,20 @@ export default function AnalyzeScreen() {
       cameraView:        view,
       closestSide:       closestSide ?? undefined,
       closestSideSource: closestSide ? closestSideSource : undefined,
-      landmarks:         effectiveLandmarks,
+      captureMetadata:   media.captureMetadata,
+      rawLandmarks:      effectiveLandmarks,
+      displayLandmarks:  effectiveDisplayLandmarks,
+      landmarks:         effectiveDisplayLandmarks,
       autoLandmarks:     autoLandmarks.length > 0 ? autoLandmarks : undefined,
       correctedLandmarks: correctedLandmarks ?? undefined,
       landmarkSource:    correctedLandmarks ? 'user_corrected' : pose ? 'auto' : checklistFindings.length > 0 ? 'manual_review' : undefined,
       imageAspectRatio:  pose ? pose.imageWidth / pose.imageHeight : (frame ? frame.width / frame.height : (media.width && media.height ? media.width / media.height : undefined)),
+      rawEstimatedAngles: rawAngles.length > 0 ? rawAngles : undefined,
       estimatedAngles:   effectiveAngles.length > 0 ? effectiveAngles : undefined,
       checklistFindings,
       confidence:        sequenceAnalysis?.confidence ?? confidence,
       notes:             notes.trim() || undefined,
-      recommendations:   [...autoFindings, ...manualRecommendations],
+      recommendations:   [...normalizedAutoFindings, ...manualRecommendations],
       limitations,
       status:            (sequenceAnalysis?.confidence ?? confidence) === 'manual_review' ? 'needs_review' : 'complete',
       referenceFrameTimeMs: frame?.timeMs,
@@ -726,6 +792,7 @@ export default function AnalyzeScreen() {
       sequenceLimitations: sequenceAnalysis?.limitations,
       analyzedDurationMs:  sequenceResult?.analyzedMs,
       videoDurationMs:     sequenceResult?.durationMs ?? media.durationMs,
+      viewFiltersMaterialized: false,
     } as never);
 
     if (sequenceResult) {
@@ -817,13 +884,13 @@ export default function AnalyzeScreen() {
           {!media ? (
             <View style={{ gap: spacing.sm }}>
               <View style={s.mediaBtnGrid}>
-                <Pressable style={s.mediaBtn} onPress={() => setShowCamera(true)}>
+                <Pressable style={s.mediaBtn} onPress={() => { setCameraMode('video'); setShowCamera(true); }}>
                   <Text style={s.mediaBtnTxt}>Record Video</Text>
                 </Pressable>
                 <Pressable style={s.mediaBtn} onPress={pickVideoFromLibrary}>
                   <Text style={s.mediaBtnTxt}>Choose Video</Text>
                 </Pressable>
-                <Pressable style={s.mediaBtn} onPress={() => pickPhoto('camera')}>
+                <Pressable style={s.mediaBtn} onPress={() => { setCameraMode('photo'); setShowCamera(true); }}>
                   <Text style={s.mediaBtnTxt}>Take Photo</Text>
                 </Pressable>
                 <Pressable style={s.mediaBtn} onPress={() => pickPhoto('library')}>
@@ -841,7 +908,7 @@ export default function AnalyzeScreen() {
               )}
               <View style={s.mediaActionsRow}>
                 {media.type === 'video' && (
-                  <Pressable style={s.mediaActionBtn} onPress={() => setShowCamera(true)}>
+                  <Pressable style={s.mediaActionBtn} onPress={() => { setCameraMode('video'); setShowCamera(true); }}>
                     <Text style={s.mediaActionTxt}>Retake</Text>
                   </Pressable>
                 )}
@@ -857,6 +924,35 @@ export default function AnalyzeScreen() {
         </View>
 
         {/* Automatic video analysis — the primary path for video clips */}
+        {media && !media.captureMetadata.orientationConfirmed ? (
+          <View style={s.card}>
+            <Text style={s.cardLabel}>CONFIRM MEDIA ORIENTATION</Text>
+            <Text style={s.helper}>
+              Library media does not reliably tell StrideOS whether it was saved mirrored. Confirm this before analysis is saved so anatomical left and right are never silently reversed.
+            </Text>
+            <View style={s.pills}>
+              <Pressable
+                style={s.pill}
+                onPress={() => setMedia(current => current ? {
+                  ...current,
+                  captureMetadata: { ...current.captureMetadata, isMirrored: false, orientationConfirmed: true },
+                } : current)}
+              >
+                <Text style={s.pillTxt}>Saved normally</Text>
+              </Pressable>
+              <Pressable
+                style={s.pill}
+                onPress={() => setMedia(current => current ? {
+                  ...current,
+                  captureMetadata: { ...current.captureMetadata, isMirrored: true, orientationConfirmed: true },
+                } : current)}
+              >
+                <Text style={s.pillTxt}>Saved mirrored</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         {media?.type === 'video' && poseAvailable && (
           <View style={s.card}>
             <Text style={s.cardLabel}>AUTOMATIC VIDEO ANALYSIS</Text>
@@ -980,7 +1076,7 @@ export default function AnalyzeScreen() {
                 imageUri={analyzableStillUri}
                 aspectRatio={overlayAspectRatio}
                 autoLandmarks={autoLandmarks.length > 0 ? autoLandmarks : pose.landmarks}
-                landmarks={pose.landmarks}
+                landmarks={displayLandmarks ?? pose.landmarks}
                 onCancel={() => setEditingMarkers(false)}
                 onSave={saveLandmarkCorrections}
               />
@@ -989,10 +1085,11 @@ export default function AnalyzeScreen() {
                 <PoseOverlay
                   imageUri={analyzableStillUri}
                   aspectRatio={overlayAspectRatio}
-                  landmarks={pose.landmarks}
+                  landmarks={displayLandmarks ?? pose.landmarks}
                   angles={displayAngles}
                   showSkeleton={showSkeleton}
                   showAngles={showAngleLabels}
+                  connections={overlayConfig.visibleConnections}
                 />
                 <View style={s.toggleRow}>
                   <View style={s.toggleItem}>
@@ -1158,9 +1255,9 @@ export default function AnalyzeScreen() {
 
         {/* Save */}
         <Pressable
-          style={[s.primaryBtn, (!canSave || saving || closestSideUnresolved) && { opacity: 0.4 }]}
+          style={[s.primaryBtn, (!canSave || saving || closestSideUnresolved || orientationUnconfirmed) && { opacity: 0.4 }]}
           onPress={handleSave}
-          disabled={!canSave || saving || closestSideUnresolved}
+          disabled={!canSave || saving || closestSideUnresolved || orientationUnconfirmed}
         >
           <Text style={s.primaryBtnTxt}>{saving ? 'Saving…' : 'Save Analysis'}</Text>
         </Pressable>
@@ -1172,6 +1269,9 @@ export default function AnalyzeScreen() {
         {canSave && closestSideUnresolved && (
           <Text style={s.helper}>Choose which side is closest to the camera above to save.</Text>
         )}
+        {canSave && orientationUnconfirmed ? (
+          <Text style={s.helper}>Confirm whether the saved media is mirrored before saving.</Text>
+        ) : null}
 
         {/* Footer disclaimer */}
         <Text style={s.smallDisclaimer}>{MOVEMENT_SAFETY_DISCLAIMER}</Text>
@@ -1184,6 +1284,7 @@ export default function AnalyzeScreen() {
         dion={dionEntry}
         title={info.title}
         durationSec={cameraDurationSec}
+        captureMode={cameraMode}
       />
     </View>
   );

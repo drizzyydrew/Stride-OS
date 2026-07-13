@@ -11,13 +11,12 @@ type Props = {
   accentColor?: string;
   dark?:        boolean;
   textColor?:   string;
-  taglineColor?: string;
 };
 
-const CONFIG: Record<Size, { chevH: number; fontSz: number; tag: boolean; fullLockup: boolean }> = {
-  sm: { chevH:  28, fontSz:  0, tag: false, fullLockup: false },
-  md: { chevH:  40, fontSz: 26, tag: false, fullLockup: true },
-  lg: { chevH: 120, fontSz: 52, tag:  true, fullLockup: true },
+const CONFIG: Record<Size, { chevH: number; fontSz: number; fullLockup: boolean }> = {
+  sm: { chevH:  28, fontSz:  0, fullLockup: false },
+  md: { chevH:  40, fontSz: 26, fullLockup: true },
+  lg: { chevH: 120, fontSz: 52, fullLockup: true },
 };
 
 const ICON_CHEVRON_PATHS = [
@@ -38,7 +37,7 @@ const SAGE2 = '#9DB2A0';
 const SAND = '#DCC0A7';
 const BROWN = '#6E8BA0';
 
-export function AppLogo({ size = 'md', accentColor, dark, textColor, taglineColor }: Props) {
+export function AppLogo({ size = 'md', accentColor, dark, textColor }: Props) {
   const c   = useColors();
   const cfg = CONFIG[size];
 
@@ -81,11 +80,6 @@ export function AppLogo({ size = 'md', accentColor, dark, textColor, taglineColo
         </View>
       )}
 
-      {cfg.tag && (
-        <Text style={[styles.tagline, { color: taglineColor ?? c.textDim }]}>
-          MOVE NOW · AGE GRACEFULLY
-        </Text>
-      )}
     </View>
   );
 }
@@ -107,11 +101,5 @@ const styles = StyleSheet.create({
   os: {
     fontFamily: 'CormorantGaramond_700Bold',
     fontWeight: '700',
-  },
-  tagline: {
-    fontFamily:    'DMSans_400Regular',
-    fontSize:       11,
-    fontWeight:    '500',
-    letterSpacing:  1.8,
   },
 });
