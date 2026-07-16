@@ -1,5 +1,10 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import {
+  expectedReadinessNotificationCount,
+  readinessReminderWeekdays,
+  type ReadinessReminderSchedule,
+} from '../utils/notificationSchedule';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -12,12 +17,15 @@ Notifications.setNotificationHandler({
 
 const WORKOUT_NOTIFICATION_ID = 'strideos-workout-reminder';
 const READINESS_NOTIFICATION_ID = 'strideos-readiness-reminder';
+const LEGACY_DAILY_READINESS_REMINDER_ID = 'strideos-daily-readiness-5am';
 
 export type NotificationPrefs = {
   enabled: boolean;
   time: string;
   workout: boolean;
   readiness: boolean;
+  readinessSchedule?: ReadinessReminderSchedule;
+  readinessDays?: number[];
 };
 
 export type TrainingNotificationScheduleStatus = {
@@ -69,9 +77,15 @@ export async function getNotificationAccessStatus(): Promise<boolean> {
 }
 
 export async function clearTrainingNotifications() {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const readinessIdentifiers = scheduled
+    .map(notification => notification.identifier)
+    .filter(identifier => identifier === READINESS_NOTIFICATION_ID || identifier.startsWith(`${READINESS_NOTIFICATION_ID}-`));
   await Promise.all([
     Notifications.cancelScheduledNotificationAsync(WORKOUT_NOTIFICATION_ID).catch(() => undefined),
-    Notifications.cancelScheduledNotificationAsync(READINESS_NOTIFICATION_ID).catch(() => undefined),
+    Notifications.cancelScheduledNotificationAsync(LEGACY_DAILY_READINESS_REMINDER_ID).catch(() => undefined),
+    ...readinessIdentifiers.map(identifier =>
+      Notifications.cancelScheduledNotificationAsync(identifier).catch(() => undefined)),
   ]);
 }
 
@@ -81,13 +95,19 @@ export async function getTrainingNotificationScheduleStatus(
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   const identifiers = new Set(scheduled.map(notification => notification.identifier));
   const workout = identifiers.has(WORKOUT_NOTIFICATION_ID);
-  const readiness = identifiers.has(READINESS_NOTIFICATION_ID);
+  const readinessCount = [...identifiers].filter(identifier =>
+    identifier === READINESS_NOTIFICATION_ID || identifier.startsWith(`${READINESS_NOTIFICATION_ID}-`)).length;
+  const readiness = readinessCount > 0;
 
   const expected = prefs?.enabled
-    ? Number(prefs.workout) + Number(prefs.readiness)
+    ? Number(prefs.workout) + expectedReadinessNotificationCount(
+      prefs.readiness,
+      prefs.readinessSchedule ?? 'daily',
+      prefs.readinessDays,
+    )
     : 0;
-  const actualExpected = Number(prefs?.workout ? workout : false) + Number(prefs?.readiness ? readiness : false);
-  const scheduledTraining = Number(workout) + Number(readiness);
+  const actualExpected = Number(prefs?.workout ? workout : false) + (prefs?.readiness ? readinessCount : 0);
+  const scheduledTraining = Number(workout) + readinessCount;
 
   return {
     workout,
@@ -108,19 +128,31 @@ export async function scheduleTrainingNotifications(prefs: NotificationPrefs) {
   const { hour, minute } = parseTime(prefs.time);
 
   if (prefs.readiness) {
-    await Notifications.scheduleNotificationAsync({
-      identifier: READINESS_NOTIFICATION_ID,
-      content: {
-        title: 'StrideOS readiness check-in',
-        body: 'Log sleep, soreness, and readiness before today’s training.',
-        data: { url: '/(tabs)/dashboard' },
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour,
-        minute,
-      },
-    });
+    const content = {
+      title: 'Morning readiness check',
+      body: 'Log sleep, soreness, and readiness before today’s training.',
+      data: { url: '/(tabs)/dashboard' },
+    };
+    const schedule = prefs.readinessSchedule ?? 'daily';
+    const days = readinessReminderWeekdays(schedule, prefs.readinessDays);
+    if (schedule === 'daily') {
+      await Notifications.scheduleNotificationAsync({
+        identifier: READINESS_NOTIFICATION_ID,
+        content,
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
+      });
+    } else {
+      await Promise.all(days.map(weekday => Notifications.scheduleNotificationAsync({
+        identifier: `${READINESS_NOTIFICATION_ID}-${weekday}`,
+        content,
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+          weekday,
+          hour,
+          minute,
+        },
+      })));
+    }
   }
 
   if (prefs.workout) {
@@ -138,41 +170,6 @@ export async function scheduleTrainingNotifications(prefs: NotificationPrefs) {
       },
     });
   }
-}
-
-// Fixed 5:00 AM daily readiness reminder — separate from the user-configurable
-// workout/readiness reminders above (scheduleTrainingNotifications), which share
-// a single toggle+time in Settings. This one is dedicated to the Dashboard's
-// daily readiness check-in and always fires at 5:00 AM device-local time.
-const DAILY_READINESS_REMINDER_ID = 'strideos-daily-readiness-5am';
-
-export async function scheduleDailyReadinessReminder(): Promise<boolean> {
-  const granted = await requestNotificationAccess();
-  if (!granted) return false;
-
-  // Cancel any existing schedule under this identifier first so re-enabling
-  // (or calling this more than once) never results in duplicate reminders.
-  await Notifications.cancelScheduledNotificationAsync(DAILY_READINESS_REMINDER_ID).catch(() => undefined);
-
-  await Notifications.scheduleNotificationAsync({
-    identifier: DAILY_READINESS_REMINDER_ID,
-    content: {
-      title: 'Morning readiness check',
-      body: 'Log how you’re feeling so StrideOS can adjust today’s training.',
-      data: { url: '/(tabs)/dashboard' },
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour: 5,
-      minute: 0,
-    },
-  });
-
-  return true;
-}
-
-export async function cancelDailyReadinessReminder(): Promise<void> {
-  await Notifications.cancelScheduledNotificationAsync(DAILY_READINESS_REMINDER_ID).catch(() => undefined);
 }
 
 export async function sendRunAlertNotification(body: string) {

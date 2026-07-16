@@ -96,3 +96,19 @@ test('extensionless uri falls back to mimeType when supported', async () => {
   );
   assert.equal(result, null);
 });
+
+test('older video is accepted without a creation-date restriction', async () => {
+  const result = await validatePickedVideo(
+    { uri: 'file:///video-from-2019.mov', duration: 5000, mimeType: 'video/quicktime' },
+    okFileInfo(),
+  );
+  assert.equal(result, null);
+});
+
+test('video with missing creation metadata is accepted', async () => {
+  const result = await validatePickedVideo(
+    { uri: 'file:///video-without-date.mp4', duration: null, mimeType: 'video/mp4' },
+    okFileInfo(),
+  );
+  assert.equal(result, null);
+});

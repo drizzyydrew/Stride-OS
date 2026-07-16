@@ -184,6 +184,6 @@ export function describeTrainingLoadPattern(acwrSeverity: TrendSeverity): string
     case 'warning':
       return 'Recent training load has climbed noticeably faster than your longer-term average. Consider an easier week to let this settle.';
     case 'critical':
-      return 'Recent training load is well above your longer-term average — this pattern is associated with higher injury risk. An easier week is recommended.';
+      return 'Recent training load is well above your longer-term average. This workload trend has important limitations, but an easier week may support recovery.';
   }
 }

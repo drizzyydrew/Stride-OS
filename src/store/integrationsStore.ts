@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { StravaTokens } from '../lib/strava';
 import { clearStravaTokens } from '../lib/strava';
+import { migrateMorningReminderPreferences } from '../utils/notificationSchedule';
 
 type IntegrationsStore = {
   healthKitEnabled:   boolean;
@@ -12,6 +13,9 @@ type IntegrationsStore = {
   notificationTime:   string;
   workoutNotifications: boolean;
   readinessNotifications: boolean;
+  readinessNotificationSchedule: 'daily' | 'weekdays' | 'custom';
+  readinessNotificationDays: number[];
+  morningReminderMigratedV37: boolean;
   stravaConnected:    boolean;
   stravaAccessToken:  string | null;
   stravaRefreshToken: string | null;
@@ -23,6 +27,9 @@ type IntegrationsStore = {
   setNotificationTime: (time: string)        => void;
   setWorkoutNotifications: (enabled: boolean) => void;
   setReadinessNotifications: (enabled: boolean) => void;
+  setReadinessNotificationSchedule: (schedule: 'daily' | 'weekdays' | 'custom') => void;
+  setReadinessNotificationDays: (days: number[]) => void;
+  migrateMorningReminderV37: (legacyEnabled: boolean) => void;
   setStrava:    (tokens: StravaTokens | null) => void;
 };
 
@@ -35,6 +42,9 @@ export const useIntegrationsStore = create<IntegrationsStore>()(
       notificationTime:   '07:00',
       workoutNotifications: true,
       readinessNotifications: true,
+      readinessNotificationSchedule: 'daily',
+      readinessNotificationDays: [2, 3, 4, 5, 6],
+      morningReminderMigratedV37: false,
       stravaConnected:    false,
       stravaAccessToken:  null,
       stravaRefreshToken: null,
@@ -46,6 +56,14 @@ export const useIntegrationsStore = create<IntegrationsStore>()(
       setNotificationTime: (time) => set({ notificationTime: time }),
       setWorkoutNotifications: (enabled) => set({ workoutNotifications: enabled }),
       setReadinessNotifications: (enabled) => set({ readinessNotifications: enabled }),
+      setReadinessNotificationSchedule: (schedule) => set({ readinessNotificationSchedule: schedule }),
+      setReadinessNotificationDays: (days) => set({
+        readinessNotificationDays: Array.from(new Set(days))
+          .filter(day => Number.isInteger(day) && day >= 1 && day <= 7)
+          .sort((a, b) => a - b),
+      }),
+      migrateMorningReminderV37: (legacyEnabled) => set(state =>
+        migrateMorningReminderPreferences(state, legacyEnabled)),
 
       setStrava: (tokens) => {
         if (!tokens) {
@@ -76,6 +94,9 @@ export const useIntegrationsStore = create<IntegrationsStore>()(
         notificationTime:   state.notificationTime,
         workoutNotifications: state.workoutNotifications,
         readinessNotifications: state.readinessNotifications,
+        readinessNotificationSchedule: state.readinessNotificationSchedule,
+        readinessNotificationDays: state.readinessNotificationDays,
+        morningReminderMigratedV37: state.morningReminderMigratedV37,
         stravaConnected:    state.stravaConnected,
         stravaTokenExpiry:  state.stravaTokenExpiry,
       }),

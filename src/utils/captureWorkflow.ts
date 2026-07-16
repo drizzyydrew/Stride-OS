@@ -20,6 +20,20 @@ export function canStartCapture(stage: CaptureStage, cameraReady: boolean, captu
   return stage === 'setup' && cameraReady && !capturePending;
 }
 
+export function isCurrentCameraSessionReady(
+  activeSessionId: number,
+  readySessionId: number | null,
+): boolean {
+  return readySessionId === activeSessionId;
+}
+
+export function shouldCommitCaptureOperation(
+  activeOperationId: number,
+  completedOperationId: number,
+): boolean {
+  return activeOperationId === completedOperationId;
+}
+
 export function captureMetadataForFacing(facing: CameraType) {
   // CameraView mirror=false is intentional: front captures are stored in a
   // known, unmirrored orientation so anatomical left/right never changes

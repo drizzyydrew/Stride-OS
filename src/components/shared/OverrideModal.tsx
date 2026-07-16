@@ -61,7 +61,7 @@ function readinessColor(fatigue: number, recovery: number): string {
 
 function readinessMessage(fatigue: number, recovery: number): string {
   if (fatigue > 75) {
-    return `Your fatigue score is ${fatigue}/100 — your body is carrying substantial training stress. Training hard now increases injury risk and delays recovery.`;
+    return `Your fatigue score is ${fatigue}/100 — your body is carrying substantial training stress. Training hard now may delay recovery.`;
   }
   if (recovery < 35) {
     return `Your recovery score is ${recovery}/100 — your body has not adequately recovered from prior stress. Hard training in this state compounds fatigue without producing adaptation.`;

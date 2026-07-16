@@ -101,7 +101,7 @@ function recoveryInsight(input: CoachingInput): CoachInsight | null {
       id: 'recovery_critical', category: 'recovery', severity: 'critical',
       priority: priorityFor('critical', true, declining), confidence: conf,
       title:  'Recovery critically low',
-      body:   `Recovery is at ${recoveryScore}/100${declining ? ', still declining' : ''}. Hard training now produces injury risk, not fitness.`,
+      body:   `Recovery is at ${recoveryScore}/100${declining ? ', still declining' : ''}. Hard training now may add more fatigue than useful adaptation.`,
       why:    'Below 40/100, sympathetic dominance suppresses protein synthesis and elevates cortisol. Adding load compounds the inflammatory response without triggering positive adaptation — the physiological equivalent of withdrawing from an empty account.',
       action: 'Rest or very gentle movement only. Prioritize 8+ hours sleep, hydration, and caloric intake. Reassess in 24 hours before committing to any intensity work.',
     };
@@ -228,7 +228,7 @@ function overtrainingInsight(input: CoachingInput): CoachInsight | null {
       priority: priorityFor('critical', true, rising), confidence: conf,
       title:  'Acute training load spike',
       body:   `ACWR is ${acwr.toFixed(2)} — well above the 1.5 injury-risk ceiling. Soft tissue and immune function are under significant stress.`,
-      why:    'Gabbett (2016) meta-analysis: ACWR > 1.5 is associated with a 3–4× increase in soft tissue injury risk. The acute workload has spiked far above what the chronic base has prepared tissue to handle, creating mechanical overload risk even at easy paces.',
+      why:    'Recent workload is far above the longer-term average. ACWR has substantial limitations and cannot predict injury, but this pattern supports a conservative recovery-focused adjustment.',
       action: 'No hard sessions for 5–7 days. Drop weekly mileage by 30%. Focus on sleep, nutrition, and monitoring for early injury symptoms (localized pain, sharp tightness).',
     };
   }
@@ -239,7 +239,7 @@ function overtrainingInsight(input: CoachingInput): CoachInsight | null {
       priority: priorityFor('warning', true, rising), confidence: conf,
       title:  'Load ratio elevated',
       body:   `ACWR is ${acwr.toFixed(2)} — in the elevated-risk zone (ceiling: 1.3). Acute load is outpacing your chronic fitness base.`,
-      why:    'Between 1.3 and 1.5, injury risk approximately doubles relative to the optimal zone. The chronic base (42-day average) represents tissue capacity built over weeks; spikes above this signal that acute load is exceeding what musculoskeletal structures can absorb.',
+      why:    'Recent workload is moderately above the longer-term average. Treat this as a workload trend—not a tissue-capacity measurement—and use recovery and symptom context before progressing.',
       action: 'Cap this week\'s mileage at last week\'s level. Replace any hard session with easy aerobic work. The next 2–3 weeks should be neutral or slightly reduced before building again.',
     };
   }
@@ -250,7 +250,7 @@ function overtrainingInsight(input: CoachingInput): CoachInsight | null {
       priority: priorityFor('positive', false, false), confidence: conf,
       title:  'Training load in optimal zone',
       body:   `ACWR is ${acwr.toFixed(2)} — in the ideal 0.8–1.3 range. Acute load is well-matched to your chronic fitness base.`,
-      why:    'The 0.8–1.3 ACWR zone is where adaptation occurs without disproportionate injury risk. Fitness is built here: acute load is challenging enough to drive stimulus, but not so far above the chronic base that tissue capacity is overwhelmed.',
+      why:    'Recent and longer-term workload are relatively close. This may reflect steadier progression, but the ratio does not diagnose readiness or guarantee a favorable outcome.',
       action: 'Continue progressive load management. The next volume increase can be planned for next week — don\'t jump more than 10% in a single week.',
     };
   }
@@ -281,7 +281,7 @@ function consistencyInsight(input: CoachingInput): CoachInsight | null {
       priority: priorityFor('positive', false, false), confidence: conf,
       title:  'Rock-solid week-to-week consistency',
       body:   `Mileage variance is very low across ${historyWeeks} weeks — your training stimulus is highly predictable.`,
-      why:    'Consistent weekly volume reduces injury risk dramatically. Erratic load — big week, small week, big week — creates repeated spikes in the acute:chronic ratio. Even consistent moderate-volume training produces better outcomes than irregular high-volume training.',
+      why:    'Consistent weekly volume is generally easier to plan and recover from than repeated large swings. Use this pattern alongside symptoms, sleep, and performance rather than as a stand-alone risk score.',
       action: 'This consistency is a real asset — protect it. Plan next week\'s mileage target now and commit to it before you start.',
     };
   }
@@ -291,7 +291,7 @@ function consistencyInsight(input: CoachingInput): CoachInsight | null {
       id: 'consistency_low', category: 'consistency', severity: 'caution',
       priority: priorityFor('caution', false, false), confidence: conf,
       title:  'High week-to-week variability',
-      body:   `Training volume is varying significantly week-to-week across ${historyWeeks} weeks. Irregular load spikes elevate injury risk.`,
+      body:   `Training volume is varying significantly week-to-week across ${historyWeeks} weeks. Consider smoothing large load swings.`,
       why:    'High weekly variance creates repeated acute:chronic spikes even if average mileage is appropriate. Tissue adapts to a consistent rhythm of stimulus and recovery — erratic loading means the chronic base never stabilizes, keeping the injury-risk window perpetually elevated.',
       action: 'For the next 3 weeks, set a fixed weekly mileage target and stick to ±5% of it. Predictability builds the chronic base that protects you during hard blocks.',
     };
@@ -724,7 +724,7 @@ function generateRaceReadiness(input: CoachingInput): RaceReadinessSummary {
       weakest[0] === 'aerobicBase' ? 'increase long run adherence to build endurance capacity' :
       weakest[0] === 'speedWork'   ? 'add structured quality sessions to raise lactate threshold' :
       weakest[0] === 'recovery'    ? 'reduce fatigue before peak race fitness can express itself' :
-      weakest[0] === 'consistency' ? 'reduce week-to-week volume variance to protect injury risk' :
+      weakest[0] === 'consistency' ? 'reduce week-to-week volume variance to make recovery more predictable' :
       'align training phase with race proximity for optimal taper timing'
     }.`,
     input.weeksRemaining <= 3

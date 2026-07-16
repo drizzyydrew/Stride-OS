@@ -29,7 +29,7 @@ import { useMovementStore } from '../../../src/store/movementStore';
 import { resolveDocumentUri } from '../../../src/lib/mediaPaths';
 import { loadPoseSequence } from '../../../src/lib/poseSequenceStorage';
 import { computeEstimatedAngles, computeFrontalMetrics } from '../../../src/utils/poseAngles';
-import { analyzeSequence, repConsistency } from '../../../src/utils/poseSequence';
+import { analyzeSequence, buildRawSequenceMaterial, repConsistency } from '../../../src/utils/poseSequence';
 import { ANALYSIS_KIND_INFO, buildSequenceFindings } from '../../../src/utils/movementEngine';
 import {
   filterAngleSeries,
@@ -48,7 +48,9 @@ import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 import type {
   AngleSeries,
+  AngleSeriesPoint,
   AnalysisConfidence,
+  MovementAnalysis,
   MovementAnalysisKind,
   PoseLandmarkRecord,
 } from '../../../src/types/movement';
@@ -117,6 +119,21 @@ function seriesSummary(series: AngleSeries): string | null {
   return `${series.name}${series.side !== 'center' ? ` — ${series.side}` : ''}: ${Math.round(Math.min(...values))}° to ${Math.round(Math.max(...values))}° Estimated`;
 }
 
+function estimatedBikeFitPhases(series: AngleSeries[]): MovementAnalysis['bikeFitPhases'] {
+  const knee = series.find(item => item.name === 'Knee flexion' && item.side !== 'center');
+  const values = (knee?.points ?? []).filter(
+    (point): point is AngleSeriesPoint & { degrees: number } => point.degrees !== null,
+  );
+  if (values.length === 0) return undefined;
+  const top = values.reduce((a, b) => b.degrees > a.degrees ? b : a);
+  const bottom = values.reduce((a, b) => b.degrees < a.degrees ? b : a);
+  return {
+    topDeadCenterMs: top.timeMs,
+    bottomDeadCenterMs: bottom.timeMs,
+    source: 'estimated',
+  };
+}
+
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function VideoAnalysisScreen() {
@@ -131,6 +148,7 @@ export default function VideoAnalysisScreen() {
   const [showAngleLabels, setShowAngleLabels] = useState(true);
   const [videoBox, setVideoBox] = useState<{ w: number; h: number } | null>(null);
   const [editingReferenceMarkers, setEditingReferenceMarkers] = useState(false);
+  const [scrubInteractionActive, setScrubInteractionActive] = useState(false);
 
   const [fullSequence, setFullSequence] = useState<PoseSequenceResult | null>(null);
   const [sequenceState, setSequenceState] = useState<'idle' | 'loading' | 'loaded' | 'unavailable'>('idle');
@@ -211,6 +229,9 @@ export default function VideoAnalysisScreen() {
       return !keyFrame.label.toLowerCase().includes(`— ${farSide}`);
     });
   const isStrength = STRENGTH_KINDS.includes(analysis.type);
+  const editableReferenceLandmarks = referenceOverlayConfig.visibleJoints.filter(name =>
+    /_(shoulder|elbow|wrist|hip|knee|ankle)$/.test(name),
+  );
 
   const durationMs = analysis.videoDurationMs && analysis.videoDurationMs > 0
     ? analysis.videoDurationMs
@@ -256,6 +277,7 @@ export default function VideoAnalysisScreen() {
       landmarkSource: corrected ? 'user_corrected' : 'auto',
       rawEstimatedAngles: rawAngles,
       estimatedAngles: filterEstimatedAngles(rawAngles, analysis!.type, analysis!.cameraView, analysis!.closestSide),
+      measurementConventionVersion: 2,
     });
     setEditingReferenceMarkers(false);
   }
@@ -268,16 +290,40 @@ export default function VideoAnalysisScreen() {
     const nextSequence = fullSequence
       ? analyzeSequence(fullSequence, analysis!.type, analysis!.cameraView, processingSide)
       : null;
+    const rawSequenceMaterial = fullSequence
+      ? buildRawSequenceMaterial(fullSequence, analysis!.type, analysis!.cameraView)
+      : null;
     const nextAngles = filterEstimatedAngles(rawAngles, analysis!.type, analysis!.cameraView, processingSide);
     const nextSequenceFields = nextSequence ? {
       angleSeries: nextSequence.angleSeries,
+      rawAngleSeries: rawSequenceMaterial?.angleSeries,
       keyFrames: nextSequence.keyFrames,
+      rawKeyFrames: rawSequenceMaterial?.keyFrames,
       repSummaries: nextSequence.repSummaries,
       symmetryEstimates: undefined,
       sequenceConfidence: nextSequence.confidence,
       sequenceLimitations: nextSequence.limitations,
       viewFiltersMaterialized: false,
-    } : {};
+    } : {
+      angleSeries: filterAngleSeries(
+        analysis!.rawAngleSeries ?? analysis!.angleSeries ?? [],
+        analysis!.type,
+        analysis!.cameraView,
+        processingSide,
+      ),
+      keyFrames: analysis!.rawKeyFrames
+        ?.filter(frame => !frame.label.toLowerCase().includes(`— ${processingSide === 'left' ? 'right' : 'left'}`))
+        .map(frame => ({
+          ...frame,
+          landmarks: filterLandmarksForDisplay(frame.landmarks, analysis!.type, analysis!.cameraView, processingSide),
+          angles: frame.angles
+            ? filterEstimatedAngles(frame.angles, analysis!.type, analysis!.cameraView, processingSide)
+            : undefined,
+        })),
+      symmetryEstimates: undefined,
+      viewFiltersMaterialized: false,
+    };
+    const materializedSeries = nextSequence?.angleSeries ?? nextSequenceFields.angleSeries ?? [];
     const manualRecommendations = analysis!.recommendations.filter(recommendation =>
       recommendation.finding !== 'Estimated joint-angle ranges over the clip'
       && !recommendation.finding.startsWith('Estimated ')
@@ -305,7 +351,17 @@ export default function VideoAnalysisScreen() {
       closestSide: side,
       closestSideSource: 'user',
       estimatedAngles: nextAngles,
+      measurementConventionVersion: 2,
       ...nextSequenceFields,
+      bikeFitPhases: analysis!.type === 'bike_fit' && nextSequence
+        ? {
+            topDeadCenterMs: nextSequence.keyFrames.find(frame => frame.label.includes('top pedal phase'))?.timeMs,
+            bottomDeadCenterMs: nextSequence.keyFrames.find(frame => frame.label.includes('bottom pedal phase'))?.timeMs,
+            source: 'estimated',
+          }
+        : analysis!.type === 'bike_fit'
+          ? estimatedBikeFitPhases(materializedSeries)
+          : analysis!.bikeFitPhases,
       recommendations: [...normalizedAutoRecommendations, ...manualRecommendations],
     });
   }
@@ -354,7 +410,11 @@ export default function VideoAnalysisScreen() {
 
   return (
     <View style={s.root}>
-      <ScrollView contentContainerStyle={[s.content, { paddingTop: insets.top + spacing.md }]} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[s.content, { paddingTop: insets.top + spacing.md }]}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={!scrubInteractionActive && !editingReferenceMarkers}
+      >
 
         {/* Header */}
         <View style={s.headerRow}>
@@ -402,6 +462,8 @@ export default function VideoAnalysisScreen() {
                     aspectRatio={analysis.imageAspectRatio ?? 3 / 4}
                     autoLandmarks={analysis.autoLandmarks ?? analysis.landmarks ?? []}
                     landmarks={analysis.landmarks ?? []}
+                    allowedLandmarkNames={editableReferenceLandmarks}
+                    visibleConnections={referenceOverlayConfig.visibleConnections}
                     onCancel={() => setEditingReferenceMarkers(false)}
                     onSave={saveReferenceMarkerCorrections}
                   />
@@ -425,7 +487,13 @@ export default function VideoAnalysisScreen() {
                       {analysis.referenceFrameTimeMs !== undefined ? `Reference frame: ${formatTimeMs(analysis.referenceFrameTimeMs)}. ` : ''}
                       Marker confidence is stored with the saved landmarks.
                     </Text>
-                    <Pressable style={s.secondaryActionBtn} onPress={() => setEditingReferenceMarkers(true)}>
+                    <Pressable
+                      style={s.secondaryActionBtn}
+                      onPress={() => {
+                        player.pause();
+                        setEditingReferenceMarkers(true);
+                      }}
+                    >
                       <Text style={s.secondaryActionTxt}>Adjust Markers</Text>
                     </Pressable>
                   </>
@@ -497,7 +565,12 @@ export default function VideoAnalysisScreen() {
             <VideoScrubBar
               progress={progress}
               onScrub={seekToFraction}
-              onScrubEnd={seekToFraction}
+              onScrubStart={() => setScrubInteractionActive(true)}
+              onScrubEnd={fraction => {
+                seekToFraction(fraction);
+                setScrubInteractionActive(false);
+              }}
+              onScrubCancel={() => setScrubInteractionActive(false)}
               markers={durationMs > 0 ? keyFrames.map(k => k.timeMs / durationMs) : []}
             />
 
@@ -557,6 +630,9 @@ export default function VideoAnalysisScreen() {
                     seriesB={second ? { label: second.side, color: colors.chartSeriesSecondary, points: second.points } : undefined}
                     currentTimeMs={currentMs}
                     onSeekMs={seekToMs}
+                    onSeekStart={() => setScrubInteractionActive(true)}
+                    onSeekEnd={() => setScrubInteractionActive(false)}
+                    onSeekCancel={() => setScrubInteractionActive(false)}
                   />
                 );
               })}
@@ -614,7 +690,11 @@ export default function VideoAnalysisScreen() {
                       <Text style={s.repTitle}>Rep {rep.index + 1}</Text>
                       <Text style={s.detailLine}>Depth (peak knee flexion): ~{Math.round(rep.peakFlexionDeg)}°</Text>
                       <Text style={s.detailLine}>Duration: {(rep.durationMs / 1000).toFixed(1)}s</Text>
-                      {rep.hipAngleAtBottom !== undefined ? <Text style={s.detailLine}>Hip angle at bottom: ~{Math.round(rep.hipAngleAtBottom)}°</Text> : null}
+                      {rep.hipMotionAtBottom ? (
+                        <Text style={s.detailLine}>
+                          {rep.hipMotionAtBottom.name === 'Hip extension' ? 'Hip Extension' : 'Hip Flexion'} at bottom: ~{Math.round(rep.hipMotionAtBottom.degrees)}° Estimated
+                        </Text>
+                      ) : null}
                       {rep.trunkAngleAtBottom !== undefined ? <Text style={s.detailLine}>Trunk lean at bottom: ~{Math.round(rep.trunkAngleAtBottom)}°</Text> : null}
                     </View>
                   ))}
@@ -633,6 +713,23 @@ export default function VideoAnalysisScreen() {
                   </Text>
                 </View>
               )
+            ) : analysis.type === 'bike_fit' ? (
+              <View style={s.card}>
+                <Text style={s.cardLabel}>PEDAL PHASE REVIEW</Text>
+                <Text style={s.detailLine}>
+                  Top phase: {analysis.bikeFitPhases?.topDeadCenterMs !== undefined
+                    ? formatTimeMs(analysis.bikeFitPhases.topDeadCenterMs)
+                    : 'Manual confirmation required'}
+                </Text>
+                <Text style={s.detailLine}>
+                  Bottom phase: {analysis.bikeFitPhases?.bottomDeadCenterMs !== undefined
+                    ? formatTimeMs(analysis.bikeFitPhases.bottomDeadCenterMs)
+                    : 'Manual confirmation required'}
+                </Text>
+                <Text style={s.helper}>
+                  Phase timing is estimated from the visible closest-side knee cycle. Confirm the frames manually before using the angle estimates. This does not replace an in-person bike fit.
+                </Text>
+              </View>
             ) : analysis.type === 'running_gait' ? (
               symmetry.length > 0 ? (
                 symmetry.map((sym, i) => (

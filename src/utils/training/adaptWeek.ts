@@ -5,7 +5,7 @@
 // The engine combines three well-established sports science frameworks:
 //
 // 1. ACUTE:CHRONIC WORKLOAD RATIO (Gabbett 2016)
-//    ACWR > 1.3 → elevated injury risk; > 1.5 → high risk. The acute load (7-day
+//    ACWR > 1.3 indicates a recent workload increase. It is not an injury predictor. The acute load (7-day
 //    rolling average) has spiked relative to the chronic base (42-day average).
 //    The engine restricts intensity to prevent further acute spike.
 //
@@ -318,7 +318,7 @@ function transformDay(
     if (severity >= 3) return {
       newType: 'recovery_run',
       change:  'converted_to_recovery',
-      reason:  'Severe overreach — threshold session removed. Lactate adaptation requires a fresh system; hard effort on high fatigue produces injury risk, not fitness.',
+      reason:  'Severe overreach — threshold session removed. Lactate adaptation requires a fresher system; hard effort on high fatigue may add stress without useful adaptation.',
     };
     if (severity === 2) return {
       newType: 'easy_run',
@@ -335,7 +335,7 @@ function transformDay(
     if (severity >= 3) return {
       newType: 'recovery_run',
       change:  'converted_to_recovery',
-      reason:  'Severe stress — strides removed. Neuromuscular recruitment under high fatigue increases injury risk with no adaptation benefit.',
+      reason:  'Severe stress — strides removed. Neuromuscular work under high fatigue may add load with little adaptation benefit.',
     };
     if (severity === 2) return {
       newType: 'easy_run',
@@ -433,7 +433,7 @@ export function adaptWeek(ctx: AdaptationContext): AdaptationResult {
     if (isMissed) {
       // Past session that was skipped — flag but do not reschedule.
       // "Making up" missed hard sessions compresses load into fewer days,
-      // raising acute-to-chronic ratio and injury risk.
+      // raising the acute-to-chronic workload ratio.
       dayTypes.push(original);
       entries.push({
         dayIndex: i, originalType: original, adaptedType: original,

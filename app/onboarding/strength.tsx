@@ -81,7 +81,7 @@ export default function StrengthScreen() {
       </View>
 
       <Text style={s.note}>
-        Strength background influences injury risk stratification and cross-training recommendations.
+        Strength background helps tailor progression and cross-training recommendations.
         You can update this anytime in Profile.
       </Text>
     </OnboardingShell>

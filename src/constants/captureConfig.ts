@@ -27,6 +27,11 @@ export const ANALYSIS_KIND_CAPTURE: Record<MovementAnalysisKind | 'lunge_single_
     perSide: false,
     recommendedLengthCopy: 'Records for about 12 seconds — enough for several full strides.',
   },
+  bike_fit: {
+    durationSec: 15,
+    perSide: false,
+    recommendedLengthCopy: 'Records for about 15 seconds — enough for repeated top and bottom pedal phases at a representative cadence.',
+  },
   squat: {
     durationSec: 10,
     perSide: false,

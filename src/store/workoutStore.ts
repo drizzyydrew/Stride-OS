@@ -8,6 +8,8 @@ import { calculateUpdatedFatigue } from '../utils/calculateFatigue';
 import { estimateDistanceMiles } from '../utils/historyUtils';
 import { syncWorkoutLog, deleteWorkoutLog } from '../lib/syncService';
 import { syncCompletedWorkoutToExternalServices } from '../lib/externalIntegrations';
+import { useActivityStore } from './activityStore';
+import { activityFromWorkoutRecord } from '../utils/activityMigration';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -195,6 +197,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           completedWorkouts: [...state.completedWorkouts, completionKey],
           history:           [...state.history, record],
         }));
+        useActivityStore.getState().addActivity(activityFromWorkoutRecord(record, false));
 
         syncWorkoutLog(record).catch(console.warn);
         syncCompletedWorkoutToExternalServices(record).catch(console.warn);
@@ -238,6 +241,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           completedWorkouts: [...state.completedWorkouts, completionKey],
           history:           [...state.history, record],
         }));
+        useActivityStore.getState().addActivity(activityFromWorkoutRecord(record, false));
 
         syncWorkoutLog(record).catch(console.warn);
       },
@@ -245,11 +249,16 @@ export const useWorkoutStore = create<WorkoutStore>()(
       // ── Edit a logged record ──────────────────────────────────────────────────
 
       editLog: (id, updates) => {
+        const existing = get().history.find(record => record.id === id);
         set(state => ({
           history: state.history.map(r =>
             r.id === id ? { ...r, ...updates } : r,
           ),
         }));
+        if (existing) {
+          const updated = { ...existing, ...updates };
+          useActivityStore.getState().addActivity(activityFromWorkoutRecord(updated, false));
+        }
       },
 
       // ── Delete a logged record ────────────────────────────────────────────────
@@ -259,6 +268,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           completedWorkouts: state.completedWorkouts.filter(k => k !== id),
           history:           state.history.filter(r => r.id !== id),
         }));
+        useActivityStore.getState().removeActivity(`activity_workout_${id}`);
         deleteWorkoutLog(id).catch(console.warn);
       },
 
@@ -274,6 +284,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
             history:           [...state.history, ...newRecords],
           };
         });
+        useActivityStore.getState().importLegacyWorkouts(records);
       },
 
       // ── Manual log ────────────────────────────────────────────────────────────
@@ -321,6 +332,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           completedWorkouts: [...state.completedWorkouts, entry.completionKey],
           history:           [...state.history, record],
         }));
+        useActivityStore.getState().addActivity(activityFromWorkoutRecord(record, false));
 
         syncWorkoutLog(record).catch(console.warn);
         syncCompletedWorkoutToExternalServices(record).catch(console.warn);

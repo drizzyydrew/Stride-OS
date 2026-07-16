@@ -1,4 +1,8 @@
 import { getSupabaseFunctionHeaders } from './supabase';
+import {
+  budgetCoachMessages,
+  enforceCoachSystemPrompt,
+} from '../utils/coachPromptBudget';
 
 type CoachRole = 'user' | 'assistant';
 
@@ -80,13 +84,15 @@ export async function sendCoachMessage(messages: CoachMessage[], system: string)
     throw new Error('AI coach is missing Supabase configuration.');
   }
 
+  const budgetedMessages = budgetCoachMessages(messages);
+  const budgetedSystem = enforceCoachSystemPrompt(system);
   const response = await fetch(coachEndpoint(), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(await getSupabaseFunctionHeaders()),
     },
-    body: JSON.stringify({ messages, system }),
+    body: JSON.stringify({ messages: budgetedMessages, system: budgetedSystem }),
   });
 
   const body = await response.json().catch(() => ({})) as CoachResponse;

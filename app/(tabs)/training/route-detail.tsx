@@ -40,7 +40,11 @@ export default function RouteDetailScreen() {
   const route = useRouteStore(s => s.routes.find(r => r.id === routeId) ?? null);
   const updateRoute = useRouteStore(s => s.updateRoute);
   const removeRoute = useRouteStore(s => s.removeRoute);
-  const selectRoute = useRouteStore(s => s.selectRoute);
+  const attachment = useRouteStore(s => s.routeAttachment);
+  const attachRoute = useRouteStore(s => s.attachRoute);
+  const detachRouteFromToday = useRouteStore(s => s.detachRouteFromToday);
+  const reverseAttachedRoute = useRouteStore(s => s.reverseAttachedRoute);
+  const isAttached = attachment.status === 'attached' && attachment.routeId === routeId;
 
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
@@ -91,11 +95,19 @@ export default function RouteDetailScreen() {
   }
 
   function useRoute() {
-    selectRoute(route!.id);
+    attachRoute(route!.id);
     Alert.alert(
       'Route selected',
       `"${route!.name}" is set for your next tracked run. Open Training Run → start any run mode and the route line will guide you on the map.`,
       [{ text: 'OK', onPress: () => router.navigate('/(tabs)/training' as never) }],
+    );
+  }
+
+  function detachRoute() {
+    detachRouteFromToday();
+    Alert.alert(
+      'Route removed from today',
+      `"${route!.name}" is still saved. Today’s run is now in free-run mode, and you can reattach the route at any time.`,
     );
   }
 
@@ -199,12 +211,23 @@ export default function RouteDetailScreen() {
 
           <TouchableOpacity
             style={[st.useBtn, { backgroundColor: C.primary }]}
-            onPress={useRoute}
+            onPress={isAttached ? detachRoute : useRoute}
             activeOpacity={0.85}
           >
-            <Ionicons name="play-outline" size={16} color={C.onPrimary} />
-            <Text style={[st.useBtnText, { color: C.onPrimary }]}>Use Route for Next Run</Text>
+            <Ionicons name={isAttached ? 'remove-circle-outline' : 'play-outline'} size={16} color={C.onPrimary} />
+            <Text style={[st.useBtnText, { color: C.onPrimary }]}>{isAttached ? 'Remove From Today’s Run' : 'Use Route for Next Run'}</Text>
           </TouchableOpacity>
+          {isAttached ? (
+            <TouchableOpacity
+              style={[st.reverseBtn, { borderColor: C.border, backgroundColor: C.cardAlt }]}
+              onPress={reverseAttachedRoute}
+            >
+              <Ionicons name="swap-horizontal-outline" size={16} color={C.text} />
+              <Text style={[st.useBtnText, { color: C.text }]}>
+                {attachment.direction === 'reverse' ? 'Use Forward Direction' : 'Reverse Route'}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* Elevation profile */}
@@ -329,6 +352,10 @@ const st = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 13,
     marginTop: 12,
+  },
+  reverseBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    borderWidth: 1, borderRadius: 12, paddingVertical: 12, marginTop: 8,
   },
   useBtnText: { fontSize: 14, fontWeight: '800' },
   profileWrap: {

@@ -126,6 +126,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="movement" options={{ href: null }} />
       <Tabs.Screen name="activity-log/index" options={{ href: null }} />
       <Tabs.Screen name="activity-log/[entryId]" options={{ href: null }} />
+      <Tabs.Screen name="activity" options={{ href: null }} />
     </Tabs>
   );
 }

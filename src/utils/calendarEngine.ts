@@ -14,7 +14,22 @@ import type { TrainingDay }     from '../types/athlete';
 
 export type CalendarEntry = {
   date:       string;       // "YYYY-MM-DD"
-  type:       'run' | 'strength' | 'rest' | 'custom' | 'race';
+  type:
+    | 'run'
+    | 'walk'
+    | 'run_walk'
+    | 'cycling'
+    | 'swimming'
+    | 'hiking'
+    | 'skiing'
+    | 'hiit'
+    | 'mixed'
+    | 'strength'
+    | 'mobility'
+    | 'assessment'
+    | 'rest'
+    | 'custom'
+    | 'race';
   label:      string;
   color:      string;
   workout?:   Workout;

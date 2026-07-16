@@ -8,7 +8,7 @@
 //   Mujika (2004)         — recovery stagnation / parasympathetic suppression
 //   Bompa & Haff (2009)   — supercompensation periodization
 //   Mujika & Padilla (2003) — taper freshness window (10–21 days post-load)
-//   Gabbett (2016)        — ACWR spike ↔ injury risk
+//   ACWR workload trend   — interpreted conservatively, never as injury prediction
 //   Seiler (2010)         — frequency consistency as primary aerobic driver
 
 import { computeSlope, rollingAverage } from './analyticsEngine';
@@ -306,7 +306,7 @@ function buildInterpretation(
     thriving:  "Both fatigue and recovery are moving in the right direction simultaneously — the physiological fingerprint of supercompensation. Your body is rebuilding above its prior baseline.",
     adapting:  "Training load is being processed at a sustainable rate. Fatigue and recovery are in equilibrium, which is expected during a structured build phase. Watch for any fatigue creep over the next 2–3 weeks.",
     stressed:  "Training stress is outpacing recovery. This is normal during peak blocks, but if the trend continues beyond 2 weeks it shifts from productive stress to non-functional overreaching — a state that takes weeks to exit.",
-    at_risk:   "Fatigue and/or recovery are in ranges associated with elevated injury risk and performance decline (Meeusen et al. 2013). A load reduction now prevents weeks of forced rest later.",
+    at_risk:   "Fatigue and/or recovery suggest elevated training stress and possible performance decline. A temporary load reduction may support recovery.",
   };
 
   const defaultNextMap: Record<OverallState, string> = {

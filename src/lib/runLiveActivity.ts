@@ -9,6 +9,12 @@ import {
   type StrideRunControlCommand,
   type StrideRunLiveActivityPayload,
 } from 'stride-live-activity';
+import {
+  normalizeOutdoorLiveActivitySnapshot,
+  type LiveActivityControlState,
+  type OutdoorLiveActivitySnapshot,
+  type OutdoorLiveActivityType,
+} from './liveActivityContracts';
 
 export type RunLiveActivitySnapshot = {
   elapsedSeconds: number;
@@ -18,20 +24,48 @@ export type RunLiveActivitySnapshot = {
   zoneLabel: string;
   zoneStatus: string;
   isPaused: boolean;
+  activityName?: string;
+  activityType?: OutdoorLiveActivityType;
+  averageSpeedMph?: number;
+  currentInterval?: string;
+  nextTransition?: string;
+  navigationInstruction?: string;
+  cueText?: string;
+  controlState?: LiveActivityControlState;
 };
 
 function payloadFromSnapshot(snapshot: RunLiveActivitySnapshot, status?: string): StrideRunLiveActivityPayload {
-  return {
-    runName: 'Training Run',
+  return normalizeOutdoorLiveActivitySnapshot({
+    activityName: snapshot.activityName ?? 'Training Run',
+    activityType: snapshot.activityType ?? 'running',
     elapsedSeconds: snapshot.elapsedSeconds,
     distanceMiles: snapshot.distanceMiles,
-    averagePace: snapshot.averagePace || '--:--',
-    heartRate: snapshot.heartRateBpm ?? 0,
-    zoneLabel: snapshot.zoneLabel || 'Zone --',
-    zoneStatus: snapshot.zoneStatus || 'unknown',
-    status: status ?? (snapshot.isPaused ? 'Paused' : 'Running'),
+    averagePace: snapshot.averagePace,
+    averageSpeedMph: snapshot.averageSpeedMph,
+    heartRateBpm: snapshot.heartRateBpm,
+    zoneLabel: snapshot.zoneLabel,
+    zoneStatus: snapshot.zoneStatus,
     isPaused: snapshot.isPaused,
-  };
+    currentInterval: snapshot.currentInterval,
+    nextTransition: snapshot.nextTransition,
+    navigationInstruction: snapshot.navigationInstruction,
+    cueText: snapshot.cueText,
+    controlState: snapshot.controlState,
+  }, status ?? (snapshot.isPaused ? 'Paused' : 'Active'));
+}
+
+export type { OutdoorLiveActivitySnapshot, OutdoorLiveActivityType };
+
+export async function startOutdoorLiveActivity(snapshot: OutdoorLiveActivitySnapshot): Promise<void> {
+  await startStrideRunLiveActivity(normalizeOutdoorLiveActivitySnapshot(snapshot));
+}
+
+export async function updateOutdoorLiveActivity(snapshot: OutdoorLiveActivitySnapshot): Promise<void> {
+  await updateStrideRunLiveActivity(normalizeOutdoorLiveActivitySnapshot(snapshot));
+}
+
+export async function endOutdoorLiveActivity(snapshot: OutdoorLiveActivitySnapshot): Promise<void> {
+  await endStrideRunLiveActivity(normalizeOutdoorLiveActivitySnapshot(snapshot, 'Finished'));
 }
 
 export async function startRunLiveActivity(snapshot: RunLiveActivitySnapshot): Promise<void> {
@@ -65,6 +99,7 @@ const COMMAND_MAX_AGE_MS = 2 * 60 * 1000;
 export function startControlCommandPolling(
   handlers: Partial<Record<StrideControlAction, () => void>>,
 ): () => void {
+  const consumedIds = new Set<string>();
   const id = setInterval(() => {
     const command = getPendingRunControlCommand();
     if (!command) return;
@@ -72,12 +107,20 @@ export function startControlCommandPolling(
     // Only consume commands this poller owns — a run poller must not eat a
     // strength command (and vice versa) if both are ever active together.
     if (!handler) return;
+    if (consumedIds.has(command.id)) {
+      clearPendingRunControlCommand(command.id);
+      return;
+    }
+    consumedIds.add(command.id);
     clearPendingRunControlCommand(command.id);
     const ageMs = Date.now() - command.createdAt * 1000;
     if (ageMs > COMMAND_MAX_AGE_MS) return;
     handler();
   }, COMMAND_POLL_INTERVAL_MS);
-  return () => clearInterval(id);
+  return () => {
+    clearInterval(id);
+    consumedIds.clear();
+  };
 }
 
 export {

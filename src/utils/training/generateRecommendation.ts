@@ -27,7 +27,7 @@
 // RECOVERY RECOMMENDATIONS
 //   Triggered by discrete thresholds. Priority = worst signal.
 //
-// INJURY RISK
+// TRAINING-STRESS REVIEW
 //   ACWR > 1.5 → high. ACWR > 1.3 OR fatigue > 70 → elevated.
 //   Combined fatigue + soreness overreach per Meeusen (2013).
 //
@@ -250,7 +250,7 @@ function buildRecoveryRec(
   return { priority, actions: unique };
 }
 
-// ─── Injury risk warning ──────────────────────────────────────────────────────
+// ─── Training-stress warning ─────────────────────────────────────────────────
 //
 // Triggers are surfaced as readable strings — the athlete can see exactly why
 // the flag was raised without needing to interpret raw numbers.
@@ -291,7 +291,7 @@ function buildInjuryRisk(
     'none';
 
   const advice =
-    level === 'high'     ? 'Skip or heavily reduce today\'s session. No training stimulus is worth the injury risk at this point.' :
+    level === 'high'     ? 'Skip or heavily reduce today\'s session. Current fatigue and recovery do not support the planned load.' :
     level === 'elevated' ? 'Scale back intensity and duration. A quality easy effort is worth more than grinding through a hard session.' :
     'No significant risk factors detected. Train as planned.';
 

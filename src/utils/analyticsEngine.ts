@@ -64,7 +64,7 @@ export function computeACWR(acute: number, chronic: number): number {
 // < 0.8  → undertraining / detraining
 // 0.8–1.3 → optimal training zone
 // 1.3–1.5 → elevated risk
-// > 1.5  → high injury risk
+// > 1.5  → abrupt recent workload increase; conservative review
 export function classifyACWR(acwr: number): TrendSeverity {
   if (acwr < 0.8)   return 'neutral';
   if (acwr <= 1.3)  return 'positive';

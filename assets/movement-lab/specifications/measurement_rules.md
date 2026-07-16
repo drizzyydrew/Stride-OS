@@ -21,7 +21,7 @@ Every automatic angle is an **estimated 2D projection**, not an exact clinical m
 - Do not report frontal-plane alignment as a primary metric from a lateral image.
 - No 45-degree view supports automatic measurement unless a future specification defines and validates it.
 - Head position is a qualitative head-to-trunk relationship unless a validated metric is explicitly defined.
-- `Hip angle` means the visible shoulder-hip-knee relationship used by the current 2D system; do not relabel it as isolated anatomical hip-joint flexion without qualification.
+- Lateral hip sagittal motion uses the visible trunk and femur axes to estimate anatomical flexion or extension. Neutral upright standing is approximately 0° flexion; increasing flexion is positive; extension is named directly rather than shown as negative flexion. Always qualify it as an estimated two-dimensional anatomical angle based on visible landmarks and camera view, not isolated clinical goniometry.
 - Ankle dorsiflexion, plantarflexion, footstrike, foot progression, toe angle, and heel height require foot/heel/toe landmarks or a manual method. They are not current automatic measurements.
 - Joint moments, forces, loading rates, muscle activation, pain, tissue stress, and injury risk cannot be derived from a generated still or ordinary monocular 2D video.
 - Manual findings must identify the observer or user-entered source when stored.
@@ -35,7 +35,7 @@ Every automatic angle is an **estimated 2D projection**, not an exact clinical m
 
 - Head position relative to trunk: qualitative manual observation.
 - Trunk inclination relative to vertical: automatic now from lateral view.
-- Closest-side hip angle/flexion pattern: automatic now as an estimated hip angle.
+- Closest-side anatomical hip flexion or extension pattern: automatic now as an estimated 2D sagittal angle when lateral orientation is established.
 - Closest-side knee flexion and depth across repetitions: automatic now.
 - Closest-side ankle dorsiflexion: manual now; future automatic only with reliable heel/toe/foot landmarks.
 - Heel contact and foot stability: manual qualitative observation.
@@ -53,7 +53,7 @@ Every automatic angle is an **estimated 2D projection**, not an exact clinical m
 ### Automatic now
 
 - Closest-side knee flexion series and peak depth.
-- Closest-side estimated hip angle at bottom.
+- Closest-side estimated anatomical hip flexion at bottom.
 - Trunk inclination at bottom.
 - Repetition count, duration, and depth consistency when detection confidence supports them.
 - Supplemental frontal pelvic obliquity, frontal knee position, and trunk lateral lean.
@@ -73,7 +73,7 @@ Every automatic angle is an **estimated 2D projection**, not an exact clinical m
 - Trunk lateral lean: automatic now.
 - Hip adduction appearance and femur alignment: manual now; future automatic after metric validation.
 - Depth control and rep-to-rep consistency: manual from frontal view; automatic from a separate lateral view.
-- Lateral-view standing-leg knee flexion, estimated hip angle, and trunk inclination: automatic now for the closest leg only.
+- Lateral-view standing-leg knee flexion, estimated anatomical hip flexion or extension, and trunk inclination: automatic now for the closest leg only.
 - Foot stability and balance corrections: manual observation.
 
 ### Do not measure
@@ -436,6 +436,50 @@ Every automatic angle is an **estimated 2D projection**, not an exact clinical m
 ### Manual now
 
 - Movement name, purpose, start/end phase, selected view, closest side when lateral, equipment, observer notes, and all unsupported-but-relevant qualitative observations.
+
+## 14. Bike Fit — Standalone Movement Lab
+
+**Required view:** direct lateral, camera perpendicular to the rider at approximately hip/crank height. **Allowed supplemental view:** none in the initial workflow.
+
+### Measure
+
+- Closest-side knee flexion near the estimated top pedal phase: automatic now when lateral orientation, phase visibility, and landmark confidence pass.
+- Closest-side knee angle near the estimated bottom pedal phase: automatic now under the same conditions.
+- Closest-side estimated anatomical hip flexion near the top pedal phase: automatic now.
+- Trunk inclination: automatic now.
+- Closest-side elbow angle and shoulder position: automatic now only when the arm landmarks remain visible and confident.
+- Top and bottom phase selection: estimated automatically from the visible knee cycle, then manually reviewed.
+- Rider comfort, bicycle type, trainer setup, resistance, cadence context, and symptoms: manual context.
+
+### Do not measure
+
+- Both sides' sagittal curves or lateral symmetry from one side-view clip.
+- Ankle position or angle without validated foot landmarks.
+- Saddle fore-aft from knee position without true pedal-spindle/object tracking.
+- Cleat position, pelvic rocking, pressure distribution, force, joint loading, or tissue stress.
+- Exact bicycle geometry, aerodynamic optimization, diagnosis, or injury prediction.
+- A complete professional bike fit from one ordinary two-dimensional phone video.
+
+### Automatic now
+
+- Closest-side knee-flexion series.
+- Closest-side estimated hip flexion.
+- Trunk inclination.
+- Closest-side elbow and shoulder angles when supported.
+- Estimated top and bottom pedal-phase key frames.
+
+### Manual now
+
+- Confirmation of the closest side and pedal phases.
+- Bicycle/trainer setup, visibility of hands/saddle/feet/crank/pedals, effort context, comfort, and symptom notes.
+- Any recommendation to change saddle or handlebar position.
+
+### Required limitations
+
+- Every numeric value is an estimated two-dimensional projection based on the available lateral view.
+- Pedal phases require manual confirmation.
+- Manual review recommended.
+- This does not replace an in-person bike fit.
 
 ## Output rules for all assessments
 

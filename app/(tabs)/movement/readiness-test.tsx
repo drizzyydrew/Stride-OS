@@ -32,8 +32,12 @@ import { useMovementStore } from '../../../src/store/movementStore';
 import { useMobilityStore } from '../../../src/store/mobilityStore';
 import { resolveDocumentUri } from '../../../src/lib/mediaPaths';
 import { copyAnalysisMediaToStorage } from '../../../src/lib/movementVideoStorage';
+import {
+  MOVEMENT_VIDEO_PICKER_OPTIONS,
+  prepareImportedMovementVideo,
+} from '../../../src/lib/movementMediaImport';
 import { savePoseSequence } from '../../../src/lib/poseSequenceStorage';
-import { analyzeSequence } from '../../../src/utils/poseSequence';
+import { analyzeSequence, buildRawSequenceMaterial } from '../../../src/utils/poseSequence';
 import { buildSequenceFindings } from '../../../src/utils/movementEngine';
 import { assessSequenceCaptureQuality, type CaptureIssue, type CaptureQualityRating } from '../../../src/utils/captureQuality';
 import { assessReadiness } from '../../../src/utils/readinessEngine';
@@ -158,6 +162,9 @@ function VideoCaptureBlock({
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [retryAsset, setRetryAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
 
   function choose<T extends string>(title: string, message: string, options: { label: string; value: T }[]): Promise<T | null> {
     return new Promise(resolve => {
@@ -175,21 +182,30 @@ function VideoCaptureBlock({
       return;
     }
 
-    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false, quality: 0.9 });
+    const picked = await ImagePicker.launchImageLibraryAsync(MOVEMENT_VIDEO_PICKER_OPTIONS);
     if (picked.canceled || picked.assets.length === 0) return;
     const asset = picked.assets[0];
-    const validation = await validatePickedVideo({
+    await prepareLibraryAsset(asset);
+  }
+
+  async function prepareLibraryAsset(asset: ImagePicker.ImagePickerAsset) {
+    setImportBusy(true);
+    setImportError(null);
+    setRetryAsset(asset);
+    const prepared = await prepareImportedMovementVideo({
       uri: asset.uri,
       fileName: asset.fileName,
       duration: asset.duration,
       fileSize: asset.fileSize,
       mimeType: asset.mimeType,
     });
-    if (validation) {
-      Alert.alert("This clip can't be used", validation.message);
+    setImportBusy(false);
+    if (!prepared.ok) {
+      setImportError(prepared.error.message);
       return;
     }
-    await analyzeVideo(asset.uri, {
+    setRetryAsset(null);
+    await analyzeVideo(prepared.video.uri, {
       cameraFacing: 'library',
       isMirrored: false,
       orientationConfirmed: false,
@@ -266,6 +282,7 @@ function VideoCaptureBlock({
         ? closestSide === 'left' ? 'right' : 'left'
         : closestSide;
       const seq = analyzeSequence(seqResult, analysisKind, view, processingSide);
+      const rawSequenceMaterial = buildRawSequenceMaterial(seqResult, analysisKind, view);
       const angleSeries = filterAngleSeries(seq.angleSeries, analysisKind, view, processingSide);
       const keyFrames = seq.keyFrames.map(keyFrame => ({
         ...keyFrame,
@@ -296,9 +313,11 @@ function VideoCaptureBlock({
       const id = addAnalysis({
         type: analysisKind, mediaUri: storedUri, mediaType: 'video', cameraView: view,
         closestSide, closestSideSource, captureMetadata: effectiveMetadata,
+        measurementConventionVersion: 2,
         checklistFindings: [], confidence: seq.confidence, recommendations: normalizedRecommendations,
         limitations: seq.limitations, status: seq.confidence === 'manual_review' ? 'needs_review' : 'complete',
-        angleSeries, keyFrames, repSummaries: seq.repSummaries,
+        angleSeries, rawAngleSeries: rawSequenceMaterial.angleSeries,
+        keyFrames, rawKeyFrames: rawSequenceMaterial.keyFrames, repSummaries: seq.repSummaries,
         symmetryEstimates: view === 'side' ? undefined : seq.symmetryEstimates, sequenceConfidence: seq.confidence,
         sequenceLimitations: seq.limitations, analyzedDurationMs: seqResult.analyzedMs, videoDurationMs: seqResult.durationMs,
         viewFiltersMaterialized: false,
@@ -360,10 +379,20 @@ function VideoCaptureBlock({
         <Pressable style={s.mediaBtn} onPress={() => setCameraOpen(true)}>
           <Text style={s.mediaBtnTxt}>Record Video</Text>
         </Pressable>
-        <Pressable style={s.mediaBtn} onPress={pickFromLibrary}>
-          <Text style={s.mediaBtnTxt}>Choose Video</Text>
+        <Pressable style={[s.mediaBtn, importBusy && { opacity: 0.5 }]} onPress={pickFromLibrary} disabled={importBusy}>
+          <Text style={s.mediaBtnTxt}>{importBusy ? 'Preparing…' : 'Choose Video'}</Text>
         </Pressable>
       </View>
+      {importError ? (
+        <View style={{ gap: spacing.xs }}>
+          <Text style={s.resultIssue}>{importError}</Text>
+          {retryAsset ? (
+            <Pressable style={s.retakeBtn} onPress={() => void prepareLibraryAsset(retryAsset)} disabled={importBusy}>
+              <Text style={s.retakeTxt}>Retry Video Import</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
       <TimedCaptureCamera
         visible={cameraOpen}
         onClose={() => setCameraOpen(false)}

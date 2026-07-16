@@ -37,42 +37,24 @@ struct StrideRunLiveActivity: Widget {
           IslandMetric(label: "DISTANCE", value: String(format: "%.2f", context.state.distanceMiles), unit: "mi")
         }
         DynamicIslandExpandedRegion(.bottom) {
-          HStack(spacing: 10) {
-            IslandMetric(label: "AVG PACE", value: context.state.averagePace, unit: "/mi")
-            Spacer()
-            ZoneBadge(label: context.state.zoneLabel, status: context.state.zoneStatus)
-            if context.state.isPaused {
-              Button(intent: ResumeRunIntent()) {
-                Image(systemName: "play.fill")
-                  .font(.caption.weight(.bold))
-                  .foregroundStyle(.white)
-              }
-              .buttonStyle(.plain)
-              .frame(width: 34, height: 28)
-              .background(StrideDesign.sage.opacity(0.28), in: Capsule())
-            } else {
-              Button(intent: PauseRunIntent()) {
-                Image(systemName: "pause.fill")
-                  .font(.caption.weight(.bold))
-                  .foregroundStyle(.white)
-              }
-              .buttonStyle(.plain)
-              .frame(width: 34, height: 28)
-              .background(StrideDesign.clay.opacity(0.28), in: Capsule())
+          VStack(alignment: .leading, spacing: 5) {
+            if let guidance = priorityGuidance(context.state) {
+              Label(guidance, systemImage: context.state.navigationInstruction.isEmpty ? "timer" : "arrow.turn.up.right")
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .foregroundStyle(StrideDesign.textSecondaryDark)
             }
-            Button(intent: StopRunIntent()) {
-              Image(systemName: "stop.fill")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.white)
+            HStack(spacing: 10) {
+              IslandMetric(label: context.state.metricLabel, value: context.state.metricValue, unit: context.state.metricUnit)
+              Spacer()
+              ZoneBadge(label: context.state.zoneLabel, status: context.state.zoneStatus)
+              CompactRunControls(state: context.state)
             }
-            .buttonStyle(.plain)
-            .frame(width: 34, height: 28)
-            .background(StrideDesign.critical.opacity(0.28), in: Capsule())
           }
         }
       } compactLeading: {
         HStack(spacing: 4) {
-          Image(systemName: context.state.isPaused ? "pause.circle.fill" : "figure.run")
+          Image(systemName: context.state.isPaused ? "pause.circle.fill" : activityIcon(context.state.activityType))
             .font(.caption.weight(.bold))
             .foregroundStyle(context.state.isPaused ? StrideDesign.clay : StrideDesign.sage)
           Text(formatElapsed(context.state.elapsedSeconds))
@@ -84,7 +66,7 @@ struct StrideRunLiveActivity: Widget {
           .font(.caption.weight(.bold))
           .foregroundStyle(StrideDesign.clay)
       } minimal: {
-        Image(systemName: context.state.isPaused ? "pause.circle.fill" : "figure.run")
+        Image(systemName: context.state.isPaused ? "pause.circle.fill" : activityIcon(context.state.activityType))
           .foregroundStyle(context.state.isPaused ? StrideDesign.clay : StrideDesign.sage)
       }
     }
@@ -93,11 +75,10 @@ struct StrideRunLiveActivity: Widget {
 
 // ─── Lock screen view ─────────────────────────────────────────────────────────
 
-// Lock Screen presentations are capped at 160pt by ActivityKit — anything
-// taller is clipped by the system. This layout budgets ~140pt: one compact
-// header, ONE row of four metrics (never stacked numerals), one action row.
-// The system draws the rounded, tinted container itself
-// (activityBackgroundTint), so there is deliberately no inner card here.
+// The system chooses the available Lock Screen region. Keep the hierarchy
+// compact and flexible: one header, one metric row, optional one-line guidance,
+// and one action row. The system draws the rounded, tinted container itself, so
+// there is deliberately no inner card here.
 private struct LockScreenRunView: View {
   let context: ActivityViewContext<StrideRunActivityAttributes>
   @Environment(\.colorScheme) private var colorScheme
@@ -114,7 +95,7 @@ private struct LockScreenRunView: View {
         Text("MM")
           .font(.system(size: 11, weight: .bold, design: .serif))
           .foregroundStyle(StrideDesign.clay)
-        Text(context.state.isPaused ? "StrideOS · Paused" : "StrideOS Run")
+        Text(context.state.isPaused ? "StrideOS · Paused" : "StrideOS · \(activityTitle(context.state.activityType))")
           .font(.system(size: 12, weight: .semibold))
           .foregroundStyle(context.state.isPaused ? StrideDesign.clay : primaryText)
         Spacer(minLength: 4)
@@ -125,13 +106,32 @@ private struct LockScreenRunView: View {
       HStack(alignment: .top, spacing: 8) {
         LockMetricCell(value: formatElapsed(context.state.elapsedSeconds), unit: nil, label: "TIME", primary: primaryText, secondary: secondaryText)
         LockMetricCell(value: String(format: "%.2f", context.state.distanceMiles), unit: "mi", label: "DISTANCE", primary: primaryText, secondary: secondaryText)
-        LockMetricCell(value: context.state.averagePace, unit: "/mi", label: "PACE", primary: primaryText, secondary: secondaryText)
+        LockMetricCell(value: context.state.metricValue, unit: context.state.metricUnit, label: context.state.metricLabel, primary: primaryText, secondary: secondaryText)
         LockMetricCell(value: context.state.heartRate > 0 ? "\(context.state.heartRate)" : "--", unit: "bpm", label: "HEART RATE", primary: primaryText, secondary: secondaryText)
+      }
+
+      if let guidance = priorityGuidance(context.state) {
+        Label(guidance, systemImage: context.state.navigationInstruction.isEmpty ? "timer" : "location.north.fill")
+          .font(.system(size: 11, weight: .semibold))
+          .foregroundStyle(secondaryText)
+          .lineLimit(1)
+          .accessibilityLabel("Current guidance: \(guidance)")
       }
 
       // Single primary action + compact stop
       HStack(spacing: 8) {
-        if context.state.isPaused {
+        if context.state.controlState != "ready" {
+          HStack(spacing: 7) {
+            ProgressView()
+              .controlSize(.small)
+            Text(pendingLabel(context.state.controlState))
+              .font(.system(size: 13, weight: .heavy))
+          }
+          .frame(maxWidth: .infinity, minHeight: 38)
+          .background(actionColor.opacity(0.18), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+          .foregroundStyle(primaryText)
+          .accessibilityLabel(pendingLabel(context.state.controlState))
+        } else if context.state.isPaused {
           Button(intent: ResumeRunIntent()) {
             Label("RESUME", systemImage: "play.fill")
               .font(.system(size: 14, weight: .heavy))
@@ -158,10 +158,54 @@ private struct LockScreenRunView: View {
             .foregroundStyle(StrideDesign.critical)
         }
         .buttonStyle(.plain)
+        .disabled(context.state.controlState != "ready")
+        .opacity(context.state.controlState == "ready" ? 1 : 0.45)
       }
     }
     .padding(.horizontal, 14)
     .padding(.vertical, 12)
+  }
+}
+
+private struct CompactRunControls: View {
+  let state: StrideRunActivityAttributes.ContentState
+
+  var body: some View {
+    if state.controlState != "ready" {
+      ProgressView()
+        .controlSize(.mini)
+        .tint(.white)
+        .frame(width: 34, height: 28)
+        .accessibilityLabel(pendingLabel(state.controlState))
+    } else {
+      if state.isPaused {
+        Button(intent: ResumeRunIntent()) {
+          Image(systemName: "play.fill")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(.white)
+        }
+        .buttonStyle(.plain)
+        .frame(width: 34, height: 28)
+        .background(StrideDesign.sage.opacity(0.28), in: Capsule())
+      } else {
+        Button(intent: PauseRunIntent()) {
+          Image(systemName: "pause.fill")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(.white)
+        }
+        .buttonStyle(.plain)
+        .frame(width: 34, height: 28)
+        .background(StrideDesign.clay.opacity(0.28), in: Capsule())
+      }
+      Button(intent: StopRunIntent()) {
+        Image(systemName: "stop.fill")
+          .font(.caption.weight(.bold))
+          .foregroundStyle(.white)
+      }
+      .buttonStyle(.plain)
+      .frame(width: 34, height: 28)
+      .background(StrideDesign.critical.opacity(0.28), in: Capsule())
+    }
   }
 }
 
@@ -280,6 +324,47 @@ private func formatElapsed(_ seconds: Int) -> String {
     : String(format: "%02d:%02d", m, sec)
 }
 
+private func activityTitle(_ type: String) -> String {
+  switch type {
+  case "walking": return "Walk"
+  case "run_walk": return "Run / Walk"
+  case "cycling": return "Ride"
+  case "hiking": return "Hike"
+  case "downhill_skiing", "cross_country_skiing": return "Ski"
+  default: return "Run"
+  }
+}
+
+private func activityIcon(_ type: String) -> String {
+  switch type {
+  case "walking", "hiking": return "figure.walk"
+  case "cycling": return "bicycle"
+  case "downhill_skiing": return "figure.skiing.downhill"
+  case "cross_country_skiing": return "figure.skiing.crosscountry"
+  default: return "figure.run"
+  }
+}
+
+private func priorityGuidance(_ state: StrideRunActivityAttributes.ContentState) -> String? {
+  if !state.navigationInstruction.isEmpty { return state.navigationInstruction }
+  if !state.currentInterval.isEmpty {
+    return state.nextTransition.isEmpty
+      ? state.currentInterval
+      : "\(state.currentInterval) · \(state.nextTransition)"
+  }
+  if !state.cueText.isEmpty { return state.cueText }
+  return nil
+}
+
+private func pendingLabel(_ controlState: String) -> String {
+  switch controlState {
+  case "pause_pending": return "Pausing…"
+  case "resume_pending": return "Resuming…"
+  case "complete_pending": return "Finishing…"
+  default: return "Updating…"
+  }
+}
+
 // ─── Phase 3: Strength Live Activity ─────────────────────────────────────────
 
 struct StrideStrengthLiveActivity: Widget {
@@ -302,9 +387,19 @@ struct StrideStrengthLiveActivity: Widget {
           }
         }
         DynamicIslandExpandedRegion(.trailing) {
-          Text("\(context.state.setsCompleted)/\(context.state.totalSets)")
-            .font(.system(.title3, design: .rounded).weight(.heavy))
-            .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
+          VStack(alignment: .trailing, spacing: 1) {
+            Text(context.state.progressLabel.isEmpty
+              ? "\(context.state.setsCompleted)/\(context.state.totalSets)"
+              : context.state.progressLabel)
+              .font(.system(.title3, design: .rounded).weight(.heavy))
+              .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
+            if !context.state.loadDisplay.isEmpty {
+              Text(context.state.loadDisplay)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+            }
+          }
         }
         DynamicIslandExpandedRegion(.bottom) {
           HStack {
@@ -313,15 +408,21 @@ struct StrideStrengthLiveActivity: Widget {
               .monospacedDigit()
               .foregroundStyle(.white)
             Spacer()
-            Button(intent: MarkSetCompleteIntent()) {
-              Label("Done", systemImage: "checkmark")
-                .font(.caption.weight(.bold))
+            if context.state.controlState == "ready" {
+              Button(intent: MarkSetCompleteIntent()) {
+                Label("Done", systemImage: "checkmark")
+                  .font(.caption.weight(.bold))
+              }
+              .buttonStyle(.plain)
+              .padding(.horizontal, 10)
+              .padding(.vertical, 5)
+              .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.3), in: Capsule())
+              .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
+            } else {
+              ProgressView()
+                .controlSize(.mini)
+                .tint(.white)
             }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.3), in: Capsule())
-            .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
           }
         }
       } compactLeading: {
@@ -346,8 +447,8 @@ struct StrideStrengthLiveActivity: Widget {
   }
 }
 
-// Same 160pt Lock Screen budget as the run view: single header line with the
-// timer inline, one exercise row, one action row (~130pt total).
+// Same adaptive hierarchy as the outdoor view: one header, one exercise row,
+// and one action row. Values scale before truncating on narrower presentations.
 private struct LockScreenStrengthView: View {
   let context: ActivityViewContext<StrideStrengthActivityAttributes>
 
@@ -392,17 +493,37 @@ private struct LockScreenStrengthView: View {
           .frame(maxWidth: .infinity, alignment: .leading)
         }
 
-        Text("\(context.state.setsCompleted)/\(context.state.totalSets)")
-          .font(.system(size: 12, weight: .heavy))
-          .padding(.horizontal, 8)
-          .padding(.vertical, 4)
-          .background(Color(red: 0.72, green: 0.75, blue: 0.64).opacity(0.2), in: Capsule())
-          .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
+        VStack(alignment: .trailing, spacing: 1) {
+          Text(context.state.prescription.isEmpty
+            ? "\(context.state.setsCompleted)/\(context.state.totalSets)"
+            : context.state.prescription)
+            .font(.system(size: 16, weight: .heavy, design: .rounded))
+            .foregroundStyle(Color(red: 0.96, green: 0.95, blue: 0.90))
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+          if !context.state.loadDisplay.isEmpty {
+            Text(context.state.loadDisplay)
+              .font(.system(size: 12, weight: .bold))
+              .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
+              .lineLimit(1)
+          }
+        }
       }
 
       // Control buttons
       HStack(spacing: 8) {
-        if context.state.isPaused {
+        if context.state.controlState != "ready" {
+          HStack(spacing: 7) {
+            ProgressView()
+              .controlSize(.small)
+            Text(pendingLabel(context.state.controlState))
+              .font(.subheadline.weight(.bold))
+          }
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 9)
+          .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.16), in: RoundedRectangle(cornerRadius: 12))
+          .foregroundStyle(.white)
+        } else if context.state.isPaused {
           Button(intent: ResumeStrengthIntent()) {
             Label("Resume", systemImage: "play.fill")
               .font(.subheadline.weight(.bold))

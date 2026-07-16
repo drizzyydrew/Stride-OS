@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Image,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -31,6 +32,7 @@ import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
 import { useMovementStore } from '../../../src/store/movementStore';
 import { useActionPlanStore } from '../../../src/store/actionPlanStore';
+import { useReadinessStore } from '../../../src/store/readinessStore';
 import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
 import { toYMD, parseYMD } from '../../../src/utils/calendarEngine';
 import type { TrainingGoalType, Race, RacePriority } from '../../../src/types/plan';
@@ -44,6 +46,7 @@ import {
   type TrainingNotificationScheduleStatus,
 } from '../../../src/lib/notifications';
 import { LAYOUT } from '../../../src/constants/layout';
+import PickerWheel from '../../../src/components/ui/PickerWheel';
 
 function formatHeight(heightCm: number, imperial: boolean) {
   if (!heightCm) return '';
@@ -94,6 +97,35 @@ function normalizeReminderTime(value: string) {
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
+const MINUTES_IN_DAY = Array.from({ length: 24 * 60 }, (_, index) => index);
+const REMINDER_DAY_OPTIONS = [
+  { value: 2, label: 'M' },
+  { value: 3, label: 'T' },
+  { value: 4, label: 'W' },
+  { value: 5, label: 'T' },
+  { value: 6, label: 'F' },
+  { value: 7, label: 'S' },
+  { value: 1, label: 'S' },
+];
+
+function reminderTimeToMinutes(time: string): number {
+  const normalized = normalizeReminderTime(time) ?? '07:00';
+  const [hour, minute] = normalized.split(':').map(Number);
+  return hour * 60 + minute;
+}
+
+function minutesToReminderTime(total: number): string {
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function formatReminderTime(total: number): string {
+  const hour24 = Math.floor(total / 60);
+  const minute = total % 60;
+  const suffix = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${String(minute).padStart(2, '0')} ${suffix}`;
+}
+
 function formatHistoryDate(timestamp: number) {
   if (!timestamp) return 'Recent';
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(timestamp));
@@ -141,6 +173,7 @@ export default function SettingsScreen() {
   const { mode } = useThemeStore();
   const { units, setUnits } = useSettingsStore();
   const integrations = useIntegrationsStore();
+  const legacyMorningReminderEnabled = useReadinessStore(state => state.reminderEnabled);
   const signOut = useAuthStore(state => state.signOut);
   const { data, updateData } = useOnboardingStore();
   const workoutHistory = useWorkoutStore(state => state.history);
@@ -165,7 +198,7 @@ export default function SettingsScreen() {
   const [ageInput, setAgeInput] = useState('');
   const [heightInput, setHeightInput] = useState('');
   const [weightInput, setWeightInput] = useState('');
-  const [notificationTimeDraft, setNotificationTimeDraft] = useState(integrations.notificationTime);
+  const [showNotificationTimePicker, setShowNotificationTimePicker] = useState(false);
 
   function saveRaceForm() {
     if (!raceForm) return;
@@ -246,6 +279,8 @@ export default function SettingsScreen() {
     time: integrations.notificationTime,
     workout: integrations.workoutNotifications,
     readiness: integrations.readinessNotifications,
+    readinessSchedule: integrations.readinessNotificationSchedule,
+    readinessDays: integrations.readinessNotificationDays,
   };
 
   const notificationCaption = notificationSchedule && integrations.notificationsEnabled
@@ -285,8 +320,10 @@ export default function SettingsScreen() {
   }, [data.age, data.heightCm, data.weightKg, imp]);
 
   useEffect(() => {
-    setNotificationTimeDraft(integrations.notificationTime);
-  }, [integrations.notificationTime]);
+    if (!integrations.morningReminderMigratedV37) {
+      integrations.migrateMorningReminderV37(legacyMorningReminderEnabled);
+    }
+  }, [integrations, legacyMorningReminderEnabled]);
 
   useEffect(() => {
     let cancelled = false;
@@ -348,6 +385,8 @@ export default function SettingsScreen() {
     integrations.notificationTime,
     integrations.workoutNotifications,
     integrations.readinessNotifications,
+    integrations.readinessNotificationSchedule,
+    integrations.readinessNotificationDays,
   ]);
 
   async function chooseProfilePhoto() {
@@ -471,6 +510,8 @@ export default function SettingsScreen() {
     time: integrations.notificationTime,
     workout: integrations.workoutNotifications,
     readiness: integrations.readinessNotifications,
+    readinessSchedule: integrations.readinessNotificationSchedule,
+    readinessDays: integrations.readinessNotificationDays,
   }) {
     setBusy('notifications');
     try {
@@ -481,7 +522,18 @@ export default function SettingsScreen() {
       }
       setNotificationSchedule(await getTrainingNotificationScheduleStatus(next));
     } catch (error) {
-      Alert.alert('Notification setup failed', error instanceof Error ? error.message : 'Could not update notifications.');
+      const message = error instanceof Error ? error.message : 'Could not update notifications.';
+      const denied = message.toLowerCase().includes('permission');
+      Alert.alert(
+        'Notification setup failed',
+        denied ? `${message} You can restore access in iOS Settings.` : message,
+        denied
+          ? [
+            { text: 'Not Now', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ]
+          : [{ text: 'OK' }],
+      );
       integrations.setNotifications(false);
       await clearTrainingNotifications().catch(() => undefined);
       setNotificationSchedule(null);
@@ -497,6 +549,8 @@ export default function SettingsScreen() {
       time: integrations.notificationTime,
       workout: integrations.workoutNotifications,
       readiness: integrations.readinessNotifications,
+      readinessSchedule: integrations.readinessNotificationSchedule,
+      readinessDays: integrations.readinessNotificationDays,
     });
   }
 
@@ -507,6 +561,8 @@ export default function SettingsScreen() {
       time: integrations.notificationTime,
       workout: enabled,
       readiness: integrations.readinessNotifications,
+      readinessSchedule: integrations.readinessNotificationSchedule,
+      readinessDays: integrations.readinessNotificationDays,
     });
   }
 
@@ -517,25 +573,29 @@ export default function SettingsScreen() {
       time: integrations.notificationTime,
       workout: integrations.workoutNotifications,
       readiness: enabled,
+      readinessSchedule: integrations.readinessNotificationSchedule,
+      readinessDays: integrations.readinessNotificationDays,
     });
   }
 
-  function commitNotificationTime() {
-    const normalized = normalizeReminderTime(notificationTimeDraft);
-    if (!normalized) {
-      setNotificationTimeDraft(integrations.notificationTime);
-      Alert.alert('Use a valid time', 'Enter reminder time as HH:MM, like 07:00 or 18:30.');
+  function updateReadinessSchedule(schedule: 'daily' | 'weekdays' | 'custom') {
+    integrations.setReadinessNotificationSchedule(schedule);
+    applyNotifications({
+      ...currentNotificationPrefs,
+      readinessSchedule: schedule,
+      readinessDays: integrations.readinessNotificationDays,
+    });
+  }
+
+  function toggleReadinessDay(day: number) {
+    const current = integrations.readinessNotificationDays;
+    const next = current.includes(day) ? current.filter(value => value !== day) : [...current, day];
+    if (next.length === 0) {
+      Alert.alert('Choose at least one day', 'A custom reminder schedule needs at least one selected day.');
       return;
     }
-
-    integrations.setNotificationTime(normalized);
-    setNotificationTimeDraft(normalized);
-    applyNotifications({
-      enabled: integrations.notificationsEnabled,
-      time: normalized,
-      workout: integrations.workoutNotifications,
-      readiness: integrations.readinessNotifications,
-    });
+    integrations.setReadinessNotificationDays(next);
+    applyNotifications({ ...currentNotificationPrefs, readinessSchedule: 'custom', readinessDays: next });
   }
 
   function resetPlanData() {
@@ -920,16 +980,19 @@ export default function SettingsScreen() {
           <>
             <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
               <View>
-                <Text style={[styles.settingTitle, { color: C.text }]}>Daily reminder time</Text>
-                <Text style={[styles.settingCaption, { color: C.textMuted }]}>Morning prompt to log readiness</Text>
+                <Text style={[styles.settingTitle, { color: C.text }]}>Morning Readiness Reminder</Text>
+                <Text style={[styles.settingCaption, { color: C.textMuted }]}>
+                  Local time · {formatReminderTime(reminderTimeToMinutes(integrations.notificationTime))}
+                </Text>
               </View>
-              <TextInput
-                value={notificationTimeDraft}
-                onChangeText={setNotificationTimeDraft}
-                onBlur={commitNotificationTime}
-                onSubmitEditing={commitNotificationTime}
-                style={[{ backgroundColor: C.cardAlt, borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 6, paddingHorizontal: 10, fontSize: 13, color: C.text }]}
-              />
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`Change morning readiness reminder time, currently ${formatReminderTime(reminderTimeToMinutes(integrations.notificationTime))}`}
+                onPress={() => setShowNotificationTimePicker(true)}
+                style={[styles.timeButton, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+              >
+                <Text style={[styles.settingTitle, { color: C.primary }]}>Change</Text>
+              </TouchableOpacity>
             </View>
             <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
               <Text style={[styles.settingTitle, { color: C.text }]}>Workout reminders</Text>
@@ -941,7 +1004,10 @@ export default function SettingsScreen() {
               />
             </View>
             <View style={styles.settingRow}>
-              <Text style={[styles.settingTitle, { color: C.text }]}>Readiness check-in</Text>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={[styles.settingTitle, { color: C.text }]}>Morning readiness check-in</Text>
+                <Text style={[styles.settingCaption, { color: C.textMuted }]}>Enable or disable the morning prompt</Text>
+              </View>
               <Switch
                 value={integrations.readinessNotifications}
                 onValueChange={updateReadinessNotifications}
@@ -949,6 +1015,50 @@ export default function SettingsScreen() {
                 thumbColor={C.card}
               />
             </View>
+            {integrations.readinessNotifications ? (
+              <View style={{ paddingTop: 12 }}>
+                <Text style={[styles.settingCaption, { color: C.textMuted, marginBottom: 8 }]}>Schedule</Text>
+                <View style={styles.pillRow}>
+                  {([
+                    { value: 'daily', label: 'Daily' },
+                    { value: 'weekdays', label: 'Weekdays' },
+                    { value: 'custom', label: 'Custom days' },
+                  ] as const).map(option => {
+                    const active = integrations.readinessNotificationSchedule === option.value;
+                    return (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[styles.pill, { backgroundColor: active ? C.primaryDim : C.cardAlt, borderColor: active ? C.primary : C.border }]}
+                        onPress={() => updateReadinessSchedule(option.value)}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: '800', color: active ? C.primary : C.textMuted }}>{option.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                {integrations.readinessNotificationSchedule === 'custom' ? (
+                  <View style={styles.dayRow}>
+                    {REMINDER_DAY_OPTIONS.map((day, index) => {
+                      const active = integrations.readinessNotificationDays.includes(day.value);
+                      return (
+                        <TouchableOpacity
+                          key={`${day.value}-${index}`}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: active }}
+                          style={[styles.dayButton, { backgroundColor: active ? C.primary : C.cardAlt, borderColor: active ? C.primary : C.border }]}
+                          onPress={() => toggleReadinessDay(day.value)}
+                        >
+                          <Text style={{ fontSize: 12, fontWeight: '900', color: active ? C.onPrimary : C.textMuted }}>{day.label}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ) : null}
+                <Text style={[styles.settingCaption, { color: C.textMuted, marginTop: 10 }]}>
+                  Notifications use device-local time. Changing the time or days cancels the old schedule before creating the new one, preventing duplicates.
+                </Text>
+              </View>
+            ) : null}
           </>
         )}
       </View>
@@ -992,6 +1102,20 @@ export default function SettingsScreen() {
       >
         <Text style={[{ fontSize: 14, fontWeight: '700', color: C.critical }]}>Sign Out</Text>
       </TouchableOpacity>
+      <PickerWheel
+        visible={showNotificationTimePicker}
+        title="Morning reminder time"
+        values={MINUTES_IN_DAY}
+        selectedValue={reminderTimeToMinutes(integrations.notificationTime)}
+        formatValue={formatReminderTime}
+        onClose={() => setShowNotificationTimePicker(false)}
+        onConfirm={value => {
+          const time = minutesToReminderTime(value);
+          integrations.setNotificationTime(time);
+          setShowNotificationTimePicker(false);
+          applyNotifications({ ...currentNotificationPrefs, time });
+        }}
+      />
     </ScrollView>
   );
 }
@@ -1077,6 +1201,28 @@ const styles = StyleSheet.create({
   settingCaption: {
     fontSize: 11,
     marginTop: 2,
+  },
+  timeButton: {
+    minHeight: 40,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 6,
+    marginTop: 10,
+  },
+  dayButton: {
+    width: 38,
+    height: 38,
+    borderWidth: 1,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   profileInput: {
     flex: 1,

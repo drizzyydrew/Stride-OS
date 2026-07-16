@@ -5,11 +5,13 @@
 // the single source of truth for calculations. Codex wires reminder
 // persistence/scheduling to FUELING_REMINDER_INTERVALS/DEFAULT_FUELING_REMINDER_INTERVAL_MIN.
 
-/** Selectable fueling-reminder intervals, in minutes. */
-export const FUELING_REMINDER_INTERVALS = [15, 20, 30, 40] as const;
-export type FuelingReminderIntervalMin = (typeof FUELING_REMINDER_INTERVALS)[number];
+/** Accessible one-minute reminder choices for hydration and carbohydrate cues. */
+export const RUN_REMINDER_INTERVALS = Array.from({ length: 56 }, (_, index) => index + 5);
+export const FUELING_REMINDER_INTERVALS = RUN_REMINDER_INTERVALS;
+export type FuelingReminderIntervalMin = number;
 
 export const DEFAULT_FUELING_REMINDER_INTERVAL_MIN: FuelingReminderIntervalMin = 20;
+export const DEFAULT_HYDRATION_REMINDER_INTERVAL_MIN = 15;
 
 /** Every hourly-rate unit on the Hydration screen renders with this suffix —
  *  never used for a concentration value (e.g. mg/L), which is a strength, not

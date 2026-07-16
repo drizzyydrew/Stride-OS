@@ -16,6 +16,7 @@ Pod::Spec.new do |s|
   s.static_framework = true
   s.dependency 'ExpoModulesCore'
   s.dependency 'StrideLiveActivityCore'
+  s.frameworks = 'ActivityKit', 'MapKit'
   s.source_files = 'Module/**/*.{swift,h,m,mm}'
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',

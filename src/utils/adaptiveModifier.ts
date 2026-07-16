@@ -4,7 +4,7 @@
 // Called by workoutEngine.generateRichWeek() before building workouts.
 //
 // Priority order (highest wins): critical fatigue → critical recovery →
-// high fatigue → poor recovery → ACWR spike → soreness → injury risk →
+// high fatigue → poor recovery → workload spike → soreness → conservative adjustment →
 // motivation → adherence → taper protection.
 //
 // AI REPLACEMENT HOOK: A future Claude layer can receive WorkoutEngineInput
@@ -82,7 +82,7 @@ function applyHighSoreness(types: RichWorkoutType[]): RichWorkoutType[] {
   });
 }
 
-// 7. Injury risk: hill_repeats → cross_training, vo2/strides → easy_run
+// 7. High training stress: hill_repeats → cross_training, vo2/strides → easy_run
 function applyInjuryRisk(types: RichWorkoutType[]): RichWorkoutType[] {
   return types.map(t => {
     if (t === 'hill_repeats') return 'cross_training';
@@ -160,7 +160,7 @@ export function applyAdaptiveModifiers(
     types = applyHighSoreness(types);
   }
 
-  // Injury risk
+  // High training stress
   if (injuryRisk) {
     types = applyInjuryRisk(types);
   }

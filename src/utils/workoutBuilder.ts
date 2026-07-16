@@ -258,10 +258,10 @@ function buildRunWalk(ctx: BuildContext): BuiltWorkout {
   const dist = mileage * 0.10;
 
   const rationale: PhysiologicalRationale = {
-    adaptation:   'Aerobic capacity + connective-tissue adaptation with low injury risk',
+    adaptation:   'Aerobic capacity + connective-tissue adaptation with lower mechanical demand',
     mechanism:    'Alternating jogging and walking keeps heart rate in an aerobic range while limiting continuous impact load on tendons, bones, and joints that haven\'t yet adapted to running. This builds the cardiovascular base and musculoskeletal durability new runners need before continuous running volume increases.',
     timeframe:    '3–6 weeks of consistent run/walk practice before continuous running feels easy',
-    scienceBasis: 'Galloway (1974) run-walk method; Fokkema et al. (2014) novice runner injury prevention',
+    scienceBasis: 'Galloway (1974) run-walk method; Fokkema et al. (2014) novice running progression',
   };
 
   return {
@@ -598,7 +598,7 @@ function buildHillRepeats(ctx: BuildContext): BuiltWorkout {
   return {
     ...base('hill_repeats', 'hill_repeats', 'anaerobic', 'hard', 'processing_power',
       'Hill Repeats',
-      `${sets} × 60s hard uphill. Builds neuromuscular power, tendon stiffness, and running economy with low injury risk.`,
+      `${sets} × 60s hard uphill. Builds neuromuscular power, tendon stiffness, and running economy with controlled speed exposure.`,
       paceCtx.rep, 4, [8, 9], dur, dist, ctx),
     warmup:  seg('Warmup', '15 min', fmtRange(paceCtx.easy), 2, [4, 5], 'Easy jog 15 min on flat ground. Include 4 strides on flat.'),
     mainSet: Array.from({ length: sets }, (_, i) => seg(
@@ -610,7 +610,7 @@ function buildHillRepeats(ctx: BuildContext): BuiltWorkout {
     )),
     cooldown: seg('Cooldown', '10 min', fmtRange(paceCtx.easy), 2, [3, 4], 'Easy flat jog 10 min.'),
     intervals,
-    purpose: 'Build leg power and tendon stiffness without high-velocity injury risk — the safest way to develop speed.',
+    purpose: 'Build leg power and tendon stiffness with less absolute speed than flat sprinting.',
     instructions: [
       'Find a consistent hill: 5–8% grade, 100–150m long.',
       'Drive arms aggressively on the uphill — they power your legs.',
@@ -869,7 +869,7 @@ function buildCrossTraining(ctx: BuildContext): BuiltWorkout {
     warmup:  seg('Warmup', '10 min', 'Low intensity', 1, [2, 3], 'Begin at very low resistance/effort.'),
     mainSet: [seg('Cross Training', '30 min', 'Zone 2 effort', 2, [4, 6], 'Sustained aerobic effort. Same HR target as easy run (Zone 2). Cycling, swimming, or elliptical preferred.')],
     cooldown: seg('Cooldown', '5 min', 'Low intensity', 1, [1, 2], 'Drop effort completely. Stretch hip flexors and calves.'),
-    purpose: 'Maintain cardiovascular fitness while reducing musculoskeletal stress — essential for injury prevention cycles.',
+    purpose: 'Maintain cardiovascular fitness while reducing musculoskeletal stress during recovery-focused cycles.',
     instructions: [
       'Match Zone 2 heart rate target used in easy runs.',
       'Cycling (outdoor or indoor): 90–100 rpm cadence preferred.',
@@ -926,10 +926,10 @@ function buildMobility(ctx: BuildContext): BuiltWorkout {
   const { mileage, multiplier, calibration } = ctx;
 
   const rationale: PhysiologicalRationale = {
-    adaptation:   'Range of motion preservation + injury risk reduction',
-    mechanism:    'Repetitive running creates adaptive shortening in hip flexors, calves, and hamstrings. Regular mobility work counteracts this, maintaining optimal joint ROM for efficient stride mechanics and reducing injury risk from muscle-tendon imbalances.',
-    timeframe:    'Acute improvements in ROM; injury risk reduction cumulative over weeks',
-    scienceBasis: 'Behm & Chaouachi (2011) flexibility and injury prevention; Ryan et al. (2014) running and hip flexor mobility',
+    adaptation:   'Range-of-motion comfort and movement-quality support',
+    mechanism:    'Regular mobility work may support comfortable available range in the hips, calves, and hamstrings. It does not guarantee symptom prevention.',
+    timeframe:    'Acute changes in comfortable range; longer-term response varies by athlete',
+    scienceBasis: 'Behm & Chaouachi (2011) flexibility; Ryan et al. (2014) running and hip flexor mobility',
   };
 
   return {

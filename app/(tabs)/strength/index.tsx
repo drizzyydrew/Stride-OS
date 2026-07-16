@@ -44,6 +44,10 @@ import {
   type PresetStrengthWorkout,
   type StrengthPresetCategory,
 } from '../../../src/constants/strengthBank';
+import {
+  activeStrengthElapsedSeconds,
+  useActiveStrengthSessionStore,
+} from '../../../src/store/activeStrengthSessionStore';
 
 type Segment = 'strength' | 'presets' | 'mobility';
 
@@ -239,7 +243,7 @@ function MobilityTabContent({ segment, setSegment, C }: {
 //
 // Read-only presentation over STRENGTH_PRESET_WORKOUTS. Mirrors the mobility
 // library pattern above (recommended section + category filter chips + cards).
-// The adaptive Strength segment (default tab) remains the primary,
+// The Training Block Workout segment (default tab) remains the primary,
 // personalized program; this is a browsable static library alongside it.
 // Does not touch strengthStore or any engine — Codex wires launch/logging.
 
@@ -265,14 +269,10 @@ function PresetsTabContent({ segment, setSegment, C }: {
   C: ReturnType<typeof useColors>;
 }) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [categoryFilter, setCategoryFilter] = useState<StrengthPresetCategory | 'all'>('all');
   const [openPresetId, setOpenPresetId] = useState<string | null>(null);
-  const [activePresetId, setActivePresetId] = useState<string | null>(null);
-  const [presetStartedAt, setPresetStartedAt] = useState<number | null>(null);
-  const logPreset = useStrengthStore(s => s.manualLog);
   const completedSessions = useStrengthStore(s => s.completedSessions);
-  const fatigueScore = useAthleteStore(s => s.fatigueScore);
-  const currentWeek = useAthleteStore(s => s.currentWeek);
 
   const recommended = useMemo(
     () => STRENGTH_PRESET_WORKOUTS.filter(w => w.categories.includes('recommended')),
@@ -282,45 +282,6 @@ function PresetsTabContent({ segment, setSegment, C }: {
     () => categoryFilter === 'all' ? STRENGTH_PRESET_WORKOUTS : getStrengthPresetWorkoutsByCategory(categoryFilter),
     [categoryFilter],
   );
-
-  function estimatedReps(reps: string): number {
-    const match = reps.match(/\d+/);
-    return match ? Number(match[0]) : 8;
-  }
-
-  function finishPreset(preset: PresetStrengthWorkout) {
-    const startedAt = presetStartedAt ?? Date.now();
-    const completionKey = `preset_${preset.id}_${startedAt}`;
-    const exercises: CompletedExercise[] = preset.exercises.map(exercise => ({
-      exerciseId: `${preset.id}_${exercise.name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
-      sets: Array.from({ length: exercise.sets }, () => ({
-        reps: estimatedReps(exercise.reps),
-        load: exercise.equipment.includes('bodyweight') ? 'BW' : exercise.equipment.map(item => EQUIPMENT_LABELS[item] ?? item).join(', '),
-        rpe: 7,
-        completed: true,
-      })),
-      notes: exercise.notes,
-    }));
-    const sessionType = preset.categories.includes('pre_run')
-      ? 'activation'
-      : preset.categories.includes('runner_strength')
-        ? 'running_economy'
-        : 'full_body';
-    logPreset({
-      completionKey,
-      sessionType,
-      goal: preset.categories.includes('runner_strength') ? 'running_economy' : 'maintenance',
-      week: Math.max(1, currentWeek),
-      plannedDuration: preset.durationMin,
-      actualDuration: Math.max(1, Math.round((Date.now() - startedAt) / 60_000)),
-      exercises,
-      overallRpe: 7,
-      notes: `Preset: ${preset.id} · ${preset.title}`,
-    }, fatigueScore);
-    setActivePresetId(null);
-    setPresetStartedAt(null);
-    Alert.alert('Preset logged', `${preset.title} was added to Strength history.`);
-  }
 
   function renderPresetCard(preset: PresetStrengthWorkout, key: string) {
     const open = openPresetId === preset.id;
@@ -355,34 +316,15 @@ function PresetsTabContent({ segment, setSegment, C }: {
                 <Text style={[{ fontSize: 12, fontWeight: '700', color: C.text }]}>{e.sets} × {e.reps}</Text>
               </View>
             ))}
-            {activePresetId === preset.id ? (
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                <TouchableOpacity
-                  style={{ flex: 1, minHeight: 42, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primary }}
-                  onPress={event => { event.stopPropagation(); finishPreset(preset); }}
-                >
-                  <Text style={{ color: C.onPrimary, fontSize: 13, fontWeight: '700' }}>Finish & Log</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{ paddingHorizontal: 14, justifyContent: 'center' }}
-                  onPress={event => { event.stopPropagation(); setActivePresetId(null); setPresetStartedAt(null); }}
-                >
-                  <Text style={{ color: C.textMuted, fontSize: 12, fontWeight: '700' }}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={{ marginTop: 8, minHeight: 42, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primary, opacity: activePresetId ? 0.45 : 1 }}
-                disabled={Boolean(activePresetId)}
-                onPress={event => {
-                  event.stopPropagation();
-                  setActivePresetId(preset.id);
-                  setPresetStartedAt(Date.now());
-                }}
-              >
-                <Text style={{ color: C.onPrimary, fontSize: 13, fontWeight: '700' }}>Start Preset</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={{ marginTop: 8, minHeight: 42, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primary }}
+              onPress={event => {
+                event.stopPropagation();
+                router.push({ pathname: '/(tabs)/strength/preset/[id]', params: { id: preset.id } } as never);
+              }}
+            >
+              <Text style={{ color: C.onPrimary, fontSize: 13, fontWeight: '700' }}>View Preset Details</Text>
+            </TouchableOpacity>
             {completedSessions.some(id => id.startsWith(`preset_${preset.id}_`)) ? (
               <Text style={{ color: C.positive, fontSize: 11, marginTop: 2 }}>Previously completed</Text>
             ) : null}
@@ -410,8 +352,8 @@ function PresetsTabContent({ segment, setSegment, C }: {
       >
         <View style={[styles.card, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
           <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>
-            Your adaptive Strength plan (the Strength tab) stays your primary, personalized program. These presets
-            are a browsable library for extra sessions, travel days, or picking your own workout.
+            Training Block Workouts and Preset Workouts remain independent. Open a preset for its purpose,
+            exercise instructions, session flow, loading, RPE, and history logging.
           </Text>
         </View>
 
@@ -570,6 +512,15 @@ export default function StrengthScreen() {
   const readinessLimited = weekPlan.strengthWeek.progressionState === 'regress';
   const logStrengthSession = useStrengthStore(s => s.manualLog);
   const strengthHistory = useStrengthStore(s => s.history);
+  const activeStrengthSession = useActiveStrengthSessionStore(s => s.session);
+  const startActiveStrengthSession = useActiveStrengthSessionStore(s => s.startSession);
+  const pauseActiveStrengthSession = useActiveStrengthSessionStore(s => s.pause);
+  const resumeActiveStrengthSession = useActiveStrengthSessionStore(s => s.resume);
+  const completeActiveStrengthExercise = useActiveStrengthSessionStore(s => s.completeExercise);
+  const uncompleteActiveStrengthExercise = useActiveStrengthSessionStore(s => s.uncompleteExercise);
+  const setActiveStrengthRpe = useActiveStrengthSessionStore(s => s.setExerciseRpe);
+  const setActiveStrengthLoad = useActiveStrengthSessionStore(s => s.setExerciseLoad);
+  const clearActiveStrengthSession = useActiveStrengthSessionStore(s => s.clearSession);
   const imp = units === 'imperial';
   const wtUnit = imp ? 'lb' : 'kg';
   const WEIGHT_VALUES = imp ? WEIGHT_VALUES_LB : WEIGHT_VALUES_KG;
@@ -638,6 +589,36 @@ export default function StrengthScreen() {
   const exercises = useMemo(() => session ? sessionToExDefs(session, strengthHistory) : [], [session, strengthHistory]);
   const estimatedDurationMin = exercises.length > 0 ? estimateWorkoutDurationMin(exercises) : 0;
 
+  const ownsActiveTrainingBlock = Boolean(
+    activeStrengthSession?.source === 'training_block'
+    && activeStrengthSession.workoutId === session?.id,
+  );
+
+  useEffect(() => {
+    if (activeStrengthSession?.source !== 'training_block') return;
+    const activeEntryIndex = strengthEntries.findIndex(entry => entry.session.id === activeStrengthSession.workoutId);
+    if (activeEntryIndex >= 0 && activeEntryIndex !== activeIndex) setManualIndex(activeEntryIndex);
+  }, [activeIndex, activeStrengthSession, strengthEntries]);
+
+  useEffect(() => {
+    if (!ownsActiveTrainingBlock || !activeStrengthSession) return;
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setTimer(activeStrengthElapsedSeconds(activeStrengthSession));
+    setCompletedExercises(Object.fromEntries(activeStrengthSession.completedExerciseIds.map(id => [id, true])));
+    setRpe(activeStrengthSession.rpeByExercise);
+    setWeights(Object.fromEntries(
+      Object.entries(activeStrengthSession.loadByExercise)
+        .map(([id, value]) => [id, Number.parseFloat(value)])
+        .filter((entry): entry is [string, number] => Number.isFinite(entry[1])),
+    ));
+    setStrState(activeStrengthSession.status);
+    if (activeStrengthSession.status === 'active') {
+      intervalRef.current = setInterval(() => {
+        setTimer(activeStrengthElapsedSeconds(useActiveStrengthSessionStore.getState().session));
+      }, 1000);
+    }
+  }, [activeStrengthSession?.workoutId, ownsActiveTrainingBlock]);
+
   // Completion is per EXERCISE, not per set: N exercises = N completions,
   // in the app and from the Lock Screen alike.
   function isExerciseDone(ex: ExDef): boolean {
@@ -662,12 +643,30 @@ export default function StrengthScreen() {
 
   function completeExercise(ex: ExDef) {
     setCompletedExercises(prev => ({ ...prev, [ex.id]: true }));
+    if (ownsActiveTrainingBlock) completeActiveStrengthExercise(ex.id);
   }
   function undoExercise(ex: ExDef) {
     setCompletedExercises(prev => ({ ...prev, [ex.id]: false }));
+    if (ownsActiveTrainingBlock) uncompleteActiveStrengthExercise(ex.id);
   }
 
-  function start() {
+  function launchTrainingBlock() {
+    if (!session) return;
+    startActiveStrengthSession({
+      source: 'training_block',
+      workoutId: session.id,
+      workoutName: wDef.title,
+      plannedDurationMin: estimatedDurationMin,
+      exercises: exercises.map(exercise => ({
+        id: exercise.id,
+        name: exercise.name,
+        sets: exercise.sets,
+        reps: exercise.reps,
+        equipment: [],
+        notes: exercise.cue,
+      })),
+    });
+    if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => setTimer(t => t + 1), 1000);
     setStrState('active');
     startStrengthLiveActivity({
@@ -679,13 +678,52 @@ export default function StrengthScreen() {
       totalSets: totalExercises,
     }).catch(console.warn);
   }
+  function start() {
+    if (!activeStrengthSession || ownsActiveTrainingBlock) {
+      if (ownsActiveTrainingBlock) {
+        if (activeStrengthSession?.status === 'paused') resume();
+        return;
+      }
+      launchTrainingBlock();
+      return;
+    }
+    Alert.alert(
+      'Another strength session is active',
+      `${activeStrengthSession.workoutName} is still in progress. StrideOS will never end it silently.`,
+      [
+        {
+          text: 'Continue Current Session',
+          onPress: () => {
+            if (activeStrengthSession.source === 'preset') {
+              router.push('/(tabs)/strength/preset-session' as never);
+              return;
+            }
+            const index = strengthEntries.findIndex(entry => entry.session.id === activeStrengthSession.workoutId);
+            if (index >= 0) setManualIndex(index);
+          },
+        },
+        {
+          text: 'End Current Session and Start Other Workout',
+          style: 'destructive',
+          onPress: async () => {
+            await endStrengthLiveActivity().catch(console.warn);
+            clearActiveStrengthSession();
+            launchTrainingBlock();
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
+  }
   function pause() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setStrState('paused');
+    if (ownsActiveTrainingBlock) pauseActiveStrengthSession();
   }
   function resume() {
     intervalRef.current = setInterval(() => setTimer(t => t + 1), 1000);
     setStrState('active');
+    if (ownsActiveTrainingBlock) resumeActiveStrengthSession();
   }
 
   // Lock-screen completion of the FINAL exercise: offer to finish the whole
@@ -743,6 +781,7 @@ export default function StrengthScreen() {
     if (!session || sessionIndexInWeek === -1) return;
     if (intervalRef.current) clearInterval(intervalRef.current);
     endStrengthLiveActivity().catch(console.warn);
+    if (ownsActiveTrainingBlock) clearActiveStrengthSession();
 
     const selectedRpes = exercises.map(ex => rpe[ex.id]).filter((value): value is number => typeof value === 'number');
     const overallRpe = selectedRpes.length
@@ -910,6 +949,7 @@ export default function StrengthScreen() {
 
         {/* Session Timer */}
         <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border, alignItems: 'center' }]}>
+          <Text style={[styles.cardLabel, { color: C.primary, marginBottom: 3 }]}>TRAINING BLOCK WORKOUT</Text>
           <Text style={[styles.cardLabel, { color: C.textDim }]}>SESSION TIME</Text>
           <Text style={[styles.timerDisplay, { color: C.text }]}>{fmt(timer)}</Text>
           {strState === 'idle' && (
@@ -926,7 +966,7 @@ export default function StrengthScreen() {
                 </View>
               </View>
               <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.primary, marginBottom: 8 }]} onPress={start} activeOpacity={0.8}>
-                <Text style={[styles.bigBtnText, { color: C.onPrimary }]}>Start {wDef.title}</Text>
+                <Text style={[styles.bigBtnText, { color: C.onPrimary }]}>Start Training Block Workout</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.smBtn, { backgroundColor: C.cardAlt }]} onPress={() => router.back()} activeOpacity={0.8}>
                 <Text style={[styles.smBtnText, { color: C.textMuted }]}>Skip Workout</Text>
@@ -1188,7 +1228,10 @@ export default function StrengthScreen() {
         selectedValue={weightPickerFor ? getWeight(weightPickerFor) : 0}
         formatValue={v => v === 0 ? 'Bodyweight' : `${v % 5 === 0 ? v : v.toFixed(1)} ${wtUnit}`}
         onConfirm={v => {
-          if (weightPickerFor) setWeights(p => ({ ...p, [weightPickerFor.id]: v }));
+          if (weightPickerFor) {
+            setWeights(p => ({ ...p, [weightPickerFor.id]: v }));
+            if (ownsActiveTrainingBlock) setActiveStrengthLoad(weightPickerFor.id, String(v));
+          }
           setWeightPickerFor(null);
         }}
         onClose={() => setWeightPickerFor(null)}
@@ -1202,7 +1245,10 @@ export default function StrengthScreen() {
         selectedValue={rpePickerFor ? (rpe[rpePickerFor.id] ?? 7) : 7}
         formatValue={v => `RPE ${v} · ${RPE_LABELS[v] ?? ''}`}
         onConfirm={v => {
-          if (rpePickerFor) setRpe(p => ({ ...p, [rpePickerFor.id]: v }));
+          if (rpePickerFor) {
+            setRpe(p => ({ ...p, [rpePickerFor.id]: v }));
+            if (ownsActiveTrainingBlock) setActiveStrengthRpe(rpePickerFor.id, v);
+          }
           setRpePickerFor(null);
         }}
         onClose={() => setRpePickerFor(null)}

@@ -15,6 +15,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { TrainingGoalType, Race } from '../types/plan';
+import type { ActivePresetGoal } from '../types/beginnerPlan';
 
 function uid(): string {
   return `race_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -24,6 +25,7 @@ type TrainingPlanState = {
   goalType:          TrainingGoalType;
   programStartDate:  string | null;
   races:             Race[];
+  activePresetGoal:  ActivePresetGoal | null;
   initialized:       boolean;
 
   setGoalType:         (goalType: TrainingGoalType) => void;
@@ -31,6 +33,8 @@ type TrainingPlanState = {
   addRace:             (race: Omit<Race, 'id'>) => string;
   updateRace:          (id: string, patch: Partial<Omit<Race, 'id'>>) => void;
   removeRace:          (id: string) => void;
+  setActivePresetGoal: (goal: ActivePresetGoal) => void;
+  clearActivePresetGoal: () => void;
 
   // Sets goalType/programStartDate ONLY if not already initialized, then
   // marks initialized. Safe to call on every launch — no-op after first run.
@@ -43,6 +47,7 @@ export const useTrainingPlanStore = create<TrainingPlanState>()(
       goalType:         'general_running',
       programStartDate: null,
       races:            [],
+      activePresetGoal: null,
       initialized:      false,
 
       setGoalType:         (goalType) => set({ goalType }),
@@ -61,6 +66,13 @@ export const useTrainingPlanStore = create<TrainingPlanState>()(
 
       removeRace: (id) =>
         set(state => ({ races: state.races.filter(r => r.id !== id) })),
+
+      setActivePresetGoal: (activePresetGoal) => set({ activePresetGoal }),
+
+      // Clearing a goal intentionally affects only future goal programming.
+      // Completed activity, readiness, analytics, and workout history live in
+      // their own persisted stores and are never removed here.
+      clearActivePresetGoal: () => set({ activePresetGoal: null }),
 
       ensureInitialized: (defaults) => {
         if (get().initialized) return;
@@ -82,6 +94,7 @@ export const useTrainingPlanStore = create<TrainingPlanState>()(
           goalType:         state?.goalType         ?? current.goalType,
           programStartDate: state?.programStartDate ?? current.programStartDate,
           races:            state?.races             ?? current.races,
+          activePresetGoal: state?.activePresetGoal  ?? current.activePresetGoal,
           initialized:      state?.initialized       ?? current.initialized,
         };
       },

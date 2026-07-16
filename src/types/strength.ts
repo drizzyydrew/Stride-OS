@@ -168,7 +168,9 @@ export type StrengthLogRecord = {
   exerciseDetails?: ExerciseSessionDetail[];  // per-exercise weights + status
   overallRpe?:      number;
   notes?:           string;
-  source:           'generated' | 'manual';
+  source:           'generated' | 'manual' | 'preset';
+  presetId?:        string;
+  workoutName?:     string;
 
   fatigueBefore:   number;
   fatigueAfter:    number;

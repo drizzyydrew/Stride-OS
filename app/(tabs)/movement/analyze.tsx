@@ -29,6 +29,10 @@ import { detectPose, detectPoseSequence, isPoseEstimationAvailable } from 'strid
 
 import { useMovementStore } from '../../../src/store/movementStore';
 import { copyAnalysisMediaToStorage } from '../../../src/lib/movementVideoStorage';
+import {
+  MOVEMENT_VIDEO_PICKER_OPTIONS,
+  prepareImportedMovementVideo,
+} from '../../../src/lib/movementMediaImport';
 import { savePoseSequence } from '../../../src/lib/poseSequenceStorage';
 import {
   ANALYSIS_CHECKLISTS,
@@ -42,7 +46,7 @@ import {
   buildSequenceFindings,
 } from '../../../src/utils/movementEngine';
 import { classifyPoseConfidence, computeEstimatedAngles, computeFrontalMetrics } from '../../../src/utils/poseAngles';
-import { analyzeSequence } from '../../../src/utils/poseSequence';
+import { analyzeSequence, buildRawSequenceMaterial } from '../../../src/utils/poseSequence';
 import {
   canonicalView,
   determineClosestSide,
@@ -78,12 +82,13 @@ import type { PoseSequenceResult } from 'stride-pose';
 
 type CurrentMovementKind = Exclude<MovementAnalysisKind, 'lunge_single_leg'>;
 
-const VALID_KINDS: CurrentMovementKind[] = ['running_gait', 'squat', 'deadlift', 'single_leg_control', 'lunge', 'general'];
+const VALID_KINDS: CurrentMovementKind[] = ['running_gait', 'bike_fit', 'squat', 'deadlift', 'single_leg_control', 'lunge', 'general'];
 
 // Default capture view per kind; angled views are not offered. 'general' starts unknown
 // until the user picks a view below.
 const KIND_CAMERA_VIEW: Record<CurrentMovementKind, MovementViewAngle> = {
   running_gait:        'side',
+  bike_fit:            'side',
   squat:                'side',
   deadlift:             'side',
   single_leg_control:   'front',
@@ -93,7 +98,9 @@ const KIND_CAMERA_VIEW: Record<CurrentMovementKind, MovementViewAngle> = {
 
 // Kinds where lateral capture drives a closest-side, single-limb read —
 // mirrors the "Lateral, lower-body kinds" rule in the measurement matrix.
-const LATERAL_LOWER_BODY_KINDS = new Set<MovementAnalysisKind>(['running_gait', 'squat', 'deadlift', 'lunge', 'single_leg_control']);
+const LATERAL_CLOSEST_SIDE_KINDS = new Set<MovementAnalysisKind>([
+  'running_gait', 'bike_fit', 'squat', 'deadlift', 'lunge', 'single_leg_control',
+]);
 
 const GENERAL_VIEW_OPTIONS: { label: string; view: MovementViewAngle }[] = [
   { label: 'Direct lateral',  view: 'side' },
@@ -124,9 +131,10 @@ const GAIT_NORM_KEYS: Record<string, string> = {
   'Trunk lean':   'trunk_lean',
 };
 const LIFTING_NORM_KEYS: Record<string, string> = {
-  'Trunk lean':   'trunk_angle',
-  'Hip angle':    'hip_angle',
-  'Knee flexion': 'knee_angle',
+  'Trunk lean':    'trunk_angle',
+  'Hip flexion':   'hip_angle',
+  'Hip extension': 'hip_angle',
+  'Knee flexion':  'knee_angle',
 };
 
 function angleConfidenceChip(c: number): { label: string; color: string } {
@@ -225,6 +233,9 @@ export default function AnalyzeScreen() {
   const [frameBusy, setFrameBusy] = useState<number | null>(null); // timeMs being extracted
   const [showCamera, setShowCamera] = useState(false);
   const [cameraMode, setCameraMode] = useState<'video' | 'photo'>('video');
+  const [importingVideo, setImportingVideo] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [retryVideoAsset, setRetryVideoAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
 
   const [pose,           setPose]           = useState<PoseState | null>(null);
   const [autoLandmarks,  setAutoLandmarks]  = useState<PoseLandmarkRecord[]>([]);
@@ -253,7 +264,7 @@ export default function AnalyzeScreen() {
   // confidence; the UI asks the athlete when confidence is low/absent.
   const [closestSide, setClosestSide] = useState<'left' | 'right' | null>(null);
   const [closestSideSource, setClosestSideSource] = useState<'auto' | 'user' | undefined>(undefined);
-  const needsClosestSide = LATERAL_LOWER_BODY_KINDS.has(kind) && canonicalView(view) === 'lateral';
+  const needsClosestSide = LATERAL_CLOSEST_SIDE_KINDS.has(kind) && canonicalView(view) === 'lateral';
   const processingClosestSide = closestSide && media?.captureMetadata.isMirrored
     ? closestSide === 'left' ? 'right' : 'left'
     : closestSide;
@@ -353,6 +364,33 @@ export default function AnalyzeScreen() {
     }
   }
 
+  async function prepareVideoAsset(asset: ImagePicker.ImagePickerAsset) {
+    setImportingVideo(true);
+    setImportError(null);
+    setRetryVideoAsset(asset);
+    const prepared = await prepareImportedMovementVideo({
+      uri: asset.uri,
+      duration: asset.duration,
+      fileSize: asset.fileSize,
+      mimeType: asset.mimeType,
+      fileName: asset.fileName,
+    });
+    setImportingVideo(false);
+    if (!prepared.ok) {
+      setImportError(prepared.error.message);
+      return;
+    }
+    setRetryVideoAsset(null);
+    applyPickedAsset({
+      ...asset,
+      uri: prepared.video.uri,
+      duration: prepared.video.duration,
+      fileSize: prepared.video.fileSize ?? undefined,
+      mimeType: prepared.video.mimeType ?? undefined,
+      fileName: prepared.video.fileName,
+    }, 'video');
+  }
+
   async function pickVideoFromLibrary() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -360,23 +398,9 @@ export default function AnalyzeScreen() {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false, quality: 0.9 });
+    const result = await ImagePicker.launchImageLibraryAsync(MOVEMENT_VIDEO_PICKER_OPTIONS);
     if (result.canceled || result.assets.length === 0) return;
-
-    const asset = result.assets[0];
-    const validationError = await validatePickedVideo({
-      uri:      asset.uri,
-      duration: asset.duration ?? undefined,
-      fileSize: asset.fileSize ?? undefined,
-      mimeType: asset.mimeType ?? undefined,
-      fileName: asset.fileName ?? undefined,
-    });
-    if (validationError) {
-      Alert.alert("This clip can't be used", validationError.message);
-      return;
-    }
-
-    applyPickedAsset(asset, 'video');
+    await prepareVideoAsset(result.assets[0]);
   }
 
   async function handleCameraCaptured(result: TimedCaptureResult) {
@@ -695,6 +719,9 @@ export default function AnalyzeScreen() {
     const effectiveAngleSeries = sequenceAnalysis?.angleSeries
       ? filterAngleSeries(sequenceAnalysis.angleSeries, kind, view, processingClosestSide ?? undefined)
       : undefined;
+    const rawSequenceMaterial = sequenceResult
+      ? buildRawSequenceMaterial(sequenceResult, kind, view)
+      : undefined;
 
     // Picker/thumbnail URIs live in the purgeable OS cache — copy the analyzed
     // media into documents so the saved record keeps working. On copy failure
@@ -776,6 +803,7 @@ export default function AnalyzeScreen() {
       imageAspectRatio:  pose ? pose.imageWidth / pose.imageHeight : (frame ? frame.width / frame.height : (media.width && media.height ? media.width / media.height : undefined)),
       rawEstimatedAngles: rawAngles.length > 0 ? rawAngles : undefined,
       estimatedAngles:   effectiveAngles.length > 0 ? effectiveAngles : undefined,
+      measurementConventionVersion: 2,
       checklistFindings,
       confidence:        sequenceAnalysis?.confidence ?? confidence,
       notes:             notes.trim() || undefined,
@@ -785,13 +813,22 @@ export default function AnalyzeScreen() {
       referenceFrameTimeMs: frame?.timeMs,
       referenceFrameUri: storedReferenceFrameUri,
       angleSeries:         effectiveAngleSeries,
+      rawAngleSeries:      rawSequenceMaterial?.angleSeries,
       keyFrames:           effectiveKeyFrames,
+      rawKeyFrames:        rawSequenceMaterial?.keyFrames,
       repSummaries:        sequenceAnalysis?.repSummaries,
       symmetryEstimates:   effectiveSymmetry,
       sequenceConfidence:  sequenceAnalysis?.confidence,
       sequenceLimitations: sequenceAnalysis?.limitations,
       analyzedDurationMs:  sequenceResult?.analyzedMs,
       videoDurationMs:     sequenceResult?.durationMs ?? media.durationMs,
+      bikeFitPhases: kind === 'bike_fit' && sequenceAnalysis
+        ? {
+            topDeadCenterMs: sequenceAnalysis.keyFrames.find(keyFrame => keyFrame.label.includes('top pedal phase'))?.timeMs,
+            bottomDeadCenterMs: sequenceAnalysis.keyFrames.find(keyFrame => keyFrame.label.includes('bottom pedal phase'))?.timeMs,
+            source: 'estimated',
+          }
+        : undefined,
       viewFiltersMaterialized: false,
     } as never);
 
@@ -887,8 +924,8 @@ export default function AnalyzeScreen() {
                 <Pressable style={s.mediaBtn} onPress={() => { setCameraMode('video'); setShowCamera(true); }}>
                   <Text style={s.mediaBtnTxt}>Record Video</Text>
                 </Pressable>
-                <Pressable style={s.mediaBtn} onPress={pickVideoFromLibrary}>
-                  <Text style={s.mediaBtnTxt}>Choose Video</Text>
+                <Pressable style={[s.mediaBtn, importingVideo && { opacity: 0.5 }]} onPress={pickVideoFromLibrary} disabled={importingVideo}>
+                  <Text style={s.mediaBtnTxt}>{importingVideo ? 'Preparing…' : 'Choose Video'}</Text>
                 </Pressable>
                 <Pressable style={s.mediaBtn} onPress={() => { setCameraMode('photo'); setShowCamera(true); }}>
                   <Text style={s.mediaBtnTxt}>Take Photo</Text>
@@ -897,6 +934,16 @@ export default function AnalyzeScreen() {
                   <Text style={s.mediaBtnTxt}>Choose Photo</Text>
                 </Pressable>
               </View>
+              {importError ? (
+                <View style={{ gap: spacing.xs }}>
+                  <Text style={s.poseMessage}>{importError}</Text>
+                  {retryVideoAsset ? (
+                    <Pressable style={s.mediaActionBtn} onPress={() => void prepareVideoAsset(retryVideoAsset)} disabled={importingVideo}>
+                      <Text style={s.mediaActionTxt}>Retry Video Import</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
               <Text style={s.importLimitsTxt}>{IMPORT_LIMITS_COPY}</Text>
             </View>
           ) : (
@@ -1077,6 +1124,8 @@ export default function AnalyzeScreen() {
                 aspectRatio={overlayAspectRatio}
                 autoLandmarks={autoLandmarks.length > 0 ? autoLandmarks : pose.landmarks}
                 landmarks={displayLandmarks ?? pose.landmarks}
+                allowedLandmarkNames={overlayConfig.visibleJoints.filter(name => /_(shoulder|elbow|wrist|hip|knee|ankle)$/.test(name))}
+                visibleConnections={overlayConfig.visibleConnections}
                 onCancel={() => setEditingMarkers(false)}
                 onSave={saveLandmarkCorrections}
               />

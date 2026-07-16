@@ -14,6 +14,7 @@ Pod::Spec.new do |s|
   s.swift_version  = '5.9'
   s.source         = { :git => '' }
   s.static_framework = true
+  s.frameworks = 'ActivityKit'
   s.source_files = 'Core/**/*.{swift,h,m,mm}'
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',

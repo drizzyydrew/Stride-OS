@@ -59,7 +59,7 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['barbell', 'dumbbell'], unilateral: false, cnsLoad: 'high',
     coachingCues: ['Hinge at hips — not waist', 'Bar/dumbbells stay close to legs', 'Soft knee, proud chest throughout'],
     contraindications: ['lower_back_pain_acute'],
-    rationale: 'Primary posterior-chain developer. Hamstring and glute strength reduces injury risk and improves propulsive force in the late stance phase of running.',
+    rationale: 'Primary posterior-chain developer. Hamstring and glute strength may support propulsive force and running performance in the late stance phase.',
   },
   hinge_single_rdl: {
     id: 'hinge_single_rdl', name: 'Single-Leg RDL', pattern: 'hinge',
@@ -80,7 +80,7 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['bodyweight'], unilateral: false, cnsLoad: 'high',
     coachingCues: ['Control the fall for 3–5 seconds', 'Use hands to control final range — don\'t crash', 'Brace core throughout'],
     contraindications: ['hamstring_injury_acute'],
-    rationale: 'Gold-standard hamstring injury prevention. Eccentric overload builds tendon stiffness and reduces hamstring strain risk by ~50%. Requires careful progressive introduction.',
+    rationale: 'High-demand eccentric hamstring exercise that builds strength at longer muscle lengths. It requires careful progressive introduction and does not guarantee symptom prevention.',
   },
 
   // ── Lunge ─────────────────────────────────────────────────────────────────
@@ -174,7 +174,7 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['bodyweight'], unilateral: true, cnsLoad: 'medium',
     coachingCues: ['Body in a straight line from head to heel', 'Top leg does the work — don\'t just hang', 'Start with short duration sets and build'],
     contraindications: ['groin_injury_acute'],
-    rationale: 'The most effective adductor loading exercise for runners. Reduces groin injury risk and builds the medial hip stability that controls knee tracking in single-leg stance.',
+    rationale: 'Progressive adductor loading that may support medial hip strength and single-leg control. Dose it conservatively and monitor symptoms.',
   },
   trunk_side_plank: {
     id: 'trunk_side_plank', name: 'Side Plank', pattern: 'trunk',
@@ -197,7 +197,7 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['bodyweight', 'dumbbell'], unilateral: true, cnsLoad: 'low',
     coachingCues: ['Full range — heel below step, full rise', '2 seconds up, 2 seconds down', 'Keep knee soft — don\'t lock out'],
     contraindications: ['achilles_tendinopathy_reactive'],
-    rationale: 'Gastrocnemius and Achilles tendon loading. The single most important injury prevention exercise for runners — directly reduces plantar fasciitis and Achilles tendinopathy risk.',
+    rationale: 'Progressive gastrocnemius and Achilles loading that may support calf capacity for running. It is not a guarantee against pain or injury.',
   },
   calf_seated: {
     id: 'calf_seated', name: 'Seated Calf Raise', pattern: 'calf_ankle',
@@ -227,7 +227,7 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['bodyweight'], unilateral: true, cnsLoad: 'high',
     coachingCues: ['Stick the landing — control for 2 seconds', 'Soft knee — don\'t land stiff-legged', 'Progress from small to large amplitude'],
     contraindications: ['knee_ligament_injury', 'ankle_sprain_acute'],
-    rationale: 'Single-leg reactive strength that mirrors the plyometric demands of fast running. Identifies and corrects asymmetries that can indicate overuse injury risk.',
+    rationale: 'Single-leg reactive strength that mirrors some plyometric demands of faster running. Side-to-side differences are estimates to review, not injury prediction.',
   },
 
   // ── Mobility / Prehab ─────────────────────────────────────────────────────
@@ -421,7 +421,7 @@ function applyStrengthAdaptations(
     goal = 'injury_resilience';
   }
 
-  // Injury risk: no high-CNS sessions
+  // High training stress: no high-CNS sessions
   if (input.injuryRisk) {
     sessionTypes = sessionTypes.map(t =>
       t === 'lower_power' || t === 'running_economy' ? 'prehab' : t,

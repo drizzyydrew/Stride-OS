@@ -23,6 +23,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMovementStore } from '../../../src/store/movementStore';
 import { useAuthStore }     from '../../../src/store/authStore';
 import { copyVideoToMovementStorage, uploadMovementVideo } from '../../../src/lib/movementVideoStorage';
+import {
+  MOVEMENT_VIDEO_PICKER_OPTIONS,
+  prepareImportedMovementVideo,
+} from '../../../src/lib/movementMediaImport';
 import { ANALYSIS_KIND_INFO } from '../../../src/utils/movementEngine';
 import { normalizeAnalysisKind } from '../../../src/utils/measurementMatrix';
 import { dionImagesForKind } from '../../../src/constants/dionImages';
@@ -44,6 +48,7 @@ import type { ReadinessCategory } from '../../../src/types/movementReadiness';
 // for the home-screen cards. Actual capture view is chosen on the analyze screen.
 const KIND_DEFAULT_VIEW: Record<Exclude<MovementAnalysisKind, 'lunge_single_leg'>, MovementViewAngle> = {
   running_gait:        'side',
+  bike_fit:            'side',
   squat:                'side',
   deadlift:             'side',
   single_leg_control:   'front',
@@ -68,6 +73,7 @@ type AddVideoForm = {
 
 const ANALYSIS_TYPES: { key: MovementAnalysisType; label: string }[] = [
   { key: 'running_gait',      label: 'Running Gait' },
+  { key: 'bike_fit',          label: 'Bike Fit'     },
   { key: 'lifting_mechanics', label: 'Lifting'       },
   { key: 'mobility',          label: 'Mobility'      },
   { key: 'other',             label: 'Other'         },
@@ -76,6 +82,7 @@ const ANALYSIS_TYPES: { key: MovementAnalysisType; label: string }[] = [
 const ACTIVITIES: { key: MovementActivity; label: string }[] = [
   { key: 'running',    label: 'Running'   },
   { key: 'walking',    label: 'Walking'   },
+  { key: 'cycling',    label: 'Cycling'   },
   { key: 'squat',      label: 'Squat'     },
   { key: 'deadlift',   label: 'Deadlift'  },
   { key: 'lunge',      label: 'Lunge'     },
@@ -94,6 +101,7 @@ const VIEW_ANGLES: { key: MovementViewAngle; label: string }[] = [
 const ACTIVITY_LABELS: Record<MovementActivity, string> = {
   running:    'Running',
   walking:    'Walking',
+  cycling:    'Cycling',
   squat:      'Squat',
   deadlift:   'Deadlift',
   lunge:      'Lunge',
@@ -107,6 +115,7 @@ const ACTIVITY_LABELS: Record<MovementActivity, string> = {
 
 const TYPE_LABELS: Record<MovementAnalysisType, string> = {
   running_gait:      'Running Gait',
+  bike_fit:          'Bike Fit',
   lifting_mechanics: 'Lifting',
   mobility:          'Mobility',
   other:             'Other',
@@ -116,6 +125,7 @@ const TYPE_LABELS: Record<MovementAnalysisType, string> = {
 // Lab home cards. Categories come from ANALYSIS_KIND_INFO (Agent A).
 const ANALYSIS_KINDS: Exclude<MovementAnalysisKind, 'lunge_single_leg'>[] = [
   'running_gait',
+  'bike_fit',
   'squat',
   'deadlift',
   'single_leg_control',
@@ -189,6 +199,9 @@ function AddVideoModal({
     view:         'side',
     notes:        '',
   });
+  const [preparingVideo, setPreparingVideo] = useState(false);
+  const [videoImportError, setVideoImportError] = useState<string | null>(null);
+  const [retryAsset, setRetryAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
 
   function patch<K extends keyof AddVideoForm>(key: K, val: AddVideoForm[K]) {
     setForm(prev => ({ ...prev, [key]: val }));
@@ -201,19 +214,33 @@ function AddVideoModal({
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['videos'],
-      allowsEditing: false,
-      quality: 1,
-    });
+    const result = await ImagePicker.launchImageLibraryAsync(MOVEMENT_VIDEO_PICKER_OPTIONS);
 
     if (!result.canceled && result.assets.length > 0) {
-      const asset = result.assets[0];
-      const ext      = asset.uri.split('.').pop() ?? 'mp4';
-      const fileName = `video_${Date.now()}.${ext}`;
-      patch('localUri',  asset.uri);
-      patch('fileName',  fileName);
+      await prepareVideoAsset(result.assets[0]);
     }
+  }
+
+  async function prepareVideoAsset(asset: ImagePicker.ImagePickerAsset) {
+    setPreparingVideo(true);
+    setVideoImportError(null);
+    setRetryAsset(asset);
+    const prepared = await prepareImportedMovementVideo({
+      uri: asset.uri,
+      fileName: asset.fileName,
+      duration: asset.duration,
+      fileSize: asset.fileSize,
+      mimeType: asset.mimeType,
+    });
+    setPreparingVideo(false);
+    if (!prepared.ok) {
+      setVideoImportError(prepared.error.message);
+      return;
+    }
+    setRetryAsset(null);
+    const ext = (prepared.video.fileName ?? prepared.video.uri).split('.').pop() ?? 'mp4';
+    patch('localUri', prepared.video.uri);
+    patch('fileName', prepared.video.fileName ?? `video_${Date.now()}.${ext}`);
   }
 
   function handleAdd() {
@@ -320,7 +347,7 @@ function AddVideoModal({
 
           <View style={m.section}>
             <Text style={m.label}>VIDEO (OPTIONAL)</Text>
-            <Pressable style={m.videoPicker} onPress={handlePickVideo}>
+            <Pressable style={[m.videoPicker, preparingVideo && { opacity: 0.5 }]} onPress={handlePickVideo} disabled={preparingVideo}>
               {form.localUri ? (
                 <View style={m.videoPickerSelected}>
                   <Text style={m.videoPickerIcon}>🎥</Text>
@@ -330,10 +357,20 @@ function AddVideoModal({
               ) : (
                 <View style={m.videoPickerEmpty}>
                   <Text style={m.videoPickerIcon}>📹</Text>
-                  <Text style={m.videoPickerTxt}>Choose from camera roll</Text>
+                  <Text style={m.videoPickerTxt}>{preparingVideo ? 'Preparing video…' : 'Choose from camera roll'}</Text>
                 </View>
               )}
             </Pressable>
+            {videoImportError ? (
+              <View style={{ gap: spacing.xs }}>
+                <Text style={m.uploadTxt}>{videoImportError}</Text>
+                {retryAsset ? (
+                  <Pressable style={m.videoPicker} onPress={() => void prepareVideoAsset(retryAsset)} disabled={preparingVideo}>
+                    <Text style={m.videoPickerChange}>Retry Video Import</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
             {uploading && (
               <View style={m.uploadRow}>
                 <ActivityIndicator size="small" color={colors.primary} />

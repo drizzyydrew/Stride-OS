@@ -16,8 +16,8 @@ import type { AngleSeries, EstimatedAngle, MovementAnalysis, PoseLandmarkRecord 
 const angles: EstimatedAngle[] = [
   { name: 'Knee flexion', joint: 'knee', side: 'left', degrees: 80, confidence: 0.9 },
   { name: 'Knee flexion', joint: 'knee', side: 'right', degrees: 82, confidence: 0.9 },
-  { name: 'Hip angle', joint: 'hip', side: 'left', degrees: 70, confidence: 0.9 },
-  { name: 'Hip angle', joint: 'hip', side: 'right', degrees: 72, confidence: 0.9 },
+  { name: 'Hip flexion', joint: 'hip', side: 'left', degrees: 70, confidence: 0.9, metricId: 'hip_sagittal_motion', motion: 'flexion' },
+  { name: 'Hip flexion', joint: 'hip', side: 'right', degrees: 72, confidence: 0.9, metricId: 'hip_sagittal_motion', motion: 'flexion' },
   { name: 'Trunk lean', joint: 'trunk', side: 'center', degrees: 12, confidence: 0.9 },
   { name: 'Elbow angle', joint: 'elbow', side: 'left', degrees: 90, confidence: 0.9 },
 ];
@@ -26,7 +26,7 @@ test('lateral lower-body measurements retain only the selected closest limb', ()
   const filtered = filterEstimatedAngles(angles, 'squat', 'side', 'left');
   assert.deepEqual(filtered.map(a => `${a.name}:${a.side}`), [
     'Knee flexion:left',
-    'Hip angle:left',
+    'Hip flexion:left',
     'Trunk lean:center',
   ]);
 });
@@ -55,7 +55,7 @@ test('angle-series filtering follows the same closest-side rule', () => {
   }));
   assert.deepEqual(
     filterAngleSeries(series, 'deadlift', 'side', 'right').map(item => `${item.name}:${item.side}`),
-    ['Knee flexion:right', 'Hip angle:right', 'Trunk lean:center'],
+    ['Knee flexion:right', 'Hip flexion:right', 'Trunk lean:center'],
   );
 });
 
@@ -117,7 +117,7 @@ test('body-region configuration suppresses unrelated measurements', () => {
 
   const upper = movementOverlayConfiguration('general', 'side', 'right', 'upper_body');
   assert.equal(upper.prohibitedMeasurements.includes('Knee flexion'), true);
-  assert.equal(upper.prohibitedMeasurements.includes('Hip angle'), true);
+  assert.equal(upper.prohibitedMeasurements.includes('Hip flexion'), true);
   assert.deepEqual(upper.allowedMeasurements, []);
 });
 
@@ -136,6 +136,22 @@ test('saved lateral analyses filter far-side charts, key frames, and symmetry', 
   assert.equal(filtered.angleSeries?.some(series => series.side === 'right'), false);
   assert.deepEqual(filtered.keyFrames, []);
   assert.equal(filtered.symmetryEstimates, undefined);
+});
+
+test('legacy lateral hip angle is suppressed without destroying raw records', () => {
+  const legacyHip: EstimatedAngle = {
+    name: 'Hip angle', joint: 'hip', side: 'left', degrees: 42, confidence: 0.8,
+  };
+  const filtered = applyAnalysisViewFilters({
+    id: 'legacy-hip', createdAt: 1, updatedAt: 1,
+    type: 'squat', mediaUri: 'frame.jpg', mediaType: 'photo', cameraView: 'side',
+    closestSide: 'left', rawEstimatedAngles: [legacyHip],
+    checklistFindings: [], confidence: 'moderate', recommendations: [], limitations: [], status: 'complete',
+  });
+  assert.equal(filtered.estimatedAngles?.some(angle => angle.name === 'Hip angle'), false);
+  assert.equal(filtered.rawEstimatedAngles?.[0]?.name, 'Hip angle');
+  assert.deepEqual(filtered.legacyMeasurementsSuppressed, ['Hip angle']);
+  assert.equal(filtered.measurementConventionVersion, 2);
 });
 
 test('mirrored saved media swaps anatomical left and right explicitly', () => {
@@ -157,4 +173,35 @@ test('mirrored saved media swaps anatomical left and right explicitly', () => {
   const reopened = applyAnalysisViewFilters(filtered);
   assert.equal(reopened.angleSeries?.[0]?.side, 'right');
   assert.equal(reopened.keyFrames?.[0]?.label, 'Peak flexion — right');
+});
+
+test('version-two lateral records preserve raw material and switch every display surface', () => {
+  const rawAngleSeries: AngleSeries[] = angles.map(angle => ({
+    name: angle.name,
+    joint: angle.joint,
+    side: angle.side,
+    points: [{ timeMs: 0, degrees: angle.degrees, confidence: angle.confidence }],
+  }));
+  const base: MovementAnalysis = {
+    id: 'v2-side', createdAt: 1, updatedAt: 1,
+    type: 'squat', mediaUri: 'frame.jpg', mediaType: 'video', cameraView: 'side',
+    closestSide: 'left', measurementConventionVersion: 2,
+    rawEstimatedAngles: angles, rawAngleSeries,
+    rawKeyFrames: [
+      { id: 'left', label: 'Deepest position — left', timeMs: 100, angles },
+      { id: 'right', label: 'Deepest position — right', timeMs: 100, angles },
+    ],
+    checklistFindings: [], confidence: 'moderate', recommendations: [], limitations: [], status: 'complete',
+  };
+  const left = applyAnalysisViewFilters(base);
+  assert.deepEqual(left.angleSeries?.filter(series => series.side !== 'center').map(series => series.side), ['left', 'left']);
+  assert.deepEqual(left.keyFrames?.map(frame => frame.id), ['left']);
+  assert.equal(left.estimatedAngles?.filter(angle => angle.side !== 'center').every(angle => angle.side === 'left'), true);
+  assert.equal(left.rawAngleSeries?.some(series => series.side === 'right'), true);
+
+  const right = applyAnalysisViewFilters({ ...left, closestSide: 'right', viewFiltersMaterialized: false });
+  assert.deepEqual(right.angleSeries?.filter(series => series.side !== 'center').map(series => series.side), ['right', 'right']);
+  assert.deepEqual(right.keyFrames?.map(frame => frame.id), ['right']);
+  assert.equal(right.estimatedAngles?.filter(angle => angle.side !== 'center').every(angle => angle.side === 'right'), true);
+  assert.equal(right.measurementConventionVersion, 2);
 });

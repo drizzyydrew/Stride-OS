@@ -92,7 +92,7 @@ export function getLongRunTarget(
 
 // ─── Adaptive Ceiling ──────────────────────────────────────────────────────────
 
-// Gabbett (2016): ACWR > 1.3 significantly elevates injury risk.
+// ACWR is retained as a workload-trend input, not an injury predictor.
 // Meeusen et al. (2013): unresolved fatigue markers require load reduction.
 // Multiple independent risk factors compound — we take the most restrictive.
 
@@ -106,7 +106,7 @@ export function getAdaptiveCeiling(
 ): CeilingResult {
   const ceilings: { factor: number; reason: string }[] = [];
 
-  if (acwr > 1.5)        ceilings.push({ factor: 0.65, reason: 'ACWR > 1.5 — high injury risk' });
+  if (acwr > 1.5)        ceilings.push({ factor: 0.65, reason: 'ACWR > 1.5 — abrupt recent load increase; use conservative progression' });
   else if (acwr > 1.3)   ceilings.push({ factor: 0.80, reason: 'ACWR > 1.3 — elevated risk zone' });
 
   if (fatigueScore > 80) ceilings.push({ factor: 0.70, reason: 'Fatigue critical — reduce load' });
@@ -153,7 +153,7 @@ export function getProgressionSafeguards(
       type:    'mileage_jump',
       severity: jumpPct > 18 ? 'critical' : 'warning',
       message:  `Target is ${jumpPct}% above last week — exceeds 10% rule`,
-      recommendation: 'Cap increase at 8–10% of last week\'s mileage to reduce injury risk',
+      recommendation: 'Cap the increase at 8–10% of last week\'s mileage to avoid an abrupt workload jump',
     });
   }
 

@@ -47,6 +47,12 @@ export const SKELETON_CONNECTIONS: [PoseJointName, PoseJointName][] = [
 
 type Point = { x: number; y: number };
 
+export type PoseAngleContext = {
+  view?: 'front' | 'side' | 'rear' | 'unknown' | '45_degree';
+  closestSide?: 'left' | 'right';
+  subjectFacing?: 'image_left' | 'image_right' | 'unknown';
+};
+
 /**
  * Angle in degrees at vertex `b`, formed by vectors b→a and b→c.
  * Returns 0–180. Degenerate (zero-length) vectors return NaN — callers skip.
@@ -96,11 +102,6 @@ function sideSpecs(side: 'left' | 'right'): TripleSpec[] {
       note: '0° = fully straight knee',
     },
     {
-      name:  'Hip angle',
-      joint: 'hip',
-      a: p('shoulder'), b: p('hip'), c: p('knee'),
-    },
-    {
       name:  'Elbow angle',
       joint: 'elbow',
       a: p('shoulder'), b: p('elbow'), c: p('wrist'),
@@ -113,6 +114,73 @@ function sideSpecs(side: 'left' | 'right'): TripleSpec[] {
   ];
 }
 
+function subjectFacingDirection(
+  joints: PoseJoint[],
+  override?: PoseAngleContext['subjectFacing'],
+): -1 | 1 | null {
+  if (override === 'image_left') return -1;
+  if (override === 'image_right') return 1;
+  if (override === 'unknown') return null;
+
+  const nose = findJoint(joints, 'nose');
+  const neck = findJoint(joints, 'neck');
+  if (!nose || !neck) return null;
+  const horizontalOffset = nose.x - neck.x;
+  if (Math.abs(horizontalOffset) < 0.012) return null;
+  return horizontalOffset < 0 ? -1 : 1;
+}
+
+/**
+ * Estimated two-dimensional anatomical sagittal hip motion.
+ *
+ * The trunk axis runs shoulder→hip (caudal) and the femur axis hip→knee.
+ * Subject-facing direction makes the signed relationship invariant to whether
+ * the athlete faces image-left, image-right, or the media is horizontally
+ * mirrored. Flexion and extension are named directly; a negative hip-flexion
+ * value is never emitted.
+ */
+export function computeAnatomicalHipMotion(
+  joints: PoseJoint[],
+  side: 'left' | 'right',
+  context: PoseAngleContext = {},
+): EstimatedAngle | null {
+  if (context.view && context.view !== 'side') return null;
+  const facing = subjectFacingDirection(joints, context.subjectFacing);
+  if (!facing) return null;
+
+  const shoulder = findJoint(joints, `${side}_shoulder` as PoseJointName);
+  const hip = findJoint(joints, `${side}_hip` as PoseJointName);
+  const knee = findJoint(joints, `${side}_knee` as PoseJointName);
+  if (!shoulder || !hip || !knee) return null;
+
+  const trunkX = hip.x - shoulder.x;
+  const trunkY = hip.y - shoulder.y;
+  const femurX = knee.x - hip.x;
+  const femurY = knee.y - hip.y;
+  if (Math.hypot(trunkX, trunkY) === 0 || Math.hypot(femurX, femurY) === 0) return null;
+
+  const signedImageAngle = Math.atan2(
+    trunkX * femurY - trunkY * femurX,
+    trunkX * femurX + trunkY * femurY,
+  ) * 180 / Math.PI;
+  const anatomicalDegrees = -facing * signedImageAngle;
+  const motion: 'flexion' | 'extension' = anatomicalDegrees < -1 ? 'extension' : 'flexion';
+  const degrees = motion === 'extension' ? Math.abs(anatomicalDegrees) : Math.max(0, anatomicalDegrees);
+
+  return {
+    name: motion === 'extension' ? 'Hip extension' : 'Hip flexion',
+    joint: 'hip',
+    side,
+    degrees: round1(degrees),
+    confidence: Math.min(shoulder.confidence, hip.confidence, knee.confidence),
+    metricId: 'hip_sagittal_motion',
+    motion,
+    note: motion === 'extension'
+      ? 'Estimated 2D anatomical hip extension from the visible trunk and femur axes'
+      : 'Estimated 2D anatomical hip flexion from the visible trunk and femur axes',
+  };
+}
+
 /**
  * Compute estimated joint angles from detected landmarks.
  * An angle is only emitted when all three contributing landmarks are present
@@ -122,10 +190,12 @@ function sideSpecs(side: 'left' | 'right'): TripleSpec[] {
 export function computeEstimatedAngles(
   joints: PoseJoint[],
   _kind: MovementAnalysisKind,
+  context: PoseAngleContext = {},
 ): EstimatedAngle[] {
   const angles: EstimatedAngle[] = [];
 
   for (const side of ['left', 'right'] as const) {
+    if (context.closestSide && side !== context.closestSide) continue;
     for (const spec of sideSpecs(side)) {
       const a = findJoint(joints, spec.a);
       const b = findJoint(joints, spec.b);
@@ -141,8 +211,17 @@ export function computeEstimatedAngles(
         degrees:    round1(degrees),
         confidence: Math.min(a.confidence, b.confidence, c.confidence),
         note:       spec.note,
+        metricId:   spec.name === 'Knee flexion'
+          ? 'knee_flexion'
+          : spec.name === 'Elbow angle'
+            ? 'elbow_angle'
+            : spec.name === 'Shoulder angle'
+              ? 'shoulder_angle'
+              : undefined,
       });
     }
+    const hipMotion = computeAnatomicalHipMotion(joints, side, context);
+    if (hipMotion) angles.push(hipMotion);
   }
 
   // Trunk lean — shoulder-midpoint → hip-midpoint line vs vertical.
@@ -165,6 +244,7 @@ export function computeEstimatedAngles(
         degrees:    round1(leanFromVertical),
         confidence: Math.min(ls.confidence, rs.confidence, lh.confidence, rh.confidence),
         note:       'Deviation of the trunk line from vertical',
+        metricId:   'trunk_lean',
       });
     }
   }
@@ -213,6 +293,7 @@ export function computeFrontalMetrics(joints: PoseJoint[]): EstimatedAngle[] {
         degrees:    round1(tiltFromLevel),
         confidence: Math.min(lh.confidence, rh.confidence),
         note:       'Estimated tilt of the hip line from level (0° = hips level)',
+        metricId:   'pelvic_obliquity',
       });
     }
   }
@@ -250,6 +331,7 @@ export function computeFrontalMetrics(joints: PoseJoint[]): EstimatedAngle[] {
       degrees:    round1(normalized),
       confidence: Math.min(hip.confidence, knee.confidence, ankle.confidence),
       note:       'Estimated knee position vs the hip–ankle line (% of limb length; + = toward midline)',
+      metricId:   'frontal_knee_position',
     });
   }
 
@@ -271,6 +353,7 @@ export function computeFrontalMetrics(joints: PoseJoint[]): EstimatedAngle[] {
         degrees:    round1(signedLean),
         confidence: Math.min(ls.confidence, rs.confidence, lh.confidence, rh.confidence),
         note:       'Estimated side-to-side trunk lean from vertical (+ = leaning image-right)',
+        metricId:   'trunk_lateral_lean',
       });
     }
   }

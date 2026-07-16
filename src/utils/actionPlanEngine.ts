@@ -74,7 +74,7 @@ const INSIGHT_ACTIONS: Record<string, ActionTemplate[]> = {
     {
       slug: 'mandatory_rest',
       title: 'Take a full rest day today',
-      reason: 'Fatigue is at a critical level. Training through this accelerates injury risk, not adaptation.',
+      reason: 'Fatigue is at a critical level. Training through this may add stress without useful adaptation.',
       category: 'recovery',
       dueWindow: 'today',
       priority: 'high',
@@ -365,7 +365,7 @@ const INSIGHT_ACTIONS: Record<string, ActionTemplate[]> = {
     {
       slug: 'strength_short_session',
       title: 'Schedule a 20-min prehab block this week — even short sessions count',
-      reason: 'Consistent short sessions outperform sporadic long ones for neuromuscular adaptation and injury prevention.',
+      reason: 'Consistent short sessions may support neuromuscular adaptation better than sporadic long sessions.',
       category: 'habit',
       dueWindow: 'this_week',
       priority: 'medium',

@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
+  Modal,
   PanResponder,
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LANDMARK_CONFIDENCE_FLOOR, SKELETON_CONNECTIONS } from '../../utils/poseAngles';
 import { colors } from '../../theme/colors';
@@ -20,15 +23,17 @@ type Props = {
   aspectRatio: number;
   autoLandmarks: PoseLandmarkRecord[];
   landmarks: PoseLandmarkRecord[];
+  allowedLandmarkNames?: string[];
+  visibleConnections?: [string, string][];
   onCancel: () => void;
   onSave: (landmarks: PoseLandmarkRecord[], corrected: boolean) => void;
 };
 
-const EDITABLE_SUFFIXES = ['shoulder', 'elbow', 'wrist', 'hip', 'knee', 'ankle'];
-const EDITABLE_NAMES = new Set(
+const EDITABLE_SUFFIXES = ['shoulder', 'hip', 'knee', 'ankle'];
+const DEFAULT_EDITABLE_NAMES = new Set(
   ['left', 'right'].flatMap(side => EDITABLE_SUFFIXES.map(suffix => `${side}_${suffix}`)),
 );
-const HANDLE_SIZE = 30;
+const HANDLE_SIZE = 44;
 
 function displayName(name: string): string {
   return name.replace(/_/g, ' ');
@@ -39,6 +44,7 @@ function clamp01(value: number): number {
 }
 
 function sameLandmarks(a: PoseLandmarkRecord[], b: PoseLandmarkRecord[]): boolean {
+  if (a.length !== b.length) return false;
   const byName = new Map(b.map(item => [item.name, item]));
   return a.every(item => {
     const other = byName.get(item.name);
@@ -83,6 +89,8 @@ function MarkerHandle({ joint, selected, width, height, onSelect, onMove }: Hand
           clamp01(start.current.y + gesture.dy / Math.max(1, height)),
         );
       },
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
     }),
     [height, joint.name, onMove, onSelect, width],
   );
@@ -90,6 +98,25 @@ function MarkerHandle({ joint, selected, width, height, onSelect, onMove }: Hand
   return (
     <View
       {...panResponder.panHandlers}
+      accessible
+      accessibilityRole="adjustable"
+      accessibilityLabel={`${displayName(joint.name)} marker`}
+      accessibilityHint="Drag, or use the accessibility actions, to adjust this landmark position."
+      accessibilityActions={[
+        { name: 'moveUp', label: 'Move up' },
+        { name: 'moveDown', label: 'Move down' },
+        { name: 'moveLeft', label: 'Move left' },
+        { name: 'moveRight', label: 'Move right' },
+      ]}
+      onAccessibilityAction={event => {
+        const step = 0.01;
+        const { x, y } = jointPos.current;
+        if (event.nativeEvent.actionName === 'moveUp') onMove(joint.name, x, clamp01(y - step));
+        if (event.nativeEvent.actionName === 'moveDown') onMove(joint.name, x, clamp01(y + step));
+        if (event.nativeEvent.actionName === 'moveLeft') onMove(joint.name, clamp01(x - step), y);
+        if (event.nativeEvent.actionName === 'moveRight') onMove(joint.name, clamp01(x + step), y);
+        onSelect(joint.name);
+      }}
       style={[
         styles.handle,
         {
@@ -109,18 +136,37 @@ export default function LandmarkEditor({
   aspectRatio,
   autoLandmarks,
   landmarks,
+  allowedLandmarkNames,
+  visibleConnections,
   onCancel,
   onSave,
 }: Props) {
+  const insets = useSafeAreaInsets();
+  const window = useWindowDimensions();
+  const allowedNames = useMemo(
+    () => new Set(allowedLandmarkNames ?? [...DEFAULT_EDITABLE_NAMES]),
+    [allowedLandmarkNames],
+  );
+  const initialNames = useMemo(() => new Set(landmarks.map(item => item.name)), [landmarks]);
   const [draft, setDraft] = useState<PoseLandmarkRecord[]>(landmarks);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const [selected, setSelected] = useState<string | null>(
-    landmarks.find(joint => EDITABLE_NAMES.has(joint.name))?.name ?? null,
+    landmarks.find(joint => allowedNames.has(joint.name))?.name ?? null,
   );
 
   const draftByName = useMemo(() => new Map(draft.map(joint => [joint.name, joint])), [draft]);
   const autoByName = useMemo(() => new Map(autoLandmarks.map(joint => [joint.name, joint])), [autoLandmarks]);
-  const editable = draft.filter(joint => EDITABLE_NAMES.has(joint.name));
+  const editable = draft.filter(joint => allowedNames.has(joint.name));
+  const availableStageWidth = Math.max(120, window.width - spacing.lg * 2);
+  const availableStageHeight = Math.max(
+    160,
+    window.height - insets.top - insets.bottom - 210,
+  );
+  const stageWidth = Math.max(
+    120,
+    Math.min(availableStageWidth, availableStageHeight * aspectRatio),
+  );
+  const stageHeight = stageWidth / Math.max(0.1, aspectRatio);
 
   function updateJoint(name: string, x: number, y: number) {
     setDraft(prev => prev.map(joint =>
@@ -136,7 +182,7 @@ export default function LandmarkEditor({
   }
 
   function resetAll() {
-    setDraft(autoLandmarks.map(joint => ({ ...joint })));
+    setDraft(autoLandmarks.filter(joint => initialNames.has(joint.name)).map(joint => ({ ...joint })));
   }
 
   function save() {
@@ -144,16 +190,24 @@ export default function LandmarkEditor({
   }
 
   return (
-    <View style={styles.wrap}>
+    <Modal visible animationType="slide" presentationStyle="fullScreen" onRequestClose={onCancel}>
+      <View style={[styles.modalRoot, { paddingTop: insets.top + spacing.sm, paddingBottom: insets.bottom + spacing.sm }]}>
+        <View style={styles.modalHeader}>
+          <View>
+            <Text style={styles.modalEyebrow}>LOCKED EDIT MODE</Text>
+            <Text style={styles.modalTitle}>Adjust Markers</Text>
+          </View>
+          <Text style={styles.modalHint}>Video and navigation are paused</Text>
+        </View>
       <View
-        style={[styles.stage, { aspectRatio }]}
+        style={[styles.stage, { width: stageWidth, height: stageHeight }]}
         onLayout={event => setSize({ w: event.nativeEvent.layout.width, h: event.nativeEvent.layout.height })}
       >
         <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
         {size ? (
           <>
             <Svg style={StyleSheet.absoluteFill} width={size.w} height={size.h} pointerEvents="none">
-              {SKELETON_CONNECTIONS.map(([a, b]) => {
+              {(visibleConnections ?? SKELETON_CONNECTIONS).map(([a, b]) => {
                 const ja = draftByName.get(a);
                 const jb = draftByName.get(b);
                 if (!ja || !jb || ja.confidence < LANDMARK_CONFIDENCE_FLOOR || jb.confidence < LANDMARK_CONFIDENCE_FLOOR) return null;
@@ -176,10 +230,10 @@ export default function LandmarkEditor({
                   cx={joint.x * size.w}
                   cy={joint.y * size.h}
                   r={4}
-                  fill={EDITABLE_NAMES.has(joint.name) ? colors.primary : 'none'}
+                  fill={allowedNames.has(joint.name) ? colors.primary : 'none'}
                   stroke={colors.primary}
                   strokeWidth={1.5}
-                  opacity={EDITABLE_NAMES.has(joint.name) ? 0.85 : 0.35}
+                  opacity={allowedNames.has(joint.name) ? 0.85 : 0.35}
                 />
               ))}
             </Svg>
@@ -201,30 +255,55 @@ export default function LandmarkEditor({
       <View style={styles.controls}>
         <Text style={styles.selected}>{selected ? displayName(selected) : 'Select marker'}</Text>
         <View style={styles.buttonRow}>
-          <Pressable style={styles.secondaryBtn} onPress={resetMarker} disabled={!selected}>
-            <Text style={styles.secondaryTxt}>Reset Marker</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryBtn} onPress={resetAll}>
-            <Text style={styles.secondaryTxt}>Reset All</Text>
-          </Pressable>
-        </View>
-        <View style={styles.buttonRow}>
-          <Pressable style={styles.cancelBtn} onPress={onCancel}>
+          <Pressable
+            style={styles.cancelBtn}
+            onPress={onCancel}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel marker adjustments"
+          >
             <Text style={styles.cancelTxt}>Cancel</Text>
           </Pressable>
-          <Pressable style={styles.saveBtn} onPress={save}>
-            <Text style={styles.saveTxt}>Save Corrections</Text>
+          <Pressable
+            style={styles.secondaryBtn}
+            onPress={resetAll}
+            accessibilityRole="button"
+            accessibilityLabel="Reset all markers to automatic positions"
+          >
+            <Text style={styles.secondaryTxt}>Reset</Text>
+          </Pressable>
+          <Pressable
+            style={styles.saveBtn}
+            onPress={save}
+            accessibilityRole="button"
+            accessibilityLabel="Save marker adjustments"
+          >
+            <Text style={styles.saveTxt}>Save</Text>
           </Pressable>
         </View>
+        {selected ? (
+          <Pressable
+            style={styles.resetMarkerBtn}
+            onPress={resetMarker}
+            accessibilityRole="button"
+            accessibilityLabel={`Reset ${displayName(selected)} marker`}
+          >
+            <Text style={styles.secondaryTxt}>Reset active marker</Text>
+          </Pressable>
+        ) : null}
       </View>
-    </View>
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.sm },
+  modalRoot: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.lg, gap: spacing.md },
+  modalHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: spacing.md },
+  modalEyebrow: { color: colors.primary, fontSize: 10, fontWeight: FontWeight.black, letterSpacing: 0.8 },
+  modalTitle: { color: colors.text, fontSize: FontSize.xl, fontWeight: FontWeight.black },
+  modalHint: { color: colors.textMuted, fontSize: FontSize.xs, textAlign: 'right', flexShrink: 1 },
   stage: {
-    width:           '100%',
+    alignSelf:       'center',
     borderRadius:    Radius.md,
     overflow:        'hidden',
     backgroundColor: '#000',
@@ -261,10 +340,14 @@ const styles = StyleSheet.create({
   },
   buttonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   secondaryBtn: {
+    flexGrow:          1,
     backgroundColor:   colors.border,
     borderRadius:      Radius.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical:   spacing.xs,
+    minHeight:         44,
+    paddingVertical:   spacing.sm,
+    alignItems:        'center',
+    justifyContent:    'center',
   },
   secondaryTxt: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   cancelBtn: {
@@ -273,6 +356,7 @@ const styles = StyleSheet.create({
     borderRadius:      Radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical:   spacing.sm,
+    minHeight:         44,
     alignItems:        'center',
   },
   cancelTxt: { color: colors.textMuted, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
@@ -282,8 +366,13 @@ const styles = StyleSheet.create({
     borderRadius:      Radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical:   spacing.sm,
+    minHeight:         44,
     alignItems:        'center',
   },
   saveTxt: { color: colors.onPrimary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  resetMarkerBtn: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
-

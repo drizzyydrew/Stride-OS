@@ -1,6 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import {
+  EMPTY_ROUTE_ATTACHMENT,
+  attachRouteState,
+  detachRouteState,
+  migrateRouteAttachment,
+  reverseRouteState,
+  reverseDistanceFromStart,
+  type RouteAttachmentState,
+} from '../utils/routeAttachment';
 
 export type RoutePoint = {
   latitude: number;
@@ -46,11 +55,17 @@ export type RunRoute = {
 
 type RouteStore = {
   routes: RunRoute[];
+  routeAttachment: RouteAttachmentState;
+  /** @deprecated Compatibility alias. Use routeAttachment.routeId. */
   selectedRouteId: string | null;
   addRoute: (route: Omit<RunRoute, 'id'>) => string;
   updateRoute: (id: string, patch: Partial<Omit<RunRoute, 'id'>>) => void;
   removeRoute: (id: string) => void;
   selectRoute: (id: string | null) => void;
+  attachRoute: (id: string) => void;
+  detachRouteFromToday: () => void;
+  reverseAttachedRoute: () => void;
+  reattachLastRoute: () => void;
 };
 
 const DEFAULT_ROUTES: RunRoute[] = [
@@ -152,6 +167,30 @@ export function routeDistanceMiles(points: RoutePoint[]): number {
   }, 0);
 }
 
+export function effectiveAttachedRoute(
+  route: RunRoute | null,
+  attachment: RouteAttachmentState,
+): RunRoute | null {
+  if (!route || attachment.status !== 'attached' || attachment.routeId !== route.id) return null;
+  if (attachment.direction === 'forward') return route;
+  const points = [...route.points].reverse();
+  return {
+    ...route,
+    points,
+    waypoints: route.waypoints ? [...route.waypoints].reverse() : undefined,
+    segments: route.segments
+      .map(segment => ({
+        ...segment,
+        distanceMiles: reverseDistanceFromStart(route.distanceMiles, segment.distanceMiles),
+      }))
+      .sort((a, b) => a.distanceMiles - b.distanceMiles)
+      .map(segment => ({
+        ...segment,
+        point: pointAtDistance(points, segment.distanceMiles),
+      })),
+  };
+}
+
 function pointAtDistance(points: RoutePoint[], targetMiles: number): RoutePoint {
   if (points.length === 0) return { latitude: 44.058, longitude: -121.315 };
   if (points.length === 1 || targetMiles <= 0) return points[0];
@@ -188,12 +227,14 @@ export const useRouteStore = create<RouteStore>()(
   persist(
     (set) => ({
       routes: DEFAULT_ROUTES,
+      routeAttachment: EMPTY_ROUTE_ATTACHMENT,
       selectedRouteId: null,
       addRoute: (route) => {
         const id = `route-${Date.now()}`;
         const now = Date.now();
         set((state) => ({
           routes: [{ createdAt: now, updatedAt: now, ...route, id }, ...state.routes],
+          routeAttachment: attachRouteState(id, now),
           selectedRouteId: id,
         }));
         return id;
@@ -205,19 +246,52 @@ export const useRouteStore = create<RouteStore>()(
       })),
       removeRoute: (id) => set((state) => ({
         routes: state.routes.filter((route) => route.id !== id),
+        routeAttachment: state.routeAttachment.routeId === id
+          ? detachRouteState(state.routeAttachment)
+          : {
+            ...state.routeAttachment,
+            lastDetachedRouteId: state.routeAttachment.lastDetachedRouteId === id
+              ? null
+              : state.routeAttachment.lastDetachedRouteId,
+          },
         selectedRouteId: state.selectedRouteId === id ? null : state.selectedRouteId,
       })),
-      selectRoute: (id) => set({ selectedRouteId: id }),
+      selectRoute: (id) => set(state => ({
+        selectedRouteId: id,
+        routeAttachment: id ? attachRouteState(id) : detachRouteState(state.routeAttachment),
+      })),
+      attachRoute: (id) => set({
+        selectedRouteId: id,
+        routeAttachment: attachRouteState(id),
+      }),
+      detachRouteFromToday: () => set(state => ({
+        selectedRouteId: null,
+        routeAttachment: detachRouteState(state.routeAttachment),
+      })),
+      reverseAttachedRoute: () => set(state => ({
+        routeAttachment: reverseRouteState(state.routeAttachment),
+      })),
+      reattachLastRoute: () => set(state => {
+        const id = state.routeAttachment.lastDetachedRouteId;
+        if (!id || !state.routes.some(route => route.id === id)) return state;
+        return {
+          selectedRouteId: id,
+          routeAttachment: attachRouteState(id),
+        };
+      }),
     }),
     {
       name: 'route-store',
       storage: createJSONStorage(() => AsyncStorage),
       merge: (persisted, current) => {
         const state = persisted as Partial<RouteStore> | undefined;
+        const attachment = migrateRouteAttachment(state?.routeAttachment, state?.selectedRouteId);
         return {
           ...current,
           ...state,
           routes: (state?.routes ?? current.routes).map(normalizeRoute),
+          routeAttachment: attachment,
+          selectedRouteId: attachment.routeId,
         };
       },
     },

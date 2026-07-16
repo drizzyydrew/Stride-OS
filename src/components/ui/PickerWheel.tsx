@@ -43,6 +43,13 @@ export default function PickerWheel({
   }, [visible]);
 
   const format = formatValue ?? ((v: number) => String(v));
+  const adjustSelection = (delta: number) => {
+    const currentIndex = Math.max(0, values.indexOf(selected));
+    const nextIndex = Math.max(0, Math.min(values.length - 1, currentIndex + delta));
+    const next = values[nextIndex];
+    setSelected(next);
+    listRef.current?.scrollToIndex({ index: nextIndex, animated: true, viewPosition: 0.5 });
+  };
 
   return (
     <Modal visible={visible} transparent animationType="slide">
@@ -50,7 +57,18 @@ export default function PickerWheel({
         <View style={[styles.sheet, { backgroundColor: C.card }]}>
           <Text style={[styles.title, { color: C.text }]}>{title}</Text>
 
-          <View style={styles.pickerContainer}>
+          <View
+            style={styles.pickerContainer}
+            accessible
+            accessibilityRole="adjustable"
+            accessibilityLabel={title}
+            accessibilityValue={{ text: format(selected) }}
+            accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+            onAccessibilityAction={event => {
+              if (event.nativeEvent.actionName === 'increment') adjustSelection(1);
+              if (event.nativeEvent.actionName === 'decrement') adjustSelection(-1);
+            }}
+          >
             <View style={[styles.highlight, { borderColor: C.primary }]} />
             <FlatList
               ref={listRef}
@@ -84,7 +102,7 @@ export default function PickerWheel({
             />
           </View>
 
-          <Text style={[styles.selectedLabel, { color: C.primary }]}>{format(selected)}</Text>
+          <Text accessibilityLiveRegion="polite" style={[styles.selectedLabel, { color: C.primary }]}>{format(selected)}</Text>
 
           <View style={styles.actions}>
             <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />

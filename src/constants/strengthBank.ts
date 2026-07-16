@@ -39,6 +39,10 @@ export type PresetStrengthExercise = {
   notes?:     string;
 };
 
+export function presetExerciseId(workoutId: string, exerciseName: string): string {
+  return `${workoutId}_${exerciseName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}`;
+}
+
 export type PresetStrengthWorkout = {
   id:           string;
   title:        string;

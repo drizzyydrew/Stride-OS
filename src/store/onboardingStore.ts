@@ -111,7 +111,7 @@ const DEFAULT_DATA: OnboardingData = {
 
 // ─── Store shape ──────────────────────────────────────────────────────────────
 
-export const ONBOARDING_TOTAL_STEPS = 10;  // Welcome + 9 data steps
+export const ONBOARDING_TOTAL_STEPS = 11;  // Welcome + 10 data steps
 
 type OnboardingStore = {
   onboardingComplete: boolean;

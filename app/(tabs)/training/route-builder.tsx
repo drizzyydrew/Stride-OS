@@ -8,8 +8,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Modal, StyleSheet, Text, TextInput,
-  TouchableOpacity, View,
+  ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -66,6 +66,8 @@ export default function RouteBuilderScreen() {
   const [routeNotes, setRouteNotes] = useState('');
   const requestIdRef = useRef(0);
   const mapRef = useRef<MapView>(null);
+  const routeNameInputRef = useRef<TextInput>(null);
+  const routeNotesInputRef = useRef<TextInput>(null);
 
   const snapUnresolved = snapEnabled && snapFailed && waypoints.length >= 2 && !routingBusy;
   const geometry = routed?.geometry ?? waypoints;
@@ -425,19 +427,37 @@ export default function RouteBuilderScreen() {
       </View>
 
       {/* Save modal */}
-      <Modal visible={showSave} transparent animationType="slide" onRequestClose={() => setShowSave(false)}>
+      <Modal
+        visible={showSave}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowSave(false)}
+        onShow={() => requestAnimationFrame(() => routeNameInputRef.current?.focus())}
+      >
+        <KeyboardAvoidingView style={s.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={s.modalOverlay}>
-          <View style={[s.modalSheet, { backgroundColor: C.card, paddingBottom: insets.bottom + 20 }]}>
+          <View style={[s.modalSheet, { backgroundColor: C.card, paddingBottom: insets.bottom + 12 }]}>
             <Text style={[s.modalTitle, { color: C.text }]}>Save Route</Text>
             <Text style={[s.modalMeta, { color: C.textMuted }]}>
               {distDisplay.toFixed(2)} {distUnit}
               {gainDisplay !== null ? ` · +${gainDisplay} ${elevUnit}` : ''} · ~{fmtDuration(Math.max(1, estimatedMin))} easy
             </Text>
+            <ScrollView
+              style={s.modalBody}
+              contentContainerStyle={s.modalBodyContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
             <TextInput
+              ref={routeNameInputRef}
               value={routeName}
               onChangeText={setRouteName}
-              placeholder="Route name"
+              placeholder="Route name (defaults to Custom Route)"
               placeholderTextColor={C.textDim}
+              selectionColor={C.primary}
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => routeNotesInputRef.current?.focus()}
               style={[s.input, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
             />
             <View style={s.folderRow}>
@@ -461,13 +481,16 @@ export default function RouteBuilderScreen() {
               ))}
             </View>
             <TextInput
+              ref={routeNotesInputRef}
               value={routeNotes}
               onChangeText={setRouteNotes}
               placeholder="Notes (parking, water stops, surface...)"
               placeholderTextColor={C.textDim}
+              selectionColor={C.primary}
               multiline
               style={[s.input, s.notesInput, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
             />
+            </ScrollView>
             <View style={s.modalActions}>
               <TouchableOpacity
                 style={[s.secondaryBtn, { flex: 1, backgroundColor: C.cardAlt, borderColor: C.border }]}
@@ -486,6 +509,7 @@ export default function RouteBuilderScreen() {
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Education modal */}
@@ -658,12 +682,16 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
+  keyboardAvoid: { flex: 1 },
   modalSheet: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
     gap: 12,
+    maxHeight: '92%',
   },
+  modalBody: { flexShrink: 1 },
+  modalBodyContent: { gap: 12, paddingBottom: 4 },
   modalTitle: { fontSize: 18, fontWeight: '800' },
   modalMeta: { fontSize: 12, fontWeight: '600' },
   input: {

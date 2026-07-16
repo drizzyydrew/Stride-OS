@@ -168,7 +168,7 @@ function explainReadinessReason(input: EngineInput, trainingPhase: TrainingPhase
   if (input.acwr > 1.5) return `training load spike (ACWR ${input.acwr.toFixed(2)})`;
   if (input.acwr > 1.3) return `rising training load (ACWR ${input.acwr.toFixed(2)})`;
   if (input.soreness !== null && input.soreness >= 8) return `soreness ${input.soreness}/10`;
-  if (input.hasCurrentInjury || input.returningFromInjury) return 'injury risk';
+  if (input.hasCurrentInjury || input.returningFromInjury) return 'current symptom or return-to-training constraint';
   if (input.motivation !== null && input.motivation <= 3 && input.recoveryScore < 55) return 'low motivation and limited recovery';
   if (input.recentHardSessions >= 3) return `${input.recentHardSessions} hard sessions already logged this week`;
   if (input.adherenceRate < 0.4) return 'building consistency first';

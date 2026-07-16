@@ -47,7 +47,7 @@ export default function StyleScreen() {
 
   function handleNext() {
     updateData({ trainingStyle: style });
-    router.push('/onboarding/complete');
+    router.push('/onboarding/cross-training' as never);
   }
 
   return (

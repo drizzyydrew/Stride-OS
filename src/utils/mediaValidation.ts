@@ -56,7 +56,7 @@ const MSG_UNSUPPORTED_TYPE =
 const MSG_TOO_LARGE =
   `This video is larger than the ${Math.round(MAX_CLIP_SIZE_BYTES / (1024 * 1024))} MB limit. Choose a shorter or lower-resolution clip.`;
 const MSG_ICLOUD_UNAVAILABLE =
-  "This video is still in iCloud and hasn't downloaded to your device yet. Open it in Photos to download it, then try again.";
+  "This video could not be downloaded from iCloud. Check your connection and try again.";
 const MSG_UNREADABLE =
   "This video file couldn't be read. Try picking it again or choose a different clip.";
 const MSG_DECODE_FAILED =

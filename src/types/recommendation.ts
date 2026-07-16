@@ -58,7 +58,7 @@ export type RecoveryRecommendation = {
   actions:  string[];   // ordered from most to least important; max 3
 };
 
-// Injury risk assessment. Triggers are always populated when level !== 'none'.
+// Conservative training-stress assessment. Triggers are populated when level !== 'none'.
 // Based on Gabbett (2016) ACWR thresholds and Meeusen (2013) overreaching markers.
 export type InjuryRiskWarning = {
   level:    'none' | 'elevated' | 'high';

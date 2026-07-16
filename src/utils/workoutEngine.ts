@@ -2,7 +2,7 @@
 //
 // Deterministic engine producing a complete RichWeek from WorkoutEngineInput.
 // Phase-based templates select 7 session types per week. The adaptive modifier
-// layer adjusts types for fatigue, recovery, ACWR, and injury risk. Environmental
+// layer adjusts types for fatigue, recovery, workload trends, and current constraints. Environmental
 // adjustments (heat, altitude) are computed post-build and attached per workout.
 //
 // AI REPLACEMENT HOOK: generateRichWeek() is the designated boundary for AI

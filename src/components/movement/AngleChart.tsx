@@ -49,6 +49,9 @@ type Props = {
   /** Called with a target time (ms) when the user taps/drags the chart. The
    *  parent should seek AND pause the video. Omit to make the chart read-only. */
   onSeekMs?: (timeMs: number) => void;
+  onSeekStart?: () => void;
+  onSeekEnd?: () => void;
+  onSeekCancel?: () => void;
 };
 
 const PAD_X = 10;   // horizontal domain padding (px) — must match domainPadding
@@ -66,7 +69,17 @@ function fmtTime(ms: number): string {
 }
 
 export default function AngleChart({
-  title, seriesA, seriesB, note, unit = '°', yDomain, currentTimeMs, onSeekMs,
+  title,
+  seriesA,
+  seriesB,
+  note,
+  unit = '°',
+  yDomain,
+  currentTimeMs,
+  onSeekMs,
+  onSeekStart,
+  onSeekEnd,
+  onSeekCancel,
 }: Props) {
   const chartWidthRef = useRef(0);
 
@@ -111,10 +124,17 @@ export default function AngleChart({
     () => PanResponder.create({
       onStartShouldSetPanResponder: () => !!onSeekMs,
       onMoveShouldSetPanResponder: () => !!onSeekMs,
-      onPanResponderGrant: (evt) => onSeekMs?.(timeFromX(evt.nativeEvent.locationX)),
+      onPanResponderGrant: (evt) => {
+        onSeekStart?.();
+        onSeekMs?.(timeFromX(evt.nativeEvent.locationX));
+      },
       onPanResponderMove:  (evt) => onSeekMs?.(timeFromX(evt.nativeEvent.locationX)),
+      onPanResponderRelease: () => onSeekEnd?.(),
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
+      onPanResponderTerminate: () => onSeekCancel?.(),
     }),
-    [onSeekMs, span, tMin],
+    [onSeekCancel, onSeekEnd, onSeekMs, onSeekStart, span, tMin],
   );
 
   function handleChartLayout(e: LayoutChangeEvent) {

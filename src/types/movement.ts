@@ -11,6 +11,7 @@
 
 export type MovementAnalysisType =
   | 'running_gait'
+  | 'bike_fit'
   | 'lifting_mechanics'
   | 'mobility'
   | 'other';
@@ -25,6 +26,7 @@ export type MovementViewAngle =
 export type MovementActivity =
   | 'running'
   | 'walking'
+  | 'cycling'
   | 'squat'
   | 'deadlift'
   | 'lunge'
@@ -339,6 +341,7 @@ export type VideoFrameAnnotation = {
 // normalizeAnalysisKind (measurementMatrix.ts) maps it on read/migration.
 export type MovementAnalysisKind =
   | 'running_gait'
+  | 'bike_fit'
   | 'squat'
   | 'deadlift'
   | 'single_leg_control'
@@ -350,7 +353,16 @@ export type AnalysisMediaType = 'photo' | 'video_frame' | 'video';
 export type AnalysisConfidence = 'high' | 'moderate' | 'low' | 'manual_review';
 export type MovementLandmarkSource = 'auto' | 'user_corrected' | 'manual_review';
 export type PoseLandmarkRecord = { name: string; x: number; y: number; confidence: number };
-export type EstimatedAngle = { name: string; joint: string; side: 'left' | 'right' | 'center'; degrees: number; confidence: number; note?: string };
+export type EstimatedAngle = {
+  name: string;
+  joint: string;
+  side: 'left' | 'right' | 'center';
+  degrees: number;
+  confidence: number;
+  note?: string;
+  metricId?: 'knee_flexion' | 'hip_sagittal_motion' | 'trunk_lean' | 'elbow_angle' | 'shoulder_angle' | 'pelvic_obliquity' | 'frontal_knee_position' | 'trunk_lateral_lean';
+  motion?: 'flexion' | 'extension';
+};
 export type ChecklistFinding = { itemId: string; label: string; value: string; severity?: FindingSeverity; note?: string };
 export type AnalysisRecommendation = {
   finding: string;
@@ -375,6 +387,8 @@ export type MovementAnalysis = {
     cameraFacing: 'front' | 'back' | 'library' | 'unknown';
     isMirrored: boolean;
     orientationConfirmed: boolean;
+    subjectFacing?: 'image_left' | 'image_right' | 'unknown';
+    subjectFacingSource?: 'auto' | 'user';
   };
   landmarks?: PoseLandmarkRecord[];   // undefined = pose not run/unavailable
   rawLandmarks?: PoseLandmarkRecord[];
@@ -382,6 +396,10 @@ export type MovementAnalysis = {
   imageAspectRatio?: number;          // width/height of analyzed image
   estimatedAngles?: EstimatedAngle[];
   rawEstimatedAngles?: EstimatedAngle[];
+  /** Version 1 stored the included shoulder-hip-knee angle. Version 2 stores
+   * estimated anatomical sagittal hip flexion or extension. */
+  measurementConventionVersion?: 1 | 2;
+  legacyMeasurementsSuppressed?: string[];
   /** Internal migration guard: side labels in inline series/key frames already
    * reflect capture mirroring and must not be swapped again on rehydrate. */
   viewFiltersMaterialized?: boolean;
@@ -401,13 +419,20 @@ export type MovementAnalysis = {
   // ── Movement Lab V2 — video sequence analysis (all optional, see below) ────
   poseSequenceUri?:     string;             // full frame-by-frame landmarks file (see poseSequenceStorage)
   angleSeries?:         AngleSeries[];      // smoothed + downsampled, inline
+  rawAngleSeries?:      AngleSeries[];      // preserved before view/convention filtering
   keyFrames?:           KeyFrameRecord[];   // inline landmarks so detail screens work offline
+  rawKeyFrames?:        KeyFrameRecord[];
   repSummaries?:        RepSummary[];       // strength kinds only
   symmetryEstimates?:   SequenceSymmetryEstimate[]; // gait kinds only
   sequenceConfidence?:  AnalysisConfidence;
   sequenceLimitations?: string[];
   analyzedDurationMs?:  number;
   videoDurationMs?:     number;
+  bikeFitPhases?: {
+    topDeadCenterMs?: number;
+    bottomDeadCenterMs?: number;
+    source: 'estimated' | 'user';
+  };
 };
 
 // ─── Movement Lab V2 — video sequence analysis ────────────────────────────────
@@ -434,6 +459,8 @@ export type AngleSeries = {
   joint:  string;                          // e.g. "knee"
   side:   'left' | 'right' | 'center';
   points: AngleSeriesPoint[];
+  metricId?: EstimatedAngle['metricId'];
+  motion?: EstimatedAngle['motion'];
 };
 
 /** A single labeled moment in the clip, with an inline landmark/angle snapshot
@@ -458,6 +485,7 @@ export type RepSummary = {
   durationMs:         number;
   peakFlexionDeg:     number;
   hipAngleAtBottom?:   number;
+  hipMotionAtBottom?:  { name: 'Hip flexion' | 'Hip extension'; degrees: number };
   trunkAngleAtBottom?: number;
 };
 

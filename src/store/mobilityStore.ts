@@ -3,6 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { MobilityCompletion } from '../types/mobility';
+import { useActivityStore } from './activityStore';
+import { activityFromMobilityCompletion } from '../utils/activityMigration';
 
 type MobilityStore = {
   completions:           MobilityCompletion[];
@@ -33,13 +35,20 @@ export const useMobilityStore = create<MobilityStore>()(
           ...entry,
         };
         set(state => ({ completions: [...state.completions, completion] }));
+        useActivityStore.getState().addActivity(
+          activityFromMobilityCompletion(completion, false),
+        );
       },
 
       deleteCompletion: (id) => {
         set(state => ({ completions: state.completions.filter(c => c.id !== id) }));
+        useActivityStore.getState().removeActivity(`activity_mobility_${id}`);
       },
 
       resetMobility: () => {
+        for (const completion of get().completions) {
+          useActivityStore.getState().removeActivity(`activity_mobility_${completion.id}`);
+        }
         set({ completions: [], recommendedWorkoutIds: [], recommendationSourceId: null });
       },
 

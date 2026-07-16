@@ -25,6 +25,7 @@ import {
 } from 'expo-camera';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useColors } from '../../theme/useColors';
 import type { Palette } from '../../theme/colors';
@@ -37,6 +38,7 @@ import {
   canStartCapture,
   captureMetadataForFacing,
   DEFAULT_CAMERA_FACING,
+  shouldCommitCaptureOperation,
   type CaptureStage,
 } from '../../utils/captureWorkflow';
 
@@ -83,8 +85,9 @@ export default function TimedCaptureCamera({
 }: Props) {
   const C = useColors();
   const s = makeStyles(C);
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [micPermission, requestMicPermission] = useMicrophonePermissions();
+  const insets = useSafeAreaInsets();
+  const [cameraPermission, requestCameraPermission, getCameraPermission] = useCameraPermissions();
+  const [micPermission, requestMicPermission, getMicPermission] = useMicrophonePermissions();
 
   const [stage, setStage] = useState<CaptureStage>('requesting_permission');
   const [facing, setFacing] = useState<CameraType>(DEFAULT_CAMERA_FACING);
@@ -94,11 +97,14 @@ export default function TimedCaptureCamera({
   const [cameraActive, setCameraActive] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [reviewResult, setReviewResult] = useState<TimedCaptureResult | null>(null);
+  const [cameraSessionId, setCameraSessionId] = useState(0);
 
   const cameraRef = useRef<CameraView>(null);
   const mountedRef = useRef(true);
-  const discardRef = useRef(false);
+  const cameraActiveRef = useRef(true);
   const capturePromiseRef = useRef(false);
+  const operationIdRef = useRef(0);
+  const cameraSessionIdRef = useRef(0);
   const stopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const remainingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -112,37 +118,45 @@ export default function TimedCaptureCamera({
     remainingIntervalRef.current = null;
   }, []);
 
-  const stopAndDiscard = useCallback(() => {
-    discardRef.current = true;
+  const invalidateCapture = useCallback(() => {
+    operationIdRef.current += 1;
     clearTimers();
     if (capturePromiseRef.current && captureMode === 'video') cameraRef.current?.stopRecording();
+    capturePromiseRef.current = false;
   }, [captureMode, clearTimers]);
+
+  const restartCameraSession = useCallback(() => {
+    const next = cameraSessionIdRef.current + 1;
+    cameraSessionIdRef.current = next;
+    setCameraSessionId(next);
+    setCameraReady(false);
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      stopAndDiscard();
+      invalidateCapture();
     };
-  }, [stopAndDiscard]);
+  }, [invalidateCapture]);
 
   useEffect(() => {
     if (!visible) {
-      stopAndDiscard();
+      invalidateCapture();
       return;
     }
 
     let cancelled = false;
-    discardRef.current = false;
-    capturePromiseRef.current = false;
+    invalidateCapture();
     setFacing(DEFAULT_CAMERA_FACING);
     setCountdown(countdownSec);
     setRemaining(durationSec);
-    setCameraReady(false);
     setCameraActive(true);
+    cameraActiveRef.current = true;
     setReviewResult(null);
     setErrorMessage(null);
     setStage('requesting_permission');
+    restartCameraSession();
 
     void (async () => {
       const cam = cameraPermission?.granted ? cameraPermission : await requestCameraPermission();
@@ -163,10 +177,27 @@ export default function TimedCaptureCamera({
     if (!visible) return;
     const subscription = AppState.addEventListener('change', nextState => {
       const active = nextState === 'active';
+      cameraActiveRef.current = active;
       setCameraActive(active);
-      if (active) return;
+      if (active) {
+        if (stage === 'setup') restartCameraSession();
+        if (stage === 'permission_denied') {
+          void (async () => {
+            const cam = await getCameraPermission();
+            const mic = captureMode === 'photo' ? { granted: true } : await getMicPermission();
+            if (!mountedRef.current || !visible) return;
+            if (cam.granted && mic.granted) {
+              restartCameraSession();
+              setStage('setup');
+            }
+          })();
+        }
+        return;
+      }
+
+      setCameraReady(false);
       if (stage === 'countdown' || stage === 'recording' || stage === 'capturing_photo') {
-        stopAndDiscard();
+        invalidateCapture();
         if (mountedRef.current) {
           setErrorMessage('Capture stopped because StrideOS moved to the background. Return to setup and try again.');
           setStage('error');
@@ -174,12 +205,20 @@ export default function TimedCaptureCamera({
       }
     });
     return () => subscription.remove();
-  }, [stage, stopAndDiscard, visible]);
+  }, [
+    captureMode,
+    getCameraPermission,
+    getMicPermission,
+    invalidateCapture,
+    restartCameraSession,
+    stage,
+    visible,
+  ]);
 
   function flipCamera() {
     if (!canFlipCamera(stage)) return;
-    setCameraReady(false);
     setFacing(current => current === 'front' ? 'back' : 'front');
+    restartCameraSession();
   }
 
   function beginCountdown() {
@@ -206,15 +245,17 @@ export default function TimedCaptureCamera({
       setStage('error');
       return;
     }
+    const operationId = operationIdRef.current + 1;
+    operationIdRef.current = operationId;
     capturePromiseRef.current = true;
-    discardRef.current = false;
 
     if (captureMode === 'photo') {
       setStage('capturing_photo');
       try {
         const photo = await cameraRef.current.takePictureAsync({ quality: 0.9, exif: false });
+        if (!shouldCommitCaptureOperation(operationIdRef.current, operationId)) return;
         capturePromiseRef.current = false;
-        if (!mountedRef.current || discardRef.current || !photo?.uri) return;
+        if (!mountedRef.current || !photo?.uri) return;
         setReviewResult({
           uri: photo.uri,
           type: 'photo',
@@ -224,8 +265,9 @@ export default function TimedCaptureCamera({
         });
         setStage('review');
       } catch {
+        if (!shouldCommitCaptureOperation(operationIdRef.current, operationId)) return;
         capturePromiseRef.current = false;
-        if (!mountedRef.current || discardRef.current) return;
+        if (!mountedRef.current) return;
         setErrorMessage('The camera could not capture this photo. Return to setup and try again.');
         setStage('error');
       }
@@ -241,9 +283,10 @@ export default function TimedCaptureCamera({
 
     try {
       const video = await cameraRef.current.recordAsync({ maxDuration: durationSec });
+      if (!shouldCommitCaptureOperation(operationIdRef.current, operationId)) return;
       clearTimers();
       capturePromiseRef.current = false;
-      if (!mountedRef.current || discardRef.current || !video?.uri) {
+      if (!mountedRef.current || !video?.uri) {
         if (mountedRef.current && visible) setStage('setup');
         return;
       }
@@ -254,30 +297,30 @@ export default function TimedCaptureCamera({
       });
       setStage('review');
     } catch {
+      if (!shouldCommitCaptureOperation(operationIdRef.current, operationId)) return;
       clearTimers();
       capturePromiseRef.current = false;
-      if (!mountedRef.current || discardRef.current) return;
+      if (!mountedRef.current) return;
       setErrorMessage('The camera could not finish this recording. Return to setup and try again.');
       setStage('error');
     }
   }
 
   function cancelActiveCapture() {
-    stopAndDiscard();
-    capturePromiseRef.current = false;
-    discardRef.current = false;
+    invalidateCapture();
     setCountdown(countdownSec);
     setRemaining(durationSec);
     setStage('setup');
+    restartCameraSession();
   }
 
   function retake() {
+    invalidateCapture();
     setReviewResult(null);
-    discardRef.current = false;
-    capturePromiseRef.current = false;
     setCountdown(countdownSec);
     setRemaining(durationSec);
     setStage('setup');
+    restartCameraSession();
   }
 
   function useCapture() {
@@ -286,7 +329,7 @@ export default function TimedCaptureCamera({
   }
 
   function closeSafely() {
-    stopAndDiscard();
+    invalidateCapture();
     onClose();
   }
 
@@ -325,21 +368,30 @@ export default function TimedCaptureCamera({
         {cameraVisible ? (
           <View style={s.cameraWrap}>
             <CameraView
+              key={`${captureMode}-${facing}-${cameraSessionId}`}
               ref={cameraRef}
               style={StyleSheet.absoluteFill}
               active={cameraActive}
               mode={captureMode === 'photo' ? 'picture' : 'video'}
               facing={facing}
               mirror={false}
-              onCameraReady={() => setCameraReady(true)}
+              onCameraReady={() => {
+                if (
+                  cameraActiveRef.current
+                  && cameraSessionId === cameraSessionIdRef.current
+                ) {
+                  setCameraReady(true);
+                }
+              }}
               onMountError={event => {
-                stopAndDiscard();
+                if (cameraSessionId !== cameraSessionIdRef.current) return;
+                invalidateCapture();
                 setErrorMessage(event.message || 'The camera preview could not start.');
                 setStage('error');
               }}
             />
 
-            <View style={s.overlayTop}>
+            <View style={[s.overlayTop, { paddingTop: insets.top + spacing.sm }]}>
               <Pressable onPress={stage === 'setup' ? closeSafely : cancelActiveCapture} hitSlop={12} style={s.circleBtn}>
                 <Ionicons name="close" size={22} color="#fff" />
               </Pressable>
@@ -355,7 +407,7 @@ export default function TimedCaptureCamera({
             </View>
 
             {stage === 'setup' ? (
-              <View style={s.setupPanel}>
+              <View style={[s.setupPanel, { bottom: insets.bottom + spacing.md }]}>
                 <Text style={s.setupHeading}>Position the phone before you start</Text>
                 <Text style={s.setupText}>Keep your full body visible, including your head and both feet. Keep the phone stable and use the required direct view.</Text>
                 {requiredJoints ? <Text style={s.setupMeta}>Visible joints: {requiredJoints}</Text> : null}
@@ -380,7 +432,7 @@ export default function TimedCaptureCamera({
             ) : null}
 
             {stage === 'recording' ? (
-              <View style={s.recordingWrap}>
+              <View style={[s.recordingWrap, { paddingBottom: insets.bottom + spacing.md }]}>
                 <View style={s.recDot} />
                 <Text style={s.remainingTxt}>{remaining}s remaining</Text>
                 <View style={s.progressTrack}><View style={[s.progressFill, { width: `${Math.min(100, progress * 100)}%` }]} /></View>
@@ -392,11 +444,11 @@ export default function TimedCaptureCamera({
         {stage === 'review' && reviewResult ? (
           <View style={s.reviewWrap}>
             <CaptureReview result={reviewResult} />
-            <View style={s.reviewTop}>
+            <View style={[s.reviewTop, { paddingTop: insets.top + spacing.sm }]}>
               <Text style={s.overlayTitle}>Review {captureMode === 'video' ? 'Video' : 'Photo'}</Text>
               <Text style={s.overlaySub}>{reviewResult.captureMetadata.cameraFacing} camera · saved unmirrored</Text>
             </View>
-            <View style={s.reviewActions}>
+            <View style={[s.reviewActions, { bottom: insets.bottom + spacing.md }]}>
               <Pressable style={s.reviewSecondary} onPress={retake}><Text style={s.reviewSecondaryTxt}>Retake</Text></Pressable>
               <Pressable style={s.reviewPrimary} onPress={useCapture}><Text style={s.primaryBtnTxt}>Use {captureMode === 'video' ? 'Video' : 'Photo'}</Text></Pressable>
             </View>

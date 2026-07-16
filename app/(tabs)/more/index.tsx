@@ -14,6 +14,11 @@ type NavItem = {
 
 const ITEMS: NavItem[] = [
   {
+    label:       'Activity',
+    icon:        'pulse-outline',
+    route:       '/(tabs)/activity',
+  },
+  {
     label:       'Running',
     icon:        'footsteps-outline',
     route:       '/(tabs)/training',

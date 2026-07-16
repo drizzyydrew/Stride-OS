@@ -12,6 +12,8 @@ import type {
 import { estimateSessionLoad } from '../utils/strengthEngine';
 import { syncStrengthLog, deleteStrengthLog } from '../lib/syncService';
 import { syncStrengthSessionToExternalServices } from '../lib/externalIntegrations';
+import { useActivityStore } from './activityStore';
+import { activityFromStrengthRecord } from '../utils/activityMigration';
 
 type StrengthLogEdits = Partial<Pick<StrengthLogRecord,
   'actualDuration' | 'overallRpe' | 'notes' | 'exercises'>>;
@@ -26,6 +28,9 @@ type ManualStrengthEntry = {
   exercises:       CompletedExercise[];
   overallRpe?:     number;
   notes?:          string;
+  source?:         'manual' | 'preset';
+  presetId?:       string;
+  workoutName?:    string;
 };
 
 type StrengthStore = {
@@ -82,6 +87,8 @@ function migrateStrengthRecord(r: Partial<StrengthLogRecord>): StrengthLogRecord
     overallRpe:       r.overallRpe,
     notes:            r.notes,
     source:          r.source          ?? 'generated',
+    presetId:        r.presetId,
+    workoutName:     r.workoutName,
     fatigueBefore:   r.fatigueBefore   ?? 0,
     fatigueAfter:    r.fatigueAfter    ?? 0,
     fatigueDelta:    r.fatigueDelta    ?? 0,
@@ -145,6 +152,7 @@ export const useStrengthStore = create<StrengthStore>()(
           completedSessions: [...state.completedSessions, completionKey],
           history:           [...state.history, record],
         }));
+        useActivityStore.getState().addActivity(activityFromStrengthRecord(record, false));
 
         syncStrengthLog(record).catch(console.warn);
         syncStrengthSessionToExternalServices(record).catch(console.warn);
@@ -180,6 +188,7 @@ export const useStrengthStore = create<StrengthStore>()(
           completedSessions: [...state.completedSessions, completionKey],
           history:           [...state.history, record],
         }));
+        useActivityStore.getState().addActivity(activityFromStrengthRecord(record, false));
 
         syncStrengthLog(record).catch(console.warn);
         syncStrengthSessionToExternalServices(record).catch(console.warn);
@@ -188,11 +197,17 @@ export const useStrengthStore = create<StrengthStore>()(
       // ── Edit a logged record ──────────────────────────────────────────────────
 
       editLog: (id, updates) => {
+        const existing = get().history.find(record => record.id === id);
         set(state => ({
           history: state.history.map(r =>
             r.id === id ? { ...r, ...updates } : r,
           ),
         }));
+        if (existing) {
+          useActivityStore.getState().addActivity(
+            activityFromStrengthRecord({ ...existing, ...updates }, false),
+          );
+        }
       },
 
       // ── Delete a logged record ────────────────────────────────────────────────
@@ -202,6 +217,7 @@ export const useStrengthStore = create<StrengthStore>()(
           completedSessions: state.completedSessions.filter(k => k !== id),
           history:           state.history.filter(r => r.id !== id),
         }));
+        useActivityStore.getState().removeActivity(`activity_strength_${id}`);
         deleteStrengthLog(id).catch(console.warn);
       },
 
@@ -227,7 +243,9 @@ export const useStrengthStore = create<StrengthStore>()(
           exercises:       entry.exercises,
           overallRpe:      entry.overallRpe,
           notes:           entry.notes,
-          source:          'manual',
+          source:          entry.source ?? 'manual',
+          presetId:        entry.presetId,
+          workoutName:     entry.workoutName,
           fatigueBefore,
           fatigueAfter,
           fatigueDelta,
@@ -238,6 +256,7 @@ export const useStrengthStore = create<StrengthStore>()(
           completedSessions: [...state.completedSessions, entry.completionKey],
           history:           [...state.history, record],
         }));
+        useActivityStore.getState().addActivity(activityFromStrengthRecord(record, false));
 
         syncStrengthLog(record).catch(console.warn);
         syncStrengthSessionToExternalServices(record).catch(console.warn);
@@ -255,6 +274,7 @@ export const useStrengthStore = create<StrengthStore>()(
             history:           [...state.history, ...newRecords],
           };
         });
+        useActivityStore.getState().importLegacyStrength(records);
       },
     }),
     {

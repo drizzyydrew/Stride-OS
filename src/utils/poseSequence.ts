@@ -61,7 +61,9 @@ function isFrontalView(view: MovementViewAngle): boolean {
 /** The estimated angles for one frame, chosen by camera view: frontal metrics
  *  for a front/rear clip, the existing sagittal set otherwise. */
 function frameAnglesForView(joints: PoseJoint[], kind: MovementAnalysisKind, view: MovementViewAngle): EstimatedAngle[] {
-  return isFrontalView(view) ? computeFrontalMetrics(joints) : computeEstimatedAngles(joints, kind);
+  return isFrontalView(view)
+    ? computeFrontalMetrics(joints)
+    : computeEstimatedAngles(joints, kind, { view });
 }
 
 // ─── buildAngleSeries ───────────────────────────────────────────────────────────
@@ -83,12 +85,26 @@ export function buildAngleSeries(
     angles: f.joints.length > 0 ? frameAnglesForView(f.joints as PoseJoint[], kind, view) : [],
   }));
 
-  type Meta = { name: string; joint: string; side: 'left' | 'right' | 'center' };
+  type Meta = {
+    name: string;
+    joint: string;
+    side: 'left' | 'right' | 'center';
+    metricId?: EstimatedAngle['metricId'];
+    motion?: EstimatedAngle['motion'];
+  };
   const metaByKey = new Map<string, Meta>();
   for (const frame of perFrame) {
     for (const a of frame.angles) {
       const key = `${a.side}::${a.name}`;
-      if (!metaByKey.has(key)) metaByKey.set(key, { name: a.name, joint: a.joint, side: a.side });
+      if (!metaByKey.has(key)) {
+        metaByKey.set(key, {
+          name: a.name,
+          joint: a.joint,
+          side: a.side,
+          metricId: a.metricId,
+          motion: a.motion,
+        });
+      }
     }
   }
 
@@ -102,7 +118,14 @@ export function buildAngleSeries(
           ? { timeMs: frame.timeMs, degrees: match.degrees, confidence: match.confidence }
           : { timeMs: frame.timeMs, degrees: null, confidence: 0 };
       });
-      return { name: meta.name, joint: meta.joint, side: meta.side, points };
+      return {
+        name: meta.name,
+        joint: meta.joint,
+        side: meta.side,
+        points,
+        metricId: meta.metricId,
+        motion: meta.motion,
+      };
     });
 
   return series;
@@ -190,6 +213,11 @@ export function buildSequenceLimitations(kind: MovementAnalysisKind, view: Movem
   if (kind === 'running_gait') {
     limitations.push('Contact/stance moments are approximate, derived from ankle vertical position — not measured ground-contact events.');
   }
+  if (kind === 'bike_fit') {
+    limitations.push('Top and bottom pedal phases are estimated from the visible closest-side knee cycle and require manual confirmation.');
+    limitations.push('The bicycle, crank, pedals, saddle, cleats, and contact pressures are not tracked, so exact geometry and fit prescriptions are not available.');
+    limitations.push('This lateral phone-video review does not replace an in-person bike fit and cannot determine force, joint loading, diagnosis, or injury risk.');
+  }
   return limitations;
 }
 
@@ -223,6 +251,20 @@ function nearestBilateral(series: AngleSeries[], name: string, timeMs: number): 
   const r = nearestValue(findSeries(series, name, 'right'), timeMs);
   if (l !== undefined && r !== undefined) return round1((l + r) / 2);
   return l ?? r;
+}
+
+function nearestHipMotion(
+  series: AngleSeries[],
+  side: 'left' | 'right',
+  timeMs: number,
+): RepSummary['hipMotionAtBottom'] {
+  const flexion = nearestValue(findSeries(series, 'Hip flexion', side), timeMs);
+  const extension = nearestValue(findSeries(series, 'Hip extension', side), timeMs);
+  if (flexion === undefined && extension === undefined) return undefined;
+  if (extension !== undefined && (flexion === undefined || extension > flexion)) {
+    return { name: 'Hip extension', degrees: extension };
+  }
+  return { name: 'Hip flexion', degrees: flexion as number };
 }
 
 function frameLandmarks(result: PoseSequenceResult, timeMs: number): PoseLandmarkRecord[] | undefined {
@@ -454,9 +496,9 @@ export function detectKeyMoments(
     for (const rep of reps) {
       repSummaries.push({
         ...rep,
-        hipAngleAtBottom: closestSide
-          ? nearestValue(findSeries(smoothedSeries, 'Hip angle', closestSide), rep.bottomMs)
-          : nearestBilateral(smoothedSeries, 'Hip angle', rep.bottomMs),
+        hipMotionAtBottom: closestSide
+          ? nearestHipMotion(smoothedSeries, closestSide, rep.bottomMs)
+          : undefined,
         trunkAngleAtBottom: nearestValue(findSeries(smoothedSeries, 'Trunk lean', 'center'), rep.bottomMs),
       });
     }
@@ -482,6 +524,38 @@ export function detectKeyMoments(
         landmarks: filterLandmarksForDisplay(frameLandmarks(result, lastConfident.timeMs), kind, view, closestSide),
         angles:    filterEstimatedAngles(frameAngles(result, kind, lastConfident.timeMs, view) ?? [], kind, view, closestSide),
       });
+    }
+  } else if (kind === 'bike_fit') {
+    if (closestSide) {
+      const kneeSeries = findSeries(smoothedSeries, 'Knee flexion', closestSide);
+      const values = (kneeSeries?.points ?? [])
+        .filter((point): point is AngleSeriesPoint & { degrees: number } => point.degrees !== null);
+      if (values.length > 0) {
+        const top = values.reduce((a, b) => b.degrees > a.degrees ? b : a);
+        const bottom = values.reduce((a, b) => b.degrees < a.degrees ? b : a);
+        for (const phase of [
+          { label: 'Estimated top pedal phase — manual confirmation required', point: top },
+          { label: 'Estimated bottom pedal phase — manual confirmation required', point: bottom },
+        ]) {
+          keyFrames.push({
+            id: keyFrameId(),
+            label: phase.label,
+            timeMs: phase.point.timeMs,
+            landmarks: filterLandmarksForDisplay(
+              frameLandmarks(result, phase.point.timeMs),
+              kind,
+              view,
+              closestSide,
+            ),
+            angles: filterEstimatedAngles(
+              frameAngles(result, kind, phase.point.timeMs, view) ?? [],
+              kind,
+              view,
+              closestSide,
+            ),
+          });
+        }
+      }
     }
   } else if (kind === 'running_gait') {
     const gaitSides = view === 'side' && closestSide ? [closestSide] : ['left', 'right'] as const;
@@ -537,6 +611,46 @@ export type SequenceAnalysis = {
   confidence:          AnalysisConfidence;
   limitations:         string[];
 };
+
+export type RawSequenceMaterial = {
+  angleSeries: AngleSeries[];
+  keyFrames: KeyFrameRecord[];
+};
+
+/**
+ * Builds the unfiltered inline sequence material that must be retained for
+ * later closest-side correction. The athlete-facing analysis is still derived
+ * through analyzeSequence/filterKeyFrames; this copy exists so changing from
+ * left to right (or reopening a legacy record) never has to recover a limb that
+ * was destructively discarded at save time.
+ */
+export function buildRawSequenceMaterial(
+  result: PoseSequenceResult,
+  kind: MovementAnalysisKind,
+  view: MovementViewAngle,
+): RawSequenceMaterial {
+  const angleSeries = decimateAngleSeries(smoothAngleSeries(buildAngleSeries(result, kind, view), 5), 240);
+
+  if (view !== 'side') {
+    return {
+      angleSeries,
+      keyFrames: detectKeyMoments(kind, result, angleSeries, view).keyFrames,
+    };
+  }
+
+  const keyFrames = (['left', 'right'] as const).flatMap(side => {
+    const sideSeries = filterAngleSeries(angleSeries, kind, view, side);
+    return detectKeyMoments(kind, result, sideSeries, view, side).keyFrames.map(frame => ({
+      ...frame,
+      label: frame.label.toLowerCase().includes(`— ${side}`)
+        ? frame.label
+        : `${frame.label} — ${side}`,
+    }));
+  });
+
+  keyFrames.sort((a, b) => a.timeMs - b.timeMs || a.label.localeCompare(b.label));
+  return { angleSeries, keyFrames };
+}
 
 /** One-call convenience wrapper combining the pure steps above — what the
  *  Analyze screen calls after detectPoseSequence resolves. */

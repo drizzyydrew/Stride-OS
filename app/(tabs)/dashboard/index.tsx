@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,11 +8,11 @@ import { useColors } from '../../../src/theme/useColors';
 import { useWeather } from '../../../src/hooks/useWeather';
 import { formatTemp } from '../../../src/lib/weather';
 import { useSettingsStore } from '../../../src/store/settingsStore';
+import { useBeginnerPlanStore } from '../../../src/store/beginnerPlanStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { todayDateKey } from '../../../src/types/checkin';
 import { readinessTier, READINESS_INTERPRETATION } from '../../../src/utils/readinessScore';
 import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckInCard';
-import { cancelDailyReadinessReminder, scheduleDailyReadinessReminder } from '../../../src/lib/notifications';
 import { LAYOUT } from '../../../src/constants/layout';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { toYMD } from '../../../src/utils/calendarEngine';
@@ -113,38 +113,28 @@ export default function TodayScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const todayReadiness = useReadinessStore(s => s.todayReadiness);
-  const reminderEnabled = useReadinessStore(s => s.reminderEnabled);
-  const setReminderEnabled = useReadinessStore(s => s.setReminderEnabled);
   const [editingCheckIn, setEditingCheckIn] = useState(false);
   const weekPlan = useWeekPlan();
+  const activeBeginnerPlan = useBeginnerPlanStore(s => s.activePlan);
   const beforeStart = weekPlan.metadata.currentWeek === 0;
   const todayYMD = toYMD(new Date());
   const todayEntries = weekPlan.calendarMap.get(todayYMD) ?? [];
   const primaryEntry = todayEntries.find(e => e.type === 'race') ?? todayEntries.find(e => e.type === 'run') ?? todayEntries[0] ?? null;
   const hasStrengthToday = todayEntries.some(e => e.type === 'strength');
+  const beginnerSessionsToday = useMemo(() => {
+    if (!activeBeginnerPlan || todayYMD < activeBeginnerPlan.startDate || todayYMD > activeBeginnerPlan.targetDate) return [];
+    const start = new Date(`${activeBeginnerPlan.startDate}T00:00:00`);
+    const day = new Date(`${todayYMD}T00:00:00`);
+    const offset = Math.floor((day.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+    return activeBeginnerPlan.weeks[Math.floor(offset / 7)]?.sessions.filter(session => session.dayIndex === offset % 7) ?? [];
+  }, [activeBeginnerPlan, todayYMD]);
+  const beginnerPrimary = beginnerSessionsToday.find(session => !session.supplements) ?? beginnerSessionsToday[0];
   const phaseLabel = weekPlan.metadata.trainingPhase.charAt(0).toUpperCase() + weekPlan.metadata.trainingPhase.slice(1);
 
   const hasCheckedInToday = todayReadiness?.date === todayDateKey();
   const readiness = hasCheckedInToday ? todayReadiness!.score : null;
   const tier = readiness !== null ? readinessTier(readiness) : null;
   const showCheckInForm = !hasCheckedInToday || editingCheckIn;
-
-  async function handleToggleReminder(enabled: boolean) {
-    if (enabled) {
-      const scheduled = await scheduleDailyReadinessReminder();
-      if (!scheduled) {
-        Alert.alert(
-          'Notifications disabled',
-          'Enable notifications for StrideOS in system settings to get a daily readiness reminder.',
-        );
-        return;
-      }
-      setReminderEnabled(true);
-    } else {
-      await cancelDailyReadinessReminder();
-      setReminderEnabled(false);
-    }
-  }
 
   return (
     <ScrollView
@@ -200,20 +190,6 @@ export default function TodayScreen() {
         </View>
       )}
 
-      {/* Readiness reminder */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-        <View style={{ flex: 1, marginRight: 12 }}>
-          <Text style={[styles.cardLabel, { color: C.textDim }]}>MORNING REMINDER</Text>
-          <Text style={[styles.reminderSub, { color: C.textMuted }]}>Daily readiness nudge at 5:00 AM</Text>
-        </View>
-        <Switch
-          value={reminderEnabled}
-          onValueChange={handleToggleReminder}
-          trackColor={{ false: C.border, true: C.primary }}
-          thumbColor={C.onPrimary}
-        />
-      </View>
-
       {/* Today's Plan */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <View style={styles.cardHeaderRow}>
@@ -233,16 +209,25 @@ export default function TodayScreen() {
         ) : (
           <>
             <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
-              {primaryEntry ? primaryEntry.label : 'Rest day — no structured session.'}
+              {beginnerPrimary
+                ? `${beginnerPrimary.kind.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())} · ${beginnerPrimary.durationMinutes} min`
+                : primaryEntry ? primaryEntry.label : 'Rest day — no structured session.'}
             </Text>
+            {beginnerPrimary ? (
+              <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
+                {beginnerPrimary.purpose} {beginnerPrimary.supplements ? 'This supplements your primary session.' : ''}
+              </Text>
+            ) : null}
             <View style={styles.workoutBtns}>
               <TouchableOpacity
                 style={[styles.workoutBtn, styles.workoutBtnPrimary, { backgroundColor: C.primary, borderColor: C.primary }]}
-                onPress={() => router.push('/(tabs)/training')}
+                onPress={() => router.push((beginnerPrimary ? '/(tabs)/activity' : '/(tabs)/training') as never)}
                 activeOpacity={0.8}
               >
                 <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>
-                  {primaryEntry && primaryEntry.type !== 'strength' ? 'Start Run' : 'View Training'}
+                  {beginnerPrimary
+                    ? beginnerPrimary.activityType === 'walking' ? 'Start Walk' : beginnerPrimary.kind === 'run_walk' ? 'Start Run / Walk' : 'View Activity'
+                    : primaryEntry && primaryEntry.type !== 'strength' ? 'Start Run' : 'View Training'}
                 </Text>
               </TouchableOpacity>
               {hasStrengthToday && (

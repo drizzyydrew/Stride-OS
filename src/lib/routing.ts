@@ -18,6 +18,16 @@
 
 import type { RoutePoint } from '../store/routeStore';
 import { milesBetween } from '../store/routeStore';
+import { getAppleRouteDirections } from 'stride-live-activity';
+import {
+  createBreadcrumbGuidancePlan,
+  createTurnByTurnGuidancePlan,
+  type RouteGuidancePlan,
+  type RouteGuidanceStep,
+  type RouteNavigationMode,
+} from './routeGuidance';
+
+export * from './routeGuidance';
 
 export type RoutingProvider = 'osrm_foot' | 'osrm_road' | 'direct';
 
@@ -32,6 +42,42 @@ export type ElevationSummary = {
   gainMeters:  number;
   lossMeters:  number;
 };
+
+// Live navigation deliberately uses native MapKit rather than the public OSRM
+// builder service. MapKit exposes walking and cycling transport types, route
+// geometry, and spoken step instructions without placing a third-party API key
+// in the client. If MapKit cannot return steps (including manually drawn or
+// unsupported trail routes), callers receive an explicit breadcrumb plan.
+export async function buildRouteGuidance(
+  geometry: RoutePoint[],
+  mode: RouteNavigationMode,
+): Promise<RouteGuidancePlan> {
+  if (mode === 'off' || geometry.length < 2) {
+    return createBreadcrumbGuidancePlan(geometry, mode);
+  }
+
+  try {
+    const result = await getAppleRouteDirections(geometry, mode);
+    if (!result || result.geometry.length < 2 || result.steps.length === 0) {
+      return createBreadcrumbGuidancePlan(geometry, mode);
+    }
+    const steps: RouteGuidanceStep[] = result.steps.map((step, index) => ({
+      id: step.id || `mapkit-step-${index}`,
+      instruction: step.instruction,
+      distanceMeters: Math.max(0, step.distanceMeters),
+      expectedTravelTimeSeconds: Math.max(0, step.expectedTravelTimeSeconds),
+      start: step.start,
+      end: step.end,
+    }));
+    return createTurnByTurnGuidancePlan({
+      mode,
+      geometry: result.geometry,
+      steps,
+    });
+  } catch {
+    return createBreadcrumbGuidancePlan(geometry, mode);
+  }
+}
 
 // Provider chain, tried in order. FOSSGIS is the true pedestrian profile
 // (footpaths + trails). The OSRM demo server is a *road-network* failover —

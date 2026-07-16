@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import * as Speech from 'expo-speech';
 import MapView, { Marker, Polyline, type LatLng, type Region } from 'react-native-maps';
 
 import { useColors } from '../../../src/theme/useColors';
@@ -14,7 +13,10 @@ import { spacing } from '../../../src/theme/spacing';
 import { radiusTokens, typographyTokens } from '../../../src/theme/tokens';
 import { useThemeMode } from '../../../src/store/themeStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
-import { evaluateRaceFuelCue } from '../../../src/utils/raceFueling';
+import { evaluateRunReminders } from '../../../src/utils/runReminderScheduler';
+import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
+import { useHydrationPlannerStore } from '../../../src/store/hydrationPlannerStore';
+import HydrationPlannerScreen from './hydration';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useIntegrationsStore } from '../../../src/store/integrationsStore';
 import { useActiveRunStore, type RunMode, type RunModeConfig } from '../../../src/store/activeRunStore';
@@ -26,7 +28,13 @@ import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { addDays as addCalendarDays, toYMD } from '../../../src/utils/calendarEngine';
 import type { RichWorkout } from '../../../src/types/workout';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
-import { useRouteStore, routeDistanceMiles, type RunRoute, type RoutePoint } from '../../../src/store/routeStore';
+import {
+  effectiveAttachedRoute,
+  useRouteStore,
+  routeDistanceMiles,
+  type RunRoute,
+  type RoutePoint,
+} from '../../../src/store/routeStore';
 import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
 import { sendRunAlertNotification } from '../../../src/lib/notifications';
@@ -284,8 +292,7 @@ function RunStat({
 }
 
 function speakCue(text: string): void {
-  Speech.stop();
-  Speech.speak(text, { rate: 0.92, pitch: 1 });
+  enqueueVoiceCue(text);
 }
 
 type LiveZoneStatus = {
@@ -634,6 +641,7 @@ function PlanTab() {
 // ─── Active Tab ────────────────────────────────────────────────────────────────
 function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void; fullScreen?: boolean }) {
   const C = useColors();
+  const router = useRouter();
   const mode = useThemeMode();
   const insets = useSafeAreaInsets();
   const { units } = useSettingsStore();
@@ -649,7 +657,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const manualLogRun = useWorkoutStore(s => s.manualLog);
   const editRunLog = useWorkoutStore(s => s.editLog);
   const imp = units === 'imperial';
-  const fuelingReminderIntervalMin = useSettingsStore(s => s.fuelingReminderIntervalMin);
+  const plannerReminder = useHydrationPlannerStore();
+  const plannerWeightKg = useOnboardingStore(s => s.data.weightKg || 70);
   const {
     isActive,
     isPaused,
@@ -674,8 +683,12 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   } = useActiveRunStore();
   const { richWeek } = useWeekPlan();
   const todayPlannedWorkout = richWeek.workouts[todayWorkoutIndex()] ?? null;
-  const selectedRouteId = useRouteStore(s => s.selectedRouteId);
-  const selectedRoute = useRouteStore(s => s.routes.find(r => r.id === selectedRouteId) ?? null);
+  const routeAttachment = useRouteStore(s => s.routeAttachment);
+  const attachedRoute = useRouteStore(s => s.routes.find(r => r.id === s.routeAttachment.routeId) ?? null);
+  const selectedRoute = effectiveAttachedRoute(attachedRoute, routeAttachment);
+  const detachRouteFromToday = useRouteStore(s => s.detachRouteFromToday);
+  const reverseAttachedRoute = useRouteStore(s => s.reverseAttachedRoute);
+  const [showRouteActions, setShowRouteActions] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [heartRateBpm, setHeartRateBpm] = useState<number | null>(null);
   const [permission, setPermission] = useState<TrackingPermissionState>({ foreground: 'unknown', background: 'unknown' });
@@ -689,7 +702,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const segmentStartRef = useRef<{ index: number; time: number } | null>(null);
   const maxRouteProgressRef = useRef(0);
   const lastHrAlertRef = useRef(0);
-  const lastFuelCueRef = useRef(0);
+  const reminderCueRef = useRef({ lastHydrationCueSec: 0, lastFuelCueSec: 0 });
   const goalDoneRef = useRef(false);
   const activeMapRef = useRef<MapView>(null);
   const [mapType, setMapType] = useState<'standard' | 'hybrid'>('standard');
@@ -751,6 +764,21 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     segmentStartRef.current = isActive ? { index: 0, time: Date.now() } : null;
   }, [isActive, selectedRoute?.id]);
 
+  useEffect(() => {
+    setRouteSegmentIndex(0);
+    maxRouteProgressRef.current = 0;
+    segmentStartRef.current = selectedRoute && isActive ? { index: 0, time: Date.now() } : null;
+  }, [routeAttachment.direction, routeAttachment.status]);
+
+  function removeRouteFromToday() {
+    detachRouteFromToday();
+    setShowRouteActions(false);
+    setRouteSegmentIndex(0);
+    maxRouteProgressRef.current = 0;
+    segmentStartRef.current = null;
+    speakCue('Route guidance stopped. Continuing in free run mode.');
+  }
+
   // Lock screen button intents. Two channels:
   // 1. Native event listeners — fire only if an intent ever executes in the
   //    app's own process.
@@ -791,7 +819,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       setRouteSegmentIndex(0);
       maxRouteProgressRef.current = 0;
       segmentStartRef.current = { index: 0, time: Date.now() };
-      lastFuelCueRef.current = 0;
+      reminderCueRef.current = { lastHydrationCueSec: 0, lastFuelCueSec: 0 };
       goalDoneRef.current = false;
 
       const startWorkout = pendingMode === 'workout' ? todayPlannedWorkout : null;
@@ -1069,23 +1097,46 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     sendRunAlertNotification(message).catch(() => undefined);
   }, [heartRateBpm, isActive, isPaused, zoneStatus.detail, zoneStatus.guidance, zoneStatus.tone]);
 
-  // Race mode: fueling reminder on the athlete's persisted interval.
+  const activeReminderPlan = useMemo(() => calculateHydrationPlan({
+    distanceMiles: plannerReminder.distanceMi,
+    durationMin: plannerReminder.durationMin ?? 60,
+    bodyWeightKg: plannerWeightKg,
+    effort: plannerReminder.effort,
+    weatherBand: weatherBandForTemp(plannerReminder.tempF),
+    temperatureF: plannerReminder.tempF,
+    humidityBand: plannerReminder.humidityPct >= 80 ? 'very_high' : plannerReminder.humidityPct >= 65 ? 'high' : plannerReminder.humidityPct < 35 ? 'low' : 'moderate',
+    sweatiness: plannerReminder.sweatiness,
+    sweatRateTestLh: plannerReminder.sweatRateMode === 'known' ? plannerReminder.sweatRateLh : undefined,
+    saltiness: plannerReminder.saltiness,
+    sweatSodiumMgL: plannerReminder.sweatSodiumMgL ?? undefined,
+    cramping: plannerReminder.cramping,
+    carbToleranceGh: plannerReminder.carbToleranceMode === 'known'
+      ? plannerReminder.knownCarbToleranceGh ?? undefined
+      : undefined,
+    fluidComfort: plannerReminder.fluidComfort,
+    goal: plannerReminder.goal,
+  }), [plannerReminder, plannerWeightKg]);
+
+  // Hydration and fuel are independent schedules. Simultaneous cues are merged.
   useEffect(() => {
-    const cue = evaluateRaceFuelCue({
+    const cue = evaluateRunReminders({
+      ...reminderCueRef.current,
       elapsedSeconds: elapsed,
-      lastCueElapsedSeconds: lastFuelCueRef.current,
-      intervalMinutes: fuelingReminderIntervalMin,
       isActive,
       isPaused,
-      runMode,
+      hydrationEnabled: plannerReminder.hydrationReminderEnabled,
+      hydrationIntervalMin: plannerReminder.hydrationReminderIntervalMin,
+      fuelEnabled: plannerReminder.fuelReminderEnabled,
+      fuelIntervalMin: plannerReminder.fuelReminderIntervalMin,
+      fluidOzPerHour: activeReminderPlan.hourly.fluidOz,
+      carbsGPerHour: activeReminderPlan.hourly.carbsG,
     });
-    if (cue.shouldCue) {
-      lastFuelCueRef.current = cue.nextLastCueElapsedSeconds;
-      const message = 'Fuel check: take carbs and a few sips of fluid now, before you feel like you need them.';
-      speakCue(message);
-      sendRunAlertNotification(message).catch(() => undefined);
+    if (cue) {
+      reminderCueRef.current = cue.nextState;
+      speakCue(cue.spokenText);
+      sendRunAlertNotification(cue.visualText).catch(() => undefined);
     }
-  }, [elapsed, fuelingReminderIntervalMin, isActive, isPaused, runMode]);
+  }, [activeReminderPlan.hourly.carbsG, activeReminderPlan.hourly.fluidOz, elapsed, isActive, isPaused, plannerReminder]);
 
   // Goal completion announcements (once per run)
   useEffect(() => {
@@ -1348,7 +1399,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
                   <Text style={[styles.goalConfigValue, { color: C.text }]}>{paceLabel(racePaceSecInput)} {imp ? '/mi' : '/km'} ›</Text>
                 </TouchableOpacity>
                 <Text style={[styles.modeDesc, { color: C.textDim }]}>
-                  Goal finish ~{fmtClockDuration(raceMilesInput * racePaceSecInput)} · fueling reminders every {fuelingReminderIntervalMin} min
+                  Goal finish ~{fmtClockDuration(raceMilesInput * racePaceSecInput)} · hydration every {plannerReminder.hydrationReminderIntervalMin} min · fuel every {plannerReminder.fuelReminderIntervalMin} min
                 </Text>
               </>
             ) : null}
@@ -1413,7 +1464,12 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
           </View>
         ) : null}
         {selectedRoute && nextSegment ? (
-          <View style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+          <TouchableOpacity
+            style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+            onPress={() => setShowRouteActions(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`Route actions for ${selectedRoute.name}`}
+          >
             <Text style={[styles.metricLabel, { color: C.textDim }]}>NEXT SEGMENT</Text>
             <Text style={[styles.routeProgressTitle, { color: C.text }]}>
               Segment {nextSegment.label} · {Math.max(0, nextSegment.distanceMiles - routeProgress).toFixed(2)} mi away
@@ -1421,17 +1477,59 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             <Text style={[styles.metricUnit, { color: C.textMuted }]}>
               {routeProgress.toFixed(2)} / {selectedRoute.distanceMiles.toFixed(1)} mi route progress
             </Text>
-          </View>
+            <Ionicons name="ellipsis-horizontal-circle-outline" size={20} color={C.primary} style={{ position: 'absolute', right: 12, top: 12 }} />
+          </TouchableOpacity>
         ) : selectedRoute ? (
-          <View style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+          <TouchableOpacity
+            style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+            onPress={() => setShowRouteActions(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`Route actions for ${selectedRoute.name}`}
+          >
             <Text style={[styles.metricLabel, { color: C.textDim }]}>SELECTED ROUTE</Text>
             <Text style={[styles.routeProgressTitle, { color: C.text }]}>{selectedRoute.name}</Text>
             <Text style={[styles.metricUnit, { color: C.textMuted }]}>
               {selectedRoute.distanceMiles.toFixed(1)} mi · +{selectedRoute.elevationGainFt} ft · {selectedRoute.estimatedMinutes} min
             </Text>
-          </View>
+            <Ionicons name="ellipsis-horizontal-circle-outline" size={20} color={C.primary} style={{ position: 'absolute', right: 12, top: 12 }} />
+          </TouchableOpacity>
         ) : null}
       </View>
+
+      <Modal visible={showRouteActions} transparent animationType="slide" onRequestClose={() => setShowRouteActions(false)}>
+        <TouchableOpacity style={styles.pointMenuOverlay} activeOpacity={1} onPress={() => setShowRouteActions(false)}>
+          <View style={[styles.pointMenuSheet, { backgroundColor: C.card, borderColor: C.border, paddingBottom: insets.bottom + 18 }]}>
+            <Text style={[styles.subTitle, { color: C.text }]}>{selectedRoute?.name}</Text>
+            <Text style={[styles.metricUnit, { color: C.textMuted, marginBottom: 8 }]}>
+              {selectedRoute?.distanceMiles.toFixed(1)} mi · {routeAttachment.direction === 'reverse' ? 'Reversed' : 'Forward'}
+            </Text>
+            <TouchableOpacity
+              style={[styles.pointMenuRow, { borderBottomColor: C.border }]}
+              onPress={() => {
+                setShowRouteActions(false);
+                if (selectedRoute) router.push({ pathname: '/(tabs)/training/route-detail', params: { routeId: selectedRoute.id } } as never);
+              }}
+            >
+              <Text style={{ color: C.text, fontWeight: '700' }}>View Route Details</Text>
+              <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.pointMenuRow, { borderBottomColor: C.border }]}
+              onPress={() => { reverseAttachedRoute(); setShowRouteActions(false); }}
+            >
+              <Text style={{ color: C.text, fontWeight: '700' }}>Reverse Route</Text>
+              <Ionicons name="swap-horizontal-outline" size={19} color={C.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.pointMenuRow, { borderBottomColor: C.border }]} onPress={removeRouteFromToday}>
+              <Text style={{ color: C.critical, fontWeight: '700' }}>Remove From Today&apos;s Run</Text>
+              <Ionicons name="remove-circle-outline" size={19} color={C.critical} />
+            </TouchableOpacity>
+            <TouchableOpacity style={{ paddingVertical: 14, alignItems: 'center' }} onPress={() => setShowRouteActions(false)}>
+              <Text style={{ color: C.textMuted, fontWeight: '700' }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Goal pickers */}
       <PickerWheel
@@ -1475,7 +1573,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 }
 
 // ─── Hydration Tab ────────────────────────────────────────────────────────────
-function HydrationTab() {
+function HydrationTabLegacy() {
   const C = useColors();
   const router = useRouter();
   const { units } = useSettingsStore();
@@ -1632,15 +1730,6 @@ function HydrationTab() {
             </Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          onPress={() => router.push('/(tabs)/training/hydration' as any)}
-          activeOpacity={0.8}
-          style={{ marginBottom: 10 }}
-        >
-          <Text style={[{ fontSize: 12, fontWeight: '800', color: C.primary }]}>
-            Open full hydration planner →
-          </Text>
-        </TouchableOpacity>
         <View style={{ gap: 8 }}>
           <View style={styles.inputRow}>
             <Text style={[{ fontSize: 12, color: C.textMuted, width: 110 }]}>Run type</Text>
@@ -1920,6 +2009,10 @@ function HydrationTab() {
   );
 }
 
+function HydrationTab() {
+  return <HydrationPlannerScreen embedded />;
+}
+
 // ─── Routes Tab ───────────────────────────────────────────────────────────────
 function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
   const C = useColors();
@@ -1931,14 +2024,14 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
   const cancelRun = useActiveRunStore(s => s.cancelRun);
   const routes = useRouteStore(s => s.routes);
   const selectedRouteId = useRouteStore(s => s.selectedRouteId);
-  const selectRoute = useRouteStore(s => s.selectRoute);
+  const attachRoute = useRouteStore(s => s.attachRoute);
   const [expanded, setExpanded] = useState<string | null>(selectedRouteId);
   const [folderFilter, setFolderFilter] = useState<RunRoute['folder'] | 'all'>('all');
 
   const filteredRoutes = routes.filter(route => folderFilter === 'all' || route.folder === folderFilter);
 
   async function startRoute(route: RunRoute) {
-    selectRoute(route.id);
+    attachRoute(route.id);
     if (isActive) {
       onStartRoute();
       return;
@@ -2010,7 +2103,6 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
           style={[styles.card, { backgroundColor: isExpanded ? C.primaryDim : C.card, borderColor: isExpanded ? C.primary : C.border, borderWidth: isExpanded ? 1.5 : 1 }]}
           onPress={() => {
             setExpanded(p => p === r.id ? null : r.id);
-            selectRoute(r.id);
           }}
           activeOpacity={0.8}
         >
@@ -2104,8 +2196,9 @@ function GPSTab() {
     currentPaceSecPerMile,
     coordinates,
   } = useActiveRunStore();
-  const selectedRouteId = useRouteStore(s => s.selectedRouteId);
-  const selectedRoute = useRouteStore(s => s.routes.find(r => r.id === selectedRouteId) ?? null);
+  const routeAttachment = useRouteStore(s => s.routeAttachment);
+  const attachedRoute = useRouteStore(s => s.routes.find(r => r.id === s.routeAttachment.routeId) ?? null);
+  const selectedRoute = effectiveAttachedRoute(attachedRoute, routeAttachment);
   const [permission, setPermission] = useState<TrackingPermissionState>({ foreground: 'unknown', background: 'unknown' });
   const [elapsed, setElapsed] = useState(0);
 

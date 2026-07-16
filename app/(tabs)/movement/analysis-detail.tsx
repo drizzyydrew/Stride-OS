@@ -195,6 +195,10 @@ export default function AnalysisDetailScreen() {
                   aspectRatio={aspectRatio}
                   autoLandmarks={analysis.autoLandmarks ?? analysis.landmarks ?? []}
                   landmarks={analysis.landmarks ?? []}
+                  allowedLandmarkNames={overlayConfig.visibleJoints.filter(name =>
+                    /_(shoulder|elbow|wrist|hip|knee|ankle)$/.test(name),
+                  )}
+                  visibleConnections={overlayConfig.visibleConnections}
                   onCancel={() => setEditingMarkers(false)}
                   onSave={saveLandmarkCorrections}
                 />

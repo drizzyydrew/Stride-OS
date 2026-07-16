@@ -118,6 +118,29 @@ function round(n: number, places = 0) {
   return Math.round(n * p) / p;
 }
 
+export type SweatRateTestInput = {
+  preWeightKg: number | null;
+  postWeightKg: number | null;
+  fluidConsumedL?: number;
+  urineOutputL?: number;
+  durationMin: number;
+};
+
+export function calculateMeasuredSweatRate(input: SweatRateTestInput): number | null {
+  if (
+    input.preWeightKg == null ||
+    input.postWeightKg == null ||
+    input.preWeightKg <= 0 ||
+    input.postWeightKg <= 0 ||
+    input.durationMin <= 0 ||
+    input.postWeightKg > input.preWeightKg + 5
+  ) return null;
+  const bodyMassLossL = input.preWeightKg - input.postWeightKg;
+  const sweatLossL = bodyMassLossL + Math.max(0, input.fluidConsumedL ?? 0) - Math.max(0, input.urineOutputL ?? 0);
+  if (sweatLossL < 0) return null;
+  return round(sweatLossL / (input.durationMin / 60), 2);
+}
+
 export function weatherBandForTemp(tempF: number): WeatherBand {
   if (tempF < 50) return 'cold';
   if (tempF < 65) return 'mild';
@@ -197,7 +220,7 @@ function carbTarget(input: HydrationCalculatorInput) {
   if (input.bodyWeightKg > 70 && hours >= 2) target += 5;
 
   const defaultMax = input.carbToleranceGh && input.carbToleranceGh >= 90 ? 120 : 90;
-  const toleranceMax = input.carbToleranceGh ? input.carbToleranceGh + 10 : defaultMax;
+  const toleranceMax = input.carbToleranceGh ?? defaultMax;
   target = clamp(target, 0, Math.min(defaultMax, toleranceMax));
 
   return {
@@ -290,8 +313,8 @@ export function calculateHydrationPlan(input: HydrationCalculatorInput): Hydrati
   if (sodiumMgPerL > 1500) {
     warnings.push('Very high sodium concentration. Split sodium across drink, food, or capsules and test in training.');
   }
-  if (input.carbToleranceGh && carbs.target > input.carbToleranceGh + 10) {
-    warnings.push('Build toward this carb target in training. Start near your current tolerated intake.');
+  if (input.carbToleranceGh && carbRateForDuration(input.durationMin).recommendedGPerHr > input.carbToleranceGh) {
+    warnings.push('A higher carbohydrate value would be a progression target, not an established current tolerance. Start near your known tolerated intake.');
   }
 
   if (!input.sweatRateTestLh) notes.push('Sweat rate is estimated from weather, effort, and sweatiness.');

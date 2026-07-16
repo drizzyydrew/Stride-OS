@@ -31,6 +31,7 @@ elsewhere).
 | "Submit an existing build to TestFlight" | `05_TESTFLIGHT_SUBMIT_SKILL.md` |
 | "Compare the app to the design" | `06_SCREENSHOT_VISUAL_QA_SKILL.md` |
 | "Is this task scoped right / getting too big" | `07_SCOPE_GUARD_SKILL.md` |
+| Authorized one-shot architecture through QA execution | `08_AUTONOMOUS_EXECUTION_SKILL.md` |
 | Combined "verify and release" ticket | 01 → 06 → 04 → 03 → 05, in that order |
 
 ## Non-negotiables (apply across every skill, not restated per-file)

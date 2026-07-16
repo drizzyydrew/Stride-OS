@@ -41,7 +41,7 @@ export type StrengthRecommendation = {
   loadGuidance:      string;
   avoidPatterns:     string[];    // movement patterns to skip today
   keyExercises:      string[];    // suggested exercise names
-  warning?:          string;      // shown if high fatigue/injury risk
+  warning?:          string;      // shown if fatigue or training stress is high
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -109,7 +109,7 @@ export function recommendStrengthFocus(
     avoidPatterns  = ['heavy_lower', 'max_effort', 'plyometric'];
     warning        = 'High fatigue or poor recovery — keep loads light and focus on quality movement.';
     keyExercises   = ['Dead bug', 'Bird dog', 'Hip 90/90 stretch', 'Calf stretch', 'Foam rolling'];
-    rationale      = 'Current readiness is low. Heavy loading during high fatigue increases injury risk and impairs adaptation. Mobility/prehab maintains movement quality without adding systemic stress.';
+    rationale      = 'Current readiness is low. Heavy loading during high fatigue may be harder to recover from. Mobility and lower-load work can maintain movement quality without adding as much systemic stress.';
     loadGuidance   = 'Bodyweight only. Focus on control, not effort. RPE should not exceed 5/10.';
     return { primaryFocus, alternateFocus, intensityLevel: intensity, sessionDurationMin: duration, rationale, loadGuidance, avoidPatterns, keyExercises, warning };
   }
@@ -156,7 +156,7 @@ export function recommendStrengthFocus(
 
   if (weakCalf) {
     keyExercises.push('Calf raise (loaded)', 'Soleus raise', 'Tibialis anterior raise');
-    rationale = 'Assessment flagged calf/soleus deficit — high injury risk for runners. Prioritize loaded calf work.';
+    rationale = 'Assessment flagged lower calf/soleus capacity. Prioritize progressive loaded calf work and monitor symptoms and recovery.';
   }
   if (weakHip) {
     keyExercises.push('Side-lying hip abduction', 'Hip thrust', 'Copenhagen plank');

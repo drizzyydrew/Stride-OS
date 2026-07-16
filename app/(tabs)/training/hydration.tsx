@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,17 +14,18 @@ import {
   useHydrationPlannerStore,
 } from '../../../src/store/hydrationPlannerStore';
 import { LAYOUT } from '../../../src/constants/layout';
+import PickerWheel from '../../../src/components/ui/PickerWheel';
 import {
-  FUELING_REMINDER_INTERVALS,
+  RUN_REMINDER_INTERVALS,
   DEFAULT_FUELING_REMINDER_INTERVAL_MIN,
   HYDRATION_INFO_COPY,
   PER_HOUR_UNIT,
   CONCENTRATION_UNIT,
   DISTANCE_STEP_MI,
   DURATION_STEP_MIN,
-  type FuelingReminderIntervalMin,
 } from '../../../src/constants/hydrationConfig';
 import {
+  calculateMeasuredSweatRate,
   calculateHydrationPlan,
   estimateEasyPaceSecPerMi,
   explainPlan,
@@ -37,6 +38,7 @@ import {
   type Saltiness,
   type Sweatiness,
 } from '../../../src/utils/hydrationEngine';
+import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
 
 // ─── Defaults (used by Reset) ────────────────────────────────────────────────
 
@@ -222,12 +224,11 @@ function ResultCard({ label, value, range, note }: { label: string; value: strin
   );
 }
 
-export default function HydrationScreen() {
+export default function HydrationScreen({ embedded = false }: { embedded?: boolean }) {
   const C = useColors();
   const router = useRouter();
   const units = useSettingsStore(st => st.units);
-  const fuelingIntervalMin = useSettingsStore(st => st.fuelingReminderIntervalMin);
-  const setFuelingIntervalMin = useSettingsStore(st => st.setFuelingReminderIntervalMin);
+  const legacyFuelingIntervalMin = useSettingsStore(st => st.fuelingReminderIntervalMin);
   const weightKg = useOnboardingStore(st => st.data.weightKg) || 70;
   const weeklyMileage = useOnboardingStore(st => st.data.weeklyMileage);
   const profile = useProfileStore(st => st.getActiveProfile());
@@ -236,7 +237,14 @@ export default function HydrationScreen() {
   const {
     distanceMi, durationMin, tempF, humidityPct, weatherSource, effort,
     sweatiness, saltiness, cramping, fluidComfort, goal, giTolerance,
-    sweatRateMode, sweatRateLh, updateInputs, resetInputs,
+    sweatRateMode, sweatRateLh, sweatSodiumMgL,
+    sweatTestPreWeightKg, sweatTestPostWeightKg, sweatTestFluidConsumedL,
+    sweatTestUrineOutputL, sweatTestDurationMin,
+    carbToleranceMode, knownCarbToleranceGh, carbProgressionTargetGh,
+    hydrationReminderEnabled, hydrationReminderIntervalMin, hydrationReminderRecommendedMin,
+    hydrationReminderSelection, fuelReminderEnabled, fuelReminderIntervalMin,
+    fuelReminderRecommendedMin, fuelReminderSelection, migratedLegacyFuelInterval,
+    updateInputs, resetInputs,
   } = planner;
   const setDistanceMi = (next: number | ((value: number) => number)) =>
     updateInputs({ distanceMi: typeof next === 'function' ? next(distanceMi) : next });
@@ -258,7 +266,17 @@ export default function HydrationScreen() {
   const setSweatRateMode = (next: 'estimate' | 'known') => updateInputs({ sweatRateMode: next });
   const setSweatRateLh = (next: number | ((value: number) => number)) =>
     updateInputs({ sweatRateLh: typeof next === 'function' ? next(sweatRateLh) : next });
+  const [pickerFor, setPickerFor] = useState<'hydration' | 'fuel' | null>(null);
   const [recalculatedFlash, setRecalculatedFlash] = useState(false);
+
+  useEffect(() => {
+    if (!migratedLegacyFuelInterval) {
+      updateInputs({
+        fuelReminderIntervalMin: Math.max(5, Math.min(60, legacyFuelingIntervalMin)),
+        migratedLegacyFuelInterval: true,
+      });
+    }
+  }, [legacyFuelingIntervalMin, migratedLegacyFuelInterval, updateInputs]);
 
   useEffect(() => {
     if (weather && weatherSource === 'current_location') {
@@ -278,7 +296,6 @@ export default function HydrationScreen() {
       tempF: weather?.tempF ?? DEFAULTS.tempF,
       humidityPct: weather?.humidity ?? DEFAULTS.humidityPct,
     });
-    setFuelingIntervalMin(DEFAULTS.fuelingIntervalMin);
   }
 
   function handleRecalculate() {
@@ -295,6 +312,21 @@ export default function HydrationScreen() {
 
   const autoDuration = Math.round(distanceMi * easyPaceSecPerMi / 60);
   const actualDuration = durationMin ?? autoDuration;
+  const measuredSweatRate = useMemo(() => calculateMeasuredSweatRate({
+    preWeightKg: sweatTestPreWeightKg,
+    postWeightKg: sweatTestPostWeightKg,
+    fluidConsumedL: sweatTestFluidConsumedL,
+    urineOutputL: sweatTestUrineOutputL,
+    durationMin: sweatTestDurationMin,
+  }), [
+    sweatTestDurationMin, sweatTestFluidConsumedL, sweatTestPostWeightKg,
+    sweatTestPreWeightKg, sweatTestUrineOutputL,
+  ]);
+  const carbToleranceGh = carbToleranceMode === 'known'
+    ? knownCarbToleranceGh ?? undefined
+    : carbToleranceMode === 'category' && giTolerance !== 'unsure'
+      ? GI_TOLERANCE_CARBS_GH[giTolerance]
+      : undefined;
 
   const plan = useMemo(() => calculateHydrationPlan({
     distanceMiles: distanceMi,
@@ -310,11 +342,34 @@ export default function HydrationScreen() {
     cramping,
     fluidComfort,
     goal,
-    carbToleranceGh: giTolerance === 'unsure' ? undefined : GI_TOLERANCE_CARBS_GH[giTolerance],
+    carbToleranceGh,
     sweatRateTestLh: sweatRateMode === 'known' ? sweatRateLh : undefined,
+    sweatSodiumMgL: sweatSodiumMgL ?? undefined,
   }), [
-    actualDuration, cramping, distanceMi, effort, fluidComfort, giTolerance,
-    goal, humidityPct, saltiness, sweatiness, sweatRateMode, sweatRateLh, tempF, weightKg,
+    actualDuration, carbToleranceGh, cramping, distanceMi, effort, fluidComfort,
+    goal, humidityPct, saltiness, sweatiness, sweatRateMode, sweatRateLh,
+    sweatSodiumMgL, tempF, weightKg,
+  ]);
+
+  useEffect(() => {
+    const hydrationRecommended = actualDuration >= 120 ? 15 : 20;
+    const fuelRecommended = actualDuration <= 60 ? 30 : actualDuration <= 120 ? 25 : 20;
+    const patch: Parameters<typeof updateInputs>[0] = {
+      hydrationReminderRecommendedMin: hydrationRecommended,
+      fuelReminderRecommendedMin: fuelRecommended,
+    };
+    if (hydrationReminderSelection === 'recommended') patch.hydrationReminderIntervalMin = hydrationRecommended;
+    if (fuelReminderSelection === 'recommended') patch.fuelReminderIntervalMin = fuelRecommended;
+    if (
+      hydrationReminderRecommendedMin !== hydrationRecommended
+      || fuelReminderRecommendedMin !== fuelRecommended
+      || (hydrationReminderSelection === 'recommended' && hydrationReminderIntervalMin !== hydrationRecommended)
+      || (fuelReminderSelection === 'recommended' && fuelReminderIntervalMin !== fuelRecommended)
+    ) updateInputs(patch);
+  }, [
+    actualDuration, fuelReminderIntervalMin, fuelReminderRecommendedMin,
+    fuelReminderSelection, hydrationReminderIntervalMin, hydrationReminderRecommendedMin,
+    hydrationReminderSelection, updateInputs,
   ]);
 
   const planExplanation = useMemo(() => explainPlan({
@@ -342,10 +397,12 @@ export default function HydrationScreen() {
   const fluidTotal = units === 'metric'
     ? `${fmt(plan.totals.fluidL, 1)} L total`
     : `${fmt(plan.totals.fluidOz)} oz total`;
+  const hydrationCueOz = Math.max(1, Math.round(plan.hourly.fluidOz * hydrationReminderIntervalMin / 60));
+  const fuelCueG = Math.max(1, Math.round((plan.hourly.carbsG * fuelReminderIntervalMin / 60) / 5) * 5);
 
   return (
-    <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
-      <View style={s.header}>
+    <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={embedded ? [] : ['top']}>
+      {!embedded ? <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.iconBtn} hitSlop={12}>
           <Ionicons name="chevron-back" size={24} color={C.text} />
         </TouchableOpacity>
@@ -354,7 +411,7 @@ export default function HydrationScreen() {
           <Text style={[s.title, { color: C.text }]}>Hydration Plan</Text>
         </View>
         <View style={s.iconBtn} />
-      </View>
+      </View> : null}
 
       <KeyboardAvoidingView style={s.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
@@ -367,6 +424,59 @@ export default function HydrationScreen() {
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.sectionLabel, { color: C.textDim }]}>PERSONALIZATION + KNOWN DATA</Text>
           <Text style={[s.inputHint, { color: C.textMuted }]}>Body weight from profile: {weightLabel}</Text>
+          <Text style={[s.dividerText, { color: C.text }]}>Measured sweat rate</Text>
+          <Text style={[s.inputHint, { color: C.textMuted }]}>
+            A pre/post-run weigh-in is distinct from estimated sweatiness. Fluid consumed is added and urine output is subtracted.
+          </Text>
+          <Stepper
+            label="Pre-run weight"
+            value={sweatTestPreWeightKg == null ? '' : fmt(sweatTestPreWeightKg, 1)}
+            unit="kg"
+            onMinus={() => updateInputs({ sweatTestPreWeightKg: Math.max(20, (sweatTestPreWeightKg ?? weightKg) - 0.1) })}
+            onPlus={() => updateInputs({ sweatTestPreWeightKg: Math.min(250, (sweatTestPreWeightKg ?? weightKg) + 0.1) })}
+            onCommitValue={value => updateInputs({ sweatTestPreWeightKg: Math.max(20, Math.min(250, value)) })}
+          />
+          <Stepper
+            label="Post-run weight"
+            value={sweatTestPostWeightKg == null ? '' : fmt(sweatTestPostWeightKg, 1)}
+            unit="kg"
+            onMinus={() => updateInputs({ sweatTestPostWeightKg: Math.max(20, (sweatTestPostWeightKg ?? weightKg) - 0.1) })}
+            onPlus={() => updateInputs({ sweatTestPostWeightKg: Math.min(250, (sweatTestPostWeightKg ?? weightKg) + 0.1) })}
+            onCommitValue={value => updateInputs({ sweatTestPostWeightKg: Math.max(20, Math.min(250, value)) })}
+          />
+          <Stepper
+            label="Fluid consumed"
+            value={fmt(sweatTestFluidConsumedL, 2)}
+            unit="L"
+            onMinus={() => updateInputs({ sweatTestFluidConsumedL: Math.max(0, sweatTestFluidConsumedL - 0.05) })}
+            onPlus={() => updateInputs({ sweatTestFluidConsumedL: Math.min(5, sweatTestFluidConsumedL + 0.05) })}
+            onCommitValue={value => updateInputs({ sweatTestFluidConsumedL: Math.max(0, Math.min(5, value)) })}
+          />
+          <Stepper
+            label="Test duration"
+            value={sweatTestDurationMin}
+            unit="min"
+            onMinus={() => updateInputs({ sweatTestDurationMin: Math.max(1, sweatTestDurationMin - 1) })}
+            onPlus={() => updateInputs({ sweatTestDurationMin: Math.min(360, sweatTestDurationMin + 1) })}
+            onCommitValue={value => updateInputs({ sweatTestDurationMin: Math.max(1, Math.min(360, Math.round(value))) })}
+          />
+          <Stepper
+            label="Urine output"
+            value={fmt(sweatTestUrineOutputL, 2)}
+            unit="L"
+            onMinus={() => updateInputs({ sweatTestUrineOutputL: Math.max(0, sweatTestUrineOutputL - 0.05) })}
+            onPlus={() => updateInputs({ sweatTestUrineOutputL: Math.min(3, sweatTestUrineOutputL + 0.05) })}
+            onCommitValue={value => updateInputs({ sweatTestUrineOutputL: Math.max(0, Math.min(3, value)) })}
+          />
+          {measuredSweatRate != null ? (
+            <TouchableOpacity
+              style={[s.measureResult, { backgroundColor: C.primaryDim, borderColor: C.primary }]}
+              onPress={() => updateInputs({ sweatRateMode: 'known', sweatRateLh: measuredSweatRate })}
+            >
+              <Text style={[s.inputLabel, { color: C.primary }]}>Measured Sweat Rate: {measuredSweatRate} L/hr</Text>
+              <Text style={[s.inputHint, { color: C.textMuted }]}>Tap to use this result in the plan.</Text>
+            </TouchableOpacity>
+          ) : null}
           <ChoiceRow
             label="Sweat rate"
             value={sweatRateMode}
@@ -388,18 +498,24 @@ export default function HydrationScreen() {
               onCommitValue={value => setSweatRateLh(Math.max(0.2, Math.min(2.5, Math.round(value * 10) / 10)))}
             />
           ) : (
-            <ChoiceRow
-              label="Sweatiness"
-              value={sweatiness}
-              onChange={setSweatiness}
-              options={[
-                { value: 'very_low', label: 'Very low' },
-                { value: 'low', label: 'Low' },
-                { value: 'average', label: 'Average' },
-                { value: 'high', label: 'High' },
-                { value: 'very_high', label: 'Very high' },
-              ]}
-            />
+            <>
+              <ChoiceRow
+                label="Estimated sweatiness"
+                value={sweatiness}
+                onChange={setSweatiness}
+                infoKey="sweatRate"
+                options={[
+                  { value: 'very_low', label: 'Very low' },
+                  { value: 'low', label: 'Low' },
+                  { value: 'average', label: 'Average' },
+                  { value: 'high', label: 'High' },
+                  { value: 'very_high', label: 'Very high' },
+                ]}
+              />
+              <Text style={[s.inputHint, { color: C.textMuted }]}>
+                Subjective starting estimate used only when measured sweat rate is unavailable; it is not equivalent to a measured value.
+              </Text>
+            </>
           )}
           <ChoiceRow
             label="Sweat saltiness"
@@ -412,6 +528,15 @@ export default function HydrationScreen() {
               { value: 'salty', label: 'Salty' },
               { value: 'very_salty', label: 'Very salty' },
             ]}
+          />
+          <Stepper
+            label="Known sweat sodium concentration"
+            value={sweatSodiumMgL ?? 900}
+            unit="mg/L"
+            hint="Optional concentration from a sweat test. mg/L is concentration, not hourly intake."
+            onMinus={() => updateInputs({ sweatSodiumMgL: Math.max(100, (sweatSodiumMgL ?? 900) - 50) })}
+            onPlus={() => updateInputs({ sweatSodiumMgL: Math.min(2500, (sweatSodiumMgL ?? 900) + 50) })}
+            onCommitValue={value => updateInputs({ sweatSodiumMgL: Math.max(100, Math.min(2500, Math.round(value))) })}
           />
           <ChoiceRow
             label="Cramping tendency"
@@ -437,17 +562,53 @@ export default function HydrationScreen() {
             ]}
           />
           <ChoiceRow
-            label="Gastrointestinal tolerance"
-            value={giTolerance}
-            onChange={setGiTolerance}
+            label="Carbohydrate tolerance"
+            value={carbToleranceMode}
+            onChange={value => updateInputs({ carbToleranceMode: value })}
             infoKey="giTolerance"
             options={[
-              { value: 'unsure', label: 'Not sure' },
-              { value: 'low', label: 'Sensitive' },
-              { value: 'typical', label: 'Typical' },
-              { value: 'high', label: 'Handles a lot' },
+              { value: 'known', label: 'Known g/hr' },
+              { value: 'category', label: 'Practical category' },
+              { value: 'unknown', label: 'Not tested' },
             ]}
           />
+          {carbToleranceMode === 'known' ? (
+            <>
+              <Stepper
+                label="Current tolerated carbohydrate"
+                value={knownCarbToleranceGh ?? 60}
+                unit="g/hr"
+                onMinus={() => updateInputs({ knownCarbToleranceGh: Math.max(10, (knownCarbToleranceGh ?? 60) - 5) })}
+                onPlus={() => updateInputs({ knownCarbToleranceGh: Math.min(120, (knownCarbToleranceGh ?? 60) + 5) })}
+                onCommitValue={value => updateInputs({ knownCarbToleranceGh: Math.max(10, Math.min(120, Math.round(value))) })}
+              />
+              <Stepper
+                label="Progression target"
+                value={carbProgressionTargetGh ?? knownCarbToleranceGh ?? 60}
+                unit="g/hr"
+                hint="A higher value is a practice target, not established current tolerance."
+                onMinus={() => updateInputs({ carbProgressionTargetGh: Math.max(10, (carbProgressionTargetGh ?? knownCarbToleranceGh ?? 60) - 5) })}
+                onPlus={() => updateInputs({ carbProgressionTargetGh: Math.min(120, (carbProgressionTargetGh ?? knownCarbToleranceGh ?? 60) + 5) })}
+                onCommitValue={value => updateInputs({ carbProgressionTargetGh: Math.max(10, Math.min(120, Math.round(value))) })}
+              />
+            </>
+          ) : carbToleranceMode === 'category' ? (
+            <ChoiceRow
+              label="Gastrointestinal tolerance"
+              value={giTolerance}
+              onChange={setGiTolerance}
+              options={[
+                { value: 'unsure', label: 'Not sure' },
+                { value: 'low', label: 'Sensitive' },
+                { value: 'typical', label: 'Typical' },
+                { value: 'high', label: 'Handles a lot' },
+              ]}
+            />
+          ) : (
+            <Text style={[s.inputHint, { color: C.textMuted }]}>
+              The plan uses a conservative starting estimate until tolerance is tested in training.
+            </Text>
+          )}
           <ChoiceRow
             label="Goal"
             value={goal}
@@ -536,13 +697,93 @@ export default function HydrationScreen() {
         </View>
 
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
-          <Text style={[s.sectionLabel, { color: C.textDim }]}>FUELING REMINDERS</Text>
-          <ChoiceRow
-            label="Remind me every"
-            value={String(fuelingIntervalMin) as `${FuelingReminderIntervalMin}`}
-            onChange={v => setFuelingIntervalMin(Number(v) as FuelingReminderIntervalMin)}
-            options={FUELING_REMINDER_INTERVALS.map(min => ({ value: String(min) as `${FuelingReminderIntervalMin}`, label: `${min} min` }))}
-          />
+          <Text style={[s.sectionLabel, { color: C.textDim }]}>VOICE REMINDERS</Text>
+          <Text style={[s.inputHint, { color: C.textMuted }]}>
+            Hydration and fuel are scheduled independently. If both are due together, StrideOS combines them into one spoken and visual cue.
+          </Text>
+          <View style={s.reminderRow}>
+            <View style={s.inputCopy}>
+              <Text style={[s.inputLabel, { color: C.text }]}>Hydration reminder</Text>
+              <Text style={[s.inputHint, { color: C.textMuted }]}>
+                Every {hydrationReminderIntervalMin} min · approximately {hydrationCueOz} oz per cue
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel="Enable hydration voice reminders"
+              value={hydrationReminderEnabled}
+              onValueChange={value => updateInputs({ hydrationReminderEnabled: value })}
+              trackColor={{ false: C.border, true: C.primaryDim }}
+              thumbColor={hydrationReminderEnabled ? C.primary : C.textDim}
+            />
+          </View>
+          <TouchableOpacity
+            style={[s.intervalButton, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+            onPress={() => setPickerFor('hydration')}
+          >
+            <Text style={[s.inputLabel, { color: C.text }]}>Hydration interval</Text>
+            <Text style={[s.intervalValue, { color: C.primary }]}>
+              {hydrationReminderIntervalMin} min · {hydrationReminderSelection === 'recommended' ? 'Recommended' : 'Override'}
+            </Text>
+          </TouchableOpacity>
+          {hydrationReminderSelection === 'override' ? (
+            <TouchableOpacity onPress={() => updateInputs({
+              hydrationReminderSelection: 'recommended',
+              hydrationReminderIntervalMin: hydrationReminderRecommendedMin,
+            })}>
+              <Text style={[s.recommendLink, { color: C.primary }]}>Use recommended {hydrationReminderRecommendedMin}-minute interval</Text>
+            </TouchableOpacity>
+          ) : null}
+          <View style={s.reminderRow}>
+            <View style={s.inputCopy}>
+              <Text style={[s.inputLabel, { color: C.text }]}>Fuel reminder</Text>
+              <Text style={[s.inputHint, { color: C.textMuted }]}>
+                Every {fuelReminderIntervalMin} min · approximately {fuelCueG} g carbohydrate per cue
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel="Enable fuel voice reminders"
+              value={fuelReminderEnabled}
+              onValueChange={value => updateInputs({ fuelReminderEnabled: value })}
+              trackColor={{ false: C.border, true: C.primaryDim }}
+              thumbColor={fuelReminderEnabled ? C.primary : C.textDim}
+            />
+          </View>
+          <TouchableOpacity
+            style={[s.intervalButton, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+            onPress={() => setPickerFor('fuel')}
+          >
+            <Text style={[s.inputLabel, { color: C.text }]}>Fuel interval</Text>
+            <Text style={[s.intervalValue, { color: C.primary }]}>
+              {fuelReminderIntervalMin} min · {fuelReminderSelection === 'recommended' ? 'Recommended' : 'Override'}
+            </Text>
+          </TouchableOpacity>
+          {fuelReminderSelection === 'override' ? (
+            <TouchableOpacity onPress={() => updateInputs({
+              fuelReminderSelection: 'recommended',
+              fuelReminderIntervalMin: fuelReminderRecommendedMin,
+            })}>
+              <Text style={[s.recommendLink, { color: C.primary }]}>Use recommended {fuelReminderRecommendedMin}-minute interval</Text>
+            </TouchableOpacity>
+          ) : null}
+          <TouchableOpacity
+            style={[s.testVoiceBtn, { borderColor: C.primary }]}
+            onPress={() => {
+              if (!hydrationReminderEnabled && !fuelReminderEnabled) {
+                Alert.alert('Voice reminders are off', 'Enable hydration, fuel, or both reminders before testing the spoken cue.');
+                return;
+              }
+              enqueueVoiceCue(
+                hydrationReminderEnabled && fuelReminderEnabled
+                  ? `Hydration and fuel reminder. Drink approximately ${hydrationCueOz} ounces and take approximately ${fuelCueG} grams of carbohydrate.`
+                  : hydrationReminderEnabled
+                    ? `Hydration reminder. Drink approximately ${hydrationCueOz} ounces.`
+                    : `Fuel reminder. Take approximately ${fuelCueG} grams of carbohydrate.`,
+              );
+            }}
+          >
+            <Ionicons name="volume-high-outline" size={17} color={C.primary} />
+            <Text style={[s.controlBtnTxt, { color: C.primary }]}>Test Voice</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={s.controlsRow}>
@@ -562,7 +803,7 @@ export default function HydrationScreen() {
             Body weight {weightLabel} · {plan.confidence.label} ({plan.confidence.score}/100)
           </Text>
           <Text style={[s.summaryMeta, { color: C.textMuted }]}>
-            Fuel reminder every {fuelingIntervalMin} min · {weatherSource === 'current_location' ? 'Current-location' : 'Manual'} weather · {humidityPct}% humidity
+            Hydration every {hydrationReminderIntervalMin} min · Fuel every {fuelReminderIntervalMin} min · {weatherSource === 'current_location' ? 'Current-location' : 'Manual'} weather · {humidityPct}% humidity
           </Text>
           <Text style={[s.summaryWhy, { color: C.text }]}>{planExplanation}</Text>
         </View>
@@ -590,7 +831,8 @@ export default function HydrationScreen() {
 
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.sectionLabel, { color: C.textDim }]}>EXECUTION</Text>
-          <Text style={[s.body, { color: C.textMuted }]}>- Take fuel on the selected {fuelingIntervalMin}-minute reminder rhythm during Race Mode.</Text>
+          <Text style={[s.body, { color: C.textMuted }]}>- Hydration cues: every {hydrationReminderIntervalMin} minutes, approximately {hydrationCueOz} oz each.</Text>
+          <Text style={[s.body, { color: C.textMuted }]}>- Fuel cues: every {fuelReminderIntervalMin} minutes, approximately {fuelCueG} g carbohydrate each.</Text>
           {plan.execution.map(item => (
             <Text key={item} style={[s.body, { color: C.textMuted }]}>- {item}</Text>
           ))}
@@ -630,6 +872,25 @@ export default function HydrationScreen() {
         </View>
       </ScrollView>
       </KeyboardAvoidingView>
+      <PickerWheel
+        visible={pickerFor !== null}
+        title={pickerFor === 'hydration' ? 'Hydration reminder interval' : 'Fuel reminder interval'}
+        values={RUN_REMINDER_INTERVALS}
+        selectedValue={pickerFor === 'hydration' ? hydrationReminderIntervalMin : fuelReminderIntervalMin}
+        formatValue={value => `${value} minutes`}
+        onClose={() => setPickerFor(null)}
+        onConfirm={value => {
+          if (pickerFor === 'hydration') updateInputs({
+            hydrationReminderIntervalMin: value,
+            hydrationReminderSelection: value === hydrationReminderRecommendedMin ? 'recommended' : 'override',
+          });
+          if (pickerFor === 'fuel') updateInputs({
+            fuelReminderIntervalMin: value,
+            fuelReminderSelection: value === fuelReminderRecommendedMin ? 'recommended' : 'override',
+          });
+          setPickerFor(null);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -671,6 +932,18 @@ const s = StyleSheet.create({
   choiceWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   choicePill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 8 },
   choiceText: { fontSize: 12, fontWeight: '800' },
+  measureResult: { borderWidth: 1, borderRadius: 12, padding: 12, marginVertical: 8 },
+  reminderRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  intervalButton: {
+    borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+  },
+  intervalValue: { fontSize: 12, fontWeight: '900', textAlign: 'right', flexShrink: 1 },
+  recommendLink: { fontSize: 12, fontWeight: '800', marginTop: 8, marginBottom: 4 },
+  testVoiceBtn: {
+    minHeight: 44, borderWidth: 1, borderRadius: 12, marginTop: 14,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+  },
   body: { fontSize: 13, lineHeight: 21, marginBottom: 6 },
   dividerText: { fontSize: 14, fontWeight: '900', marginTop: 10, marginBottom: 4 },
   warning: { fontSize: 13, lineHeight: 20, marginTop: 8, fontWeight: '800' },

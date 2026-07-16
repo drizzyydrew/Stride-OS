@@ -417,6 +417,16 @@ export const useMovementStore = create<MovementStore>()(
     {
       name:    'movement-store',
       storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
+      migrate: (persisted, _version) => {
+        const state = persisted as Partial<MovementStore>;
+        return {
+          ...state,
+          videos: (state.videos ?? []).map(migrateMovementVideoPaths),
+          analyses: (state.analyses ?? []).map(migrateMovementAnalysisPaths),
+          readinessAssessments: state.readinessAssessments ?? [],
+        };
+      },
       // Older persisted stores predate `analyses`/`readinessAssessments` —
       // default them to [] on rehydrate.
       merge: (persisted, current) => {

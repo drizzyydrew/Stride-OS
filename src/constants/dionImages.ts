@@ -28,6 +28,7 @@ export type DionAssessmentId =
   | 'readiness_easy_running_gait'
   | 'readiness_walking_gait'
   | 'standalone_running_gait_analysis'
+  | 'standalone_bike_fit'
   | 'standalone_squat_analysis'
   | 'standalone_deadlift_analysis'
   | 'standalone_single_leg_control'
@@ -319,6 +320,36 @@ export const DION_ASSESSMENT_IMAGES: Record<DionAssessmentId, DionAssessmentImag
     ],
   },
 
+  // Build 38 direct-lateral Bike Fit reference pair. These generated production
+  // assets were reviewed for Dion identity, full-bike framing, direct camera
+  // plane, visible contact points, and representative top/bottom pedal phases.
+  standalone_bike_fit: {
+    assessmentId: 'standalone_bike_fit',
+    viewLabel: 'Direct lateral',
+    mustBeVisible: ['Head', 'Shoulders', 'Elbows', 'Hands', 'Hips', 'Knees', 'Ankles', 'Feet', 'Full bicycle', 'Crank', 'Pedals'],
+    recommendedDistance: 'Camera perpendicular at approximately hip/crank height; full rider and bicycle visible',
+    primary: phase(
+      'dion_bike_fit_side_bottom_dead_center_v1',
+      require('../../assets/movement-lab/assets/standalone_bike_fit/dion_bike_fit_side_bottom_dead_center_v1.png'),
+      'bottom_dead_center',
+      'Dion riding a stationary road bicycle in direct lateral view near bottom dead center, with the full rider, bicycle, crank, pedals, hands, feet, and contact points visible.',
+    ),
+    phases: [
+      phase(
+        'dion_bike_fit_side_bottom_dead_center_v1',
+        require('../../assets/movement-lab/assets/standalone_bike_fit/dion_bike_fit_side_bottom_dead_center_v1.png'),
+        'bottom_dead_center',
+        'Dion riding in direct lateral view with the closest leg near the bottom pedal phase and a small natural knee bend.',
+      ),
+      phase(
+        'dion_bike_fit_side_top_dead_center_v1',
+        require('../../assets/movement-lab/assets/standalone_bike_fit/dion_bike_fit_side_top_dead_center_v1.png'),
+        'top_dead_center',
+        'Dion riding in direct lateral view with the closest leg near the top pedal phase and visible hip and knee flexion.',
+      ),
+    ],
+  },
+
   standalone_squat_analysis: {
     assessmentId: 'standalone_squat_analysis',
     viewLabel: 'Direct lateral',
@@ -502,6 +533,8 @@ export function dionImagesForKind(
   switch (kind) {
     case 'running_gait':
       return DION_ASSESSMENT_IMAGES.standalone_running_gait_analysis;
+    case 'bike_fit':
+      return DION_ASSESSMENT_IMAGES.standalone_bike_fit;
     case 'squat':
       return DION_ASSESSMENT_IMAGES.standalone_squat_analysis;
     case 'deadlift':

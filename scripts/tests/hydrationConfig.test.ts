@@ -8,13 +8,18 @@ import {
   DISTANCE_STEP_MI,
   DURATION_STEP_MIN,
   FUELING_REMINDER_INTERVALS,
+  RUN_REMINDER_INTERVALS,
   PER_HOUR_UNIT,
 } from '../../src/constants/hydrationConfig';
 
 test('hydration increments, intervals, and unit meanings stay canonical', () => {
   assert.equal(DISTANCE_STEP_MI, 0.01);
   assert.equal(DURATION_STEP_MIN, 1);
-  assert.deepEqual([...FUELING_REMINDER_INTERVALS], [15, 20, 30, 40]);
+  assert.equal(RUN_REMINDER_INTERVALS.length, 56);
+  assert.equal(RUN_REMINDER_INTERVALS[0], 5);
+  assert.equal(RUN_REMINDER_INTERVALS.at(-1), 60);
+  assert.equal(RUN_REMINDER_INTERVALS.every((value, index) => index === 0 || value - RUN_REMINDER_INTERVALS[index - 1] === 1), true);
+  assert.equal([15, 20, 30, 40].every(value => FUELING_REMINDER_INTERVALS.includes(value)), true);
   assert.equal(PER_HOUR_UNIT, '/hr');
   assert.equal(CONCENTRATION_UNIT, 'mg/L');
 });

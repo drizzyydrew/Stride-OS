@@ -243,7 +243,7 @@ function buildReadinessForecast(
 
 // ─── Overreaching risk ────────────────────────────────────────────────────────
 //
-// Gabbett (2016): ACWR > 1.5 = high injury risk; 1.3–1.5 = elevated.
+// ACWR bands are workload-trend heuristics with major limitations; they do not predict injury.
 // We project ACWR forward using fatigue slope as a proxy for ATL growth:
 //   acwrSlope ≈ fatigueSlope / 40 (scaled to ACWR units).
 //

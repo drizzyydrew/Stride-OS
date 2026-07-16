@@ -1,0 +1,4598 @@
+{
+  "generatedAt": "2026-07-16",
+  "count": 141,
+  "entries": [
+    {
+      "canonicalId": "exercise_90_90_hip_switches",
+      "canonicalName": "90/90 Hip Switches",
+      "ids": [
+        "ninety_ninety_hip_switches"
+      ],
+      "aliases": [],
+      "category": [
+        "Hips · Rotation",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 10 reps"
+      ],
+      "whereUsed": [
+        "Mobility — Hip Extension Mobility; Hip Control + Mobility; Full-Body Runner Mobility; Pre-Run Hip Opener; Hip Rotation & Control; Full-Body Mobility — Session B"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_adductor_rockbacks",
+      "canonicalName": "Adductor Rockbacks",
+      "ids": [
+        "adductor_rockbacks"
+      ],
+      "aliases": [],
+      "category": [
+        "Inner Thigh · Adductors",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 8 reps / side"
+      ],
+      "whereUsed": [
+        "Mobility — Low Back Mobility Reset"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_ankle_alphabet",
+      "canonicalName": "Ankle Alphabet",
+      "ids": [
+        "ankle_alphabet"
+      ],
+      "aliases": [],
+      "category": [
+        "Ankle",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "1 sets · 0 reps / side"
+      ],
+      "whereUsed": [
+        "Mobility — Pre-Run Ankle Activation; Post-Run Calf & Ankle Cooldown; Ankle Circles & Control; Ankle Dorsiflexion Deficit Focus; Joint-Friendly Full-Body Session"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_ankle_mobility_drill",
+      "canonicalName": "Ankle Mobility Drill",
+      "ids": [
+        "b_ankle_mob"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "mobility_prehab",
+        "stretch"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "hold-based or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_ankle_rocks",
+      "canonicalName": "Ankle Rocks",
+      "ids": [
+        "ankle_rocks"
+      ],
+      "aliases": [],
+      "category": [
+        "Ankle",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 12 reps"
+      ],
+      "whereUsed": [
+        "Mobility — Pre-Run Mobility Primer; Ankle Dorsiflexion Routine; Calf/Soleus Mobility + Capacity; Pre-Run Ankle Activation; 5-Minute Pre-Run Primer; Ankle Circles & Control; Combined Ankle + Calf Reset; Calf & Ankle Lower-Body Session; Full-Body Mobility — Session A; Quick 10-Minute Full-Body Mobility; Race-Week Gentle Primer; Hill-Prep Ankle & Calf Session; Long-Run Prep & Recovery Combo; Gentle Daily Walk Prep"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_back_extension",
+      "canonicalName": "Back Extension",
+      "ids": [
+        "sw_barbell_posterior_chain_back_extension"
+      ],
+      "aliases": [],
+      "category": [
+        "gym_barbell",
+        "lower_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10-12"
+      ],
+      "whereUsed": [
+        "Preset Workout — Posterior Chain Builder"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_back_squat",
+      "canonicalName": "Back Squat",
+      "ids": [
+        "b_squat",
+        "sw_barbell_beginner_full_body_back_squat",
+        "sw_barbell_full_body_strength_a_back_squat",
+        "sw_barbell_leg_day_back_squat",
+        "sw_barbell_lower_body_squat_focus_back_squat",
+        "sw_barbell_runner_strength_gym_back_squat",
+        "sw_barbell_squat_rack_strength_back_squat",
+        "sw_barbell_strength_5x5_back_squat",
+        "sw_runner_strength_hybrid_back_squat"
+      ],
+      "aliases": [
+        "Barbell Squat"
+      ],
+      "category": [
+        "exercise_library",
+        "full_body",
+        "gym_barbell",
+        "lower",
+        "lower_body",
+        "recommended",
+        "runner_strength",
+        "squat",
+        "strength_preset"
+      ],
+      "equipment": [
+        "barbell",
+        "squat_rack"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 6-8",
+        "3 sets · 8-10",
+        "4 sets · 6-8",
+        "5 sets · 5",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library",
+        "Preset Workout — Barbell Leg Day",
+        "Preset Workout — Beginner Barbell Full Body",
+        "Preset Workout — Classic 5x5 Strength",
+        "Preset Workout — Full-Body Barbell Strength A",
+        "Preset Workout — Lower Body — Squat Focus",
+        "Preset Workout — Runner Strength — Gym Session",
+        "Preset Workout — Runner Strength — Hybrid Session",
+        "Preset Workout — Squat Rack Strength"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_band_chest_press",
+      "canonicalName": "Band Chest Press",
+      "ids": [
+        "sw_band_upper_body_band_chest_press"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "band"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 12-15"
+      ],
+      "whereUsed": [
+        "Preset Workout — Band Upper Body"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_band_clamshell",
+      "canonicalName": "Band Clamshell",
+      "ids": [
+        "b_clam",
+        "sw_band_activation_pre_run_band_clamshell",
+        "sw_band_glute_activation_band_clamshell",
+        "sw_problem_area_hip_stability_band_clamshell"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "mobility_prehab",
+        "pre_run",
+        "problem_area",
+        "single_leg",
+        "strength_preset"
+      ],
+      "equipment": [
+        "band"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 12 per side",
+        "3 sets · 12 per side",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library",
+        "Preset Workout — Band Activation — Pre-Run",
+        "Preset Workout — Band Glute Activation",
+        "Preset Workout — Problem Area — Hip Stability"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_band_face_pull",
+      "canonicalName": "Band Face Pull",
+      "ids": [
+        "sw_band_upper_body_band_face_pull",
+        "sw_barbell_pull_day_band_face_pull"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "gym_barbell",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "band"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 12-15",
+        "3 sets · 15"
+      ],
+      "whereUsed": [
+        "Preset Workout — Band Upper Body",
+        "Preset Workout — Barbell Pull Day"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_band_glute_bridge",
+      "canonicalName": "Band Glute Bridge",
+      "ids": [
+        "sw_band_activation_pre_run_band_glute_bridge",
+        "sw_band_glute_activation_band_glute_bridge"
+      ],
+      "aliases": [],
+      "category": [
+        "pre_run",
+        "problem_area",
+        "strength_preset"
+      ],
+      "equipment": [
+        "band"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 15",
+        "3 sets · 15"
+      ],
+      "whereUsed": [
+        "Preset Workout — Band Activation — Pre-Run",
+        "Preset Workout — Band Glute Activation"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_band_lateral_walk",
+      "canonicalName": "Band Lateral Walk",
+      "ids": [
+        "sw_band_activation_pre_run_band_lateral_walk",
+        "sw_band_glute_activation_band_lateral_walk",
+        "sw_problem_area_hip_stability_band_lateral_walk"
+      ],
+      "aliases": [],
+      "category": [
+        "pre_run",
+        "problem_area",
+        "strength_preset"
+      ],
+      "equipment": [
+        "band"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 10 per side",
+        "3 sets · 10 per side"
+      ],
+      "whereUsed": [
+        "Preset Workout — Band Activation — Pre-Run",
+        "Preset Workout — Band Glute Activation",
+        "Preset Workout — Problem Area — Hip Stability"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_band_pull_apart",
+      "canonicalName": "Band Pull Apart",
+      "ids": [
+        "b_pull_apart",
+        "guide:band_pull_apart",
+        "pull_band_pull",
+        "sw_band_upper_body_band_pull_apart"
+      ],
+      "aliases": [
+        "Band Pull-Apart"
+      ],
+      "category": [
+        "bodyweight",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "pull",
+        "strength_engine",
+        "strength_preset",
+        "upper",
+        "upper_body"
+      ],
+      "equipment": [
+        "band"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 15",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Band Upper Body",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_band_row",
+      "canonicalName": "Band Row",
+      "ids": [
+        "sw_band_upper_body_band_row"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "band"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 12-15"
+      ],
+      "whereUsed": [
+        "Preset Workout — Band Upper Body"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_barbell_hip_thrust",
+      "canonicalName": "Barbell Hip Thrust",
+      "ids": [
+        "sw_barbell_deadlift_day_barbell_hip_thrust",
+        "sw_barbell_posterior_chain_barbell_hip_thrust"
+      ],
+      "aliases": [],
+      "category": [
+        "gym_barbell",
+        "lower_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "barbell",
+        "bench"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8-10",
+        "4 sets · 8-10"
+      ],
+      "whereUsed": [
+        "Preset Workout — Deadlift Day",
+        "Preset Workout — Posterior Chain Builder"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_barbell_row",
+      "canonicalName": "Barbell Row",
+      "ids": [
+        "sw_barbell_beginner_full_body_barbell_row",
+        "sw_barbell_bench_press_day_barbell_row",
+        "sw_barbell_deadlift_day_barbell_row",
+        "sw_barbell_full_body_strength_b_barbell_row",
+        "sw_barbell_posterior_chain_barbell_row",
+        "sw_barbell_pull_day_barbell_row",
+        "sw_barbell_strength_5x5_barbell_row",
+        "sw_barbell_total_body_power_barbell_row",
+        "sw_barbell_upper_body_push_pull_barbell_row"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "gym_barbell",
+        "lower_body",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8-10",
+        "4 sets · 8-10",
+        "5 sets · 5"
+      ],
+      "whereUsed": [
+        "Preset Workout — Barbell Pull Day",
+        "Preset Workout — Beginner Barbell Full Body",
+        "Preset Workout — Bench Press Day",
+        "Preset Workout — Classic 5x5 Strength",
+        "Preset Workout — Deadlift Day",
+        "Preset Workout — Full-Body Barbell Strength B",
+        "Preset Workout — Posterior Chain Builder",
+        "Preset Workout — Total-Body Barbell Power",
+        "Preset Workout — Upper Body Push/Pull"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_barbell_shrug",
+      "canonicalName": "Barbell Shrug",
+      "ids": [
+        "sw_barbell_pull_day_barbell_shrug"
+      ],
+      "aliases": [],
+      "category": [
+        "gym_barbell",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10-12"
+      ],
+      "whereUsed": [
+        "Preset Workout — Barbell Pull Day"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_barbell_walking_lunge",
+      "canonicalName": "Barbell Walking Lunge",
+      "ids": [
+        "sw_barbell_leg_day_barbell_walking_lunge"
+      ],
+      "aliases": [],
+      "category": [
+        "gym_barbell",
+        "lower_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8 per leg"
+      ],
+      "whereUsed": [
+        "Preset Workout — Barbell Leg Day"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_bench_press",
+      "canonicalName": "Bench Press",
+      "ids": [
+        "sw_barbell_beginner_full_body_bench_press",
+        "sw_barbell_bench_press_day_bench_press",
+        "sw_barbell_full_body_strength_a_bench_press",
+        "sw_barbell_push_day_bench_press",
+        "sw_barbell_strength_5x5_bench_press",
+        "sw_barbell_upper_body_push_pull_bench_press"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "gym_barbell",
+        "recommended",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "barbell",
+        "bench"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8-10",
+        "4 sets · 6-8",
+        "5 sets · 5"
+      ],
+      "whereUsed": [
+        "Preset Workout — Barbell Push Day",
+        "Preset Workout — Beginner Barbell Full Body",
+        "Preset Workout — Bench Press Day",
+        "Preset Workout — Classic 5x5 Strength",
+        "Preset Workout — Full-Body Barbell Strength A",
+        "Preset Workout — Upper Body Push/Pull"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_bent_knee_calf_raise",
+      "canonicalName": "Bent-Knee Calf Raise",
+      "ids": [
+        "b_soleus_raise"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "lower",
+        "single_leg"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_bent_over_row",
+      "canonicalName": "Bent-Over Row",
+      "ids": [
+        "sw_barbell_full_body_strength_a_bent_over_row"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "gym_barbell",
+        "recommended",
+        "strength_preset"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8-10"
+      ],
+      "whereUsed": [
+        "Preset Workout — Full-Body Barbell Strength A"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_bird_dog",
+      "canonicalName": "Bird Dog",
+      "ids": [
+        "b_bird_dog",
+        "guide:bird_dog",
+        "sw_bodyweight_core_bird_dog",
+        "trunk_bird_dog"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "core",
+        "core_anti_extension",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "full_body",
+        "strength_engine",
+        "strength_preset",
+        "trunk"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10 per side",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Bodyweight Core",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_bodyweight_dip",
+      "canonicalName": "Bodyweight Dip",
+      "ids": [
+        "sw_barbell_bench_press_day_bodyweight_dip"
+      ],
+      "aliases": [],
+      "category": [
+        "gym_barbell",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8-12"
+      ],
+      "whereUsed": [
+        "Preset Workout — Bench Press Day"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_box_jump",
+      "canonicalName": "Box Jump",
+      "ids": [
+        "b_box_jump",
+        "guide:box_jump",
+        "plyo_box_jump"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "plyometric",
+        "power",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_box_squat",
+      "canonicalName": "Box Squat",
+      "ids": [
+        "guide:box_squat",
+        "squat_box",
+        "sw_barbell_squat_rack_strength_box_squat"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias",
+        "gym_barbell",
+        "lower_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "barbell",
+        "squat_rack"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 5",
+        "instruction reference"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Preset Workout — Squat Rack Strength"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_box_squat_bodyweight",
+      "canonicalName": "Box Squat (Bodyweight)",
+      "ids": [
+        "squat_box"
+      ],
+      "aliases": [],
+      "category": [
+        "squat",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_brisk_walk",
+      "canonicalName": "Brisk Walk",
+      "ids": [
+        "run_warmup_walk"
+      ],
+      "aliases": [],
+      "category": [
+        "running_protocol"
+      ],
+      "equipment": [],
+      "laterality": "not_applicable",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "time or repetitions by workout type"
+      ],
+      "whereUsed": [
+        "Running warm-up/cool-down protocols"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_bulgarian_split_squat",
+      "canonicalName": "Bulgarian Split Squat",
+      "ids": [
+        "b_bss",
+        "guide:bulgarian_split_squat",
+        "squat_bulgarian",
+        "sw_dumbbell_single_leg_focus_bulgarian_split_squat",
+        "sw_problem_area_single_leg_control_bulgarian_split_squat"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "lower",
+        "lower_body",
+        "problem_area",
+        "runner_strength",
+        "squat",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight",
+        "dumbbell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8 per leg",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Problem Area — Single-Leg Control",
+        "Preset Workout — Single-Leg Focus — Dumbbell",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_bulgarian_split_squat_bodyweight",
+      "canonicalName": "Bulgarian Split Squat (Bodyweight)",
+      "ids": [
+        "sw_bodyweight_single_leg_focus_bulgarian_split_squat_bodyweight"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "lower_body",
+        "problem_area",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8 per leg"
+      ],
+      "whereUsed": [
+        "Preset Workout — Single-Leg Focus — Bodyweight"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_calf_raise",
+      "canonicalName": "Calf Raise",
+      "ids": [
+        "sw_bodyweight_lower_body_calf_raise"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "lower_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 15-20"
+      ],
+      "whereUsed": [
+        "Preset Workout — Bodyweight Lower Body"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_calf_stretch",
+      "canonicalName": "Calf Stretch (Bent/Straight)",
+      "ids": [
+        "b_calf_stretch"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "mobility_prehab",
+        "stretch"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "hold-based or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_straight_knee_calf_stretch",
+      "canonicalName": "Calf Stretch (Straight-Knee)",
+      "ids": [
+        "calf_stretch_gastroc"
+      ],
+      "aliases": [],
+      "category": [
+        "Calf · Gastrocnemius",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "2 sets · 30s hold / side"
+      ],
+      "whereUsed": [
+        "Mobility — Post-Run Recovery Mobility; Ankle Dorsiflexion Routine; Full-Body Runner Mobility; Calf/Soleus Mobility + Capacity; Post-Run Calf & Ankle Cooldown; Full-Body Post-Run Cooldown; Ankle Dorsiflexion Progression; Combined Ankle + Calf Reset; Calf & Ankle Lower-Body Session; Full-Body Mobility — Session B; Calf Capacity — Problem Area Focus; Ankle Dorsiflexion Deficit Focus; Long-Run Prep & Recovery Combo"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_cat_cow",
+      "canonicalName": "Cat-Cow",
+      "ids": [
+        "cat_cow"
+      ],
+      "aliases": [],
+      "category": [
+        "Spine · Core",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 10 reps"
+      ],
+      "whereUsed": [
+        "Mobility — Pre-Run Mobility Primer; Low Back Mobility Reset; Thoracic Mobility for Running Posture; Thoracic Rotation Flow; Low Back Daily Reset; Cat-Cow & Breathing Flow; Desk-Break Mobility; Quick 10-Minute Full-Body Mobility; Gentle Daily Walk Prep; Joint-Friendly Full-Body Session"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_childs_pose_breathing",
+      "canonicalName": "Child's Pose Breathing",
+      "ids": [
+        "childs_pose_breathing"
+      ],
+      "aliases": [],
+      "category": [
+        "Low Back · Hips",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "1 sets · 0 reps"
+      ],
+      "whereUsed": [
+        "Mobility — Post-Run Recovery Mobility; Low Back Mobility Reset; Post-Run Hip & Low Back Release; Low Back Daily Reset; Cat-Cow & Breathing Flow; Long-Run Prep & Recovery Combo"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_clamshell",
+      "canonicalName": "Clamshell",
+      "ids": [
+        "b_clam",
+        "guide:clamshell",
+        "mobility_clamshell"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias",
+        "mobility",
+        "strength_engine"
+      ],
+      "equipment": [
+        "band",
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_close_grip_bench_press",
+      "canonicalName": "Close-Grip Bench Press",
+      "ids": [
+        "sw_barbell_push_day_close_grip_bench_press"
+      ],
+      "aliases": [],
+      "category": [
+        "gym_barbell",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "barbell",
+        "bench"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8-10"
+      ],
+      "whereUsed": [
+        "Preset Workout — Barbell Push Day"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_controlled_hip_cars",
+      "canonicalName": "Controlled Hip CARs",
+      "ids": [
+        "controlled_hip_cars"
+      ],
+      "aliases": [],
+      "category": [
+        "Hip Joint · Rotational Control",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 5 reps / side"
+      ],
+      "whereUsed": [
+        "Mobility — Pre-Run Mobility Primer; Hip Extension Mobility; Hip Control + Mobility; Single-Leg Control Prep; Pre-Run Hip Opener; Hip Rotation & Control; Glute Activation + Hip Control; Outer Hip & IT Band Care; Hip & Glute Lower-Body Session; Full-Body Mobility — Session C; Trunk & Pelvic Control Focus; Speed-Work Prep Mobility; Balance & Stability for Walking"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_conventional_deadlift",
+      "canonicalName": "Conventional Deadlift",
+      "ids": [
+        "sw_barbell_deadlift_day_conventional_deadlift"
+      ],
+      "aliases": [],
+      "category": [
+        "gym_barbell",
+        "lower_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "5 sets · 5"
+      ],
+      "whereUsed": [
+        "Preset Workout — Deadlift Day"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_copenhagen_plank",
+      "canonicalName": "Copenhagen Plank",
+      "ids": [
+        "b_copenhagen",
+        "guide:copenhagen_plank",
+        "trunk_copenhagen"
+      ],
+      "aliases": [],
+      "category": [
+        "core",
+        "core_anti_lateral",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "strength_engine",
+        "trunk"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "mixed",
+      "prescriptionConvention": [
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_couch_stretch",
+      "canonicalName": "Couch Stretch",
+      "ids": [
+        "couch_stretch"
+      ],
+      "aliases": [],
+      "category": [
+        "Hip Flexors · Quads",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "2 sets · 30s hold / side"
+      ],
+      "whereUsed": [
+        "Mobility — Hip Extension Mobility; Hip Flexor Focus; Quad & Hip Flexor Lower-Body Session; Hip Extension Deficit Focus"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_db_press",
+      "canonicalName": "Db Press",
+      "ids": [
+        "guide:db_press",
+        "push_db_press"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias"
+      ],
+      "equipment": [],
+      "laterality": "not_applicable",
+      "movementType": "mixed",
+      "prescriptionConvention": [
+        "instruction reference"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_db_row",
+      "canonicalName": "Db Row",
+      "ids": [
+        "b_row",
+        "dbr",
+        "guide:db_row",
+        "pull_row"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias"
+      ],
+      "equipment": [],
+      "laterality": "not_applicable",
+      "movementType": "mixed",
+      "prescriptionConvention": [
+        "instruction reference"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_dead_bug",
+      "canonicalName": "Dead Bug",
+      "ids": [
+        "b_dead_bug",
+        "db2",
+        "guide:dead_bug",
+        "sw_bodyweight_core_dead_bug",
+        "sw_post_run_recovery_bodyweight_dead_bug",
+        "trunk_dead_bug"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "core",
+        "core_anti_extension",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "full_body",
+        "post_run_recovery",
+        "strength_engine",
+        "strength_preset",
+        "trunk"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 10 per side",
+        "3 sets · 10 per side",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Bodyweight Core",
+        "Preset Workout — Post-Run Recovery — Bodyweight",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_deadlift",
+      "canonicalName": "Deadlift",
+      "ids": [
+        "b_deadlift",
+        "movement_deadlift",
+        "sw_barbell_full_body_strength_b_deadlift",
+        "sw_barbell_pull_day_deadlift"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "full_body",
+        "gym_barbell",
+        "hinge",
+        "lower",
+        "movement_lab_assessment",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "4 sets · 5",
+        "movement-specific timed capture",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library",
+        "Movement Lab · direct lateral",
+        "Preset Workout — Barbell Pull Day",
+        "Preset Workout — Full-Body Barbell Strength B"
+      ],
+      "existingDionAssetStatus": "assessment_reference_only",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_depth_jump",
+      "canonicalName": "Depth Jump",
+      "ids": [
+        "b_depth_jump"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "plyometric",
+        "power"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_diaphragmatic_breathing",
+      "canonicalName": "Diaphragmatic Breathing",
+      "ids": [
+        "run_cooldown_breathing"
+      ],
+      "aliases": [],
+      "category": [
+        "running_protocol"
+      ],
+      "equipment": [],
+      "laterality": "not_applicable",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "time or repetitions by workout type"
+      ],
+      "whereUsed": [
+        "Running warm-up/cool-down protocols"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_dumbbell_bench_press",
+      "canonicalName": "Dumbbell Bench Press",
+      "ids": [
+        "sw_dumbbell_beginner_full_body_dumbbell_bench_press",
+        "sw_dumbbell_full_body_a_dumbbell_bench_press",
+        "sw_dumbbell_push_pull_dumbbell_bench_press",
+        "sw_dumbbell_upper_body_dumbbell_bench_press"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "full_body",
+        "recommended",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "bench",
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10-12",
+        "3 sets · 8-10",
+        "4 sets · 8-10"
+      ],
+      "whereUsed": [
+        "Preset Workout — Beginner Dumbbell Full Body",
+        "Preset Workout — Dumbbell Push/Pull",
+        "Preset Workout — Dumbbell Upper Body",
+        "Preset Workout — Full-Body Dumbbell A"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_dumbbell_calf_raise",
+      "canonicalName": "Dumbbell Calf Raise",
+      "ids": [
+        "sw_dumbbell_lower_body_dumbbell_calf_raise",
+        "sw_dumbbell_runner_strength_dumbbell_calf_raise"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "lower_body",
+        "recommended",
+        "runner_strength",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 15",
+        "3 sets · 15 per leg"
+      ],
+      "whereUsed": [
+        "Preset Workout — Dumbbell Lower Body",
+        "Preset Workout — Runner Strength — Dumbbell"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_dumbbell_curl",
+      "canonicalName": "Dumbbell Curl",
+      "ids": [
+        "sw_dumbbell_upper_body_dumbbell_curl"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 10-12"
+      ],
+      "whereUsed": [
+        "Preset Workout — Dumbbell Upper Body"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_dumbbell_hip_thrust",
+      "canonicalName": "Dumbbell Hip Thrust",
+      "ids": [
+        "sw_dumbbell_glute_focus_dumbbell_hip_thrust"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "lower_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bench",
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10-12"
+      ],
+      "whereUsed": [
+        "Preset Workout — Glute Focus — Dumbbell"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_dumbbell_reverse_fly",
+      "canonicalName": "Dumbbell Reverse Fly",
+      "ids": [
+        "sw_dumbbell_push_pull_dumbbell_reverse_fly"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 12"
+      ],
+      "whereUsed": [
+        "Preset Workout — Dumbbell Push/Pull"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_dumbbell_romanian_deadlift",
+      "canonicalName": "Dumbbell Romanian Deadlift",
+      "ids": [
+        "sw_dumbbell_full_body_b_dumbbell_romanian_deadlift",
+        "sw_dumbbell_glute_focus_dumbbell_romanian_deadlift",
+        "sw_dumbbell_lower_body_dumbbell_romanian_deadlift"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "full_body",
+        "lower_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10-12",
+        "4 sets · 10-12"
+      ],
+      "whereUsed": [
+        "Preset Workout — Dumbbell Lower Body",
+        "Preset Workout — Full-Body Dumbbell B",
+        "Preset Workout — Glute Focus — Dumbbell"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_dumbbell_row",
+      "canonicalName": "Dumbbell Row",
+      "ids": [
+        "b_row",
+        "sw_dumbbell_beginner_full_body_dumbbell_row",
+        "sw_dumbbell_full_body_b_dumbbell_row",
+        "sw_dumbbell_push_pull_dumbbell_row",
+        "sw_dumbbell_upper_body_dumbbell_row",
+        "sw_post_run_recovery_dumbbell_dumbbell_row"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "exercise_library",
+        "full_body",
+        "post_run_recovery",
+        "pull",
+        "strength_preset",
+        "upper",
+        "upper_body"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 10 per side",
+        "3 sets · 10 per side",
+        "4 sets · 10 per side",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library",
+        "Preset Workout — Beginner Dumbbell Full Body",
+        "Preset Workout — Dumbbell Push/Pull",
+        "Preset Workout — Dumbbell Upper Body",
+        "Preset Workout — Full-Body Dumbbell B",
+        "Preset Workout — Post-Run Recovery — Light Dumbbell"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_dumbbell_shoulder_press",
+      "canonicalName": "Dumbbell Shoulder Press",
+      "ids": [
+        "sw_dumbbell_full_body_b_dumbbell_shoulder_press",
+        "sw_dumbbell_push_pull_dumbbell_shoulder_press",
+        "sw_dumbbell_upper_body_dumbbell_shoulder_press"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "full_body",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8-10"
+      ],
+      "whereUsed": [
+        "Preset Workout — Dumbbell Push/Pull",
+        "Preset Workout — Dumbbell Upper Body",
+        "Preset Workout — Full-Body Dumbbell B"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_dumbbell_suitcase_carry",
+      "canonicalName": "Dumbbell Suitcase Carry",
+      "ids": [
+        "sw_dumbbell_core_and_stability_dumbbell_suitcase_carry"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "full_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 20-30m per side"
+      ],
+      "whereUsed": [
+        "Preset Workout — Core & Stability — Dumbbell"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_easy_jog",
+      "canonicalName": "Easy Jog",
+      "ids": [
+        "run_warmup_easy_jog"
+      ],
+      "aliases": [],
+      "category": [
+        "running_protocol"
+      ],
+      "equipment": [],
+      "laterality": "not_applicable",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "time or repetitions by workout type"
+      ],
+      "whereUsed": [
+        "Running warm-up/cool-down protocols"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_eccentric_step_down",
+      "canonicalName": "Eccentric Step-Down",
+      "ids": [
+        "b_step_down"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "lower",
+        "single_leg"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_face_pull",
+      "canonicalName": "Face Pull",
+      "ids": [
+        "b_face_pull",
+        "guide:face_pull",
+        "pull_facepull"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "pull",
+        "upper"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "instruction reference",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_face_pull_band",
+      "canonicalName": "Face Pull (Band)",
+      "ids": [
+        "pull_facepull"
+      ],
+      "aliases": [],
+      "category": [
+        "pull",
+        "strength_engine"
+      ],
+      "equipment": [
+        "band"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_farmer_carry",
+      "canonicalName": "Farmers Carry",
+      "ids": [
+        "carry_farmers",
+        "guide:farmers_carry",
+        "sw_dumbbell_core_and_stability_dumbbell_farmer_carry"
+      ],
+      "aliases": [
+        "Farmer's Carry",
+        "Dumbbell Farmer Carry"
+      ],
+      "category": [
+        "carry",
+        "dumbbell",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "full_body",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell",
+        "kettlebell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 30-40m",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Preset Workout — Core & Stability — Dumbbell",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_figure_four_glute_stretch",
+      "canonicalName": "Figure-Four Glute Stretch",
+      "ids": [
+        "figure_four_glute_stretch"
+      ],
+      "aliases": [],
+      "category": [
+        "Glutes · Outer Hip",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "2 sets · 30s hold / side"
+      ],
+      "whereUsed": [
+        "Mobility — Post-Run Hip & Low Back Release; Glute Activation + Hip Control; Joint-Friendly Full-Body Session"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_foam_roll_general",
+      "canonicalName": "Foam Roll (General)",
+      "ids": [
+        "b_foam_roll"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "mobility_prehab",
+        "stretch"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "hold-based or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_front_squat",
+      "canonicalName": "Front Squat",
+      "ids": [
+        "sw_barbell_full_body_strength_b_front_squat",
+        "sw_barbell_squat_rack_strength_front_squat",
+        "sw_barbell_total_body_power_front_squat"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "gym_barbell",
+        "lower_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "barbell",
+        "squat_rack"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 6-8"
+      ],
+      "whereUsed": [
+        "Preset Workout — Full-Body Barbell Strength B",
+        "Preset Workout — Squat Rack Strength",
+        "Preset Workout — Total-Body Barbell Power"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_glute_bridge",
+      "canonicalName": "Glute Bridge",
+      "ids": [
+        "gb",
+        "glute_bridge",
+        "guide:glute_bridge",
+        "sw_bodyweight_beginner_full_body_glute_bridge",
+        "sw_bodyweight_full_body_b_glute_bridge",
+        "sw_bodyweight_travel_friendly_glute_bridge",
+        "sw_post_run_recovery_bodyweight_glute_bridge"
+      ],
+      "aliases": [],
+      "category": [
+        "Glutes · Hip Extension",
+        "bodyweight",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "full_body",
+        "mobility",
+        "post_run_recovery",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 15",
+        "3 sets · 12",
+        "3 sets · 12 reps",
+        "3 sets · 15",
+        "instruction reference"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Mobility — Pre-Run Mobility Primer; Hip Control + Mobility; Full-Body Runner Mobility; Single-Leg Control Prep; 5-Minute Pre-Run Primer; Glute Activation + Hip Control; Outer Hip & IT Band Care; Hip & Glute Lower-Body Session; Full-Body Mobility — Session A; Full-Body Mobility — Session C; Trunk & Pelvic Control Focus; Balance & Stability for Walking",
+        "Preset Workout — Beginner Bodyweight Full Body",
+        "Preset Workout — Full-Body Bodyweight B",
+        "Preset Workout — Post-Run Recovery — Bodyweight",
+        "Preset Workout — Travel-Friendly Bodyweight Session"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_goblet_squat",
+      "canonicalName": "Goblet Squat",
+      "ids": [
+        "b_goblet_squat",
+        "gs",
+        "guide:goblet_squat",
+        "squat_goblet",
+        "sw_dumbbell_beginner_full_body_goblet_squat",
+        "sw_dumbbell_full_body_a_goblet_squat",
+        "sw_dumbbell_lower_body_goblet_squat",
+        "sw_post_run_recovery_dumbbell_goblet_squat"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "full_body",
+        "lower",
+        "lower_body",
+        "post_run_recovery",
+        "recommended",
+        "squat",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell",
+        "kettlebell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 10",
+        "3 sets · 10-12",
+        "4 sets · 10-12",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Beginner Dumbbell Full Body",
+        "Preset Workout — Dumbbell Lower Body",
+        "Preset Workout — Full-Body Dumbbell A",
+        "Preset Workout — Post-Run Recovery — Light Dumbbell",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_hamstring_flossing",
+      "canonicalName": "Hamstring Flossing",
+      "ids": [
+        "hamstring_flossing"
+      ],
+      "aliases": [],
+      "category": [
+        "Hamstrings · Nerve Glide",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 10 reps / side"
+      ],
+      "whereUsed": [
+        "Mobility — Post-Run Recovery Mobility; Full-Body Post-Run Cooldown; Hamstring-Focused Mobility; Speed-Work Prep Mobility"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_hip_90_90",
+      "canonicalName": "Hip 90 90",
+      "ids": [
+        "b_hip_9090",
+        "guide:hip_90_90",
+        "mobility_hip_90"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias"
+      ],
+      "equipment": [],
+      "laterality": "not_applicable",
+      "movementType": "mixed",
+      "prescriptionConvention": [
+        "instruction reference"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_hip_90_90_stretch",
+      "canonicalName": "Hip 90/90 Stretch",
+      "ids": [
+        "b_hip_9090",
+        "mobility_hip_90"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "mobility",
+        "mobility_prehab",
+        "strength_engine",
+        "stretch"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "mixed",
+      "prescriptionConvention": [
+        "hold-based or user-entered",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Exercise Library",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_hip_circles",
+      "canonicalName": "Hip Circles",
+      "ids": [
+        "run_warmup_hip_circles"
+      ],
+      "aliases": [],
+      "category": [
+        "running_protocol"
+      ],
+      "equipment": [],
+      "laterality": "not_applicable",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "time or repetitions by workout type"
+      ],
+      "whereUsed": [
+        "Running warm-up/cool-down protocols"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_hip_flexor_stretch",
+      "canonicalName": "Hip Flexor Stretch",
+      "ids": [
+        "b_hip_flexor",
+        "guide:hip_flexor_stretch",
+        "hip_flexor_stretch_kneeling",
+        "mobility_hip_flexor"
+      ],
+      "aliases": [
+        "Half-Kneeling Hip Flexor Stretch"
+      ],
+      "category": [
+        "Hip Flexors",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "mobility",
+        "mobility_prehab",
+        "strength_engine",
+        "stretch"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "mixed",
+      "prescriptionConvention": [
+        "2 sets · 30s hold / side",
+        "hold-based or user-entered",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Mobility — Post-Run Recovery Mobility; Hip Extension Mobility; Post-Run Hip & Low Back Release; Full-Body Post-Run Cooldown; Hip Flexor Focus; Desk-Break Mobility; Hip & Glute Lower-Body Session; Quad & Hip Flexor Lower-Body Session; Hip Extension Deficit Focus",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_hip_thrust",
+      "canonicalName": "Hip Thrust",
+      "ids": [
+        "b_hip_thrust",
+        "guide:hip_thrust",
+        "hinge_hip_thrust"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "hinge",
+        "lower",
+        "strength_engine"
+      ],
+      "equipment": [
+        "barbell",
+        "bodyweight",
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_incline_bench_press",
+      "canonicalName": "Incline Bench Press",
+      "ids": [
+        "sw_barbell_bench_press_day_incline_bench_press"
+      ],
+      "aliases": [],
+      "category": [
+        "gym_barbell",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "barbell",
+        "bench"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8-10"
+      ],
+      "whereUsed": [
+        "Preset Workout — Bench Press Day"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_isometric_calf_hold",
+      "canonicalName": "Isometric Calf Hold",
+      "ids": [
+        "b_isometric_calf"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "isometric",
+        "tendon_capacity"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "hold-based or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_isometric_leg_extension",
+      "canonicalName": "Isometric Leg Extension",
+      "ids": [
+        "b_patellar_iso"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "isometric",
+        "tendon_capacity"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "hold-based or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_jump_squat",
+      "canonicalName": "Jump Squat",
+      "ids": [
+        "b_jump_squat"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "plyometric",
+        "power"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_kettlebell_deadlift",
+      "canonicalName": "Kettlebell Deadlift",
+      "ids": [
+        "sw_kettlebell_full_body_b_kettlebell_deadlift",
+        "sw_kettlebell_lower_body_kettlebell_deadlift"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "kettlebell",
+        "lower_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "kettlebell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10-12",
+        "4 sets · 10-12"
+      ],
+      "whereUsed": [
+        "Preset Workout — Full-Body Kettlebell B",
+        "Preset Workout — Kettlebell Lower Body"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_kettlebell_farmer_carry",
+      "canonicalName": "Kettlebell Farmer Carry",
+      "ids": [
+        "sw_kettlebell_core_and_carry_kettlebell_farmer_carry"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "kettlebell",
+        "strength_preset"
+      ],
+      "equipment": [
+        "kettlebell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 30-40m"
+      ],
+      "whereUsed": [
+        "Preset Workout — Core & Carry — Kettlebell"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_kettlebell_goblet_squat",
+      "canonicalName": "Kettlebell Goblet Squat",
+      "ids": [
+        "sw_kettlebell_beginner_kettlebell_goblet_squat",
+        "sw_kettlebell_conditioning_strength_kettlebell_goblet_squat",
+        "sw_kettlebell_full_body_a_kettlebell_goblet_squat",
+        "sw_kettlebell_lower_body_kettlebell_goblet_squat",
+        "sw_kettlebell_swing_focus_kettlebell_goblet_squat"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "kettlebell",
+        "lower_body",
+        "recommended",
+        "strength_preset"
+      ],
+      "equipment": [
+        "kettlebell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10",
+        "3 sets · 10-12",
+        "4 sets · 10-12",
+        "4 sets · 15"
+      ],
+      "whereUsed": [
+        "Preset Workout — Beginner Kettlebell Full Body",
+        "Preset Workout — Full-Body Kettlebell A",
+        "Preset Workout — Kettlebell Conditioning Strength",
+        "Preset Workout — Kettlebell Lower Body",
+        "Preset Workout — Kettlebell Swing Focus"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_kettlebell_reverse_lunge",
+      "canonicalName": "Kettlebell Reverse Lunge",
+      "ids": [
+        "sw_kettlebell_full_body_b_kettlebell_reverse_lunge",
+        "sw_kettlebell_lower_body_kettlebell_reverse_lunge",
+        "sw_kettlebell_runner_strength_kettlebell_reverse_lunge"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "kettlebell",
+        "lower_body",
+        "recommended",
+        "runner_strength",
+        "strength_preset"
+      ],
+      "equipment": [
+        "kettlebell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8 per leg"
+      ],
+      "whereUsed": [
+        "Preset Workout — Full-Body Kettlebell B",
+        "Preset Workout — Kettlebell Lower Body",
+        "Preset Workout — Runner Strength — Kettlebell"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_kettlebell_row",
+      "canonicalName": "Kettlebell Row",
+      "ids": [
+        "sw_kettlebell_beginner_kettlebell_row",
+        "sw_kettlebell_conditioning_strength_kettlebell_row",
+        "sw_kettlebell_full_body_a_kettlebell_row"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "kettlebell",
+        "recommended",
+        "strength_preset"
+      ],
+      "equipment": [
+        "kettlebell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10 per side",
+        "3 sets · 12 per side"
+      ],
+      "whereUsed": [
+        "Preset Workout — Beginner Kettlebell Full Body",
+        "Preset Workout — Full-Body Kettlebell A",
+        "Preset Workout — Kettlebell Conditioning Strength"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_kettlebell_single_arm_press",
+      "canonicalName": "Kettlebell Single-Arm Press",
+      "ids": [
+        "sw_kettlebell_full_body_b_kettlebell_single_arm_press"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "kettlebell",
+        "strength_preset"
+      ],
+      "equipment": [
+        "kettlebell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8 per side"
+      ],
+      "whereUsed": [
+        "Preset Workout — Full-Body Kettlebell B"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_kettlebell_single_leg_deadlift",
+      "canonicalName": "Kettlebell Single-Leg Deadlift",
+      "ids": [
+        "sw_kettlebell_runner_strength_kettlebell_single_leg_deadlift"
+      ],
+      "aliases": [],
+      "category": [
+        "kettlebell",
+        "recommended",
+        "runner_strength",
+        "strength_preset"
+      ],
+      "equipment": [
+        "kettlebell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8 per leg"
+      ],
+      "whereUsed": [
+        "Preset Workout — Runner Strength — Kettlebell"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_kettlebell_suitcase_carry",
+      "canonicalName": "Kettlebell Suitcase Carry",
+      "ids": [
+        "sw_kettlebell_core_and_carry_kettlebell_suitcase_carry"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "kettlebell",
+        "strength_preset"
+      ],
+      "equipment": [
+        "kettlebell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 20-30m per side"
+      ],
+      "whereUsed": [
+        "Preset Workout — Core & Carry — Kettlebell"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_kettlebell_swing",
+      "canonicalName": "Kettlebell Swing",
+      "ids": [
+        "b_kb_swing",
+        "sw_kettlebell_beginner_kettlebell_swing",
+        "sw_kettlebell_conditioning_strength_kettlebell_swing",
+        "sw_kettlebell_full_body_a_kettlebell_swing",
+        "sw_kettlebell_runner_strength_kettlebell_swing",
+        "sw_kettlebell_swing_focus_kettlebell_swing"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "full_body",
+        "hinge",
+        "kettlebell",
+        "recommended",
+        "runner_strength",
+        "strength_preset"
+      ],
+      "equipment": [
+        "kettlebell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10-12",
+        "4 sets · 15",
+        "4 sets · 20",
+        "5 sets · 15-20",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library",
+        "Preset Workout — Beginner Kettlebell Full Body",
+        "Preset Workout — Full-Body Kettlebell A",
+        "Preset Workout — Kettlebell Conditioning Strength",
+        "Preset Workout — Kettlebell Swing Focus",
+        "Preset Workout — Runner Strength — Kettlebell"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_knee_push_up",
+      "canonicalName": "Knee Push-Up",
+      "ids": [
+        "sw_bodyweight_beginner_full_body_knee_push_up"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "full_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8-10"
+      ],
+      "whereUsed": [
+        "Preset Workout — Beginner Bodyweight Full Body"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_knee_to_wall",
+      "canonicalName": "Knee-to-Wall",
+      "ids": [
+        "knee_to_wall_ankle_mobilization",
+        "readiness_knee_to_wall"
+      ],
+      "aliases": [
+        "Knee-to-Wall Ankle Mobilization"
+      ],
+      "category": [
+        "Ankle · Calf",
+        "mobility",
+        "movement_readiness"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 10 reps / side",
+        "assessment-specific reps, time, or manual count"
+      ],
+      "whereUsed": [
+        "Mobility — Ankle Dorsiflexion Routine; Ankle Dorsiflexion Progression; Combined Ankle + Calf Reset; Ankle Dorsiflexion Deficit Focus; Hill-Prep Ankle & Calf Session",
+        "Movement Readiness · close direct lateral"
+      ],
+      "existingDionAssetStatus": "assessment_reference_only",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_lateral_lunge",
+      "canonicalName": "Lateral Lunge",
+      "ids": [
+        "guide:lateral_lunge",
+        "lunge_lateral"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias",
+        "lunge",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight",
+        "dumbbell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_lateral_raise",
+      "canonicalName": "Lateral Raise",
+      "ids": [
+        "b_lat_raise"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "push",
+        "upper"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_leg_curl",
+      "canonicalName": "Leg Curl",
+      "ids": [
+        "b_leg_curl"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "hinge",
+        "lower"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_leg_swings",
+      "canonicalName": "Leg Swings",
+      "ids": [
+        "run_warmup_leg_swings"
+      ],
+      "aliases": [],
+      "category": [
+        "running_protocol"
+      ],
+      "equipment": [],
+      "laterality": "not_applicable",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "time or repetitions by workout type"
+      ],
+      "whereUsed": [
+        "Running warm-up/cool-down protocols"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_lunge",
+      "canonicalName": "Lunge",
+      "ids": [
+        "movement_lunge"
+      ],
+      "aliases": [],
+      "category": [
+        "movement_lab_assessment"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "movement-specific timed capture"
+      ],
+      "whereUsed": [
+        "Movement Lab · direct lateral or direct frontal"
+      ],
+      "existingDionAssetStatus": "assessment_reference_only",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_lunge_with_rotation",
+      "canonicalName": "Lunge with Rotation",
+      "ids": [
+        "lunge_with_rotation"
+      ],
+      "aliases": [],
+      "category": [
+        "Hips · Thoracic Spine",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 8 reps / side"
+      ],
+      "whereUsed": [
+        "Mobility — Pre-Run Mobility Primer; Pre-Run Hip Opener; Hip Rotation & Control; Speed-Work Prep Mobility"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_nordic_curl",
+      "canonicalName": "Nordic Curl",
+      "ids": [
+        "b_nordic_curl",
+        "guide:nordic_curl",
+        "hinge_nordic"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias"
+      ],
+      "equipment": [],
+      "laterality": "not_applicable",
+      "movementType": "mixed",
+      "prescriptionConvention": [
+        "instruction reference"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_nordic_hamstring_curl",
+      "canonicalName": "Nordic Hamstring Curl",
+      "ids": [
+        "b_nordic_curl",
+        "hinge_nordic"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "hinge",
+        "lower",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_one_arm_dumbbell_row",
+      "canonicalName": "One-Arm Dumbbell Row",
+      "ids": [
+        "sw_dumbbell_full_body_a_one_arm_dumbbell_row"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "full_body",
+        "recommended",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10 per side"
+      ],
+      "whereUsed": [
+        "Preset Workout — Full-Body Dumbbell A"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_overhead_press",
+      "canonicalName": "Overhead Press",
+      "ids": [
+        "b_ohp",
+        "guide:overhead_press",
+        "ohp",
+        "sw_barbell_full_body_strength_b_overhead_press",
+        "sw_barbell_push_day_overhead_press",
+        "sw_barbell_upper_body_push_pull_overhead_press"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "full_body",
+        "gym_barbell",
+        "push",
+        "strength_preset",
+        "upper",
+        "upper_body"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 6-8",
+        "4 sets · 6-8",
+        "instruction reference",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Barbell Push Day",
+        "Preset Workout — Full-Body Barbell Strength B",
+        "Preset Workout — Upper Body Push/Pull"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_pallof_press",
+      "canonicalName": "Pallof Press",
+      "ids": [
+        "b_pallof"
+      ],
+      "aliases": [],
+      "category": [
+        "core",
+        "core_anti_rotation",
+        "exercise_library"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_pike_push_up",
+      "canonicalName": "Pike Push-Up",
+      "ids": [
+        "sw_bodyweight_upper_body_pike_push_up"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8-10"
+      ],
+      "whereUsed": [
+        "Preset Workout — Bodyweight Upper Body"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_plank",
+      "canonicalName": "Plank",
+      "ids": [
+        "b_plank",
+        "guide:plank",
+        "pl",
+        "sw_barbell_beginner_full_body_plank",
+        "sw_barbell_deadlift_day_plank",
+        "sw_barbell_full_body_strength_a_plank",
+        "sw_barbell_push_day_plank",
+        "sw_barbell_runner_strength_gym_plank",
+        "sw_barbell_squat_rack_strength_plank",
+        "sw_bodyweight_beginner_full_body_plank",
+        "sw_bodyweight_core_plank",
+        "sw_bodyweight_full_body_a_plank",
+        "sw_bodyweight_travel_friendly_plank",
+        "sw_dumbbell_beginner_full_body_plank",
+        "sw_dumbbell_core_and_stability_plank",
+        "sw_dumbbell_full_body_a_plank",
+        "sw_dumbbell_runner_strength_plank",
+        "sw_kettlebell_conditioning_strength_plank",
+        "sw_kettlebell_full_body_a_plank",
+        "sw_kettlebell_swing_focus_plank",
+        "sw_post_run_recovery_dumbbell_plank",
+        "sw_runner_strength_hybrid_plank"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "core",
+        "dumbbell",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "full_body",
+        "gym_barbell",
+        "isometric",
+        "kettlebell",
+        "lower_body",
+        "post_run_recovery",
+        "recommended",
+        "runner_strength",
+        "strength_preset",
+        "upper_body"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "2 sets · 15-20s",
+        "2 sets · 20-30s",
+        "2 sets · 20s",
+        "2 sets · 30s",
+        "3 sets · 30-45s",
+        "3 sets · 30s",
+        "hold-based or user-entered",
+        "instruction reference"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Barbell Push Day",
+        "Preset Workout — Beginner Barbell Full Body",
+        "Preset Workout — Beginner Bodyweight Full Body",
+        "Preset Workout — Beginner Dumbbell Full Body",
+        "Preset Workout — Bodyweight Core",
+        "Preset Workout — Core & Stability — Dumbbell",
+        "Preset Workout — Deadlift Day",
+        "Preset Workout — Full-Body Barbell Strength A",
+        "Preset Workout — Full-Body Bodyweight A",
+        "Preset Workout — Full-Body Dumbbell A",
+        "Preset Workout — Full-Body Kettlebell A",
+        "Preset Workout — Kettlebell Conditioning Strength",
+        "Preset Workout — Kettlebell Swing Focus",
+        "Preset Workout — Post-Run Recovery — Light Dumbbell",
+        "Preset Workout — Runner Strength — Dumbbell",
+        "Preset Workout — Runner Strength — Gym Session",
+        "Preset Workout — Runner Strength — Hybrid Session",
+        "Preset Workout — Squat Rack Strength",
+        "Preset Workout — Travel-Friendly Bodyweight Session"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_plyometric_bound",
+      "canonicalName": "Plyometric Bound",
+      "ids": [
+        "b_bound"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "plyometric",
+        "power"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_pogo_hops",
+      "canonicalName": "Pogo Hops",
+      "ids": [
+        "calf_pogo",
+        "guide:pogo_hops"
+      ],
+      "aliases": [],
+      "category": [
+        "calf_ankle",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_pull_up",
+      "canonicalName": "Pull-Up",
+      "ids": [
+        "b_pullup",
+        "sw_barbell_upper_body_push_pull_pull_up",
+        "sw_bodyweight_upper_body_pull_up"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "exercise_library",
+        "gym_barbell",
+        "pull",
+        "strength_preset",
+        "upper",
+        "upper_body"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · AMRAP",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library",
+        "Preset Workout — Bodyweight Upper Body",
+        "Preset Workout — Upper Body Push/Pull"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_push_press",
+      "canonicalName": "Push Press",
+      "ids": [
+        "sw_barbell_total_body_power_push_press"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "gym_barbell",
+        "strength_preset"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 6-8"
+      ],
+      "whereUsed": [
+        "Preset Workout — Total-Body Barbell Power"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_push_up",
+      "canonicalName": "Push Up",
+      "ids": [
+        "b_pushup",
+        "guide:push_up",
+        "pu",
+        "push_pushup",
+        "sw_bodyweight_full_body_a_push_up",
+        "sw_bodyweight_full_body_b_push_up",
+        "sw_bodyweight_travel_friendly_push_up",
+        "sw_bodyweight_upper_body_push_up"
+      ],
+      "aliases": [
+        "Push-Up"
+      ],
+      "category": [
+        "bodyweight",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "full_body",
+        "push",
+        "recommended",
+        "strength_engine",
+        "strength_preset",
+        "upper",
+        "upper_body"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10-12",
+        "3 sets · 10-15",
+        "4 sets · 10-15",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Bodyweight Upper Body",
+        "Preset Workout — Full-Body Bodyweight A",
+        "Preset Workout — Full-Body Bodyweight B",
+        "Preset Workout — Travel-Friendly Bodyweight Session",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_reverse_knee_extension",
+      "canonicalName": "Reverse Knee Extension",
+      "ids": [
+        "b_rke"
+      ],
+      "aliases": [],
+      "category": [
+        "core",
+        "exercise_library",
+        "isometric"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "hold-based or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_reverse_lunge",
+      "canonicalName": "Reverse Lunge",
+      "ids": [
+        "b_lunge",
+        "guide:reverse_lunge",
+        "lunge_reverse",
+        "sw_bodyweight_full_body_a_reverse_lunge",
+        "sw_bodyweight_lower_body_reverse_lunge",
+        "sw_dumbbell_full_body_b_reverse_lunge",
+        "sw_dumbbell_glute_focus_reverse_lunge",
+        "sw_dumbbell_runner_strength_reverse_lunge"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "dumbbell",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "full_body",
+        "lower",
+        "lower_body",
+        "lunge",
+        "recommended",
+        "runner_strength",
+        "single_leg",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight",
+        "dumbbell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10 per leg",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Bodyweight Lower Body",
+        "Preset Workout — Full-Body Bodyweight A",
+        "Preset Workout — Full-Body Dumbbell B",
+        "Preset Workout — Glute Focus — Dumbbell",
+        "Preset Workout — Runner Strength — Dumbbell",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_romanian_deadlift",
+      "canonicalName": "Romanian Deadlift",
+      "ids": [
+        "b_rdl",
+        "guide:romanian_deadlift",
+        "hinge_rdl",
+        "rdl",
+        "sw_barbell_leg_day_romanian_deadlift",
+        "sw_barbell_lower_body_squat_focus_romanian_deadlift",
+        "sw_barbell_posterior_chain_romanian_deadlift"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "gym_barbell",
+        "hinge",
+        "lower",
+        "lower_body",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "barbell",
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8-10",
+        "4 sets · 8-10",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Barbell Leg Day",
+        "Preset Workout — Lower Body — Squat Focus",
+        "Preset Workout — Posterior Chain Builder",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_running_gait",
+      "canonicalName": "Running Gait",
+      "ids": [
+        "movement_running_gait",
+        "readiness_running_gait"
+      ],
+      "aliases": [
+        "Easy Running Gait"
+      ],
+      "category": [
+        "movement_lab_assessment",
+        "movement_readiness"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "assessment-specific reps, time, or manual count",
+        "movement-specific timed capture"
+      ],
+      "whereUsed": [
+        "Movement Lab · direct lateral",
+        "Movement Readiness · direct lateral"
+      ],
+      "existingDionAssetStatus": "assessment_reference_only",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_running_strides",
+      "canonicalName": "Running Strides",
+      "ids": [
+        "run_warmup_strides"
+      ],
+      "aliases": [],
+      "category": [
+        "running_protocol"
+      ],
+      "equipment": [],
+      "laterality": "not_applicable",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "time or repetitions by workout type"
+      ],
+      "whereUsed": [
+        "Running warm-up/cool-down protocols"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_seated_calf_raise",
+      "canonicalName": "Seated Calf Raise",
+      "ids": [
+        "b_seated_calf",
+        "calf_seated",
+        "guide:seated_calf_raise"
+      ],
+      "aliases": [],
+      "category": [
+        "calf_ankle",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "strength_engine"
+      ],
+      "equipment": [
+        "dumbbell",
+        "machine"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_seated_spinal_twist",
+      "canonicalName": "Seated Spinal Twist",
+      "ids": [
+        "seated_spinal_twist"
+      ],
+      "aliases": [],
+      "category": [
+        "Spine · Obliques",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "2 sets · 20s hold / side"
+      ],
+      "whereUsed": [
+        "Mobility — Thoracic Rotation Flow; Low Back Daily Reset; Seated Spinal Mobility"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_shoulder_wall_slides",
+      "canonicalName": "Shoulder Wall Slides",
+      "ids": [
+        "shoulder_wall_slides"
+      ],
+      "aliases": [],
+      "category": [
+        "Shoulders · Upper Back",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 10 reps"
+      ],
+      "whereUsed": [
+        "Mobility — Seated Spinal Mobility; Shoulder & Thoracic Combo; Running Posture Reset; Desk-Break Mobility"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_side_plank",
+      "canonicalName": "Side Plank",
+      "ids": [
+        "b_side_plank",
+        "guide:side_plank",
+        "sw_bodyweight_core_side_plank",
+        "sw_bodyweight_full_body_b_side_plank",
+        "sw_dumbbell_core_and_stability_side_plank",
+        "sw_kettlebell_core_and_carry_side_plank",
+        "sw_post_run_recovery_bodyweight_side_plank",
+        "sw_problem_area_hip_stability_side_plank",
+        "trunk_side_plank"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "core",
+        "core_anti_lateral",
+        "dumbbell",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "full_body",
+        "kettlebell",
+        "post_run_recovery",
+        "problem_area",
+        "strength_engine",
+        "strength_preset",
+        "trunk"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "mixed",
+      "prescriptionConvention": [
+        "2 sets · 20s per side",
+        "3 sets · 20-30s per side",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Bodyweight Core",
+        "Preset Workout — Core & Carry — Kettlebell",
+        "Preset Workout — Core & Stability — Dumbbell",
+        "Preset Workout — Full-Body Bodyweight B",
+        "Preset Workout — Post-Run Recovery — Bodyweight",
+        "Preset Workout — Problem Area — Hip Stability",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_side_lying_hip_abduction",
+      "canonicalName": "Side-Lying Hip Abduction",
+      "ids": [
+        "b_hip_abduction"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "single_leg",
+        "tendon_capacity"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_single_leg_calf_raise",
+      "canonicalName": "Single Leg Calf Raise",
+      "ids": [
+        "b_slr_calf",
+        "calf_single_standing",
+        "guide:single_leg_calf_raise",
+        "sw_bodyweight_single_leg_focus_single_leg_calf_raise",
+        "sw_dumbbell_single_leg_focus_single_leg_calf_raise",
+        "sw_problem_area_calf_capacity_single_leg_calf_raise"
+      ],
+      "aliases": [
+        "Single-Leg Calf Raise"
+      ],
+      "category": [
+        "bodyweight",
+        "calf_ankle",
+        "dumbbell",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "lower",
+        "lower_body",
+        "problem_area",
+        "single_leg",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight",
+        "dumbbell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 12 per leg",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Problem Area — Calf Capacity",
+        "Preset Workout — Single-Leg Focus — Bodyweight",
+        "Preset Workout — Single-Leg Focus — Dumbbell",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_single_leg_hop",
+      "canonicalName": "Single Leg Hop",
+      "ids": [
+        "guide:single_leg_hop",
+        "plyo_single_hop"
+      ],
+      "aliases": [
+        "Single-Leg Hop"
+      ],
+      "category": [
+        "exercise_guide",
+        "exercise_guide_alias",
+        "plyometric",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_single_leg_rdl",
+      "canonicalName": "Single Leg Rdl",
+      "ids": [
+        "guide:single_leg_rdl",
+        "hinge_single_rdl",
+        "sw_barbell_runner_strength_gym_single_leg_romanian_deadlift",
+        "sw_dumbbell_runner_strength_single_leg_romanian_deadlift",
+        "sw_dumbbell_single_leg_focus_single_leg_romanian_deadlift",
+        "sw_problem_area_single_leg_control_single_leg_romanian_deadlift",
+        "sw_runner_strength_hybrid_single_leg_romanian_deadlift"
+      ],
+      "aliases": [
+        "Single-Leg RDL",
+        "Single-Leg Romanian Deadlift"
+      ],
+      "category": [
+        "dumbbell",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "full_body",
+        "gym_barbell",
+        "hinge",
+        "lower_body",
+        "problem_area",
+        "recommended",
+        "runner_strength",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight",
+        "dumbbell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8 per leg",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Preset Workout — Problem Area — Single-Leg Control",
+        "Preset Workout — Runner Strength — Dumbbell",
+        "Preset Workout — Runner Strength — Gym Session",
+        "Preset Workout — Runner Strength — Hybrid Session",
+        "Preset Workout — Single-Leg Focus — Dumbbell",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_single_arm_db_press",
+      "canonicalName": "Single-Arm DB Press",
+      "ids": [
+        "push_db_press"
+      ],
+      "aliases": [],
+      "category": [
+        "push",
+        "strength_engine"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_single_arm_db_row",
+      "canonicalName": "Single-Arm DB Row",
+      "ids": [
+        "pull_row"
+      ],
+      "aliases": [],
+      "category": [
+        "pull",
+        "strength_engine"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_single_leg_control",
+      "canonicalName": "Single-Leg Control",
+      "ids": [
+        "movement_single_leg_control"
+      ],
+      "aliases": [],
+      "category": [
+        "movement_lab_assessment"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "movement-specific timed capture"
+      ],
+      "whereUsed": [
+        "Movement Lab · direct frontal"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_single_leg_glute_bridge",
+      "canonicalName": "Single-Leg Glute Bridge",
+      "ids": [
+        "sw_bodyweight_lower_body_single_leg_glute_bridge",
+        "sw_bodyweight_single_leg_focus_single_leg_glute_bridge",
+        "sw_problem_area_single_leg_control_single_leg_glute_bridge"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "lower_body",
+        "problem_area",
+        "runner_strength",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10 per leg"
+      ],
+      "whereUsed": [
+        "Preset Workout — Bodyweight Lower Body",
+        "Preset Workout — Problem Area — Single-Leg Control",
+        "Preset Workout — Single-Leg Focus — Bodyweight"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_single_leg_heel_raise",
+      "canonicalName": "Single-Leg Heel Raise",
+      "ids": [
+        "readiness_heel_raise"
+      ],
+      "aliases": [],
+      "category": [
+        "movement_readiness"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "assessment-specific reps, time, or manual count"
+      ],
+      "whereUsed": [
+        "Movement Readiness · direct lateral"
+      ],
+      "existingDionAssetStatus": "assessment_reference_only",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_single_leg_heel_raise_capacity_drill",
+      "canonicalName": "Single-Leg Heel Raise (Capacity Drill)",
+      "ids": [
+        "single_leg_heel_raise"
+      ],
+      "aliases": [],
+      "category": [
+        "Calf · Soleus Capacity",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 15 reps / side"
+      ],
+      "whereUsed": [
+        "Mobility — Ankle Dorsiflexion Routine; Calf/Soleus Mobility + Capacity; Single-Leg Control Prep; Calf Capacity Builder; Calf & Ankle Lower-Body Session; Full-Body Mobility — Session C; Calf Capacity — Problem Area Focus; Hill-Prep Ankle & Calf Session; Balance & Stability for Walking"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_single_leg_squat",
+      "canonicalName": "Single-Leg Squat",
+      "ids": [
+        "readiness_single_leg_squat"
+      ],
+      "aliases": [],
+      "category": [
+        "movement_readiness"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "assessment-specific reps, time, or manual count"
+      ],
+      "whereUsed": [
+        "Movement Readiness · direct frontal"
+      ],
+      "existingDionAssetStatus": "assessment_reference_only",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_bent_knee_calf_stretch",
+      "canonicalName": "Soleus Stretch (Bent-Knee)",
+      "ids": [
+        "soleus_stretch"
+      ],
+      "aliases": [],
+      "category": [
+        "Calf · Soleus",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "2 sets · 30s hold / side"
+      ],
+      "whereUsed": [
+        "Mobility — Post-Run Recovery Mobility; Ankle Dorsiflexion Routine; Calf/Soleus Mobility + Capacity; Post-Run Calf & Ankle Cooldown; Calf Capacity Builder; Combined Ankle + Calf Reset; Calf Capacity — Problem Area Focus; Ankle Dorsiflexion Deficit Focus"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_split_stance_lunge",
+      "canonicalName": "Split-Stance Lunge",
+      "ids": [
+        "readiness_split_stance_lunge"
+      ],
+      "aliases": [],
+      "category": [
+        "movement_readiness"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "assessment-specific reps, time, or manual count"
+      ],
+      "whereUsed": [
+        "Movement Readiness · direct lateral"
+      ],
+      "existingDionAssetStatus": "assessment_reference_only",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_squat",
+      "canonicalName": "Squat",
+      "ids": [
+        "movement_squat",
+        "readiness_squat",
+        "sw_bodyweight_beginner_full_body_bodyweight_squat",
+        "sw_bodyweight_full_body_a_bodyweight_squat",
+        "sw_bodyweight_lower_body_bodyweight_squat",
+        "sw_bodyweight_travel_friendly_bodyweight_squat"
+      ],
+      "aliases": [
+        "Bodyweight Squat"
+      ],
+      "category": [
+        "bodyweight",
+        "full_body",
+        "lower_body",
+        "movement_lab_assessment",
+        "movement_readiness",
+        "recommended",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10-12",
+        "3 sets · 15",
+        "4 sets · 15-20",
+        "assessment-specific reps, time, or manual count",
+        "movement-specific timed capture"
+      ],
+      "whereUsed": [
+        "Movement Lab · direct lateral or direct frontal",
+        "Movement Readiness · direct lateral",
+        "Preset Workout — Beginner Bodyweight Full Body",
+        "Preset Workout — Bodyweight Lower Body",
+        "Preset Workout — Full-Body Bodyweight A",
+        "Preset Workout — Travel-Friendly Bodyweight Session"
+      ],
+      "existingDionAssetStatus": "assessment_reference_only",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_squat_pry",
+      "canonicalName": "Squat Pry",
+      "ids": [
+        "squat_pry"
+      ],
+      "aliases": [],
+      "category": [
+        "Ankles · Hips · Groin",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 0 reps"
+      ],
+      "whereUsed": [
+        "Mobility — Hip Control + Mobility; Single-Leg Control Prep; Pre-Run Ankle Activation; Ankle Dorsiflexion Progression; Full-Body Mobility — Session B; Trunk & Pelvic Control Focus"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_standing_calf_raise",
+      "canonicalName": "Standing Calf Raise",
+      "ids": [
+        "sw_barbell_leg_day_standing_calf_raise",
+        "sw_barbell_lower_body_squat_focus_standing_calf_raise",
+        "sw_barbell_runner_strength_gym_standing_calf_raise",
+        "sw_problem_area_calf_capacity_standing_calf_raise",
+        "sw_runner_strength_hybrid_standing_calf_raise"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "gym_barbell",
+        "lower_body",
+        "problem_area",
+        "recommended",
+        "runner_strength",
+        "strength_preset"
+      ],
+      "equipment": [
+        "barbell",
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 12-15",
+        "3 sets · 15",
+        "4 sets · 12-15"
+      ],
+      "whereUsed": [
+        "Preset Workout — Barbell Leg Day",
+        "Preset Workout — Lower Body — Squat Focus",
+        "Preset Workout — Problem Area — Calf Capacity",
+        "Preset Workout — Runner Strength — Gym Session",
+        "Preset Workout — Runner Strength — Hybrid Session"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_standing_it_band_stretch",
+      "canonicalName": "Standing IT Band Stretch",
+      "ids": [
+        "standing_it_band_stretch"
+      ],
+      "aliases": [],
+      "category": [
+        "Outer Hip · IT Band",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "2 sets · 25s hold / side"
+      ],
+      "whereUsed": [
+        "Mobility — Outer Hip & IT Band Care"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_standing_quad_stretch",
+      "canonicalName": "Standing Quad Stretch",
+      "ids": [
+        "standing_quad_stretch"
+      ],
+      "aliases": [],
+      "category": [
+        "Quads · Hip Flexors",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "2 sets · 30s hold / side"
+      ],
+      "whereUsed": [
+        "Mobility — Hip Flexor Focus; Quad & Hip Flexor Lower-Body Session; Hip Extension Deficit Focus"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_step_up",
+      "canonicalName": "Step Up",
+      "ids": [
+        "b_step_up",
+        "guide:step_up",
+        "lunge_step_up",
+        "sw_bodyweight_full_body_b_step_up",
+        "sw_bodyweight_single_leg_focus_step_up"
+      ],
+      "aliases": [
+        "Step-Up"
+      ],
+      "category": [
+        "bodyweight",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "full_body",
+        "lower",
+        "lower_body",
+        "lunge",
+        "problem_area",
+        "single_leg",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight",
+        "dumbbell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10 per leg",
+        "instruction reference",
+        "planned sets, reps or hold with RPE/load progression",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library",
+        "Preset Workout — Full-Body Bodyweight B",
+        "Preset Workout — Single-Leg Focus — Bodyweight",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_suitcase_carry",
+      "canonicalName": "Suitcase Carry",
+      "ids": [
+        "b_suitcase_carry",
+        "carry_suitcase",
+        "guide:suitcase_carry"
+      ],
+      "aliases": [],
+      "category": [
+        "carry",
+        "exercise_guide",
+        "exercise_guide_alias",
+        "exercise_library",
+        "full_body"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "instruction reference",
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_suitcase_carry_single_arm",
+      "canonicalName": "Suitcase Carry (Single-Arm)",
+      "ids": [
+        "carry_suitcase"
+      ],
+      "aliases": [],
+      "category": [
+        "carry",
+        "strength_engine"
+      ],
+      "equipment": [
+        "dumbbell",
+        "kettlebell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_thoracic_open_books",
+      "canonicalName": "Thoracic Open Books",
+      "ids": [
+        "thoracic_open_books"
+      ],
+      "aliases": [],
+      "category": [
+        "Upper Back · Thoracic Spine",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 8 reps / side"
+      ],
+      "whereUsed": [
+        "Mobility — Low Back Mobility Reset; Thoracic Mobility for Running Posture; Full-Body Runner Mobility; Full-Body Post-Run Cooldown; Thoracic Rotation Flow; Shoulder & Thoracic Combo; Running Posture Reset; Full-Body Mobility — Session A; Full-Body Mobility — Session B"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_thruster",
+      "canonicalName": "Thruster",
+      "ids": [
+        "b_thruster"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "full_body",
+        "squat"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "sets/reps or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_tibialis_anterior_raise",
+      "canonicalName": "Tibialis Anterior Raise",
+      "ids": [
+        "b_tibialis"
+      ],
+      "aliases": [],
+      "category": [
+        "exercise_library",
+        "isometric",
+        "lower"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "static",
+      "prescriptionConvention": [
+        "hold-based or user-entered"
+      ],
+      "whereUsed": [
+        "Exercise Library"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_trap_bar_deadlift",
+      "canonicalName": "Trap Bar Deadlift",
+      "ids": [
+        "sw_barbell_total_body_power_trap_bar_deadlift"
+      ],
+      "aliases": [],
+      "category": [
+        "full_body",
+        "gym_barbell",
+        "strength_preset"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "4 sets · 5"
+      ],
+      "whereUsed": [
+        "Preset Workout — Total-Body Barbell Power"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_walking_gait",
+      "canonicalName": "Walking Gait",
+      "ids": [
+        "readiness_walking_gait"
+      ],
+      "aliases": [],
+      "category": [
+        "movement_readiness"
+      ],
+      "equipment": [],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "assessment-specific reps, time, or manual count"
+      ],
+      "whereUsed": [
+        "Movement Readiness · direct lateral"
+      ],
+      "existingDionAssetStatus": "assessment_reference_only",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_walking_lunge",
+      "canonicalName": "Walking Lunge",
+      "ids": [
+        "sw_barbell_lower_body_squat_focus_walking_lunge",
+        "sw_dumbbell_lower_body_walking_lunge"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "gym_barbell",
+        "lower_body",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 10 per leg"
+      ],
+      "whereUsed": [
+        "Preset Workout — Dumbbell Lower Body",
+        "Preset Workout — Lower Body — Squat Focus"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_worlds_greatest_stretch",
+      "canonicalName": "World's Greatest Stretch",
+      "ids": [
+        "worlds_greatest_stretch"
+      ],
+      "aliases": [],
+      "category": [
+        "Full Body · Hips, Thoracic, Hamstrings",
+        "mobility"
+      ],
+      "equipment": [],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 5 reps / side"
+      ],
+      "whereUsed": [
+        "Mobility — Pre-Run Mobility Primer; Thoracic Mobility for Running Posture; Full-Body Runner Mobility; 5-Minute Pre-Run Primer; Running Posture Reset; Hamstring-Focused Mobility; Full-Body Mobility — Session A; Quick 10-Minute Full-Body Mobility; Race-Week Gentle Primer; Long-Run Prep & Recovery Combo"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Single Reference",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 2
+    }
+  ]
+}

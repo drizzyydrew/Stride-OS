@@ -140,6 +140,7 @@ and the `git diff --stat` verification mechanic — this identity doc names
 | `skills/05_TESTFLIGHT_SUBMIT_SKILL.md` | Submitting an already-built artifact to TestFlight |
 | `skills/06_SCREENSHOT_VISUAL_QA_SKILL.md` | Comparing the app against V3 design references |
 | `skills/07_SCOPE_GUARD_SKILL.md` | Scope-sizing a task; the protected-paths reference |
+| `skills/08_AUTONOMOUS_EXECUTION_SKILL.md` | Authorized one-shot execution from inspection through implementation, QA, and documentation |
 
 ## Roadmap awareness
 

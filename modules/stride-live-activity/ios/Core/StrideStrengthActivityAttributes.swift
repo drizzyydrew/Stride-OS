@@ -9,6 +9,10 @@ public struct StrideStrengthActivityAttributes: ActivityAttributes {
     public var setsCompleted: Int
     public var totalSets: Int
     public var isPaused: Bool
+    public var prescription: String
+    public var loadDisplay: String
+    public var progressLabel: String
+    public var controlState: String
 
     public init(
       elapsedSeconds: Int,
@@ -16,7 +20,11 @@ public struct StrideStrengthActivityAttributes: ActivityAttributes {
       nextExercise: String,
       setsCompleted: Int,
       totalSets: Int,
-      isPaused: Bool = false
+      isPaused: Bool = false,
+      prescription: String = "",
+      loadDisplay: String = "",
+      progressLabel: String = "",
+      controlState: String = "ready"
     ) {
       self.elapsedSeconds = elapsedSeconds
       self.currentExercise = currentExercise
@@ -24,6 +32,10 @@ public struct StrideStrengthActivityAttributes: ActivityAttributes {
       self.setsCompleted = setsCompleted
       self.totalSets = totalSets
       self.isPaused = isPaused
+      self.prescription = prescription
+      self.loadDisplay = loadDisplay
+      self.progressLabel = progressLabel
+      self.controlState = controlState
     }
   }
 

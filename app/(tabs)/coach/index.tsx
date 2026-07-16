@@ -30,11 +30,23 @@ import { useReadinessStore } from '../../../src/store/readinessStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
 import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
+import { useHydrationPlannerStore } from '../../../src/store/hydrationPlannerStore';
+import { useActivityStore } from '../../../src/store/activityStore';
+import { useTrainingPreferencesStore } from '../../../src/store/trainingPreferencesStore';
+import { useBeginnerPlanStore } from '../../../src/store/beginnerPlanStore';
+import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { pickTargetRace } from '../../../src/utils/plan/macroPlanner';
 import { toYMD } from '../../../src/utils/calendarEngine';
 import type { RichWorkout } from '../../../src/types/workout';
 import { buildCoachingInput } from '../../../src/utils/coachingInputBuilder';
+import { buildBudgetedCoachPrompt } from '../../../src/utils/coachPromptBudget';
+import { summarizeActivityLoad } from '../../../src/utils/activityLoad';
+import {
+  calculateHydrationPlan,
+  GI_TOLERANCE_CARBS_GH,
+  weatherBandForTemp,
+} from '../../../src/utils/hydrationEngine';
 import { buildCoachHandoff, ANALYSIS_KIND_INFO } from '../../../src/utils/movementEngine';
 import type { MovementAnalysis } from '../../../src/types/movement';
 import type { ReadinessAssessment } from '../../../src/types/movementReadiness';
@@ -45,7 +57,7 @@ import CoachInsightsCard from '../../../src/components/coaching/CoachInsightsCar
 import RaceReadinessCard from '../../../src/components/coaching/RaceReadinessCard';
 import { todayDateKey } from '../../../src/types/checkin';
 import type { CompletedWorkoutRecord } from '../../../src/types/training';
-import type { StrengthLogRecord } from '../../../src/types/strength';
+import type { StrengthLogRecord, StrengthSession } from '../../../src/types/strength';
 import {
   checkAiCoachHealth,
   isAiCoachConfigured,
@@ -207,13 +219,13 @@ function buildFocusedAnalysisBlock(analysis: MovementAnalysis): string {
   const closestSide = (h as { closestSide?: 'left' | 'right' }).closestSide;
 
   const angles = h.detectedAngles.length
-    ? h.detectedAngles.slice(0, 10).map(x => `${x.name} ${Math.round(x.degrees)}° (landmark confidence ${Math.round(x.confidence * 100)}%)`).join(', ')
+    ? h.detectedAngles.slice(0, 3).map(x => `${x.name} ${Math.round(x.degrees)}° Estimated (${Math.round(x.confidence * 100)}% landmark confidence)`).join(', ')
     : 'none detected';
   const findings = h.checklistFindings.length
-    ? h.checklistFindings.slice(0, 10).map(f => `${f.label}: ${f.value}${f.severity ? ` (${f.severity})` : ''}${f.note ? ` — ${f.note.slice(0, 240)}` : ''}`).join('; ')
+    ? h.checklistFindings.slice(0, 5).map(f => `${f.label}: ${f.value}${f.severity ? ` (${f.severity})` : ''}${f.note ? ` — ${f.note.slice(0, 120)}` : ''}`).join('; ')
     : 'none recorded';
   const recs = h.recommendations.length
-    ? h.recommendations.slice(0, 8).map(r => `${r.finding}${r.meaning ? ` — ${r.meaning.slice(0, 300)}` : ''}${r.recommendation ? ` Suggested: ${r.recommendation.slice(0, 300)}` : ''}${r.confidence ? ` [${r.confidence} confidence]` : ''}`).join('\n    ')
+    ? h.recommendations.slice(0, 5).map(r => `${r.finding}${r.meaning ? ` — ${r.meaning.slice(0, 150)}` : ''}${r.recommendation ? ` Suggested: ${r.recommendation.slice(0, 150)}` : ''}${r.confidence ? ` [${r.confidence} confidence]` : ''}`).join('\n    ')
     : 'none';
 
   const videoExtra = h.mediaType === 'video'
@@ -223,8 +235,8 @@ function buildFocusedAnalysisBlock(analysis: MovementAnalysis): string {
           ? `\n  Reps detected: ${h.repSummary.count}, peak-flexion range ${Math.round(h.repSummary.depthRangeDeg[0])}–${Math.round(h.repSummary.depthRangeDeg[1])}°${h.repSummary.consistencyDeg !== undefined ? `, consistency spread ${h.repSummary.consistencyDeg}°` : ''}.`
           : '',
         h.symmetryNote ? `\n  Symmetry estimate: ${h.symmetryNote}` : '',
-        h.keyFrameLabels?.length ? `\n  Key frames: ${h.keyFrameLabels.slice(0, 8).join(', ')}` : '',
-        h.sequenceLimitations?.length ? `\n  Sequence limitations: ${h.sequenceLimitations.slice(0, 6).join(' ')}` : '',
+        h.keyFrameLabels?.length ? `\n  Key frames: ${h.keyFrameLabels.slice(0, 3).join(', ')}` : '',
+        h.sequenceLimitations?.length ? `\n  Sequence limitations: ${h.sequenceLimitations.slice(0, 3).join(' ')}` : '',
       ].join('')
     : '';
 
@@ -234,11 +246,13 @@ function buildFocusedAnalysisBlock(analysis: MovementAnalysis): string {
   Media type: ${h.mediaType.replace(/_/g, ' ')}
   Detection quality: ${h.detectionQuality}. Overall confidence: ${h.confidence.replace(/_/g, ' ')}.
   Landmark source: ${h.landmarkSource === 'user_corrected' ? 'user-corrected' : 'auto-detected'}.
+  Manual corrections: ${h.manualCorrections.length ? h.manualCorrections.join('; ') : 'none'}.
+  Manual review required: ${h.manualReviewRequired ? 'yes' : 'no'}.
   Estimated angles: ${angles}
   Checklist findings: ${findings}
   Automated findings and recommendations:
     ${recs}${videoExtra}${h.userNotes ? `\n  Athlete notes: ${h.userNotes.slice(0, 800)}` : ''}
-  Limitations: ${h.limitations.length ? h.limitations.slice(0, 6).join(' ') : 'none noted'}`;
+  Limitations: ${h.limitations.length ? h.limitations.slice(0, 3).join(' ') : 'none noted'}`;
 }
 
 // Legacy 'lunge_single_leg' records still carry the retired combined title in
@@ -309,6 +323,9 @@ function buildSystemPrompt(
   mobilityRecommendedIds: string[],
   mobilityCompletions: MobilityCompletion[],
   focusedAnalysis: MovementAnalysis | undefined,
+  question: string,
+  hydrationContext: string,
+  strengthContext: string,
 ): string {
   const flags   = riskFlags();
   const flagTxt = flags.length
@@ -319,49 +336,152 @@ function buildSystemPrompt(
     ? `${data.prDistance ?? ''} PR: ${Math.floor(data.prTimeSeconds / 60)}:${String(data.prTimeSeconds % 60).padStart(2, '0')}`
     : 'No PR on file';
 
-  const prompt = `You are an expert running and movement coach. You are speaking directly with ${data.name || 'the athlete'}.
+  const feature = focusedAnalysis ? 'movement'
+    : /hydrat|fuel|carb|sodium|fluid|sweat/i.test(question) ? 'hydration'
+      : /strength|lift|preset|training block|sets|reps/i.test(question) ? 'strength'
+        : /mobility|stretch|range of motion|warmup|warm-up/i.test(question) ? 'mobility'
+          : /movement|gait|squat|deadlift|lunge|marker|angle/i.test(question) ? 'movement'
+            : 'running';
 
-ATHLETE PROFILE
-- Age: ${data.age}  Sex: ${data.sex}  Height: ${data.heightCm} cm  Weight: ${data.weightKg} kg
-- Goal: ${data.primaryGoal}${data.goalRaceLabel ? ` — ${data.goalRaceLabel}` : ''}
-- Running experience: ${data.yearsRunning} year(s), currently ~${data.weeklyMileage} miles/week
-- Training style: ${data.trainingStyle}
-- Training days: ${data.availableDays.join(', ')} (${data.targetSessions} sessions/week)
-- Strength level: ${data.strengthLevel}
-- ${pr}
-${data.hrMax ? `- HR max: ${data.hrMax} bpm` : ''}${data.hrResting ? `  Resting HR: ${data.hrResting} bpm` : ''}
-- Current injury: ${data.hasCurrentInjury ? data.injuryNotes || 'Yes (no details)' : 'None'}
+  const athlete = `${data.name || 'Athlete'} · goal ${data.primaryGoal}${data.goalRaceLabel ? ` (${data.goalRaceLabel})` : ''} · ${data.weeklyMileage} mi/week · ${data.targetSessions} sessions/week · strength ${data.strengthLevel} · ${pr}. Current injury/symptom context: ${data.hasCurrentInjury ? data.injuryNotes || 'reported, no details' : 'none reported'}.`;
+  const activityState = useActivityStore.getState();
+  const preferences = useTrainingPreferencesStore.getState();
+  const beginnerPlan = useBeginnerPlanStore.getState().activePlan;
+  const recentActivities = [...activityState.activities]
+    .sort((a, b) => b.startTime - a.startTime)
+    .slice(0, 5);
+  const load = summarizeActivityLoad(
+    activityState.activities.filter(activity => Date.now() - activity.startTime <= 7 * 24 * 60 * 60 * 1000),
+  );
+  const activityContext = `PRIMARY ENDURANCE AND RECENT ACTIVITY
+- Primary endurance mode: ${preferences.primaryEnduranceMode.replace(/_/g, ' ')}
+- Active preset plan: ${beginnerPlan ? `${beginnerPlan.goal.replace(/_/g, ' ')} through ${beginnerPlan.targetDate}` : 'none'}
+- Cross-training: ${preferences.crossTrainingDecision}${preferences.crossTrainingActivities.length ? `; preferred ${preferences.crossTrainingActivities.map(item => item.activityType.replace(/_/g, ' ')).join(', ')}` : ''}
+- 7-day load: whole body ${Math.round(load.wholeBody)}, running ${Math.round(load.running)}, walking ${Math.round(load.walking)}, cross-training ${Math.round(load.crossTraining)}, strength ${Math.round(load.strength)}.
+- Recent activity: ${recentActivities.length ? recentActivities.map(activity => `${activity.activityType.replace(/_/g, ' ')} ${Math.round((activity.metrics.durationSeconds ?? 0) / 60)} min${activity.rpe ? ` RPE ${activity.rpe}` : ''}`).join('; ') : 'none'}.
+Cycling, swimming, and walking do not count as running mileage or running pace history. Workload trends do not predict injury.`;
+  const featureContext = feature === 'movement'
+    ? (focusedAnalysis ? buildFocusedAnalysisBlock(focusedAnalysis) : buildMovementLabBlock(analyses))
+    : feature === 'hydration' ? hydrationContext
+      : feature === 'strength' ? strengthContext
+        : feature === 'mobility' ? buildMobilityBlock(mobilityRecommendedIds, mobilityCompletions)
+          : `${buildTrainingPlanBlock(trainingCtx)}\n${buildTrainingContextBlock(trainingCtx)}`;
 
-MOVEMENT RISK FLAGS
-${flagTxt}
+  return buildBudgetedCoachPrompt({
+    question,
+    sections: [
+      {
+        key: 'Coaching role',
+        priority: 1,
+        required: true,
+        content: `You are the StrideOS running, strength, movement, mobility, hydration, and fueling coach speaking directly with ${data.name || 'the athlete'}. Give concise, personalized guidance using Observation → Interpretation → Recommendation.`,
+      },
+      {
+        key: 'Safety and evidence rules',
+        priority: 2,
+        required: true,
+        content: 'Never diagnose, predict injury, guarantee symptom prevention, or infer tissue loading, joint force, or pathology from app data. Movement values are estimated two-dimensional projections based on the available camera view. Use “may reflect,” “may be associated with,” “approximate,” and “manual review recommended.” For pain, injury, neurologic symptoms, or medical concerns, recommend a qualified clinician. Do not invent findings. Use plain text, no markdown.',
+      },
+      {
+        key: 'Essential athlete context',
+        priority: 4,
+        required: true,
+        content: athlete,
+      },
+      {
+        key: `${feature} context`,
+        priority: 5,
+        required: true,
+        content: featureContext,
+        compact: featureContext.slice(0, 1_400),
+      },
+      {
+        key: 'Activity and goal context',
+        priority: 6,
+        content: activityContext,
+        compact: `Mode ${preferences.primaryEnduranceMode}; plan ${beginnerPlan?.goal ?? 'none'}; loads total ${Math.round(load.wholeBody)}, run ${Math.round(load.running)}, walk ${Math.round(load.walking)}, cross ${Math.round(load.crossTraining)}, strength ${Math.round(load.strength)}.`,
+      },
+      {
+        key: 'Symptoms and restrictions',
+        priority: 7,
+        content: `${buildReadinessBlock(readinessAssessment)}\nMovement considerations:\n${flagTxt}`,
+        compact: data.hasCurrentInjury ? `Athlete-reported concern: ${data.injuryNotes || 'no details'}.` : 'No current injury reported.',
+      },
+      {
+        key: 'Optional recent context',
+        priority: 8,
+        content: feature === 'running' ? buildTrainingContextBlock(trainingCtx) : buildTrainingPlanBlock(trainingCtx),
+        compact: `Week ${trainingCtx.currentWeek}, ${trainingCtx.trainingPhase}; fatigue ${trainingCtx.fatigueScore}/100, recovery ${trainingCtx.recoveryScore}/100.`,
+      },
+    ],
+  });
+}
 
-${focusedAnalysis ? `${buildFocusedAnalysisBlock(focusedAnalysis)}\n\n` : ''}${buildMovementLabBlock(analyses)}
+function buildHydrationContext(
+  data: ReturnType<typeof useOnboardingStore.getState>['data'],
+): string {
+  const planner = useHydrationPlannerStore.getState();
+  const settings = useSettingsStore.getState();
+  const durationMin = planner.durationMin ?? Math.max(30, Math.round(planner.distanceMi * 10));
+  const humidityBand = planner.humidityPct >= 85 ? 'very_high'
+    : planner.humidityPct >= 65 ? 'high'
+      : planner.humidityPct >= 35 ? 'moderate'
+        : 'low';
+  const categoryTolerance = planner.giTolerance === 'unsure'
+    ? undefined
+    : GI_TOLERANCE_CARBS_GH[planner.giTolerance];
+  const carbToleranceGh = planner.carbToleranceMode === 'known'
+    ? planner.knownCarbToleranceGh ?? undefined
+    : planner.carbToleranceMode === 'category'
+      ? categoryTolerance
+      : undefined;
+  const plan = calculateHydrationPlan({
+    distanceMiles: planner.distanceMi,
+    durationMin,
+    bodyWeightKg: data.weightKg || 70,
+    effort: planner.effort,
+    weatherBand: weatherBandForTemp(planner.tempF),
+    temperatureF: planner.tempF,
+    humidityBand,
+    sweatiness: planner.sweatiness,
+    sweatRateTestLh: planner.sweatRateMode === 'known' ? planner.sweatRateLh : undefined,
+    saltiness: planner.saltiness,
+    sweatSodiumMgL: planner.sweatSodiumMgL ?? undefined,
+    cramping: planner.cramping,
+    carbToleranceGh,
+    fluidComfort: planner.fluidComfort,
+    goal: planner.goal,
+  });
 
-${buildReadinessBlock(readinessAssessment)}
+  return `HYDRATION AND FUELING PLAN
+- Expected duration: ${durationMin} min for ${planner.distanceMi.toFixed(2)} mi.
+- Environment: ${planner.tempF}°F, ${planner.humidityPct}% humidity (${planner.weatherSource === 'current_location' ? 'current-location weather' : 'manual weather'}).
+- Fluid: ${plan.range.fluidLowL.toFixed(2)}–${plan.range.fluidHighL.toFixed(2)} L/hr (${Math.round(plan.range.fluidLowL * 33.814)}–${Math.round(plan.range.fluidHighL * 33.814)} oz/hr).
+- Carbohydrate: ${plan.range.carbsLowG}–${plan.range.carbsHighG} g/hr.
+- Sodium intake: ${plan.range.sodiumLowMg}–${plan.range.sodiumHighMg} mg/hr. Sweat sodium concentration: ${Math.round(plan.physiology.sweatSodiumMgL)} mg/L.
+- Hydration reminder: ${planner.hydrationReminderEnabled ? `${planner.hydrationReminderIntervalMin} min (${planner.hydrationReminderSelection})` : 'off'}.
+- Fuel reminder: ${planner.fuelReminderEnabled ? `${planner.fuelReminderIntervalMin || settings.fuelingReminderIntervalMin} min (${planner.fuelReminderSelection})` : 'off'}.
+- Confidence: ${plan.confidence.label}. This is an approximate training plan, not a medical prescription or guarantee of symptom prevention.`;
+}
 
-${buildMobilityBlock(mobilityRecommendedIds, mobilityCompletions)}
+function buildStrengthContext(
+  trainingCtx: CoachTrainingContext,
+  strengthSession: StrengthSession | undefined,
+): string {
+  const recent = trainingCtx.strengthHistory
+    .filter(record => !record.skipped)
+    .sort((a, b) => b.timestamp - a.timestamp)[0];
+  const exercises = strengthSession?.exercises
+    .slice(0, 6)
+    .map(item => `${item.exercise.name} ${item.sets}×${item.repRange[0]}–${item.repRange[1]}`)
+    .join(', ');
 
-${buildTrainingPlanBlock(trainingCtx)}
-
-${buildTrainingContextBlock(trainingCtx)}
-
-INSTRUCTIONS
-- Give personalised, actionable advice grounded in this athlete's specific data.
-- Structure meaningful answers as: what the data shows (observation), what it means (interpretation), what to do (recommendation).
-- Reference the athlete's actual recent training, readiness, fatigue, and recovery numbers above whenever relevant. Never give generic advice when this data can ground the answer.
-- When asked why a workout exists, answer from the TRAINING PLAN block (goal, phase, race timeline, recent readiness) — never invent a different plan.
-- Be direct and concise. Use dashes for bullet points.
-- When giving training, recovery, or injury-risk guidance, cite credible sports science sources such as PubMed-indexed research, ACSM, NSCA, or consensus guidelines in plain text.
-- Do NOT use markdown: no # headers, no ## headers, no **bold**, no *italics*. Plain text only.
-- Never give medical diagnoses. Recommend professional care for pain or injury concerns.
-- Movement findings are estimates from phone video. Use language like "may affect" or "worth monitoring". Never diagnose, never claim injury causation, never invent findings that are not listed above.
-- If asked about paces or zones, calculate from their profile data.`;
-
-  const maxChars = 24_000;
-  if (prompt.length <= maxChars) return prompt;
-  const headChars = 19_000;
-  const tailChars = maxChars - headChars - 80;
-  return `${prompt.slice(0, headChars)}\n[Less-relevant historical context truncated.]\n${prompt.slice(-tailChars)}`;
+  return `STRENGTH CONTEXT
+- Current option: ${strengthSession ? `Training Block Workout — ${strengthSession.title}` : 'No Training Block Workout scheduled'}.
+- Purpose: ${strengthSession?.purpose ?? 'No scheduled session purpose available.'}
+- Main exercises: ${exercises || 'none scheduled'}.
+- Current session state: no active-session details supplied to this handoff.
+- Most recent completed strength session: ${recent ? `${shortDate(recent.timestamp)}, ${recent.sessionType.replace(/_/g, ' ')}${recent.overallRpe ? `, RPE ${recent.overallRpe}` : ''}` : 'none logged'}.`;
 }
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
@@ -585,7 +705,8 @@ export default function CoachScreen() {
       const system  = buildSystemPrompt(
         data, riskFlags, trainingCtx, movementAnalyses,
         latestReadinessAssessment, mobilityRecommendedIds, mobilityCompletions,
-        focusedAnalysis,
+        focusedAnalysis, text, buildHydrationContext(data),
+        buildStrengthContext(trainingCtx, weekPlan.strengthWeek.sessions[0]),
       );
       const reply = await sendCoachMessage(updated, system);
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
@@ -680,7 +801,7 @@ export default function CoachScreen() {
               <View style={s.empty}>
                 <Text style={s.emptyTitle}>Ask your AI Coach</Text>
                 <Text style={s.emptyDesc}>
-                  Questions about training, recovery, nutrition, pacing, or injury prevention -
+                  Questions about training, recovery, nutrition, pacing, symptoms, or returning to training -
                   answered using your real data.
                 </Text>
                 <View style={s.suggestions}>

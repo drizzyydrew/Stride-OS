@@ -19,6 +19,13 @@ import { completeSupabaseAuthFromUrl } from '../src/lib/authRedirect';
 import { ToastProvider } from '../src/components/ui/Toast';
 import { ThemeProvider as StrideThemeProvider } from '../src/theme/ThemeProvider';
 import { getNavigationTheme } from '../src/theme/theme';
+import { useIntegrationsStore } from '../src/store/integrationsStore';
+import { useReadinessStore } from '../src/store/readinessStore';
+import {
+  clearTrainingNotifications,
+  getNotificationAccessStatus,
+  scheduleTrainingNotifications,
+} from '../src/lib/notifications';
 
 // Register GPS background task at module level (required by expo-task-manager)
 import '../src/lib/gpsTracking';
@@ -74,6 +81,50 @@ export default function RootLayout() {
     Linking.getInitialURL().then(url => { if (url) handleUrl(url); });
     const sub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
     return () => sub.remove();
+  }, []);
+
+  // Build 37 migration runs at app startup rather than waiting for Settings to
+  // mount. This preserves the legacy 5:00 AM preference, removes the legacy
+  // identifier, and reschedules only when notification access already exists
+  // (startup never triggers a surprise permission prompt).
+  useEffect(() => {
+    let cancelled = false;
+    const waitForHydration = (store: typeof useIntegrationsStore | typeof useReadinessStore) => {
+      if (store.persist.hasHydrated()) return Promise.resolve();
+      return new Promise<void>(resolve => {
+        const unsubscribe = store.persist.onFinishHydration(() => {
+          unsubscribe();
+          resolve();
+        });
+      });
+    };
+
+    async function migrateMorningReminder() {
+      await Promise.all([
+        waitForHydration(useIntegrationsStore),
+        waitForHydration(useReadinessStore),
+      ]);
+      if (cancelled) return;
+      const before = useIntegrationsStore.getState();
+      if (before.morningReminderMigratedV37) return;
+      before.migrateMorningReminderV37(useReadinessStore.getState().reminderEnabled);
+      const prefs = useIntegrationsStore.getState();
+      if (prefs.notificationsEnabled && await getNotificationAccessStatus()) {
+        await scheduleTrainingNotifications({
+          enabled: prefs.notificationsEnabled,
+          time: prefs.notificationTime,
+          workout: prefs.workoutNotifications,
+          readiness: prefs.readinessNotifications,
+          readinessSchedule: prefs.readinessNotificationSchedule,
+          readinessDays: prefs.readinessNotificationDays,
+        });
+      } else {
+        await clearTrainingNotifications();
+      }
+    }
+
+    void migrateMorningReminder().catch(error => console.warn('[morning-reminder-migration]', error));
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {

@@ -48,7 +48,7 @@ export const GAIT_FINDING_TEMPLATES: Record<string, GaitFindingTemplate> = {
   overstride: {
     finding:        'Overstriding at initial contact',
     severity:       'moderate',
-    implication:    'May increase braking force and ground-reaction loading; may be associated with shin, knee, and Achilles complaints. Estimated from 2D video — requires confirmation.',
+    implication:    'May reflect a braking-oriented landing strategy and may be associated with shin, knee, or Achilles complaints. Estimated from 2D video — requires confirmation.',
     drill:          'Quick cadence drills (180 BPM metronome), A-skips, pop-up drill',
     strengthFocus:  'Hip extension strength (glutes), plantar flexor power',
     retestNote:     'Refilm at same pace after 4–6 weeks of cadence work',
@@ -58,7 +58,7 @@ export const GAIT_FINDING_TEMPLATES: Record<string, GaitFindingTemplate> = {
   crossover: {
     finding:        'Crossover gait pattern observed',
     severity:       'moderate',
-    implication:    'May increase IT band and hip abductor loading; may be associated with ITBS and patellofemoral pain. Estimated observation, requires confirmation.',
+    implication:    'May reflect a narrower step-width strategy and may be associated with lateral hip or knee complaints. Estimated observation, requires confirmation.',
     drill:          'Lateral band walks, single-leg balance, wide lane running drill',
     strengthFocus:  'Hip abductors (glute medius), hip external rotators',
     retestNote:     'Refilm with focus line on ground to assess crossing',
@@ -127,7 +127,7 @@ export const GAIT_FINDING_TEMPLATES: Record<string, GaitFindingTemplate> = {
   low_cadence: {
     finding:        'Below-optimal running cadence (< 160 steps/min)',
     severity:       'low',
-    implication:    'Lower cadence often associated with overstriding and increased impact loading.',
+    implication:    'Lower cadence may accompany a longer-stride strategy. Cadence alone cannot determine impact loading or injury risk.',
     drill:          'Metronome runs at target BPM, cadence-focused strides',
     strengthFocus:  'Hip flexor reactivity, plantar flexor stiffness',
     retestNote:     'Recheck cadence after 3–4 weeks of targeted drills',
@@ -218,7 +218,7 @@ export const LIFTING_TEMPLATES: Record<string, Omit<LiftingFinding, 'id' | 'vide
     finding:     'Bar drifts forward from body during pull',
     severity:    'moderate',
     confidence:  'moderate',
-    implication: 'May increase the lumbar moment arm and may be associated with lower back strain. Estimated, requires confirmation.',
+    implication: 'The bar appears farther from the body in this camera view, changing the visible trunk-to-load relationship. A 2D video cannot determine lumbar loading or tissue strain.',
     regression:  'Romanian deadlift with wall cue to maintain bar path.',
     cue:         'Bar stays in contact with body throughout pull.',
   },
@@ -320,7 +320,7 @@ export type JointAngleNorm = {
 export const GAIT_ANGLE_NORMS: Partial<Record<string, JointAngleNorm>> = {
   trunk_lean:           { min: 0,   max: 10,  optimal: 5,  note: 'Forward lean 3–7° typical for distance running' },
   hip_flexion:          { min: 35,  max: 55,  optimal: 45, note: 'Hip flexion at initial swing (approx.)' },
-  hip_extension:        { min: -10, max: 0,   optimal: -5, note: 'Terminal stance hip extension' },
+  hip_extension:        { min: 0,   max: 15,  optimal: 5, note: 'Estimated terminal-stance hip extension magnitude' },
   knee_flexion:         { min: 15,  max: 40,  optimal: 25, note: 'Knee flexion at initial contact — higher values may be associated with more overstride' },
   ankle_dorsiflexion:   { min: 10,  max: 25,  optimal: 18, note: 'Running requires ~15–25° dynamic dorsiflexion' },
   ankle_plantarflexion: { min: 20,  max: 40,  optimal: 30, note: 'Push-off plantarflexion' },
@@ -329,7 +329,7 @@ export const GAIT_ANGLE_NORMS: Partial<Record<string, JointAngleNorm>> = {
 
 export const LIFTING_ANGLE_NORMS: Partial<Record<string, JointAngleNorm>> = {
   trunk_angle:      { min: 45, max: 90, optimal: 70, note: 'Squat trunk angle (varies with stance)' },
-  hip_angle:        { min: 45, max: 90, optimal: 70, note: 'Hip flexion at bottom of squat' },
+  hip_flexion:      { min: 70, max: 150, optimal: 110, note: 'Estimated anatomical hip flexion at squat depth; task and body proportions matter' },
   knee_angle:       { min: 70, max: 110, optimal: 90, note: 'Knee flexion at squat depth' },
   ankle_angle:      { min: 10, max: 30, optimal: 20, note: 'Ankle dorsiflexion during squat descent' },
   shoulder_angle:   { min: 0,  max: 45, optimal: 20, note: 'Shoulder abduction during overhead press' },
@@ -382,6 +382,7 @@ export const DETECTION_LIMITATIONS_NOTE =
 
 export type AnalysisKindCategory =
   | 'Running Performance'
+  | 'Cycling Performance'
   | 'Strength Movement'
   | 'Athletic Movement'
   | 'General Analysis';
@@ -406,6 +407,26 @@ export const ANALYSIS_KIND_INFO: Record<
       'Pelvic control (hip) estimates',
       'Closest-side knee and hip angles',
       'Closest-side joint timing and position estimates',
+    ],
+  },
+  bike_fit: {
+    title:       'Bike Fit',
+    category:    'Cycling Performance',
+    cameraAngle: 'Direct lateral view, camera perpendicular at hip/crank height',
+    setup: [
+      'Use a bicycle on a stable indoor trainer or a stationary bike',
+      'Film directly from the side with the camera perpendicular to the rider',
+      'Place the camera at approximately hip/crank height and keep it stable',
+      'Keep the full rider, bicycle, crank, pedals, hands, and both contact phases visible',
+      'Pedal naturally long enough to include repeated top and bottom pedal phases',
+      'Do not use a three-quarter or 45-degree view',
+    ],
+    analyzes: [
+      'Closest-side knee angle near top and bottom pedal phases',
+      'Closest-side estimated hip flexion near the top phase',
+      'Trunk inclination',
+      'Closest-side elbow and shoulder position when landmarks are confident',
+      'Manual review of contact points and phase selection',
     ],
   },
   squat: {
@@ -527,6 +548,14 @@ export const ANALYSIS_CHECKLISTS: Record<MovementAnalysisKind, { id: string; lab
     { id: 'arm_swing',            label: 'Arm swing symmetry',    options: ['Symmetric', 'Asymmetric', 'Unclear'] },
     { id: 'vertical_oscillation', label: 'Vertical oscillation',  options: ['Low', 'Moderate', 'High', 'Unclear'] },
   ],
+  bike_fit: [
+    { id: 'camera_alignment', label: 'Camera alignment', options: ['Direct lateral', 'Not perpendicular', 'Unclear'] },
+    { id: 'phase_capture', label: 'Pedal phases captured', options: ['Top and bottom visible', 'One phase missing', 'Unclear'] },
+    { id: 'knee_pattern', label: 'Knee position through stroke', options: ['Consistent', 'Variable', 'Unclear'] },
+    { id: 'trunk_position', label: 'Trunk position', options: ['Stable', 'Changes during stroke', 'Unclear'] },
+    { id: 'upper_body', label: 'Upper-body position', options: ['Relaxed and supported', 'Tense or locked', 'Unclear'] },
+    { id: 'contact_visibility', label: 'Bike contact points', options: ['Visible', 'Partly obscured', 'Unclear'] },
+  ],
   squat: [
     { id: 'depth',          label: 'Depth',          options: ['Above parallel', 'Parallel', 'Below parallel', 'Unclear'] },
     { id: 'trunk_angle',    label: 'Trunk angle',    options: ['Upright', 'Moderate', 'Excessive lean', 'Unclear'] },
@@ -580,6 +609,9 @@ export const NORMAL_CHECKLIST_VALUES = new Set([
   'Stable', 'Steady', 'Smooth', 'Controlled', 'Slight forward',
   // Build 36 — Single-Leg Control / Lunge normal answers.
   'Tracks over foot', 'Level',
+  // Build 38 — Bike Fit descriptive normal answers.
+  'Direct lateral', 'Top and bottom visible', 'Consistent',
+  'Relaxed and supported', 'Visible',
 ]);
 
 function gaitTemplateToRec(t: GaitFindingTemplate): AnalysisRecommendation {
@@ -734,6 +766,51 @@ export function buildAnalysisRecommendations(
     }
   }
 
+  if (kind === 'bike_fit') {
+    if (get('camera_alignment') === 'Not perpendicular') {
+      recs.push({
+        finding: 'Camera was not perpendicular to the rider',
+        meaning: 'A three-quarter or angled view changes the apparent joint relationships and does not support the lateral Bike Fit estimates.',
+        recommendation: 'Repeat the capture from directly the side with the phone stable at approximately hip/crank height. Manual review recommended before using the numeric estimates.',
+      });
+    }
+    if (get('phase_capture') === 'One phase missing') {
+      recs.push({
+        finding: 'One required pedal phase was not captured clearly',
+        meaning: 'Bike Fit needs representative top and bottom pedal phases to describe how the visible knee, hip, trunk, shoulder, and elbow positions change through the stroke.',
+        recommendation: 'Repeat a longer steady-pedaling clip with the full crank and pedals visible. Confirm the top and bottom phase frames manually before interpreting fit.',
+      });
+    }
+    if (get('knee_pattern') === 'Variable') {
+      recs.push({
+        finding: 'Visible knee position varied across pedal strokes',
+        meaning: 'The available lateral view shows a variable two-dimensional knee path. This may reflect cadence, effort, fatigue, capture quality, or current setup; it does not identify a cause.',
+        recommendation: 'Confirm the pattern across several relaxed pedal cycles at a steady resistance. If symptoms or fit concerns persist, review the video with a qualified bike fitter or clinician.',
+      });
+    }
+    if (get('trunk_position') === 'Changes during stroke') {
+      recs.push({
+        finding: 'Trunk position changed during the pedal stroke',
+        meaning: 'The rider did not maintain one repeatable trunk relationship in this clip. A single phone view cannot determine whether bike setup, effort, fatigue, or riding style explains the change.',
+        recommendation: 'Repeat the clip at representative easy-to-moderate effort and review saddle, hand support, and comfort with a qualified bike fitter when the pattern or symptoms persist.',
+      });
+    }
+    if (get('upper_body') === 'Tense or locked') {
+      recs.push({
+        finding: 'Upper body appears tense or locked',
+        meaning: 'The visible shoulder and elbow positions may reflect how the rider is supporting the trunk in this setup. This does not establish an optimal handlebar position or diagnose a problem.',
+        recommendation: 'Use a relaxed grip and soft elbows during a repeat capture. Consider an in-person fit review if hand, neck, shoulder, or back symptoms accompany the position.',
+      });
+    }
+    if (get('contact_visibility') === 'Partly obscured') {
+      recs.push({
+        finding: 'One or more bicycle contact points were obscured',
+        meaning: 'Hidden hands, feet, pedals, saddle contact, or crank position limit manual phase review and make fit interpretation less reliable.',
+        recommendation: 'Refilm with the entire bicycle and rider visible, including hands, saddle contact, crank, pedals, and both feet. Manual review recommended.',
+      });
+    }
+  }
+
   if (kind === 'squat') {
     if (get('depth') === 'Above parallel') {
       recs.push(liftingTemplateToRec(LIFTING_TEMPLATES.poor_depth));
@@ -762,7 +839,7 @@ export function buildAnalysisRecommendations(
     if (get('symmetry') === 'Asymmetric') {
       recs.push({
         finding:        'Left/right asymmetry during the squat',
-        meaning:        'Uneven loading between sides — one leg, hip, or ankle is contributing more. Over time this compounds into strength imbalances and localized overuse.',
+        meaning:        'The visible sides used different movement strategies in this capture. The cause cannot be determined from one 2D video.',
         recommendation: 'Add 2 sets of unilateral lower-body work (rear-foot-elevated split squat or single-leg press) per session, starting with the weaker side and matching reps. Keep bilateral loads moderate until sides look even on video.',
       });
     }
@@ -783,7 +860,7 @@ export function buildAnalysisRecommendations(
     if (hinge === 'Stiff-legged') {
       recs.push({
         finding:        'Stiff-legged pull — hips too high, knees barely bent',
-        meaning:        'With the hips too high the legs contribute little off the floor, so the low back and hamstrings take the whole load — a common setup for lumbar strain as weights climb.',
+        meaning:        'A higher-hip setup changes how the knees, hips, and trunk contribute. Whether that strategy is appropriate depends on the athlete, implement, and symptoms.',
         recommendation: 'Cue: "drop the hips until the shins touch the bar, chest up, push the floor away." Use blocks or rack pulls at knee height to rebuild the pattern, then lower the start position over 2–3 weeks. Keep loads at ~70% while the setup changes.',
       });
     }
@@ -791,14 +868,14 @@ export function buildAnalysisRecommendations(
     if (trunk === 'Rounded') {
       recs.push({
         finding:        'Rounded trunk during the pull',
-        meaning:        'Spinal flexion under load increases shear stress on the lumbar discs and ligaments — the highest-priority deadlift fault to correct before adding weight.',
+        meaning:        'The visible trunk shape changed during the pull. A phone video cannot determine spinal loading or tissue stress, so confirm the pattern and consider symptoms before changing load.',
         recommendation: 'Cue: "chest up, lats on — bend the bar around your shins." Reduce load 20–30% immediately, add front-loaded core work (front squat holds, ab wheel) and paused deadlifts at a load where the spine stays neutral. Refilm weekly; if rounding continues or the back aches, get coached in person.',
       });
     }
     if (trunk === 'Overextended') {
       recs.push({
         finding:        'Overextended (hyperlordotic) trunk position',
-        meaning:        'Arching hard into extension compresses the facet joints and usually means the ribs are flaring instead of the core bracing — stability is coming from the spine, not the trunk muscles.',
+        meaning:        'The trunk appears extended at this camera angle. This may reflect the athlete’s setup or bracing strategy, but the video cannot determine joint compression or tissue loading.',
         recommendation: 'Cue: "ribs down, brace 360° like taking a punch." Practice dead-bug and bird-dog breathing drills, and set the brace before each rep rather than pulling into an arch. Retest at working load after 2 weeks of brace practice.',
       });
     }
@@ -813,14 +890,14 @@ export function buildAnalysisRecommendations(
     if (lockout === 'Hyperextended') {
       recs.push({
         finding:        'Hyperextended lockout — leaning back at the top',
-        meaning:        'Leaning back past vertical loads the lumbar facets instead of finishing with the glutes. The lift is complete when hips and knees are straight — anything past that is spine, not hips.',
+        meaning:        'Leaning back past vertical changes the finish position from hip and knee extension toward visible trunk extension. A phone video cannot determine joint compression or tissue loading.',
         recommendation: 'Cue: "finish tall, glutes squeezed, ribs stacked over pelvis — don\'t lean back." Rehearse the finish position unloaded against a wall, then at ~50% load with a 2-second hold at the top.',
       });
     }
     if (get('start_position') === 'Rushed') {
       recs.push({
         finding:        'Rushed setup before the pull',
-        meaning:        'Pulling before tension is set (slack in the arms, hips finding position mid-rep) makes every rep slightly different and is where most technique faults start.',
+        meaning:        'Pulling before tension is set may make the setup less repeatable from rep to rep. The video can show consistency, but not internal loading.',
         recommendation: 'Build a repeatable ritual: feet set → grip → pull the slack out of the bar → brace → pull. Count one full second of tension before the bar leaves the floor. Film the first rep of each set to confirm consistency.',
       });
     }
@@ -831,7 +908,7 @@ export function buildAnalysisRecommendations(
     if (kneePos === 'Drifts inward') {
       recs.push({
         finding:        'Knee drifts toward the midline on single-leg loading',
-        meaning:        'A knee-in (valgus) position may be associated with increased patellofemoral and medial knee loading, and often reflects lateral hip and control demands. Estimated from 2D video — worth monitoring, not a diagnosis.',
+        meaning:        'A knee-in position is a frontal-plane observation that may reflect the athlete’s current movement strategy. A 2D video cannot determine joint loading, cause, or diagnosis.',
         recommendation: 'Cue: "knee points at the second toe." Add lateral band drills, single-leg step-downs, and glute-medius work. Refilm front-on in 3–4 weeks.',
       });
     } else if (kneePos === 'Drifts outward') {
@@ -876,7 +953,7 @@ export function buildAnalysisRecommendations(
     } else if (kneeCtrl === 'Travels far forward') {
       recs.push({
         finding:        'Front knee travels well past the toes',
-        meaning:        'A long forward knee travel shifts load toward the front knee and may reflect step length or ankle-strategy preferences. An estimated observation, not a fault on its own.',
+        meaning:        'Forward knee travel may reflect step length, movement goal, or ankle strategy. It is an estimated observation, not a fault or loading measurement on its own.',
         recommendation: 'Try a slightly longer stance and a more vertical shin if the goal is to spread load; keep the pattern you can control smoothly. Refilm from the side to compare.',
       });
     }
@@ -929,14 +1006,14 @@ export function buildAnalysisRecommendations(
     if (get('movement_quality') === 'Compensated') {
       recs.push({
         finding:        'Compensation patterns visible during the movement',
-        meaning:        'The movement is being completed by working around a restriction or weakness rather than through the intended pattern — the compensating tissue quietly absorbs extra load.',
+        meaning:        'The movement uses a visible alternative strategy. A single 2D capture cannot determine whether mobility, strength, habit, fatigue, or task constraints explain it.',
         recommendation: 'Reduce the load or range until the movement looks smooth, then rebuild gradually. Note in your log which segment compensates (trunk, hip, knee, ankle) and film the same movement every 2 weeks to track it.',
       });
     }
     if (get('symmetry') === 'Asymmetric') {
       recs.push({
         finding:        'Left/right asymmetry during the movement',
-        meaning:        'One side is moving or loading differently. Small asymmetries are normal; visible ones under load tend to grow into strength imbalances and localized overuse.',
+        meaning:        'One side appears to move differently in this capture. Small variation is common, and a repeat capture is needed before treating it as a persistent training consideration.',
         recommendation: 'Add unilateral versions of this movement, leading with and matching reps to the weaker side. Refilm side-by-side in 4 weeks to compare.',
       });
     }
@@ -954,7 +1031,7 @@ export function buildAnalysisRecommendations(
     const normals = findings.filter(f => NORMAL_CHECKLIST_VALUES.has(f.value)).length;
     if (normals >= 3) {
       recs.push({
-        finding:        'No notable movement faults identified',
+        finding:        'No notable movement considerations identified',
         meaning:        'Everything assessed on this checklist looked within normal ranges for this camera view. A clean screen is a valid, useful result.',
         recommendation: 'Keep training as planned. Refilm periodically (every 8–12 weeks, or when fatigue/injury changes how things feel) to keep a baseline for comparison.',
       });
@@ -990,10 +1067,12 @@ export type CoachHandoff = {
   sequenceLimitations?: string[];
   landmarkSource?: MovementAnalysis['landmarkSource'];
   referenceFrameTimeMs?: number;
-  referenceFrameUri?: string;
+  bikeFitPhases?: MovementAnalysis['bikeFitPhases'];
   captureMetadata?: MovementAnalysis['captureMetadata'];
   manualCorrections: string[];
   manualReviewRequired: boolean;
+  measurementConventionVersion: 1 | 2;
+  legacyMeasurementsSuppressed: string[];
 };
 
 export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
@@ -1002,8 +1081,13 @@ export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
   const landmarks = analysis.landmarks ?? [];
   let detectionQuality: CoachHandoff['detectionQuality'] = 'none';
   if (landmarks.length > 0) {
-    const mean = landmarks.reduce((sum, l) => sum + l.confidence, 0) / landmarks.length;
-    detectionQuality = mean >= 0.6 && landmarks.length >= 10 ? 'good' : 'partial';
+    const required = new Set(matrix.visibleJoints);
+    const requiredLandmarks = landmarks.filter(landmark => required.has(landmark.name));
+    const coverage = required.size > 0 ? requiredLandmarks.length / required.size : 0;
+    const mean = requiredLandmarks.length > 0
+      ? requiredLandmarks.reduce((sum, landmark) => sum + landmark.confidence, 0) / requiredLandmarks.length
+      : 0;
+    detectionQuality = coverage >= 0.75 && mean >= 0.6 ? 'good' : 'partial';
   }
 
   const isVideo = analysis.mediaType === 'video';
@@ -1034,11 +1118,13 @@ export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
     mediaType:         analysis.mediaType,
     cameraView:        analysis.cameraView,
     closestSide:       analysis.closestSide,
-    detectedAngles:    (analysis.estimatedAngles ?? []).map(a => ({
+    detectedAngles:    (analysis.estimatedAngles ?? [])
+      .filter(angle => angle.name !== 'Hip angle')
+      .map(a => ({
       name:       `${a.name}${a.side !== 'center' ? ` (${a.side})` : ''}`,
       degrees:    a.degrees,
       confidence: a.confidence,
-    })),
+      })),
     checklistFindings: analysis.checklistFindings,
     confidence:        analysis.confidence,
     userNotes:         analysis.notes,
@@ -1053,18 +1139,26 @@ export function buildCoachHandoff(analysis: MovementAnalysis): CoachHandoff {
     sequenceLimitations: isVideo ? analysis.sequenceLimitations : undefined,
     landmarkSource:       analysis.landmarkSource,
     referenceFrameTimeMs: analysis.referenceFrameTimeMs,
-    referenceFrameUri:    analysis.referenceFrameUri,
+    bikeFitPhases:         analysis.bikeFitPhases,
     captureMetadata:      analysis.captureMetadata,
     manualCorrections: [
       analysis.closestSideSource === 'user' && analysis.closestSide
         ? `Closest side confirmed by athlete: ${analysis.closestSide}`
         : null,
       analysis.landmarkSource === 'user_corrected' ? 'Reference landmarks corrected by athlete' : null,
+      analysis.captureMetadata?.subjectFacing && analysis.captureMetadata.subjectFacing !== 'unknown'
+        ? `Subject facing confirmed as ${analysis.captureMetadata.subjectFacing.replace('_', ' ')}`
+        : null,
       analysis.captureMetadata?.orientationConfirmed === false ? 'Saved-media orientation is unconfirmed' : null,
+      analysis.legacyMeasurementsSuppressed?.length
+        ? `Legacy measurements suppressed: ${analysis.legacyMeasurementsSuppressed.join(', ')}`
+        : null,
     ].filter((value): value is string => Boolean(value)),
     manualReviewRequired: matrix.manualReviewRequired
       || analysis.status === 'needs_review'
       || analysis.confidence === 'manual_review'
       || analysis.captureMetadata?.orientationConfirmed === false,
+    measurementConventionVersion: analysis.measurementConventionVersion ?? 1,
+    legacyMeasurementsSuppressed: analysis.legacyMeasurementsSuppressed ?? [],
   };
 }

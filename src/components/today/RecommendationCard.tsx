@@ -176,7 +176,7 @@ function InjuryRiskSection({ risk }: { risk: InjuryRiskWarning }) {
   return (
     <View style={[styles.section, styles.sectionBordered]}>
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionLabel}>INJURY RISK</Text>
+        <Text style={styles.sectionLabel}>TRAINING-STRESS CONTEXT</Text>
         <Text style={[styles.riskLabel, { color }]}>{levelStr}</Text>
       </View>
       {risk.triggers.map((t, i) => (
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
 
-  // Injury risk label
+  // Training-stress label
   riskLabel: {
     fontSize:      11,
     fontWeight:    FontWeight.black,
