@@ -16,6 +16,7 @@ import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckIn
 import { LAYOUT } from '../../../src/constants/layout';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { toYMD } from '../../../src/utils/calendarEngine';
+import { displayLabel } from '../../../src/utils/displayLabels';
 
 function lastUpdatedLabel(fetchedAt: number | null): string | null {
   if (fetchedAt === null) return null;
@@ -210,7 +211,7 @@ export default function TodayScreen() {
           <>
             <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
               {beginnerPrimary
-                ? `${beginnerPrimary.kind.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())} · ${beginnerPrimary.durationMinutes} min`
+                ? `${displayLabel(beginnerPrimary.kind)} · ${beginnerPrimary.durationMinutes} min`
                 : primaryEntry ? primaryEntry.label : 'Rest day — no structured session.'}
             </Text>
             {beginnerPrimary ? (

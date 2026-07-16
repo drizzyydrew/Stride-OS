@@ -1,10 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { LAYOUT } from '../../../src/constants/layout';
 import { useColors } from '../../../src/theme/useColors';
+import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 
 type NavItem = {
   label:       string;
@@ -19,14 +20,9 @@ const ITEMS: NavItem[] = [
     route:       '/(tabs)/activity',
   },
   {
-    label:       'Running',
-    icon:        'footsteps-outline',
-    route:       '/(tabs)/training',
-  },
-  {
-    label:       'Strength',
-    icon:        'fitness-outline',
-    route:       '/(tabs)/strength',
+    label:       'Movement Lab',
+    icon:        'body-outline',
+    route:       '/(tabs)/movement',
   },
   {
     label:       'Analytics',
@@ -55,24 +51,17 @@ export default function MoreScreen() {
   const C = useColors();
 
   return (
-    <View style={s.root}>
-      <Pressable
-        style={s.backdrop}
-        onPress={() => router.back()}
-        accessibilityRole="button"
-        accessibilityLabel="Close More"
-      />
-      <View
-        style={[
-          s.sheet,
-          {
-            backgroundColor: C.card,
-            paddingBottom: Math.max(insets.bottom + 28, LAYOUT.screenPadBottom),
-          },
+    <View style={[s.root, { backgroundColor: C.bg }]}>
+      <View style={{ paddingTop: insets.top }}>
+        <ScreenHeader eyebrow="STRIDEOS" title="More" />
+      </View>
+      <ScrollView
+        contentContainerStyle={[
+          s.content,
+          { paddingBottom: LAYOUT.tabBarHeight + Math.max(insets.bottom, 16) + 24 },
         ]}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={[s.sheetHandle, { backgroundColor: C.border }]} />
-        <Text style={[s.headerLabel, { color: C.textDim }]}>MORE</Text>
         <View style={s.grid}>
           {ITEMS.map(item => (
             <Pressable
@@ -89,7 +78,7 @@ export default function MoreScreen() {
             </Pressable>
           ))}
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -97,34 +86,9 @@ export default function MoreScreen() {
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.55)',
   },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-  },
-  sheet: {
+  content: {
     paddingHorizontal: 18,
-    paddingTop: 18,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-  },
-  sheetHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 18,
-  },
-  headerLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    marginBottom: 12,
   },
   grid: {
     flexDirection: 'row',

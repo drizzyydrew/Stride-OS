@@ -7,6 +7,7 @@ import { CROSS_TRAINING_ACTIVITY_TYPES, type CrossTrainingDecision } from '../..
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight } from '../../src/theme/tokens';
+import { displayLabel } from '../../src/utils/displayLabels';
 
 const DECISIONS: { key: CrossTrainingDecision; label: string; description: string }[] = [
   { key: 'no', label: 'No', description: 'Keep program behavior focused on your primary endurance mode.' },
@@ -70,7 +71,7 @@ export default function CrossTrainingOnboardingScreen() {
               return (
                 <Pressable key={type} onPress={() => toggleActivity(type)} style={[s.chip, selected && s.chipActive]}>
                   <Text style={[s.chipText, selected && s.chipTextActive]}>
-                    {type === 'mixed_modal' ? 'CrossFit / Mixed' : type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                    {type === 'mixed_modal' ? 'CrossFit / mixed-modal' : displayLabel(type)}
                   </Text>
                 </Pressable>
               );

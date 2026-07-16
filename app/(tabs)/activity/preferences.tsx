@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import ScreenHeader from '../../../src/components/layout/ScreenHeader';
+import PickerWheel from '../../../src/components/ui/PickerWheel';
 import { useTrainingPreferencesStore } from '../../../src/store/trainingPreferencesStore';
 import { useColors } from '../../../src/theme/useColors';
 import {
@@ -12,6 +15,7 @@ import {
   type CrossTrainingPurpose,
   type PrimaryEnduranceMode,
 } from '../../../src/types/trainingPreferences';
+import { displayLabel } from '../../../src/utils/displayLabels';
 
 const MODES: { key: PrimaryEnduranceMode; label: string }[] = [
   { key: 'running', label: 'Running' },
@@ -35,13 +39,14 @@ const PURPOSES: { key: CrossTrainingPurpose; label: string }[] = [
 
 function activityLabel(type: CrossTrainingActivityType): string {
   if (type === 'mixed_modal') return 'CrossFit / mixed-modal';
-  return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return displayLabel(type);
 }
 
 export default function TrainingPreferencesScreen() {
   const C = useColors();
   const router = useRouter();
   const prefs = useTrainingPreferencesStore();
+  const [frequencyPickerVisible, setFrequencyPickerVisible] = useState(false);
 
   function toggleActivity(type: CrossTrainingActivityType) {
     const existing = prefs.crossTrainingActivities.find(item => item.activityType === type);
@@ -69,13 +74,11 @@ export default function TrainingPreferencesScreen() {
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.iconButton}><Ionicons name="chevron-back" size={24} color={C.text} /></TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={[s.eyebrow, { color: C.textDim }]}>TRAINING PREFERENCES</Text>
-          <Text style={[s.title, { color: C.text }]}>Endurance & Cross-Training</Text>
-        </View>
-      </View>
+      <ScreenHeader
+        eyebrow="TRAINING PREFERENCES"
+        title="Endurance & Cross-Training"
+        onBack={() => router.back()}
+      />
       <ScrollView contentContainerStyle={s.content}>
         <Section title="Primary endurance program" subtitle="Changing this shapes future programming and never erases history.">
           <ChoiceRow values={MODES} selected={prefs.primaryEnduranceMode} onSelect={prefs.setPrimaryEnduranceMode} />
@@ -94,11 +97,21 @@ export default function TrainingPreferencesScreen() {
               </View>
             </Section>
             <Section title="Frequency" subtitle="StrideOS adapts this around running, walking, strength, and readiness.">
-              <View style={s.frequency}>
-                {[1, 2, 3, 4].map(value => (
-                  <Chip key={value} label={`${value}× / week`} selected={prefs.crossTrainingFrequencyPerWeek === value} onPress={() => prefs.setCrossTrainingFrequency(value)} />
-                ))}
-              </View>
+              <TouchableOpacity
+                style={[s.frequencyRow, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+                onPress={() => setFrequencyPickerVisible(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`Cross-training frequency, ${prefs.crossTrainingFrequencyPerWeek || 2} times per week`}
+                accessibilityHint="Opens the frequency picker"
+              >
+                <View style={s.frequencyCopy}>
+                  <Text style={[s.frequencyLabel, { color: C.text }]}>Frequency</Text>
+                  <Text style={[s.frequencyValue, { color: C.textMuted }]}>
+                    {prefs.crossTrainingFrequencyPerWeek || 2}× per week
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+              </TouchableOpacity>
             </Section>
             <Section title="Primary purpose" subtitle="HIIT and mixed-modal work count as intensity and will not be casually stacked beside intervals.">
               <View style={s.wrap}>
@@ -116,6 +129,18 @@ export default function TrainingPreferencesScreen() {
           </Text>
         </View>
       </ScrollView>
+      <PickerWheel
+        visible={frequencyPickerVisible}
+        title="Cross-training frequency"
+        values={[1, 2, 3, 4]}
+        selectedValue={prefs.crossTrainingFrequencyPerWeek || 2}
+        formatValue={value => `${value}× per week`}
+        onClose={() => setFrequencyPickerVisible(false)}
+        onConfirm={value => {
+          prefs.setCrossTrainingFrequency(value);
+          setFrequencyPickerVisible(false);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -144,16 +169,15 @@ function ChoiceRow<K extends string>({ values, selected, onSelect }: { values: {
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 10 },
-  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
-  title: { fontSize: 27, fontFamily: 'CormorantGaramond_700Bold' },
   content: { paddingHorizontal: 18, paddingBottom: 100 },
   section: { borderWidth: 1, borderRadius: 17, padding: 16, marginBottom: 12 },
   sectionTitle: { fontSize: 16, fontWeight: '900' },
   sectionSub: { fontSize: 12, lineHeight: 17, marginTop: 4, marginBottom: 13 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  frequency: { flexDirection: 'row', gap: 8 },
+  frequencyRow: { minHeight: 58, borderWidth: 1, borderRadius: 13, paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  frequencyCopy: { flex: 1, minWidth: 0 },
+  frequencyLabel: { fontSize: 14, fontWeight: '900' },
+  frequencyValue: { fontSize: 12, lineHeight: 17, marginTop: 2 },
   chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 9 },
   chipText: { fontSize: 12, fontWeight: '800' },
   note: { borderWidth: 1, borderRadius: 15, padding: 14, flexDirection: 'row', gap: 10 },

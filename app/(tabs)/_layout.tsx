@@ -77,7 +77,7 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="dashboard/index"
+        name="dashboard"
         options={{
           title: 'Today',
           tabBarIcon: ({ focused }) => (
@@ -95,6 +95,24 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="training"
+        options={{
+          title: 'Running',
+          tabBarIcon: ({ focused }) => (
+            <TabBtn name="footsteps-outline" label="Running" focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="strength"
+        options={{
+          title: 'Strength',
+          tabBarIcon: ({ focused }) => (
+            <TabBtn name="barbell-outline" label="Strength" focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="coach"
         options={{
           title: 'AI Coach',
@@ -104,10 +122,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="more/index"
+        name="more"
         options={{
           title: 'More',
-          tabBarStyle: { display: 'none' },
           tabBarIcon: ({ focused }) => (
             <TabBtn name="menu-outline" label="More" focused={focused} />
           ),
@@ -115,17 +132,12 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen name="index" options={{ href: null }} />
-      <Tabs.Screen name="training" options={{ href: null }} />
-      <Tabs.Screen name="strength" options={{ href: null }} />
-      <Tabs.Screen name="analytics/index" options={{ href: null }} />
+      <Tabs.Screen name="analytics" options={{ href: null }} />
       <Tabs.Screen name="performance" options={{ href: null }} />
-      <Tabs.Screen name="profile/index" options={{ href: null }} />
-      <Tabs.Screen name="profile/calibration" options={{ href: null }} />
-      <Tabs.Screen name="profile/availability" options={{ href: null }} />
+      <Tabs.Screen name="profile" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="movement" options={{ href: null }} />
-      <Tabs.Screen name="activity-log/index" options={{ href: null }} />
-      <Tabs.Screen name="activity-log/[entryId]" options={{ href: null }} />
+      <Tabs.Screen name="activity-log" options={{ href: null }} />
       <Tabs.Screen name="activity" options={{ href: null }} />
     </Tabs>
   );
@@ -136,11 +148,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     gap: 3,
-    paddingVertical: 4,
-    minWidth: 64,
+    paddingVertical: 3,
+    paddingHorizontal: 1,
+    minWidth: 0,
   },
   tabLabel: {
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: '700',
     textAlign: 'center',
   },

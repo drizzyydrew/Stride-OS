@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { useBeginnerPlanStore } from '../../../src/store/beginnerPlanStore';
 import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
 import { useTrainingPreferencesStore } from '../../../src/store/trainingPreferencesStore';
@@ -23,6 +24,7 @@ import {
   generateBeginnerPlan,
   recommendBeginnerPlanDuration,
 } from '../../../src/utils/beginnerPlans';
+import { displayLabel } from '../../../src/utils/displayLabels';
 
 const GOALS = Object.values(BEGINNER_PLAN_DEFINITIONS);
 
@@ -88,20 +90,18 @@ export default function PresetPlansScreen() {
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.iconButton}><Ionicons name="chevron-back" size={24} color={C.text} /></TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={[s.eyebrow, { color: C.textDim }]}>PRESET TRAINING PLANS</Text>
-          <Text style={[s.title, { color: C.text }]}>Build Your Endurance Base</Text>
-        </View>
-      </View>
+      <ScreenHeader
+        eyebrow="PRESET TRAINING PLANS"
+        title="Build Your Endurance Base"
+        onBack={() => router.back()}
+      />
       <ScrollView contentContainerStyle={s.content}>
         {activePlan ? (
           <View style={[s.activeCard, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
             <Text style={[s.eyebrow, { color: C.primary }]}>ACTIVE PRESET GOAL PLAN</Text>
             <Text style={[s.cardTitle, { color: C.text }]}>{BEGINNER_PLAN_DEFINITIONS[activePlan.goal].title}</Text>
             <Text style={[s.body, { color: C.textMuted }]}>
-              {activePlan.durationWeeks} weeks · target {activePlan.targetDate} · {activePlan.primaryEnduranceMode.replace(/_/g, ' ')}
+              {activePlan.durationWeeks} weeks · target {activePlan.targetDate} · {displayLabel(activePlan.primaryEnduranceMode)}
             </Text>
             <TouchableOpacity onPress={removeGoal} style={s.removeButton}>
               <Text style={[s.removeText, { color: C.critical }]}>End future goal programming</Text>
@@ -143,7 +143,7 @@ export default function PresetPlansScreen() {
                 onPress={() => setStartingLevel(level)}
                 style={[s.pill, { backgroundColor: startingLevel === level ? C.primaryDim : C.cardAlt, borderColor: startingLevel === level ? C.primary : C.border }]}
               >
-                <Text style={[s.pillText, { color: startingLevel === level ? C.primary : C.textMuted }]}>{level.replace(/_/g, ' ')}</Text>
+                <Text style={[s.pillText, { color: startingLevel === level ? C.primary : C.textMuted }]}>{displayLabel(level)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -199,10 +199,7 @@ export default function PresetPlansScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 10 },
-  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
-  title: { fontSize: 28, fontFamily: 'CormorantGaramond_700Bold' },
   content: { paddingHorizontal: 18, paddingBottom: 110 },
   activeCard: { borderWidth: 1, borderRadius: 17, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 20, fontFamily: 'CormorantGaramond_700Bold', marginTop: 5 },

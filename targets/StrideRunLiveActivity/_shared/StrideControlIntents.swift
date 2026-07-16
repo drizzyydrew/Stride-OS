@@ -8,12 +8,20 @@ private enum StrideRunControlCommand {
   static let idKey = "StrideOS.pendingRunControlCommand.id"
   static let actionKey = "StrideOS.pendingRunControlCommand.action"
   static let createdAtKey = "StrideOS.pendingRunControlCommand.createdAt"
+  static let sessionIdKey = "StrideOS.pendingRunControlCommand.sessionId"
+  static let sessionSourceKey = "StrideOS.pendingRunControlCommand.sessionSource"
+  static let activityKitIdKey = "StrideOS.pendingRunControlCommand.activityKitId"
   static let runActivityIdKey = "StrideOS.currentRunLiveActivityId"
   static let strengthActivityIdKey = "StrideOS.currentStrengthLiveActivityId"
   static let pendingTimeout: TimeInterval = 15
 
   @discardableResult
-  static func write(_ action: String) -> Bool {
+  static func write(
+    _ action: String,
+    sessionId: String,
+    sessionSource: String,
+    activityKitId: String
+  ) -> Bool {
     guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else { return false }
     let existingId = defaults.string(forKey: idKey)
     let existingCreatedAt = defaults.double(forKey: createdAtKey)
@@ -23,6 +31,9 @@ private enum StrideRunControlCommand {
     defaults.set(UUID().uuidString, forKey: idKey)
     defaults.set(action, forKey: actionKey)
     defaults.set(Date().timeIntervalSince1970, forKey: createdAtKey)
+    defaults.set(sessionId, forKey: sessionIdKey)
+    defaults.set(sessionSource, forKey: sessionSourceKey)
+    defaults.set(activityKitId, forKey: activityKitIdKey)
     defaults.synchronize()
     return true
   }
@@ -36,7 +47,13 @@ struct PauseRunIntent: LiveActivityIntent {
   static var openAppWhenRun: Bool = false
 
   func perform() async throws -> some IntentResult {
-    guard StrideRunControlCommand.write("pause") else { return .result() }
+    guard let activity = currentRunActivity() else { return .result() }
+    guard StrideRunControlCommand.write(
+      "pause",
+      sessionId: activity.attributes.sessionId,
+      sessionSource: activity.attributes.sessionSource,
+      activityKitId: activity.id
+    ) else { return .result() }
     await updateRun(isPaused: true, status: "Paused", controlState: "pause_pending")
     return .result()
   }
@@ -50,7 +67,13 @@ struct ResumeRunIntent: LiveActivityIntent {
   static var openAppWhenRun: Bool = false
 
   func perform() async throws -> some IntentResult {
-    guard StrideRunControlCommand.write("resume") else { return .result() }
+    guard let activity = currentRunActivity() else { return .result() }
+    guard StrideRunControlCommand.write(
+      "resume",
+      sessionId: activity.attributes.sessionId,
+      sessionSource: activity.attributes.sessionSource,
+      activityKitId: activity.id
+    ) else { return .result() }
     await updateRun(isPaused: false, status: "Running", controlState: "resume_pending")
     return .result()
   }
@@ -64,7 +87,13 @@ struct StopRunIntent: LiveActivityIntent {
   static var openAppWhenRun: Bool = false
 
   func perform() async throws -> some IntentResult {
-    guard StrideRunControlCommand.write("stop") else { return .result() }
+    guard let activity = currentRunActivity() else { return .result() }
+    guard StrideRunControlCommand.write(
+      "stop",
+      sessionId: activity.attributes.sessionId,
+      sessionSource: activity.attributes.sessionSource,
+      activityKitId: activity.id
+    ) else { return .result() }
     await updateRun(isPaused: true, status: "Finishing", controlState: "complete_pending")
     return .result()
   }
@@ -78,7 +107,13 @@ struct PauseStrengthIntent: LiveActivityIntent {
   static var openAppWhenRun: Bool = false
 
   func perform() async throws -> some IntentResult {
-    guard StrideRunControlCommand.write("strength_pause") else { return .result() }
+    guard let activity = currentStrengthActivity() else { return .result() }
+    guard StrideRunControlCommand.write(
+      "strength_pause",
+      sessionId: activity.attributes.sessionId,
+      sessionSource: activity.attributes.sessionSource,
+      activityKitId: activity.id
+    ) else { return .result() }
     await updateStrength(isPaused: true, controlState: "pause_pending")
     return .result()
   }
@@ -92,7 +127,13 @@ struct ResumeStrengthIntent: LiveActivityIntent {
   static var openAppWhenRun: Bool = false
 
   func perform() async throws -> some IntentResult {
-    guard StrideRunControlCommand.write("strength_resume") else { return .result() }
+    guard let activity = currentStrengthActivity() else { return .result() }
+    guard StrideRunControlCommand.write(
+      "strength_resume",
+      sessionId: activity.attributes.sessionId,
+      sessionSource: activity.attributes.sessionSource,
+      activityKitId: activity.id
+    ) else { return .result() }
     await updateStrength(isPaused: false, controlState: "resume_pending")
     return .result()
   }
@@ -106,7 +147,13 @@ struct MarkSetCompleteIntent: LiveActivityIntent {
   static var openAppWhenRun: Bool = false
 
   func perform() async throws -> some IntentResult {
-    guard StrideRunControlCommand.write("strength_complete") else { return .result() }
+    guard let activity = currentStrengthActivity() else { return .result() }
+    guard StrideRunControlCommand.write(
+      "strength_complete",
+      sessionId: activity.attributes.sessionId,
+      sessionSource: activity.attributes.sessionSource,
+      activityKitId: activity.id
+    ) else { return .result() }
     await markStrengthPending()
     return .result()
   }
@@ -133,7 +180,9 @@ private func updateRun(isPaused: Bool, status: String, controlState: String) asy
     nextTransition: current.nextTransition,
     navigationInstruction: current.navigationInstruction,
     cueText: current.cueText,
-    controlState: controlState
+    controlState: controlState,
+    elevationDisplay: current.elevationDisplay,
+    descentDisplay: current.descentDisplay
   )
   await activity.update(ActivityContent(state: state, staleDate: Date().addingTimeInterval(90), relevanceScore: 0.95))
 }
@@ -180,20 +229,30 @@ private func markStrengthPending() async {
 private func currentRunActivity() -> Activity<StrideRunActivityAttributes>? {
   let defaults = UserDefaults(suiteName: StrideRunControlCommand.appGroupIdentifier)
   if let id = defaults?.string(forKey: StrideRunControlCommand.runActivityIdKey) {
-    return Activity<StrideRunActivityAttributes>.activities.first(where: { $0.id == id })
+    if let activity = Activity<StrideRunActivityAttributes>.activities.first(where: { $0.id == id }) {
+      return activity
+    }
+    defaults?.removeObject(forKey: StrideRunControlCommand.runActivityIdKey)
   }
-  return Activity<StrideRunActivityAttributes>.activities.count == 1
-    ? Activity<StrideRunActivityAttributes>.activities.first
-    : nil
+  guard Activity<StrideRunActivityAttributes>.activities.count == 1,
+        let activity = Activity<StrideRunActivityAttributes>.activities.first else { return nil }
+  defaults?.set(activity.id, forKey: StrideRunControlCommand.runActivityIdKey)
+  defaults?.synchronize()
+  return activity
 }
 
 @available(iOS 18.0, *)
 private func currentStrengthActivity() -> Activity<StrideStrengthActivityAttributes>? {
   let defaults = UserDefaults(suiteName: StrideRunControlCommand.appGroupIdentifier)
   if let id = defaults?.string(forKey: StrideRunControlCommand.strengthActivityIdKey) {
-    return Activity<StrideStrengthActivityAttributes>.activities.first(where: { $0.id == id })
+    if let activity = Activity<StrideStrengthActivityAttributes>.activities.first(where: { $0.id == id }) {
+      return activity
+    }
+    defaults?.removeObject(forKey: StrideRunControlCommand.strengthActivityIdKey)
   }
-  return Activity<StrideStrengthActivityAttributes>.activities.count == 1
-    ? Activity<StrideStrengthActivityAttributes>.activities.first
-    : nil
+  guard Activity<StrideStrengthActivityAttributes>.activities.count == 1,
+        let activity = Activity<StrideStrengthActivityAttributes>.activities.first else { return nil }
+  defaults?.set(activity.id, forKey: StrideRunControlCommand.strengthActivityIdKey)
+  defaults?.synchronize()
+  return activity
 }

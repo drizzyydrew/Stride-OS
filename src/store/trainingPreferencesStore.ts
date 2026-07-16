@@ -39,13 +39,16 @@ export const useTrainingPreferencesStore = create<TrainingPreferencesStore>()(
       setCrossTrainingDecision: decision =>
         set(state => ({
           crossTrainingDecision: decision,
-          crossTrainingFrequencyPerWeek: decision === 'no' ? 0 : state.crossTrainingFrequencyPerWeek,
+          crossTrainingFrequencyPerWeek:
+            decision === 'yes' && state.crossTrainingFrequencyPerWeek <= 0
+              ? 2
+              : state.crossTrainingFrequencyPerWeek,
           updatedAt: Date.now(),
         })),
 
       setCrossTrainingFrequency: frequency =>
         set({
-          crossTrainingFrequencyPerWeek: Math.max(0, Math.min(7, Math.round(frequency))),
+          crossTrainingFrequencyPerWeek: Math.max(1, Math.min(4, Math.round(frequency))),
           updatedAt: Date.now(),
         }),
 

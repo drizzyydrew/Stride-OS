@@ -5,6 +5,7 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { StrengthSession } from '../../types/strength';
+import { displayLabel } from '../../utils/displayLabels';
 
 type Props = {
   session:    StrengthSession;
@@ -34,7 +35,7 @@ const GOAL_COLORS: Record<string, { color: string; bg: string }> = {
 
 export default function StrengthSessionCard({ session, isComplete, onPress }: Props) {
   const goalConfig = GOAL_COLORS[session.goal] ?? GOAL_COLORS.maintenance;
-  const typeLabel  = SESSION_TYPE_LABELS[session.sessionType] ?? session.sessionType;
+  const typeLabel  = SESSION_TYPE_LABELS[session.sessionType] ?? displayLabel(session.sessionType);
   const setCount   = session.exercises.reduce((s, e) => s + e.sets, 0);
 
   return (
@@ -65,7 +66,7 @@ export default function StrengthSessionCard({ session, isComplete, onPress }: Pr
         <View style={styles.patterns}>
           {session.primaryPatterns.slice(0, 4).map(p => (
             <View key={p} style={styles.patternChip}>
-              <Text style={styles.patternText}>{p.replace('_', ' ')}</Text>
+              <Text style={styles.patternText}>{displayLabel(p)}</Text>
             </View>
           ))}
         </View>

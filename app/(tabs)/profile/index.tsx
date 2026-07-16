@@ -13,6 +13,7 @@ import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useActiveProfile } from '../../../src/store/profileStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { formatPace, formatRaceTime } from '../../../src/utils/calibrationEngine';
+import { displayLabel } from '../../../src/utils/displayLabels';
 
 function formatHeight(heightCm: number, imperial: boolean) {
   if (!heightCm) return '';
@@ -62,7 +63,7 @@ export default function ProfileScreen() {
 
   const calibration = profile?.calibration ?? null;
   const racePredictions = calibration?.racePredictions?.slice(1, 5) ?? [];
-  const methodLabel = calibration?.activeZoneMethod?.replace(/_/g, ' ') ?? 'Estimated';
+  const methodLabel = displayLabel(calibration?.activeZoneMethod) || 'Estimated';
   const stalePrs = useMemo(() => {
     const cutoff = Date.now() - 18 * 30 * 24 * 60 * 60 * 1000;
     return (profile?.racePRs ?? []).filter(pr => new Date(`${pr.date}T00:00:00`).getTime() < cutoff).length;
@@ -223,7 +224,7 @@ export default function ProfileScreen() {
 
       <TouchableOpacity
         style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}
-        onPress={() => router.push('/(tabs)/activity-log' as any)}
+        onPress={() => router.push('/(tabs)/activity' as any)}
         activeOpacity={0.78}
       >
         <View style={styles.cardHeaderRow}>
@@ -231,7 +232,7 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={18} color={C.primary} />
         </View>
         <Text style={[styles.body, { color: C.textMuted }]}>
-          Open the activity log to review completed runs, strength sessions, and exercise history.
+          Open Activity to review completed running, walking, cross-training, strength, and mobility history.
         </Text>
       </TouchableOpacity>
     </ScrollView>

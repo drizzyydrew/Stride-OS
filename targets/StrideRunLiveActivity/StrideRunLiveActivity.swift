@@ -117,6 +117,19 @@ private struct LockScreenRunView: View {
           .lineLimit(1)
           .accessibilityLabel("Current guidance: \(guidance)")
       }
+      if !context.state.elevationDisplay.isEmpty || !context.state.descentDisplay.isEmpty {
+        HStack(spacing: 12) {
+          if !context.state.elevationDisplay.isEmpty {
+            Label(context.state.elevationDisplay, systemImage: "mountain.2.fill")
+          }
+          if !context.state.descentDisplay.isEmpty {
+            Label(context.state.descentDisplay, systemImage: "arrow.down.right")
+          }
+        }
+        .font(.system(size: 10, weight: .semibold))
+        .foregroundStyle(secondaryText)
+        .lineLimit(1)
+      }
 
       // Single primary action + compact stop
       HStack(spacing: 8) {
@@ -331,6 +344,7 @@ private func activityTitle(_ type: String) -> String {
   case "cycling": return "Ride"
   case "hiking": return "Hike"
   case "downhill_skiing", "cross_country_skiing": return "Ski"
+  case "snowboarding": return "Snowboard"
   default: return "Run"
   }
 }
@@ -341,6 +355,7 @@ private func activityIcon(_ type: String) -> String {
   case "cycling": return "bicycle"
   case "downhill_skiing": return "figure.skiing.downhill"
   case "cross_country_skiing": return "figure.skiing.crosscountry"
+  case "snowboarding": return "figure.snowboarding"
   default: return "figure.run"
   }
 }
@@ -402,26 +417,67 @@ struct StrideStrengthLiveActivity: Widget {
           }
         }
         DynamicIslandExpandedRegion(.bottom) {
-          HStack {
-            Text(formatStrengthElapsed(context.state.elapsedSeconds))
-              .font(.system(.body, design: .rounded).weight(.bold))
-              .monospacedDigit()
-              .foregroundStyle(.white)
-            Spacer()
-            if context.state.controlState == "ready" {
-              Button(intent: MarkSetCompleteIntent()) {
-                Label("Done", systemImage: "checkmark")
-                  .font(.caption.weight(.bold))
+          VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+              if !context.state.prescription.isEmpty {
+                Text(context.state.prescription)
+                  .font(.system(.headline, design: .rounded).weight(.heavy))
+                  .foregroundStyle(.white)
+                  .lineLimit(1)
               }
-              .buttonStyle(.plain)
-              .padding(.horizontal, 10)
-              .padding(.vertical, 5)
-              .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.3), in: Capsule())
-              .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
-            } else {
-              ProgressView()
-                .controlSize(.mini)
-                .tint(.white)
+              if !context.state.loadDisplay.isEmpty {
+                Text(context.state.loadDisplay)
+                  .font(.caption.weight(.bold))
+                  .foregroundStyle(Color(red: 0.72, green: 0.75, blue: 0.64))
+                  .lineLimit(1)
+              }
+              Spacer()
+              Text(formatStrengthElapsed(context.state.elapsedSeconds))
+                .font(.system(.body, design: .rounded).weight(.bold))
+                .monospacedDigit()
+                .foregroundStyle(.white)
+            }
+            HStack {
+              if context.state.controlState == "ready" {
+                if context.state.isPaused {
+                  Button(intent: ResumeStrengthIntent()) {
+                    Label("Resume", systemImage: "play.fill")
+                      .font(.caption.weight(.bold))
+                  }
+                  .buttonStyle(.plain)
+                  .padding(.horizontal, 10)
+                  .padding(.vertical, 5)
+                  .background(Color(red: 0.91, green: 0.69, blue: 0.34).opacity(0.25), in: Capsule())
+                  .foregroundStyle(Color(red: 0.91, green: 0.69, blue: 0.34))
+                } else {
+                  Button(intent: PauseStrengthIntent()) {
+                    Label("Pause", systemImage: "pause.fill")
+                      .font(.caption.weight(.bold))
+                  }
+                  .buttonStyle(.plain)
+                  .padding(.horizontal, 10)
+                  .padding(.vertical, 5)
+                  .background(Color(red: 0.91, green: 0.69, blue: 0.34).opacity(0.25), in: Capsule())
+                  .foregroundStyle(Color(red: 0.91, green: 0.69, blue: 0.34))
+                }
+                Spacer()
+                Button(intent: MarkSetCompleteIntent()) {
+                  Label("Done", systemImage: "checkmark")
+                    .font(.caption.weight(.bold))
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.3), in: Capsule())
+                .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
+              } else {
+                ProgressView()
+                  .controlSize(.mini)
+                  .tint(.white)
+                Text(pendingLabel(context.state.controlState))
+                  .font(.caption.weight(.bold))
+                  .foregroundStyle(.white)
+              }
             }
           }
         }
@@ -467,7 +523,7 @@ private struct LockScreenStrengthView: View {
           .foregroundStyle(Color(red: 0.96, green: 0.95, blue: 0.90))
       }
 
-      // Current & next exercise + set progress
+      // Current prescription first; workout title truncates before this row.
       HStack(spacing: 10) {
         VStack(alignment: .leading, spacing: 1) {
           Text("NOW")
@@ -479,19 +535,6 @@ private struct LockScreenStrengthView: View {
             .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-
-        if !context.state.nextExercise.isEmpty {
-          VStack(alignment: .leading, spacing: 1) {
-            Text("NEXT")
-              .font(.system(size: 8, weight: .bold))
-              .foregroundStyle(Color(red: 0.66, green: 0.69, blue: 0.58))
-            Text(context.state.nextExercise)
-              .font(.system(size: 13, weight: .semibold))
-              .foregroundStyle(Color(red: 0.82, green: 0.82, blue: 0.76))
-              .lineLimit(1)
-          }
-          .frame(maxWidth: .infinity, alignment: .leading)
-        }
 
         VStack(alignment: .trailing, spacing: 1) {
           Text(context.state.prescription.isEmpty
@@ -508,6 +551,12 @@ private struct LockScreenStrengthView: View {
               .lineLimit(1)
           }
         }
+      }
+      if !context.state.nextExercise.isEmpty {
+        Text("Next: \(context.state.nextExercise)")
+          .font(.system(size: 10, weight: .semibold))
+          .foregroundStyle(Color(red: 0.82, green: 0.82, blue: 0.76))
+          .lineLimit(1)
       }
 
       // Control buttons

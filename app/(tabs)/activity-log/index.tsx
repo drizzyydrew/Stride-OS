@@ -24,6 +24,7 @@ import { getExerciseGuide } from '../../../src/constants/exerciseGuides';
 import { LAYOUT } from '../../../src/constants/layout';
 import type { CompletedWorkoutRecord } from '../../../src/types/training';
 import type { StrengthLogRecord } from '../../../src/types/strength';
+import { displayLabel } from '../../../src/utils/displayLabels';
 
 type ActivityEntry =
   | { kind: 'run'; id: string; timestamp: number; record: CompletedWorkoutRecord }
@@ -65,14 +66,11 @@ function fmtPace(distanceMiles?: number, durationMin?: number) {
 }
 
 function strengthName(record: StrengthLogRecord) {
-  return record.sessionId
-    .replace(/^strength_/, '')
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase()) || 'Strength session';
+  return displayLabel(record.sessionId.replace(/^strength_/, '')) || 'Strength session';
 }
 
 function titleCaseFromId(id: string) {
-  return id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return displayLabel(id);
 }
 
 function exerciseName(id: string, custom?: LibraryExercise) {

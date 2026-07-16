@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import {
   useHydrationPlannerStore,
 } from '../../../src/store/hydrationPlannerStore';
 import { LAYOUT } from '../../../src/constants/layout';
+import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
 import {
   RUN_REMINDER_INTERVALS,
@@ -111,9 +112,11 @@ function Stepper({
   onCommitValue?: (value: number) => void;
 }) {
   const C = useColors();
+  const { width, fontScale } = useWindowDimensions();
   const [draft, setDraft] = useState(String(value));
   const minusRepeat = useAutoRepeat(onMinus);
   const plusRepeat  = useAutoRepeat(onPlus);
+  const stacked = width <= 480 || fontScale >= 1.15;
   useEffect(() => setDraft(String(value)), [value]);
 
   function commitDraft() {
@@ -122,7 +125,7 @@ function Stepper({
     else setDraft(String(value));
   }
   return (
-    <View style={s.inputRow}>
+    <View style={[s.inputRow, stacked && s.inputRowStacked]}>
       <View style={s.inputCopy}>
         <View style={s.labelRow}>
           <Text style={[s.inputLabel, { color: C.text }]}>{label}</Text>
@@ -134,12 +137,17 @@ function Stepper({
         </View>
         {hint ? <Text style={[s.inputHint, { color: C.textMuted }]}>{hint}</Text> : null}
       </View>
-      <View style={s.stepControls}>
-        <TouchableOpacity {...minusRepeat} style={[s.stepBtn, { backgroundColor: C.cardAlt }]}>
+      <View style={[s.stepControls, stacked && s.stepControlsStacked]}>
+        <TouchableOpacity
+          {...minusRepeat}
+          style={[s.stepBtn, { backgroundColor: C.cardAlt }]}
+          accessibilityRole="button"
+          accessibilityLabel={`Decrease ${label.toLowerCase()}`}
+        >
           <Ionicons name="remove" size={18} color={C.text} />
         </TouchableOpacity>
         {onCommitValue ? (
-          <View style={s.editableValueWrap}>
+          <View style={[s.editableValueWrap, stacked && s.editableValueWrapStacked]}>
             <TextInput
               accessibilityLabel={`Enter ${label.toLowerCase()}`}
               value={draft}
@@ -153,11 +161,16 @@ function Stepper({
             {unit ? <Text style={[s.stepUnit, { color: C.textMuted }]}>{unit}</Text> : null}
           </View>
         ) : (
-          <Text style={[s.stepValue, { color: C.text }]}>
+          <Text style={[s.stepValue, stacked && s.stepValueStacked, { color: C.text }]}>
             {value}{unit ? <Text style={[s.stepUnit, { color: C.textMuted }]}> {unit}</Text> : null}
           </Text>
         )}
-        <TouchableOpacity {...plusRepeat} style={[s.stepBtn, { backgroundColor: C.cardAlt }]}>
+        <TouchableOpacity
+          {...plusRepeat}
+          style={[s.stepBtn, { backgroundColor: C.cardAlt }]}
+          accessibilityRole="button"
+          accessibilityLabel={`Increase ${label.toLowerCase()}`}
+        >
           <Ionicons name="add" size={18} color={C.text} />
         </TouchableOpacity>
       </View>
@@ -402,20 +415,17 @@ export default function HydrationScreen({ embedded = false }: { embedded?: boole
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={embedded ? [] : ['top']}>
-      {!embedded ? <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.iconBtn} hitSlop={12}>
-          <Ionicons name="chevron-back" size={24} color={C.text} />
-        </TouchableOpacity>
-        <View style={s.headerCopy}>
-          <Text style={[s.eyebrow, { color: C.textDim }]}>RUNNING</Text>
-          <Text style={[s.title, { color: C.text }]}>Hydration Plan</Text>
-        </View>
-        <View style={s.iconBtn} />
-      </View> : null}
+      {!embedded ? (
+        <ScreenHeader
+          eyebrow="RUNNING"
+          title="Hydration Plan"
+          onBack={() => router.back()}
+        />
+      ) : null}
 
       <KeyboardAvoidingView style={s.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
-        contentContainerStyle={[s.scroll, { paddingBottom: LAYOUT.screenPadBottom }]}
+        contentContainerStyle={[s.scroll, { paddingBottom: embedded ? 32 : LAYOUT.screenPadBottom }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
@@ -898,11 +908,6 @@ export default function HydrationScreen({ embedded = false }: { embedded?: boole
 const s = StyleSheet.create({
   safe: { flex: 1 },
   keyboardAvoid: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingBottom: 12, gap: 8 },
-  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerCopy: { flex: 1 },
-  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 2 },
-  title: { fontSize: 32, fontFamily: 'CormorantGaramond_700Bold' },
   scroll: { paddingHorizontal: 18, paddingTop: 8 },
   summaryCard: { borderWidth: 1.5, borderRadius: 16, padding: 18, marginBottom: 14 },
   summaryEyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.5, marginBottom: 6 },
@@ -918,16 +923,20 @@ const s = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 12, padding: 16, marginBottom: 14 },
   sectionLabel: { fontSize: 11, fontWeight: '900', letterSpacing: 2, marginBottom: 12 },
   inputRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 12 },
+  inputRowStacked: { flexDirection: 'column', alignItems: 'stretch', gap: 0 },
   inputCopy: { flex: 1, minWidth: 0 },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  inputLabel: { fontSize: 14, fontWeight: '900' },
+  inputLabel: { flexShrink: 1, fontSize: 14, fontWeight: '900' },
   inputHint: { fontSize: 11, lineHeight: 16, marginTop: 2 },
   stepControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  stepControlsStacked: { alignSelf: 'stretch', justifyContent: 'space-between', marginTop: 12 },
   stepBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   stepValue: { minWidth: 66, textAlign: 'center', fontSize: 15, fontWeight: '900' },
   editableValueWrap: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  editableValueWrapStacked: { flex: 1, justifyContent: 'center' },
   editableValue: { minWidth: 58, height: 40, borderWidth: 1, borderRadius: 8, paddingHorizontal: 8 },
   stepUnit: { fontSize: 11, fontWeight: '700' },
+  stepValueStacked: { flex: 1 },
   choiceBlock: { paddingVertical: 10 },
   choiceWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   choicePill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 8 },

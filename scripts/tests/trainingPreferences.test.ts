@@ -33,3 +33,21 @@ test('partial preference migrations are backward compatible and idempotent', () 
   assert.deepEqual(once.crossTrainingPurpose, []);
 });
 
+test('cross-training frequency migration preserves supported values and normalizes unsafe values', () => {
+  assert.equal(migrateTrainingPreferencesState({
+    crossTrainingDecision: 'yes',
+    crossTrainingFrequencyPerWeek: 4,
+  }).crossTrainingFrequencyPerWeek, 4);
+  assert.equal(migrateTrainingPreferencesState({
+    crossTrainingDecision: 'yes',
+    crossTrainingFrequencyPerWeek: 12,
+  }).crossTrainingFrequencyPerWeek, 4);
+  assert.equal(migrateTrainingPreferencesState({
+    crossTrainingDecision: 'yes',
+    crossTrainingFrequencyPerWeek: 0,
+  }).crossTrainingFrequencyPerWeek, 2);
+  assert.equal(migrateTrainingPreferencesState({
+    crossTrainingDecision: 'no',
+    crossTrainingFrequencyPerWeek: 3,
+  }).crossTrainingFrequencyPerWeek, 3);
+});

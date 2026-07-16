@@ -23,12 +23,11 @@ import { toYMD } from '../../../src/utils/calendarEngine';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
 import {
-  addStrengthIntentListener,
   endStrengthLiveActivity,
   startStrengthLiveActivity,
+  strengthLiveActivitySessionId,
   updateStrengthLiveActivity,
 } from '../../../src/lib/strengthLiveActivity';
-import { startControlCommandPolling } from '../../../src/lib/runLiveActivity';
 import InfoButton from '../../../src/components/shared/InfoButton';
 import { useMobilityStore, weeklyCompletionCount, lastCompletedAt } from '../../../src/store/mobilityStore';
 import {
@@ -48,6 +47,11 @@ import {
   activeStrengthElapsedSeconds,
   useActiveStrengthSessionStore,
 } from '../../../src/store/activeStrengthSessionStore';
+import { displayLabel, displayLabels } from '../../../src/utils/displayLabels';
+import {
+  activeSessionStoresHydrated,
+  getConflictingActiveSession,
+} from '../../../src/lib/activeSessionCoordinator';
 
 type Segment = 'strength' | 'presets' | 'mobility';
 
@@ -253,16 +257,6 @@ const PRESET_CATEGORY_FILTERS: (StrengthPresetCategory | 'all')[] = [
   'pre_run', 'post_run_recovery', 'problem_area',
 ];
 
-const EQUIPMENT_LABELS: Record<string, string> = {
-  barbell: 'Barbell',
-  squat_rack: 'Squat Rack',
-  bench: 'Bench',
-  dumbbell: 'Dumbbell',
-  kettlebell: 'Kettlebell',
-  band: 'Band',
-  bodyweight: 'Bodyweight',
-};
-
 function PresetsTabContent({ segment, setSegment, C }: {
   segment: Segment;
   setSegment: (s: Segment) => void;
@@ -305,7 +299,7 @@ function PresetsTabContent({ segment, setSegment, C }: {
           <Text style={[{ fontSize: 11, color: C.textDim }]}>{preset.exercises.length} exercises</Text>
           <Text style={[{ fontSize: 11, color: C.textDim }]}>·</Text>
           <Text style={[{ fontSize: 11, color: C.textDim, flexShrink: 1 }]} numberOfLines={1}>
-            {preset.equipment.map(e => EQUIPMENT_LABELS[e] ?? e).join(', ')}
+            {displayLabels(preset.equipment)}
           </Text>
         </View>
         {open && (
@@ -431,7 +425,7 @@ function sessionToExDefs(session: StrengthSession, strengthHistory: ReturnType<t
       reps: `${ex.repRange[0]}–${ex.repRange[1]}`,
       weight: Number.isFinite(parsedWeight) ? parsedWeight : 0,
       restSeconds: ex.restSeconds,
-      muscles: PATTERN_MUSCLES[ex.exercise.pattern] ?? ex.exercise.pattern.replace(/_/g, ' '),
+      muscles: PATTERN_MUSCLES[ex.exercise.pattern] ?? displayLabel(ex.exercise.pattern),
       desc: ex.exercise.rationale,
       cue: ex.exercise.coachingCues[0] ?? ex.rationale,
     };
@@ -619,6 +613,15 @@ export default function StrengthScreen() {
     }
   }, [activeStrengthSession?.workoutId, ownsActiveTrainingBlock]);
 
+  useEffect(() => {
+    if (ownsActiveTrainingBlock || strState === 'idle') return;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setStrState('idle');
+  }, [ownsActiveTrainingBlock, strState]);
+
   // Completion is per EXERCISE, not per set: N exercises = N completions,
   // in the app and from the Lock Screen alike.
   function isExerciseDone(ex: ExDef): boolean {
@@ -666,11 +669,14 @@ export default function StrengthScreen() {
         notes: exercise.cue,
       })),
     });
+    const launchedSession = useActiveStrengthSessionStore.getState().session;
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => setTimer(t => t + 1), 1000);
     setStrState('active');
     startStrengthLiveActivity({
       workoutName: wDef.title,
+      sessionId: launchedSession ? strengthLiveActivitySessionId(launchedSession) : undefined,
+      sessionSource: 'training_block',
       elapsedSeconds: 0,
       currentExercise: exerciseDetail(currentExercise),
       nextExercise: nextExerciseName(),
@@ -679,6 +685,25 @@ export default function StrengthScreen() {
     }).catch(console.warn);
   }
   function start() {
+    if (!activeSessionStoresHydrated()) {
+      Alert.alert('Restoring session', 'StrideOS is restoring your active-session state. Try again in a moment.');
+      return;
+    }
+    const crossDomainConflict = getConflictingActiveSession('strength');
+    if (crossDomainConflict) {
+      Alert.alert(
+        'Another session is active',
+        `${crossDomainConflict.name} is still in progress. Continue it or end it before starting Strength.`,
+        [
+          {
+            text: 'Continue Current Session',
+            onPress: () => router.push(crossDomainConflict.route as never),
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
+      return;
+    }
     if (!activeStrengthSession || ownsActiveTrainingBlock) {
       if (ownsActiveTrainingBlock) {
         if (activeStrengthSession?.status === 'paused') resume();
@@ -716,58 +741,27 @@ export default function StrengthScreen() {
     );
   }
   function pause() {
+    if (!ownsActiveTrainingBlock) return;
     if (intervalRef.current) clearInterval(intervalRef.current);
     setStrState('paused');
-    if (ownsActiveTrainingBlock) pauseActiveStrengthSession();
+    pauseActiveStrengthSession();
   }
   function resume() {
+    if (!ownsActiveTrainingBlock) return;
     intervalRef.current = setInterval(() => setTimer(t => t + 1), 1000);
     setStrState('active');
-    if (ownsActiveTrainingBlock) resumeActiveStrengthSession();
+    resumeActiveStrengthSession();
   }
-
-  // Lock-screen completion of the FINAL exercise: offer to finish the whole
-  // workout so the session doesn't sit open after the last lift.
-  function completeFromLockScreen() {
-    if (!currentExercise) return;
-    const isLast = exercisesCompleted === totalExercises - 1;
-    completeExercise(currentExercise);
-    if (isLast) {
-      Alert.alert('All exercises complete', 'Finish the workout and save it to your history?', [
-        { text: 'Keep Going', style: 'cancel' },
-        { text: 'Finish & Save', onPress: finishSession },
-      ]);
-    }
-  }
-
-  // Lock-screen intents: native event listeners (in-process case) plus App
-  // Group command polling — the widget runs in its own process, so polling
-  // the shared store is the path that actually works from the Lock Screen.
-  useEffect(() => {
-    if (strState === 'idle') return;
-    const subs = [
-      addStrengthIntentListener('onPauseStrengthIntent',   () => { if (strState === 'active') pause(); }),
-      addStrengthIntentListener('onResumeStrengthIntent',  () => { if (strState === 'paused') resume(); }),
-      addStrengthIntentListener('onMarkSetCompleteIntent', completeFromLockScreen),
-    ];
-    const stopPolling = startControlCommandPolling({
-      strength_pause:    () => { if (strState === 'active') pause(); },
-      strength_resume:   () => { if (strState === 'paused') resume(); },
-      strength_complete: completeFromLockScreen,
-    });
-    return () => {
-      subs.forEach(s => s.remove());
-      stopPolling();
-    };
-  }, [strState, currentExercise, exercisesCompleted, exercises]);
 
   // Keep the Live Activity in lockstep with the in-app session: every timer
   // tick, exercise completion, and pause/resume pushes authoritative state
   // (mirrors how the run activity stays current).
   useEffect(() => {
-    if (strState === 'idle') return;
+    if (!ownsActiveTrainingBlock || strState === 'idle' || !activeStrengthSession) return;
     updateStrengthLiveActivity({
       workoutName: wDef.title,
+      sessionId: strengthLiveActivitySessionId(activeStrengthSession),
+      sessionSource: 'training_block',
       elapsedSeconds: timer,
       currentExercise: exerciseDetail(currentExercise),
       nextExercise: nextExerciseName(),
@@ -775,13 +769,22 @@ export default function StrengthScreen() {
       totalSets: totalExercises,
       isPaused: strState === 'paused',
     }).catch(console.warn);
-  }, [timer, exercisesCompleted, strState]);
+  }, [
+    activeStrengthSession?.startedAt,
+    activeStrengthSession?.workoutId,
+    exercisesCompleted,
+    ownsActiveTrainingBlock,
+    strState,
+    timer,
+  ]);
 
   function finishSession() {
     if (!session || sessionIndexInWeek === -1) return;
     if (intervalRef.current) clearInterval(intervalRef.current);
-    endStrengthLiveActivity().catch(console.warn);
-    if (ownsActiveTrainingBlock) clearActiveStrengthSession();
+    if (ownsActiveTrainingBlock) {
+      endStrengthLiveActivity().catch(console.warn);
+      clearActiveStrengthSession();
+    }
 
     const selectedRpes = exercises.map(ex => rpe[ex.id]).filter((value): value is number => typeof value === 'number');
     const overallRpe = selectedRpes.length

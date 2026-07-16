@@ -1,9 +1,26 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  liveActivityCommandMatchesSession,
   normalizeOutdoorLiveActivitySnapshot,
   shouldAcceptControlCommand,
 } from '../../src/lib/liveActivityContracts';
+
+test('session ownership keeps preset and Training Block commands isolated', () => {
+  const trainingTarget = {
+    sessionId: 'training_block:strength-a:100',
+    sessionSource: 'training_block',
+  };
+  const presetCommand = {
+    sessionId: 'preset:preset-a:200',
+    sessionSource: 'preset',
+  };
+
+  assert.equal(liveActivityCommandMatchesSession(trainingTarget, trainingTarget), true);
+  assert.equal(liveActivityCommandMatchesSession(presetCommand, trainingTarget), false);
+  assert.equal(liveActivityCommandMatchesSession({}, trainingTarget), false);
+  assert.equal(liveActivityCommandMatchesSession(presetCommand), true);
+});
 
 test('running and walking payloads use pace without speed leakage', () => {
   for (const activityType of ['running', 'walking', 'run_walk', 'hiking'] as const) {
@@ -24,7 +41,7 @@ test('running and walking payloads use pace without speed leakage', () => {
 });
 
 test('cycling and skiing payloads use speed without pace leakage', () => {
-  for (const activityType of ['cycling', 'downhill_skiing', 'cross_country_skiing'] as const) {
+  for (const activityType of ['cycling', 'downhill_skiing', 'cross_country_skiing', 'snowboarding'] as const) {
     const payload = normalizeOutdoorLiveActivitySnapshot({
       activityName: 'Outdoor Session',
       activityType,
@@ -39,6 +56,27 @@ test('cycling and skiing payloads use speed without pace leakage', () => {
     assert.equal(payload.metricValue, '14.3');
     assert.equal(payload.metricUnit, 'mph');
   }
+});
+
+test('outdoor payload carries session ownership and applicable elevation context', () => {
+  const payload = normalizeOutdoorLiveActivitySnapshot({
+    sessionId: 'outdoor:session-1',
+    sessionSource: 'outdoor',
+    activityName: 'Snowboard',
+    activityType: 'snowboarding',
+    elapsedSeconds: 900,
+    distanceMiles: 3.4,
+    averageSpeedMph: 18.2,
+    heartRateBpm: 142,
+    isPaused: false,
+    elevationGainMeters: 35,
+    elevationLossMeters: 640,
+  });
+  assert.equal(payload.sessionId, 'outdoor:session-1');
+  assert.equal(payload.sessionSource, 'outdoor');
+  assert.equal(payload.metricLabel, 'SPEED');
+  assert.equal(payload.elevationDisplay, '35 m');
+  assert.equal(payload.descentDisplay, '640 m');
 });
 
 test('run-walk interval and navigation content survive payload normalization', () => {

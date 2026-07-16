@@ -331,9 +331,9 @@ export function integrateCrossTrainingIntoWeek(
   if (eligible.length === 0) return week;
 
   let sessions = [...week.sessions];
-  const count = Math.min(preferences.crossTrainingFrequencyPerWeek, eligible.length, 3);
+  const count = Math.min(preferences.crossTrainingFrequencyPerWeek, 4);
   for (let index = 0; index < count; index += 1) {
-    const preference = eligible[index];
+    const preference = eligible[index % eligible.length];
     const isIntensitySession = preference.activityType === 'hiit'
       || preference.activityType === 'mixed_modal';
     const shouldReplace = isIntensitySession
@@ -345,15 +345,19 @@ export function integrateCrossTrainingIntoWeek(
       && !session.replacesSessionId);
     const preferredDay = preference.preferredDays.find(day =>
       !sessions.some(session => session.dayIndex === day));
-    const dayIndex = shouldReplace && replaceable
+    const supplementalDay = preferredDay
+      ?? [0, 5, 2, 4, 1, 3, 6].find(day => !sessions.some(session => session.dayIndex === day));
+    if ((!shouldReplace || !replaceable) && supplementalDay == null) continue;
+    const replaces = shouldReplace && Boolean(replaceable);
+    const dayIndex = replaces && replaceable
       ? replaceable.dayIndex
-      : preferredDay ?? [0, 5, 2].find(day => !sessions.some(session => session.dayIndex === day)) ?? 5;
+      : supplementalDay as number;
     const durationMinutes = Math.max(
       10,
       Math.min(180, preference.typicalDurationMinutes),
     );
     const session: BeginnerPlanSession = {
-      id: `week_${week.weekNumber}_day_${dayIndex}_${preference.activityType}`,
+      id: `week_${week.weekNumber}_day_${dayIndex}_${preference.activityType}_slot_${index + 1}`,
       dayIndex,
       kind: 'cross_training',
       activityType: preference.activityType,
@@ -363,17 +367,17 @@ export function integrateCrossTrainingIntoWeek(
       intensity: preference.activityType === 'hiit' || preference.activityType === 'mixed_modal'
         ? 'moderate'
         : readinessScore < 55 ? 'recovery' : 'easy',
-      purpose: shouldReplace
+      purpose: replaces
         ? 'Maintain aerobic work with a lower-impact or preferred cross-training option.'
         : 'Add preferred aerobic variety without replacing the primary endurance progression.',
-      replacesSessionId: shouldReplace ? replaceable?.id : undefined,
-      supplements: !shouldReplace,
-      explanation: shouldReplace
+      replacesSessionId: replaces ? replaceable?.id : undefined,
+      supplements: !replaces,
+      explanation: replaces
         ? 'This replaces an easy aerobic session. It contributes whole-body and cross-training load, not running mileage.'
         : 'This supplements the plan. Keep the effort controlled so it does not compromise the next primary session.',
     };
 
-    sessions = shouldReplace && replaceable
+    sessions = replaces && replaceable
       ? sessions.map(existing => existing.id === replaceable.id ? session : existing)
       : [...sessions, session];
   }

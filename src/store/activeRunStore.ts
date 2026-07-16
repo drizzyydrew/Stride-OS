@@ -6,8 +6,11 @@
 // GPS-derived metrics only.
 
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import type { LocationObject } from 'expo-location';
 import type { RichWorkout } from '../types/workout';
+import { elapsedSecondsExcludingPause } from '../utils/activeTime';
 
 export type Coordinate = {
   lat:       number;
@@ -47,7 +50,7 @@ function haversineMiles(a: Coordinate, b: Coordinate): number {
   return R * 2 * Math.atan2(Math.sqrt(chord), Math.sqrt(1 - chord));
 }
 
-type ActiveRunStore = {
+export type ActiveRunStore = {
   isActive:               boolean;
   isPaused:               boolean;
   startTime:              number | null;
@@ -66,6 +69,7 @@ type ActiveRunStore = {
   goalMinutes:            number | null;
   goalMiles:              number | null;
   targetPaceSecPerMile:   number | null;
+  completionRequestedAt:  number | null;
 
   startRun:          (plannedWorkout: RichWorkout | null, config?: RunModeConfig) => void;
   pauseRun:          () => void;
@@ -74,9 +78,23 @@ type ActiveRunStore = {
   advanceInterval:   () => void;
   finishRun:         () => void;
   cancelRun:         () => void;
+  requestCompletion: () => void;
+  clearCompletionRequest: () => void;
 };
 
-export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
+export function activeRunElapsedSeconds(
+  state: Pick<ActiveRunStore, 'startTime' | 'isPaused' | 'pausedAt' | 'pausedDurationMs'>,
+  now = Date.now(),
+): number {
+  return elapsedSecondsExcludingPause({
+    startedAt: state.startTime,
+    isPaused: state.isPaused,
+    pausedAt: state.pausedAt,
+    pausedDurationMs: state.pausedDurationMs,
+  }, now);
+}
+
+export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => ({
   isActive:               false,
   isPaused:               false,
   startTime:              null,
@@ -95,6 +113,7 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
   goalMinutes:            null,
   goalMiles:              null,
   targetPaceSecPerMile:   null,
+  completionRequestedAt:  null,
 
   startRun: (plannedWorkout, config) => {
     set({
@@ -115,6 +134,7 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       goalMinutes:            config?.goalMinutes ?? null,
       goalMiles:              config?.goalMiles ?? null,
       targetPaceSecPerMile:   config?.targetPaceSecPerMile ?? null,
+      completionRequestedAt:  null,
     });
   },
 
@@ -232,6 +252,7 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       goalMinutes:            null,
       goalMiles:              null,
       targetPaceSecPerMile:   null,
+      completionRequestedAt:  null,
       lastRunCoordinates:     state.coordinates,
     });
   },
@@ -255,6 +276,15 @@ export const useActiveRunStore = create<ActiveRunStore>((set, get) => ({
       goalMinutes:            null,
       goalMiles:              null,
       targetPaceSecPerMile:   null,
+      completionRequestedAt:  null,
     });
   },
+
+  requestCompletion: () => set({ completionRequestedAt: Date.now() }),
+  clearCompletionRequest: () => set({ completionRequestedAt: null }),
+}), {
+  name: 'active-run-store-v1',
+  version: 1,
+  storage: createJSONStorage(() => AsyncStorage),
+  partialize: state => state,
 }));

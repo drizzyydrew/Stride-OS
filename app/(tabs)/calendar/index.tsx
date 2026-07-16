@@ -21,6 +21,7 @@ import { getPhaseSessionPreview } from '../../../src/utils/strengthEngine';
 import { RICH_TYPE_LABEL }          from '../../../src/utils/trainingEngine';
 import type { MacroWeek, Race }     from '../../../src/types/plan';
 import type { ActivityType } from '../../../src/types/activity';
+import { displayLabel } from '../../../src/utils/displayLabels';
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -126,7 +127,7 @@ export default function CalendarScreen() {
       if (type === 'cycling' || type === 'indoor_cycling') return 'cycling';
       if (type === 'swimming') return 'swimming';
       if (type === 'hiking') return 'hiking';
-      if (type.includes('skiing')) return 'skiing';
+      if (type.includes('skiing') || type === 'snowboarding') return 'skiing';
       if (type === 'hiit') return 'hiit';
       if (type === 'mixed_modal') return 'mixed';
       if (type === 'strength') return 'strength';
@@ -140,7 +141,7 @@ export default function CalendarScreen() {
         type: activity.subtype === 'run_walk' ? 'run_walk' : typeFor(activity.activityType),
         label: activity.subtype === 'run_walk'
           ? 'Run / Walk'
-          : activity.activityType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+          : displayLabel(activity.activityType),
         color: activity.activityType === 'strength' ? C.accent : C.primary,
         completed: activity.status === 'completed',
         missed: activity.status === 'skipped',
@@ -170,7 +171,7 @@ export default function CalendarScreen() {
                 : session.kind === 'cross_training'
                   ? 'cycling'
                   : 'run',
-        label: session.kind.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        label: displayLabel(session.kind),
         color: session.kind === 'strength' ? C.accent : C.primary,
         completed: false,
       }));
@@ -461,7 +462,7 @@ export default function CalendarScreen() {
           info.entries.map((entry, i) => (
             <View key={`${entry.type}-${i}`} style={[styles.summaryBox, { backgroundColor: C.cardAlt }]}>
               <Text style={[styles.summaryLabel, { color: C.textDim }]}>
-                {entry.type === 'race' ? 'RACE DAY' : entry.type.replace(/_/g, ' ').toUpperCase()}
+                {entry.type === 'race' ? 'RACE DAY' : displayLabel(entry.type).toUpperCase()}
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Text style={[styles.dayEntryTitle, { color: C.text }]}>{entry.label}</Text>

@@ -145,3 +145,16 @@ test('additional aerobic work supplements while HIIT replaces instead of stackin
   );
 });
 
+test('frequency can repeat one preferred activity without duplicate session IDs', () => {
+  const repeated = preferences('replace_easy_aerobic');
+  repeated.crossTrainingFrequencyPerWeek = 4;
+  const result = applyCrossTrainingPreferencesToWeek(
+    week(),
+    repeated,
+    { month: 7, readinessScore: 80 },
+  );
+  const crossTraining = result.workouts.filter(item => item.richType === 'cross_training');
+  assert.equal(crossTraining.length, 4);
+  assert.equal(new Set(crossTraining.map(item => item.id)).size, 4);
+  assert.equal(new Set(crossTraining.map(item => item.dayIndex)).size, 4);
+});

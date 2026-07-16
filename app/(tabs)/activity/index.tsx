@@ -4,10 +4,12 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useColors } from '../../../src/theme/useColors';
 import type { Activity, ActivityFilter, ActivityType } from '../../../src/types/activity';
 import { activityMatchesFilter, summarizeActivityLoad } from '../../../src/utils/activityLoad';
+import { displayLabel } from '../../../src/utils/displayLabels';
 
 const FILTERS: { key: ActivityFilter; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -22,10 +24,6 @@ const FILTERS: { key: ActivityFilter; label: string }[] = [
   { key: 'hiit_mixed', label: 'HIIT / Mixed' },
   { key: 'other', label: 'Other' },
 ];
-
-function labelFor(type: ActivityType): string {
-  return type.replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
-}
 
 function iconFor(type: ActivityType): keyof typeof Ionicons.glyphMap {
   if (type === 'running' || type === 'walking' || type === 'hiking') return 'footsteps-outline';
@@ -61,18 +59,16 @@ export default function ActivityScreen() {
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.iconButton} accessibilityLabel="Back">
-          <Ionicons name="chevron-back" size={24} color={C.text} />
-        </TouchableOpacity>
-        <View style={s.headerCopy}>
-          <Text style={[s.eyebrow, { color: C.textDim }]}>ALL TRAINING</Text>
-          <Text style={[s.title, { color: C.text }]}>Activity</Text>
-        </View>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/activity/manual' as never)} style={s.iconButton} accessibilityLabel="Log activity">
-          <Ionicons name="add" size={25} color={C.primary} />
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        eyebrow="ALL TRAINING"
+        title="Activity"
+        onBack={() => router.back()}
+        right={(
+          <TouchableOpacity onPress={() => router.push('/(tabs)/activity/manual' as never)} style={s.iconButton} accessibilityLabel="Log activity">
+            <Ionicons name="add" size={25} color={C.primary} />
+          </TouchableOpacity>
+        )}
+      />
 
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <View style={s.actions}>
@@ -142,7 +138,7 @@ export default function ActivityScreen() {
             </View>
             <View style={s.activityCopy}>
               <Text style={[s.activityTitle, { color: C.text }]}>
-                {activity.subtype === 'run_walk' ? 'Run / Walk' : labelFor(activity.activityType)}
+                {activity.subtype === 'run_walk' ? 'Run / Walk' : displayLabel(activity.activityType)}
               </Text>
               <Text style={[s.activityMeta, { color: C.textMuted }]}>
                 {new Date(activity.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {metricLine(activity)}
@@ -166,11 +162,7 @@ export default function ActivityScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 10 },
-  headerCopy: { flex: 1 },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4 },
-  title: { fontSize: 32, fontFamily: 'CormorantGaramond_700Bold' },
   content: { paddingHorizontal: 18, paddingBottom: 120 },
   actions: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   action: { flex: 1, minHeight: 50, borderWidth: 1, borderColor: 'transparent', borderRadius: 14, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },

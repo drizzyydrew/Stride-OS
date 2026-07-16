@@ -880,11 +880,11 @@ export default function SettingsScreen() {
         <TouchableOpacity
           style={styles.historyHeader}
           activeOpacity={0.75}
-          onPress={() => router.push('/(tabs)/activity-log' as any)}
+          onPress={() => router.push('/(tabs)/activity' as any)}
         >
           <Text style={[styles.sectionLabel, { color: C.textDim, marginBottom: 0 }]}>TRAINING HISTORY</Text>
           <View style={styles.historyHeaderLink}>
-            <Text style={[styles.historyHeaderText, { color: C.primary }]}>Activity log</Text>
+            <Text style={[styles.historyHeaderText, { color: C.primary }]}>Activity</Text>
             <Ionicons name="chevron-forward" size={16} color={C.primary} />
           </View>
         </TouchableOpacity>
@@ -897,7 +897,7 @@ export default function SettingsScreen() {
                 index < recentTrainingHistory.length - 1 && { borderBottomColor: C.border, borderBottomWidth: 1 },
               ]}
               activeOpacity={0.75}
-              onPress={() => router.push('/(tabs)/activity-log' as any)}
+              onPress={() => router.push('/(tabs)/activity' as any)}
             >
               <View style={[styles.historyIcon, { backgroundColor: item.skipped ? C.cardAlt : C.primaryDim }]}>
                 <Ionicons name={item.skipped ? 'remove-circle-outline' : 'checkmark-circle-outline'} size={18} color={item.skipped ? C.textMuted : C.primary} />

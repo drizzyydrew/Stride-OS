@@ -13,6 +13,7 @@ import { STRENGTH_EXERCISES } from '../../../src/utils/strengthEngine';
 import { LAYOUT } from '../../../src/constants/layout';
 import type { CompletedWorkoutRecord } from '../../../src/types/training';
 import type { StrengthLogRecord } from '../../../src/types/strength';
+import { displayLabel } from '../../../src/utils/displayLabels';
 
 function fmtDate(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
@@ -29,14 +30,14 @@ function fmtPace(distanceMiles?: number, durationMin?: number) {
 
 function runTitle(record: CompletedWorkoutRecord) {
   if (record.skipped) return 'Skipped run';
-  return record.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return displayLabel(record.type);
 }
 
 function strengthTitle(record: StrengthLogRecord) {
   if (record.skipped) return 'Skipped strength';
   if (record.sessionId.includes('prototype-strength-lower')) return 'Lower Body & Core';
   if (record.sessionId.includes('prototype-strength-upper')) return 'Upper Body & Core';
-  return record.sessionId.replace(/^strength_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Strength session';
+  return displayLabel(record.sessionId.replace(/^strength_/, '')) || 'Strength session';
 }
 
 const DARK_MAP_STYLE = [
@@ -113,7 +114,7 @@ function RunSummary({ record }: { record: CompletedWorkoutRecord }) {
       <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[s.sectionLabel, { color: C.textDim }]}>RUN DETAILS</Text>
         <Text style={[s.body, { color: C.textMuted }]}>
-          Intensity: {record.intensity.replace(/_/g, ' ')} · Load: {Math.round(record.estimatedLoad)}
+          Intensity: {displayLabel(record.intensity)} · Load: {Math.round(record.estimatedLoad)}
         </Text>
         <Text style={[s.body, { color: C.textMuted }]}>
           Heart rate: not saved for this log yet. Future live HealthKit run samples can be shown here when captured with the workout.
@@ -140,7 +141,7 @@ function StrengthSummary({ record }: { record: StrengthLogRecord }) {
         <Text style={[s.sectionLabel, { color: C.textDim }]}>SETS, REPS, WEIGHT, RPE</Text>
         {record.exercises.length > 0 ? record.exercises.map(exercise => {
           const detail = record.exerciseDetails?.find(d => d.exerciseId === exercise.exerciseId);
-          const name = STRENGTH_EXERCISES[exercise.exerciseId]?.name ?? exercise.exerciseId.replace(/_/g, ' ');
+          const name = STRENGTH_EXERCISES[exercise.exerciseId]?.name ?? displayLabel(exercise.exerciseId);
           const weight = detail?.weightLb
             ? units === 'metric'
               ? `${Math.round(detail.weightLb * 0.453592)} kg`

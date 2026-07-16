@@ -4,16 +4,29 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useActiveActivityStore, type ActiveOutdoorType } from '../../../src/store/activeActivityStore';
+import ScreenHeader from '../../../src/components/layout/ScreenHeader';
+import {
+  activeOutdoorElapsedSeconds,
+  useActiveActivityStore,
+  type ActiveOutdoorType,
+} from '../../../src/store/activeActivityStore';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { effectiveAttachedRoute, useRouteStore } from '../../../src/store/routeStore';
 import { useColors } from '../../../src/theme/useColors';
 import { startActivityLocationTracking, stopActivityLocationTracking } from '../../../src/lib/activityGpsTracking';
-import { endOutdoorLiveActivity, startOutdoorLiveActivity, updateOutdoorLiveActivity } from '../../../src/lib/runLiveActivity';
+import {
+  endOutdoorLiveActivity,
+  startOutdoorLiveActivity,
+  updateOutdoorLiveActivity,
+} from '../../../src/lib/runLiveActivity';
 import { buildRouteGuidance } from '../../../src/lib/routing';
 import { updateRouteGuidanceProgress, type RouteGuidancePlan } from '../../../src/lib/routeGuidance';
 import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
 import { evaluateRunWalkCue, intervalAtElapsed } from '../../../src/utils/activityTracking';
+import {
+  activeSessionStoresHydrated,
+  getConflictingActiveSession,
+} from '../../../src/lib/activeSessionCoordinator';
 
 const TYPES: { type: ActiveOutdoorType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { type: 'running', label: 'Run', icon: 'walk-outline' },
@@ -22,6 +35,7 @@ const TYPES: { type: ActiveOutdoorType; label: string; icon: keyof typeof Ionico
   { type: 'hiking', label: 'Hike', icon: 'trail-sign-outline' },
   { type: 'downhill_skiing', label: 'Downhill Ski', icon: 'snow-outline' },
   { type: 'cross_country_skiing', label: 'XC Ski', icon: 'snow-outline' },
+  { type: 'snowboarding', label: 'Snowboard', icon: 'snow-outline' },
 ];
 
 function time(seconds: number): string {
@@ -44,22 +58,22 @@ export default function StartOutdoorActivityScreen() {
   const previousElapsed = useRef(0);
   const lastAnnouncedStep = useRef<string | null>(null);
 
-  const activeSeconds = active.startedAt
-    ? Math.max(0, Math.floor((Date.now() - active.startedAt - active.pausedDurationMs) / 1000))
-    : 0;
+  const activeSeconds = activeOutdoorElapsedSeconds(active);
   const miles = active.aggregate.distanceMeters / 1609.344;
   const mph = active.aggregate.currentMetersPerSecond * 2.23694;
   const secPerMile = active.aggregate.currentMetersPerSecond > 0 ? 1609.344 / active.aggregate.currentMetersPerSecond : 0;
-  const speedBased = active.activityType === 'cycling' || active.activityType.includes('skiing');
+  const speedBased = active.activityType === 'cycling'
+    || active.activityType.includes('skiing')
+    || active.activityType === 'snowboarding';
   const intervals = useMemo(() => runWalk
     ? Array.from({ length: 12 }, (_, index) => ({ kind: index % 2 === 0 ? 'run' as const : 'walk' as const, durationSeconds: index % 2 === 0 ? 60 : 90 }))
     : [], [runWalk]);
 
   useEffect(() => {
     if (!active.isActive || active.isPaused || !active.startedAt) return;
-    const timer = setInterval(() => setElapsedSeconds(Math.max(0, Math.floor(
-      (Date.now() - active.startedAt! - active.pausedDurationMs) / 1000,
-    ))), 1000);
+    const timer = setInterval(() => setElapsedSeconds(
+      activeOutdoorElapsedSeconds(useActiveActivityStore.getState()),
+    ), 1000);
     return () => clearInterval(timer);
   }, [active.isActive, active.isPaused, active.pausedDurationMs, active.startedAt]);
 
@@ -96,6 +110,8 @@ export default function StartOutdoorActivityScreen() {
     if (!active.isActive) return;
     const interval = active.runWalkIntervals.length ? intervalAtElapsed(active.runWalkIntervals, elapsedSeconds) : null;
     void updateOutdoorLiveActivity({
+      sessionId: active.activityId ?? '',
+      sessionSource: 'outdoor',
       activityName: active.name,
       activityType: active.runWalkIntervals.length ? 'run_walk' : active.activityType,
       elapsedSeconds,
@@ -107,10 +123,31 @@ export default function StartOutdoorActivityScreen() {
       currentInterval: interval ? active.runWalkIntervals[interval.index]?.kind === 'run' ? 'Run' : 'Walk' : undefined,
       nextTransition: interval ? `${interval.intervalRemaining}s` : undefined,
       navigationInstruction: active.nextInstruction ?? undefined,
+      elevationGainMeters: active.aggregate.elevationGainMeters,
+      elevationLossMeters: active.aggregate.elevationLossMeters,
     }).catch(() => undefined);
   }, [active.aggregate.averageMetersPerSecond, active.isActive, active.isPaused, active.name, active.nextInstruction, active.runWalkIntervals, active.activityType, elapsedSeconds, miles, secPerMile]);
 
   async function begin() {
+    if (!activeSessionStoresHydrated()) {
+      Alert.alert('Restoring session', 'StrideOS is restoring your active-session state. Try again in a moment.');
+      return;
+    }
+    const conflict = getConflictingActiveSession('outdoor');
+    if (conflict) {
+      Alert.alert(
+        'Another session is active',
+        `${conflict.name} is still in progress. Continue it or end it before starting another outdoor activity.`,
+        [
+          {
+            text: 'Continue Current Session',
+            onPress: () => router.push(conflict.route as never),
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
+      return;
+    }
     const mode = navigationMode === 'off'
       ? 'off'
       : selectedType === 'cycling'
@@ -131,66 +168,93 @@ export default function StartOutdoorActivityScreen() {
       setGuidance(plan);
     }
     await startActivityLocationTracking();
+    const started = useActiveActivityStore.getState();
     await startOutdoorLiveActivity({
+      sessionId: started.activityId ?? '',
+      sessionSource: 'outdoor',
       activityName: runWalk ? 'Run / Walk' : TYPES.find(item => item.type === selectedType)?.label ?? 'Activity',
       activityType: runWalk ? 'run_walk' : selectedType,
       elapsedSeconds: 0,
       distanceMiles: 0,
       heartRateBpm: null,
       isPaused: false,
+      elevationGainMeters: 0,
+      elevationLossMeters: 0,
     }).catch(() => undefined);
     enqueueVoiceCue(runWalk ? 'Begin running.' : `${TYPES.find(item => item.type === selectedType)?.label ?? 'Activity'} started.`);
   }
+
+  async function saveAndFinish() {
+          const latest = useActiveActivityStore.getState();
+          if (!latest.isActive) return;
+          const elapsedToSave = latest.startedAt
+            ? activeOutdoorElapsedSeconds(latest)
+            : elapsedSeconds;
+          const latestSpeedBased = latest.activityType === 'cycling'
+            || latest.activityType.includes('skiing')
+            || latest.activityType === 'snowboarding';
+          await stopActivityLocationTracking().catch(() => undefined);
+          await endOutdoorLiveActivity({
+            sessionId: latest.activityId ?? '',
+            sessionSource: 'outdoor',
+            activityName: latest.name,
+            activityType: latest.runWalkIntervals.length ? 'run_walk' : latest.activityType,
+            elapsedSeconds: elapsedToSave,
+            distanceMiles: latest.aggregate.distanceMeters / 1609.344,
+            averageSpeedMph: latest.aggregate.averageMetersPerSecond * 2.23694,
+            heartRateBpm: null,
+            isPaused: false,
+            elevationGainMeters: latest.aggregate.elevationGainMeters,
+            elevationLossMeters: latest.aggregate.elevationLossMeters,
+          }).catch(() => undefined);
+          addActivity({
+            id: latest.activityId ?? undefined,
+            activityType: latest.activityType,
+            subtype: latest.runWalkIntervals.length ? 'run_walk' : latest.subtype,
+            source: 'tracked',
+            status: 'completed',
+            scheduled: false,
+            startTime: latest.startedAt ?? Date.now() - elapsedToSave * 1000,
+            endTime: Date.now(),
+            indoor: false,
+            metrics: {
+              durationSeconds: elapsedToSave,
+              elapsedTimeSeconds: elapsedToSave,
+              activeTimeSeconds: elapsedToSave,
+              distanceMeters: latest.aggregate.distanceMeters,
+              elevationGainMeters: latest.aggregate.elevationGainMeters,
+              elevationLossMeters: latest.aggregate.elevationLossMeters,
+              speed: {
+                currentMetersPerSecond: latest.aggregate.currentMetersPerSecond,
+                averageMetersPerSecond: latest.aggregate.averageMetersPerSecond,
+                maximumMetersPerSecond: latest.aggregate.maximumMetersPerSecond,
+              },
+              pace: latestSpeedBased ? undefined : {
+                currentSecondsPerKilometer: latest.aggregate.currentMetersPerSecond ? 1000 / latest.aggregate.currentMetersPerSecond : undefined,
+                averageSecondsPerKilometer: latest.aggregate.averageMetersPerSecond ? 1000 / latest.aggregate.averageMetersPerSecond : undefined,
+              },
+              routeId: latest.routeId ?? undefined,
+              routeCoordinates: latest.aggregate.points,
+              runWalkIntervals: latest.runWalkIntervals.length ? latest.runWalkIntervals : undefined,
+            },
+          });
+          useActiveActivityStore.getState().discard();
+          router.replace('/(tabs)/activity' as never);
+  }
+
+  useEffect(() => {
+    if (!active.isActive || !active.completionRequestedAt) return;
+    active.clearCompletionRequest();
+    void saveAndFinish();
+  }, [active.completionRequestedAt, active.isActive]);
 
   function finish() {
     Alert.alert('Finish activity?', 'Save this activity to your unified history?', [
       { text: 'Keep Going', style: 'cancel' },
       {
         text: 'Save and Finish',
-        onPress: async () => {
-          await stopActivityLocationTracking().catch(() => undefined);
-          await endOutdoorLiveActivity({
-            activityName: active.name,
-            activityType: active.runWalkIntervals.length ? 'run_walk' : active.activityType,
-            elapsedSeconds,
-            distanceMiles: miles,
-            averageSpeedMph: active.aggregate.averageMetersPerSecond * 2.23694,
-            heartRateBpm: null,
-            isPaused: false,
-          }).catch(() => undefined);
-          addActivity({
-            id: active.activityId ?? undefined,
-            activityType: active.activityType,
-            subtype: active.runWalkIntervals.length ? 'run_walk' : active.subtype,
-            source: 'tracked',
-            status: 'completed',
-            scheduled: false,
-            startTime: active.startedAt ?? Date.now() - elapsedSeconds * 1000,
-            endTime: Date.now(),
-            indoor: false,
-            metrics: {
-              durationSeconds: elapsedSeconds,
-              elapsedTimeSeconds: elapsedSeconds,
-              activeTimeSeconds: elapsedSeconds,
-              distanceMeters: active.aggregate.distanceMeters,
-              elevationGainMeters: active.aggregate.elevationGainMeters,
-              elevationLossMeters: active.aggregate.elevationLossMeters,
-              speed: {
-                currentMetersPerSecond: active.aggregate.currentMetersPerSecond,
-                averageMetersPerSecond: active.aggregate.averageMetersPerSecond,
-                maximumMetersPerSecond: active.aggregate.maximumMetersPerSecond,
-              },
-              pace: speedBased ? undefined : {
-                currentSecondsPerKilometer: active.aggregate.currentMetersPerSecond ? 1000 / active.aggregate.currentMetersPerSecond : undefined,
-                averageSecondsPerKilometer: active.aggregate.averageMetersPerSecond ? 1000 / active.aggregate.averageMetersPerSecond : undefined,
-              },
-              routeId: active.routeId ?? undefined,
-              routeCoordinates: active.aggregate.points,
-              runWalkIntervals: active.runWalkIntervals.length ? active.runWalkIntervals : undefined,
-            },
-          });
-          active.discard();
-          router.replace('/(tabs)/activity' as never);
+        onPress: () => {
+          void saveAndFinish();
         },
       },
     ]);
@@ -199,13 +263,11 @@ export default function StartOutdoorActivityScreen() {
   if (!active.isActive) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
-        <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} style={s.iconButton}><Ionicons name="close" size={24} color={C.text} /></TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={[s.eyebrow, { color: C.textDim }]}>OUTDOOR TRACKING</Text>
-            <Text style={[s.title, { color: C.text }]}>Choose Activity</Text>
-          </View>
-        </View>
+        <ScreenHeader
+          eyebrow="OUTDOOR TRACKING"
+          title="Choose Activity"
+          onBack={() => router.back()}
+        />
         <ScrollView contentContainerStyle={s.content}>
           <View style={s.typeGrid}>
             {TYPES.map(item => (
@@ -300,8 +362,6 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 10 },
-  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.3 },
   title: { fontSize: 30, fontFamily: 'CormorantGaramond_700Bold' },
   content: { paddingHorizontal: 18, paddingBottom: 120 },

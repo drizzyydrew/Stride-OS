@@ -18,6 +18,7 @@ export const ACTIVITY_STORE_SCHEMA_VERSION = 1;
 type ActivityStore = {
   schemaVersion: number;
   activities: Activity[];
+  hydrationStatus: 'loading' | 'ready' | 'error';
   addActivity: (input: Activity | ActivityDraft) => string;
   updateActivity: (id: string, patch: Partial<Activity>) => void;
   removeActivity: (id: string) => void;
@@ -25,6 +26,7 @@ type ActivityStore = {
   importLegacyWorkouts: (records: CompletedWorkoutRecord[]) => void;
   importLegacyStrength: (records: StrengthLogRecord[]) => void;
   importLegacyMobility: (records: MobilityCompletion[]) => void;
+  setHydrationStatus: (status: ActivityStore['hydrationStatus']) => void;
 };
 
 function uid(now = Date.now()): string {
@@ -70,6 +72,7 @@ export const useActivityStore = create<ActivityStore>()(
     (set, get) => ({
       schemaVersion: ACTIVITY_STORE_SCHEMA_VERSION,
       activities: [],
+      hydrationStatus: 'loading',
 
       addActivity: (input) => {
         const activity = normalizeActivity(input);
@@ -120,6 +123,8 @@ export const useActivityStore = create<ActivityStore>()(
         set(state => ({
           activities: migrateLegacyMobilityHistory(records, state.activities),
         })),
+
+      setHydrationStatus: hydrationStatus => set({ hydrationStatus }),
     }),
     {
       name: 'activity-store',
@@ -134,13 +139,21 @@ export const useActivityStore = create<ActivityStore>()(
         ...current,
         ...migrateActivityStoreState(persisted),
       }),
-      onRehydrateStorage: () => state => {
-        if (!state) return;
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.warn('Activity store hydration failed', error);
+          useActivityStore.getState().setHydrationStatus('error');
+          return;
+        }
+        if (!state) {
+          useActivityStore.getState().setHydrationStatus('error');
+          return;
+        }
         // Build 36/37 stored completed running workouts separately. Read that
         // persisted snapshot after this store hydrates, then project it with
         // stable IDs. Repeating this on every launch is safe and idempotent.
-        AsyncStorage.getItem('workout-store')
-          .then(raw => {
+        Promise.allSettled([
+          AsyncStorage.getItem('workout-store').then(raw => {
             if (!raw) return;
             const parsed = JSON.parse(raw) as {
               state?: { history?: CompletedWorkoutRecord[] };
@@ -148,10 +161,8 @@ export const useActivityStore = create<ActivityStore>()(
             if (Array.isArray(parsed.state?.history)) {
               state.importLegacyWorkouts(parsed.state.history);
             }
-          })
-          .catch(error => console.warn('Activity legacy migration failed', error));
-        AsyncStorage.getItem('strength-store')
-          .then(raw => {
+          }),
+          AsyncStorage.getItem('strength-store').then(raw => {
             if (!raw) return;
             const parsed = JSON.parse(raw) as {
               state?: { history?: StrengthLogRecord[] };
@@ -159,10 +170,8 @@ export const useActivityStore = create<ActivityStore>()(
             if (Array.isArray(parsed.state?.history)) {
               state.importLegacyStrength(parsed.state.history);
             }
-          })
-          .catch(error => console.warn('Strength Activity migration failed', error));
-        AsyncStorage.getItem('mobility-store')
-          .then(raw => {
+          }),
+          AsyncStorage.getItem('mobility-store').then(raw => {
             if (!raw) return;
             const parsed = JSON.parse(raw) as {
               state?: { completions?: MobilityCompletion[] };
@@ -170,8 +179,15 @@ export const useActivityStore = create<ActivityStore>()(
             if (Array.isArray(parsed.state?.completions)) {
               state.importLegacyMobility(parsed.state.completions);
             }
-          })
-          .catch(error => console.warn('Mobility Activity migration failed', error));
+          }),
+        ]).then(results => {
+          results.forEach(result => {
+            if (result.status === 'rejected') {
+              console.warn('Activity legacy migration failed', result.reason);
+            }
+          });
+          state.setHydrationStatus('ready');
+        });
       },
     },
   ),

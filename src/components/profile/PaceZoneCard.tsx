@@ -7,6 +7,7 @@ import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import { formatPace } from '../../utils/calibrationEngine';
 import { useSettingsStore } from '../../store/settingsStore';
 import { formatPaceSecPerMile } from '../../lib/units';
+import { displayLabel } from '../../utils/displayLabels';
 import type { PaceZoneEntry, CalibrationOutput } from '../../types/athlete';
 
 type Props = {
@@ -191,7 +192,7 @@ export default function PaceZoneCard({ calibration }: Props) {
         <Text style={styles.footerText}>
           Confidence: {calibration.confidenceLabel.toUpperCase()} ·{' '}
           VDOT {calibration.vdot.toFixed(1)} ·{' '}
-          {calibration.primarySource.replace(/_/g, ' ')}
+          {displayLabel(calibration.primarySource)}
         </Text>
       </View>
     </Card>

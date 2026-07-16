@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
+import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useColors } from '../../../src/theme/useColors';
 import type { ActivityType } from '../../../src/types/activity';
@@ -96,16 +96,16 @@ export default function ManualActivityScreen() {
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
       <KeyboardAvoidingView style={s.safe} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} style={s.iconButton}><Ionicons name="close" size={24} color={C.text} /></TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={[s.eyebrow, { color: C.textDim }]}>QUICK ENTRY</Text>
-            <Text style={[s.title, { color: C.text }]}>Log Activity</Text>
-          </View>
-          <TouchableOpacity onPress={save} style={[s.saveButton, { backgroundColor: C.primary }]}>
-            <Text style={[s.saveText, { color: C.onPrimary }]}>Save</Text>
-          </TouchableOpacity>
-        </View>
+        <ScreenHeader
+          eyebrow="QUICK ENTRY"
+          title="Log Activity"
+          onBack={() => router.back()}
+          right={(
+            <TouchableOpacity onPress={save} style={[s.saveButton, { backgroundColor: C.primary }]}>
+              <Text style={[s.saveText, { color: C.onPrimary }]}>Save</Text>
+            </TouchableOpacity>
+          )}
+        />
         <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
           <Text style={[s.label, { color: C.textDim }]}>ACTIVITY</Text>
           <View style={s.pills}>
@@ -185,10 +185,6 @@ function Field({ label, value, onChange, suffix, optional }: {
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 10, gap: 8 },
-  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
-  title: { fontSize: 29, fontFamily: 'CormorantGaramond_700Bold' },
   saveButton: { minWidth: 70, minHeight: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   saveText: { fontSize: 13, fontWeight: '900' },
   content: { paddingHorizontal: 18, paddingBottom: 120 },

@@ -4,6 +4,7 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { StrengthWeek } from '../../types/strength';
+import { displayLabel } from '../../utils/displayLabels';
 
 type Props = {
   strengthWeek:      StrengthWeek;
@@ -34,7 +35,7 @@ export default function StrengthWeekCard({ strengthWeek, completedSessions, curr
       <View style={styles.header}>
         <Text style={styles.title}>This Week</Text>
         <Text style={[styles.goal, { color: goalColor }]}>
-          {strengthWeek.primaryGoal.replace(/_/g, ' ')}
+          {displayLabel(strengthWeek.primaryGoal)}
         </Text>
       </View>
 

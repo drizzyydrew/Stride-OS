@@ -19,7 +19,12 @@ import { useHydrationPlannerStore } from '../../../src/store/hydrationPlannerSto
 import HydrationPlannerScreen from './hydration';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useIntegrationsStore } from '../../../src/store/integrationsStore';
-import { useActiveRunStore, type RunMode, type RunModeConfig } from '../../../src/store/activeRunStore';
+import {
+  activeRunElapsedSeconds,
+  useActiveRunStore,
+  type RunMode,
+  type RunModeConfig,
+} from '../../../src/store/activeRunStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
@@ -38,7 +43,7 @@ import {
 import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
 import { sendRunAlertNotification } from '../../../src/lib/notifications';
-import { addRunIntentListener, endRunLiveActivity, startControlCommandPolling, startRunLiveActivity, updateRunLiveActivity } from '../../../src/lib/runLiveActivity';
+import { endRunLiveActivity, startRunLiveActivity, updateRunLiveActivity } from '../../../src/lib/runLiveActivity';
 import {
   calculateHydrationPlan,
   explainPlan,
@@ -50,6 +55,11 @@ import {
   type Sweatiness,
 } from '../../../src/utils/hydrationEngine';
 import { LAYOUT } from '../../../src/constants/layout';
+import { displayLabel } from '../../../src/utils/displayLabels';
+import {
+  activeSessionStoresHydrated,
+  getConflictingActiveSession,
+} from '../../../src/lib/activeSessionCoordinator';
 
 // ─── Sub-tab types ─────────────────────────────────────────────────────────────
 type RunTab = 'plan' | 'active' | 'hydration' | 'routes';
@@ -493,7 +503,7 @@ function PlanTab() {
           <Text style={[styles.subTitle, { color: C.text, marginTop: 8 }]}>
             {'name' in customRunToday
               ? customRunToday.name
-              : customRunToday.notes?.split(' — ')[0] || customRunToday.runType?.replace(/_/g, ' ') || 'Custom Run'}
+              : customRunToday.notes?.split(' — ')[0] || displayLabel(customRunToday.runType) || 'Custom Run'}
           </Text>
           <Text style={[{ fontSize: 13, color: C.textMuted, marginTop: 6 }]}>
             {customRunToday.durationMinutes ? `${Math.round(customRunToday.durationMinutes)} min` : ''}
@@ -675,11 +685,13 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     goalMiles,
     targetPaceSecPerMile,
     plannedWorkout,
+    completionRequestedAt,
     startRun,
     pauseRun,
     resumeRun,
     finishRun,
     cancelRun,
+    clearCompletionRequest,
   } = useActiveRunStore();
   const { richWeek } = useWeekPlan();
   const todayPlannedWorkout = richWeek.workouts[todayWorkoutIndex()] ?? null;
@@ -779,33 +791,32 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     speakCue('Route guidance stopped. Continuing in free run mode.');
   }
 
-  // Lock screen button intents. Two channels:
-  // 1. Native event listeners — fire only if an intent ever executes in the
-  //    app's own process.
-  // 2. App Group command polling — the reliable path. Intents run in the
-  //    WIDGET process and can only leave a command in the shared store;
-  //    without this poll the app never hears lock-screen presses and its
-  //    per-second Live Activity updates immediately revert the widget state.
   useEffect(() => {
-    const subs = [
-      addRunIntentListener('onPauseIntent',  () => { if (isActive && !isPaused) pauseRun(); }),
-      addRunIntentListener('onResumeIntent', () => { if (isActive && isPaused) resumeRun(); }),
-      addRunIntentListener('onStopIntent',   () => { if (isActive) stop(); }),
-    ];
-    const stopPolling = isActive
-      ? startControlCommandPolling({
-          pause:  () => { if (isActive && !isPaused) pauseRun(); },
-          resume: () => { if (isActive && isPaused) resumeRun(); },
-          stop:   () => { if (isActive) stop(); },
-        })
-      : null;
-    return () => {
-      subs.forEach(s => s.remove());
-      stopPolling?.();
-    };
-  }, [isActive, isPaused]);
+    if (!isActive || !completionRequestedAt) return;
+    clearCompletionRequest();
+    void stop();
+  }, [clearCompletionRequest, completionRequestedAt, isActive]);
 
   async function start() {
+    if (!activeSessionStoresHydrated()) {
+      Alert.alert('Restoring session', 'StrideOS is restoring your active-session state. Try again in a moment.');
+      return;
+    }
+    const conflict = getConflictingActiveSession('running');
+    if (conflict) {
+      Alert.alert(
+        'Another session is active',
+        `${conflict.name} is still in progress. Continue it or end it before starting a run.`,
+        [
+          {
+            text: 'Continue Current Session',
+            onPress: () => router.push(conflict.route as never),
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
+      return;
+    }
     try {
       const nextPermission = await requestTrackingPermissionState();
       setPermission(nextPermission);
@@ -833,7 +844,10 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         pendingMode === 'workout' && startWorkout ? { mode: 'workout' } :
         { mode: 'quick' };
       startRun(startWorkout, config);
+      const liveRunStartedAt = useActiveRunStore.getState().startTime;
       await startRunLiveActivity({
+        sessionId: liveRunStartedAt ? `run:${liveRunStartedAt}` : '',
+        sessionSource: 'running',
         elapsedSeconds: 0,
         distanceMiles: 0,
         averagePace: '--:--',
@@ -873,12 +887,16 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   }
 
   async function stop() {
-    const finalElapsed = elapsed;
+    const finalElapsed = activeRunElapsedSeconds(useActiveRunStore.getState());
     const finalDurationMin = Math.max(1, Math.round(finalElapsed / 60));
     const finalDistanceMiles = Math.round(distanceMiles * 100) / 100;
     const routeCoordinates = [...coordinates];
 
-    await endRunLiveActivity({ ...liveActivitySnapshot, isPaused: false }).catch(console.warn);
+    await endRunLiveActivity({
+      ...liveActivitySnapshot,
+      elapsedSeconds: finalElapsed,
+      isPaused: false,
+    }).catch(console.warn);
     finishRun();
     setElapsed(0);
     setRouteSegmentIndex(0);
@@ -937,6 +955,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         ? C.critical
         : C.accent;
   const liveActivitySnapshot = {
+    sessionId: startTime ? `run:${startTime}` : '',
+    sessionSource: 'running' as const,
     elapsedSeconds: elapsed,
     distanceMiles,
     averagePace: avgPace,
@@ -2031,6 +2051,25 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
   const filteredRoutes = routes.filter(route => folderFilter === 'all' || route.folder === folderFilter);
 
   async function startRoute(route: RunRoute) {
+    if (!activeSessionStoresHydrated()) {
+      Alert.alert('Restoring session', 'StrideOS is restoring your active-session state. Try again in a moment.');
+      return;
+    }
+    const conflict = getConflictingActiveSession('running');
+    if (conflict) {
+      Alert.alert(
+        'Another session is active',
+        `${conflict.name} is still in progress. Continue it or end it before starting this route.`,
+        [
+          {
+            text: 'Continue Current Session',
+            onPress: () => router.push(conflict.route as never),
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
+      return;
+    }
     attachRoute(route.id);
     if (isActive) {
       onStartRoute();
@@ -2039,6 +2078,18 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
 
     try {
       startRun(null);
+      const startedAt = useActiveRunStore.getState().startTime;
+      await startRunLiveActivity({
+        sessionId: startedAt ? `run:${startedAt}` : '',
+        sessionSource: 'running',
+        elapsedSeconds: 0,
+        distanceMiles: 0,
+        averagePace: '--:--',
+        heartRateBpm: null,
+        zoneLabel: 'Zone --',
+        zoneStatus: 'unknown',
+        isPaused: false,
+      }).catch(console.warn);
       await startLocationTracking();
       speakCue(route.segments.length > 0
         ? `Starting route: ${route.name}. ${route.segments.length} interval markers set.`

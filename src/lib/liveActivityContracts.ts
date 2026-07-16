@@ -5,7 +5,8 @@ export type OutdoorLiveActivityType =
   | 'cycling'
   | 'hiking'
   | 'downhill_skiing'
-  | 'cross_country_skiing';
+  | 'cross_country_skiing'
+  | 'snowboarding';
 
 export type LiveActivityControlState =
   | 'ready'
@@ -13,7 +14,23 @@ export type LiveActivityControlState =
   | 'resume_pending'
   | 'complete_pending';
 
+export type LiveActivitySessionIdentity = {
+  sessionId?: string;
+  sessionSource?: string;
+};
+
+export function liveActivityCommandMatchesSession(
+  command: LiveActivitySessionIdentity,
+  target?: { sessionId: string; sessionSource: string },
+): boolean {
+  if (!target) return true;
+  return command.sessionId === target.sessionId
+    && command.sessionSource === target.sessionSource;
+}
+
 export type OutdoorLiveActivitySnapshot = {
+  sessionId?: string;
+  sessionSource?: 'running' | 'outdoor';
   activityName: string;
   activityType: OutdoorLiveActivityType;
   elapsedSeconds: number;
@@ -29,10 +46,14 @@ export type OutdoorLiveActivitySnapshot = {
   navigationInstruction?: string;
   cueText?: string;
   controlState?: LiveActivityControlState;
+  elevationGainMeters?: number;
+  elevationLossMeters?: number;
 };
 
 export type NormalizedOutdoorLiveActivityPayload = {
   runName: string;
+  sessionId: string;
+  sessionSource: 'running' | 'outdoor';
   activityType: OutdoorLiveActivityType;
   elapsedSeconds: number;
   distanceMiles: number;
@@ -50,6 +71,8 @@ export type NormalizedOutdoorLiveActivityPayload = {
   navigationInstruction: string;
   cueText: string;
   controlState: LiveActivityControlState;
+  elevationDisplay: string;
+  descentDisplay: string;
 };
 
 export function normalizeOutdoorLiveActivitySnapshot(
@@ -58,13 +81,16 @@ export function normalizeOutdoorLiveActivitySnapshot(
 ): NormalizedOutdoorLiveActivityPayload {
   const speedBased = snapshot.activityType === 'cycling'
     || snapshot.activityType === 'downhill_skiing'
-    || snapshot.activityType === 'cross_country_skiing';
+    || snapshot.activityType === 'cross_country_skiing'
+    || snapshot.activityType === 'snowboarding';
   const metricValue = speedBased
     ? formatSpeed(snapshot.averageSpeedMph)
     : snapshot.averagePace?.trim() || '--:--';
 
   return {
     runName: snapshot.activityName.trim() || defaultActivityName(snapshot.activityType),
+    sessionId: snapshot.sessionId?.trim() || '',
+    sessionSource: snapshot.sessionSource ?? 'outdoor',
     activityType: snapshot.activityType,
     elapsedSeconds: Math.max(0, Math.round(snapshot.elapsedSeconds)),
     distanceMiles: Math.max(0, snapshot.distanceMiles),
@@ -82,6 +108,8 @@ export function normalizeOutdoorLiveActivitySnapshot(
     navigationInstruction: snapshot.navigationInstruction?.trim() || '',
     cueText: snapshot.cueText?.trim() || '',
     controlState: snapshot.controlState ?? 'ready',
+    elevationDisplay: formatElevation(snapshot.elevationGainMeters),
+    descentDisplay: formatElevation(snapshot.elevationLossMeters),
   };
 }
 
@@ -111,6 +139,12 @@ function defaultActivityName(type: OutdoorLiveActivityType): string {
   case 'hiking': return 'Hike';
   case 'downhill_skiing': return 'Downhill Ski';
   case 'cross_country_skiing': return 'Cross-Country Ski';
+  case 'snowboarding': return 'Snowboard';
   default: return 'Training Run';
   }
+}
+
+function formatElevation(value: number | undefined): string {
+  if (!Number.isFinite(value) || (value ?? 0) <= 0) return '';
+  return `${Math.round(value as number)} m`;
 }

@@ -36,6 +36,7 @@ const MAX_SPEED_MPS: Partial<Record<ActivityType, number>> = {
   cycling: 28,
   downhill_skiing: 45,
   cross_country_skiing: 16,
+  snowboarding: 45,
 };
 
 const MIN_DISTANCE_METERS = 2.5;

@@ -1,8 +1,8 @@
 // ─── Dion Instruction Card ───────────────────────────────────────────────────
 //
 // Renders an approved Dion production illustration from the manifest-backed
-// registry (src/constants/dionImages.ts): resizeMode="contain" inside a fixed
-// 864:1821 aspect-ratio container so no required joint is ever cropped, with
+// registry (src/constants/dionImages.ts): resizeMode="contain" inside an
+// asset-appropriate frame so no required joint is ever cropped, with
 // an onError fallback to a structured placeholder (never a stick figure,
 // never an invented person) if the bundled asset somehow fails to decode.
 // `symptom_review` has no approved asset at all — image is null — so it
@@ -17,6 +17,7 @@ import type { Palette } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { DionAssessmentImages, DionPhaseImage } from '../../constants/dionImages';
+import { displayLabel } from '../../utils/displayLabels';
 
 type Variant = 'compact' | 'full';
 
@@ -24,6 +25,7 @@ type Variant = 'compact' | 'full';
 // this component renders is sized to this ratio so contain-fit never crops
 // a required joint regardless of the container's own width/height.
 const ASSET_ASPECT_RATIO = 864 / 1821;
+const BIKE_FIT_ASPECT_RATIO = 4 / 3;
 
 type Props = {
   dion:      DionAssessmentImages;
@@ -39,9 +41,10 @@ export default function DionInstructionCard({ dion, variant = 'full', phase, sho
   const s = makeStyles(C);
   const compact = variant === 'compact';
   const activePhase = phase ?? dion.primary;
+  const landscape = dion.assessmentId === 'standalone_bike_fit';
 
   const frame = (
-    <ImageFrame image={activePhase} compact={compact} viewLabel={dion.viewLabel} s={s} C={C} />
+    <ImageFrame image={activePhase} compact={compact} landscape={landscape} viewLabel={dion.viewLabel} s={s} C={C} />
   );
 
   // Compact = a bare thumbnail meant to drop into an existing list row —
@@ -56,14 +59,25 @@ export default function DionInstructionCard({ dion, variant = 'full', phase, sho
 
   return (
     <View style={s.card} accessibilityLabel={activePhase.alt} accessible>
-      <View style={s.row}>
-        {frame}
-        <View style={s.details}>
-          <Text style={s.label}>CAMERA VIEW</Text>
-          <Text style={s.viewLabelBig}>{dion.viewLabel}</Text>
-          <Text style={s.distance}>{dion.recommendedDistance}</Text>
+      {landscape ? (
+        <>
+          {frame}
+          <View style={s.landscapeDetails}>
+            <Text style={s.label}>CAMERA VIEW</Text>
+            <Text style={s.viewLabelBig}>{dion.viewLabel}</Text>
+            <Text style={s.distance}>{dion.recommendedDistance}</Text>
+          </View>
+        </>
+      ) : (
+        <View style={s.row}>
+          {frame}
+          <View style={s.details}>
+            <Text style={s.label}>CAMERA VIEW</Text>
+            <Text style={s.viewLabelBig}>{dion.viewLabel}</Text>
+            <Text style={s.distance}>{dion.recommendedDistance}</Text>
+          </View>
         </View>
-      </View>
+      )}
 
       {dion.mustBeVisible.length > 0 && (
         <View style={s.mustBeVisibleBlock}>
@@ -84,8 +98,8 @@ export default function DionInstructionCard({ dion, variant = 'full', phase, sho
           <View style={s.phaseStrip}>
             {dion.phases.map(p => (
               <View key={p.assetId} style={s.phaseStripItem}>
-                <ImageFrame image={p} compact s={s} C={C} thumbnail />
-                <Text style={s.phaseStripLabel} numberOfLines={1}>{p.position.replace(/_/g, ' ')}</Text>
+                <ImageFrame image={p} compact landscape={landscape} s={s} C={C} thumbnail />
+                <Text style={s.phaseStripLabel} numberOfLines={1}>{displayLabel(p.position)}</Text>
               </View>
             ))}
           </View>
@@ -96,10 +110,11 @@ export default function DionInstructionCard({ dion, variant = 'full', phase, sho
 }
 
 function ImageFrame({
-  image, compact, viewLabel, s, C, thumbnail,
+  image, compact, landscape, viewLabel, s, C, thumbnail,
 }: {
   image:      DionPhaseImage;
   compact:    boolean;
+  landscape?: boolean;
   viewLabel?: string;
   s:          ReturnType<typeof makeStyles>;
   C:          Palette;
@@ -109,7 +124,16 @@ function ImageFrame({
   const showPlaceholder = !image.image || failed;
 
   return (
-    <View style={[s.frame, compact ? (thumbnail ? s.frameThumb : s.frameCompact) : s.frameFull]}>
+    <View style={[
+      s.frame,
+      landscape
+        ? compact
+          ? (thumbnail ? s.frameThumbLandscape : s.frameCompactLandscape)
+          : s.frameFullLandscape
+        : compact
+          ? (thumbnail ? s.frameThumb : s.frameCompact)
+          : s.frameFull,
+    ]}>
       {!showPlaceholder ? (
         <Image
           source={image.image as number}
@@ -159,6 +183,21 @@ function makeStyles(C: Palette) {
     frameFull:    { width: 132, height: 132 / ASSET_ASPECT_RATIO },
     frameCompact: { width: 56, height: 56 / ASSET_ASPECT_RATIO, borderRadius: Radius.sm },
     frameThumb:   { width: 40, height: 40 / ASSET_ASPECT_RATIO, borderRadius: Radius.sm },
+    frameFullLandscape: {
+      width: '100%',
+      aspectRatio: BIKE_FIT_ASPECT_RATIO,
+      borderRadius: Radius.md,
+    },
+    frameCompactLandscape: {
+      width: 72,
+      aspectRatio: BIKE_FIT_ASPECT_RATIO,
+      borderRadius: Radius.sm,
+    },
+    frameThumbLandscape: {
+      width: 64,
+      aspectRatio: BIKE_FIT_ASPECT_RATIO,
+      borderRadius: Radius.sm,
+    },
     image:        { width: '100%', height: '100%' },
     placeholder: {
       alignItems:        'center',
@@ -174,6 +213,7 @@ function makeStyles(C: Palette) {
     },
     viewLabelCompact: { fontSize: 8, lineHeight: 10 },
     details: { flex: 1, gap: 3 },
+    landscapeDetails: { width: '100%', gap: 3, paddingTop: 2 },
     label: {
       color:         C.textDim,
       fontSize:      10,
@@ -193,7 +233,7 @@ function makeStyles(C: Palette) {
     chipTxt: { color: C.primary, fontSize: 11, fontWeight: FontWeight.bold },
     phaseStripBlock: { gap: 6 },
     phaseStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    phaseStripItem: { alignItems: 'center', gap: 3, width: 48 },
+    phaseStripItem: { alignItems: 'center', gap: 3, minWidth: 48 },
     phaseStripLabel: { color: C.textMuted, fontSize: 9, textTransform: 'capitalize' },
   });
 }

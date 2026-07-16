@@ -8,6 +8,7 @@ import {
   appendTrackingPoint,
   type TrackingAggregate,
 } from '../utils/activityTracking';
+import { elapsedSecondsExcludingPause } from '../utils/activeTime';
 
 export type ActiveOutdoorType =
   | 'running'
@@ -15,7 +16,8 @@ export type ActiveOutdoorType =
   | 'cycling'
   | 'hiking'
   | 'downhill_skiing'
-  | 'cross_country_skiing';
+  | 'cross_country_skiing'
+  | 'snowboarding';
 
 const EMPTY_AGGREGATE: TrackingAggregate = {
   points: [],
@@ -44,6 +46,7 @@ type ActiveActivityStore = {
   routeId: string | null;
   navigationMode: 'off' | 'walking' | 'cycling';
   nextInstruction: string | null;
+  completionRequestedAt: number | null;
   start: (input: {
     activityType: ActiveOutdoorType;
     subtype?: ActivitySubtype;
@@ -58,9 +61,18 @@ type ActiveActivityStore = {
   setNextInstruction: (instruction: string | null) => void;
   setPaceCoachingEnabled: (enabled: boolean) => void;
   setIntervalPromptsEnabled: (enabled: boolean) => void;
+  requestCompletion: () => void;
+  clearCompletionRequest: () => void;
   finish: () => void;
   discard: () => void;
 };
+
+export function activeOutdoorElapsedSeconds(
+  state: Pick<ActiveActivityStore, 'startedAt' | 'isPaused' | 'pausedAt' | 'pausedDurationMs'>,
+  now = Date.now(),
+): number {
+  return elapsedSecondsExcludingPause(state, now);
+}
 
 function labelFor(type: ActiveOutdoorType): string {
   if (type === 'walking') return 'Walk';
@@ -68,6 +80,7 @@ function labelFor(type: ActiveOutdoorType): string {
   if (type === 'hiking') return 'Hike';
   if (type === 'downhill_skiing') return 'Downhill Ski';
   if (type === 'cross_country_skiing') return 'Cross-Country Ski';
+  if (type === 'snowboarding') return 'Snowboard';
   return 'Run';
 }
 
@@ -90,6 +103,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
       routeId: null,
       navigationMode: 'off',
       nextInstruction: null,
+      completionRequestedAt: null,
 
       start: input => set({
         activityId: `active_${Date.now()}`,
@@ -106,6 +120,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
         routeId: input.routeId ?? null,
         navigationMode: input.navigationMode ?? 'off',
         nextInstruction: null,
+        completionRequestedAt: null,
       }),
 
       pause: () => {
@@ -141,12 +156,15 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
       setNextInstruction: nextInstruction => set({ nextInstruction }),
       setPaceCoachingEnabled: paceCoachingEnabled => set({ paceCoachingEnabled }),
       setIntervalPromptsEnabled: intervalPromptsEnabled => set({ intervalPromptsEnabled }),
+      requestCompletion: () => set({ completionRequestedAt: Date.now() }),
+      clearCompletionRequest: () => set({ completionRequestedAt: null }),
 
       finish: () => set({
         isActive: false,
         isPaused: false,
         pausedAt: null,
         nextInstruction: null,
+        completionRequestedAt: null,
       }),
 
       discard: () => set({
@@ -161,6 +179,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
         routeId: null,
         navigationMode: 'off',
         nextInstruction: null,
+        completionRequestedAt: null,
       }),
     }),
     {

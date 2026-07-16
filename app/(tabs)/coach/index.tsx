@@ -69,6 +69,7 @@ import { useColors } from '../../../src/theme/useColors';
 import type { Palette } from '../../../src/theme/colors';
 import { spacing }  from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
+import { displayLabel } from '../../../src/utils/displayLabels';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -124,10 +125,10 @@ function buildTrainingContextBlock(ctx: CoachTrainingContext): string {
   const runLines = runs.slice(0, 5).map(r => {
     const miles = r.actualDistanceMiles ?? r.estimatedDistanceMiles;
     const minutes = r.actualDurationMinutes ?? r.durationMinutes;
-    return `  - ${shortDate(r.timestamp)}: ${r.type.replace(/_/g, ' ')}, ${miles ? `${miles.toFixed(1)} mi` : 'distance n/a'}, ${minutes} min${r.rpe ? `, RPE ${r.rpe}` : ''}`;
+    return `  - ${shortDate(r.timestamp)}: ${displayLabel(r.type)}, ${miles ? `${miles.toFixed(1)} mi` : 'distance n/a'}, ${minutes} min${r.rpe ? `, RPE ${r.rpe}` : ''}`;
   });
   const strengthLines = strength.slice(0, 3).map(r =>
-    `  - ${shortDate(r.timestamp)}: ${r.sessionType.replace(/_/g, ' ')}${r.actualDuration ? `, ${r.actualDuration} min` : ''}${r.overallRpe ? `, RPE ${r.overallRpe}` : ''}`,
+    `  - ${shortDate(r.timestamp)}: ${displayLabel(r.sessionType)}${r.actualDuration ? `, ${r.actualDuration} min` : ''}${r.overallRpe ? `, RPE ${r.overallRpe}` : ''}`,
   );
 
   return `RECENT TRAINING (last 14 days)
@@ -187,7 +188,7 @@ function buildMovementLabBlock(analyses: MovementAnalysis[]): string {
 
     const videoExtra = h.mediaType === 'video'
       ? [
-          `\n  Sequence confidence: ${h.sequenceConfidence?.replace(/_/g, ' ') ?? 'n/a'}.`,
+          `\n  Sequence confidence: ${displayLabel(h.sequenceConfidence) || 'n/a'}.`,
           h.repSummary
             ? ` Reps: ${h.repSummary.count}, depth range ${Math.round(h.repSummary.depthRangeDeg[0])}–${Math.round(h.repSummary.depthRangeDeg[1])}°${h.repSummary.consistencyDeg !== undefined ? `, consistency spread ${h.repSummary.consistencyDeg}°` : ''}.`
             : '',
@@ -197,8 +198,8 @@ function buildMovementLabBlock(analyses: MovementAnalysis[]): string {
         ].join('')
       : '';
 
-    return `- ${shortDate(a.createdAt)} · ${h.analysisType.replace(/_/g, ' ')} (${h.cameraView.replace(/_/g, ' ')} view, ${h.mediaType.replace(/_/g, ' ')})
-  Detection quality: ${h.detectionQuality}. Overall confidence: ${h.confidence.replace(/_/g, ' ')}.
+    return `- ${shortDate(a.createdAt)} · ${displayLabel(h.analysisType)} (${displayLabel(h.cameraView)} view, ${displayLabel(h.mediaType)})
+  Detection quality: ${h.detectionQuality}. Overall confidence: ${displayLabel(h.confidence)}.
   Estimated angles (camera-view estimates, not clinical measurements): ${angles}
   Checklist findings: ${findings}
   Flagged: ${recs}${h.userNotes ? `\n  Athlete notes: ${h.userNotes.slice(0, 500)}` : ''}${videoExtra}`;
@@ -230,7 +231,7 @@ function buildFocusedAnalysisBlock(analysis: MovementAnalysis): string {
 
   const videoExtra = h.mediaType === 'video'
     ? [
-        `\n  Sequence confidence: ${h.sequenceConfidence?.replace(/_/g, ' ') ?? 'n/a'}.`,
+        `\n  Sequence confidence: ${displayLabel(h.sequenceConfidence) || 'n/a'}.`,
         h.repSummary
           ? `\n  Reps detected: ${h.repSummary.count}, peak-flexion range ${Math.round(h.repSummary.depthRangeDeg[0])}–${Math.round(h.repSummary.depthRangeDeg[1])}°${h.repSummary.consistencyDeg !== undefined ? `, consistency spread ${h.repSummary.consistencyDeg}°` : ''}.`
           : '',
@@ -241,10 +242,10 @@ function buildFocusedAnalysisBlock(analysis: MovementAnalysis): string {
     : '';
 
   return `FOCUSED ANALYSIS (the analysis the athlete tapped "Discuss with AI Coach" on — ${shortDate(analysis.createdAt)}. Joint angles are estimated 2D projections from a phone camera, not clinical measurements.)
-  Movement type: ${h.analysisType.replace(/_/g, ' ')}
-  Camera view: ${h.cameraView.replace(/_/g, ' ')}${closestSide ? ` · Closest side to camera: ${closestSide}` : ''}
-  Media type: ${h.mediaType.replace(/_/g, ' ')}
-  Detection quality: ${h.detectionQuality}. Overall confidence: ${h.confidence.replace(/_/g, ' ')}.
+  Movement type: ${displayLabel(h.analysisType)}
+  Camera view: ${displayLabel(h.cameraView)}${closestSide ? ` · Closest side to camera: ${closestSide}` : ''}
+  Media type: ${displayLabel(h.mediaType)}
+  Detection quality: ${h.detectionQuality}. Overall confidence: ${displayLabel(h.confidence)}.
   Landmark source: ${h.landmarkSource === 'user_corrected' ? 'user-corrected' : 'auto-detected'}.
   Manual corrections: ${h.manualCorrections.length ? h.manualCorrections.join('; ') : 'none'}.
   Manual review required: ${h.manualReviewRequired ? 'yes' : 'no'}.
@@ -275,7 +276,7 @@ function buildReadinessBlock(assessment: ReadinessAssessment | undefined): strin
     const sides = d.leftValue !== undefined || d.rightValue !== undefined
       ? ` (L ${d.leftValue ?? 'n/a'}${d.unit ?? ''} / R ${d.rightValue ?? 'n/a'}${d.unit ?? ''})`
       : '';
-    return `  - ${d.domain.replace(/_/g, ' ')}: ${d.category.replace(/_/g, ' ')}${sides} — ${d.note}`;
+    return `  - ${displayLabel(d.domain)}: ${displayLabel(d.category)}${sides} — ${d.note}`;
   });
 
   const workoutTitles = assessment.recommendedMobilityWorkoutIds
@@ -283,7 +284,7 @@ function buildReadinessBlock(assessment: ReadinessAssessment | undefined): strin
     .filter((t): t is string => Boolean(t));
 
   return `RUNNING/WALKING READINESS ASSESSMENT (${shortDate(assessment.createdAt)}, focus: ${assessment.activityFocus})
-- Overall: ${assessment.overall.replace(/_/g, ' ')}
+- Overall: ${displayLabel(assessment.overall)}
 - Pain reported: ${assessment.painReported ? 'Yes — consult-a-clinician messaging was shown to the athlete' : 'No'}
 - Athlete-reported symptom: ${assessment.symptom ? `${assessment.symptom.intensity}/10 at ${assessment.symptom.location}${assessment.symptom.notes ? ` — ${assessment.symptom.notes.slice(0, 300)}` : ''}` : 'none recorded'}
 - Domains:
@@ -354,11 +355,11 @@ function buildSystemPrompt(
     activityState.activities.filter(activity => Date.now() - activity.startTime <= 7 * 24 * 60 * 60 * 1000),
   );
   const activityContext = `PRIMARY ENDURANCE AND RECENT ACTIVITY
-- Primary endurance mode: ${preferences.primaryEnduranceMode.replace(/_/g, ' ')}
-- Active preset plan: ${beginnerPlan ? `${beginnerPlan.goal.replace(/_/g, ' ')} through ${beginnerPlan.targetDate}` : 'none'}
-- Cross-training: ${preferences.crossTrainingDecision}${preferences.crossTrainingActivities.length ? `; preferred ${preferences.crossTrainingActivities.map(item => item.activityType.replace(/_/g, ' ')).join(', ')}` : ''}
+- Primary endurance mode: ${displayLabel(preferences.primaryEnduranceMode)}
+- Active preset plan: ${beginnerPlan ? `${displayLabel(beginnerPlan.goal)} through ${beginnerPlan.targetDate}` : 'none'}
+- Cross-training: ${preferences.crossTrainingDecision}${preferences.crossTrainingActivities.length ? `; preferred ${preferences.crossTrainingActivities.map(item => displayLabel(item.activityType)).join(', ')}` : ''}
 - 7-day load: whole body ${Math.round(load.wholeBody)}, running ${Math.round(load.running)}, walking ${Math.round(load.walking)}, cross-training ${Math.round(load.crossTraining)}, strength ${Math.round(load.strength)}.
-- Recent activity: ${recentActivities.length ? recentActivities.map(activity => `${activity.activityType.replace(/_/g, ' ')} ${Math.round((activity.metrics.durationSeconds ?? 0) / 60)} min${activity.rpe ? ` RPE ${activity.rpe}` : ''}`).join('; ') : 'none'}.
+- Recent activity: ${recentActivities.length ? recentActivities.map(activity => `${displayLabel(activity.activityType)} ${Math.round((activity.metrics.durationSeconds ?? 0) / 60)} min${activity.rpe ? ` RPE ${activity.rpe}` : ''}`).join('; ') : 'none'}.
 Cycling, swimming, and walking do not count as running mileage or running pace history. Workload trends do not predict injury.`;
   const featureContext = feature === 'movement'
     ? (focusedAnalysis ? buildFocusedAnalysisBlock(focusedAnalysis) : buildMovementLabBlock(analyses))
@@ -481,7 +482,7 @@ function buildStrengthContext(
 - Purpose: ${strengthSession?.purpose ?? 'No scheduled session purpose available.'}
 - Main exercises: ${exercises || 'none scheduled'}.
 - Current session state: no active-session details supplied to this handoff.
-- Most recent completed strength session: ${recent ? `${shortDate(recent.timestamp)}, ${recent.sessionType.replace(/_/g, ' ')}${recent.overallRpe ? `, RPE ${recent.overallRpe}` : ''}` : 'none logged'}.`;
+- Most recent completed strength session: ${recent ? `${shortDate(recent.timestamp)}, ${displayLabel(recent.sessionType)}${recent.overallRpe ? `, RPE ${recent.overallRpe}` : ''}` : 'none logged'}.`;
 }
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
@@ -896,7 +897,7 @@ export default function CoachScreen() {
                 >
                   <View>
                     <Text style={s.videoRowTitle} numberOfLines={1}>{analysisKindLabel(a)}</Text>
-                    <Text style={s.videoRowMeta}>{shortDate(a.createdAt)} · {a.mediaType.replace(/_/g, ' ')}</Text>
+                    <Text style={s.videoRowMeta}>{shortDate(a.createdAt)} · {displayLabel(a.mediaType)}</Text>
                   </View>
                   <Text style={s.videoRowChevron}>›</Text>
                 </Pressable>
@@ -915,7 +916,7 @@ export default function CoachScreen() {
                 >
                   <View>
                     <Text style={s.videoRowTitle} numberOfLines={1}>{video.title}</Text>
-                    <Text style={s.videoRowMeta}>{video.date} · {video.activity.replace(/_/g, ' ')}</Text>
+                    <Text style={s.videoRowMeta}>{video.date} · {displayLabel(video.activity)}</Text>
                   </View>
                   <Text style={s.videoRowChevron}>›</Text>
                 </Pressable>

@@ -2,6 +2,8 @@ import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
 import { requireNativeModule } from 'expo-modules-core';
 
 export type StrideRunLiveActivityPayload = {
+  sessionId?: string;
+  sessionSource?: 'running' | 'outdoor' | string;
   runName: string;
   activityType?: string;
   elapsedSeconds: number;
@@ -20,9 +22,13 @@ export type StrideRunLiveActivityPayload = {
   navigationInstruction?: string;
   cueText?: string;
   controlState?: 'ready' | 'pause_pending' | 'resume_pending' | 'complete_pending';
+  elevationDisplay?: string;
+  descentDisplay?: string;
 };
 
 export type StrideStrengthLiveActivityPayload = {
+  sessionId?: string;
+  sessionSource?: 'training_block' | 'preset' | string;
   workoutName: string;
   elapsedSeconds: number;
   currentExercise: string;
@@ -33,6 +39,7 @@ export type StrideStrengthLiveActivityPayload = {
   prescription?: string;
   loadDisplay?: string;
   progressLabel?: string;
+  controlState?: 'ready' | 'pause_pending' | 'resume_pending' | 'complete_pending';
 };
 
 export type AppleRouteDirectionsResult = {
@@ -59,6 +66,9 @@ export type StrideRunControlCommand = {
   id: string;
   action: StrideControlAction;
   createdAt: number;
+  sessionId?: string;
+  sessionSource?: string;
+  activityKitId?: string;
 };
 
 const VALID_CONTROL_ACTIONS: readonly StrideControlAction[] = [
@@ -70,6 +80,8 @@ type StrideLiveActivityModule = {
   getPendingRunControlCommand?: () => StrideRunControlCommand | null;
   clearPendingRunControlCommand?: (id: string) => void;
   start: (
+    sessionId: string,
+    sessionSource: string,
     runName: string,
     activityType: string,
     elapsedSeconds: number,
@@ -88,6 +100,8 @@ type StrideLiveActivityModule = {
     navigationInstruction: string,
     cueText: string,
     controlState: string,
+    elevationDisplay: string,
+    descentDisplay: string,
   ) => Promise<string | null>;
   update: (
     elapsedSeconds: number,
@@ -106,6 +120,8 @@ type StrideLiveActivityModule = {
     navigationInstruction: string,
     cueText: string,
     controlState: string,
+    elevationDisplay: string,
+    descentDisplay: string,
   ) => Promise<void>;
   end: (
     elapsedSeconds: number,
@@ -124,6 +140,8 @@ type StrideLiveActivityModule = {
     cueText: string,
   ) => Promise<void>;
   startStrength: (
+    sessionId: string,
+    sessionSource: string,
     workoutName: string,
     elapsedSeconds: number,
     currentExercise: string,
@@ -133,6 +151,7 @@ type StrideLiveActivityModule = {
     prescription: string,
     loadDisplay: string,
     progressLabel: string,
+    controlState: string,
   ) => Promise<string | null>;
   updateStrength: (
     elapsedSeconds: number,
@@ -144,6 +163,7 @@ type StrideLiveActivityModule = {
     prescription: string,
     loadDisplay: string,
     progressLabel: string,
+    controlState: string,
   ) => Promise<void>;
   endStrength: () => Promise<void>;
   getRouteDirections?: (
@@ -221,6 +241,8 @@ export async function startStrideRunLiveActivity(payload: StrideRunLiveActivityP
   const nativeModule = getNativeModule();
   if (!nativeModule || !isStrideRunLiveActivityAvailable()) return null;
   return nativeModule.start(
+    payload.sessionId ?? '',
+    payload.sessionSource ?? 'running',
     payload.runName,
     payload.activityType ?? 'running',
     Math.max(0, Math.round(payload.elapsedSeconds)),
@@ -239,6 +261,8 @@ export async function startStrideRunLiveActivity(payload: StrideRunLiveActivityP
     payload.navigationInstruction ?? '',
     payload.cueText ?? '',
     payload.controlState ?? 'ready',
+    payload.elevationDisplay ?? '',
+    payload.descentDisplay ?? '',
   );
 }
 
@@ -262,6 +286,8 @@ export async function updateStrideRunLiveActivity(payload: StrideRunLiveActivity
     payload.navigationInstruction ?? '',
     payload.cueText ?? '',
     payload.controlState ?? 'ready',
+    payload.elevationDisplay ?? '',
+    payload.descentDisplay ?? '',
   );
 }
 
@@ -310,6 +336,8 @@ export async function startStrengthLiveActivity(payload: StrideStrengthLiveActiv
   const nativeModule = getNativeModule();
   if (!nativeModule || !isStrideRunLiveActivityAvailable()) return null;
   return nativeModule.startStrength(
+    payload.sessionId ?? '',
+    payload.sessionSource ?? 'training_block',
     payload.workoutName,
     Math.max(0, payload.elapsedSeconds),
     payload.currentExercise,
@@ -319,6 +347,7 @@ export async function startStrengthLiveActivity(payload: StrideStrengthLiveActiv
     payload.prescription ?? '',
     payload.loadDisplay ?? '',
     payload.progressLabel ?? '',
+    payload.controlState ?? 'ready',
   );
 }
 
@@ -335,6 +364,7 @@ export async function updateStrengthLiveActivity(payload: StrideStrengthLiveActi
     payload.prescription ?? '',
     payload.loadDisplay ?? '',
     payload.progressLabel ?? '',
+    payload.controlState ?? 'ready',
   );
 }
 

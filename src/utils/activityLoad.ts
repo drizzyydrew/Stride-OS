@@ -20,6 +20,7 @@ const IMPACT_BEARING = new Set<ActivityType>([
   'hiking',
   'downhill_skiing',
   'cross_country_skiing',
+  'snowboarding',
   'stair_climbing',
   'hiit',
   'mixed_modal',
@@ -33,6 +34,7 @@ const CROSS_TRAINING = new Set<ActivityType>([
   'hiking',
   'downhill_skiing',
   'cross_country_skiing',
+  'snowboarding',
   'elliptical',
   'rowing',
   'stair_climbing',
@@ -50,6 +52,7 @@ const ESTIMATED_INTENSITY_FACTOR: Record<ActivityType, number> = {
   hiking: 0.58,
   downhill_skiing: 0.58,
   cross_country_skiing: 0.72,
+  snowboarding: 0.58,
   elliptical: 0.58,
   rowing: 0.66,
   stair_climbing: 0.72,
@@ -112,20 +115,20 @@ export function calculateActivityLoad(input: ActivityLoadInput): ActivityLoadDim
 
 const DISTANCE_TYPES = new Set<ActivityType>([
   'running', 'walking', 'cycling', 'indoor_cycling', 'swimming', 'hiking',
-  'downhill_skiing', 'cross_country_skiing', 'elliptical', 'rowing',
+  'downhill_skiing', 'cross_country_skiing', 'snowboarding', 'elliptical', 'rowing',
 ]);
 const ELEVATION_TYPES = new Set<ActivityType>([
-  'running', 'walking', 'cycling', 'hiking', 'downhill_skiing', 'cross_country_skiing',
+  'running', 'walking', 'cycling', 'hiking', 'downhill_skiing', 'cross_country_skiing', 'snowboarding',
 ]);
 const PACE_TYPES = new Set<ActivityType>(['running', 'walking', 'hiking']);
 const SPEED_TYPES = new Set<ActivityType>([
-  'cycling', 'indoor_cycling', 'downhill_skiing', 'cross_country_skiing',
+  'cycling', 'indoor_cycling', 'downhill_skiing', 'cross_country_skiing', 'snowboarding',
 ]);
 const CADENCE_TYPES = new Set<ActivityType>([
   'running', 'walking', 'cycling', 'indoor_cycling', 'rowing',
 ]);
 const ROUTE_TYPES = new Set<ActivityType>([
-  'running', 'walking', 'cycling', 'hiking', 'downhill_skiing', 'cross_country_skiing',
+  'running', 'walking', 'cycling', 'hiking', 'downhill_skiing', 'cross_country_skiing', 'snowboarding',
 ]);
 
 export function sanitizeActivityMetrics(
@@ -161,7 +164,7 @@ export function sanitizeActivityMetrics(
     clean.routeCoordinates = metrics.routeCoordinates;
   }
   if (activityType === 'swimming') clean.swimming = metrics.swimming;
-  if (activityType === 'downhill_skiing' || activityType === 'cross_country_skiing') {
+  if (activityType === 'downhill_skiing' || activityType === 'cross_country_skiing' || activityType === 'snowboarding') {
     clean.skiing = metrics.skiing;
   }
   if (activityType === 'hiit' || activityType === 'mixed_modal') {
@@ -181,7 +184,8 @@ export function activityMatchesFilter(activity: Activity, filter: ActivityFilter
   }
   if (filter === 'skiing') {
     return activity.activityType === 'downhill_skiing'
-      || activity.activityType === 'cross_country_skiing';
+      || activity.activityType === 'cross_country_skiing'
+      || activity.activityType === 'snowboarding';
   }
   if (filter === 'hiit_mixed') {
     return activity.activityType === 'hiit' || activity.activityType === 'mixed_modal';

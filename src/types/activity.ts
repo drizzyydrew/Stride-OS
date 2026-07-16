@@ -7,6 +7,7 @@ export const ACTIVITY_TYPES = [
   'hiking',
   'downhill_skiing',
   'cross_country_skiing',
+  'snowboarding',
   'elliptical',
   'rowing',
   'stair_climbing',
@@ -175,4 +176,3 @@ export type ActivityDraft = Omit<
   updatedAt?: number;
   trainingLoad?: ActivityLoadDimensions;
 };
-

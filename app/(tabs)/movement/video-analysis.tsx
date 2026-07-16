@@ -46,6 +46,7 @@ import VideoScrubBar from '../../../src/components/movement/VideoScrubBar';
 import { colors } from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
+import { displayLabel } from '../../../src/utils/displayLabels';
 import type {
   AngleSeries,
   AngleSeriesPoint,
@@ -450,7 +451,7 @@ export default function VideoAnalysisScreen() {
               <Text style={s.cardLabel}>DETAILS</Text>
               <Text style={s.detailLine}>Type: {info.title}</Text>
               <Text style={s.detailLine}>Recorded: {new Date(analysis.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</Text>
-              <Text style={s.detailLine}>Camera view: {analysis.cameraView.replace('_', ' ')}</Text>
+              <Text style={s.detailLine}>Camera view: {displayLabel(analysis.cameraView)}</Text>
               {durationMs > 0 ? <Text style={s.detailLine}>Clip length analyzed: {formatTimeMs(analysis.analyzedDurationMs ?? durationMs)}{analysis.videoDurationMs && analysis.analyzedDurationMs && analysis.analyzedDurationMs < analysis.videoDurationMs ? ` of ${formatTimeMs(analysis.videoDurationMs)}` : ''}</Text> : null}
             </View>
             {referenceFrameUri && (analysis.landmarks?.length ?? 0) > 0 ? (

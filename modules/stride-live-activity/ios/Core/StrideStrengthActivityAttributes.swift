@@ -40,8 +40,12 @@ public struct StrideStrengthActivityAttributes: ActivityAttributes {
   }
 
   public var workoutName: String
+  public var sessionId: String
+  public var sessionSource: String
 
-  public init(workoutName: String) {
+  public init(workoutName: String, sessionId: String = "", sessionSource: String = "training_block") {
     self.workoutName = workoutName
+    self.sessionId = sessionId
+    self.sessionSource = sessionSource
   }
 }

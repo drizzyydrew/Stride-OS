@@ -21,11 +21,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Speech from 'expo-speech';
 
-import { useActiveRunStore } from '../../../src/store/activeRunStore';
+import {
+  activeRunElapsedSeconds,
+  useActiveRunStore,
+} from '../../../src/store/activeRunStore';
 import { useAthleteStore }   from '../../../src/store/athleteStore';
 import { useWorkoutStore }   from '../../../src/store/workoutStore';
 import { useWeekPlan }       from '../../../src/hooks/useWeekPlan';
 import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
+import {
+  endRunLiveActivity,
+  startRunLiveActivity,
+  updateRunLiveActivity,
+} from '../../../src/lib/runLiveActivity';
+import {
+  getConflictingActiveSession,
+  waitForActiveSessionStores,
+} from '../../../src/lib/activeSessionCoordinator';
 
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
@@ -113,7 +125,7 @@ export default function RunTrackingScreen() {
 
   const {
     isActive, isPaused, startTime, distanceMiles,
-    currentPaceSecPerMile,
+    currentPaceSecPerMile, averagePaceSecPerMile,
     startRun, pauseRun, resumeRun, finishRun, cancelRun,
   } = useActiveRunStore();
 
@@ -125,7 +137,7 @@ export default function RunTrackingScreen() {
   useEffect(() => {
     if (isActive && !isPaused && startTime) {
       timerRef.current = setInterval(() => {
-        setElapsedSec(Math.floor((Date.now() - startTime) / 1000));
+        setElapsedSec(activeRunElapsedSeconds(useActiveRunStore.getState()));
       }, 1000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -136,21 +148,85 @@ export default function RunTrackingScreen() {
   // ── Start run on mount ────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!isActive) {
+    let cancelled = false;
+    async function launch() {
+      await waitForActiveSessionStores();
+      if (cancelled) return;
+      const conflict = getConflictingActiveSession('running');
+      if (conflict) {
+        Alert.alert(
+          'Another session is active',
+          `${conflict.name} is still in progress. Continue it or end it before starting this run.`,
+          [
+            {
+              text: 'Continue Current Session',
+              onPress: () => router.replace(conflict.route as never),
+            },
+            { text: 'Cancel', style: 'cancel', onPress: () => router.back() },
+          ],
+        );
+        return;
+      }
+      if (!useActiveRunStore.getState().isActive) {
       startRun(plannedWorkout);
+      const startedAt = useActiveRunStore.getState().startTime;
+      await startRunLiveActivity({
+        sessionId: startedAt ? `run:${startedAt}` : '',
+        sessionSource: 'running',
+        elapsedSeconds: 0,
+        distanceMiles: 0,
+        averagePace: '--:--',
+        heartRateBpm: null,
+        zoneLabel: 'Zone --',
+        zoneStatus: 'unknown',
+        isPaused: false,
+      }).catch(console.warn);
       startLocationTracking().catch(console.warn);
       const workoutName = plannedWorkout?.title ?? 'run';
       Speech.speak(`${workoutName} started. ${plannedWorkout?.warmup?.instructions ?? 'Start easy.'}.`, { rate: 0.9 });
+      }
     }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    void launch();
+    return () => {
+      cancelled = true;
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!isActive || !startTime) return;
+    void updateRunLiveActivity({
+      sessionId: `run:${startTime}`,
+      sessionSource: 'running',
+      elapsedSeconds: activeRunElapsedSeconds(useActiveRunStore.getState()),
+      distanceMiles,
+      averagePace: formatPace(averagePaceSecPerMile),
+      heartRateBpm: null,
+      zoneLabel: 'Zone --',
+      zoneStatus: 'unknown',
+      isPaused,
+    }).catch(console.warn);
+  }, [averagePaceSecPerMile, distanceMiles, elapsedSec, isActive, isPaused, startTime]);
 
   // ── End run ───────────────────────────────────────────────────────────────────
 
   const handleEndRun = useCallback(() => {
-    const confirmEnd = () => {
-      stopLocationTracking().catch(console.warn);
+    const confirmEnd = async () => {
+      const finalState = useActiveRunStore.getState();
+      const finalElapsed = activeRunElapsedSeconds(finalState);
+      await endRunLiveActivity({
+        sessionId: finalState.startTime ? `run:${finalState.startTime}` : '',
+        sessionSource: 'running',
+        elapsedSeconds: finalElapsed,
+        distanceMiles: finalState.distanceMiles,
+        averagePace: formatPace(finalState.averagePaceSecPerMile),
+        heartRateBpm: null,
+        zoneLabel: 'Zone --',
+        zoneStatus: 'unknown',
+        isPaused: false,
+      }).catch(console.warn);
+      await stopLocationTracking().catch(console.warn);
       Speech.speak('Run complete. Great work.', { rate: 0.9 });
       finishRun();
 
@@ -163,7 +239,7 @@ export default function RunTrackingScreen() {
             setFatigueScore, setRecentEasyLoad,
           );
           editLog(completionKey, {
-            actualDurationMinutes: Math.round(elapsedSec / 60),
+            actualDurationMinutes: Math.round(finalElapsed / 60),
             actualDistanceMiles:   Math.round(distanceMiles * 100) / 100,
           });
         }
@@ -176,7 +252,7 @@ export default function RunTrackingScreen() {
     } else {
       Alert.alert('End Run', 'Save this run and finish?', [
         { text: 'Keep Running', style: 'cancel' },
-        { text: 'End & Save',   style: 'default', onPress: confirmEnd },
+        { text: 'End & Save', style: 'default', onPress: () => { void confirmEnd(); } },
       ]);
     }
   }, [
@@ -191,8 +267,20 @@ export default function RunTrackingScreen() {
       {
         text: 'Discard',
         style: 'destructive',
-        onPress: () => {
-          stopLocationTracking().catch(console.warn);
+        onPress: async () => {
+          const finalState = useActiveRunStore.getState();
+          await endRunLiveActivity({
+            sessionId: finalState.startTime ? `run:${finalState.startTime}` : '',
+            sessionSource: 'running',
+            elapsedSeconds: activeRunElapsedSeconds(finalState),
+            distanceMiles: finalState.distanceMiles,
+            averagePace: formatPace(finalState.averagePaceSecPerMile),
+            heartRateBpm: null,
+            zoneLabel: 'Zone --',
+            zoneStatus: 'unknown',
+            isPaused: false,
+          }).catch(console.warn);
+          await stopLocationTracking().catch(console.warn);
           cancelRun();
           router.back();
         },

@@ -33,7 +33,7 @@ function activity(type: Activity['activityType']): Activity {
 test('canonical Activity taxonomy contains every supported Build 38 activity type', () => {
   assert.deepEqual(ACTIVITY_TYPES, [
     'running', 'walking', 'cycling', 'indoor_cycling', 'swimming', 'hiking',
-    'downhill_skiing', 'cross_country_skiing', 'elliptical', 'rowing',
+    'downhill_skiing', 'cross_country_skiing', 'snowboarding', 'elliptical', 'rowing',
     'stair_climbing', 'hiit', 'mixed_modal', 'strength', 'mobility', 'other',
   ]);
   assert.equal(new Set(ACTIVITY_TYPES).size, ACTIVITY_TYPES.length);
@@ -88,4 +88,3 @@ test('walking and cross-training load remain isolated from running load', () => 
   assert.equal(summary.strength, 300);
   assert.equal(summary.durationMinutes, 240);
 });
-

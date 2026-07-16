@@ -124,3 +124,29 @@ test('enabled cross-training supports seasonal substitution and supplementation'
   assert.ok(ski?.replacesSessionId);
   assert.match(ski?.explanation ?? '', /not running mileage/);
 });
+
+test('beginner plans treat frequency as sessions rather than unique activity types', () => {
+  const plan = generateBeginnerPlan(input(), 'run_walk');
+  const preferences: TrainingPreferences = {
+    ...DEFAULT_TRAINING_PREFERENCES,
+    crossTrainingDecision: 'yes',
+    crossTrainingFrequencyPerWeek: 4,
+    crossTrainingActivities: [{
+      activityType: 'cycling',
+      preferredDays: [0, 2, 4, 6],
+      equipment: ['bike'],
+      setting: 'either',
+      typicalDurationMinutes: 35,
+      experienceLevel: 'some_experience',
+      use: 'either',
+    }],
+  };
+  const result = integrateCrossTrainingIntoWeek(plan.weeks[0], preferences, 7, 80);
+  const crossTraining = result.sessions.filter(session => session.kind === 'cross_training');
+  // Five existing sessions leave room for three cross-training integrations:
+  // one replacement plus two supplements. The fourth request is safely held
+  // rather than stacking two sessions on the same day.
+  assert.equal(crossTraining.length, 3);
+  assert.equal(new Set(crossTraining.map(session => session.id)).size, 3);
+  assert.equal(new Set(result.sessions.map(session => session.dayIndex)).size, result.sessions.length);
+});

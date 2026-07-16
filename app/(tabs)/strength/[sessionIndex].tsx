@@ -19,6 +19,7 @@ import {
 import Card   from '../../../src/components/ui/Card';
 import Badge  from '../../../src/components/ui/Badge';
 import Button from '../../../src/components/ui/Button';
+import { displayLabel } from '../../../src/utils/displayLabels';
 
 import { colors }   from '../../../src/theme/colors';
 import { spacing }  from '../../../src/theme/spacing';
@@ -422,7 +423,7 @@ export default function StrengthSessionDetailScreen() {
         {/* Session header */}
         <View style={styles.headerCard}>
           <View style={styles.headerTop}>
-            <Text style={styles.sessionType}>{session.sessionType.replace(/_/g, ' ').toUpperCase()}</Text>
+            <Text style={styles.sessionType}>{displayLabel(session.sessionType).toUpperCase()}</Text>
             <Text style={styles.duration}>{session.targetDuration} min</Text>
           </View>
           <Text style={styles.sessionTitle}>{session.title}</Text>
@@ -481,7 +482,7 @@ export default function StrengthSessionDetailScreen() {
                 </View>
                 <View style={styles.exMeta}>
                   <Text style={[styles.exName, isSkip && styles.exNameSkipped]}>{ex.exercise.name}</Text>
-                  <Text style={styles.exPattern}>{ex.exercise.pattern.replace('_', ' ')}</Text>
+                  <Text style={styles.exPattern}>{displayLabel(ex.exercise.pattern)}</Text>
                 </View>
                 <View style={styles.exSets}>
                   <Text style={styles.exSetsValue}>{ex.sets}×{ex.repRange[0]}–{ex.repRange[1]}</Text>

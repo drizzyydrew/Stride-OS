@@ -88,11 +88,11 @@ function crossTrainingWorkout(
   };
 }
 
-function freeDay(workouts: RichWorkout[], preferredDays: number[]): number {
+function freeDay(workouts: RichWorkout[], preferredDays: number[]): number | null {
   const occupied = new Set(workouts.map(workout => workout.dayIndex));
   return preferredDays.find(day => !occupied.has(day))
     ?? [0, 2, 4, 6, 1, 3, 5].find(day => !occupied.has(day))
-    ?? 5;
+    ?? null;
 }
 
 export function applyCrossTrainingPreferencesToWeek(
@@ -108,14 +108,20 @@ export function applyCrossTrainingPreferencesToWeek(
     return week;
   }
 
-  const eligible = preferences.crossTrainingActivities
-    .filter(preference => isAvailable(preference, context.month))
-    .slice(0, Math.min(3, preferences.crossTrainingFrequencyPerWeek));
-  if (eligible.length === 0) return week;
+  const available = preferences.crossTrainingActivities
+    .filter(preference => isAvailable(preference, context.month));
+  if (available.length === 0) return week;
+  const requestedCount = Math.min(4, preferences.crossTrainingFrequencyPerWeek);
+  const scheduledPreferences = Array.from(
+    { length: requestedCount },
+    (_, index) => available[index % available.length],
+  );
 
   let workouts = [...week.workouts];
+  const aerobicTemplate = week.workouts.find(workout =>
+    REPLACEABLE_TYPES.has(workout.richType));
   let loadDelta = 0;
-  for (const preference of eligible) {
+  for (const [slotIndex, preference] of scheduledPreferences.entries()) {
     const isIntensity = preference.activityType === 'hiit'
       || preference.activityType === 'mixed_modal';
     const replacementIndex = workouts.findIndex(workout =>
@@ -139,15 +145,19 @@ export function applyCrossTrainingPreferencesToWeek(
       continue;
     }
 
-    const template = workouts.find(workout => REPLACEABLE_TYPES.has(workout.richType));
+    const template = workouts.find(workout => REPLACEABLE_TYPES.has(workout.richType))
+      ?? aerobicTemplate;
     if (!template) continue;
+    const supplementalDay = freeDay(workouts, preference.preferredDays);
+    if (supplementalDay == null) continue;
     const supplemental = crossTrainingWorkout(
       template,
       preference,
       'supplement',
-      freeDay(workouts, preference.preferredDays),
+      supplementalDay,
       context.readinessScore,
     );
+    supplemental.id = `${supplemental.id}_slot_${slotIndex + 1}`;
     loadDelta += supplemental.score.intendedLoad;
     workouts.push(supplemental);
   }
@@ -162,4 +172,3 @@ export function applyCrossTrainingPreferencesToWeek(
     progressionNote: `${week.progressionNote} Cross-training is integrated as a documented replacement or supplement; it does not add running mileage.`,
   };
 }
-

@@ -17,6 +17,7 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { PoseLandmarkRecord } from '../../types/movement';
+import { displayLabel } from '../../utils/displayLabels';
 
 type Props = {
   imageUri: string;
@@ -34,10 +35,6 @@ const DEFAULT_EDITABLE_NAMES = new Set(
   ['left', 'right'].flatMap(side => EDITABLE_SUFFIXES.map(suffix => `${side}_${suffix}`)),
 );
 const HANDLE_SIZE = 44;
-
-function displayName(name: string): string {
-  return name.replace(/_/g, ' ');
-}
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
@@ -100,7 +97,7 @@ function MarkerHandle({ joint, selected, width, height, onSelect, onMove }: Hand
       {...panResponder.panHandlers}
       accessible
       accessibilityRole="adjustable"
-      accessibilityLabel={`${displayName(joint.name)} marker`}
+      accessibilityLabel={`${displayLabel(joint.name)} marker`}
       accessibilityHint="Drag, or use the accessibility actions, to adjust this landmark position."
       accessibilityActions={[
         { name: 'moveUp', label: 'Move up' },
@@ -253,7 +250,7 @@ export default function LandmarkEditor({
       </View>
 
       <View style={styles.controls}>
-        <Text style={styles.selected}>{selected ? displayName(selected) : 'Select marker'}</Text>
+        <Text style={styles.selected}>{selected ? displayLabel(selected) : 'Select marker'}</Text>
         <View style={styles.buttonRow}>
           <Pressable
             style={styles.cancelBtn}
@@ -285,7 +282,7 @@ export default function LandmarkEditor({
             style={styles.resetMarkerBtn}
             onPress={resetMarker}
             accessibilityRole="button"
-            accessibilityLabel={`Reset ${displayName(selected)} marker`}
+            accessibilityLabel={`Reset ${displayLabel(selected)} marker`}
           >
             <Text style={styles.secondaryTxt}>Reset active marker</Text>
           </Pressable>

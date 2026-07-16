@@ -10,6 +10,7 @@ import {
   type StrideRunLiveActivityPayload,
 } from 'stride-live-activity';
 import {
+  liveActivityCommandMatchesSession,
   normalizeOutdoorLiveActivitySnapshot,
   type LiveActivityControlState,
   type OutdoorLiveActivitySnapshot,
@@ -17,6 +18,8 @@ import {
 } from './liveActivityContracts';
 
 export type RunLiveActivitySnapshot = {
+  sessionId?: string;
+  sessionSource?: 'running' | 'outdoor';
   elapsedSeconds: number;
   distanceMiles: number;
   averagePace: string;
@@ -36,6 +39,8 @@ export type RunLiveActivitySnapshot = {
 
 function payloadFromSnapshot(snapshot: RunLiveActivitySnapshot, status?: string): StrideRunLiveActivityPayload {
   return normalizeOutdoorLiveActivitySnapshot({
+    sessionId: snapshot.sessionId,
+    sessionSource: snapshot.sessionSource ?? 'running',
     activityName: snapshot.activityName ?? 'Training Run',
     activityType: snapshot.activityType ?? 'running',
     elapsedSeconds: snapshot.elapsedSeconds,
@@ -97,7 +102,8 @@ const COMMAND_POLL_INTERVAL_MS = 1000;
 const COMMAND_MAX_AGE_MS = 2 * 60 * 1000;
 
 export function startControlCommandPolling(
-  handlers: Partial<Record<StrideControlAction, () => void>>,
+  handlers: Partial<Record<StrideControlAction, (command: StrideRunControlCommand) => void>>,
+  target?: { sessionId: string; sessionSource: string },
 ): () => void {
   const consumedIds = new Set<string>();
   const id = setInterval(() => {
@@ -107,15 +113,19 @@ export function startControlCommandPolling(
     // Only consume commands this poller owns — a run poller must not eat a
     // strength command (and vice versa) if both are ever active together.
     if (!handler) return;
+    if (!liveActivityCommandMatchesSession(command, target)) return;
     if (consumedIds.has(command.id)) {
       clearPendingRunControlCommand(command.id);
       return;
     }
     consumedIds.add(command.id);
-    clearPendingRunControlCommand(command.id);
     const ageMs = Date.now() - command.createdAt * 1000;
-    if (ageMs > COMMAND_MAX_AGE_MS) return;
-    handler();
+    if (ageMs > COMMAND_MAX_AGE_MS) {
+      clearPendingRunControlCommand(command.id);
+      return;
+    }
+    handler(command);
+    clearPendingRunControlCommand(command.id);
   }, COMMAND_POLL_INTERVAL_MS);
   return () => {
     clearInterval(id);

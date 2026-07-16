@@ -64,6 +64,7 @@ import DionInstructionCard from '../../../src/components/movement/DionInstructio
 import TimedCaptureCamera, { type TimedCaptureResult } from '../../../src/components/movement/TimedCaptureCamera';
 import PoseOverlay from '../../../src/components/assessment/PoseOverlay';
 import LandmarkEditor from '../../../src/components/movement/LandmarkEditor';
+import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
@@ -858,18 +859,15 @@ export default function AnalyzeScreen() {
 
   return (
     <View style={s.root}>
-      <ScrollView contentContainerStyle={[s.content, { paddingTop: insets.top + spacing.md }]} showsVerticalScrollIndicator={false}>
-
-        {/* Header */}
-        <View style={s.headerRow}>
-          <Pressable onPress={() => router.back()} hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}>
-            <Text style={s.back}>‹ Back</Text>
-          </Pressable>
-        </View>
-        <View style={s.titleBlock}>
-          <Text style={s.eyebrow}>MOVEMENT LAB</Text>
-          <Text style={s.title}>{info.title}</Text>
-        </View>
+      <View style={{ paddingTop: insets.top }}>
+        <ScreenHeader
+          eyebrow="MOVEMENT LAB"
+          title={info.title}
+          onBack={() => router.back()}
+          backLabel="Back to Movement Lab"
+        />
+      </View>
+      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
         {/* General upload: pick a view before anything else. */}
         {kind === 'general' && (
@@ -1344,16 +1342,6 @@ export default function AnalyzeScreen() {
 const s = StyleSheet.create({
   root:    { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, paddingBottom: 120, gap: spacing.md },
-  headerRow: { flexDirection: 'row', alignItems: 'center' },
-  back:      { color: colors.primary, fontSize: FontSize.base },
-  titleBlock: { gap: 2 },
-  eyebrow: {
-    color:         colors.textMuted,
-    fontSize:      10,
-    fontWeight:    FontWeight.black,
-    letterSpacing: 0.6,
-  },
-  title: { color: colors.text, fontSize: 22, fontWeight: FontWeight.black },
   card: {
     backgroundColor: colors.card,
     borderRadius:    12,

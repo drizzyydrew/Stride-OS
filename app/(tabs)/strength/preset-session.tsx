@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   activeStrengthElapsedSeconds,
@@ -10,11 +10,17 @@ import {
 } from '../../../src/store/activeStrengthSessionStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
-import { endStrengthLiveActivity, updateStrengthLiveActivity } from '../../../src/lib/strengthLiveActivity';
+import {
+  endStrengthLiveActivity,
+  strengthLiveActivitySessionId,
+  updateStrengthLiveActivity,
+} from '../../../src/lib/strengthLiveActivity';
 import { useColors } from '../../../src/theme/useColors';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
+import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { LAYOUT } from '../../../src/constants/layout';
 import type { CompletedExercise } from '../../../src/types/strength';
+import { displayLabels } from '../../../src/utils/displayLabels';
 
 function primaryRepCount(reps: string): number {
   const match = reps.match(/\d+/);
@@ -43,6 +49,7 @@ function sessionExerciseSupport(name: string, equipment: string[]) {
 export default function PresetStrengthSessionScreen() {
   const C = useColors();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const session = useActiveStrengthSessionStore(state => state.session);
   const pause = useActiveStrengthSessionStore(state => state.pause);
   const resume = useActiveStrengthSessionStore(state => state.resume);
@@ -74,19 +81,24 @@ export default function PresetStrengthSessionScreen() {
   }, [session]);
 
   useEffect(() => {
-    if (!session || !current) return;
+    if (!session || session.source !== 'preset' || !current) return;
     updateStrengthLiveActivity({
       workoutName: session.workoutName,
+      sessionId: strengthLiveActivitySessionId(session),
+      sessionSource: 'preset',
       elapsedSeconds: elapsed,
-      currentExercise: `${current.name} · ${current.sets}×${current.reps}`,
+      currentExercise: current.name,
       nextExercise: next?.name ?? '',
       setsCompleted: session.completedExerciseIds.length,
       totalSets: session.exercises.length,
       isPaused: session.status === 'paused',
+      prescription: `${current.sets}×${current.reps}`,
+      loadDisplay: session.loadByExercise[current.id] || (current.equipment.includes('bodyweight') ? 'Bodyweight' : 'Load not set'),
+      progressLabel: `${session.completedExerciseIds.length}/${session.exercises.length} exercises`,
     }).catch(console.warn);
   }, [current, elapsed, next, session]);
 
-  if (!session) {
+  if (!session || session.source !== 'preset') {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: C.bg }]}>
         <View style={styles.empty}>
@@ -156,15 +168,20 @@ export default function PresetStrengthSessionScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: C.bg }]} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}><Ionicons name="chevron-back" size={24} color={C.text} /></TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.eyebrow, { color: C.textDim }]}>ACTIVE PRESET WORKOUT</Text>
-          <Text style={[styles.title, { color: C.text }]} numberOfLines={1}>{session.workoutName}</Text>
-        </View>
-        <Text style={[styles.timer, { color: C.primary }]}>{formatElapsed(elapsed)}</Text>
-      </View>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScreenHeader
+        eyebrow="ACTIVE PRESET WORKOUT"
+        title={session.workoutName}
+        onBack={() => router.back()}
+        titleNumberOfLines={1}
+        right={<Text style={[styles.timer, { color: C.primary }]}>{formatElapsed(elapsed)}</Text>}
+      />
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: LAYOUT.tabBarHeight + Math.max(insets.bottom, 16) + 28 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={[styles.progressCard, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
           <Text style={[styles.progress, { color: C.text }]}>{session.completedExerciseIds.length} of {session.exercises.length} exercises complete</Text>
           <View style={[styles.progressTrack, { backgroundColor: C.cardAlt }]}>
@@ -180,11 +197,11 @@ export default function PresetStrengthSessionScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        <View style={[styles.summaryCard, { backgroundColor: C.card, borderColor: C.border }]}> 
+        <View style={[styles.summaryCard, styles.warmupCard, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[styles.exerciseName, { color: C.text }]}>Warm-Up</Text>
           <Text style={[styles.instructions, { color: C.textMuted }]}>Spend about five minutes on easy movement, joint-specific preparation, and lighter practice sets before the first working exercise.</Text>
         </View>
-        <Text style={[styles.eyebrow, { color: C.textDim, marginBottom: 8 }]}>EXERCISE-BY-EXERCISE FLOW</Text>
+        <Text style={[styles.eyebrow, styles.flowLabel, { color: C.textDim }]}>EXERCISE-BY-EXERCISE FLOW</Text>
         {session.exercises.map((exercise, index) => {
           const done = session.completedExerciseIds.includes(exercise.id);
           const selected = index === session.currentExerciseIndex;
@@ -203,7 +220,7 @@ export default function PresetStrengthSessionScreen() {
               <View style={styles.exerciseHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.exerciseName, { color: C.text }]}>{exercise.name}</Text>
-                  <Text style={[styles.meta, { color: C.textMuted }]}>{exercise.sets} sets · {exercise.reps} · {exercise.equipment.join(', ')}</Text>
+                  <Text style={[styles.meta, { color: C.textMuted }]}>{exercise.sets} sets · {exercise.reps} · {displayLabels(exercise.equipment)}</Text>
                 </View>
                 {done ? <Ionicons name="checkmark-circle" size={23} color={C.primary} /> : null}
               </View>
@@ -212,7 +229,7 @@ export default function PresetStrengthSessionScreen() {
                   <Text style={[styles.detailLabel, { color: C.textDim }]}>HOW TO PERFORM</Text>
                   <Text style={[styles.instructions, { color: C.textMuted }]}>{support.how}</Text>
                   <Text style={[styles.detailLabel, { color: C.textDim }]}>COACHING CUES</Text>
-                  <Text style={[styles.instructions, { color: C.textMuted }]}> 
+                  <Text style={[styles.instructions, { color: C.textMuted }]}>
                     {exercise.notes ?? 'Use a controlled range, maintain stable technique, and choose a load appropriate for today.'}
                   </Text>
                   <Text style={[styles.detailLabel, { color: C.textDim }]}>WHAT IT SHOULD FEEL LIKE</Text>
@@ -274,12 +291,10 @@ export default function PresetStrengthSessionScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 10, gap: 8 },
-  iconButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4 },
   title: { fontSize: 24, fontFamily: 'CormorantGaramond_700Bold' },
   timer: { fontSize: 16, fontWeight: '900' },
-  content: { paddingHorizontal: 18, paddingBottom: LAYOUT.screenPadBottom },
+  content: { paddingHorizontal: 18 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
   progressCard: { borderWidth: 1, borderRadius: 16, padding: 15, marginBottom: 18 },
   progress: { fontSize: 14, fontWeight: '900' },
@@ -300,5 +315,7 @@ const styles = StyleSheet.create({
   completeButton: { minHeight: 46, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   completeText: { fontSize: 13, fontWeight: '900' },
   summaryCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginTop: 6 },
+  warmupCard: { marginBottom: 24 },
+  flowLabel: { marginBottom: 12 },
   finishButton: { minHeight: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
 });

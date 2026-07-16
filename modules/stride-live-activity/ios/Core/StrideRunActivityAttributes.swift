@@ -20,6 +20,8 @@ public struct StrideRunActivityAttributes: ActivityAttributes {
     public var navigationInstruction: String
     public var cueText: String
     public var controlState: String
+    public var elevationDisplay: String
+    public var descentDisplay: String
 
     public init(
       elapsedSeconds: Int,
@@ -38,7 +40,9 @@ public struct StrideRunActivityAttributes: ActivityAttributes {
       nextTransition: String = "",
       navigationInstruction: String = "",
       cueText: String = "",
-      controlState: String = "ready"
+      controlState: String = "ready",
+      elevationDisplay: String = "",
+      descentDisplay: String = ""
     ) {
       self.elapsedSeconds = elapsedSeconds
       self.distanceMiles = distanceMiles
@@ -57,12 +61,18 @@ public struct StrideRunActivityAttributes: ActivityAttributes {
       self.navigationInstruction = navigationInstruction
       self.cueText = cueText
       self.controlState = controlState
+      self.elevationDisplay = elevationDisplay
+      self.descentDisplay = descentDisplay
     }
   }
 
   public var runName: String
+  public var sessionId: String
+  public var sessionSource: String
 
-  public init(runName: String) {
+  public init(runName: String, sessionId: String = "", sessionSource: String = "running") {
     self.runName = runName
+    self.sessionId = sessionId
+    self.sessionSource = sessionSource
   }
 }

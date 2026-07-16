@@ -29,6 +29,7 @@ import PickerWheel from '../../../src/components/ui/PickerWheel';
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
+import { displayLabel } from '../../../src/utils/displayLabels';
 import type {
   GaitFinding,
   MovementRiskFlag,
@@ -525,7 +526,7 @@ export default function VideoDetailScreen() {
           <View style={s.section}>
             <View style={s.overviewCard}>
               <Text style={s.cardLabel}>VIDEO DETAILS</Text>
-              <View style={s.infoRow}><Text style={s.infoKey}>Type</Text><Text style={s.infoVal}>{video.analysisType.replace(/_/g, ' ')}</Text></View>
+              <View style={s.infoRow}><Text style={s.infoKey}>Type</Text><Text style={s.infoVal}>{displayLabel(video.analysisType)}</Text></View>
               <View style={s.infoRow}><Text style={s.infoKey}>Activity</Text><Text style={s.infoVal}>{video.activity}</Text></View>
               <View style={s.infoRow}><Text style={s.infoKey}>View angle</Text><Text style={s.infoVal}>{video.view}</Text></View>
               {video.shoes   ? <View style={s.infoRow}><Text style={s.infoKey}>Shoes</Text><Text style={s.infoVal}>{video.shoes}</Text></View>   : null}
@@ -655,7 +656,7 @@ export default function VideoDetailScreen() {
             ) : null}
             {(session?.jointAngles ?? []).map(angle => (
               <View key={angle.id} style={s.angleCard}>
-                <Text style={s.angleLabel}>{angle.angleName.replace(/_/g, ' ')}</Text>
+                <Text style={s.angleLabel}>{displayLabel(angle.angleName)}</Text>
                 <Text style={s.angleVal}>{angle.angleDegrees}°</Text>
               </View>
             ))}

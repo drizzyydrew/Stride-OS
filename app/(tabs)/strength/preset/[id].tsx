@@ -1,6 +1,5 @@
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getStrengthPresetWorkout, presetExerciseId } from '../../../../src/constants/strengthBank';
@@ -8,6 +7,12 @@ import { useActiveStrengthSessionStore } from '../../../../src/store/activeStren
 import { endStrengthLiveActivity, startStrengthLiveActivity } from '../../../../src/lib/strengthLiveActivity';
 import { useColors } from '../../../../src/theme/useColors';
 import { LAYOUT } from '../../../../src/constants/layout';
+import ScreenHeader from '../../../../src/components/layout/ScreenHeader';
+import { displayLabels } from '../../../../src/utils/displayLabels';
+import {
+  activeSessionStoresHydrated,
+  getConflictingActiveSession,
+} from '../../../../src/lib/activeSessionCoordinator';
 
 function exerciseSupport(name: string, equipment: string[]) {
   const lower = name.toLowerCase();
@@ -46,6 +51,25 @@ export default function PresetStrengthDetailScreen() {
   }
 
   const begin = () => {
+    if (!activeSessionStoresHydrated()) {
+      Alert.alert('Restoring session', 'StrideOS is restoring your active-session state. Try again in a moment.');
+      return;
+    }
+    const crossDomainConflict = getConflictingActiveSession('strength');
+    if (crossDomainConflict) {
+      Alert.alert(
+        'Another session is active',
+        `${crossDomainConflict.name} is still in progress. Continue it or end it before starting this Preset Workout.`,
+        [
+          {
+            text: 'Continue Current Session',
+            onPress: () => router.push(crossDomainConflict.route as never),
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
+      return;
+    }
     const launch = () => {
       const exercises = workout.exercises.map(exercise => ({
         id: presetExerciseId(workout.id, exercise.name),
@@ -103,20 +127,17 @@ export default function PresetStrengthDetailScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: C.bg }]} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-          <Ionicons name="chevron-back" size={24} color={C.text} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.eyebrow, { color: C.textDim }]}>PRESET WORKOUT</Text>
-          <Text style={[styles.title, { color: C.text }]}>{workout.title}</Text>
-        </View>
-      </View>
+      <ScreenHeader
+        eyebrow="PRESET WORKOUT"
+        title={workout.title}
+        onBack={() => router.back()}
+        backLabel="Back to preset workouts"
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.hero, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[styles.purpose, { color: C.text }]}>{workout.description}</Text>
           <Text style={[styles.meta, { color: C.textMuted }]}> 
-            {workout.durationMin} min · {workout.exercises.length} exercises · {workout.equipment.join(', ')}
+            {workout.durationMin} min · {workout.exercises.length} exercises · {displayLabels(workout.equipment)}
           </Text>
           <Text style={[styles.detailLabel, { color: C.textDim }]}>INTENDED USE</Text>
           <Text style={[styles.body, { color: C.textMuted }]}>{workout.description}</Text>
@@ -135,7 +156,7 @@ export default function PresetStrengthDetailScreen() {
             <Text style={[styles.exerciseNumber, { color: C.primary }]}>{index + 1}</Text>
             <View style={{ flex: 1 }}>
               <Text style={[styles.exerciseName, { color: C.text }]}>{exercise.name}</Text>
-              <Text style={[styles.meta, { color: C.textMuted }]}>{exercise.sets} sets · {exercise.reps} · {exercise.equipment.join(', ')}</Text>
+              <Text style={[styles.meta, { color: C.textMuted }]}>{exercise.sets} sets · {exercise.reps} · {displayLabels(exercise.equipment)}</Text>
               <Text style={[styles.detailLabel, { color: C.textDim }]}>HOW TO PERFORM</Text>
               <Text style={[styles.body, { color: C.textMuted }]}>
                 Use a controlled range you can own. Keep the prescribed setup stable and stop the set before technique meaningfully changes.
@@ -149,7 +170,7 @@ export default function PresetStrengthDetailScreen() {
               <Text style={[styles.detailLabel, { color: C.textDim }]}>EASIER ALTERNATIVE</Text>
               <Text style={[styles.body, { color: C.textMuted }]}>{support.easier}</Text>
               <Text style={[styles.detailLabel, { color: C.textDim }]}>LOAD TYPE</Text>
-              <Text style={[styles.body, { color: C.textMuted }]}>{exercise.equipment.join(', ')} · {exercise.sets} sets · {exercise.reps}</Text>
+              <Text style={[styles.body, { color: C.textMuted }]}>{displayLabels(exercise.equipment)} · {exercise.sets} sets · {exercise.reps}</Text>
             </View>
           </View>
           );
@@ -166,8 +187,6 @@ export default function PresetStrengthDetailScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 16, paddingBottom: 12, gap: 8 },
-  iconButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 18, paddingBottom: LAYOUT.screenPadBottom },
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.6 },
   title: { fontSize: 28, fontFamily: 'CormorantGaramond_700Bold' },

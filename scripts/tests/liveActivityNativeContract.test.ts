@@ -18,6 +18,13 @@ test('Live Activity IDs persist and stale first-activity selection is avoided', 
   assert.match(moduleSource, /StrideOS\.currentStrengthLiveActivityId/);
   assert.match(intentSource, /currentRunActivity\(\)/);
   assert.match(intentSource, /activities\.count == 1/);
+  assert.match(intentSource, /removeObject\(forKey: StrideRunControlCommand\.strengthActivityIdKey\)/);
+  assert.match(moduleSource, /StrideLiveActivityIdStore\.write\(activity\.id, key: StrideLiveActivityIdStore\.strengthKey\)/);
+});
+
+test('native start paths enforce one cross-domain Live Activity owner', () => {
+  assert.match(moduleSource, /await Self\.endExistingActivityIfNeeded\(\)\s+await Self\.endExistingStrengthActivityIfNeeded\(\)/);
+  assert.match(moduleSource, /AsyncFunction\("startStrength"\)[\s\S]*await Self\.endExistingActivityIfNeeded\(\)\s+await Self\.endExistingStrengthActivityIfNeeded\(\)/);
 });
 
 test('App Intents publish pending state and suppress rapid duplicate commands', () => {
@@ -28,6 +35,9 @@ test('App Intents publish pending state and suppress rapid duplicate commands', 
   assert.doesNotMatch(intentSource, /private func endRun/);
   assert.match(widgetSource, /ProgressView\(\)/);
   assert.match(widgetSource, /pendingLabel/);
+  assert.match(intentSource, /sessionSourceKey/);
+  assert.match(intentSource, /activityKitIdKey/);
+  assert.match(moduleSource, /controlStatePreservingPending/);
 });
 
 test('activity-specific and strength-priority content are visible contracts', () => {
@@ -36,4 +46,7 @@ test('activity-specific and strength-priority content are visible contracts', ()
   assert.match(widgetSource, /context\.state\.navigationInstruction/);
   assert.match(widgetSource, /context\.state\.prescription/);
   assert.match(widgetSource, /context\.state\.loadDisplay/);
+  assert.match(widgetSource, /PauseStrengthIntent/);
+  assert.match(widgetSource, /ResumeStrengthIntent/);
+  assert.match(widgetSource, /figure\.snowboarding/);
 });

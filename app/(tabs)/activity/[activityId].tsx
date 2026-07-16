@@ -1,11 +1,14 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Polyline } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 
+import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useColors } from '../../../src/theme/useColors';
+import { resolveActivityDetail } from '../../../src/utils/activityResolution';
+import { displayLabel } from '../../../src/utils/displayLabels';
 
 function duration(seconds?: number): string {
   const total = Math.round(seconds ?? 0);
@@ -21,17 +24,50 @@ function pace(secondsPerKm?: number): string {
 export default function ActivityDetailScreen() {
   const C = useColors();
   const router = useRouter();
-  const { activityId } = useLocalSearchParams<{ activityId: string }>();
-  const activity = useActivityStore(state => state.activities.find(item => item.id === activityId));
-  if (!activity) return (
-    <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]}>
-      <Text style={[s.title, { color: C.text }]}>Activity not found</Text>
+  const { activityId } = useLocalSearchParams<{ activityId?: string | string[] }>();
+  const activities = useActivityStore(state => state.activities);
+  const hydrationStatus = useActivityStore(state => state.hydrationStatus);
+  const resolution = resolveActivityDetail(activities, activityId, hydrationStatus);
+  if (resolution.status === 'loading') return (
+    <SafeAreaView style={[s.safe, s.centered, { backgroundColor: C.bg }]}>
+      <ActivityIndicator color={C.primary} />
+      <Text style={[s.recoveryTitle, { color: C.text }]}>Loading activity</Text>
+      <Text style={[s.recoveryBody, { color: C.textMuted }]}>Your activity history is still loading.</Text>
     </SafeAreaView>
   );
+  if (resolution.status === 'unavailable') return (
+    <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
+      <ScreenHeader title="Activity" eyebrow="ALL TRAINING" onBack={() => router.back()} />
+      <View style={s.centered}>
+        <View style={[s.recoveryCard, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Ionicons name="alert-circle-outline" size={30} color={C.primary} />
+          <Text style={[s.recoveryTitle, { color: C.text }]}>Activity unavailable</Text>
+          <Text style={[s.recoveryBody, { color: C.textMuted }]}>
+            We couldn’t find this activity. It may have been removed or its data may not have finished loading.
+          </Text>
+          <TouchableOpacity
+            style={[s.recoveryPrimary, { backgroundColor: C.primary }]}
+            onPress={() => router.replace('/(tabs)/activity' as never)}
+          >
+            <Text style={[s.recoveryPrimaryText, { color: C.onPrimary }]}>Back to Activity</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.recoverySecondary, { borderColor: C.border }]}
+            onPress={() => router.replace('/(tabs)/dashboard' as never)}
+          >
+            <Text style={[s.recoveryPrimaryText, { color: C.text }]}>Return to Today</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+  const activity = resolution.activity;
 
   const route = activity.metrics.routeCoordinates ?? [];
   const distanceMiles = (activity.metrics.distanceMeters ?? 0) / 1609.344;
-  const isSpeed = activity.activityType === 'cycling' || activity.activityType.includes('skiing');
+  const isSpeed = activity.activityType === 'cycling'
+    || activity.activityType.includes('skiing')
+    || activity.activityType === 'snowboarding';
   const metricCards = [
     ['Duration', duration(activity.metrics.durationSeconds)],
     activity.metrics.distanceMeters ? ['Distance', `${distanceMiles.toFixed(2)} mi`] : null,
@@ -49,17 +85,11 @@ export default function ActivityDetailScreen() {
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.iconButton}>
-          <Ionicons name="chevron-back" size={24} color={C.text} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={[s.eyebrow, { color: C.textDim }]}>ACTIVITY DETAIL</Text>
-          <Text style={[s.title, { color: C.text }]}>
-            {activity.activityType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-          </Text>
-        </View>
-      </View>
+      <ScreenHeader
+        eyebrow="ACTIVITY DETAIL"
+        title={displayLabel(activity.activityType)}
+        onBack={() => router.back()}
+      />
       <ScrollView contentContainerStyle={s.content}>
         {route.length > 1 ? (
           <View style={[s.mapCard, { borderColor: C.border }]}>
@@ -111,8 +141,13 @@ export default function ActivityDetailScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 10 },
-  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 10 },
+  recoveryCard: { width: '100%', maxWidth: 420, borderWidth: 1, borderRadius: 20, padding: 22, alignItems: 'center' },
+  recoveryTitle: { fontSize: 24, fontWeight: '900', marginTop: 8, textAlign: 'center' },
+  recoveryBody: { fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 6, marginBottom: 18 },
+  recoveryPrimary: { width: '100%', minHeight: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  recoverySecondary: { width: '100%', minHeight: 48, borderRadius: 13, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 10 },
+  recoveryPrimaryText: { fontSize: 14, fontWeight: '900' },
   eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
   title: { fontSize: 30, fontFamily: 'CormorantGaramond_700Bold' },
   content: { paddingHorizontal: 18, paddingBottom: 100 },

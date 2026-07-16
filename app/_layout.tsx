@@ -26,6 +26,7 @@ import {
   getNotificationAccessStatus,
   scheduleTrainingNotifications,
 } from '../src/lib/notifications';
+import LiveActivityCommandReconciler from '../src/components/liveActivity/LiveActivityCommandReconciler';
 
 // Register GPS background task at module level (required by expo-task-manager)
 import '../src/lib/gpsTracking';
@@ -173,6 +174,7 @@ export default function RootLayout() {
         <Stack.Screen name="auth"       options={{ headerShown: false }} />
         <Stack.Screen name="modal"      options={{ presentation: 'modal' }} />
       </Stack>
+      <LiveActivityCommandReconciler />
       <NavigationGate />
         </ToastProvider>
       </NavigationThemeProvider>
