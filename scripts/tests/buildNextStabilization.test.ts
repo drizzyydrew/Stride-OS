@@ -208,7 +208,7 @@ test('bottom tabs remain exactly six visible destinations with modest larger ico
   const source = fs.readFileSync('app/(tabs)/_layout.tsx', 'utf8');
   const visible = [...source.matchAll(/<Tabs\.Screen\s+name="(dashboard|calendar|training|strength|coach|more)"/g)].map(match => match[1]);
   assert.deepEqual(visible, ['dashboard', 'calendar', 'training', 'strength', 'coach', 'more']);
-  assert.match(source, /size=\{24\}/);
-  assert.match(source, /fontSize:\s*9\.5/);
+  assert.match(source, /TAB_ICON_SIZE\s*=\s*25/);
+  assert.match(source, /TAB_LABEL_FONT_SIZE\s*=\s*10/);
   assert.match(source, /href:\s*null/);
 });

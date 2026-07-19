@@ -28,6 +28,7 @@ export type RunModeConfig = {
   goalMinutes?:           number;  // time mode
   goalMiles?:             number;  // distance + race modes
   targetPaceSecPerMile?:  number;  // race mode
+  scheduledSessionId?:    string;
 };
 
 // Rolling window for pace calculation (seconds of data to average)
@@ -65,6 +66,7 @@ export type ActiveRunStore = {
   lastRunCoordinates:     Coordinate[];
   currentIntervalIndex:   number;
   plannedWorkout:         RichWorkout | null;
+  scheduledSessionId:     string | null;
   runMode:                RunMode;
   goalMinutes:            number | null;
   goalMiles:              number | null;
@@ -109,6 +111,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
   lastRunCoordinates:     [],
   currentIntervalIndex:   0,
   plannedWorkout:         null,
+  scheduledSessionId:     null,
   runMode:                'quick',
   goalMinutes:            null,
   goalMiles:              null,
@@ -130,6 +133,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       coordinates:            [],
       currentIntervalIndex:   0,
       plannedWorkout,
+      scheduledSessionId:     config?.scheduledSessionId ?? null,
       runMode:                config?.mode ?? (plannedWorkout ? 'workout' : 'quick'),
       goalMinutes:            config?.goalMinutes ?? null,
       goalMiles:              config?.goalMiles ?? null,
@@ -248,6 +252,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       coordinates:            [],
       currentIntervalIndex:   0,
       plannedWorkout:         null,
+      scheduledSessionId:     null,
       runMode:                'quick',
       goalMinutes:            null,
       goalMiles:              null,
@@ -272,6 +277,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       coordinates:            [],
       currentIntervalIndex:   0,
       plannedWorkout:         null,
+      scheduledSessionId:     null,
       runMode:                'quick',
       goalMinutes:            null,
       goalMiles:              null,

@@ -697,9 +697,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   } = useActiveRunStore();
   const weekPlan = useWeekPlan();
   const activeScheduled = useScheduledSessions(weekPlan);
-  const todayPlannedSession = activeScheduled.todaySessions.find(session =>
-    session.activityType === 'run' || session.activityType === 'run_walk' || session.activityType === 'walk',
-  );
+  const todayPlannedSession = activeScheduled.activeTodayRun;
   const todayPlannedWorkout = todayPlannedSession?.richWorkout ?? null;
   const routeAttachment = useRouteStore(s => s.routeAttachment);
   const attachedRoute = useRouteStore(s => s.routes.find(r => r.id === s.routeAttachment.routeId) ?? null);
@@ -847,7 +845,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         pendingMode === 'time'     ? { mode: 'time', goalMinutes: goalMinutesInput } :
         pendingMode === 'distance' ? { mode: 'distance', goalMiles: toMiles(goalMilesInput) } :
         pendingMode === 'race'     ? { mode: 'race', goalMiles: toMiles(raceMilesInput), targetPaceSecPerMile: toSecPerMile(racePaceSecInput) } :
-        pendingMode === 'workout' && startWorkout ? { mode: 'workout' } :
+        pendingMode === 'workout' && startWorkout ? { mode: 'workout', scheduledSessionId: todayPlannedSession?.scheduledSessionId } :
         { mode: 'quick' };
       startRun(startWorkout, config);
       const liveRunStartedAt = useActiveRunStore.getState().startTime;
@@ -1438,12 +1436,36 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             ) : null}
             {pendingMode === 'workout' ? (
               todayPlannedWorkout ? (
-                <View style={[styles.goalConfigRow, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
-                  <View style={{ flex: 1 }}>
+                <View style={[styles.workoutDetailCard, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+                  <View style={{ flex: 1, gap: 6 }}>
                     <Text style={[styles.goalConfigValue, { color: C.text }]}>{todayPlannedWorkout.title}</Text>
-                    <Text style={[styles.goalConfigLabel, { color: C.textMuted }]} numberOfLines={2}>
+                    <Text style={[styles.goalConfigLabel, { color: C.textMuted }]}>
                       {todayPlannedWorkout.purpose}
                     </Text>
+                    {todayPlannedSession?.runWalk ? (
+                      <>
+                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
+                          Total: {todayPlannedSession.runWalk.totalMinutes} min · {todayPlannedSession.runWalk.hrZone} · RPE {todayPlannedSession.runWalk.rpe}
+                        </Text>
+                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
+                          Warm-up: {todayPlannedSession.runWalk.warmupMinutes}-minute easy walk
+                        </Text>
+                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
+                          Main set: {todayPlannedSession.runWalk.rounds} rounds · {todayPlannedSession.runWalk.runSeconds} sec run / {todayPlannedSession.runWalk.walkSeconds} sec walk
+                        </Text>
+                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
+                          Cooldown: {todayPlannedSession.runWalk.cooldownMinutes}-minute easy walk · Pace: {todayPlannedSession.runWalk.pace}
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>Total: {todayPlannedWorkout.durationMinutes} min</Text>
+                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>Warm-up: {todayPlannedWorkout.warmup.instructions}</Text>
+                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>Main set: {todayPlannedWorkout.mainSet.map(segment => segment.instructions).join(' ')}</Text>
+                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>Cooldown: {todayPlannedWorkout.cooldown.instructions}</Text>
+                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>Target: Zone {todayPlannedWorkout.hrZoneTarget} · RPE {todayPlannedWorkout.rpeRange[0]}–{todayPlannedWorkout.rpeRange[1]} · {todayPlannedWorkout.paceGuidance.targetPace}</Text>
+                      </>
+                    )}
                   </View>
                 </View>
               ) : (
@@ -2639,6 +2661,18 @@ const styles = StyleSheet.create({
   goalConfigValue: {
     fontSize: 14,
     fontWeight: '800',
+  },
+  workoutDetailCard: {
+    borderWidth: 1,
+    borderRadius: radiusTokens.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    marginTop: spacing.sm,
+  },
+  workoutDetailText: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '600',
   },
   goalPanel: {
     borderWidth: 1,

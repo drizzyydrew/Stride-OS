@@ -21,6 +21,7 @@ import { getLastLoggedExercise, suggestProgression } from '../../../src/utils/st
 import { getExerciseGuide } from '../../../src/constants/exerciseGuides';
 import { toYMD } from '../../../src/utils/calendarEngine';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
+import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
 import {
   endStrengthLiveActivity,
@@ -502,6 +503,7 @@ export default function StrengthScreen() {
   const [segment, setSegment] = useState<Segment>('strength');
   const { units } = useSettingsStore();
   const weekPlan = useWeekPlan();
+  const scheduled = useScheduledSessions(weekPlan);
   const fatigueScore = useAthleteStore(s => s.fatigueScore);
   const readinessLimited = weekPlan.strengthWeek.progressionState === 'regress';
   const logStrengthSession = useStrengthStore(s => s.manualLog);
@@ -525,14 +527,15 @@ export default function StrengthScreen() {
 
   // ── Real sessions for this week, date-sorted ───────────────────────────────
   const strengthEntries = useMemo(() => {
-    const list: { date: string; session: StrengthSession }[] = [];
-    for (const [date, entries] of weekPlan.calendarMap.entries()) {
-      for (const e of entries) {
-        if (e.type === 'strength' && e.session) list.push({ date, session: e.session });
-      }
-    }
+    const list: { date: string; scheduledSessionId: string; session: StrengthSession }[] = scheduled.weekSessions
+      .filter(item => item.activityType === 'strength' && item.strengthSession)
+      .map(item => ({
+        date: item.date,
+        scheduledSessionId: item.scheduledSessionId,
+        session: item.strengthSession!,
+      }));
     return list.sort((a, b) => a.date.localeCompare(b.date));
-  }, [weekPlan.calendarMap]);
+  }, [scheduled.weekSessions]);
 
   const autoIndex = useMemo(() => {
     if (strengthEntries.length === 0) return -1;
@@ -550,7 +553,7 @@ export default function StrengthScreen() {
   const activeEntry = activeIndex >= 0 ? strengthEntries[activeIndex] : null;
   const session = activeEntry?.session ?? null;
 
-  const sessionIndexInWeek = session ? weekPlan.strengthWeek.sessions.indexOf(session) : -1;
+  const sessionIndexInWeek = session ? weekPlan.strengthWeek.sessions.findIndex(item => item.id === session.id) : -1;
   const currentWeek = weekPlan.metadata.currentWeek;
 
   const wDef = session

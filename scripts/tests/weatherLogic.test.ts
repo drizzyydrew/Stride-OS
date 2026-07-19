@@ -100,8 +100,8 @@ test('mergeWeatherOutcome: failure with no cache never fabricates data', () => {
 test('classifyAqi maps AirNow-style category thresholds conservatively', () => {
   assert.equal(classifyAqi(12).category, 'Good');
   assert.equal(classifyAqi(75).category, 'Moderate');
-  assert.equal(classifyAqi(125).category, 'Unhealthy for sensitive groups');
+  assert.equal(classifyAqi(125).category, 'Unhealthy for Sensitive Groups');
   assert.equal(classifyAqi(175).category, 'Unhealthy');
-  assert.equal(classifyAqi(250).category, 'Very unhealthy');
+  assert.equal(classifyAqi(250).category, 'Very Unhealthy');
   assert.equal(classifyAqi(325).category, 'Hazardous');
 });

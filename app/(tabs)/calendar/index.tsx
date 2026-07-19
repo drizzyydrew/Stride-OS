@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ import { useWeekPlan }      from '../../../src/hooks/useWeekPlan';
 import { usePlanTimeline }  from '../../../src/hooks/usePlanTimeline';
 import { useAthleteStore }  from '../../../src/store/athleteStore';
 import { useActivityStore } from '../../../src/store/activityStore';
+import { useScheduledSessionSelectionStore } from '../../../src/store/scheduledSessionSelectionStore';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import { calendarEntriesFromScheduledSessions } from '../../../src/utils/scheduledSessions';
 
@@ -137,6 +138,8 @@ export default function CalendarScreen() {
   const progressionLevel = useAthleteStore(s => s.progressionLevel);
   const activities = useActivityStore(s => s.activities);
   const scheduled = useScheduledSessions(weekPlan);
+  const selectScheduledSessionForDate = useScheduledSessionSelectionStore(s => s.selectForDate);
+  const removeScheduledSessionFromToday = useScheduledSessionSelectionStore(s => s.removeFromToday);
 
   const today    = useMemo(() => startOfDay(new Date()), []);
   const todayYMD = useMemo(() => toYMD(today), [today]);
@@ -288,6 +291,53 @@ export default function CalendarScreen() {
     setSelectedDate(date);
     setDisplayedMonth(new Date(date.getFullYear(), date.getMonth(), 1));
     setView('day');
+  }
+
+  function handleEntryPress(entry: CalendarEntry, entryDateYMD: string, isToday: boolean) {
+    if (!entry.scheduledSessionId || entry.type === 'race') {
+      router.push(routeForEntry(entry) as never);
+      return;
+    }
+    const isFuture = entryDateYMD > todayYMD;
+    const buttons = [
+      {
+        text: isToday ? 'Select for Today' : isFuture ? 'Perform Today' : 'View Details',
+        onPress: () => {
+          if (isFuture) {
+            Alert.alert('Perform this workout today?', 'StrideOS will use this scheduled session as today’s active selection and nearby sessions may adapt.', [
+              { text: 'Keep Scheduled Date', style: 'cancel' },
+              {
+                text: 'Perform Today',
+                onPress: () => {
+                  selectScheduledSessionForDate(todayYMD, entry.scheduledSessionId!);
+                  setSelectedDate(today);
+                },
+              },
+            ]);
+            return;
+          }
+          selectScheduledSessionForDate(todayYMD, entry.scheduledSessionId!);
+          router.push(routeForEntry(entry) as never);
+        },
+      },
+      ...(isToday ? [{
+        text: 'Remove from Today',
+        style: 'destructive' as const,
+        onPress: () => removeScheduledSessionFromToday(todayYMD, entry.scheduledSessionId!),
+      }] : [{
+        text: 'Keep Scheduled Date',
+        style: 'cancel' as const,
+      }]),
+      {
+        text: 'Discuss with AI Coach',
+        onPress: () => router.push('/(tabs)/coach' as never),
+      },
+      {
+        text: 'Cancel',
+        style: 'cancel' as const,
+      },
+    ];
+    Alert.alert(entry.label, 'Choose how to use this scheduled session. This does not delete the planned session or completed history.', buttons);
   }
 
   function renderSegment(label: string, value: CalendarView) {
@@ -472,7 +522,14 @@ export default function CalendarScreen() {
           </View>
         ) : (
           info.entries.map((entry, i) => (
-            <View key={`${entry.type}-${i}`} style={[styles.summaryBox, { backgroundColor: C.cardAlt }]}>
+            <TouchableOpacity
+              key={`${entry.type}-${i}`}
+              style={[styles.summaryBox, { backgroundColor: C.cardAlt }]}
+              onPress={() => handleEntryPress(entry, toYMD(selectedDate), isToday)}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityLabel={`Open actions for ${entry.label}`}
+            >
               <Text style={[styles.summaryLabel, { color: C.textDim }]}>
                 {entry.type === 'race' ? 'RACE DAY' : displayLabel(entry.type).toUpperCase()}
               </Text>
@@ -501,7 +558,7 @@ export default function CalendarScreen() {
               <Text style={[styles.futureText, { color: entry.completed ? C.positive : entry.missed ? C.critical : C.textMuted, marginTop: 6, fontWeight: '700' }]}>
                 {entry.completed ? 'Completed' : entry.missed ? 'Missed' : isFuture ? 'Upcoming' : 'Planned'}
               </Text>
-            </View>
+            </TouchableOpacity>
           ))
         )}
 

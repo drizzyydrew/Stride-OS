@@ -66,8 +66,8 @@ test('bottom tabs remain exactly six and use the modest larger label/icon contra
   const tabs = readFileSync('app/(tabs)/_layout.tsx', 'utf8');
   const visibleSection = tabs.slice(tabs.indexOf('<Tabs.Screen'), tabs.indexOf('<Tabs.Screen name="index"'));
   assert.equal((visibleSection.match(/<Tabs\.Screen/g) ?? []).length, 6);
-  assert.match(tabs, /size=\{24\}/);
-  assert.match(tabs, /fontSize:\s*9\.5/);
+  assert.match(tabs, /TAB_ICON_SIZE\s*=\s*25/);
+  assert.match(tabs, /TAB_LABEL_FONT_SIZE\s*=\s*10/);
   assert.match(tabs, /minimumFontScale=\{0\.85\}/);
   assert.match(tabs, /minWidth:\s*0/);
 });

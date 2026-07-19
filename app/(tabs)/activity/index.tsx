@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { Swipeable } from 'react-native-gesture-handler';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { useActivityStore } from '../../../src/store/activityStore';
@@ -60,6 +61,7 @@ export default function ActivityScreen() {
   const C = useColors();
   const router = useRouter();
   const activities = useActivityStore(state => state.activities);
+  const removeActivity = useActivityStore(state => state.removeActivity);
   const [filter, setFilter] = useState<ActivityFilter>('all');
   const meaningful = useMemo(() => activities.filter(isMeaningfulActivity), [activities]);
   const visible = useMemo(() => meaningful
@@ -68,6 +70,21 @@ export default function ActivityScreen() {
   const weekly = useMemo(() => summarizeActivityLoad(
     meaningful.filter(activity => Date.now() - activity.startTime <= 7 * 24 * 60 * 60 * 1000),
   ), [meaningful]);
+
+  function confirmDeleteActivity(activity: Activity) {
+    Alert.alert(
+      'Delete this activity?',
+      'This removes the activity from your history and recalculates affected load and analytics. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Activity',
+          style: 'destructive',
+          onPress: () => removeActivity(activity.id),
+        },
+      ],
+    );
+  }
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
@@ -140,24 +157,41 @@ export default function ActivityScreen() {
         </ScrollView>
 
         {visible.map(activity => (
-          <TouchableOpacity
+          <Swipeable
             key={activity.id}
-            style={[s.activityCard, { backgroundColor: C.card, borderColor: C.border }]}
-            onPress={() => router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: activity.id } } as never)}
+            overshootRight={false}
+            renderRightActions={() => (
+              <TouchableOpacity
+                style={[s.deleteAction, { backgroundColor: C.critical }]}
+                onPress={() => confirmDeleteActivity(activity)}
+                accessibilityLabel={`Delete ${displayLabel(activity.activityType)} activity`}
+              >
+                <Ionicons name="trash-outline" size={20} color="#fff" />
+                <Text style={s.deleteActionText}>Delete</Text>
+              </TouchableOpacity>
+            )}
           >
-            <View style={[s.activityIcon, { backgroundColor: C.primaryDim }]}>
-              <Ionicons name={iconFor(activity.activityType)} size={20} color={C.primary} />
-            </View>
-            <View style={s.activityCopy}>
-              <Text style={[s.activityTitle, { color: C.text }]}>
-                {activity.subtype === 'run_walk' ? 'Run / Walk' : displayLabel(activity.activityType)}
-              </Text>
-              <Text style={[s.activityMeta, { color: C.textMuted }]}>
-                {new Date(activity.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {metricLine(activity)}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.activityCard, { backgroundColor: C.card, borderColor: C.border }]}
+              onPress={() => router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: activity.id } } as never)}
+              onLongPress={() => confirmDeleteActivity(activity)}
+              delayLongPress={450}
+              accessibilityHint="Double tap to open. Long press for activity actions including delete."
+            >
+              <View style={[s.activityIcon, { backgroundColor: C.primaryDim }]}>
+                <Ionicons name={iconFor(activity.activityType)} size={20} color={C.primary} />
+              </View>
+              <View style={s.activityCopy}>
+                <Text style={[s.activityTitle, { color: C.text }]}>
+                  {activity.subtype === 'run_walk' ? 'Run / Walk' : displayLabel(activity.activityType)}
+                </Text>
+                <Text style={[s.activityMeta, { color: C.textMuted }]}>
+                  {new Date(activity.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {metricLine(activity)}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+            </TouchableOpacity>
+          </Swipeable>
         ))}
 
         {visible.length === 0 ? (
@@ -211,6 +245,8 @@ const s = StyleSheet.create({
   filter: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 8 },
   filterText: { fontSize: 12, fontWeight: '800' },
   activityCard: { borderWidth: 1, borderRadius: 16, padding: 14, marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  deleteAction: { width: 96, borderRadius: 16, marginBottom: 10, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  deleteActionText: { color: '#fff', fontSize: 12, fontWeight: '900' },
   activityIcon: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   activityCopy: { flex: 1, minWidth: 0 },
   activityTitle: { fontSize: 15, fontWeight: '900' },

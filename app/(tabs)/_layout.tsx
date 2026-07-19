@@ -11,6 +11,10 @@ import { sundayOf, toYMD } from '../../src/utils/calendarEngine';
 import type { TrainingGoalType } from '../../src/types/plan';
 
 const RACE_GOALS = new Set(['marathon', 'half_marathon', '10k', '5k']);
+export const TAB_ICON_SIZE = 25;
+export const TAB_LABEL_FONT_SIZE = 10;
+export const TAB_LABEL_LINE_HEIGHT = 12;
+export const VISIBLE_BOTTOM_TABS = ['Today', 'Calendar', 'Running', 'Strength', 'AI Coach', 'More'] as const;
 
 function inferGoalType(primaryGoal: string): TrainingGoalType {
   return RACE_GOALS.has(primaryGoal) ? 'race_prep' : 'general_running';
@@ -28,7 +32,9 @@ function TabBtn({
   const C = useColors();
   return (
     <View style={styles.tabBtn}>
-      <Ionicons name={name} size={24} color={focused ? C.primary : C.textMuted} />
+      <View style={styles.tabIconBox}>
+        <Ionicons name={name} size={TAB_ICON_SIZE} color={focused ? C.primary : C.textMuted} />
+      </View>
       <Text
         numberOfLines={1}
         adjustsFontSizeToFit
@@ -147,14 +153,23 @@ const styles = StyleSheet.create({
   tabBtn: {
     flex: 1,
     alignItems: 'center',
-    gap: 3,
+    justifyContent: 'center',
+    gap: 4,
     paddingVertical: 2,
     paddingHorizontal: 1,
     minWidth: 0,
   },
+  tabIconBox: {
+    height: TAB_ICON_SIZE,
+    minWidth: TAB_ICON_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tabLabel: {
-    fontSize: 9.5,
+    fontSize: TAB_LABEL_FONT_SIZE,
+    lineHeight: TAB_LABEL_LINE_HEIGHT,
     fontWeight: '700',
     textAlign: 'center',
+    includeFontPadding: false,
   },
 });

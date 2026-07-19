@@ -84,7 +84,7 @@ test('Today, Calendar, Running, Strength, and AI Coach read the scheduled-sessio
   assert.match(calendar, /useScheduledSessions\(weekPlan\)/);
   assert.match(running, /useScheduledSessions\(weekPlan\)/);
   assert.match(coach, /useScheduledSessions\(weekPlan\)/);
-  assert.match(strength, /weekPlan\.calendarMap/);
+  assert.match(strength, /scheduled\.weekSessions/);
   assert.match(weekPlan, /calendarEntriesFromScheduledSessions/);
 });
 

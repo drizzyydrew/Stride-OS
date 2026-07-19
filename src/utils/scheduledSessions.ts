@@ -359,7 +359,29 @@ export function scheduledSessionsForDate(
   now = new Date(),
 ): ScheduledSession[] {
   const beginner = activeBeginnerPlan ? sessionsFromBeginnerPlanForDate(activeBeginnerPlan, dateYMD, now) : [];
-  if (beginner.length > 0) return dedupePrimarySessions(beginner);
+  if (beginner.length > 0) {
+    const projectedEntries = weekPlan.calendarMap.get(dateYMD) ?? [];
+    const enrichedById = new Map(
+      projectedEntries
+        .filter(entry => entry.scheduledSessionId)
+        .map(entry => [entry.scheduledSessionId!, sessionFromCalendarEntry(entry, now)]),
+    );
+    return dedupePrimarySessions(beginner.map(session => {
+      const enriched = enrichedById.get(session.scheduledSessionId);
+      return {
+      ...session,
+      ...(enriched ?? {}),
+      scheduledSessionId: session.scheduledSessionId,
+      date: session.date,
+      originalDate: session.originalDate,
+      status: enriched?.status ?? session.status,
+      priority: session.priority,
+      runWalk: session.runWalk,
+      richWorkout: session.richWorkout ?? enriched?.richWorkout,
+      strengthSession: enriched?.strengthSession ?? session.strengthSession,
+      };
+    }));
+  }
   return (weekPlan.calendarMap.get(dateYMD) ?? []).map(entry => sessionFromCalendarEntry(entry, now));
 }
 
@@ -409,4 +431,74 @@ export function primarySessionForDate(sessions: ScheduledSession[]): ScheduledSe
     ?? sessions.find(session => session.priority === 'supporting')
     ?? sessions[0]
     ?? null;
+}
+
+export function getScheduledSessionsForDate(
+  weekPlan: WeekPlan,
+  activeBeginnerPlan: GeneratedBeginnerPlan | null,
+  dateYMD: string,
+  now = new Date(),
+): ScheduledSession[] {
+  return scheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now);
+}
+
+export function getPrimarySessionForDate(sessions: ScheduledSession[]): ScheduledSession | null {
+  return primarySessionForDate(sessions);
+}
+
+export function getSupportingSessionsForDate(sessions: ScheduledSession[]): ScheduledSession[] {
+  return sessions.filter(session => session.priority === 'supporting');
+}
+
+export function getScheduledRunForDate(sessions: ScheduledSession[]): ScheduledSession | null {
+  return sessions.find(session =>
+    session.priority === 'primary'
+    && ['run', 'run_walk', 'walk'].includes(session.activityType),
+  ) ?? sessions.find(session => ['run', 'run_walk', 'walk'].includes(session.activityType)) ?? null;
+}
+
+export function getScheduledStrengthForDate(sessions: ScheduledSession[]): ScheduledSession | null {
+  return sessions.find(session => session.activityType === 'strength') ?? null;
+}
+
+export function getSessionById(sessions: ScheduledSession[], scheduledSessionId: string): ScheduledSession | null {
+  return sessions.find(session => session.scheduledSessionId === scheduledSessionId) ?? null;
+}
+
+export function activeScheduledSessionsForDate(
+  sessionsForDate: ScheduledSession[],
+  allKnownSessions: ScheduledSession[],
+  dateYMD: string,
+  selectedSessionId?: string,
+  removedSessionIds: string[] = [],
+): ScheduledSession[] {
+  const removed = new Set(removedSessionIds);
+  const visibleForActiveUse = sessionsForDate.filter(session => !removed.has(session.scheduledSessionId));
+  if (!selectedSessionId || removed.has(selectedSessionId)) return visibleForActiveUse;
+
+  const selected = allKnownSessions.find(session => session.scheduledSessionId === selectedSessionId)
+    ?? visibleForActiveUse.find(session => session.scheduledSessionId === selectedSessionId);
+  if (!selected) return visibleForActiveUse;
+
+  const selectedForToday: ScheduledSession = {
+    ...selected,
+    date: dateYMD,
+    originalDate: selected.originalDate,
+    status: selected.status === 'completed' || selected.status === 'skipped' ? selected.status : 'today',
+  };
+
+  return [
+    selectedForToday,
+    ...visibleForActiveUse.filter(session => session.scheduledSessionId !== selectedSessionId),
+  ];
+}
+
+export function actionLabelForScheduledSession(session: ScheduledSession | null): string {
+  if (!session) return "View Today's Plan";
+  if (session.status === 'in_progress') return 'Resume Workout';
+  if (session.activityType === 'strength') return 'Start Strength';
+  if (session.activityType === 'run_walk') return 'Start Run/Walk';
+  if (session.activityType === 'run') return 'Start Run';
+  if (session.activityType === 'mobility') return 'View Mobility';
+  return `Start ${displayLabel(session.activityType)}`;
 }

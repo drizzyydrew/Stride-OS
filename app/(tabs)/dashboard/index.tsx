@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, type DimensionValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,9 +14,9 @@ import { readinessTier, READINESS_INTERPRETATION } from '../../../src/utils/read
 import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckInCard';
 import { LAYOUT } from '../../../src/constants/layout';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
-import { displayLabel } from '../../../src/utils/displayLabels';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
-import { describeRunWalk } from '../../../src/utils/scheduledSessions';
+import { actionLabelForScheduledSession, describeRunWalk } from '../../../src/utils/scheduledSessions';
+import { US_AQI_BANDS, aqiVoiceOverLabel, getAqiScalePosition } from '../../../src/utils/aqi';
 
 function lastUpdatedLabel(fetchedAt: number | null): string | null {
   if (fetchedAt === null) return null;
@@ -34,6 +34,7 @@ function WeatherCard() {
   const units = useSettingsStore(s => s.units);
   const { weather, status, loading, refreshing, isStale, fetchedAt, refresh } = useWeather();
   const [infoOpen, setInfoOpen] = useState(false);
+  const aqiPositionPct: DimensionValue = weather?.aqi ? `${Math.round(getAqiScalePosition(weather.aqi.value) * 100)}%` : '0%';
 
   const statusLine =
     status === 'permission_denied'   ? 'Location access is off — StrideOS can’t read your local weather.'
@@ -42,15 +43,21 @@ function WeatherCard() {
     : null;
 
   return (
-    <View style={[styles.weatherCard, { backgroundColor: C.card, borderColor: C.border }]}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+    <TouchableOpacity
+      style={[styles.weatherCard, { backgroundColor: C.card, borderColor: C.border }]}
+      onPress={() => setInfoOpen(true)}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel="Open weather and air quality details"
+    >
+      <View style={styles.weatherTopRow}>
+        <View style={styles.weatherMain}>
           <Ionicons
             name={(weather?.icon ?? 'cloud-outline') as keyof typeof Ionicons.glyphMap}
             size={22}
             color={C.primary}
           />
-          <View style={{ flex: 1 }}>
+          <View style={styles.weatherCopy}>
             {loading ? (
               <>
                 <Text style={[styles.weatherTemp, { color: C.text }]}>Fetching local weather…</Text>
@@ -64,10 +71,11 @@ function WeatherCard() {
                 <Text style={[styles.weatherSub, { color: C.textMuted }]}>
                   Humidity {weather.humidity}% · {weather.runAdvice}
                 </Text>
-                <Text style={[styles.weatherSub, { color: weather.aqi ? C.textMuted : C.warning }]}>
-                  {weather.aqi
-                    ? `AQI ${weather.aqi.value} · ${weather.aqi.category} — ${weather.aqi.guidance}`
-                    : 'AQI unavailable'}
+                <Text
+                  style={[styles.weatherSub, { color: weather.aqi ? C.textMuted : C.warning }]}
+                  accessibilityLabel={weather.aqi ? aqiVoiceOverLabel(weather.aqi.value) : 'AQI unavailable'}
+                >
+                  {weather.aqi ? `AQI ${weather.aqi.value} · ${weather.aqi.category}` : 'AQI unavailable'}
                 </Text>
                 <Text style={[styles.weatherSub, { color: isStale ? C.warning : C.textDim }]}>
                   {[weather.placeName, lastUpdatedLabel(fetchedAt), isStale ? 'Pull latest' : null]
@@ -86,17 +94,35 @@ function WeatherCard() {
             )}
           </View>
         </View>
-        <TouchableOpacity onPress={refresh} disabled={refreshing} hitSlop={10} accessibilityLabel="Refresh weather">
+        <TouchableOpacity
+          onPress={(event) => {
+            event.stopPropagation();
+            refresh();
+          }}
+          disabled={refreshing}
+          style={[styles.weatherAction, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+          accessibilityLabel="Refresh weather"
+          accessibilityRole="button"
+        >
           {refreshing && !loading ? (
             <ActivityIndicator size="small" color={C.textMuted} />
           ) : (
-            <Ionicons name="refresh-outline" size={18} color={C.textMuted} />
+            <Ionicons name="refresh-outline" size={19} color={C.textMuted} />
           )}
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setInfoOpen(true)} hitSlop={10} accessibilityLabel="Weather and air quality information">
-          <Ionicons name="information-circle-outline" size={18} color={C.textMuted} />
-        </TouchableOpacity>
       </View>
+      <TouchableOpacity
+        onPress={(event) => {
+          event.stopPropagation();
+          setInfoOpen(true);
+        }}
+        style={styles.weatherInfoRow}
+        accessibilityLabel="Weather and AQI information"
+        accessibilityRole="button"
+      >
+        <Ionicons name="information-circle-outline" size={17} color={C.textMuted} />
+        <Text style={[styles.weatherInfoText, { color: C.textMuted }]}>Weather and AQI details</Text>
+      </TouchableOpacity>
       {status === 'permission_denied' ? (
         <TouchableOpacity
           onPress={() => { void Linking.openSettings(); }}
@@ -111,13 +137,46 @@ function WeatherCard() {
           <View style={[styles.infoSheet, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[styles.infoTitle, { color: C.text }]}>Weather and AQI</Text>
             <Text style={[styles.infoCopy, { color: C.textMuted }]}>
+              AQI is the U.S. Air Quality Index. It summarizes outdoor air pollution on a 0–500 scale; higher values generally mean more reason to reduce exposure or intensity.
+            </Text>
+            {weather?.aqi ? (
+              <View style={styles.aqiScaleBlock} accessibilityLabel={aqiVoiceOverLabel(weather.aqi.value)}>
+                <View style={styles.aqiScaleTrack}>
+                  {US_AQI_BANDS.map(band => (
+                    <View
+                      key={band.category}
+                      style={[styles.aqiScaleSegment, { backgroundColor: band.color }]}
+                      accessibilityLabel={`${band.category}, AQI ${band.min} to ${band.max}`}
+                    />
+                  ))}
+                  <View style={[styles.aqiMarker, { left: aqiPositionPct, backgroundColor: C.text }]} />
+                </View>
+                <Text style={[styles.infoCopy, { color: C.text }]}>
+                  Current AQI {weather.aqi.value}: {weather.aqi.category}
+                </Text>
+                <Text style={[styles.infoCopy, { color: C.textMuted }]}>{weather.aqi.guidance}</Text>
+                <View style={styles.aqiBandList}>
+                  {US_AQI_BANDS.map(band => (
+                    <View key={band.category} style={styles.aqiBandRow}>
+                      <View style={[styles.aqiDot, { backgroundColor: band.color }]} />
+                      <Text style={[styles.aqiBandText, { color: C.textMuted }]}>
+                        {band.min}–{band.max}: {band.category}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : (
+              <Text style={[styles.infoCopy, { color: C.warning }]}>AQI unavailable</Text>
+            )}
+            <Text style={[styles.infoCopy, { color: C.textMuted }]}>
               Temperature affects heat and cold stress. In warmer conditions, easy efforts may feel harder and hydration needs may increase. In cold conditions, warm up gradually and dress in layers.
             </Text>
             <Text style={[styles.infoCopy, { color: C.textMuted }]}>
               Humidity can reduce cooling and raise perceived effort. Adjust intensity when easy training no longer feels conversational.
             </Text>
             <Text style={[styles.infoCopy, { color: C.textMuted }]}>
-              AQI describes outdoor air quality categories. Sensitive athletes may prefer lower intensity or indoor training on elevated AQI days. This guidance is informational and does not diagnose or replace medical advice.
+              Sensitive individuals may need to modify exposure earlier than others. Consider local alerts, symptoms, medication or clinician guidance, and whether indoor training is the more conservative option.
             </Text>
             <TouchableOpacity style={[styles.infoClose, { backgroundColor: C.primary }]} onPress={() => setInfoOpen(false)}>
               <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>Done</Text>
@@ -125,7 +184,7 @@ function WeatherCard() {
           </View>
         </View>
       </Modal>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -146,10 +205,9 @@ export default function TodayScreen() {
   const weekPlan = useWeekPlan();
   const scheduled = useScheduledSessions(weekPlan);
   const beforeStart = weekPlan.metadata.currentWeek === 0;
-  const primarySession = scheduled.todayPrimary;
-  const supportingSessions = scheduled.todaySessions.filter(session => session.priority === 'supporting');
-  const optionalSessions = scheduled.todaySessions.filter(session => session.priority === 'optional');
-  const hasStrengthToday = scheduled.todaySessions.some(session => session.activityType === 'strength');
+  const primarySession = scheduled.activeTodayPrimary;
+  const supportingSessions = scheduled.activeTodaySessions.filter(session => session.priority === 'supporting');
+  const optionalSessions = scheduled.activeTodaySessions.filter(session => session.priority === 'optional');
   const phaseLabel = weekPlan.metadata.trainingPhase.charAt(0).toUpperCase() + weekPlan.metadata.trainingPhase.slice(1);
 
   const hasCheckedInToday = todayReadiness?.date === todayDateKey();
@@ -264,26 +322,9 @@ export default function TodayScreen() {
                 activeOpacity={0.8}
               >
                 <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>
-                  {primarySession?.activityType === 'strength'
-                    ? 'View Strength Workout'
-                    : primarySession?.activityType === 'run_walk'
-                      ? 'Start Run/Walk'
-                      : primarySession?.activityType === 'run'
-                        ? 'Start Run'
-                        : primarySession
-                          ? `Start ${displayLabel(primarySession.activityType)}`
-                          : "View Today's Plan"}
+                  {actionLabelForScheduledSession(primarySession)}
                 </Text>
               </TouchableOpacity>
-              {hasStrengthToday && (
-                <TouchableOpacity
-                  style={[styles.workoutBtn, styles.workoutBtnSecondary, { backgroundColor: 'transparent', borderColor: C.primary }]}
-                  onPress={() => router.push('/(tabs)/strength')}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.workoutBtnText, { color: C.primary }]}>Strength</Text>
-                </TouchableOpacity>
-              )}
             </View>
           </>
         )}
@@ -407,6 +448,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  weatherTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  weatherMain: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
+  },
+  weatherCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  weatherAction: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  weatherInfoRow: {
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    paddingRight: 12,
+  },
+  weatherInfoText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   weatherTemp: {
     fontSize: 15,
     fontWeight: '600',
@@ -443,6 +522,44 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     marginBottom: 10,
+  },
+  aqiScaleBlock: {
+    marginBottom: 12,
+  },
+  aqiScaleTrack: {
+    height: 12,
+    borderRadius: 999,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  aqiScaleSegment: {
+    flex: 1,
+  },
+  aqiMarker: {
+    position: 'absolute',
+    top: -4,
+    width: 4,
+    height: 20,
+    borderRadius: 2,
+  },
+  aqiBandList: {
+    gap: 6,
+    marginBottom: 2,
+  },
+  aqiBandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  aqiDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 999,
+  },
+  aqiBandText: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   infoClose: {
     minHeight: 46,
