@@ -57,6 +57,8 @@ export default function PresetStrengthSessionScreen() {
   const setExerciseRpe = useActiveStrengthSessionStore(state => state.setExerciseRpe);
   const setExerciseLoad = useActiveStrengthSessionStore(state => state.setExerciseLoad);
   const goToExercise = useActiveStrengthSessionStore(state => state.goToExercise);
+  const completionRequestedAt = useActiveStrengthSessionStore(state => state.completionRequestedAt);
+  const clearCompletionRequest = useActiveStrengthSessionStore(state => state.clearCompletionRequest);
   const clearSession = useActiveStrengthSessionStore(state => state.clearSession);
   const manualLog = useStrengthStore(state => state.manualLog);
   const fatigueScore = useAthleteStore(state => state.fatigueScore);
@@ -165,6 +167,15 @@ export default function PresetStrengthSessionScreen() {
       },
     ],
   );
+
+  useEffect(() => {
+    if (!completionRequestedAt || !session || session.source !== 'preset') return;
+    clearCompletionRequest();
+    saveAndFinish();
+    // The native App Intent sets a one-shot store request. The save action uses
+    // the current hydrated session snapshot and then clears the active session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completionRequestedAt, session?.source]);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: C.bg }]} edges={['top']}>

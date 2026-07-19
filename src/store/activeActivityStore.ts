@@ -42,7 +42,11 @@ type ActiveActivityStore = {
   aggregate: TrackingAggregate;
   runWalkIntervals: RunWalkInterval[];
   paceCoachingEnabled: boolean;
+  heartRateCoachingEnabled: boolean;
   intervalPromptsEnabled: boolean;
+  hydrationPromptsEnabled: boolean;
+  fuelPromptsEnabled: boolean;
+  navigationPromptsEnabled: boolean;
   routeId: string | null;
   navigationMode: 'off' | 'walking' | 'cycling';
   nextInstruction: string | null;
@@ -60,7 +64,11 @@ type ActiveActivityStore = {
   addLocation: (location: LocationObject, activeSeconds: number) => void;
   setNextInstruction: (instruction: string | null) => void;
   setPaceCoachingEnabled: (enabled: boolean) => void;
+  setHeartRateCoachingEnabled: (enabled: boolean) => void;
   setIntervalPromptsEnabled: (enabled: boolean) => void;
+  setHydrationPromptsEnabled: (enabled: boolean) => void;
+  setFuelPromptsEnabled: (enabled: boolean) => void;
+  setNavigationPromptsEnabled: (enabled: boolean) => void;
   requestCompletion: () => void;
   clearCompletionRequest: () => void;
   finish: () => void;
@@ -99,7 +107,11 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
       aggregate: EMPTY_AGGREGATE,
       runWalkIntervals: [],
       paceCoachingEnabled: true,
+      heartRateCoachingEnabled: true,
       intervalPromptsEnabled: true,
+      hydrationPromptsEnabled: true,
+      fuelPromptsEnabled: true,
+      navigationPromptsEnabled: true,
       routeId: null,
       navigationMode: 'off',
       nextInstruction: null,
@@ -155,7 +167,11 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
 
       setNextInstruction: nextInstruction => set({ nextInstruction }),
       setPaceCoachingEnabled: paceCoachingEnabled => set({ paceCoachingEnabled }),
+      setHeartRateCoachingEnabled: heartRateCoachingEnabled => set({ heartRateCoachingEnabled }),
       setIntervalPromptsEnabled: intervalPromptsEnabled => set({ intervalPromptsEnabled }),
+      setHydrationPromptsEnabled: hydrationPromptsEnabled => set({ hydrationPromptsEnabled }),
+      setFuelPromptsEnabled: fuelPromptsEnabled => set({ fuelPromptsEnabled }),
+      setNavigationPromptsEnabled: navigationPromptsEnabled => set({ navigationPromptsEnabled }),
       requestCompletion: () => set({ completionRequestedAt: Date.now() }),
       clearCompletionRequest: () => set({ completionRequestedAt: null }),
 

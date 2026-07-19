@@ -28,7 +28,7 @@ function TabBtn({
   const C = useColors();
   return (
     <View style={styles.tabBtn}>
-      <Ionicons name={name} size={22} color={focused ? C.primary : C.textMuted} />
+      <Ionicons name={name} size={24} color={focused ? C.primary : C.textMuted} />
       <Text
         numberOfLines={1}
         adjustsFontSizeToFit
@@ -148,12 +148,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     gap: 3,
-    paddingVertical: 3,
+    paddingVertical: 2,
     paddingHorizontal: 1,
     minWidth: 0,
   },
   tabLabel: {
-    fontSize: 8.5,
+    fontSize: 9.5,
     fontWeight: '700',
     textAlign: 'center',
   },

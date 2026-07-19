@@ -17,6 +17,7 @@ import {
   runAdvice,
   WEATHER_TTL_MS,
   wmoLookup,
+  classifyAqi,
   type WeatherData,
 } from '../../src/utils/weatherLogic';
 
@@ -94,4 +95,13 @@ test('mergeWeatherOutcome: failure with no cache never fabricates data', () => {
   assert.equal(r.data, null);
   assert.equal(r.fetchedAt, null);
   assert.notEqual(r.status, 'ok');       // 'ok' is impossible without real data
+});
+
+test('classifyAqi maps AirNow-style category thresholds conservatively', () => {
+  assert.equal(classifyAqi(12).category, 'Good');
+  assert.equal(classifyAqi(75).category, 'Moderate');
+  assert.equal(classifyAqi(125).category, 'Unhealthy for sensitive groups');
+  assert.equal(classifyAqi(175).category, 'Unhealthy');
+  assert.equal(classifyAqi(250).category, 'Very unhealthy');
+  assert.equal(classifyAqi(325).category, 'Hazardous');
 });

@@ -22,6 +22,7 @@ import {
   mergeWeatherOutcome,
   runAdvice,
   wmoLookup,
+  classifyAqi,
   type Coords,
   type WeatherData,
   type WeatherReport,
@@ -167,6 +168,28 @@ async function fetchOpenMeteo(coords: Coords): Promise<Omit<WeatherData, 'placeN
   }
 }
 
+async function fetchOpenMeteoAqi(coords: Coords): Promise<WeatherData['aqi'] | undefined> {
+  const url =
+    `https://air-quality-api.open-meteo.com/v1/air-quality` +
+    `?latitude=${coords.latitude}&longitude=${coords.longitude}` +
+    `&current=us_aqi&timezone=auto`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`aqi http ${res.status}`);
+    const json = await res.json();
+    const value = json.current?.us_aqi;
+    if (typeof value !== 'number') return undefined;
+    return { ...classifyAqi(value), updatedAt: json.current?.time };
+  } catch {
+    return undefined;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Fetch the current local weather report.
  * - Deduplicates concurrent calls (one shared in-flight promise).
@@ -201,8 +224,8 @@ export async function getWeatherReport(options?: { force?: boolean }): Promise<W
     }
 
     try {
-      const [base, placeName] = await Promise.all([fetchOpenMeteo(coords), resolvePlaceName(coords)]);
-      const data: WeatherData = { ...base, placeName };
+      const [base, placeName, aqi] = await Promise.all([fetchOpenMeteo(coords), resolvePlaceName(coords), fetchOpenMeteoAqi(coords)]);
+      const data: WeatherData = { ...base, placeName, aqi };
       const fetchedAt = Date.now();
       memoryCache = { data, fetchedAt, coords };
       void persistCache(memoryCache);

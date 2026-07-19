@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,15 +8,15 @@ import { useColors } from '../../../src/theme/useColors';
 import { useWeather } from '../../../src/hooks/useWeather';
 import { formatTemp } from '../../../src/lib/weather';
 import { useSettingsStore } from '../../../src/store/settingsStore';
-import { useBeginnerPlanStore } from '../../../src/store/beginnerPlanStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { todayDateKey } from '../../../src/types/checkin';
 import { readinessTier, READINESS_INTERPRETATION } from '../../../src/utils/readinessScore';
 import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckInCard';
 import { LAYOUT } from '../../../src/constants/layout';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
-import { toYMD } from '../../../src/utils/calendarEngine';
 import { displayLabel } from '../../../src/utils/displayLabels';
+import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
+import { describeRunWalk } from '../../../src/utils/scheduledSessions';
 
 function lastUpdatedLabel(fetchedAt: number | null): string | null {
   if (fetchedAt === null) return null;
@@ -33,6 +33,7 @@ function WeatherCard() {
   const C = useColors();
   const units = useSettingsStore(s => s.units);
   const { weather, status, loading, refreshing, isStale, fetchedAt, refresh } = useWeather();
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const statusLine =
     status === 'permission_denied'   ? 'Location access is off — StrideOS can’t read your local weather.'
@@ -63,6 +64,11 @@ function WeatherCard() {
                 <Text style={[styles.weatherSub, { color: C.textMuted }]}>
                   Humidity {weather.humidity}% · {weather.runAdvice}
                 </Text>
+                <Text style={[styles.weatherSub, { color: weather.aqi ? C.textMuted : C.warning }]}>
+                  {weather.aqi
+                    ? `AQI ${weather.aqi.value} · ${weather.aqi.category} — ${weather.aqi.guidance}`
+                    : 'AQI unavailable'}
+                </Text>
                 <Text style={[styles.weatherSub, { color: isStale ? C.warning : C.textDim }]}>
                   {[weather.placeName, lastUpdatedLabel(fetchedAt), isStale ? 'Pull latest' : null]
                     .filter(Boolean)
@@ -87,6 +93,9 @@ function WeatherCard() {
             <Ionicons name="refresh-outline" size={18} color={C.textMuted} />
           )}
         </TouchableOpacity>
+        <TouchableOpacity onPress={() => setInfoOpen(true)} hitSlop={10} accessibilityLabel="Weather and air quality information">
+          <Ionicons name="information-circle-outline" size={18} color={C.textMuted} />
+        </TouchableOpacity>
       </View>
       {status === 'permission_denied' ? (
         <TouchableOpacity
@@ -97,6 +106,25 @@ function WeatherCard() {
           <Text style={[styles.localLabel, { color: C.primary }]}>OPEN SETTINGS</Text>
         </TouchableOpacity>
       ) : null}
+      <Modal visible={infoOpen} transparent animationType="slide" onRequestClose={() => setInfoOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.infoSheet, { backgroundColor: C.card, borderColor: C.border }]}>
+            <Text style={[styles.infoTitle, { color: C.text }]}>Weather and AQI</Text>
+            <Text style={[styles.infoCopy, { color: C.textMuted }]}>
+              Temperature affects heat and cold stress. In warmer conditions, easy efforts may feel harder and hydration needs may increase. In cold conditions, warm up gradually and dress in layers.
+            </Text>
+            <Text style={[styles.infoCopy, { color: C.textMuted }]}>
+              Humidity can reduce cooling and raise perceived effort. Adjust intensity when easy training no longer feels conversational.
+            </Text>
+            <Text style={[styles.infoCopy, { color: C.textMuted }]}>
+              AQI describes outdoor air quality categories. Sensitive athletes may prefer lower intensity or indoor training on elevated AQI days. This guidance is informational and does not diagnose or replace medical advice.
+            </Text>
+            <TouchableOpacity style={[styles.infoClose, { backgroundColor: C.primary }]} onPress={() => setInfoOpen(false)}>
+              <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -116,20 +144,12 @@ export default function TodayScreen() {
   const todayReadiness = useReadinessStore(s => s.todayReadiness);
   const [editingCheckIn, setEditingCheckIn] = useState(false);
   const weekPlan = useWeekPlan();
-  const activeBeginnerPlan = useBeginnerPlanStore(s => s.activePlan);
+  const scheduled = useScheduledSessions(weekPlan);
   const beforeStart = weekPlan.metadata.currentWeek === 0;
-  const todayYMD = toYMD(new Date());
-  const todayEntries = weekPlan.calendarMap.get(todayYMD) ?? [];
-  const primaryEntry = todayEntries.find(e => e.type === 'race') ?? todayEntries.find(e => e.type === 'run') ?? todayEntries[0] ?? null;
-  const hasStrengthToday = todayEntries.some(e => e.type === 'strength');
-  const beginnerSessionsToday = useMemo(() => {
-    if (!activeBeginnerPlan || todayYMD < activeBeginnerPlan.startDate || todayYMD > activeBeginnerPlan.targetDate) return [];
-    const start = new Date(`${activeBeginnerPlan.startDate}T00:00:00`);
-    const day = new Date(`${todayYMD}T00:00:00`);
-    const offset = Math.floor((day.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
-    return activeBeginnerPlan.weeks[Math.floor(offset / 7)]?.sessions.filter(session => session.dayIndex === offset % 7) ?? [];
-  }, [activeBeginnerPlan, todayYMD]);
-  const beginnerPrimary = beginnerSessionsToday.find(session => !session.supplements) ?? beginnerSessionsToday[0];
+  const primarySession = scheduled.todayPrimary;
+  const supportingSessions = scheduled.todaySessions.filter(session => session.priority === 'supporting');
+  const optionalSessions = scheduled.todaySessions.filter(session => session.priority === 'optional');
+  const hasStrengthToday = scheduled.todaySessions.some(session => session.activityType === 'strength');
   const phaseLabel = weekPlan.metadata.trainingPhase.charAt(0).toUpperCase() + weekPlan.metadata.trainingPhase.slice(1);
 
   const hasCheckedInToday = todayReadiness?.date === todayDateKey();
@@ -210,25 +230,49 @@ export default function TodayScreen() {
         ) : (
           <>
             <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
-              {beginnerPrimary
-                ? `${displayLabel(beginnerPrimary.kind)} · ${beginnerPrimary.durationMinutes} min`
-                : primaryEntry ? primaryEntry.label : 'Rest day — no structured session.'}
+              {primarySession
+                ? `${primarySession.title} · ${primarySession.runWalk ? describeRunWalk(primarySession.runWalk) : `${primarySession.durationMinutes} min · ${primarySession.target}`}`
+                : 'Rest day — no structured session.'}
             </Text>
-            {beginnerPrimary ? (
+            {primarySession ? (
               <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
-                {beginnerPrimary.purpose} {beginnerPrimary.supplements ? 'This supplements your primary session.' : ''}
+                {primarySession.purpose}
+              </Text>
+            ) : null}
+            {supportingSessions.length > 0 ? (
+              <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
+                Supporting: {supportingSessions.map(session => `${session.title} (${session.durationMinutes} min)`).join(' · ')}
+              </Text>
+            ) : null}
+            {optionalSessions.length > 0 ? (
+              <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
+                Optional recovery: {optionalSessions.map(session => session.title).join(' · ')}
               </Text>
             ) : null}
             <View style={styles.workoutBtns}>
               <TouchableOpacity
                 style={[styles.workoutBtn, styles.workoutBtnPrimary, { backgroundColor: C.primary, borderColor: C.primary }]}
-                onPress={() => router.push((beginnerPrimary ? '/(tabs)/activity' : '/(tabs)/training') as never)}
+                onPress={() => router.push((
+                  primarySession?.activityType === 'strength'
+                    ? '/(tabs)/strength'
+                    : primarySession?.activityType === 'run' || primarySession?.activityType === 'run_walk'
+                      ? '/(tabs)/training'
+                      : primarySession
+                        ? '/(tabs)/activity/start'
+                        : '/(tabs)/calendar'
+                ) as never)}
                 activeOpacity={0.8}
               >
                 <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>
-                  {beginnerPrimary
-                    ? beginnerPrimary.activityType === 'walking' ? 'Start Walk' : beginnerPrimary.kind === 'run_walk' ? 'Start Run / Walk' : 'View Activity'
-                    : primaryEntry && primaryEntry.type !== 'strength' ? 'Start Run' : 'View Training'}
+                  {primarySession?.activityType === 'strength'
+                    ? 'View Strength Workout'
+                    : primarySession?.activityType === 'run_walk'
+                      ? 'Start Run/Walk'
+                      : primarySession?.activityType === 'run'
+                        ? 'Start Run'
+                        : primarySession
+                          ? `Start ${displayLabel(primarySession.activityType)}`
+                          : "View Today's Plan"}
                 </Text>
               </TouchableOpacity>
               {hasStrengthToday && (
@@ -377,6 +421,35 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.65)',
+  },
+  infoSheet: {
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    borderWidth: 1,
+    padding: 18,
+    paddingBottom: 38,
+  },
+  infoTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 10,
+  },
+  infoCopy: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 10,
+  },
+  infoClose: {
+    minHeight: 46,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
   },
   workoutTitle: {
     fontSize: 14,

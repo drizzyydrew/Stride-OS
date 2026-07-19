@@ -47,6 +47,7 @@ import {
 } from '../../../src/lib/notifications';
 import { LAYOUT } from '../../../src/constants/layout';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
+import { formatYMDForDisplay, parseDisplayDateToYMD } from '../../../src/utils/dateFormatting';
 
 function formatHeight(heightCm: number, imperial: boolean) {
   if (!heightCm) return '';
@@ -136,6 +137,13 @@ function isValidPlanDate(s: string): boolean {
   return !Number.isNaN(parseYMD(s).getTime());
 }
 
+function normalizeDisplayPlanDate(s: string): string | null {
+  const parsed = parseDisplayDateToYMD(s);
+  if (parsed && isValidPlanDate(parsed)) return parsed;
+  if (isValidPlanDate(s)) return s;
+  return null;
+}
+
 const GOAL_TYPE_OPTIONS: { key: TrainingGoalType; label: string }[] = [
   { key: 'general_running',  label: 'General Running' },
   { key: 'general_strength', label: 'General Strength' },
@@ -188,7 +196,7 @@ export default function SettingsScreen() {
   const updatePlanRace   = useTrainingPlanStore(s => s.updateRace);
   const removePlanRace   = useTrainingPlanStore(s => s.removeRace);
 
-  const [startDateDraft, setStartDateDraft] = useState(planStartDate ?? toYMD(new Date()));
+  const [startDateDraft, setStartDateDraft] = useState(formatYMDForDisplay(planStartDate ?? toYMD(new Date())));
   const [raceForm, setRaceForm] = useState<RaceFormState | null>(null);
   const [raceFormError, setRaceFormError] = useState('');
 
@@ -203,16 +211,17 @@ export default function SettingsScreen() {
   function saveRaceForm() {
     if (!raceForm) return;
     if (!raceForm.name.trim()) { setRaceFormError('Give the race a name.'); return; }
-    if (!isValidPlanDate(raceForm.date)) { setRaceFormError('Enter a valid date as YYYY-MM-DD.'); return; }
+    const normalizedDate = normalizeDisplayPlanDate(raceForm.date);
+    if (!normalizedDate) { setRaceFormError('Enter a valid date as MM-DD-YYYY.'); return; }
 
     if (raceForm.id) {
       updatePlanRace(raceForm.id, {
-        name: raceForm.name.trim(), date: raceForm.date,
+        name: raceForm.name.trim(), date: normalizedDate,
         distance: raceForm.distance, priority: raceForm.priority,
       });
     } else {
       addPlanRace({
-        name: raceForm.name.trim(), date: raceForm.date,
+        name: raceForm.name.trim(), date: normalizedDate,
         distance: raceForm.distance, priority: raceForm.priority,
       });
     }
@@ -245,7 +254,7 @@ export default function SettingsScreen() {
         <TextInput
           value={raceForm.date}
           onChangeText={v => setRaceForm(f => f && { ...f, date: v })}
-          placeholder={toYMD(new Date())}
+          placeholder={formatYMDForDisplay(toYMD(new Date()))}
           placeholderTextColor={C.textDim}
           keyboardType="numbers-and-punctuation"
           style={[styles.profileInput, { backgroundColor: C.card, borderColor: C.border, color: C.text }]}
@@ -822,19 +831,22 @@ export default function SettingsScreen() {
             <TextInput
               value={startDateDraft}
               onChangeText={setStartDateDraft}
-              placeholder={toYMD(new Date())}
+              placeholder={formatYMDForDisplay(toYMD(new Date()))}
               placeholderTextColor={C.textDim}
               keyboardType="numbers-and-punctuation"
               style={[styles.profileInput, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text, flex: 1 }]}
             />
-            {startDateDraft !== (planStartDate ?? '') && isValidPlanDate(startDateDraft) && (
-              <TouchableOpacity style={[styles.connectBtn, { backgroundColor: C.primary }]} onPress={() => setPlanStartDate(startDateDraft)} activeOpacity={0.8}>
+            {(() => {
+              const normalizedStartDate = normalizeDisplayPlanDate(startDateDraft);
+              return normalizedStartDate && normalizedStartDate !== (planStartDate ?? '') ? (
+              <TouchableOpacity style={[styles.connectBtn, { backgroundColor: C.primary }]} onPress={() => setPlanStartDate(normalizedStartDate)} activeOpacity={0.8}>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: C.onPrimary }}>Save</Text>
               </TouchableOpacity>
-            )}
+              ) : null;
+            })()}
           </View>
-          {startDateDraft && !isValidPlanDate(startDateDraft) && (
-            <Text style={{ fontSize: 11, color: C.critical }}>Use YYYY-MM-DD format.</Text>
+          {startDateDraft && !normalizeDisplayPlanDate(startDateDraft) && (
+            <Text style={{ fontSize: 11, color: C.critical }}>Use MM-DD-YYYY format.</Text>
           )}
         </View>
 
@@ -858,10 +870,10 @@ export default function SettingsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.settingTitle, { color: C.text }]}>{race.name}</Text>
                   <Text style={[styles.settingCaption, { color: C.textMuted }]}>
-                    {RACE_DISTANCE_OPTIONS.find(d => d.key === race.distance)?.label ?? race.distance} · {race.date} · Priority {race.priority === 'tune_up' ? 'Tune-Up' : race.priority}
+                    {RACE_DISTANCE_OPTIONS.find(d => d.key === race.distance)?.label ?? race.distance} · {formatYMDForDisplay(race.date)} · Priority {race.priority === 'tune_up' ? 'Tune-Up' : race.priority}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={() => { setRaceForm({ id: race.id, name: race.name, date: race.date, distance: race.distance, priority: race.priority }); setRaceFormError(''); }} style={{ padding: 6 }}>
+                <TouchableOpacity onPress={() => { setRaceForm({ id: race.id, name: race.name, date: formatYMDForDisplay(race.date), distance: race.distance, priority: race.priority }); setRaceFormError(''); }} style={{ padding: 6 }}>
                   <Ionicons name="pencil-outline" size={16} color={C.textMuted} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => removePlanRace(race.id)} style={{ padding: 6 }}>

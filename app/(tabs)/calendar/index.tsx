@@ -12,9 +12,10 @@ import { useWeekPlan }      from '../../../src/hooks/useWeekPlan';
 import { usePlanTimeline }  from '../../../src/hooks/usePlanTimeline';
 import { useAthleteStore }  from '../../../src/store/athleteStore';
 import { useActivityStore } from '../../../src/store/activityStore';
-import { useBeginnerPlanStore } from '../../../src/store/beginnerPlanStore';
+import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
+import { calendarEntriesFromScheduledSessions } from '../../../src/utils/scheduledSessions';
 
-import { addDays, parseYMD, toYMD } from '../../../src/utils/calendarEngine';
+import { addDays, toYMD } from '../../../src/utils/calendarEngine';
 import type { CalendarEntry }       from '../../../src/utils/calendarEngine';
 import { getPhaseTypesForWeek }     from '../../../src/utils/workoutEngine';
 import { getPhaseSessionPreview } from '../../../src/utils/strengthEngine';
@@ -93,6 +94,39 @@ function weekBadge(mw: MacroWeek | null): { label: string; kind: 'race' | 'taper
   return null;
 }
 
+function entrySummary(entry: CalendarEntry): string {
+  if (entry.target) return entry.target;
+  if (entry.workout) {
+    const workout = entry.workout as any;
+    const ratio = workout.intervals
+      ? `${workout.intervals.workLabel} run / ${workout.intervals.restLabel}`
+      : `Zone ${workout.hrZoneTarget}`;
+    return `${workout.durationMinutes} min · ${ratio} · RPE ${workout.rpeRange?.[0] ?? 3}-${workout.rpeRange?.[1] ?? 4}`;
+  }
+  if (entry.session) {
+    return `${entry.session.targetDuration} min · ${displayLabel(entry.session.sessionType)} · ${entry.session.exercises.length} exercises`;
+  }
+  return entry.summary ?? displayLabel(entry.type);
+}
+
+function routeForEntry(entry: CalendarEntry): string {
+  if (entry.type === 'strength') return '/(tabs)/strength';
+  if (['run', 'run_walk', 'walk'].includes(entry.type)) return '/(tabs)/training';
+  if (['cycling', 'swimming', 'hiking', 'skiing', 'hiit', 'mixed'].includes(entry.type)) return '/(tabs)/activity';
+  return '/(tabs)/activity';
+}
+
+function actionLabelForEntries(entries: CalendarEntry[], isToday: boolean): string {
+  const first = entries.find(e => e.type !== 'race') ?? entries[0];
+  if (!first) return 'View Plan →';
+  if (!isToday) return 'View Workout →';
+  if (first.type === 'strength') return 'View Strength Workout →';
+  if (first.type === 'run_walk') return 'Start Run/Walk →';
+  if (first.type === 'walk') return 'Start Walk →';
+  if (first.type === 'run') return 'Start Run →';
+  return 'Start Activity →';
+}
+
 export default function CalendarScreen() {
   const C = useColors();
   const insets = useSafeAreaInsets();
@@ -102,7 +136,7 @@ export default function CalendarScreen() {
   const timeline  = usePlanTimeline();
   const progressionLevel = useAthleteStore(s => s.progressionLevel);
   const activities = useActivityStore(s => s.activities);
-  const activeBeginnerPlan = useBeginnerPlanStore(s => s.activePlan);
+  const scheduled = useScheduledSessions(weekPlan);
 
   const today    = useMemo(() => startOfDay(new Date()), []);
   const todayYMD = useMemo(() => toYMD(today), [today]);
@@ -148,35 +182,6 @@ export default function CalendarScreen() {
       }));
   }
 
-  function beginnerPlanEntriesForDate(dateYMD: string): CalendarEntry[] {
-    if (!activeBeginnerPlan || dateYMD < activeBeginnerPlan.startDate || dateYMD > activeBeginnerPlan.targetDate) return [];
-    const start = parseYMD(activeBeginnerPlan.startDate);
-    const date = parseYMD(dateYMD);
-    const dayOffset = Math.floor((date.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
-    const week = activeBeginnerPlan.weeks[Math.floor(dayOffset / 7)];
-    if (!week) return [];
-    const dayIndex = dayOffset % 7;
-    return week.sessions
-      .filter(session => session.dayIndex === dayIndex)
-      .map(session => ({
-        date: dateYMD,
-        type: session.kind === 'run_walk'
-          ? 'run_walk'
-          : session.kind === 'walk'
-            ? 'walk'
-            : session.kind === 'strength'
-              ? 'strength'
-              : session.kind === 'mobility'
-                ? 'mobility'
-                : session.kind === 'cross_training'
-                  ? 'cycling'
-                  : 'run',
-        label: displayLabel(session.kind),
-        color: session.kind === 'strength' ? C.accent : C.primary,
-        completed: false,
-      }));
-  }
-
   function raceEntry(race: Race): CalendarEntry {
     return { date: race.date, type: 'race', label: `Race Day: ${race.name}`, color: '#DCC0A7', completed: false };
   }
@@ -201,15 +206,22 @@ export default function CalendarScreen() {
     // (including "nothing", i.e. a genuine rest day) is final. Never fall back
     // to a template guess here, or a rest day could show a fabricated workout.
     if (isCurrentWeek) {
-      return { entries: weekPlan.calendarMap.get(dateYMD) ?? [], macroWeek, beforeStart: false };
+      return {
+        entries: calendarEntriesFromScheduledSessions(scheduled.sessionsForDate(dateYMD)),
+        macroWeek,
+        beforeStart: false,
+      };
     }
 
     if (race) return { entries: [raceEntry(race)], macroWeek, beforeStart: false };
 
+    const scheduledForDate = scheduled.sessionsForDate(dateYMD);
+    if (scheduledForDate.length > 0) {
+      return { entries: calendarEntriesFromScheduledSessions(scheduledForDate), macroWeek, beforeStart: false };
+    }
+
     const logged = completedEntriesForDate(dateYMD);
     if (logged.length > 0) return { entries: logged, macroWeek, beforeStart: false };
-    const preset = beginnerPlanEntriesForDate(dateYMD);
-    if (preset.length > 0) return { entries: preset, macroWeek, beforeStart: false };
 
     // Template preview — titles only, no rich generation.
     const isPast = dateYMD < todayYMD;
@@ -472,11 +484,19 @@ export default function CalendarScreen() {
               </View>
               {entry.workout ? (
                 <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>
-                  {(entry.workout as any).purpose ?? entry.workout.description}
+                  {entrySummary(entry)}
                 </Text>
               ) : null}
               {entry.session ? (
-                <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>{entry.session.purpose}</Text>
+                <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>{entrySummary(entry)}</Text>
+              ) : null}
+              {!entry.workout && !entry.session && entry.summary ? (
+                <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>{entry.summary}</Text>
+              ) : null}
+              {entry.designation ? (
+                <Text style={[styles.futureText, { color: C.textDim, marginTop: 4, fontWeight: '700' }]}>
+                  {displayLabel(entry.designation)}
+                </Text>
               ) : null}
               <Text style={[styles.futureText, { color: entry.completed ? C.positive : entry.missed ? C.critical : C.textMuted, marginTop: 6, fontWeight: '700' }]}>
                 {entry.completed ? 'Completed' : entry.missed ? 'Missed' : isFuture ? 'Upcoming' : 'Planned'}
@@ -497,16 +517,10 @@ export default function CalendarScreen() {
         {!info.beforeStart && info.entries.some(e => !e.completed && e.type !== 'race') && (isToday || (isFuture && isCurrentWeek)) ? (
           <TouchableOpacity
             style={[styles.startButton, { backgroundColor: C.primary }]}
-            onPress={() => router.push((
-              info.entries.some(e => e.type === 'strength') && info.entries.every(e => e.type === 'strength')
-                ? '/(tabs)/strength'
-                : info.entries.some(e => ['walk', 'run_walk', 'cycling', 'swimming', 'hiking', 'skiing', 'hiit', 'mixed'].includes(e.type))
-                  ? '/(tabs)/activity'
-                  : '/(tabs)/training'
-            ) as never)}
+            onPress={() => router.push(routeForEntry(info.entries.find(e => e.type !== 'race') ?? info.entries[0]) as never)}
             activeOpacity={0.8}
           >
-            <Text style={[styles.startButtonText, { color: C.onPrimary }]}>{isToday ? "Go to Today's Session →" : 'Preview Session →'}</Text>
+            <Text style={[styles.startButtonText, { color: C.onPrimary }]}>{actionLabelForEntries(info.entries, isToday)}</Text>
           </TouchableOpacity>
         ) : null}
       </View>

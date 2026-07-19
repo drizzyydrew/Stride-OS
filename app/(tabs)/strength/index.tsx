@@ -514,6 +514,8 @@ export default function StrengthScreen() {
   const uncompleteActiveStrengthExercise = useActiveStrengthSessionStore(s => s.uncompleteExercise);
   const setActiveStrengthRpe = useActiveStrengthSessionStore(s => s.setExerciseRpe);
   const setActiveStrengthLoad = useActiveStrengthSessionStore(s => s.setExerciseLoad);
+  const completionRequestedAt = useActiveStrengthSessionStore(s => s.completionRequestedAt);
+  const clearCompletionRequest = useActiveStrengthSessionStore(s => s.clearCompletionRequest);
   const clearActiveStrengthSession = useActiveStrengthSessionStore(s => s.clearSession);
   const imp = units === 'imperial';
   const wtUnit = imp ? 'lb' : 'kg';
@@ -829,6 +831,15 @@ export default function StrengthScreen() {
     setStrState('idle');
     Alert.alert('Strength logged', `${wDef.title} was saved to your training history.`);
   }
+
+  useEffect(() => {
+    if (!completionRequestedAt || !ownsActiveTrainingBlock) return;
+    clearCompletionRequest();
+    finishSession();
+    // Native completion requests are one-shot commands. The finish function
+    // reads the current training-block session and clears the active session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completionRequestedAt, ownsActiveTrainingBlock]);
 
   function getWeight(ex: ExDef): number {
     return weights[ex.id] !== undefined ? weights[ex.id] : ex.weight;

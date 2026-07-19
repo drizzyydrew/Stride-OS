@@ -28,6 +28,7 @@ import { useCheckInStore }      from '../store/checkInStore';
 import { useStrengthStore }     from '../store/strengthStore';
 import { useProfileStore }      from '../store/profileStore';
 import { useTrainingPlanStore } from '../store/trainingPlanStore';
+import { useBeginnerPlanStore } from '../store/beginnerPlanStore';
 
 import { calculateACWR }                     from '../utils/training';
 import { getWeeklyMileage }                  from '../utils/historyUtils';
@@ -55,6 +56,7 @@ export function useWeekPlan(): WeekPlan {
   const goalType         = useTrainingPlanStore(s => s.goalType);
   const programStartDate = useTrainingPlanStore(s => s.programStartDate);
   const races            = useTrainingPlanStore(s => s.races);
+  const activeBeginnerPlan = useBeginnerPlanStore(s => s.activePlan);
 
   // CRITICAL: separate selectors, never `s => ({ a: s.a, b: s.b })`.
   // That pattern creates a new object on every evaluation and causes
@@ -155,6 +157,7 @@ export function useWeekPlan(): WeekPlan {
     beforeStart,
     programStartDate,
     races,
+    activeBeginnerPlan,
 
     // Physiological profile
     calibration,
@@ -192,7 +195,7 @@ export function useWeekPlan(): WeekPlan {
   }), [
     goalRace, weeklyMileage, fatigueScore, recoveryScore,
     currentWeek, trainingPhase, progressionLevel,
-    goalType, macroWeek, beforeStart, programStartDate, races,
+    goalType, macroWeek, beforeStart, programStartDate, races, activeBeginnerPlan,
     calibration, profile,
     onboardingData,
     checkedIn, todayCheckIn,

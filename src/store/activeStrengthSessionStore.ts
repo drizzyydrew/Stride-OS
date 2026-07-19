@@ -31,6 +31,7 @@ export type ActiveStrengthSession = {
 
 type ActiveStrengthSessionStore = {
   session: ActiveStrengthSession | null;
+  completionRequestedAt: number | null;
   startSession: (session: Omit<ActiveStrengthSession, 'currentExerciseIndex' | 'completedExerciseIds' | 'rpeByExercise' | 'loadByExercise' | 'startedAt' | 'pausedAt' | 'pausedDurationMs' | 'status'>) => void;
   pause: () => void;
   resume: () => void;
@@ -39,6 +40,8 @@ type ActiveStrengthSessionStore = {
   completeExercise: (exerciseId: string) => void;
   uncompleteExercise: (exerciseId: string) => void;
   goToExercise: (index: number) => void;
+  requestCompletion: () => void;
+  clearCompletionRequest: () => void;
   clearSession: () => void;
 };
 
@@ -52,6 +55,7 @@ export const useActiveStrengthSessionStore = create<ActiveStrengthSessionStore>(
   persist(
     set => ({
       session: null,
+      completionRequestedAt: null,
       startSession: input => set({
         session: {
           ...input,
@@ -64,6 +68,7 @@ export const useActiveStrengthSessionStore = create<ActiveStrengthSessionStore>(
           pausedDurationMs: 0,
           status: 'active',
         },
+        completionRequestedAt: null,
       }),
       pause: () => set(state => state.session?.status === 'active'
         ? { session: { ...state.session, status: 'paused', pausedAt: Date.now() } }
@@ -119,12 +124,14 @@ export const useActiveStrengthSessionStore = create<ActiveStrengthSessionStore>(
           currentExerciseIndex: Math.max(0, Math.min(state.session.exercises.length - 1, index)),
         },
       }) : state),
-      clearSession: () => set({ session: null }),
+      requestCompletion: () => set(state => state.session ? ({ completionRequestedAt: Date.now() }) : state),
+      clearCompletionRequest: () => set({ completionRequestedAt: null }),
+      clearSession: () => set({ session: null, completionRequestedAt: null }),
     }),
     {
       name: 'active-strength-session-v1',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: state => ({ session: state.session }),
+      partialize: state => ({ session: state.session, completionRequestedAt: state.completionRequestedAt }),
     },
   ),
 );

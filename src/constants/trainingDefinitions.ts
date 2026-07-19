@@ -60,7 +60,7 @@ export const TRAINING_DEFINITIONS: TermDefinition[] = [
     category: 'running',
     whatIsIt: 'A structured pattern of alternating running and walking intervals within a single session.',
     whyDoIt: 'It lets you build time on feet and aerobic fitness while managing effort and impact — useful for beginners, return-to-running, or long distances.',
-    howToPerform: 'Follow the prescribed run/walk ratio (e.g. 2 minutes running, 1 minute walking) and repeat for the session duration, keeping both segments at an easy effort.',
+    howToPerform: 'Use the exact interval durations shown in today\'s workout prescription, including the warm-up walk, repeated run/walk rounds, and cooldown walk. Keep both segments at an easy effort unless the session says otherwise.',
     howItShouldFeel: 'The running segments should feel easy, and the walking segments should feel like genuine recovery, not just a slower jog.',
     commonMistakes: ['Running the run segments too hard because they feel short.', 'Treating the walk breaks as a failure instead of part of the plan.'],
   },

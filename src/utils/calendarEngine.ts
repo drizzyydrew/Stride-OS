@@ -36,6 +36,13 @@ export type CalendarEntry = {
   session?:   StrengthSession;
   completed:  boolean;
   missed?:    boolean;      // set by reconcileMissedSessions for past, incomplete entries
+  scheduledSessionId?: string;
+  originalDate?: string;
+  designation?: 'primary' | 'supporting' | 'optional';
+  summary?: string;
+  target?: string;
+  status?: 'upcoming' | 'today' | 'in_progress' | 'completed' | 'skipped' | 'moved' | 'missed' | 'replaced' | 'optional';
+  actionRoute?: string;
 };
 
 export type DayPlan = {

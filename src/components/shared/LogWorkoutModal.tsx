@@ -31,6 +31,7 @@ import type {
   ExerciseLogEntry,
   SetEntry,
 } from '../../types/customWorkout';
+import { formatYMDForDisplay, parseDisplayDateToYMD } from '../../utils/dateFormatting';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -150,7 +151,7 @@ export default function LogWorkoutModal({
   const today = new Date().toISOString().split('T')[0];
 
   const [category,     setCategory]     = useState<CustomWorkoutCategory>('running');
-  const [date,         setDate]         = useState(defaultDate ?? today);
+  const [dateDisplay,  setDateDisplay]  = useState(formatYMDForDisplay(defaultDate ?? today));
   const [rpe,          setRpe]          = useState(5);
   const [notes,        setNotes]        = useState('');
 
@@ -183,11 +184,12 @@ export default function LogWorkoutModal({
   }
 
   function handleSave() {
+    const savedDate = parseDisplayDateToYMD(dateDisplay) ?? defaultDate ?? today;
     const source = defaultDate && defaultDate < today ? 'backdated' : overrideId ? 'override' : 'custom';
 
     const base = {
       category,
-      date,
+      date: savedDate,
       source: source as 'custom' | 'backdated' | 'override',
       overrideId,
       notes: notes || undefined,
@@ -220,7 +222,7 @@ export default function LogWorkoutModal({
   }
 
   function resetForm() {
-    setCategory('running'); setDate(defaultDate ?? today); setRpe(5); setNotes('');
+    setCategory('running'); setDateDisplay(formatYMDForDisplay(defaultDate ?? today)); setRpe(5); setNotes('');
     setRunType('easy'); setDurMin(45); setDistMi(0);
     setSFocus('lower'); setSDurMin(45); setExercises([]);
     setCrossType('bike'); setCrossDurMin(45); setCrossDistMi(0);
@@ -255,9 +257,9 @@ export default function LogWorkoutModal({
             <SLabel label="DATE" />
             <TextInput
               style={s.dateInput}
-              value={date}
-              onChangeText={setDate}
-              placeholder="YYYY-MM-DD"
+              value={dateDisplay}
+              onChangeText={setDateDisplay}
+              placeholder="MM-DD-YYYY"
               placeholderTextColor={colors.textSubtle}
               keyboardType="numbers-and-punctuation"
               returnKeyType="done"

@@ -45,17 +45,29 @@ function metricLine(activity: Activity): string {
   return details.join(' · ');
 }
 
+function isMeaningfulActivity(activity: Activity): boolean {
+  const durationSeconds = activity.metrics.durationSeconds ?? activity.metrics.elapsedTimeSeconds ?? 0;
+  const distanceMeters = activity.metrics.distanceMeters ?? 0;
+  const load = activity.trainingLoad.wholeBody ?? 0;
+  if (durationSeconds > 60) return true;
+  if (distanceMeters > 80) return true;
+  if (load > 8) return true;
+  if (activity.source === 'tracked' && durationSeconds > 0) return true;
+  return Boolean(activity.notes?.trim() || activity.scheduledSessionId);
+}
+
 export default function ActivityScreen() {
   const C = useColors();
   const router = useRouter();
   const activities = useActivityStore(state => state.activities);
   const [filter, setFilter] = useState<ActivityFilter>('all');
-  const visible = useMemo(() => activities
+  const meaningful = useMemo(() => activities.filter(isMeaningfulActivity), [activities]);
+  const visible = useMemo(() => meaningful
     .filter(activity => activityMatchesFilter(activity, filter))
-    .sort((a, b) => b.startTime - a.startTime), [activities, filter]);
+    .sort((a, b) => b.startTime - a.startTime), [meaningful, filter]);
   const weekly = useMemo(() => summarizeActivityLoad(
-    activities.filter(activity => Date.now() - activity.startTime <= 7 * 24 * 60 * 60 * 1000),
-  ), [activities]);
+    meaningful.filter(activity => Date.now() - activity.startTime <= 7 * 24 * 60 * 60 * 1000),
+  ), [meaningful]);
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
@@ -151,8 +163,28 @@ export default function ActivityScreen() {
         {visible.length === 0 ? (
           <View style={[s.empty, { backgroundColor: C.card, borderColor: C.border }]}>
             <Ionicons name="pulse-outline" size={26} color={C.primary} />
-            <Text style={[s.activityTitle, { color: C.text }]}>No activities in this filter</Text>
-            <Text style={[s.activityMeta, { color: C.textMuted }]}>Track outdoors or add a quick manual entry.</Text>
+            <Text style={[s.activityTitle, { color: C.text }]}>
+              {meaningful.length === 0 ? 'No activities yet' : 'No activities in this filter'}
+            </Text>
+            <Text style={[s.activityMeta, { color: C.textMuted, textAlign: 'center' }]}>
+              {meaningful.length === 0
+                ? 'Your completed runs, walks, rides, strength sessions, mobility sessions, and other training will appear here.'
+                : 'Try another filter or add a completed activity.'}
+            </Text>
+            <View style={s.emptyActions}>
+              <TouchableOpacity
+                style={[s.emptyAction, { backgroundColor: C.primary }]}
+                onPress={() => router.push('/(tabs)/activity/start' as never)}
+              >
+                <Text style={[s.actionText, { color: C.onPrimary }]}>Start an Activity</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.emptyAction, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+                onPress={() => router.push('/(tabs)/dashboard' as never)}
+              >
+                <Text style={[s.actionText, { color: C.text }]}>View Today’s Plan</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ) : null}
       </ScrollView>
@@ -184,4 +216,6 @@ const s = StyleSheet.create({
   activityTitle: { fontSize: 15, fontWeight: '900' },
   activityMeta: { fontSize: 12, lineHeight: 17, marginTop: 3 },
   empty: { borderWidth: 1, borderRadius: 16, padding: 24, alignItems: 'center', gap: 8 },
+  emptyActions: { alignSelf: 'stretch', gap: 8, marginTop: 8 },
+  emptyAction: { minHeight: 44, borderRadius: 12, borderWidth: 1, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
 });

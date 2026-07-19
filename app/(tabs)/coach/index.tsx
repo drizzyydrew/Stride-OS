@@ -6,6 +6,7 @@
 
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -37,8 +38,6 @@ import { useBeginnerPlanStore } from '../../../src/store/beginnerPlanStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { pickTargetRace } from '../../../src/utils/plan/macroPlanner';
-import { toYMD } from '../../../src/utils/calendarEngine';
-import type { RichWorkout } from '../../../src/types/workout';
 import { buildCoachingInput } from '../../../src/utils/coachingInputBuilder';
 import { buildBudgetedCoachPrompt } from '../../../src/utils/coachPromptBudget';
 import { summarizeActivityLoad } from '../../../src/utils/activityLoad';
@@ -70,6 +69,9 @@ import type { Palette } from '../../../src/theme/colors';
 import { spacing }  from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 import { displayLabel } from '../../../src/utils/displayLabels';
+import { formatYMDForDisplay } from '../../../src/utils/dateFormatting';
+import { sanitizeCoachDisplayText } from '../../../src/utils/coachDisplay';
+import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -105,7 +107,7 @@ export type CoachTrainingContext = {
   focus:            string;
   race:             CoachRaceContext | 'none';
   adaptations:      string[];
-  todayWorkout:     { title: string; rationale: string } | null;
+  todayWorkout:     { title: string; rationale: string; target?: string; mainSet?: string } | null;
 };
 
 function shortDate(timestamp: number): string {
@@ -148,19 +150,19 @@ CURRENT STATE
 function buildTrainingPlanBlock(ctx: CoachTrainingContext): string {
   const raceLine = ctx.race === 'none'
     ? 'No race currently scheduled.'
-    : `${ctx.race.name} (${ctx.race.distance}) on ${ctx.race.date} — priority ${ctx.race.priority === 'tune_up' ? 'Tune-Up' : ctx.race.priority}, ${ctx.race.weeksOut} week(s) out.`;
+    : `${ctx.race.name} (${ctx.race.distance}) on ${formatYMDForDisplay(ctx.race.date)} — priority ${ctx.race.priority === 'tune_up' ? 'Tune-Up' : ctx.race.priority}, ${ctx.race.weeksOut} week(s) out.`;
 
   const adaptLines = ctx.adaptations.length
     ? ctx.adaptations.map(a => `  - ${a}`).join('\n')
     : '  - None this week.';
 
   const todayLine = ctx.todayWorkout
-    ? `Today's session and why: ${ctx.todayWorkout.title} — ${ctx.todayWorkout.rationale}`
+    ? `Today's session: ${ctx.todayWorkout.title}${ctx.todayWorkout.target ? ` — ${ctx.todayWorkout.target}` : ''}${ctx.todayWorkout.mainSet ? ` — ${ctx.todayWorkout.mainSet}` : ''}. Why: ${ctx.todayWorkout.rationale}`
     : "Today's session and why: Rest day — no structured session today.";
 
   return `TRAINING PLAN
 - Goal type: ${ctx.goalType}
-- Program start date: ${ctx.programStartDate ?? 'not set yet'}
+- Program start date: ${formatYMDForDisplay(ctx.programStartDate)}
 - Current phase: ${ctx.trainingPhase}, week ${ctx.currentWeek}
 - This week's focus: ${ctx.focus || 'n/a'}
 - Race: ${raceLine}
@@ -356,7 +358,7 @@ function buildSystemPrompt(
   );
   const activityContext = `PRIMARY ENDURANCE AND RECENT ACTIVITY
 - Primary endurance mode: ${displayLabel(preferences.primaryEnduranceMode)}
-- Active preset plan: ${beginnerPlan ? `${displayLabel(beginnerPlan.goal)} through ${beginnerPlan.targetDate}` : 'none'}
+- Active preset plan: ${beginnerPlan ? `${displayLabel(beginnerPlan.goal)} through ${formatYMDForDisplay(beginnerPlan.targetDate)}` : 'none'}
 - Cross-training: ${preferences.crossTrainingDecision}${preferences.crossTrainingActivities.length ? `; preferred ${preferences.crossTrainingActivities.map(item => displayLabel(item.activityType)).join(', ')}` : ''}
 - 7-day load: whole body ${Math.round(load.wholeBody)}, running ${Math.round(load.running)}, walking ${Math.round(load.walking)}, cross-training ${Math.round(load.crossTraining)}, strength ${Math.round(load.strength)}.
 - Recent activity: ${recentActivities.length ? recentActivities.map(activity => `${displayLabel(activity.activityType)} ${Math.round((activity.metrics.durationSeconds ?? 0) / 60)} min${activity.rpe ? ` RPE ${activity.rpe}` : ''}`).join('; ') : 'none'}.
@@ -381,7 +383,7 @@ Cycling, swimming, and walking do not count as running mileage or running pace h
         key: 'Safety and evidence rules',
         priority: 2,
         required: true,
-        content: 'Never diagnose, predict injury, guarantee symptom prevention, or infer tissue loading, joint force, or pathology from app data. Movement values are estimated two-dimensional projections based on the available camera view. Use “may reflect,” “may be associated with,” “approximate,” and “manual review recommended.” For pain, injury, neurologic symptoms, or medical concerns, recommend a qualified clinician. Do not invent findings. Use plain text, no markdown.',
+        content: 'Never diagnose, predict injury, guarantee symptom prevention, or infer tissue loading, joint force, or pathology from app data. Movement values are estimated two-dimensional projections based on the available camera view. Use “may reflect,” “may be associated with,” “approximate,” and “manual review recommended.” For pain, injury, neurologic symptoms, or medical concerns, recommend a qualified clinician. Do not invent findings. Use plain text only: no markdown syntax, no emojis, no raw asterisks, and no backticks. When exact session data is present, use it directly; do not tell the athlete to check the app for the same details.',
       },
       {
         key: 'Essential athlete context',
@@ -493,9 +495,9 @@ function Bubble({ msg }: { msg: Message }) {
   const isUser = msg.role === 'user';
   return (
     <View style={[b.wrap, isUser ? b.userWrap : b.assistantWrap]}>
-      {!isUser && <Text style={b.avatar}>🏃</Text>}
+      {!isUser && <Text style={b.avatar}>AI</Text>}
       <View style={[b.bubble, isUser ? b.userBubble : b.assistantBubble]}>
-        <Text style={[b.txt, isUser ? b.userTxt : b.assistantTxt]}>{msg.content}</Text>
+        <Text style={[b.txt, isUser ? b.userTxt : b.assistantTxt]}>{isUser ? msg.content : sanitizeCoachDisplayText(msg.content)}</Text>
       </View>
     </View>
   );
@@ -543,6 +545,7 @@ export default function CoachScreen() {
 
   // ── Plan spine — grounds the coach in the real macro plan ──────────────────
   const weekPlan          = useWeekPlan();
+  const scheduled         = useScheduledSessions(weekPlan);
   const { richWeek, weeksToRace } = weekPlan;
   const planGoalType      = useTrainingPlanStore(s => s.goalType);
   const planStartDate     = useTrainingPlanStore(s => s.programStartDate);
@@ -559,15 +562,13 @@ export default function CoachScreen() {
   }, [planGoalType, planStartDate, planRaces, weekPlan.weeksToRace]);
 
   const todayWorkoutCtx = useMemo(() => {
-    const todayYMD = toYMD(new Date());
-    const todayEntries = weekPlan.calendarMap.get(todayYMD) ?? [];
-    const todayRunEntry = todayEntries.find(e => e.type === 'run');
-    const workout = (todayRunEntry?.workout as RichWorkout | undefined)
-      ?? weekPlan.richWeek.workouts[(new Date().getDay() + 6) % 7]
-      ?? null;
-    if (!workout || workout.type === 'rest') return null;
-    return { title: workout.title, rationale: workout.purpose };
-  }, [weekPlan.calendarMap, weekPlan.richWeek]);
+    const session = scheduled.todayPrimary;
+    if (!session) return null;
+    const prescription = session.runWalk
+      ? `Total ${session.runWalk.totalMinutes} min; warm-up ${session.runWalk.warmupMinutes} min; ${session.runWalk.rounds} rounds of ${session.runWalk.runSeconds} sec run / ${session.runWalk.walkSeconds} sec walk; cooldown ${session.runWalk.cooldownMinutes} min; ${session.runWalk.hrZone}; RPE ${session.runWalk.rpe}.`
+      : `${session.durationMinutes} min; ${session.target}; ${session.hrTarget ?? ''}; ${session.rpeTarget ?? ''}.`;
+    return { title: session.title, rationale: `${session.purpose} ${prescription}` };
+  }, [scheduled.todayPrimary]);
 
   const trainingCtx: CoachTrainingContext = useMemo(() => ({
     runHistory,
@@ -709,7 +710,7 @@ export default function CoachScreen() {
         focusedAnalysis, text, buildHydrationContext(data),
         buildStrengthContext(trainingCtx, weekPlan.strengthWeek.sessions[0]),
       );
-      const reply = await sendCoachMessage(updated, system);
+      const reply = sanitizeCoachDisplayText(await sendCoachMessage(updated, system));
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (e) {
@@ -723,7 +724,7 @@ export default function CoachScreen() {
     <KeyboardAvoidingView
       style={s.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={90}
+      keyboardVerticalOffset={0}
     >
       <View style={[s.header, { paddingTop: insets.top + 6 }]}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
@@ -758,7 +759,7 @@ export default function CoachScreen() {
 
       {tab === 'chat' && (!isConfigured || (coachHealth && !coachHealth.ok)) ? (
         <View style={s.noKey}>
-          <Text style={s.noKeyIcon}>🔑</Text>
+          <Ionicons name="key-outline" size={38} color={C.primary} />
           <Text style={s.noKeyTitle}>Coach setup required</Text>
           <Text style={s.noKeyDesc}>
             {!isConfigured
@@ -790,8 +791,11 @@ export default function CoachScreen() {
           <ScrollView
             ref={scrollRef}
             style={s.messages}
-            contentContainerStyle={s.messagesContent}
+            contentContainerStyle={[s.messagesContent, { paddingBottom: spacing.xxl + insets.bottom + 84 }]}
             showsVerticalScrollIndicator={false}
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+            onScrollBeginDrag={() => Keyboard.dismiss()}
           >
             <View style={s.contextCard}>
               <Text style={s.contextEyebrow}>Your Training Context</Text>
@@ -823,7 +827,7 @@ export default function CoachScreen() {
 
             {loading && (
               <View style={[b.wrap, b.assistantWrap]}>
-                <Text style={b.avatar}>🏃</Text>
+                <Text style={b.avatar}>AI</Text>
                 <View style={[b.bubble, b.assistantBubble]}>
                   <ActivityIndicator size="small" color={C.primary} />
                 </View>
@@ -837,7 +841,7 @@ export default function CoachScreen() {
             )}
           </ScrollView>
 
-          <View style={s.inputRow}>
+          <View style={[s.inputRow, { paddingBottom: insets.bottom + 10 }]}>
             <TextInput
               style={s.input}
               value={input}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +23,8 @@ import { buildRouteGuidance } from '../../../src/lib/routing';
 import { updateRouteGuidanceProgress, type RouteGuidancePlan } from '../../../src/lib/routeGuidance';
 import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
 import { evaluateRunWalkCue, intervalAtElapsed } from '../../../src/utils/activityTracking';
+import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
+import { useIntegrationsStore } from '../../../src/store/integrationsStore';
 import {
   activeSessionStoresHydrated,
   getConflictingActiveSession,
@@ -46,6 +48,7 @@ export default function StartOutdoorActivityScreen() {
   const C = useColors();
   const router = useRouter();
   const addActivity = useActivityStore(state => state.addActivity);
+  const healthKitEnabled = useIntegrationsStore(state => state.healthKitEnabled);
   const active = useActiveActivityStore();
   const routes = useRouteStore(state => state.routes);
   const attachment = useRouteStore(state => state.routeAttachment);
@@ -54,6 +57,7 @@ export default function StartOutdoorActivityScreen() {
   const [runWalk, setRunWalk] = useState(false);
   const [navigationMode, setNavigationMode] = useState<'off' | 'walking' | 'cycling'>('off');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [heartRateBpm, setHeartRateBpm] = useState<number | null>(null);
   const [guidance, setGuidance] = useState<RouteGuidancePlan | null>(null);
   const previousElapsed = useRef(0);
   const lastAnnouncedStep = useRef<string | null>(null);
@@ -78,6 +82,24 @@ export default function StartOutdoorActivityScreen() {
   }, [active.isActive, active.isPaused, active.pausedDurationMs, active.startedAt]);
 
   useEffect(() => {
+    let cancelled = false;
+    async function refreshHeartRate() {
+      if (!healthKitEnabled || !active.isActive || active.isPaused || Platform.OS !== 'ios') {
+        if (!cancelled) setHeartRateBpm(null);
+        return;
+      }
+      const latest = await getLatestHeartRateBpm().catch(() => null);
+      if (!cancelled) setHeartRateBpm(latest);
+    }
+    refreshHeartRate();
+    const timer = setInterval(refreshHeartRate, 10_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [active.isActive, active.isPaused, healthKitEnabled]);
+
+  useEffect(() => {
     if (!active.isActive || !active.intervalPromptsEnabled || active.runWalkIntervals.length === 0) return;
     const cue = evaluateRunWalkCue({
       intervals: active.runWalkIntervals,
@@ -89,7 +111,7 @@ export default function StartOutdoorActivityScreen() {
   }, [active.intervalPromptsEnabled, active.isActive, active.runWalkIntervals, elapsedSeconds]);
 
   useEffect(() => {
-    if (!active.isActive || !guidance || !active.aggregate.points.length) return;
+    if (!active.isActive || !active.navigationPromptsEnabled || !guidance || !active.aggregate.points.length) return;
     const point = active.aggregate.points.at(-1)!;
     const progress = updateRouteGuidanceProgress({ point, plan: guidance });
     active.setNextInstruction(progress.isOffRoute ? 'You appear to be off route.' : progress.nextInstruction);
@@ -104,7 +126,7 @@ export default function StartOutdoorActivityScreen() {
       lastAnnouncedStep.current = progress.nextInstruction;
       enqueueVoiceCue(progress.nextInstruction);
     }
-  }, [active.aggregate.points.length, active.isActive, guidance]);
+  }, [active.aggregate.points.length, active.isActive, active.navigationPromptsEnabled, guidance]);
 
   useEffect(() => {
     if (!active.isActive) return;
@@ -118,7 +140,7 @@ export default function StartOutdoorActivityScreen() {
       distanceMiles: miles,
       averagePace: secPerMile ? `${Math.floor(secPerMile / 60)}:${String(Math.round(secPerMile % 60)).padStart(2, '0')}` : '--:--',
       averageSpeedMph: active.aggregate.averageMetersPerSecond * 2.23694,
-      heartRateBpm: null,
+      heartRateBpm,
       isPaused: active.isPaused,
       currentInterval: interval ? active.runWalkIntervals[interval.index]?.kind === 'run' ? 'Run' : 'Walk' : undefined,
       nextTransition: interval ? `${interval.intervalRemaining}s` : undefined,
@@ -126,7 +148,7 @@ export default function StartOutdoorActivityScreen() {
       elevationGainMeters: active.aggregate.elevationGainMeters,
       elevationLossMeters: active.aggregate.elevationLossMeters,
     }).catch(() => undefined);
-  }, [active.aggregate.averageMetersPerSecond, active.isActive, active.isPaused, active.name, active.nextInstruction, active.runWalkIntervals, active.activityType, elapsedSeconds, miles, secPerMile]);
+  }, [active.aggregate.averageMetersPerSecond, active.isActive, active.isPaused, active.name, active.nextInstruction, active.runWalkIntervals, active.activityType, elapsedSeconds, heartRateBpm, miles, secPerMile]);
 
   async function begin() {
     if (!activeSessionStoresHydrated()) {
@@ -202,7 +224,7 @@ export default function StartOutdoorActivityScreen() {
             elapsedSeconds: elapsedToSave,
             distanceMiles: latest.aggregate.distanceMeters / 1609.344,
             averageSpeedMph: latest.aggregate.averageMetersPerSecond * 2.23694,
-            heartRateBpm: null,
+            heartRateBpm,
             isPaused: false,
             elevationGainMeters: latest.aggregate.elevationGainMeters,
             elevationLossMeters: latest.aggregate.elevationLossMeters,
@@ -338,7 +360,15 @@ export default function StartOutdoorActivityScreen() {
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <View style={s.row}><Text style={[s.cardTitle, { color: C.text }]}>Interval voice prompts</Text><Switch value={active.intervalPromptsEnabled} onValueChange={active.setIntervalPromptsEnabled} trackColor={{ true: C.primary }} /></View>
           <View style={[s.divider, { backgroundColor: C.border }]} />
+          <View style={s.row}><Text style={[s.cardTitle, { color: C.text }]}>Heart-rate coaching</Text><Switch value={active.heartRateCoachingEnabled} onValueChange={active.setHeartRateCoachingEnabled} trackColor={{ true: C.primary }} /></View>
+          <View style={[s.divider, { backgroundColor: C.border }]} />
           <View style={s.row}><Text style={[s.cardTitle, { color: C.text }]}>Pace / effort coaching</Text><Switch value={active.paceCoachingEnabled} onValueChange={active.setPaceCoachingEnabled} trackColor={{ true: C.primary }} /></View>
+          <View style={[s.divider, { backgroundColor: C.border }]} />
+          <View style={s.row}><Text style={[s.cardTitle, { color: C.text }]}>Hydration prompts</Text><Switch value={active.hydrationPromptsEnabled} onValueChange={active.setHydrationPromptsEnabled} trackColor={{ true: C.primary }} /></View>
+          <View style={[s.divider, { backgroundColor: C.border }]} />
+          <View style={s.row}><Text style={[s.cardTitle, { color: C.text }]}>Fuel prompts</Text><Switch value={active.fuelPromptsEnabled} onValueChange={active.setFuelPromptsEnabled} trackColor={{ true: C.primary }} /></View>
+          <View style={[s.divider, { backgroundColor: C.border }]} />
+          <View style={s.row}><Text style={[s.cardTitle, { color: C.text }]}>Navigation prompts</Text><Switch value={active.navigationPromptsEnabled} onValueChange={active.setNavigationPromptsEnabled} trackColor={{ true: C.primary }} /></View>
         </View>
       </ScrollView>
       <View style={s.controls}>

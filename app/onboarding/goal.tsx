@@ -11,6 +11,8 @@ import type { GoalType } from '../../src/store/onboardingStore';
 import type { TrainingGoalType, RacePriority } from '../../src/types/plan';
 import type { RaceDistance } from '../../src/types/training';
 import { toYMD, parseYMD } from '../../src/utils/calendarEngine';
+import { formatYMDForDisplay } from '../../src/utils/dateFormatting';
+import MultiColumnPickerSheet from '../../src/components/ui/MultiColumnPickerSheet';
 
 const GOAL_TYPES: { key: TrainingGoalType; label: string; desc: string }[] = [
   { key: 'general_running',  label: 'General Running',        desc: 'Build aerobic fitness and consistency — no race on the calendar.' },
@@ -31,6 +33,26 @@ const PRIORITIES: { key: RacePriority; label: string }[] = [
   { key: 'B',        label: 'B — Secondary' },
   { key: 'tune_up',  label: 'Tune-Up' },
 ];
+
+const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
+const DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
+const YEARS = Array.from({ length: 8 }, (_, index) => new Date().getFullYear() + index);
+
+function partsFromYMD(value: string): { month: number; day: number; year: number } {
+  const parsed = isValidYMD(value) ? parseYMD(value) : new Date();
+  return {
+    month: parsed.getMonth() + 1,
+    day: parsed.getDate(),
+    year: parsed.getFullYear(),
+  };
+}
+
+function ymdFromParts(values: Record<string, string | number>): string {
+  const month = Number(values.month);
+  const day = Number(values.day);
+  const year = Number(values.year);
+  return toYMD(new Date(year, month - 1, day));
+}
 
 function isValidYMD(s: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
@@ -66,6 +88,7 @@ export default function GoalScreen() {
 
   const [programStartDate, setProgramStartDate] = useState(data.programStartDate || toYMD(new Date()));
   const [startDateError, setStartDateError] = useState('');
+  const [datePickerFor, setDatePickerFor] = useState<null | 'race' | 'start'>(null);
 
   function handleNext() {
     setRaceDateError('');
@@ -74,7 +97,7 @@ export default function GoalScreen() {
 
     const startDate = programStartDate.trim();
     if (!isValidYMD(startDate)) {
-      setStartDateError('Enter a valid date as YYYY-MM-DD.');
+      setStartDateError('Choose a valid date as MM-DD-YYYY.');
       return;
     }
 
@@ -85,7 +108,7 @@ export default function GoalScreen() {
         return;
       }
       if (!isValidYMD(raceDate)) {
-        setRaceDateError('Enter a valid date as YYYY-MM-DD.');
+        setRaceDateError('Choose a valid date as MM-DD-YYYY.');
         return;
       }
       if (!isTodayOrFuture(raceDate)) {
@@ -161,15 +184,15 @@ export default function GoalScreen() {
           </View>
 
           <View style={styles.customRow}>
-            <Text style={styles.customLabel}>RACE DATE (YYYY-MM-DD)</Text>
-            <TextInput
-              style={styles.input}
-              value={raceDate}
-              onChangeText={setRaceDate}
-              placeholder={toYMD(new Date())}
-              placeholderTextColor={colors.textSubtle}
-              keyboardType="numbers-and-punctuation"
-            />
+            <Text style={styles.customLabel}>RACE DATE (MM-DD-YYYY)</Text>
+            <Pressable
+              style={styles.dateButton}
+              onPress={() => setDatePickerFor('race')}
+              accessibilityRole="button"
+              accessibilityLabel="Choose race date"
+            >
+              <Text style={styles.dateText}>{formatYMDForDisplay(raceDate) || formatYMDForDisplay(toYMD(new Date()))}</Text>
+            </Pressable>
             {raceDateError ? <Text style={styles.errorText}>{raceDateError}</Text> : null}
           </View>
 
@@ -205,17 +228,38 @@ export default function GoalScreen() {
 
       <View style={styles.customRow}>
         <Text style={styles.customLabel}>PROGRAM START DATE</Text>
-        <TextInput
-          style={styles.input}
-          value={programStartDate}
-          onChangeText={setProgramStartDate}
-          placeholder={toYMD(new Date())}
-          placeholderTextColor={colors.textSubtle}
-          keyboardType="numbers-and-punctuation"
-        />
+        <Pressable
+          style={styles.dateButton}
+          onPress={() => setDatePickerFor('start')}
+          accessibilityRole="button"
+          accessibilityLabel="Choose program start date"
+        >
+          <Text style={styles.dateText}>{formatYMDForDisplay(programStartDate)}</Text>
+        </Pressable>
         {startDateError ? <Text style={styles.errorText}>{startDateError}</Text> : null}
         <Text style={styles.note}>Defaults to today. Set a future date if you want your plan to start later.</Text>
       </View>
+
+      <MultiColumnPickerSheet
+        visible={datePickerFor !== null}
+        title={datePickerFor === 'race' ? 'Race Date' : 'Program Start Date'}
+        columns={(() => {
+          const selectedDate = datePickerFor === 'race' ? raceDate || toYMD(new Date()) : programStartDate;
+          const parts = partsFromYMD(selectedDate);
+          return [
+            { key: 'month', title: 'Month', values: MONTHS, selectedValue: parts.month, formatValue: value => String(value).padStart(2, '0') },
+            { key: 'day', title: 'Day', values: DAYS, selectedValue: parts.day, formatValue: value => String(value).padStart(2, '0') },
+            { key: 'year', title: 'Year', values: YEARS, selectedValue: parts.year },
+          ];
+        })()}
+        onClose={() => setDatePickerFor(null)}
+        onConfirm={values => {
+          const next = ymdFromParts(values);
+          if (datePickerFor === 'race') setRaceDate(next);
+          if (datePickerFor === 'start') setProgramStartDate(next);
+          setDatePickerFor(null);
+        }}
+      />
     </OnboardingShell>
   );
 }
@@ -268,6 +312,20 @@ const styles = StyleSheet.create({
     color:           colors.text,
     fontSize:        FontSize.base,
     padding:         spacing.md,
+  },
+  dateButton: {
+    backgroundColor: colors.card,
+    borderRadius:    Radius.sm,
+    borderWidth:     1,
+    borderColor:     colors.border,
+    minHeight:       52,
+    justifyContent:  'center',
+    padding:         spacing.md,
+  },
+  dateText: {
+    color:      colors.text,
+    fontSize:   FontSize.base,
+    fontWeight: FontWeight.bold,
   },
   note: {
     color:    colors.textSubtle,

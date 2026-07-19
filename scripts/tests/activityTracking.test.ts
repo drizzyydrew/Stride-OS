@@ -7,6 +7,7 @@ import {
   evaluateSustainedEffortCue,
   intervalAtElapsed,
   mergeSpokenCues,
+  type EffortCueState,
 } from '../../src/utils/activityTracking';
 
 const empty = {
@@ -49,13 +50,34 @@ test('effort cue requires sustained samples and observes cooldown', () => {
     state = result.state;
   }
   const due = evaluateSustainedEffortCue({ state, elapsedSeconds: 50, isAboveTarget: true });
-  assert.match(due.text ?? '', /above today’s easy effort/i);
+  assert.match(due.text ?? '', /above today’s target/i);
   const suppressed = evaluateSustainedEffortCue({
     state: { consecutiveHighSamples: 4, lastCueElapsedSeconds: 50 },
     elapsedSeconds: 80,
     isAboveTarget: true,
   });
   assert.equal(suppressed.text, undefined);
+});
+
+test('heart-rate voice coaching supports below range and back-in-zone cues', () => {
+  let state: EffortCueState = {
+    consecutiveHighSamples: 0,
+    consecutiveLowSamples: 0,
+    wasOutOfRange: false,
+    lastCueElapsedSeconds: -300,
+  };
+  for (let i = 1; i <= 4; i += 1) {
+    state = evaluateSustainedEffortCue({ state, elapsedSeconds: i * 10, isAboveTarget: false, isBelowTarget: true }).state;
+  }
+  const low = evaluateSustainedEffortCue({ state, elapsedSeconds: 50, isAboveTarget: false, isBelowTarget: true });
+  assert.match(low.text ?? '', /below today’s target/i);
+  const back = evaluateSustainedEffortCue({
+    state: { ...low.state, lastCueElapsedSeconds: -300 },
+    elapsedSeconds: 360,
+    isAboveTarget: false,
+    backInTarget: true,
+  });
+  assert.match(back.text ?? '', /back in your target zone/i);
 });
 
 test('voice collisions merge without duplicate phrases', () => {

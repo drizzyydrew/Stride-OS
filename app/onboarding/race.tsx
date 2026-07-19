@@ -8,6 +8,7 @@ import { colors }  from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 import type { StandardDistance } from '../../src/types/athlete';
+import MultiColumnPickerSheet from '../../src/components/ui/MultiColumnPickerSheet';
 
 const DISTANCES: { key: StandardDistance; label: string; meters: number }[] = [
   { key: 'marathon',      label: 'Marathon',      meters: 42195    },
@@ -18,53 +19,12 @@ const DISTANCES: { key: StandardDistance; label: string; meters: number }[] = [
   { key: '800m',          label: '800m',          meters: 800      },
 ];
 
-function TimeInput({
-  hours, minutes, seconds,
-  setHours, setMinutes, setSeconds,
-}: {
-  hours: number; minutes: number; seconds: number;
-  setHours: (n: number) => void;
-  setMinutes: (n: number) => void;
-  setSeconds: (n: number) => void;
-}) {
-  const unit = (
-    label: string, val: number, max: number,
-    set: (n: number) => void,
-  ) => (
-    <View style={t.unit} key={label}>
-      <Text style={t.val}>{String(val).padStart(2, '0')}</Text>
-      <Text style={t.unitLabel}>{label}</Text>
-      <View style={t.btnRow}>
-        <Pressable style={t.btn} onPress={() => set(Math.max(0, val - 1))}>
-          <Text style={t.btnTxt}>−</Text>
-        </Pressable>
-        <Pressable style={t.btn} onPress={() => set(Math.min(max, val + 1))}>
-          <Text style={t.btnTxt}>+</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-  return (
-    <View style={t.row}>
-      {unit('hrs', hours,   9,  setHours)}
-      <Text style={t.sep}>:</Text>
-      {unit('min', minutes, 59, setMinutes)}
-      <Text style={t.sep}>:</Text>
-      {unit('sec', seconds, 59, setSeconds)}
-    </View>
-  );
-}
+const HOURS = Array.from({ length: 13 }, (_, index) => index);
+const SIXTY = Array.from({ length: 60 }, (_, index) => index);
 
-const t = StyleSheet.create({
-  row:      { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs, justifyContent: 'center' },
-  unit:     { alignItems: 'center', gap: 4 },
-  val:      { color: colors.text, fontSize: 32, fontWeight: FontWeight.black, lineHeight: 36 },
-  unitLabel:{ color: colors.textSubtle, fontSize: 9 },
-  btnRow:   { flexDirection: 'row', gap: spacing.xs },
-  btn:      { width: 36, height: 36, borderRadius: Radius.sm, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-  btnTxt:   { color: colors.text, fontSize: FontSize.md, fontWeight: FontWeight.bold },
-  sep:      { color: colors.textSubtle, fontSize: 28, fontWeight: FontWeight.black, marginTop: 4 },
-});
+function formatTime(hours: number, minutes: number, seconds: number): string {
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
 
 export default function RaceScreen() {
   const { data, updateData } = useOnboardingStore();
@@ -73,6 +33,7 @@ export default function RaceScreen() {
   const [hours,     setHours]     = useState(0);
   const [minutes,   setMinutes]   = useState(25);
   const [seconds,   setSeconds]   = useState(0);
+  const [timePickerVisible, setTimePickerVisible] = useState(false);
 
   function handleNext() {
     const totalSec = hours * 3600 + minutes * 60 + seconds;
@@ -135,10 +96,15 @@ export default function RaceScreen() {
           {/* Time input */}
           <View style={styles.timeCard}>
             <Text style={styles.timeTitle}>FINISH TIME</Text>
-            <TimeInput
-              hours={hours} minutes={minutes} seconds={seconds}
-              setHours={setHours} setMinutes={setMinutes} setSeconds={setSeconds}
-            />
+            <Pressable
+              style={styles.timePickerButton}
+              onPress={() => setTimePickerVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Choose finish time"
+            >
+              <Text style={styles.timeValue}>{formatTime(hours, minutes, seconds)}</Text>
+              <Text style={styles.timeHint}>Tap to choose hours, minutes, and seconds</Text>
+            </Pressable>
           </View>
 
           <Text style={styles.note}>
@@ -153,6 +119,23 @@ export default function RaceScreen() {
           You can add a race PR anytime from the Profile screen.
         </Text>
       )}
+
+      <MultiColumnPickerSheet
+        visible={timePickerVisible}
+        title="Finish Time"
+        columns={[
+          { key: 'hours', title: 'Hours', values: HOURS, selectedValue: hours, formatValue: value => `${value} hr` },
+          { key: 'minutes', title: 'Minutes', values: SIXTY, selectedValue: minutes, formatValue: value => String(value).padStart(2, '0') },
+          { key: 'seconds', title: 'Seconds', values: SIXTY, selectedValue: seconds, formatValue: value => String(value).padStart(2, '0') },
+        ]}
+        onClose={() => setTimePickerVisible(false)}
+        onConfirm={values => {
+          setHours(Number(values.hours));
+          setMinutes(Number(values.minutes));
+          setSeconds(Number(values.seconds));
+          setTimePickerVisible(false);
+        }}
+      />
     </OnboardingShell>
   );
 }
@@ -222,6 +205,25 @@ const styles = StyleSheet.create({
     fontWeight:    FontWeight.black,
     letterSpacing: 0.6,
     textAlign:     'center',
+  },
+  timePickerButton: {
+    minHeight: 92,
+    borderRadius: Radius.md,
+    backgroundColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.md,
+  },
+  timeValue: {
+    color: colors.text,
+    fontSize: 34,
+    fontWeight: FontWeight.black,
+    lineHeight: 40,
+  },
+  timeHint: {
+    color: colors.textSubtle,
+    fontSize: FontSize.xs,
+    marginTop: 5,
   },
   note: {
     color:      colors.textSubtle,

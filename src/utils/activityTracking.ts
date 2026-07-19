@@ -26,6 +26,8 @@ export type IntervalCue = {
 
 export type EffortCueState = {
   consecutiveHighSamples: number;
+  consecutiveLowSamples?: number;
+  wasOutOfRange?: boolean;
   lastCueElapsedSeconds: number;
 };
 
@@ -161,6 +163,8 @@ export function evaluateSustainedEffortCue(input: {
   state: EffortCueState;
   elapsedSeconds: number;
   isAboveTarget: boolean;
+  isBelowTarget?: boolean;
+  backInTarget?: boolean;
   samplesRequired?: number;
   cooldownSeconds?: number;
 }): { state: EffortCueState; text?: string } {
@@ -169,15 +173,35 @@ export function evaluateSustainedEffortCue(input: {
   const consecutiveHighSamples = input.isAboveTarget
     ? input.state.consecutiveHighSamples + 1
     : 0;
+  const consecutiveLowSamples = input.isBelowTarget
+    ? (input.state.consecutiveLowSamples ?? 0) + 1
+    : 0;
   const cooledDown = input.elapsedSeconds - input.state.lastCueElapsedSeconds >= cooldownSeconds;
   if (consecutiveHighSamples >= samplesRequired && cooledDown) {
     return {
-      state: { consecutiveHighSamples: 0, lastCueElapsedSeconds: input.elapsedSeconds },
-      text: 'You’re above today’s easy effort. Slow down slightly.',
+      state: { consecutiveHighSamples: 0, consecutiveLowSamples: 0, wasOutOfRange: true, lastCueElapsedSeconds: input.elapsedSeconds },
+      text: 'Your heart rate is above today’s target. Ease the pace slightly.',
+    };
+  }
+  if (consecutiveLowSamples >= samplesRequired && cooledDown) {
+    return {
+      state: { consecutiveHighSamples: 0, consecutiveLowSamples: 0, wasOutOfRange: true, lastCueElapsedSeconds: input.elapsedSeconds },
+      text: 'You’re below today’s target. Increase the effort gently if that feels appropriate.',
+    };
+  }
+  if (input.backInTarget && input.state.wasOutOfRange && cooledDown) {
+    return {
+      state: { consecutiveHighSamples: 0, consecutiveLowSamples: 0, wasOutOfRange: false, lastCueElapsedSeconds: input.elapsedSeconds },
+      text: 'You’re back in your target zone.',
     };
   }
   return {
-    state: { ...input.state, consecutiveHighSamples },
+    state: {
+      ...input.state,
+      consecutiveHighSamples,
+      consecutiveLowSamples,
+      wasOutOfRange: input.state.wasOutOfRange || input.isAboveTarget || Boolean(input.isBelowTarget),
+    },
   };
 }
 

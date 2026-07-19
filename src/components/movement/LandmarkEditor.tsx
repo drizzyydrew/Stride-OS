@@ -18,6 +18,10 @@ import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { PoseLandmarkRecord } from '../../types/movement';
 import { displayLabel } from '../../utils/displayLabels';
+import {
+  clampMarkerCoordinate,
+  normalizedMarkerFromDrag,
+} from '../../utils/markerEditing';
 
 type Props = {
   imageUri: string;
@@ -35,10 +39,6 @@ const DEFAULT_EDITABLE_NAMES = new Set(
   ['left', 'right'].flatMap(side => EDITABLE_SUFFIXES.map(suffix => `${side}_${suffix}`)),
 );
 const HANDLE_SIZE = 44;
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
 
 function sameLandmarks(a: PoseLandmarkRecord[], b: PoseLandmarkRecord[]): boolean {
   if (a.length !== b.length) return false;
@@ -80,10 +80,11 @@ function MarkerHandle({ joint, selected, width, height, onSelect, onMove }: Hand
         onSelect(joint.name);
       },
       onPanResponderMove: (_, gesture) => {
+        const next = normalizedMarkerFromDrag(start.current, { dx: gesture.dx, dy: gesture.dy }, { width, height });
         onMove(
           joint.name,
-          clamp01(start.current.x + gesture.dx / Math.max(1, width)),
-          clamp01(start.current.y + gesture.dy / Math.max(1, height)),
+          next.x,
+          next.y,
         );
       },
       onPanResponderTerminationRequest: () => false,
@@ -108,10 +109,10 @@ function MarkerHandle({ joint, selected, width, height, onSelect, onMove }: Hand
       onAccessibilityAction={event => {
         const step = 0.01;
         const { x, y } = jointPos.current;
-        if (event.nativeEvent.actionName === 'moveUp') onMove(joint.name, x, clamp01(y - step));
-        if (event.nativeEvent.actionName === 'moveDown') onMove(joint.name, x, clamp01(y + step));
-        if (event.nativeEvent.actionName === 'moveLeft') onMove(joint.name, clamp01(x - step), y);
-        if (event.nativeEvent.actionName === 'moveRight') onMove(joint.name, clamp01(x + step), y);
+        if (event.nativeEvent.actionName === 'moveUp') onMove(joint.name, x, clampMarkerCoordinate(y - step));
+        if (event.nativeEvent.actionName === 'moveDown') onMove(joint.name, x, clampMarkerCoordinate(y + step));
+        if (event.nativeEvent.actionName === 'moveLeft') onMove(joint.name, clampMarkerCoordinate(x - step), y);
+        if (event.nativeEvent.actionName === 'moveRight') onMove(joint.name, clampMarkerCoordinate(x + step), y);
         onSelect(joint.name);
       }}
       style={[
@@ -200,7 +201,7 @@ export default function LandmarkEditor({
         style={[styles.stage, { width: stageWidth, height: stageHeight }]}
         onLayout={event => setSize({ w: event.nativeEvent.layout.width, h: event.nativeEvent.layout.height })}
       >
-        <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
+        <Image source={{ uri: imageUri }} style={styles.image} resizeMode="contain" />
         {size ? (
           <>
             <Svg style={StyleSheet.absoluteFill} width={size.w} height={size.h} pointerEvents="none">

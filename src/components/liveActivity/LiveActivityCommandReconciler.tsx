@@ -199,9 +199,9 @@ export default function LiveActivityCommandReconciler() {
         },
         strength_complete: command => {
           if (!strengthCommandMatches(command)) return;
-          const store = useActiveStrengthSessionStore.getState();
-          const current = store.session?.exercises[store.session.currentExerciseIndex];
-          if (current) store.completeExercise(current.id);
+          const source = useActiveStrengthSessionStore.getState().session?.source;
+          useActiveStrengthSessionStore.getState().requestCompletion();
+          router.replace((source === 'preset' ? '/(tabs)/strength/preset-session' : '/(tabs)/strength') as never);
           void publishStrengthState();
         },
       });

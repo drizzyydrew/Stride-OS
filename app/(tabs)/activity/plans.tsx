@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -25,11 +24,27 @@ import {
   recommendBeginnerPlanDuration,
 } from '../../../src/utils/beginnerPlans';
 import { displayLabel } from '../../../src/utils/displayLabels';
+import { formatYMDForDisplay } from '../../../src/utils/dateFormatting';
+import MultiColumnPickerSheet from '../../../src/components/ui/MultiColumnPickerSheet';
 
 const GOALS = Object.values(BEGINNER_PLAN_DEFINITIONS);
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
+const DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
+const YEARS = Array.from({ length: 8 }, (_, index) => new Date().getFullYear() + index);
+
+function dateParts(value: string) {
+  const fallback = today();
+  const [year, month, day] = (value || fallback).split('-').map(Number);
+  return {
+    year: Number.isFinite(year) ? year : new Date().getFullYear(),
+    month: Number.isFinite(month) ? month : new Date().getMonth() + 1,
+    day: Number.isFinite(day) ? day : new Date().getDate(),
+  };
 }
 
 export default function PresetPlansScreen() {
@@ -46,6 +61,7 @@ export default function PresetPlansScreen() {
   const [startingLevel, setStartingLevel] = useState<BeginnerPlanReadinessInput['startingLevel']>('walking');
   const [acknowledgeVisible, setAcknowledgeVisible] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
+  const [targetPickerVisible, setTargetPickerVisible] = useState(false);
 
   const input = useMemo<BeginnerPlanReadinessInput>(() => ({
     goal: selectedGoal,
@@ -101,7 +117,7 @@ export default function PresetPlansScreen() {
             <Text style={[s.eyebrow, { color: C.primary }]}>ACTIVE PRESET GOAL PLAN</Text>
             <Text style={[s.cardTitle, { color: C.text }]}>{BEGINNER_PLAN_DEFINITIONS[activePlan.goal].title}</Text>
             <Text style={[s.body, { color: C.textMuted }]}>
-              {activePlan.durationWeeks} weeks · target {activePlan.targetDate} · {displayLabel(activePlan.primaryEnduranceMode)}
+              {activePlan.durationWeeks} weeks · target {formatYMDForDisplay(activePlan.targetDate)} · {displayLabel(activePlan.primaryEnduranceMode)}
             </Text>
             <TouchableOpacity onPress={removeGoal} style={s.removeButton}>
               <Text style={[s.removeText, { color: C.critical }]}>End future goal programming</Text>
@@ -148,19 +164,22 @@ export default function PresetPlansScreen() {
             ))}
           </View>
           <Text style={[s.label, { color: C.textDim }]}>REQUESTED TARGET DATE · OPTIONAL</Text>
-          <TextInput
-            value={targetDate}
-            onChangeText={setTargetDate}
-            placeholder={recommendation.earliestSupportedTargetDate}
-            placeholderTextColor={C.textMuted}
-            style={[s.input, { color: C.text, backgroundColor: C.cardAlt, borderColor: recommendation.accelerated ? C.warning : C.border }]}
-          />
+          <TouchableOpacity
+            style={[s.input, { backgroundColor: C.cardAlt, borderColor: recommendation.accelerated ? C.warning : C.border, justifyContent: 'center' }]}
+            onPress={() => setTargetPickerVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Choose requested target date"
+          >
+            <Text style={{ color: targetDate ? C.text : C.textMuted, fontSize: 14, fontWeight: '800' }}>
+              {targetDate ? formatYMDForDisplay(targetDate) : `Recommended: ${formatYMDForDisplay(recommendation.earliestSupportedTargetDate)}`}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>RECOMMENDATION</Text>
           <Text style={[s.recommended, { color: C.text }]}>{recommendation.recommendedWeeks} weeks</Text>
-          <Text style={[s.body, { color: C.textMuted }]}>Earliest supported target: {recommendation.earliestSupportedTargetDate}</Text>
+          <Text style={[s.body, { color: C.textMuted }]}>Earliest supported target: {formatYMDForDisplay(recommendation.earliestSupportedTargetDate)}</Text>
           {recommendation.reasoning.slice(0, 3).map(reason => <Text key={reason} style={[s.bullet, { color: C.textMuted }]}>• {reason}</Text>)}
           <Text style={[s.helper, { color: C.textMuted }]}>
             The plan may hold or extend when adherence, readiness, recovery, or symptoms do not support progression. Completion and injury prevention cannot be guaranteed.
@@ -193,6 +212,23 @@ export default function PresetPlansScreen() {
           </View>
         </View>
       </Modal>
+      <MultiColumnPickerSheet
+        visible={targetPickerVisible}
+        title="Target Date"
+        columns={(() => {
+          const parts = dateParts(targetDate || recommendation.earliestSupportedTargetDate);
+          return [
+            { key: 'month', title: 'Month', values: MONTHS, selectedValue: parts.month, formatValue: value => String(value).padStart(2, '0') },
+            { key: 'day', title: 'Day', values: DAYS, selectedValue: parts.day, formatValue: value => String(value).padStart(2, '0') },
+            { key: 'year', title: 'Year', values: YEARS, selectedValue: parts.year },
+          ];
+        })()}
+        onClose={() => setTargetPickerVisible(false)}
+        onConfirm={values => {
+          setTargetDate(`${values.year}-${String(values.month).padStart(2, '0')}-${String(values.day).padStart(2, '0')}`);
+          setTargetPickerVisible(false);
+        }}
+      />
     </SafeAreaView>
   );
 }

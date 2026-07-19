@@ -30,6 +30,7 @@ import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
 import { useCalibration } from '../../../src/store/profileStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
+import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import { addDays as addCalendarDays, toYMD } from '../../../src/utils/calendarEngine';
 import type { RichWorkout } from '../../../src/types/workout';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
@@ -60,6 +61,7 @@ import {
   activeSessionStoresHydrated,
   getConflictingActiveSession,
 } from '../../../src/lib/activeSessionCoordinator';
+import { evaluateSustainedEffortCue, type EffortCueState } from '../../../src/utils/activityTracking';
 
 // ─── Sub-tab types ─────────────────────────────────────────────────────────────
 type RunTab = 'plan' | 'active' | 'hydration' | 'routes';
@@ -349,6 +351,7 @@ function PlanTab() {
   const pUnit = imp ? '/mi' : '/km';
 
   const weekPlan = useWeekPlan();
+  const scheduled = useScheduledSessions(weekPlan);
   const beforeStart = weekPlan.metadata.currentWeek === 0;
   const todayYMD = toYMD(new Date());
   const customLogs = useCustomWorkoutStore(s => s.logs);
@@ -381,35 +384,34 @@ function PlanTab() {
   // Single source of truth for "today's workout": the calendar map's real
   // date entry, falling back to the Monday-indexed richWeek slot only if the
   // date lookup comes up empty.
-  const todayEntries = weekPlan.calendarMap.get(todayYMD) ?? [];
-  const todayRunEntry = todayEntries.find(e => e.type === 'run');
-  const todayRaceEntry = todayEntries.find(e => e.type === 'race');
+  const todayEntries = scheduled.todaySessions;
+  const todayRunSession = todayEntries.find(e => e.activityType === 'run' || e.activityType === 'run_walk' || e.activityType === 'walk');
+  const todayRaceEntry = (weekPlan.calendarMap.get(todayYMD) ?? []).find(e => e.type === 'race');
   const todayWorkout: RichWorkout | null =
-    (todayRunEntry?.workout as RichWorkout | undefined)
-    ?? weekPlan.richWeek.workouts[todayWorkoutIndex()]
+    todayRunSession?.richWorkout
     ?? null;
-  const isRestToday = !todayRaceEntry && todayEntries.length === 0;
+  const isRestToday = !todayRaceEntry && !todayRunSession && !customRunToday;
 
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const date = addCalendarDays(weekPlan.weekStartDate, i);
       const dateYMD = toYMD(date);
-      const entries = weekPlan.calendarMap.get(dateYMD) ?? [];
-      const primary = entries[0];
+      const entries = scheduled.sessionsForDate(dateYMD);
+      const primary = entries.find(entry => entry.priority === 'primary') ?? entries[0];
       const isToday = dateYMD === todayYMD;
       const isPast = dateYMD < todayYMD;
       return {
         key: dateYMD,
         label: date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2),
-        name: primary ? primary.label : 'Rest',
-        zone: primary ? (primary.type === 'strength' ? 'Lift' : primary.type === 'race' ? 'Race' : 'Run') : 'Off',
-        done: isPast && (primary ? primary.completed : true),
-        missed: !!primary?.missed,
+        name: primary ? primary.title : 'Rest',
+        zone: primary ? (primary.activityType === 'strength' ? 'Lift' : primary.activityType === 'race' ? 'Race' : 'Run') : 'Off',
+        done: isPast && (primary ? primary.status === 'completed' : true),
+        missed: primary?.status === 'missed',
         today: isToday,
         future: dateYMD > todayYMD,
       };
     });
-  }, [weekPlan.calendarMap, weekPlan.weekStartDate, todayYMD]);
+  }, [scheduled, weekPlan.weekStartDate, todayYMD]);
 
   const activeZoneKey  = !beforeStart && todayWorkout ? todayWorkout.zone : null;
   const activeHrZone   = !beforeStart && todayWorkout ? todayWorkout.hrZoneTarget : null;
@@ -693,8 +695,12 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     cancelRun,
     clearCompletionRequest,
   } = useActiveRunStore();
-  const { richWeek } = useWeekPlan();
-  const todayPlannedWorkout = richWeek.workouts[todayWorkoutIndex()] ?? null;
+  const weekPlan = useWeekPlan();
+  const activeScheduled = useScheduledSessions(weekPlan);
+  const todayPlannedSession = activeScheduled.todaySessions.find(session =>
+    session.activityType === 'run' || session.activityType === 'run_walk' || session.activityType === 'walk',
+  );
+  const todayPlannedWorkout = todayPlannedSession?.richWorkout ?? null;
   const routeAttachment = useRouteStore(s => s.routeAttachment);
   const attachedRoute = useRouteStore(s => s.routes.find(r => r.id === s.routeAttachment.routeId) ?? null);
   const selectedRoute = effectiveAttachedRoute(attachedRoute, routeAttachment);
@@ -713,7 +719,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [goalPickerFor, setGoalPickerFor] = useState<null | 'time' | 'distance' | 'raceDist' | 'racePace'>(null);
   const segmentStartRef = useRef<{ index: number; time: number } | null>(null);
   const maxRouteProgressRef = useRef(0);
-  const lastHrAlertRef = useRef(0);
+  const effortCueRef = useRef<EffortCueState>({ consecutiveHighSamples: 0, consecutiveLowSamples: 0, wasOutOfRange: false, lastCueElapsedSeconds: -9999 });
   const reminderCueRef = useRef({ lastHydrationCueSec: 0, lastFuelCueSec: 0 });
   const goalDoneRef = useRef(false);
   const activeMapRef = useRef<MapView>(null);
@@ -1108,14 +1114,21 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   }, [selectedRoute?.id, currentPoint?.latitude, currentPoint?.longitude, nextSegment?.label, nextSegment?.distanceMiles, isActive, isPaused, routeProgress, routeSegmentIndex, startTime]);
 
   useEffect(() => {
-    if (!isActive || isPaused || !heartRateBpm || zoneStatus.guidance !== 'high' || zoneStatus.tone !== 'out') return;
-    const now = Date.now();
-    if (now - lastHrAlertRef.current < 2 * 60 * 1000) return;
-    lastHrAlertRef.current = now;
-    const message = `Heart rate is ${zoneStatus.detail}. Slow down slightly to return to Zone ${targetZone}.`;
-    speakCue(message);
-    sendRunAlertNotification(message).catch(() => undefined);
-  }, [heartRateBpm, isActive, isPaused, zoneStatus.detail, zoneStatus.guidance, zoneStatus.tone]);
+    if (!isActive || isPaused || !heartRateBpm || zoneStatus.tone === 'unknown') return;
+    const result = evaluateSustainedEffortCue({
+      state: effortCueRef.current,
+      elapsedSeconds: elapsed,
+      isAboveTarget: zoneStatus.guidance === 'high' && zoneStatus.tone === 'out',
+      isBelowTarget: zoneStatus.guidance === 'low' && zoneStatus.tone === 'out',
+      backInTarget: zoneStatus.tone === 'in',
+      samplesRequired: 3,
+      cooldownSeconds: 180,
+    });
+    effortCueRef.current = result.state;
+    if (!result.text) return;
+    speakCue(result.text);
+    sendRunAlertNotification(result.text).catch(() => undefined);
+  }, [elapsed, heartRateBpm, isActive, isPaused, zoneStatus.guidance, zoneStatus.tone]);
 
   const activeReminderPlan = useMemo(() => calculateHydrationPlan({
     distanceMiles: plannerReminder.distanceMi,

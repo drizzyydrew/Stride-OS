@@ -17,6 +17,7 @@ import {
   type ZoneMethod,
 } from '../../../src/types/athlete';
 import { formatPace, formatRaceTime, vdotFromRacePR } from '../../../src/utils/calibrationEngine';
+import { formatYMDForDisplay, parseDisplayDateToYMD } from '../../../src/utils/dateFormatting';
 
 const DISTANCES: { key: StandardDistance; label: string }[] = [
   { key: '5k', label: '5K' },
@@ -75,7 +76,7 @@ export default function CalibrationScreen() {
 
   const [distance, setDistance] = useState<StandardDistance>('5k');
   const [prTime, setPrTime] = useState('');
-  const [prDate, setPrDate] = useState(today());
+  const [prDate, setPrDate] = useState(formatYMDForDisplay(today()));
   const [restingHr, setRestingHr] = useState(profile?.hrResting ? String(profile.hrResting) : '');
   const [maxHr, setMaxHr] = useState(profile?.hrMax ? String(profile.hrMax) : '');
   const [thresholdHr, setThresholdHr] = useState(profile?.thresholdTest?.avgHRLastTwentyMin ? String(profile.thresholdTest.avgHRLastTwentyMin) : '');
@@ -122,7 +123,7 @@ export default function CalibrationScreen() {
       distanceLabel: label,
       distanceMeters: meters,
       timeSeconds: seconds,
-      date: prDate || today(),
+      date: parseDisplayDateToYMD(prDate) ?? today(),
       official: true,
     };
     addRacePR(profile.athleteId, pr);
@@ -263,7 +264,7 @@ export default function CalibrationScreen() {
         </View>
         <View style={styles.formRow}>
           <Field C={C} label="Time" value={prTime} onChangeText={setPrTime} placeholder="22:30" />
-          <Field C={C} label="Date" value={prDate} onChangeText={setPrDate} placeholder="YYYY-MM-DD" />
+          <Field C={C} label="Date" value={prDate} onChangeText={setPrDate} placeholder="MM-DD-YYYY" />
         </View>
         <TouchableOpacity style={[styles.secondaryBtn, { borderColor: C.primary }]} onPress={addPr}>
           <Text style={[styles.secondaryText, { color: C.primary }]}>Add PR</Text>
@@ -275,7 +276,7 @@ export default function CalibrationScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.rowTitle, { color: C.text }]}>{pr.distanceLabel} · {formatRaceTime(pr.timeSeconds)}</Text>
                 <Text style={[styles.caption, { color: stale ? C.warning : C.textMuted }]}>
-                  {pr.date} · VDOT {vdotFromRacePR(pr.distanceMeters, pr.timeSeconds).toFixed(1)}{stale ? ' · may be stale' : ''}
+                  {formatYMDForDisplay(pr.date)} · VDOT {vdotFromRacePR(pr.distanceMeters, pr.timeSeconds).toFixed(1)}{stale ? ' · may be stale' : ''}
                 </Text>
               </View>
               <TouchableOpacity onPress={() => { removeRacePR(profile.athleteId, pr.id); setTimeout(runRecalibration, 0); }}>

@@ -15,6 +15,12 @@ export type WeatherData = {
   icon:           string;   // Ionicons name
   runAdvice:      string;
   placeName?:     string;   // reverse-geocoded city/area when available
+  aqi?: {
+    value: number;
+    category: 'Good' | 'Moderate' | 'Unhealthy for sensitive groups' | 'Unhealthy' | 'Very unhealthy' | 'Hazardous';
+    guidance: string;
+    updatedAt?: string;
+  };
 };
 
 export type WeatherStatus = 'ok' | 'permission_denied' | 'location_unavailable' | 'service_unavailable';
@@ -75,6 +81,26 @@ export function runAdvice(tempF: number, code: number): string {
   if (tempF >= 45) return 'Good running conditions';
   if (tempF >= 32) return 'Cold — dress in layers';
   return 'Very cold — run indoors or bundle up';
+}
+
+export function classifyAqi(value: number): NonNullable<WeatherData['aqi']> {
+  const rounded = Math.max(0, Math.round(value));
+  if (rounded <= 50) {
+    return { value: rounded, category: 'Good', guidance: 'Good air quality for most outdoor training.' };
+  }
+  if (rounded <= 100) {
+    return { value: rounded, category: 'Moderate', guidance: 'Moderate air quality. Sensitive athletes may prefer easier effort.' };
+  }
+  if (rounded <= 150) {
+    return { value: rounded, category: 'Unhealthy for sensitive groups', guidance: 'Consider easier intensity or indoor training if you are sensitive to air quality.' };
+  }
+  if (rounded <= 200) {
+    return { value: rounded, category: 'Unhealthy', guidance: 'Indoor training may be preferable, especially for harder sessions.' };
+  }
+  if (rounded <= 300) {
+    return { value: rounded, category: 'Very unhealthy', guidance: 'Prefer indoor training and reduce exposure where practical.' };
+  }
+  return { value: rounded, category: 'Hazardous', guidance: 'Avoid outdoor training when possible.' };
 }
 
 export function fToC(tempF: number): number {

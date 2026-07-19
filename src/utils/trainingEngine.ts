@@ -25,6 +25,7 @@ import type { TrainingPhase, ProgressionLevel, TrainingStyle, GoalType, Strength
 import type { CalibrationOutput, TrainingDay } from '../types/athlete';
 import type { CalendarEntry } from './calendarEngine';
 import type { TrainingGoalType, MacroWeek, Race } from '../types/plan';
+import type { GeneratedBeginnerPlan } from '../types/beginnerPlan';
 import { generateRichWeek, getBaseTemplate } from './workoutEngine';
 import { generateStrengthWeek }     from './strengthEngine';
 import {
@@ -34,9 +35,14 @@ import {
   sundayOf,
   toYMD,
   parseYMD,
+  addDays,
 } from './calendarEngine';
 import { pickTargetRace } from './plan/macroPlanner';
 import { reconcileMissedSessions } from './plan/missedWorkouts';
+import {
+  calendarEntriesFromScheduledSessions,
+  sessionsFromBeginnerPlanForDate,
+} from './scheduledSessions';
 
 // ─── Engine input ─────────────────────────────────────────────────────────────
 
@@ -56,6 +62,7 @@ export type EngineInput = {
   beforeStart:          boolean;
   programStartDate:     string | null;
   races:                Race[];
+  activeBeginnerPlan?:  GeneratedBeginnerPlan | null;
 
   // ── Physiological profile (from profileStore) ───────────────────────────────
   calibration:             CalibrationOutput | null;
@@ -281,7 +288,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
     altitudeMeters:         input.altitudeMeters,
   };
 
-  const richWeek = generateRichWeek(workoutInput);
+  let richWeek = generateRichWeek(workoutInput);
   const baseline = getBaseTemplate(workoutInput);
   const adaptations = diffAdaptations(baseline, richWeek.workouts, input, trainingPhase);
 
@@ -328,6 +335,60 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   );
 
   let calendarMap = mergePlans(runPlans, strengthPlans);
+
+  // ── Active preset beginner plan projection ───────────────────────────────
+  //
+  // Preset goals are not just a marketing card: once active, their dated
+  // sessions become the authoritative schedule for Calendar, Today, Running,
+  // Strength, Activity previews, voice prompts, Live Activity payloads, and AI
+  // Coach context.  The legacy run/strength generators still provide reusable
+  // strength session detail, but they no longer add disconnected future runs on
+  // top of the active preset plan.
+  if (input.activeBeginnerPlan && todayYMD >= input.activeBeginnerPlan.startDate && todayYMD <= input.activeBeginnerPlan.targetDate) {
+    const beginnerCalendar = new Map<string, CalendarEntry[]>();
+    const beginnerWorkouts: RichWorkout[] = [];
+    let strengthCursor = 0;
+
+    for (let i = 0; i < 7; i += 1) {
+      const date = toYMD(addDays(weekStartDate, i));
+      const sessions = sessionsFromBeginnerPlanForDate(input.activeBeginnerPlan, date, today);
+      if (sessions.length === 0) continue;
+
+      const enriched = sessions.map(session => {
+        if (session.activityType !== 'strength') return session;
+        const template = strengthWeek.sessions[strengthCursor % Math.max(1, strengthWeek.sessions.length)];
+        strengthCursor += 1;
+        if (!template) return session;
+        return {
+          ...session,
+          title: template.title || session.title,
+          purpose: template.purpose || session.purpose,
+          durationMinutes: template.targetDuration || session.durationMinutes,
+          strengthSession: template,
+          mainSet: template.exercises
+            .map(ex => `${ex.exercise.name}: ${ex.sets} x ${ex.repRange[0]}-${ex.repRange[1]}`)
+            .join('; '),
+          target: `${template.targetDuration} min - ${template.exercises.length} exercises`,
+        };
+      });
+
+      for (const session of enriched) {
+        if (session.richWorkout) beginnerWorkouts.push(session.richWorkout);
+      }
+      beginnerCalendar.set(date, calendarEntriesFromScheduledSessions(enriched));
+    }
+
+    calendarMap = beginnerCalendar;
+    richWeek = {
+      ...richWeek,
+      workouts: beginnerWorkouts,
+      progressionNote: input.activeBeginnerPlan.weeks[0]?.focus ?? richWeek.progressionNote,
+    };
+    adaptations.length = 0;
+    if (input.activeBeginnerPlan.weeks[0]?.focus) {
+      adaptations.push(input.activeBeginnerPlan.weeks[0].focus);
+    }
+  }
 
   // ── Race day entry — clears any other entry that date, adds no workout ────
   if (macroWeek.isRaceWeek && macroWeek.raceId) {
