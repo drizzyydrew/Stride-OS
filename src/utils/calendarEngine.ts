@@ -41,7 +41,9 @@ export type CalendarEntry = {
   designation?: 'primary' | 'supporting' | 'optional';
   summary?: string;
   target?: string;
-  status?: 'upcoming' | 'today' | 'in_progress' | 'completed' | 'skipped' | 'moved' | 'missed' | 'replaced' | 'optional';
+  status?: 'upcoming' | 'today' | 'in_progress' | 'completed' | 'partial' | 'skipped' | 'moved' | 'missed' | 'replaced' | 'optional';
+  completedActivityId?: string;
+  completionState?: 'completed_as_planned' | 'modified' | 'partial' | 'stopped_early';
   actionRoute?: string;
 };
 

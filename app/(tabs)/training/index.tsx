@@ -1466,6 +1466,21 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
                         <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>Target: Zone {todayPlannedWorkout.hrZoneTarget} · RPE {todayPlannedWorkout.rpeRange[0]}–{todayPlannedWorkout.rpeRange[1]} · {todayPlannedWorkout.paceGuidance.targetPace}</Text>
                       </>
                     )}
+                    <TouchableOpacity
+                      style={[styles.inlineCompletionButton, { backgroundColor: C.primary }]}
+                      onPress={() => {
+                        if (todayPlannedSession?.completedActivityId) {
+                          router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: todayPlannedSession.completedActivityId } } as never);
+                          return;
+                        }
+                        router.push({ pathname: '/(tabs)/activity/manual', params: { scheduledSessionId: todayPlannedSession?.scheduledSessionId, activityType: todayPlannedSession?.activityType, mode: 'complete' } } as never);
+                      }}
+                      accessibilityLabel={todayPlannedSession?.completedActivityId ? 'View completed running activity' : 'Log completion for scheduled running workout'}
+                    >
+                      <Text style={[styles.inlineCompletionText, { color: C.onPrimary }]}>
+                        {todayPlannedSession?.completedActivityId ? 'View Completed Activity' : 'Log Completion'}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               ) : (
@@ -2673,6 +2688,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     fontWeight: '600',
+  },
+  inlineCompletionButton: {
+    alignSelf: 'stretch',
+    minHeight: 42,
+    borderRadius: radiusTokens.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+  },
+  inlineCompletionText: {
+    fontSize: 13,
+    fontWeight: '900',
   },
   goalPanel: {
     borderWidth: 1,

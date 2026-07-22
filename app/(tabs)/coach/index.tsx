@@ -564,11 +564,16 @@ export default function CoachScreen() {
   const todayWorkoutCtx = useMemo(() => {
     const session = scheduled.todayPrimary;
     if (!session) return null;
+    const completed = scheduled.getCompletedActivityForScheduledSession(session.scheduledSessionId);
+    const comparison = scheduled.getPlannedVersusCompletedComparison(session.scheduledSessionId).slice(0, 7).join(' | ');
     const prescription = session.runWalk
       ? `Total ${session.runWalk.totalMinutes} min; warm-up ${session.runWalk.warmupMinutes} min; ${session.runWalk.rounds} rounds of ${session.runWalk.runSeconds} sec run / ${session.runWalk.walkSeconds} sec walk; cooldown ${session.runWalk.cooldownMinutes} min; ${session.runWalk.hrZone}; RPE ${session.runWalk.rpe}.`
       : `${session.durationMinutes} min; ${session.target}; ${session.hrTarget ?? ''}; ${session.rpeTarget ?? ''}.`;
-    return { title: session.title, rationale: `${session.purpose} ${prescription}` };
-  }, [scheduled.todayPrimary]);
+    return {
+      title: session.title,
+      rationale: `${session.purpose} ${prescription}${completed ? ` Completion linked: ${completed.status}; ${comparison}` : ''}`,
+    };
+  }, [scheduled]);
 
   const trainingCtx: CoachTrainingContext = useMemo(() => ({
     runHistory,

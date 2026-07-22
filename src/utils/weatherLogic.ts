@@ -16,6 +16,14 @@ export type WeatherData = {
   conditionLabel: string;
   icon:           string;   // Ionicons name
   runAdvice:      string;
+  weatherProvider?: {
+    name: string;
+    url?: string;
+  };
+  aqiProvider?: {
+    name: string;
+    url?: string;
+  };
   placeName?:     string;   // reverse-geocoded city/area when available
   aqi?: {
     value: number;

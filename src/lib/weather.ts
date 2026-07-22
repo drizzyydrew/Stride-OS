@@ -162,6 +162,10 @@ async function fetchOpenMeteo(coords: Coords): Promise<Omit<WeatherData, 'placeN
       conditionLabel: wmo.label,
       icon:           wmo.icon,
       runAdvice:      runAdvice(tempF, code),
+      weatherProvider: {
+        name: 'Open-Meteo',
+        url: 'https://open-meteo.com/',
+      },
     };
   } finally {
     clearTimeout(timer);
@@ -225,7 +229,15 @@ export async function getWeatherReport(options?: { force?: boolean }): Promise<W
 
     try {
       const [base, placeName, aqi] = await Promise.all([fetchOpenMeteo(coords), resolvePlaceName(coords), fetchOpenMeteoAqi(coords)]);
-      const data: WeatherData = { ...base, placeName, aqi };
+      const data: WeatherData = {
+        ...base,
+        placeName,
+        aqi,
+        aqiProvider: aqi ? {
+          name: 'Open-Meteo Air Quality API',
+          url: 'https://open-meteo.com/en/docs/air-quality-api',
+        } : undefined,
+      };
       const fetchedAt = Date.now();
       memoryCache = { data, fetchedAt, coords };
       void persistCache(memoryCache);

@@ -12,6 +12,7 @@ export type ScheduledSessionStatus =
   | 'today'
   | 'in_progress'
   | 'completed'
+  | 'partial'
   | 'skipped'
   | 'moved'
   | 'missed'
@@ -57,6 +58,8 @@ export type ScheduledSession = {
   richWorkout?: RichWorkout;
   strengthSession?: StrengthSession;
   status: ScheduledSessionStatus;
+  completedActivityId?: string;
+  completionState?: 'completed_as_planned' | 'modified' | 'partial' | 'stopped_early';
   adaptationReason?: string;
   loadEstimate?: number;
 };
@@ -395,9 +398,11 @@ export function calendarEntriesFromScheduledSessions(
     color: session.activityType === 'strength' ? '#A855F7' : '#DCC0A7',
     workout: session.richWorkout,
     session: session.strengthSession,
-    completed: session.status === 'completed',
+    completed: session.status === 'completed' || session.status === 'partial',
     missed: session.status === 'missed',
     scheduledSessionId: session.scheduledSessionId,
+    completedActivityId: session.completedActivityId,
+    completionState: session.completionState,
     originalDate: session.originalDate,
     designation: session.priority,
     summary: session.mainSet ?? session.purpose,
@@ -495,6 +500,7 @@ export function activeScheduledSessionsForDate(
 
 export function actionLabelForScheduledSession(session: ScheduledSession | null): string {
   if (!session) return "View Today's Plan";
+  if (session.completedActivityId || session.status === 'completed' || session.status === 'partial') return 'View Completed Activity';
   if (session.status === 'in_progress') return 'Resume Workout';
   if (session.activityType === 'strength') return 'Start Strength';
   if (session.activityType === 'run_walk') return 'Start Run/Walk';

@@ -180,8 +180,10 @@ export default function CalendarScreen() {
           ? 'Run / Walk'
           : displayLabel(activity.activityType),
         color: activity.activityType === 'strength' ? C.accent : C.primary,
-        completed: activity.status === 'completed',
+        completed: activity.status === 'completed' || activity.status === 'partial',
         missed: activity.status === 'skipped',
+        completedActivityId: activity.id,
+        scheduledSessionId: activity.scheduledSessionId,
       }));
   }
 
@@ -294,14 +296,53 @@ export default function CalendarScreen() {
   }
 
   function handleEntryPress(entry: CalendarEntry, entryDateYMD: string, isToday: boolean) {
+    if (entry.completedActivityId && !entry.scheduledSessionId) {
+      router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: entry.completedActivityId } } as never);
+      return;
+    }
     if (!entry.scheduledSessionId || entry.type === 'race') {
       router.push(routeForEntry(entry) as never);
       return;
     }
     const isFuture = entryDateYMD > todayYMD;
+    const completionRoute = {
+      pathname: '/(tabs)/activity/manual',
+      params: {
+        scheduledSessionId: entry.scheduledSessionId,
+        activityType: entry.type,
+        mode: 'complete',
+      },
+    } as const;
+    if (entry.completedActivityId || entry.completed) {
+      const completedActivityId = entry.completedActivityId;
+      Alert.alert(entry.label, 'This scheduled session already has a linked completed activity.', [
+        ...(completedActivityId ? [{
+          text: 'View Completed Activity',
+          onPress: () => router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: completedActivityId } } as never),
+        }] : []),
+        ...(completedActivityId ? [{
+          text: 'Edit Activity',
+          onPress: () => router.push({ pathname: '/(tabs)/activity/manual', params: { activityId: completedActivityId, scheduledSessionId: entry.scheduledSessionId } } as never),
+        }] : []),
+        {
+          text: 'Compare Planned vs. Completed',
+          onPress: () => router.push({ pathname: '/(tabs)/activity/compare', params: { scheduledSessionId: entry.scheduledSessionId } } as never),
+        },
+        {
+          text: 'Discuss with AI Coach',
+          onPress: () => router.push('/(tabs)/coach' as never),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+      return;
+    }
     const buttons = [
       {
-        text: isToday ? 'Select for Today' : isFuture ? 'Perform Today' : 'View Details',
+        text: 'View Details',
+        onPress: () => router.push(routeForEntry(entry) as never),
+      },
+      {
+        text: isToday ? 'Start Workout' : isFuture ? 'Perform Today' : 'Start Workout',
         onPress: () => {
           if (isFuture) {
             Alert.alert('Perform this workout today?', 'StrideOS will use this scheduled session as today’s active selection and nearby sessions may adapt.', [
@@ -319,6 +360,14 @@ export default function CalendarScreen() {
           selectScheduledSessionForDate(todayYMD, entry.scheduledSessionId!);
           router.push(routeForEntry(entry) as never);
         },
+      },
+      {
+        text: 'Mark Completed',
+        onPress: () => router.push(completionRoute as never),
+      },
+      {
+        text: 'Log Manually',
+        onPress: () => router.push(completionRoute as never),
       },
       ...(isToday ? [{
         text: 'Remove from Today',
@@ -556,7 +605,7 @@ export default function CalendarScreen() {
                 </Text>
               ) : null}
               <Text style={[styles.futureText, { color: entry.completed ? C.positive : entry.missed ? C.critical : C.textMuted, marginTop: 6, fontWeight: '700' }]}>
-                {entry.completed ? 'Completed' : entry.missed ? 'Missed' : isFuture ? 'Upcoming' : 'Planned'}
+                {entry.status === 'partial' ? 'Partially completed' : entry.completed ? 'Completed' : entry.missed ? 'Missed' : isFuture ? 'Upcoming' : 'Planned'}
               </Text>
             </TouchableOpacity>
           ))

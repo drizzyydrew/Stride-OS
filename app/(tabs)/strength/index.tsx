@@ -15,6 +15,7 @@ import { useColors } from '../../../src/theme/useColors';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
+import { useActivityStore } from '../../../src/store/activityStore';
 import { LAYOUT } from '../../../src/constants/layout';
 import type { CompletedExercise, MovementPattern, StrengthSession } from '../../../src/types/strength';
 import { getLastLoggedExercise, suggestProgression } from '../../../src/utils/strengthHistory';
@@ -22,6 +23,7 @@ import { getExerciseGuide } from '../../../src/constants/exerciseGuides';
 import { toYMD } from '../../../src/utils/calendarEngine';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
+import type { ScheduledSession } from '../../../src/utils/scheduledSessions';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
 import {
   endStrengthLiveActivity,
@@ -49,6 +51,7 @@ import {
   useActiveStrengthSessionStore,
 } from '../../../src/store/activeStrengthSessionStore';
 import { displayLabel, displayLabels } from '../../../src/utils/displayLabels';
+import { buildManualActivityDraft } from '../../../src/utils/activityCompletion';
 import {
   activeSessionStoresHydrated,
   getConflictingActiveSession,
@@ -507,6 +510,7 @@ export default function StrengthScreen() {
   const fatigueScore = useAthleteStore(s => s.fatigueScore);
   const readinessLimited = weekPlan.strengthWeek.progressionState === 'regress';
   const logStrengthSession = useStrengthStore(s => s.manualLog);
+  const addActivity = useActivityStore(s => s.addActivity);
   const strengthHistory = useStrengthStore(s => s.history);
   const activeStrengthSession = useActiveStrengthSessionStore(s => s.session);
   const startActiveStrengthSession = useActiveStrengthSessionStore(s => s.startSession);
@@ -527,11 +531,12 @@ export default function StrengthScreen() {
 
   // ── Real sessions for this week, date-sorted ───────────────────────────────
   const strengthEntries = useMemo(() => {
-    const list: { date: string; scheduledSessionId: string; session: StrengthSession }[] = scheduled.weekSessions
+    const list: { date: string; scheduledSessionId: string; scheduledSession: ScheduledSession; session: StrengthSession }[] = scheduled.weekSessions
       .filter(item => item.activityType === 'strength' && item.strengthSession)
       .map(item => ({
         date: item.date,
         scheduledSessionId: item.scheduledSessionId,
+        scheduledSession: item,
         session: item.strengthSession!,
       }));
     return list.sort((a, b) => a.date.localeCompare(b.date));
@@ -829,6 +834,15 @@ export default function StrengthScreen() {
       notes: `${wDef.title} completed from the Strength screen.`,
     }, fatigueScore);
 
+    addActivity(buildManualActivityDraft(activeEntry?.scheduledSession ?? null, {
+      activityType: 'strength',
+      completionState: anyMarked && exercisesCompleted < totalExercises ? 'partial' : 'completed_as_planned',
+      durationMinutes,
+      rpe: overallRpe,
+      notes: `${wDef.title} completed from the Strength screen.`,
+      indoor: true,
+    }));
+
     setCompletedExercises({});
     setTimer(0);
     setStrState('idle');
@@ -984,6 +998,21 @@ export default function StrengthScreen() {
               </View>
               <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.primary, marginBottom: 8 }]} onPress={start} activeOpacity={0.8}>
                 <Text style={[styles.bigBtnText, { color: C.onPrimary }]}>Start Training Block Workout</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.bigBtn, { backgroundColor: C.primaryDim, marginBottom: 8 }]}
+                onPress={() => {
+                  if (activeEntry?.scheduledSession.completedActivityId) {
+                    router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: activeEntry.scheduledSession.completedActivityId } } as never);
+                    return;
+                  }
+                  router.push({ pathname: '/(tabs)/activity/manual', params: { scheduledSessionId: activeEntry?.scheduledSessionId, activityType: 'strength', mode: 'complete' } } as never);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.bigBtnText, { color: C.primary }]}>
+                  {activeEntry?.scheduledSession.completedActivityId ? 'View Completed Activity' : 'Log Completion'}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.smBtn, { backgroundColor: C.cardAlt }]} onPress={() => router.back()} activeOpacity={0.8}>
                 <Text style={[styles.smBtnText, { color: C.textMuted }]}>Skip Workout</Text>

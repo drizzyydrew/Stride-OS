@@ -6,6 +6,7 @@ export default function ActivityLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="[activityId]" />
       <Stack.Screen name="manual" />
+      <Stack.Screen name="compare" />
       <Stack.Screen name="plans" />
       <Stack.Screen name="preferences" />
       <Stack.Screen name="start" />

@@ -89,6 +89,15 @@ export default function ActivityDetailScreen() {
         eyebrow="ACTIVITY DETAIL"
         title={displayLabel(activity.activityType)}
         onBack={() => router.back()}
+        right={(
+          <TouchableOpacity
+            style={[s.editButton, { backgroundColor: C.card, borderColor: C.border }]}
+            onPress={() => router.push({ pathname: '/(tabs)/activity/manual', params: { activityId: activity.id, scheduledSessionId: activity.scheduledSessionId } } as never)}
+            accessibilityLabel="Edit activity"
+          >
+            <Text style={[s.editText, { color: C.primary }]}>Edit</Text>
+          </TouchableOpacity>
+        )}
       />
       <ScrollView contentContainerStyle={s.content}>
         {route.length > 1 ? (
@@ -148,6 +157,8 @@ const s = StyleSheet.create({
   recoveryPrimary: { width: '100%', minHeight: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   recoverySecondary: { width: '100%', minHeight: 48, borderRadius: 13, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 10 },
   recoveryPrimaryText: { fontSize: 14, fontWeight: '900' },
+  editButton: { minWidth: 64, minHeight: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  editText: { fontSize: 13, fontWeight: '900' },
   eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
   title: { fontSize: 30, fontFamily: 'CormorantGaramond_700Bold' },
   content: { paddingHorizontal: 18, paddingBottom: 100 },

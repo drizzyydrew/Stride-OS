@@ -79,13 +79,24 @@ export const useActivityStore = create<ActivityStore>()(
         set(state => {
           const existingIndex = state.activities.findIndex(item => item.id === activity.id);
           if (existingIndex < 0) {
+            if (activity.scheduledSessionId) {
+              const linkedIndex = state.activities.findIndex(item => item.scheduledSessionId === activity.scheduledSessionId);
+              if (linkedIndex >= 0) {
+                return {
+                  activities: state.activities.map(item => item.scheduledSessionId === activity.scheduledSessionId
+                    ? { ...activity, id: item.id, createdAt: item.createdAt, updatedAt: Date.now() }
+                    : item),
+                };
+              }
+            }
             return { activities: [...state.activities, activity] };
           }
           return {
             activities: state.activities.map(item => item.id === activity.id ? activity : item),
           };
         });
-        return activity.id;
+        return get().activities.find(item => item.scheduledSessionId && item.scheduledSessionId === activity.scheduledSessionId)?.id
+          ?? activity.id;
       },
 
       updateActivity: (id, patch) =>

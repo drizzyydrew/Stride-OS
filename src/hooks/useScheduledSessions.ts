@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { useBeginnerPlanStore } from '../store/beginnerPlanStore';
+import { useActivityStore } from '../store/activityStore';
 import { useScheduledSessionSelectionStore } from '../store/scheduledSessionSelectionStore';
 import { toYMD } from '../utils/calendarEngine';
 import {
@@ -15,22 +16,34 @@ import {
   getSessionById,
   getSupportingSessionsForDate,
 } from '../utils/scheduledSessions';
+import {
+  getCompletedActivityForScheduledSession,
+  overlayCompletionOnScheduledSessions,
+  plannedVersusCompletedComparison,
+} from '../utils/activityCompletion';
 import type { ScheduledSession } from '../utils/scheduledSessions';
 import type { WeekPlan } from '../utils/trainingEngine';
 
 export function useScheduledSessions(weekPlan: WeekPlan, now = new Date()) {
   const activeBeginnerPlan = useBeginnerPlanStore(state => state.activePlan);
+  const activities = useActivityStore(state => state.activities);
   const selectedByDate = useScheduledSessionSelectionStore(state => state.selectedByDate);
   const removedFromToday = useScheduledSessionSelectionStore(state => state.removedFromToday);
   const todayYMD = toYMD(now);
 
   const weekSessions = useMemo(
-    () => scheduledSessionsForWeek(weekPlan, activeBeginnerPlan, weekPlan.weekStartDate, now),
-    [activeBeginnerPlan, now, weekPlan],
+    () => overlayCompletionOnScheduledSessions(
+      scheduledSessionsForWeek(weekPlan, activeBeginnerPlan, weekPlan.weekStartDate, now),
+      activities,
+    ),
+    [activeBeginnerPlan, activities, now, weekPlan],
   );
   const todaySessions = useMemo(
-    () => scheduledSessionsForDate(weekPlan, activeBeginnerPlan, todayYMD, now),
-    [activeBeginnerPlan, now, todayYMD, weekPlan],
+    () => overlayCompletionOnScheduledSessions(
+      scheduledSessionsForDate(weekPlan, activeBeginnerPlan, todayYMD, now),
+      activities,
+    ),
+    [activeBeginnerPlan, activities, now, todayYMD, weekPlan],
   );
   const todayPrimary = useMemo<ScheduledSession | null>(
     () => primarySessionForDate(todaySessions),
@@ -66,12 +79,18 @@ export function useScheduledSessions(weekPlan: WeekPlan, now = new Date()) {
     todayStrength: getScheduledStrengthForDate(todaySessions),
     activeTodayStrength: getScheduledStrengthForDate(activeTodaySessions),
     todaySupporting: getSupportingSessionsForDate(todaySessions),
-    sessionsForDate: (dateYMD: string) => scheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now),
-    getScheduledSessionsForDate: (dateYMD: string) => getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now),
-    getPrimarySessionForDate: (dateYMD: string) => getPrimarySessionForDate(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now)),
-    getSupportingSessionsForDate: (dateYMD: string) => getSupportingSessionsForDate(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now)),
-    getScheduledRunForDate: (dateYMD: string) => getScheduledRunForDate(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now)),
-    getScheduledStrengthForDate: (dateYMD: string) => getScheduledStrengthForDate(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now)),
+    sessionsForDate: (dateYMD: string) => overlayCompletionOnScheduledSessions(scheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now), activities),
+    getScheduledSessionsForDate: (dateYMD: string) => overlayCompletionOnScheduledSessions(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now), activities),
+    getPrimarySessionForDate: (dateYMD: string) => getPrimarySessionForDate(overlayCompletionOnScheduledSessions(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now), activities)),
+    getSupportingSessionsForDate: (dateYMD: string) => getSupportingSessionsForDate(overlayCompletionOnScheduledSessions(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now), activities)),
+    getScheduledRunForDate: (dateYMD: string) => getScheduledRunForDate(overlayCompletionOnScheduledSessions(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now), activities)),
+    getScheduledStrengthForDate: (dateYMD: string) => getScheduledStrengthForDate(overlayCompletionOnScheduledSessions(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now), activities)),
     getSessionById: (scheduledSessionId: string) => getSessionById(weekSessions, scheduledSessionId),
+    getCompletedActivityForScheduledSession: (scheduledSessionId: string) => getCompletedActivityForScheduledSession(activities, scheduledSessionId),
+    getPlannedVersusCompletedComparison: (scheduledSessionId: string) => {
+      const session = getSessionById(weekSessions, scheduledSessionId);
+      if (!session) return [];
+      return plannedVersusCompletedComparison(session, getCompletedActivityForScheduledSession(activities, scheduledSessionId));
+    },
   };
 }

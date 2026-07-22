@@ -178,6 +178,17 @@ function WeatherCard() {
             <Text style={[styles.infoCopy, { color: C.textMuted }]}>
               Sensitive individuals may need to modify exposure earlier than others. Consider local alerts, symptoms, medication or clinician guidance, and whether indoor training is the more conservative option.
             </Text>
+            <View style={[styles.attributionBox, { borderTopColor: C.border }]}>
+              <Text style={[styles.attributionText, { color: C.textDim }]}>
+                Weather data provided by {weather?.weatherProvider?.name ?? 'the configured weather provider'}.
+              </Text>
+              <Text style={[styles.attributionText, { color: C.textDim }]}>
+                Air-quality data provided by {weather?.aqiProvider?.name ?? 'the configured AQI provider when available'}.
+              </Text>
+              <Text style={[styles.attributionText, { color: C.textDim }]}>
+                {fetchedAt ? `Updated at ${new Date(fetchedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.` : 'Updated time unavailable.'}
+              </Text>
+            </View>
             <TouchableOpacity style={[styles.infoClose, { backgroundColor: C.primary }]} onPress={() => setInfoOpen(false)}>
               <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>Done</Text>
             </TouchableOpacity>
@@ -310,15 +321,21 @@ export default function TodayScreen() {
             <View style={styles.workoutBtns}>
               <TouchableOpacity
                 style={[styles.workoutBtn, styles.workoutBtnPrimary, { backgroundColor: C.primary, borderColor: C.primary }]}
-                onPress={() => router.push((
-                  primarySession?.activityType === 'strength'
-                    ? '/(tabs)/strength'
-                    : primarySession?.activityType === 'run' || primarySession?.activityType === 'run_walk'
-                      ? '/(tabs)/training'
-                      : primarySession
-                        ? '/(tabs)/activity/start'
-                        : '/(tabs)/calendar'
-                ) as never)}
+                onPress={() => {
+                  if (primarySession?.completedActivityId) {
+                    router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: primarySession.completedActivityId } } as never);
+                    return;
+                  }
+                  router.push((
+                    primarySession?.activityType === 'strength'
+                      ? '/(tabs)/strength'
+                      : primarySession?.activityType === 'run' || primarySession?.activityType === 'run_walk'
+                        ? '/(tabs)/training'
+                        : primarySession
+                          ? '/(tabs)/activity/start'
+                          : '/(tabs)/calendar'
+                  ) as never);
+                }}
                 activeOpacity={0.8}
               >
                 <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>
@@ -559,6 +576,17 @@ const styles = StyleSheet.create({
   },
   aqiBandText: {
     fontSize: 12,
+    lineHeight: 16,
+  },
+  attributionBox: {
+    borderTopWidth: 1,
+    paddingTop: 10,
+    marginTop: 2,
+    marginBottom: 12,
+    gap: 3,
+  },
+  attributionText: {
+    fontSize: 11,
     lineHeight: 16,
   },
   infoClose: {
