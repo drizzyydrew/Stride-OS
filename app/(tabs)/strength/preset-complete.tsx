@@ -11,7 +11,23 @@ export default function PresetCompleteScreen() {
   const C = useColors();
   const router = useRouter();
   const [rating, setRating] = useState<string | null>(null);
-  const { name, duration, rpe, logId } = useLocalSearchParams<{ name: string; duration: string; rpe: string; logId: string }>();
+  const {
+    name, duration, rpe, logId,
+    completedSets, totalReps, externalLoadVolumeLb, bandSetsCount, bodyweightSetsCount, totalHoldSeconds, warmupSetsCount,
+  } = useLocalSearchParams<{
+    name: string; duration: string; rpe: string; logId: string;
+    completedSets?: string; totalReps?: string; externalLoadVolumeLb?: string;
+    bandSetsCount?: string; bodyweightSetsCount?: string; totalHoldSeconds?: string; warmupSetsCount?: string;
+  }>();
+  // Honest split — deliberately no single combined "volume" number.
+  const summaryLines = [
+    completedSets ? `${completedSets} sets · ${totalReps ?? 0} main reps` : null,
+    externalLoadVolumeLb ? `External load: ${Number(externalLoadVolumeLb).toLocaleString()} lb` : null,
+    bandSetsCount && Number(bandSetsCount) > 0 ? `Band sets: ${bandSetsCount} (not counted as load)` : null,
+    bodyweightSetsCount && Number(bodyweightSetsCount) > 0 ? `Bodyweight sets: ${bodyweightSetsCount}` : null,
+    totalHoldSeconds && Number(totalHoldSeconds) > 0 ? `Hold time: ${totalHoldSeconds}s` : null,
+    warmupSetsCount && Number(warmupSetsCount) > 0 ? `Warm-up sets (excluded above): ${warmupSetsCount}` : null,
+  ].filter((line): line is string => Boolean(line));
   const editLog = useStrengthStore(state => state.editLog);
   const savedLog = useStrengthStore(state => state.history.find(record => record.id === logId));
 
@@ -29,6 +45,14 @@ export default function PresetCompleteScreen() {
       <Text style={[styles.eyebrow, { color: C.primary }]}>PRESET WORKOUT SAVED</Text>
       <Text style={[styles.title, { color: C.text }]}>{name}</Text>
       <Text style={[styles.summary, { color: C.textMuted }]}>{duration} min · Overall RPE {rpe}</Text>
+      {summaryLines.length > 0 ? (
+        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border, marginTop: 14 }]}>
+          <Text style={[styles.cardTitle, { color: C.text, marginBottom: 8 }]}>Session Summary</Text>
+          {summaryLines.map(line => (
+            <Text key={line} style={[styles.note, { color: C.textMuted, marginTop: 2 }]}>{line}</Text>
+          ))}
+        </View>
+      ) : null}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.cardTitle, { color: C.text }]}>How did the workout feel?</Text>
         <View style={styles.ratingRow}>

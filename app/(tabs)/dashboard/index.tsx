@@ -10,12 +10,12 @@ import { formatTemp } from '../../../src/lib/weather';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { todayDateKey } from '../../../src/types/checkin';
-import { readinessTier, READINESS_INTERPRETATION } from '../../../src/utils/readinessScore';
 import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckInCard';
 import { LAYOUT } from '../../../src/constants/layout';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import { actionLabelForScheduledSession, describeRunWalk } from '../../../src/utils/scheduledSessions';
+import { activityTypeFromScheduledSession } from '../../../src/utils/activityCompletion';
 import { US_AQI_BANDS, aqiVoiceOverLabel, getAqiScalePosition } from '../../../src/utils/aqi';
 
 function lastUpdatedLabel(fetchedAt: number | null): string | null {
@@ -24,6 +24,58 @@ function lastUpdatedLabel(fetchedAt: number | null): string | null {
   if (mins < 1) return 'Updated just now';
   if (mins < 60) return `Updated ${mins}m ago`;
   return `Updated ${Math.round(mins / 60)}h ago`;
+}
+
+const SLEEP_QUALITY_LABELS: Record<number, string> = {
+  1: 'Very poor',
+  2: 'Poor',
+  3: 'Fair',
+  4: 'Good',
+  5: 'Excellent',
+};
+
+const BODY_LABELS: Record<number, string> = {
+  1: 'Very fatigued',
+  2: 'Heavy or sore',
+  3: 'A little stiff',
+  4: 'Good',
+  5: 'Fresh',
+};
+
+const ENERGY_LABELS: Record<number, string> = {
+  1: 'Very low',
+  2: 'Low',
+  3: 'Normal',
+  4: 'Good',
+  5: 'High',
+};
+
+const STRESS_LABELS: Record<number, string> = {
+  1: 'Very high',
+  2: 'High',
+  3: 'Moderate',
+  4: 'Low',
+  5: 'Very low',
+};
+
+function formatReadinessSleep(totalMinutes: number): string {
+  const safe = Math.max(0, Math.round(Number.isFinite(totalMinutes) ? totalMinutes : 0));
+  const hours = Math.floor(safe / 60);
+  const minutes = safe % 60;
+  if (hours === 0) return `${minutes} min`;
+  if (minutes === 0) return `${hours} hr`;
+  return `${hours} hr ${minutes} min`;
+}
+
+function readinessChoiceLabel(labels: Record<number, string>, value: unknown): string {
+  return typeof value === 'number' && labels[Math.round(value)] ? labels[Math.round(value)] : 'Not recorded';
+}
+
+function recentTrainingLabel(value: number): string {
+  if (value >= 80) return 'Light';
+  if (value >= 60) return 'Manageable';
+  if (value >= 40) return 'Demanding';
+  return 'High';
 }
 
 // Live local weather card. Every displayed value is real fetched weather —
@@ -43,12 +95,9 @@ function WeatherCard() {
     : null;
 
   return (
-    <TouchableOpacity
+    <View
       style={[styles.weatherCard, { backgroundColor: C.card, borderColor: C.border }]}
-      onPress={() => setInfoOpen(true)}
-      activeOpacity={0.85}
-      accessibilityRole="button"
-      accessibilityLabel="Open weather and air quality details"
+      accessibilityLabel="Weather and air quality summary"
     >
       <View style={styles.weatherTopRow}>
         <View style={styles.weatherMain}>
@@ -195,7 +244,7 @@ function WeatherCard() {
           </View>
         </View>
       </Modal>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -213,18 +262,56 @@ export default function TodayScreen() {
   const router = useRouter();
   const todayReadiness = useReadinessStore(s => s.todayReadiness);
   const [editingCheckIn, setEditingCheckIn] = useState(false);
+  const [whyOpen, setWhyOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const weekPlan = useWeekPlan();
   const scheduled = useScheduledSessions(weekPlan);
   const beforeStart = weekPlan.metadata.currentWeek === 0;
   const primarySession = scheduled.activeTodayPrimary;
-  const supportingSessions = scheduled.activeTodaySessions.filter(session => session.priority === 'supporting');
-  const optionalSessions = scheduled.activeTodaySessions.filter(session => session.priority === 'optional');
   const phaseLabel = weekPlan.metadata.trainingPhase.charAt(0).toUpperCase() + weekPlan.metadata.trainingPhase.slice(1);
 
   const hasCheckedInToday = todayReadiness?.date === todayDateKey();
   const readiness = hasCheckedInToday ? todayReadiness!.score : null;
-  const tier = readiness !== null ? readinessTier(readiness) : null;
   const showCheckInForm = !hasCheckedInToday || editingCheckIn;
+  const recommendation = hasCheckedInToday ? todayReadiness!.details : null;
+  const workoutDuration = primarySession?.runWalk
+    ? describeRunWalk(primarySession.runWalk)
+    : primarySession ? `${primarySession.durationMinutes} min` : 'Rest day';
+  const primaryDayIndex = primarySession
+    ? (new Date(`${primarySession.date}T12:00:00`).getDay() + 6) % 7
+    : null;
+
+  function startWorkout() {
+    if (primarySession?.completedActivityId) {
+      router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: primarySession.completedActivityId } } as never);
+      return;
+    }
+    if (primarySession?.activityType === 'strength') {
+      router.push('/(tabs)/strength' as never);
+      return;
+    }
+    if (primarySession?.activityType === 'run' || primarySession?.activityType === 'run_walk') {
+      router.push('/(tabs)/training' as never);
+      return;
+    }
+    if (primarySession?.activityType === 'cycling') {
+      router.push({ pathname: '/(tabs)/activity/indoor-ride', params: { scheduledSessionId: primarySession.scheduledSessionId } } as never);
+      return;
+    }
+    if (primarySession) {
+      router.push({
+        pathname: '/(tabs)/activity/start',
+        params: {
+          scheduledSessionId: primarySession.scheduledSessionId,
+          activityType: activityTypeFromScheduledSession(primarySession),
+          associatedTrainingBlockId: primarySession.trainingBlockId,
+          associatedGoalId: primarySession.goalPlanId,
+        },
+      } as never);
+      return;
+    }
+    router.push('/(tabs)/calendar' as never);
+  }
 
   return (
     <ScrollView
@@ -247,43 +334,10 @@ export default function TodayScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Weather — live local conditions (never hardcoded) */}
-      <WeatherCard />
-
-      {/* Readiness */}
-      {showCheckInForm ? (
-        <ReadinessCheckInCard
-          initialValues={todayReadiness ?? undefined}
-          onSaved={() => setEditingCheckIn(false)}
-        />
-      ) : (
-        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={[styles.cardLabel, { color: C.textDim }]}>READINESS</Text>
-            <View style={[styles.badge, { backgroundColor: C.primary }]}>
-              <Text style={[styles.badgeText, { color: C.onPrimary }]}>{READINESS_INTERPRETATION[tier!].label}</Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
-            <Text style={[styles.bigNum, { color: C.text }]}>{readiness}</Text>
-            <Text style={[styles.bigNumSub, { color: C.textMuted }]}>/ 100</Text>
-          </View>
-          <View style={[styles.progressBar, { backgroundColor: C.border }]}>
-            <View style={[styles.progressFill, { width: `${readiness ?? 0}%`, backgroundColor: C.primary }]} />
-          </View>
-          <Text style={[styles.readinessInterpretation, { color: C.textMuted }]}>
-            {READINESS_INTERPRETATION[tier!].message}
-          </Text>
-          <TouchableOpacity onPress={() => setEditingCheckIn(true)} style={{ marginTop: 10 }} hitSlop={8}>
-            <Text style={[styles.updateCheckInText, { color: C.primary }]}>Update check-in</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Today's Plan */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+      {/* One dominant answer for the day: what to do, how it should feel, and why. */}
+      <View style={[styles.primaryWorkoutCard, { backgroundColor: C.card, borderColor: C.primary }]}>
         <View style={styles.cardHeaderRow}>
-          <Text style={[styles.workoutTitle, { color: C.text }]}>Today's Plan</Text>
+          <Text style={[styles.cardLabel, { color: C.primary }]}>TODAY'S WORKOUT</Text>
           {!beforeStart && (
             <View style={[styles.badge, { backgroundColor: C.primaryDim }]}>
               <Text style={[styles.badgeText, { color: C.primary }]}>{phaseLabel.toUpperCase()}</Text>
@@ -291,61 +345,84 @@ export default function TodayScreen() {
           )}
         </View>
         {beforeStart ? (
-          <Text style={[styles.workoutMeta, { color: C.textMuted, marginBottom: 0 }]}>
+          <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
             {weekPlan.metadata.startsOn
               ? `Your plan starts ${weekPlan.metadata.startsOn}.`
               : 'Set a program start date in Settings to see your plan here.'}
           </Text>
         ) : (
           <>
-            <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
-              {primarySession
-                ? `${primarySession.title} · ${primarySession.runWalk ? describeRunWalk(primarySession.runWalk) : `${primarySession.durationMinutes} min · ${primarySession.target}`}`
-                : 'Rest day — no structured session.'}
+            <Text style={[styles.primaryWorkoutTitle, { color: C.text }]}>
+              {primarySession?.title ?? 'Rest day'}
             </Text>
-            {primarySession ? (
-              <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
-                {primarySession.purpose}
-              </Text>
-            ) : null}
-            {supportingSessions.length > 0 ? (
-              <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
-                Supporting: {supportingSessions.map(session => `${session.title} (${session.durationMinutes} min)`).join(' · ')}
-              </Text>
-            ) : null}
-            {optionalSessions.length > 0 ? (
-              <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
-                Optional recovery: {optionalSessions.map(session => session.title).join(' · ')}
-              </Text>
-            ) : null}
-            <View style={styles.workoutBtns}>
-              <TouchableOpacity
-                style={[styles.workoutBtn, styles.workoutBtnPrimary, { backgroundColor: C.primary, borderColor: C.primary }]}
-                onPress={() => {
-                  if (primarySession?.completedActivityId) {
-                    router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: primarySession.completedActivityId } } as never);
-                    return;
-                  }
-                  router.push((
-                    primarySession?.activityType === 'strength'
-                      ? '/(tabs)/strength'
-                      : primarySession?.activityType === 'run' || primarySession?.activityType === 'run_walk'
-                        ? '/(tabs)/training'
-                        : primarySession
-                          ? '/(tabs)/activity/start'
-                          : '/(tabs)/calendar'
-                  ) as never);
-                }}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>
-                  {actionLabelForScheduledSession(primarySession)}
-                </Text>
-              </TouchableOpacity>
+            <Text style={[styles.workoutMeta, { color: C.textMuted }]}>What: {workoutDuration}</Text>
+            <Text style={[styles.workoutMeta, { color: C.textMuted }]}>Feel: {primarySession?.target ?? 'Easy and restorative'}</Text>
+            <Text style={[styles.workoutMeta, { color: C.textMuted }]}>Why: {primarySession?.purpose ?? 'Recovery is part of training, too.'}</Text>
+            <Text style={[styles.workoutChange, { color: primarySession?.adaptationReason ? C.warning : C.textMuted }]}>
+              What changed: {primarySession?.adaptationReason ?? 'No plan changes today.'}
+            </Text>
+            <TouchableOpacity style={[styles.startButton, { backgroundColor: C.primary }]} onPress={startWorkout} activeOpacity={0.8}>
+              <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>{actionLabelForScheduledSession(primarySession)}</Text>
+            </TouchableOpacity>
+            <View style={styles.secondaryActions}>
+              <TouchableOpacity onPress={() => primaryDayIndex === null
+                ? router.push('/(tabs)/training' as never)
+                : router.push({ pathname: '/(tabs)/training/[dayIndex]', params: { dayIndex: String(primaryDayIndex) } } as never)}
+              ><Text style={[styles.secondaryActionText, { color: C.primary }]}>View Details</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push({
+                pathname: '/(tabs)/activity/manual',
+                params: { scheduledSessionId: primarySession?.scheduledSessionId, activityType: primarySession?.activityType },
+              } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Do My Own Workout</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push({
+                pathname: '/(tabs)/training/adapt',
+                params: { mode: 'missed', scheduledSessionId: primarySession?.scheduledSessionId },
+              } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Not Today</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week' } } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Adapt My Week</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push({
+                pathname: '/(tabs)/training/adapt',
+                params: { mode: 'health', scheduledSessionId: primarySession?.scheduledSessionId },
+              } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Not Feeling 100%</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/coach', params: { ask: 'Help me adapt today’s workout.' } } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Ask AI Coach</Text></TouchableOpacity>
             </View>
           </>
         )}
       </View>
+
+      {/* Readiness stays supportive: interpretation first, numeric mechanics only on request. */}
+      {showCheckInForm ? (
+        <ReadinessCheckInCard initialValues={todayReadiness ?? undefined} onSaved={() => setEditingCheckIn(false)} />
+      ) : (
+        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S READINESS</Text>
+          <Text style={[styles.readinessLabel, { color: C.text }]}>{recommendation!.label}</Text>
+          <Text style={[styles.readinessInterpretation, { color: C.textMuted }]}>{recommendation!.message}</Text>
+          <TouchableOpacity onPress={() => setWhyOpen(open => !open)} style={styles.disclosureButton}>
+            <Text style={[styles.updateCheckInText, { color: C.primary }]}>Why this recommendation {whyOpen ? '−' : '+'}</Text>
+          </TouchableOpacity>
+          {whyOpen ? (
+            <View style={styles.readinessDetails}>
+              <Text style={[styles.reasonText, { color: C.textMuted }]}>Sleep: {formatReadinessSleep(todayReadiness!.sleepMinutesTotal)}</Text>
+              <Text style={[styles.reasonText, { color: C.textMuted }]}>Sleep quality: {readinessChoiceLabel(SLEEP_QUALITY_LABELS, todayReadiness!.sleepQuality)}</Text>
+              <Text style={[styles.reasonText, { color: C.textMuted }]}>Body: {readinessChoiceLabel(BODY_LABELS, todayReadiness!.bodyStatus)}</Text>
+              <Text style={[styles.reasonText, { color: C.textMuted }]}>Energy: {readinessChoiceLabel(ENERGY_LABELS, todayReadiness!.energy)}</Text>
+              <Text style={[styles.reasonText, { color: C.textMuted }]}>Stress: {readinessChoiceLabel(STRESS_LABELS, todayReadiness!.stress)}</Text>
+              <Text style={[styles.reasonText, { color: C.textMuted }]}>Recent training: {recentTrainingLabel(recommendation!.trainingRecoveryContribution)}</Text>
+              <Text style={[styles.reasonText, { color: C.textMuted }]}>Recommendation: {recommendation!.message}</Text>
+              {recommendation!.reasons.map(reason => <Text key={reason} style={[styles.reasonText, { color: C.textMuted }]}>• {reason}</Text>)}
+            </View>
+          ) : null}
+          <TouchableOpacity onPress={() => setAdvancedOpen(open => !open)} style={styles.disclosureButton}>
+            <Text style={[styles.advancedLink, { color: C.textDim }]}>Advanced details {advancedOpen ? '−' : '+'}</Text>
+          </TouchableOpacity>
+          {advancedOpen ? <Text style={[styles.advancedText, { color: C.textDim }]}>Readiness score {readiness}/100 · sleep {todayReadiness!.sleepMinutesTotal} min · sleep contribution {recommendation!.sleepContribution}/100 · {recommendation!.baselineSource === 'personal_28_day' ? 'your 28-day sleep baseline' : 'starter sleep baseline'} {recommendation!.baselineSleepMinutes} min.</Text> : null}
+          <TouchableOpacity onPress={() => setEditingCheckIn(true)} style={styles.disclosureButton} hitSlop={8}>
+            <Text style={[styles.updateCheckInText, { color: C.primary }]}>Update check-in</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Support information deliberately follows the daily decision. */}
+      <WeatherCard />
 
       {/* Performance Forecast */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
@@ -404,6 +481,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     padding: 16,
+    marginBottom: 16,
+  },
+  primaryWorkoutCard: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    padding: 18,
     marginBottom: 16,
   },
   weatherCard: {
@@ -600,6 +683,61 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     fontFamily: 'DMSans_400Regular',
+  },
+  primaryWorkoutTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 10,
+  },
+  workoutChange: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  startButton: {
+    minHeight: 50,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: 14,
+    rowGap: 10,
+    marginTop: 14,
+  },
+  secondaryActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  readinessLabel: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginTop: 5,
+    marginBottom: 6,
+  },
+  disclosureButton: {
+    alignSelf: 'flex-start',
+    marginTop: 12,
+  },
+  readinessDetails: {
+    marginTop: 6,
+  },
+  reasonText: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 6,
+  },
+  advancedLink: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  advancedText: {
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: 6,
   },
   workoutMeta: {
     fontSize: 13,

@@ -216,15 +216,21 @@ function buildWeek(
   totalWeeks: number,
   longestSessionMinutes: number,
   mode: PrimaryEnduranceMode,
+  previousNonRecoveryLongMinutes?: number,
 ): BeginnerPlanWeek {
   const isRecoveryWeek = weekNumber % 4 === 0 && weekNumber < totalWeeks;
   const progress = Math.min(1, weekNumber / totalWeeks);
   const recoveryMultiplier = isRecoveryWeek ? 0.76 : 1;
   const shortDuration = Math.round((20 + progress * 25) * recoveryMultiplier);
-  const longDuration = Math.round(
+  const rawLongDuration = Math.round(
     Math.min(longestSessionMinutes, 28 + progress * (longestSessionMinutes - 28))
       * recoveryMultiplier,
   );
+  const longDuration = isRecoveryWeek
+    ? Math.round(Math.min(rawLongDuration, (previousNonRecoveryLongMinutes ?? rawLongDuration) * 0.8))
+    : previousNonRecoveryLongMinutes
+      ? Math.min(rawLongDuration, Math.max(previousNonRecoveryLongMinutes, Math.round(previousNonRecoveryLongMinutes * 1.1)))
+      : rawLongDuration;
   const sessions: BeginnerPlanSession[] = [
     buildEnduranceSession(goal, weekNumber, totalWeeks, 1, shortDuration, mode, false),
     {
@@ -284,24 +290,79 @@ export function generateBeginnerPlan(
   const definition = BEGINNER_PLAN_DEFINITIONS[input.goal];
   const createdAt = Date.now();
 
+  const weeks: BeginnerPlanWeek[] = [];
+  let previousNonRecoveryLongMinutes: number | undefined;
+  for (let index = 0; index < durationWeeks; index += 1) {
+    const week = buildWeek(
+      input.goal,
+      index + 1,
+      durationWeeks,
+      definition.longestSessionMinutes,
+      primaryEnduranceMode,
+      previousNonRecoveryLongMinutes,
+    );
+    weeks.push(week);
+    if (!week.isRecoveryWeek) {
+      previousNonRecoveryLongMinutes = week.sessions.find(session => session.kind === 'long_session' || session.dayIndex === 6)?.durationMinutes;
+    }
+  }
+
   return {
     id: `preset_plan_${input.goal}_${createdAt}`,
     goal: input.goal,
     primaryEnduranceMode,
+    completionGoal: input.completionGoal ?? 'complete_distance',
     startDate: input.startDate,
     targetDate: addWeeks(input.startDate, durationWeeks),
     durationWeeks,
     recommendation,
     acceleratedAcknowledgedAt,
-    weeks: Array.from({ length: durationWeeks }, (_, index) =>
-      buildWeek(
-        input.goal,
-        index + 1,
-        durationWeeks,
-        definition.longestSessionMinutes,
-        primaryEnduranceMode,
-      )),
+    weeks,
     createdAt,
+  };
+}
+
+function destinationSessionId(id: string, targetWeekNumber: number): string {
+  return id.replace(/^week_\d+_/, `week_${targetWeekNumber}_`);
+}
+
+/**
+ * Holds progression by copying one week's prescription into the following
+ * calendar week. Destination IDs remain destination-specific, and the
+ * superseded prescription is retained for audit/readback.
+ */
+export function repeatBeginnerWeek(
+  plan: GeneratedBeginnerPlan,
+  sourceWeekNumber: number,
+  confirmedAt = Date.now(),
+): GeneratedBeginnerPlan {
+  const source = plan.weeks.find(week => week.weekNumber === sourceWeekNumber);
+  const targetWeekNumber = sourceWeekNumber + 1;
+  const target = plan.weeks.find(week => week.weekNumber === targetWeekNumber);
+  if (!source || !target) return plan;
+  const repeated: BeginnerPlanWeek = {
+    weekNumber: targetWeekNumber,
+    isRecoveryWeek: source.isRecoveryWeek,
+    focus: 'This week intentionally repeats last week’s volume. Progress does not require increasing every week.',
+    sessions: source.sessions.map(session => ({
+      ...session,
+      id: destinationSessionId(session.id, targetWeekNumber),
+      explanation: `${session.explanation} This prescription intentionally holds last week’s progression.`,
+    })),
+  };
+  return {
+    ...plan,
+    weeks: plan.weeks.map(week => week.weekNumber === targetWeekNumber ? repeated : week),
+    adaptationAudit: [
+      ...(plan.adaptationAudit ?? []),
+      {
+        type: 'repeat_week',
+        sourceWeekNumber,
+        targetWeekNumber,
+        originalTargetWeek: JSON.parse(JSON.stringify(target)) as BeginnerPlanWeek,
+        confirmedAt,
+      },
+    ],
   };
 }
 

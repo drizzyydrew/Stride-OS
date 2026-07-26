@@ -6,6 +6,7 @@ export type BeginnerPlanGoal =
   | 'couch_to_10k'
   | 'couch_to_half_marathon'
   | 'couch_to_marathon';
+export type BeginnerCompletionGoal = 'complete_distance' | 'run_continuously';
 
 export type BeginnerStartingLevel = 'inactive' | 'walking' | 'run_walk' | 'running';
 
@@ -21,6 +22,7 @@ export type BeginnerPlanReadinessInput = {
   crossTrainingExperience: boolean;
   requestedTargetDate?: string;
   startDate: string;
+  completionGoal?: BeginnerCompletionGoal;
 };
 
 export type BeginnerPlanRecommendation = {
@@ -69,6 +71,7 @@ export type GeneratedBeginnerPlan = {
   id: string;
   goal: BeginnerPlanGoal;
   primaryEnduranceMode: PrimaryEnduranceMode;
+  completionGoal: BeginnerCompletionGoal;
   startDate: string;
   targetDate: string;
   durationWeeks: number;
@@ -76,6 +79,13 @@ export type GeneratedBeginnerPlan = {
   acceleratedAcknowledgedAt?: number;
   weeks: BeginnerPlanWeek[];
   createdAt: number;
+  adaptationAudit?: {
+    type: 'repeat_week';
+    sourceWeekNumber: number;
+    targetWeekNumber: number;
+    originalTargetWeek: BeginnerPlanWeek;
+    confirmedAt: number;
+  }[];
 };
 
 export type ActivePresetGoal = {

@@ -179,7 +179,14 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { mode } = useThemeStore();
-  const { units, setUnits } = useSettingsStore();
+  const {
+    units,
+    setUnits,
+    voiceCueMode,
+    voiceCuePreferences,
+    setVoiceCueMode,
+    setVoiceCuePreference,
+  } = useSettingsStore();
   const integrations = useIntegrationsStore();
   const legacyMorningReminderEnabled = useReadinessStore(state => state.reminderEnabled);
   const signOut = useAuthStore(state => state.signOut);
@@ -783,6 +790,48 @@ export default function SettingsScreen() {
             onChange={v => setUnits(v as any)}
             activeTone="primary"
           />
+        </View>
+      </View>
+
+      {/* Voice coaching — uses the existing expo-speech architecture only. */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.sectionLabel, { color: C.textDim }]}>VOICE COACHING</Text>
+        <Text style={[styles.settingCaption, { color: C.textMuted, marginBottom: 10 }]}>
+          Choose how often StrideOS speaks. These controls add no new audio dependency.
+        </Text>
+        <SegmentControl
+          options={[
+            { label: 'Silent', value: 'silent' },
+            { label: 'Minimal', value: 'minimal' },
+            { label: 'Standard', value: 'standard' },
+            { label: 'Coach', value: 'coach' },
+          ]}
+          value={voiceCueMode}
+          onChange={value => setVoiceCueMode(value as typeof voiceCueMode)}
+          activeTone="primary"
+        />
+        <View style={{ marginTop: 10 }}>
+          {([
+            ['interval', 'Interval changes'],
+            ['pace', 'Pace alerts'],
+            ['heartRate', 'Heart-rate alerts'],
+            ['runWalk', 'Run/walk changes'],
+            ['motivation', 'Motivation'],
+            ['technique', 'Technique cues'],
+            ['fueling', 'Fueling reminders'],
+            ['hydration', 'Hydration reminders'],
+          ] as const).map(([key, label]) => (
+            <View key={key} style={[styles.settingRow, { borderBottomColor: C.border }]}>
+              <Text style={[styles.settingTitle, { color: C.text }]}>{label}</Text>
+              <Switch
+                value={voiceCuePreferences[key]}
+                onValueChange={enabled => setVoiceCuePreference(key, enabled)}
+                disabled={voiceCueMode === 'silent'}
+                trackColor={{ false: C.border, true: C.primaryDim }}
+                thumbColor={voiceCuePreferences[key] && voiceCueMode !== 'silent' ? C.primary : C.textDim}
+              />
+            </View>
+          ))}
         </View>
       </View>
 

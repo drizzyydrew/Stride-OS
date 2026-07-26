@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -21,12 +22,16 @@ import type { ActivitySubtype, ActivityType } from '../../../src/types/activity'
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import {
+  activityStatusForClassification,
   activityTypeFromScheduledSession,
   buildManualActivityDraft,
   calculatePaceOrSpeed,
+  isPaceBasedActivity,
+  isSpeedBasedActivity,
   type CompletionState,
 } from '../../../src/utils/activityCompletion';
 import { displayLabel } from '../../../src/utils/displayLabels';
+import { categoryFromActivityType, categoryFromScheduledType, classifySubstitution } from '../../../src/utils/substitution';
 
 const TYPES: { key: string; type: ActivityType; subtype?: ActivitySubtype; label: string }[] = [
   { key: 'running', type: 'running', subtype: 'outdoor', label: 'Running' },
@@ -47,12 +52,28 @@ const TYPES: { key: string; type: ActivityType; subtype?: ActivitySubtype; label
   { key: 'stair_climbing', type: 'stair_climbing', subtype: 'indoor', label: 'Stair Climbing' },
   { key: 'hiit', type: 'hiit', subtype: 'general', label: 'HIIT' },
   { key: 'mixed_modal', type: 'mixed_modal', subtype: 'crossfit', label: 'HIIT / Mixed Conditioning' },
+  // Active Recovery isn't its own ActivityType (the union stays closed per
+  // the execution-plan guardrail) — the honest mapping is 'other' with the
+  // already-declared 'recovery' ActivitySubtype, distinct from a normal
+  // easy walk/ride, mobility session, or unclassified 'Other' entry.
+  { key: 'active_recovery', type: 'other', subtype: 'recovery', label: 'Active Recovery' },
   { key: 'other', type: 'other', subtype: 'general', label: 'Other' },
 ];
 
 function numeric(value: string): number | undefined {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+// 'other' now covers two picker entries (Active Recovery + generic Other) —
+// resolve by subtype when known, otherwise fall back to the generic 'general'
+// entry so pre-existing "Other" activities/links never silently relabel as
+// Active Recovery.
+function findTypeEntry(type: string | undefined, subtype: string | undefined): typeof TYPES[number] | undefined {
+  if (!type) return undefined;
+  const matches = TYPES.filter(item => item.type === type);
+  if (matches.length <= 1) return matches[0];
+  return matches.find(item => item.subtype === subtype) ?? matches.find(item => item.subtype === 'general') ?? matches[0];
 }
 
 function draftIsIndoor(activityKey: string, activityType: ActivityType, pool: boolean): boolean {
@@ -88,12 +109,18 @@ export default function ManualActivityScreen() {
     ? activities.find(activity => activity.id === params.activityId)
     : null;
   const prefillActivity = editedActivity ?? linkedActivity;
+  // An explicit ?activityType= param (e.g. the indoor-ride screen's "Log
+  // Completed Ride" link) only wins when there's nothing to prefill from —
+  // an existing linked/edited activity's own type always takes priority.
+  const paramTypeKey = !prefillActivity ? findTypeEntry(params.activityType, undefined)?.key : undefined;
   const initialType = prefillActivity?.activityType ?? activityTypeFromScheduledSession(scheduledSession);
   const initialKey = scheduledSession?.activityType === 'run_walk' || prefillActivity?.subtype === 'run_walk'
     ? 'run_walk'
     : prefillActivity?.subtype === 'treadmill'
       ? 'treadmill_running'
-      : TYPES.find(item => item.type === initialType)?.key ?? 'running';
+      : paramTypeKey
+        ?? findTypeEntry(initialType, prefillActivity?.subtype)?.key
+        ?? 'running';
   const initialDurationSeconds = prefillActivity?.metrics.durationSeconds ?? (scheduledSession ? scheduledSession.durationMinutes * 60 : 45 * 60);
 
   const [activityKey, setActivityKey] = useState(initialKey);
@@ -130,6 +157,10 @@ export default function ManualActivityScreen() {
   const isBike = activityType === 'cycling' || activityType === 'indoor_cycling';
   const isMixed = activityType === 'hiit' || activityType === 'mixed_modal';
   const isStrength = activityType === 'strength';
+  // Distance/pace only mean something for activities actually measured that
+  // way — strength, mobility, HIIT/mixed conditioning, and Active Recovery
+  // never force a running-only distance+pace UI onto the athlete.
+  const showDistancePace = isPaceBasedActivity(activityType) || isSpeedBasedActivity(activityType) || isSwim;
   const paceOrSpeed = useMemo(() => calculatePaceOrSpeed(
     activityType,
     numeric(distance),
@@ -138,9 +169,20 @@ export default function ManualActivityScreen() {
     distanceUnit,
   ), [activityType, distance, distanceUnit, durationMinutes]);
 
-  function save() {
+  // When the athlete is logging against a scheduled session whose category
+  // doesn't match what they actually picked (e.g. the schedule says a run,
+  // they're logging cycling), the substitution matrix decides the default
+  // classification — never a silent 'completed_as_prescribed'. Gated pairs
+  // (e.g. running -> cycling) need an explicit chooser before the log can
+  // count toward the scheduled session at all.
+  const scheduledCategory = scheduledSession ? categoryFromScheduledType(scheduledSession.activityType) : null;
+  const actualCategory = categoryFromActivityType(activityType, selectedType.subtype);
+  const categoryMismatch = Boolean(scheduledSession) && scheduledCategory !== actualCategory;
+
+  function commitSave(options: { unlinkSchedule?: boolean; classification?: ReturnType<typeof classifySubstitution>['classification'] } = {}) {
     const minutes = numeric(durationMinutes) ?? 1;
-    const draft = buildManualActivityDraft(scheduledSession, {
+    const effectiveScheduledSession = options.unlinkSchedule ? null : scheduledSession;
+    const draft = buildManualActivityDraft(effectiveScheduledSession, {
       activityType,
       completionState,
       durationMinutes: minutes,
@@ -165,6 +207,8 @@ export default function ManualActivityScreen() {
       ...draft,
       id: prefillActivity?.id,
       subtype: isSwim ? (pool ? 'pool' : 'open_water') : selectedType.subtype ?? draft.subtype,
+      completionClassification: options.classification ?? draft.completionClassification,
+      status: options.classification ? activityStatusForClassification(options.classification) : draft.status,
       metrics: {
         ...draft.metrics,
         routeCoordinates: routeId && !draftIsIndoor(selectedType.key, activityType, pool)
@@ -181,6 +225,37 @@ export default function ManualActivityScreen() {
       },
     });
     router.replace({ pathname: '/(tabs)/activity/[activityId]', params: { activityId } } as never);
+  }
+
+  function save() {
+    if (!categoryMismatch || !scheduledCategory) {
+      commitSave();
+      return;
+    }
+    const substitution = classifySubstitution({
+      scheduledCategory,
+      actualCategory,
+      intentMatch: false, // manual entry doesn't know finer same-category intent — matrix falls back conservatively
+    });
+    if (!substitution.requiresExplicitAcceptance) {
+      commitSave({ classification: substitution.classification });
+      return;
+    }
+    Alert.alert(
+      'This doesn’t match the scheduled session',
+      'The scheduled session is a different type of workout. How should this be recorded?',
+      [
+        {
+          text: 'Count Toward Scheduled Workout as Substitute',
+          onPress: () => commitSave({ classification: 'equivalent_substitute' }),
+        },
+        {
+          text: 'Log as Separate Activity',
+          onPress: () => commitSave({ unlinkSchedule: true, classification: undefined }),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
   }
 
   return (
@@ -268,7 +343,7 @@ export default function ManualActivityScreen() {
 
           <View style={s.grid}>
             <Field label="Duration" value={durationMinutes} onChange={setDurationMinutes} suffix="min" />
-            <Field label="Distance" value={distance} onChange={setDistance} suffix={distanceUnit} optional />
+            {showDistancePace ? <Field label="Distance" value={distance} onChange={setDistance} suffix={distanceUnit} optional /> : null}
             <Field label="Average HR" value={averageHr} onChange={setAverageHr} suffix="bpm" optional />
             <Field label="Maximum HR" value={maximumHr} onChange={setMaximumHr} suffix="bpm" optional />
             <Field label="RPE" value={rpe} onChange={setRpe} suffix="/10" />
@@ -277,24 +352,26 @@ export default function ManualActivityScreen() {
             {isBike ? <Field label="Average power" value={power} onChange={setPower} suffix="W" optional /> : null}
             {isMixed ? <Field label="Rounds" value={rounds} onChange={setRounds} optional /> : null}
           </View>
-          <View style={s.unitRow}>
-            <TouchableOpacity
-              style={[s.unitButton, { backgroundColor: distanceUnit === 'mi' ? C.primaryDim : C.card, borderColor: distanceUnit === 'mi' ? C.primary : C.border }]}
-              onPress={() => setDistanceUnit('mi')}
-            >
-              <Text style={[s.pillText, { color: distanceUnit === 'mi' ? C.primary : C.textMuted }]}>Miles</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[s.unitButton, { backgroundColor: distanceUnit === 'km' ? C.primaryDim : C.card, borderColor: distanceUnit === 'km' ? C.primary : C.border }]}
-              onPress={() => setDistanceUnit('km')}
-            >
-              <Text style={[s.pillText, { color: distanceUnit === 'km' ? C.primary : C.textMuted }]}>Kilometers</Text>
-            </TouchableOpacity>
-            <View style={[s.paceBadge, { backgroundColor: C.card, borderColor: C.border }]}>
-              <Text style={[s.fieldLabel, { color: C.textDim }]}>{paceOrSpeed.kind === 'speed' ? 'AVG SPEED' : 'AVG PACE'}</Text>
-              <Text style={[s.paceText, { color: C.text }]}>{paceOrSpeed.label}</Text>
+          {showDistancePace ? (
+            <View style={s.unitRow}>
+              <TouchableOpacity
+                style={[s.unitButton, { backgroundColor: distanceUnit === 'mi' ? C.primaryDim : C.card, borderColor: distanceUnit === 'mi' ? C.primary : C.border }]}
+                onPress={() => setDistanceUnit('mi')}
+              >
+                <Text style={[s.pillText, { color: distanceUnit === 'mi' ? C.primary : C.textMuted }]}>Miles</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.unitButton, { backgroundColor: distanceUnit === 'km' ? C.primaryDim : C.card, borderColor: distanceUnit === 'km' ? C.primary : C.border }]}
+                onPress={() => setDistanceUnit('km')}
+              >
+                <Text style={[s.pillText, { color: distanceUnit === 'km' ? C.primary : C.textMuted }]}>Kilometers</Text>
+              </TouchableOpacity>
+              <View style={[s.paceBadge, { backgroundColor: C.card, borderColor: C.border }]}>
+                <Text style={[s.fieldLabel, { color: C.textDim }]}>{paceOrSpeed.kind === 'speed' ? 'AVG SPEED' : 'AVG PACE'}</Text>
+                <Text style={[s.paceText, { color: C.text }]}>{paceOrSpeed.label}</Text>
+              </View>
             </View>
-          </View>
+          ) : null}
           {isStrength && scheduledSession?.strengthSession ? (
             <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
               <Text style={[s.label, { color: C.textDim, marginTop: 0 }]}>PRESCRIBED STRENGTH WORK</Text>
@@ -305,7 +382,7 @@ export default function ManualActivityScreen() {
               ))}
             </View>
           ) : null}
-          {!draftIsIndoor(selectedType.key, activityType, pool) ? (
+          {showDistancePace && !draftIsIndoor(selectedType.key, activityType, pool) ? (
             <>
               <Text style={[s.label, { color: C.textDim }]}>OPTIONAL ROUTE</Text>
               <View style={s.pills}>

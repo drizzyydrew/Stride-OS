@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { StravaTokens } from '../lib/strava';
@@ -86,7 +87,7 @@ export const useIntegrationsStore = create<IntegrationsStore>()(
     }),
     {
       name:    'integrations-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       partialize: (state) => ({
         healthKitEnabled:   state.healthKitEnabled,
         locationEnabled:    state.locationEnabled,

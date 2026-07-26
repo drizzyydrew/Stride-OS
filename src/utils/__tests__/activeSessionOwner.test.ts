@@ -11,6 +11,7 @@ test('one active-session owner resolves across running, outdoor, and strength', 
     runningActive: true,
     outdoorActive: false,
     outdoorName: '',
+    indoorRideActive: false,
     strengthName: null,
     strengthSource: null,
   });
@@ -22,6 +23,7 @@ test('one active-session owner resolves across running, outdoor, and strength', 
     runningActive: false,
     outdoorActive: false,
     outdoorName: '',
+    indoorRideActive: false,
     strengthName: 'Runner Strength',
     strengthSource: 'preset',
   });
@@ -34,6 +36,7 @@ test('legacy overlap resolves deterministically instead of exposing two owners',
     runningActive: true,
     outdoorActive: true,
     outdoorName: 'Ride',
+    indoorRideActive: true,
     strengthName: 'Strength',
     strengthSource: 'training_block',
   });
@@ -42,4 +45,46 @@ test('legacy overlap resolves deterministically instead of exposing two owners',
     name: 'Training Run',
     route: '/(tabs)/training',
   });
+});
+
+test('indoor ride resolves as its own owner and conflicts with every other domain', () => {
+  const ride = resolveActiveSessionOwner({
+    runningActive: false,
+    outdoorActive: false,
+    outdoorName: '',
+    indoorRideActive: true,
+    strengthName: null,
+    strengthSource: null,
+  });
+  assert.deepEqual(ride, {
+    domain: 'indoor_ride',
+    name: 'Indoor Ride',
+    route: '/(tabs)/activity/indoor-ride',
+  });
+  assert.equal(conflictingActiveSession(ride, 'indoor_ride'), null);
+  assert.equal(conflictingActiveSession(ride, 'running')?.domain, 'indoor_ride');
+  assert.equal(conflictingActiveSession(ride, 'outdoor')?.domain, 'indoor_ride');
+  assert.equal(conflictingActiveSession(ride, 'strength')?.domain, 'indoor_ride');
+
+  // Running and outdoor both still win priority over an active indoor ride —
+  // same "one deterministic owner" rule as the legacy-overlap case above.
+  const runningWins = resolveActiveSessionOwner({
+    runningActive: true,
+    outdoorActive: false,
+    outdoorName: '',
+    indoorRideActive: true,
+    strengthName: null,
+    strengthSource: null,
+  });
+  assert.equal(runningWins?.domain, 'running');
+
+  const outdoorWins = resolveActiveSessionOwner({
+    runningActive: false,
+    outdoorActive: true,
+    outdoorName: 'Ride',
+    indoorRideActive: true,
+    strengthName: null,
+    strengthSource: null,
+  });
+  assert.equal(outdoorWins?.domain, 'outdoor');
 });

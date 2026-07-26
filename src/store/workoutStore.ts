@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { CompletedWorkoutRecord, Workout, WorkoutIntensity, WorkoutType } from '../types/training';
@@ -340,7 +341,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
     }),
     {
       name:       'workout-store',
-      storage:    createJSONStorage(() => AsyncStorage),
+      storage:    createAppJSONStorage(),
       partialize: (state) => ({
         completedWorkouts: state.completedWorkouts,
         history:           state.history,

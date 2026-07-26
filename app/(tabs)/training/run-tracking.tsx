@@ -19,7 +19,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as Speech from 'expo-speech';
 
 import {
   activeRunElapsedSeconds,
@@ -35,9 +34,15 @@ import {
   updateRunLiveActivity,
 } from '../../../src/lib/runLiveActivity';
 import {
+  discardActiveSession,
   getConflictingActiveSession,
+  isActiveSessionStale,
   waitForActiveSessionStores,
 } from '../../../src/lib/activeSessionCoordinator';
+import { resolveLaunchDecision } from '../../../src/utils/workoutInstance';
+import { runScheduledSessionId } from '../../../src/utils/scheduledSessionIds';
+import { toYMD } from '../../../src/utils/calendarEngine';
+import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
 
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
@@ -115,6 +120,12 @@ export default function RunTrackingScreen() {
 
   const { richWeek } = useWeekPlan();
   const plannedWorkout = richWeek.workouts[dayIndex] as RichWorkout | undefined ?? null;
+  // Canonical id for the workout this screen was launched to run — used to
+  // decide whether an already-active run is *this* run (resume) or a
+  // different one (never silently take over or silently discard it).
+  const requestedScheduledSessionId = plannedWorkout
+    ? runScheduledSessionId(toYMD(new Date()), plannedWorkout.id, dayIndex)
+    : null;
 
   const {
     fatigueScore, recoveryScore, currentWeek,
@@ -149,26 +160,13 @@ export default function RunTrackingScreen() {
 
   useEffect(() => {
     let cancelled = false;
-    async function launch() {
-      await waitForActiveSessionStores();
-      if (cancelled) return;
-      const conflict = getConflictingActiveSession('running');
-      if (conflict) {
-        Alert.alert(
-          'Another session is active',
-          `${conflict.name} is still in progress. Continue it or end it before starting this run.`,
-          [
-            {
-              text: 'Continue Current Session',
-              onPress: () => router.replace(conflict.route as never),
-            },
-            { text: 'Cancel', style: 'cancel', onPress: () => router.back() },
-          ],
-        );
-        return;
-      }
-      if (!useActiveRunStore.getState().isActive) {
-      startRun(plannedWorkout);
+
+    async function beginFreshRun() {
+      startRun(plannedWorkout, {
+        mode: plannedWorkout ? 'workout' : 'quick',
+        scheduledSessionId: requestedScheduledSessionId ?? undefined,
+        environment: 'outdoor',
+      });
       const startedAt = useActiveRunStore.getState().startTime;
       await startRunLiveActivity({
         sessionId: startedAt ? `run:${startedAt}` : '',
@@ -183,8 +181,83 @@ export default function RunTrackingScreen() {
       }).catch(console.warn);
       startLocationTracking().catch(console.warn);
       const workoutName = plannedWorkout?.title ?? 'run';
-      Speech.speak(`${workoutName} started. ${plannedWorkout?.warmup?.instructions ?? 'Start easy.'}.`, { rate: 0.9 });
+      enqueueVoiceCue(
+        `${workoutName} started. ${plannedWorkout?.warmup?.instructions ?? 'Start easy.'}.`,
+        'motivation',
+      );
+    }
+
+    async function launch() {
+      await waitForActiveSessionStores();
+      if (cancelled) return;
+
+      const conflict = getConflictingActiveSession('running');
+      if (conflict) {
+        const stale = isActiveSessionStale();
+        Alert.alert(
+          'Another session is active',
+          stale
+            ? `${conflict.name} started a while ago and is still open. Continue it, or end it and start this run.`
+            : `${conflict.name} is still in progress. Continue it or end it before starting this run.`,
+          [
+            { text: 'Continue Current Session', onPress: () => router.replace(conflict.route as never) },
+            {
+              text: 'End Previous Session and Start New',
+              style: 'destructive',
+              onPress: () => { void discardActiveSession(conflict).then(beginFreshRun); },
+            },
+            { text: 'Cancel', style: 'cancel', onPress: () => router.back() },
+          ],
+        );
+        return;
       }
+
+      const runState = useActiveRunStore.getState();
+      const decision = resolveLaunchDecision({
+        isActive: runState.isActive,
+        activeScheduledSessionId: runState.scheduledSessionId,
+        requestedScheduledSessionId,
+        startedAtMs: runState.startTime,
+      });
+
+      if (decision === 'start_new') {
+        await beginFreshRun();
+        return;
+      }
+
+      if (decision === 'resume') {
+        // This is genuinely the same run — but this legacy full-screen UI has
+        // no treadmill panel. If the in-progress run is indoor, hand off to
+        // the primary Running tab instead of silently rendering GPS UI for a
+        // session with no GPS data.
+        if (runState.environment === 'indoor') {
+          router.replace('/(tabs)/training' as never);
+        }
+        return;
+      }
+
+      // decision === 'confirm': a different (or stale) run is active. Never a
+      // silent wedge — offer resume-previous or discard-and-start-new.
+      Alert.alert(
+        'A run is already in progress',
+        runState.environment === 'indoor'
+          ? 'An indoor treadmill run is already active. Resume it in the Running tab, or discard it and start this GPS run.'
+          : 'A different run is already active. Resume it, or discard it and start this one.',
+        [
+          {
+            text: 'Resume Previous Run',
+            onPress: () => {
+              if (runState.environment === 'indoor') router.replace('/(tabs)/training' as never);
+            },
+          },
+          {
+            text: 'Discard and Start New',
+            style: 'destructive',
+            onPress: () => { void discardActiveSession({ domain: 'running', name: 'Training Run', route: '/(tabs)/training' }).then(beginFreshRun); },
+          },
+          { text: 'Cancel', style: 'cancel', onPress: () => router.back() },
+        ],
+      );
     }
     void launch();
     return () => {
@@ -227,7 +300,7 @@ export default function RunTrackingScreen() {
         isPaused: false,
       }).catch(console.warn);
       await stopLocationTracking().catch(console.warn);
-      Speech.speak('Run complete. Great work.', { rate: 0.9 });
+      enqueueVoiceCue('Run complete. Great work.', 'motivation');
       finishRun();
 
       if (plannedWorkout) {

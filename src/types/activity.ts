@@ -45,6 +45,36 @@ export type ActivitySource =
 
 export type ActivityStatus = 'completed' | 'skipped' | 'partial';
 
+// Richer, athlete-facing classification of how a completion relates to what
+// was scheduled. `ActivityStatus` remains the coarse back-compat field every
+// existing screen already reads; `completionClassification` is optional and
+// additive. See activityStatusForClassification() in activityCompletion.ts
+// for the back-compat mapping.
+export type CompletionClassification =
+  | 'completed_as_prescribed'
+  | 'modified'
+  | 'equivalent_substitute'
+  | 'partial'
+  | 'completed_other_activity'
+  | 'stopped_early'
+  | 'skipped';
+
+// How a completed activity's distance was determined. Never inferred from HR
+// or power; never a fabricated GPS route for indoor sessions.
+export type DistanceSource =
+  | 'gps'
+  | 'treadmill_reported'
+  | 'foot_pod'
+  | 'prescribed_estimate'
+  | 'confirmed_speed_estimate'
+  | 'equipment_display'
+  | 'manual_entry'
+  | 'health_import'
+  | 'trainer_reported'
+  | 'wheel_sensor'
+  | 'virtual'
+  | 'unavailable';
+
 export type ActivityFilter =
   | 'all'
   | 'running'
@@ -68,6 +98,27 @@ export type ActivityCoordinate = {
 
 export type HeartRateZoneSeconds = Partial<Record<1 | 2 | 3 | 4 | 5, number>>;
 
+export type HeartRateSample = {
+  timestamp: number;
+  bpm: number;
+  source: 'healthkit';
+};
+
+// A completion-time summary, not a promise of continuous sensor coverage.
+// `averageReliable: false` intentionally means averageHeartRateBpm is absent.
+export type HeartRateSummary = {
+  source: 'healthkit';
+  sampleCount: number;
+  coverageSeconds: number;
+  sessionSeconds: number;
+  coverageRatio: number;
+  largestGapSeconds: number;
+  averageReliable: boolean;
+  averageHeartRateBpm?: number;
+  maximumHeartRateBpm?: number;
+  zoneSeconds?: HeartRateZoneSeconds;
+};
+
 export type RunWalkInterval = {
   kind: 'run' | 'walk';
   durationSeconds: number;
@@ -84,6 +135,7 @@ export type ActivityMetrics = {
   averageHeartRateBpm?: number;
   maximumHeartRateBpm?: number;
   heartRateZoneSeconds?: HeartRateZoneSeconds;
+  heartRateSummary?: HeartRateSummary;
   estimatedCalories?: number;
 
   pace?: {
@@ -98,9 +150,16 @@ export type ActivityMetrics = {
   };
   cadenceRpm?: number;
   cyclingPowerWatts?: number;
+  // Indoor cycling only: whatever the trainer/bike's resistance control showed
+  // (a level number or a free-text setting) — never used to derive distance.
+  resistanceLevel?: string;
   runWalkIntervals?: RunWalkInterval[];
   routeId?: string;
   routeCoordinates?: ActivityCoordinate[];
+  distanceSource?: DistanceSource;
+  // Preserved when the athlete later corrects the final distance (e.g. from
+  // a treadmill's displayed reading) so the original estimate isn't lost.
+  originalEstimatedDistanceMiles?: number;
 
   swimming?: {
     environment: 'pool' | 'open_water';
@@ -121,7 +180,19 @@ export type ActivityMetrics = {
     exerciseCount?: number;
     sets?: number;
     reps?: number;
-    volumeKg?: number;
+    volumeKg?: number; // legacy combined figure — superseded by the honest split below
+    // Honest split summary (src/utils/strengthSummary.ts) — deliberately no
+    // single combined "volume" number. Band and bodyweight work are never
+    // converted into externalLoadVolumeLb.
+    externalLoadVolumeLb?: number;
+    bandSetsCount?: number;
+    bodyweightSetsCount?: number;
+    totalHoldSeconds?: number;
+    averageRpe?: number;
+    warmupSetsCount?: number;
+    // Exact per-exercise/set execution when the active strength session
+    // supplied it. Legacy records simply leave this absent.
+    exercises?: import('./strength').CompletedExercise[];
   };
 };
 
@@ -153,6 +224,7 @@ export type Activity = {
   associatedTrainingBlockId?: string;
   associatedGoalId?: string;
   scheduledSessionId?: string;
+  completionClassification?: CompletionClassification;
   startTime: number;
   endTime?: number;
   rpe?: number;

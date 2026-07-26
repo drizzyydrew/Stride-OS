@@ -7,7 +7,8 @@
 // No business logic — pure storage + CRUD.
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { StrengthFocus } from '../types/customWorkout';
@@ -149,7 +150,7 @@ export const useExerciseStore = create<ExerciseStore>()(
     }),
     {
       name:    'exercise-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       partialize: (state) => ({
         // Only persist custom exercises — built-ins are always derived from code
         exercises: state.exercises.filter(e => e.isCustom),

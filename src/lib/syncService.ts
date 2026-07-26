@@ -7,7 +7,7 @@
 // Requires tables: workout_logs, strength_logs, custom_workout_logs,
 // daily_check_ins, and profiles with onboarding_data / athlete_data columns.
 
-import { supabase } from './supabase';
+import { getSupabaseAvailability } from './supabase';
 import type { CompletedWorkoutRecord } from '../types/training';
 import type { StrengthLogRecord } from '../types/strength';
 import type { CustomWorkoutLog } from '../types/customWorkout';
@@ -16,7 +16,15 @@ import type { OnboardingData } from '../store/onboardingStore';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+function getSupabaseClient() {
+  const supabaseState = getSupabaseAvailability();
+  return supabaseState.status === 'available' ? supabaseState.client : null;
+}
+
 async function getUserId(): Promise<string | null> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+
   const { data } = await supabase.auth.getUser();
   return data.user?.id ?? null;
 }
@@ -26,6 +34,8 @@ async function getUserId(): Promise<string | null> {
 export async function syncWorkoutLog(record: CompletedWorkoutRecord): Promise<void> {
   const user_id = await getUserId();
   if (!user_id) return;
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
 
   await supabase
     .from('workout_logs')
@@ -35,6 +45,8 @@ export async function syncWorkoutLog(record: CompletedWorkoutRecord): Promise<vo
 export async function deleteWorkoutLog(id: string): Promise<void> {
   const user_id = await getUserId();
   if (!user_id) return;
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
 
   await supabase
     .from('workout_logs')
@@ -48,6 +60,8 @@ export async function deleteWorkoutLog(id: string): Promise<void> {
 export async function syncStrengthLog(record: StrengthLogRecord): Promise<void> {
   const user_id = await getUserId();
   if (!user_id) return;
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
 
   await supabase
     .from('strength_logs')
@@ -57,6 +71,8 @@ export async function syncStrengthLog(record: StrengthLogRecord): Promise<void> 
 export async function deleteStrengthLog(id: string): Promise<void> {
   const user_id = await getUserId();
   if (!user_id) return;
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
 
   await supabase
     .from('strength_logs')
@@ -70,6 +86,8 @@ export async function deleteStrengthLog(id: string): Promise<void> {
 export async function syncCustomLog(record: CustomWorkoutLog): Promise<void> {
   const user_id = await getUserId();
   if (!user_id) return;
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
 
   await supabase
     .from('custom_workout_logs')
@@ -79,6 +97,8 @@ export async function syncCustomLog(record: CustomWorkoutLog): Promise<void> {
 export async function deleteCustomLog(id: string): Promise<void> {
   const user_id = await getUserId();
   if (!user_id) return;
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
 
   await supabase
     .from('custom_workout_logs')
@@ -92,6 +112,8 @@ export async function deleteCustomLog(id: string): Promise<void> {
 export async function syncCheckIn(checkIn: DailyCheckIn): Promise<void> {
   const user_id = await getUserId();
   if (!user_id) return;
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
 
   await supabase
     .from('daily_check_ins')
@@ -106,6 +128,8 @@ export async function syncUserProfile(
 ): Promise<void> {
   const user_id = await getUserId();
   if (!user_id) return;
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
 
   await supabase
     .from('profiles')
@@ -129,6 +153,8 @@ export type HydrateResult = {
 export async function hydrateFromSupabase(): Promise<HydrateResult> {
   const user_id = await getUserId();
   if (!user_id) return { workoutLogs: [], strengthLogs: [], customLogs: [], checkIns: [] };
+  const supabase = getSupabaseClient();
+  if (!supabase) return { workoutLogs: [], strengthLogs: [], customLogs: [], checkIns: [] };
 
   const [workouts, strength, custom, checkins] = await Promise.all([
     supabase.from('workout_logs').select('data').eq('user_id', user_id),

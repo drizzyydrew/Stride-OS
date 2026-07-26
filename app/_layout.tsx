@@ -9,13 +9,14 @@ import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, Platform, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { useOnboardingStore } from '../src/store/onboardingStore';
 import { useAuthStore }       from '../src/store/authStore';
 import { useThemeStore }      from '../src/store/themeStore';
 import { completeSupabaseAuthFromUrl } from '../src/lib/authRedirect';
+import { getSupabaseAvailability } from '../src/lib/supabase';
 import { ToastProvider } from '../src/components/ui/Toast';
 import { ThemeProvider as StrideThemeProvider } from '../src/theme/ThemeProvider';
 import { getNavigationTheme } from '../src/theme/theme';
@@ -129,6 +130,8 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    if (Platform.OS === 'web') return undefined;
+
     function redirect(notification: Notifications.Notification) {
       const url = notification.request.content.data?.url;
       if (typeof url === 'string') router.push(url as never);
@@ -189,6 +192,7 @@ function NavigationGate() {
   const loading           = useAuthStore(s => s.loading);
   const onboardingComplete = useOnboardingStore(s => s.onboardingComplete);
   const segments           = useSegments();
+  const supabaseAvailable = getSupabaseAvailability().status === 'available';
 
   useEffect(() => {
     if (loading) return;
@@ -197,14 +201,20 @@ function NavigationGate() {
     const inAuth       = path.includes('auth');
     const inOnboarding = path.includes('onboarding');
 
-    if (!session) {
+    if (!supabaseAvailable) {
+      if (!onboardingComplete) {
+        if (!inOnboarding) router.replace('/onboarding' as never);
+      } else if (inAuth || inOnboarding) {
+        router.replace('/(tabs)/dashboard');
+      }
+    } else if (!session) {
       if (!inAuth) router.replace('/auth/sign-in' as never);
     } else if (!onboardingComplete) {
       if (!inOnboarding) router.replace('/onboarding' as never);
     } else if (inAuth || inOnboarding) {
       router.replace('/(tabs)/dashboard');
     }
-  }, [session, loading, onboardingComplete, segments]);
+  }, [session, loading, onboardingComplete, segments, supabaseAvailable]);
 
   return null;
 }

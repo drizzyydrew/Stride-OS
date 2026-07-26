@@ -73,12 +73,54 @@ test('bottom tab labels and icons use one uniform visual contract', () => {
 
   assert.equal((visibleSection.match(/<Tabs\.Screen/g) ?? []).length, 6);
   assert.match(tabs, /TAB_ICON_SIZE\s*=\s*25/);
+  assert.match(tabs, /TAB_ICON_BOX_SIZE\s*=\s*30/);
+  assert.match(tabs, /TAB_ITEM_MIN_HEIGHT\s*=\s*54/);
   assert.match(tabs, /TAB_LABEL_FONT_SIZE\s*=\s*10/);
   assert.match(tabs, /TAB_LABEL_LINE_HEIGHT\s*=\s*12/);
   assert.match(tabs, /fontWeight:\s*'700'/);
   assert.match(tabs, /includeFontPadding:\s*false/);
   assert.match(tabs, /minimumFontScale=\{0\.85\}/);
+  assert.match(tabs, /tabBarItemStyle:\s*\{/);
+  assert.match(tabs, /paddingHorizontal:\s*0/);
+  assert.match(tabs, /width:\s*TAB_ICON_BOX_SIZE/);
+  assert.match(tabs, /height:\s*TAB_ICON_BOX_SIZE/);
   assert.match(tabs, /minWidth:\s*0/);
+});
+
+test('Daily Check-In uses word choices, blank required state, and one-minute sleep picker options', () => {
+  const source = read('src/components/today/ReadinessCheckInCard.tsx');
+  assert.match(source, /HOUR_OPTIONS = Array\.from\(\{ length: 15 \}/);
+  assert.match(source, /MINUTE_OPTIONS = Array\.from\(\{ length: 60 \}/);
+  assert.match(source, /TwoColumnPickerWheel/);
+  assert.match(source, /id:\s*'hours'/);
+  assert.match(source, /id:\s*'minutes'/);
+  assert.match(source, /Select sleep duration/);
+  assert.match(source, /How was the quality of your sleep\?/);
+  assert.match(source, /Very poor/);
+  assert.match(source, /Excellent/);
+  assert.match(source, /Very fatigued/);
+  assert.match(source, /Fresh/);
+  assert.match(source, /Very low/);
+  assert.match(source, /Very high/);
+  assert.match(source, /disabled=\{!canSave\}/);
+  assert.match(source, /accessibilityState=\{\{ selected \}\}/);
+  assert.match(source, />Selected<\/Text>/);
+  assert.doesNotMatch(source, /TextInput/);
+  assert.doesNotMatch(source, /ScrollView/);
+  assert.doesNotMatch(source, /\[0, 15, 30, 45\]/);
+  assert.doesNotMatch(source, /DEFAULT_INPUTS/);
+
+  const pickerWheel = read('src/components/ui/PickerWheel.tsx');
+  assert.match(pickerWheel, /export function TwoColumnPickerWheel/);
+  assert.match(pickerWheel, /snapToInterval=\{ITEM_HEIGHT\}/);
+  assert.match(pickerWheel, /accessibilityRole="adjustable"/);
+
+  const today = read('app/(tabs)/dashboard/index.tsx');
+  assert.match(today, /Sleep quality:/);
+  assert.match(today, /Body:/);
+  assert.match(today, /Energy:/);
+  assert.match(today, /Stress:/);
+  assert.match(today, /Recent training:/);
 });
 
 test('Today weather card separates information and refresh controls and expands AQI education', () => {
@@ -114,7 +156,7 @@ test('AQI ranges match official U.S. categories and expose non-color VoiceOver l
 test('Today plan renders one centered primary action and no redundant adjacent Strength button', () => {
   const today = read('app/(tabs)/dashboard/index.tsx');
   assert.match(today, /actionLabelForScheduledSession\(primarySession\)/);
-  assert.match(today, /styles\.workoutBtnPrimary/);
+  assert.match(today, /styles\.startButton/);
   assert.doesNotMatch(today, /hasStrengthToday/);
   assert.doesNotMatch(today, />Strength<\/Text>/);
 });
@@ -165,8 +207,16 @@ test('Calendar unselection removes only the active selection, not the planned se
     undefined,
     ['session-run'],
   );
-  assert.equal(active.length, 0);
+  // "Remove from Today" demotes the session out of primary/run selection —
+  // getScheduledRunForDate/primarySessionForDate will not surface it — but it
+  // must stay reachable as a secondary entry rather than disappearing, so
+  // Calendar and the Running/Strength surfaces never disagree about what's
+  // actually scheduled today.
+  assert.equal(active.length, 1);
+  assert.equal(active[0]?.scheduledSessionId, 'session-run');
+  assert.equal(active[0]?.priority, 'optional');
   assert.equal(todayRun.scheduledSessionId, 'session-run');
+  assert.equal(todayRun.priority, 'primary');
 });
 
 test('Running and Strength screens resolve scheduled sessions from the shared hook', () => {

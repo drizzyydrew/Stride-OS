@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 
 import type {
   CrampingFrequency,
@@ -95,7 +96,7 @@ export const useHydrationPlannerStore = create<HydrationPlannerStore>()(
     }),
     {
       name: 'hydration-planner-inputs',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       merge: (persisted, current) => ({
         ...current,
         ...(persisted as Partial<HydrationPlannerStore> | undefined),

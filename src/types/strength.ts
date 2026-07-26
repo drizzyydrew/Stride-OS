@@ -124,17 +124,34 @@ export type StrengthWeek = {
 // ─── Completed set ────────────────────────────────────────────────────────────
 
 export type CompletedSet = {
-  reps:      number;
-  load?:     string;    // "60kg", "BW", "RPE 7" — free text
-  rpe?:      number;    // 1–10 actual
-  completed: boolean;
+  id?:          string;
+  reps?:        number;
+  // Legacy display value. New execution paths persist the structured fields
+  // below instead of requiring this free text to be parsed later.
+  load?:        string;
+  weight?:      number;
+  weightUnit?:  'lb' | 'kg';
+  bandLevel?:   import('../utils/strengthSession').BandLevel;
+  bandCustomLabel?: string;
+  holdSeconds?: number;
+  rpe?:         number;    // 1–10 actual
+  isWarmup?:    boolean;
+  completed:    boolean;
+  notes?:       string;
 };
 
 // ─── Completed exercise within a session ─────────────────────────────────────
 
 export type CompletedExercise = {
   exerciseId: string;
+  name?:      string;
+  equipmentType?: import('../utils/strengthSession').EquipmentType;
   sets:       CompletedSet[];
+  // Completion audit fields. They are optional so historic records retain
+  // their original meaning rather than receiving invented execution detail.
+  skipped?:   boolean;
+  substitutedFromExerciseId?: string;
+  added?:     boolean;
   notes?:     string;
 };
 
@@ -154,6 +171,11 @@ export type ExerciseSessionDetail = {
 export type StrengthLogRecord = {
   id:              string;    // "sw${week}_${sessionId}_${index}"
   sessionId:       string;   // original session id
+  // Canonical `week:${date}:strength:${strengthId}` scheduled-session id, set
+  // when the caller already knows it (e.g. manual completion from the
+  // Strength screen, where `sessionId` above is a completionKey, not a raw
+  // strength id). Optional — most callers derive this from `sessionId`.
+  scheduledSessionId?: string;
   sessionType:     StrengthSessionType;
   goal:            StrengthGoal;
   week:            number;
@@ -161,6 +183,7 @@ export type StrengthLogRecord = {
   completed:       true;     // discriminant — all persisted records are completed
   skipped?:        boolean;
   skippedReason?:  string;
+  completionClassification?: import('./activity').CompletionClassification;
 
   plannedDuration:  number;
   actualDuration?:  number;

@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { resolveDocumentUri, toRelativeDocumentPath } from './mediaPaths';
-import { supabase } from './supabase';
+import { getSupabaseAvailability, supabaseUnavailableMessage } from './supabase';
 
 const VIDEO_DIR = `${FileSystem.documentDirectory}movement-videos/`;
 
@@ -96,6 +96,12 @@ export async function uploadMovementVideo(
   storagePath: string,
   contentType: string,
 ): Promise<void> {
+  const supabaseState = getSupabaseAvailability();
+  if (supabaseState.status !== 'available') {
+    throw new Error(supabaseUnavailableMessage('Movement video upload'));
+  }
+
+  const { client: supabase } = supabaseState;
   const resolvedUri = resolveDocumentUri(localUri) ?? localUri;
   const base64 = await FileSystem.readAsStringAsync(resolvedUri, {
     encoding: FileSystem.EncodingType.Base64,

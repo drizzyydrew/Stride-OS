@@ -1,4 +1,9 @@
 import * as Speech from 'expo-speech';
+import { useSettingsStore } from '../store/settingsStore';
+import {
+  shouldSpeakVoiceCue,
+  type VoiceCueCategory,
+} from '../utils/voiceCoaching';
 
 const queue: string[] = [];
 let speaking = false;
@@ -17,7 +22,16 @@ function drain() {
   });
 }
 
-export function enqueueVoiceCue(text: string): void {
+export function enqueueVoiceCue(
+  text: string,
+  category: VoiceCueCategory = 'motivation',
+): void {
+  const settings = useSettingsStore.getState();
+  if (!shouldSpeakVoiceCue(
+    settings.voiceCueMode,
+    settings.voiceCuePreferences,
+    category,
+  )) return;
   const normalized = text.trim();
   if (!normalized || queue.at(-1) === normalized) return;
   queue.push(normalized);

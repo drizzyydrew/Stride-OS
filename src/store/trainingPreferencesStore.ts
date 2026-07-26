@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 
 import type {
   CrossTrainingActivityPreference,
@@ -83,7 +84,7 @@ export const useTrainingPreferencesStore = create<TrainingPreferencesStore>()(
     {
       name: 'training-preferences-store',
       version: TRAINING_PREFERENCES_SCHEMA_VERSION,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       partialize: state => ({
         schemaVersion: state.schemaVersion,
         crossTrainingDecision: state.crossTrainingDecision,

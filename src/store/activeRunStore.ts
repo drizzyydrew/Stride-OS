@@ -7,10 +7,14 @@
 
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import type { LocationObject } from 'expo-location';
 import type { RichWorkout } from '../types/workout';
+import type { DistanceSource } from '../types/activity';
 import { elapsedSecondsExcludingPause } from '../utils/activeTime';
+import { buildWorkoutInstanceId, synthesizeWorkoutInstanceId } from '../utils/workoutInstance';
+import { closeOpenSegment, confirmSpeedChange, openSegment, sanitizeSpeedMph, type TreadmillSegment } from '../utils/treadmill';
 
 export type Coordinate = {
   lat:       number;
@@ -23,12 +27,18 @@ export type Coordinate = {
 // tracking; the goal fields only apply to their matching mode.
 export type RunMode = 'quick' | 'time' | 'distance' | 'workout' | 'race';
 
+// Whether this run is tracked via GPS outdoors or via confirmed treadmill
+// speed indoors. Indoor runs never request location permission, start GPS
+// tasks, or record coordinates.
+export type RunEnvironment = 'outdoor' | 'indoor';
+
 export type RunModeConfig = {
   mode:                   RunMode;
   goalMinutes?:           number;  // time mode
   goalMiles?:             number;  // distance + race modes
   targetPaceSecPerMile?:  number;  // race mode
   scheduledSessionId?:    string;
+  environment?:           RunEnvironment;
 };
 
 // Rolling window for pace calculation (seconds of data to average)
@@ -73,6 +83,21 @@ export type ActiveRunStore = {
   targetPaceSecPerMile:   number | null;
   completionRequestedAt:  number | null;
 
+  // Live workout instance identity — see src/utils/workoutInstance.ts. Every
+  // startRun() call gets a fresh id; mount guards key off this, not isActive.
+  workoutInstanceId:      string | null;
+
+  // Indoor/treadmill support.
+  environment:            RunEnvironment;
+  treadmillSegments:      TreadmillSegment[];
+  currentSpeedMph:        number | null;
+  manualDistanceMiles:    number | null;
+  distanceSource:         DistanceSource | null;
+  // Last outdoor/indoor choice the athlete made on the run-setup screen,
+  // persisted so the toggle defaults to it next time (not tied to any one
+  // active session — survives finishRun/cancelRun).
+  lastEnvironmentPreference: RunEnvironment;
+
   startRun:          (plannedWorkout: RichWorkout | null, config?: RunModeConfig) => void;
   pauseRun:          () => void;
   resumeRun:         () => void;
@@ -82,6 +107,9 @@ export type ActiveRunStore = {
   cancelRun:         () => void;
   requestCompletion: () => void;
   clearCompletionRequest: () => void;
+  confirmTreadmillSpeed:  (speedMph: number) => void;
+  setManualLiveDistance:  (miles: number) => void;
+  setLastEnvironmentPreference: (environment: RunEnvironment) => void;
 };
 
 export function activeRunElapsedSeconds(
@@ -117,12 +145,20 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
   goalMiles:              null,
   targetPaceSecPerMile:   null,
   completionRequestedAt:  null,
+  workoutInstanceId:      null,
+  environment:            'outdoor',
+  treadmillSegments:      [],
+  currentSpeedMph:        null,
+  manualDistanceMiles:    null,
+  distanceSource:         null,
+  lastEnvironmentPreference: 'outdoor',
 
   startRun: (plannedWorkout, config) => {
+    const now = Date.now();
     set({
       isActive:               true,
       isPaused:               false,
-      startTime:              Date.now(),
+      startTime:              now,
       pausedAt:               null,
       pausedDurationMs:       0,
       distanceMiles:          0,
@@ -139,24 +175,61 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       goalMiles:              config?.goalMiles ?? null,
       targetPaceSecPerMile:   config?.targetPaceSecPerMile ?? null,
       completionRequestedAt:  null,
+      workoutInstanceId:      buildWorkoutInstanceId(config?.scheduledSessionId ?? null, now),
+      environment:            config?.environment ?? 'outdoor',
+      treadmillSegments:      [],
+      currentSpeedMph:        null,
+      manualDistanceMiles:    null,
+      distanceSource:         null,
+      lastEnvironmentPreference: config?.environment ?? get().lastEnvironmentPreference,
     });
   },
+
+  setLastEnvironmentPreference: (environment) => set({ lastEnvironmentPreference: environment }),
 
   pauseRun: () => {
     const state = get();
     if (!state.isActive || state.isPaused) return;
-    set({ isPaused: true, pausedAt: Date.now() });
+    const now = Date.now();
+    // Treadmill segments never span a pause: close the open one now, reopen
+    // at the same confirmed speed on resume.
+    const treadmillSegments = state.environment === 'indoor'
+      ? closeOpenSegment(state.treadmillSegments, now)
+      : state.treadmillSegments;
+    set({ isPaused: true, pausedAt: now, treadmillSegments });
   },
 
   resumeRun: () => {
     const state = get();
     if (!state.isActive || !state.isPaused) return;
-    const pausedFor = state.pausedAt ? Date.now() - state.pausedAt : 0;
+    const now = Date.now();
+    const pausedFor = state.pausedAt ? now - state.pausedAt : 0;
+    const treadmillSegments = state.environment === 'indoor' && state.currentSpeedMph != null
+      ? [...state.treadmillSegments, openSegment(state.currentSpeedMph, now)]
+      : state.treadmillSegments;
     set({
       isPaused: false,
       pausedAt: null,
       pausedDurationMs: state.pausedDurationMs + pausedFor,
+      treadmillSegments,
     });
+  },
+
+  confirmTreadmillSpeed: (speedMph) => {
+    const state = get();
+    if (!state.isActive || state.isPaused) return;
+    const now = Date.now();
+    const speed = sanitizeSpeedMph(speedMph);
+    set({
+      treadmillSegments: confirmSpeedChange(state.treadmillSegments, speed, now),
+      currentSpeedMph: speed,
+      distanceSource: 'confirmed_speed_estimate',
+    });
+  },
+
+  setManualLiveDistance: (miles) => {
+    if (!Number.isFinite(miles) || miles < 0) return;
+    set({ manualDistanceMiles: miles, distanceSource: 'manual_entry' });
   },
 
   addLocationUpdate: (loc) => {
@@ -259,6 +332,12 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       targetPaceSecPerMile:   null,
       completionRequestedAt:  null,
       lastRunCoordinates:     state.coordinates,
+      workoutInstanceId:      null,
+      environment:            'outdoor',
+      treadmillSegments:      [],
+      currentSpeedMph:        null,
+      manualDistanceMiles:    null,
+      distanceSource:         null,
     });
   },
 
@@ -283,6 +362,12 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       goalMiles:              null,
       targetPaceSecPerMile:   null,
       completionRequestedAt:  null,
+      workoutInstanceId:      null,
+      environment:            'outdoor',
+      treadmillSegments:      [],
+      currentSpeedMph:        null,
+      manualDistanceMiles:    null,
+      distanceSource:         null,
     });
   },
 
@@ -291,6 +376,22 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
 }), {
   name: 'active-run-store-v1',
   version: 1,
-  storage: createJSONStorage(() => AsyncStorage),
+  storage: createAppJSONStorage(),
   partialize: state => state,
+  // Old persisted sessions (pre-instance-identity) get a synthesized
+  // workoutInstanceId and safe defaults for the new treadmill/environment
+  // fields rather than being discarded on rehydrate.
+  merge: (persisted, current) => {
+    const merged = { ...current, ...(persisted as Partial<ActiveRunStore> | undefined) };
+    if (merged.isActive) {
+      merged.workoutInstanceId = synthesizeWorkoutInstanceId({
+        workoutInstanceId: merged.workoutInstanceId,
+        scheduledSessionId: merged.scheduledSessionId,
+        startedAtMs: merged.startTime,
+      });
+    }
+    if (!merged.environment) merged.environment = 'outdoor';
+    if (!merged.treadmillSegments) merged.treadmillSegments = [];
+    return merged;
+  },
 }));

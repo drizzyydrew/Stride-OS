@@ -29,8 +29,9 @@ import { useStrengthStore }     from '../store/strengthStore';
 import { useProfileStore }      from '../store/profileStore';
 import { useTrainingPlanStore } from '../store/trainingPlanStore';
 import { useBeginnerPlanStore } from '../store/beginnerPlanStore';
+import { useActivityStore }     from '../store/activityStore';
 
-import { calculateACWR }                     from '../utils/training';
+import { calculateACWR, activitiesToACWRRecords } from '../utils/training';
 import { getWeeklyMileage }                  from '../utils/historyUtils';
 import { computeConsistency }                from '../utils/analyticsEngine';
 import { buildMacroPlan, macroWeekForDate }  from '../utils/plan/macroPlanner';
@@ -73,8 +74,17 @@ export function useWeekPlan(): WeekPlan {
   const profile     = useProfileStore(s => s.getActiveProfile());
   const calibration = profile?.calibration ?? null;
 
+  // ACWR is unified onto the normalized activity store (single source of
+  // truth across all completion writers) rather than the legacy workout-store
+  // history, which only ever saw running/strength completions logged through
+  // that specific store.
+  const activities = useActivityStore(s => s.activities);
+
   // ── Derived history signals (memoized on history) ─────────────────────
-  const acwrResult = useMemo(() => calculateACWR(history), [history]);
+  const acwrResult = useMemo(
+    () => calculateACWR(activitiesToACWRRecords(activities)),
+    [activities],
+  );
 
   const recentIntensityDist = useMemo(() => {
     const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;

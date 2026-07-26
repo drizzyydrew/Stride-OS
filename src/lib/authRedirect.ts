@@ -1,6 +1,6 @@
 import * as Linking from 'expo-linking';
 
-import { supabase } from './supabase';
+import { getSupabaseAvailability, supabaseUnavailableMessage } from './supabase';
 import { hydrateFromSupabase } from './syncService';
 import { useCheckInStore } from '../store/checkInStore';
 import { useCustomWorkoutStore } from '../store/customWorkoutStore';
@@ -37,6 +37,8 @@ export async function hydrateUserData(): Promise<void> {
 }
 
 export async function completeSupabaseAuthFromUrl(url: string): Promise<AuthCompletionResult> {
+  const supabaseState = getSupabaseAvailability();
+  const supabase = supabaseState.status === 'available' ? supabaseState.client : null;
   const params = authParams(url);
   const code = params.get('code');
   const accessToken = params.get('access_token');
@@ -46,6 +48,15 @@ export async function completeSupabaseAuthFromUrl(url: string): Promise<AuthComp
 
   if (authError) {
     return { handled: true, recovery: type === 'recovery', error: authError.replace(/\+/g, ' ') };
+  }
+
+  if (!supabase) {
+    const hasAuthPayload = Boolean(code || accessToken || refreshToken);
+    return {
+      handled: hasAuthPayload,
+      recovery: type === 'recovery',
+      error: hasAuthPayload ? supabaseUnavailableMessage('Authentication callback') : null,
+    };
   }
 
   if (code) {

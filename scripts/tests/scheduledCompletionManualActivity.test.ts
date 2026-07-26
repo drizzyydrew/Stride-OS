@@ -191,7 +191,7 @@ test('Activity store prevents duplicate completion records by scheduledSessionId
 test('Running, Strength, Today, Activity, and Coach expose linked completion paths', () => {
   assert.match(read('app/(tabs)/training/index.tsx'), /Log Completion/);
   assert.match(read('app/(tabs)/training/index.tsx'), /todayPlannedSession\?\.completedActivityId/);
-  assert.match(read('app/(tabs)/strength/index.tsx'), /buildManualActivityDraft\(activeEntry\?\.scheduledSession/);
+  assert.match(read('app/(tabs)/strength/index.tsx'), /scheduledSessionId: activeEntry\?\.scheduledSessionId/);
   assert.match(read('app/(tabs)/dashboard/index.tsx'), /primarySession\.completedActivityId/);
   assert.match(read('app/(tabs)/activity/[activityId].tsx'), /Edit activity/);
   assert.match(read('app/(tabs)/coach/index.tsx'), /getPlannedVersusCompletedComparison/);

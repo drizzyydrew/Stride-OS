@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
-import { supabase } from '../lib/supabase';
+import { getSupabaseAvailability, supabaseUnavailableMessage } from '../lib/supabase';
 import {
   authRedirectUrl,
   completeSupabaseAuthFromUrl,
@@ -34,6 +34,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
   loading: true,
 
   initialize: async () => {
+    const supabaseState = getSupabaseAvailability();
+    if (supabaseState.status !== 'available') {
+      set({ session: null, user: null, loading: false });
+      return;
+    }
+
+    const { client: supabase } = supabaseState;
     const { data: { session } } = await supabase.auth.getSession();
     set({ session, user: session?.user ?? null, loading: false });
 
@@ -46,6 +53,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   signIn: async (email, password) => {
+    const supabaseState = getSupabaseAvailability();
+    if (supabaseState.status !== 'available') return supabaseUnavailableMessage('Sign in');
+    const { client: supabase } = supabaseState;
+
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     if (!error) {
       hydrateUserData().catch(console.warn);
@@ -54,6 +65,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   signUp: async (email, password) => {
+    const supabaseState = getSupabaseAvailability();
+    if (supabaseState.status !== 'available') return supabaseUnavailableMessage('Account creation');
+    const { client: supabase } = supabaseState;
+
     const normalizedEmail = email.trim().toLowerCase();
     const { data, error } = await supabase.auth.signUp({
       email: normalizedEmail,
@@ -69,6 +84,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   resetPassword: async (email) => {
+    const supabaseState = getSupabaseAvailability();
+    if (supabaseState.status !== 'available') return supabaseUnavailableMessage('Password reset');
+    const { client: supabase } = supabaseState;
+
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
       redirectTo: authRedirectUrl(),
     });
@@ -76,6 +95,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   resendConfirmation: async (email) => {
+    const supabaseState = getSupabaseAvailability();
+    if (supabaseState.status !== 'available') return supabaseUnavailableMessage('Email confirmation');
+    const { client: supabase } = supabaseState;
+
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email.trim().toLowerCase(),
@@ -87,11 +110,19 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   updatePassword: async (newPassword) => {
+    const supabaseState = getSupabaseAvailability();
+    if (supabaseState.status !== 'available') return supabaseUnavailableMessage('Password update');
+    const { client: supabase } = supabaseState;
+
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     return error?.message ?? null;
   },
 
   signInWithApple: async () => {
+    const supabaseState = getSupabaseAvailability();
+    if (supabaseState.status !== 'available') return supabaseUnavailableMessage('Apple sign in');
+    const { client: supabase } = supabaseState;
+
     try {
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -113,6 +144,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   signInWithGoogle: async () => {
+    const supabaseState = getSupabaseAvailability();
+    if (supabaseState.status !== 'available') return supabaseUnavailableMessage('Google sign in');
+    const { client: supabase } = supabaseState;
+
     try {
       const redirectTo = authRedirectUrl();
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -138,7 +173,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   signOut: async () => {
-    await supabase.auth.signOut();
+    const supabaseState = getSupabaseAvailability();
+    if (supabaseState.status === 'available') {
+      await supabaseState.client.auth.signOut();
+    }
     set({ session: null, user: null });
     useWorkoutStore.setState({ completedWorkouts: [], history: [] });
     useStrengthStore.setState({ completedSessions: [], history: [] });

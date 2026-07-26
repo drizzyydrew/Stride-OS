@@ -23,7 +23,7 @@ import * as FileSystem from 'expo-file-system';
 
 import { useMovementStore } from '../../../src/store/movementStore';
 import { resolveDocumentUri } from '../../../src/lib/mediaPaths';
-import { supabase }         from '../../../src/lib/supabase';
+import { getSupabaseAvailability } from '../../../src/lib/supabase';
 import { suggestGaitFindings, getMovementTrainingInfluences } from '../../../src/utils/movementEngine';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
 import { colors }  from '../../../src/theme/colors';
@@ -389,6 +389,10 @@ export default function VideoDetailScreen() {
 
     const fetchSignedUrl = () => {
       if (!video.storagePath) { setVideoUnavailable(true); return; }
+      const supabaseState = getSupabaseAvailability();
+      if (supabaseState.status !== 'available') { setVideoUnavailable(true); return; }
+
+      const { client: supabase } = supabaseState;
       supabase.storage
         .from('movement-videos')
         .createSignedUrl(video.storagePath, 3600)
@@ -435,7 +439,10 @@ export default function VideoDetailScreen() {
     const doDelete = () => {
       // Remove from Supabase Storage if we have a path
       if (currentVideo.storagePath) {
-        supabase.storage.from('movement-videos').remove([currentVideo.storagePath]);
+        const supabaseState = getSupabaseAvailability();
+        if (supabaseState.status === 'available') {
+          supabaseState.client.storage.from('movement-videos').remove([currentVideo.storagePath]);
+        }
       }
       deleteVideo(videoId!);
       router.back();

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { TrainingPhase } from '../types/training';
@@ -33,7 +34,7 @@ export const usePeriodizationStore = create<PeriodizationStore>()(
     }),
     {
       name:    'periodization-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       partialize: (state) => ({
         weeklyTargets:   state.weeklyTargets,
         phaseStartWeeks: state.phaseStartWeeks,

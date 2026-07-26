@@ -19,13 +19,13 @@ import { useColors } from '../../../src/theme/useColors';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { LAYOUT } from '../../../src/constants/layout';
-import type { CompletedExercise } from '../../../src/types/strength';
 import { displayLabels } from '../../../src/utils/displayLabels';
-
-function primaryRepCount(reps: string): number {
-  const match = reps.match(/\d+/);
-  return match ? Number(match[0]) : 8;
-}
+import { getStrengthPresetWorkout } from '../../../src/constants/strengthBank';
+import { warmupForSession, warmupKindForCategory } from '../../../src/utils/warmupProtocols';
+import { summarizeStrengthSession } from '../../../src/utils/strengthSummary';
+import { completedExercisesFromActiveSession } from '../../../src/utils/strengthPersistence';
+import { useSettingsStore } from '../../../src/store/settingsStore';
+import StrengthSetEditor from '../../../src/components/strength/StrengthSetEditor';
 
 function formatElapsed(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
@@ -51,12 +51,23 @@ export default function PresetStrengthSessionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const session = useActiveStrengthSessionStore(state => state.session);
+  const { units } = useSettingsStore();
+  const weightUnit: 'lb' | 'kg' = units === 'imperial' ? 'lb' : 'kg';
   const pause = useActiveStrengthSessionStore(state => state.pause);
   const resume = useActiveStrengthSessionStore(state => state.resume);
   const completeExercise = useActiveStrengthSessionStore(state => state.completeExercise);
   const setExerciseRpe = useActiveStrengthSessionStore(state => state.setExerciseRpe);
   const setExerciseLoad = useActiveStrengthSessionStore(state => state.setExerciseLoad);
   const goToExercise = useActiveStrengthSessionStore(state => state.goToExercise);
+  const skipExercise = useActiveStrengthSessionStore(state => state.skipExercise);
+  const addExercise = useActiveStrengthSessionStore(state => state.addExercise);
+  const substituteExercise = useActiveStrengthSessionStore(state => state.substituteExercise);
+  const addSet = useActiveStrengthSessionStore(state => state.addSet);
+  const removeSet = useActiveStrengthSessionStore(state => state.removeSet);
+  const duplicateSet = useActiveStrengthSessionStore(state => state.duplicateSet);
+  const editSet = useActiveStrengthSessionStore(state => state.editSet);
+  const toggleSetWarmup = useActiveStrengthSessionStore(state => state.toggleSetWarmup);
+  const toggleSetCompleted = useActiveStrengthSessionStore(state => state.toggleSetCompleted);
   const completionRequestedAt = useActiveStrengthSessionStore(state => state.completionRequestedAt);
   const clearCompletionRequest = useActiveStrengthSessionStore(state => state.clearCompletionRequest);
   const clearSession = useActiveStrengthSessionStore(state => state.clearSession);
@@ -65,6 +76,7 @@ export default function PresetStrengthSessionScreen() {
   const currentWeek = useAthleteStore(state => state.currentWeek);
   const [elapsed, setElapsed] = useState(() => activeStrengthElapsedSeconds(session));
   const [rpePickerExerciseId, setRpePickerExerciseId] = useState<string | null>(null);
+  const [exerciseChangeName, setExerciseChangeName] = useState('');
 
   useEffect(() => {
     const tick = () => setElapsed(activeStrengthElapsedSeconds(useActiveStrengthSessionStore.getState().session));
@@ -80,6 +92,16 @@ export default function PresetStrengthSessionScreen() {
     if (!session) return 7;
     const values = Object.values(session.rpeByExercise);
     return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 7;
+  }, [session]);
+
+  // No per-preset warmupProtocol content exists in the static bank yet — this
+  // is the "fill the gap" fallback the utility is designed for, keyed off the
+  // preset's own categories (upper/lower/full-body/runner strength etc.).
+  const warmup = useMemo(() => {
+    const presetWorkout = session?.source === 'preset' ? getStrengthPresetWorkout(session.workoutId) : null;
+    const categories = presetWorkout?.categories ?? [];
+    const preferred = categories.find(category => category !== 'recommended') ?? categories[0];
+    return warmupForSession(warmupKindForCategory('strength', preferred));
   }, [session]);
 
   useEffect(() => {
@@ -101,29 +123,65 @@ export default function PresetStrengthSessionScreen() {
   }, [current, elapsed, next, session]);
 
   if (!session || session.source !== 'preset') {
+    // A session exists, but it's a Training Block Workout, not a preset —
+    // this screen has nothing to render for it. Never a dead end: offer to
+    // discard the mismatched session, not just "go elsewhere."
+    const mismatched = session && session.source !== 'preset' ? session : null;
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: C.bg }]}>
         <View style={styles.empty}>
           <Text style={[styles.title, { color: C.text }]}>No active preset workout</Text>
+          {mismatched ? (
+            <Text style={{ color: C.textMuted, textAlign: 'center', marginBottom: 12 }}>
+              {mismatched.workoutName} is active from Training Block Workouts instead.
+            </Text>
+          ) : null}
           <TouchableOpacity onPress={() => router.replace('/(tabs)/strength' as never)}>
             <Text style={{ color: C.primary, fontWeight: '800' }}>Open Preset Library</Text>
           </TouchableOpacity>
+          {mismatched ? (
+            <TouchableOpacity
+              style={{ marginTop: 16 }}
+              onPress={() => Alert.alert(
+                'Discard active session?',
+                `This ends ${mismatched.workoutName} without saving it.`,
+                [
+                  { text: 'Keep It', style: 'cancel' },
+                  {
+                    text: 'Discard',
+                    style: 'destructive',
+                    onPress: () => {
+                      endStrengthLiveActivity().catch(console.warn);
+                      clearSession();
+                    },
+                  },
+                ],
+              )}
+            >
+              <Text style={{ color: C.critical, fontWeight: '800' }}>Discard {mismatched.workoutName}</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </SafeAreaView>
     );
   }
 
   const saveAndFinish = () => {
-    const exercises: CompletedExercise[] = session.exercises.map(exercise => ({
-      exerciseId: exercise.id,
-      sets: Array.from({ length: exercise.sets }, () => ({
-        reps: primaryRepCount(exercise.reps),
-        load: session.loadByExercise[exercise.id] || (exercise.equipment.includes('bodyweight') ? 'BW' : undefined),
-        rpe: session.rpeByExercise[exercise.id] ?? overallRpe,
-        completed: session.completedExerciseIds.includes(exercise.id),
-      })),
-      notes: exercise.notes,
-    }));
+    const exercises = completedExercisesFromActiveSession(
+      session.exercises,
+      'preset',
+      session.completedExerciseIds,
+      session.rpeByExercise,
+      session.loadByExercise,
+    );
+
+    // Honest split summary comes from the same per-set source persisted above.
+    const summary = summarizeStrengthSession({
+      exercises: session.exercises,
+      rpeByExercise: session.rpeByExercise,
+      durationSeconds: elapsed,
+    });
+
     manualLog({
       completionKey: `preset_${session.workoutId}_${session.startedAt}`,
       sessionType: 'full_body',
@@ -147,6 +205,13 @@ export default function PresetStrengthSessionScreen() {
         duration: Math.max(1, Math.round(elapsed / 60)),
         rpe: overallRpe,
         logId: `preset_${session.workoutId}_${session.startedAt}`,
+        completedSets: String(summary.completedSets),
+        totalReps: String(summary.totalReps),
+        externalLoadVolumeLb: summary.hasExternalLoadVolume ? String(summary.externalLoadVolumeLb) : '',
+        bandSetsCount: String(summary.bandSetsCount),
+        bodyweightSetsCount: String(summary.bodyweightSetsCount),
+        totalHoldSeconds: String(summary.totalHoldSeconds),
+        warmupSetsCount: String(summary.warmupSetsCount),
       },
     } as never);
   };
@@ -208,10 +273,16 @@ export default function PresetStrengthSessionScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        <View style={[styles.summaryCard, styles.warmupCard, { backgroundColor: C.card, borderColor: C.border }]}>
-          <Text style={[styles.exerciseName, { color: C.text }]}>Warm-Up</Text>
-          <Text style={[styles.instructions, { color: C.textMuted }]}>Spend about five minutes on easy movement, joint-specific preparation, and lighter practice sets before the first working exercise.</Text>
-        </View>
+        {warmup.items.length > 0 ? (
+          <View style={[styles.summaryCard, styles.warmupCard, { backgroundColor: C.card, borderColor: C.border }]}>
+            {/* Warm-Up — session-specific protocol from warmupForSession(), not a generic hardcoded card */}
+            <Text style={[styles.exerciseName, { color: C.text }]}>{warmup.title}</Text>
+            <Text style={[styles.meta, { color: C.textMuted }]}>{warmup.durationMinutes} min</Text>
+            {warmup.items.map(item => (
+              <Text key={item} style={[styles.instructions, { color: C.textMuted }]}>• {item}</Text>
+            ))}
+          </View>
+        ) : null}
         <Text style={[styles.eyebrow, styles.flowLabel, { color: C.textDim }]}>EXERCISE-BY-EXERCISE FLOW</Text>
         {session.exercises.map((exercise, index) => {
           const done = session.completedExerciseIds.includes(exercise.id);
@@ -260,7 +331,61 @@ export default function PresetStrengthSessionScreen() {
                     <Text style={[styles.secondaryText, { color: C.text }]}>RPE</Text>
                     <Text style={[styles.rpeValue, { color: C.primary }]}>{session.rpeByExercise[exercise.id] ?? 'Set effort'}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.completeButton, { backgroundColor: C.primary }]} onPress={() => completeExercise(exercise.id)}>
+                  <StrengthSetEditor
+                    sets={exercise.setEntries}
+                    equipmentType={exercise.equipmentType}
+                    weightUnit={weightUnit}
+                    onAdd={() => addSet(exercise.id)}
+                    onDuplicate={setId => duplicateSet(exercise.id, setId)}
+                    onRemove={setId => removeSet(exercise.id, setId)}
+                    onEdit={(setId, patch) => editSet(exercise.id, setId, patch)}
+                    onToggleWarmup={setId => toggleSetWarmup(exercise.id, setId)}
+                    onToggleCompleted={setId => toggleSetCompleted(exercise.id, setId)}
+                  />
+                  <TouchableOpacity
+                    style={[styles.rpeButton, { backgroundColor: C.cardAlt }]}
+                    onPress={() => skipExercise(exercise.id, !exercise.skipped)}
+                  >
+                    <Text style={[styles.secondaryText, { color: exercise.skipped ? C.primary : C.textMuted }]}>
+                      {exercise.skipped ? 'Undo Skip' : 'Skip Exercise'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TextInput
+                    value={exerciseChangeName}
+                    onChangeText={setExerciseChangeName}
+                    placeholder="Add or substitute exercise"
+                    placeholderTextColor={C.textDim}
+                    style={[styles.input, { color: C.text, borderColor: C.border, backgroundColor: C.bg }]}
+                  />
+                  <View style={styles.actions}>
+                    <TouchableOpacity
+                      style={[styles.secondaryButton, { borderColor: C.border }]}
+                      disabled={!exerciseChangeName.trim()}
+                      onPress={() => {
+                        addExercise({ name: exerciseChangeName.trim(), equipmentType: 'other' });
+                        setExerciseChangeName('');
+                      }}
+                    >
+                      <Text style={[styles.secondaryText, { color: C.text }]}>Add Exercise</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.secondaryButton, { borderColor: C.border }]}
+                      disabled={!exerciseChangeName.trim()}
+                      onPress={() => {
+                        substituteExercise(exercise.id, { name: exerciseChangeName.trim(), equipmentType: 'other' });
+                        setExerciseChangeName('');
+                      }}
+                    >
+                      <Text style={[styles.secondaryText, { color: C.text }]}>Substitute This</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.completeButton, { backgroundColor: C.primary }]}
+                    onPress={() => {
+                      exercise.setEntries.forEach(entry => toggleSetCompleted(exercise.id, entry.id, true));
+                      completeExercise(exercise.id);
+                    }}
+                  >
                     <Text style={[styles.completeText, { color: C.onPrimary }]}>Complete Exercise</Text>
                   </TouchableOpacity>
                 </View>

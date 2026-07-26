@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import MapView, { Marker, Polyline } from '../../../src/components/maps/MapComponents';
 
 import { useColors } from '../../../src/theme/useColors';
 import { useThemeMode } from '../../../src/store/themeStore';

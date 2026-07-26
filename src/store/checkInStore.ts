@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { DailyCheckIn, PostWorkoutNote } from '../types/checkin';
@@ -60,7 +61,7 @@ export const useCheckInStore = create<CheckInStore>()(
     }),
     {
       name:    'checkin-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       partialize: (state) => ({
         todayCheckIn:     state.todayCheckIn,
         postWorkoutNotes: state.postWorkoutNotes,

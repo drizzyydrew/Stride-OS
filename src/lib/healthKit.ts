@@ -31,7 +31,12 @@ type HealthKitModule = {
         };
       };
     },
-  ) => Promise<readonly { quantity?: number; value?: number }[]>;
+  ) => Promise<readonly {
+    quantity?: number;
+    value?: number;
+    startDate?: Date | string;
+    endDate?: Date | string;
+  }[]>;
   saveWorkoutSample?: (
     workoutActivityType: number,
     quantities: readonly unknown[],
@@ -110,7 +115,9 @@ export async function getAppleHealthWriteStatus(): Promise<boolean> {
   }
 }
 
-export async function getLatestHeartRateBpm(maxAgeMinutes = 10): Promise<number | null> {
+export type HealthHeartRateSample = { bpm: number; sampledAt: number };
+
+export async function getLatestHeartRateSample(maxAgeMinutes = 10): Promise<HealthHeartRateSample | null> {
   if (!Health) return null;
   const available = await isAppleHealthAvailable();
   if (!available) return null;
@@ -134,11 +141,20 @@ export async function getLatestHeartRateBpm(maxAgeMinutes = 10): Promise<number 
       },
     );
 
-    const value = samples?.[0]?.quantity ?? samples?.[0]?.value;
-    return typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : null;
+    const sample = samples?.[0];
+    const value = sample?.quantity ?? sample?.value;
+    const sourceDate = sample?.startDate ?? sample?.endDate;
+    const sampledAt = sourceDate instanceof Date ? sourceDate.getTime() : Date.parse(sourceDate ?? '');
+    if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isFinite(sampledAt)) return null;
+    if (sampledAt < startDate.getTime() || sampledAt > endDate.getTime() + 5_000) return null;
+    return { bpm: Math.round(value), sampledAt };
   } catch {
     return null;
   }
+}
+
+export async function getLatestHeartRateBpm(maxAgeMinutes = 10): Promise<number | null> {
+  return (await getLatestHeartRateSample(maxAgeMinutes))?.bpm ?? null;
 }
 
 export async function writeWorkout(workout: CompletedWorkoutRecord): Promise<void> {

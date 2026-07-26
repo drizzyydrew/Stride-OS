@@ -1,7 +1,41 @@
-import type { Activity, ActivityDraft, ActivityStatus, ActivityType } from '../types/activity';
+import type { Activity, ActivityDraft, ActivityStatus, ActivityType, CompletionClassification } from '../types/activity';
 import type { ScheduledSession } from './scheduledSessions';
 
+export type { CompletionClassification } from '../types/activity';
+
+// Input-facing completion state offered in the manual-entry UI pills. Distinct
+// from the broader, stored CompletionClassification — mapped onto it via
+// classificationFromCompletionState() below.
 export type CompletionState = 'completed_as_planned' | 'modified' | 'partial' | 'stopped_early';
+
+const COMPLETION_STATE_TO_CLASSIFICATION: Record<CompletionState, CompletionClassification> = {
+  completed_as_planned: 'completed_as_prescribed',
+  modified: 'modified',
+  partial: 'partial',
+  stopped_early: 'stopped_early',
+};
+
+export function classificationFromCompletionState(state: CompletionState): CompletionClassification {
+  return COMPLETION_STATE_TO_CLASSIFICATION[state];
+}
+
+// Back-compat mapping from the richer classification onto the coarse
+// ActivityStatus every existing screen already reads.
+export function activityStatusForClassification(classification: CompletionClassification | undefined): ActivityStatus {
+  if (classification === 'skipped') return 'skipped';
+  if (classification === 'partial' || classification === 'stopped_early') return 'partial';
+  return 'completed';
+}
+
+// Derives a classification for activities persisted before this field
+// existed — no data rewrite required, existing activities just fall back to
+// deriving classification from `status` on read.
+export function classificationForActivity(activity: Pick<Activity, 'status' | 'completionClassification'>): CompletionClassification {
+  if (activity.completionClassification) return activity.completionClassification;
+  if (activity.status === 'skipped') return 'skipped';
+  if (activity.status === 'partial') return 'partial';
+  return 'completed_as_prescribed';
+}
 
 export type ManualCompletionFields = {
   activityType?: ActivityType;
@@ -42,8 +76,7 @@ export function activityTypeFromScheduledSession(session: ScheduledSession | nul
 }
 
 export function completionStatusForState(state: CompletionState): ActivityStatus {
-  if (state === 'partial' || state === 'stopped_early') return 'partial';
-  return 'completed';
+  return activityStatusForClassification(classificationFromCompletionState(state));
 }
 
 export function isPaceBasedActivity(type: ActivityType): boolean {
@@ -115,9 +148,9 @@ export function overlayCompletionOnScheduledSessions(
     if (!completed) return session;
     return {
       ...session,
-      status: completed.status === 'partial' ? 'partial' : completed.status,
+      status: completed.status === 'skipped' ? 'skipped' : completed.status === 'partial' ? 'partial' : completed.status,
       completedActivityId: completed.id,
-      completionState: completed.status === 'partial' ? 'partial' : 'completed_as_planned',
+      completionState: classificationForActivity(completed),
     };
   });
 }
@@ -141,6 +174,7 @@ export function buildManualActivityDraft(
     subtype: session?.activityType === 'run_walk' ? 'run_walk' : activityType === 'running' && indoor ? 'treadmill' : 'general',
     source: session ? 'training_plan' : 'manual',
     status: completionStatusForState(completionState),
+    completionClassification: classificationFromCompletionState(completionState),
     scheduled: Boolean(session),
     associatedTrainingBlockId: session?.trainingBlockId,
     associatedGoalId: session?.goalPlanId,
@@ -180,6 +214,39 @@ export function buildManualActivityDraft(
           { kind: 'walk' as const, durationSeconds: session.runWalk!.walkSeconds },
         ])
         : undefined,
+    },
+  };
+}
+
+// Skipping a scheduled session is a first-class completion outcome: it
+// creates a real, linked Activity (status 'skipped', classification
+// 'skipped') rather than only flipping local UI state, so the scheduled
+// session's overlay, history, and duplicate-prevention all see it exactly
+// like any other completion.
+export function buildSkippedActivityDraft(
+  session: ScheduledSession,
+  reason?: string,
+  now: number = Date.now(),
+): ActivityDraft {
+  const activityType = activityTypeFromScheduledSession(session);
+  return {
+    activityType,
+    subtype: session.activityType === 'run_walk' ? 'run_walk' : 'general',
+    source: 'training_plan',
+    status: 'skipped',
+    completionClassification: 'skipped',
+    scheduled: true,
+    associatedTrainingBlockId: session.trainingBlockId,
+    associatedGoalId: session.goalPlanId,
+    scheduledSessionId: session.scheduledSessionId,
+    startTime: now,
+    endTime: now,
+    notes: reason?.trim() || undefined,
+    indoor: activityType === 'strength' || activityType === 'mobility',
+    metrics: {
+      durationSeconds: 0,
+      elapsedTimeSeconds: 0,
+      activeTimeSeconds: 0,
     },
   };
 }

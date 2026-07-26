@@ -17,7 +17,8 @@
 //     - App foreground (stale check; skip if < 24h since last calibration)
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type {
@@ -291,7 +292,7 @@ export const useProfileStore = create<ProfileStore>()(
     }),
     {
       name:    'profile-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       partialize: (state) => ({
         profiles:        state.profiles,
         activeAthleteId: state.activeAthleteId,

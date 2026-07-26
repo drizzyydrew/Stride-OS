@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Action IDs are week-scoped ('w{week}_...') so completion state automatically
@@ -40,7 +41,7 @@ export const useActionPlanStore = create<ActionPlanStore>()(
     }),
     {
       name:    'action-plan-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       partialize: (state) => ({
         completedActionIds: state.completedActionIds,
         dismissedActionIds: state.dismissedActionIds,

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Modal,
+  Alert,
   ScrollView,
   StyleSheet,
   Switch,
@@ -17,7 +18,7 @@ import { useBeginnerPlanStore } from '../../../src/store/beginnerPlanStore';
 import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
 import { useTrainingPreferencesStore } from '../../../src/store/trainingPreferencesStore';
 import { useColors } from '../../../src/theme/useColors';
-import type { BeginnerPlanGoal, BeginnerPlanReadinessInput } from '../../../src/types/beginnerPlan';
+import type { BeginnerCompletionGoal, BeginnerPlanGoal, BeginnerPlanReadinessInput } from '../../../src/types/beginnerPlan';
 import {
   BEGINNER_PLAN_DEFINITIONS,
   generateBeginnerPlan,
@@ -54,11 +55,13 @@ export default function PresetPlansScreen() {
   const activePlan = useBeginnerPlanStore(state => state.activePlan);
   const setActivePlan = useBeginnerPlanStore(state => state.setActivePlan);
   const clearFuturePlan = useBeginnerPlanStore(state => state.clearFuturePlan);
+  const repeatWeek = useBeginnerPlanStore(state => state.repeatWeek);
   const setActivePresetGoal = useTrainingPlanStore(state => state.setActivePresetGoal);
   const clearActivePresetGoal = useTrainingPlanStore(state => state.clearActivePresetGoal);
   const [selectedGoal, setSelectedGoal] = useState<BeginnerPlanGoal>('couch_to_5k');
   const [targetDate, setTargetDate] = useState('');
   const [startingLevel, setStartingLevel] = useState<BeginnerPlanReadinessInput['startingLevel']>('walking');
+  const [completionGoal, setCompletionGoal] = useState<BeginnerCompletionGoal>('complete_distance');
   const [acknowledgeVisible, setAcknowledgeVisible] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [targetPickerVisible, setTargetPickerVisible] = useState(false);
@@ -74,7 +77,8 @@ export default function PresetPlansScreen() {
     crossTrainingExperience: false,
     requestedTargetDate: targetDate.trim() || undefined,
     startDate: today(),
-  }), [selectedGoal, startingLevel, targetDate]);
+    completionGoal,
+  }), [completionGoal, selectedGoal, startingLevel, targetDate]);
   const recommendation = useMemo(() => recommendBeginnerPlanDuration(input), [input]);
 
   function activate(acknowledgedAt?: number) {
@@ -104,6 +108,30 @@ export default function PresetPlansScreen() {
     clearActivePresetGoal();
   }
 
+  function currentPlanWeekNumber(): number | null {
+    if (!activePlan) return null;
+    const start = Date.parse(`${activePlan.startDate}T00:00:00.000Z`);
+    const current = Date.parse(`${today()}T00:00:00.000Z`);
+    const week = Math.floor((current - start) / (7 * 86_400_000)) + 1;
+    return week >= 1 && week < activePlan.durationWeeks ? week : null;
+  }
+
+  function previewRepeatWeek() {
+    const week = currentPlanWeekNumber();
+    if (!week) {
+      Alert.alert('Repeat unavailable', 'A current week with a future week is required.');
+      return;
+    }
+    Alert.alert(
+      `Repeat week ${week}?`,
+      `Preview: week ${week + 1} will use week ${week}’s duration, run/walk ratio, strength, and recovery pattern. The original week ${week + 1} prescription will remain in the adaptation audit.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Confirm repeat', onPress: () => repeatWeek(week) },
+      ],
+    );
+  }
+
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
       <ScreenHeader
@@ -119,6 +147,12 @@ export default function PresetPlansScreen() {
             <Text style={[s.body, { color: C.textMuted }]}>
               {activePlan.durationWeeks} weeks · target {formatYMDForDisplay(activePlan.targetDate)} · {displayLabel(activePlan.primaryEnduranceMode)}
             </Text>
+            <Text style={[s.helper, { color: C.textMuted }]}>
+              Goal: {activePlan.completionGoal === 'run_continuously' ? 'Run continuously' : 'Complete the distance'}
+            </Text>
+            <TouchableOpacity onPress={previewRepeatWeek} style={s.removeButton}>
+              <Text style={[s.removeText, { color: C.primary }]}>Preview repeating this week</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={removeGoal} style={s.removeButton}>
               <Text style={[s.removeText, { color: C.critical }]}>End future goal programming</Text>
             </TouchableOpacity>
@@ -160,6 +194,21 @@ export default function PresetPlansScreen() {
                 style={[s.pill, { backgroundColor: startingLevel === level ? C.primaryDim : C.cardAlt, borderColor: startingLevel === level ? C.primary : C.border }]}
               >
                 <Text style={[s.pillText, { color: startingLevel === level ? C.primary : C.textMuted }]}>{displayLabel(level)}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={[s.label, { color: C.textDim }]}>GOAL STYLE</Text>
+          <View style={s.pills}>
+            {([
+              ['complete_distance', 'Complete the distance'],
+              ['run_continuously', 'Run continuously'],
+            ] as const).map(([value, label]) => (
+              <TouchableOpacity
+                key={value}
+                onPress={() => setCompletionGoal(value)}
+                style={[s.pill, { backgroundColor: completionGoal === value ? C.primaryDim : C.cardAlt, borderColor: completionGoal === value ? C.primary : C.border }]}
+              >
+                <Text style={[s.pillText, { color: completionGoal === value ? C.primary : C.textMuted }]}>{label}</Text>
               </TouchableOpacity>
             ))}
           </View>

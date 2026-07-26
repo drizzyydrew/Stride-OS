@@ -6,6 +6,13 @@ import type { StrengthSession } from '../types/strength';
 import type { GeneratedBeginnerPlan, BeginnerPlanSession } from '../types/beginnerPlan';
 import { BEGINNER_PLAN_DEFINITIONS } from './beginnerPlans';
 import { displayLabel } from './displayLabels';
+import {
+  beginnerScheduledSessionId,
+  otherScheduledSessionId,
+  runScheduledSessionId,
+  strengthScheduledSessionId,
+} from './scheduledSessionIds';
+import type { CompletionClassification } from '../types/activity';
 
 export type ScheduledSessionStatus =
   | 'upcoming'
@@ -59,7 +66,7 @@ export type ScheduledSession = {
   strengthSession?: StrengthSession;
   status: ScheduledSessionStatus;
   completedActivityId?: string;
-  completionState?: 'completed_as_planned' | 'modified' | 'partial' | 'stopped_early';
+  completionState?: CompletionClassification;
   adaptationReason?: string;
   loadEstimate?: number;
 };
@@ -277,7 +284,7 @@ export function sessionsFromBeginnerPlanForDate(
         ? describeRunWalk(runWalk)
         : `${session.durationMinutes} min - ${displayLabel(session.intensity)} effort`;
       return {
-        scheduledSessionId: `${plan.id}:${session.id}`,
+        scheduledSessionId: beginnerScheduledSessionId(plan.id, session.id),
         trainingBlockId: 'active-preset-plan',
         goalPlanId: plan.id,
         date: dateYMD,
@@ -328,10 +335,10 @@ function sessionFromCalendarEntry(entry: CalendarEntry, now = new Date()): Sched
       : displayLabel(entry.type);
   return {
     scheduledSessionId: workout
-      ? `week:${entry.date}:run:${workout.id}:${workout.dayIndex}`
+      ? runScheduledSessionId(entry.date, workout.id, workout.dayIndex)
       : strength
-        ? `week:${entry.date}:strength:${strength.id}`
-        : `week:${entry.date}:${entry.type}:${title}`,
+        ? strengthScheduledSessionId(entry.date, strength.id)
+        : otherScheduledSessionId(entry.date, entry.type, title),
     date: entry.date,
     originalDate: entry.date,
     activityType: entry.type,
@@ -417,8 +424,10 @@ export function scheduledSessionsForWeek(
   weekStartDate = weekPlan.weekStartDate,
   now = new Date(),
 ): ScheduledSession[] {
-  return Array.from({ length: 7 }, (_, index) => toYMD(addDays(weekStartDate, index)))
-    .flatMap(date => scheduledSessionsForDate(weekPlan, activeBeginnerPlan, date, now));
+  return dedupePrimarySessions(
+    Array.from({ length: 7 }, (_, index) => toYMD(addDays(weekStartDate, index)))
+      .flatMap(date => scheduledSessionsForDate(weekPlan, activeBeginnerPlan, date, now)),
+  );
 }
 
 export function dedupePrimarySessions(sessions: ScheduledSession[]): ScheduledSession[] {
@@ -479,11 +488,21 @@ export function activeScheduledSessionsForDate(
 ): ScheduledSession[] {
   const removed = new Set(removedSessionIds);
   const visibleForActiveUse = sessionsForDate.filter(session => !removed.has(session.scheduledSessionId));
-  if (!selectedSessionId || removed.has(selectedSessionId)) return visibleForActiveUse;
+  // "Remove from Today" hides a session from primary/run/strength selection
+  // (below, via the 'optional' demotion) but must not make it unreachable —
+  // it still appears as a secondary entry so Calendar and the Running/
+  // Strength surfaces agree on what's scheduled today.
+  const removedButVisible = sessionsForDate
+    .filter(session => removed.has(session.scheduledSessionId))
+    .map(session => ({ ...session, priority: 'optional' as const }));
+
+  if (!selectedSessionId || removed.has(selectedSessionId)) {
+    return [...visibleForActiveUse, ...removedButVisible];
+  }
 
   const selected = allKnownSessions.find(session => session.scheduledSessionId === selectedSessionId)
     ?? visibleForActiveUse.find(session => session.scheduledSessionId === selectedSessionId);
-  if (!selected) return visibleForActiveUse;
+  if (!selected) return [...visibleForActiveUse, ...removedButVisible];
 
   const selectedForToday: ScheduledSession = {
     ...selected,
@@ -495,7 +514,38 @@ export function activeScheduledSessionsForDate(
   return [
     selectedForToday,
     ...visibleForActiveUse.filter(session => session.scheduledSessionId !== selectedSessionId),
+    ...removedButVisible,
   ];
+}
+
+// Reschedule ("move date"): pulls sessions moved to `dateYMD` in from
+// elsewhere in the known set and drops sessions moved away from `dateYMD`.
+// `allKnownSessions` bounds the search to whatever the caller already has in
+// hand (in practice, the current week) — a session rescheduled outside that
+// window won't be found, which is an accepted limitation rather than a
+// cross-week reschedule engine.
+export function applyDateOverridesForDate(
+  sessionsForDate: ScheduledSession[],
+  allKnownSessions: ScheduledSession[],
+  dateYMD: string,
+  dateOverrides: Record<string, string | undefined>,
+): ScheduledSession[] {
+  if (Object.keys(dateOverrides).length === 0) return sessionsForDate;
+
+  const remaining = sessionsForDate.filter(session => {
+    const overrideDate = dateOverrides[session.scheduledSessionId];
+    return overrideDate === undefined || overrideDate === dateYMD;
+  });
+
+  const alreadyPresent = new Set(remaining.map(session => session.scheduledSessionId));
+  const incoming = allKnownSessions
+    .filter(session =>
+      dateOverrides[session.scheduledSessionId] === dateYMD
+      && session.date !== dateYMD
+      && !alreadyPresent.has(session.scheduledSessionId))
+    .map(session => ({ ...session, date: dateYMD }));
+
+  return [...remaining, ...incoming];
 }
 
 export function actionLabelForScheduledSession(session: ScheduledSession | null): string {

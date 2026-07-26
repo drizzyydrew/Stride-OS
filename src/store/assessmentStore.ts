@@ -4,7 +4,8 @@
 // Computation lives in src/utils/assessmentEngine.ts.
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { AssessmentResult, AssessmentTestKey } from '../types/assessment';
@@ -66,7 +67,7 @@ export const useAssessmentStore = create<AssessmentStore>()(
     }),
     {
       name:    'assessment-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
     },
   ),
 );

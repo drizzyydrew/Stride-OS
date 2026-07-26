@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { LocationObject } from 'expo-location';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 
 import type { ActivitySubtype, ActivityType, RunWalkInterval } from '../types/activity';
 import {
@@ -9,6 +10,7 @@ import {
   type TrackingAggregate,
 } from '../utils/activityTracking';
 import { elapsedSecondsExcludingPause } from '../utils/activeTime';
+import { buildWorkoutInstanceId, synthesizeWorkoutInstanceId } from '../utils/workoutInstance';
 
 export type ActiveOutdoorType =
   | 'running'
@@ -34,6 +36,9 @@ type ActiveActivityStore = {
   activityType: ActiveOutdoorType;
   subtype: ActivitySubtype;
   name: string;
+  scheduledSessionId: string | null;
+  associatedTrainingBlockId: string | null;
+  associatedGoalId: string | null;
   isActive: boolean;
   isPaused: boolean;
   startedAt: number | null;
@@ -51,6 +56,8 @@ type ActiveActivityStore = {
   navigationMode: 'off' | 'walking' | 'cycling';
   nextInstruction: string | null;
   completionRequestedAt: number | null;
+  // Live workout instance identity — see src/utils/workoutInstance.ts.
+  workoutInstanceId: string | null;
   start: (input: {
     activityType: ActiveOutdoorType;
     subtype?: ActivitySubtype;
@@ -58,6 +65,9 @@ type ActiveActivityStore = {
     runWalkIntervals?: RunWalkInterval[];
     routeId?: string;
     navigationMode?: 'off' | 'walking' | 'cycling';
+    scheduledSessionId?: string;
+    associatedTrainingBlockId?: string;
+    associatedGoalId?: string;
   }) => void;
   pause: () => void;
   resume: () => void;
@@ -99,6 +109,9 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
       activityType: 'walking',
       subtype: 'outdoor',
       name: 'Walk',
+      scheduledSessionId: null,
+      associatedTrainingBlockId: null,
+      associatedGoalId: null,
       isActive: false,
       isPaused: false,
       startedAt: null,
@@ -116,24 +129,32 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
       navigationMode: 'off',
       nextInstruction: null,
       completionRequestedAt: null,
+      workoutInstanceId: null,
 
-      start: input => set({
-        activityId: `active_${Date.now()}`,
-        activityType: input.activityType,
-        subtype: input.subtype ?? 'outdoor',
-        name: input.name ?? labelFor(input.activityType),
-        isActive: true,
-        isPaused: false,
-        startedAt: Date.now(),
-        pausedAt: null,
-        pausedDurationMs: 0,
-        aggregate: EMPTY_AGGREGATE,
-        runWalkIntervals: input.runWalkIntervals ?? [],
-        routeId: input.routeId ?? null,
-        navigationMode: input.navigationMode ?? 'off',
-        nextInstruction: null,
-        completionRequestedAt: null,
-      }),
+      start: input => {
+        const now = Date.now();
+        set({
+          activityId: `active_${now}`,
+          activityType: input.activityType,
+          subtype: input.subtype ?? 'outdoor',
+          name: input.name ?? labelFor(input.activityType),
+          scheduledSessionId: input.scheduledSessionId ?? null,
+          associatedTrainingBlockId: input.associatedTrainingBlockId ?? null,
+          associatedGoalId: input.associatedGoalId ?? null,
+          isActive: true,
+          isPaused: false,
+          startedAt: now,
+          pausedAt: null,
+          pausedDurationMs: 0,
+          aggregate: EMPTY_AGGREGATE,
+          runWalkIntervals: input.runWalkIntervals ?? [],
+          routeId: input.routeId ?? null,
+          navigationMode: input.navigationMode ?? 'off',
+          nextInstruction: null,
+          completionRequestedAt: null,
+          workoutInstanceId: buildWorkoutInstanceId(input.scheduledSessionId ?? null, now),
+        });
+      },
 
       pause: () => {
         const state = get();
@@ -185,6 +206,9 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
 
       discard: () => set({
         activityId: null,
+        scheduledSessionId: null,
+        associatedTrainingBlockId: null,
+        associatedGoalId: null,
         isActive: false,
         isPaused: false,
         startedAt: null,
@@ -196,21 +220,33 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
         navigationMode: 'off',
         nextInstruction: null,
         completionRequestedAt: null,
+        workoutInstanceId: null,
       }),
     }),
     {
       name: 'active-activity-store',
       version: 1,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       partialize: state => state,
-      merge: (persisted, current) => ({
-        ...current,
-        ...(persisted as Partial<ActiveActivityStore> | undefined),
-        aggregate: {
-          ...EMPTY_AGGREGATE,
-          ...(persisted as Partial<ActiveActivityStore> | undefined)?.aggregate,
-        },
-      }),
+      merge: (persisted, current) => {
+        const p = persisted as Partial<ActiveActivityStore> | undefined;
+        const merged: ActiveActivityStore = {
+          ...current,
+          ...p,
+          aggregate: {
+            ...EMPTY_AGGREGATE,
+            ...p?.aggregate,
+          },
+        };
+        if (merged.isActive) {
+          merged.workoutInstanceId = synthesizeWorkoutInstanceId({
+            workoutInstanceId: merged.workoutInstanceId,
+            scheduledSessionId: merged.scheduledSessionId,
+            startedAtMs: merged.startedAt,
+          });
+        }
+        return merged;
+      },
     },
   ),
 );

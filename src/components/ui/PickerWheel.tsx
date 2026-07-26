@@ -19,6 +19,110 @@ type Props = {
   onClose:        () => void;
 };
 
+type WheelColumnProps = {
+  title?:         string;
+  values:         number[];
+  selectedValue:  number;
+  visible:        boolean;
+  formatValue?:   (v: number) => string;
+  onChange:       (v: number) => void;
+};
+
+type TwoColumnPickerWheelColumn = {
+  id:             string;
+  title:          string;
+  values:         number[];
+  selectedValue:  number;
+  formatValue?:   (v: number) => string;
+};
+
+type TwoColumnPickerWheelProps = {
+  visible:          boolean;
+  title:            string;
+  subtitle?:        string;
+  columns:          [TwoColumnPickerWheelColumn, TwoColumnPickerWheelColumn];
+  confirmLabel?:    string;
+  confirmDisabled?: (values: Record<string, number>) => boolean;
+  onConfirm:        (values: Record<string, number>) => void;
+  onClose:          () => void;
+};
+
+function WheelColumn({
+  title, values, selectedValue, visible, formatValue, onChange,
+}: WheelColumnProps) {
+  const C = useColors();
+  const listRef = useRef<FlatList<number>>(null);
+  const format = formatValue ?? ((v: number) => String(v));
+
+  useEffect(() => {
+    if (!visible) return;
+    const idx = values.indexOf(selectedValue);
+    if (idx >= 0) {
+      setTimeout(() => {
+        listRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.5 });
+      }, 50);
+    }
+  }, [selectedValue, values, visible]);
+
+  const adjustSelection = (delta: number) => {
+    const currentIndex = Math.max(0, values.indexOf(selectedValue));
+    const nextIndex = Math.max(0, Math.min(values.length - 1, currentIndex + delta));
+    const next = values[nextIndex];
+    onChange(next);
+    listRef.current?.scrollToIndex({ index: nextIndex, animated: true, viewPosition: 0.5 });
+  };
+
+  return (
+    <View style={styles.column}>
+      {title ? <Text style={[styles.columnTitle, { color: C.textDim }]}>{title}</Text> : null}
+      <View
+        style={styles.pickerContainer}
+        accessible
+        accessibilityRole="adjustable"
+        accessibilityLabel={title ?? 'Picker'}
+        accessibilityValue={{ text: format(selectedValue) }}
+        accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+        onAccessibilityAction={event => {
+          if (event.nativeEvent.actionName === 'increment') adjustSelection(1);
+          if (event.nativeEvent.actionName === 'decrement') adjustSelection(-1);
+        }}
+      >
+        <View style={[styles.highlight, { borderColor: C.primary }]} />
+        <FlatList
+          ref={listRef}
+          data={values}
+          keyExtractor={item => String(item)}
+          getItemLayout={(_, index) => ({
+            length: ITEM_HEIGHT,
+            offset: ITEM_HEIGHT * 2 + ITEM_HEIGHT * index,
+            index,
+          })}
+          snapToInterval={ITEM_HEIGHT}
+          decelerationRate="fast"
+          showsVerticalScrollIndicator={false}
+          style={{ height: ITEM_HEIGHT * VISIBLE_ROWS }}
+          contentContainerStyle={{ paddingVertical: ITEM_HEIGHT * 2 }}
+          onMomentumScrollEnd={e => {
+            const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT);
+            onChange(values[Math.max(0, Math.min(idx, values.length - 1))]);
+          }}
+          renderItem={({ item }) => (
+            <Pressable style={styles.item} onPress={() => onChange(item)}>
+              <Text style={[
+                styles.itemText,
+                { color: C.textDim },
+                item === selectedValue && [styles.itemTextActive, { color: C.text }],
+              ]}>
+                {format(item)}
+              </Text>
+            </Pressable>
+          )}
+        />
+      </View>
+    </View>
+  );
+}
+
 // Generic iOS-style scrolling picker wheel: snap-to-interval FlatList with a
 // highlighted center row. Pass any numeric value list (weight increments,
 // RPE 1-10, reps, etc.) and an optional formatter for the display label.
@@ -27,29 +131,10 @@ export default function PickerWheel({
 }: Props) {
   const C = useColors();
   const [selected, setSelected] = useState(selectedValue);
-  const listRef = useRef<FlatList<number>>(null);
 
   useEffect(() => { setSelected(selectedValue); }, [selectedValue, visible]);
 
-  useEffect(() => {
-    if (!visible) return;
-    const idx = values.indexOf(selected);
-    if (idx >= 0) {
-      setTimeout(() => {
-        listRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.5 });
-      }, 50);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
-
   const format = formatValue ?? ((v: number) => String(v));
-  const adjustSelection = (delta: number) => {
-    const currentIndex = Math.max(0, values.indexOf(selected));
-    const nextIndex = Math.max(0, Math.min(values.length - 1, currentIndex + delta));
-    const next = values[nextIndex];
-    setSelected(next);
-    listRef.current?.scrollToIndex({ index: nextIndex, animated: true, viewPosition: 0.5 });
-  };
 
   return (
     <Modal visible={visible} transparent animationType="slide">
@@ -57,56 +142,73 @@ export default function PickerWheel({
         <View style={[styles.sheet, { backgroundColor: C.card }]}>
           <Text style={[styles.title, { color: C.text }]}>{title}</Text>
 
-          <View
-            style={styles.pickerContainer}
-            accessible
-            accessibilityRole="adjustable"
-            accessibilityLabel={title}
-            accessibilityValue={{ text: format(selected) }}
-            accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-            onAccessibilityAction={event => {
-              if (event.nativeEvent.actionName === 'increment') adjustSelection(1);
-              if (event.nativeEvent.actionName === 'decrement') adjustSelection(-1);
-            }}
-          >
-            <View style={[styles.highlight, { borderColor: C.primary }]} />
-            <FlatList
-              ref={listRef}
-              data={values}
-              keyExtractor={item => String(item)}
-              getItemLayout={(_, index) => ({
-                length: ITEM_HEIGHT,
-                offset: ITEM_HEIGHT * 2 + ITEM_HEIGHT * index,
-                index,
-              })}
-              snapToInterval={ITEM_HEIGHT}
-              decelerationRate="fast"
-              showsVerticalScrollIndicator={false}
-              style={{ height: ITEM_HEIGHT * VISIBLE_ROWS }}
-              contentContainerStyle={{ paddingVertical: ITEM_HEIGHT * 2 }}
-              onMomentumScrollEnd={e => {
-                const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT);
-                setSelected(values[Math.max(0, Math.min(idx, values.length - 1))]);
-              }}
-              renderItem={({ item }) => (
-                <Pressable style={styles.item} onPress={() => setSelected(item)}>
-                  <Text style={[
-                    styles.itemText,
-                    { color: C.textDim },
-                    item === selected && [styles.itemTextActive, { color: C.text }],
-                  ]}>
-                    {format(item)}
-                  </Text>
-                </Pressable>
-              )}
-            />
-          </View>
+          <WheelColumn
+            values={values}
+            selectedValue={selected}
+            visible={visible}
+            formatValue={formatValue}
+            onChange={setSelected}
+          />
 
           <Text accessibilityLiveRegion="polite" style={[styles.selectedLabel, { color: C.primary }]}>{format(selected)}</Text>
 
           <View style={styles.actions}>
             <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />
             <Button label="Confirm" onPress={() => onConfirm(selected)} style={{ flex: 1 }} />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+export function TwoColumnPickerWheel({
+  visible, title, subtitle, columns, confirmLabel = 'Confirm', confirmDisabled, onConfirm, onClose,
+}: TwoColumnPickerWheelProps) {
+  const C = useColors();
+  const [selectedValues, setSelectedValues] = useState<Record<string, number>>(() => ({
+    [columns[0].id]: columns[0].selectedValue,
+    [columns[1].id]: columns[1].selectedValue,
+  }));
+
+  useEffect(() => {
+    if (!visible) return;
+    setSelectedValues({
+      [columns[0].id]: columns[0].selectedValue,
+      [columns[1].id]: columns[1].selectedValue,
+    });
+  }, [columns, visible]);
+
+  const disabled = confirmDisabled?.(selectedValues) ?? false;
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <View style={[styles.sheet, { backgroundColor: C.card }]}>
+          <Text style={[styles.title, { color: C.text }]}>{title}</Text>
+          {subtitle ? <Text style={[styles.subtitle, { color: C.textDim }]}>{subtitle}</Text> : null}
+
+          <View style={styles.columnsRow}>
+            {columns.map(column => (
+              <WheelColumn
+                key={column.id}
+                title={column.title}
+                values={column.values}
+                selectedValue={selectedValues[column.id] ?? column.selectedValue}
+                visible={visible}
+                formatValue={column.formatValue}
+                onChange={value => setSelectedValues(previous => ({ ...previous, [column.id]: value }))}
+              />
+            ))}
+          </View>
+
+          <Text accessibilityLiveRegion="polite" style={[styles.selectedLabel, { color: C.primary }]}>
+            {columns.map(column => column.formatValue?.(selectedValues[column.id] ?? column.selectedValue) ?? String(selectedValues[column.id] ?? column.selectedValue)).join(' ')}
+          </Text>
+
+          <View style={styles.actions}>
+            <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />
+            <Button label={confirmLabel} onPress={() => onConfirm(selectedValues)} disabled={disabled} style={{ flex: 1 }} />
           </View>
         </View>
       </View>
@@ -131,6 +233,27 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     marginBottom: spacing.md,
     textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: FontSize.sm,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  columnsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  column: {
+    flex: 1,
+    minWidth: 0,
+  },
+  columnTitle: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
+    textTransform: 'uppercase',
   },
   pickerContainer: {
     height: ITEM_HEIGHT * VISIBLE_ROWS,

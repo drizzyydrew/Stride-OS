@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import MapView, { Marker, Polyline, type LatLng, type Region } from 'react-native-maps';
+import MapView, { Marker, Polyline, type LatLng, type MapViewRef, type Region } from '../../../src/components/maps/MapComponents';
 
 import { useColors } from '../../../src/theme/useColors';
 import { spacing } from '../../../src/theme/spacing';
@@ -22,11 +22,13 @@ import { useIntegrationsStore } from '../../../src/store/integrationsStore';
 import {
   activeRunElapsedSeconds,
   useActiveRunStore,
+  type RunEnvironment,
   type RunMode,
   type RunModeConfig,
 } from '../../../src/store/activeRunStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
+import { useActivityStore } from '../../../src/store/activityStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
 import { useCalibration } from '../../../src/store/profileStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
@@ -59,9 +61,17 @@ import { LAYOUT } from '../../../src/constants/layout';
 import { displayLabel } from '../../../src/utils/displayLabels';
 import {
   activeSessionStoresHydrated,
+  discardActiveSession,
   getConflictingActiveSession,
+  isActiveSessionStale,
 } from '../../../src/lib/activeSessionCoordinator';
 import { evaluateSustainedEffortCue, type EffortCueState } from '../../../src/utils/activityTracking';
+import { estimateDistanceMiles, estimateMilesFromPrescription, safePaceSecPerMile, type FinalDistanceResult } from '../../../src/utils/treadmill';
+import type { DistanceSource } from '../../../src/types/activity';
+import { paceSecPerMileToSecPerKm } from '../../../src/utils/units';
+import { zoneStatusForHeartRate } from '../../../src/utils/heartRateZones';
+import TreadmillPanel from '../../../src/components/run/TreadmillPanel';
+import TreadmillCompletionSheet from '../../../src/components/run/TreadmillCompletionSheet';
 
 // ─── Sub-tab types ─────────────────────────────────────────────────────────────
 type RunTab = 'plan' | 'active' | 'hydration' | 'routes';
@@ -307,40 +317,6 @@ function speakCue(text: string): void {
   enqueueVoiceCue(text);
 }
 
-type LiveZoneStatus = {
-  label: string;
-  detail: string;
-  tone: 'in' | 'near' | 'out' | 'unknown';
-  guidance: 'high' | 'low' | null;
-};
-
-function zoneStatusForHeartRate(
-  heartRateBpm: number | null,
-  targetZone: number,
-  zones?: { zone: number; label: string; minBPM: number | null; maxBPM: number | null }[] | null,
-): LiveZoneStatus {
-  const target = zones?.find(z => z.zone === targetZone);
-  if (!heartRateBpm || !target || target.minBPM == null || target.maxBPM == null) {
-    return { label: `Z${targetZone}`, detail: 'TARGET', tone: 'unknown', guidance: null };
-  }
-
-  const current = zones?.find(z =>
-    (z.minBPM == null || heartRateBpm >= z.minBPM) &&
-    (z.maxBPM == null || heartRateBpm <= z.maxBPM),
-  );
-  const below = heartRateBpm < target.minBPM;
-  const above = heartRateBpm > target.maxBPM;
-  const delta = below ? target.minBPM - heartRateBpm : above ? heartRateBpm - target.maxBPM : 0;
-  const tone: LiveZoneStatus['tone'] = delta === 0 ? 'in' : delta <= 5 ? 'near' : 'out';
-
-  return {
-    label: current ? `Z${current.zone}` : `Z${targetZone}`,
-    detail: delta === 0 ? target.label : `${delta} bpm ${above ? 'high' : 'low'}`,
-    tone,
-    guidance: above ? 'high' : below ? 'low' : null,
-  };
-}
-
 // ─── Plan Tab ─────────────────────────────────────────────────────────────────
 function PlanTab() {
   const C = useColors();
@@ -381,10 +357,12 @@ function PlanTab() {
   );
   const customRunToday = selectedCustomRunToday ?? legacyCustomRunToday;
 
-  // Single source of truth for "today's workout": the calendar map's real
-  // date entry, falling back to the Monday-indexed richWeek slot only if the
-  // date lookup comes up empty.
-  const todayEntries = scheduled.todaySessions;
+  // Single source of truth for "today's workout": activeTodaySessions applies
+  // the same selection/removal overrides (scheduledSessionSelectionStore)
+  // that the Running tab's activeTodayRun uses, so "Perform Today" / "Remove
+  // from Today" on a session stays consistent between the plan overview and
+  // the Running surface instead of one showing a session the other hid.
+  const todayEntries = scheduled.activeTodaySessions;
   const todayRunSession = todayEntries.find(e => e.activityType === 'run' || e.activityType === 'run_walk' || e.activityType === 'walk');
   const todayRaceEntry = (weekPlan.calendarMap.get(todayYMD) ?? []).find(e => e.type === 'race');
   const todayWorkout: RichWorkout | null =
@@ -694,6 +672,17 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     finishRun,
     cancelRun,
     clearCompletionRequest,
+    environment,
+    treadmillSegments,
+    currentSpeedMph,
+    manualDistanceMiles,
+    distanceSource,
+    currentIntervalIndex,
+    lastEnvironmentPreference,
+    confirmTreadmillSpeed,
+    setManualLiveDistance,
+    advanceInterval,
+    setLastEnvironmentPreference,
   } = useActiveRunStore();
   const weekPlan = useWeekPlan();
   const activeScheduled = useScheduledSessions(weekPlan);
@@ -710,6 +699,9 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [permission, setPermission] = useState<TrackingPermissionState>({ foreground: 'unknown', background: 'unknown' });
   const [routeSegmentIndex, setRouteSegmentIndex] = useState(0);
   const [pendingMode, setPendingMode] = useState<RunMode>('quick');
+  const [pendingEnvironment, setPendingEnvironment] = useState<RunEnvironment>(() => lastEnvironmentPreference);
+  const [showTreadmillCompletion, setShowTreadmillCompletion] = useState(false);
+  const treadmillCompletionRef = useRef<{ estimateMiles: number; movingSeconds: number; estimateSource: DistanceSource } | null>(null);
   const [goalMinutesInput, setGoalMinutesInput] = useState(45);
   const [goalMilesInput, setGoalMilesInput] = useState(5);
   const [raceMilesInput, setRaceMilesInput] = useState(13.1);
@@ -720,7 +712,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const effortCueRef = useRef<EffortCueState>({ consecutiveHighSamples: 0, consecutiveLowSamples: 0, wasOutOfRange: false, lastCueElapsedSeconds: -9999 });
   const reminderCueRef = useRef({ lastHydrationCueSec: 0, lastFuelCueSec: 0 });
   const goalDoneRef = useRef(false);
-  const activeMapRef = useRef<MapView>(null);
+  const activeMapRef = useRef<MapViewRef>(null);
   const [mapType, setMapType] = useState<'standard' | 'hybrid'>('standard');
   const runState: RunState = !isActive ? 'idle' : isPaused ? 'paused' : 'active';
 
@@ -808,58 +800,87 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     }
     const conflict = getConflictingActiveSession('running');
     if (conflict) {
+      const stale = isActiveSessionStale();
       Alert.alert(
         'Another session is active',
-        `${conflict.name} is still in progress. Continue it or end it before starting a run.`,
+        stale
+          ? `${conflict.name} started a while ago and is still open. Continue it, or end it and start this run.`
+          : `${conflict.name} is still in progress. Continue it or end it before starting a run.`,
         [
           {
             text: 'Continue Current Session',
             onPress: () => router.push(conflict.route as never),
+          },
+          {
+            text: 'End Previous Session and Start New',
+            style: 'destructive',
+            onPress: () => { void discardActiveSession(conflict).then(() => start()); },
           },
           { text: 'Cancel', style: 'cancel' },
         ],
       );
       return;
     }
-    try {
-      const nextPermission = await requestTrackingPermissionState();
-      setPermission(nextPermission);
-      if (nextPermission.foreground !== 'granted' || nextPermission.background !== 'granted') {
-        Alert.alert(
-          'Background location needed',
-          'StrideOS needs Always/background location to keep recording the route when the phone locks.',
-        );
+    setLastEnvironmentPreference(pendingEnvironment);
+    const startWorkout = pendingMode === 'workout' ? todayPlannedWorkout : null;
+    // Picker values are in display units; the store always holds miles and sec/mi.
+    const toMiles = (v: number) => imp ? v : v / 1.609344;
+    const toSecPerMile = (v: number) => imp ? v : v * 1.609344;
+    const config: RunModeConfig =
+      pendingMode === 'time'     ? { mode: 'time', goalMinutes: goalMinutesInput } :
+      pendingMode === 'distance' ? { mode: 'distance', goalMiles: toMiles(goalMilesInput) } :
+      pendingMode === 'race'     ? { mode: 'race', goalMiles: toMiles(raceMilesInput), targetPaceSecPerMile: toSecPerMile(racePaceSecInput) } :
+      pendingMode === 'workout' && startWorkout ? { mode: 'workout', scheduledSessionId: todayPlannedSession?.scheduledSessionId } :
+      { mode: 'quick' };
+    config.environment = pendingEnvironment;
+
+    // Indoor: never request location permission, never start GPS tasks, no
+    // map/route. Outdoor: request background location before committing to
+    // starting (unchanged behavior).
+    if (pendingEnvironment === 'outdoor') {
+      try {
+        const nextPermission = await requestTrackingPermissionState();
+        setPermission(nextPermission);
+        if (nextPermission.foreground !== 'granted' || nextPermission.background !== 'granted') {
+          Alert.alert(
+            'Background location needed',
+            'StrideOS needs Always/background location to keep recording the route when the phone locks.',
+          );
+          return;
+        }
+      } catch (error) {
+        Alert.alert('Location unavailable', error instanceof Error ? error.message : 'Could not start GPS tracking.');
         return;
       }
-      setRouteSegmentIndex(0);
-      maxRouteProgressRef.current = 0;
-      segmentStartRef.current = { index: 0, time: Date.now() };
-      reminderCueRef.current = { lastHydrationCueSec: 0, lastFuelCueSec: 0 };
-      goalDoneRef.current = false;
+    }
 
-      const startWorkout = pendingMode === 'workout' ? todayPlannedWorkout : null;
-      // Picker values are in display units; the store always holds miles and sec/mi.
-      const toMiles = (v: number) => imp ? v : v / 1.609344;
-      const toSecPerMile = (v: number) => imp ? v : v * 1.609344;
-      const config: RunModeConfig =
-        pendingMode === 'time'     ? { mode: 'time', goalMinutes: goalMinutesInput } :
-        pendingMode === 'distance' ? { mode: 'distance', goalMiles: toMiles(goalMilesInput) } :
-        pendingMode === 'race'     ? { mode: 'race', goalMiles: toMiles(raceMilesInput), targetPaceSecPerMile: toSecPerMile(racePaceSecInput) } :
-        pendingMode === 'workout' && startWorkout ? { mode: 'workout', scheduledSessionId: todayPlannedSession?.scheduledSessionId } :
-        { mode: 'quick' };
-      startRun(startWorkout, config);
-      const liveRunStartedAt = useActiveRunStore.getState().startTime;
-      await startRunLiveActivity({
-        sessionId: liveRunStartedAt ? `run:${liveRunStartedAt}` : '',
-        sessionSource: 'running',
-        elapsedSeconds: 0,
-        distanceMiles: 0,
-        averagePace: '--:--',
-        heartRateBpm: null,
-        zoneLabel: 'Zone --',
-        zoneStatus: 'unknown',
-        isPaused: false,
-      }).catch(console.warn);
+    setRouteSegmentIndex(0);
+    maxRouteProgressRef.current = 0;
+    segmentStartRef.current = { index: 0, time: Date.now() };
+    reminderCueRef.current = { lastHydrationCueSec: 0, lastFuelCueSec: 0 };
+    goalDoneRef.current = false;
+
+    startRun(startWorkout, config);
+    const liveRunStartedAt = useActiveRunStore.getState().startTime;
+    await startRunLiveActivity({
+      sessionId: liveRunStartedAt ? `run:${liveRunStartedAt}` : '',
+      sessionSource: 'running',
+      elapsedSeconds: 0,
+      distanceMiles: 0,
+      averagePace: '--:--',
+      heartRateBpm: null,
+      zoneLabel: 'Zone --',
+      zoneStatus: 'unknown',
+      isPaused: false,
+    }).catch(console.warn);
+
+    if (pendingEnvironment === 'indoor') {
+      const workoutName = startWorkout?.title ?? 'treadmill run';
+      speakCue(`Starting ${workoutName} on the treadmill. Confirm your speed when you start moving.`);
+      return;
+    }
+
+    try {
       await startLocationTracking();
       const unitWord = imp ? 'mile' : 'kilometer';
       if (config.mode === 'time') {
@@ -891,10 +912,36 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   }
 
   async function stop() {
+    if (environment === 'indoor') {
+      // Capture the estimate + moving time before finishRun() resets the
+      // store, then hand off to the completion-correction sheet — the actual
+      // save happens in completeIndoorRun() once the athlete resolves it.
+      const finalState = useActiveRunStore.getState();
+      const movingSeconds = activeRunElapsedSeconds(finalState);
+      const confirmedEstimate = estimateDistanceMiles(finalState.treadmillSegments);
+      // No speed was ever confirmed: fall back to a prescribed-pace estimate
+      // (distinct DistanceSource) rather than reporting 0.00 miles.
+      const neverConfirmedSpeed = finalState.treadmillSegments.length === 0;
+      const prescribedEstimate = neverConfirmedSpeed
+        ? estimateMilesFromPrescription(movingSeconds / 60, finalState.plannedWorkout?.paceRange ?? null)
+        : null;
+      treadmillCompletionRef.current = {
+        estimateMiles: prescribedEstimate ?? confirmedEstimate,
+        movingSeconds,
+        estimateSource: prescribedEstimate != null ? 'prescribed_estimate' : 'confirmed_speed_estimate',
+      };
+      setShowTreadmillCompletion(true);
+      return;
+    }
     const finalElapsed = activeRunElapsedSeconds(useActiveRunStore.getState());
     const finalDurationMin = Math.max(1, Math.round(finalElapsed / 60));
     const finalDistanceMiles = Math.round(distanceMiles * 100) / 100;
     const routeCoordinates = [...coordinates];
+    // Captured before finishRun() resets the store — this is the link back to
+    // the scheduled session the athlete started this run against, if any.
+    const completedScheduledSessionId = useActiveRunStore.getState().scheduledSessionId ?? undefined;
+    const completedTrainingBlockId = todayPlannedSession?.trainingBlockId;
+    const completedGoalPlanId = todayPlannedSession?.goalPlanId;
 
     await endRunLiveActivity({
       ...liveActivitySnapshot,
@@ -936,6 +983,101 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         actualDurationMinutes: finalDurationMin,
         actualDistanceMiles: finalDistanceMiles,
         routeCoordinates,
+      });
+      if (completedScheduledSessionId) {
+        // manualLogRun/editRunLog above wrote through activityFromWorkoutRecord,
+        // whose id is deterministic from this same completionKey — stamp the
+        // canonical scheduledSessionId directly rather than relying on id-shape
+        // inference (this id doesn't match the `w{week}_{workoutId}_{dayIndex}`
+        // pattern, since a live GPS run can start against a scheduled workout
+        // that itself has no fixed dayIndex-based workoutId to key off of).
+        useActivityStore.getState().updateActivity(`activity_workout_${id}`, {
+          scheduledSessionId: completedScheduledSessionId,
+          scheduled: true,
+          associatedTrainingBlockId: completedTrainingBlockId,
+          associatedGoalId: completedGoalPlanId,
+        });
+      }
+      Alert.alert('Run saved', `${finalDurationMin} min · ${finalDistanceMiles.toFixed(2)} mi saved to Activity Log.`);
+    } else {
+      Alert.alert('Run discarded', 'Runs under 5 minutes are not saved.');
+    }
+  }
+
+  function cancelTreadmillCompletion() {
+    setShowTreadmillCompletion(false);
+    treadmillCompletionRef.current = null;
+  }
+
+  async function completeIndoorRun(result: FinalDistanceResult) {
+    setShowTreadmillCompletion(false);
+    const captured = treadmillCompletionRef.current;
+    treadmillCompletionRef.current = null;
+    const movingSeconds = captured?.movingSeconds ?? activeRunElapsedSeconds(useActiveRunStore.getState());
+    const finalDurationMin = Math.max(1, Math.round(movingSeconds / 60));
+    const finalDistanceMiles = Math.round(result.distanceMiles * 100) / 100;
+    const completedScheduledSessionId = useActiveRunStore.getState().scheduledSessionId ?? undefined;
+    const completedTrainingBlockId = todayPlannedSession?.trainingBlockId;
+    const completedGoalPlanId = todayPlannedSession?.goalPlanId;
+
+    await endRunLiveActivity({
+      ...liveActivitySnapshot,
+      elapsedSeconds: movingSeconds,
+      distanceMiles: result.distanceMiles,
+      isPaused: false,
+    }).catch(console.warn);
+    finishRun();
+    setElapsed(0);
+    onFinished?.();
+
+    if (movingSeconds >= 300) {
+      const id = `treadmill_run_${Date.now()}`;
+      const modeNote =
+        runMode === 'time' && goalMinutes ? ` · Time goal ${goalMinutes} min` :
+        runMode === 'workout' && plannedWorkout ? ` · Workout: ${plannedWorkout.title}` :
+        '';
+      manualLogRun(
+        {
+          completionKey: id,
+          type: runMode === 'workout' && plannedWorkout ? plannedWorkout.type : 'easy_run',
+          intensity: 'easy',
+          durationMinutes: finalDurationMin,
+          distanceMiles: Math.max(0, finalDistanceMiles),
+          notes: `Saved from indoor treadmill run${modeNote}.`,
+        },
+        currentWeek,
+        fatigueScore,
+        recoveryScore,
+        setFatigueScore,
+        setRecentEasyLoad,
+      );
+      editRunLog(id, {
+        actualDurationMinutes: finalDurationMin,
+        actualDistanceMiles: finalDistanceMiles,
+        // No routeCoordinates: indoor sessions never fabricate a GPS route.
+      });
+
+      const activityId = `activity_workout_${id}`;
+      const existing = useActivityStore.getState().getById(activityId);
+      const recalculatedPaceSecPerMile = safePaceSecPerMile(finalDistanceMiles, movingSeconds);
+      useActivityStore.getState().updateActivity(activityId, {
+        indoor: true,
+        subtype: 'treadmill',
+        scheduledSessionId: completedScheduledSessionId,
+        scheduled: Boolean(completedScheduledSessionId),
+        associatedTrainingBlockId: completedTrainingBlockId,
+        associatedGoalId: completedGoalPlanId,
+        metrics: {
+          ...existing?.metrics,
+          distanceMeters: finalDistanceMiles * 1609.344,
+          distanceSource: result.distanceSource,
+          originalEstimatedDistanceMiles: result.originalEstimatedDistanceMiles,
+          routeCoordinates: undefined,
+          pace: recalculatedPaceSecPerMile != null ? {
+            ...existing?.metrics?.pace,
+            averageSecondsPerKilometer: paceSecPerMileToSecPerKm(recalculatedPaceSecPerMile) ?? undefined,
+          } : existing?.metrics?.pace,
+        },
       });
       Alert.alert('Run saved', `${finalDurationMin} min · ${finalDistanceMiles.toFixed(2)} mi saved to Activity Log.`);
     } else {
@@ -1230,6 +1372,77 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     </MapView>
   );
 
+  // Indoor/treadmill: no map, no GPS stats — a dedicated live panel replaces
+  // them entirely while a run is active or paused.
+  if (environment === 'indoor' && runState !== 'idle') {
+    return (
+      <View style={[styles.activeRunRoot, { paddingTop: fullScreen ? insets.top : insets.top, backgroundColor: panelBg }]}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
+          <TreadmillPanel
+            elapsedLabel={fmt(elapsed)}
+            imperial={imp}
+            plannedWorkout={plannedWorkout}
+            currentStepIndex={currentIntervalIndex}
+            onAdvanceStep={advanceInterval}
+            segments={treadmillSegments}
+            currentSpeedMph={currentSpeedMph}
+            manualDistanceMiles={manualDistanceMiles}
+            distanceSource={distanceSource}
+            onConfirmSpeed={confirmTreadmillSpeed}
+            onSetManualDistance={setManualLiveDistance}
+            heartRateBpm={heartRateBpm}
+            zoneLabel={zoneStatus.label}
+            zoneDetail={zoneStatus.detail}
+            zoneTone={zoneStatus.tone}
+            isPaused={isPaused}
+          />
+        </ScrollView>
+        <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: (fullScreen ? insets.bottom : 0) + spacing.md }]}>
+          {isPaused ? (
+            <TouchableOpacity
+              style={[styles.resumePill, { backgroundColor: C.positive }]}
+              onPress={resume}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityLabel="Resume run"
+            >
+              <Ionicons name="play" size={18} color={C.onPrimary} />
+              <Text style={[styles.resumePillText, { color: C.onPrimary }]}>RESUME RUN</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.pauseCircle, { backgroundColor: C.primary, alignSelf: 'center' }]}
+              onPress={pause}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityLabel="Pause run"
+            >
+              <Ionicons name="pause" size={28} color={C.onPrimary} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={[styles.stopRunPill, { backgroundColor: C.critical }]}
+            onPress={stop}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel="Stop run"
+          >
+            <Ionicons name="stop-circle" size={18} color="#FFFFFF" />
+            <Text style={styles.stopRunPillText}>STOP RUN</Text>
+          </TouchableOpacity>
+        </View>
+        <TreadmillCompletionSheet
+          visible={showTreadmillCompletion}
+          estimateMiles={treadmillCompletionRef.current?.estimateMiles ?? estimateDistanceMiles(treadmillSegments)}
+          estimateSource={treadmillCompletionRef.current?.estimateSource}
+          imperial={imp}
+          onCancel={cancelTreadmillCompletion}
+          onResolve={completeIndoorRun}
+        />
+      </View>
+    );
+  }
+
   if (runState === 'paused') {
     return (
       <View style={[styles.activeRunRoot, { paddingTop: insets.top, backgroundColor: panelBg }]}>
@@ -1290,31 +1503,45 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     );
   }
 
+  // Idle setup with Indoor selected: never mount the map (it requests
+  // location permission via showsUserLocation) — show a neutral placeholder.
+  const showIndoorSetupPlaceholder = runState === 'idle' && pendingEnvironment === 'indoor';
+
   return (
     <View style={[styles.activeRunRoot, { paddingTop: fullScreen ? insets.top : 0, backgroundColor: panelBg }]}>
       <View style={styles.activeMapShellFill}>
-        {mapNode(isActive)}
-        <View style={styles.mapToolStack}>
-          <TouchableOpacity
-            style={[styles.mapToolButton, { backgroundColor: softPanelBg, borderColor: C.border }]}
-            onPress={centerOnMyLocation}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Center map on my location"
-          >
-            <Ionicons name="navigate-outline" size={19} color={C.text} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.mapToolButton, { backgroundColor: mapType === 'hybrid' ? C.primaryDim : softPanelBg, borderColor: mapType === 'hybrid' ? C.primary : C.border }]}
-            onPress={() => setMapType(t => (t === 'standard' ? 'hybrid' : 'standard'))}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Toggle satellite map"
-          >
-            <Ionicons name="layers-outline" size={19} color={mapType === 'hybrid' ? C.primary : C.text} />
-          </TouchableOpacity>
-        </View>
-        {permission.background !== 'granted' ? (
+        {showIndoorSetupPlaceholder ? (
+          <View style={[styles.activeRunMapFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: softPanelBg }]}>
+            <Ionicons name="walk-outline" size={40} color={C.textMuted} />
+            <Text style={[styles.mapOverlayTitle, { color: C.text, marginTop: spacing.sm }]}>Indoor (Treadmill) selected</Text>
+            <Text style={[styles.mapOverlayCopy, { color: C.textMuted }]}>No GPS or map for this run.</Text>
+          </View>
+        ) : (
+          <>
+            {mapNode(isActive)}
+            <View style={styles.mapToolStack}>
+              <TouchableOpacity
+                style={[styles.mapToolButton, { backgroundColor: softPanelBg, borderColor: C.border }]}
+                onPress={centerOnMyLocation}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Center map on my location"
+              >
+                <Ionicons name="navigate-outline" size={19} color={C.text} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.mapToolButton, { backgroundColor: mapType === 'hybrid' ? C.primaryDim : softPanelBg, borderColor: mapType === 'hybrid' ? C.primary : C.border }]}
+                onPress={() => setMapType(t => (t === 'standard' ? 'hybrid' : 'standard'))}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Toggle satellite map"
+              >
+                <Ionicons name="layers-outline" size={19} color={mapType === 'hybrid' ? C.primary : C.text} />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+        {!showIndoorSetupPlaceholder && permission.background !== 'granted' ? (
           <View style={[styles.mapOverlay, { backgroundColor: mode === 'light' ? C.card : C.cardElevated }]}>
             <Ionicons name="location-outline" size={32} color={C.accent} />
             <Text style={[styles.mapOverlayTitle, { color: C.text }]}>
@@ -1389,6 +1616,36 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             <Text style={[styles.modeDesc, { color: C.textDim }]}>
               {RUN_MODE_OPTIONS.find(o => o.key === pendingMode)?.desc}
             </Text>
+
+            {/* Outdoor / Indoor (Treadmill) toggle — applies to every run mode. */}
+            <View style={styles.modeRow}>
+              {(['outdoor', 'indoor'] as const).map(env => {
+                const active = pendingEnvironment === env;
+                return (
+                  <TouchableOpacity
+                    key={env}
+                    style={[
+                      styles.modeChip,
+                      { backgroundColor: active ? C.primaryDim : C.cardAlt, borderColor: active ? C.primary : C.border },
+                    ]}
+                    onPress={() => setPendingEnvironment(env)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={env === 'outdoor' ? 'Outdoor GPS run' : 'Indoor treadmill run'}
+                  >
+                    <Ionicons name={env === 'outdoor' ? 'earth-outline' : 'walk-outline'} size={16} color={active ? C.primary : C.textMuted} />
+                    <Text style={[styles.modeChipText, { color: active ? C.primary : C.textMuted }]}>
+                      {env === 'outdoor' ? 'Outdoor' : 'Indoor (Treadmill)'}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {pendingEnvironment === 'indoor' ? (
+              <Text style={[styles.modeDesc, { color: C.textDim }]}>
+                No GPS, no map. Distance is estimated from confirmed treadmill speed — correct it against the machine's display when you finish.
+              </Text>
+            ) : null}
 
             {/* Mode configuration */}
             {pendingMode === 'time' ? (

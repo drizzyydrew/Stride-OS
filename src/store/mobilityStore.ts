@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { MobilityCompletion } from '../types/mobility';
@@ -58,7 +59,7 @@ export const useMobilityStore = create<MobilityStore>()(
     }),
     {
       name: 'mobility-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       partialize: (state) => ({
         completions: state.completions,
         recommendedWorkoutIds: state.recommendedWorkoutIds,

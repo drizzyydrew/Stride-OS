@@ -687,13 +687,13 @@ export function getExercise(id: string): Exercise | undefined {
 // Uses sets × reps × RPE factor (matching the scoring model above).
 
 export function estimateSessionLoad(
-  completedExercises: { sets: { reps: number; rpe?: number; completed: boolean }[] }[],
+  completedExercises: { sets: { reps?: number; rpe?: number; completed: boolean }[] }[],
 ): number {
   return completedExercises.reduce((total, ex) => {
     return total + ex.sets.filter(s => s.completed).reduce((s, set) => {
       const rpe = set.rpe ?? 6;
       const factor = (rpe - 3) / 7;
-      return s + set.reps * factor * 2;
+      return s + (set.reps ?? 0) * factor * 2;
     }, 0);
   }, 0);
 }

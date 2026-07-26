@@ -15,8 +15,16 @@ import { useActivityStore } from '../../../src/store/activityStore';
 import { useScheduledSessionSelectionStore } from '../../../src/store/scheduledSessionSelectionStore';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import { calendarEntriesFromScheduledSessions } from '../../../src/utils/scheduledSessions';
+import { buildSkippedActivityDraft } from '../../../src/utils/activityCompletion';
+import { useActiveStrengthSessionStore } from '../../../src/store/activeStrengthSessionStore';
+import {
+  activeSessionStoresHydrated,
+  discardActiveSession,
+  getConflictingActiveSession,
+} from '../../../src/lib/activeSessionCoordinator';
+import { endStrengthLiveActivity } from '../../../src/lib/strengthLiveActivity';
 
-import { addDays, toYMD } from '../../../src/utils/calendarEngine';
+import { addDays, parseYMD, toYMD } from '../../../src/utils/calendarEngine';
 import type { CalendarEntry }       from '../../../src/utils/calendarEngine';
 import { getPhaseTypesForWeek }     from '../../../src/utils/workoutEngine';
 import { getPhaseSessionPreview } from '../../../src/utils/strengthEngine';
@@ -110,11 +118,35 @@ function entrySummary(entry: CalendarEntry): string {
   return entry.summary ?? displayLabel(entry.type);
 }
 
-function routeForEntry(entry: CalendarEntry): string {
+function routeForEntry(entry: CalendarEntry): string | { pathname: string; params?: Record<string, string> } {
   if (entry.type === 'strength') return '/(tabs)/strength';
   if (['run', 'run_walk', 'walk'].includes(entry.type)) return '/(tabs)/training';
-  if (['cycling', 'swimming', 'hiking', 'skiing', 'hiit', 'mixed'].includes(entry.type)) return '/(tabs)/activity';
+  // Cross-training rides route to the indoor-ride live screen (no GPS) with
+  // the canonical scheduledSessionId so completion links back to this
+  // scheduled session instead of creating an orphaned activity.
+  if (entry.type === 'cycling') {
+    return entry.scheduledSessionId
+      ? { pathname: '/(tabs)/activity/indoor-ride', params: { scheduledSessionId: entry.scheduledSessionId } }
+      : '/(tabs)/activity/indoor-ride';
+  }
+  if (['swimming', 'hiking', 'skiing', 'hiit', 'mixed'].includes(entry.type)) return '/(tabs)/activity';
   return '/(tabs)/activity';
+}
+
+function detailRouteForEntry(
+  entry: CalendarEntry,
+  entryDateYMD: string,
+): string | { pathname: string; params?: Record<string, string> } {
+  if (['run', 'run_walk', 'walk'].includes(entry.type)) {
+    // richWeek.workouts and the detail route are Monday-indexed, while the
+    // canonical calendar window begins on Sunday.
+    const dayIndex = (parseYMD(entryDateYMD).getDay() + 6) % 7;
+    return {
+      pathname: '/(tabs)/training/[dayIndex]',
+      params: { dayIndex: String(dayIndex) },
+    };
+  }
+  return routeForEntry(entry);
 }
 
 function actionLabelForEntries(entries: CalendarEntry[], isToday: boolean): string {
@@ -137,9 +169,13 @@ export default function CalendarScreen() {
   const timeline  = usePlanTimeline();
   const progressionLevel = useAthleteStore(s => s.progressionLevel);
   const activities = useActivityStore(s => s.activities);
+  const addActivity = useActivityStore(s => s.addActivity);
   const scheduled = useScheduledSessions(weekPlan);
   const selectScheduledSessionForDate = useScheduledSessionSelectionStore(s => s.selectForDate);
   const removeScheduledSessionFromToday = useScheduledSessionSelectionStore(s => s.removeFromToday);
+  const activeStrengthSession = useActiveStrengthSessionStore(s => s.session);
+  const startCustomStrengthSession = useActiveStrengthSessionStore(s => s.startSession);
+  const clearActiveStrengthSession = useActiveStrengthSessionStore(s => s.clearSession);
 
   const today    = useMemo(() => startOfDay(new Date()), []);
   const todayYMD = useMemo(() => toYMD(today), [today]);
@@ -336,11 +372,110 @@ export default function CalendarScreen() {
       ]);
       return;
     }
+    function skipEntry() {
+      if (!entry.scheduledSessionId) return;
+      const session = scheduled.getSessionById(entry.scheduledSessionId);
+      if (session) {
+        addActivity(buildSkippedActivityDraft(session));
+        return;
+      }
+      // Session outside the hook's current-week window (e.g. a far-future
+      // template preview) — still record a linked skipped Activity from the
+      // fields the calendar entry already has, rather than doing nothing.
+      addActivity({
+        activityType: entry.type === 'strength' ? 'strength'
+          : entry.type === 'walk' ? 'walking'
+          : entry.type === 'cycling' ? 'cycling'
+          : entry.type === 'mobility' ? 'mobility'
+          : entry.type === 'hiking' ? 'hiking'
+          : entry.type === 'swimming' ? 'swimming'
+          : 'other',
+        subtype: 'general',
+        source: 'training_plan',
+        status: 'skipped',
+        completionClassification: 'skipped',
+        scheduled: true,
+        scheduledSessionId: entry.scheduledSessionId,
+        startTime: Date.now(),
+        endTime: Date.now(),
+        indoor: entry.type === 'strength' || entry.type === 'mobility',
+        metrics: { durationSeconds: 0, elapsedTimeSeconds: 0, activeTimeSeconds: 0 },
+      });
+    }
+
+    // "Do My Own Workout" is offered for scheduled sessions where a freeform
+    // custom strength session is a reasonable substitute — strength and
+    // mobility are the categories the calendar entry model can identify
+    // cleanly today; active-recovery/cross-train don't have a distinct
+    // CalendarEntry['type'] to key off yet.
+    const offersCustomWorkout = entry.type === 'strength' || entry.type === 'mobility';
+    function launchCustomWorkout() {
+      if (!entry.scheduledSessionId) return;
+      if (!activeSessionStoresHydrated()) {
+        Alert.alert('Restoring session', 'StrideOS is restoring your active-session state. Try again in a moment.');
+        return;
+      }
+      const crossDomainConflict = getConflictingActiveSession('strength');
+      if (crossDomainConflict) {
+        Alert.alert(
+          'Another session is active',
+          `${crossDomainConflict.name} is still in progress. Continue it or end it before starting a custom workout.`,
+          [
+            { text: 'Continue Current Session', onPress: () => router.push(crossDomainConflict.route as never) },
+            { text: 'End Previous Session and Start New', style: 'destructive', onPress: () => { void discardActiveSession(crossDomainConflict).then(() => launchCustomWorkout()); } },
+            { text: 'Cancel', style: 'cancel' },
+          ],
+        );
+        return;
+      }
+      const start = () => {
+        startCustomStrengthSession({
+          source: 'custom',
+          workoutId: entry.scheduledSessionId!,
+          workoutName: `Custom · ${entry.label}`,
+          plannedDurationMin: 0,
+          exercises: [],
+          scheduledSessionId: entry.scheduledSessionId,
+          scheduledCategory: entry.type,
+        });
+        router.push('/(tabs)/strength/custom-session' as never);
+      };
+      if (!activeStrengthSession) { start(); return; }
+      Alert.alert(
+        'Another strength session is active',
+        `${activeStrengthSession.workoutName} is still in progress. StrideOS will never end it silently.`,
+        [
+          {
+            text: 'Continue Current Session',
+            onPress: () => router.push(activeStrengthSession.source === 'preset'
+              ? '/(tabs)/strength/preset-session' as never
+              : activeStrengthSession.source === 'custom'
+                ? '/(tabs)/strength/custom-session' as never
+                : '/(tabs)/strength' as never),
+          },
+          {
+            text: 'End Current Session and Start Custom Workout',
+            style: 'destructive',
+            onPress: async () => {
+              await endStrengthLiveActivity().catch(console.warn);
+              clearActiveStrengthSession();
+              start();
+            },
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
+    }
+
     const buttons = [
       {
         text: 'View Details',
-        onPress: () => router.push(routeForEntry(entry) as never),
+        onPress: () => router.push(detailRouteForEntry(entry, entryDateYMD) as never),
       },
+      ...(offersCustomWorkout ? [{
+        text: 'Do My Own Workout',
+        onPress: launchCustomWorkout,
+      }] : []),
       {
         text: isToday ? 'Start Workout' : isFuture ? 'Perform Today' : 'Start Workout',
         onPress: () => {
@@ -368,6 +503,44 @@ export default function CalendarScreen() {
       {
         text: 'Log Manually',
         onPress: () => router.push(completionRoute as never),
+      },
+      {
+        text: 'Reschedule',
+        // Every move now uses the canonical preview/conflict validator. The
+        // legacy dateOverrides store remains readable for existing users but
+        // no new unchecked override is written from Calendar.
+        onPress: () => router.push({
+          pathname: '/(tabs)/training/adapt',
+          params: {
+            mode: entry.missed ? 'missed' : 'week',
+            scheduledSessionId: entry.scheduledSessionId,
+            preferredAction: 'moved',
+          },
+        } as never),
+      },
+      {
+        text: entry.missed ? 'What happened?' : 'Adapt My Week',
+        onPress: () => router.push({
+          pathname: '/(tabs)/training/adapt',
+          params: { mode: entry.missed ? 'missed' : 'week', scheduledSessionId: entry.scheduledSessionId },
+        } as never),
+      },
+      {
+        text: 'Not Feeling 100%',
+        onPress: () => router.push({
+          pathname: '/(tabs)/training/adapt',
+          params: { mode: 'health', scheduledSessionId: entry.scheduledSessionId },
+        } as never),
+      },
+      {
+        text: 'Skip',
+        style: 'destructive' as const,
+        onPress: () => {
+          Alert.alert('Skip this session?', 'This records it as skipped in your training history rather than leaving it unresolved.', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Skip Session', style: 'destructive', onPress: skipEntry },
+          ]);
+        },
       },
       ...(isToday ? [{
         text: 'Remove from Today',
@@ -571,43 +744,47 @@ export default function CalendarScreen() {
           </View>
         ) : (
           info.entries.map((entry, i) => (
-            <TouchableOpacity
+            <View
               key={`${entry.type}-${i}`}
               style={[styles.summaryBox, { backgroundColor: C.cardAlt }]}
-              onPress={() => handleEntryPress(entry, toYMD(selectedDate), isToday)}
-              activeOpacity={0.82}
-              accessibilityRole="button"
-              accessibilityLabel={`Open actions for ${entry.label}`}
             >
-              <Text style={[styles.summaryLabel, { color: C.textDim }]}>
-                {entry.type === 'race' ? 'RACE DAY' : displayLabel(entry.type).toUpperCase()}
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={[styles.dayEntryTitle, { color: C.text }]}>{entry.label}</Text>
-                {entry.type !== 'race' && (
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                <TouchableOpacity
+                  style={{ flex: 1 }}
+                  onPress={() => handleEntryPress(entry, toYMD(selectedDate), isToday)}
+                  activeOpacity={0.82}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open actions for ${entry.label}`}
+                >
+                  <Text style={[styles.summaryLabel, { color: C.textDim }]}>
+                    {entry.type === 'race' ? 'RACE DAY' : displayLabel(entry.type).toUpperCase()}
+                  </Text>
+                  <Text style={[styles.dayEntryTitle, { color: C.text }]}>{entry.label}</Text>
+                  {entry.workout ? (
+                    <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>
+                      {entrySummary(entry)}
+                    </Text>
+                  ) : null}
+                  {entry.session ? (
+                    <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>{entrySummary(entry)}</Text>
+                  ) : null}
+                  {!entry.workout && !entry.session && entry.summary ? (
+                    <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>{entry.summary}</Text>
+                  ) : null}
+                  {entry.designation ? (
+                    <Text style={[styles.futureText, { color: C.textDim, marginTop: 4, fontWeight: '700' }]}>
+                      {displayLabel(entry.designation)}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.futureText, { color: entry.completed ? C.positive : entry.missed ? C.critical : C.textMuted, marginTop: 6, fontWeight: '700' }]}>
+                    {entry.status === 'partial' ? 'Partially completed' : entry.completed ? 'Completed' : entry.missed ? 'Missed' : isFuture ? 'Upcoming' : 'Planned'}
+                  </Text>
+                </TouchableOpacity>
+                {entry.type !== 'race' ? (
                   <InfoButton term={entry.workout?.type ?? (entry.type === 'strength' ? 'strength' : 'rest')} />
-                )}
+                ) : null}
               </View>
-              {entry.workout ? (
-                <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>
-                  {entrySummary(entry)}
-                </Text>
-              ) : null}
-              {entry.session ? (
-                <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>{entrySummary(entry)}</Text>
-              ) : null}
-              {!entry.workout && !entry.session && entry.summary ? (
-                <Text style={[styles.futureText, { color: C.textMuted, marginTop: 4 }]}>{entry.summary}</Text>
-              ) : null}
-              {entry.designation ? (
-                <Text style={[styles.futureText, { color: C.textDim, marginTop: 4, fontWeight: '700' }]}>
-                  {displayLabel(entry.designation)}
-                </Text>
-              ) : null}
-              <Text style={[styles.futureText, { color: entry.completed ? C.positive : entry.missed ? C.critical : C.textMuted, marginTop: 6, fontWeight: '700' }]}>
-                {entry.status === 'partial' ? 'Partially completed' : entry.completed ? 'Completed' : entry.missed ? 'Missed' : isFuture ? 'Upcoming' : 'Planned'}
-              </Text>
-            </TouchableOpacity>
+            </View>
           ))
         )}
 
@@ -623,7 +800,12 @@ export default function CalendarScreen() {
         {!info.beforeStart && info.entries.some(e => !e.completed && e.type !== 'race') && (isToday || (isFuture && isCurrentWeek)) ? (
           <TouchableOpacity
             style={[styles.startButton, { backgroundColor: C.primary }]}
-            onPress={() => router.push(routeForEntry(info.entries.find(e => e.type !== 'race') ?? info.entries[0]) as never)}
+            onPress={() => {
+              const entry = info.entries.find(e => e.type !== 'race') ?? info.entries[0];
+              router.push((isToday
+                ? routeForEntry(entry)
+                : detailRouteForEntry(entry, toYMD(selectedDate))) as never);
+            }}
             activeOpacity={0.8}
           >
             <Text style={[styles.startButtonText, { color: C.onPrimary }]}>{actionLabelForEntries(info.entries, isToday)}</Text>

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type {
@@ -14,21 +15,25 @@ import { syncStrengthLog, deleteStrengthLog } from '../lib/syncService';
 import { syncStrengthSessionToExternalServices } from '../lib/externalIntegrations';
 import { useActivityStore } from './activityStore';
 import { activityFromStrengthRecord } from '../utils/activityMigration';
+import type { CompletionClassification } from '../types/activity';
 
 type StrengthLogEdits = Partial<Pick<StrengthLogRecord,
   'actualDuration' | 'overallRpe' | 'notes' | 'exercises'>>;
 
 type ManualStrengthEntry = {
   completionKey:   string;
+  scheduledSessionId?: string;
   sessionType:     StrengthSessionType;
   goal:            StrengthGoal;
   week:            number;
   plannedDuration: number;
   actualDuration:  number;
   exercises:       CompletedExercise[];
+  exerciseDetails?: ExerciseSessionDetail[];
   overallRpe?:     number;
   notes?:          string;
-  source?:         'manual' | 'preset';
+  completionClassification?: CompletionClassification;
+  source?:         'generated' | 'manual' | 'preset';
   presetId?:       string;
   workoutName?:    string;
 };
@@ -73,6 +78,7 @@ function migrateStrengthRecord(r: Partial<StrengthLogRecord>): StrengthLogRecord
   return {
     id:              r.id              ?? '',
     sessionId:       r.sessionId       ?? '',
+    scheduledSessionId: r.scheduledSessionId,
     sessionType:     r.sessionType     ?? 'full_body',
     goal:            r.goal            ?? 'maintenance',
     week:            r.week            ?? 1,
@@ -80,6 +86,7 @@ function migrateStrengthRecord(r: Partial<StrengthLogRecord>): StrengthLogRecord
     completed:       true,
     skipped:         r.skipped,
     skippedReason:   r.skippedReason,
+    completionClassification: r.completionClassification,
     plannedDuration:  r.plannedDuration  ?? 0,
     actualDuration:   r.actualDuration,
     exercises:        r.exercises        ?? [],
@@ -233,6 +240,7 @@ export const useStrengthStore = create<StrengthStore>()(
         const record: StrengthLogRecord = {
           id:              entry.completionKey,
           sessionId:       entry.completionKey,
+          scheduledSessionId: entry.scheduledSessionId,
           sessionType:     entry.sessionType,
           goal:            entry.goal,
           week:            entry.week,
@@ -241,8 +249,10 @@ export const useStrengthStore = create<StrengthStore>()(
           plannedDuration: entry.plannedDuration,
           actualDuration:  entry.actualDuration,
           exercises:       entry.exercises,
+          exerciseDetails: entry.exerciseDetails,
           overallRpe:      entry.overallRpe,
           notes:           entry.notes,
+          completionClassification: entry.completionClassification,
           source:          entry.source ?? 'manual',
           presetId:        entry.presetId,
           workoutName:     entry.workoutName,
@@ -279,7 +289,7 @@ export const useStrengthStore = create<StrengthStore>()(
     }),
     {
       name:       'strength-store',
-      storage:    createJSONStorage(() => AsyncStorage),
+      storage:    createAppJSONStorage(),
       partialize: (state) => ({
         completedSessions: state.completedSessions,
         history:           state.history,

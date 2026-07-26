@@ -36,6 +36,7 @@ import { useActivityStore } from '../../../src/store/activityStore';
 import { useTrainingPreferencesStore } from '../../../src/store/trainingPreferencesStore';
 import { useBeginnerPlanStore } from '../../../src/store/beginnerPlanStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
+import { useAdaptationStore } from '../../../src/store/adaptationStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { pickTargetRace } from '../../../src/utils/plan/macroPlanner';
 import { buildCoachingInput } from '../../../src/utils/coachingInputBuilder';
@@ -72,6 +73,11 @@ import { displayLabel } from '../../../src/utils/displayLabels';
 import { formatYMDForDisplay } from '../../../src/utils/dateFormatting';
 import { sanitizeCoachDisplayText } from '../../../src/utils/coachDisplay';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
+import { calculateReadiness } from '../../../src/utils/training/calculateReadiness';
+import type { AdaptationResult } from '../../../src/types/adaptation';
+import { adaptationWeekKey, type ConfirmedAdaptation } from '../../../src/utils/adaptationWorkflow';
+import { toYMD } from '../../../src/utils/calendarEngine';
+import type { ScheduledSession } from '../../../src/utils/scheduledSessions';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,6 +113,7 @@ export type CoachTrainingContext = {
   focus:            string;
   race:             CoachRaceContext | 'none';
   adaptations:      string[];
+  adaptationStatus: string;
   todayWorkout:     { title: string; rationale: string; target?: string; mainSet?: string } | null;
 };
 
@@ -168,7 +175,56 @@ function buildTrainingPlanBlock(ctx: CoachTrainingContext): string {
 - Race: ${raceLine}
 - This week's adaptations:
 ${adaptLines}
+- Execution state: ${ctx.adaptationStatus}
 - ${todayLine}`;
+}
+
+// Adaptation fields may be extended by the adaptation stream independently of
+// the coach. Read optional confirmation/readiness fields defensively so this
+// handoff remains accurate for both existing and newly enriched records.
+function buildAdaptationStatus(
+  result: AdaptationResult | undefined,
+  confirmed: ConfirmedAdaptation | undefined,
+  todaySession: ScheduledSession | null,
+  todayCompleted: boolean,
+  dailyReadinessLabel: string | undefined,
+  fatigueScore: number,
+  recoveryScore: number,
+): string {
+  const confirmedOverlay = todaySession
+    ? confirmed?.overlays.find(overlay => overlay.scheduledSessionId === todaySession.scheduledSessionId)
+    : undefined;
+  if (confirmedOverlay) {
+    const prescribed = `${confirmedOverlay.original.title} (${confirmedOverlay.original.target})`;
+    const adapted = confirmedOverlay.adapted
+      ? `${confirmedOverlay.adapted.title} (${confirmedOverlay.adapted.target})`
+      : 'removed without replacement';
+    return `Prescribed: ${prescribed}. Adapted: ${adapted}. Adaptation reason: ${confirmedOverlay.reason}; ${confirmedOverlay.explanation}. Completed: ${todayCompleted ? 'yes' : 'no'}. Readiness: ${dailyReadinessLabel ?? 'not recorded'}. Athlete confirmation: confirmed at ${confirmed?.confirmedAt ?? 'unknown time'}.`;
+  }
+  if (confirmed?.overlays.length) {
+    const changes = confirmed.overlays.slice(0, 4).map(overlay => {
+      const adapted = overlay.adapted
+        ? `${overlay.adapted.title} (${overlay.adapted.target})`
+        : 'removed without replacement';
+      return `${overlay.original.date} ${overlay.original.title} -> ${adapted}; reason ${overlay.reason}`;
+    }).join(' | ');
+    return `Confirmed week adaptations: ${changes}. Today completed: ${todayCompleted ? 'yes' : 'no'}. Readiness: ${dailyReadinessLabel ?? 'not recorded'}. Athlete confirmation: confirmed at ${confirmed.confirmedAt}.`;
+  }
+  const todayIndex = (new Date().getDay() + 6) % 7;
+  const today = result?.entries?.find(entry => entry.dayIndex === todayIndex);
+  const optional = result as (AdaptationResult & {
+    readinessLabel?: string;
+    userConfirmed?: boolean;
+    userConfirmation?: { confirmed?: boolean };
+  }) | undefined;
+  const readinessLabel = dailyReadinessLabel ?? optional?.readinessLabel
+    ?? calculateReadiness(recoveryScore, fatigueScore).readinessLabel;
+  const confirmation = optional?.userConfirmed ?? optional?.userConfirmation?.confirmed;
+  const prescribed = today?.originalType ?? 'not recorded';
+  const adapted = today && today.change !== 'as_planned'
+    ? `${today.adaptedType}; reason: ${today.reason}`
+    : 'no change recorded';
+  return `Prescribed: ${prescribed}. Adapted: ${adapted}. Completed: ${todayCompleted ? 'yes' : 'no'}. Readiness: ${readinessLabel}. Athlete confirmation: ${confirmation === undefined ? 'not recorded' : confirmation ? 'confirmed' : 'not confirmed'}.`;
 }
 
 // Recent Movement Lab still-frame + video analyses, serialized via the coach
@@ -542,10 +598,13 @@ export default function CoachScreen() {
   const recoveryScore = useAthleteStore(s => s.recoveryScore);
   const currentWeek = useAthleteStore(s => s.currentWeek);
   const trainingPhase = useAthleteStore(s => s.trainingPhase);
+  const weekAdaptation = useAdaptationStore(s => s.getAdaptation(currentWeek));
+  const confirmedAdaptations = useAdaptationStore(s => s.confirmed);
 
   // ── Plan spine — grounds the coach in the real macro plan ──────────────────
   const weekPlan          = useWeekPlan();
   const scheduled         = useScheduledSessions(weekPlan);
+  const confirmedAdaptation = confirmedAdaptations[adaptationWeekKey(toYMD(weekPlan.weekStartDate))];
   const { richWeek, weeksToRace } = weekPlan;
   const planGoalType      = useTrainingPlanStore(s => s.goalType);
   const planStartDate     = useTrainingPlanStore(s => s.programStartDate);
@@ -568,18 +627,23 @@ export default function CoachScreen() {
     const comparison = scheduled.getPlannedVersusCompletedComparison(session.scheduledSessionId).slice(0, 7).join(' | ');
     const prescription = session.runWalk
       ? `Total ${session.runWalk.totalMinutes} min; warm-up ${session.runWalk.warmupMinutes} min; ${session.runWalk.rounds} rounds of ${session.runWalk.runSeconds} sec run / ${session.runWalk.walkSeconds} sec walk; cooldown ${session.runWalk.cooldownMinutes} min; ${session.runWalk.hrZone}; RPE ${session.runWalk.rpe}.`
-      : `${session.durationMinutes} min; ${session.target}; ${session.hrTarget ?? ''}; ${session.rpeTarget ?? ''}.`;
+      : `${session.durationMinutes} min; ${session.target}; ${session.hrTarget ?? ''}; ${session.rpeTarget ?? ''}.${session.warmup ? ` Warm-up: ${session.warmup}.` : ''}`;
     return {
       title: session.title,
       rationale: `${session.purpose} ${prescription}${completed ? ` Completion linked: ${completed.status}; ${comparison}` : ''}`,
     };
   }, [scheduled]);
 
+  const todayAdaptationCompleted = useMemo(() => {
+    const session = scheduled.todayPrimary;
+    return Boolean(session && scheduled.getCompletedActivityForScheduledSession(session.scheduledSessionId));
+  }, [scheduled]);
+
   const trainingCtx: CoachTrainingContext = useMemo(() => ({
     runHistory,
     strengthHistory,
     readinessLine: todayReadiness?.date === todayDateKey()
-      ? `Today's readiness check-in: ${todayReadiness.score}/100`
+      ? `Today's readiness: ${todayReadiness.details.label}. ${todayReadiness.details.message}`
       : 'No readiness check-in yet today.',
     fatigueScore,
     recoveryScore,
@@ -590,10 +654,20 @@ export default function CoachScreen() {
     focus:            weekPlan.metadata.focus,
     race:             targetRaceCtx,
     adaptations:      weekPlan.adaptations,
+    adaptationStatus: buildAdaptationStatus(
+      weekAdaptation,
+      confirmedAdaptation,
+      scheduled.todayPrimary,
+      todayAdaptationCompleted,
+      todayReadiness?.date === todayDateKey() ? todayReadiness.details.label : undefined,
+      fatigueScore,
+      recoveryScore,
+    ),
     todayWorkout:     todayWorkoutCtx,
   }), [
     runHistory, strengthHistory, todayReadiness, fatigueScore, recoveryScore, currentWeek, trainingPhase,
-    planGoalType, planStartDate, weekPlan.metadata.focus, targetRaceCtx, weekPlan.adaptations, todayWorkoutCtx,
+    planGoalType, planStartDate, weekPlan.metadata.focus, targetRaceCtx, weekPlan.adaptations,
+    weekAdaptation, confirmedAdaptation, scheduled.todayPrimary, todayAdaptationCompleted, todayWorkoutCtx,
   ]);
 
   // ── Insights (deterministic coach engine over real history) ────────────────

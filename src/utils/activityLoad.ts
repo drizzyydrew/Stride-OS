@@ -145,7 +145,15 @@ export function sanitizeActivityMetrics(
     estimatedCalories: metrics.estimatedCalories,
   };
 
-  if (DISTANCE_TYPES.has(activityType)) clean.distanceMeters = metrics.distanceMeters;
+  if (DISTANCE_TYPES.has(activityType)) {
+    clean.distanceMeters = metrics.distanceMeters;
+    // Never dropped: honesty gate depends on distanceSource surviving the
+    // store round-trip exactly like distanceMeters does (e.g. 'unavailable'
+    // for indoor cycling with no equipment-display entry, or the treadmill
+    // confirmed-speed/prescribed-estimate/equipment-display/manual sources).
+    clean.distanceSource = metrics.distanceSource;
+    clean.originalEstimatedDistanceMiles = metrics.originalEstimatedDistanceMiles;
+  }
   if (ELEVATION_TYPES.has(activityType)) {
     clean.elevationGainMeters = metrics.elevationGainMeters;
     clean.elevationLossMeters = metrics.elevationLossMeters;
@@ -155,6 +163,9 @@ export function sanitizeActivityMetrics(
   if (CADENCE_TYPES.has(activityType)) clean.cadenceRpm = metrics.cadenceRpm;
   if (activityType === 'cycling' || activityType === 'indoor_cycling') {
     clean.cyclingPowerWatts = metrics.cyclingPowerWatts;
+  }
+  if (activityType === 'indoor_cycling') {
+    clean.resistanceLevel = metrics.resistanceLevel;
   }
   if (activityType === 'running' || activityType === 'walking') {
     clean.runWalkIntervals = metrics.runWalkIntervals;

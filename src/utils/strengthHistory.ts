@@ -223,7 +223,7 @@ export function getLastLoggedExercise(
   return {
     timestamp:     latest.timestamp,
     completedSets: latest.completed.length,
-    reps:          first.reps,
+    reps:          first.reps ?? 0,
     load:          first.load,
     rpe:           first.rpe,
   };

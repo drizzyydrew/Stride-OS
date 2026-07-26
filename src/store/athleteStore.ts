@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { TrainingPhase, ProgressionLevel } from '../types/training';
@@ -153,7 +154,7 @@ export const useAthleteStore = create<AthleteState>()(
     }),
     {
       name:    'athlete-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       partialize: (state) => ({
         athleteName:       state.athleteName,
         goalRace:          state.goalRace,

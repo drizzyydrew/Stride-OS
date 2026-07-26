@@ -9,6 +9,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useWeekPlan }     from '../../../src/hooks/useWeekPlan';
+import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
+import { addDays as addCalendarDays, toYMD } from '../../../src/utils/calendarEngine';
 
 import WorkoutDetailCard from '../../../src/components/training/WorkoutDetailCard';
 import IntervalStructureCard from '../../../src/components/training/IntervalStructureCard';
@@ -162,9 +164,19 @@ export default function SessionDetailScreen() {
   } = useWorkoutStore();
 
   // ── Plan (shared with training list — deterministic, no store writes) ────
-  const { richWeek } = useWeekPlan();
+  const weekPlan = useWeekPlan();
+  const { richWeek } = weekPlan;
+  const scheduled = useScheduledSessions(weekPlan);
 
-  const workout = richWeek.workouts[dayIndex];
+  const canonicalWorkout = richWeek.workouts[dayIndex];
+
+  // richWeek is the generator's immutable prescription. The scheduled-session
+  // resolver may layer a confirmed adaptation over that prescription; prefer
+  // its RichWorkout so the executable detail agrees with Calendar and Today.
+  const dayDateYMD = toYMD(addCalendarDays(weekPlan.weekStartDate, (dayIndex + 1) % 7));
+  const daySessions = scheduled.sessionsForDate(dayDateYMD);
+  const dayScheduledSession = daySessions.find(entry => entry.priority === 'primary') ?? daySessions[0] ?? null;
+  const workout = dayScheduledSession?.richWorkout ?? canonicalWorkout;
 
   // ── Completion key ───────────────────────────────────────────────────────────
   const completionKey = workout
@@ -177,6 +189,15 @@ export default function SessionDetailScreen() {
   const logRecord = history.find(r => r.id === completionKey);
 
   const isRest = workout?.type === 'rest';
+
+  // This screen's richWeek only carries the running engine's view of the
+  // week — non-running days (strength, mobility, active recovery, etc.) show
+  // up here as an undifferentiated 'rest' RichWorkout with no warmup, even
+  // though the unified schedule knows exactly what's planned. Read-only: pull
+  // the actual scheduled session for this day so its real warmup text (e.g.
+  // a strength session's warmup protocol) can be shown instead of nothing.
+  const warmupText = dayScheduledSession?.warmup
+    ?? (!isRest ? workout?.warmup?.instructions : undefined);
 
   // ── Local UI state ───────────────────────────────────────────────────────────
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
@@ -314,6 +335,32 @@ export default function SessionDetailScreen() {
 
         {/* Main workout detail */}
         <WorkoutDetailCard workout={workout} />
+
+        {/* This explanation deliberately comes from the scheduled-session
+            resolver, not a second generated workout. It therefore reflects
+            confirmed adaptation overlays everywhere the athlete sees it. */}
+        {dayScheduledSession && (
+          <Card style={{ marginBottom: spacing.cardGap }}>
+            <Text style={styles.summaryCellLabel}>Scheduled prescription</Text>
+            <Text style={[styles.summaryMeta, { marginTop: spacing.sm }]}>What: {dayScheduledSession.title} · {dayScheduledSession.target}</Text>
+            <Text style={[styles.summaryMeta, { marginTop: spacing.xs }]}>Why: {dayScheduledSession.purpose}</Text>
+            <Text style={[styles.summaryMeta, { marginTop: spacing.xs }]}>Feel: {dayScheduledSession.rpeTarget ? `RPE ${dayScheduledSession.rpeTarget}` : 'conversational and controlled'}{dayScheduledSession.hrTarget ? ` · ${dayScheduledSession.hrTarget}` : ''}</Text>
+            <Text style={[styles.summaryMeta, { marginTop: spacing.xs }]}>What not to do: Do not add volume or intensity to make up a missed session.</Text>
+            <Text style={[styles.summaryMeta, { marginTop: spacing.xs }]}>Success: Finish feeling like you could have done a little more, with symptoms no worse during or after.</Text>
+            {dayScheduledSession.adaptationReason ? <Text style={[styles.summaryMeta, { marginTop: spacing.xs }]}>Adaptation: {dayScheduledSession.adaptationReason}</Text> : null}
+          </Card>
+        )}
+
+        {/* Warm-up for scheduled non-running sessions (strength, mobility,
+            active recovery, etc.) — WorkoutDetailCard already shows its own
+            warmup segment for running-type days, so this only fills the gap
+            when this screen's richWorkout is a bare 'rest' placeholder. */}
+        {isRest && warmupText && (
+          <Card style={{ marginBottom: spacing.cardGap }}>
+            <Text style={styles.summaryCellLabel}>{dayScheduledSession?.title ?? 'Planned Session'}</Text>
+            <Text style={[styles.summaryMeta, { marginTop: spacing.sm }]}>Warm-up: {warmupText}</Text>
+          </Card>
+        )}
 
         {/* Interval structure (only for structured sessions) */}
         {workout.intervals && (

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -27,7 +27,9 @@ import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
 import { useIntegrationsStore } from '../../../src/store/integrationsStore';
 import {
   activeSessionStoresHydrated,
+  discardActiveSession,
   getConflictingActiveSession,
+  isActiveSessionStale,
 } from '../../../src/lib/activeSessionCoordinator';
 
 const TYPES: { type: ActiveOutdoorType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -47,13 +49,20 @@ function time(seconds: number): string {
 export default function StartOutdoorActivityScreen() {
   const C = useColors();
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    scheduledSessionId?: string;
+    activityType?: string;
+    associatedTrainingBlockId?: string;
+    associatedGoalId?: string;
+  }>();
   const addActivity = useActivityStore(state => state.addActivity);
   const healthKitEnabled = useIntegrationsStore(state => state.healthKitEnabled);
   const active = useActiveActivityStore();
   const routes = useRouteStore(state => state.routes);
   const attachment = useRouteStore(state => state.routeAttachment);
   const attached = effectiveAttachedRoute(routes.find(route => route.id === attachment.routeId) ?? null, attachment);
-  const [selectedType, setSelectedType] = useState<ActiveOutdoorType>('walking');
+  const paramActivityType = TYPES.find(item => item.type === params.activityType)?.type;
+  const [selectedType, setSelectedType] = useState<ActiveOutdoorType>(paramActivityType ?? 'walking');
   const [runWalk, setRunWalk] = useState(false);
   const [navigationMode, setNavigationMode] = useState<'off' | 'walking' | 'cycling'>('off');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -107,7 +116,7 @@ export default function StartOutdoorActivityScreen() {
       previousElapsedSeconds: previousElapsed.current,
     });
     previousElapsed.current = elapsedSeconds;
-    if (cue) enqueueVoiceCue(cue.text);
+    if (cue) enqueueVoiceCue(cue.text, 'runWalk');
   }, [active.intervalPromptsEnabled, active.isActive, active.runWalkIntervals, elapsedSeconds]);
 
   useEffect(() => {
@@ -116,7 +125,7 @@ export default function StartOutdoorActivityScreen() {
     const progress = updateRouteGuidanceProgress({ point, plan: guidance });
     active.setNextInstruction(progress.isOffRoute ? 'You appear to be off route.' : progress.nextInstruction);
     if (progress.isOffRoute) {
-      enqueueVoiceCue('You appear to be off route.');
+      enqueueVoiceCue('You appear to be off route.', 'technique');
     } else if (
       progress.nextInstruction
       && progress.distanceToNextStepMeters != null
@@ -124,7 +133,7 @@ export default function StartOutdoorActivityScreen() {
       && lastAnnouncedStep.current !== progress.nextInstruction
     ) {
       lastAnnouncedStep.current = progress.nextInstruction;
-      enqueueVoiceCue(progress.nextInstruction);
+      enqueueVoiceCue(progress.nextInstruction, 'technique');
     }
   }, [active.aggregate.points.length, active.isActive, active.navigationPromptsEnabled, guidance]);
 
@@ -157,13 +166,21 @@ export default function StartOutdoorActivityScreen() {
     }
     const conflict = getConflictingActiveSession('outdoor');
     if (conflict) {
+      const stale = isActiveSessionStale();
       Alert.alert(
         'Another session is active',
-        `${conflict.name} is still in progress. Continue it or end it before starting another outdoor activity.`,
+        stale
+          ? `${conflict.name} started a while ago and is still open. Continue it, or end it and start this activity.`
+          : `${conflict.name} is still in progress. Continue it or end it before starting another outdoor activity.`,
         [
           {
             text: 'Continue Current Session',
             onPress: () => router.push(conflict.route as never),
+          },
+          {
+            text: 'End Previous Session and Start New',
+            style: 'destructive',
+            onPress: () => { void discardActiveSession(conflict).then(() => begin()); },
           },
           { text: 'Cancel', style: 'cancel' },
         ],
@@ -182,6 +199,9 @@ export default function StartOutdoorActivityScreen() {
       runWalkIntervals: runWalk ? intervals : [],
       routeId: attached?.id,
       navigationMode: attached ? mode : 'off',
+      scheduledSessionId: params.scheduledSessionId,
+      associatedTrainingBlockId: params.associatedTrainingBlockId,
+      associatedGoalId: params.associatedGoalId,
     });
     previousElapsed.current = 0;
     setElapsedSeconds(0);
@@ -203,7 +223,10 @@ export default function StartOutdoorActivityScreen() {
       elevationGainMeters: 0,
       elevationLossMeters: 0,
     }).catch(() => undefined);
-    enqueueVoiceCue(runWalk ? 'Begin running.' : `${TYPES.find(item => item.type === selectedType)?.label ?? 'Activity'} started.`);
+    enqueueVoiceCue(
+      runWalk ? 'Begin running.' : `${TYPES.find(item => item.type === selectedType)?.label ?? 'Activity'} started.`,
+      runWalk ? 'runWalk' : 'motivation',
+    );
   }
 
   async function saveAndFinish() {
@@ -235,7 +258,11 @@ export default function StartOutdoorActivityScreen() {
             subtype: latest.runWalkIntervals.length ? 'run_walk' : latest.subtype,
             source: 'tracked',
             status: 'completed',
-            scheduled: false,
+            completionClassification: 'completed_as_prescribed',
+            scheduled: Boolean(latest.scheduledSessionId),
+            associatedTrainingBlockId: latest.associatedTrainingBlockId ?? undefined,
+            associatedGoalId: latest.associatedGoalId ?? undefined,
+            scheduledSessionId: latest.scheduledSessionId ?? undefined,
             startTime: latest.startedAt ?? Date.now() - elapsedToSave * 1000,
             endTime: Date.now(),
             indoor: false,
@@ -298,6 +325,20 @@ export default function StartOutdoorActivityScreen() {
                 <Text style={[s.typeText, { color: C.text }]}>{item.label}</Text>
               </TouchableOpacity>
             ))}
+            {/* Distinct choice, not a selectedType option — routes straight to
+                the indoor-ride live screen instead of starting GPS tracking. */}
+            <TouchableOpacity
+              onPress={() => router.push({
+                pathname: '/(tabs)/activity/indoor-ride',
+                params: params.scheduledSessionId ? { scheduledSessionId: params.scheduledSessionId } : undefined,
+              } as never)}
+              style={[s.typeCard, { backgroundColor: C.card, borderColor: C.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Indoor cycling — no GPS"
+            >
+              <Ionicons name="bicycle" size={24} color={C.textMuted} />
+              <Text style={[s.typeText, { color: C.text }]}>Indoor Cycling</Text>
+            </TouchableOpacity>
           </View>
           {selectedType === 'running' || selectedType === 'walking' ? (
             <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>

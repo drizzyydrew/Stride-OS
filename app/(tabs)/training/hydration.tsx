@@ -788,6 +788,7 @@ export default function HydrationScreen({ embedded = false }: { embedded?: boole
                   : hydrationReminderEnabled
                     ? `Hydration reminder. Drink approximately ${hydrationCueOz} ounces.`
                     : `Fuel reminder. Take approximately ${fuelCueG} grams of carbohydrate.`,
+                hydrationReminderEnabled ? 'hydration' : 'fueling',
               );
             }}
           >

@@ -10,6 +10,7 @@ export default function ActivityLayout() {
       <Stack.Screen name="plans" />
       <Stack.Screen name="preferences" />
       <Stack.Screen name="start" />
+      <Stack.Screen name="indoor-ride" />
     </Stack>
   );
 }

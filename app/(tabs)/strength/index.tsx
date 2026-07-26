@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,9 +16,8 @@ import { useColors } from '../../../src/theme/useColors';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
-import { useActivityStore } from '../../../src/store/activityStore';
 import { LAYOUT } from '../../../src/constants/layout';
-import type { CompletedExercise, MovementPattern, StrengthSession } from '../../../src/types/strength';
+import type { MovementPattern, StrengthSession } from '../../../src/types/strength';
 import { getLastLoggedExercise, suggestProgression } from '../../../src/utils/strengthHistory';
 import { getExerciseGuide } from '../../../src/constants/exerciseGuides';
 import { toYMD } from '../../../src/utils/calendarEngine';
@@ -51,10 +51,13 @@ import {
   useActiveStrengthSessionStore,
 } from '../../../src/store/activeStrengthSessionStore';
 import { displayLabel, displayLabels } from '../../../src/utils/displayLabels';
-import { buildManualActivityDraft } from '../../../src/utils/activityCompletion';
+import { completedExercisesFromActiveSession } from '../../../src/utils/strengthPersistence';
+import StrengthSetEditor from '../../../src/components/strength/StrengthSetEditor';
 import {
   activeSessionStoresHydrated,
+  discardActiveSession,
   getConflictingActiveSession,
+  isActiveSessionStale,
 } from '../../../src/lib/activeSessionCoordinator';
 
 type Segment = 'strength' | 'presets' | 'mobility';
@@ -403,6 +406,7 @@ type ExDef = {
   muscles: string;
   desc: string;
   cue: string;
+  equipment: string[];
 };
 
 const PATTERN_MUSCLES: Record<MovementPattern, string> = {
@@ -432,6 +436,7 @@ function sessionToExDefs(session: StrengthSession, strengthHistory: ReturnType<t
       muscles: PATTERN_MUSCLES[ex.exercise.pattern] ?? displayLabel(ex.exercise.pattern),
       desc: ex.exercise.rationale,
       cue: ex.exercise.coachingCues[0] ?? ex.rationale,
+      equipment: ex.exercise.equipment,
     };
   });
 }
@@ -510,7 +515,6 @@ export default function StrengthScreen() {
   const fatigueScore = useAthleteStore(s => s.fatigueScore);
   const readinessLimited = weekPlan.strengthWeek.progressionState === 'regress';
   const logStrengthSession = useStrengthStore(s => s.manualLog);
-  const addActivity = useActivityStore(s => s.addActivity);
   const strengthHistory = useStrengthStore(s => s.history);
   const activeStrengthSession = useActiveStrengthSessionStore(s => s.session);
   const startActiveStrengthSession = useActiveStrengthSessionStore(s => s.startSession);
@@ -520,6 +524,15 @@ export default function StrengthScreen() {
   const uncompleteActiveStrengthExercise = useActiveStrengthSessionStore(s => s.uncompleteExercise);
   const setActiveStrengthRpe = useActiveStrengthSessionStore(s => s.setExerciseRpe);
   const setActiveStrengthLoad = useActiveStrengthSessionStore(s => s.setExerciseLoad);
+  const addActiveStrengthSet = useActiveStrengthSessionStore(s => s.addSet);
+  const removeActiveStrengthSet = useActiveStrengthSessionStore(s => s.removeSet);
+  const duplicateActiveStrengthSet = useActiveStrengthSessionStore(s => s.duplicateSet);
+  const editActiveStrengthSet = useActiveStrengthSessionStore(s => s.editSet);
+  const toggleActiveStrengthWarmup = useActiveStrengthSessionStore(s => s.toggleSetWarmup);
+  const toggleActiveStrengthSetCompleted = useActiveStrengthSessionStore(s => s.toggleSetCompleted);
+  const skipActiveStrengthExercise = useActiveStrengthSessionStore(s => s.skipExercise);
+  const addActiveStrengthExercise = useActiveStrengthSessionStore(s => s.addExercise);
+  const substituteActiveStrengthExercise = useActiveStrengthSessionStore(s => s.substituteExercise);
   const completionRequestedAt = useActiveStrengthSessionStore(s => s.completionRequestedAt);
   const clearCompletionRequest = useActiveStrengthSessionStore(s => s.clearCompletionRequest);
   const clearActiveStrengthSession = useActiveStrengthSessionStore(s => s.clearSession);
@@ -577,6 +590,7 @@ export default function StrengthScreen() {
   const [cooldownOpen, setCooldownOpen] = useState(false);
   const [weightPickerFor, setWeightPickerFor] = useState<ExDef | null>(null);
   const [rpePickerFor, setRpePickerFor] = useState<ExDef | null>(null);
+  const [exerciseChangeName, setExerciseChangeName] = useState('');
 
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
@@ -656,7 +670,11 @@ export default function StrengthScreen() {
 
   function completeExercise(ex: ExDef) {
     setCompletedExercises(prev => ({ ...prev, [ex.id]: true }));
-    if (ownsActiveTrainingBlock) completeActiveStrengthExercise(ex.id);
+    if (ownsActiveTrainingBlock) {
+      const activeExercise = activeStrengthSession?.exercises.find(item => item.id === ex.id);
+      activeExercise?.setEntries.forEach(setEntry => toggleActiveStrengthSetCompleted(ex.id, setEntry.id, true));
+      completeActiveStrengthExercise(ex.id);
+    }
   }
   function undoExercise(ex: ExDef) {
     setCompletedExercises(prev => ({ ...prev, [ex.id]: false }));
@@ -670,12 +688,14 @@ export default function StrengthScreen() {
       workoutId: session.id,
       workoutName: wDef.title,
       plannedDurationMin: estimatedDurationMin,
+      scheduledSessionId: activeEntry?.scheduledSessionId,
+      scheduledCategory: activeEntry?.scheduledSession.activityType,
       exercises: exercises.map(exercise => ({
         id: exercise.id,
         name: exercise.name,
         sets: exercise.sets,
         reps: exercise.reps,
-        equipment: [],
+        equipment: exercise.equipment,
         notes: exercise.cue,
       })),
     });
@@ -701,13 +721,21 @@ export default function StrengthScreen() {
     }
     const crossDomainConflict = getConflictingActiveSession('strength');
     if (crossDomainConflict) {
+      const stale = isActiveSessionStale();
       Alert.alert(
         'Another session is active',
-        `${crossDomainConflict.name} is still in progress. Continue it or end it before starting Strength.`,
+        stale
+          ? `${crossDomainConflict.name} started a while ago and is still open. Continue it, or end it and start Strength.`
+          : `${crossDomainConflict.name} is still in progress. Continue it or end it before starting Strength.`,
         [
           {
             text: 'Continue Current Session',
             onPress: () => router.push(crossDomainConflict.route as never),
+          },
+          {
+            text: 'End Previous Session and Start New',
+            style: 'destructive',
+            onPress: () => { void discardActiveSession(crossDomainConflict).then(() => start()); },
           },
           { text: 'Cancel', style: 'cancel' },
         ],
@@ -763,6 +791,66 @@ export default function StrengthScreen() {
     resumeActiveStrengthSession();
   }
 
+  // "Do My Own Workout" — freeform custom strength, either standalone or
+  // launched against a specific scheduled session (Calendar's action sheet
+  // and the buttons below both call this with/without a linked session).
+  function launchCustomWorkout(target?: { scheduledSessionId: string; scheduledCategory?: string; workoutName?: string }) {
+    if (!activeSessionStoresHydrated()) {
+      Alert.alert('Restoring session', 'StrideOS is restoring your active-session state. Try again in a moment.');
+      return;
+    }
+    const crossDomainConflict = getConflictingActiveSession('strength');
+    if (crossDomainConflict) {
+      Alert.alert(
+        'Another session is active',
+        `${crossDomainConflict.name} is still in progress. Continue it or end it before starting a custom workout.`,
+        [
+          { text: 'Continue Current Session', onPress: () => router.push(crossDomainConflict.route as never) },
+          { text: 'End Previous Session and Start New', style: 'destructive', onPress: () => { void discardActiveSession(crossDomainConflict).then(() => launchCustomWorkout(target)); } },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
+      return;
+    }
+    const launch = () => {
+      startActiveStrengthSession({
+        source: 'custom',
+        workoutId: target?.scheduledSessionId ?? `custom_adhoc_${Date.now()}`,
+        workoutName: target?.workoutName ?? 'Custom Workout',
+        plannedDurationMin: 0,
+        exercises: [],
+        scheduledSessionId: target?.scheduledSessionId,
+        scheduledCategory: target?.scheduledCategory,
+      });
+      router.push('/(tabs)/strength/custom-session' as never);
+    };
+    if (!activeStrengthSession) return launch();
+    Alert.alert(
+      'Another strength session is active',
+      `${activeStrengthSession.workoutName} is still in progress. StrideOS will never end it silently.`,
+      [
+        {
+          text: 'Continue Current Session',
+          onPress: () => router.push(activeStrengthSession.source === 'preset'
+            ? '/(tabs)/strength/preset-session' as never
+            : activeStrengthSession.source === 'custom'
+              ? '/(tabs)/strength/custom-session' as never
+              : '/(tabs)/strength' as never),
+        },
+        {
+          text: 'End Current Session and Start Custom Workout',
+          style: 'destructive',
+          onPress: async () => {
+            await endStrengthLiveActivity().catch(console.warn);
+            clearActiveStrengthSession();
+            launch();
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
+  }
+
   // Keep the Live Activity in lockstep with the in-app session: every timer
   // tick, exercise completion, and pause/resume pushes authoritative state
   // (mirrors how the run activity stays current).
@@ -807,23 +895,30 @@ export default function StrengthScreen() {
     // prescribed sets as done. With nothing marked, treat the whole session
     // as completed (the athlete finished without ticking boxes).
     const anyMarked = Object.values(completedExercises).some(Boolean);
-    const loggedExercises: CompletedExercise[] = exercises.map(ex => {
-      const reps = primaryRepCount(ex.reps);
-      const load = getWeight(ex) > 0 ? `${getWeight(ex)} ${wtUnit}` : 'BW';
-      const done = anyMarked ? isExerciseDone(ex) : true;
-      return {
+    const loggedExercises = activeStrengthSession && ownsActiveTrainingBlock
+      ? completedExercisesFromActiveSession(
+        activeStrengthSession.exercises,
+        'training_block',
+        // A legacy session could have been completed before the per-set
+        // reducer existed. Preserve its deliberate exercise completions, but
+        // don't fabricate a set record while migrating persisted history.
+        anyMarked ? activeStrengthSession.completedExerciseIds : activeStrengthSession.exercises.map(exercise => exercise.id),
+        activeStrengthSession.rpeByExercise,
+        activeStrengthSession.loadByExercise,
+      )
+      : exercises.map(ex => ({
         exerciseId: ex.id,
         sets: Array.from({ length: ex.sets }, () => ({
-          reps,
-          load,
+          reps: primaryRepCount(ex.reps),
+          load: getWeight(ex) > 0 ? `${getWeight(ex)} ${wtUnit}` : 'BW',
           rpe: rpe[ex.id] ?? overallRpe,
-          completed: done,
+          completed: anyMarked ? isExerciseDone(ex) : true,
         })),
-      };
-    });
+      }));
 
     logStrengthSession({
       completionKey,
+      scheduledSessionId: activeEntry?.scheduledSessionId,
       sessionType: session.sessionType,
       goal: session.goal,
       week: currentWeek,
@@ -832,16 +927,11 @@ export default function StrengthScreen() {
       exercises: loggedExercises,
       overallRpe,
       notes: `${wDef.title} completed from the Strength screen.`,
+      source: 'generated',
+      completionClassification: anyMarked && exercisesCompleted < totalExercises
+        ? 'partial'
+        : 'completed_as_prescribed',
     }, fatigueScore);
-
-    addActivity(buildManualActivityDraft(activeEntry?.scheduledSession ?? null, {
-      activityType: 'strength',
-      completionState: anyMarked && exercisesCompleted < totalExercises ? 'partial' : 'completed_as_planned',
-      durationMinutes,
-      rpe: overallRpe,
-      notes: `${wDef.title} completed from the Strength screen.`,
-      indoor: true,
-    }));
 
     setCompletedExercises({});
     setTimer(0);
@@ -901,6 +991,9 @@ export default function StrengthScreen() {
                 : 'Set a program start date in Settings to see your strength sessions here.'}
             </Text>
           </View>
+          <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.primaryDim }]} onPress={() => launchCustomWorkout()} activeOpacity={0.8}>
+            <Text style={[styles.bigBtnText, { color: C.primary }]}>Do My Own Workout</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -926,6 +1019,9 @@ export default function StrengthScreen() {
               No strength session is scheduled this week — {weekPlan.strengthWeek.phaseNote || 'check back next week.'}
             </Text>
           </View>
+          <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.primaryDim }]} onPress={() => launchCustomWorkout()} activeOpacity={0.8}>
+            <Text style={[styles.bigBtnText, { color: C.primary }]}>Do My Own Workout</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -1014,6 +1110,19 @@ export default function StrengthScreen() {
                   {activeEntry?.scheduledSession.completedActivityId ? 'View Completed Activity' : 'Log Completion'}
                 </Text>
               </TouchableOpacity>
+              {!activeEntry?.scheduledSession.completedActivityId && (
+                <TouchableOpacity
+                  style={[styles.smBtn, { backgroundColor: C.cardAlt, marginBottom: 8 }]}
+                  onPress={() => launchCustomWorkout({
+                    scheduledSessionId: activeEntry!.scheduledSessionId,
+                    scheduledCategory: 'strength',
+                    workoutName: `Custom · ${wDef.title}`,
+                  })}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.smBtnText, { color: C.textMuted }]}>Do My Own Workout Instead</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity style={[styles.smBtn, { backgroundColor: C.cardAlt }]} onPress={() => router.back()} activeOpacity={0.8}>
                 <Text style={[styles.smBtnText, { color: C.textMuted }]}>Skip Workout</Text>
               </TouchableOpacity>
@@ -1076,6 +1185,9 @@ export default function StrengthScreen() {
           const lastPerformance = getLastLoggedExercise(strengthHistory, ex.id);
           const progression = suggestProgression(lastPerformance, ex.sets, readinessLimited, wtUnit);
           const guide = getExerciseGuide(ex.id);
+          const activeExercise = ownsActiveTrainingBlock
+            ? activeStrengthSession?.exercises.find(item => item.id === ex.id)
+            : null;
           return (
             <View
               key={ex.id}
@@ -1191,6 +1303,73 @@ export default function StrengthScreen() {
                     {rpeVal !== undefined ? `${rpeVal} · ${RPE_LABELS[rpeVal] ?? ''}` : 'Tap to set ›'}
                   </Text>
                 </TouchableOpacity>
+                {activeExercise ? (
+                  <>
+                    <StrengthSetEditor
+                      sets={activeExercise.setEntries}
+                      equipmentType={activeExercise.equipmentType}
+                      weightUnit={wtUnit}
+                      onAdd={() => addActiveStrengthSet(ex.id)}
+                      onDuplicate={setId => duplicateActiveStrengthSet(ex.id, setId)}
+                      onRemove={setId => removeActiveStrengthSet(ex.id, setId)}
+                      onEdit={(setId, patch) => editActiveStrengthSet(ex.id, setId, patch)}
+                      onToggleWarmup={setId => toggleActiveStrengthWarmup(ex.id, setId)}
+                      onToggleCompleted={setId => toggleActiveStrengthSetCompleted(ex.id, setId)}
+                    />
+                    <TouchableOpacity
+                      style={[{
+                        minHeight: 38,
+                        borderRadius: 9,
+                        marginTop: 8,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: activeExercise.skipped ? C.primaryDim : C.cardAlt,
+                      }]}
+                      onPress={() => skipActiveStrengthExercise(ex.id, !activeExercise.skipped)}
+                    >
+                      <Text style={[{ fontSize: 12, fontWeight: '800', color: activeExercise.skipped ? C.primary : C.textMuted }]}>
+                        {activeExercise.skipped ? 'Undo Skip' : 'Skip Exercise'}
+                      </Text>
+                    </TouchableOpacity>
+                    <TextInput
+                      value={exerciseChangeName}
+                      onChangeText={setExerciseChangeName}
+                      placeholder="Add or substitute exercise"
+                      placeholderTextColor={C.textDim}
+                      style={{
+                        minHeight: 42,
+                        marginTop: 8,
+                        borderWidth: 1,
+                        borderRadius: 9,
+                        borderColor: C.border,
+                        color: C.text,
+                        paddingHorizontal: 10,
+                      }}
+                    />
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                      <TouchableOpacity
+                        style={{ flex: 1, minHeight: 38, borderRadius: 9, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}
+                        disabled={!exerciseChangeName.trim()}
+                        onPress={() => {
+                          addActiveStrengthExercise({ name: exerciseChangeName.trim(), equipmentType: 'other' });
+                          setExerciseChangeName('');
+                        }}
+                      >
+                        <Text style={{ color: C.textMuted, fontSize: 11, fontWeight: '800' }}>Add Exercise</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={{ flex: 1, minHeight: 38, borderRadius: 9, backgroundColor: C.cardAlt, alignItems: 'center', justifyContent: 'center' }}
+                        disabled={!exerciseChangeName.trim()}
+                        onPress={() => {
+                          substituteActiveStrengthExercise(ex.id, { name: exerciseChangeName.trim(), equipmentType: 'other' });
+                          setExerciseChangeName('');
+                        }}
+                      >
+                        <Text style={{ color: C.textMuted, fontSize: 11, fontWeight: '800' }}>Substitute This</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                ) : null}
               </View>
 
               {/* Exercise completion — one action per exercise */}

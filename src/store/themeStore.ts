@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { ThemeMode } from '../theme/colors';
@@ -19,7 +20,7 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'theme-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       partialize: (s) => ({ mode: s.mode }),
     },
   ),

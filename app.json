@@ -14,7 +14,7 @@
       "appleTeamId": "QBAVJD9497",
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "43",
+      "buildNumber": "44",
       "backgroundColor": "#14160F",
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -115,7 +115,8 @@
             "backgroundColor": "#2E2620"
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

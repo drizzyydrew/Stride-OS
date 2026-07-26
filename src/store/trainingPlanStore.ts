@@ -11,7 +11,8 @@
 // existing completion keys (`w1_…`) keep matching.
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { TrainingGoalType, Race } from '../types/plan';
@@ -85,7 +86,7 @@ export const useTrainingPlanStore = create<TrainingPlanState>()(
     }),
     {
       name:    'training-plan-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       merge: (persisted, current) => {
         const state = persisted as Partial<TrainingPlanState> | undefined;
         return {

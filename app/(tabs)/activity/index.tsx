@@ -7,10 +7,20 @@ import { Swipeable } from 'react-native-gesture-handler';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { useActivityStore } from '../../../src/store/activityStore';
+import { useRecalculationStore } from '../../../src/store/recalculationStore';
+import { runRecalculation } from '../../../src/lib/recalculation';
 import { useColors } from '../../../src/theme/useColors';
 import type { Activity, ActivityFilter, ActivityType } from '../../../src/types/activity';
 import { activityMatchesFilter, summarizeActivityLoad } from '../../../src/utils/activityLoad';
 import { displayLabel } from '../../../src/utils/displayLabels';
+
+function formatLastUpdated(lastRunAt: number | null): string {
+  if (!lastRunAt) return 'Never run';
+  const diffMs = Date.now() - lastRunAt;
+  if (diffMs < 60_000) return 'Just now';
+  if (diffMs < 3_600_000) return `${Math.floor(diffMs / 60_000)} min ago`;
+  return new Date(lastRunAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
 
 const FILTERS: { key: ActivityFilter; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -62,6 +72,9 @@ export default function ActivityScreen() {
   const router = useRouter();
   const activities = useActivityStore(state => state.activities);
   const removeActivity = useActivityStore(state => state.removeActivity);
+  const recalculationStatus = useRecalculationStore(state => state.status);
+  const recalculationLastRunAt = useRecalculationStore(state => state.lastRunAt);
+  const recalculationError = useRecalculationStore(state => state.error);
   const [filter, setFilter] = useState<ActivityFilter>('all');
   const meaningful = useMemo(() => activities.filter(isMeaningfulActivity), [activities]);
   const visible = useMemo(() => meaningful
@@ -114,6 +127,26 @@ export default function ActivityScreen() {
           >
             <Ionicons name="flag-outline" size={18} color={C.primary} />
             <Text style={[s.actionText, { color: C.text }]}>Preset Plans</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={[s.refreshRow, { backgroundColor: C.card, borderColor: C.border }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[s.refreshLabel, { color: C.textDim }]}>
+              {recalculationStatus === 'error' ? 'REFRESH FAILED' : 'ANALYTICS LAST UPDATED'}
+            </Text>
+            <Text style={[s.refreshValue, { color: recalculationStatus === 'error' ? C.critical : C.text }]}>
+              {recalculationStatus === 'running' ? 'Refreshing…' : recalculationStatus === 'error' ? (recalculationError ?? 'Unknown error') : formatLastUpdated(recalculationLastRunAt)}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => runRecalculation('manual_refresh', activities)}
+            style={[s.refreshButton, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+            accessibilityLabel="Refresh training analytics"
+            disabled={recalculationStatus === 'running'}
+          >
+            <Ionicons name="refresh-outline" size={16} color={C.primary} />
+            <Text style={[s.refreshButtonText, { color: C.primary }]}>Refresh</Text>
           </TouchableOpacity>
         </View>
 
@@ -231,6 +264,11 @@ const s = StyleSheet.create({
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 18, paddingBottom: 120 },
   actions: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  refreshRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 14, padding: 12, marginBottom: 12 },
+  refreshLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  refreshValue: { fontSize: 13, fontWeight: '700', marginTop: 3 },
+  refreshButton: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9 },
+  refreshButtonText: { fontSize: 12, fontWeight: '800' },
   action: { flex: 1, minHeight: 50, borderWidth: 1, borderColor: 'transparent', borderRadius: 14, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
   actionText: { fontSize: 13, fontWeight: '800' },
   loadCard: { borderWidth: 1, borderRadius: 18, padding: 16, marginBottom: 14 },

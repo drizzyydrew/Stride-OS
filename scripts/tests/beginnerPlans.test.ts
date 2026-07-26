@@ -6,6 +6,7 @@ import type { TrainingPreferences } from '../../src/types/trainingPreferences';
 import {
   generateBeginnerPlan,
   integrateCrossTrainingIntoWeek,
+  repeatBeginnerWeek,
   recommendBeginnerPlanDuration,
   requiresAcceleratedAcknowledgment,
 } from '../../src/utils/beginnerPlans';
@@ -67,6 +68,45 @@ test('preset plans use run/walk, regular recovery weeks, strength support, and n
   const firstInterval = plan.weeks[0].sessions.find(session => session.kind === 'run_walk');
   assert.ok((firstInterval?.runSeconds ?? 0) > 0);
   assert.ok((firstInterval?.walkSeconds ?? 0) > 0);
+});
+
+test('beginner long-session progression is capped and recovery weeks are obvious', () => {
+  const plan = generateBeginnerPlan(input({ goal: 'couch_to_marathon' }), 'run_walk');
+  let previousNonRecovery: number | undefined;
+  for (const week of plan.weeks) {
+    const long = week.sessions.find(session => session.dayIndex === 6)!.durationMinutes;
+    if (week.isRecoveryWeek) {
+      assert.ok(previousNonRecovery === undefined || long <= Math.round(previousNonRecovery * 0.8));
+    } else {
+      assert.ok(previousNonRecovery === undefined || long <= Math.round(previousNonRecovery * 1.1));
+      previousNonRecovery = long;
+    }
+  }
+});
+
+test('repeating a beginner week preserves destination IDs and the original audit record', () => {
+  const plan = generateBeginnerPlan(input({ completionGoal: 'run_continuously' }), 'run_walk');
+  const originalWeekTwo = structuredClone(plan.weeks[1]);
+  const repeated = repeatBeginnerWeek(plan, 1, 123);
+  assert.equal(repeated.completionGoal, 'run_continuously');
+  assert.equal(repeated.weeks[1].focus, 'This week intentionally repeats last week’s volume. Progress does not require increasing every week.');
+  assert.ok(repeated.weeks[1].sessions.every(session => session.id.startsWith('week_2_')));
+  assert.equal(new Set(repeated.weeks.flatMap(week => week.sessions.map(session => session.id))).size, repeated.weeks.flatMap(week => week.sessions).length);
+  assert.deepEqual(repeated.adaptationAudit?.[0]?.originalTargetWeek, originalWeekTwo);
+});
+
+test('beginner weeks never stack primary runs, consecutive hard runs, or Norwegian 4x4', () => {
+  const plan = generateBeginnerPlan(input(), 'run_walk');
+  for (const week of plan.weeks) {
+    for (let day = 0; day < 7; day += 1) {
+      const primaryRuns = week.sessions.filter(session =>
+        session.dayIndex === day
+        && ['walk', 'run_walk', 'easy_run', 'long_session'].includes(session.kind));
+      assert.ok(primaryRuns.length <= 1);
+    }
+    assert.ok(week.sessions.every(session => !/norwegian|4.?[×x].?4/i.test(`${session.id} ${session.purpose} ${session.explanation}`)));
+    assert.ok(week.sessions.every(session => session.intensity !== 'moderate'));
+  }
 });
 
 test('walking-primary plan remains separate from running pace and accepts future run/walk transition', () => {

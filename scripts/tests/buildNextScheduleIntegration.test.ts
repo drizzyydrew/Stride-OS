@@ -72,6 +72,17 @@ test('beginner schedule dedupes duplicate same-day primary endurance sessions', 
   assert.equal(deduped.length, 1);
 });
 
+test('canonical week aggregation applies primary-run dedupe to every plan source', () => {
+  const source = readFileSync(
+    'src/utils/scheduledSessions.ts',
+    'utf8',
+  );
+  assert.match(
+    source,
+    /return dedupePrimarySessions\(\s*Array\.from\(\{ length: 7 \}/,
+  );
+});
+
 test('Today, Calendar, Running, Strength, and AI Coach read the scheduled-session resolver', () => {
   const dashboard = readFileSync('app/(tabs)/dashboard/index.tsx', 'utf8');
   const calendar = readFileSync('app/(tabs)/calendar/index.tsx', 'utf8');

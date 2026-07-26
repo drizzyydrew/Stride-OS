@@ -3,9 +3,13 @@ import { useMemo } from 'react';
 import { useBeginnerPlanStore } from '../store/beginnerPlanStore';
 import { useActivityStore } from '../store/activityStore';
 import { useScheduledSessionSelectionStore } from '../store/scheduledSessionSelectionStore';
-import { toYMD } from '../utils/calendarEngine';
+import { useAdaptationStore } from '../store/adaptationStore';
+import { useOnboardingStore } from '../store/onboardingStore';
+import { addDays, toYMD } from '../utils/calendarEngine';
+import { adaptationWeekKey, applyAdaptationOverlays, validateAdaptationSchedule } from '../utils/adaptationWorkflow';
 import {
   activeScheduledSessionsForDate,
+  applyDateOverridesForDate,
   getPrimarySessionForDate,
   getScheduledRunForDate,
   getScheduledSessionsForDate,
@@ -29,21 +33,53 @@ export function useScheduledSessions(weekPlan: WeekPlan, now = new Date()) {
   const activities = useActivityStore(state => state.activities);
   const selectedByDate = useScheduledSessionSelectionStore(state => state.selectedByDate);
   const removedFromToday = useScheduledSessionSelectionStore(state => state.removedFromToday);
+  const dateOverrides = useScheduledSessionSelectionStore(state => state.dateOverrides);
+  const availableDays = useOnboardingStore(state => state.data.availableDays);
+  const adaptationKey = adaptationWeekKey(toYMD(weekPlan.weekStartDate));
+  const confirmedAdaptation = useAdaptationStore(state => state.confirmed[adaptationKey]);
   const todayYMD = toYMD(now);
 
-  const weekSessions = useMemo(
-    () => overlayCompletionOnScheduledSessions(
+  const canonicalWeekSessions = useMemo(() =>
+    overlayCompletionOnScheduledSessions(
       scheduledSessionsForWeek(weekPlan, activeBeginnerPlan, weekPlan.weekStartDate, now),
       activities,
-    ),
-    [activeBeginnerPlan, activities, now, weekPlan],
-  );
+    ), [activeBeginnerPlan, activities, now, weekPlan]);
+  const weekSessionsRaw = useMemo(() => applyAdaptationOverlays(
+    canonicalWeekSessions,
+    confirmedAdaptation?.overlays,
+  ), [canonicalWeekSessions, confirmedAdaptation?.overlays]);
+  // Reschedule ("move date") is applied per-day against the whole known week
+  // so a session moved off one day and onto another shows up exactly once,
+  // on its new day, everywhere this hook is consumed.
+  const weekSessions = useMemo(() => {
+    if (Object.keys(dateOverrides).length === 0) return weekSessionsRaw;
+    const planStartDate = toYMD(weekPlan.weekStartDate);
+    const planEndDate = toYMD(addDays(weekPlan.weekStartDate, 6));
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+    const lockedDates = Array.from({ length: 7 }, (_, index) => addDays(weekPlan.weekStartDate, index))
+      .filter(date => !availableDays.includes(dayLabels[date.getDay()]))
+      .map(toYMD);
+    const safeOverrides = Object.fromEntries(
+      Object.entries(dateOverrides).filter(([, date]) =>
+        Boolean(date && date >= planStartDate && date <= planEndDate && !lockedDates.includes(date))),
+    );
+    if (Object.keys(safeOverrides).length === 0) return weekSessionsRaw;
+    const byDate = new Map<string, ScheduledSession[]>();
+    for (const session of weekSessionsRaw) {
+      const bucket = byDate.get(session.date) ?? [];
+      bucket.push(session);
+      byDate.set(session.date, bucket);
+    }
+    const dates = new Set([...byDate.keys(), ...Object.values(safeOverrides).filter((d): d is string => Boolean(d))]);
+    const candidate = [...dates].flatMap(dateYMD =>
+      applyDateOverridesForDate(byDate.get(dateYMD) ?? [], weekSessionsRaw, dateYMD, safeOverrides));
+    return validateAdaptationSchedule(candidate, { planStartDate, planEndDate, lockedDates }).length > 0
+      ? weekSessionsRaw
+      : candidate;
+  }, [availableDays, dateOverrides, weekPlan.weekStartDate, weekSessionsRaw]);
   const todaySessions = useMemo(
-    () => overlayCompletionOnScheduledSessions(
-      scheduledSessionsForDate(weekPlan, activeBeginnerPlan, todayYMD, now),
-      activities,
-    ),
-    [activeBeginnerPlan, activities, now, todayYMD, weekPlan],
+    () => weekSessions.filter(session => session.date === todayYMD),
+    [todayYMD, weekSessions],
   );
   const todayPrimary = useMemo<ScheduledSession | null>(
     () => primarySessionForDate(todaySessions),
@@ -68,6 +104,7 @@ export function useScheduledSessions(weekPlan: WeekPlan, now = new Date()) {
 
   return {
     activeBeginnerPlan,
+    canonicalWeekSessions,
     todayYMD,
     weekSessions,
     todaySessions,
@@ -79,12 +116,12 @@ export function useScheduledSessions(weekPlan: WeekPlan, now = new Date()) {
     todayStrength: getScheduledStrengthForDate(todaySessions),
     activeTodayStrength: getScheduledStrengthForDate(activeTodaySessions),
     todaySupporting: getSupportingSessionsForDate(todaySessions),
-    sessionsForDate: (dateYMD: string) => overlayCompletionOnScheduledSessions(scheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now), activities),
-    getScheduledSessionsForDate: (dateYMD: string) => overlayCompletionOnScheduledSessions(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now), activities),
-    getPrimarySessionForDate: (dateYMD: string) => getPrimarySessionForDate(overlayCompletionOnScheduledSessions(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now), activities)),
-    getSupportingSessionsForDate: (dateYMD: string) => getSupportingSessionsForDate(overlayCompletionOnScheduledSessions(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now), activities)),
-    getScheduledRunForDate: (dateYMD: string) => getScheduledRunForDate(overlayCompletionOnScheduledSessions(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now), activities)),
-    getScheduledStrengthForDate: (dateYMD: string) => getScheduledStrengthForDate(overlayCompletionOnScheduledSessions(getScheduledSessionsForDate(weekPlan, activeBeginnerPlan, dateYMD, now), activities)),
+    sessionsForDate: (dateYMD: string) => weekSessions.filter(session => session.date === dateYMD),
+    getScheduledSessionsForDate: (dateYMD: string) => weekSessions.filter(session => session.date === dateYMD),
+    getPrimarySessionForDate: (dateYMD: string) => getPrimarySessionForDate(weekSessions.filter(session => session.date === dateYMD)),
+    getSupportingSessionsForDate: (dateYMD: string) => getSupportingSessionsForDate(weekSessions.filter(session => session.date === dateYMD)),
+    getScheduledRunForDate: (dateYMD: string) => getScheduledRunForDate(weekSessions.filter(session => session.date === dateYMD)),
+    getScheduledStrengthForDate: (dateYMD: string) => getScheduledStrengthForDate(weekSessions.filter(session => session.date === dateYMD)),
     getSessionById: (scheduledSessionId: string) => getSessionById(weekSessions, scheduledSessionId),
     getCompletedActivityForScheduledSession: (scheduledSessionId: string) => getCompletedActivityForScheduledSession(activities, scheduledSessionId),
     getPlannedVersusCompletedComparison: (scheduledSessionId: string) => {

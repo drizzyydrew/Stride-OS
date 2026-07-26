@@ -1,8 +1,8 @@
 // ─── Angle Chart ────────────────────────────────────────────────────────────────
 //
-// Small line chart (victory-native / Skia) for one estimated metric over the
-// clip, showing up to two sides (left/right, or a single center series like
-// trunk lean) with distinct colors. Build 36 additions: a playhead line driven
+// Small line chart for one estimated metric over the clip, showing up to two
+// sides (left/right, or a single center series like trunk lean) with distinct
+// colors. Build 36 additions: a playhead line driven
 // by the video player (`currentTimeMs`), tap/drag to seek (`onSeekMs` — the
 // parent pauses the video), degree/seconds axis labels, a min/max ROM
 // annotation, and a metric-specific y-domain so each chart is scaled sensibly.
@@ -12,7 +12,7 @@
 // so the line breaks rather than fabricating a value across a period with no
 // detection.
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   PanResponder,
   StyleSheet,
@@ -20,7 +20,7 @@ import {
   View,
   type LayoutChangeEvent,
 } from 'react-native';
-import { CartesianChart, Line } from 'victory-native';
+import Svg, { Line as SvgLine, Polyline } from 'react-native-svg';
 
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
@@ -34,6 +34,7 @@ export type ChartLineSeries = {
 };
 
 type ChartRow = { t: number; a: number | null; b: number | null };
+type PlotPoint = { x: number; y: number };
 
 type Props = {
   title:   string;
@@ -54,7 +55,9 @@ type Props = {
   onSeekCancel?: () => void;
 };
 
-const PAD_X = 10;   // horizontal domain padding (px) — must match domainPadding
+const PAD_X = 10;
+const PAD_Y = 8;
+const CHART_HEIGHT = 160;
 
 function niceDomain(values: number[]): [number, number] {
   const min = Math.min(...values);
@@ -82,6 +85,7 @@ export default function AngleChart({
   onSeekCancel,
 }: Props) {
   const chartWidthRef = useRef(0);
+  const [chartWidth, setChartWidth] = useState(0);
 
   const timesSet = new Set<number>();
   seriesA.points.forEach(p => timesSet.add(p.timeMs));
@@ -103,6 +107,7 @@ export default function AngleChart({
 
   const [yLo, yHi] = yDomain ?? (realValues.length > 0 ? niceDomain(realValues) : [0, 1]);
   const yMid = Math.round((yLo + yHi) / 2);
+  const ySpan = Math.max(1, yHi - yLo);
 
   const rom = realValues.length > 0
     ? { min: Math.round(Math.min(...realValues)), max: Math.round(Math.max(...realValues)) }
@@ -138,8 +143,41 @@ export default function AngleChart({
   );
 
   function handleChartLayout(e: LayoutChangeEvent) {
-    chartWidthRef.current = e.nativeEvent.layout.width;
+    const width = e.nativeEvent.layout.width;
+    chartWidthRef.current = width;
+    setChartWidth(width);
   }
+
+  function toPlotPoint(row: ChartRow, value: number): PlotPoint {
+    const plotW = Math.max(1, chartWidth - 2 * PAD_X);
+    const plotH = Math.max(1, CHART_HEIGHT - 2 * PAD_Y);
+    const x = PAD_X + (span > 0 ? ((row.t - tMin) / span) * plotW : plotW / 2);
+    const y = PAD_Y + ((yHi - value) / ySpan) * plotH;
+    return { x, y };
+  }
+
+  function lineSegments(key: 'a' | 'b'): PlotPoint[][] {
+    const segments: PlotPoint[][] = [];
+    let current: PlotPoint[] = [];
+
+    data.forEach((row) => {
+      const value = row[key];
+      if (value === null) {
+        if (current.length > 1) segments.push(current);
+        current = [];
+        return;
+      }
+
+      current.push(toPlotPoint(row, value));
+    });
+
+    if (current.length > 1) segments.push(current);
+    return segments;
+  }
+
+  const canRenderChart = chartWidth > 0;
+  const seriesASegments = canRenderChart ? lineSegments('a') : [];
+  const seriesBSegments = seriesB && canRenderChart ? lineSegments('b') : [];
 
   return (
     <View style={s.card}>
@@ -171,22 +209,44 @@ export default function AngleChart({
 
             {/* Chart + playhead + seek overlay */}
             <View style={s.chartBox} onLayout={handleChartLayout} {...panResponder.panHandlers}>
-              <CartesianChart
-                data={data}
-                xKey="t"
-                yKeys={['a', 'b']}
-                domain={{ y: [yLo, yHi] }}
-                domainPadding={{ top: 8, bottom: 8, left: PAD_X, right: PAD_X }}
-              >
-                {({ points }) => (
-                  <>
-                    <Line points={points.a} color={seriesA.color} strokeWidth={2} curveType="natural" connectMissingData={false} />
-                    {seriesB ? (
-                      <Line points={points.b} color={seriesB.color} strokeWidth={2} curveType="natural" connectMissingData={false} />
-                    ) : null}
-                  </>
-                )}
-              </CartesianChart>
+              {canRenderChart ? (
+                <Svg width={chartWidth} height={CHART_HEIGHT}>
+                  {[0, 0.5, 1].map((fraction) => (
+                    <SvgLine
+                      key={`grid-${fraction}`}
+                      x1={PAD_X}
+                      x2={chartWidth - PAD_X}
+                      y1={PAD_Y + fraction * (CHART_HEIGHT - 2 * PAD_Y)}
+                      y2={PAD_Y + fraction * (CHART_HEIGHT - 2 * PAD_Y)}
+                      stroke={colors.border}
+                      strokeOpacity={0.55}
+                      strokeWidth={1}
+                    />
+                  ))}
+                  {seriesASegments.map((segment, index) => (
+                    <Polyline
+                      key={`a-${index}`}
+                      points={segment.map(point => `${point.x},${point.y}`).join(' ')}
+                      fill="none"
+                      stroke={seriesA.color}
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  ))}
+                  {seriesBSegments.map((segment, index) => (
+                    <Polyline
+                      key={`b-${index}`}
+                      points={segment.map(point => `${point.x},${point.y}`).join(' ')}
+                      fill="none"
+                      stroke={seriesB?.color}
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  ))}
+                </Svg>
+              ) : null}
 
               {playheadFraction !== null ? (
                 <View
@@ -237,7 +297,7 @@ const s = StyleSheet.create({
   legendTxt:  { color: colors.textMuted, fontSize: FontSize.xs },
   plotRow:    { flexDirection: 'row', alignItems: 'stretch' },
   yAxis:      { width: 34, height: 160, justifyContent: 'space-between', paddingVertical: 6, alignItems: 'flex-end', paddingRight: 4 },
-  chartBox:   { flex: 1, height: 160, position: 'relative' },
+  chartBox:   { flex: 1, height: CHART_HEIGHT, position: 'relative' },
   playhead:   { position: 'absolute', top: 0, bottom: 0, width: 1.5, backgroundColor: colors.text, opacity: 0.65 },
   xAxis:      { flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 34 },
   axisTxt:    { color: colors.textSubtle, fontSize: 10 },

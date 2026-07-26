@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import {
   EMPTY_ROUTE_ATTACHMENT,
   attachRouteState,
@@ -282,7 +283,7 @@ export const useRouteStore = create<RouteStore>()(
     }),
     {
       name: 'route-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       merge: (persisted, current) => {
         const state = persisted as Partial<RouteStore> | undefined;
         const attachment = migrateRouteAttachment(state?.routeAttachment, state?.selectedRouteId);

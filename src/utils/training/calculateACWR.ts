@@ -1,5 +1,3 @@
-import type { CompletedWorkoutRecord } from '../../types/training';
-
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type ACWRResult = {
@@ -8,9 +6,17 @@ export type ACWRResult = {
   acwr:    number;   // acute / chronic ratio
 };
 
+// Minimal shape this needs from a completion record — CompletedWorkoutRecord
+// satisfies this structurally, and so does the normalized-activity adapter
+// (activityACWRAdapter.ts), so callers can pass either without conversion.
+export type ACWRLoadRecord = {
+  timestamp:     number;
+  estimatedLoad: number;
+};
+
 // Computes ATL / CTL / ACWR from real completion history.
 // Falls back to ratio 1.0 (neutral) when chronic history is absent.
-export function calculateACWR(history: CompletedWorkoutRecord[]): ACWRResult {
+export function calculateACWR(history: ACWRLoadRecord[]): ACWRResult {
   const now    = Date.now();
   const last7  = history.filter(r => now - r.timestamp <=  7 * DAY_MS);
   const last42 = history.filter(r => now - r.timestamp <= 42 * DAY_MS);

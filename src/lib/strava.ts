@@ -7,12 +7,10 @@
 import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from 'expo-secure-store';
 import type { CompletedWorkoutRecord } from '../types/training';
-import { getSupabaseFunctionHeaders } from './supabase';
+import { getSupabaseFunctionHeaders, getSupabaseFunctionUrl } from './supabase';
 
 const CLIENT_ID     = process.env.EXPO_PUBLIC_STRAVA_CLIENT_ID;
 const REDIRECT_URI  = 'strideos://strava-callback';
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 const STORE_ACCESS_TOKEN  = 'strava_access_token';
 const STORE_REFRESH_TOKEN = 'strava_refresh_token';
@@ -72,7 +70,7 @@ export type StravaSetupStatus = {
 };
 
 function assertStravaTokenProxyConfigured(): void {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  if (!getSupabaseFunctionUrl('strava-token')) {
     throw new Error('Missing Supabase configuration for Strava token exchange.');
   }
 }
@@ -83,7 +81,8 @@ export function isStravaClientConfigured(): boolean {
 
 export async function checkStravaSetup(): Promise<StravaSetupStatus> {
   const clientConfigured = isStravaClientConfigured();
-  const proxyBaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+  const proxyEndpoint = getSupabaseFunctionUrl('strava-token');
+  const proxyBaseConfigured = Boolean(proxyEndpoint);
 
   if (!clientConfigured) {
     return {
@@ -104,9 +103,19 @@ export async function checkStravaSetup(): Promise<StravaSetupStatus> {
   }
 
   try {
-    const response = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/strava-token`, {
+    const headers = await getSupabaseFunctionHeaders();
+    if (!proxyEndpoint || !headers) {
+      return {
+        ok: false,
+        clientConfigured,
+        proxyConfigured: false,
+        error: 'Missing Supabase configuration for Strava token exchange.',
+      };
+    }
+
+    const response = await fetch(proxyEndpoint, {
       method: 'GET',
-      headers: await getSupabaseFunctionHeaders(),
+      headers,
     });
     const body = await response.json().catch(() => ({})) as { ok?: boolean; error?: string };
     if (!response.ok) {
@@ -135,12 +144,17 @@ export async function checkStravaSetup(): Promise<StravaSetupStatus> {
 
 async function requestStravaTokens(body: StravaTokenRequest): Promise<StravaTokens> {
   assertStravaTokenProxyConfigured();
+  const proxyEndpoint = getSupabaseFunctionUrl('strava-token');
+  const headers = await getSupabaseFunctionHeaders();
+  if (!proxyEndpoint || !headers) {
+    throw new Error('Missing Supabase configuration for Strava token exchange.');
+  }
 
-  const res = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/strava-token`, {
+  const res = await fetch(proxyEndpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(await getSupabaseFunctionHeaders()),
+      ...headers,
     },
     body: JSON.stringify(body),
   });

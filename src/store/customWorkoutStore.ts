@@ -4,7 +4,8 @@
 // Integrates with athleteStore via callback pattern (same as workoutStore).
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { CustomRunDefinition, CustomWorkoutLog, OverrideRecord } from '../types/customWorkout';
@@ -164,7 +165,7 @@ export const useCustomWorkoutStore = create<CustomWorkoutStore>()(
     }),
     {
       name:    'custom-workout-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       merge: (persisted, current) => ({
         ...current,
         ...(persisted as Partial<CustomWorkoutStore> | undefined),

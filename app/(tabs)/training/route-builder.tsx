@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import MapView, { Marker, Polyline, type MapViewRef } from '../../../src/components/maps/MapComponents';
 
 import { useColors } from '../../../src/theme/useColors';
 import { useThemeMode } from '../../../src/store/themeStore';
@@ -65,7 +65,7 @@ export default function RouteBuilderScreen() {
   const [routeFolder, setRouteFolder] = useState<RunRoute['folder']>('custom');
   const [routeNotes, setRouteNotes] = useState('');
   const requestIdRef = useRef(0);
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<MapViewRef>(null);
   const routeNameInputRef = useRef<TextInput>(null);
   const routeNotesInputRef = useRef<TextInput>(null);
 

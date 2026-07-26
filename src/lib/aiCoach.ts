@@ -1,4 +1,4 @@
-import { getSupabaseFunctionHeaders } from './supabase';
+import { getSupabaseFunctionHeaders, getSupabaseFunctionUrl } from './supabase';
 import {
   budgetCoachMessages,
   enforceCoachSystemPrompt,
@@ -27,15 +27,12 @@ export type AiCoachHealth = {
   error?: string;
 };
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
-
 export function isAiCoachConfigured(): boolean {
-  return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+  return Boolean(getSupabaseFunctionUrl('ai-coach'));
 }
 
-function coachEndpoint(): string {
-  return `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/ai-coach`;
+function coachEndpoint(): string | null {
+  return getSupabaseFunctionUrl('ai-coach');
 }
 
 function errorMessage(body: CoachResponse, status: number): string {
@@ -50,14 +47,16 @@ function errorMessage(body: CoachResponse, status: number): string {
 }
 
 export async function checkAiCoachHealth(): Promise<AiCoachHealth> {
-  if (!isAiCoachConfigured()) {
+  const endpoint = coachEndpoint();
+  const headers = await getSupabaseFunctionHeaders();
+  if (!endpoint || !headers) {
     return { ok: false, error: 'AI coach is missing Supabase configuration.' };
   }
 
   try {
-    const response = await fetch(coachEndpoint(), {
+    const response = await fetch(endpoint, {
       method: 'GET',
-      headers: await getSupabaseFunctionHeaders(),
+      headers,
     });
     const body = await response.json().catch(() => ({})) as AiCoachHealth;
     if (!response.ok) {
@@ -80,17 +79,19 @@ export async function checkAiCoachHealth(): Promise<AiCoachHealth> {
 }
 
 export async function sendCoachMessage(messages: CoachMessage[], system: string): Promise<string> {
-  if (!isAiCoachConfigured()) {
+  const endpoint = coachEndpoint();
+  const headers = await getSupabaseFunctionHeaders();
+  if (!endpoint || !headers) {
     throw new Error('AI coach is missing Supabase configuration.');
   }
 
   const budgetedMessages = budgetCoachMessages(messages);
   const budgetedSystem = enforceCoachSystemPrompt(system);
-  const response = await fetch(coachEndpoint(), {
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(await getSupabaseFunctionHeaders()),
+      ...headers,
     },
     body: JSON.stringify({ messages: budgetedMessages, system: budgetedSystem }),
   });

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage, getAppStorage } from './persistStorage';
 
 import type { Activity, ActivityDraft } from '../types/activity';
 import type { CompletedWorkoutRecord } from '../types/training';
@@ -11,9 +12,11 @@ import {
   migrateLegacyMobilityHistory,
   migrateLegacyStrengthHistory,
   migrateLegacyWorkoutHistory,
+  remapLegacyScheduledSessionIds,
 } from '../utils/activityMigration';
+import { runRecalculation } from '../lib/recalculation';
 
-export const ACTIVITY_STORE_SCHEMA_VERSION = 1;
+export const ACTIVITY_STORE_SCHEMA_VERSION = 2;
 
 type ActivityStore = {
   schemaVersion: number;
@@ -59,11 +62,18 @@ function normalizeActivity(input: Activity | ActivityDraft, now = Date.now()): A
 
 export function migrateActivityStoreState(persisted: unknown): Pick<ActivityStore, 'schemaVersion' | 'activities'> {
   const source = (persisted ?? {}) as Partial<ActivityStore>;
+  const normalized = Array.isArray(source.activities)
+    ? source.activities.map(activity => normalizeActivity(activity, activity.updatedAt ?? Date.now()))
+    : [];
+  // v1 → v2: remap bare-id scheduledSessionId values written before the
+  // canonical id fix to the same `week:${date}:...` form scheduledSessions.ts
+  // derives. Runs unconditionally (not just when persistedVersion === 1)
+  // because `merge` calls this same function on every hydration regardless
+  // of version — the remap is idempotent (see remapLegacyScheduledSessionId)
+  // so that's safe and keeps already-migrated installs correct too.
   return {
     schemaVersion: ACTIVITY_STORE_SCHEMA_VERSION,
-    activities: Array.isArray(source.activities)
-      ? source.activities.map(activity => normalizeActivity(activity, activity.updatedAt ?? Date.now()))
-      : [],
+    activities: remapLegacyScheduledSessionIds(normalized),
   };
 }
 
@@ -95,11 +105,13 @@ export const useActivityStore = create<ActivityStore>()(
             activities: state.activities.map(item => item.id === activity.id ? activity : item),
           };
         });
+        // After state settles — synchronous, no dangling promise.
+        runRecalculation('activity_added', get().activities);
         return get().activities.find(item => item.scheduledSessionId && item.scheduledSessionId === activity.scheduledSessionId)?.id
           ?? activity.id;
       },
 
-      updateActivity: (id, patch) =>
+      updateActivity: (id, patch) => {
         set(state => ({
           activities: state.activities.map(activity => {
             if (activity.id !== id) return activity;
@@ -113,10 +125,14 @@ export const useActivityStore = create<ActivityStore>()(
                 ?? (shouldRecalculateLoad ? undefined : activity.trainingLoad),
             }, next.updatedAt);
           }),
-        })),
+        }));
+        runRecalculation('activity_updated', get().activities);
+      },
 
-      removeActivity: (id) =>
-        set(state => ({ activities: state.activities.filter(activity => activity.id !== id) })),
+      removeActivity: (id) => {
+        set(state => ({ activities: state.activities.filter(activity => activity.id !== id) }));
+        runRecalculation('activity_removed', get().activities);
+      },
 
       getById: (id) => get().activities.find(activity => activity.id === id),
 
@@ -140,7 +156,7 @@ export const useActivityStore = create<ActivityStore>()(
     {
       name: 'activity-store',
       version: ACTIVITY_STORE_SCHEMA_VERSION,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       partialize: state => ({
         schemaVersion: state.schemaVersion,
         activities: state.activities,
@@ -163,8 +179,9 @@ export const useActivityStore = create<ActivityStore>()(
         // Build 36/37 stored completed running workouts separately. Read that
         // persisted snapshot after this store hydrates, then project it with
         // stable IDs. Repeating this on every launch is safe and idempotent.
+        const storage = getAppStorage();
         Promise.allSettled([
-          AsyncStorage.getItem('workout-store').then(raw => {
+          Promise.resolve(storage.getItem('workout-store')).then((raw: string | null) => {
             if (!raw) return;
             const parsed = JSON.parse(raw) as {
               state?: { history?: CompletedWorkoutRecord[] };
@@ -173,7 +190,7 @@ export const useActivityStore = create<ActivityStore>()(
               state.importLegacyWorkouts(parsed.state.history);
             }
           }),
-          AsyncStorage.getItem('strength-store').then(raw => {
+          Promise.resolve(storage.getItem('strength-store')).then((raw: string | null) => {
             if (!raw) return;
             const parsed = JSON.parse(raw) as {
               state?: { history?: StrengthLogRecord[] };
@@ -182,7 +199,7 @@ export const useActivityStore = create<ActivityStore>()(
               state.importLegacyStrength(parsed.state.history);
             }
           }),
-          AsyncStorage.getItem('mobility-store').then(raw => {
+          Promise.resolve(storage.getItem('mobility-store')).then((raw: string | null) => {
             if (!raw) return;
             const parsed = JSON.parse(raw) as {
               state?: { completions?: MobilityCompletion[] };

@@ -7,7 +7,8 @@
 // The profile + athlete stores receive the finalized data on completion.
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { Sex, TrainingDay, StandardDistance } from '../types/athlete';
@@ -146,7 +147,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
     }),
     {
       name:    'onboarding-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       // Older persisted stores predate the Build 33 plan-spine fields on
       // `data` (goalType/raceName/raceDistance/raceDate/racePriority/
       // programStartDate) — merge onto DEFAULT_DATA so existing users get

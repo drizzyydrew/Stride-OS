@@ -4,7 +4,8 @@
 // URI-only storage — actual video binaries remain in the device filesystem.
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { toRelativeDocumentPath } from '../lib/mediaPaths';
@@ -416,7 +417,7 @@ export const useMovementStore = create<MovementStore>()(
     }),
     {
       name:    'movement-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createAppJSONStorage(),
       version: 2,
       migrate: (persisted, _version) => {
         const state = persisted as Partial<MovementStore>;

@@ -9,6 +9,7 @@
 import type { Workout }         from '../types/training';
 import type { StrengthSession } from '../types/strength';
 import type { TrainingDay }     from '../types/athlete';
+import type { CompletionClassification } from '../types/activity';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,7 +44,7 @@ export type CalendarEntry = {
   target?: string;
   status?: 'upcoming' | 'today' | 'in_progress' | 'completed' | 'partial' | 'skipped' | 'moved' | 'missed' | 'replaced' | 'optional';
   completedActivityId?: string;
-  completionState?: 'completed_as_planned' | 'modified' | 'partial' | 'stopped_early';
+  completionState?: CompletionClassification;
   actionRoute?: string;
 };
 

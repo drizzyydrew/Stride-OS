@@ -6,14 +6,18 @@ import {
   type ReadinessReminderSchedule,
 } from '../utils/notificationSchedule';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+const NOTIFICATIONS_SUPPORTED = Platform.OS !== 'web';
+
+if (NOTIFICATIONS_SUPPORTED) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 const WORKOUT_NOTIFICATION_ID = 'strideos-workout-reminder';
 const READINESS_NOTIFICATION_ID = 'strideos-readiness-reminder';
@@ -57,6 +61,8 @@ function hasNotificationAccess(status: Notifications.NotificationPermissionsStat
 }
 
 export async function requestNotificationAccess(): Promise<boolean> {
+  if (!NOTIFICATIONS_SUPPORTED) return false;
+
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('daily-training', {
       name: 'Daily training',
@@ -72,11 +78,15 @@ export async function requestNotificationAccess(): Promise<boolean> {
 }
 
 export async function getNotificationAccessStatus(): Promise<boolean> {
+  if (!NOTIFICATIONS_SUPPORTED) return false;
+
   const existing = await Notifications.getPermissionsAsync();
   return hasNotificationAccess(existing);
 }
 
 export async function clearTrainingNotifications() {
+  if (!NOTIFICATIONS_SUPPORTED) return;
+
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   const readinessIdentifiers = scheduled
     .map(notification => notification.identifier)
@@ -92,6 +102,22 @@ export async function clearTrainingNotifications() {
 export async function getTrainingNotificationScheduleStatus(
   prefs?: NotificationPrefs,
 ): Promise<TrainingNotificationScheduleStatus> {
+  if (!NOTIFICATIONS_SUPPORTED) {
+    return {
+      workout: false,
+      readiness: false,
+      expected: prefs?.enabled
+        ? Number(prefs.workout) + expectedReadinessNotificationCount(
+          prefs.readiness,
+          prefs.readinessSchedule ?? 'daily',
+          prefs.readinessDays,
+        )
+        : 0,
+      scheduled: 0,
+      inSync: !prefs?.enabled,
+    };
+  }
+
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   const identifiers = new Set(scheduled.map(notification => notification.identifier));
   const workout = identifiers.has(WORKOUT_NOTIFICATION_ID);
@@ -119,6 +145,8 @@ export async function getTrainingNotificationScheduleStatus(
 }
 
 export async function scheduleTrainingNotifications(prefs: NotificationPrefs) {
+  if (!NOTIFICATIONS_SUPPORTED) return;
+
   await clearTrainingNotifications();
   if (!prefs.enabled) return;
 
@@ -173,6 +201,8 @@ export async function scheduleTrainingNotifications(prefs: NotificationPrefs) {
 }
 
 export async function sendRunAlertNotification(body: string) {
+  if (!NOTIFICATIONS_SUPPORTED) return;
+
   const granted = await requestNotificationAccess();
   if (!granted) return;
 

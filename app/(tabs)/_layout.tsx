@@ -12,8 +12,10 @@ import type { TrainingGoalType } from '../../src/types/plan';
 
 const RACE_GOALS = new Set(['marathon', 'half_marathon', '10k', '5k']);
 export const TAB_ICON_SIZE = 25;
+export const TAB_ICON_BOX_SIZE = 30;
 export const TAB_LABEL_FONT_SIZE = 10;
 export const TAB_LABEL_LINE_HEIGHT = 12;
+export const TAB_ITEM_MIN_HEIGHT = 54;
 export const VISIBLE_BOTTOM_TABS = ['Today', 'Calendar', 'Running', 'Strength', 'AI Coach', 'More'] as const;
 
 function inferGoalType(primaryGoal: string): TrainingGoalType {
@@ -79,6 +81,11 @@ export default function TabsLayout() {
           height: LAYOUT.tabBarHeight,
           paddingBottom: LAYOUT.tabBarPadBottom,
           paddingTop: LAYOUT.tabBarPadTop,
+        },
+        tabBarItemStyle: {
+          paddingHorizontal: 0,
+          paddingVertical: 0,
+          minWidth: 0,
         },
       }}
     >
@@ -151,17 +158,18 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   tabBtn: {
-    flex: 1,
+    width: '100%',
+    minHeight: TAB_ITEM_MIN_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    paddingVertical: 2,
-    paddingHorizontal: 1,
+    paddingVertical: 3,
+    paddingHorizontal: 0,
     minWidth: 0,
   },
   tabIconBox: {
-    height: TAB_ICON_SIZE,
-    minWidth: TAB_ICON_SIZE,
+    width: TAB_ICON_BOX_SIZE,
+    height: TAB_ICON_BOX_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
   },
