@@ -398,10 +398,16 @@ const lo = StyleSheet.create({
 const PHASE_LABEL_MAP: Record<TrainingPhase, string> = {
   foundation: 'Foundation Phase Targets',
   base:   'Base Phase Targets',
+  aerobic_development: 'Aerobic Development Targets',
+  threshold: 'Threshold Phase Targets',
+  vo2: 'VO₂ Phase Targets',
+  race_specific: 'Race-Specific Targets',
   build:  'Build Phase Targets',
   peak:   'Peak Phase Targets',
   deload: 'Deload Week Targets',
   taper:  'Taper Week Targets',
+  transition: 'Transition Week Targets',
+  recovery: 'Recovery Week Targets',
 };
 
 export default function WeeklyLoadTargetsCard({ targets, trainingPhase, currentMiles }: Props) {

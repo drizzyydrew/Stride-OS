@@ -4,8 +4,12 @@ import type { WeekPlan } from './trainingEngine';
 import type { RichWorkout } from '../types/workout';
 import type { StrengthSession } from '../types/strength';
 import type { GeneratedBeginnerPlan, BeginnerPlanSession } from '../types/beginnerPlan';
+import type { TrainingFocus, TrainingPhase } from '../types/training';
+import type { SessionStressProfile } from './sessionStress';
 import { BEGINNER_PLAN_DEFINITIONS } from './beginnerPlans';
 import { displayLabel } from './displayLabels';
+import { formatPrescriptionWithSets } from './prescriptionFormat';
+import { classifySessionStress } from './sessionStress';
 import {
   beginnerScheduledSessionId,
   otherScheduledSessionId,
@@ -69,6 +73,9 @@ export type ScheduledSession = {
   completionState?: CompletionClassification;
   adaptationReason?: string;
   loadEstimate?: number;
+  trainingPhase?: TrainingPhase;
+  trainingFocus?: TrainingFocus;
+  stress?: SessionStressProfile;
 };
 
 function localEndOfDay(dateYMD: string): number {
@@ -261,6 +268,17 @@ function beginnerPriority(session: BeginnerPlanSession): ScheduledSessionPriorit
   return ['walk', 'run_walk', 'easy_run', 'long_session'].includes(session.kind) ? 'primary' : 'supporting';
 }
 
+function attachStress(session: ScheduledSession): ScheduledSession {
+  return { ...session, stress: classifySessionStress(session) };
+}
+
+function trainingFocusForBeginnerSession(session: BeginnerPlanSession): TrainingFocus {
+  if (session.kind === 'strength') return 'Strength';
+  if (session.kind === 'mobility') return 'Recovery';
+  if (session.kind === 'cross_training') return 'Aerobic Capacity';
+  return session.kind === 'long_session' ? 'Durability' : 'Aerobic Capacity';
+}
+
 export function sessionsFromBeginnerPlanForDate(
   plan: GeneratedBeginnerPlan,
   dateYMD: string,
@@ -283,7 +301,7 @@ export function sessionsFromBeginnerPlanForDate(
       const target = runWalk
         ? describeRunWalk(runWalk)
         : `${session.durationMinutes} min - ${displayLabel(session.intensity)} effort`;
-      return {
+      return attachStress({
         scheduledSessionId: beginnerScheduledSessionId(plan.id, session.id),
         trainingBlockId: 'active-preset-plan',
         goalPlanId: plan.id,
@@ -319,7 +337,9 @@ export function sessionsFromBeginnerPlanForDate(
         status: statusFor(dateYMD, false, false, now),
         adaptationReason: week.isRecoveryWeek ? 'Recovery week - reduced duration and no added intensity.' : undefined,
         loadEstimate: session.durationMinutes * (session.intensity === 'moderate' ? 5 : session.intensity === 'recovery' ? 2 : 3),
-      } satisfies ScheduledSession;
+        trainingPhase: week.isRecoveryWeek ? 'deload' : 'foundation',
+        trainingFocus: trainingFocusForBeginnerSession(session),
+      } satisfies ScheduledSession);
     });
 }
 
@@ -333,7 +353,7 @@ function sessionFromCalendarEntry(entry: CalendarEntry, now = new Date()): Sched
     : strength
       ? `${strength.targetDuration} min - ${strength.exercises.length} exercises`
       : displayLabel(entry.type);
-  return {
+  return attachStress({
     scheduledSessionId: workout
       ? runScheduledSessionId(entry.date, workout.id, workout.dayIndex)
       : strength
@@ -349,7 +369,7 @@ function sessionFromCalendarEntry(entry: CalendarEntry, now = new Date()): Sched
     durationMinutes,
     warmup: workout?.warmup?.instructions ?? strength?.warmupProtocol,
     mainSet: workout?.mainSet?.map(segment => `${segment.label}: ${segment.duration}`).join('; ')
-      ?? strength?.exercises.map(ex => `${ex.exercise.name}: ${ex.sets} x ${ex.repRange[0]}-${ex.repRange[1]}`).join('; '),
+      ?? strength?.exercises.map(ex => `${ex.exercise.name}: ${formatPrescriptionWithSets(ex.sets, ex.repScheme, `${ex.repRange[0]}-${ex.repRange[1]} reps`)}`).join('; '),
     cooldown: workout?.cooldown?.instructions ?? strength?.cooldownProtocol,
     target,
     hrTarget: workout ? `Zone ${workout.hrZoneTarget}` : undefined,
@@ -359,7 +379,7 @@ function sessionFromCalendarEntry(entry: CalendarEntry, now = new Date()): Sched
     strengthSession: strength,
     status: statusFor(entry.date, entry.completed, entry.missed, now),
     loadEstimate: workout?.score.intendedLoad,
-  };
+  });
 }
 
 export function scheduledSessionsForDate(

@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -6,11 +7,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { LAYOUT } from '../../../src/constants/layout';
 import { useColors } from '../../../src/theme/useColors';
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
+import { experienceModeAllows, useExperienceMode } from '../../../src/hooks/useExperienceMode';
+import type { ExperienceMode } from '../../../src/store/settingsStore';
+import { useActivityStore } from '../../../src/store/activityStore';
+import { useAchievementStore } from '../../../src/store/achievementStore';
+import { evaluateAchievements, HEALTHY_ACHIEVEMENTS } from '../../../src/utils/achievements';
 
 type NavItem = {
   label:       string;
   icon:        keyof typeof Ionicons.glyphMap;
   route:       string;
+  minMode?:    ExperienceMode;
 };
 
 const ITEMS: NavItem[] = [
@@ -18,6 +25,16 @@ const ITEMS: NavItem[] = [
     label:       'Activity',
     icon:        'pulse-outline',
     route:       '/(tabs)/activity',
+  },
+  {
+    label:       'Gear',
+    icon:        'trail-sign-outline',
+    route:       '/(tabs)/more/gear',
+  },
+  {
+    label:       'Stride Report',
+    icon:        'share-social-outline',
+    route:       '/(tabs)/more/stride-report',
   },
   {
     label:       'Movement Lab',
@@ -28,11 +45,13 @@ const ITEMS: NavItem[] = [
     label:       'Analytics',
     icon:        'stats-chart-outline',
     route:       '/(tabs)/analytics',
+    minMode:     'balanced',
   },
   {
     label:       'Adaptive Performance',
     icon:        'speedometer-outline',
     route:       '/(tabs)/performance',
+    minMode:     'balanced',
   },
   {
     label:       'Profile',
@@ -49,6 +68,20 @@ const ITEMS: NavItem[] = [
 export default function MoreScreen() {
   const insets = useSafeAreaInsets();
   const C = useColors();
+  const experienceMode = useExperienceMode();
+  const visibleItems = ITEMS.filter(item => !item.minMode || experienceModeAllows(experienceMode, item.minMode));
+  const activities = useActivityStore(state => state.activities);
+  const awarded = useAchievementStore(state => state.awarded);
+  const recordAwards = useAchievementStore(state => state.recordAwards);
+  const earnedIds = useMemo(
+    () => evaluateAchievements(activities, awarded.map(item => item.id)),
+    [activities, awarded],
+  );
+  const newestAchievement = HEALTHY_ACHIEVEMENTS.find(item => earnedIds.includes(item.id));
+
+  useEffect(() => {
+    recordAwards(earnedIds);
+  }, [earnedIds, recordAwards]);
 
   return (
     <View style={[s.root, { backgroundColor: C.bg }]}>
@@ -63,7 +96,7 @@ export default function MoreScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={s.grid}>
-          {ITEMS.map(item => (
+          {visibleItems.map(item => (
             <Pressable
               key={item.route}
               style={({ pressed }) => [
@@ -78,6 +111,13 @@ export default function MoreScreen() {
             </Pressable>
           ))}
         </View>
+        {newestAchievement ? (
+          <View style={[s.achievementCard, { backgroundColor: C.bg, borderColor: C.border }]}>
+            <Text style={[s.eyebrow, { color: C.textDim }]}>HEALTHY PROGRESS</Text>
+            <Text style={[s.achievementTitle, { color: C.text }]}>{newestAchievement.title}</Text>
+            <Text style={[s.achievementCopy, { color: C.textMuted }]}>{newestAchievement.description}</Text>
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -109,5 +149,26 @@ const s = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '700',
+  },
+  achievementCard: {
+    marginTop: 14,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+  },
+  eyebrow: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  achievementTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    marginTop: 6,
+  },
+  achievementCopy: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4,
   },
 });

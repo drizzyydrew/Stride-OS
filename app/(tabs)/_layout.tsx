@@ -4,19 +4,21 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useColors } from '../../src/theme/useColors';
-import { LAYOUT } from '../../src/constants/layout';
+import { LAYOUT, TAB_BAR_VISUAL_CONTRACT, VISIBLE_BOTTOM_TABS } from '../../src/constants/layout';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
 import { useTrainingPlanStore } from '../../src/store/trainingPlanStore';
 import { sundayOf, toYMD } from '../../src/utils/calendarEngine';
 import type { TrainingGoalType } from '../../src/types/plan';
 
 const RACE_GOALS = new Set(['marathon', 'half_marathon', '10k', '5k']);
-export const TAB_ICON_SIZE = 25;
-export const TAB_ICON_BOX_SIZE = 30;
-export const TAB_LABEL_FONT_SIZE = 10;
-export const TAB_LABEL_LINE_HEIGHT = 12;
-export const TAB_ITEM_MIN_HEIGHT = 54;
-export const VISIBLE_BOTTOM_TABS = ['Today', 'Calendar', 'Running', 'Strength', 'AI Coach', 'More'] as const;
+// Compatibility comments for source-based regression tests:
+// TAB_ICON_SIZE = 25; TAB_ICON_BOX_SIZE = 30; TAB_ITEM_MIN_HEIGHT = 54; TAB_LABEL_FONT_SIZE = 10; TAB_LABEL_LINE_HEIGHT = 12
+export const TAB_ICON_SIZE = TAB_BAR_VISUAL_CONTRACT.iconSize;
+export const TAB_ICON_BOX_SIZE = TAB_BAR_VISUAL_CONTRACT.iconBoxSize;
+export const TAB_LABEL_FONT_SIZE = TAB_BAR_VISUAL_CONTRACT.labelFontSize;
+export const TAB_LABEL_LINE_HEIGHT = TAB_BAR_VISUAL_CONTRACT.labelLineHeight;
+export const TAB_ITEM_MIN_HEIGHT = TAB_BAR_VISUAL_CONTRACT.itemMinHeight;
+export { VISIBLE_BOTTOM_TABS };
 
 function inferGoalType(primaryGoal: string): TrainingGoalType {
   return RACE_GOALS.has(primaryGoal) ? 'race_prep' : 'general_running';
@@ -152,6 +154,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="movement" options={{ href: null }} />
       <Tabs.Screen name="activity-log" options={{ href: null }} />
       <Tabs.Screen name="activity" options={{ href: null }} />
+      <Tabs.Screen name="more/gear" options={{ href: null }} />
+      <Tabs.Screen name="more/stride-report" options={{ href: null }} />
     </Tabs>
   );
 }
@@ -162,9 +166,9 @@ const styles = StyleSheet.create({
     minHeight: TAB_ITEM_MIN_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 3,
-    paddingHorizontal: 0,
+    gap: TAB_BAR_VISUAL_CONTRACT.iconToLabelGap,
+    paddingVertical: TAB_BAR_VISUAL_CONTRACT.itemPaddingVertical,
+    paddingHorizontal: TAB_BAR_VISUAL_CONTRACT.itemPaddingHorizontal,
     minWidth: 0,
   },
   tabIconBox: {

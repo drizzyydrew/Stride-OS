@@ -7,9 +7,9 @@ import { useAdaptationStore } from '../store/adaptationStore';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { addDays, toYMD } from '../utils/calendarEngine';
 import { adaptationWeekKey, applyAdaptationOverlays, validateAdaptationSchedule } from '../utils/adaptationWorkflow';
+import { legacyOverridesToMoveLedger, projectMoveLedgerForWeek } from '../utils/scheduleMoveLedger';
 import {
   activeScheduledSessionsForDate,
-  applyDateOverridesForDate,
   getPrimarySessionForDate,
   getScheduledRunForDate,
   getScheduledSessionsForDate,
@@ -34,6 +34,7 @@ export function useScheduledSessions(weekPlan: WeekPlan, now = new Date()) {
   const selectedByDate = useScheduledSessionSelectionStore(state => state.selectedByDate);
   const removedFromToday = useScheduledSessionSelectionStore(state => state.removedFromToday);
   const dateOverrides = useScheduledSessionSelectionStore(state => state.dateOverrides);
+  const moveLedger = useScheduledSessionSelectionStore(state => state.moveLedger);
   const availableDays = useOnboardingStore(state => state.data.availableDays);
   const adaptationKey = adaptationWeekKey(toYMD(weekPlan.weekStartDate));
   const confirmedAdaptation = useAdaptationStore(state => state.confirmed[adaptationKey]);
@@ -52,31 +53,22 @@ export function useScheduledSessions(weekPlan: WeekPlan, now = new Date()) {
   // so a session moved off one day and onto another shows up exactly once,
   // on its new day, everywhere this hook is consumed.
   const weekSessions = useMemo(() => {
-    if (Object.keys(dateOverrides).length === 0) return weekSessionsRaw;
+    const effectiveLedger = {
+      ...legacyOverridesToMoveLedger(dateOverrides),
+      ...moveLedger,
+    };
+    if (Object.keys(effectiveLedger).length === 0) return weekSessionsRaw;
     const planStartDate = toYMD(weekPlan.weekStartDate);
     const planEndDate = toYMD(addDays(weekPlan.weekStartDate, 6));
     const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
     const lockedDates = Array.from({ length: 7 }, (_, index) => addDays(weekPlan.weekStartDate, index))
       .filter(date => !availableDays.includes(dayLabels[date.getDay()]))
       .map(toYMD);
-    const safeOverrides = Object.fromEntries(
-      Object.entries(dateOverrides).filter(([, date]) =>
-        Boolean(date && date >= planStartDate && date <= planEndDate && !lockedDates.includes(date))),
-    );
-    if (Object.keys(safeOverrides).length === 0) return weekSessionsRaw;
-    const byDate = new Map<string, ScheduledSession[]>();
-    for (const session of weekSessionsRaw) {
-      const bucket = byDate.get(session.date) ?? [];
-      bucket.push(session);
-      byDate.set(session.date, bucket);
-    }
-    const dates = new Set([...byDate.keys(), ...Object.values(safeOverrides).filter((d): d is string => Boolean(d))]);
-    const candidate = [...dates].flatMap(dateYMD =>
-      applyDateOverridesForDate(byDate.get(dateYMD) ?? [], weekSessionsRaw, dateYMD, safeOverrides));
+    const candidate = projectMoveLedgerForWeek(weekSessionsRaw, effectiveLedger, { planStartDate, planEndDate, lockedDates });
     return validateAdaptationSchedule(candidate, { planStartDate, planEndDate, lockedDates }).length > 0
       ? weekSessionsRaw
       : candidate;
-  }, [availableDays, dateOverrides, weekPlan.weekStartDate, weekSessionsRaw]);
+  }, [availableDays, dateOverrides, moveLedger, weekPlan.weekStartDate, weekSessionsRaw]);
   const todaySessions = useMemo(
     () => weekSessions.filter(session => session.date === todayYMD),
     [todayYMD, weekSessions],

@@ -43,6 +43,7 @@ import {
   calendarEntriesFromScheduledSessions,
   sessionsFromBeginnerPlanForDate,
 } from './scheduledSessions';
+import { formatPrescriptionWithSets } from './prescriptionFormat';
 
 // ─── Engine input ─────────────────────────────────────────────────────────────
 
@@ -366,7 +367,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
           durationMinutes: template.targetDuration || session.durationMinutes,
           strengthSession: template,
           mainSet: template.exercises
-            .map(ex => `${ex.exercise.name}: ${ex.sets} x ${ex.repRange[0]}-${ex.repRange[1]}`)
+            .map(ex => `${ex.exercise.name}: ${formatPrescriptionWithSets(ex.sets, ex.repScheme, `${ex.repRange[0]}-${ex.repRange[1]} reps`)}`)
             .join('; '),
           target: `${template.targetDuration} min - ${template.exercises.length} exercises`,
         };

@@ -30,6 +30,15 @@ import MultiColumnPickerSheet from '../../../src/components/ui/MultiColumnPicker
 
 const GOALS = Object.values(BEGINNER_PLAN_DEFINITIONS);
 
+const CONTINUOUS_RUN_DISTANCE_OPTIONS = [
+  { label: 'Not yet', meters: 0 },
+  { label: '¼ mile', meters: 400 },
+  { label: '½ mile', meters: 800 },
+  { label: '1 mile', meters: 1609 },
+  { label: '2 miles', meters: 3219 },
+  { label: '5K or more', meters: 5000 },
+];
+
 function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -62,6 +71,7 @@ export default function PresetPlansScreen() {
   const [targetDate, setTargetDate] = useState('');
   const [startingLevel, setStartingLevel] = useState<BeginnerPlanReadinessInput['startingLevel']>('walking');
   const [completionGoal, setCompletionGoal] = useState<BeginnerCompletionGoal>('complete_distance');
+  const [continuousRunDistanceMeters, setContinuousRunDistanceMeters] = useState(0);
   const [acknowledgeVisible, setAcknowledgeVisible] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [targetPickerVisible, setTargetPickerVisible] = useState(false);
@@ -71,6 +81,7 @@ export default function PresetPlansScreen() {
     startingLevel,
     continuousWalkMinutes: startingLevel === 'inactive' ? 10 : 35,
     continuousRunMinutes: startingLevel === 'running' ? 30 : startingLevel === 'run_walk' ? 5 : 0,
+    continuousRunDistanceMeters,
     recentConsistentWeeks: startingLevel === 'inactive' ? 0 : 4,
     availableDaysPerWeek: 4,
     hasCurrentSymptoms: false,
@@ -78,7 +89,7 @@ export default function PresetPlansScreen() {
     requestedTargetDate: targetDate.trim() || undefined,
     startDate: today(),
     completionGoal,
-  }), [completionGoal, selectedGoal, startingLevel, targetDate]);
+  }), [completionGoal, continuousRunDistanceMeters, selectedGoal, startingLevel, targetDate]);
   const recommendation = useMemo(() => recommendBeginnerPlanDuration(input), [input]);
 
   function activate(acknowledgedAt?: number) {
@@ -212,6 +223,20 @@ export default function PresetPlansScreen() {
               </TouchableOpacity>
             ))}
           </View>
+          <Text style={[s.label, { color: C.textDim }]}>WHAT IS THE FARTHEST YOU CAN CURRENTLY RUN WITHOUT STOPPING?</Text>
+          <View style={s.pills}>
+            {CONTINUOUS_RUN_DISTANCE_OPTIONS.map(option => (
+              <TouchableOpacity
+                key={option.label}
+                onPress={() => setContinuousRunDistanceMeters(option.meters)}
+                style={[s.pill, { backgroundColor: continuousRunDistanceMeters === option.meters ? C.primaryDim : C.cardAlt, borderColor: continuousRunDistanceMeters === option.meters ? C.primary : C.border }]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: continuousRunDistanceMeters === option.meters }}
+              >
+                <Text style={[s.pillText, { color: continuousRunDistanceMeters === option.meters ? C.primary : C.textMuted }]}>{option.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <Text style={[s.label, { color: C.textDim }]}>REQUESTED TARGET DATE · OPTIONAL</Text>
           <TouchableOpacity
             style={[s.input, { backgroundColor: C.cardAlt, borderColor: recommendation.accelerated ? C.warning : C.border, justifyContent: 'center' }]}
@@ -230,6 +255,18 @@ export default function PresetPlansScreen() {
           <Text style={[s.recommended, { color: C.text }]}>{recommendation.recommendedWeeks} weeks</Text>
           <Text style={[s.body, { color: C.textMuted }]}>Earliest supported target: {formatYMDForDisplay(recommendation.earliestSupportedTargetDate)}</Text>
           {recommendation.reasoning.slice(0, 3).map(reason => <Text key={reason} style={[s.bullet, { color: C.textMuted }]}>• {reason}</Text>)}
+          {recommendation.continuousRunEligibility?.requiresFiveKContinuous ? (
+            <View style={[s.noteBox, { borderColor: recommendation.continuousRunEligibility.eligible ? C.primary : C.warning, backgroundColor: C.cardAlt }]}>
+              <Text style={[s.helper, { color: C.text }]}>
+                {recommendation.continuousRunEligibility.recommendation}
+              </Text>
+              {!recommendation.continuousRunEligibility.eligible
+                ? recommendation.continuousRunEligibility.alternatives.map(alternative => (
+                  <Text key={alternative} style={[s.bullet, { color: C.textMuted }]}>• {alternative}</Text>
+                ))
+                : null}
+            </View>
+          ) : null}
           <Text style={[s.helper, { color: C.textMuted }]}>
             The plan may hold or extend when adherence, readiness, recovery, or symptoms do not support progression. Completion and injury prevention cannot be guaranteed.
           </Text>
@@ -301,6 +338,7 @@ const s = StyleSheet.create({
   pill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 8 },
   pillText: { fontSize: 11, fontWeight: '800', textTransform: 'capitalize' },
   input: { minHeight: 48, borderWidth: 1, borderRadius: 13, paddingHorizontal: 13, fontSize: 14 },
+  noteBox: { borderWidth: 1, borderRadius: 14, padding: 12, marginTop: 12 },
   recommended: { fontSize: 37, fontWeight: '900', marginTop: 7 },
   bullet: { fontSize: 12, lineHeight: 18, marginTop: 6 },
   primaryButton: { minHeight: 52, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },

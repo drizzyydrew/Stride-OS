@@ -19,9 +19,10 @@
 import type {
   Exercise, PlannedExercise, StrengthSession, StrengthWeek,
   StrengthGoal, StrengthSessionType, MovementPattern, StrengthEngineInput,
-  StrengthProgressionState,
+  StrengthProgressionState, RepScheme,
 } from '../types/strength';
 import type { TrainingPhase, ProgressionLevel } from '../types/training';
+import { parsePrescriptionScheme } from './prescriptionFormat';
 
 // ─── Exercise library ─────────────────────────────────────────────────────────
 //
@@ -264,12 +265,13 @@ type SessionTemplate = {
   exerciseIds:  string[];
   sets:         number;
   repRange:     [number, number];
+  repSchemes?:   Partial<Record<string, RepScheme>>;
   rpe:          number;
   rationale:    string;
   purpose:      string;
 };
 
-const SESSION_TEMPLATES: Record<StrengthSessionType, SessionTemplate> = {
+export const SESSION_TEMPLATES: Record<StrengthSessionType, SessionTemplate> = {
   full_body: {
     title:       'Full Body Strength',
     goal:        'force_production',
@@ -287,6 +289,10 @@ const SESSION_TEMPLATES: Record<StrengthSessionType, SessionTemplate> = {
     patterns:    ['squat', 'hinge', 'trunk', 'calf_ankle'],
     exerciseIds: ['squat_bulgarian', 'hinge_hip_thrust', 'hinge_nordic', 'trunk_copenhagen', 'calf_single_standing'],
     sets: 3, repRange: [5, 8], rpe: 8,
+    repSchemes: {
+      trunk_copenhagen: { kind: 'duration', secondsMin: 20, secondsMax: 30, perSide: true },
+      calf_single_standing: { kind: 'reps_hold', repsMin: 8, repsMax: 12, holdSeconds: 2, perSide: true },
+    },
     rationale: 'High-intensity lower-body loading in the build phase converts aerobic base into race-specific power. Maximal force adaptations (Rønnestad & Mujika 2014) improve running economy by 2–8% — without any additional running volume.',
     purpose: 'Develop maximum lower-body force production to translate into faster race pace at lower RPE.',
   },
@@ -297,6 +303,10 @@ const SESSION_TEMPLATES: Record<StrengthSessionType, SessionTemplate> = {
     patterns:    ['squat', 'hinge', 'plyometric', 'trunk', 'calf_ankle'],
     exerciseIds: ['squat_bulgarian', 'hinge_single_rdl', 'plyo_box_jump', 'trunk_bird_dog', 'calf_pogo'],
     sets: 3, repRange: [5, 8], rpe: 7,
+    repSchemes: {
+      squat_bulgarian: { kind: 'reps_tempo', repsMin: 5, repsMax: 8, tempo: '3:1:1', perSide: true },
+      hinge_single_rdl: { kind: 'reps_tempo', repsMin: 5, repsMax: 8, tempo: '3:1:1', perSide: true },
+    },
     rationale: 'Explosive and reactive strength improves the elastic energy storage and return of the Achilles-calf complex. Paavolainen et al. (1999) demonstrated a 30-second 5k improvement with 9 weeks of explosive strength training, without any change in VO2max.',
     purpose: 'Improve running efficiency so the same effort produces more speed — targeting elastic energy return and neuromuscular firing rate.',
   },
@@ -307,6 +317,10 @@ const SESSION_TEMPLATES: Record<StrengthSessionType, SessionTemplate> = {
     patterns:    ['trunk', 'calf_ankle', 'mobility', 'pull'],
     exerciseIds: ['trunk_side_plank', 'calf_single_standing', 'mobility_clamshell', 'pull_band_pull', 'mobility_hip_flexor'],
     sets: 2, repRange: [10, 15], rpe: 5,
+    repSchemes: {
+      trunk_side_plank: { kind: 'duration', secondsMin: 20, secondsMax: 30, perSide: true },
+      calf_single_standing: { kind: 'reps_hold', repsMin: 10, repsMax: 15, holdSeconds: 2, perSide: true },
+    },
     rationale: 'Targeted prehabilitation maintains joint health and tissue resilience without adding meaningful fatigue. During deload and taper, this session protects the accumulated adaptations while allowing neuromuscular recovery.',
     purpose: 'Maintain tissue health, correct imbalances, and prepare for the next training block — without adding fatigue.',
   },
@@ -343,6 +357,26 @@ const PHASE_CONFIG: Record<TrainingPhase, Record<ProgressionLevel, PhaseConfig>>
     intermediate: { sessionTypes: ['full_body', 'prehab'], sessionDays: [1, 4], goal: 'force_production', phaseNote: 'Base: 2×/week — strength + prehab', phaseRationale: 'Two sessions per week in base phase: one compound strength session and one prehab/accessory session. This is when the largest strength gains occur before race-specific running volume climbs.' },
     advanced:     { sessionTypes: ['full_body', 'lower_power'], sessionDays: [1, 4], goal: 'force_production', phaseNote: 'Base: 2×/week — full body + lower power', phaseRationale: 'Advanced athletes can handle higher strength loads in base phase. Two sessions target both structural strength and early force development.' },
   },
+  aerobic_development: {
+    beginner:     { sessionTypes: ['full_body'], sessionDays: [1], goal: 'force_production', phaseNote: 'Aerobic development: 1×/week full body', phaseRationale: 'Maintain simple strength exposure while aerobic consistency is the priority.' },
+    intermediate: { sessionTypes: ['full_body', 'prehab'], sessionDays: [1, 4], goal: 'force_production', phaseNote: 'Aerobic development: strength + prehab', phaseRationale: 'Strength supports durability without competing with aerobic volume.' },
+    advanced:     { sessionTypes: ['full_body', 'lower_power'], sessionDays: [1, 4], goal: 'force_production', phaseNote: 'Aerobic development: force + power support', phaseRationale: 'Preserve force production while the run plan builds aerobic capacity.' },
+  },
+  threshold: {
+    beginner:     { sessionTypes: ['prehab'], sessionDays: [2], goal: 'injury_resilience', phaseNote: 'Threshold: 1×/week prehab', phaseRationale: 'Keep strength low-fatigue while controlled run quality is introduced.' },
+    intermediate: { sessionTypes: ['prehab', 'full_body'], sessionDays: [1, 4], goal: 'maintenance', phaseNote: 'Threshold: maintenance + prehab', phaseRationale: 'Maintain strength and tissue resilience without stealing recovery from threshold work.' },
+    advanced:     { sessionTypes: ['running_economy', 'prehab'], sessionDays: [1, 4], goal: 'running_economy', phaseNote: 'Threshold: economy + prehab', phaseRationale: 'Low-volume economy work supports quality running while prehab manages load.' },
+  },
+  vo2: {
+    beginner:     { sessionTypes: ['prehab'], sessionDays: [2], goal: 'injury_resilience', phaseNote: 'VO₂: 1×/week prehab', phaseRationale: 'High-end running work leaves no room for aggressive lower-body loading.' },
+    intermediate: { sessionTypes: ['prehab'], sessionDays: [2], goal: 'maintenance', phaseNote: 'VO₂: prehab only', phaseRationale: 'Strength shifts to maintenance during high-intensity run exposure.' },
+    advanced:     { sessionTypes: ['running_economy', 'prehab'], sessionDays: [1, 4], goal: 'maintenance', phaseNote: 'VO₂: reduced economy + prehab', phaseRationale: 'Maintain neuromuscular qualities with reduced volume and careful spacing.' },
+  },
+  race_specific: {
+    beginner:     { sessionTypes: ['activation'], sessionDays: [2], goal: 'maintenance', phaseNote: 'Race specific: activation', phaseRationale: 'Strength supports readiness without adding new fatigue during race-specific work.' },
+    intermediate: { sessionTypes: ['activation', 'prehab'], sessionDays: [1, 4], goal: 'maintenance', phaseNote: 'Race specific: activation + prehab', phaseRationale: 'Keep movement sharp and tissue resilient while run specificity dominates.' },
+    advanced:     { sessionTypes: ['running_economy', 'activation'], sessionDays: [1, 4], goal: 'maintenance', phaseNote: 'Race specific: low-volume economy', phaseRationale: 'Preserve economy and power with minimal volume as run specificity rises.' },
+  },
   build: {
     beginner:     { sessionTypes: ['prehab'], sessionDays: [2], goal: 'injury_resilience', phaseNote: 'Build: 1×/week prehab focus', phaseRationale: 'Running volume is climbing — one prehab session protects tissue health without adding CNS fatigue that would compromise key running sessions.' },
     intermediate: { sessionTypes: ['lower_power', 'prehab'], sessionDays: [1, 4], goal: 'running_economy', phaseNote: 'Build: 2×/week — power + prehab', phaseRationale: 'One high-intensity session converts base strength into race power; one prehab session manages the increased running load.' },
@@ -362,6 +396,16 @@ const PHASE_CONFIG: Record<TrainingPhase, Record<ProgressionLevel, PhaseConfig>>
     beginner:     { sessionTypes: ['activation'], sessionDays: [2], goal: 'taper_support', phaseNote: 'Taper: 1×/week activation only', phaseRationale: 'Taper: minimal loading to maintain neuromuscular potentiation. No new stimuli — preserve sharpness without adding fatigue.' },
     intermediate: { sessionTypes: ['activation'], sessionDays: [2], goal: 'taper_support', phaseNote: 'Taper: 1×/week activation', phaseRationale: 'Taper: maintain neuromuscular activation with very reduced volume. The goal is feel — not fitness.' },
     advanced:     { sessionTypes: ['activation'], sessionDays: [1], goal: 'taper_support', phaseNote: 'Taper: 1×/week early-week activation', phaseRationale: 'Single activation session early in the week preserves neuromuscular potentiation with full recovery before race day.' },
+  },
+  transition: {
+    beginner:     { sessionTypes: ['prehab'], sessionDays: [2], goal: 'injury_resilience', phaseNote: 'Transition: movement quality', phaseRationale: 'Light movement quality restores rhythm without forcing progression.' },
+    intermediate: { sessionTypes: ['prehab'], sessionDays: [2], goal: 'maintenance', phaseNote: 'Transition: low-load maintenance', phaseRationale: 'Reduce load while maintaining useful movement patterns.' },
+    advanced:     { sessionTypes: ['prehab'], sessionDays: [2], goal: 'maintenance', phaseNote: 'Transition: low-load maintenance', phaseRationale: 'Keep structure light until normal training resumes.' },
+  },
+  recovery: {
+    beginner:     { sessionTypes: ['prehab'], sessionDays: [3], goal: 'deload', phaseNote: 'Recovery: gentle prehab', phaseRationale: 'Recovery phase prioritizes restoration and symptom-safe movement.' },
+    intermediate: { sessionTypes: ['prehab'], sessionDays: [3], goal: 'deload', phaseNote: 'Recovery: gentle prehab', phaseRationale: 'Recovery phase lowers strength stress and preserves mobility.' },
+    advanced:     { sessionTypes: ['prehab'], sessionDays: [3], goal: 'deload', phaseNote: 'Recovery: gentle prehab', phaseRationale: 'Recovery phase is not a strength-building block; keep loading minimal.' },
   },
 };
 
@@ -464,6 +508,12 @@ function buildExercise(
   const rir      = 10 - rpe;
   const rest     = ex.cnsLoad === 'high' ? 120 : ex.cnsLoad === 'medium' ? 90 : 60;
   const tempo    = ex.pattern === 'plyometric' ? 'Explosive: fast concentric' : '3:1:1';
+  const repRange: [number, number] = isDeload
+    ? [template.repRange[0] + 2, template.repRange[1] + 3]
+    : template.repRange;
+  const fallbackPrescription = `${repRange[0]}-${repRange[1]}`;
+  const repScheme = template.repSchemes?.[id]
+    ?? parsePrescriptionScheme(fallbackPrescription, { exerciseName: ex.name, tempo });
   const loadTarget =
     template.goal === 'force_production' ? `RPE ${rpe} — heavy, controlled` :
     template.goal === 'running_economy'  ? `RPE ${rpe} — moderate load, fast concentric` :
@@ -475,9 +525,8 @@ function buildExercise(
     exerciseId:      id,
     exercise:        ex,
     sets,
-    repRange:        isDeload
-      ? [template.repRange[0] + 2, template.repRange[1] + 3]
-      : template.repRange,
+    repRange,
+    repScheme,
     loadTarget,
     rpe,
     rir,

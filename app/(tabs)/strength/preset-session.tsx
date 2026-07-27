@@ -26,6 +26,7 @@ import { summarizeStrengthSession } from '../../../src/utils/strengthSummary';
 import { completedExercisesFromActiveSession } from '../../../src/utils/strengthPersistence';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import StrengthSetEditor from '../../../src/components/strength/StrengthSetEditor';
+import { formatPrescriptionWithSets } from '../../../src/utils/prescriptionFormat';
 
 function formatElapsed(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
@@ -116,7 +117,7 @@ export default function PresetStrengthSessionScreen() {
       setsCompleted: session.completedExerciseIds.length,
       totalSets: session.exercises.length,
       isPaused: session.status === 'paused',
-      prescription: `${current.sets}×${current.reps}`,
+      prescription: formatPrescriptionWithSets(current.sets, current.repScheme, current.reps),
       loadDisplay: session.loadByExercise[current.id] || (current.equipment.includes('bodyweight') ? 'Bodyweight' : 'Load not set'),
       progressLabel: `${session.completedExerciseIds.length}/${session.exercises.length} exercises`,
     }).catch(console.warn);
@@ -302,7 +303,7 @@ export default function PresetStrengthSessionScreen() {
               <View style={styles.exerciseHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.exerciseName, { color: C.text }]}>{exercise.name}</Text>
-                  <Text style={[styles.meta, { color: C.textMuted }]}>{exercise.sets} sets · {exercise.reps} · {displayLabels(exercise.equipment)}</Text>
+                  <Text style={[styles.meta, { color: C.textMuted }]}>{formatPrescriptionWithSets(exercise.sets, exercise.repScheme, exercise.reps)} · {displayLabels(exercise.equipment)}</Text>
                 </View>
                 {done ? <Ionicons name="checkmark-circle" size={23} color={C.primary} /> : null}
               </View>

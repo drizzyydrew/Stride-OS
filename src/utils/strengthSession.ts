@@ -14,6 +14,14 @@
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
+import type { RepScheme } from '../types/strength';
+import {
+  parsePrescriptionScheme,
+  representativeDistanceMetersForScheme,
+  representativeRepsForScheme,
+  representativeSecondsForScheme,
+} from './prescriptionFormat';
+
 export type EquipmentType =
   | 'bodyweight'
   | 'barbell'
@@ -53,6 +61,7 @@ export type ActiveStrengthExercise = {
   // what was actually done.
   sets: number;
   reps: string;
+  repScheme?: RepScheme;
   equipment: string[];
   equipmentType?: EquipmentType;
   notes?: string;
@@ -153,14 +162,17 @@ function primaryRepCount(reps: string): number | undefined {
 // used both when a session first starts (training_block/preset exercises
 // arrive without setEntries) and when rehydrating a persisted session that
 // predates the per-set structure.
-export function synthesizeSetEntries(sets: number, reps: string): ActiveSetEntry[] {
+export function synthesizeSetEntries(sets: number, reps: string, repScheme?: RepScheme): ActiveSetEntry[] {
   const count = Math.max(0, Math.round(sets) || 0);
-  const repCount = primaryRepCount(reps);
-  const isTimeBased = /sec/i.test(reps);
+  const scheme = repScheme ?? parsePrescriptionScheme(reps);
+  const repCount = scheme ? representativeRepsForScheme(scheme) : primaryRepCount(reps);
+  const holdSeconds = representativeSecondsForScheme(scheme, reps);
+  const distanceMeters = representativeDistanceMetersForScheme(scheme, reps);
   return Array.from({ length: count }, () => ({
     id: generateSetId(),
-    reps: isTimeBased ? undefined : repCount,
-    holdSeconds: isTimeBased ? repCount : undefined,
+    reps: repCount,
+    holdSeconds,
+    distanceMeters,
     completed: false,
   }));
 }
@@ -170,17 +182,19 @@ export function synthesizeSetEntries(sets: number, reps: string): ActiveSetEntry
 export function ensureExerciseShape(exercise: Partial<ActiveStrengthExercise> & { id: string; name: string }): ActiveStrengthExercise {
   const sets = exercise.sets ?? exercise.setEntries?.length ?? 0;
   const reps = exercise.reps ?? '';
+  const repScheme = exercise.repScheme;
   return {
     id: exercise.id,
     name: exercise.name,
     sets,
     reps,
+    repScheme,
     equipment: exercise.equipment ?? [],
     equipmentType: exercise.equipmentType ?? mapEquipmentType(exercise.equipment),
     notes: exercise.notes,
     setEntries: exercise.setEntries && exercise.setEntries.length > 0
       ? exercise.setEntries
-      : synthesizeSetEntries(sets, reps),
+      : synthesizeSetEntries(sets, reps, repScheme),
     substitutedFromId: exercise.substitutedFromId,
     added: exercise.added,
     skipped: exercise.skipped,
@@ -223,6 +237,7 @@ export type AddExerciseInput = {
   equipmentType?: EquipmentType;
   equipment?: string[];
   notes?: string;
+  repScheme?: RepScheme;
   substitutedFromId?: string;
   // Optional first set seed (custom sessions add one blank set by default so
   // the athlete has something to edit immediately).
@@ -235,6 +250,7 @@ export function addExercise(session: ActiveStrengthSession, input: AddExerciseIn
     name: input.name.trim() || 'Exercise',
     sets: 0,
     reps: '',
+    repScheme: input.repScheme,
     equipment: input.equipment ?? [],
     equipmentType: input.equipmentType ?? mapEquipmentType(input.equipment),
     notes: input.notes,
@@ -283,6 +299,7 @@ export function substituteExercise(
     name: replacement.name.trim() || 'Exercise',
     sets: 0,
     reps: '',
+    repScheme: replacement.repScheme,
     equipment: replacement.equipment ?? [],
     equipmentType: replacement.equipmentType ?? mapEquipmentType(replacement.equipment),
     notes: replacement.notes,

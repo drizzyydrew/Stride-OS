@@ -145,6 +145,7 @@ export type PhysiologicalRationale = {
 
 export type RichWorkout = Workout & {
   richType:      RichWorkoutType;
+  protocol?:     'norwegian_4x4';
   dayIndex:      number;           // 0–6 position in the week
 
   // Targets

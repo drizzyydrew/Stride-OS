@@ -7,6 +7,7 @@ export type AdvancedIntervalEligibilityInput = {
   weeklyRunningMinutes: number;
   toleratedLowerIntensityIntervals: boolean;
   hasNearbyHardSession: boolean;
+  hasAdjacentHardLowerBodySession?: boolean;
   readinessScore: number;
   hasCurrentSymptoms: boolean;
   beginnerFoundationPlanActive: boolean;
@@ -42,10 +43,12 @@ export function isEligibleForNorwegian4x4(input: AdvancedIntervalEligibilityInpu
   if (input.beginnerFoundationPlanActive) return false;
   if (input.progressionLevel === 'beginner') return false;
   if (input.trainingPhase === 'foundation' || input.trainingPhase === 'base') return false;
+  if (input.trainingPhase === 'deload' || input.trainingPhase === 'taper' || input.trainingPhase === 'recovery' || input.trainingPhase === 'transition') return false;
   if (input.recentConsistentWeeks < 8) return false;
   if (input.weeklyRunningMinutes < 180) return false;
   if (!input.toleratedLowerIntensityIntervals) return false;
   if (input.hasNearbyHardSession) return false;
+  if (input.hasAdjacentHardLowerBodySession) return false;
   if (input.readinessScore < 70) return false;
   if (input.hasCurrentSymptoms) return false;
   return true;

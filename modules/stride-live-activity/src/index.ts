@@ -2,6 +2,7 @@ import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
 import { requireNativeModule } from 'expo-modules-core';
 
 export type StrideRunLiveActivityPayload = {
+  workoutInstanceId?: string;
   sessionId?: string;
   sessionSource?: 'running' | 'outdoor' | string;
   runName: string;
@@ -27,6 +28,7 @@ export type StrideRunLiveActivityPayload = {
 };
 
 export type StrideStrengthLiveActivityPayload = {
+  workoutInstanceId?: string;
   sessionId?: string;
   sessionSource?: 'training_block' | 'preset' | string;
   workoutName: string;
@@ -241,7 +243,7 @@ export async function startStrideRunLiveActivity(payload: StrideRunLiveActivityP
   const nativeModule = getNativeModule();
   if (!nativeModule || !isStrideRunLiveActivityAvailable()) return null;
   return nativeModule.start(
-    payload.sessionId ?? '',
+    payload.workoutInstanceId ?? payload.sessionId ?? '',
     payload.sessionSource ?? 'running',
     payload.runName,
     payload.activityType ?? 'running',
@@ -336,7 +338,7 @@ export async function startStrengthLiveActivity(payload: StrideStrengthLiveActiv
   const nativeModule = getNativeModule();
   if (!nativeModule || !isStrideRunLiveActivityAvailable()) return null;
   return nativeModule.startStrength(
-    payload.sessionId ?? '',
+    payload.workoutInstanceId ?? payload.sessionId ?? '',
     payload.sessionSource ?? 'training_block',
     payload.workoutName,
     Math.max(0, payload.elapsedSeconds),

@@ -9,14 +9,21 @@
 // success, or error state.
 
 import { useRecalculationStore } from '../store/recalculationStore';
-import { calculateACWR, activitiesToACWRRecords } from '../utils/training';
+import { buildTrainingOutlook } from '../utils/trainingOutlook';
+import { buildRecalculationDecisionSnapshot } from '../utils/training/recalculationDecisionSnapshot';
 import type { Activity } from '../types/activity';
 
 export type RecalculationReason =
   | 'activity_added'
   | 'activity_updated'
   | 'activity_removed'
-  | 'manual_refresh';
+  | 'manual_refresh'
+  | 'adaptation_confirmed'
+  | 'missed_session'
+  | 'readiness_changed'
+  | 'deload_transition'
+  | 'phase_transition'
+  | 'event_date_changed';
 
 export function runRecalculation(
   reason: RecalculationReason,
@@ -31,8 +38,9 @@ export function runRecalculation(
     // notification-triggered recalculation and the manual Refresh control
     // need a value that exists outside of a mounted screen). Later phases
     // hook fatigue/load recomputation into this same pass.
-    const acwr = calculateACWR(activitiesToACWRRecords(activities));
-    useRecalculationStore.getState().succeed(acwr);
+    const { acwr, decisionSnapshot } = buildRecalculationDecisionSnapshot(activities);
+    const trainingOutlook = buildTrainingOutlook({ activities, decisionSnapshot });
+    useRecalculationStore.getState().succeed(acwr, decisionSnapshot, trainingOutlook);
   } catch (error) {
     useRecalculationStore.getState().fail(error instanceof Error ? error.message : 'Recalculation failed.');
   }

@@ -56,6 +56,41 @@ export const BEGINNER_PLAN_DEFINITIONS: Record<BeginnerPlanGoal, BeginnerPlanDef
   },
 };
 
+const FIVE_K_METERS = 5000;
+type ContinuousRunEligibility = NonNullable<BeginnerPlanRecommendation['continuousRunEligibility']>;
+
+export function evaluateContinuousRunEligibility(input: BeginnerPlanReadinessInput): ContinuousRunEligibility {
+  const requiresFiveKContinuous = input.completionGoal === 'run_continuously'
+    && (input.goal === 'couch_to_half_marathon' || input.goal === 'couch_to_marathon');
+  if (!requiresFiveKContinuous) {
+    return {
+      eligible: true,
+      requiresFiveKContinuous,
+      farthestContinuousRunMeters: input.continuousRunDistanceMeters,
+      recommendation: 'Continuous 5K readiness is not required for this goal style.',
+      alternatives: [],
+    };
+  }
+
+  const farthest = typeof input.continuousRunDistanceMeters === 'number' && Number.isFinite(input.continuousRunDistanceMeters)
+    ? Math.max(0, input.continuousRunDistanceMeters)
+    : 0;
+  const eligible = farthest >= FIVE_K_METERS;
+  return {
+    eligible,
+    requiresFiveKContinuous,
+    farthestContinuousRunMeters: farthest,
+    recommendation: eligible
+      ? 'Your current continuous-run distance supports a run-continuously half or marathon progression.'
+      : 'For a run-continuously half or marathon plan, StrideOS recommends first building to a comfortable continuous 5K.',
+    alternatives: eligible ? [] : [
+      'Start with Couch to 5K.',
+      'Choose a run/walk half or marathon completion plan.',
+      'Use a foundation block until continuous running is more established.',
+    ],
+  };
+}
+
 function dateAtUtcMidnight(date: string): Date {
   const parsed = new Date(`${date}T00:00:00.000Z`);
   if (Number.isNaN(parsed.getTime())) throw new Error(`Invalid date: ${date}`);
@@ -102,6 +137,14 @@ export function recommendBeginnerPlanDuration(
     reasoning.push('Current continuous running capacity supports beginning beyond the earliest run/walk stage.');
   }
 
+  const continuousRunEligibility = evaluateContinuousRunEligibility(input);
+  if (!continuousRunEligibility.eligible) {
+    recommendedWeeks += input.goal === 'couch_to_marathon' ? 6 : 4;
+    reasoning.push(continuousRunEligibility.recommendation);
+    progressionRequirements.push('Build to a comfortable continuous 5K before making run-continuously half or marathon completion the main goal.');
+    continuousRunEligibility.alternatives.forEach(alternative => progressionRequirements.push(alternative));
+  }
+
   if (input.continuousWalkMinutes < 30) {
     recommendedWeeks += input.goal === 'couch_to_marathon' ? 4 : 2;
     reasoning.push('Build toward a comfortable 30-minute continuous walk before extending running intervals.');
@@ -142,6 +185,7 @@ export function recommendBeginnerPlanDuration(
     reasoning,
     progressionRequirements,
     accelerated,
+    continuousRunEligibility,
   };
 }
 

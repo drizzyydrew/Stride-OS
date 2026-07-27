@@ -14,6 +14,7 @@ import type { TrainingPhase, RaceDistance, ProgressionLevel } from '../../types/
 import type { MacroPlan, MacroWeek, Race, RacePriority, TrainingGoalType } from '../../types/plan';
 import { sundayOf, addDays, toYMD, parseYMD } from '../calendarEngine';
 import { getPlanTemplateForDistance, type PlanTemplate } from '../periodization';
+import { resolvePhaseWithDeload } from '../training/deloadModel';
 
 export const RACE_BLOCK_MAX_WEEKS = 22;
 
@@ -75,10 +76,16 @@ function focusForPhase(phase: TrainingPhase, goalType: TrainingGoalType, race?: 
   switch (phase) {
     case 'foundation': return foundationFocus(goalType);
     case 'base':        return baseFocus(goalType);
+    case 'aerobic_development': return 'Aerobic development — building capacity while keeping most work easy';
+    case 'threshold':   return 'Threshold — controlled sustained quality';
+    case 'vo2':         return 'VO₂ — limited aerobic-power exposure with recovery protection';
+    case 'race_specific': return race ? `Race specific — preparing for ${race.name}` : 'Race specific — event-focused preparation';
     case 'build':        return buildFocus(goalType);
     case 'peak':          return 'Peak — race-specific sharpening';
     case 'deload':        return 'Deload — recovery week, let the adaptations lock in';
     case 'taper':          return race ? `Taper — arriving fresh for ${race.name}` : 'Taper — arriving fresh for race day';
+    case 'transition':     return 'Transition — reset and restore training rhythm';
+    case 'recovery':       return 'Recovery — restoration before more loading';
   }
 }
 
@@ -103,7 +110,7 @@ function makeWeek(
 }
 
 function deloadOr(weekNumber: number, phase: TrainingPhase): TrainingPhase {
-  return weekNumber % 4 === 0 ? 'deload' : phase;
+  return resolvePhaseWithDeload(weekNumber, phase);
 }
 
 // ─── Race selection ───────────────────────────────────────────────────────────
@@ -211,8 +218,8 @@ function appendRaceBlock(
       phase = 'taper';
     } else if (isSecondLast && phase !== 'taper') {
       phase = 'taper';
-    } else if (phase !== 'taper' && globalWeek % 4 === 0) {
-      phase = 'deload';
+    } else {
+      phase = deloadOr(globalWeek, phase);
     }
 
     const otherRace = raceForWeek(otherRaces, weekStartForNumber(startDate, globalWeek));
@@ -236,7 +243,7 @@ function appendPostRace(
 ): void {
   for (let weekNumber = startWeekNumber; weekNumber <= minTotal; weekNumber++) {
     const isFirst = weekNumber === startWeekNumber;
-    const phase: TrainingPhase = weekNumber % 4 === 0 ? 'deload' : 'base';
+    const phase: TrainingPhase = deloadOr(weekNumber, 'base');
     weeks.push(makeWeek(startDate, weekNumber, phase, {
       focus: isFirst
         ? `Post-race recovery — easy running only after ${race.name}`
@@ -294,7 +301,7 @@ function buildGeneralStrengthPlan(startDate: string, foundationLen: number): Mac
   }
 
   for (; weekNumber <= MIN_TOTAL_WEEKS; weekNumber++) {
-    const phase: TrainingPhase = weekNumber % 4 === 0 ? 'deload' : 'base';
+    const phase: TrainingPhase = deloadOr(weekNumber, 'base');
     weeks.push(makeWeek(startDate, weekNumber, phase, {
       focus: phase === 'deload' ? 'Deload — recovery week, let the adaptations lock in' : baseFocus('general_strength'),
     }));
@@ -427,7 +434,7 @@ export function macroWeekForDate(plan: MacroPlan, date: Date): MacroWeek | null 
   if (found) return found;
 
   // Clamp beyond generated horizon by extending the base/deload cadence.
-  const phase: TrainingPhase = weekNum % 4 === 0 ? 'deload' : 'base';
+  const phase: TrainingPhase = deloadOr(weekNum, 'base');
   return {
     weekNumber: weekNum,
     startDate:  toYMD(weekStartForNumber(plan.startDate, weekNum)),

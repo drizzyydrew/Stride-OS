@@ -15,6 +15,7 @@ import { useThemeMode } from '../../../src/store/themeStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { evaluateRunReminders } from '../../../src/utils/runReminderScheduler';
 import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
+import type { VoiceCueCategory } from '../../../src/utils/voiceCoaching';
 import { useHydrationPlannerStore } from '../../../src/store/hydrationPlannerStore';
 import HydrationPlannerScreen from './hydration';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
@@ -33,6 +34,7 @@ import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
 import { useCalibration } from '../../../src/store/profileStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
+import { useExperienceModeAllows } from '../../../src/hooks/useExperienceMode';
 import { addDays as addCalendarDays, toYMD } from '../../../src/utils/calendarEngine';
 import type { RichWorkout } from '../../../src/types/workout';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
@@ -313,8 +315,8 @@ function RunStat({
   );
 }
 
-function speakCue(text: string): void {
-  enqueueVoiceCue(text);
+function speakCue(text: string, category: VoiceCueCategory = 'motivation'): void {
+  enqueueVoiceCue(text, category);
 }
 
 // ─── Plan Tab ─────────────────────────────────────────────────────────────────
@@ -323,6 +325,7 @@ function PlanTab() {
   const router = useRouter();
   const mode = useThemeMode();
   const { units } = useSettingsStore();
+  const showDataRichDetails = useExperienceModeAllows('data_rich');
   const imp = units === 'imperial';
   const pUnit = imp ? '/mi' : '/km';
 
@@ -566,7 +569,7 @@ function PlanTab() {
       ) : null}
 
       {/* Pace zones */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+      {showDataRichDetails ? <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.cardLabel, { color: C.textDim }]}>V·DOT PACE ZONES</Text>
         <View style={{ gap: 6, marginTop: 10 }}>
           {paceZones.map(z => {
@@ -590,10 +593,10 @@ function PlanTab() {
             );
           })}
         </View>
-      </View>
+      </View> : null}
 
       {/* HR Zones */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+      {showDataRichDetails ? <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.cardLabel, { color: C.textDim }]}>HEART RATE ZONES</Text>
         <View style={{ gap: 6, marginTop: 10 }}>
           {[
@@ -623,7 +626,7 @@ function PlanTab() {
             );
           })}
         </View>
-      </View>
+      </View> : null}
     </ScrollView>
   );
 }
@@ -784,7 +787,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     setRouteSegmentIndex(0);
     maxRouteProgressRef.current = 0;
     segmentStartRef.current = null;
-    speakCue('Route guidance stopped. Continuing in free run mode.');
+    speakCue('Route guidance stopped. Continuing in free run mode.', 'navigation');
   }
 
   useEffect(() => {
@@ -876,7 +879,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
     if (pendingEnvironment === 'indoor') {
       const workoutName = startWorkout?.title ?? 'treadmill run';
-      speakCue(`Starting ${workoutName} on the treadmill. Confirm your speed when you start moving.`);
+      speakCue(`Starting ${workoutName} on the treadmill. Confirm your speed when you start moving.`, 'motivation');
       return;
     }
 
@@ -888,11 +891,11 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       } else if (config.mode === 'distance') {
         speakCue(`Starting a ${goalMilesInput} ${unitWord} run. Start easy.`);
       } else if (config.mode === 'race') {
-        speakCue(`Race mode. Target pace ${paceLabel(racePaceSecInput)} per ${unitWord} over ${raceMilesInput} ${unitWord}s. Hold back the first ${unitWord}.`);
+        speakCue(`Race mode. Target pace ${paceLabel(racePaceSecInput)} per ${unitWord} over ${raceMilesInput} ${unitWord}s. Hold back the first ${unitWord}.`, 'pace');
       } else if (config.mode === 'workout' && startWorkout) {
         speakCue(`Starting ${startWorkout.title}. ${startWorkout.purpose ?? ''}`);
       } else if (selectedRoute) {
-        speakCue(`Starting route: ${selectedRoute.name}. ${selectedRoute.segments.length} interval markers set.`);
+        speakCue(`Starting route: ${selectedRoute.name}. ${selectedRoute.segments.length} interval markers set.`, 'navigation');
       }
     } catch (error) {
       cancelRun();
@@ -1247,7 +1250,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     const elapsedSeconds = Math.max(1, Math.floor((now - segStart) / 1000));
     const segmentPace = paceLabel(elapsedSeconds / segmentMiles);
 
-    speakCue(`End of segment ${routeSegmentIndex + 1}. Pace: ${segmentPace} per mile.`);
+    speakCue(`End of segment ${routeSegmentIndex + 1}. Pace: ${segmentPace} per mile.`, 'navigation');
     const nextIndex = routeSegmentIndex + 1;
     setRouteSegmentIndex(nextIndex);
     segmentStartRef.current = { index: nextIndex, time: now };
@@ -1266,7 +1269,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     });
     effortCueRef.current = result.state;
     if (!result.text) return;
-    speakCue(result.text);
+    speakCue(result.text, 'heartRate');
     sendRunAlertNotification(result.text).catch(() => undefined);
   }, [elapsed, heartRateBpm, isActive, isPaused, zoneStatus.guidance, zoneStatus.tone]);
 
@@ -1306,7 +1309,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     });
     if (cue) {
       reminderCueRef.current = cue.nextState;
-      speakCue(cue.spokenText);
+      speakCue(cue.spokenText, cue.kind === 'fuel' ? 'fueling' : cue.kind === 'hydration' ? 'hydration' : 'hydration');
       sendRunAlertNotification(cue.visualText).catch(() => undefined);
     }
   }, [activeReminderPlan.hourly.carbsG, activeReminderPlan.hourly.fluidOz, elapsed, isActive, isPaused, plannerReminder]);
@@ -1316,13 +1319,13 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     if (!isActive || goalDoneRef.current) return;
     if (runMode === 'time' && goalMinutes && elapsed >= goalMinutes * 60) {
       goalDoneRef.current = true;
-      speakCue(`Time goal complete: ${goalMinutes} minutes. Finish whenever you're ready.`);
+      speakCue(`Time goal complete: ${goalMinutes} minutes. Finish whenever you're ready.`, 'interval');
     } else if ((runMode === 'distance' || runMode === 'race') && goalMiles && distanceMiles >= goalMiles) {
       goalDoneRef.current = true;
       const goalDisplay = imp ? goalMiles : goalMiles * 1.609344;
       speakCue(runMode === 'race'
         ? 'Race distance complete. Strong execution.'
-        : `Distance goal reached: ${Math.round(goalDisplay * 10) / 10} ${imp ? 'miles' : 'kilometers'}. Nice work.`);
+        : `Distance goal reached: ${Math.round(goalDisplay * 10) / 10} ${imp ? 'miles' : 'kilometers'}. Nice work.`, 'interval');
     }
   }, [elapsed, distanceMiles, isActive, runMode, goalMinutes, goalMiles, imp]);
 
@@ -2400,7 +2403,7 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
       await startLocationTracking();
       speakCue(route.segments.length > 0
         ? `Starting route: ${route.name}. ${route.segments.length} interval markers set.`
-        : `Starting route: ${route.name}.`);
+        : `Starting route: ${route.name}.`, 'navigation');
       onStartRoute();
     } catch (error) {
       cancelRun();

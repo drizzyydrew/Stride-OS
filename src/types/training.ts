@@ -60,10 +60,28 @@ export type WorkoutIntensity =
 export type TrainingPhase =
   | 'foundation'
   | 'base'
+  | 'aerobic_development'
+  | 'threshold'
+  | 'vo2'
+  | 'race_specific'
   | 'build'
   | 'peak'
   | 'deload'
-  | 'taper';
+  | 'taper'
+  | 'transition'
+  | 'recovery';
+
+export type TrainingFocus =
+  | 'Aerobic Capacity'
+  | 'Threshold'
+  | 'VO₂ Max'
+  | 'Running Economy'
+  | 'Strength'
+  | 'Hypertrophy'
+  | 'Power'
+  | 'Durability'
+  | 'Recovery'
+  | 'Race Specific';
 
 export type ProgressionLevel =
   | 'beginner'

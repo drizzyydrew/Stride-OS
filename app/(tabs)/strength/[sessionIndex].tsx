@@ -20,6 +20,7 @@ import Card   from '../../../src/components/ui/Card';
 import Badge  from '../../../src/components/ui/Badge';
 import Button from '../../../src/components/ui/Button';
 import { displayLabel } from '../../../src/utils/displayLabels';
+import { formatPrescriptionWithSets, representativeRepsForScheme } from '../../../src/utils/prescriptionFormat';
 
 import { colors }   from '../../../src/theme/colors';
 import { spacing }  from '../../../src/theme/spacing';
@@ -370,7 +371,7 @@ export default function StrengthSessionDetailScreen() {
     const exercises: CompletedExercise[] = session.exercises.map(ex => ({
       exerciseId: ex.exerciseId,
       sets: Array.from({ length: ex.sets }, (): CompletedSet => ({
-        reps:      ex.repRange[0],
+        reps:      representativeRepsForScheme(ex.repScheme) ?? ex.repRange[0],
         rpe,
         completed: exerciseStatus[ex.exerciseId] !== 'skipped',
       })),
@@ -485,8 +486,8 @@ export default function StrengthSessionDetailScreen() {
                   <Text style={styles.exPattern}>{displayLabel(ex.exercise.pattern)}</Text>
                 </View>
                 <View style={styles.exSets}>
-                  <Text style={styles.exSetsValue}>{ex.sets}×{ex.repRange[0]}–{ex.repRange[1]}</Text>
-                  <Text style={styles.exSetsLabel}>sets×reps</Text>
+                  <Text style={styles.exSetsValue}>{formatPrescriptionWithSets(ex.sets, ex.repScheme, `${ex.repRange[0]}–${ex.repRange[1]} reps`)}</Text>
+                  <Text style={styles.exSetsLabel}>prescription</Text>
                 </View>
               </View>
 

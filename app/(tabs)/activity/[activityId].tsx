@@ -9,6 +9,7 @@ import { useActivityStore } from '../../../src/store/activityStore';
 import { useColors } from '../../../src/theme/useColors';
 import { resolveActivityDetail } from '../../../src/utils/activityResolution';
 import { displayLabel } from '../../../src/utils/displayLabels';
+import { useExperienceModeAllows } from '../../../src/hooks/useExperienceMode';
 
 function duration(seconds?: number): string {
   const total = Math.round(seconds ?? 0);
@@ -27,6 +28,7 @@ export default function ActivityDetailScreen() {
   const { activityId } = useLocalSearchParams<{ activityId?: string | string[] }>();
   const activities = useActivityStore(state => state.activities);
   const hydrationStatus = useActivityStore(state => state.hydrationStatus);
+  const showDataRichDetails = useExperienceModeAllows('data_rich');
   const resolution = resolveActivityDetail(activities, activityId, hydrationStatus);
   if (resolution.status === 'loading') return (
     <SafeAreaView style={[s.safe, s.centered, { backgroundColor: C.bg }]}>
@@ -76,11 +78,11 @@ export default function ActivityDetailScreen() {
       : activity.metrics.pace?.averageSecondsPerKilometer
         ? ['Average pace', pace(activity.metrics.pace.averageSecondsPerKilometer)]
         : null,
-    activity.metrics.averageHeartRateBpm ? ['Average HR', `${activity.metrics.averageHeartRateBpm} bpm`] : null,
-    activity.metrics.maximumHeartRateBpm ? ['Maximum HR', `${activity.metrics.maximumHeartRateBpm} bpm`] : null,
+    showDataRichDetails && activity.metrics.averageHeartRateBpm ? ['Average HR', `${activity.metrics.averageHeartRateBpm} bpm`] : null,
+    showDataRichDetails && activity.metrics.maximumHeartRateBpm ? ['Maximum HR', `${activity.metrics.maximumHeartRateBpm} bpm`] : null,
     activity.metrics.elevationGainMeters ? ['Elevation gain', `${Math.round(activity.metrics.elevationGainMeters * 3.28084)} ft`] : null,
     activity.rpe ? ['RPE', `${activity.rpe}/10`] : null,
-    ['Whole-body load', `${Math.round(activity.trainingLoad.wholeBody)}`],
+    showDataRichDetails ? ['Whole-body load', `${Math.round(activity.trainingLoad.wholeBody)}`] : null,
   ].filter((item): item is string[] => Boolean(item));
 
   return (
@@ -125,7 +127,7 @@ export default function ActivityDetailScreen() {
             </View>
           ))}
         </View>
-        {activity.metrics.heartRateZoneSeconds ? (
+        {showDataRichDetails && activity.metrics.heartRateZoneSeconds ? (
           <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[s.eyebrow, { color: C.textDim }]}>HEART-RATE ZONES</Text>
             {Object.entries(activity.metrics.heartRateZoneSeconds).map(([zone, seconds]) => (

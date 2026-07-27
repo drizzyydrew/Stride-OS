@@ -18,16 +18,23 @@ import type { TrainingPhase, ProgressionLevel, TrainingStyle } from '../types/tr
 import { buildPaceContext, buildRichWorkout, BuildContext } from './workoutBuilder';
 import { applyAdaptiveModifiers } from './adaptiveModifier';
 import { formatPace } from './calibrationEngine';
+import { getWeekInBlock, shouldApplyDeload } from './training/deloadModel';
 
 // ─── Phase intensity multipliers ──────────────────────────────────────────────
 
 const PHASE_MULTIPLIER: Record<TrainingPhase, number> = {
   foundation: 0.55,
   base:   0.70,
+  aerobic_development: 0.78,
+  threshold: 0.95,
+  vo2: 1.05,
+  race_specific: 1.00,
   build:  1.00,
   peak:   1.15,
   deload: 0.40,
   taper:  0.60,
+  transition: 0.45,
+  recovery: 0.35,
 };
 
 // ─── 7-day week templates (Mon–Sun) ───────────────────────────────────────────
@@ -45,6 +52,26 @@ const WEEK_TEMPLATES: Record<TrainingPhase, Record<ProgressionLevel, RichWorkout
     beginner:     ['easy_run', 'strides',    'easy_run',  'rest',     'easy_run',  'long_run', 'recovery_run'],
     intermediate: ['easy_run', 'strides',    'threshold', 'easy_run', 'rest',      'long_run', 'recovery_run'],
     advanced:     ['easy_run', 'threshold',  'strides',   'easy_run', 'strides',   'long_run', 'recovery_run'],
+  },
+  aerobic_development: {
+    beginner:     ['easy_run', 'strides',    'easy_run',  'rest',     'easy_run',  'long_run', 'recovery_run'],
+    intermediate: ['easy_run', 'strides',    'easy_run',  'easy_run', 'rest',      'long_run', 'recovery_run'],
+    advanced:     ['easy_run', 'strides',    'easy_run',  'easy_run', 'strides',   'long_run', 'recovery_run'],
+  },
+  threshold: {
+    beginner:     ['easy_run', 'fartlek',    'easy_run',  'easy_run', 'rest',      'long_run', 'recovery_run'],
+    intermediate: ['easy_run', 'threshold',  'easy_run',  'fartlek',  'rest',      'long_run', 'recovery_run'],
+    advanced:     ['easy_run', 'threshold',  'easy_run',  'threshold','strides',   'long_run', 'recovery_run'],
+  },
+  vo2: {
+    beginner:     ['easy_run', 'fartlek',    'easy_run',  'easy_run', 'rest',      'long_run', 'recovery_run'],
+    intermediate: ['easy_run', 'vo2',        'easy_run',  'threshold','rest',      'long_run', 'recovery_run'],
+    advanced:     ['easy_run', 'vo2',        'easy_run',  'threshold','strides',   'long_run', 'recovery_run'],
+  },
+  race_specific: {
+    beginner:     ['easy_run', 'tempo',      'easy_run',  'strides',  'rest',      'long_run',        'recovery_run'],
+    intermediate: ['easy_run', 'threshold',  'easy_run',  'marathon_pace','rest',  'progression_run', 'recovery_run'],
+    advanced:     ['easy_run', 'vo2',        'easy_run',  'marathon_pace','strides','progression_run', 'easy_run'],
   },
   build: {
     beginner:     ['easy_run', 'fartlek',    'easy_run',  'easy_run', 'rest',      'long_run', 'recovery_run'],
@@ -65,6 +92,16 @@ const WEEK_TEMPLATES: Record<TrainingPhase, Record<ProgressionLevel, RichWorkout
     beginner:     ['easy_run', 'taper_session', 'rest',    'taper_session', 'rest', 'taper_session', 'rest'],
     intermediate: ['easy_run', 'taper_session', 'strides', 'easy_run',      'rest', 'taper_session', 'rest'],
     advanced:     ['easy_run', 'taper_session', 'strides', 'threshold',     'rest', 'taper_session', 'easy_run'],
+  },
+  transition: {
+    beginner:     ['recovery_run', 'rest', 'easy_run', 'mobility', 'rest', 'easy_run', 'rest'],
+    intermediate: ['recovery_run', 'mobility', 'easy_run', 'rest', 'easy_run', 'rest', 'rest'],
+    advanced:     ['easy_run', 'mobility', 'easy_run', 'rest', 'recovery_run', 'easy_run', 'rest'],
+  },
+  recovery: {
+    beginner:     ['rest', 'mobility', 'recovery_run', 'rest', 'mobility', 'easy_run', 'rest'],
+    intermediate: ['recovery_run', 'mobility', 'rest', 'easy_run', 'rest', 'recovery_run', 'rest'],
+    advanced:     ['easy_run', 'mobility', 'rest', 'easy_run', 'rest', 'recovery_run', 'rest'],
   },
 };
 
@@ -108,10 +145,16 @@ function computeWeekScore(workouts: RichWorkout[]): RichWeek['weekScore'] {
 const PHASE_RATIONALE: Record<TrainingPhase, string> = {
   foundation: 'Building the aerobic engine from the ground up. Run/walk intervals let tendons, bones, and the cardiovascular system adapt gradually — the safest, most durable way to start a running habit before any structured intensity is introduced.',
   base:   'Establishing aerobic base via 80/20 polarized distribution. High easy volume primes mitochondrial density before structured intensity is introduced.',
+  aerobic_development: 'Extending aerobic capacity with controlled volume and repeatable easy work.',
+  threshold: 'Adding controlled sustained quality on top of an established aerobic base.',
+  vo2: 'Using limited high-intensity aerobic-power exposure with strict recovery spacing.',
+  race_specific: 'Converting general fitness into event-specific confidence while preserving recovery.',
   build:  'Progressive intensity loading — threshold and VO2max sessions target lactate threshold elevation and maximal oxygen uptake improvement.',
   peak:   'Race-specific sharpening. Reduced volume concentrates quality; sessions mirror target race demands to maximise neuromuscular specificity.',
   deload: 'Planned recovery phase. Reduced load allows supercompensation: accumulated adaptations consolidate before the next build block.',
   taper:  'Pre-race taper. Maintaining intensity at sharply reduced volume preserves fitness while eliminating residual fatigue for peak performance.',
+  transition: 'Light structure after a major goal or interruption, rebuilding rhythm before load.',
+  recovery: 'Restorative training emphasis when the useful signal is reducing accumulated stress.',
 };
 
 function buildProgressionNote(
@@ -122,10 +165,16 @@ function buildProgressionNote(
   const blockLabel: Record<TrainingPhase, string> = {
     foundation: 'Foundation — building the habit',
     base:   'Base block — aerobic foundation',
+    aerobic_development: 'Aerobic development — capacity and consistency',
+    threshold: 'Threshold — controlled sustained quality',
+    vo2: 'VO₂ — limited aerobic-power exposure',
+    race_specific: 'Race specific — event-focused sharpening',
     build:  'Build block — intensity loading',
     peak:   'Peak block — race sharpening',
     deload: 'Deload — recovery & supercompensation',
     taper:  'Taper — pre-race freshening',
+    transition: 'Transition — reset and restore rhythm',
+    recovery: 'Recovery — restoration first',
   };
   const weekLabel = trainingPhase === 'deload' || trainingPhase === 'taper'
     ? `Week ${currentWeek}`
@@ -301,9 +350,9 @@ export function buildRichDay(
   input:      WorkoutEngineInput,
   dayIndex:   number,
 ): RichWorkout {
-  const weekInBlock  = ((input.currentWeek - 1) % 4) + 1;
-  const isAutoDeload = weekInBlock === 4 &&
-    input.trainingPhase !== 'deload' && input.trainingPhase !== 'taper';
+  const weekInBlock  = getWeekInBlock(input.currentWeek);
+  const isAutoDeload = shouldApplyDeload(input.currentWeek, input.trainingPhase)
+    && input.trainingPhase !== 'deload';
   const multiplier   = isAutoDeload
     ? PHASE_MULTIPLIER['deload']!
     : PHASE_MULTIPLIER[input.trainingPhase];
@@ -334,14 +383,14 @@ export function getPhaseTypesForWeek(
   progressionLevel: ProgressionLevel,
   weekInBlock:       number,
 ): RichWorkoutType[] {
-  const isAutoDeload = weekInBlock === 4 && phase !== 'deload' && phase !== 'taper';
+  const isAutoDeload = shouldApplyDeload(weekInBlock, phase) && phase !== 'deload';
   return isAutoDeload
     ? (DELOAD_OVERRIDE[progressionLevel] ?? DELOAD_OVERRIDE['intermediate'])
     : (WEEK_TEMPLATES[phase]?.[progressionLevel] ?? WEEK_TEMPLATES['base']!['intermediate']!);
 }
 
 export function getBaseTemplate(input: WorkoutEngineInput): RichWorkoutType[] {
-  const weekInBlock = ((input.currentWeek - 1) % 4) + 1;
+  const weekInBlock = getWeekInBlock(input.currentWeek);
   return getPhaseTypesForWeek(input.trainingPhase, input.progressionLevel, weekInBlock);
 }
 
@@ -354,9 +403,9 @@ export function generateRichWeek(input: WorkoutEngineInput): RichWeek {
     temperatureCelsius, altitudeMeters,
   } = input;
 
-  const weekInBlock  = ((currentWeek - 1) % 4) + 1;
-  const isAutoDeload = weekInBlock === 4 &&
-    trainingPhase !== 'deload' && trainingPhase !== 'taper';
+  const weekInBlock  = getWeekInBlock(currentWeek);
+  const isAutoDeload = shouldApplyDeload(currentWeek, trainingPhase)
+    && trainingPhase !== 'deload';
 
   const baseTemplate = isAutoDeload
     ? (DELOAD_OVERRIDE[progressionLevel] ?? DELOAD_OVERRIDE['intermediate'])

@@ -224,6 +224,8 @@ export type Activity = {
   associatedTrainingBlockId?: string;
   associatedGoalId?: string;
   scheduledSessionId?: string;
+  shoeId?: string;
+  gearIds?: string[];
   completionClassification?: CompletionClassification;
   startTime: number;
   endTime?: number;

@@ -30,6 +30,12 @@ function phaseColor(phase: TrainingPhase): string {
       return colors.chartSeriesPrimary;
     case 'base':
       return colors.chartSeriesPrimary;
+    case 'aerobic_development':
+      return colors.chartSeriesPrimary;
+    case 'threshold':
+    case 'vo2':
+    case 'race_specific':
+      return colors.chartSeriesSecondary;
     case 'build':
       return colors.chartSeriesSecondary;
     case 'peak':
@@ -38,6 +44,9 @@ function phaseColor(phase: TrainingPhase): string {
       return colors.positive;
     case 'taper':
       return colors.critical;
+    case 'transition':
+    case 'recovery':
+      return colors.positive;
   }
 }
 
@@ -47,6 +56,12 @@ function phaseBg(phase: TrainingPhase): string {
       return colors.primaryDim;
     case 'base':
       return colors.primaryDim;
+    case 'aerobic_development':
+      return colors.primaryDim;
+    case 'threshold':
+    case 'vo2':
+    case 'race_specific':
+      return colors.accentDim;
     case 'build':
       return colors.accentDim;
     case 'peak':
@@ -55,16 +70,25 @@ function phaseBg(phase: TrainingPhase): string {
       return colors.positiveDim;
     case 'taper':
       return colors.criticalDim;
+    case 'transition':
+    case 'recovery':
+      return colors.positiveDim;
   }
 }
 
 const PHASE_NAME: Record<TrainingPhase, string> = {
   foundation: 'FOUNDATION',
   base:   'BASE',
+  aerobic_development: 'AEROBIC',
+  threshold: 'THRESHOLD',
+  vo2: 'VO₂',
+  race_specific: 'RACE SPECIFIC',
   build:  'BUILD',
   peak:   'PEAK',
   deload: 'DELOAD',
   taper:  'TAPER',
+  transition: 'TRANSITION',
+  recovery: 'RECOVERY',
 };
 
 // ─── Safeguard row ────────────────────────────────────────────────────────────

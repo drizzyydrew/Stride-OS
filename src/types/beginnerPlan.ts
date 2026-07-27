@@ -15,6 +15,7 @@ export type BeginnerPlanReadinessInput = {
   startingLevel: BeginnerStartingLevel;
   continuousWalkMinutes: number;
   continuousRunMinutes: number;
+  continuousRunDistanceMeters?: number;
   recentConsistentWeeks: number;
   availableDaysPerWeek: number;
   hasCurrentSymptoms: boolean;
@@ -32,6 +33,13 @@ export type BeginnerPlanRecommendation = {
   reasoning: string[];
   progressionRequirements: string[];
   accelerated: boolean;
+  continuousRunEligibility?: {
+    eligible: boolean;
+    requiresFiveKContinuous: boolean;
+    farthestContinuousRunMeters?: number;
+    recommendation: string;
+    alternatives: string[];
+  };
 };
 
 export type BeginnerPlanSessionKind =

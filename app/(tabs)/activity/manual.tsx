@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useRouteStore } from '../../../src/store/routeStore';
+import { useGearStore } from '../../../src/store/gearStore';
 import { useColors } from '../../../src/theme/useColors';
 import type { ActivitySubtype, ActivityType } from '../../../src/types/activity';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
@@ -32,6 +33,7 @@ import {
 } from '../../../src/utils/activityCompletion';
 import { displayLabel } from '../../../src/utils/displayLabels';
 import { categoryFromActivityType, categoryFromScheduledType, classifySubstitution } from '../../../src/utils/substitution';
+import { formatPrescriptionWithSets } from '../../../src/utils/prescriptionFormat';
 
 const TYPES: { key: string; type: ActivityType; subtype?: ActivitySubtype; label: string }[] = [
   { key: 'running', type: 'running', subtype: 'outdoor', label: 'Running' },
@@ -101,6 +103,8 @@ export default function ManualActivityScreen() {
   const activities = useActivityStore(state => state.activities);
   const addActivity = useActivityStore(state => state.addActivity);
   const routes = useRouteStore(state => state.routes);
+  const shoes = useGearStore(state => state.shoes);
+  const defaultShoeId = useGearStore(state => state.defaultShoeId);
   const scheduledSession = params.scheduledSessionId ? scheduled.getSessionById(params.scheduledSessionId) : null;
   const linkedActivity = params.scheduledSessionId
     ? scheduled.getCompletedActivityForScheduledSession(params.scheduledSessionId)
@@ -139,6 +143,7 @@ export default function ManualActivityScreen() {
   const [rounds, setRounds] = useState('');
   const [notes, setNotes] = useState('');
   const [routeId, setRouteId] = useState<string | null>(prefillActivity?.metrics.routeId ?? null);
+  const [shoeId, setShoeId] = useState<string | null>(prefillActivity?.shoeId ?? defaultShoeId ?? null);
   const [pool, setPool] = useState(true);
   const hydratedRef = useRef(false);
 
@@ -161,6 +166,7 @@ export default function ManualActivityScreen() {
   // way — strength, mobility, HIIT/mixed conditioning, and Active Recovery
   // never force a running-only distance+pace UI onto the athlete.
   const showDistancePace = isPaceBasedActivity(activityType) || isSpeedBasedActivity(activityType) || isSwim;
+  const showShoePicker = ['running', 'walking', 'hiking'].includes(activityType);
   const paceOrSpeed = useMemo(() => calculatePaceOrSpeed(
     activityType,
     numeric(distance),
@@ -209,6 +215,7 @@ export default function ManualActivityScreen() {
       subtype: isSwim ? (pool ? 'pool' : 'open_water') : selectedType.subtype ?? draft.subtype,
       completionClassification: options.classification ?? draft.completionClassification,
       status: options.classification ? activityStatusForClassification(options.classification) : draft.status,
+      shoeId: showShoePicker ? shoeId ?? undefined : undefined,
       metrics: {
         ...draft.metrics,
         routeCoordinates: routeId && !draftIsIndoor(selectedType.key, activityType, pool)
@@ -377,7 +384,7 @@ export default function ManualActivityScreen() {
               <Text style={[s.label, { color: C.textDim, marginTop: 0 }]}>PRESCRIBED STRENGTH WORK</Text>
               {scheduledSession.strengthSession.exercises.map(item => (
                 <Text key={item.exercise.id} style={[s.helper, { color: C.textMuted }]}>
-                  {displayLabel(item.exercise.name)} · {item.sets} sets · {item.repRange[0]}-{item.repRange[1]} reps
+                  {displayLabel(item.exercise.name)} · {formatPrescriptionWithSets(item.sets, item.repScheme, `${item.repRange[0]}-${item.repRange[1]} reps`)}
                 </Text>
               ))}
             </View>
@@ -405,6 +412,34 @@ export default function ManualActivityScreen() {
                     }]}
                   >
                     <Text style={[s.pillText, { color: routeId === route.id ? C.primary : C.textMuted }]}>{route.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          ) : null}
+          {showShoePicker && shoes.length > 0 ? (
+            <>
+              <Text style={[s.label, { color: C.textDim }]}>SHOES</Text>
+              <View style={s.pills}>
+                <TouchableOpacity
+                  onPress={() => setShoeId(null)}
+                  style={[s.pill, {
+                    backgroundColor: shoeId === null ? C.primaryDim : C.card,
+                    borderColor: shoeId === null ? C.primary : C.border,
+                  }]}
+                >
+                  <Text style={[s.pillText, { color: shoeId === null ? C.primary : C.textMuted }]}>No shoe</Text>
+                </TouchableOpacity>
+                {shoes.filter(shoe => shoe.active).map(shoe => (
+                  <TouchableOpacity
+                    key={shoe.id}
+                    onPress={() => setShoeId(shoe.id)}
+                    style={[s.pill, {
+                      backgroundColor: shoeId === shoe.id ? C.primaryDim : C.card,
+                      borderColor: shoeId === shoe.id ? C.primary : C.border,
+                    }]}
+                  >
+                    <Text style={[s.pillText, { color: shoeId === shoe.id ? C.primary : C.textMuted }]}>{shoe.brand} {shoe.model}</Text>
                   </TouchableOpacity>
                 ))}
               </View>

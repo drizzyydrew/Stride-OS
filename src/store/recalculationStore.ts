@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createAppJSONStorage } from './persistStorage';
+import type { RecalculationDecisionSnapshot } from '../utils/training/recalculationDecisionSnapshot';
+import type { TrainingOutlook } from '../utils/trainingOutlook';
 
 export type RecalculationStatus = 'idle' | 'running' | 'success' | 'error';
 
@@ -18,8 +20,10 @@ type RecalculationStore = {
   lastAcute?: number;
   lastChronic?: number;
   lastAcwr?: number;
+  decisionSnapshot?: RecalculationDecisionSnapshot;
+  trainingOutlook?: TrainingOutlook;
   begin: (reason: string) => void;
-  succeed: (summary?: RecalculationSummary) => void;
+  succeed: (summary?: RecalculationSummary, decisionSnapshot?: RecalculationDecisionSnapshot, trainingOutlook?: TrainingOutlook) => void;
   fail: (error: string) => void;
 };
 
@@ -33,14 +37,18 @@ export const useRecalculationStore = create<RecalculationStore>()(
       lastAcute: undefined,
       lastChronic: undefined,
       lastAcwr: undefined,
+      decisionSnapshot: undefined,
+      trainingOutlook: undefined,
 
       begin: reason => set({ status: 'running', lastReason: reason, error: undefined }),
 
-      succeed: summary => set({
+      succeed: (summary, decisionSnapshot, trainingOutlook) => set({
         status: 'success',
         lastRunAt: Date.now(),
         error: undefined,
         ...(summary ? { lastAcute: summary.acute, lastChronic: summary.chronic, lastAcwr: summary.acwr } : {}),
+        ...(decisionSnapshot ? { decisionSnapshot } : {}),
+        ...(trainingOutlook ? { trainingOutlook } : {}),
       }),
 
       fail: error => set({ status: 'error', lastRunAt: Date.now(), error }),
@@ -60,6 +68,8 @@ export const useRecalculationStore = create<RecalculationStore>()(
         lastAcute: state.lastAcute,
         lastChronic: state.lastChronic,
         lastAcwr: state.lastAcwr,
+        decisionSnapshot: state.decisionSnapshot,
+        trainingOutlook: state.trainingOutlook,
       }),
     },
   ),

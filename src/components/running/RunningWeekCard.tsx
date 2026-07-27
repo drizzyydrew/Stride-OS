@@ -35,10 +35,16 @@ export type RunningWeekCardProps = {
 const PHASE_BADGE: Record<TrainingPhase, { bg: string; text: string; label: string }> = {
   foundation: { bg: colors.primaryDim, text: colors.primary, label: 'FOUNDATION' },
   base:   { bg: colors.primaryDim,  text: colors.primary,  label: 'BASE'   },
+  aerobic_development: { bg: colors.primaryDim, text: colors.primary, label: 'AEROBIC' },
+  threshold: { bg: colors.accentDim, text: colors.accent, label: 'THRESHOLD' },
+  vo2: { bg: colors.accentDim, text: colors.accent, label: 'VO₂' },
+  race_specific: { bg: colors.warningDim, text: colors.warning, label: 'RACE SPECIFIC' },
   build:  { bg: colors.accentDim,   text: colors.accent,   label: 'BUILD'  },
   peak:   { bg: colors.warningDim,  text: colors.warning,  label: 'PEAK'   },
   deload: { bg: colors.criticalDim, text: colors.critical, label: 'DELOAD' },
   taper:  { bg: colors.positiveDim, text: colors.positive, label: 'TAPER'  },
+  transition: { bg: colors.positiveDim, text: colors.positive, label: 'TRANSITION' },
+  recovery: { bg: colors.positiveDim, text: colors.positive, label: 'RECOVERY' },
 };
 
 // ─── Stat tile ───────────────────────────────────────────────────────────────

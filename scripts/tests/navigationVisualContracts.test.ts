@@ -21,6 +21,8 @@ test('bottom navigation declares exactly the six approved primary destinations',
     'movement',
     'activity-log',
     'activity',
+    'more/gear',
+    'more/stride-report',
   ]);
   assert.equal(existsSync('app/(tabs)/activity/_layout.tsx'), true);
   assert.equal(existsSync('app/(tabs)/profile/_layout.tsx'), true);
@@ -38,6 +40,8 @@ test('More contains only valid secondary destinations and does not duplicate pri
 
   assert.deepEqual(labels, [
     'Activity',
+    'Gear',
+    'Stride Report',
     'Movement Lab',
     'Analytics',
     'Adaptive Performance',

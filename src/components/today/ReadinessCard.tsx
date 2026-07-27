@@ -6,6 +6,7 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import type { TrainingPhase } from '../../types/training';
+import { useExperienceModeAllows } from '../../hooks/useExperienceMode';
 
 type Props = {
   recoveryScore:  number;
@@ -18,10 +19,16 @@ type Props = {
 const PHASE_BADGE: Record<TrainingPhase, { bg: string; text: string; label: string }> = {
   foundation: { bg: colors.primaryDim, text: colors.primary, label: 'Foundation' },
   base:   { bg: colors.primaryDim,  text: colors.primary,  label: 'Base'   },
+  aerobic_development: { bg: colors.primaryDim, text: colors.primary, label: 'Aerobic' },
+  threshold: { bg: colors.accentDim, text: colors.accent, label: 'Threshold' },
+  vo2: { bg: colors.accentDim, text: colors.accent, label: 'VO₂' },
+  race_specific: { bg: colors.warningDim, text: colors.warning, label: 'Race Specific' },
   build:  { bg: colors.accentDim,   text: colors.accent,   label: 'Build'  },
   peak:   { bg: colors.warningDim,  text: colors.warning,  label: 'Peak'   },
   deload: { bg: colors.criticalDim, text: colors.critical, label: 'Deload' },
   taper:  { bg: colors.positiveDim, text: colors.positive, label: 'Taper'  },
+  transition: { bg: colors.positiveDim, text: colors.positive, label: 'Transition' },
+  recovery: { bg: colors.positiveDim, text: colors.positive, label: 'Recovery' },
 };
 
 function recoveryColor(score: number): string {
@@ -34,6 +41,20 @@ function fatigueColor(score: number): string {
   if (score > 70) return colors.critical;
   if (score > 45) return colors.warning;
   return colors.positive;
+}
+
+function readinessLabelFromScores(recoveryScore: number, fatigueScore: number): string {
+  if (recoveryScore >= 75 && fatigueScore <= 45) return 'Ready to Train';
+  if (recoveryScore >= 60 && fatigueScore <= 60) return 'Mostly Ready';
+  if (recoveryScore >= 45 && fatigueScore <= 75) return 'Take It Easier Today';
+  return 'Recovery Recommended';
+}
+
+function readinessGuidanceFromScores(recoveryScore: number, fatigueScore: number): string {
+  if (recoveryScore >= 75 && fatigueScore <= 45) return 'Your recovery looks supportive for today’s plan.';
+  if (recoveryScore >= 60 && fatigueScore <= 60) return 'Today’s work is appropriate if you keep the effort controlled.';
+  if (recoveryScore >= 45 && fatigueScore <= 75) return 'Consider a lower-key session if the workout feels harder than intended.';
+  return 'Recovery or a lighter option is the conservative choice today.';
 }
 
 function MetricColumn({
@@ -61,6 +82,7 @@ export default function ReadinessCard({
   motivation,
 }: Props) {
   const phase = PHASE_BADGE[trainingPhase];
+  const showBalancedDetails = useExperienceModeAllows('balanced');
 
   return (
     <Card>
@@ -69,29 +91,36 @@ export default function ReadinessCard({
         <Badge label={phase.label} bg={phase.bg} color={phase.text} />
       </View>
 
-      <View style={styles.metricsRow}>
-        <MetricColumn
-          value={recoveryScore}
-          label="RECOVERY"
-          color={recoveryColor(recoveryScore)}
-        />
-        <View style={styles.divider} />
-        <MetricColumn
-          value={fatigueScore}
-          label="FATIGUE"
-          color={fatigueColor(fatigueScore)}
-        />
-        <View style={styles.divider} />
-        <MetricColumn
-          value={`${motivation}/10`}
-          label="MOTIVATION"
-        />
-      </View>
+      {showBalancedDetails ? (
+        <View style={styles.metricsRow}>
+          <MetricColumn
+            value={recoveryScore}
+            label="RECOVERY"
+            color={recoveryColor(recoveryScore)}
+          />
+          <View style={styles.divider} />
+          <MetricColumn
+            value={fatigueScore}
+            label="FATIGUE"
+            color={fatigueColor(fatigueScore)}
+          />
+          <View style={styles.divider} />
+          <MetricColumn
+            value={`${motivation}/10`}
+            label="MOTIVATION"
+          />
+        </View>
+      ) : (
+        <View style={styles.simpleReadiness}>
+          <Text style={styles.simpleLabel}>{readinessLabelFromScores(recoveryScore, fatigueScore)}</Text>
+          <Text style={styles.simpleCopy}>{readinessGuidanceFromScores(recoveryScore, fatigueScore)}</Text>
+        </View>
+      )}
 
-      <View style={styles.subRow}>
+      {showBalancedDetails ? <View style={styles.subRow}>
         <Text style={styles.subLabel}>Soreness</Text>
         <Text style={styles.subValue}>{soreness}/10</Text>
-      </View>
+      </View> : null}
     </Card>
   );
 }
@@ -144,6 +173,19 @@ const styles = StyleSheet.create({
     paddingTop:     spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  simpleReadiness: {
+    gap: spacing.xs,
+  },
+  simpleLabel: {
+    color: colors.text,
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.black,
+  },
+  simpleCopy: {
+    color: colors.textMuted,
+    fontSize: FontSize.sm,
+    lineHeight: 19,
   },
   subLabel: {
     color:    colors.textDim,

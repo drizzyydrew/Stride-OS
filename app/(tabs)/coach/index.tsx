@@ -37,11 +37,15 @@ import { useTrainingPreferencesStore } from '../../../src/store/trainingPreferen
 import { useBeginnerPlanStore } from '../../../src/store/beginnerPlanStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useAdaptationStore } from '../../../src/store/adaptationStore';
+import { useAchievementStore } from '../../../src/store/achievementStore';
+import { useGearStore } from '../../../src/store/gearStore';
+import { useRecalculationStore } from '../../../src/store/recalculationStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { pickTargetRace } from '../../../src/utils/plan/macroPlanner';
 import { buildCoachingInput } from '../../../src/utils/coachingInputBuilder';
 import { buildBudgetedCoachPrompt } from '../../../src/utils/coachPromptBudget';
 import { summarizeActivityLoad } from '../../../src/utils/activityLoad';
+import { formatPrescriptionWithSets } from '../../../src/utils/prescriptionFormat';
 import {
   calculateHydrationPlan,
   GI_TOLERANCE_CARBS_GH,
@@ -78,6 +82,7 @@ import type { AdaptationResult } from '../../../src/types/adaptation';
 import { adaptationWeekKey, type ConfirmedAdaptation } from '../../../src/utils/adaptationWorkflow';
 import { toYMD } from '../../../src/utils/calendarEngine';
 import type { ScheduledSession } from '../../../src/utils/scheduledSessions';
+import { buildBuild45CoachContextSections } from '../../../src/utils/coachBuild45Context';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -419,6 +424,17 @@ function buildSystemPrompt(
 - 7-day load: whole body ${Math.round(load.wholeBody)}, running ${Math.round(load.running)}, walking ${Math.round(load.walking)}, cross-training ${Math.round(load.crossTraining)}, strength ${Math.round(load.strength)}.
 - Recent activity: ${recentActivities.length ? recentActivities.map(activity => `${displayLabel(activity.activityType)} ${Math.round((activity.metrics.durationSeconds ?? 0) / 60)} min${activity.rpe ? ` RPE ${activity.rpe}` : ''}`).join('; ') : 'none'}.
 Cycling, swimming, and walking do not count as running mileage or running pace history. Workload trends do not predict injury.`;
+  const recalculationState = useRecalculationStore.getState();
+  const gearState = useGearStore.getState();
+  const achievementState = useAchievementStore.getState();
+  const build45ContextSections = buildBuild45CoachContextSections({
+    trainingOutlook: recalculationState.trainingOutlook,
+    decisionSnapshot: recalculationState.decisionSnapshot,
+    shoes: gearState.shoes,
+    equipment: gearState.equipment,
+    awardedAchievements: achievementState.awarded,
+    activities: activityState.activities,
+  });
   const featureContext = feature === 'movement'
     ? (focusedAnalysis ? buildFocusedAnalysisBlock(focusedAnalysis) : buildMovementLabBlock(analyses))
     : feature === 'hydration' ? hydrationContext
@@ -472,6 +488,7 @@ Cycling, swimming, and walking do not count as running mileage or running pace h
         content: feature === 'running' ? buildTrainingContextBlock(trainingCtx) : buildTrainingPlanBlock(trainingCtx),
         compact: `Week ${trainingCtx.currentWeek}, ${trainingCtx.trainingPhase}; fatigue ${trainingCtx.fatigueScore}/100, recovery ${trainingCtx.recoveryScore}/100.`,
       },
+      ...build45ContextSections,
     ],
   });
 }
@@ -532,7 +549,7 @@ function buildStrengthContext(
     .sort((a, b) => b.timestamp - a.timestamp)[0];
   const exercises = strengthSession?.exercises
     .slice(0, 6)
-    .map(item => `${item.exercise.name} ${item.sets}×${item.repRange[0]}–${item.repRange[1]}`)
+    .map(item => `${item.exercise.name} ${formatPrescriptionWithSets(item.sets, item.repScheme, `${item.repRange[0]}–${item.repRange[1]} reps`)}`)
     .join(', ');
 
   return `STRENGTH CONTEXT

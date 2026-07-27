@@ -1,5 +1,6 @@
 import { resolveRaceDistance, buildPeriodizationPlan } from './periodization';
 import { computeProgressedMileage } from './progression';
+import { resolveDeloadDecision } from './training/deloadModel';
 
 import type {
   MesocyclePosition,
@@ -16,18 +17,15 @@ import type { TrainingPhase, RaceDistance } from '../types/training';
 
 // ─── Mesocycle Position ────────────────────────────────────────────────────────
 
-// Bompa & Haff (2009): 4-week mesocycle — 3 loading weeks + 1 deload.
-// Multipliers create progressive overload within each block: 90% → 95% → 100% → 65%.
-const BLOCK_MULTIPLIERS = [0.90, 0.95, 1.00, 0.65] as const;
-
 export function getMesocyclePosition(currentWeek: number, phase: TrainingPhase): MesocyclePosition {
-  const blockNumber   = Math.ceil(currentWeek / 4);
-  const weekInBlock   = ((currentWeek - 1) % 4) + 1;
-  const isDeload      = weekInBlock === 4 || phase === 'deload';
-  const isLoadingPeak = weekInBlock === 3 && !isDeload;
-  const blockMultiplier = BLOCK_MULTIPLIERS[weekInBlock - 1];
-
-  return { blockNumber, weekInBlock, isDeload, isLoadingPeak, blockMultiplier };
+  const decision = resolveDeloadDecision({ currentWeek, phase });
+  return {
+    blockNumber: decision.blockNumber,
+    weekInBlock: decision.weekInBlock,
+    isDeload: decision.isDeload,
+    isLoadingPeak: decision.isLoadingPeak,
+    blockMultiplier: decision.blockMultiplier,
+  };
 }
 
 // ─── Intensity Targets ─────────────────────────────────────────────────────────
@@ -37,10 +35,16 @@ export function getMesocyclePosition(currentWeek: number, phase: TrainingPhase):
 const INTENSITY_TARGETS: Record<TrainingPhase, IntensityTargets> = {
   foundation: { easy: 1.00, moderate: 0.00, hard: 0.00 },
   base:   { easy: 0.85, moderate: 0.00, hard: 0.15 },
+  aerobic_development: { easy: 0.88, moderate: 0.07, hard: 0.05 },
+  threshold: { easy: 0.80, moderate: 0.10, hard: 0.10 },
+  vo2: { easy: 0.80, moderate: 0.05, hard: 0.15 },
+  race_specific: { easy: 0.78, moderate: 0.07, hard: 0.15 },
   build:  { easy: 0.80, moderate: 0.05, hard: 0.15 },
   peak:   { easy: 0.75, moderate: 0.05, hard: 0.20 },
   deload: { easy: 0.92, moderate: 0.08, hard: 0.00 },
   taper:  { easy: 0.80, moderate: 0.05, hard: 0.15 },
+  transition: { easy: 0.95, moderate: 0.05, hard: 0.00 },
+  recovery: { easy: 1.00, moderate: 0.00, hard: 0.00 },
 };
 
 export function getIntensityTargets(phase: TrainingPhase): IntensityTargets {
@@ -54,10 +58,16 @@ export function getIntensityTargets(phase: TrainingPhase): IntensityTargets {
 const LONG_RUN_PCT: Record<TrainingPhase, [number, number]> = {
   foundation: [0.20, 0.25],
   base:   [0.24, 0.30],
+  aerobic_development: [0.24, 0.30],
+  threshold: [0.25, 0.31],
+  vo2: [0.23, 0.28],
+  race_specific: [0.28, 0.34],
   build:  [0.27, 0.33],
   peak:   [0.30, 0.35],
   deload: [0.15, 0.20],
   taper:  [0.18, 0.22],
+  transition: [0.15, 0.22],
+  recovery: [0.12, 0.18],
 };
 
 const LONG_RUN_ABS_CAP: Record<RaceDistance, number> = {
@@ -256,6 +266,26 @@ const PHASE_RATIONALE: Record<TrainingPhase, Omit<PhaseRationale, 'keyFocus'>> =
     adaptationTarget: 'Aerobic base development, fat oxidation efficiency, musculoskeletal durability, and movement economy at easy paces.',
     successCriteria:  'Easy runs feel genuinely easy. Resting heart rate is stable or dropping. No recurring soreness. Mileage tolerance is building week over week.',
   },
+  aerobic_development: {
+    whyThisPhase:     'Aerobic development extends the base phase with slightly more purposeful volume while keeping effort controlled.',
+    adaptationTarget: 'Aerobic capacity, durability, and repeatable weekly consistency.',
+    successCriteria:  'Most sessions remain conversational, long-run tolerance improves, and recovery stays stable.',
+  },
+  threshold: {
+    whyThisPhase:     'Threshold training introduces controlled sustained efforts after the aerobic base is ready.',
+    adaptationTarget: 'Lactate clearance, steady-state control, and comfort near race-specific effort.',
+    successCriteria:  'Quality segments feel strong but controlled, with no need to force paces.',
+  },
+  vo2: {
+    whyThisPhase:     'VO₂ work is a limited high-intensity stimulus reserved for athletes with adequate base and recovery.',
+    adaptationTarget: 'Aerobic power and controlled high-end effort tolerance.',
+    successCriteria:  'Intervals are completed with consistent effort and full recovery between hard days.',
+  },
+  race_specific: {
+    whyThisPhase:     'Race-specific work narrows training toward the demands of the target event.',
+    adaptationTarget: 'Race-pace economy, fueling practice, and confidence in event-specific rhythm.',
+    successCriteria:  'Key sessions match intended effort without disrupting recovery.',
+  },
   build: {
     whyThisPhase:     'The build phase adds structured quality work on top of the aerobic base. Threshold and VO2 sessions extend your lactate threshold and race-specific fitness.',
     adaptationTarget: 'Lactate threshold elevation, aerobic power, running economy at race pace, and ability to sustain effort in the discomfort zone.',
@@ -276,15 +306,31 @@ const PHASE_RATIONALE: Record<TrainingPhase, Omit<PhaseRationale, 'keyFocus'>> =
     adaptationTarget: 'Full glycogen saturation, neuromuscular freshness, hormonal balance, reduced inflammation, and psychological readiness for race effort.',
     successCriteria:  'Legs feel springy. Race-pace runs feel easier than expected. Sleep is good. Excitement (not anxiety) is the dominant feeling approaching race day.',
   },
+  transition: {
+    whyThisPhase:     'Transition lowers structure after a major goal or interruption so training can restart cleanly.',
+    adaptationTarget: 'Routine, movement quality, and fatigue dissipation.',
+    successCriteria:  'Training feels repeatable and the athlete is ready to resume a normal build.',
+  },
+  recovery: {
+    whyThisPhase:     'Recovery prioritizes restoration when training stress or life stress needs to come down.',
+    adaptationTarget: 'Freshness, symptom-free movement, and readiness to resume normal loading.',
+    successCriteria:  'Fatigue drops, easy movement feels better, and hard sessions are no longer being forced.',
+  },
 };
 
 const PHASE_KEY_FOCUS: Record<TrainingPhase, string> = {
   foundation: 'Show up consistently. Walk breaks are part of the plan — the goal is building the habit, not speed.',
   base:   'Build your long run and keep the vast majority of miles genuinely easy — conversational pace throughout.',
+  aerobic_development: 'Build aerobic capacity with controlled volume. Do not turn easy days into hidden workouts.',
+  threshold: 'Use controlled sustained efforts; stop chasing pace if effort drifts above the target.',
+  vo2: 'Keep high-intensity exposure limited, precise, and surrounded by recovery.',
+  race_specific: 'Practice the event demands without adding extra stress outside the prescription.',
   build:  'Execute threshold and quality sessions precisely; protect recovery days to absorb the adaptation.',
   peak:   'Hit the peak long run and key race-pace workouts. This is the hardest week of the plan — trust the process.',
   deload: 'Resist the urge to add extra miles. Active recovery runs only. Sleep and nutrition are the work this week.',
   taper:  'Short, sharp, easy miles only. Resist the "taper madness" urge. Your fitness is banked — rest is the strategy.',
+  transition: 'Keep structure light and rebuild rhythm before adding load.',
+  recovery: 'Choose restoration first; the goal is to be ready for the next useful training signal.',
 };
 
 export function getPhaseRationale(phase: TrainingPhase): PhaseRationale {
@@ -300,10 +346,16 @@ export function getPhaseRationale(phase: TrainingPhase): PhaseRationale {
 const INTENSITY_LOAD_FACTOR: Record<TrainingPhase, number> = {
   foundation: 4.0,
   base:   6.5,
+  aerobic_development: 7.0,
+  threshold: 8.0,
+  vo2: 8.8,
+  race_specific: 8.2,
   build:  8.5,
   peak:   9.5,
   deload: 4.5,
   taper:  5.5,
+  transition: 4.2,
+  recovery: 3.5,
 };
 
 function estimateLoadRange(targetMiles: number, phase: TrainingPhase): [number, number] {

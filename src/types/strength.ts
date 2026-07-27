@@ -64,6 +64,43 @@ export type Exercise = {
   rationale:        string;    // running-specific benefit (1–2 sentences)
 };
 
+// ─── Structured prescription schemes ─────────────────────────────────────────
+
+export type RepScheme =
+  | {
+      kind: 'reps';
+      repsMin?: number;
+      repsMax?: number;
+      label?: string;
+      perSide?: boolean;
+    }
+  | {
+      kind: 'duration';
+      secondsMin: number;
+      secondsMax?: number;
+      perSide?: boolean;
+    }
+  | {
+      kind: 'distance';
+      metersMin: number;
+      metersMax?: number;
+      perSide?: boolean;
+    }
+  | {
+      kind: 'reps_hold';
+      repsMin: number;
+      repsMax?: number;
+      holdSeconds: number;
+      perSide?: boolean;
+    }
+  | {
+      kind: 'reps_tempo';
+      repsMin: number;
+      repsMax?: number;
+      tempo: string;
+      perSide?: boolean;
+    };
+
 // ─── Planned exercise (within a session) ─────────────────────────────────────
 
 export type PlannedExercise = {
@@ -71,6 +108,7 @@ export type PlannedExercise = {
   exercise:         Exercise;
   sets:             number;
   repRange:         [number, number];  // [min, max]
+  repScheme?:       RepScheme;         // structured prescription; repRange remains the legacy fallback
   loadTarget:       string;           // "Bodyweight", "60–70% 1RM", "RPE 7"
   rpe:              number;
   rir:              number;           // reps in reserve
@@ -134,6 +172,7 @@ export type CompletedSet = {
   bandLevel?:   import('../utils/strengthSession').BandLevel;
   bandCustomLabel?: string;
   holdSeconds?: number;
+  distanceMeters?: number;
   rpe?:         number;    // 1–10 actual
   isWarmup?:    boolean;
   completed:    boolean;

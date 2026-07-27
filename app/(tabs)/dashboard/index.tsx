@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, type DimensionValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -9,14 +9,18 @@ import { useWeather } from '../../../src/hooks/useWeather';
 import { formatTemp } from '../../../src/lib/weather';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
+import { useActivityStore } from '../../../src/store/activityStore';
+import { useRecalculationStore } from '../../../src/store/recalculationStore';
 import { todayDateKey } from '../../../src/types/checkin';
 import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckInCard';
 import { LAYOUT } from '../../../src/constants/layout';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
+import { experienceModeAllows, useExperienceMode } from '../../../src/hooks/useExperienceMode';
 import { actionLabelForScheduledSession, describeRunWalk } from '../../../src/utils/scheduledSessions';
 import { activityTypeFromScheduledSession } from '../../../src/utils/activityCompletion';
 import { US_AQI_BANDS, aqiVoiceOverLabel, getAqiScalePosition } from '../../../src/utils/aqi';
+import { buildTrainingOutlook } from '../../../src/utils/trainingOutlook';
 
 function lastUpdatedLabel(fetchedAt: number | null): string | null {
   if (fetchedAt === null) return null;
@@ -76,6 +80,16 @@ function recentTrainingLabel(value: number): string {
   if (value >= 60) return 'Manageable';
   if (value >= 40) return 'Demanding';
   return 'High';
+}
+
+function cleanFeelLine(target: string | undefined, durationMinutes: number | undefined): string {
+  const fallback = 'Easy and restorative';
+  if (!target) return fallback;
+  if (!durationMinutes) return target;
+  return target
+    .replace(new RegExp(`^${durationMinutes}\\s*min\\s*[-·:]\\s*`, 'i'), '')
+    .replace(new RegExp(`^${durationMinutes}\\s*minutes\\s*[-·:]\\s*`, 'i'), '')
+    .trim() || target;
 }
 
 // Live local weather card. Every displayed value is real fetched weather —
@@ -264,8 +278,12 @@ export default function TodayScreen() {
   const [editingCheckIn, setEditingCheckIn] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
+  const experienceMode = useExperienceMode();
   const weekPlan = useWeekPlan();
   const scheduled = useScheduledSessions(weekPlan);
+  const activities = useActivityStore(s => s.activities);
+  const decisionSnapshot = useRecalculationStore(s => s.decisionSnapshot);
   const beforeStart = weekPlan.metadata.currentWeek === 0;
   const primarySession = scheduled.activeTodayPrimary;
   const phaseLabel = weekPlan.metadata.trainingPhase.charAt(0).toUpperCase() + weekPlan.metadata.trainingPhase.slice(1);
@@ -277,6 +295,28 @@ export default function TodayScreen() {
   const workoutDuration = primarySession?.runWalk
     ? describeRunWalk(primarySession.runWalk)
     : primarySession ? `${primarySession.durationMinutes} min` : 'Rest day';
+  const workoutFeel = cleanFeelLine(primarySession?.target, primarySession?.durationMinutes);
+  const showBalancedDetails = experienceModeAllows(experienceMode, 'balanced');
+  const showDataRichDetails = experienceModeAllows(experienceMode, 'data_rich');
+  const trainingOutlook = useMemo(() => buildTrainingOutlook({
+    activities,
+    currentWeek: weekPlan.metadata.currentWeek,
+    trainingPhase: weekPlan.metadata.trainingPhase,
+    focus: weekPlan.metadata.focus,
+    weeksToRace: weekPlan.metadata.weeksToRace,
+    readinessLabel: recommendation?.label,
+    readinessScore: readiness ?? undefined,
+    decisionSnapshot,
+  }), [
+    activities,
+    weekPlan.metadata.currentWeek,
+    weekPlan.metadata.trainingPhase,
+    weekPlan.metadata.focus,
+    weekPlan.metadata.weeksToRace,
+    recommendation?.label,
+    readiness,
+    decisionSnapshot,
+  ]);
   const primaryDayIndex = primarySession
     ? (new Date(`${primarySession.date}T12:00:00`).getDay() + 6) % 7
     : null;
@@ -356,11 +396,13 @@ export default function TodayScreen() {
               {primarySession?.title ?? 'Rest day'}
             </Text>
             <Text style={[styles.workoutMeta, { color: C.textMuted }]}>What: {workoutDuration}</Text>
-            <Text style={[styles.workoutMeta, { color: C.textMuted }]}>Feel: {primarySession?.target ?? 'Easy and restorative'}</Text>
+            <Text style={[styles.workoutMeta, { color: C.textMuted }]}>Feel: {workoutFeel}</Text>
             <Text style={[styles.workoutMeta, { color: C.textMuted }]}>Why: {primarySession?.purpose ?? 'Recovery is part of training, too.'}</Text>
-            <Text style={[styles.workoutChange, { color: primarySession?.adaptationReason ? C.warning : C.textMuted }]}>
-              What changed: {primarySession?.adaptationReason ?? 'No plan changes today.'}
-            </Text>
+            {primarySession?.adaptationReason ? (
+              <Text style={[styles.workoutChange, { color: C.warning }]}>
+                What changed: {primarySession.adaptationReason}
+              </Text>
+            ) : null}
             <TouchableOpacity style={[styles.startButton, { backgroundColor: C.primary }]} onPress={startWorkout} activeOpacity={0.8}>
               <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>{actionLabelForScheduledSession(primarySession)}</Text>
             </TouchableOpacity>
@@ -369,21 +411,57 @@ export default function TodayScreen() {
                 ? router.push('/(tabs)/training' as never)
                 : router.push({ pathname: '/(tabs)/training/[dayIndex]', params: { dayIndex: String(primaryDayIndex) } } as never)}
               ><Text style={[styles.secondaryActionText, { color: C.primary }]}>View Details</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push({
-                pathname: '/(tabs)/activity/manual',
-                params: { scheduledSessionId: primarySession?.scheduledSessionId, activityType: primarySession?.activityType },
-              } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Do My Own Workout</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push({
-                pathname: '/(tabs)/training/adapt',
-                params: { mode: 'missed', scheduledSessionId: primarySession?.scheduledSessionId },
-              } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Not Today</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week' } } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Adapt My Week</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push({
-                pathname: '/(tabs)/training/adapt',
-                params: { mode: 'health', scheduledSessionId: primarySession?.scheduledSessionId },
-              } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Not Feeling 100%</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/coach', params: { ask: 'Help me adapt today’s workout.' } } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Ask AI Coach</Text></TouchableOpacity>
             </View>
+            <TouchableOpacity
+              onPress={() => setMoreOptionsOpen(open => !open)}
+              style={[styles.moreOptionsButton, { borderColor: C.border, backgroundColor: C.cardAlt }]}
+              accessibilityRole="button"
+              accessibilityLabel={moreOptionsOpen ? 'Hide more workout options' : 'Show more workout options'}
+            >
+              <Text style={[styles.moreOptionsText, { color: C.text }]}>More Options</Text>
+              <Ionicons name={moreOptionsOpen ? 'chevron-up' : 'chevron-down'} size={16} color={C.textMuted} />
+            </TouchableOpacity>
+            {moreOptionsOpen ? (
+              <View style={styles.optionGroups}>
+                <View style={styles.optionGroup}>
+                  <Text style={[styles.optionGroupLabel, { color: C.textDim }]}>Adjust today</Text>
+                  <View style={styles.secondaryActions}>
+                    <TouchableOpacity onPress={() => router.push({
+                      pathname: '/(tabs)/activity/manual',
+                      params: { scheduledSessionId: primarySession?.scheduledSessionId, activityType: primarySession?.activityType },
+                    } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Do My Own Workout</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => router.push({
+                      pathname: '/(tabs)/training/adapt',
+                      params: { mode: 'health', scheduledSessionId: primarySession?.scheduledSessionId },
+                    } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Not Feeling 100%</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => router.push({
+                      pathname: '/(tabs)/training/adapt',
+                      params: { mode: 'missed', scheduledSessionId: primarySession?.scheduledSessionId },
+                    } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Not Today</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => router.push({
+                      pathname: '/(tabs)/training/adapt',
+                      params: { mode: 'week', scheduledSessionId: primarySession?.scheduledSessionId },
+                    } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Workout Alternatives</Text></TouchableOpacity>
+                  </View>
+                </View>
+                <View style={styles.optionGroup}>
+                  <Text style={[styles.optionGroupLabel, { color: C.textDim }]}>Adjust the plan</Text>
+                  <View style={styles.secondaryActions}>
+                    <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week' } } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Adapt My Week</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => router.push({
+                      pathname: '/(tabs)/training/adapt',
+                      params: { mode: 'week', preferredAction: 'moved', scheduledSessionId: primarySession?.scheduledSessionId },
+                    } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Reschedule</Text></TouchableOpacity>
+                  </View>
+                </View>
+                <View style={styles.optionGroup}>
+                  <Text style={[styles.optionGroupLabel, { color: C.textDim }]}>Get help</Text>
+                  <View style={styles.secondaryActions}>
+                    <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/coach', params: { ask: 'Help me adapt today’s workout.' } } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Ask AI Coach</Text></TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            ) : null}
           </>
         )}
       </View>
@@ -396,10 +474,12 @@ export default function TodayScreen() {
           <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S READINESS</Text>
           <Text style={[styles.readinessLabel, { color: C.text }]}>{recommendation!.label}</Text>
           <Text style={[styles.readinessInterpretation, { color: C.textMuted }]}>{recommendation!.message}</Text>
-          <TouchableOpacity onPress={() => setWhyOpen(open => !open)} style={styles.disclosureButton}>
-            <Text style={[styles.updateCheckInText, { color: C.primary }]}>Why this recommendation {whyOpen ? '−' : '+'}</Text>
-          </TouchableOpacity>
-          {whyOpen ? (
+          {showBalancedDetails ? (
+            <TouchableOpacity onPress={() => setWhyOpen(open => !open)} style={styles.disclosureButton}>
+              <Text style={[styles.updateCheckInText, { color: C.primary }]}>Why this recommendation {whyOpen ? '−' : '+'}</Text>
+            </TouchableOpacity>
+          ) : null}
+          {showBalancedDetails && whyOpen ? (
             <View style={styles.readinessDetails}>
               <Text style={[styles.reasonText, { color: C.textMuted }]}>Sleep: {formatReadinessSleep(todayReadiness!.sleepMinutesTotal)}</Text>
               <Text style={[styles.reasonText, { color: C.textMuted }]}>Sleep quality: {readinessChoiceLabel(SLEEP_QUALITY_LABELS, todayReadiness!.sleepQuality)}</Text>
@@ -411,10 +491,12 @@ export default function TodayScreen() {
               {recommendation!.reasons.map(reason => <Text key={reason} style={[styles.reasonText, { color: C.textMuted }]}>• {reason}</Text>)}
             </View>
           ) : null}
-          <TouchableOpacity onPress={() => setAdvancedOpen(open => !open)} style={styles.disclosureButton}>
-            <Text style={[styles.advancedLink, { color: C.textDim }]}>Advanced details {advancedOpen ? '−' : '+'}</Text>
-          </TouchableOpacity>
-          {advancedOpen ? <Text style={[styles.advancedText, { color: C.textDim }]}>Readiness score {readiness}/100 · sleep {todayReadiness!.sleepMinutesTotal} min · sleep contribution {recommendation!.sleepContribution}/100 · {recommendation!.baselineSource === 'personal_28_day' ? 'your 28-day sleep baseline' : 'starter sleep baseline'} {recommendation!.baselineSleepMinutes} min.</Text> : null}
+          {showDataRichDetails ? (
+            <TouchableOpacity onPress={() => setAdvancedOpen(open => !open)} style={styles.disclosureButton}>
+              <Text style={[styles.advancedLink, { color: C.textDim }]}>Advanced details {advancedOpen ? '−' : '+'}</Text>
+            </TouchableOpacity>
+          ) : null}
+          {showDataRichDetails && advancedOpen ? <Text style={[styles.advancedText, { color: C.textDim }]}>Readiness score {readiness}/100 · sleep {todayReadiness!.sleepMinutesTotal} min · sleep contribution {recommendation!.sleepContribution}/100 · {recommendation!.baselineSource === 'personal_28_day' ? 'your 28-day sleep baseline' : 'starter sleep baseline'} {recommendation!.baselineSleepMinutes} min.</Text> : null}
           <TouchableOpacity onPress={() => setEditingCheckIn(true)} style={styles.disclosureButton} hitSlop={8}>
             <Text style={[styles.updateCheckInText, { color: C.primary }]}>Update check-in</Text>
           </TouchableOpacity>
@@ -424,27 +506,30 @@ export default function TodayScreen() {
       {/* Support information deliberately follows the daily decision. */}
       <WeatherCard />
 
-      {/* Performance Forecast */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Text style={[styles.cardLabel, { color: C.textDim }]}>PERFORMANCE FORECAST</Text>
+      {/* Training Outlook */}
+      {showBalancedDetails ? <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.cardLabel, { color: C.textDim }]}>TRAINING OUTLOOK</Text>
+        <Text style={[styles.outlookTitle, { color: C.text }]}>{trainingOutlook.statusLabel}</Text>
+        <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{trainingOutlook.message}</Text>
+        <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{trainingOutlook.recommendation}</Text>
         <View style={styles.forecastRow}>
           <View style={[styles.forecastCell, { backgroundColor: C.cardAlt }]}>
-            <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>Peak Window</Text>
-            <Text style={[styles.forecastCellNum, { color: C.text }]}>63</Text>
-            <Text style={[styles.forecastCellUnit, { color: C.textMuted }]}>days</Text>
-          </View>
-          <View style={[styles.forecastCell, { backgroundColor: C.cardAlt }]}>
-            <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>Race Ready</Text>
-            <Text style={[styles.forecastCellDate, { color: C.positive }]}>Aug 3</Text>
-            <Text style={[styles.forecastCellUnit, { color: C.textMuted }]}>est.</Text>
-          </View>
-          <View style={[styles.forecastCell, { backgroundColor: C.cardAlt }]}>
             <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>Load</Text>
-            <Text style={[styles.forecastCellArrow, { color: C.warning }]}>↑</Text>
-            <Text style={[styles.forecastCellUnit, { color: C.textMuted }]}>Ramping</Text>
+            <Text style={[styles.forecastCellDate, { color: C.text }]}>{trainingOutlook.loadStateLabel}</Text>
+          </View>
+          <View style={[styles.forecastCell, { backgroundColor: C.cardAlt }]}>
+            <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>Focus</Text>
+            <Text style={[styles.forecastCellDate, { color: C.text }]}>{trainingOutlook.focus ?? 'Build consistency'}</Text>
           </View>
         </View>
-      </View>
+        {showDataRichDetails ? (
+          <View style={[styles.outlookDataBox, { borderTopColor: C.border }]}>
+            <Text style={[styles.advancedText, { color: C.textDim }]}>
+              History {trainingOutlook.historyWeeks} week{trainingOutlook.historyWeeks === 1 ? '' : 's'} · completed {trainingOutlook.completedActivities} · ACWR-style workload trend {trainingOutlook.loadTrend.ratio.toFixed(2)} · confidence {trainingOutlook.confidence}
+            </Text>
+          </View>
+        ) : null}
+      </View> : null}
     </ScrollView>
   );
 }
@@ -708,6 +793,33 @@ const styles = StyleSheet.create({
     rowGap: 10,
     marginTop: 14,
   },
+  moreOptionsButton: {
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 14,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  moreOptionsText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  optionGroups: {
+    marginTop: 12,
+    gap: 14,
+  },
+  optionGroup: {
+    gap: 0,
+  },
+  optionGroupLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
   secondaryActionText: {
     fontSize: 12,
     fontWeight: '700',
@@ -738,6 +850,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 17,
     marginTop: 6,
+  },
+  outlookTitle: {
+    fontSize: 21,
+    fontWeight: '900',
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  outlookCopy: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 4,
+  },
+  outlookDataBox: {
+    borderTopWidth: 1,
+    marginTop: 12,
+    paddingTop: 10,
   },
   workoutMeta: {
     fontSize: 13,

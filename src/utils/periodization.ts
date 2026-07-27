@@ -4,6 +4,7 @@ import type {
   PhaseBlock,
   PeriodizationPlan,
 } from '../types/training';
+import { resolvePhaseWithDeload } from './training/deloadModel';
 
 // ─── Race Distance Detection ──────────────────────────────────────────────────
 
@@ -111,11 +112,7 @@ export function resolveTrainingPhase(
       b => currentWeek >= b.startWeek && currentWeek <= b.endWeek,
     )?.phase ?? 'base';
 
-  if (plannedPhase === 'taper') return 'taper';
-
-  if (currentWeek % 4 === 0) return 'deload';
-
-  return plannedPhase;
+  return resolvePhaseWithDeload(currentWeek, plannedPhase);
 }
 
 // ─── Plan Summary Helpers ─────────────────────────────────────────────────────

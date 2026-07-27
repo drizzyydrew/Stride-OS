@@ -25,6 +25,7 @@ export type StrengthSessionSummary = {
   bandSetsCount: number;             // never converted to a load number
   bodyweightSetsCount: number;
   totalHoldSeconds: number;
+  totalDistanceMeters: number;
   durationMinutes: number;
   averageRpe: number | null;         // set-level rpe, falling back to exercise-level
   warmupSetsCount: number;           // reported separately, excluded from totalReps/externalLoadVolume
@@ -68,6 +69,7 @@ export function summarizeStrengthSession(params: {
   let bandSetsCount = 0;
   let bodyweightSetsCount = 0;
   let totalHoldSeconds = 0;
+  let totalDistanceMeters = 0;
   let warmupSetsCount = 0;
   let warmupReps = 0;
   const rpeSamples: number[] = [];
@@ -80,6 +82,9 @@ export function summarizeStrengthSession(params: {
 
       if (isFiniteNumber(set.holdSeconds) && set.holdSeconds > 0) {
         totalHoldSeconds += set.holdSeconds;
+      }
+      if (isFiniteNumber(set.distanceMeters) && set.distanceMeters > 0 && !set.isWarmup) {
+        totalDistanceMeters += set.distanceMeters;
       }
 
       if (isBandSet(set, exercise.equipmentType)) {
@@ -124,6 +129,7 @@ export function summarizeStrengthSession(params: {
     bandSetsCount,
     bodyweightSetsCount,
     totalHoldSeconds,
+    totalDistanceMeters: Math.round(totalDistanceMeters * 10) / 10,
     durationMinutes: Math.max(0, Math.round(params.durationSeconds / 60)),
     averageRpe,
     warmupSetsCount,

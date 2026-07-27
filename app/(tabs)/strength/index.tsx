@@ -17,12 +17,13 @@ import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
 import { LAYOUT } from '../../../src/constants/layout';
-import type { MovementPattern, StrengthSession } from '../../../src/types/strength';
+import type { MovementPattern, RepScheme, StrengthSession } from '../../../src/types/strength';
 import { getLastLoggedExercise, suggestProgression } from '../../../src/utils/strengthHistory';
 import { getExerciseGuide } from '../../../src/constants/exerciseGuides';
 import { toYMD } from '../../../src/utils/calendarEngine';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
+import { useExperienceModeAllows } from '../../../src/hooks/useExperienceMode';
 import type { ScheduledSession } from '../../../src/utils/scheduledSessions';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
 import {
@@ -38,6 +39,7 @@ import {
   MOBILITY_CATEGORY_LABELS,
   getMobilityWorkoutsByCategory,
 } from '../../../src/constants/mobilityBank';
+import { formatPrescription, representativeRepsForScheme } from '../../../src/utils/prescriptionFormat';
 import type { MobilityCategory } from '../../../src/types/mobility';
 import {
   STRENGTH_PRESET_WORKOUTS,
@@ -401,6 +403,7 @@ type ExDef = {
   name: string;
   sets: number;
   reps: string;
+  repScheme?: RepScheme;
   weight: number;
   restSeconds: number;
   muscles: string;
@@ -430,7 +433,8 @@ function sessionToExDefs(session: StrengthSession, strengthHistory: ReturnType<t
       id: ex.exerciseId,
       name: ex.exercise.name,
       sets: ex.sets,
-      reps: `${ex.repRange[0]}–${ex.repRange[1]}`,
+      reps: formatPrescription(ex.repScheme, `${ex.repRange[0]}–${ex.repRange[1]} reps`),
+      repScheme: ex.repScheme,
       weight: Number.isFinite(parsedWeight) ? parsedWeight : 0,
       restSeconds: ex.restSeconds,
       muscles: PATTERN_MUSCLES[ex.exercise.pattern] ?? displayLabel(ex.exercise.pattern),
@@ -510,6 +514,7 @@ export default function StrengthScreen() {
   const router = useRouter();
   const [segment, setSegment] = useState<Segment>('strength');
   const { units } = useSettingsStore();
+  const showDataRichDetails = useExperienceModeAllows('data_rich');
   const weekPlan = useWeekPlan();
   const scheduled = useScheduledSessions(weekPlan);
   const fatigueScore = useAthleteStore(s => s.fatigueScore);
@@ -695,6 +700,7 @@ export default function StrengthScreen() {
         name: exercise.name,
         sets: exercise.sets,
         reps: exercise.reps,
+        repScheme: exercise.repScheme,
         equipment: exercise.equipment,
         notes: exercise.cue,
       })),
@@ -909,7 +915,7 @@ export default function StrengthScreen() {
       : exercises.map(ex => ({
         exerciseId: ex.id,
         sets: Array.from({ length: ex.sets }, () => ({
-          reps: primaryRepCount(ex.reps),
+          reps: representativeRepsForScheme(ex.repScheme, ex.reps) ?? primaryRepCount(ex.reps),
           load: getWeight(ex) > 0 ? `${getWeight(ex)} ${wtUnit}` : 'BW',
           rpe: rpe[ex.id] ?? overallRpe,
           completed: anyMarked ? isExerciseDone(ex) : true,
@@ -1404,7 +1410,7 @@ export default function StrengthScreen() {
         })}
 
         {/* Volume Summary */}
-        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        {showDataRichDetails ? <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 10 }]}>VOLUME SUMMARY</Text>
           {exercises.map(ex => {
             const w = getWeight(ex);
@@ -1419,7 +1425,7 @@ export default function StrengthScreen() {
             <Text style={[{ fontSize: 13, fontWeight: '700', color: C.text }]}>Total Volume</Text>
             <Text style={[{ fontSize: 15, fontWeight: '800', color: C.primary }]}>{totalVolStr}</Text>
           </View>
-        </View>
+        </View> : null}
 
         {/* Cool-Down */}
         <TouchableOpacity

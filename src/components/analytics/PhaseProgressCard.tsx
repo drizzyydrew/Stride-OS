@@ -35,6 +35,12 @@ function getPhaseColor(phase: TrainingPhase) {
       return { accent: colors.chartSeriesPrimary, bg: colors.primaryDim, text: colors.primary };
     case 'base':
       return { accent: colors.chartSeriesPrimary, bg: colors.primaryDim, text: colors.primary };
+    case 'aerobic_development':
+      return { accent: colors.chartSeriesPrimary, bg: colors.primaryDim, text: colors.primary };
+    case 'threshold':
+    case 'vo2':
+    case 'race_specific':
+      return { accent: colors.chartSeriesSecondary, bg: colors.accentDim, text: colors.accent };
     case 'build':
       return { accent: colors.chartSeriesSecondary, bg: colors.accentDim, text: colors.accent };
     case 'peak':
@@ -43,6 +49,9 @@ function getPhaseColor(phase: TrainingPhase) {
       return { accent: colors.positive, bg: colors.positiveDim, text: colors.positive };
     case 'taper':
       return { accent: colors.critical, bg: colors.criticalDim, text: colors.critical };
+    case 'transition':
+    case 'recovery':
+      return { accent: colors.positive, bg: colors.positiveDim, text: colors.positive };
   }
 }
 

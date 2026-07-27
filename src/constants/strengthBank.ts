@@ -8,6 +8,9 @@
 // no diagnosis or guarantee claims. Ids are stable (`sw_<slug>`) — once
 // shipped, do not rename or remove an id; downstream logging may reference it.
 
+import type { RepScheme } from '../types/strength';
+import { parsePrescriptionScheme } from '../utils/prescriptionFormat';
+
 export type StrengthEquipment =
   | 'barbell'
   | 'squat_rack'
@@ -35,6 +38,7 @@ export type PresetStrengthExercise = {
   name:       string;
   sets:       number;
   reps:       string;
+  repScheme?: RepScheme;
   equipment:  StrengthEquipment[];
   notes?:     string;
 };
@@ -54,7 +58,8 @@ export type PresetStrengthWorkout = {
 };
 
 function ex(name: string, sets: number, reps: string, equipment: StrengthEquipment[], notes?: string): PresetStrengthExercise {
-  return notes ? { name, sets, reps, equipment, notes } : { name, sets, reps, equipment };
+  const repScheme = parsePrescriptionScheme(reps, { exerciseName: name, notes });
+  return notes ? { name, sets, reps, repScheme, equipment, notes } : { name, sets, reps, repScheme, equipment };
 }
 
 function workoutEquipment(exercises: PresetStrengthExercise[]): StrengthEquipment[] {

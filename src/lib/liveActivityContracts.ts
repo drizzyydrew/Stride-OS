@@ -3,10 +3,13 @@ export type OutdoorLiveActivityType =
   | 'walking'
   | 'run_walk'
   | 'cycling'
+  | 'indoor_cycling'
   | 'hiking'
   | 'downhill_skiing'
   | 'cross_country_skiing'
-  | 'snowboarding';
+  | 'snowboarding'
+  | 'mobility'
+  | 'active_recovery';
 
 export type LiveActivityControlState =
   | 'ready'
@@ -15,6 +18,7 @@ export type LiveActivityControlState =
   | 'complete_pending';
 
 export type LiveActivitySessionIdentity = {
+  workoutInstanceId?: string;
   sessionId?: string;
   sessionSource?: string;
 };
@@ -24,12 +28,13 @@ export function liveActivityCommandMatchesSession(
   target?: { sessionId: string; sessionSource: string },
 ): boolean {
   if (!target) return true;
-  return command.sessionId === target.sessionId
+  return (command.workoutInstanceId ?? command.sessionId) === target.sessionId
     && command.sessionSource === target.sessionSource;
 }
 
 export type OutdoorLiveActivitySnapshot = {
   sessionId?: string;
+  workoutInstanceId?: string;
   sessionSource?: 'running' | 'outdoor';
   activityName: string;
   activityType: OutdoorLiveActivityType;
@@ -52,6 +57,7 @@ export type OutdoorLiveActivitySnapshot = {
 
 export type NormalizedOutdoorLiveActivityPayload = {
   runName: string;
+  workoutInstanceId: string;
   sessionId: string;
   sessionSource: 'running' | 'outdoor';
   activityType: OutdoorLiveActivityType;
@@ -80,6 +86,7 @@ export function normalizeOutdoorLiveActivitySnapshot(
   status?: string,
 ): NormalizedOutdoorLiveActivityPayload {
   const speedBased = snapshot.activityType === 'cycling'
+    || snapshot.activityType === 'indoor_cycling'
     || snapshot.activityType === 'downhill_skiing'
     || snapshot.activityType === 'cross_country_skiing'
     || snapshot.activityType === 'snowboarding';
@@ -89,7 +96,8 @@ export function normalizeOutdoorLiveActivitySnapshot(
 
   return {
     runName: snapshot.activityName.trim() || defaultActivityName(snapshot.activityType),
-    sessionId: snapshot.sessionId?.trim() || '',
+    workoutInstanceId: snapshot.workoutInstanceId?.trim() || snapshot.sessionId?.trim() || '',
+    sessionId: snapshot.sessionId?.trim() || snapshot.workoutInstanceId?.trim() || '',
     sessionSource: snapshot.sessionSource ?? 'outdoor',
     activityType: snapshot.activityType,
     elapsedSeconds: Math.max(0, Math.round(snapshot.elapsedSeconds)),
@@ -135,7 +143,10 @@ function defaultActivityName(type: OutdoorLiveActivityType): string {
   switch (type) {
   case 'walking': return 'Walk';
   case 'run_walk': return 'Run / Walk';
-  case 'cycling': return 'Ride';
+  case 'cycling':
+  case 'indoor_cycling': return 'Ride';
+  case 'mobility': return 'Mobility';
+  case 'active_recovery': return 'Active Recovery';
   case 'hiking': return 'Hike';
   case 'downhill_skiing': return 'Downhill Ski';
   case 'cross_country_skiing': return 'Cross-Country Ski';

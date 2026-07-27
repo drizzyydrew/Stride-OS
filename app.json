@@ -14,7 +14,7 @@
       "appleTeamId": "QBAVJD9497",
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "44",
+      "buildNumber": "45",
       "backgroundColor": "#14160F",
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -116,7 +116,15 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-audio",
+      [
+        "react-native-ble-plx",
+        {
+          "bluetoothAlwaysPermission": "StrideOS uses Bluetooth to connect heart-rate straps, treadmills, trainers, foot pods, and cycling sensors during workouts.",
+          "isBackgroundEnabled": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

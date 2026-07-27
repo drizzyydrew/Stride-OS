@@ -3,6 +3,7 @@ import type {
   ProgressionLevel,
   GeneratableWorkoutType,
 } from '../types/training';
+import { shouldApplyDeload } from './training/deloadModel';
 
 // ─── Level Classification ─────────────────────────────────────────────────────
 
@@ -16,7 +17,7 @@ export function resolveProgressionLevel(weeklyMileage: number): ProgressionLevel
 
 // Every 4th training week triggers a deload. Periodization overrides this for taper.
 export function shouldDeload(currentWeek: number): boolean {
-  return currentWeek % 4 === 0;
+  return shouldApplyDeload(currentWeek);
 }
 
 // ─── Mileage Progression ──────────────────────────────────────────────────────
@@ -33,10 +34,16 @@ const WEEKLY_INCREASE_RATE: Record<ProgressionLevel, number> = {
 const PHASE_MILEAGE_CEILING: Record<TrainingPhase, number> = {
   foundation: 0.85,
   base:   1.00,
+  aerobic_development: 1.08,
+  threshold: 1.15,
+  vo2: 1.10,
+  race_specific: 1.12,
   build:  1.25,
   peak:   1.15,
   deload: 0.65,
   taper:  0.75,
+  transition: 0.70,
+  recovery: 0.60,
 };
 
 export type MileageProgressionInput = {
@@ -69,10 +76,16 @@ export function computeProgressedMileage({
 const PHASE_INTENSITY_MULTIPLIER: Record<TrainingPhase, number> = {
   foundation: 0.55,
   base:   0.70,
+  aerobic_development: 0.78,
+  threshold: 0.95,
+  vo2: 1.05,
+  race_specific: 1.00,
   build:  1.00,
   peak:   1.15,
   deload: 0.40,
   taper:  0.60,
+  transition: 0.45,
+  recovery: 0.35,
 };
 
 export function resolvePhaseIntensityMultiplier(phase: TrainingPhase): number {
@@ -103,12 +116,16 @@ export function selectPhaseWorkouts({
       return   ['easy_run', 'rest',      'easy_run', 'rest',     'easy_run', 'rest',      'rest'];
 
     case 'base':
+    case 'aerobic_development':
       if (progressionLevel === 'beginner') {
         return ['easy_run', 'rest',      'easy_run', 'rest',     'long_run', 'strides',  'rest'];
       }
       return   ['easy_run', 'strides',   'easy_run', 'rest',     'long_run', 'easy_run', 'rest'];
 
     case 'build':
+    case 'threshold':
+    case 'vo2':
+    case 'race_specific':
       if (progressionLevel === 'beginner') {
         return ['easy_run', 'threshold', 'rest',     'easy_run', 'long_run', 'strides',  'rest'];
       }
@@ -121,6 +138,8 @@ export function selectPhaseWorkouts({
       return   ['easy_run', 'vo2',       'easy_run', 'threshold','rest',     'long_run', 'strides'];
 
     case 'deload':
+    case 'transition':
+    case 'recovery':
       return   ['rest', 'recovery_run', 'easy_run', 'rest', 'recovery_run', 'strides', 'rest'];
 
     case 'taper':

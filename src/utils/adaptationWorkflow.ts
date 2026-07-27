@@ -1,4 +1,5 @@
 import type { ScheduledSession } from './scheduledSessions';
+import { hasOverlappingHardStress, isHardLowerStrengthStress, isHardStress, isLongStress } from './sessionStress';
 
 /**
  * A deliberately small, serializable overlay over the canonical schedule.
@@ -89,6 +90,7 @@ export type AdaptationConflictCode =
   | 'consecutive_hard'
   | 'long_after_hard_strength'
   | 'recovery_spacing'
+  | 'stress_axis_overlap'
   | 'locked_day'
   | 'plan_boundary';
 
@@ -129,23 +131,15 @@ function isRun(session: ScheduledSession): boolean {
 }
 
 function isHard(session: ScheduledSession): boolean {
-  if (
-    session.activityType === 'run_walk'
-    || session.subtype === 'run_walk'
-    || /run\s*\/\s*walk/i.test(session.title)
-  ) return false;
-  const text = `${session.subtype} ${session.title} ${session.richWorkout?.type ?? ''} ${session.richWorkout?.intensity ?? ''}`.toLowerCase();
-  return /interval|tempo|threshold|vo2|speed|hard|max/.test(text);
+  return isHardStress(session);
 }
 
 function isLong(session: ScheduledSession): boolean {
-  return /long/.test(`${session.subtype} ${session.title} ${session.richWorkout?.type ?? ''}`.toLowerCase());
+  return isLongStress(session);
 }
 
 function isHardLowerStrength(session: ScheduledSession): boolean {
-  if (session.activityType !== 'strength') return false;
-  const text = `${session.subtype} ${session.title} ${session.purpose}`.toLowerCase();
-  return /lower|leg|squat|deadlift|strength/.test(text) && !/mobility|recovery/.test(text);
+  return isHardLowerStrengthStress(session);
 }
 
 function shortDate(date: string): string {
@@ -157,6 +151,30 @@ function calendarDayGap(earlier: string, later: string): number {
   const laterMs = Date.parse(`${later}T00:00:00.000Z`);
   if (!Number.isFinite(earlierMs) || !Number.isFinite(laterMs)) return Number.POSITIVE_INFINITY;
   return Math.round((laterMs - earlierMs) / 86_400_000);
+}
+
+function hasUnsafeSameDayStressOverlap(items: ScheduledSession[]): ScheduledSession[] {
+  const hardRuns = items.filter(item =>
+    item.priority === 'primary'
+    && isHard(item)
+    && ['run', 'run_walk'].includes(item.activityType));
+  const hardLowerStrength = items.filter(isHardLowerStrength);
+  return hardRuns.length && hardLowerStrength.length ? [...hardRuns, ...hardLowerStrength] : [];
+}
+
+function nextDate(date: string): string {
+  const parsed = new Date(`${date}T00:00:00.000Z`);
+  parsed.setUTCDate(parsed.getUTCDate() + 1);
+  return parsed.toISOString().slice(0, 10);
+}
+
+function isTrueRecoveryDay(items: ScheduledSession[]): boolean {
+  if (items.length === 0) return true;
+  return items.every(item => {
+    const stress = item.stress;
+    if (stress) return stress.classification === 'recovery' || stress.classification === 'easy';
+    return !isHard(item) && !isLong(item);
+  });
 }
 
 function adaptedSessionFor(request: AdaptationRequest, original: ScheduledSession): ScheduledSession | null {
@@ -422,6 +440,8 @@ export function validateAdaptationSchedule(
     const hasRunWalk = items.some(item => item.activityType === 'run_walk');
     const easyRuns = items.filter(item => item.activityType === 'run' && /easy/.test(`${item.subtype} ${item.title}`.toLowerCase()));
     if (hasRunWalk && easyRuns.length) conflicts.push({ code: 'run_walk_plus_easy', sessionIds: items.filter(item => item.activityType === 'run_walk' || easyRuns.includes(item)).map(item => item.scheduledSessionId), message: `${date} cannot stack run/walk and an easy run.` });
+    const unsafeOverlap = hasUnsafeSameDayStressOverlap(items);
+    if (unsafeOverlap.length && !isTrueRecoveryDay(byDate.get(nextDate(date)) ?? [])) conflicts.push({ code: 'stress_axis_overlap', sessionIds: unsafeOverlap.map(item => item.scheduledSessionId), message: `${date} stacks hard running with hard lower-body strength. Consolidate only if the following day is true recovery.` });
   }
   const days = [...byDate.keys()].sort();
   for (let index = 1; index < days.length; index += 1) {
@@ -430,9 +450,17 @@ export function validateAdaptationSchedule(
     const current = byDate.get(days[index]) ?? [];
     const previousHard = previous.filter(isHard);
     const currentHard = current.filter(isHard);
-    if (previousHard.length && currentHard.length) conflicts.push({ code: 'consecutive_hard', sessionIds: [...previousHard, ...currentHard].map(item => item.scheduledSessionId), message: 'Hard sessions need a recovery day between them.' });
+    // Consecutive hard days only conflict when the two days drain the same
+    // system (leg/cardio/neuromuscular/upper overlap) — hard upper-body work
+    // followed by intervals is an acceptable pairing and must not warn.
+    const overlappingConsecutive = previousHard.filter(prev => currentHard.some(curr => hasOverlappingHardStress(prev, curr)));
+    if (overlappingConsecutive.length) {
+      const overlappingCurrent = currentHard.filter(curr => previousHard.some(prev => hasOverlappingHardStress(prev, curr)));
+      conflicts.push({ code: 'consecutive_hard', sessionIds: [...overlappingConsecutive, ...overlappingCurrent].map(item => item.scheduledSessionId), message: 'Hard sessions that stress the same systems need a recovery day between them.' });
+    }
     if (previous.some(isHardLowerStrength) && current.some(isLong)) conflicts.push({ code: 'long_after_hard_strength', sessionIds: [...previous, ...current].filter(item => isHardLowerStrength(item) || isLong(item)).map(item => item.scheduledSessionId), message: 'Do not place a long run the day after hard lower-body strength.' });
-    if (previousHard.length && current.some(item => isLong(item) || isHard(item))) conflicts.push({ code: 'recovery_spacing', sessionIds: [...previousHard, ...current.filter(item => isLong(item) || isHard(item))].map(item => item.scheduledSessionId), message: 'Protect recovery spacing after a hard session.' });
+    const spacingTargets = current.filter(item => (isLong(item) || isHard(item)) && previousHard.some(prev => hasOverlappingHardStress(prev, item)));
+    if (spacingTargets.length) conflicts.push({ code: 'recovery_spacing', sessionIds: [...previousHard.filter(prev => spacingTargets.some(item => hasOverlappingHardStress(prev, item))), ...spacingTargets].map(item => item.scheduledSessionId), message: 'Protect recovery spacing after a hard session.' });
   }
   return conflicts;
 }

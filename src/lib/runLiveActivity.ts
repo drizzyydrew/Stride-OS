@@ -19,6 +19,7 @@ import {
 
 export type RunLiveActivitySnapshot = {
   sessionId?: string;
+  workoutInstanceId?: string;
   sessionSource?: 'running' | 'outdoor';
   elapsedSeconds: number;
   distanceMiles: number;
@@ -40,6 +41,7 @@ export type RunLiveActivitySnapshot = {
 function payloadFromSnapshot(snapshot: RunLiveActivitySnapshot, status?: string): StrideRunLiveActivityPayload {
   return normalizeOutdoorLiveActivitySnapshot({
     sessionId: snapshot.sessionId,
+    workoutInstanceId: snapshot.workoutInstanceId,
     sessionSource: snapshot.sessionSource ?? 'running',
     activityName: snapshot.activityName ?? 'Training Run',
     activityType: snapshot.activityType ?? 'running',

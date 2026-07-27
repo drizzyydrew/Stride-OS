@@ -31,6 +31,19 @@ export const LAYOUT = {
   },
 } as const;
 
+export const TAB_BAR_VISUAL_CONTRACT = {
+  iconSize: 25,
+  iconBoxSize: 30,
+  labelFontSize: 10,
+  labelLineHeight: 12,
+  itemMinHeight: 54,
+  iconToLabelGap: 4,
+  itemPaddingVertical: 3,
+  itemPaddingHorizontal: 0,
+} as const;
+
+export const VISIBLE_BOTTOM_TABS = ['Today', 'Calendar', 'Running', 'Strength', 'AI Coach', 'More'] as const;
+
 // Returns the appropriate max content width for a given screen width.
 //   Phone  (<744px):  fills full width; padding applied by ScrollScreen
 //   Tablet (744–1024): 88% up to 760px

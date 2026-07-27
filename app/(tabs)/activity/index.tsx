@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ import { runRecalculation } from '../../../src/lib/recalculation';
 import { useColors } from '../../../src/theme/useColors';
 import type { Activity, ActivityFilter, ActivityType } from '../../../src/types/activity';
 import { activityMatchesFilter, summarizeActivityLoad } from '../../../src/utils/activityLoad';
+import { filterActivities } from '../../../src/utils/activitySearch';
 import { displayLabel } from '../../../src/utils/displayLabels';
 
 function formatLastUpdated(lastRunAt: number | null): string {
@@ -76,10 +77,12 @@ export default function ActivityScreen() {
   const recalculationLastRunAt = useRecalculationStore(state => state.lastRunAt);
   const recalculationError = useRecalculationStore(state => state.error);
   const [filter, setFilter] = useState<ActivityFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const meaningful = useMemo(() => activities.filter(isMeaningfulActivity), [activities]);
-  const visible = useMemo(() => meaningful
-    .filter(activity => activityMatchesFilter(activity, filter))
-    .sort((a, b) => b.startTime - a.startTime), [meaningful, filter]);
+  const visible = useMemo(() => filterActivities(
+    meaningful.filter(activity => activityMatchesFilter(activity, filter)),
+    { query: searchQuery },
+  ).sort((a, b) => b.startTime - a.startTime), [meaningful, filter, searchQuery]);
   const weekly = useMemo(() => summarizeActivityLoad(
     meaningful.filter(activity => Date.now() - activity.startTime <= 7 * 24 * 60 * 60 * 1000),
   ), [meaningful]);
@@ -99,20 +102,78 @@ export default function ActivityScreen() {
     );
   }
 
-  return (
-    <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
-      <ScreenHeader
-        eyebrow="ALL TRAINING"
-        title="Activity"
-        onBack={() => router.back()}
-        right={(
-          <TouchableOpacity onPress={() => router.push('/(tabs)/activity/manual' as never)} style={s.iconButton} accessibilityLabel="Log activity">
-            <Ionicons name="add" size={25} color={C.primary} />
+  function renderActivityRow({ item: activity }: { item: Activity }) {
+    return (
+      <Swipeable
+        overshootRight={false}
+        renderRightActions={() => (
+          <TouchableOpacity
+            style={[s.deleteAction, { backgroundColor: C.critical }]}
+            onPress={() => confirmDeleteActivity(activity)}
+            accessibilityLabel={`Delete ${displayLabel(activity.activityType)} activity`}
+          >
+            <Ionicons name="trash-outline" size={20} color="#fff" />
+            <Text style={s.deleteActionText}>Delete</Text>
           </TouchableOpacity>
         )}
-      />
+      >
+        <TouchableOpacity
+          style={[s.activityCard, { backgroundColor: C.card, borderColor: C.border }]}
+          onPress={() => router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: activity.id } } as never)}
+          onLongPress={() => confirmDeleteActivity(activity)}
+          delayLongPress={450}
+          accessibilityHint="Double tap to open. Long press for activity actions including delete."
+        >
+          <View style={[s.activityIcon, { backgroundColor: C.primaryDim }]}>
+            <Ionicons name={iconFor(activity.activityType)} size={20} color={C.primary} />
+          </View>
+          <View style={s.activityCopy}>
+            <Text style={[s.activityTitle, { color: C.text }]}>
+              {activity.subtype === 'run_walk' ? 'Run / Walk' : displayLabel(activity.activityType)}
+            </Text>
+            <Text style={[s.activityMeta, { color: C.textMuted }]}>
+              {new Date(activity.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {metricLine(activity)}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+        </TouchableOpacity>
+      </Swipeable>
+    );
+  }
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+  function renderEmptyState() {
+    return (
+      <View style={[s.empty, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Ionicons name="pulse-outline" size={26} color={C.primary} />
+        <Text style={[s.activityTitle, { color: C.text }]}>
+          {meaningful.length === 0 ? 'No activities yet' : 'No activities in this filter'}
+        </Text>
+        <Text style={[s.activityMeta, { color: C.textMuted, textAlign: 'center' }]}>
+          {meaningful.length === 0
+            ? 'Your completed runs, walks, rides, strength sessions, mobility sessions, and other training will appear here.'
+            : 'Try another search or filter, or add a completed activity.'}
+        </Text>
+        <View style={s.emptyActions}>
+          <TouchableOpacity
+            style={[s.emptyAction, { backgroundColor: C.primary }]}
+            onPress={() => router.push('/(tabs)/activity/start' as never)}
+          >
+            <Text style={[s.actionText, { color: C.onPrimary }]}>Start an Activity</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.emptyAction, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+            onPress={() => router.push('/(tabs)/dashboard' as never)}
+          >
+            <Text style={[s.actionText, { color: C.text }]}>View Today’s Plan</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  function renderListHeader() {
+    return (
+      <>
         <View style={s.actions}>
           <TouchableOpacity
             style={[s.action, { backgroundColor: C.primary }]}
@@ -171,6 +232,15 @@ export default function ActivityScreen() {
           </Text>
         </View>
 
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search activity history"
+          placeholderTextColor={C.textDim}
+          style={[s.searchInput, { backgroundColor: C.card, borderColor: C.border, color: C.text }]}
+          accessibilityLabel="Search activity history"
+        />
+
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filters}>
           {FILTERS.map(item => (
             <TouchableOpacity
@@ -188,73 +258,33 @@ export default function ActivityScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+      </>
+    );
+  }
 
-        {visible.map(activity => (
-          <Swipeable
-            key={activity.id}
-            overshootRight={false}
-            renderRightActions={() => (
-              <TouchableOpacity
-                style={[s.deleteAction, { backgroundColor: C.critical }]}
-                onPress={() => confirmDeleteActivity(activity)}
-                accessibilityLabel={`Delete ${displayLabel(activity.activityType)} activity`}
-              >
-                <Ionicons name="trash-outline" size={20} color="#fff" />
-                <Text style={s.deleteActionText}>Delete</Text>
-              </TouchableOpacity>
-            )}
-          >
-            <TouchableOpacity
-              style={[s.activityCard, { backgroundColor: C.card, borderColor: C.border }]}
-              onPress={() => router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: activity.id } } as never)}
-              onLongPress={() => confirmDeleteActivity(activity)}
-              delayLongPress={450}
-              accessibilityHint="Double tap to open. Long press for activity actions including delete."
-            >
-              <View style={[s.activityIcon, { backgroundColor: C.primaryDim }]}>
-                <Ionicons name={iconFor(activity.activityType)} size={20} color={C.primary} />
-              </View>
-              <View style={s.activityCopy}>
-                <Text style={[s.activityTitle, { color: C.text }]}>
-                  {activity.subtype === 'run_walk' ? 'Run / Walk' : displayLabel(activity.activityType)}
-                </Text>
-                <Text style={[s.activityMeta, { color: C.textMuted }]}>
-                  {new Date(activity.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {metricLine(activity)}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
-            </TouchableOpacity>
-          </Swipeable>
-        ))}
+  return (
+    <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
+      <ScreenHeader
+        eyebrow="ALL TRAINING"
+        title="Activity"
+        onBack={() => router.back()}
+        right={(
+          <TouchableOpacity onPress={() => router.push('/(tabs)/activity/manual' as never)} style={s.iconButton} accessibilityLabel="Log activity">
+            <Ionicons name="add" size={25} color={C.primary} />
+          </TouchableOpacity>
+        )}
+      />
 
-        {visible.length === 0 ? (
-          <View style={[s.empty, { backgroundColor: C.card, borderColor: C.border }]}>
-            <Ionicons name="pulse-outline" size={26} color={C.primary} />
-            <Text style={[s.activityTitle, { color: C.text }]}>
-              {meaningful.length === 0 ? 'No activities yet' : 'No activities in this filter'}
-            </Text>
-            <Text style={[s.activityMeta, { color: C.textMuted, textAlign: 'center' }]}>
-              {meaningful.length === 0
-                ? 'Your completed runs, walks, rides, strength sessions, mobility sessions, and other training will appear here.'
-                : 'Try another filter or add a completed activity.'}
-            </Text>
-            <View style={s.emptyActions}>
-              <TouchableOpacity
-                style={[s.emptyAction, { backgroundColor: C.primary }]}
-                onPress={() => router.push('/(tabs)/activity/start' as never)}
-              >
-                <Text style={[s.actionText, { color: C.onPrimary }]}>Start an Activity</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.emptyAction, { backgroundColor: C.cardAlt, borderColor: C.border }]}
-                onPress={() => router.push('/(tabs)/dashboard' as never)}
-              >
-                <Text style={[s.actionText, { color: C.text }]}>View Today’s Plan</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : null}
-      </ScrollView>
+      <FlatList
+        data={visible}
+        keyExtractor={item => item.id}
+        renderItem={renderActivityRow}
+        ListHeaderComponent={renderListHeader}
+        ListEmptyComponent={renderEmptyState}
+        contentContainerStyle={s.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      />
     </SafeAreaView>
   );
 }
@@ -279,6 +309,7 @@ const s = StyleSheet.create({
   loadGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 },
   loadSmall: { fontSize: 12, fontWeight: '700' },
   limitation: { fontSize: 11, lineHeight: 16, marginTop: 10 },
+  searchInput: { minHeight: 46, borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, fontSize: 14, fontWeight: '700', marginBottom: 12 },
   filters: { gap: 8, paddingBottom: 14 },
   filter: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 8 },
   filterText: { fontSize: 12, fontWeight: '800' },

@@ -20,7 +20,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { useColors } from '../../../src/theme/useColors';
 import { useThemeStore } from '../../../src/store/themeStore';
-import { useSettingsStore } from '../../../src/store/settingsStore';
+import { useSettingsStore, type ExperienceMode } from '../../../src/store/settingsStore';
 import { useIntegrationsStore } from '../../../src/store/integrationsStore';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useAuthStore } from '../../../src/store/authStore';
@@ -48,6 +48,7 @@ import {
 import { LAYOUT } from '../../../src/constants/layout';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
 import { formatYMDForDisplay, parseDisplayDateToYMD } from '../../../src/utils/dateFormatting';
+import { testVoiceCoaching } from '../../../src/lib/voiceCoach';
 
 function formatHeight(heightCm: number, imperial: boolean) {
   if (!heightCm) return '';
@@ -182,6 +183,8 @@ export default function SettingsScreen() {
   const {
     units,
     setUnits,
+    experienceMode,
+    setExperienceMode,
     voiceCueMode,
     voiceCuePreferences,
     setVoiceCueMode,
@@ -214,6 +217,7 @@ export default function SettingsScreen() {
   const [heightInput, setHeightInput] = useState('');
   const [weightInput, setWeightInput] = useState('');
   const [showNotificationTimePicker, setShowNotificationTimePicker] = useState(false);
+  const [voiceTestResult, setVoiceTestResult] = useState<string | null>(null);
 
   function saveRaceForm() {
     if (!raceForm) return;
@@ -779,7 +783,7 @@ export default function SettingsScreen() {
             onChange={v => useThemeStore.getState().setMode(v as any)}
           />
         </View>
-        <View style={styles.settingRow}>
+        <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
           <View style={styles.settingCopy}>
             <Text style={[styles.settingTitle, { color: C.text }]}>Units</Text>
             <Text style={[styles.settingCaption, { color: C.textMuted }]}>Updates distances & weights everywhere</Text>
@@ -791,13 +795,29 @@ export default function SettingsScreen() {
             activeTone="primary"
           />
         </View>
+        <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'stretch', gap: 10 }]}>
+          <View style={styles.settingCopy}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Experience Mode</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Controls how much detail StrideOS shows by default. Data is not removed.</Text>
+          </View>
+          <SegmentControl
+            options={[
+              { label: 'Simple', value: 'simple' },
+              { label: 'Balanced', value: 'balanced' },
+              { label: 'Data-rich', value: 'data_rich' },
+            ]}
+            value={experienceMode}
+            onChange={v => setExperienceMode(v as ExperienceMode)}
+            activeTone="primary"
+          />
+        </View>
       </View>
 
-      {/* Voice coaching — uses the existing expo-speech architecture only. */}
+      {/* Voice coaching */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>VOICE COACHING</Text>
         <Text style={[styles.settingCaption, { color: C.textMuted, marginBottom: 10 }]}>
-          Choose how often StrideOS speaks. These controls add no new audio dependency.
+          Choose how often StrideOS speaks. The test button runs through the same delivery pipeline used during workouts.
         </Text>
         <SegmentControl
           options={[
@@ -820,6 +840,7 @@ export default function SettingsScreen() {
             ['technique', 'Technique cues'],
             ['fueling', 'Fueling reminders'],
             ['hydration', 'Hydration reminders'],
+            ['navigation', 'Route navigation'],
           ] as const).map(([key, label]) => (
             <View key={key} style={[styles.settingRow, { borderBottomColor: C.border }]}>
               <Text style={[styles.settingTitle, { color: C.text }]}>{label}</Text>
@@ -833,6 +854,24 @@ export default function SettingsScreen() {
             </View>
           ))}
         </View>
+        <TouchableOpacity
+          style={[styles.testVoiceButton, { borderColor: C.primary, backgroundColor: C.primaryDim }]}
+          activeOpacity={0.75}
+          onPress={() => {
+            const state = testVoiceCoaching();
+            setVoiceTestResult(
+              state === 'unavailable'
+                ? 'Voice delivery is unavailable in this environment. Test on device before release.'
+                : `Voice test ${state}.`,
+            );
+          }}
+        >
+          <Ionicons name="volume-high-outline" size={17} color={C.primary} />
+          <Text style={[styles.testVoiceText, { color: C.primary }]}>Test Voice Coaching</Text>
+        </TouchableOpacity>
+        {voiceTestResult ? (
+          <Text style={[styles.settingCaption, { color: C.textMuted, marginTop: 8 }]}>{voiceTestResult}</Text>
+        ) : null}
       </View>
 
       {/* Training Definitions */}
@@ -1324,6 +1363,21 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 999,
     borderWidth: 1,
+  },
+  testVoiceButton: {
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  testVoiceText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
   userRow: {
     flexDirection: 'row',

@@ -9,6 +9,7 @@ import { useColors } from '../../../../src/theme/useColors';
 import { LAYOUT } from '../../../../src/constants/layout';
 import ScreenHeader from '../../../../src/components/layout/ScreenHeader';
 import { displayLabels } from '../../../../src/utils/displayLabels';
+import { formatPrescriptionWithSets } from '../../../../src/utils/prescriptionFormat';
 import {
   activeSessionStoresHydrated,
   getConflictingActiveSession,
@@ -76,6 +77,7 @@ export default function PresetStrengthDetailScreen() {
         name: exercise.name,
         sets: exercise.sets,
         reps: exercise.reps,
+        repScheme: exercise.repScheme,
         equipment: exercise.equipment,
         notes: exercise.notes,
       }));
@@ -89,7 +91,7 @@ export default function PresetStrengthDetailScreen() {
       startStrengthLiveActivity({
         workoutName: workout.title,
         elapsedSeconds: 0,
-        currentExercise: `${exercises[0]?.name ?? ''} · ${exercises[0]?.sets ?? 0}×${exercises[0]?.reps ?? ''}`,
+        currentExercise: `${exercises[0]?.name ?? ''} · ${formatPrescriptionWithSets(exercises[0]?.sets ?? 0, exercises[0]?.repScheme, exercises[0]?.reps ?? '')}`,
         nextExercise: exercises[1]?.name ?? '',
         setsCompleted: 0,
         totalSets: exercises.length,
@@ -156,7 +158,7 @@ export default function PresetStrengthDetailScreen() {
             <Text style={[styles.exerciseNumber, { color: C.primary }]}>{index + 1}</Text>
             <View style={{ flex: 1 }}>
               <Text style={[styles.exerciseName, { color: C.text }]}>{exercise.name}</Text>
-              <Text style={[styles.meta, { color: C.textMuted }]}>{exercise.sets} sets · {exercise.reps} · {displayLabels(exercise.equipment)}</Text>
+              <Text style={[styles.meta, { color: C.textMuted }]}>{formatPrescriptionWithSets(exercise.sets, exercise.repScheme, exercise.reps)} · {displayLabels(exercise.equipment)}</Text>
               <Text style={[styles.detailLabel, { color: C.textDim }]}>HOW TO PERFORM</Text>
               <Text style={[styles.body, { color: C.textMuted }]}>
                 Use a controlled range you can own. Keep the prescribed setup stable and stop the set before technique meaningfully changes.
@@ -170,7 +172,7 @@ export default function PresetStrengthDetailScreen() {
               <Text style={[styles.detailLabel, { color: C.textDim }]}>EASIER ALTERNATIVE</Text>
               <Text style={[styles.body, { color: C.textMuted }]}>{support.easier}</Text>
               <Text style={[styles.detailLabel, { color: C.textDim }]}>LOAD TYPE</Text>
-              <Text style={[styles.body, { color: C.textMuted }]}>{displayLabels(exercise.equipment)} · {exercise.sets} sets · {exercise.reps}</Text>
+              <Text style={[styles.body, { color: C.textMuted }]}>{displayLabels(exercise.equipment)} · {formatPrescriptionWithSets(exercise.sets, exercise.repScheme, exercise.reps)}</Text>
             </View>
           </View>
           );

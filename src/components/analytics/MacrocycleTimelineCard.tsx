@@ -28,6 +28,12 @@ function phaseColor(phase: TrainingPhase): string {
       return colors.chartSeriesPrimary;
     case 'base':
       return colors.chartSeriesPrimary;
+    case 'aerobic_development':
+      return colors.chartSeriesPrimary;
+    case 'threshold':
+    case 'vo2':
+    case 'race_specific':
+      return colors.chartSeriesSecondary;
     case 'build':
       return colors.chartSeriesSecondary;
     case 'peak':
@@ -36,6 +42,9 @@ function phaseColor(phase: TrainingPhase): string {
       return colors.positive;
     case 'taper':
       return colors.critical;
+    case 'transition':
+    case 'recovery':
+      return colors.positive;
   }
 }
 
@@ -45,6 +54,12 @@ function phaseBackground(phase: TrainingPhase): string {
       return colors.primaryDim;
     case 'base':
       return colors.primaryDim;
+    case 'aerobic_development':
+      return colors.primaryDim;
+    case 'threshold':
+    case 'vo2':
+    case 'race_specific':
+      return colors.accentDim;
     case 'build':
       return colors.accentDim;
     case 'peak':
@@ -53,16 +68,25 @@ function phaseBackground(phase: TrainingPhase): string {
       return colors.positiveDim;
     case 'taper':
       return colors.criticalDim;
+    case 'transition':
+    case 'recovery':
+      return colors.positiveDim;
   }
 }
 
 const PHASE_LABEL: Record<TrainingPhase, string> = {
   foundation: 'FDN',
   base:   'BASE',
+  aerobic_development: 'AER',
+  threshold: 'THR',
+  vo2: 'VO₂',
+  race_specific: 'RACE',
   build:  'BUILD',
   peak:   'PEAK',
   deload: 'DLD',
   taper:  'TPR',
+  transition: 'TRN',
+  recovery: 'REC',
 };
 
 // ─── Key workout by phase ──────────────────────────────────────────────────────
@@ -70,10 +94,16 @@ const PHASE_LABEL: Record<TrainingPhase, string> = {
 const PHASE_KEY_WORKOUT: Record<TrainingPhase, string> = {
   foundation: 'Run/Walk Intervals',
   base:   'Aerobic Base Run',
+  aerobic_development: 'Aerobic Capacity Run',
+  threshold: 'Threshold Session',
+  vo2: 'VO₂ Intervals',
+  race_specific: 'Race-Specific Session',
   build:  'Tempo / Threshold',
   peak:   'VO₂max Intervals',
   deload: 'Recovery Run',
   taper:  'Race-Pace Strides',
+  transition: 'Easy Reset Run',
+  recovery: 'Recovery Movement',
 };
 
 // ─── Run session counts by phase ──────────────────────────────────────────────
@@ -81,10 +111,16 @@ const PHASE_KEY_WORKOUT: Record<TrainingPhase, string> = {
 const PHASE_RUN_SESSIONS: Record<TrainingPhase, number> = {
   foundation: 3,
   base:   4,
+  aerobic_development: 4,
+  threshold: 4,
+  vo2: 4,
+  race_specific: 4,
   build:  5,
   peak:   5,
   deload: 3,
   taper:  4,
+  transition: 3,
+  recovery: 2,
 };
 
 // ─── Resolve phase for a given week ───────────────────────────────────────────

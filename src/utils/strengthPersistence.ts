@@ -38,6 +38,7 @@ export function completedExercisesFromActiveSession(
       bandLevel: entry.bandLevel,
       bandCustomLabel: entry.bandCustomLabel,
       holdSeconds: entry.holdSeconds,
+      distanceMeters: entry.distanceMeters,
       rpe: entry.rpe ?? rpeByExercise[exercise.id],
       isWarmup: entry.isWarmup,
       completed,
