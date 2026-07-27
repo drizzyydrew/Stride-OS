@@ -71,3 +71,16 @@ Release decision: PASS at ≥95% confidence, conditional on post-upload device Q
 (ducking/silent switch/interruption), Live Activity & Lock Screen sizing per activity type, and
 BLE hardware behavior (scan/pair/stream/dropout/reconnect/arbitration) — none of which can be
 physically exercised before TestFlight on this machine.
+
+## Release record
+
+- Release commit: `4a3c3253e1fc0994aa26ce7d768b33106113a777` — "StrideOS Build 45 — adaptive periodization, Stride Report, coaching, and connected equipment"
+- Pushed to `origin/build-19-v3-foundation`; local HEAD verified equal to remote HEAD
+- App version 1.0.0, iOS buildNumber 45 (bumped from 44 only after EAS history confirmed 45 unused)
+- EAS build: `11298b8b-0fbb-4d72-9b55-8d57e11b1f0d` — platform IOS, profile production, status FINISHED,
+  appVersion 1.0.0, appBuildVersion 45, gitCommitHash `4a3c325…` (exact release commit)
+- Artifact: `https://expo.dev/artifacts/eas/ALR8edPNK5b_S6Ap4QCyCCxhlZPUiFFW6NkjksTiigg.ipa`
+- TestFlight submission: `42cc9ceb-c2c5-40be-9801-10a60758db19` — upload to App Store Connect succeeded;
+  Apple-side processing was still pending at submission time (processing/export-compliance state must be
+  confirmed in App Store Connect)
+- Exactly one Build 45 EAS build was created; no duplicates; Build 44 was not resubmitted
