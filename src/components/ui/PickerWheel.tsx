@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Button from './Button';
 import { useColors } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
+import { composeDistanceHundredths, decomposeDistanceHundredths } from '../../utils/units';
 
 const ITEM_HEIGHT = 48;
 const VISIBLE_ROWS = 5;
@@ -55,7 +57,19 @@ type ChoicePickerWheelProps = {
   values:        { value: string; label: string }[];
   selectedValue: string;
   confirmLabel?: string;
+  renderExtra?:  (selectedValue: string) => ReactNode;
+  onDraftChange?: (value: string) => void;
   onConfirm:     (value: string) => void;
+  onClose:       () => void;
+};
+
+type DistanceHundredthsPickerWheelProps = {
+  visible:       boolean;
+  title:         string;
+  unitLabel:     string;
+  selectedValue: number;
+  confirmLabel?: string;
+  onConfirm:     (value: number) => void;
   onClose:       () => void;
 };
 
@@ -93,6 +107,7 @@ function WheelColumn({
         accessibilityRole="adjustable"
         accessibilityLabel={title ?? 'Picker'}
         accessibilityValue={{ text: format(selectedValue) }}
+        accessibilityHint="Swipe up or down to adjust the selected value."
         accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
         onAccessibilityAction={event => {
           if (event.nativeEvent.actionName === 'increment') adjustSelection(1);
@@ -112,7 +127,7 @@ function WheelColumn({
           snapToInterval={ITEM_HEIGHT}
           decelerationRate="fast"
           showsVerticalScrollIndicator={false}
-          style={{ height: ITEM_HEIGHT * VISIBLE_ROWS }}
+          style={styles.wheelList}
           contentContainerStyle={{ paddingVertical: ITEM_HEIGHT * 2 }}
           onMomentumScrollEnd={e => {
             const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT);
@@ -135,6 +150,53 @@ function WheelColumn({
   );
 }
 
+function PickerSheet({
+  visible,
+  title,
+  subtitle,
+  selectedLabel,
+  children,
+  footer,
+  onClose,
+}: {
+  visible: boolean;
+  title: string;
+  subtitle?: string;
+  selectedLabel?: string;
+  children: ReactNode;
+  footer: ReactNode;
+  onClose: () => void;
+}) {
+  const C = useColors();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.overlay} pointerEvents="auto">
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardWrap}>
+          <View style={[styles.sheet, { backgroundColor: C.card, borderColor: C.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
+            <View style={[styles.dragIndicator, { backgroundColor: C.border }]} />
+            <View style={styles.header}>
+              <Text style={[styles.title, { color: C.text }]}>{title}</Text>
+              {subtitle ? <Text style={[styles.subtitle, { color: C.textDim }]}>{subtitle}</Text> : null}
+            </View>
+            <View style={styles.viewport}>
+              {children}
+            </View>
+            {selectedLabel ? (
+              <Text accessibilityLiveRegion="polite" style={[styles.selectedLabel, { color: C.primary }]}>{selectedLabel}</Text>
+            ) : null}
+            <View style={[styles.divider, { backgroundColor: C.border }]} />
+            <View style={styles.actions}>
+              {footer}
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
+  );
+}
+
 // Generic iOS-style scrolling picker wheel: snap-to-interval FlatList with a
 // highlighted center row. Pass any numeric value list (weight increments,
 // RPE 1-10, reps, etc.) and an optional formatter for the display label.
@@ -149,28 +211,26 @@ export default function PickerWheel({
   const format = formatValue ?? ((v: number) => String(v));
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={[styles.sheet, { backgroundColor: C.card }]}>
-          <Text style={[styles.title, { color: C.text }]}>{title}</Text>
-
-          <WheelColumn
-            values={values}
-            selectedValue={selected}
-            visible={visible}
-            formatValue={value => format(Number(value))}
-            onChange={value => setSelected(Number(value))}
-          />
-
-          <Text accessibilityLiveRegion="polite" style={[styles.selectedLabel, { color: C.primary }]}>{format(selected)}</Text>
-
-          <View style={styles.actions}>
-            <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />
-            <Button label="Confirm" onPress={() => onConfirm(selected)} style={{ flex: 1 }} />
-          </View>
-        </View>
-      </View>
-    </Modal>
+    <PickerSheet
+      visible={visible}
+      title={title}
+      selectedLabel={format(selected)}
+      onClose={onClose}
+      footer={(
+        <>
+          <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />
+          <Button label="Confirm" onPress={() => onConfirm(selected)} style={{ flex: 1 }} />
+        </>
+      )}
+    >
+      <WheelColumn
+        values={values}
+        selectedValue={selected}
+        visible={visible}
+        formatValue={value => format(Number(value))}
+        onChange={value => setSelected(Number(value))}
+      />
+    </PickerSheet>
   );
 }
 
@@ -194,42 +254,38 @@ export function TwoColumnPickerWheel({
   const disabled = confirmDisabled?.(selectedValues) ?? false;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={[styles.sheet, { backgroundColor: C.card }]}>
-          <Text style={[styles.title, { color: C.text }]}>{title}</Text>
-          {subtitle ? <Text style={[styles.subtitle, { color: C.textDim }]}>{subtitle}</Text> : null}
-
-          <View style={styles.columnsRow}>
-            {columns.map(column => (
-              <WheelColumn
-                key={column.id}
-                title={column.title}
-                values={column.values}
-                selectedValue={selectedValues[column.id] ?? column.selectedValue}
-                visible={visible}
-                formatValue={value => column.formatValue?.(Number(value)) ?? String(value)}
-                onChange={value => setSelectedValues(previous => ({ ...previous, [column.id]: Number(value) }))}
-              />
-            ))}
-          </View>
-
-          <Text accessibilityLiveRegion="polite" style={[styles.selectedLabel, { color: C.primary }]}>
-            {columns.map(column => column.formatValue?.(selectedValues[column.id] ?? column.selectedValue) ?? String(selectedValues[column.id] ?? column.selectedValue)).join(' ')}
-          </Text>
-
-          <View style={styles.actions}>
-            <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />
-            <Button label={confirmLabel} onPress={() => onConfirm(selectedValues)} disabled={disabled} style={{ flex: 1 }} />
-          </View>
-        </View>
+    <PickerSheet
+      visible={visible}
+      title={title}
+      subtitle={subtitle}
+      selectedLabel={columns.map(column => column.formatValue?.(selectedValues[column.id] ?? column.selectedValue) ?? String(selectedValues[column.id] ?? column.selectedValue)).join(' ')}
+      onClose={onClose}
+      footer={(
+        <>
+          <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />
+          <Button label={confirmLabel} onPress={() => onConfirm(selectedValues)} disabled={disabled} style={{ flex: 1 }} />
+        </>
+      )}
+    >
+      <View style={styles.columnsRow}>
+        {columns.map(column => (
+          <WheelColumn
+            key={column.id}
+            title={column.title}
+            values={column.values}
+            selectedValue={selectedValues[column.id] ?? column.selectedValue}
+            visible={visible}
+            formatValue={value => column.formatValue?.(Number(value)) ?? String(value)}
+            onChange={value => setSelectedValues(previous => ({ ...previous, [column.id]: Number(value) }))}
+          />
+        ))}
       </View>
-    </Modal>
+    </PickerSheet>
   );
 }
 
 export function ChoicePickerWheel({
-  visible, title, subtitle, values, selectedValue, confirmLabel = 'Confirm', onConfirm, onClose,
+  visible, title, subtitle, values, selectedValue, confirmLabel = 'Confirm', renderExtra, onDraftChange, onConfirm, onClose,
 }: ChoicePickerWheelProps) {
   const C = useColors();
   const [selected, setSelected] = useState<string>(selectedValue);
@@ -240,30 +296,91 @@ export function ChoicePickerWheel({
 
   const labels = useMemo(() => new Map(values.map(value => [value.value, value.label])), [values]);
   const format = (value: PickerValue) => labels.get(String(value)) ?? String(value);
+  const changeSelected = (value: PickerValue) => {
+    const next = String(value);
+    setSelected(next);
+    onDraftChange?.(next);
+  };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={[styles.sheet, { backgroundColor: C.card }]}>
-          <Text style={[styles.title, { color: C.text }]}>{title}</Text>
-          {subtitle ? <Text style={[styles.subtitle, { color: C.textDim }]}>{subtitle}</Text> : null}
-          <WheelColumn
-            values={values.map(value => value.value)}
-            selectedValue={selected}
-            visible={visible}
-            formatValue={format}
-            onChange={value => setSelected(String(value))}
-          />
-          <Text accessibilityLiveRegion="polite" style={[styles.selectedLabel, { color: C.primary }]}>
-            {format(selected)}
-          </Text>
-          <View style={styles.actions}>
-            <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />
-            <Button label={confirmLabel} onPress={() => onConfirm(selected)} style={{ flex: 1 }} />
-          </View>
+    <PickerSheet
+      visible={visible}
+      title={title}
+      subtitle={subtitle}
+      selectedLabel={format(selected)}
+      onClose={onClose}
+      footer={(
+        <>
+          <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />
+          <Button label={confirmLabel} onPress={() => onConfirm(selected)} style={{ flex: 1 }} />
+        </>
+      )}
+    >
+      <WheelColumn
+        values={values.map(value => value.value)}
+        selectedValue={selected}
+        visible={visible}
+        formatValue={format}
+        onChange={changeSelected}
+      />
+      {renderExtra?.(selected)}
+    </PickerSheet>
+  );
+}
+
+export function DistanceHundredthsPickerWheel({
+  visible, title, unitLabel, selectedValue, confirmLabel = 'Confirm', onConfirm, onClose,
+}: DistanceHundredthsPickerWheelProps) {
+  const parts = decomposeDistanceHundredths(selectedValue);
+  const [selectedValues, setSelectedValues] = useState<Record<string, number>>(() => ({
+    whole: parts.whole,
+    tenths: parts.tenths,
+    hundredths: parts.hundredths,
+  }));
+
+  useEffect(() => {
+    if (!visible) return;
+    const next = decomposeDistanceHundredths(selectedValue);
+    setSelectedValues({ whole: next.whole, tenths: next.tenths, hundredths: next.hundredths });
+  }, [selectedValue, visible]);
+
+  const composed = composeDistanceHundredths(
+    selectedValues.whole ?? 0,
+    selectedValues.tenths ?? 0,
+    selectedValues.hundredths ?? 0,
+  );
+  const wholeValues = Array.from({ length: 101 }, (_, index) => index);
+  const digitValues = Array.from({ length: 10 }, (_, index) => index);
+  const change = (key: string, value: PickerValue) => {
+    setSelectedValues(previous => ({ ...previous, [key]: Number(value) }));
+  };
+
+  return (
+    <PickerSheet
+      visible={visible}
+      title={title}
+      subtitle="Whole number, tenths, and hundredths compose the stored distance without floating-point accumulation."
+      selectedLabel={`${composed.toFixed(2)} ${unitLabel}`}
+      onClose={onClose}
+      footer={(
+        <>
+          <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />
+          <Button label={confirmLabel} onPress={() => onConfirm(composed)} disabled={composed <= 0 || composed > 100} style={{ flex: 1 }} />
+        </>
+      )}
+    >
+      <View style={styles.distanceColumnsRow}>
+        <WheelColumn title="Whole" values={wholeValues} selectedValue={selectedValues.whole ?? 0} visible={visible} onChange={value => change('whole', value)} />
+        <View style={styles.decimalColumn} accessible={false}>
+          <Text style={styles.decimalText}>.</Text>
+        </View>
+        <WheelColumn title="Tenths" values={digitValues} selectedValue={selectedValues.tenths ?? 0} visible={visible} onChange={value => change('tenths', value)} />
+        <WheelColumn title="Hundredths" values={digitValues} selectedValue={selectedValues.hundredths ?? 0} visible={visible} onChange={value => change('hundredths', value)} />
+        <View style={styles.unitColumn} accessible accessibilityLabel={`Distance unit ${unitLabel}`}>
+          <Text style={styles.unitText}>{unitLabel}</Text>
         </View>
       </View>
-    </Modal>
+    </PickerSheet>
   );
 }
 
@@ -273,26 +390,51 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'flex-end',
   },
+  keyboardWrap: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
   sheet: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: spacing.xl,
-    paddingBottom: 40,
+    borderWidth: 1,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    maxHeight: '88%',
+  },
+  dragIndicator: {
+    width: 44,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+  },
+  header: {
+    gap: spacing.xs,
+    marginBottom: spacing.md,
   },
   title: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    marginBottom: spacing.md,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: FontSize.sm,
-    marginBottom: spacing.sm,
     textAlign: 'center',
+  },
+  viewport: {
+    minHeight: ITEM_HEIGHT * VISIBLE_ROWS,
+    maxHeight: ITEM_HEIGHT * VISIBLE_ROWS + 96,
+    justifyContent: 'center',
   },
   columnsRow: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  distanceColumnsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   column: {
     flex: 1,
@@ -310,7 +452,10 @@ const styles = StyleSheet.create({
     height: ITEM_HEIGHT * VISIBLE_ROWS,
     overflow: 'hidden',
     position: 'relative',
-    marginBottom: spacing.sm,
+    marginBottom: 0,
+  },
+  wheelList: {
+    height: ITEM_HEIGHT * VISIBLE_ROWS,
   },
   highlight: {
     position: 'absolute',
@@ -339,10 +484,38 @@ const styles = StyleSheet.create({
     fontSize: FontSize.base,
     fontWeight: FontWeight.bold,
     textAlign: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  divider: {
+    height: 1,
     marginBottom: spacing.md,
   },
   actions: {
     flexDirection: 'row',
     gap: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  decimalColumn: {
+    width: 12,
+    height: ITEM_HEIGHT * VISIBLE_ROWS,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: spacing.lg,
+  },
+  decimalText: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.black,
+  },
+  unitColumn: {
+    width: 34,
+    height: ITEM_HEIGHT * VISIBLE_ROWS,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: spacing.lg,
+  },
+  unitText: {
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.black,
   },
 });

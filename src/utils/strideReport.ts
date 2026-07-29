@@ -1,7 +1,9 @@
 import type { Activity } from '../types/activity';
 import type { Shoe } from '../store/gearStore';
+import type { UnitSystem } from '../store/settingsStore';
 import { evaluateAchievements, HEALTHY_ACHIEVEMENTS, type AchievementId } from './achievements';
 import { mostUsedShoe } from './gear';
+import { timestampToDateOnly } from './dateOnly';
 
 export type StrideReportPeriod = 'weekly' | 'monthly' | 'yearly';
 export type StrideReportShareVariant = 'clean_summary' | 'data_focus' | 'achievement_focus';
@@ -16,6 +18,33 @@ export type StrideReportHighlight = {
   label: string;
   value: string;
   detail?: string;
+};
+
+export type StrideReportShoeSummary = {
+  shoeId: string | null;
+  label: string;
+  active: boolean;
+  periodDistanceMiles: number;
+  periodRuns: number;
+  periodMinutes: number;
+  periodElevationGainMeters: number;
+  lifetimeDistanceMiles: number;
+  longestRunMiles: number;
+  reminderStatus: string | null;
+};
+
+export type StrideReportShoeReport = {
+  mostUsed: StrideReportShoeSummary | null;
+  highestElevation: StrideReportShoeSummary | null;
+  longestRun: StrideReportShoeSummary | null;
+  currentRotation: StrideReportShoeSummary[];
+  retiredDuringPeriod: StrideReportShoeSummary[];
+  byShoe: StrideReportShoeSummary[];
+  unassigned: StrideReportShoeSummary | null;
+  privacyDefaults: {
+    includePhotos: false;
+    includePrivateNotes: false;
+  };
 };
 
 export type StrideReportActivityReference = {
@@ -44,6 +73,7 @@ export type StrideReport = {
   longestRun: StrideReportActivityReference | null;
   highestElevationActivity: StrideReportActivityReference | null;
   mostUsedShoe: { label: string; miles: number } | null;
+  shoeReport: StrideReportShoeReport;
   mostUsedRoute: { routeId: string; activityCount: number; miles: number } | null;
   healthyAchievements: StrideReportHighlight[];
   highlights: StrideReportHighlight[];
@@ -83,6 +113,7 @@ type StrideReportBase = Omit<StrideReport, 'highlights' | 'privacyDefaults'>;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const METERS_PER_MILE = 1609.344;
+const FEET_PER_METER = 3.28084;
 
 const PERIOD_DAYS: Record<StrideReportPeriod, number> = {
   weekly: 7,
@@ -116,6 +147,23 @@ function minutesFromSeconds(value: unknown): number {
 function round(value: number, digits = 1): number {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
+}
+
+export function formatReportDistance(miles: number, units: UnitSystem, digits = 1): string {
+  return units === 'metric'
+    ? `${(miles * 1.609344).toFixed(digits)} km`
+    : `${miles.toFixed(digits)} mi`;
+}
+
+export function formatReportElevation(meters: number | null | undefined, units: UnitSystem): string {
+  if (meters == null || !Number.isFinite(meters)) return 'No elevation';
+  return units === 'metric'
+    ? `${Math.round(meters)} m`
+    : `${Math.round(meters * FEET_PER_METER).toLocaleString()} ft`;
+}
+
+export function formatReportDuration(minutes: number): string {
+  return `${Math.round(minutes)} min`;
 }
 
 function dateLabel(timestamp: number): string {
@@ -212,6 +260,108 @@ function mostUsedRouteFor(activities: readonly Activity[]): StrideReport['mostUs
   return top ? { ...top, miles: round(top.miles, 1) } : null;
 }
 
+function shoeLabel(shoe: Shoe | undefined, shoeId: string | null): string {
+  if (!shoeId) return 'Unassigned';
+  if (!shoe) return 'Unknown Shoe';
+  return `${shoe.brand} ${shoe.model}`.trim();
+}
+
+function reminderStatus(shoe: Shoe | undefined, lifetimeMiles: number): string | null {
+  if (!shoe?.reminderThresholdMiles) return null;
+  return lifetimeMiles >= shoe.reminderThresholdMiles
+    ? `${Math.round(lifetimeMiles)} mi logged. Consider checking wear.`
+    : `${Math.max(0, Math.round(shoe.reminderThresholdMiles - lifetimeMiles))} mi until reminder.`;
+}
+
+function buildShoeReport(
+  periodActivities: readonly Activity[],
+  allActivities: readonly Activity[],
+  shoes: readonly Shoe[],
+  range: StrideReportRange,
+): StrideReportShoeReport {
+  const shoeMap = new Map(shoes.map(shoe => [shoe.id, shoe]));
+  const summaries = new Map<string, StrideReportShoeSummary>();
+  const keyFor = (shoeId: string | undefined) => shoeId || '__unassigned__';
+
+  function ensure(shoeId: string | undefined): StrideReportShoeSummary {
+    const key = keyFor(shoeId);
+    const existing = summaries.get(key);
+    if (existing) return existing;
+    const shoe = shoeId ? shoeMap.get(shoeId) : undefined;
+    const summary: StrideReportShoeSummary = {
+      shoeId: shoeId ?? null,
+      label: shoeLabel(shoe, shoeId ?? null),
+      active: shoe ? shoe.active : false,
+      periodDistanceMiles: 0,
+      periodRuns: 0,
+      periodMinutes: 0,
+      periodElevationGainMeters: 0,
+      lifetimeDistanceMiles: 0,
+      longestRunMiles: 0,
+      reminderStatus: null,
+    };
+    summaries.set(key, summary);
+    return summary;
+  }
+
+  for (const activity of periodActivities) {
+    if (!isQualifyingRun(activity)) continue;
+    const summary = ensure(activity.shoeId);
+    const miles = milesFromMeters(activity.metrics.distanceMeters);
+    summary.periodDistanceMiles += miles;
+    summary.periodRuns += 1;
+    summary.periodMinutes += minutesFromSeconds(activity.metrics.durationSeconds ?? activity.metrics.activeTimeSeconds);
+    if (hasValidElevation(activity)) summary.periodElevationGainMeters += safeNumber(activity.metrics.elevationGainMeters) ?? 0;
+    summary.longestRunMiles = Math.max(summary.longestRunMiles, miles);
+  }
+
+  for (const activity of allActivities) {
+    if (!isQualifyingRun(activity) || !activity.shoeId) continue;
+    const summary = ensure(activity.shoeId);
+    summary.lifetimeDistanceMiles += milesFromMeters(activity.metrics.distanceMeters);
+  }
+
+  for (const shoe of shoes) {
+    const summary = ensure(shoe.id);
+    summary.reminderStatus = reminderStatus(shoe, summary.lifetimeDistanceMiles);
+  }
+
+  const byShoe = [...summaries.values()]
+    .map(summary => ({
+      ...summary,
+      periodDistanceMiles: round(summary.periodDistanceMiles, 1),
+      periodMinutes: round(summary.periodMinutes, 0),
+      periodElevationGainMeters: round(summary.periodElevationGainMeters, 0),
+      lifetimeDistanceMiles: round(summary.lifetimeDistanceMiles, 1),
+      longestRunMiles: round(summary.longestRunMiles, 1),
+    }))
+    .filter(summary => summary.periodRuns > 0 || summary.lifetimeDistanceMiles > 0 || summary.active)
+    .sort((a, b) => b.periodDistanceMiles - a.periodDistanceMiles || b.periodRuns - a.periodRuns);
+
+  const periodOnly = byShoe.filter(summary => summary.periodRuns > 0);
+  const currentRotation = byShoe.filter(summary => summary.active && summary.shoeId !== null);
+  const retiredDuringPeriod = byShoe.filter(summary => {
+    if (!summary.shoeId) return false;
+    const shoe = shoeMap.get(summary.shoeId);
+    return Boolean(shoe?.retirementDate && Date.parse(`${shoe.retirementDate}T12:00:00`) >= range.startTime && Date.parse(`${shoe.retirementDate}T12:00:00`) <= range.endTime);
+  });
+  const unassigned = byShoe.find(summary => summary.shoeId === null) ?? null;
+
+  return {
+    mostUsed: periodOnly[0] ?? null,
+    highestElevation: [...periodOnly].sort((a, b) => b.periodElevationGainMeters - a.periodElevationGainMeters)[0] ?? null,
+    longestRun: [...periodOnly].sort((a, b) => b.longestRunMiles - a.longestRunMiles)[0] ?? null,
+    currentRotation,
+    retiredDuringPeriod,
+    byShoe,
+    unassigned,
+    privacyDefaults: {
+      includePhotos: false,
+      includePrivateNotes: false,
+    },
+  };
+}
+
 function buildHighlights(report: StrideReportBase): StrideReportHighlight[] {
   const highlights: StrideReportHighlight[] = [
     {
@@ -281,7 +431,7 @@ export function buildStrideReport(input: BuildStrideReportInput): StrideReport {
     .filter(activity => activity.startTime >= range.startTime && activity.startTime <= range.endTime)
     .filter(isCompletedTraining);
   const qualifyingRuns = periodActivities.filter(isQualifyingRun);
-  const activeDays = new Set(periodActivities.map(activity => new Date(activity.startTime).toISOString().slice(0, 10)));
+  const activeDays = new Set(periodActivities.map(activity => timestampToDateOnly(activity.startTime)));
   const validElevationActivities = periodActivities.filter(hasValidElevation);
 
   const totalDistanceMiles = periodActivities.reduce(
@@ -340,6 +490,7 @@ export function buildStrideReport(input: BuildStrideReportInput): StrideReport {
       label: `${topShoe.shoe.brand} ${topShoe.shoe.model}`.trim(),
       miles: topShoe.miles,
     } : null,
+    shoeReport: buildShoeReport(periodActivities, input.activities, input.shoes ?? [], range),
     mostUsedRoute: mostUsedRouteFor(periodActivities),
     healthyAchievements,
     upcomingFocus: input.period === 'weekly' ? input.upcomingFocus : undefined,
@@ -355,11 +506,12 @@ export function buildStrideReport(input: BuildStrideReportInput): StrideReport {
 export function buildStrideReportSharePayload(
   report: StrideReport,
   variant: StrideReportShareVariant,
+  units: UnitSystem = 'imperial',
 ): StrideReportSharePayload {
   const headline = variant === 'achievement_focus' && report.healthyAchievements[0]
     ? report.healthyAchievements[0].value
     : variant === 'data_focus'
-      ? `${report.totals.distanceMiles.toFixed(1)} miles · ${Math.round(report.totals.trainingMinutes)} minutes`
+      ? `${formatReportDistance(report.totals.distanceMiles, units)} · ${formatReportDuration(report.totals.trainingMinutes)}`
       : `${report.range.label} with StrideOS`;
 
   return {

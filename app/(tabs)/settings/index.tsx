@@ -34,7 +34,7 @@ import { useMovementStore } from '../../../src/store/movementStore';
 import { useActionPlanStore } from '../../../src/store/actionPlanStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
-import { toYMD, parseYMD } from '../../../src/utils/calendarEngine';
+import { parseYMD } from '../../../src/utils/calendarEngine';
 import type { TrainingGoalType, Race, RacePriority } from '../../../src/types/plan';
 import type { RaceDistance } from '../../../src/types/training';
 import { getAppleHealthWriteStatus, isAppleHealthAvailable, requestPermissions as requestHealthPermissions } from '../../../src/lib/healthKit';
@@ -48,6 +48,8 @@ import {
 import { LAYOUT } from '../../../src/constants/layout';
 import PickerWheel from '../../../src/components/ui/PickerWheel';
 import { formatYMDForDisplay, parseDisplayDateToYMD } from '../../../src/utils/dateFormatting';
+import StrideDateField from '../../../src/components/ui/StrideDateField';
+import { todayDateOnly } from '../../../src/utils/dateOnly';
 import { testVoiceCoaching } from '../../../src/lib/voiceCoach';
 
 function formatHeight(heightCm: number, imperial: boolean) {
@@ -173,7 +175,7 @@ type RaceFormState = {
   priority: RacePriority;
 };
 
-const EMPTY_RACE_FORM: RaceFormState = { id: null, name: '', date: '', distance: 'half_marathon', priority: 'A' };
+const EMPTY_RACE_FORM: RaceFormState = { id: null, name: '', date: todayDateOnly(), distance: 'half_marathon', priority: 'A' };
 
 export default function SettingsScreen() {
   const C = useColors();
@@ -206,7 +208,7 @@ export default function SettingsScreen() {
   const updatePlanRace   = useTrainingPlanStore(s => s.updateRace);
   const removePlanRace   = useTrainingPlanStore(s => s.removeRace);
 
-  const [startDateDraft, setStartDateDraft] = useState(formatYMDForDisplay(planStartDate ?? toYMD(new Date())));
+  const [startDateDraft, setStartDateDraft] = useState(planStartDate ?? todayDateOnly());
   const [raceForm, setRaceForm] = useState<RaceFormState | null>(null);
   const [raceFormError, setRaceFormError] = useState('');
 
@@ -223,7 +225,7 @@ export default function SettingsScreen() {
     if (!raceForm) return;
     if (!raceForm.name.trim()) { setRaceFormError('Give the race a name.'); return; }
     const normalizedDate = normalizeDisplayPlanDate(raceForm.date);
-    if (!normalizedDate) { setRaceFormError('Enter a valid date as MM-DD-YYYY.'); return; }
+    if (!normalizedDate) { setRaceFormError('Choose a valid race date.'); return; }
 
     if (raceForm.id) {
       updatePlanRace(raceForm.id, {
@@ -262,13 +264,14 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        <TextInput
-          value={raceForm.date}
-          onChangeText={v => setRaceForm(f => f && { ...f, date: v })}
-          placeholder={formatYMDForDisplay(toYMD(new Date()))}
-          placeholderTextColor={C.textDim}
-          keyboardType="numbers-and-punctuation"
-          style={[styles.profileInput, { backgroundColor: C.card, borderColor: C.border, color: C.text }]}
+        <StrideDateField
+          label="Race Date"
+          value={normalizeDisplayPlanDate(raceForm.date) ?? todayDateOnly()}
+          onChange={v => setRaceForm(f => f && { ...f, date: v })}
+          title="Race Date"
+          minDate={todayDateOnly()}
+          error={raceFormError && !normalizeDisplayPlanDate(raceForm.date) ? raceFormError : null}
+          accessibilityHint="Opens a calendar. Past race dates are disabled."
         />
         <View style={styles.pillRow}>
           {RACE_PRIORITY_OPTIONS.map(p => (
@@ -916,14 +919,15 @@ export default function SettingsScreen() {
         <View style={[styles.settingRow, { borderBottomColor: C.border, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>
           <Text style={[styles.settingTitle, { color: C.text }]}>Program Start Date</Text>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-            <TextInput
-              value={startDateDraft}
-              onChangeText={setStartDateDraft}
-              placeholder={formatYMDForDisplay(toYMD(new Date()))}
-              placeholderTextColor={C.textDim}
-              keyboardType="numbers-and-punctuation"
-              style={[styles.profileInput, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text, flex: 1 }]}
-            />
+            <View style={{ flex: 1 }}>
+              <StrideDateField
+                label="Program Start Date"
+                value={normalizeDisplayPlanDate(startDateDraft) ?? todayDateOnly()}
+                onChange={setStartDateDraft}
+                title="Program Start Date"
+                helper="Supported training-engine dates are saved exactly as selected."
+              />
+            </View>
             {(() => {
               const normalizedStartDate = normalizeDisplayPlanDate(startDateDraft);
               return normalizedStartDate && normalizedStartDate !== (planStartDate ?? '') ? (
@@ -933,15 +937,15 @@ export default function SettingsScreen() {
               ) : null;
             })()}
           </View>
-          {startDateDraft && !normalizeDisplayPlanDate(startDateDraft) && (
-            <Text style={{ fontSize: 11, color: C.critical }}>Use MM-DD-YYYY format.</Text>
-          )}
+          {startDateDraft && !normalizeDisplayPlanDate(startDateDraft) ? (
+            <Text style={{ fontSize: 11, color: C.critical }}>Choose a valid program start date.</Text>
+          ) : null}
         </View>
 
         <View style={{ paddingTop: 12 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <Text style={[styles.settingTitle, { color: C.text }]}>Races</Text>
-            <TouchableOpacity onPress={() => { setRaceForm(raceForm ? null : { ...EMPTY_RACE_FORM }); setRaceFormError(''); }}>
+            <TouchableOpacity onPress={() => { setRaceForm(raceForm ? null : { ...EMPTY_RACE_FORM, date: todayDateOnly() }); setRaceFormError(''); }}>
               <Text style={{ fontSize: 12, fontWeight: '700', color: C.primary }}>{raceForm ? 'Cancel' : '+ Add Race'}</Text>
             </TouchableOpacity>
           </View>
@@ -961,7 +965,7 @@ export default function SettingsScreen() {
                     {RACE_DISTANCE_OPTIONS.find(d => d.key === race.distance)?.label ?? race.distance} · {formatYMDForDisplay(race.date)} · Priority {race.priority === 'tune_up' ? 'Tune-Up' : race.priority}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={() => { setRaceForm({ id: race.id, name: race.name, date: formatYMDForDisplay(race.date), distance: race.distance, priority: race.priority }); setRaceFormError(''); }} style={{ padding: 6 }}>
+                <TouchableOpacity onPress={() => { setRaceForm({ id: race.id, name: race.name, date: race.date, distance: race.distance, priority: race.priority }); setRaceFormError(''); }} style={{ padding: 6 }}>
                   <Ionicons name="pencil-outline" size={16} color={C.textMuted} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => removePlanRace(race.id)} style={{ padding: 6 }}>

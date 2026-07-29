@@ -62,7 +62,7 @@ const DOW_TO_IDX: Record<TrainingDay, number> = {
 // ─── Date utilities ────────────────────────────────────────────────────────────
 
 export function toYMD(d: Date): string {
-  return d.toISOString().split('T')[0]!;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 // Parses a "YYYY-MM-DD" string as a LOCAL midnight Date (avoids the UTC-shift

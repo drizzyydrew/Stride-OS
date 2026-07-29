@@ -17,7 +17,9 @@ import {
   type ZoneMethod,
 } from '../../../src/types/athlete';
 import { formatPace, formatRaceTime, vdotFromRacePR } from '../../../src/utils/calibrationEngine';
-import { formatYMDForDisplay, parseDisplayDateToYMD } from '../../../src/utils/dateFormatting';
+import { formatYMDForDisplay } from '../../../src/utils/dateFormatting';
+import StrideDateField from '../../../src/components/ui/StrideDateField';
+import { todayDateOnly } from '../../../src/utils/dateOnly';
 
 const DISTANCES: { key: StandardDistance; label: string }[] = [
   { key: '5k', label: '5K' },
@@ -50,7 +52,7 @@ function parsePaceToSeconds(value: string) {
 }
 
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return todayDateOnly();
 }
 
 export default function CalibrationScreen() {
@@ -76,7 +78,7 @@ export default function CalibrationScreen() {
 
   const [distance, setDistance] = useState<StandardDistance>('5k');
   const [prTime, setPrTime] = useState('');
-  const [prDate, setPrDate] = useState(formatYMDForDisplay(today()));
+  const [prDate, setPrDate] = useState(today());
   const [restingHr, setRestingHr] = useState(profile?.hrResting ? String(profile.hrResting) : '');
   const [maxHr, setMaxHr] = useState(profile?.hrMax ? String(profile.hrMax) : '');
   const [thresholdHr, setThresholdHr] = useState(profile?.thresholdTest?.avgHRLastTwentyMin ? String(profile.thresholdTest.avgHRLastTwentyMin) : '');
@@ -123,7 +125,7 @@ export default function CalibrationScreen() {
       distanceLabel: label,
       distanceMeters: meters,
       timeSeconds: seconds,
-      date: parseDisplayDateToYMD(prDate) ?? today(),
+      date: prDate || today(),
       official: true,
     };
     addRacePR(profile.athleteId, pr);
@@ -264,7 +266,16 @@ export default function CalibrationScreen() {
         </View>
         <View style={styles.formRow}>
           <Field C={C} label="Time" value={prTime} onChangeText={setPrTime} placeholder="22:30" />
-          <Field C={C} label="Date" value={prDate} onChangeText={setPrDate} placeholder="MM-DD-YYYY" />
+          <View style={{ flex: 1 }}>
+            <StrideDateField
+              label="Date"
+              value={prDate}
+              onChange={setPrDate}
+              title="Race PR Date"
+              maxDate={today()}
+              accessibilityHint="Opens a calendar. Future PR dates are disabled."
+            />
+          </View>
         </View>
         <TouchableOpacity style={[styles.secondaryBtn, { borderColor: C.primary }]} onPress={addPr}>
           <Text style={[styles.secondaryText, { color: C.primary }]}>Add PR</Text>

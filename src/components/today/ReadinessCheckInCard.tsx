@@ -181,12 +181,19 @@ function TrainingFactorPicker({
   const [open, setOpen] = useState(false);
   const [otherText, setOtherText] = useState(value?.startsWith('other:') ? value.slice('other:'.length).trim() : '');
   const selectedValue = value?.startsWith('other:') ? 'other' : value ?? '';
+  const [pendingValue, setPendingValue] = useState(selectedValue);
+  const [pendingOtherText, setPendingOtherText] = useState(otherText);
+  function openPicker() {
+    setPendingValue(selectedValue);
+    setPendingOtherText(value?.startsWith('other:') ? value.slice('other:'.length).trim() : otherText);
+    setOpen(true);
+  }
 
   return (
     <View style={styles.row}>
       <Text style={[styles.rowLabel, { color: C.textDim }]}>Anything affecting today's training?</Text>
       <Pressable
-        onPress={() => setOpen(true)}
+        onPress={openPicker}
         accessibilityRole="button"
         accessibilityLabel={`Training factor, ${factorLabel(value)}`}
         accessibilityHint="Opens a picker wheel"
@@ -202,14 +209,36 @@ function TrainingFactorPicker({
         visible={open}
         title="Anything affecting training?"
         values={FACTOR_CHOICES.map(choice => ({ value: choice.value, label: choice.label }))}
-        selectedValue={selectedValue}
+        selectedValue={pendingValue}
         confirmLabel="Set Factor"
+        onDraftChange={next => setPendingValue(next)}
+        renderExtra={draftValue => draftValue === 'other' ? (
+          <TextInput
+            value={pendingOtherText}
+            onChangeText={setPendingOtherText}
+            placeholder="Add a short note"
+            placeholderTextColor={C.textDim}
+            style={[styles.otherInput, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
+            accessibilityLabel="Other training factor note"
+            returnKeyType="done"
+          />
+        ) : null}
         onConfirm={next => {
-          onChange(next);
-          if (next !== 'other') setOtherText('');
+          if (next === 'other') {
+            const trimmed = pendingOtherText.trim();
+            setOtherText(trimmed);
+            onChange(trimmed ? `other:${trimmed}` : 'other:');
+          } else {
+            setOtherText('');
+            onChange(next);
+          }
           setOpen(false);
         }}
-        onClose={() => setOpen(false)}
+        onClose={() => {
+          setPendingValue(selectedValue);
+          setPendingOtherText(otherText);
+          setOpen(false);
+        }}
       />
       {selectedValue === 'other' ? (
         <TextInput

@@ -37,7 +37,7 @@ import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import { useExperienceModeAllows } from '../../../src/hooks/useExperienceMode';
 import { addDays as addCalendarDays, toYMD } from '../../../src/utils/calendarEngine';
 import type { RichWorkout } from '../../../src/types/workout';
-import PickerWheel from '../../../src/components/ui/PickerWheel';
+import PickerWheel, { DistanceHundredthsPickerWheel } from '../../../src/components/ui/PickerWheel';
 import {
   effectiveAttachedRoute,
   useRouteStore,
@@ -94,12 +94,6 @@ const RUN_MODE_OPTIONS: { key: RunMode; label: string; icon: keyof typeof Ionico
 ];
 
 const TIME_GOAL_VALUES = Array.from({ length: 35 }, (_, i) => 10 + i * 5);            // 10–180 min
-const DISTANCE_GOAL_VALUES = (() => {
-  const list: number[] = [];
-  for (let v = 1; v <= 30; v += 0.5) list.push(Math.round(v * 10) / 10);
-  for (const race of [3.1, 6.2, 13.1, 26.2]) if (!list.includes(race)) list.push(race);
-  return list.sort((a, b) => a - b);
-})();
 const RACE_PACE_VALUES = Array.from({ length: 121 }, (_, i) => 300 + i * 5);           // 5:00–15:00 /mi
 
 function todayWorkoutIndex(): number {
@@ -1873,21 +1867,21 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         onConfirm={v => { setGoalMinutesInput(v); setGoalPickerFor(null); }}
         onClose={() => setGoalPickerFor(null)}
       />
-      <PickerWheel
+      <DistanceHundredthsPickerWheel
         visible={goalPickerFor === 'distance'}
-        title={`Run distance (${distUnit})`}
-        values={DISTANCE_GOAL_VALUES}
+        title="Run distance"
+        unitLabel={distUnit}
         selectedValue={goalMilesInput}
-        formatValue={v => `${v} ${distUnit}`}
+        confirmLabel="Set Distance"
         onConfirm={v => { setGoalMilesInput(v); setGoalPickerFor(null); }}
         onClose={() => setGoalPickerFor(null)}
       />
-      <PickerWheel
+      <DistanceHundredthsPickerWheel
         visible={goalPickerFor === 'raceDist'}
-        title={`Race distance (${distUnit})`}
-        values={DISTANCE_GOAL_VALUES}
+        title="Race distance"
+        unitLabel={distUnit}
         selectedValue={raceMilesInput}
-        formatValue={v => `${v} ${distUnit}`}
+        confirmLabel="Set Distance"
         onConfirm={v => { setRaceMilesInput(v); setGoalPickerFor(null); }}
         onClose={() => setGoalPickerFor(null)}
       />

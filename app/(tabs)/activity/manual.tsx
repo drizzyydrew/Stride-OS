@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
+import StrideDateField from '../../../src/components/ui/StrideDateField';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useRecalculationStore } from '../../../src/store/recalculationStore';
 import { useRouteStore } from '../../../src/store/routeStore';
@@ -38,6 +39,7 @@ import { displayLabel } from '../../../src/utils/displayLabels';
 import { categoryFromActivityType, categoryFromScheduledType, classifySubstitution } from '../../../src/utils/substitution';
 import { formatPrescriptionWithSets } from '../../../src/utils/prescriptionFormat';
 import { runRecalculation } from '../../../src/lib/recalculation';
+import { dateOnlyToLocalTimestamp, timestampToDateOnly, todayDateOnly } from '../../../src/utils/dateOnly';
 
 const TYPES: { key: string; type: ActivityType; subtype?: ActivitySubtype; label: string }[] = [
   { key: 'running', type: 'running', subtype: 'outdoor', label: 'Running' },
@@ -69,40 +71,6 @@ const TYPES: { key: string; type: ActivityType; subtype?: ActivitySubtype; label
 function numeric(value: string): number | undefined {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
-}
-
-function toDateInput(timestamp: number): string {
-  const date = new Date(timestamp);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function toTimeInput(timestamp: number): string {
-  const date = new Date(timestamp);
-  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-}
-
-function parseLocalStartTime(dateText: string, timeText: string, fallback: number): number {
-  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateText.trim());
-  const timeMatch = /^(\d{1,2}):(\d{2})$/.exec(timeText.trim());
-  if (!dateMatch || !timeMatch) return fallback;
-  const year = Number(dateMatch[1]);
-  const month = Number(dateMatch[2]);
-  const day = Number(dateMatch[3]);
-  const hour = Number(timeMatch[1]);
-  const minute = Number(timeMatch[2]);
-  const date = new Date(year, month - 1, day, hour, minute, 0, 0);
-  return Number.isFinite(date.getTime()) ? date.getTime() : fallback;
-}
-
-function localTimeZoneLabel(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Device time zone';
-  } catch {
-    return 'Device time zone';
-  }
 }
 
 // 'other' now covers two picker entries (Active Recovery + generic Other) —
@@ -173,8 +141,7 @@ export default function ManualActivityScreen() {
   const activityType = selectedType.type;
   const [completionState, setCompletionState] = useState<CompletionState>(prefillActivity?.status === 'partial' ? 'partial' : 'completed_as_planned');
   const [durationMinutes, setDurationMinutes] = useState(String(Math.round(initialDurationSeconds / 60)));
-  const [activityDate, setActivityDate] = useState(toDateInput(initialStartTime));
-  const [startTimeText, setStartTimeText] = useState(toTimeInput(initialStartTime));
+  const [activityDate, setActivityDate] = useState(timestampToDateOnly(initialStartTime));
   const [refreshResult, setRefreshResult] = useState<'idle' | 'success' | 'error'>('idle');
   const [distance, setDistance] = useState('');
   const [distanceUnit, setDistanceUnit] = useState<'mi' | 'km'>('mi');
@@ -200,8 +167,7 @@ export default function ManualActivityScreen() {
     if (prefillActivity.metrics.maximumHeartRateBpm) setMaximumHr(String(prefillActivity.metrics.maximumHeartRateBpm));
     if (prefillActivity.rpe) setRpe(String(prefillActivity.rpe));
     if (prefillActivity.notes) setNotes(prefillActivity.notes);
-    setActivityDate(toDateInput(prefillActivity.startTime));
-    setStartTimeText(toTimeInput(prefillActivity.startTime));
+    setActivityDate(timestampToDateOnly(prefillActivity.startTime));
   }, [prefillActivity]);
 
   const isSwim = activityType === 'swimming';
@@ -244,7 +210,7 @@ export default function ManualActivityScreen() {
   function commitSave(options: { unlinkSchedule?: boolean; classification?: ReturnType<typeof classifySubstitution>['classification'] } = {}) {
     const minutes = numeric(durationMinutes) ?? 1;
     const effectiveScheduledSession = options.unlinkSchedule ? null : scheduledSession;
-    const startTime = parseLocalStartTime(activityDate, startTimeText, initialStartTime);
+    const startTime = dateOnlyToLocalTimestamp(activityDate);
     const draft = buildManualActivityDraft(effectiveScheduledSession, {
       activityType,
       completionState,
@@ -359,16 +325,16 @@ export default function ManualActivityScreen() {
 
           <Text style={[s.label, { color: C.textDim }]}>WHEN</Text>
           <View style={s.grid}>
-            <DateField label="Activity date" value={activityDate} onChange={setActivityDate} placeholder="YYYY-MM-DD" />
-            <DateField label="Start time" value={startTimeText} onChange={setStartTimeText} placeholder="HH:MM" />
-          </View>
-          <View style={[s.timeZoneCard, { backgroundColor: C.card, borderColor: C.border }]}>
-            <Ionicons name="time-outline" size={17} color={C.primary} />
-            <View style={{ flex: 1 }}>
-              <Text style={[s.fieldLabel, { color: C.textDim }]}>TIME ZONE</Text>
-              <Text style={[s.helper, { color: C.textMuted }]}>
-                Saved using {localTimeZoneLabel()}. Backdated activities stay in history and only influence future plan decisions when they fall inside the engine’s reliable adaptation window.
-              </Text>
+            <View style={s.fullWidthField}>
+              <StrideDateField
+                label="Activity Date"
+                value={activityDate}
+                onChange={setActivityDate}
+                title="Activity Date"
+                maxDate={todayDateOnly()}
+                helper="Backdated activities stay on the selected calendar day and can refresh future plan decisions."
+                accessibilityHint="Opens a calendar. Future activity dates are disabled."
+              />
             </View>
           </View>
 
@@ -597,29 +563,6 @@ function Field({ label, value, onChange, suffix, optional }: {
   );
 }
 
-function DateField({ label, value, onChange, placeholder }: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-}) {
-  const C = useColors();
-  return (
-    <View style={[s.field, { backgroundColor: C.card, borderColor: C.border }]}>
-      <Text style={[s.fieldLabel, { color: C.textDim }]}>{label.toUpperCase()}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChange}
-        keyboardType="numbers-and-punctuation"
-        placeholder={placeholder}
-        placeholderTextColor={C.textMuted}
-        style={[s.input, { color: C.text }]}
-        accessibilityLabel={label}
-      />
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
   safe: { flex: 1 },
   saveButton: { minWidth: 70, minHeight: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
@@ -635,6 +578,7 @@ const s = StyleSheet.create({
   fieldTitle: { fontSize: 14, fontWeight: '900' },
   helper: { fontSize: 11, lineHeight: 16, marginTop: 5 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  fullWidthField: { width: '100%' },
   unitRow: { flexDirection: 'row', alignItems: 'stretch', gap: 8, marginTop: 10, marginBottom: 4, flexWrap: 'wrap' },
   unitButton: { minHeight: 42, borderRadius: 13, borderWidth: 1, paddingHorizontal: 13, alignItems: 'center', justifyContent: 'center' },
   paceBadge: { minHeight: 42, borderRadius: 13, borderWidth: 1, paddingHorizontal: 13, justifyContent: 'center', flexGrow: 1 },

@@ -1,12 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { StrideReport } from '../../utils/strideReport';
+import type { UnitSystem } from '../../store/settingsStore';
+import { formatReportDistance, type StrideReport } from '../../utils/strideReport';
 
 type Props = {
   report: StrideReport;
+  units: UnitSystem;
 };
 
-export default function ShareCardAchievementFocus({ report }: Props) {
+export default function ShareCardAchievementFocus({ report, units }: Props) {
   const achievement = report.healthyAchievements[0] ?? {
     value: 'Healthy Consistency',
     detail: 'Training that supports the next week, not just today.',
@@ -19,7 +21,7 @@ export default function ShareCardAchievementFocus({ report }: Props) {
       <Text style={s.copy}>{achievement.detail}</Text>
       <View style={s.summary}>
         <Text style={s.summaryValue}>{report.totals.activeDays}</Text>
-        <Text style={s.summaryLabel}>active days · {report.totals.distanceMiles.toFixed(1)} mi</Text>
+        <Text style={s.summaryLabel}>active days · {formatReportDistance(report.totals.distanceMiles, units)}</Text>
       </View>
     </View>
   );

@@ -10,19 +10,19 @@ import {
   normalizedMarkerFromDrag,
 } from '../../src/utils/markerEditing';
 
-test('user-facing date helpers display MM-DD-YYYY and store ISO without timezone shifting', () => {
-  assert.equal(formatYMDForDisplay('2026-10-18'), '10-18-2026');
+test('user-facing date helpers display MM/DD/YYYY and store ISO without timezone shifting', () => {
+  assert.equal(formatYMDForDisplay('2026-10-18'), '10/18/2026');
   assert.equal(formatYMDForDisplay(null), '');
+  assert.equal(parseDisplayDateToYMD('10/18/2026'), '2026-10-18');
   assert.equal(parseDisplayDateToYMD('10-18-2026'), '2026-10-18');
-  assert.equal(parseDisplayDateToYMD('2026-10-18'), null);
+  assert.equal(parseDisplayDateToYMD('2026-10-18'), '2026-10-18');
 });
 
 test('onboarding date and PR inputs use picker sheets instead of free-text ISO or steppers', () => {
   const goal = readFileSync('app/onboarding/goal.tsx', 'utf8');
   const race = readFileSync('app/onboarding/race.tsx', 'utf8');
 
-  assert.match(goal, /RACE DATE \(MM-DD-YYYY\)/);
-  assert.match(goal, /MultiColumnPickerSheet/);
+  assert.match(goal, /StrideDateField/);
   assert.doesNotMatch(goal, /placeholder="YYYY-MM-DD"/);
   assert.match(race, /Hours/);
   assert.match(race, /Minutes/);
@@ -31,7 +31,7 @@ test('onboarding date and PR inputs use picker sheets instead of free-text ISO o
   assert.doesNotMatch(race, /onPress=\{\(\) => adjust/);
 });
 
-test('settings, calibration, and manual logging expose MM-DD-YYYY date entry', () => {
+test('settings, calibration, and manual logging expose shared MM/DD/YYYY date entry', () => {
   const settings = readFileSync('app/(tabs)/settings/index.tsx', 'utf8');
   const calibration = readFileSync('app/(tabs)/profile/calibration.tsx', 'utf8');
   const logModal = readFileSync('src/components/shared/LogWorkoutModal.tsx', 'utf8');
@@ -41,11 +41,11 @@ test('settings, calibration, and manual logging expose MM-DD-YYYY date entry', (
     assert.doesNotMatch(source, /Use YYYY-MM-DD format/);
   }
 
-  assert.match(settings, /Enter a valid date as MM-DD-YYYY/);
+  assert.match(settings, /StrideDateField/);
   assert.match(settings, /formatYMDForDisplay\(race\.date\)/);
-  assert.match(calibration, /placeholder="MM-DD-YYYY"/);
-  assert.match(logModal, /placeholder="MM-DD-YYYY"/);
-  assert.match(logModal, /parseDisplayDateToYMD\(dateDisplay\)/);
+  assert.match(calibration, /StrideDateField/);
+  assert.match(logModal, /StrideDateField/);
+  assert.doesNotMatch(logModal, /parseDisplayDateToYMD\(dateDisplay\)/);
 });
 
 test('AI Coach strips raw Markdown and emoji-like pictographs before display', () => {

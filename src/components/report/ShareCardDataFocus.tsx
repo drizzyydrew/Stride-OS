@@ -1,18 +1,20 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { StrideReport } from '../../utils/strideReport';
+import type { UnitSystem } from '../../store/settingsStore';
+import { formatReportDistance, formatReportDuration, formatReportElevation, type StrideReport } from '../../utils/strideReport';
 
 type Props = {
   report: StrideReport;
+  units: UnitSystem;
 };
 
-export default function ShareCardDataFocus({ report }: Props) {
+export default function ShareCardDataFocus({ report, units }: Props) {
   const stats = [
-    ['Distance', `${report.totals.distanceMiles.toFixed(1)} mi`],
-    ['Training', `${Math.round(report.totals.trainingMinutes)} min`],
+    ['Distance', formatReportDistance(report.totals.distanceMiles, units)],
+    ['Training', formatReportDuration(report.totals.trainingMinutes)],
     ['Runs', `${report.totals.runs}`],
     ['Active days', `${report.totals.activeDays}`],
-    ['Elevation', `${Math.round(report.totals.elevationGainMeters)} m`],
+    ['Elevation', formatReportElevation(report.totals.elevationGainMeters, units)],
     ['Strength', `${report.totals.strengthSessions}`],
   ];
 

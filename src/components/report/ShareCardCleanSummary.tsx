@@ -1,19 +1,21 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { StrideReport } from '../../utils/strideReport';
+import type { UnitSystem } from '../../store/settingsStore';
+import { formatReportDistance, formatReportDuration, type StrideReport } from '../../utils/strideReport';
 
 type Props = {
   report: StrideReport;
+  units: UnitSystem;
 };
 
-export default function ShareCardCleanSummary({ report }: Props) {
+export default function ShareCardCleanSummary({ report, units }: Props) {
   return (
     <View style={s.card} collapsable={false}>
       <Text style={s.eyebrow}>STRIDEOS</Text>
       <Text style={s.title}>{report.range.label}</Text>
-      <Text style={s.hero}>{report.totals.distanceMiles.toFixed(1)} mi</Text>
+      <Text style={s.hero}>{formatReportDistance(report.totals.distanceMiles, units)}</Text>
       <Text style={s.subtitle}>
-        {Math.round(report.totals.trainingMinutes)} minutes · {report.totals.activeDays} active days
+        {formatReportDuration(report.totals.trainingMinutes)} · {report.totals.activeDays} active days
       </Text>
       <View style={s.rule} />
       {report.highlights.slice(0, 3).map(item => (

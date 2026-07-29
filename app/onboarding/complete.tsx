@@ -21,6 +21,7 @@ import { useProfileStore }       from '../../src/store/profileStore';
 import { useAthleteStore }       from '../../src/store/athleteStore';
 import { useTrainingPlanStore }  from '../../src/store/trainingPlanStore';
 import { toYMD }                 from '../../src/utils/calendarEngine';
+import { todayDateOnly }         from '../../src/utils/dateOnly';
 import { vdotFromRacePR, estimateHRMax } from '../../src/utils/calibrationEngine';
 import { buildGoalRaceLabel } from '../../src/utils/goalRaceEngine';
 import { colors }  from '../../src/theme/colors';
@@ -172,7 +173,7 @@ export default function CompleteScreen() {
         distanceLabel:  DISTANCE_LABELS[data.prDistance],
         distanceMeters: DISTANCE_METERS[data.prDistance],
         timeSeconds:    data.prTimeSeconds,
-        date:           data.prDate || new Date().toISOString().split('T')[0],
+        date:           data.prDate || todayDateOnly(),
         official:       false,
       };
       addRacePR(activeAthleteId, pr);

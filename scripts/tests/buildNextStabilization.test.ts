@@ -184,8 +184,9 @@ test('fresh activity store migration does not seed demo history', () => {
   assert.doesNotMatch(source, /Downhill skiing|fake|demo activity|sample user history/i);
 });
 
-test('date display is MM-DD-YYYY while storage stays ISO', () => {
-  assert.equal(formatYMDForDisplay('2026-10-18'), '10-18-2026');
+test('date display is MM/DD/YYYY while storage stays ISO', () => {
+  assert.equal(formatYMDForDisplay('2026-10-18'), '10/18/2026');
+  assert.equal(parseDisplayDateToYMD('10/18/2026'), '2026-10-18');
   assert.equal(parseDisplayDateToYMD('10-18-2026'), '2026-10-18');
 });
 

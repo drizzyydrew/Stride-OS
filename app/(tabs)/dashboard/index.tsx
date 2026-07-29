@@ -278,6 +278,9 @@ export default function TodayScreen() {
   const [editingCheckIn, setEditingCheckIn] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [outlookRationaleOpen, setOutlookRationaleOpen] = useState(false);
+  const [outlookHistoryOpen, setOutlookHistoryOpen] = useState(false);
+  const [forecastDetailsOpen, setForecastDetailsOpen] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [openOptionSection, setOpenOptionSection] = useState<'today' | 'plan' | 'help' | null>(null);
   const experienceMode = useExperienceMode();
@@ -580,58 +583,95 @@ export default function TodayScreen() {
       )}
 
       {/* Training Outlook */}
-      {showBalancedDetails ? <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.cardLabel, { color: C.textDim }]}>TRAINING OUTLOOK</Text>
         <Text style={[styles.outlookTitle, { color: C.text }]}>{trainingOutlook.statusLabel}</Text>
         <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{trainingOutlook.message}</Text>
-        <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{trainingOutlook.recommendation}</Text>
-        <View style={styles.forecastRow}>
-          <View style={[styles.forecastCell, { backgroundColor: C.cardAlt }]}>
-            <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>Load</Text>
-            <Text style={[styles.forecastCellDate, { color: C.text }]}>{trainingOutlook.loadStateLabel}</Text>
+        {showBalancedDetails ? (
+          <View style={styles.outlookDecisionStack}>
+            <View style={[styles.outlookDecisionRow, { borderColor: C.border, backgroundColor: C.cardAlt }]}>
+              <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>Training Focus</Text>
+              <Text style={[styles.outlookValue, { color: C.text }]}>{trainingOutlook.focus ?? 'Aerobic Foundation'}</Text>
+            </View>
+            <View style={[styles.outlookDecisionRow, { borderColor: C.border, backgroundColor: C.cardAlt }]}>
+              <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>Recommended Action</Text>
+              <Text style={[styles.outlookValue, { color: C.text }]}>{trainingOutlook.recommendation}</Text>
+            </View>
           </View>
-          <View style={[styles.forecastCell, { backgroundColor: C.cardAlt }]}>
-            <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>Focus</Text>
-            <Text style={[styles.forecastCellDate, { color: C.text }]}>{trainingOutlook.focus ?? 'Build consistency'}</Text>
-          </View>
-        </View>
+        ) : (
+          <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{trainingOutlook.recommendation}</Text>
+        )}
+        {showBalancedDetails ? (
+          <TouchableOpacity
+            onPress={() => setOutlookRationaleOpen(open => !open)}
+            style={styles.disclosureButton}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: outlookRationaleOpen }}
+          >
+            <Text style={[styles.updateCheckInText, { color: C.primary }]}>Why? {outlookRationaleOpen ? '−' : '+'}</Text>
+          </TouchableOpacity>
+        ) : null}
+        {showBalancedDetails && outlookRationaleOpen ? (
+          <Text style={[styles.outlookCopy, { color: C.textMuted }]}>
+            {trainingOutlook.focus ? `Why this is the focus: ${trainingOutlook.focus}. ` : 'Why this is the focus: build consistency before adding more stress. '}
+            {trainingOutlook.message}
+          </Text>
+        ) : null}
         {showDataRichDetails ? (
+          <TouchableOpacity
+            onPress={() => setOutlookHistoryOpen(open => !open)}
+            style={styles.disclosureButton}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: outlookHistoryOpen }}
+          >
+            <Text style={[styles.advancedLink, { color: C.textDim }]}>History and Confidence {outlookHistoryOpen ? '−' : '+'}</Text>
+          </TouchableOpacity>
+        ) : null}
+        {showDataRichDetails && outlookHistoryOpen ? (
           <View style={[styles.outlookDataBox, { borderTopColor: C.border }]}>
             <Text style={[styles.advancedText, { color: C.textDim }]}>
-              History {trainingOutlook.historyWeeks} week{trainingOutlook.historyWeeks === 1 ? '' : 's'} · completed {trainingOutlook.completedActivities} · ACWR-style workload trend {trainingOutlook.loadTrend.ratio.toFixed(2)} · confidence {trainingOutlook.confidence}
+              History {trainingOutlook.historyWeeks} week{trainingOutlook.historyWeeks === 1 ? '' : 's'} · completed {trainingOutlook.completedActivities} · adherence and workload analysis update after completed, skipped, edited, deleted, backdated, deload, interruption, readiness, and plan-change events · confidence {trainingOutlook.confidence}
             </Text>
           </View>
         ) : null}
-      </View> : null}
+      </View>
 
       {/* Performance Forecast */}
       {showBalancedDetails ? <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.cardLabel, { color: C.textDim }]}>PERFORMANCE FORECAST</Text>
-        <Text style={[styles.outlookTitle, { color: C.text }]}>{performanceForecast.metrics[0]?.state ?? 'Developing'}</Text>
         <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{performanceForecast.summary}</Text>
-        <View style={styles.performanceMetricList}>
+        <View style={styles.forecastSummaryGrid}>
           {performanceForecast.metrics.map(metric => (
-            <View key={metric.key} style={[styles.performanceMetricRow, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
-              <View style={{ flex: 1 }}>
+            <View key={metric.key} style={[styles.forecastSummaryCell, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+              <View style={styles.forecastMetricHeader}>
                 <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>{metric.label}</Text>
-                <Text style={[styles.forecastState, { color: C.text }]}>{metric.state}</Text>
-                <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{metric.summary}</Text>
+                <TouchableOpacity
+                  onPress={() => Alert.alert(metric.label, `${metric.info}\n\nConfidence: ${performanceForecast.confidence}. ${performanceForecast.limitations}`)}
+                  style={[styles.metricInfoButton, { backgroundColor: C.card, borderColor: C.border }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`About ${metric.label}`}
+                  accessibilityHint="Explains contributing data, confidence, and limitations."
+                >
+                  <Ionicons name="information-circle-outline" size={19} color={C.primary} />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                onPress={() => Alert.alert(metric.label, `${metric.info}\n\nConfidence: ${performanceForecast.confidence}. ${performanceForecast.limitations}`)}
-                style={[styles.metricInfoButton, { backgroundColor: C.card, borderColor: C.border }]}
-                accessibilityRole="button"
-                accessibilityLabel={`About ${metric.label}`}
-                accessibilityHint="Explains contributing data, confidence, and limitations."
-              >
-                <Ionicons name="information-circle-outline" size={19} color={C.primary} />
-              </TouchableOpacity>
+              <Text style={[styles.forecastState, { color: C.text }]}>{metric.visualLabel ?? metric.state}</Text>
             </View>
           ))}
         </View>
         {showDataRichDetails ? (
+          <TouchableOpacity
+            onPress={() => setForecastDetailsOpen(open => !open)}
+            style={styles.disclosureButton}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: forecastDetailsOpen }}
+          >
+            <Text style={[styles.advancedLink, { color: C.textDim }]}>Forecast Details {forecastDetailsOpen ? '−' : '+'}</Text>
+          </TouchableOpacity>
+        ) : null}
+        {showDataRichDetails && forecastDetailsOpen ? (
           <Text style={[styles.advancedText, { color: C.textDim }]}>
-            Forecast confidence {performanceForecast.confidence}. {performanceForecast.limitations}
+            {performanceForecast.metrics.map(metric => `${metric.label}: ${metric.summary}`).join(' ')} Forecast confidence {performanceForecast.confidence}. {performanceForecast.limitations}
           </Text>
         ) : null}
       </View> : null}
@@ -1010,6 +1050,20 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 10,
   },
+  outlookDecisionStack: {
+    gap: 8,
+    marginTop: 12,
+  },
+  outlookDecisionRow: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+  },
+  outlookValue: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '900',
+  },
   workoutMeta: {
     fontSize: 13,
     lineHeight: 20,
@@ -1071,6 +1125,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     alignItems: 'flex-start',
+  },
+  forecastSummaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  forecastSummaryCell: {
+    flexGrow: 1,
+    flexBasis: '31%',
+    minWidth: 96,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+  },
+  forecastMetricHeader: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 6,
   },
   forecastState: {
     fontSize: 15,

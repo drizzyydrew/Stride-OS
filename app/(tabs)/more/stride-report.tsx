@@ -12,10 +12,14 @@ import { LAYOUT } from '../../../src/constants/layout';
 import { shareCardUnavailableReason, shareReportCard } from '../../../src/lib/shareCard';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useGearStore } from '../../../src/store/gearStore';
+import { useSettingsStore, type UnitSystem } from '../../../src/store/settingsStore';
 import { useColors } from '../../../src/theme/useColors';
 import {
   buildStrideReport,
   buildStrideReportSharePayload,
+  formatReportDistance,
+  formatReportDuration,
+  formatReportElevation,
   type StrideReport,
   type StrideReportPeriod,
   type StrideReportShareVariant,
@@ -62,10 +66,10 @@ function PeriodButton({
   );
 }
 
-function SharePreview({ variant, report }: { variant: StrideReportShareVariant; report: StrideReport }) {
-  if (variant === 'data_focus') return <ShareCardDataFocus report={report} />;
-  if (variant === 'achievement_focus') return <ShareCardAchievementFocus report={report} />;
-  return <ShareCardCleanSummary report={report} />;
+function SharePreview({ variant, report, units }: { variant: StrideReportShareVariant; report: StrideReport; units: UnitSystem }) {
+  if (variant === 'data_focus') return <ShareCardDataFocus report={report} units={units} />;
+  if (variant === 'achievement_focus') return <ShareCardAchievementFocus report={report} units={units} />;
+  return <ShareCardCleanSummary report={report} units={units} />;
 }
 
 export default function StrideReportScreen() {
@@ -76,6 +80,7 @@ export default function StrideReportScreen() {
   const [shareMessage, setShareMessage] = useState<string | null>(shareCardUnavailableReason());
   const activities = useActivityStore(state => state.activities);
   const shoes = useGearStore(state => state.shoes);
+  const units = useSettingsStore(state => state.units);
   const cardRef = useRef<View>(null);
 
   const report = useMemo(
@@ -87,7 +92,7 @@ export default function StrideReportScreen() {
     }),
     [activities, period, shoes],
   );
-  const sharePayload = useMemo(() => buildStrideReportSharePayload(report, variant), [report, variant]);
+  const sharePayload = useMemo(() => buildStrideReportSharePayload(report, variant, units), [report, units, variant]);
 
   async function handleShare() {
     setShareMessage(null);
@@ -103,7 +108,7 @@ export default function StrideReportScreen() {
       <View style={{ paddingTop: insets.top }}>
         <ScreenHeader
           eyebrow="STRIDE REPORT"
-          title="Training Report"
+          title="Stride Report"
           onBack={() => router.back()}
         />
       </View>
@@ -128,7 +133,7 @@ export default function StrideReportScreen() {
         <View style={[s.summaryCard, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>{report.range.label.toUpperCase()}</Text>
           <Text style={[s.title, { color: C.text }]}>
-            {report.totals.distanceMiles.toFixed(1)} miles · {Math.round(report.totals.trainingMinutes)} minutes
+            {formatReportDistance(report.totals.distanceMiles, units)} · {formatReportDuration(report.totals.trainingMinutes)}
           </Text>
           <Text style={[s.copy, { color: C.textMuted }]}>
             Retrospective training summary only. Route maps, exact locations, symptoms, readiness details, and private notes are excluded by default.
@@ -140,8 +145,8 @@ export default function StrideReportScreen() {
 
         <View style={s.statGrid}>
           <ReportStatPill label="Active days" value={`${report.totals.activeDays}`} />
-          <ReportStatPill label="Runs" value={`${report.totals.runs}`} detail={report.totals.averageRunMiles === null ? 'No qualifying runs' : `${report.totals.averageRunMiles.toFixed(1)} mi avg`} />
-          <ReportStatPill label="Elevation" value={`${Math.round(report.totals.elevationGainMeters)} m`} detail={report.totals.averageElevationGainMeters === null ? 'Outdoor elevation only' : `${Math.round(report.totals.averageElevationGainMeters)} m avg`} />
+          <ReportStatPill label="Runs" value={`${report.totals.runs}`} detail={report.totals.averageRunMiles === null ? 'No qualifying runs' : `${formatReportDistance(report.totals.averageRunMiles, units)} avg`} />
+          <ReportStatPill label="Elevation" value={formatReportElevation(report.totals.elevationGainMeters, units)} detail={report.totals.averageElevationGainMeters === null ? 'Outdoor elevation only' : `${formatReportElevation(report.totals.averageElevationGainMeters, units)} avg`} />
           <ReportStatPill label="Strength" value={`${report.totals.strengthSessions}`} detail={`${report.totals.crossTrainingSessions} cross-training`} />
         </View>
 
@@ -158,6 +163,55 @@ export default function StrideReportScreen() {
           )) : (
             <Text style={[s.copy, { color: C.textMuted }]}>No completed training in this period yet.</Text>
           )}
+        </View>
+
+        <View style={[s.summaryCard, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[s.eyebrow, { color: C.textDim }]}>SHOE REPORT</Text>
+          {report.shoeReport.mostUsed ? (
+            <View style={[s.highlightRow, { borderBottomColor: C.separator }]}>
+              <View style={s.highlightCopy}>
+                <Text style={[s.highlightLabel, { color: C.text }]}>Most Used</Text>
+                <Text style={[s.highlightDetail, { color: C.textMuted }]}>
+                  {formatReportDistance(report.shoeReport.mostUsed.periodDistanceMiles, units)} across {report.shoeReport.mostUsed.periodRuns} run{report.shoeReport.mostUsed.periodRuns === 1 ? '' : 's'}
+                </Text>
+              </View>
+              <Text style={[s.highlightValue, { color: C.primary }]}>{report.shoeReport.mostUsed.label}</Text>
+            </View>
+          ) : (
+            <Text style={[s.copy, { color: C.textMuted }]}>No assigned running shoes in this period yet.</Text>
+          )}
+          {report.shoeReport.highestElevation ? (
+            <View style={[s.highlightRow, { borderBottomColor: C.separator }]}>
+              <View style={s.highlightCopy}>
+                <Text style={[s.highlightLabel, { color: C.text }]}>Highest-Elevation Shoe</Text>
+                <Text style={[s.highlightDetail, { color: C.textMuted }]}>
+                  {formatReportElevation(report.shoeReport.highestElevation.periodElevationGainMeters, units)} across {report.shoeReport.highestElevation.periodRuns} run{report.shoeReport.highestElevation.periodRuns === 1 ? '' : 's'}
+                </Text>
+              </View>
+              <Text style={[s.highlightValue, { color: C.primary }]}>{report.shoeReport.highestElevation.label}</Text>
+            </View>
+          ) : null}
+          {report.shoeReport.currentRotation.length > 0 ? (
+            <>
+              <Text style={[s.sectionTitleSmall, { color: C.text }]}>Current Rotation</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.shoeCardRow}>
+                {report.shoeReport.currentRotation.map(summary => (
+                  <View key={summary.shoeId ?? 'unassigned'} style={[s.shoeCard, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+                    <Text style={[s.shoeCardTitle, { color: C.text }]} numberOfLines={2}>{summary.label}</Text>
+                    <Text style={[s.highlightDetail, { color: C.textMuted }]}>{formatReportDistance(summary.periodDistanceMiles, units)} period</Text>
+                    <Text style={[s.highlightDetail, { color: C.textMuted }]}>{formatReportDistance(summary.lifetimeDistanceMiles, units)} lifetime</Text>
+                    {summary.reminderStatus ? <Text style={[s.highlightDetail, { color: C.textMuted }]}>{summary.reminderStatus}</Text> : null}
+                  </View>
+                ))}
+              </ScrollView>
+            </>
+          ) : null}
+          {report.shoeReport.unassigned ? (
+            <Text style={[s.copy, { color: C.textMuted }]}>
+              Unassigned: {formatReportDistance(report.shoeReport.unassigned.periodDistanceMiles, units)} across {report.shoeReport.unassigned.periodRuns} run{report.shoeReport.unassigned.periodRuns === 1 ? '' : 's'}.
+            </Text>
+          ) : null}
+          <Text style={[s.copy, { color: C.textMuted }]}>Shoe photos and private notes are excluded from shared reports by default.</Text>
         </View>
 
         <View>
@@ -186,7 +240,7 @@ export default function StrideReportScreen() {
         </View>
 
         <View ref={cardRef} collapsable={false} style={s.previewWrap}>
-          <SharePreview variant={variant} report={report} />
+          <SharePreview variant={variant} report={report} units={units} />
         </View>
 
         <Pressable
@@ -293,6 +347,30 @@ const s = StyleSheet.create({
     fontSize: 18,
     fontWeight: '900',
     marginBottom: 10,
+  },
+  sectionTitleSmall: {
+    fontSize: 14,
+    fontWeight: '900',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  shoeCardRow: {
+    gap: 10,
+    paddingRight: 18,
+    paddingBottom: 4,
+  },
+  shoeCard: {
+    width: 172,
+    minHeight: 118,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+  },
+  shoeCardTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '900',
+    marginBottom: 4,
   },
   variantGrid: {
     flexDirection: 'row',

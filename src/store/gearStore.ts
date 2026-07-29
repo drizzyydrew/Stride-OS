@@ -9,6 +9,9 @@ export type Shoe = {
   model: string;
   addedAt: number;
   active: boolean;
+  purchaseDate?: string;
+  firstUseDate?: string;
+  retirementDate?: string;
   typicalUse?: string;
   surface?: string;
   notes?: string;

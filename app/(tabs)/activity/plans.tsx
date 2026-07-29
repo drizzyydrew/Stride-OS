@@ -26,7 +26,8 @@ import {
 } from '../../../src/utils/beginnerPlans';
 import { displayLabel } from '../../../src/utils/displayLabels';
 import { formatYMDForDisplay } from '../../../src/utils/dateFormatting';
-import MultiColumnPickerSheet from '../../../src/components/ui/MultiColumnPickerSheet';
+import StrideDateField from '../../../src/components/ui/StrideDateField';
+import { todayDateOnly } from '../../../src/utils/dateOnly';
 
 const GOALS = Object.values(BEGINNER_PLAN_DEFINITIONS);
 
@@ -40,21 +41,7 @@ const CONTINUOUS_RUN_DISTANCE_OPTIONS = [
 ];
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
-const DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
-const YEARS = Array.from({ length: 8 }, (_, index) => new Date().getFullYear() + index);
-
-function dateParts(value: string) {
-  const fallback = today();
-  const [year, month, day] = (value || fallback).split('-').map(Number);
-  return {
-    year: Number.isFinite(year) ? year : new Date().getFullYear(),
-    month: Number.isFinite(month) ? month : new Date().getMonth() + 1,
-    day: Number.isFinite(day) ? day : new Date().getDate(),
-  };
+  return todayDateOnly();
 }
 
 export default function TrainingPathsScreen() {
@@ -74,7 +61,6 @@ export default function TrainingPathsScreen() {
   const [continuousRunDistanceMeters, setContinuousRunDistanceMeters] = useState(0);
   const [acknowledgeVisible, setAcknowledgeVisible] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
-  const [targetPickerVisible, setTargetPickerVisible] = useState(false);
 
   const input = useMemo<BeginnerPlanReadinessInput>(() => ({
     goal: selectedGoal,
@@ -238,16 +224,16 @@ export default function TrainingPathsScreen() {
             ))}
           </View>
           <Text style={[s.label, { color: C.textDim }]}>REQUESTED TARGET DATE · OPTIONAL</Text>
-          <TouchableOpacity
-            style={[s.input, { backgroundColor: C.cardAlt, borderColor: recommendation.accelerated ? C.warning : C.border, justifyContent: 'center' }]}
-            onPress={() => setTargetPickerVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Choose requested target date"
-          >
-            <Text style={{ color: targetDate ? C.text : C.textMuted, fontSize: 14, fontWeight: '800' }}>
-              {targetDate ? formatYMDForDisplay(targetDate) : `Recommended: ${formatYMDForDisplay(recommendation.earliestSupportedTargetDate)}`}
-            </Text>
-          </TouchableOpacity>
+          <StrideDateField
+            label="Requested Target Date"
+            value={targetDate || recommendation.earliestSupportedTargetDate}
+            onChange={setTargetDate}
+            title="Requested Target Date"
+            minDate={today()}
+            error={recommendation.accelerated ? 'This target date is earlier than StrideOS recommends.' : null}
+            helper={targetDate ? undefined : `Recommended: ${formatYMDForDisplay(recommendation.earliestSupportedTargetDate)}`}
+            accessibilityHint="Opens a calendar. Past target dates are disabled."
+          />
         </View>
 
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
@@ -305,23 +291,6 @@ export default function TrainingPathsScreen() {
           </View>
         </View>
       </Modal>
-      <MultiColumnPickerSheet
-        visible={targetPickerVisible}
-        title="Target Date"
-        columns={(() => {
-          const parts = dateParts(targetDate || recommendation.earliestSupportedTargetDate);
-          return [
-            { key: 'month', title: 'Month', values: MONTHS, selectedValue: parts.month, formatValue: value => String(value).padStart(2, '0') },
-            { key: 'day', title: 'Day', values: DAYS, selectedValue: parts.day, formatValue: value => String(value).padStart(2, '0') },
-            { key: 'year', title: 'Year', values: YEARS, selectedValue: parts.year },
-          ];
-        })()}
-        onClose={() => setTargetPickerVisible(false)}
-        onConfirm={values => {
-          setTargetDate(`${values.year}-${String(values.month).padStart(2, '0')}-${String(values.day).padStart(2, '0')}`);
-          setTargetPickerVisible(false);
-        }}
-      />
     </SafeAreaView>
   );
 }

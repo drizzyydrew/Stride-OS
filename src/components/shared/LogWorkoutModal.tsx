@@ -20,6 +20,7 @@ import {
 import { useState } from 'react';
 
 import NumberInput from '../ui/NumberInput';
+import StrideDateField from '../ui/StrideDateField';
 import { colors }  from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
@@ -31,7 +32,7 @@ import type {
   ExerciseLogEntry,
   SetEntry,
 } from '../../types/customWorkout';
-import { formatYMDForDisplay, parseDisplayDateToYMD } from '../../utils/dateFormatting';
+import { todayDateOnly } from '../../utils/dateOnly';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -148,10 +149,10 @@ export default function LogWorkoutModal({
   currentFatigue, recentEasyLoad, setFatigueScore, setRecentEasyLoad,
   defaultDate, overrideId,
 }: LogWorkoutModalProps) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayDateOnly();
 
   const [category,     setCategory]     = useState<CustomWorkoutCategory>('running');
-  const [dateDisplay,  setDateDisplay]  = useState(formatYMDForDisplay(defaultDate ?? today));
+  const [activityDate, setActivityDate] = useState(defaultDate ?? today);
   const [rpe,          setRpe]          = useState(5);
   const [notes,        setNotes]        = useState('');
 
@@ -184,7 +185,7 @@ export default function LogWorkoutModal({
   }
 
   function handleSave() {
-    const savedDate = parseDisplayDateToYMD(dateDisplay) ?? defaultDate ?? today;
+    const savedDate = activityDate || defaultDate || today;
     const source = defaultDate && defaultDate < today ? 'backdated' : overrideId ? 'override' : 'custom';
 
     const base = {
@@ -222,7 +223,7 @@ export default function LogWorkoutModal({
   }
 
   function resetForm() {
-    setCategory('running'); setDateDisplay(formatYMDForDisplay(defaultDate ?? today)); setRpe(5); setNotes('');
+    setCategory('running'); setActivityDate(defaultDate ?? today); setRpe(5); setNotes('');
     setRunType('easy'); setDurMin(45); setDistMi(0);
     setSFocus('lower'); setSDurMin(45); setExercises([]);
     setCrossType('bike'); setCrossDurMin(45); setCrossDistMi(0);
@@ -254,15 +255,13 @@ export default function LogWorkoutModal({
         <ScrollView style={s.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Date */}
           <View style={s.section}>
-            <SLabel label="DATE" />
-            <TextInput
-              style={s.dateInput}
-              value={dateDisplay}
-              onChangeText={setDateDisplay}
-              placeholder="MM-DD-YYYY"
-              placeholderTextColor={colors.textSubtle}
-              keyboardType="numbers-and-punctuation"
-              returnKeyType="done"
+            <StrideDateField
+              label="Activity Date"
+              value={activityDate}
+              onChange={setActivityDate}
+              title="Activity Date"
+              maxDate={today}
+              accessibilityHint="Opens a calendar. Future workout dates are disabled."
             />
           </View>
 
@@ -432,15 +431,6 @@ const s = StyleSheet.create({
     fontSize:      10,
     fontWeight:    FontWeight.black,
     letterSpacing: 0.6,
-  },
-  dateInput: {
-    backgroundColor: colors.card,
-    borderRadius:    Radius.sm,
-    borderWidth:     1,
-    borderColor:     colors.border,
-    color:           colors.text,
-    fontSize:        FontSize.base,
-    padding:         spacing.md,
   },
   catRow: {
     flexDirection: 'row',

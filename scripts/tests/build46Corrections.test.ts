@@ -81,9 +81,10 @@ test('Today more-options controls expose button and accordion accessibility cont
 
 test('manual activity logging supports backdating and explicit plan refresh', () => {
   const source = readFileSync('app/(tabs)/activity/manual.tsx', 'utf8');
-  assert.match(source, /label="Activity date"/);
-  assert.match(source, /label="Start time"/);
-  assert.match(source, /parseLocalStartTime/);
+  assert.match(source, /label="Activity Date"/);
+  assert.doesNotMatch(source, /label="Start time"/);
+  assert.doesNotMatch(source, /TIME ZONE/);
+  assert.match(source, /dateOnlyToLocalTimestamp/);
   assert.match(source, /startTime,/);
   assert.match(source, /Refresh Training Plan/);
   assert.match(source, /manual_refresh/);

@@ -55,6 +55,7 @@ export type PerformanceForecastMetric = {
   key: 'peak_window' | 'race_readiness' | 'training_load_trend';
   label: string;
   state: 'Estimated' | 'Developing' | 'Insufficient History' | 'On Track' | 'Progressing Cautiously' | 'Recovery Needed' | 'Maintaining' | 'Updated After Plan Change';
+  visualLabel?: string;
   summary: string;
   info: string;
 };
@@ -246,6 +247,14 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
     outlook.loadState === 'recovering' || outlook.loadState === 'deloading' ? 'Maintaining' :
     outlook.loadState === 'insufficient_data' ? 'Insufficient History' :
     'On Track';
+  const loadVisualLabel =
+    outlook.loadState === 'ramping_quickly' ? 'Warning: Ramping Quickly' :
+    outlook.loadState === 'recovering' ? 'Down: Reducing' :
+    outlook.loadState === 'deloading' ? 'Down-right: Deloading' :
+    outlook.loadState === 'building' ? 'Up: Building' :
+    outlook.loadState === 'returning' ? 'Up: Building Cautiously' :
+    outlook.loadState === 'stable' ? 'Right: Stable' :
+    'Developing';
 
   const peakSummary = insufficient
     ? 'Need more completed training before naming a peak window.'
@@ -266,6 +275,7 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         key: 'peak_window',
         label: 'Peak Window',
         state: peakState,
+        visualLabel: insufficient ? 'Not Yet Available' : peakState,
         summary: peakSummary,
         info: 'Uses phase, weeks to race, completed sessions, adherence depth, load trend, deload timing, and recent plan edits. It avoids a precise date when confidence is limited.',
       },
@@ -273,6 +283,7 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         key: 'race_readiness',
         label: 'Race Readiness',
         state: readinessState,
+        visualLabel: insufficient ? 'Developing' : readinessState,
         summary: outlook.status === 'recovery_needed'
           ? 'Recovery signals should lead before projecting race readiness.'
           : outlook.status === 'progressing_cautiously'
@@ -286,6 +297,7 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         key: 'training_load_trend',
         label: 'Training Load Trend',
         state: loadState,
+        visualLabel: loadVisualLabel,
         summary: `Current workload ratio is ${outlook.loadTrend.ratio.toFixed(2)} with ${outlook.completedActivities} completed session${outlook.completedActivities === 1 ? '' : 's'} in scope.`,
         info: 'Compares recent completed training load with prior load while preserving completed history separately from planned sessions. Sudden edits or backdated entries can change this.',
       },
