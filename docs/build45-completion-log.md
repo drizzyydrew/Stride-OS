@@ -84,3 +84,35 @@ physically exercised before TestFlight on this machine.
   Apple-side processing was still pending at submission time (processing/export-compliance state must be
   confirmed in App Store Connect)
 - Exactly one Build 45 EAS build was created; no duplicates; Build 44 was not resubmitted
+
+## Build 46 correction-pass addendum (2026-07-29)
+
+Target release: StrideOS Build 46. App version remains 1.0.0; iOS buildNumber was changed from 45 to 46 only after EAS iOS build history confirmed no Build 46 artifact in the latest 30 iOS builds. Latest EAS iOS production builds before the bump were 45 (`11298b8b-0fbb-4d72-9b55-8d57e11b1f0d`, commit `4a3c3253e1fc0994aa26ce7d768b33106113a777`), 44, 43, 42, and 41.
+
+Implemented correction scope:
+
+- Light-theme semantic color tokens were strengthened without changing the dark identity. Measured light ratios include `primary #6F513A` on `#EFE7DA` 5.87:1, `textMuted #5F6B68` on `#EFE7DA` 4.52:1, `warning #7A5A28` on `#EFE7DA` 5.15:1, `critical #8A332D` on `#EFE7DA` 6.60:1, and selected surface `#E4D5C5` against muted text 3.86:1.
+- Today now places Weather/AQI directly under greeting; More Options is a visible button and opens collapsed Adjust Today, Adjust the Plan, and Get Help disclosure buttons.
+- Daily check-in uses picker wheels for sleep quality, body, energy, stress, and training factor; Other reveals editable text only after selection.
+- Running Active idle layout uses natural ScrollView flow, preserves selected ScheduledSession visibility, separates Start Run from Log Completion, and opens a canonical workout detail route.
+- Activity manual logging supports date, start time, local time zone, shoe selection, and a visible Refresh Training Plan action.
+- Training Paths user copy replaces goal-plan preset wording while preserving the adaptive engine and faster-than-recommended acknowledgment flow.
+- Performance Forecast is restored as a separate dynamic Today section with confidence/limitations info buttons.
+- Healthy Progress taxonomy expanded to sustainable, noncompetitive awards with dedupe plus optional supporting activity/session IDs.
+- Gear supports optional local shoe images from camera/library, replace/remove controls, fallback shoe artwork, and a horizontal visual catalog.
+- Half-Kneeling Hip Flexor Stretch is duration-based (`2 × 30s per side`) with `Gentle stretch, no pain`; static-stretch validation rejects reps, strength tempo, and load progression.
+- Strength Volume Summary separates repetition work, timed holds, distance work, and loaded volume; no universal total volume is shown.
+- Paired interval-unit helpers and hundredths distance composition were added for track-friendly display and exact picker value composition.
+
+Validation:
+
+- `PATH=/usr/local/bin:$PATH npm run typecheck`: PASS.
+- `PATH=/usr/local/bin:$PATH npm test`: PASS, 487/487.
+- Focused Build 46 tests: PASS, 25/25 in `scripts/tests/build46Corrections.test.ts`.
+- `PATH=/usr/local/bin:$PATH npx expo export --platform web`: PASS, 117 static routes.
+- `PATH=/usr/local/bin:$PATH npm run expo:check`: PASS, dependencies up to date.
+- `PATH=/usr/local/bin:$PATH npx expo prebuild --platform ios --no-install --clean`: PASS after Build 46 config bump.
+- `git diff --check`: PASS.
+- Secret scan over diff for key/token/password/private-key patterns: no matches.
+
+Visual QA note: no new browser/simulator screenshot pass was completed in this correction pass before commit. Current evidence is automated/source/static-export validation plus the prior Build 45 browser QA record. Native behaviors still requiring TestFlight or device validation: voice audio delivery/silent switch/interruption, Live Activity/Lock Screen sizing and controls, BLE scan/pair/stream/dropout/arbitration, HealthKit/location permission prompts, background lifecycle, camera/library shoe-photo flows, and share-sheet flows.

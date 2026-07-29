@@ -154,6 +154,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="movement" options={{ href: null }} />
       <Tabs.Screen name="activity-log" options={{ href: null }} />
       <Tabs.Screen name="activity" options={{ href: null }} />
+      <Tabs.Screen name="training/workout-detail" options={{ href: null }} />
       <Tabs.Screen name="more/gear" options={{ href: null }} />
       <Tabs.Screen name="more/stride-report" options={{ href: null }} />
     </Tabs>

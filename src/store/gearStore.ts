@@ -13,6 +13,9 @@ export type Shoe = {
   surface?: string;
   notes?: string;
   reminderThresholdMiles?: number;
+  imageUri?: string;
+  imageSource?: 'camera' | 'library' | 'local';
+  imageUpdatedAt?: number;
 };
 
 export type EquipmentItem = {

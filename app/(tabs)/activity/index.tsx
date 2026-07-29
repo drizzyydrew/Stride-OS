@@ -187,7 +187,7 @@ export default function ActivityScreen() {
             onPress={() => router.push('/(tabs)/activity/plans' as never)}
           >
             <Ionicons name="flag-outline" size={18} color={C.primary} />
-            <Text style={[s.actionText, { color: C.text }]}>Preset Plans</Text>
+            <Text style={[s.actionText, { color: C.text }]}>Training Paths</Text>
           </TouchableOpacity>
         </View>
 
@@ -203,11 +203,13 @@ export default function ActivityScreen() {
           <TouchableOpacity
             onPress={() => runRecalculation('manual_refresh', activities)}
             style={[s.refreshButton, { backgroundColor: C.cardAlt, borderColor: C.border }]}
-            accessibilityLabel="Refresh training analytics"
+            accessibilityRole="button"
+            accessibilityLabel="Refresh Training Plan"
+            accessibilityHint="Recalculates future training guidance from chronologically sorted activity history."
             disabled={recalculationStatus === 'running'}
           >
             <Ionicons name="refresh-outline" size={16} color={C.primary} />
-            <Text style={[s.refreshButtonText, { color: C.primary }]}>Refresh</Text>
+            <Text style={[s.refreshButtonText, { color: C.primary }]}>Refresh Training Plan</Text>
           </TouchableOpacity>
         </View>
 

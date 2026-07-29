@@ -419,7 +419,7 @@ function buildSystemPrompt(
   );
   const activityContext = `PRIMARY ENDURANCE AND RECENT ACTIVITY
 - Primary endurance mode: ${displayLabel(preferences.primaryEnduranceMode)}
-- Active preset plan: ${beginnerPlan ? `${displayLabel(beginnerPlan.goal)} through ${formatYMDForDisplay(beginnerPlan.targetDate)}` : 'none'}
+- Active training path: ${beginnerPlan ? `${displayLabel(beginnerPlan.goal)} through ${formatYMDForDisplay(beginnerPlan.targetDate)}` : 'none'}
 - Cross-training: ${preferences.crossTrainingDecision}${preferences.crossTrainingActivities.length ? `; preferred ${preferences.crossTrainingActivities.map(item => displayLabel(item.activityType)).join(', ')}` : ''}
 - 7-day load: whole body ${Math.round(load.wholeBody)}, running ${Math.round(load.running)}, walking ${Math.round(load.walking)}, cross-training ${Math.round(load.crossTraining)}, strength ${Math.round(load.strength)}.
 - Recent activity: ${recentActivities.length ? recentActivities.map(activity => `${displayLabel(activity.activityType)} ${Math.round((activity.metrics.durationSeconds ?? 0) / 60)} min${activity.rpe ? ` RPE ${activity.rpe}` : ''}`).join('; ') : 'none'}.

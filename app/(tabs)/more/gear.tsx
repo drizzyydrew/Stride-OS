@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
@@ -18,6 +19,7 @@ export default function GearScreen() {
   const equipment = useGearStore(s => s.equipment);
   const defaultShoeId = useGearStore(s => s.defaultShoeId);
   const addShoe = useGearStore(s => s.addShoe);
+  const updateShoe = useGearStore(s => s.updateShoe);
   const retireShoe = useGearStore(s => s.retireShoe);
   const setDefaultShoe = useGearStore(s => s.setDefaultShoe);
   const addEquipment = useGearStore(s => s.addEquipment);
@@ -35,6 +37,35 @@ export default function GearScreen() {
     addShoe({ brand, model, typicalUse: 'running' });
     setBrand('');
     setModel('');
+  }
+
+  async function pickShoeImage(shoeId: string, source: 'camera' | 'library') {
+    const permission = source === 'camera'
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Photo access needed', source === 'camera'
+        ? 'Camera access is needed to add a shoe photo from the camera.'
+        : 'Photo library access is needed to choose a shoe photo.');
+      return;
+    }
+    const result = source === 'camera'
+      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.72 })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.72 });
+    if (result.canceled || !result.assets[0]?.uri) return;
+    updateShoe(shoeId, {
+      imageUri: result.assets[0].uri,
+      imageSource: source,
+      imageUpdatedAt: Date.now(),
+    });
+  }
+
+  function removeShoeImage(shoeId: string) {
+    updateShoe(shoeId, {
+      imageUri: undefined,
+      imageSource: undefined,
+      imageUpdatedAt: undefined,
+    });
   }
 
   function saveEquipment() {
@@ -70,38 +101,64 @@ export default function GearScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={[s.section, { color: C.textDim }]}>SHOES</Text>
+        <Text style={[s.section, { color: C.textDim }]}>VISUAL SHOE CATALOG</Text>
         {shoes.length === 0 ? (
           <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[s.body, { color: C.textMuted }]}>No shoes added yet. Mileage will be derived from linked activities after you assign shoes to runs.</Text>
           </View>
-        ) : shoes.map(shoe => {
-          const summary = mileage.find(item => item.shoeId === shoe.id);
-          const miles = summary?.miles ?? 0;
-          const reminder = shoeWearReminderCopy(shoe, miles);
-          return (
-            <View key={shoe.id} style={[s.card, { backgroundColor: C.card, borderColor: C.border, opacity: shoe.active ? 1 : 0.6 }]}>
-              <View style={s.row}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.title, { color: C.text }]}>{shoe.brand} {shoe.model}</Text>
-                  <Text style={[s.body, { color: C.textMuted }]}>{miles.toFixed(1)} mi · {summary?.activityCount ?? 0} activities{defaultShoeId === shoe.id ? ' · default' : ''}</Text>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.shoeCarousel}>
+            {shoes.map(shoe => {
+              const summary = mileage.find(item => item.shoeId === shoe.id);
+              const miles = summary?.miles ?? 0;
+              const reminder = shoeWearReminderCopy(shoe, miles);
+              const isDefault = defaultShoeId === shoe.id;
+              return (
+                <View key={shoe.id} style={[s.shoeCard, { backgroundColor: C.card, borderColor: C.border, opacity: shoe.active ? 1 : 0.68 }]}>
+                  <View style={[s.shoeImageWrap, { backgroundColor: C.cardAlt }]}>
+                    {shoe.imageUri ? (
+                      <Image source={{ uri: shoe.imageUri }} style={s.shoeImage} resizeMode="cover" />
+                    ) : (
+                      <Ionicons name="walk-outline" size={42} color={C.primary} />
+                    )}
+                  </View>
+                  <View style={s.shoeBadgeRow}>
+                    <Text style={[s.badge, { color: shoe.active ? C.primary : C.textMuted, borderColor: shoe.active ? C.primary : C.border }]}>
+                      {shoe.active ? 'Active' : 'Retired'}
+                    </Text>
+                    {isDefault ? <Text style={[s.badge, { color: C.text, borderColor: C.border }]}>Primary</Text> : null}
+                  </View>
+                  <Text style={[s.title, { color: C.text }]} numberOfLines={2}>{shoe.brand} {shoe.model}</Text>
+                  <Text style={[s.body, { color: C.textMuted }]}>{miles.toFixed(1)} mi · {summary?.activityCount ?? 0} activities</Text>
+                  {reminder ? <Text style={[s.body, { color: C.warning }]}>{reminder}</Text> : null}
+                  <View style={s.photoActions}>
+                    <TouchableOpacity onPress={() => pickShoeImage(shoe.id, 'library')} style={[s.iconButton, { borderColor: C.border }]} accessibilityRole="button" accessibilityLabel={`Choose photo for ${shoe.brand} ${shoe.model}`}>
+                      <Ionicons name="images-outline" size={17} color={C.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => pickShoeImage(shoe.id, 'camera')} style={[s.iconButton, { borderColor: C.border }]} accessibilityRole="button" accessibilityLabel={`Take photo for ${shoe.brand} ${shoe.model}`}>
+                      <Ionicons name="camera-outline" size={17} color={C.primary} />
+                    </TouchableOpacity>
+                    {shoe.imageUri ? (
+                      <TouchableOpacity onPress={() => removeShoeImage(shoe.id)} style={[s.iconButton, { borderColor: C.border }]} accessibilityRole="button" accessibilityLabel={`Remove photo for ${shoe.brand} ${shoe.model}`}>
+                        <Ionicons name="close-outline" size={17} color={C.textMuted} />
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                  <View style={s.actions}>
+                    <TouchableOpacity onPress={() => setDefaultShoe(isDefault ? undefined : shoe.id)} accessibilityRole="button">
+                      <Text style={[s.link, { color: C.primary }]}>{isDefault ? 'Clear Primary' : 'Set Primary'}</Text>
+                    </TouchableOpacity>
+                    {shoe.active ? (
+                      <TouchableOpacity onPress={() => retireShoe(shoe.id)} accessibilityRole="button">
+                        <Text style={[s.link, { color: C.textMuted }]}>Retire</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
                 </View>
-                <Ionicons name="walk-outline" size={20} color={C.primary} />
-              </View>
-              {reminder ? <Text style={[s.body, { color: C.warning, marginTop: 8 }]}>{reminder}</Text> : null}
-              <View style={s.actions}>
-                <TouchableOpacity onPress={() => setDefaultShoe(defaultShoeId === shoe.id ? undefined : shoe.id)}>
-                  <Text style={[s.link, { color: C.primary }]}>{defaultShoeId === shoe.id ? 'Clear Default' : 'Set Default'}</Text>
-                </TouchableOpacity>
-                {shoe.active ? (
-                  <TouchableOpacity onPress={() => retireShoe(shoe.id)}>
-                    <Text style={[s.link, { color: C.textMuted }]}>Retire</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-            </View>
-          );
-        })}
+              );
+            })}
+          </ScrollView>
+        )}
 
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.section, { color: C.textDim }]}>ADD EQUIPMENT</Text>
@@ -166,4 +223,12 @@ const s = StyleSheet.create({
   body: { fontSize: 12, lineHeight: 18, marginTop: 3 },
   actions: { flexDirection: 'row', gap: 16, marginTop: 10 },
   link: { fontSize: 12, fontWeight: '900' },
+  shoeCarousel: { gap: 12, paddingRight: 18, paddingBottom: 12 },
+  shoeCard: { width: 228, borderWidth: 1, borderRadius: 16, padding: 14 },
+  shoeImageWrap: { height: 132, borderRadius: 13, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  shoeImage: { width: '100%', height: '100%' },
+  shoeBadgeRow: { flexDirection: 'row', gap: 6, marginBottom: 8, flexWrap: 'wrap' },
+  badge: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, fontSize: 10, fontWeight: '900' },
+  photoActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  iconButton: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
 });

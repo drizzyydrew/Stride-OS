@@ -11,7 +11,7 @@ import { experienceModeAllows, useExperienceMode } from '../../../src/hooks/useE
 import type { ExperienceMode } from '../../../src/store/settingsStore';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useAchievementStore } from '../../../src/store/achievementStore';
-import { evaluateAchievements, HEALTHY_ACHIEVEMENTS } from '../../../src/utils/achievements';
+import { evaluateAchievementAwards, HEALTHY_ACHIEVEMENTS } from '../../../src/utils/achievements';
 
 type NavItem = {
   label:       string;
@@ -73,15 +73,16 @@ export default function MoreScreen() {
   const activities = useActivityStore(state => state.activities);
   const awarded = useAchievementStore(state => state.awarded);
   const recordAwards = useAchievementStore(state => state.recordAwards);
-  const earnedIds = useMemo(
-    () => evaluateAchievements(activities, awarded.map(item => item.id)),
+  const earnedAwards = useMemo(
+    () => evaluateAchievementAwards(activities, awarded.map(item => item.id)),
     [activities, awarded],
   );
+  const earnedIds = useMemo(() => earnedAwards.map(item => item.id), [earnedAwards]);
   const newestAchievement = HEALTHY_ACHIEVEMENTS.find(item => earnedIds.includes(item.id));
 
   useEffect(() => {
-    recordAwards(earnedIds);
-  }, [earnedIds, recordAwards]);
+    recordAwards(earnedAwards);
+  }, [earnedAwards, recordAwards]);
 
   return (
     <View style={[s.root, { backgroundColor: C.bg }]}>

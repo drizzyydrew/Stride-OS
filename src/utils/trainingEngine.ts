@@ -344,7 +344,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   // Strength, Activity previews, voice prompts, Live Activity payloads, and AI
   // Coach context.  The legacy run/strength generators still provide reusable
   // strength session detail, but they no longer add disconnected future runs on
-  // top of the active preset plan.
+  // top of the active training path.
   if (input.activeBeginnerPlan && todayYMD >= input.activeBeginnerPlan.startDate && todayYMD <= input.activeBeginnerPlan.targetDate) {
     const beginnerCalendar = new Map<string, CalendarEntry[]>();
     const beginnerWorkouts: RichWorkout[] = [];

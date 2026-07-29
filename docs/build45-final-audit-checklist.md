@@ -92,3 +92,24 @@ iPhone.
 - [ ] [device] Install the EAS artifact; execute the device items above on THIS artifact
 - [ ] `eas submit --platform ios --id <exact-build-id>` (the verified artifact only)
 - [ ] Record submission in docs ("docs: record Build 45 TestFlight submission" pattern); update memory
+
+## Build 46 correction-pass audit addendum (2026-07-29)
+
+- [x] Repository path verified: `/Users/drew/Documents/StrideOS_App_clean_build19_v3_foundation`
+- [x] Branch verified: `build-19-v3-foundation`
+- [x] Starting HEAD for this correction pass: `2e6c9543f35d31146334eace854767ff2213b9bc`
+- [x] Build 45 confirmed already released in history; Build 46 is the target.
+- [x] EAS iOS build history compact query: latest 30 builds returned `build46: []`; latest was Build 45, `11298b8b-0fbb-4d72-9b55-8d57e11b1f0d`.
+- [x] App version remains `1.0.0`; iOS buildNumber bumped to `46`.
+- [x] `expo config --type public` confirmed bundle identifier `com.mooremovement.strideos`, version `1.0.0`, buildNumber `46`.
+- [x] Typecheck passed.
+- [x] Full tests passed: 487/487.
+- [x] Web export passed: 117 static routes.
+- [x] `expo:check` passed.
+- [x] Clean CNG iOS prebuild passed after the build-number bump.
+- [x] `git diff --check` passed.
+- [x] Diff secret scan found no likely credentials.
+- [x] Generated `dist/` and `ios/` output remained ignored and unstaged.
+- [ ] Production Build 46 EAS build started, finished, and exact artifact verified.
+- [ ] Exact Build 46 artifact submitted to App Store Connect/TestFlight.
+- [ ] App Store Connect/TestFlight processing result recorded.

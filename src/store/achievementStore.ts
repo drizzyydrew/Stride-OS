@@ -7,11 +7,13 @@ import type { AchievementId } from '../utils/achievements';
 export type AwardedAchievement = {
   id: AchievementId;
   awardedAt: number;
+  supportingActivityIds?: string[];
+  supportingSessionIds?: string[];
 };
 
 type AchievementStore = {
   awarded: AwardedAchievement[];
-  recordAwards: (ids: AchievementId[], awardedAt?: number) => void;
+  recordAwards: (ids: (AchievementId | Omit<AwardedAchievement, 'awardedAt'> | AwardedAchievement)[], awardedAt?: number) => void;
 };
 
 export const useAchievementStore = create<AchievementStore>()(
@@ -21,8 +23,11 @@ export const useAchievementStore = create<AchievementStore>()(
       recordAwards: (ids, awardedAt = Date.now()) => set(state => {
         const existing = new Set(state.awarded.map(item => item.id));
         const next = ids
-          .filter(id => !existing.has(id))
-          .map(id => ({ id, awardedAt }));
+          .filter(item => !existing.has(typeof item === 'string' ? item : item.id))
+          .map(item => {
+            if (typeof item === 'string') return { id: item, awardedAt };
+            return { ...item, awardedAt: 'awardedAt' in item ? item.awardedAt : awardedAt };
+          });
         return next.length ? { awarded: [...state.awarded, ...next] } : state;
       }),
     }),

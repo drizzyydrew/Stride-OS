@@ -109,3 +109,20 @@ captured and visually inspected.
 Not visually verified (state-driven, unreachable by URL): live treadmill/ride/strength sessions,
 share-sheet flow (native), voice test button behavior (native), Live Activity surfaces (native),
 BLE pairing (native). These are covered by the 475-test suite and listed as post-build device QA.
+
+## Build 46 correction-pass web QA addendum (2026-07-29)
+
+`PATH=/usr/local/bin:$PATH npx expo export --platform web` completed successfully after the Build 46 corrections and generated 117 static routes. Newly covered/static-exported routes include `/training/workout-detail` and `/(tabs)/training/workout-detail`.
+
+Source-level browser-safe contracts added or updated for:
+
+- Today Weather/AQI placement under greeting.
+- More Options button and Adjust Today / Adjust the Plan / Get Help disclosures.
+- Daily check-in picker-wheel persistence/cancel/Other-note behavior.
+- Running Active scroll-flow layout and canonical workout detail navigation.
+- Training Paths copy.
+- Performance Forecast confidence and info controls.
+- Gear shoe-image catalog metadata and controls.
+- Strength prescription validation and Volume Summary category separation.
+
+Interactive visual/browser status: not re-run with screenshots in this correction pass. Required follow-up remains a working browser or native device pass at 320, 375, 390, and 430 point widths for Today, Running Active, workout detail, check-in sheets, Activity manual entry, Gear shoe catalog, Strength Volume Summary, Training Paths, and Performance Forecast.

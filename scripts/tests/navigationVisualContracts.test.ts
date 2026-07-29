@@ -21,6 +21,7 @@ test('bottom navigation declares exactly the six approved primary destinations',
     'movement',
     'activity-log',
     'activity',
+    'training/workout-detail',
     'more/gear',
     'more/stride-report',
   ]);

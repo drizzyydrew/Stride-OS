@@ -51,6 +51,21 @@ export type TrainingOutlook = {
   generatedAt: number;
 };
 
+export type PerformanceForecastMetric = {
+  key: 'peak_window' | 'race_readiness' | 'training_load_trend';
+  label: string;
+  state: 'Estimated' | 'Developing' | 'Insufficient History' | 'On Track' | 'Progressing Cautiously' | 'Recovery Needed' | 'Maintaining' | 'Updated After Plan Change';
+  summary: string;
+  info: string;
+};
+
+export type PerformanceForecast = {
+  summary: string;
+  confidence: TrainingOutlook['confidence'];
+  limitations: string;
+  metrics: PerformanceForecastMetric[];
+};
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const STATUS_LABEL: Record<OutlookStatus, string> = {
@@ -203,5 +218,77 @@ export function buildTrainingOutlook(input: TrainingOutlookInput): TrainingOutlo
     loadTrend,
     dateClaimAllowed: confidence === 'strong' && historyWeeks >= 8,
     generatedAt: now,
+  };
+}
+
+export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<TrainingOutlookInput, 'weeksToRace' | 'trainingPhase' | 'decisionSnapshot'> = {}): PerformanceForecast {
+  const weeksToRace = Math.max(0, Math.round(input.weeksToRace ?? 999));
+  const updatedAfterPlanChange = Boolean(input.decisionSnapshot?.decision && input.decisionSnapshot.decision !== 'maintain');
+  const insufficient = outlook.confidence === 'limited' || !outlook.dateClaimAllowed;
+
+  const readinessState: PerformanceForecastMetric['state'] =
+    outlook.status === 'recovery_needed' ? 'Recovery Needed' :
+    outlook.status === 'progressing_cautiously' ? 'Progressing Cautiously' :
+    outlook.status === 'maintaining' ? 'Maintaining' :
+    outlook.status === 'ready_for_current_goal' ? 'On Track' :
+    insufficient ? 'Developing' :
+    updatedAfterPlanChange ? 'Updated After Plan Change' :
+    'Estimated';
+
+  const peakState: PerformanceForecastMetric['state'] =
+    insufficient ? 'Insufficient History' :
+    input.trainingPhase === 'taper' || weeksToRace <= 2 ? 'On Track' :
+    updatedAfterPlanChange ? 'Updated After Plan Change' :
+    'Estimated';
+
+  const loadState: PerformanceForecastMetric['state'] =
+    outlook.loadState === 'ramping_quickly' ? 'Progressing Cautiously' :
+    outlook.loadState === 'recovering' || outlook.loadState === 'deloading' ? 'Maintaining' :
+    outlook.loadState === 'insufficient_data' ? 'Insufficient History' :
+    'On Track';
+
+  const peakSummary = insufficient
+    ? 'Need more completed training before naming a peak window.'
+    : weeksToRace <= 2
+      ? 'Race-specific fitness appears close enough that taper and recovery matter most.'
+      : `Current progression points toward the final ${Math.min(4, Math.max(2, weeksToRace))} weeks before the goal.`;
+
+  return {
+    summary: insufficient
+      ? 'Forecast is developing from current adherence, load trend, phase, and readiness history.'
+      : 'Forecast reflects where current progression appears to be heading, not a guaranteed result.',
+    confidence: outlook.confidence,
+    limitations: insufficient
+      ? 'History is limited, so effort, readiness, and adherence carry more weight than precise dates.'
+      : 'Forecasts update after plan changes, completed sessions, missed sessions, deloads, and readiness changes.',
+    metrics: [
+      {
+        key: 'peak_window',
+        label: 'Peak Window',
+        state: peakState,
+        summary: peakSummary,
+        info: 'Uses phase, weeks to race, completed sessions, adherence depth, load trend, deload timing, and recent plan edits. It avoids a precise date when confidence is limited.',
+      },
+      {
+        key: 'race_readiness',
+        label: 'Race Readiness',
+        state: readinessState,
+        summary: outlook.status === 'recovery_needed'
+          ? 'Recovery signals should lead before projecting race readiness.'
+          : outlook.status === 'progressing_cautiously'
+            ? 'Fitness may be building, but load is rising quickly.'
+            : outlook.status === 'ready_for_current_goal'
+              ? 'Current signals support the goal with continued controlled training.'
+              : 'Readiness is being estimated from completed work and recent recovery signals.',
+        info: 'Uses readiness trend, adherence, current phase/focus, progression or regression decisions, interruptions, and available historical depth. It is not a race guarantee.',
+      },
+      {
+        key: 'training_load_trend',
+        label: 'Training Load Trend',
+        state: loadState,
+        summary: `Current workload ratio is ${outlook.loadTrend.ratio.toFixed(2)} with ${outlook.completedActivities} completed session${outlook.completedActivities === 1 ? '' : 's'} in scope.`,
+        info: 'Compares recent completed training load with prior load while preserving completed history separately from planned sessions. Sudden edits or backdated entries can change this.',
+      },
+    ],
   };
 }

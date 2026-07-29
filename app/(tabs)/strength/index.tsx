@@ -958,11 +958,28 @@ export default function StrengthScreen() {
     return weights[ex.id] !== undefined ? weights[ex.id] : ex.weight;
   }
 
-  const totalVol = exercises.reduce((acc, ex) => {
-    const w = getWeight(ex);
-    return acc + (ex.sets * (parseInt(ex.reps) || 10) * w);
-  }, 0);
-  const totalVolStr = totalVol > 0 ? `${Math.round(totalVol).toLocaleString()} ${wtUnit}` : '—';
+  const volumeSummary = exercises.reduce((acc, ex) => {
+    const weight = getWeight(ex);
+    if (ex.repScheme?.kind === 'duration') {
+      acc.holdSeconds += ex.sets * ex.repScheme.secondsMin;
+      return acc;
+    }
+    if (ex.repScheme?.kind === 'distance') {
+      acc.distanceMeters += ex.sets * ex.repScheme.metersMin;
+      return acc;
+    }
+    const reps = primaryRepCount(ex.reps);
+    acc.reps += ex.sets * reps;
+    acc.sets += ex.sets;
+    if (weight > 0) acc.loadedVolume += ex.sets * reps * weight;
+    return acc;
+  }, { reps: 0, sets: 0, holdSeconds: 0, distanceMeters: 0, loadedVolume: 0 });
+  const volumeRows = [
+    { label: 'Repetition work', value: volumeSummary.reps > 0 ? `${volumeSummary.reps} reps · ${volumeSummary.sets} sets` : null },
+    { label: 'Timed holds', value: volumeSummary.holdSeconds > 0 ? `${volumeSummary.holdSeconds}s held` : null },
+    { label: 'Distance work', value: volumeSummary.distanceMeters > 0 ? `${volumeSummary.distanceMeters} m` : null },
+    { label: 'Loaded volume', value: volumeSummary.loadedVolume > 0 ? `${Math.round(volumeSummary.loadedVolume).toLocaleString()} ${wtUnit}` : null },
+  ].filter((row): row is { label: string; value: string } => row.value !== null);
 
   // ── Presets segment ──────────────────────────────────────────────────────────
   if (segment === 'presets') {
@@ -1415,15 +1432,21 @@ export default function StrengthScreen() {
           {exercises.map(ex => {
             const w = getWeight(ex);
             return (
-              <View key={ex.id} style={[{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.border }]}>
-                <Text style={[{ fontSize: 12, color: C.textMuted }]}>{ex.name}</Text>
-                <Text style={[{ fontSize: 12, fontWeight: '700', color: C.text }]}>{ex.sets} × {ex.reps}{w > 0 ? ` @ ${w} ${wtUnit}` : ''}</Text>
+              <View key={ex.id} style={[styles.volumeExerciseRow, { borderBottomColor: C.border }]}>
+                <Text style={[styles.volumeExerciseName, { color: C.textMuted }]}>{ex.name}</Text>
+                <Text style={[styles.volumePrescription, { color: C.text }]}>{ex.sets} × {ex.reps}{w > 0 ? ` @ ${w} ${wtUnit}` : ''}</Text>
               </View>
             );
           })}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 10 }}>
-            <Text style={[{ fontSize: 13, fontWeight: '700', color: C.text }]}>Total Volume</Text>
-            <Text style={[{ fontSize: 15, fontWeight: '800', color: C.primary }]}>{totalVolStr}</Text>
+          <View style={styles.volumeTotals}>
+            {volumeRows.length > 0 ? volumeRows.map(row => (
+              <View key={row.label} style={[styles.volumeTotalPill, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+                <Text style={[styles.volumeTotalLabel, { color: C.textDim }]}>{row.label}</Text>
+                <Text style={[styles.volumeTotalValue, { color: C.primary }]}>{row.value}</Text>
+              </View>
+            )) : (
+              <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>No compatible volume categories yet. Complete sets to populate repetition, hold, distance, or loaded summaries.</Text>
+            )}
           </View>
         </View> : null}
 
@@ -1624,5 +1647,46 @@ const styles = StyleSheet.create({
   },
   previewDivider: {
     width: 1,
+  },
+  volumeExerciseRow: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    gap: 3,
+  },
+  volumeExerciseName: {
+    fontSize: 12,
+    lineHeight: 17,
+    flexShrink: 1,
+  },
+  volumePrescription: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '800',
+    flexShrink: 1,
+  },
+  volumeTotals: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingTop: 10,
+  },
+  volumeTotalPill: {
+    minWidth: '47%',
+    flexGrow: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+  },
+  volumeTotalLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  volumeTotalValue: {
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: '900',
+    marginTop: 3,
   },
 });

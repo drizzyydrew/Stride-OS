@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import Button from '../ui/Button';
-import { TwoColumnPickerWheel } from '../ui/PickerWheel';
+import { ChoicePickerWheel, TwoColumnPickerWheel } from '../ui/PickerWheel';
 import { useColors } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typographyTokens } from '../../theme/tokens';
@@ -49,11 +49,15 @@ const STRESS_CHOICES = [
 ] as const;
 
 const FACTOR_CHOICES = [
-  { label: 'No', value: '' },
+  { label: 'Nothing notable', value: '' },
+  { label: 'Limited time', value: 'limited_time' },
+  { label: 'Poor sleep', value: 'poor_sleep' },
+  { label: 'Work or life stress', value: 'work_or_life_stress' },
+  { label: 'Muscle soreness', value: 'muscle_soreness' },
   { label: 'Pain or symptoms', value: 'pain_or_symptoms' },
   { label: 'Illness', value: 'illness' },
-  { label: 'Poor sleep', value: 'poor_sleep' },
-  { label: 'Schedule or travel', value: 'schedule_or_travel' },
+  { label: 'Travel', value: 'travel' },
+  { label: 'Weather', value: 'weather' },
   { label: 'Other', value: 'other' },
 ] as const;
 
@@ -111,41 +115,114 @@ function ChoiceRow({
   C: Colors;
   required?: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const selectedChoice = choices.find(choice => choice.value === value);
   return (
     <View style={styles.row}>
       <View style={styles.labelLine}>
         <Text style={[styles.rowLabel, { color: C.textDim }]}>{label}</Text>
         {required && value === undefined ? <Text style={[styles.requiredText, { color: C.warning }]}>Required</Text> : null}
       </View>
-      <View style={styles.choiceWrap}>
-        {choices.map(choice => {
-          const selected = value === choice.value;
-          return (
-            <Pressable
-              key={choice.label}
-              onPress={() => onChange(choice.value)}
-              accessibilityRole="button"
-              accessibilityLabel={`${label}: ${choice.label}`}
-              accessibilityState={{ selected }}
-              style={({ pressed }) => [
-                styles.choice,
-                {
-                  borderColor: selected ? C.primary : C.border,
-                  backgroundColor: selected ? C.primaryDim : C.cardAlt,
-                  opacity: pressed ? 0.82 : 1,
-                },
-              ]}
-            >
-              <Text style={[styles.choiceText, { color: selected ? C.primary : C.textMuted }]}>{choice.label}</Text>
-              {selected ? <Text style={[styles.selectedText, { color: C.primary }]}>Selected</Text> : null}
-            </Pressable>
-          );
-        })}
-      </View>
-      {choices.find(choice => choice.value === value)?.desc ? (
-        <Text style={[styles.choiceDescription, { color: C.textMuted }]}>
-          {choices.find(choice => choice.value === value)?.desc}
+      <Pressable
+        onPress={() => setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={`${label}, ${selectedChoice?.label ?? 'not selected'}`}
+        accessibilityHint="Opens a picker wheel"
+        style={({ pressed }) => [
+          styles.sleepPickerButton,
+          {
+            borderColor: value === undefined ? C.warning : C.border,
+            backgroundColor: C.cardAlt,
+            opacity: pressed ? 0.82 : 1,
+          },
+        ]}
+      >
+        <Text style={[styles.sleepPickerValue, { color: selectedChoice ? C.text : C.textMuted }]}>
+          {selectedChoice?.label ?? 'Choose one'}
         </Text>
+        <Text style={[styles.sleepPickerAction, { color: C.primary }]}>Change</Text>
+      </Pressable>
+      <ChoicePickerWheel
+        visible={open}
+        title={label}
+        values={choices.map(choice => ({ value: String(choice.value), label: choice.label }))}
+        selectedValue={String(value ?? choices[Math.floor(choices.length / 2)]?.value ?? '')}
+        confirmLabel="Set"
+        onConfirm={next => {
+          onChange(Number(next));
+          setOpen(false);
+        }}
+        onClose={() => setOpen(false)}
+      />
+      {selectedChoice?.desc ? (
+        <Text style={[styles.choiceDescription, { color: C.textMuted }]}>
+          {selectedChoice.desc}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function factorLabel(value: string | undefined): string {
+  if (!value) return 'Nothing notable';
+  if (value.startsWith('other:')) return value.slice('other:'.length).trim() || 'Other';
+  return FACTOR_CHOICES.find(choice => choice.value === value)?.label ?? 'Other';
+}
+
+function TrainingFactorPicker({
+  value,
+  onChange,
+  C,
+}: {
+  value: string | undefined;
+  onChange: (value: string) => void;
+  C: Colors;
+}) {
+  const [open, setOpen] = useState(false);
+  const [otherText, setOtherText] = useState(value?.startsWith('other:') ? value.slice('other:'.length).trim() : '');
+  const selectedValue = value?.startsWith('other:') ? 'other' : value ?? '';
+
+  return (
+    <View style={styles.row}>
+      <Text style={[styles.rowLabel, { color: C.textDim }]}>Anything affecting today's training?</Text>
+      <Pressable
+        onPress={() => setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={`Training factor, ${factorLabel(value)}`}
+        accessibilityHint="Opens a picker wheel"
+        style={({ pressed }) => [
+          styles.sleepPickerButton,
+          { borderColor: C.border, backgroundColor: C.cardAlt, opacity: pressed ? 0.82 : 1 },
+        ]}
+      >
+        <Text style={[styles.sleepPickerValue, { color: C.text }]}>{factorLabel(value)}</Text>
+        <Text style={[styles.sleepPickerAction, { color: C.primary }]}>Change</Text>
+      </Pressable>
+      <ChoicePickerWheel
+        visible={open}
+        title="Anything affecting training?"
+        values={FACTOR_CHOICES.map(choice => ({ value: choice.value, label: choice.label }))}
+        selectedValue={selectedValue}
+        confirmLabel="Set Factor"
+        onConfirm={next => {
+          onChange(next);
+          if (next !== 'other') setOtherText('');
+          setOpen(false);
+        }}
+        onClose={() => setOpen(false)}
+      />
+      {selectedValue === 'other' ? (
+        <TextInput
+          value={otherText}
+          onChangeText={text => {
+            setOtherText(text);
+            onChange(`other:${text}`);
+          }}
+          placeholder="Add a short note"
+          placeholderTextColor={C.textDim}
+          style={[styles.otherInput, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
+          accessibilityLabel="Other training factor note"
+        />
       ) : null}
     </View>
   );
@@ -293,27 +370,7 @@ export default function ReadinessCheckInCard({ initialValues, onSaved }: Props) 
           value={inputs.energy} choices={ENERGY_CHOICES} onChange={v => update('energy', v)} required />
         <ChoiceRow label="What are your stress levels like today?" C={C}
           value={inputs.stress} choices={STRESS_CHOICES} onChange={v => update('stress', v)} required />
-        <View style={styles.row}>
-          <Text style={[styles.rowLabel, { color: C.textDim }]}>Anything affecting today's training?</Text>
-          <View style={styles.choiceWrap}>
-            {FACTOR_CHOICES.map(choice => {
-              const selected = (inputs.optionalFactor ?? '') === choice.value;
-              return (
-                <Pressable
-                  key={choice.value || 'none'}
-                  onPress={() => setInputs(previous => ({ ...previous, optionalFactor: choice.value }))}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Training factor: ${choice.label}`}
-                  accessibilityState={{ selected }}
-                  style={[styles.choice, { borderColor: selected ? C.primary : C.border, backgroundColor: selected ? C.primaryDim : C.cardAlt }]}
-                >
-                  <Text style={[styles.choiceText, { color: selected ? C.primary : C.textMuted }]}>{choice.label}</Text>
-                  {selected ? <Text style={[styles.selectedText, { color: C.primary }]}>Selected</Text> : null}
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
+        <TrainingFactorPicker value={inputs.optionalFactor} onChange={value => update('optionalFactor', value)} C={C} />
       </View>
 
       {!canSave ? (
@@ -386,6 +443,14 @@ const styles = StyleSheet.create({
   choiceDescription: {
     fontSize: 12,
     lineHeight: 17,
+  },
+  otherInput: {
+    minHeight: 44,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    fontWeight: '600',
   },
   rowLabel: {
     fontSize:      11,

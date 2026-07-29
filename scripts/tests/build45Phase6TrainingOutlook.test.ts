@@ -130,12 +130,13 @@ test('recalculation pipeline stores outlook snapshots and names all Phase 6 trig
   }
 });
 
-test('Today dashboard uses Training Outlook and removes hardcoded forecast placeholders', () => {
+test('Today dashboard uses Training Outlook and dynamic Performance Forecast without hardcoded placeholders', () => {
   const dashboard = read('app/(tabs)/dashboard/index.tsx');
   assert.match(dashboard, /TRAINING OUTLOOK/);
   assert.match(dashboard, /buildTrainingOutlook/);
-  assert.doesNotMatch(dashboard, /PERFORMANCE FORECAST/);
-  assert.doesNotMatch(dashboard, /Peak Window/);
+  assert.match(dashboard, /PERFORMANCE FORECAST/);
+  assert.match(dashboard, /buildPerformanceForecast/);
+  assert.match(dashboard, /performanceForecast\.metrics/);
   assert.doesNotMatch(dashboard, /Race Ready/);
   assert.doesNotMatch(dashboard, /Aug 3/);
   assert.doesNotMatch(dashboard, />63</);

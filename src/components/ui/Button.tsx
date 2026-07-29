@@ -61,7 +61,7 @@ export default function Button({
 }
 
 function getBackground(variant: Variant, disabled: boolean, theme: ReturnType<typeof useTheme>) {
-  if (disabled) return theme.colors.border;
+  if (disabled) return theme.colors.disabledSurface;
   if (variant === 'primary') return theme.colors.primary;
   if (variant === 'danger') return theme.colors.danger;
   if (variant === 'tertiary') return 'transparent';
@@ -69,7 +69,7 @@ function getBackground(variant: Variant, disabled: boolean, theme: ReturnType<ty
 }
 
 function getForeground(variant: Variant, disabled: boolean, theme: ReturnType<typeof useTheme>) {
-  if (disabled) return theme.colors.textDim;
+  if (disabled) return theme.colors.disabledText;
   if (variant === 'primary') return theme.colors.onPrimary;
   if (variant === 'danger') return '#FFFFFF';
   if (variant === 'secondary' || variant === 'tertiary') return theme.colors.primary;

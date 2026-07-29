@@ -320,6 +320,7 @@ export const SESSION_TEMPLATES: Record<StrengthSessionType, SessionTemplate> = {
     repSchemes: {
       trunk_side_plank: { kind: 'duration', secondsMin: 20, secondsMax: 30, perSide: true },
       calf_single_standing: { kind: 'reps_hold', repsMin: 10, repsMax: 15, holdSeconds: 2, perSide: true },
+      mobility_hip_flexor: { kind: 'duration', secondsMin: 30, perSide: true },
     },
     rationale: 'Targeted prehabilitation maintains joint health and tissue resilience without adding meaningful fatigue. During deload and taper, this session protects the accumulated adaptations while allowing neuromuscular recovery.',
     purpose: 'Maintain tissue health, correct imbalances, and prepare for the next training block — without adding fatigue.',
@@ -507,7 +508,8 @@ function buildExercise(
   const rpe      = isDeload ? Math.max(3, template.rpe - 2) : template.rpe;
   const rir      = 10 - rpe;
   const rest     = ex.cnsLoad === 'high' ? 120 : ex.cnsLoad === 'medium' ? 90 : 60;
-  const tempo    = ex.pattern === 'plyometric' ? 'Explosive: fast concentric' : '3:1:1';
+  const isStaticStretch = id === 'mobility_hip_flexor';
+  const tempo    = isStaticStretch ? 'Gentle static hold' : ex.pattern === 'plyometric' ? 'Explosive: fast concentric' : '3:1:1';
   const repRange: [number, number] = isDeload
     ? [template.repRange[0] + 2, template.repRange[1] + 3]
     : template.repRange;
@@ -515,6 +517,7 @@ function buildExercise(
   const repScheme = template.repSchemes?.[id]
     ?? parsePrescriptionScheme(fallbackPrescription, { exerciseName: ex.name, tempo });
   const loadTarget =
+    isStaticStretch ? 'Gentle stretch, no pain' :
     template.goal === 'force_production' ? `RPE ${rpe} — heavy, controlled` :
     template.goal === 'running_economy'  ? `RPE ${rpe} — moderate load, fast concentric` :
     template.goal === 'injury_resilience'? 'Light — technique focus' :
@@ -532,10 +535,12 @@ function buildExercise(
     rir,
     tempo,
     restSeconds:     rest,
-    progressionRule: ex.cnsLoad === 'high'
+    progressionRule: isStaticStretch
+      ? 'Maintain a pain-free hold; add time only if the stretch stays gentle and controlled.'
+      : ex.cnsLoad === 'high'
       ? 'When top of rep range is reached for all sets at good technique, increase load by 2.5–5kg next session.'
       : 'Add 1 rep per set per week; once all sets hit top of range, increase load by 2.5kg and return to lower rep target.',
-    regressionRule:  'If form deteriorates, reduce load by 10%. If fatigue prevents target reps, drop 1 set.',
+    regressionRule:  isStaticStretch ? 'If pain or symptoms appear, stop the stretch and use an easier position.' : 'If form deteriorates, reduce load by 10%. If fatigue prevents target reps, drop 1 set.',
     coachingCues:    ex.coachingCues,
     rationale:       ex.rationale,
   };

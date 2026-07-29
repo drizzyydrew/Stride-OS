@@ -1,6 +1,20 @@
 export type ThemeMode = 'light' | 'dark';
 
 export type Palette = {
+  backgroundPrimary: string;
+  backgroundSecondary: string;
+  surfacePrimary: string;
+  surfaceElevated: string;
+  surfaceSelected: string;
+  textOnAccent: string;
+  borderDefault: string;
+  borderStrong: string;
+  accentPrimary: string;
+  accentPressed: string;
+  accentSubtle: string;
+  success: string;
+  disabledSurface: string;
+  disabledText: string;
   bg: string;
   surface: string;
   card: string;
@@ -38,6 +52,20 @@ export type Palette = {
 };
 
 export const darkColors: Palette = {
+  backgroundPrimary: '#0a0a0a',
+  backgroundSecondary: '#141414',
+  surfacePrimary: '#1a1a1a',
+  surfaceElevated:'#202020',
+  surfaceSelected: 'rgba(220,192,167,0.14)',
+  textOnAccent: '#0a0a0a',
+  borderDefault: '#2a2a2a',
+  borderStrong: '#5F5F5F',
+  accentPrimary: '#DCC0A7',
+  accentPressed: '#C8A98E',
+  accentSubtle: 'rgba(220,192,167,0.14)',
+  success: '#6BB388',
+  disabledSurface: '#2a2a2a',
+  disabledText: '#999999',
   bg:          '#0a0a0a',
   surface:     '#0a0a0a',
   card:        '#1a1a1a',
@@ -75,32 +103,46 @@ export const darkColors: Palette = {
 };
 
 export const lightColors: Palette = {
+  backgroundPrimary: '#EFE7DA',
+  backgroundSecondary: '#E7DED4',
+  surfacePrimary: '#F7EFE4',
+  surfaceElevated:'#FFF9EF',
+  surfaceSelected: '#E4D5C5',
+  textOnAccent: '#FFFFFF',
+  borderDefault: '#B9AA9D',
+  borderStrong: '#725C42',
+  accentPrimary: '#6F513A',
+  accentPressed: '#5B3F2C',
+  accentSubtle: '#E4D5C5',
+  success: '#2F6F4E',
+  disabledSurface: '#DDD2C4',
+  disabledText: '#5F6B68',
   bg:          '#EFE7DA',
   surface:     '#EFE7DA',
-  card:        '#f5ede0',
+  card:        '#F7EFE4',
   cardElevated:'#FFF9EF',
-  border:      '#dddddd',
-  separator:   '#dddddd',
+  border:      '#B9AA9D',
+  separator:   '#B9AA9D',
   text:        '#0a0a0a',
   textPrimary: '#0a0a0a',
   textSecondary:'#4D433E',
   textMuted:   '#4D433E',
-  textDim:     '#708489',
-  textSubtle:  '#999999',
-  primary:     '#DCC0A7',
-  primaryDim:  'rgba(220,192,167,0.34)',
-  onPrimary:   '#0a0a0a',
-  positive:    '#6BB388',
-  positiveDim: 'rgba(107,179,136,0.18)',
-  warning:     '#C79B57',
-  warningDim:  'rgba(199,155,87,0.18)',
+  textDim:     '#5F6B68',
+  textSubtle:  '#5F6B68',
+  primary:     '#6F513A',
+  primaryDim:  '#E4D5C5',
+  onPrimary:   '#FFFFFF',
+  positive:    '#2F6F4E',
+  positiveDim: '#D8E6DA',
+  warning:     '#7A5A28',
+  warningDim:  '#EFE1C8',
   critical:    '#8A332D',
-  criticalDim: 'rgba(138,51,45,0.16)',
-  neutral:     '#708489',
+  criticalDim: '#EBD8D5',
+  neutral:     '#5F6B68',
   danger:      '#8A332D',
   cardAlt:     '#EFE7DA',
-  accent:      '#8B927C',
-  accentDim:   'rgba(139,146,124,0.18)',
+  accent:      '#4B5F56',
+  accentDim:   '#DCE5DD',
   icon:         '#4D433E',
   overlay:      'rgba(17,17,17,0.32)',
   skeletonBase: '#E7DED4',

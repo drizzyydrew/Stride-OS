@@ -20,6 +20,9 @@ function isFinitePositive(value: number): boolean {
 // mi->km->mi round-trips land back on the exact starting float rather than
 // drifting through two independently-rounded constants.
 const KM_PER_MILE = 1.609344;
+const METERS_PER_MILE = 1609.344;
+
+export type UnitPreference = 'imperial' | 'metric';
 
 export function milesToKm(miles: number): number | null {
   if (!isFiniteNumber(miles) || miles < 0) return null;
@@ -29,6 +32,58 @@ export function milesToKm(miles: number): number | null {
 export function kmToMiles(km: number): number | null {
   if (!isFiniteNumber(km) || km < 0) return null;
   return km / KM_PER_MILE;
+}
+
+export function milesToMeters(miles: number): number | null {
+  if (!isFiniteNumber(miles) || miles < 0) return null;
+  return miles * METERS_PER_MILE;
+}
+
+export function metersToMiles(meters: number): number | null {
+  if (!isFiniteNumber(meters) || meters < 0) return null;
+  return meters / METERS_PER_MILE;
+}
+
+export function kmToMeters(km: number): number | null {
+  if (!isFiniteNumber(km) || km < 0) return null;
+  return km * 1000;
+}
+
+export function metersToKm(meters: number): number | null {
+  if (!isFiniteNumber(meters) || meters < 0) return null;
+  return meters / 1000;
+}
+
+export function composeDistanceHundredths(whole: number, tenths: number, hundredths: number): number {
+  const safeWhole = Math.max(0, Math.min(100, Math.trunc(whole)));
+  const safeTenths = Math.max(0, Math.min(9, Math.trunc(tenths)));
+  const safeHundredths = Math.max(0, Math.min(9, Math.trunc(hundredths)));
+  return Number(`${safeWhole}.${safeTenths}${safeHundredths}`);
+}
+
+export function decomposeDistanceHundredths(value: number): { whole: number; tenths: number; hundredths: number } {
+  const cents = Math.max(0, Math.min(10000, Math.round((Number.isFinite(value) ? value : 0) * 100)));
+  return {
+    whole: Math.floor(cents / 100),
+    tenths: Math.floor((cents % 100) / 10),
+    hundredths: cents % 10,
+  };
+}
+
+function formatMetersTrack(meters: number): string {
+  if (meters === 1000) return '1 km';
+  if (meters === 1600) return '1.6 km';
+  if (Math.abs(meters - METERS_PER_MILE) < 0.01) return '1 mile';
+  return `${Math.round(meters).toLocaleString()} m`;
+}
+
+export function formatPairedTrackDistance(meters: number, preference: UnitPreference): string {
+  if (!isFinitePositive(meters)) return '--';
+  const miles = meters / METERS_PER_MILE;
+  const metricLabel = formatMetersTrack(meters);
+  const imperialLabel = `${miles.toFixed(2)} mi`;
+  if (preference === 'metric') return `${metricLabel} (${imperialLabel})`;
+  return `${imperialLabel} (${metricLabel})`;
 }
 
 // ── Weight ────────────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ import { FontSize, FontWeight } from '../../theme/tokens';
 
 const ITEM_HEIGHT = 48;
 const VISIBLE_ROWS = 5;
+type PickerValue = string | number;
 
 type Props = {
   visible:        boolean;
@@ -21,11 +22,11 @@ type Props = {
 
 type WheelColumnProps = {
   title?:         string;
-  values:         number[];
-  selectedValue:  number;
+  values:         PickerValue[];
+  selectedValue:  PickerValue;
   visible:        boolean;
-  formatValue?:   (v: number) => string;
-  onChange:       (v: number) => void;
+  formatValue?:   (v: PickerValue) => string;
+  onChange:       (v: PickerValue) => void;
 };
 
 type TwoColumnPickerWheelColumn = {
@@ -47,12 +48,23 @@ type TwoColumnPickerWheelProps = {
   onClose:          () => void;
 };
 
+type ChoicePickerWheelProps = {
+  visible:       boolean;
+  title:         string;
+  subtitle?:     string;
+  values:        { value: string; label: string }[];
+  selectedValue: string;
+  confirmLabel?: string;
+  onConfirm:     (value: string) => void;
+  onClose:       () => void;
+};
+
 function WheelColumn({
   title, values, selectedValue, visible, formatValue, onChange,
 }: WheelColumnProps) {
   const C = useColors();
-  const listRef = useRef<FlatList<number>>(null);
-  const format = formatValue ?? ((v: number) => String(v));
+  const listRef = useRef<FlatList<PickerValue>>(null);
+  const format = formatValue ?? ((v: PickerValue) => String(v));
 
   useEffect(() => {
     if (!visible) return;
@@ -146,8 +158,8 @@ export default function PickerWheel({
             values={values}
             selectedValue={selected}
             visible={visible}
-            formatValue={formatValue}
-            onChange={setSelected}
+            formatValue={value => format(Number(value))}
+            onChange={value => setSelected(Number(value))}
           />
 
           <Text accessibilityLiveRegion="polite" style={[styles.selectedLabel, { color: C.primary }]}>{format(selected)}</Text>
@@ -196,8 +208,8 @@ export function TwoColumnPickerWheel({
                 values={column.values}
                 selectedValue={selectedValues[column.id] ?? column.selectedValue}
                 visible={visible}
-                formatValue={column.formatValue}
-                onChange={value => setSelectedValues(previous => ({ ...previous, [column.id]: value }))}
+                formatValue={value => column.formatValue?.(Number(value)) ?? String(value)}
+                onChange={value => setSelectedValues(previous => ({ ...previous, [column.id]: Number(value) }))}
               />
             ))}
           </View>
@@ -209,6 +221,45 @@ export function TwoColumnPickerWheel({
           <View style={styles.actions}>
             <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />
             <Button label={confirmLabel} onPress={() => onConfirm(selectedValues)} disabled={disabled} style={{ flex: 1 }} />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+export function ChoicePickerWheel({
+  visible, title, subtitle, values, selectedValue, confirmLabel = 'Confirm', onConfirm, onClose,
+}: ChoicePickerWheelProps) {
+  const C = useColors();
+  const [selected, setSelected] = useState<string>(selectedValue);
+
+  useEffect(() => {
+    if (visible) setSelected(selectedValue);
+  }, [selectedValue, visible]);
+
+  const labels = useMemo(() => new Map(values.map(value => [value.value, value.label])), [values]);
+  const format = (value: PickerValue) => labels.get(String(value)) ?? String(value);
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <View style={[styles.sheet, { backgroundColor: C.card }]}>
+          <Text style={[styles.title, { color: C.text }]}>{title}</Text>
+          {subtitle ? <Text style={[styles.subtitle, { color: C.textDim }]}>{subtitle}</Text> : null}
+          <WheelColumn
+            values={values.map(value => value.value)}
+            selectedValue={selected}
+            visible={visible}
+            formatValue={format}
+            onChange={value => setSelected(String(value))}
+          />
+          <Text accessibilityLiveRegion="polite" style={[styles.selectedLabel, { color: C.primary }]}>
+            {format(selected)}
+          </Text>
+          <View style={styles.actions}>
+            <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />
+            <Button label={confirmLabel} onPress={() => onConfirm(selected)} style={{ flex: 1 }} />
           </View>
         </View>
       </View>

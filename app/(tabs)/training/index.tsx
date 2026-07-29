@@ -1511,8 +1511,12 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const showIndoorSetupPlaceholder = runState === 'idle' && pendingEnvironment === 'indoor';
 
   return (
-    <View style={[styles.activeRunRoot, { paddingTop: fullScreen ? insets.top : 0, backgroundColor: panelBg }]}>
-      <View style={styles.activeMapShellFill}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: panelBg }}
+      contentContainerStyle={[styles.activeIdleContent, { paddingTop: fullScreen ? insets.top : 0, paddingBottom: (fullScreen ? insets.bottom : 0) + LAYOUT.screenPadBottom }]}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.activeMapShellIdle}>
         {showIndoorSetupPlaceholder ? (
           <View style={[styles.activeRunMapFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: softPanelBg }]}>
             <Ionicons name="walk-outline" size={40} color={C.textMuted} />
@@ -1564,7 +1568,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         ) : null}
       </View>
 
-      <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: (fullScreen ? insets.bottom : 0) + spacing.md }]}>
+      <View style={[styles.runControlPanel, styles.runControlPanelFlow, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: spacing.md }]}>
         <View style={styles.runPrimaryRow}>
           <View>
             <Text style={[styles.runPrimaryValue, { color: C.text }]}>{fmt(elapsed)}</Text>
@@ -1703,29 +1707,26 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
                       {todayPlannedWorkout.purpose}
                     </Text>
                     {todayPlannedSession?.runWalk ? (
-                      <>
-                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
-                          Total: {todayPlannedSession.runWalk.totalMinutes} min · {todayPlannedSession.runWalk.hrZone} · RPE {todayPlannedSession.runWalk.rpe}
-                        </Text>
-                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
-                          Warm-up: {todayPlannedSession.runWalk.warmupMinutes}-minute easy walk
-                        </Text>
-                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
-                          Main set: {todayPlannedSession.runWalk.rounds} rounds · {todayPlannedSession.runWalk.runSeconds} sec run / {todayPlannedSession.runWalk.walkSeconds} sec walk
-                        </Text>
-                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
-                          Cooldown: {todayPlannedSession.runWalk.cooldownMinutes}-minute easy walk · Pace: {todayPlannedSession.runWalk.pace}
-                        </Text>
-                      </>
+                      <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
+                        {todayPlannedSession.runWalk.totalMinutes} min · {todayPlannedSession.runWalk.rounds} rounds · RPE {todayPlannedSession.runWalk.rpe}
+                      </Text>
                     ) : (
-                      <>
-                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>Total: {todayPlannedWorkout.durationMinutes} min</Text>
-                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>Warm-up: {todayPlannedWorkout.warmup.instructions}</Text>
-                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>Main set: {todayPlannedWorkout.mainSet.map(segment => segment.instructions).join(' ')}</Text>
-                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>Cooldown: {todayPlannedWorkout.cooldown.instructions}</Text>
-                        <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>Target: Zone {todayPlannedWorkout.hrZoneTarget} · RPE {todayPlannedWorkout.rpeRange[0]}–{todayPlannedWorkout.rpeRange[1]} · {todayPlannedWorkout.paceGuidance.targetPace}</Text>
-                      </>
+                      <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
+                        {todayPlannedWorkout.durationMinutes} min · Zone {todayPlannedWorkout.hrZoneTarget} · RPE {todayPlannedWorkout.rpeRange[0]}-{todayPlannedWorkout.rpeRange[1]}
+                      </Text>
                     )}
+                    <Text style={[styles.workoutDetailText, { color: C.textMuted }]} numberOfLines={2}>
+                      {todayPlannedSession?.mainSet ?? todayPlannedWorkout.mainSet.map(segment => segment.instructions).join(' ')}
+                    </Text>
+                    <TouchableOpacity
+                      style={[styles.inlineDetailButton, { backgroundColor: C.card, borderColor: C.border }]}
+                      onPress={() => router.push({ pathname: '/(tabs)/training/workout-detail', params: { scheduledSessionId: todayPlannedSession?.scheduledSessionId } } as never)}
+                      accessibilityRole="button"
+                      accessibilityLabel="View workout details"
+                    >
+                      <Text style={[styles.inlineDetailText, { color: C.text }]}>View Workout Details</Text>
+                      <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+                    </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.inlineCompletionButton, { backgroundColor: C.primary }]}
                       onPress={() => {
@@ -1736,6 +1737,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
                         router.push({ pathname: '/(tabs)/activity/manual', params: { scheduledSessionId: todayPlannedSession?.scheduledSessionId, activityType: todayPlannedSession?.activityType, mode: 'complete' } } as never);
                       }}
                       accessibilityLabel={todayPlannedSession?.completedActivityId ? 'View completed running activity' : 'Log completion for scheduled running workout'}
+                      accessibilityRole="button"
                     >
                       <Text style={[styles.inlineCompletionText, { color: C.onPrimary }]}>
                         {todayPlannedSession?.completedActivityId ? 'View Completed Activity' : 'Log Completion'}
@@ -1898,7 +1900,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         onConfirm={v => { setRacePaceSecInput(v); setGoalPickerFor(null); }}
         onClose={() => setGoalPickerFor(null)}
       />
-    </View>
+    </ScrollView>
   );
 }
 
@@ -2804,8 +2806,15 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: 'hidden',
   },
+  activeIdleContent: {
+    minHeight: '100%',
+  },
   activeMapShellFill: {
     flex: 1,
+  },
+  activeMapShellIdle: {
+    height: 260,
+    minHeight: 220,
   },
   activeRunMapFill: {
     flex: 1,
@@ -2833,6 +2842,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
+  },
+  runControlPanelFlow: {
+    marginTop: 0,
   },
   runPrimaryRow: {
     flexDirection: 'row',
@@ -2958,6 +2970,21 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   inlineCompletionText: {
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  inlineDetailButton: {
+    alignSelf: 'stretch',
+    minHeight: 44,
+    borderRadius: radiusTokens.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexDirection: 'row',
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.sm,
+  },
+  inlineDetailText: {
     fontSize: 13,
     fontWeight: '900',
   },

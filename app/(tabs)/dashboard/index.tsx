@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, type DimensionValue } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, type DimensionValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,7 +20,7 @@ import { experienceModeAllows, useExperienceMode } from '../../../src/hooks/useE
 import { actionLabelForScheduledSession, describeRunWalk } from '../../../src/utils/scheduledSessions';
 import { activityTypeFromScheduledSession } from '../../../src/utils/activityCompletion';
 import { US_AQI_BANDS, aqiVoiceOverLabel, getAqiScalePosition } from '../../../src/utils/aqi';
-import { buildTrainingOutlook } from '../../../src/utils/trainingOutlook';
+import { buildPerformanceForecast, buildTrainingOutlook } from '../../../src/utils/trainingOutlook';
 
 function lastUpdatedLabel(fetchedAt: number | null): string | null {
   if (fetchedAt === null) return null;
@@ -279,6 +279,7 @@ export default function TodayScreen() {
   const [whyOpen, setWhyOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
+  const [openOptionSection, setOpenOptionSection] = useState<'today' | 'plan' | 'help' | null>(null);
   const experienceMode = useExperienceMode();
   const weekPlan = useWeekPlan();
   const scheduled = useScheduledSessions(weekPlan);
@@ -317,6 +318,16 @@ export default function TodayScreen() {
     readiness,
     decisionSnapshot,
   ]);
+  const performanceForecast = useMemo(() => buildPerformanceForecast(trainingOutlook, {
+    weeksToRace: weekPlan.metadata.weeksToRace,
+    trainingPhase: weekPlan.metadata.trainingPhase,
+    decisionSnapshot,
+  }), [
+    trainingOutlook,
+    weekPlan.metadata.weeksToRace,
+    weekPlan.metadata.trainingPhase,
+    decisionSnapshot,
+  ]);
   const primaryDayIndex = primarySession
     ? (new Date(`${primarySession.date}T12:00:00`).getDay() + 6) % 7
     : null;
@@ -353,6 +364,62 @@ export default function TodayScreen() {
     router.push('/(tabs)/calendar' as never);
   }
 
+  const optionSections = [
+    {
+      key: 'today' as const,
+      title: 'Adjust Today',
+      subtitle: "Change only today's workout or schedule.",
+      icon: 'options-outline' as const,
+      items: [
+        { label: "Shorten today's session", action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week', preferredAction: 'reduced', scheduledSessionId: primarySession?.scheduledSessionId } } as never) },
+        { label: 'Reduce intensity', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'health', scheduledSessionId: primarySession?.scheduledSessionId } } as never) },
+        { label: "Move today's workout", action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week', preferredAction: 'moved', scheduledSessionId: primarySession?.scheduledSessionId } } as never) },
+        { label: 'Replace with an equivalent session', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week', preferredAction: 'reduced', scheduledSessionId: primarySession?.scheduledSessionId } } as never) },
+        { label: 'Switch outdoor to treadmill', action: () => router.push('/(tabs)/training' as never) },
+        { label: 'Skip today', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'missed', scheduledSessionId: primarySession?.scheduledSessionId } } as never) },
+        { label: 'Report limited time', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week', reason: 'limited_time', scheduledSessionId: primarySession?.scheduledSessionId } } as never) },
+        { label: 'Report fatigue', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'health', reason: 'fatigue', scheduledSessionId: primarySession?.scheduledSessionId } } as never) },
+        { label: 'Report soreness', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'health', reason: 'soreness', scheduledSessionId: primarySession?.scheduledSessionId } } as never) },
+        { label: 'Report pain or symptoms', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'health', reason: 'pain_or_symptoms', scheduledSessionId: primarySession?.scheduledSessionId } } as never) },
+        { label: 'Report illness', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'health', reason: 'illness', scheduledSessionId: primarySession?.scheduledSessionId } } as never) },
+        { label: 'Report travel or schedule conflict', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week', reason: 'schedule_or_travel', scheduledSessionId: primarySession?.scheduledSessionId } } as never) },
+      ],
+    },
+    {
+      key: 'plan' as const,
+      title: 'Adjust the Plan',
+      subtitle: 'Update future training days, goals, or program structure.',
+      icon: 'calendar-outline' as const,
+      items: [
+        { label: 'Change training days', action: () => router.push('/(tabs)/profile/availability' as never) },
+        { label: 'Change long-run day', action: () => router.push('/(tabs)/profile/availability' as never) },
+        { label: 'Add or remove strength days', action: () => router.push('/(tabs)/settings' as never) },
+        { label: 'Update race or goal date', action: () => router.push('/(tabs)/settings' as never) },
+        { label: 'Change goal', action: () => router.push('/(tabs)/activity/plans' as never) },
+        { label: 'Pause plan', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week', reason: 'pause_plan' } } as never) },
+        { label: 'Return after time off', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week', reason: 'return_after_time_off' } } as never) },
+        { label: 'Rebuild the upcoming week', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week', preferredAction: 'rebuilt' } } as never) },
+        { label: 'Rebuild the current block', action: () => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week', preferredAction: 'rebuilt_block' } } as never) },
+      ],
+    },
+    {
+      key: 'help' as const,
+      title: 'Get Help',
+      subtitle: 'Ask why something changed or get guidance.',
+      icon: 'help-circle-outline' as const,
+      items: [
+        { label: 'Ask AI Coach', action: () => router.push({ pathname: '/(tabs)/coach', params: { ask: "Help me adapt today's workout." } } as never) },
+        { label: 'Why is this workout scheduled?', action: () => router.push({ pathname: '/(tabs)/coach', params: { ask: 'Why is this workout scheduled today?' } } as never) },
+        { label: 'Why did my plan change?', action: () => router.push({ pathname: '/(tabs)/coach', params: { ask: 'Why did my plan change?' } } as never) },
+        { label: 'What should I do after a missed workout?', action: () => router.push({ pathname: '/(tabs)/coach', params: { ask: 'What should I do after a missed workout?' } } as never) },
+        { label: 'Explain readiness', action: () => router.push({ pathname: '/(tabs)/coach', params: { ask: 'Explain my readiness.' } } as never) },
+        { label: 'Explain Training Outlook', action: () => router.push({ pathname: '/(tabs)/coach', params: { ask: 'Explain my Training Outlook.' } } as never) },
+        { label: 'Explain Performance Forecast', action: () => router.push({ pathname: '/(tabs)/coach', params: { ask: 'Explain my Performance Forecast.' } } as never) },
+        { label: 'Technical help', action: () => router.push('/(tabs)/settings' as never) },
+      ],
+    },
+  ];
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: C.bg }}
@@ -373,6 +440,8 @@ export default function TodayScreen() {
           <Ionicons name="person-outline" size={18} color={C.textMuted} />
         </TouchableOpacity>
       </View>
+
+      <WeatherCard />
 
       {/* One dominant answer for the day: what to do, how it should feel, and why. */}
       <View style={[styles.primaryWorkoutCard, { backgroundColor: C.card, borderColor: C.primary }]}>
@@ -415,51 +484,58 @@ export default function TodayScreen() {
             <TouchableOpacity
               onPress={() => setMoreOptionsOpen(open => !open)}
               style={[styles.moreOptionsButton, { borderColor: C.border, backgroundColor: C.cardAlt }]}
+              activeOpacity={0.82}
               accessibilityRole="button"
               accessibilityLabel={moreOptionsOpen ? 'Hide more workout options' : 'Show more workout options'}
+              accessibilityHint="Opens workout adjustment and help choices"
+              accessibilityState={{ expanded: moreOptionsOpen }}
             >
+              <Ionicons name="ellipsis-horizontal-circle-outline" size={18} color={C.primary} />
               <Text style={[styles.moreOptionsText, { color: C.text }]}>More Options</Text>
               <Ionicons name={moreOptionsOpen ? 'chevron-up' : 'chevron-down'} size={16} color={C.textMuted} />
             </TouchableOpacity>
             {moreOptionsOpen ? (
               <View style={styles.optionGroups}>
-                <View style={styles.optionGroup}>
-                  <Text style={[styles.optionGroupLabel, { color: C.textDim }]}>Adjust today</Text>
-                  <View style={styles.secondaryActions}>
-                    <TouchableOpacity onPress={() => router.push({
-                      pathname: '/(tabs)/activity/manual',
-                      params: { scheduledSessionId: primarySession?.scheduledSessionId, activityType: primarySession?.activityType },
-                    } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Do My Own Workout</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={() => router.push({
-                      pathname: '/(tabs)/training/adapt',
-                      params: { mode: 'health', scheduledSessionId: primarySession?.scheduledSessionId },
-                    } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Not Feeling 100%</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={() => router.push({
-                      pathname: '/(tabs)/training/adapt',
-                      params: { mode: 'missed', scheduledSessionId: primarySession?.scheduledSessionId },
-                    } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Not Today</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={() => router.push({
-                      pathname: '/(tabs)/training/adapt',
-                      params: { mode: 'week', scheduledSessionId: primarySession?.scheduledSessionId },
-                    } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Workout Alternatives</Text></TouchableOpacity>
-                  </View>
-                </View>
-                <View style={styles.optionGroup}>
-                  <Text style={[styles.optionGroupLabel, { color: C.textDim }]}>Adjust the plan</Text>
-                  <View style={styles.secondaryActions}>
-                    <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/training/adapt', params: { mode: 'week' } } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Adapt My Week</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={() => router.push({
-                      pathname: '/(tabs)/training/adapt',
-                      params: { mode: 'week', preferredAction: 'moved', scheduledSessionId: primarySession?.scheduledSessionId },
-                    } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Reschedule</Text></TouchableOpacity>
-                  </View>
-                </View>
-                <View style={styles.optionGroup}>
-                  <Text style={[styles.optionGroupLabel, { color: C.textDim }]}>Get help</Text>
-                  <View style={styles.secondaryActions}>
-                    <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/coach', params: { ask: 'Help me adapt today’s workout.' } } as never)}><Text style={[styles.secondaryActionText, { color: C.primary }]}>Ask AI Coach</Text></TouchableOpacity>
-                  </View>
-                </View>
+                {optionSections.map(section => {
+                  const expanded = openOptionSection === section.key;
+                  return (
+                    <View key={section.key} style={styles.optionGroup}>
+                      <TouchableOpacity
+                        onPress={() => setOpenOptionSection(current => current === section.key ? null : section.key)}
+                        style={[styles.optionDisclosureButton, { backgroundColor: C.cardAlt, borderColor: expanded ? C.primary : C.border }]}
+                        activeOpacity={0.82}
+                        accessibilityRole="button"
+                        accessibilityLabel={section.title}
+                        accessibilityHint={section.subtitle}
+                        accessibilityState={{ expanded }}
+                      >
+                        <Ionicons name={section.icon} size={18} color={expanded ? C.primary : C.textMuted} />
+                        <View style={styles.optionDisclosureCopy}>
+                          <Text style={[styles.optionDisclosureTitle, { color: C.text }]}>{section.title}</Text>
+                          <Text style={[styles.optionDisclosureSubtitle, { color: C.textMuted }]}>{section.subtitle}</Text>
+                        </View>
+                        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={C.textMuted} />
+                      </TouchableOpacity>
+                      {expanded ? (
+                        <View style={styles.optionActionList}>
+                          {section.items.map(item => (
+                            <TouchableOpacity
+                              key={item.label}
+                              onPress={item.action}
+                              style={[styles.optionActionButton, { backgroundColor: C.card, borderColor: C.border }]}
+                              activeOpacity={0.82}
+                              accessibilityRole="button"
+                              accessibilityLabel={item.label}
+                            >
+                              <Text style={[styles.optionActionText, { color: C.text }]}>{item.label}</Text>
+                              <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })}
               </View>
             ) : null}
           </>
@@ -503,9 +579,6 @@ export default function TodayScreen() {
         </View>
       )}
 
-      {/* Support information deliberately follows the daily decision. */}
-      <WeatherCard />
-
       {/* Training Outlook */}
       {showBalancedDetails ? <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.cardLabel, { color: C.textDim }]}>TRAINING OUTLOOK</Text>
@@ -528,6 +601,38 @@ export default function TodayScreen() {
               History {trainingOutlook.historyWeeks} week{trainingOutlook.historyWeeks === 1 ? '' : 's'} · completed {trainingOutlook.completedActivities} · ACWR-style workload trend {trainingOutlook.loadTrend.ratio.toFixed(2)} · confidence {trainingOutlook.confidence}
             </Text>
           </View>
+        ) : null}
+      </View> : null}
+
+      {/* Performance Forecast */}
+      {showBalancedDetails ? <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.cardLabel, { color: C.textDim }]}>PERFORMANCE FORECAST</Text>
+        <Text style={[styles.outlookTitle, { color: C.text }]}>{performanceForecast.metrics[0]?.state ?? 'Developing'}</Text>
+        <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{performanceForecast.summary}</Text>
+        <View style={styles.performanceMetricList}>
+          {performanceForecast.metrics.map(metric => (
+            <View key={metric.key} style={[styles.performanceMetricRow, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>{metric.label}</Text>
+                <Text style={[styles.forecastState, { color: C.text }]}>{metric.state}</Text>
+                <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{metric.summary}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => Alert.alert(metric.label, `${metric.info}\n\nConfidence: ${performanceForecast.confidence}. ${performanceForecast.limitations}`)}
+                style={[styles.metricInfoButton, { backgroundColor: C.card, borderColor: C.border }]}
+                accessibilityRole="button"
+                accessibilityLabel={`About ${metric.label}`}
+                accessibilityHint="Explains contributing data, confidence, and limitations."
+              >
+                <Ionicons name="information-circle-outline" size={19} color={C.primary} />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+        {showDataRichDetails ? (
+          <Text style={[styles.advancedText, { color: C.textDim }]}>
+            Forecast confidence {performanceForecast.confidence}. {performanceForecast.limitations}
+          </Text>
         ) : null}
       </View> : null}
     </ScrollView>
@@ -793,6 +898,10 @@ const styles = StyleSheet.create({
     rowGap: 10,
     marginTop: 14,
   },
+  secondaryActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
   moreOptionsButton: {
     minHeight: 44,
     borderRadius: 12,
@@ -802,27 +911,61 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
   },
   moreOptionsText: {
     fontSize: 13,
     fontWeight: '800',
+    flex: 1,
   },
   optionGroups: {
     marginTop: 12,
-    gap: 14,
+    gap: 10,
   },
   optionGroup: {
-    gap: 0,
+    gap: 8,
   },
-  optionGroupLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+  optionDisclosureButton: {
+    minHeight: 58,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  secondaryActionText: {
+  optionDisclosureCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  optionDisclosureTitle: {
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  optionDisclosureSubtitle: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 2,
+  },
+  optionActionList: {
+    gap: 7,
+  },
+  optionActionButton: {
+    minHeight: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  optionActionText: {
+    flex: 1,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   readinessLabel: {
     fontSize: 20,
@@ -915,6 +1058,33 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     lineHeight: 28,
+  },
+  performanceMetricList: {
+    gap: 10,
+    marginTop: 12,
+  },
+  performanceMetricRow: {
+    minHeight: 72,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'flex-start',
+  },
+  forecastState: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '900',
+    marginTop: 3,
+  },
+  metricInfoButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   forecastCellArrow: {
     fontSize: 22,

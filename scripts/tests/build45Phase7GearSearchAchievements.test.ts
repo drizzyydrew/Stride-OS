@@ -101,22 +101,27 @@ test('healthy achievements are restrained and rest never removes existing awards
     activity({ id: 'lift', activityType: 'strength', trainingLoad: { strength: 40, wholeBody: 40 } as Activity['trainingLoad'] }),
     activity({ id: 'mobility', activityType: 'mobility' }),
     activity({ id: 'skip', status: 'skipped' }),
-  ], ['consistency'], NOW);
+  ], ['consistency_wins'], NOW);
 
   assert.ok(ids.includes('long_run_builder'));
   assert.ok(ids.includes('easy_means_easy'));
   assert.ok(ids.includes('strong_strides'));
   assert.ok(ids.includes('recovery_master'));
-  assert.ok(ids.includes('consistency'));
+  assert.ok(ids.includes('consistency_wins'));
   assert.deepEqual(HEALTHY_ACHIEVEMENTS.map(item => item.id), [
+    'consistency_wins',
     'long_run_builder',
-    'easy_means_easy',
-    'strong_strides',
     'recovery_master',
-    'consistency',
-    'smart_adjustment',
-    'back_in_rhythm',
+    'smart_progression',
+    'strong_strides',
+    'foundation_builder',
+    'strength_supports_running',
+    'listened_to_your_body',
+    'back_on_track',
+    'deload_done_right',
     'balanced_training',
+    'quality_earned',
+    'easy_means_easy',
   ]);
 });
 

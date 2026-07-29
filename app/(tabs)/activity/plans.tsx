@@ -57,7 +57,7 @@ function dateParts(value: string) {
   };
 }
 
-export default function PresetPlansScreen() {
+export default function TrainingPathsScreen() {
   const C = useColors();
   const router = useRouter();
   const enduranceMode = useTrainingPreferencesStore(state => state.primaryEnduranceMode);
@@ -146,14 +146,14 @@ export default function PresetPlansScreen() {
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
       <ScreenHeader
-        eyebrow="PRESET TRAINING PLANS"
-        title="Build Your Endurance Base"
+        eyebrow="TRAINING PATHS"
+        title="Choose a Training Goal"
         onBack={() => router.back()}
       />
       <ScrollView contentContainerStyle={s.content}>
         {activePlan ? (
           <View style={[s.activeCard, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
-            <Text style={[s.eyebrow, { color: C.primary }]}>ACTIVE PRESET GOAL PLAN</Text>
+            <Text style={[s.eyebrow, { color: C.primary }]}>ACTIVE TRAINING PATH</Text>
             <Text style={[s.cardTitle, { color: C.text }]}>{BEGINNER_PLAN_DEFINITIONS[activePlan.goal].title}</Text>
             <Text style={[s.body, { color: C.textMuted }]}>
               {activePlan.durationWeeks} weeks · target {formatYMDForDisplay(activePlan.targetDate)} · {displayLabel(activePlan.primaryEnduranceMode)}
@@ -194,7 +194,7 @@ export default function PresetPlansScreen() {
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.cardTitle, { color: C.text }]}>{BEGINNER_PLAN_DEFINITIONS[selectedGoal].title}</Text>
           <Text style={[s.body, { color: C.textMuted }]}>
-            Adaptive walking, run/walk, strength, recovery, and fueling progression. Continuous running is not required.
+            Choose the destination for the adaptive engine. StrideOS will build the first schedule from your current capacity, history, readiness, and training preferences.
           </Text>
           <Text style={[s.label, { color: C.textDim }]}>CURRENT STARTING POINT</Text>
           <View style={s.pills}>
@@ -254,16 +254,23 @@ export default function PresetPlansScreen() {
           <Text style={[s.eyebrow, { color: C.textDim }]}>RECOMMENDATION</Text>
           <Text style={[s.recommended, { color: C.text }]}>{recommendation.recommendedWeeks} weeks</Text>
           <Text style={[s.body, { color: C.textMuted }]}>Earliest supported target: {formatYMDForDisplay(recommendation.earliestSupportedTargetDate)}</Text>
-          {recommendation.reasoning.slice(0, 3).map(reason => <Text key={reason} style={[s.bullet, { color: C.textMuted }]}>• {reason}</Text>)}
+          <Text style={[s.label, { color: C.textDim }]}>WHY THIS TIMELINE</Text>
+          {recommendation.reasoning.slice(0, 2).map(reason => <Text key={reason} style={[s.bullet, { color: C.textMuted }]}>• {reason}</Text>)}
           {recommendation.continuousRunEligibility?.requiresFiveKContinuous ? (
             <View style={[s.noteBox, { borderColor: recommendation.continuousRunEligibility.eligible ? C.primary : C.warning, backgroundColor: C.cardAlt }]}>
+              <Text style={[s.label, { color: C.textDim, marginTop: 0 }]}>BEFORE A CONTINUOUS HALF OR MARATHON</Text>
               <Text style={[s.helper, { color: C.text }]}>
                 {recommendation.continuousRunEligibility.recommendation}
               </Text>
               {!recommendation.continuousRunEligibility.eligible
-                ? recommendation.continuousRunEligibility.alternatives.map(alternative => (
-                  <Text key={alternative} style={[s.bullet, { color: C.textMuted }]}>• {alternative}</Text>
-                ))
+                ? (
+                  <>
+                    <Text style={[s.label, { color: C.textDim }]}>YOUR OPTIONS</Text>
+                    {recommendation.continuousRunEligibility.alternatives.slice(0, 3).map(alternative => (
+                      <Text key={alternative} style={[s.bullet, { color: C.textMuted }]}>• {alternative}</Text>
+                    ))}
+                  </>
+                )
                 : null}
             </View>
           ) : null}
@@ -272,7 +279,7 @@ export default function PresetPlansScreen() {
           </Text>
         </View>
         <TouchableOpacity onPress={choosePlan} style={[s.primaryButton, { backgroundColor: C.primary }]}>
-          <Text style={[s.primaryText, { color: C.onPrimary }]}>Use This Preset Plan</Text>
+          <Text style={[s.primaryText, { color: C.onPrimary }]}>Start This Training Path</Text>
         </TouchableOpacity>
       </ScrollView>
 

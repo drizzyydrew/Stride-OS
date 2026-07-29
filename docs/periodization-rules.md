@@ -1,6 +1,6 @@
 # StrideOS Periodization Rules
 
-Build 45 establishes this document as the coaching constitution for training engines, preset plans, custom plans, AI-generated plans, adaptive plans, workout alternatives, AI Coach context, and future native/watch surfaces.
+Build 45 establishes this document as the coaching constitution for training engines, goal-based training paths, custom plans, AI-generated plans, adaptive plans, workout alternatives, AI Coach context, and future native/watch surfaces.
 
 ## Core principle
 

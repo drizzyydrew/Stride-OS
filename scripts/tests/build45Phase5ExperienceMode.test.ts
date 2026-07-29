@@ -34,16 +34,19 @@ test('Today workout card uses the required action groups and no empty change ban
   const dashboard = read('app/(tabs)/dashboard/index.tsx');
   assert.doesNotMatch(dashboard, /No plan changes today/);
   assert.match(dashboard, /More Options/);
-  for (const group of ['Adjust today', 'Adjust the plan', 'Get help']) {
+  for (const group of ['Adjust Today', 'Adjust the Plan', 'Get Help']) {
     assert.match(dashboard, new RegExp(group));
   }
   for (const action of [
-    'Do My Own Workout',
-    'Not Feeling 100%',
-    'Not Today',
-    'Workout Alternatives',
-    'Adapt My Week',
-    'Reschedule',
+    "Shorten today's session",
+    'Reduce intensity',
+    "Move today's workout",
+    'Replace with an equivalent session',
+    'Switch outdoor to treadmill',
+    'Skip today',
+    'Report fatigue',
+    'Why is this workout scheduled?',
+    'Explain Performance Forecast',
     'Ask AI Coach',
   ]) {
     assert.match(dashboard, new RegExp(action));

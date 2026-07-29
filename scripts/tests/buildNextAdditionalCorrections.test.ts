@@ -103,9 +103,9 @@ test('Daily Check-In uses word choices, blank required state, and one-minute sle
   assert.match(source, /Very low/);
   assert.match(source, /Very high/);
   assert.match(source, /disabled=\{!canSave\}/);
-  assert.match(source, /accessibilityState=\{\{ selected \}\}/);
-  assert.match(source, />Selected<\/Text>/);
-  assert.doesNotMatch(source, /TextInput/);
+  assert.match(source, /ChoicePickerWheel/);
+  assert.match(source, /Other training factor note/);
+  assert.match(source, /TextInput/);
   assert.doesNotMatch(source, /ScrollView/);
   assert.doesNotMatch(source, /\[0, 15, 30, 45\]/);
   assert.doesNotMatch(source, /DEFAULT_INPUTS/);

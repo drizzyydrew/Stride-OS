@@ -95,6 +95,63 @@ export function parsePrescriptionScheme(
   return { kind: 'reps', label: text, perSide };
 }
 
+export type PrescriptionCategory =
+  | 'static_stretch'
+  | 'isometric'
+  | 'dynamic_mobility'
+  | 'strength'
+  | 'carry'
+  | 'balance'
+  | 'plyometric'
+  | 'aerobic_warmup'
+  | 'loaded_strength_warmup'
+  | 'bodyweight_warmup';
+
+export type PrescriptionValidationResult = {
+  valid: boolean;
+  issues: string[];
+};
+
+export function validatePrescriptionForCategory(
+  category: PrescriptionCategory,
+  scheme: RepScheme | undefined,
+  context: { loadTarget?: string; tempo?: string; exerciseName?: string } = {},
+): PrescriptionValidationResult {
+  const issues: string[] = [];
+  const loadTarget = context.loadTarget?.toLowerCase() ?? '';
+  const tempo = context.tempo?.toLowerCase() ?? '';
+
+  if (category === 'static_stretch') {
+    if (!scheme || scheme.kind !== 'duration') issues.push('static stretch must use a timed hold prescription');
+    if (scheme?.kind === 'reps' || scheme?.kind === 'reps_hold' || scheme?.kind === 'reps_tempo') issues.push('static stretch must not be rendered as repetitions');
+    if (scheme?.kind === 'reps_tempo' || /\d+\s*:\s*\d+\s*:\s*\d+/.test(tempo)) issues.push('static stretch must not use strength tempo');
+    if (/bodyweight|%|1rm|working/i.test(loadTarget)) issues.push('static stretch must not use load progression');
+  }
+
+  if (category === 'isometric') {
+    if (!scheme || (scheme.kind !== 'duration' && scheme.kind !== 'reps_hold')) issues.push('isometric work must include hold duration');
+    if (scheme?.kind === 'reps_tempo') issues.push('isometric holds must not use strength tempo');
+  }
+
+  if (category === 'carry' && (!scheme || scheme.kind !== 'distance')) {
+    issues.push('carry must specify distance or duration');
+  }
+
+  if (category === 'balance') {
+    if (!scheme || scheme.kind !== 'duration') issues.push('balance work must be rendered as a hold, not repetitions');
+  }
+
+  if (category === 'bodyweight_warmup' && /%|1rm|working/.test(loadTarget)) {
+    issues.push('bodyweight warm-up must not show percentage loading');
+  }
+
+  if (category === 'loaded_strength_warmup' && /%/.test(loadTarget) && !/(1rm|working|training max|estimated)/.test(loadTarget)) {
+    issues.push('percentage warm-up loading must name its load basis');
+  }
+
+  return { valid: issues.length === 0, issues };
+}
+
 export function representativeRepsForScheme(scheme: RepScheme | undefined, fallbackReps?: string): number | undefined {
   if (!scheme) return firstTwoNumbers(fallbackReps ?? '')?.[0];
   if (scheme.kind === 'duration' || scheme.kind === 'distance') return undefined;
