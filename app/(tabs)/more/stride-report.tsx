@@ -8,6 +8,7 @@ import ReportStatPill from '../../../src/components/report/ReportStatPill';
 import ShareCardAchievementFocus from '../../../src/components/report/ShareCardAchievementFocus';
 import ShareCardCleanSummary from '../../../src/components/report/ShareCardCleanSummary';
 import ShareCardDataFocus from '../../../src/components/report/ShareCardDataFocus';
+import ShareCardShoeReport from '../../../src/components/report/ShareCardShoeReport';
 import { LAYOUT } from '../../../src/constants/layout';
 import { shareCardUnavailableReason, shareReportCard } from '../../../src/lib/shareCard';
 import { useActivityStore } from '../../../src/store/activityStore';
@@ -20,6 +21,7 @@ import {
   formatReportDistance,
   formatReportDuration,
   formatReportElevation,
+  strideReportHighlightsForUnits,
   type StrideReport,
   type StrideReportPeriod,
   type StrideReportShareVariant,
@@ -35,6 +37,7 @@ const VARIANTS: Array<{ id: StrideReportShareVariant; label: string; description
   { id: 'clean_summary', label: 'Clean', description: 'Simple training recap' },
   { id: 'data_focus', label: 'Data', description: 'Stats without private fields' },
   { id: 'achievement_focus', label: 'Progress', description: 'Healthy progress highlight' },
+  { id: 'shoe_report', label: 'Shoe Report', description: 'Gear mileage without private notes' },
 ];
 
 function PeriodButton({
@@ -69,6 +72,7 @@ function PeriodButton({
 function SharePreview({ variant, report, units }: { variant: StrideReportShareVariant; report: StrideReport; units: UnitSystem }) {
   if (variant === 'data_focus') return <ShareCardDataFocus report={report} units={units} />;
   if (variant === 'achievement_focus') return <ShareCardAchievementFocus report={report} units={units} />;
+  if (variant === 'shoe_report') return <ShareCardShoeReport report={report} units={units} />;
   return <ShareCardCleanSummary report={report} units={units} />;
 }
 
@@ -93,6 +97,7 @@ export default function StrideReportScreen() {
     [activities, period, shoes],
   );
   const sharePayload = useMemo(() => buildStrideReportSharePayload(report, variant, units), [report, units, variant]);
+  const displayHighlights = useMemo(() => strideReportHighlightsForUnits(report, units), [report, units]);
 
   async function handleShare() {
     setShareMessage(null);
@@ -152,7 +157,7 @@ export default function StrideReportScreen() {
 
         <View style={[s.summaryCard, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>HIGHLIGHTS</Text>
-          {report.highlights.length > 0 ? report.highlights.slice(0, 6).map(item => (
+          {displayHighlights.length > 0 ? displayHighlights.slice(0, 6).map(item => (
             <View key={`${item.label}-${item.value}`} style={[s.highlightRow, { borderBottomColor: C.separator }]}>
               <View style={s.highlightCopy}>
                 <Text style={[s.highlightLabel, { color: C.text }]}>{item.label}</Text>

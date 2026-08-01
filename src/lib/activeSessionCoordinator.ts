@@ -83,12 +83,14 @@ export function isActiveSessionStale(): boolean {
 // actions so a stale/conflicting session is never a dead end.
 export async function discardActiveSession(owner: ActiveSessionOwner): Promise<void> {
   if (owner.domain === 'running') {
+    const run = useActiveRunStore.getState();
     await stopLocationTracking().catch(() => undefined);
     await endRunLiveActivity({
-      sessionId: '',
+      sessionId: run.workoutInstanceId ?? (run.startTime ? `run:${run.startTime}` : ''),
+      workoutInstanceId: run.workoutInstanceId ?? undefined,
       sessionSource: 'running',
-      elapsedSeconds: 0,
-      distanceMiles: 0,
+      elapsedSeconds: run.startTime ? Math.max(0, Math.floor((Date.now() - run.startTime - run.pausedDurationMs) / 1000)) : 0,
+      distanceMiles: run.distanceMiles,
       averagePace: '--:--',
       heartRateBpm: null,
       zoneLabel: 'Zone --',
@@ -99,14 +101,16 @@ export async function discardActiveSession(owner: ActiveSessionOwner): Promise<v
     return;
   }
   if (owner.domain === 'outdoor') {
+    const outdoor = useActiveActivityStore.getState();
     await stopActivityLocationTracking().catch(() => undefined);
     await endOutdoorLiveActivity({
-      sessionId: '',
+      sessionId: outdoor.workoutInstanceId ?? outdoor.activityId ?? '',
+      workoutInstanceId: outdoor.workoutInstanceId ?? undefined,
       sessionSource: 'outdoor',
-      activityName: owner.name,
-      activityType: 'walking',
-      elapsedSeconds: 0,
-      distanceMiles: 0,
+      activityName: outdoor.name || owner.name,
+      activityType: outdoor.runWalkIntervals.length ? 'run_walk' : outdoor.activityType,
+      elapsedSeconds: outdoor.startedAt ? Math.max(0, Math.floor((Date.now() - outdoor.startedAt - outdoor.pausedDurationMs) / 1000)) : 0,
+      distanceMiles: outdoor.aggregate.distanceMeters / 1609.344,
       heartRateBpm: null,
       isPaused: false,
       elevationGainMeters: 0,
@@ -116,7 +120,22 @@ export async function discardActiveSession(owner: ActiveSessionOwner): Promise<v
     return;
   }
   if (owner.domain === 'indoor_ride') {
-    useActiveIndoorRideStore.getState().cancelRide();
+    const ride = useActiveIndoorRideStore.getState();
+    await endOutdoorLiveActivity({
+      sessionId: ride.workoutInstanceId ?? '',
+      workoutInstanceId: ride.workoutInstanceId ?? undefined,
+      sessionSource: 'outdoor',
+      activityName: 'Indoor Ride',
+      activityType: 'indoor_cycling',
+      elapsedSeconds: ride.startedAt ? Math.max(0, Math.floor((Date.now() - ride.startedAt - ride.pausedDurationMs) / 1000)) : 0,
+      distanceMiles: ride.equipmentDistance
+        ? (ride.equipmentDistance.unit === 'mi' ? ride.equipmentDistance.value : ride.equipmentDistance.value / 1.609344)
+        : 0,
+      averageSpeedMph: 0,
+      heartRateBpm: ride.heartRateBpm,
+      isPaused: false,
+    }).catch(() => undefined);
+    ride.cancelRide();
     return;
   }
   if (owner.domain === 'strength') {

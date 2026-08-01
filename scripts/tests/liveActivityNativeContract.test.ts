@@ -22,9 +22,10 @@ test('Live Activity IDs persist and stale first-activity selection is avoided', 
   assert.match(moduleSource, /StrideLiveActivityIdStore\.write\(activity\.id, key: StrideLiveActivityIdStore\.strengthKey\)/);
 });
 
-test('native start paths enforce one cross-domain Live Activity owner', () => {
-  assert.match(moduleSource, /await Self\.endExistingActivityIfNeeded\(\)\s+await Self\.endExistingStrengthActivityIfNeeded\(\)/);
-  assert.match(moduleSource, /AsyncFunction\("startStrength"\)[\s\S]*await Self\.endExistingActivityIfNeeded\(\)\s+await Self\.endExistingStrengthActivityIfNeeded\(\)/);
+test('native start paths clean only matching Live Activity instances', () => {
+  assert.match(moduleSource, /await Self\.endMatchingRunActivityIfNeeded\(sessionId: sessionId, sessionSource: sessionSource\)/);
+  assert.match(moduleSource, /AsyncFunction\("startStrength"\)[\s\S]*await Self\.endMatchingStrengthActivityIfNeeded\(sessionId: sessionId, sessionSource: sessionSource\)/);
+  assert.doesNotMatch(moduleSource, /await Self\.endExistingActivityIfNeeded\(\)\s+await Self\.endExistingStrengthActivityIfNeeded\(\)/);
 });
 
 test('App Intents publish pending state and suppress rapid duplicate commands', () => {

@@ -43,6 +43,21 @@ export type ActivitySource =
   | 'strava'
   | 'legacy_import';
 
+export type TelemetrySource =
+  | 'phone_gps'
+  | 'phone_motion'
+  | 'apple_watch'
+  | 'healthkit'
+  | 'foot_pod'
+  | 'ftms_treadmill'
+  | 'smart_trainer'
+  | 'heart_rate_monitor'
+  | 'cycling_power_meter'
+  | 'manual_equipment_entry'
+  | 'manual_entry'
+  | 'prescribed_estimate'
+  | 'unavailable';
+
 export type ActivityStatus = 'completed' | 'skipped' | 'partial';
 
 // Richer, athlete-facing classification of how a completion relates to what
@@ -101,7 +116,7 @@ export type HeartRateZoneSeconds = Partial<Record<1 | 2 | 3 | 4 | 5, number>>;
 export type HeartRateSample = {
   timestamp: number;
   bpm: number;
-  source: 'healthkit';
+  source: Extract<TelemetrySource, 'healthkit' | 'apple_watch' | 'heart_rate_monitor'>;
 };
 
 // A completion-time summary, not a promise of continuous sensor coverage.
@@ -157,6 +172,18 @@ export type ActivityMetrics = {
   routeId?: string;
   routeCoordinates?: ActivityCoordinate[];
   distanceSource?: DistanceSource;
+  metricSources?: Partial<Record<
+    | 'distance'
+    | 'pace'
+    | 'speed'
+    | 'heartRate'
+    | 'cadence'
+    | 'power'
+    | 'elevation'
+    | 'steps'
+    | 'energy',
+    TelemetrySource
+  >>;
   // Preserved when the athlete later corrects the final distance (e.g. from
   // a treadmill's displayed reading) so the original estimate isn't lost.
   originalEstimatedDistanceMiles?: number;
@@ -194,6 +221,27 @@ export type ActivityMetrics = {
     // supplied it. Legacy records simply leave this absent.
     exercises?: import('./strength').CompletedExercise[];
   };
+};
+
+export type HealthKitImportMetadata = {
+  workoutUuid: string;
+  sourceBundleIdentifier: string;
+  sourceName?: string;
+  deviceName?: string;
+  deviceManufacturer?: string;
+  originalStartTime: number;
+  originalEndTime: number;
+  localCalendarDate: string;
+  importedAt: number;
+  routeStatus: 'available' | 'not_available' | 'not_authorized' | 'unsupported';
+  importedByStrideOS: boolean;
+};
+
+export type WorkoutKitExportMetadata = {
+  scheduledWorkoutId: string;
+  exportedAt: number;
+  status: 'exported' | 'removed' | 'unsupported' | 'stale';
+  unsupportedReason?: string;
 };
 
 export type ActivityLoadDimensions = {
@@ -236,6 +284,8 @@ export type Activity = {
   metrics: ActivityMetrics;
   trainingLoad: ActivityLoadDimensions;
   liveActivity?: ActivityLiveState;
+  healthKit?: HealthKitImportMetadata;
+  workoutKit?: WorkoutKitExportMetadata;
   legacyWorkoutId?: string;
   createdAt: number;
   updatedAt: number;

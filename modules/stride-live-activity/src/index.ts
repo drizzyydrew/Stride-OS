@@ -73,6 +73,17 @@ export type StrideRunControlCommand = {
   activityKitId?: string;
 };
 
+export type StrideLiveActivityDiagnostics = {
+  areActivitiesEnabled: boolean;
+  activeRunActivityCount: number;
+  activeStrengthActivityCount: number;
+  appGroupIdentifier: string;
+  lastStartResult?: string;
+  lastUpdateResult?: string;
+  lastEndResult?: string;
+  lastRequestError?: string;
+};
+
 const VALID_CONTROL_ACTIONS: readonly StrideControlAction[] = [
   'pause', 'resume', 'stop', 'strength_pause', 'strength_resume', 'strength_complete',
 ];
@@ -106,6 +117,8 @@ type StrideLiveActivityModule = {
     descentDisplay: string,
   ) => Promise<string | null>;
   update: (
+    sessionId: string,
+    sessionSource: string,
     elapsedSeconds: number,
     distanceMiles: number,
     averagePace: string,
@@ -126,6 +139,8 @@ type StrideLiveActivityModule = {
     descentDisplay: string,
   ) => Promise<void>;
   end: (
+    sessionId: string,
+    sessionSource: string,
     elapsedSeconds: number,
     distanceMiles: number,
     averagePace: string,
@@ -156,6 +171,8 @@ type StrideLiveActivityModule = {
     controlState: string,
   ) => Promise<string | null>;
   updateStrength: (
+    sessionId: string,
+    sessionSource: string,
     elapsedSeconds: number,
     currentExercise: string,
     nextExercise: string,
@@ -167,7 +184,8 @@ type StrideLiveActivityModule = {
     progressLabel: string,
     controlState: string,
   ) => Promise<void>;
-  endStrength: () => Promise<void>;
+  endStrength: (sessionId?: string, sessionSource?: string) => Promise<void>;
+  getDiagnostics?: () => StrideLiveActivityDiagnostics;
   getRouteDirections?: (
     coordinates: { latitude: number; longitude: number }[],
     transport: 'walking' | 'cycling',
@@ -208,6 +226,30 @@ export function isStrideRunLiveActivityAvailable(): boolean {
     return nativeModule.isAvailable();
   } catch {
     return false;
+  }
+}
+
+export function getStrideLiveActivityDiagnostics(): StrideLiveActivityDiagnostics {
+  const nativeModule = getNativeModule();
+  if (!nativeModule?.getDiagnostics) {
+    return {
+      areActivitiesEnabled: isStrideRunLiveActivityAvailable(),
+      activeRunActivityCount: 0,
+      activeStrengthActivityCount: 0,
+      appGroupIdentifier: 'group.com.mooremovement.strideos',
+      lastStartResult: nativeModule ? 'diagnostics_unavailable' : 'native_module_unavailable',
+    };
+  }
+  try {
+    return nativeModule.getDiagnostics();
+  } catch (error) {
+    return {
+      areActivitiesEnabled: false,
+      activeRunActivityCount: 0,
+      activeStrengthActivityCount: 0,
+      appGroupIdentifier: 'group.com.mooremovement.strideos',
+      lastRequestError: error instanceof Error ? error.message : 'Diagnostics failed',
+    };
   }
 }
 
@@ -272,6 +314,8 @@ export async function updateStrideRunLiveActivity(payload: StrideRunLiveActivity
   const nativeModule = getNativeModule();
   if (!nativeModule || !isStrideRunLiveActivityAvailable()) return;
   await nativeModule.update(
+    payload.workoutInstanceId ?? payload.sessionId ?? '',
+    payload.sessionSource ?? 'running',
     Math.max(0, Math.round(payload.elapsedSeconds)),
     Math.max(0, payload.distanceMiles),
     payload.averagePace,
@@ -297,6 +341,8 @@ export async function endStrideRunLiveActivity(payload: StrideRunLiveActivityPay
   const nativeModule = getNativeModule();
   if (!nativeModule) return;
   await nativeModule.end(
+    payload.workoutInstanceId ?? payload.sessionId ?? '',
+    payload.sessionSource ?? 'running',
     Math.max(0, Math.round(payload.elapsedSeconds)),
     Math.max(0, payload.distanceMiles),
     payload.averagePace,
@@ -357,6 +403,8 @@ export async function updateStrengthLiveActivity(payload: StrideStrengthLiveActi
   const nativeModule = getNativeModule();
   if (!nativeModule || !isStrideRunLiveActivityAvailable()) return;
   await nativeModule.updateStrength(
+    payload.workoutInstanceId ?? payload.sessionId ?? '',
+    payload.sessionSource ?? 'training_block',
     Math.max(0, payload.elapsedSeconds),
     payload.currentExercise,
     payload.nextExercise,
@@ -370,10 +418,13 @@ export async function updateStrengthLiveActivity(payload: StrideStrengthLiveActi
   );
 }
 
-export async function endStrengthLiveActivity(): Promise<void> {
+export async function endStrengthLiveActivity(payload?: Pick<StrideStrengthLiveActivityPayload, 'workoutInstanceId' | 'sessionId' | 'sessionSource'>): Promise<void> {
   const nativeModule = getNativeModule();
   if (!nativeModule) return;
-  await nativeModule.endStrength();
+  await nativeModule.endStrength(
+    payload?.workoutInstanceId ?? payload?.sessionId ?? '',
+    payload?.sessionSource ?? 'training_block',
+  );
 }
 
 // Phase 3: Strength lock screen intent listeners

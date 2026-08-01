@@ -24,6 +24,7 @@ test('bottom navigation declares exactly the six approved primary destinations',
     'training/workout-detail',
     'more/gear',
     'more/stride-report',
+    'more/health-sync',
   ]);
   assert.equal(existsSync('app/(tabs)/activity/_layout.tsx'), true);
   assert.equal(existsSync('app/(tabs)/profile/_layout.tsx'), true);
@@ -43,6 +44,7 @@ test('More contains only valid secondary destinations and does not duplicate pri
     'Activity',
     'Gear',
     'Stride Report',
+    'Health Sync',
     'Movement Lab',
     'Analytics',
     'Adaptive Performance',

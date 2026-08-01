@@ -30,6 +30,11 @@ import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import { getLatestHeartRateSample } from '../../../src/lib/healthKit';
 import {
+  endOutdoorLiveActivity,
+  startOutdoorLiveActivity,
+  updateOutdoorLiveActivity,
+} from '../../../src/lib/runLiveActivity';
+import {
   activeSessionStoresHydrated,
   discardActiveSession,
   getConflictingActiveSession,
@@ -78,6 +83,10 @@ export default function IndoorRideScreen() {
   const [distanceModalOpen, setDistanceModalOpen] = useState(false);
   const [distanceInput, setDistanceInput] = useState('');
   const [distanceUnitInput, setDistanceUnitInput] = useState<'mi' | 'km'>(imperial ? 'mi' : 'km');
+  const steps = ride.plannedWorkout ? flattenWorkoutSteps(ride.plannedWorkout) : [];
+  const stepIndex = clampStepIndex(steps, ride.currentIntervalIndex);
+  const currentStep = steps[stepIndex] ?? null;
+  const remainingMinutes = steps.length ? totalRemainingMinutes(steps, stepIndex) : null;
 
   useEffect(() => {
     if (!ride.isActive || ride.isPaused || !ride.startedAt) return;
@@ -98,6 +107,27 @@ export default function IndoorRideScreen() {
   }, [ride.isActive, ride.workoutInstanceId]);
 
   useEffect(() => {
+    if (!ride.isActive || !ride.workoutInstanceId) return;
+    const miles = ride.equipmentDistance
+      ? (ride.equipmentDistance.unit === 'mi' ? ride.equipmentDistance.value : ride.equipmentDistance.value / 1.609344)
+      : 0;
+    void updateOutdoorLiveActivity({
+      sessionId: ride.workoutInstanceId,
+      workoutInstanceId: ride.workoutInstanceId,
+      sessionSource: 'outdoor',
+      activityName: 'Indoor Ride',
+      activityType: 'indoor_cycling',
+      elapsedSeconds,
+      distanceMiles: miles,
+      averageSpeedMph: miles > 0 && elapsedSeconds > 0 ? miles / (elapsedSeconds / 3600) : 0,
+      heartRateBpm: ride.heartRateBpm,
+      isPaused: ride.isPaused,
+      currentInterval: currentStep?.label,
+      cueText: ride.equipmentDistance == null ? 'Distance unavailable until entered from equipment.' : 'Equipment distance',
+    }).catch(() => undefined);
+  }, [currentStep?.label, elapsedSeconds, ride.equipmentDistance, ride.heartRateBpm, ride.isActive, ride.isPaused, ride.workoutInstanceId]);
+
+  useEffect(() => {
     let cancelled = false;
     async function refreshHeartRate() {
       if (!healthKitEnabled || !ride.isActive || ride.isPaused || Platform.OS !== 'ios') {
@@ -114,11 +144,6 @@ export default function IndoorRideScreen() {
       clearInterval(timer);
     };
   }, [ride.isActive, ride.isPaused, healthKitEnabled]);
-
-  const steps = ride.plannedWorkout ? flattenWorkoutSteps(ride.plannedWorkout) : [];
-  const stepIndex = clampStepIndex(steps, ride.currentIntervalIndex);
-  const currentStep = steps[stepIndex] ?? null;
-  const remainingMinutes = steps.length ? totalRemainingMinutes(steps, stepIndex) : null;
 
   const targetZone = 2;
   const zoneStatus = zoneStatusForHeartRate(ride.heartRateBpm, targetZone, calibration?.hrZones);
@@ -162,6 +187,20 @@ export default function IndoorRideScreen() {
       return;
     }
     ride.startRide(config);
+    const started = useActiveIndoorRideStore.getState();
+    await startOutdoorLiveActivity({
+      sessionId: started.workoutInstanceId ?? '',
+      workoutInstanceId: started.workoutInstanceId ?? undefined,
+      sessionSource: 'outdoor',
+      activityName: 'Indoor Ride',
+      activityType: 'indoor_cycling',
+      elapsedSeconds: 0,
+      distanceMiles: 0,
+      averageSpeedMph: 0,
+      heartRateBpm: null,
+      isPaused: false,
+      cueText: 'Distance unavailable until entered from equipment.',
+    }).catch(() => undefined);
     setElapsedSeconds(0);
     setCadenceInput('');
     setPowerInput('');
@@ -254,6 +293,20 @@ export default function IndoorRideScreen() {
       rpe: state.rpe,
       equipmentDistance: state.equipmentDistance,
     });
+    await endOutdoorLiveActivity({
+      sessionId: state.workoutInstanceId ?? '',
+      workoutInstanceId: state.workoutInstanceId ?? undefined,
+      sessionSource: 'outdoor',
+      activityName: 'Indoor Ride',
+      activityType: 'indoor_cycling',
+      elapsedSeconds: elapsed,
+      distanceMiles: state.equipmentDistance
+        ? (state.equipmentDistance.unit === 'mi' ? state.equipmentDistance.value : state.equipmentDistance.value / 1.609344)
+        : 0,
+      averageSpeedMph: 0,
+      heartRateBpm: state.heartRateBpm,
+      isPaused: false,
+    }).catch(() => undefined);
     const activityId = addActivity(draft);
     ride.finishRide();
     router.replace({ pathname: '/(tabs)/activity/[activityId]', params: { activityId } } as never);
@@ -262,7 +315,25 @@ export default function IndoorRideScreen() {
   function cancel() {
     Alert.alert('Cancel ride?', 'This discards the in-progress ride without saving it.', [
       { text: 'Keep Riding', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => ride.cancelRide() },
+      {
+        text: 'Discard',
+        style: 'destructive',
+        onPress: () => {
+          const state = useActiveIndoorRideStore.getState();
+          void endOutdoorLiveActivity({
+            sessionId: state.workoutInstanceId ?? '',
+            workoutInstanceId: state.workoutInstanceId ?? undefined,
+            sessionSource: 'outdoor',
+            activityName: 'Indoor Ride',
+            activityType: 'indoor_cycling',
+            elapsedSeconds: activeIndoorRideElapsedSeconds(state),
+            distanceMiles: 0,
+            averageSpeedMph: 0,
+            heartRateBpm: state.heartRateBpm,
+            isPaused: false,
+          }).catch(() => undefined).finally(() => ride.cancelRide());
+        },
+      },
     ]);
   }
 

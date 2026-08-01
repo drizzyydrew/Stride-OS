@@ -42,6 +42,8 @@ export async function startLocationTracking(): Promise<void> {
     accuracy:         Location.Accuracy.BestForNavigation,
     timeInterval:     1000,
     distanceInterval: 5,
+    pausesUpdatesAutomatically: false,
+    activityType: Location.ActivityType.Fitness,
     showsBackgroundLocationIndicator: true,
     foregroundService: {
       notificationTitle: 'Stride is tracking your run',

@@ -647,7 +647,7 @@ export default function TodayScreen() {
                 <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>{metric.label}</Text>
                 <TouchableOpacity
                   onPress={() => Alert.alert(metric.label, `${metric.info}\n\nConfidence: ${performanceForecast.confidence}. ${performanceForecast.limitations}`)}
-                  style={[styles.metricInfoButton, { backgroundColor: C.card, borderColor: C.border }]}
+                  style={styles.metricInfoButton}
                   accessibilityRole="button"
                   accessibilityLabel={`About ${metric.label}`}
                   accessibilityHint="Explains contributing data, confidence, and limitations."
@@ -1134,10 +1134,10 @@ const styles = StyleSheet.create({
   },
   forecastSummaryCell: {
     flexGrow: 1,
-    flexBasis: '31%',
-    minWidth: 96,
+    flexBasis: 148,
+    minWidth: 132,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 8,
     padding: 12,
   },
   forecastMetricHeader: {
@@ -1156,8 +1156,6 @@ const styles = StyleSheet.create({
   metricInfoButton: {
     width: 44,
     height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },

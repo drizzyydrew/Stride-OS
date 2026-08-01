@@ -37,6 +37,7 @@ export function normalizeStrengthLiveActivityPayload(
 
   return {
     ...payload,
+    workoutInstanceId: payload.workoutInstanceId ?? activeSession?.workoutInstanceId,
     sessionId: payload.sessionId
       ?? (activeSession ? strengthLiveActivitySessionId(activeSession) : ''),
     sessionSource: payload.sessionSource ?? activeSession?.source ?? 'training_block',
@@ -68,8 +69,13 @@ export async function updateStrengthLiveActivity(
   await updateNativeStrengthLiveActivity(normalizeStrengthLiveActivityPayload(payload));
 }
 
-export async function endStrengthLiveActivity(): Promise<void> {
-  await endNativeStrengthLiveActivity();
+export async function endStrengthLiveActivity(payload?: Partial<Pick<StrengthLiveActivityPayload, 'workoutInstanceId' | 'sessionId' | 'sessionSource'>>): Promise<void> {
+  const activeSession = useActiveStrengthSessionStore.getState().session;
+  await endNativeStrengthLiveActivity({
+    workoutInstanceId: payload?.workoutInstanceId ?? activeSession?.workoutInstanceId ?? undefined,
+    sessionId: payload?.sessionId ?? (activeSession ? strengthLiveActivitySessionId(activeSession) : undefined),
+    sessionSource: payload?.sessionSource ?? activeSession?.source ?? 'training_block',
+  });
 }
 
 export { addStrengthIntentListener };

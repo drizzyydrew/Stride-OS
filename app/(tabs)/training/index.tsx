@@ -70,6 +70,8 @@ import {
 import { evaluateSustainedEffortCue, type EffortCueState } from '../../../src/utils/activityTracking';
 import { estimateDistanceMiles, estimateMilesFromPrescription, safePaceSecPerMile, type FinalDistanceResult } from '../../../src/utils/treadmill';
 import type { DistanceSource } from '../../../src/types/activity';
+import { treadmillMetricAvailability, type TreadmillPhonePlacement } from '../../../src/utils/treadmillPlacement';
+import { labelForMetricSource } from '../../../src/utils/metricSources';
 import { paceSecPerMileToSecPerKm } from '../../../src/utils/units';
 import { zoneStatusForHeartRate } from '../../../src/utils/heartRateZones';
 import TreadmillPanel from '../../../src/components/run/TreadmillPanel';
@@ -91,6 +93,32 @@ const RUN_MODE_OPTIONS: { key: RunMode; label: string; icon: keyof typeof Ionico
   { key: 'distance', label: 'Distance',    icon: 'flag-outline',    desc: 'Run to a set distance.' },
   { key: 'workout',  label: 'Workout',     icon: 'list-outline',    desc: "Follow today's structured plan." },
   { key: 'race',     label: 'Race',        icon: 'trophy-outline',  desc: 'Target pace, predicted finish, fueling cues.' },
+];
+
+const TREADMILL_PLACEMENT_OPTIONS: {
+  key: TreadmillPhonePlacement;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  desc: string;
+}[] = [
+  {
+    key: 'on_body',
+    label: 'On my body',
+    icon: 'body-outline',
+    desc: 'Phone motion may estimate steps, cadence, pace, and distance.',
+  },
+  {
+    key: 'resting_on_treadmill',
+    label: 'Resting on treadmill',
+    icon: 'tablet-landscape-outline',
+    desc: 'Phone motion will not be used for cadence, pace, or distance.',
+  },
+  {
+    key: 'connected_sensor',
+    label: 'Connected sensor',
+    icon: 'bluetooth-outline',
+    desc: 'StrideOS will prioritize the connected treadmill, foot pod, watch, or wearable source.',
+  },
 ];
 
 const TIME_GOAL_VALUES = Array.from({ length: 35 }, (_, i) => 10 + i * 5);            // 10–180 min
@@ -318,7 +346,7 @@ function PlanTab() {
   const C = useColors();
   const router = useRouter();
   const mode = useThemeMode();
-  const { units } = useSettingsStore();
+  const { units, treadmillPhonePlacementDefault, setTreadmillPhonePlacementDefault } = useSettingsStore();
   const showDataRichDetails = useExperienceModeAllows('data_rich');
   const imp = units === 'imperial';
   const pUnit = imp ? '/mi' : '/km';
@@ -631,7 +659,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const router = useRouter();
   const mode = useThemeMode();
   const insets = useSafeAreaInsets();
-  const { units } = useSettingsStore();
+  const { units, treadmillPhonePlacementDefault, setTreadmillPhonePlacementDefault } = useSettingsStore();
   const healthKitEnabled = useIntegrationsStore(s => s.healthKitEnabled);
   const calibration = useCalibration();
   const {
@@ -662,6 +690,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     goalMiles,
     targetPaceSecPerMile,
     plannedWorkout,
+    workoutInstanceId,
     completionRequestedAt,
     startRun,
     pauseRun,
@@ -697,6 +726,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [routeSegmentIndex, setRouteSegmentIndex] = useState(0);
   const [pendingMode, setPendingMode] = useState<RunMode>('quick');
   const [pendingEnvironment, setPendingEnvironment] = useState<RunEnvironment>(() => lastEnvironmentPreference);
+  const [pendingTreadmillPlacement, setPendingTreadmillPlacement] = useState<TreadmillPhonePlacement>(() => treadmillPhonePlacementDefault);
   const [showTreadmillCompletion, setShowTreadmillCompletion] = useState(false);
   const treadmillCompletionRef = useRef<{ estimateMiles: number; movingSeconds: number; estimateSource: DistanceSource } | null>(null);
   const [goalMinutesInput, setGoalMinutesInput] = useState(45);
@@ -830,6 +860,10 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       pendingMode === 'workout' && startWorkout ? { mode: 'workout', scheduledSessionId: todayPlannedSession?.scheduledSessionId } :
       { mode: 'quick' };
     config.environment = pendingEnvironment;
+    if (pendingEnvironment === 'indoor') {
+      config.treadmillPhonePlacement = pendingTreadmillPlacement;
+      setTreadmillPhonePlacementDefault(pendingTreadmillPlacement);
+    }
 
     // Indoor: never request location permission, never start GPS tasks, no
     // map/route. Outdoor: request background location before committing to
@@ -858,9 +892,11 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     goalDoneRef.current = false;
 
     startRun(startWorkout, config);
-    const liveRunStartedAt = useActiveRunStore.getState().startTime;
+    const activeRun = useActiveRunStore.getState();
+    const activeWorkoutInstanceId = activeRun.workoutInstanceId ?? '';
     await startRunLiveActivity({
-      sessionId: liveRunStartedAt ? `run:${liveRunStartedAt}` : '',
+      sessionId: activeWorkoutInstanceId || (activeRun.startTime ? `run:${activeRun.startTime}` : ''),
+      workoutInstanceId: activeWorkoutInstanceId,
       sessionSource: 'running',
       elapsedSeconds: 0,
       distanceMiles: 0,
@@ -1098,7 +1134,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         ? C.critical
         : C.accent;
   const liveActivitySnapshot = {
-    sessionId: startTime ? `run:${startTime}` : '',
+    sessionId: workoutInstanceId ?? (startTime ? `run:${startTime}` : ''),
+    workoutInstanceId: workoutInstanceId ?? undefined,
     sessionSource: 'running' as const,
     elapsedSeconds: elapsed,
     distanceMiles,
@@ -1157,6 +1194,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const plannedRouteColor = C.chartSeriesSecondary;
   const panelBg = mode === 'light' ? C.cardAlt : C.bg;
   const softPanelBg = mode === 'light' ? C.card : C.cardElevated;
+  const pendingTreadmillAvailability = treadmillMetricAvailability({ placement: pendingTreadmillPlacement });
 
   const distDisplayFactor = imp ? 1 : 1.609344;
   const goalPanel = isActive && runMode !== 'quick' ? (
@@ -1643,9 +1681,40 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
               })}
             </View>
             {pendingEnvironment === 'indoor' ? (
-              <Text style={[styles.modeDesc, { color: C.textDim }]}>
-                No GPS, no map. Distance is estimated from confirmed treadmill speed — correct it against the machine's display when you finish.
-              </Text>
+              <>
+                <Text style={[styles.modeDesc, { color: C.textDim }]}>
+                  No GPS, no map. Distance is labeled by source and can be corrected against the treadmill display when you finish.
+                </Text>
+                <Text style={[styles.modeDesc, { color: C.textMuted, marginTop: spacing.sm }]}>
+                  Where will your phone be during this workout?
+                </Text>
+                <View style={styles.modeRow}>
+                  {TREADMILL_PLACEMENT_OPTIONS.map(option => {
+                    const active = pendingTreadmillPlacement === option.key;
+                    return (
+                      <TouchableOpacity
+                        key={option.key}
+                        style={[
+                          styles.modeChip,
+                          { backgroundColor: active ? C.primaryDim : C.cardAlt, borderColor: active ? C.primary : C.border },
+                        ]}
+                        onPress={() => setPendingTreadmillPlacement(option.key)}
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                        accessibilityLabel={option.label}
+                      >
+                        <Ionicons name={option.icon} size={16} color={active ? C.primary : C.textMuted} />
+                        <Text style={[styles.modeChipText, { color: active ? C.primary : C.textMuted }]}>{option.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <Text style={[styles.modeDesc, { color: C.textDim }]}>
+                  {TREADMILL_PLACEMENT_OPTIONS.find(option => option.key === pendingTreadmillPlacement)?.desc}
+                  {' '}
+                  Distance: {labelForMetricSource(pendingTreadmillAvailability.distance)}. Cadence: {labelForMetricSource(pendingTreadmillAvailability.cadence)}.
+                </Text>
+              </>
             ) : null}
 
             {/* Mode configuration */}

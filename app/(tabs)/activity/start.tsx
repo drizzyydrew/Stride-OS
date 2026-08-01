@@ -141,7 +141,8 @@ export default function StartOutdoorActivityScreen() {
     if (!active.isActive) return;
     const interval = active.runWalkIntervals.length ? intervalAtElapsed(active.runWalkIntervals, elapsedSeconds) : null;
     void updateOutdoorLiveActivity({
-      sessionId: active.activityId ?? '',
+      sessionId: active.workoutInstanceId ?? active.activityId ?? '',
+      workoutInstanceId: active.workoutInstanceId ?? undefined,
       sessionSource: 'outdoor',
       activityName: active.name,
       activityType: active.runWalkIntervals.length ? 'run_walk' : active.activityType,
@@ -157,7 +158,7 @@ export default function StartOutdoorActivityScreen() {
       elevationGainMeters: active.aggregate.elevationGainMeters,
       elevationLossMeters: active.aggregate.elevationLossMeters,
     }).catch(() => undefined);
-  }, [active.aggregate.averageMetersPerSecond, active.isActive, active.isPaused, active.name, active.nextInstruction, active.runWalkIntervals, active.activityType, elapsedSeconds, heartRateBpm, miles, secPerMile]);
+  }, [active.aggregate.averageMetersPerSecond, active.isActive, active.isPaused, active.name, active.nextInstruction, active.runWalkIntervals, active.activityType, active.workoutInstanceId, elapsedSeconds, heartRateBpm, miles, secPerMile]);
 
   async function begin() {
     if (!activeSessionStoresHydrated()) {
@@ -212,7 +213,8 @@ export default function StartOutdoorActivityScreen() {
     await startActivityLocationTracking();
     const started = useActiveActivityStore.getState();
     await startOutdoorLiveActivity({
-      sessionId: started.activityId ?? '',
+      sessionId: started.workoutInstanceId ?? started.activityId ?? '',
+      workoutInstanceId: started.workoutInstanceId ?? undefined,
       sessionSource: 'outdoor',
       activityName: runWalk ? 'Run / Walk' : TYPES.find(item => item.type === selectedType)?.label ?? 'Activity',
       activityType: runWalk ? 'run_walk' : selectedType,
@@ -240,7 +242,8 @@ export default function StartOutdoorActivityScreen() {
             || latest.activityType === 'snowboarding';
           await stopActivityLocationTracking().catch(() => undefined);
           await endOutdoorLiveActivity({
-            sessionId: latest.activityId ?? '',
+            sessionId: latest.workoutInstanceId ?? latest.activityId ?? '',
+            workoutInstanceId: latest.workoutInstanceId ?? undefined,
             sessionSource: 'outdoor',
             activityName: latest.name,
             activityType: latest.runWalkIntervals.length ? 'run_walk' : latest.activityType,
@@ -285,6 +288,13 @@ export default function StartOutdoorActivityScreen() {
               routeId: latest.routeId ?? undefined,
               routeCoordinates: latest.aggregate.points,
               runWalkIntervals: latest.runWalkIntervals.length ? latest.runWalkIntervals : undefined,
+              metricSources: {
+                distance: 'phone_gps',
+                speed: 'phone_gps',
+                pace: 'phone_gps',
+                elevation: 'phone_gps',
+                heartRate: heartRateBpm == null ? 'unavailable' : 'healthkit',
+              },
             },
           });
           useActiveActivityStore.getState().discard();

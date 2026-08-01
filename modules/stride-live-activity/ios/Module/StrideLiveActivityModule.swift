@@ -55,6 +55,10 @@ private enum StrideLiveActivityIdStore {
   static let appGroupIdentifier = "group.com.mooremovement.strideos"
   static let runKey = "StrideOS.currentRunLiveActivityId"
   static let strengthKey = "StrideOS.currentStrengthLiveActivityId"
+  static let lastStartResultKey = "StrideOS.liveActivity.lastStartResult"
+  static let lastUpdateResultKey = "StrideOS.liveActivity.lastUpdateResult"
+  static let lastEndResultKey = "StrideOS.liveActivity.lastEndResult"
+  static let lastErrorKey = "StrideOS.liveActivity.lastRequestError"
 
   static func read(_ key: String) -> String? {
     UserDefaults(suiteName: appGroupIdentifier)?.string(forKey: key)
@@ -68,6 +72,19 @@ private enum StrideLiveActivityIdStore {
       defaults.removeObject(forKey: key)
     }
     defaults.synchronize()
+  }
+
+  static func writeResult(_ value: String, key: String) {
+    guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else { return }
+    defaults.set(value, forKey: key)
+    if key != lastErrorKey {
+      defaults.removeObject(forKey: lastErrorKey)
+    }
+    defaults.synchronize()
+  }
+
+  static func readResult(_ key: String) -> String {
+    UserDefaults(suiteName: appGroupIdentifier)?.string(forKey: key) ?? ""
   }
 }
 
@@ -136,6 +153,31 @@ public final class StrideLiveActivityModule: Module {
       StrideRunControlCommandStore.clear(id: id)
     }
 
+    Function("getDiagnostics") { () -> [String: Any] in
+      if #available(iOS 16.1, *) {
+        return [
+          "areActivitiesEnabled": ActivityAuthorizationInfo().areActivitiesEnabled,
+          "activeRunActivityCount": Activity<StrideRunActivityAttributes>.activities.count,
+          "activeStrengthActivityCount": Activity<StrideStrengthActivityAttributes>.activities.count,
+          "appGroupIdentifier": StrideLiveActivityIdStore.appGroupIdentifier,
+          "lastStartResult": StrideLiveActivityIdStore.readResult(StrideLiveActivityIdStore.lastStartResultKey),
+          "lastUpdateResult": StrideLiveActivityIdStore.readResult(StrideLiveActivityIdStore.lastUpdateResultKey),
+          "lastEndResult": StrideLiveActivityIdStore.readResult(StrideLiveActivityIdStore.lastEndResultKey),
+          "lastRequestError": StrideLiveActivityIdStore.readResult(StrideLiveActivityIdStore.lastErrorKey),
+        ]
+      }
+      return [
+        "areActivitiesEnabled": false,
+        "activeRunActivityCount": 0,
+        "activeStrengthActivityCount": 0,
+        "appGroupIdentifier": StrideLiveActivityIdStore.appGroupIdentifier,
+        "lastStartResult": "activitykit_unavailable",
+        "lastUpdateResult": "",
+        "lastEndResult": "",
+        "lastRequestError": "",
+      ]
+    }
+
     AsyncFunction("start") {
       (
         sessionId: String,
@@ -169,8 +211,7 @@ public final class StrideLiveActivityModule: Module {
 
       Task {
         do {
-          await Self.endExistingActivityIfNeeded()
-          await Self.endExistingStrengthActivityIfNeeded()
+          await Self.endMatchingRunActivityIfNeeded(sessionId: sessionId, sessionSource: sessionSource)
           let attributes = StrideRunActivityAttributes(
             runName: runName,
             sessionId: sessionId,
@@ -212,8 +253,10 @@ public final class StrideLiveActivityModule: Module {
 
           Self.currentActivityId = activity.id
           StrideLiveActivityIdStore.write(activity.id, key: StrideLiveActivityIdStore.runKey)
+          StrideLiveActivityIdStore.writeResult("started:\(sessionSource):\(sessionId):\(activity.id)", key: StrideLiveActivityIdStore.lastStartResultKey)
           promise.resolve(activity.id)
         } catch {
+          StrideLiveActivityIdStore.writeResult(error.localizedDescription, key: StrideLiveActivityIdStore.lastErrorKey)
           promise.reject("ERR_STRIDE_LIVE_ACTIVITY_START", error.localizedDescription)
         }
       }
@@ -221,6 +264,8 @@ public final class StrideLiveActivityModule: Module {
 
     AsyncFunction("update") {
       (
+        sessionId: String,
+        sessionSource: String,
         elapsedSeconds: Int,
         distanceMiles: Double,
         averagePace: String,
@@ -247,7 +292,8 @@ public final class StrideLiveActivityModule: Module {
       }
 
       Task {
-        guard let activity = Self.currentActivity() else {
+        guard let activity = Self.currentActivity(sessionId: sessionId, sessionSource: sessionSource) else {
+          StrideLiveActivityIdStore.writeResult("ignored:no_matching_run:\(sessionSource):\(sessionId)", key: StrideLiveActivityIdStore.lastUpdateResultKey)
           promise.resolve(nil)
           return
         }
@@ -290,12 +336,15 @@ public final class StrideLiveActivityModule: Module {
         } else {
           await activity.update(using: state)
         }
+        StrideLiveActivityIdStore.writeResult("updated:\(activity.attributes.sessionSource):\(activity.attributes.sessionId):\(activity.id)", key: StrideLiveActivityIdStore.lastUpdateResultKey)
         promise.resolve(nil)
       }
     }
 
     AsyncFunction("end") {
       (
+        sessionId: String,
+        sessionSource: String,
         elapsedSeconds: Int,
         distanceMiles: Double,
         averagePace: String,
@@ -318,7 +367,8 @@ public final class StrideLiveActivityModule: Module {
       }
 
       Task {
-        guard let activity = Self.currentActivity() else {
+        guard let activity = Self.currentActivity(sessionId: sessionId, sessionSource: sessionSource) else {
+          StrideLiveActivityIdStore.writeResult("ignored:no_matching_run:\(sessionSource):\(sessionId)", key: StrideLiveActivityIdStore.lastEndResultKey)
           promise.resolve(nil)
           return
         }
@@ -352,6 +402,7 @@ public final class StrideLiveActivityModule: Module {
         }
         Self.currentActivityId = nil
         StrideLiveActivityIdStore.write(nil, key: StrideLiveActivityIdStore.runKey)
+        StrideLiveActivityIdStore.writeResult("ended:\(activity.attributes.sessionSource):\(activity.attributes.sessionId):\(activity.id)", key: StrideLiveActivityIdStore.lastEndResultKey)
         promise.resolve(nil)
       }
     }
@@ -377,8 +428,7 @@ public final class StrideLiveActivityModule: Module {
       guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
       Task {
         do {
-          await Self.endExistingActivityIfNeeded()
-          await Self.endExistingStrengthActivityIfNeeded()
+          await Self.endMatchingStrengthActivityIfNeeded(sessionId: sessionId, sessionSource: sessionSource)
           let attributes = StrideStrengthActivityAttributes(
             workoutName: workoutName,
             sessionId: sessionId,
@@ -408,8 +458,10 @@ public final class StrideLiveActivityModule: Module {
           }
           Self.currentStrengthActivityId = activity.id
           StrideLiveActivityIdStore.write(activity.id, key: StrideLiveActivityIdStore.strengthKey)
+          StrideLiveActivityIdStore.writeResult("started_strength:\(sessionSource):\(sessionId):\(activity.id)", key: StrideLiveActivityIdStore.lastStartResultKey)
           promise.resolve(activity.id)
         } catch {
+          StrideLiveActivityIdStore.writeResult(error.localizedDescription, key: StrideLiveActivityIdStore.lastErrorKey)
           promise.reject("ERR_STRIDE_STRENGTH_START", error.localizedDescription)
         }
       }
@@ -417,6 +469,8 @@ public final class StrideLiveActivityModule: Module {
 
     AsyncFunction("updateStrength") {
       (
+        sessionId: String,
+        sessionSource: String,
         elapsedSeconds: Int,
         currentExercise: String,
         nextExercise: String,
@@ -431,7 +485,11 @@ public final class StrideLiveActivityModule: Module {
       ) in
       guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
       Task {
-        guard let activity = Self.currentStrengthActivity() else { promise.resolve(nil); return }
+        guard let activity = Self.currentStrengthActivity(sessionId: sessionId, sessionSource: sessionSource) else {
+          StrideLiveActivityIdStore.writeResult("ignored:no_matching_strength:\(sessionSource):\(sessionId)", key: StrideLiveActivityIdStore.lastUpdateResultKey)
+          promise.resolve(nil)
+          return
+        }
         let resolvedControlState = Self.controlStatePreservingPending(
           requested: controlState,
           current: activity.contentState.controlState,
@@ -455,14 +513,19 @@ public final class StrideLiveActivityModule: Module {
         } else {
           await activity.update(using: state)
         }
+        StrideLiveActivityIdStore.writeResult("updated_strength:\(activity.attributes.sessionSource):\(activity.attributes.sessionId):\(activity.id)", key: StrideLiveActivityIdStore.lastUpdateResultKey)
         promise.resolve(nil)
       }
     }
 
-    AsyncFunction("endStrength") { (promise: Promise) in
+    AsyncFunction("endStrength") { (sessionId: String, sessionSource: String, promise: Promise) in
       guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
       Task {
-        guard let activity = Self.currentStrengthActivity() else { promise.resolve(nil); return }
+        guard let activity = Self.currentStrengthActivity(sessionId: sessionId, sessionSource: sessionSource) else {
+          StrideLiveActivityIdStore.writeResult("ignored:no_matching_strength:\(sessionSource):\(sessionId)", key: StrideLiveActivityIdStore.lastEndResultKey)
+          promise.resolve(nil)
+          return
+        }
         let state = activity.contentState
         if #available(iOS 16.2, *) {
           await activity.end(
@@ -474,6 +537,7 @@ public final class StrideLiveActivityModule: Module {
         }
         Self.currentStrengthActivityId = nil
         StrideLiveActivityIdStore.write(nil, key: StrideLiveActivityIdStore.strengthKey)
+        StrideLiveActivityIdStore.writeResult("ended_strength:\(activity.attributes.sessionSource):\(activity.attributes.sessionId):\(activity.id)", key: StrideLiveActivityIdStore.lastEndResultKey)
         promise.resolve(nil)
       }
     }
@@ -504,24 +568,26 @@ public final class StrideLiveActivityModule: Module {
   }
 
   @available(iOS 16.1, *)
-  private static func currentStrengthActivity() -> Activity<StrideStrengthActivityAttributes>? {
+  private static func currentStrengthActivity(sessionId: String, sessionSource: String) -> Activity<StrideStrengthActivityAttributes>? {
     if let id = currentStrengthActivityId ?? StrideLiveActivityIdStore.read(StrideLiveActivityIdStore.strengthKey) {
-      if let activity = Activity<StrideStrengthActivityAttributes>.activities.first(where: { $0.id == id }) {
+      if let activity = Activity<StrideStrengthActivityAttributes>.activities.first(where: { $0.id == id }),
+         matches(activity.attributes.sessionId, activity.attributes.sessionSource, sessionId, sessionSource) {
         return activity
       }
       currentStrengthActivityId = nil
       StrideLiveActivityIdStore.write(nil, key: StrideLiveActivityIdStore.strengthKey)
     }
-    guard Activity<StrideStrengthActivityAttributes>.activities.count == 1,
-          let activity = Activity<StrideStrengthActivityAttributes>.activities.first else { return nil }
+    guard let activity = Activity<StrideStrengthActivityAttributes>.activities.first(where: {
+      matches($0.attributes.sessionId, $0.attributes.sessionSource, sessionId, sessionSource)
+    }) else { return nil }
     currentStrengthActivityId = activity.id
     StrideLiveActivityIdStore.write(activity.id, key: StrideLiveActivityIdStore.strengthKey)
     return activity
   }
 
   @available(iOS 16.1, *)
-  private static func endExistingStrengthActivityIfNeeded() async {
-    for activity in Activity<StrideStrengthActivityAttributes>.activities {
+  private static func endMatchingStrengthActivityIfNeeded(sessionId: String, sessionSource: String) async {
+    for activity in Activity<StrideStrengthActivityAttributes>.activities where matches(activity.attributes.sessionId, activity.attributes.sessionSource, sessionId, sessionSource) {
       if #available(iOS 16.2, *) {
         await activity.end(ActivityContent(state: activity.contentState, staleDate: nil), dismissalPolicy: .immediate)
       } else {
@@ -578,24 +644,26 @@ public final class StrideLiveActivityModule: Module {
   }
 
   @available(iOS 16.1, *)
-  private static func currentActivity() -> Activity<StrideRunActivityAttributes>? {
+  private static func currentActivity(sessionId: String, sessionSource: String) -> Activity<StrideRunActivityAttributes>? {
     if let currentActivityId = currentActivityId ?? StrideLiveActivityIdStore.read(StrideLiveActivityIdStore.runKey) {
-      if let activity = Activity<StrideRunActivityAttributes>.activities.first(where: { $0.id == currentActivityId }) {
+      if let activity = Activity<StrideRunActivityAttributes>.activities.first(where: { $0.id == currentActivityId }),
+         matches(activity.attributes.sessionId, activity.attributes.sessionSource, sessionId, sessionSource) {
         return activity
       }
       Self.currentActivityId = nil
       StrideLiveActivityIdStore.write(nil, key: StrideLiveActivityIdStore.runKey)
     }
-    guard Activity<StrideRunActivityAttributes>.activities.count == 1,
-          let activity = Activity<StrideRunActivityAttributes>.activities.first else { return nil }
+    guard let activity = Activity<StrideRunActivityAttributes>.activities.first(where: {
+      matches($0.attributes.sessionId, $0.attributes.sessionSource, sessionId, sessionSource)
+    }) else { return nil }
     currentActivityId = activity.id
     StrideLiveActivityIdStore.write(activity.id, key: StrideLiveActivityIdStore.runKey)
     return activity
   }
 
   @available(iOS 16.1, *)
-  private static func endExistingActivityIfNeeded() async {
-    for activity in Activity<StrideRunActivityAttributes>.activities {
+  private static func endMatchingRunActivityIfNeeded(sessionId: String, sessionSource: String) async {
+    for activity in Activity<StrideRunActivityAttributes>.activities where matches(activity.attributes.sessionId, activity.attributes.sessionSource, sessionId, sessionSource) {
       let state = StrideRunActivityAttributes.ContentState(
         elapsedSeconds: activity.contentState.elapsedSeconds,
         distanceMiles: activity.contentState.distanceMiles,
@@ -623,6 +691,12 @@ public final class StrideLiveActivityModule: Module {
     }
     currentActivityId = nil
     StrideLiveActivityIdStore.write(nil, key: StrideLiveActivityIdStore.runKey)
+  }
+
+  private static func matches(_ activitySessionId: String, _ activitySessionSource: String, _ requestedSessionId: String, _ requestedSessionSource: String) -> Bool {
+    let idMatches = requestedSessionId.isEmpty || activitySessionId == requestedSessionId
+    let sourceMatches = requestedSessionSource.isEmpty || activitySessionSource == requestedSessionSource
+    return idMatches && sourceMatches
   }
 
   private static func calculateDirections(

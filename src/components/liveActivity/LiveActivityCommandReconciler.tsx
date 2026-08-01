@@ -50,7 +50,7 @@ function runCommandMatches(command: StrideRunControlCommand): boolean {
     run.isActive
     && run.startTime
     && liveActivityCommandMatchesSession(command, {
-      sessionId: `run:${run.startTime}`,
+      sessionId: run.workoutInstanceId ?? `run:${run.startTime}`,
       sessionSource: 'running',
     }),
   );
@@ -62,7 +62,7 @@ function outdoorCommandMatches(command: StrideRunControlCommand): boolean {
     outdoor.isActive
     && outdoor.activityId
     && liveActivityCommandMatchesSession(command, {
-      sessionId: outdoor.activityId,
+      sessionId: outdoor.workoutInstanceId ?? outdoor.activityId,
       sessionSource: 'outdoor',
     }),
   );
@@ -73,7 +73,7 @@ function strengthCommandMatches(command: StrideRunControlCommand): boolean {
   return Boolean(
     strength
     && liveActivityCommandMatchesSession(command, {
-      sessionId: strengthLiveActivitySessionId(strength),
+      sessionId: strength.workoutInstanceId ?? strengthLiveActivitySessionId(strength),
       sessionSource: strength.source,
     }),
   );
@@ -84,7 +84,8 @@ async function publishRunState(): Promise<void> {
   if (!run.isActive || !run.startTime) return;
   const pace = run.averagePaceSecPerMile;
   await updateRunLiveActivity({
-    sessionId: `run:${run.startTime}`,
+    sessionId: run.workoutInstanceId ?? `run:${run.startTime}`,
+    workoutInstanceId: run.workoutInstanceId ?? undefined,
     sessionSource: 'running',
     elapsedSeconds: activeRunElapsedSeconds(run),
     distanceMiles: run.distanceMiles,
@@ -107,7 +108,8 @@ async function publishOutdoorState(): Promise<void> {
     || outdoor.activityType === 'snowboarding';
   const pace = averageSpeed ? 1609.344 / averageSpeed : 0;
   await updateOutdoorLiveActivity({
-    sessionId: outdoor.activityId,
+    sessionId: outdoor.workoutInstanceId ?? outdoor.activityId,
+    workoutInstanceId: outdoor.workoutInstanceId ?? undefined,
     sessionSource: 'outdoor',
     activityName: outdoor.name,
     activityType: outdoor.runWalkIntervals.length ? 'run_walk' : outdoor.activityType,
@@ -133,6 +135,7 @@ async function publishStrengthState(): Promise<void> {
   if (!current) return;
   await updateStrengthLiveActivity({
     workoutName: strength.workoutName,
+    workoutInstanceId: strength.workoutInstanceId,
     sessionId: strengthLiveActivitySessionId(strength),
     sessionSource: strength.source,
     elapsedSeconds: activeStrengthElapsedSeconds(strength),

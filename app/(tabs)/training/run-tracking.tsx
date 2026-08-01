@@ -167,9 +167,10 @@ export default function RunTrackingScreen() {
         scheduledSessionId: requestedScheduledSessionId ?? undefined,
         environment: 'outdoor',
       });
-      const startedAt = useActiveRunStore.getState().startTime;
+      const startedRun = useActiveRunStore.getState();
       await startRunLiveActivity({
-        sessionId: startedAt ? `run:${startedAt}` : '',
+        sessionId: startedRun.workoutInstanceId ?? (startedRun.startTime ? `run:${startedRun.startTime}` : ''),
+        workoutInstanceId: startedRun.workoutInstanceId ?? undefined,
         sessionSource: 'running',
         elapsedSeconds: 0,
         distanceMiles: 0,
@@ -269,10 +270,12 @@ export default function RunTrackingScreen() {
 
   useEffect(() => {
     if (!isActive || !startTime) return;
+    const latestState = useActiveRunStore.getState();
     void updateRunLiveActivity({
-      sessionId: `run:${startTime}`,
+      sessionId: latestState.workoutInstanceId ?? `run:${startTime}`,
+      workoutInstanceId: latestState.workoutInstanceId ?? undefined,
       sessionSource: 'running',
-      elapsedSeconds: activeRunElapsedSeconds(useActiveRunStore.getState()),
+      elapsedSeconds: activeRunElapsedSeconds(latestState),
       distanceMiles,
       averagePace: formatPace(averagePaceSecPerMile),
       heartRateBpm: null,
@@ -289,7 +292,8 @@ export default function RunTrackingScreen() {
       const finalState = useActiveRunStore.getState();
       const finalElapsed = activeRunElapsedSeconds(finalState);
       await endRunLiveActivity({
-        sessionId: finalState.startTime ? `run:${finalState.startTime}` : '',
+        sessionId: finalState.workoutInstanceId ?? (finalState.startTime ? `run:${finalState.startTime}` : ''),
+        workoutInstanceId: finalState.workoutInstanceId ?? undefined,
         sessionSource: 'running',
         elapsedSeconds: finalElapsed,
         distanceMiles: finalState.distanceMiles,
@@ -343,7 +347,8 @@ export default function RunTrackingScreen() {
         onPress: async () => {
           const finalState = useActiveRunStore.getState();
           await endRunLiveActivity({
-            sessionId: finalState.startTime ? `run:${finalState.startTime}` : '',
+            sessionId: finalState.workoutInstanceId ?? (finalState.startTime ? `run:${finalState.startTime}` : ''),
+            workoutInstanceId: finalState.workoutInstanceId ?? undefined,
             sessionSource: 'running',
             elapsedSeconds: activeRunElapsedSeconds(finalState),
             distanceMiles: finalState.distanceMiles,

@@ -15,6 +15,7 @@ import type { DistanceSource } from '../types/activity';
 import { elapsedSecondsExcludingPause } from '../utils/activeTime';
 import { buildWorkoutInstanceId, synthesizeWorkoutInstanceId } from '../utils/workoutInstance';
 import { closeOpenSegment, confirmSpeedChange, openSegment, sanitizeSpeedMph, type TreadmillSegment } from '../utils/treadmill';
+import type { TreadmillPhonePlacement } from '../utils/treadmillPlacement';
 
 export type Coordinate = {
   lat:       number;
@@ -39,6 +40,7 @@ export type RunModeConfig = {
   targetPaceSecPerMile?:  number;  // race mode
   scheduledSessionId?:    string;
   environment?:           RunEnvironment;
+  treadmillPhonePlacement?: TreadmillPhonePlacement;
 };
 
 // Rolling window for pace calculation (seconds of data to average)
@@ -93,6 +95,7 @@ export type ActiveRunStore = {
   currentSpeedMph:        number | null;
   manualDistanceMiles:    number | null;
   distanceSource:         DistanceSource | null;
+  treadmillPhonePlacement: TreadmillPhonePlacement;
   // Last outdoor/indoor choice the athlete made on the run-setup screen,
   // persisted so the toggle defaults to it next time (not tied to any one
   // active session — survives finishRun/cancelRun).
@@ -150,8 +153,9 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
   treadmillSegments:      [],
   currentSpeedMph:        null,
   manualDistanceMiles:    null,
-  distanceSource:         null,
-  lastEnvironmentPreference: 'outdoor',
+      distanceSource:         null,
+      treadmillPhonePlacement: 'on_body',
+      lastEnvironmentPreference: 'outdoor',
 
   startRun: (plannedWorkout, config) => {
     const now = Date.now();
@@ -181,6 +185,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       currentSpeedMph:        null,
       manualDistanceMiles:    null,
       distanceSource:         null,
+      treadmillPhonePlacement: config?.treadmillPhonePlacement ?? get().treadmillPhonePlacement,
       lastEnvironmentPreference: config?.environment ?? get().lastEnvironmentPreference,
     });
   },
@@ -338,10 +343,12 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       currentSpeedMph:        null,
       manualDistanceMiles:    null,
       distanceSource:         null,
+      treadmillPhonePlacement: state.treadmillPhonePlacement,
     });
   },
 
   cancelRun: () => {
+    const state = get();
     set({
       isActive:               false,
       isPaused:               false,
@@ -368,6 +375,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       currentSpeedMph:        null,
       manualDistanceMiles:    null,
       distanceSource:         null,
+      treadmillPhonePlacement: state.treadmillPhonePlacement,
     });
   },
 
@@ -392,6 +400,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     }
     if (!merged.environment) merged.environment = 'outdoor';
     if (!merged.treadmillSegments) merged.treadmillSegments = [];
+    if (!merged.treadmillPhonePlacement) merged.treadmillPhonePlacement = 'on_body';
     return merged;
   },
 }));

@@ -37,6 +37,11 @@ const ITEMS: NavItem[] = [
     route:       '/(tabs)/more/stride-report',
   },
   {
+    label:       'Health Sync',
+    icon:        'heart-outline',
+    route:       '/(tabs)/more/health-sync',
+  },
+  {
     label:       'Movement Lab',
     icon:        'body-outline',
     route:       '/(tabs)/movement',

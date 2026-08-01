@@ -7,6 +7,9 @@ import {
   type FuelingReminderIntervalMin,
 } from '../constants/hydrationConfig';
 import type { ExperienceMode } from '../utils/experienceMode';
+import type { ActivityDetectionMode } from '../utils/activityDetection';
+import type { AutoPauseMode } from '../utils/autoPause';
+import type { TreadmillPhonePlacement } from '../utils/treadmillPlacement';
 
 export type UnitSystem = 'imperial' | 'metric';
 export type { ExperienceMode };
@@ -22,6 +25,8 @@ export type VoiceCuePreferences = {
   hydration: boolean;
   navigation: boolean;
 };
+
+export type HealthWorkoutSyncMode = 'off' | 'review' | 'automatic';
 
 export const DEFAULT_VOICE_CUE_PREFERENCES: VoiceCuePreferences = {
   interval: true,
@@ -41,11 +46,25 @@ type SettingsStore = {
   fuelingReminderIntervalMin: FuelingReminderIntervalMin;
   voiceCueMode: VoiceCueMode;
   voiceCuePreferences: VoiceCuePreferences;
+  liveActivitiesEnabled: boolean;
+  autoPauseMode: AutoPauseMode;
+  announceAutoPause: boolean;
+  announceAutoResume: boolean;
+  activityDetectionMode: ActivityDetectionMode;
+  treadmillPhonePlacementDefault: TreadmillPhonePlacement;
+  healthWorkoutSyncMode: HealthWorkoutSyncMode;
   setUnits: (units: UnitSystem) => void;
   setExperienceMode: (mode: ExperienceMode) => void;
   setFuelingReminderIntervalMin: (minutes: FuelingReminderIntervalMin) => void;
   setVoiceCueMode: (mode: VoiceCueMode) => void;
   setVoiceCuePreference: (cue: keyof VoiceCuePreferences, enabled: boolean) => void;
+  setLiveActivitiesEnabled: (enabled: boolean) => void;
+  setAutoPauseMode: (mode: AutoPauseMode) => void;
+  setAnnounceAutoPause: (enabled: boolean) => void;
+  setAnnounceAutoResume: (enabled: boolean) => void;
+  setActivityDetectionMode: (mode: ActivityDetectionMode) => void;
+  setTreadmillPhonePlacementDefault: (placement: TreadmillPhonePlacement) => void;
+  setHealthWorkoutSyncMode: (mode: HealthWorkoutSyncMode) => void;
 };
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -58,6 +77,13 @@ export const useSettingsStore = create<SettingsStore>()(
       // deliberately reduce it to Standard/Minimal/Silent.
       voiceCueMode: 'coach',
       voiceCuePreferences: DEFAULT_VOICE_CUE_PREFERENCES,
+      liveActivitiesEnabled: true,
+      autoPauseMode: 'off',
+      announceAutoPause: true,
+      announceAutoResume: true,
+      activityDetectionMode: 'off',
+      treadmillPhonePlacementDefault: 'on_body',
+      healthWorkoutSyncMode: 'review',
       setUnits: (units) => set({ units }),
       setExperienceMode: (experienceMode) => set({ experienceMode }),
       setFuelingReminderIntervalMin: (fuelingReminderIntervalMin) => set({ fuelingReminderIntervalMin }),
@@ -65,6 +91,13 @@ export const useSettingsStore = create<SettingsStore>()(
       setVoiceCuePreference: (cue, enabled) => set(state => ({
         voiceCuePreferences: { ...state.voiceCuePreferences, [cue]: enabled },
       })),
+      setLiveActivitiesEnabled: (liveActivitiesEnabled) => set({ liveActivitiesEnabled }),
+      setAutoPauseMode: (autoPauseMode) => set({ autoPauseMode }),
+      setAnnounceAutoPause: (announceAutoPause) => set({ announceAutoPause }),
+      setAnnounceAutoResume: (announceAutoResume) => set({ announceAutoResume }),
+      setActivityDetectionMode: (activityDetectionMode) => set({ activityDetectionMode }),
+      setTreadmillPhonePlacementDefault: (treadmillPhonePlacementDefault) => set({ treadmillPhonePlacementDefault }),
+      setHealthWorkoutSyncMode: (healthWorkoutSyncMode) => set({ healthWorkoutSyncMode }),
     }),
     {
       name:    'settings-store',
@@ -84,6 +117,13 @@ export const useSettingsStore = create<SettingsStore>()(
             ...DEFAULT_VOICE_CUE_PREFERENCES,
             ...(saved?.voiceCuePreferences ?? {}),
           },
+          liveActivitiesEnabled: saved?.liveActivitiesEnabled ?? true,
+          autoPauseMode: saved?.autoPauseMode ?? 'off',
+          announceAutoPause: saved?.announceAutoPause ?? true,
+          announceAutoResume: saved?.announceAutoResume ?? true,
+          activityDetectionMode: saved?.activityDetectionMode ?? 'off',
+          treadmillPhonePlacementDefault: saved?.treadmillPhonePlacementDefault ?? 'on_body',
+          healthWorkoutSyncMode: saved?.healthWorkoutSyncMode ?? 'review',
         };
       },
     },

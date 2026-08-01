@@ -393,9 +393,9 @@ test('removing the linked activity from the array restores the scheduled session
 // ─── Wiring assertions — files that transitively import react-native and
 //     can't be exercised directly under plain node+tsx ──────────────────────
 
-test('activityStore is on schema v2, remaps legacy ids on every hydration, and recalculates after every mutation', () => {
+test('activityStore is on schema v3, remaps legacy ids on every hydration, and recalculates after every mutation', () => {
   const source = read('src/store/activityStore.ts');
-  assert.match(source, /ACTIVITY_STORE_SCHEMA_VERSION\s*=\s*2/);
+  assert.match(source, /ACTIVITY_STORE_SCHEMA_VERSION\s*=\s*3/);
   assert.match(source, /remapLegacyScheduledSessionIds/);
   assert.match(source, /runRecalculation\('activity_added', get\(\)\.activities\)/);
   assert.match(source, /runRecalculation\('activity_updated', get\(\)\.activities\)/);

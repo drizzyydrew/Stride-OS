@@ -51,6 +51,7 @@ import { formatYMDForDisplay, parseDisplayDateToYMD } from '../../../src/utils/d
 import StrideDateField from '../../../src/components/ui/StrideDateField';
 import { todayDateOnly } from '../../../src/utils/dateOnly';
 import { testVoiceCoaching } from '../../../src/lib/voiceCoach';
+import { getStrideLiveActivityDiagnostics, type StrideLiveActivityDiagnostics } from 'stride-live-activity';
 
 function formatHeight(heightCm: number, imperial: boolean) {
   if (!heightCm) return '';
@@ -191,6 +192,20 @@ export default function SettingsScreen() {
     voiceCuePreferences,
     setVoiceCueMode,
     setVoiceCuePreference,
+    liveActivitiesEnabled,
+    setLiveActivitiesEnabled,
+    autoPauseMode,
+    setAutoPauseMode,
+    announceAutoPause,
+    setAnnounceAutoPause,
+    announceAutoResume,
+    setAnnounceAutoResume,
+    activityDetectionMode,
+    setActivityDetectionMode,
+    treadmillPhonePlacementDefault,
+    setTreadmillPhonePlacementDefault,
+    healthWorkoutSyncMode,
+    setHealthWorkoutSyncMode,
   } = useSettingsStore();
   const integrations = useIntegrationsStore();
   const legacyMorningReminderEnabled = useReadinessStore(state => state.reminderEnabled);
@@ -220,6 +235,11 @@ export default function SettingsScreen() {
   const [weightInput, setWeightInput] = useState('');
   const [showNotificationTimePicker, setShowNotificationTimePicker] = useState(false);
   const [voiceTestResult, setVoiceTestResult] = useState<string | null>(null);
+  const [liveDiagnostics, setLiveDiagnostics] = useState<StrideLiveActivityDiagnostics | null>(null);
+
+  useEffect(() => {
+    setLiveDiagnostics(getStrideLiveActivityDiagnostics());
+  }, []);
 
   function saveRaceForm() {
     if (!raceForm) return;
@@ -872,8 +892,102 @@ export default function SettingsScreen() {
           <Ionicons name="volume-high-outline" size={17} color={C.primary} />
           <Text style={[styles.testVoiceText, { color: C.primary }]}>Test Voice Coaching</Text>
         </TouchableOpacity>
-        {voiceTestResult ? (
+      {voiceTestResult ? (
           <Text style={[styles.settingCaption, { color: C.textMuted, marginTop: 8 }]}>{voiceTestResult}</Text>
+        ) : null}
+      </View>
+
+      {/* Workout intelligence */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.sectionLabel, { color: C.textDim }]}>WORKOUT INTELLIGENCE</Text>
+        <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
+          <View style={styles.settingCopy}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Live Activities</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Lock Screen and Dynamic Island cards for active workouts</Text>
+          </View>
+          <Switch
+            value={liveActivitiesEnabled}
+            onValueChange={setLiveActivitiesEnabled}
+            trackColor={{ false: C.cardAlt, true: C.primary }}
+            thumbColor={C.card}
+          />
+        </View>
+        <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'stretch', gap: 10, borderBottomColor: C.border }]}>
+          <View style={styles.settingCopy}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Auto-Pause</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Uses GPS quality, movement, cadence, and repeated samples before pausing.</Text>
+          </View>
+          <SegmentControl
+            options={[
+              { label: 'Off', value: 'off' },
+              { label: 'Run', value: 'running_only' },
+              { label: 'Ride', value: 'cycling_only' },
+              { label: 'Both', value: 'running_and_cycling' },
+            ]}
+            value={autoPauseMode}
+            onChange={value => setAutoPauseMode(value as typeof autoPauseMode)}
+            activeTone="primary"
+          />
+        </View>
+        <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
+          <View style={styles.settingCopy}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Announce Auto-Pause</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Voice cue when StrideOS pauses because you stopped moving.</Text>
+          </View>
+          <Switch value={announceAutoPause} onValueChange={setAnnounceAutoPause} trackColor={{ false: C.cardAlt, true: C.primary }} thumbColor={C.card} />
+        </View>
+        <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
+          <View style={styles.settingCopy}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Announce Auto-Resume</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Voice cue after StrideOS confirms you are moving again.</Text>
+          </View>
+          <Switch value={announceAutoResume} onValueChange={setAnnounceAutoResume} trackColor={{ false: C.cardAlt, true: C.primary }} thumbColor={C.card} />
+        </View>
+        <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'stretch', gap: 10, borderBottomColor: C.border }]}>
+          <View style={styles.settingCopy}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Activity Detection</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Suggests starting a workout after sustained evidence. It will not start or save workouts silently.</Text>
+          </View>
+          <SegmentControl
+            options={[
+              { label: 'Off', value: 'off' },
+              { label: 'Run', value: 'suggest_running' },
+              { label: 'Ride', value: 'suggest_cycling' },
+              { label: 'Both', value: 'suggest_running_and_cycling' },
+            ]}
+            value={activityDetectionMode}
+            onChange={value => setActivityDetectionMode(value as typeof activityDetectionMode)}
+            activeTone="primary"
+          />
+          <Text style={[styles.settingCaption, { color: C.textMuted }]}>Detection may not run after force-quit or full suspension, and StrideOS does not keep high-accuracy GPS on all day.</Text>
+        </View>
+        <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'stretch', gap: 10 }]}>
+          <View style={styles.settingCopy}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Treadmill Phone Default</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>You can change this before every treadmill workout.</Text>
+          </View>
+          <SegmentControl
+            options={[
+              { label: 'On body', value: 'on_body' },
+              { label: 'Resting', value: 'resting_on_treadmill' },
+              { label: 'Sensor', value: 'connected_sensor' },
+            ]}
+            value={treadmillPhonePlacementDefault}
+            onChange={value => setTreadmillPhonePlacementDefault(value as typeof treadmillPhonePlacementDefault)}
+            activeTone="primary"
+          />
+        </View>
+        {experienceMode !== 'simple' ? (
+          <View style={[styles.diagnosticBox, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Live Activity Diagnostics</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>iOS allowed: {liveDiagnostics?.areActivitiesEnabled ? 'Yes' : 'No or unavailable'}</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Extension bundled: StrideRunLiveActivity</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Active count: {(liveDiagnostics?.activeRunActivityCount ?? 0) + (liveDiagnostics?.activeStrengthActivityCount ?? 0)}</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Last start: {liveDiagnostics?.lastStartResult || 'None'}</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Last update: {liveDiagnostics?.lastUpdateResult || 'None'}</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Last end: {liveDiagnostics?.lastEndResult || 'None'}</Text>
+            <Text style={[styles.settingCaption, { color: liveDiagnostics?.lastRequestError ? C.warning : C.textMuted }]}>Last error: {liveDiagnostics?.lastRequestError || 'None'}</Text>
+          </View>
         ) : null}
       </View>
 
@@ -1042,6 +1156,29 @@ export default function SettingsScreen() {
             <Text style={[{ fontSize: 12, fontWeight: '700', color: integrations.healthKitEnabled ? C.positive : C.onPrimary }]}>
               {busy === 'health' ? 'Connecting...' : integrations.healthKitEnabled ? '✓ Connected' : 'Connect'}
             </Text>
+          </TouchableOpacity>
+        </View>
+        <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'stretch', gap: 10, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 14 }]}>
+          <View style={styles.settingCopy}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Health Workout Sync</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Import completed Apple Fitness workouts into Activity history.</Text>
+          </View>
+          <SegmentControl
+            options={[
+              { label: 'Off', value: 'off' },
+              { label: 'Review', value: 'review' },
+              { label: 'Auto', value: 'automatic' },
+            ]}
+            value={healthWorkoutSyncMode}
+            onChange={value => setHealthWorkoutSyncMode(value as typeof healthWorkoutSyncMode)}
+            activeTone="primary"
+          />
+          <TouchableOpacity
+            style={[styles.connectBtn, { backgroundColor: C.primary, alignSelf: 'flex-start' }]}
+            onPress={() => router.push('/(tabs)/more/health-sync' as any)}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 12, fontWeight: '700', color: C.onPrimary }}>Open Sync Review</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -1268,6 +1405,13 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     paddingRight: 8,
+  },
+  diagnosticBox: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    gap: 3,
+    marginTop: 2,
   },
   settingTitle: {
     fontSize: 14,

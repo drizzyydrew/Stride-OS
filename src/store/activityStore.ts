@@ -16,7 +16,7 @@ import {
 } from '../utils/activityMigration';
 import { runRecalculation } from '../lib/recalculation';
 
-export const ACTIVITY_STORE_SCHEMA_VERSION = 2;
+export const ACTIVITY_STORE_SCHEMA_VERSION = 3;
 
 type ActivityStore = {
   schemaVersion: number;
@@ -60,6 +60,21 @@ function normalizeActivity(input: Activity | ActivityDraft, now = Date.now()): A
   };
 }
 
+function healthKitDuplicateIndex(activities: readonly Activity[], activity: Activity): number {
+  const metadata = activity.healthKit;
+  if (!metadata) return -1;
+  return activities.findIndex(item => {
+    if (
+      item.healthKit?.workoutUuid === metadata.workoutUuid &&
+      item.healthKit.sourceBundleIdentifier === metadata.sourceBundleIdentifier
+    ) return true;
+    return metadata.importedByStrideOS
+      && item.source === 'tracked'
+      && Math.abs(item.startTime - metadata.originalStartTime) < 30_000
+      && Math.abs((item.endTime ?? item.startTime) - metadata.originalEndTime) < 30_000;
+  });
+}
+
 export function migrateActivityStoreState(persisted: unknown): Pick<ActivityStore, 'schemaVersion' | 'activities'> {
   const source = (persisted ?? {}) as Partial<ActivityStore>;
   const normalized = Array.isArray(source.activities)
@@ -89,6 +104,14 @@ export const useActivityStore = create<ActivityStore>()(
         set(state => {
           const existingIndex = state.activities.findIndex(item => item.id === activity.id);
           if (existingIndex < 0) {
+            const healthKitIndex = healthKitDuplicateIndex(state.activities, activity);
+            if (healthKitIndex >= 0) {
+              return {
+                activities: state.activities.map((item, index) => index === healthKitIndex
+                  ? { ...item, ...activity, id: item.id, createdAt: item.createdAt, updatedAt: Date.now() }
+                  : item),
+              };
+            }
             if (activity.scheduledSessionId) {
               const linkedIndex = state.activities.findIndex(item => item.scheduledSessionId === activity.scheduledSessionId);
               if (linkedIndex >= 0) {

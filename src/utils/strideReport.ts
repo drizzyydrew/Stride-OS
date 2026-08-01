@@ -6,7 +6,7 @@ import { mostUsedShoe } from './gear';
 import { timestampToDateOnly } from './dateOnly';
 
 export type StrideReportPeriod = 'weekly' | 'monthly' | 'yearly';
-export type StrideReportShareVariant = 'clean_summary' | 'data_focus' | 'achievement_focus';
+export type StrideReportShareVariant = 'clean_summary' | 'data_focus' | 'achievement_focus' | 'shoe_report';
 
 export type StrideReportRange = {
   startTime: number;
@@ -106,6 +106,7 @@ export type StrideReportSharePayload = {
   totals: StrideReport['totals'];
   longestRun: StrideReportActivityReference | null;
   highestElevationActivity: StrideReportActivityReference | null;
+  shoeReport: StrideReportShoeReport;
   privacyDefaults: StrideReport['privacyDefaults'];
 };
 
@@ -164,6 +165,19 @@ export function formatReportElevation(meters: number | null | undefined, units: 
 
 export function formatReportDuration(minutes: number): string {
   return `${Math.round(minutes)} min`;
+}
+
+export function strideReportHighlightsForUnits(
+  report: Pick<StrideReport, 'highlights' | 'highestElevationActivity'>,
+  units: UnitSystem,
+): StrideReportHighlight[] {
+  return report.highlights.map(highlight => {
+    if (highlight.label !== 'Most climbing' || !report.highestElevationActivity) return highlight;
+    return {
+      ...highlight,
+      value: formatReportElevation(report.highestElevationActivity.elevationGainMeters, units),
+    };
+  });
 }
 
 function dateLabel(timestamp: number): string {
@@ -510,6 +524,10 @@ export function buildStrideReportSharePayload(
 ): StrideReportSharePayload {
   const headline = variant === 'achievement_focus' && report.healthyAchievements[0]
     ? report.healthyAchievements[0].value
+    : variant === 'shoe_report'
+      ? (report.shoeReport.mostUsed
+        ? `${report.shoeReport.mostUsed.label} · ${formatReportDistance(report.shoeReport.mostUsed.periodDistanceMiles, units)}`
+        : `${report.range.label} shoe report`)
     : variant === 'data_focus'
       ? `${formatReportDistance(report.totals.distanceMiles, units)} · ${formatReportDuration(report.totals.trainingMinutes)}`
       : `${report.range.label} with StrideOS`;
@@ -519,10 +537,11 @@ export function buildStrideReportSharePayload(
     period: report.period,
     rangeLabel: report.range.label,
     headline,
-    highlights: report.highlights.slice(0, variant === 'data_focus' ? 6 : 4),
+    highlights: strideReportHighlightsForUnits(report, units).slice(0, variant === 'data_focus' ? 6 : 4),
     totals: report.totals,
     longestRun: report.longestRun,
     highestElevationActivity: report.highestElevationActivity,
+    shoeReport: report.shoeReport,
     privacyDefaults: report.privacyDefaults,
   };
 }
