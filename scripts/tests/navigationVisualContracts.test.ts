@@ -75,6 +75,19 @@ test('legacy training-history links open unified Activity', () => {
   assert.doesNotMatch(settings, /router\.push\('\/\(tabs\)\/activity-log'/);
 });
 
+test('Build 48 hotfix keeps diagnostics advanced and Health Sync review-only', () => {
+  const settings = read('app/(tabs)/settings/index.tsx');
+  const healthSync = read('app/(tabs)/more/health-sync.tsx');
+
+  assert.match(settings, /Show Advanced Diagnostics/);
+  assert.match(settings, /showLiveActivityDiagnostics/);
+  assert.match(settings, /Live Activity Diagnostics/);
+  assert.match(settings, /Automatic background import is not enabled yet/);
+  assert.match(healthSync, /Automatic background import is not enabled yet/);
+  assert.doesNotMatch(settings, /label:\s*'Auto'/);
+  assert.doesNotMatch(healthSync, /label:\s*'Auto'/);
+});
+
 test('Build 38 detail screens use shared responsive headers', () => {
   const header = read('src/components/layout/ScreenHeader.tsx');
   const preset = read('app/(tabs)/strength/preset/[id].tsx');

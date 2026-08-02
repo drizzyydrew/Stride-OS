@@ -109,6 +109,9 @@ const READ_TYPES = [
 ] as const;
 
 const SHARE_TYPES = [
+  'HKQuantityTypeIdentifierActiveEnergyBurned',
+  'HKQuantityTypeIdentifierDistanceWalkingRunning',
+  'HKQuantityTypeIdentifierDistanceCycling',
   WORKOUT_TYPE,
 ] as const;
 

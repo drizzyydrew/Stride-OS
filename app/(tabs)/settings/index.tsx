@@ -236,10 +236,16 @@ export default function SettingsScreen() {
   const [showNotificationTimePicker, setShowNotificationTimePicker] = useState(false);
   const [voiceTestResult, setVoiceTestResult] = useState<string | null>(null);
   const [liveDiagnostics, setLiveDiagnostics] = useState<StrideLiveActivityDiagnostics | null>(null);
+  const [showLiveActivityDiagnostics, setShowLiveActivityDiagnostics] = useState(false);
+  const visibleHealthWorkoutSyncMode = healthWorkoutSyncMode === 'automatic' ? 'review' : healthWorkoutSyncMode;
 
   useEffect(() => {
     setLiveDiagnostics(getStrideLiveActivityDiagnostics());
   }, []);
+
+  useEffect(() => {
+    if (healthWorkoutSyncMode === 'automatic') setHealthWorkoutSyncMode('review');
+  }, [healthWorkoutSyncMode, setHealthWorkoutSyncMode]);
 
   function saveRaceForm() {
     if (!raceForm) return;
@@ -978,6 +984,17 @@ export default function SettingsScreen() {
           />
         </View>
         {experienceMode !== 'simple' ? (
+          <TouchableOpacity
+            style={[styles.connectBtn, { backgroundColor: C.cardAlt, alignSelf: 'flex-start', marginTop: 12 }]}
+            onPress={() => setShowLiveActivityDiagnostics(value => !value)}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 12, fontWeight: '700', color: C.text }}>
+              {showLiveActivityDiagnostics ? 'Hide Advanced Diagnostics' : 'Show Advanced Diagnostics'}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+        {experienceMode !== 'simple' && showLiveActivityDiagnostics ? (
           <View style={[styles.diagnosticBox, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
             <Text style={[styles.settingTitle, { color: C.text }]}>Live Activity Diagnostics</Text>
             <Text style={[styles.settingCaption, { color: C.textMuted }]}>iOS allowed: {liveDiagnostics?.areActivitiesEnabled ? 'Yes' : 'No or unavailable'}</Text>
@@ -1167,12 +1184,12 @@ export default function SettingsScreen() {
             options={[
               { label: 'Off', value: 'off' },
               { label: 'Review', value: 'review' },
-              { label: 'Auto', value: 'automatic' },
             ]}
-            value={healthWorkoutSyncMode}
+            value={visibleHealthWorkoutSyncMode}
             onChange={value => setHealthWorkoutSyncMode(value as typeof healthWorkoutSyncMode)}
             activeTone="primary"
           />
+          <Text style={[styles.settingCaption, { color: C.textMuted }]}>Automatic background import is not enabled yet. Use Review to choose workouts before importing.</Text>
           <TouchableOpacity
             style={[styles.connectBtn, { backgroundColor: C.primary, alignSelf: 'flex-start' }]}
             onPress={() => router.push('/(tabs)/more/health-sync' as any)}

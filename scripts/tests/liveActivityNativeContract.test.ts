@@ -22,6 +22,15 @@ test('Live Activity IDs persist and stale first-activity selection is avoided', 
   assert.match(moduleSource, /StrideLiveActivityIdStore\.write\(activity\.id, key: StrideLiveActivityIdStore\.strengthKey\)/);
 });
 
+test('native Live Activity recovery keeps the prior single-activity fallback', () => {
+  assert.match(moduleSource, /singleRunActivityFallback\(sessionId: sessionId, sessionSource: sessionSource\)/);
+  assert.match(moduleSource, /Activity<StrideRunActivityAttributes>\.activities\.count == 1/);
+  assert.match(moduleSource, /fallback_single_run/);
+  assert.match(moduleSource, /singleStrengthActivityFallback\(sessionId: sessionId, sessionSource: sessionSource\)/);
+  assert.match(moduleSource, /Activity<StrideStrengthActivityAttributes>\.activities\.count == 1/);
+  assert.match(moduleSource, /fallback_single_strength/);
+});
+
 test('native start paths clean only matching Live Activity instances', () => {
   assert.match(moduleSource, /await Self\.endMatchingRunActivityIfNeeded\(sessionId: sessionId, sessionSource: sessionSource\)/);
   assert.match(moduleSource, /AsyncFunction\("startStrength"\)[\s\S]*await Self\.endMatchingStrengthActivityIfNeeded\(sessionId: sessionId, sessionSource: sessionSource\)/);

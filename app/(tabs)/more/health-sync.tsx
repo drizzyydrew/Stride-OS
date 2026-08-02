@@ -38,6 +38,7 @@ export default function HealthSyncScreen() {
   const addActivity = useActivityStore(state => state.addActivity);
   const weekPlan = useWeekPlan();
   const scheduled = useScheduledSessions(weekPlan);
+  const visibleHealthWorkoutSyncMode = healthWorkoutSyncMode === 'automatic' ? 'review' : healthWorkoutSyncMode;
   const [filterDays, setFilterDays] = useState<typeof FILTERS[number]>(30);
   const [candidates, setCandidates] = useState<HealthKitWorkoutCandidate[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -79,6 +80,10 @@ export default function HealthSyncScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterDays]);
 
+  useEffect(() => {
+    if (healthWorkoutSyncMode === 'automatic') setHealthWorkoutSyncMode('review');
+  }, [healthWorkoutSyncMode, setHealthWorkoutSyncMode]);
+
   const rows = useMemo(() => candidates.map(candidate => {
     const duplicate = isDuplicateHealthKitWorkout(candidate, activities);
     return {
@@ -119,18 +124,19 @@ export default function HealthSyncScreen() {
       >
         <View style={[s.card, { backgroundColor: C.bg, borderColor: C.border }]}>
           <Text style={[s.title, { color: C.text }]}>Health Workout Sync</Text>
-          <Text style={[s.copy, { color: C.textMuted }]}>Completed Health/Fitness workouts are reviewed before import by default. Routes and health details import only when authorized.</Text>
+          <Text style={[s.copy, { color: C.textMuted }]}>Completed Health/Fitness workouts are reviewed before import. Routes and health details import only when authorized.</Text>
           <View style={s.pills}>
-            {(['off', 'review', 'automatic'] as const).map(mode => (
+            {(['off', 'review'] as const).map(mode => (
               <Pressable
                 key={mode}
-                style={[s.pill, { borderColor: healthWorkoutSyncMode === mode ? C.primary : C.border, backgroundColor: healthWorkoutSyncMode === mode ? C.primaryDim : C.cardAlt }]}
+                style={[s.pill, { borderColor: visibleHealthWorkoutSyncMode === mode ? C.primary : C.border, backgroundColor: visibleHealthWorkoutSyncMode === mode ? C.primaryDim : C.cardAlt }]}
                 onPress={() => setHealthWorkoutSyncMode(mode)}
               >
-                <Text style={[s.pillText, { color: healthWorkoutSyncMode === mode ? C.primary : C.textMuted }]}>{mode === 'review' ? 'Review' : mode === 'automatic' ? 'Auto' : 'Off'}</Text>
+                <Text style={[s.pillText, { color: visibleHealthWorkoutSyncMode === mode ? C.primary : C.textMuted }]}>{mode === 'review' ? 'Review' : 'Off'}</Text>
               </Pressable>
             ))}
           </View>
+          <Text style={[s.copy, { color: C.textMuted }]}>Automatic background import is not enabled yet.</Text>
         </View>
 
         <View style={s.toolbar}>

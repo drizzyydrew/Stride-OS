@@ -579,9 +579,23 @@ public final class StrideLiveActivityModule: Module {
     }
     guard let activity = Activity<StrideStrengthActivityAttributes>.activities.first(where: {
       matches($0.attributes.sessionId, $0.attributes.sessionSource, sessionId, sessionSource)
-    }) else { return nil }
+    }) ?? singleStrengthActivityFallback(sessionId: sessionId, sessionSource: sessionSource) else { return nil }
     currentStrengthActivityId = activity.id
     StrideLiveActivityIdStore.write(activity.id, key: StrideLiveActivityIdStore.strengthKey)
+    return activity
+  }
+
+  @available(iOS 16.1, *)
+  private static func singleStrengthActivityFallback(sessionId: String, sessionSource: String) -> Activity<StrideStrengthActivityAttributes>? {
+    guard Activity<StrideStrengthActivityAttributes>.activities.count == 1,
+          let activity = Activity<StrideStrengthActivityAttributes>.activities.first else { return nil }
+    let exactSourceConflict = (
+      !sessionSource.isEmpty
+      && !activity.attributes.sessionSource.isEmpty
+      && activity.attributes.sessionSource != sessionSource
+    )
+    guard !exactSourceConflict else { return nil }
+    StrideLiveActivityIdStore.writeResult("fallback_single_strength:\(activity.attributes.sessionSource):\(activity.attributes.sessionId):requested:\(sessionSource):\(sessionId)", key: StrideLiveActivityIdStore.lastUpdateResultKey)
     return activity
   }
 
@@ -655,9 +669,23 @@ public final class StrideLiveActivityModule: Module {
     }
     guard let activity = Activity<StrideRunActivityAttributes>.activities.first(where: {
       matches($0.attributes.sessionId, $0.attributes.sessionSource, sessionId, sessionSource)
-    }) else { return nil }
+    }) ?? singleRunActivityFallback(sessionId: sessionId, sessionSource: sessionSource) else { return nil }
     currentActivityId = activity.id
     StrideLiveActivityIdStore.write(activity.id, key: StrideLiveActivityIdStore.runKey)
+    return activity
+  }
+
+  @available(iOS 16.1, *)
+  private static func singleRunActivityFallback(sessionId: String, sessionSource: String) -> Activity<StrideRunActivityAttributes>? {
+    guard Activity<StrideRunActivityAttributes>.activities.count == 1,
+          let activity = Activity<StrideRunActivityAttributes>.activities.first else { return nil }
+    let exactSourceConflict = (
+      !sessionSource.isEmpty
+      && !activity.attributes.sessionSource.isEmpty
+      && activity.attributes.sessionSource != sessionSource
+    )
+    guard !exactSourceConflict else { return nil }
+    StrideLiveActivityIdStore.writeResult("fallback_single_run:\(activity.attributes.sessionSource):\(activity.attributes.sessionId):requested:\(sessionSource):\(sessionId)", key: StrideLiveActivityIdStore.lastUpdateResultKey)
     return activity
   }
 
