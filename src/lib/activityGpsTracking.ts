@@ -12,11 +12,12 @@ TaskManager.defineTask(ACTIVITY_LOCATION_TASK, async ({ data, error }) => {
   }
   const locations = (data as { locations?: Location.LocationObject[] })?.locations ?? [];
   const state = useActiveActivityStore.getState();
-  const now = locations.at(-1)?.timestamp ?? Date.now();
-  const activeSeconds = state.startedAt
-    ? Math.max(0, (now - state.startedAt - state.pausedDurationMs) / 1000)
-    : 0;
-  locations.forEach(location => useActiveActivityStore.getState().addLocation(location, activeSeconds));
+  locations.forEach(location => {
+    const activeSeconds = state.startedAt
+      ? Math.max(0, (location.timestamp - state.startedAt - state.pausedDurationMs) / 1000)
+      : 0;
+    useActiveActivityStore.getState().addLocation(location, activeSeconds);
+  });
 });
 
 export async function startActivityLocationTracking(): Promise<void> {

@@ -14,7 +14,7 @@
       "appleTeamId": "QBAVJD9497",
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "49",
+      "buildNumber": "50",
       "backgroundColor": "#14160F",
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -22,6 +22,10 @@
         ]
       },
       "infoPlist": {
+        "UIBackgroundModes": [
+          "audio",
+          "location"
+        ],
         "NSSupportsLiveActivities": true,
         "NSSupportsLiveActivitiesFrequentUpdates": true,
         "NSLocationWhenInUseUsageDescription": "StrideOS uses your location to track distance and pace during GPS runs.",
@@ -124,7 +128,8 @@
           "bluetoothAlwaysPermission": "StrideOS uses Bluetooth to connect heart-rate straps, treadmills, trainers, foot pods, and cycling sensors during workouts.",
           "isBackgroundEnabled": false
         }
-      ]
+      ],
+      "./plugins/withIosWorkoutBackgroundModes"
     ],
     "experiments": {
       "typedRoutes": true

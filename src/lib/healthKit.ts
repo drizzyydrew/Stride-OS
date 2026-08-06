@@ -109,7 +109,6 @@ const READ_TYPES = [
 ] as const;
 
 const SHARE_TYPES = [
-  'HKQuantityTypeIdentifierActiveEnergyBurned',
   'HKQuantityTypeIdentifierDistanceWalkingRunning',
   'HKQuantityTypeIdentifierDistanceCycling',
   WORKOUT_TYPE,
@@ -233,10 +232,15 @@ export async function writeWorkout(workout: CompletedWorkoutRecord): Promise<voi
   const activityType = Health.WorkoutActivityType?.running;
   if (typeof activityType !== 'number') return;
 
-  const totals = {
-    distance:     (workout.actualDistanceMiles ?? workout.estimatedDistanceMiles) * 1609.344,
-    energyBurned: Math.round(workout.estimatedLoad * 1.05),
-  };
+  // Only write a distance total when we have a real, finite, positive value —
+  // never NaN. estimatedLoad is a TSS-analog (training load), NOT kilocalories,
+  // so we deliberately do NOT write it as energyBurned; publishing a fabricated
+  // calorie figure into Apple Health would mislead the user and other apps.
+  const distanceMiles = workout.actualDistanceMiles ?? workout.estimatedDistanceMiles;
+  const totals: { distance?: number; energyBurned?: number } = {};
+  if (Number.isFinite(distanceMiles) && distanceMiles > 0) {
+    totals.distance = distanceMiles * 1609.344;
+  }
 
   await Health.saveWorkoutSample?.(activityType, [], startDate, endDate, totals, {
     HKMetadataKeyWorkoutBrandName: 'StrideOS',

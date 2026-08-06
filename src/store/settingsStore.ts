@@ -14,6 +14,7 @@ import type { TreadmillPhonePlacement } from '../utils/treadmillPlacement';
 export type UnitSystem = 'imperial' | 'metric';
 export type { ExperienceMode };
 export type VoiceCueMode = 'silent' | 'minimal' | 'standard' | 'coach';
+export type VoiceDistanceUpdateInterval = 'half' | 'one';
 export type VoiceCuePreferences = {
   interval: boolean;
   pace: boolean;
@@ -46,6 +47,7 @@ type SettingsStore = {
   fuelingReminderIntervalMin: FuelingReminderIntervalMin;
   voiceCueMode: VoiceCueMode;
   voiceCuePreferences: VoiceCuePreferences;
+  voiceDistanceUpdateInterval: VoiceDistanceUpdateInterval;
   liveActivitiesEnabled: boolean;
   autoPauseMode: AutoPauseMode;
   announceAutoPause: boolean;
@@ -58,6 +60,7 @@ type SettingsStore = {
   setFuelingReminderIntervalMin: (minutes: FuelingReminderIntervalMin) => void;
   setVoiceCueMode: (mode: VoiceCueMode) => void;
   setVoiceCuePreference: (cue: keyof VoiceCuePreferences, enabled: boolean) => void;
+  setVoiceDistanceUpdateInterval: (interval: VoiceDistanceUpdateInterval) => void;
   setLiveActivitiesEnabled: (enabled: boolean) => void;
   setAutoPauseMode: (mode: AutoPauseMode) => void;
   setAnnounceAutoPause: (enabled: boolean) => void;
@@ -77,6 +80,7 @@ export const useSettingsStore = create<SettingsStore>()(
       // deliberately reduce it to Standard/Minimal/Silent.
       voiceCueMode: 'coach',
       voiceCuePreferences: DEFAULT_VOICE_CUE_PREFERENCES,
+      voiceDistanceUpdateInterval: 'half',
       liveActivitiesEnabled: true,
       autoPauseMode: 'off',
       announceAutoPause: true,
@@ -91,6 +95,7 @@ export const useSettingsStore = create<SettingsStore>()(
       setVoiceCuePreference: (cue, enabled) => set(state => ({
         voiceCuePreferences: { ...state.voiceCuePreferences, [cue]: enabled },
       })),
+      setVoiceDistanceUpdateInterval: (voiceDistanceUpdateInterval) => set({ voiceDistanceUpdateInterval }),
       setLiveActivitiesEnabled: (liveActivitiesEnabled) => set({ liveActivitiesEnabled }),
       setAutoPauseMode: (autoPauseMode) => set({ autoPauseMode }),
       setAnnounceAutoPause: (announceAutoPause) => set({ announceAutoPause }),
@@ -117,6 +122,7 @@ export const useSettingsStore = create<SettingsStore>()(
             ...DEFAULT_VOICE_CUE_PREFERENCES,
             ...(saved?.voiceCuePreferences ?? {}),
           },
+          voiceDistanceUpdateInterval: saved?.voiceDistanceUpdateInterval === 'one' ? 'one' : 'half',
           liveActivitiesEnabled: saved?.liveActivitiesEnabled ?? true,
           autoPauseMode: saved?.autoPauseMode ?? 'off',
           announceAutoPause: saved?.announceAutoPause ?? true,

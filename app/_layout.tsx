@@ -31,6 +31,11 @@ import LiveActivityCommandReconciler from '../src/components/liveActivity/LiveAc
 
 // Register GPS background task at module level (required by expo-task-manager)
 import '../src/lib/gpsTracking';
+// Register the outdoor-activity (walk/hike/outdoor-cycle) background location
+// task at launch too — not just the run task — so iOS can find its handler when
+// it relaunches the app in the background to deliver locations. Defining it only
+// when the activity screen mounts drops background GPS on a cold relaunch.
+import '../src/lib/activityGpsTracking';
 import '../src/lib/notifications';
 
 export {

@@ -7,10 +7,12 @@ import { createAppJSONStorage } from './persistStorage';
 import type { ActivitySubtype, ActivityType, RunWalkInterval } from '../types/activity';
 import {
   appendTrackingPoint,
+  evaluateRunWalkCue,
   type TrackingAggregate,
 } from '../utils/activityTracking';
 import { elapsedSecondsExcludingPause } from '../utils/activeTime';
 import { buildWorkoutInstanceId, synthesizeWorkoutInstanceId } from '../utils/workoutInstance';
+import { enqueueVoiceCue } from '../lib/voiceCue';
 
 export type ActiveOutdoorType =
   | 'running'
@@ -55,6 +57,7 @@ type ActiveActivityStore = {
   routeId: string | null;
   navigationMode: 'off' | 'walking' | 'cycling';
   nextInstruction: string | null;
+  lastRunWalkCueElapsedSeconds: number;
   completionRequestedAt: number | null;
   // Live workout instance identity — see src/utils/workoutInstance.ts.
   workoutInstanceId: string | null;
@@ -128,6 +131,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
       routeId: null,
       navigationMode: 'off',
       nextInstruction: null,
+      lastRunWalkCueElapsedSeconds: 0,
       completionRequestedAt: null,
       workoutInstanceId: null,
 
@@ -151,6 +155,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
           routeId: input.routeId ?? null,
           navigationMode: input.navigationMode ?? 'off',
           nextInstruction: null,
+          lastRunWalkCueElapsedSeconds: 0,
           completionRequestedAt: null,
           workoutInstanceId: buildWorkoutInstanceId(input.scheduledSessionId ?? null, now),
         });
@@ -175,6 +180,16 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
       addLocation: (location, activeSeconds) => {
         const state = get();
         if (!state.isActive || state.isPaused) return;
+        let nextRunWalkCueElapsedSeconds = state.lastRunWalkCueElapsedSeconds;
+        if (state.intervalPromptsEnabled && state.runWalkIntervals.length > 0) {
+          const cue = evaluateRunWalkCue({
+            intervals: state.runWalkIntervals,
+            previousElapsedSeconds: state.lastRunWalkCueElapsedSeconds,
+            elapsedSeconds: activeSeconds,
+          });
+          nextRunWalkCueElapsedSeconds = activeSeconds;
+          if (cue) enqueueVoiceCue(cue.text, 'runWalk');
+        }
         set({
           aggregate: appendTrackingPoint(state.aggregate, {
             latitude: location.coords.latitude,
@@ -183,6 +198,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
             altitudeMeters: location.coords.altitude ?? undefined,
             accuracyMeters: location.coords.accuracy ?? undefined,
           }, state.activityType as ActivityType, activeSeconds),
+          lastRunWalkCueElapsedSeconds: nextRunWalkCueElapsedSeconds,
         });
       },
 
@@ -201,6 +217,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
         isPaused: false,
         pausedAt: null,
         nextInstruction: null,
+        lastRunWalkCueElapsedSeconds: 0,
         completionRequestedAt: null,
       }),
 
@@ -219,6 +236,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
         routeId: null,
         navigationMode: 'off',
         nextInstruction: null,
+        lastRunWalkCueElapsedSeconds: 0,
         completionRequestedAt: null,
         workoutInstanceId: null,
       }),
@@ -244,6 +262,9 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
             scheduledSessionId: merged.scheduledSessionId,
             startedAtMs: merged.startedAt,
           });
+        }
+        if (!Number.isFinite(merged.lastRunWalkCueElapsedSeconds)) {
+          merged.lastRunWalkCueElapsedSeconds = 0;
         }
         return merged;
       },

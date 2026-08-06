@@ -1,7 +1,12 @@
 import type { UnitSystem } from '../store/settingsStore';
 
-const MI_PER_KM   = 0.621371;
-const KM_PER_MI   = 1.60934;
+// Canonical km<->mi factor (matches src/utils/units.ts) so distances render
+// identically across screens. NOTE: this module (display formatting bound to a
+// UnitSystem) and src/utils/units.ts (pure NaN-guarded conversions) both export
+// a `formatDistance` with different signatures — a latent footgun. Prefer
+// importing from a single module; consolidation is tracked in the Build 49 audit.
+const KM_PER_MI   = 1.609344;
+const MI_PER_KM   = 1 / KM_PER_MI;
 const LB_PER_KG   = 2.20462;
 const INCHES_PER_CM = 0.393701;
 

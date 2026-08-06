@@ -190,8 +190,10 @@ export default function SettingsScreen() {
     setExperienceMode,
     voiceCueMode,
     voiceCuePreferences,
+    voiceDistanceUpdateInterval,
     setVoiceCueMode,
     setVoiceCuePreference,
+    setVoiceDistanceUpdateInterval,
     liveActivitiesEnabled,
     setLiveActivitiesEnabled,
     autoPauseMode,
@@ -882,6 +884,25 @@ export default function SettingsScreen() {
               />
             </View>
           ))}
+        </View>
+        <View style={[styles.settingRow, { borderBottomColor: C.border, flexDirection: 'column', alignItems: 'stretch', gap: 10 }]}>
+          <View style={styles.settingCopy}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Distance Updates</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>
+              Speak distance, split pace, average pace, and elapsed time during outdoor runs.
+            </Text>
+          </View>
+          <View>
+            <SegmentControl
+              options={[
+                { label: imp ? '0.5 mi' : '0.5 km', value: 'half' },
+                { label: imp ? '1 mi' : '1 km', value: 'one' },
+              ]}
+              value={voiceDistanceUpdateInterval}
+              onChange={value => setVoiceDistanceUpdateInterval(value as typeof voiceDistanceUpdateInterval)}
+              activeTone="primary"
+            />
+          </View>
         </View>
         <TouchableOpacity
           style={[styles.testVoiceButton, { borderColor: C.primary, backgroundColor: C.primaryDim }]}

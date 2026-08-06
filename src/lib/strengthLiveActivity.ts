@@ -74,7 +74,11 @@ export async function endStrengthLiveActivity(payload?: Partial<Pick<StrengthLiv
   await endNativeStrengthLiveActivity({
     workoutInstanceId: payload?.workoutInstanceId ?? activeSession?.workoutInstanceId ?? undefined,
     sessionId: payload?.sessionId ?? (activeSession ? strengthLiveActivitySessionId(activeSession) : undefined),
-    sessionSource: payload?.sessionSource ?? activeSession?.source ?? 'training_block',
+    // Fall back to an empty source (native treats empty as a wildcard) rather
+    // than a fixed 'training_block' — if the session store was already cleared
+    // and the activity was started under a different source, a fixed source
+    // would fail to match and leave a stale Live Activity on the Lock Screen.
+    sessionSource: payload?.sessionSource ?? activeSession?.source ?? '',
   });
 }
 

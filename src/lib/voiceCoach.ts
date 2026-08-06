@@ -41,18 +41,44 @@ function record(item: QueueItem, state: VoiceDeliveryState, reason?: string): vo
 
 async function ensureAudioSession(): Promise<void> {
   if (audioSessionReady) return;
+  // duckOthers lowers music while a cue plays; shouldPlayInBackground:true lets
+  // cues speak while the screen is locked / app is backgrounded during a run
+  // (requires the `audio` UIBackgroundMode in app.json). This ducked mode must
+  // be released once the queue empties — see releaseAudioSession — otherwise
+  // the session stays active with duckOthers and music never returns to full
+  // volume for the rest of the run.
   await setAudioModeAsync({
     playsInSilentMode: true,
     interruptionMode: 'duckOthers',
     allowsRecording: false,
-    shouldPlayInBackground: false,
+    shouldPlayInBackground: true,
     shouldRouteThroughEarpiece: false,
   });
   audioSessionReady = true;
 }
 
+async function releaseAudioSession(): Promise<void> {
+  if (!audioSessionReady) return;
+  audioSessionReady = false;
+  // Switch to a non-ducking, mixable mode so other apps' audio (the user's
+  // music/podcast) returns to full volume after the last cue finishes. The
+  // next cue calls ensureAudioSession() again and re-ducks.
+  await setAudioModeAsync({
+    playsInSilentMode: true,
+    interruptionMode: 'mixWithOthers',
+    allowsRecording: false,
+    shouldPlayInBackground: true,
+    shouldRouteThroughEarpiece: false,
+  }).catch(() => undefined);
+}
+
 function drain(): void {
-  if (speaking || queue.length === 0) return;
+  if (speaking) return;
+  if (queue.length === 0) {
+    // Nothing left to say — let ducked music recover.
+    void releaseAudioSession();
+    return;
+  }
   queue.sort((a, b) => b.priority - a.priority || a.at - b.at);
   const item = queue.shift();
   if (!item) return;
@@ -128,6 +154,9 @@ export function clearVoiceCoachQueue(): void {
   queue.length = 0;
   speaking = false;
   void Speech.stop();
+  // Release the ducked session immediately so music recovers even if no
+  // onStopped callback fires (e.g. nothing was speaking when the run ended).
+  void releaseAudioSession();
 }
 
 export function testVoiceCoaching(): VoiceDeliveryState {

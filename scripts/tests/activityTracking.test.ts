@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -85,4 +86,13 @@ test('voice collisions merge without duplicate phrases', () => {
     mergeSpokenCues(['Begin running.', 'Hydration reminder: drink approximately four ounces.', 'Begin running.']),
     'Begin running. Hydration reminder: drink approximately four ounces.',
   );
+});
+
+test('background activity tracking owns run-walk cues from location updates', () => {
+  const store = readFileSync('src/store/activeActivityStore.ts', 'utf8');
+  const task = readFileSync('src/lib/activityGpsTracking.ts', 'utf8');
+  assert.match(store, /evaluateRunWalkCue/);
+  assert.match(store, /lastRunWalkCueElapsedSeconds/);
+  assert.match(store, /enqueueVoiceCue\(cue\.text, 'runWalk'\)/);
+  assert.match(task, /location\.timestamp - state\.startedAt - state\.pausedDurationMs/);
 });

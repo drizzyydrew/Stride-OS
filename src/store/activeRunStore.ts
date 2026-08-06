@@ -16,6 +16,13 @@ import { elapsedSecondsExcludingPause } from '../utils/activeTime';
 import { buildWorkoutInstanceId, synthesizeWorkoutInstanceId } from '../utils/workoutInstance';
 import { closeOpenSegment, confirmSpeedChange, openSegment, sanitizeSpeedMph, type TreadmillSegment } from '../utils/treadmill';
 import type { TreadmillPhonePlacement } from '../utils/treadmillPlacement';
+import {
+  DEFAULT_DISTANCE_SPLIT_STATE,
+  evaluateDistanceSplitCue,
+  type DistanceSplitVoiceState,
+} from '../utils/voiceCoachingEngine';
+import { useSettingsStore } from './settingsStore';
+import { enqueueVoiceCue } from '../lib/voiceCue';
 
 export type Coordinate = {
   lat:       number;
@@ -101,6 +108,9 @@ export type ActiveRunStore = {
   // active session — survives finishRun/cancelRun).
   lastEnvironmentPreference: RunEnvironment;
 
+  // Distance-split voice-cue state (mile/km announcements). Reset each run.
+  splitVoiceState:        DistanceSplitVoiceState;
+
   startRun:          (plannedWorkout: RichWorkout | null, config?: RunModeConfig) => void;
   pauseRun:          () => void;
   resumeRun:         () => void;
@@ -156,6 +166,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       distanceSource:         null,
       treadmillPhonePlacement: 'on_body',
       lastEnvironmentPreference: 'outdoor',
+      splitVoiceState:        DEFAULT_DISTANCE_SPLIT_STATE,
 
   startRun: (plannedWorkout, config) => {
     const now = Date.now();
@@ -187,6 +198,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       distanceSource:         null,
       treadmillPhonePlacement: config?.treadmillPhonePlacement ?? get().treadmillPhonePlacement,
       lastEnvironmentPreference: config?.environment ?? get().lastEnvironmentPreference,
+      splitVoiceState:        DEFAULT_DISTANCE_SPLIT_STATE,
     });
   },
 
@@ -300,6 +312,20 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       ? elapsedMovingSec / totalDist
       : state.averagePaceSecPerMile;
 
+    // Distance-split voice cue (mile/km). Evaluated here in the store so it
+    // fires no matter which run UI is mounted, and from the background GPS
+    // task with the screen locked. Gating (mode/preferences/cooldown) happens
+    // inside enqueueVoiceCue; treadmill/indoor distance never routes through
+    // this reducer, so only outdoor GPS splits are announced.
+    const settings = useSettingsStore.getState();
+    const splitEval = evaluateDistanceSplitCue({
+      state: state.splitVoiceState,
+      distanceMiles: totalDist,
+      elapsedMovingSec,
+      units: settings.units,
+      interval: settings.voiceDistanceUpdateInterval,
+    });
+
     set({
       coordinates: coords,
       distanceMiles: totalDist,
@@ -307,7 +333,10 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       averagePaceSecPerMile: averagePace,
       elevationGainFt,
       elevationRefM,
+      splitVoiceState: splitEval.state,
     });
+
+    if (splitEval.text) enqueueVoiceCue(splitEval.text, 'pace');
   },
 
   advanceInterval: () => {
@@ -344,6 +373,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       manualDistanceMiles:    null,
       distanceSource:         null,
       treadmillPhonePlacement: state.treadmillPhonePlacement,
+      splitVoiceState:        DEFAULT_DISTANCE_SPLIT_STATE,
     });
   },
 
@@ -376,6 +406,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       manualDistanceMiles:    null,
       distanceSource:         null,
       treadmillPhonePlacement: state.treadmillPhonePlacement,
+      splitVoiceState:        DEFAULT_DISTANCE_SPLIT_STATE,
     });
   },
 
@@ -401,6 +432,13 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     if (!merged.environment) merged.environment = 'outdoor';
     if (!merged.treadmillSegments) merged.treadmillSegments = [];
     if (!merged.treadmillPhonePlacement) merged.treadmillPhonePlacement = 'on_body';
+    if (
+      !merged.splitVoiceState
+      || !Number.isFinite(merged.splitVoiceState.lastSplitIndex)
+      || !Number.isFinite(merged.splitVoiceState.lastSplitElapsedSec)
+    ) {
+      merged.splitVoiceState = DEFAULT_DISTANCE_SPLIT_STATE;
+    }
     return merged;
   },
 }));
