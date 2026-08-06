@@ -13,6 +13,12 @@ strideos_Full_Project_LLM/
 # Local Expo/dev artifacts
 .expo/
 dist/
+dist [0-9]*/
 web-build/
 /ios/
 /android/
+targets [0-9]*/
+StrideOS_Fable5_Build_Authority_Pack/
+docs/build-next-prototypes/
+docs/build37-prototypes/
+docs/build38-prototypes/
