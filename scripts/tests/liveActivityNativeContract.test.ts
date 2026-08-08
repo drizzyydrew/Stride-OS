@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const moduleSource = readFileSync('modules/stride-live-activity/ios/Module/StrideLiveActivityModule.swift', 'utf8');
 const intentSource = readFileSync('targets/StrideRunLiveActivity/_shared/StrideControlIntents.swift', 'utf8');
+const targetConfigSource = readFileSync('targets/StrideRunLiveActivity/expo-target.config.js', 'utf8');
 const widgetSource = readFileSync('targets/StrideRunLiveActivity/StrideRunLiveActivity.swift', 'utf8');
 
 test('native route directions use MapKit walking and cycling contracts', () => {
@@ -48,6 +49,16 @@ test('App Intents publish pending state and suppress rapid duplicate commands', 
   assert.match(intentSource, /sessionSourceKey/);
   assert.match(intentSource, /activityKitIdKey/);
   assert.match(moduleSource, /controlStatePreservingPending/);
+});
+
+test('Live Activity extension supports iOS 17 display and gates iOS 18 controls', () => {
+  assert.match(targetConfigSource, /deploymentTarget: '17\.0'/);
+  assert.match(moduleSource, /#available\(iOS 17\.0, \*\)/);
+  assert.match(moduleSource, /live_activity_extension_requires_ios_17/);
+  assert.match(widgetSource, /if #available\(iOS 18\.0, \*\)/);
+  assert.match(intentSource, /@available\(iOS 18\.0, \*\)[\s\S]*struct PauseRunIntent/);
+  assert.match(widgetSource, /Tracking in StrideOS/);
+  assert.match(widgetSource, /Open StrideOS for controls/);
 });
 
 test('activity-specific and strength-priority content are visible contracts', () => {

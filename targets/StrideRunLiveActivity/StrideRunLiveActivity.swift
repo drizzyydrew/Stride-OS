@@ -133,46 +133,55 @@ private struct LockScreenRunView: View {
 
       // Single primary action + compact stop
       HStack(spacing: 8) {
-        if context.state.controlState != "ready" {
-          HStack(spacing: 7) {
-            ProgressView()
-              .controlSize(.small)
-            Text(pendingLabel(context.state.controlState))
-              .font(.system(size: 13, weight: .heavy))
+        if #available(iOS 18.0, *) {
+          if context.state.controlState != "ready" {
+            HStack(spacing: 7) {
+              ProgressView()
+                .controlSize(.small)
+              Text(pendingLabel(context.state.controlState))
+                .font(.system(size: 13, weight: .heavy))
+            }
+            .frame(maxWidth: .infinity, minHeight: 38)
+            .background(actionColor.opacity(0.18), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .foregroundStyle(primaryText)
+            .accessibilityLabel(pendingLabel(context.state.controlState))
+          } else if context.state.isPaused {
+            Button(intent: ResumeRunIntent()) {
+              Label("RESUME", systemImage: "play.fill")
+                .font(.system(size: 14, weight: .heavy))
+                .frame(maxWidth: .infinity, minHeight: 38)
+                .background(actionColor, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .foregroundStyle(isLight ? .white : StrideDesign.ink)
+            }
+            .buttonStyle(.plain)
+          } else {
+            Button(intent: PauseRunIntent()) {
+              Label("PAUSE", systemImage: "pause.fill")
+                .font(.system(size: 14, weight: .heavy))
+                .frame(maxWidth: .infinity, minHeight: 38)
+                .background(actionColor, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .foregroundStyle(isLight ? .white : StrideDesign.ink)
+            }
+            .buttonStyle(.plain)
           }
-          .frame(maxWidth: .infinity, minHeight: 38)
-          .background(actionColor.opacity(0.18), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-          .foregroundStyle(primaryText)
-          .accessibilityLabel(pendingLabel(context.state.controlState))
-        } else if context.state.isPaused {
-          Button(intent: ResumeRunIntent()) {
-            Label("RESUME", systemImage: "play.fill")
+          Button(intent: StopRunIntent()) {
+            Image(systemName: "stop.fill")
               .font(.system(size: 14, weight: .heavy))
-              .frame(maxWidth: .infinity, minHeight: 38)
-              .background(actionColor, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-              .foregroundStyle(isLight ? .white : StrideDesign.ink)
+              .frame(width: 46, height: 38)
+              .background(StrideDesign.critical.opacity(0.22), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+              .foregroundStyle(StrideDesign.critical)
           }
           .buttonStyle(.plain)
+          .disabled(context.state.controlState != "ready")
+          .opacity(context.state.controlState == "ready" ? 1 : 0.45)
         } else {
-          Button(intent: PauseRunIntent()) {
-            Label("PAUSE", systemImage: "pause.fill")
-              .font(.system(size: 14, weight: .heavy))
-              .frame(maxWidth: .infinity, minHeight: 38)
-              .background(actionColor, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-              .foregroundStyle(isLight ? .white : StrideDesign.ink)
-          }
-          .buttonStyle(.plain)
+          Label(context.state.isPaused ? "Paused in StrideOS" : "Tracking in StrideOS", systemImage: context.state.isPaused ? "pause.fill" : "figure.run")
+            .font(.system(size: 13, weight: .heavy))
+            .frame(maxWidth: .infinity, minHeight: 38)
+            .background(actionColor.opacity(0.18), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .foregroundStyle(primaryText)
+            .accessibilityLabel(context.state.isPaused ? "Paused in StrideOS. Open the app to resume." : "Tracking in StrideOS. Open the app to pause or finish.")
         }
-        Button(intent: StopRunIntent()) {
-          Image(systemName: "stop.fill")
-            .font(.system(size: 14, weight: .heavy))
-            .frame(width: 46, height: 38)
-            .background(StrideDesign.critical.opacity(0.22), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-            .foregroundStyle(StrideDesign.critical)
-        }
-        .buttonStyle(.plain)
-        .disabled(context.state.controlState != "ready")
-        .opacity(context.state.controlState == "ready" ? 1 : 0.45)
       }
     }
     .padding(.horizontal, 14)
@@ -190,7 +199,7 @@ private struct CompactRunControls: View {
         .tint(.white)
         .frame(width: 34, height: 28)
         .accessibilityLabel(pendingLabel(state.controlState))
-    } else {
+    } else if #available(iOS 18.0, *) {
       if state.isPaused {
         Button(intent: ResumeRunIntent()) {
           Image(systemName: "play.fill")
@@ -218,6 +227,12 @@ private struct CompactRunControls: View {
       .buttonStyle(.plain)
       .frame(width: 34, height: 28)
       .background(StrideDesign.critical.opacity(0.28), in: Capsule())
+    } else {
+      Image(systemName: state.isPaused ? "pause.circle.fill" : "figure.run")
+        .font(.caption.weight(.bold))
+        .foregroundStyle(state.isPaused ? StrideDesign.clay : StrideDesign.sage)
+        .frame(width: 34, height: 28)
+        .accessibilityLabel(state.isPaused ? "Paused" : "Tracking")
     }
   }
 }
@@ -438,7 +453,7 @@ struct StrideStrengthLiveActivity: Widget {
                 .foregroundStyle(.white)
             }
             HStack {
-              if context.state.controlState == "ready" {
+              if context.state.controlState == "ready", #available(iOS 18.0, *) {
                 if context.state.isPaused {
                   Button(intent: ResumeStrengthIntent()) {
                     Label("Resume", systemImage: "play.fill")
@@ -469,12 +484,14 @@ struct StrideStrengthLiveActivity: Widget {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
                 .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.3), in: Capsule())
-                .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
+                  .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
               } else {
-                ProgressView()
-                  .controlSize(.mini)
-                  .tint(.white)
-                Text(pendingLabel(context.state.controlState))
+                if context.state.controlState != "ready" {
+                  ProgressView()
+                    .controlSize(.mini)
+                    .tint(.white)
+                }
+                Text(context.state.controlState == "ready" ? (context.state.isPaused ? "Paused in StrideOS" : "Open StrideOS for controls") : pendingLabel(context.state.controlState))
                   .font(.caption.weight(.bold))
                   .foregroundStyle(.white)
               }
@@ -572,36 +589,45 @@ private struct LockScreenStrengthView: View {
           .padding(.vertical, 9)
           .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.16), in: RoundedRectangle(cornerRadius: 12))
           .foregroundStyle(.white)
-        } else if context.state.isPaused {
-          Button(intent: ResumeStrengthIntent()) {
-            Label("Resume", systemImage: "play.fill")
-              .font(.subheadline.weight(.bold))
-              .frame(maxWidth: .infinity)
-              .padding(.vertical, 9)
-              .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
-              .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
-          }
-          .buttonStyle(.plain)
-        } else {
-          Button(intent: MarkSetCompleteIntent()) {
-            Label("Mark Complete", systemImage: "checkmark.circle.fill")
-              .font(.subheadline.weight(.bold))
-              .frame(maxWidth: .infinity)
-              .padding(.vertical, 9)
-              .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
-              .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
-          }
-          .buttonStyle(.plain)
+        } else if #available(iOS 18.0, *) {
+          if context.state.isPaused {
+            Button(intent: ResumeStrengthIntent()) {
+              Label("Resume", systemImage: "play.fill")
+                .font(.subheadline.weight(.bold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
+                .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
+            }
+            .buttonStyle(.plain)
+          } else {
+            Button(intent: MarkSetCompleteIntent()) {
+              Label("Mark Complete", systemImage: "checkmark.circle.fill")
+                .font(.subheadline.weight(.bold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
+                .foregroundStyle(Color(red: 0.56, green: 0.72, blue: 0.41))
+            }
+            .buttonStyle(.plain)
 
-          Button(intent: PauseStrengthIntent()) {
-            Label("Pause", systemImage: "pause.fill")
-              .font(.subheadline.weight(.bold))
-              .frame(maxWidth: .infinity)
-              .padding(.vertical, 9)
-              .background(Color(red: 0.91, green: 0.69, blue: 0.34).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
-              .foregroundStyle(Color(red: 0.91, green: 0.69, blue: 0.34))
+            Button(intent: PauseStrengthIntent()) {
+              Label("Pause", systemImage: "pause.fill")
+                .font(.subheadline.weight(.bold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(Color(red: 0.91, green: 0.69, blue: 0.34).opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
+                .foregroundStyle(Color(red: 0.91, green: 0.69, blue: 0.34))
+            }
+            .buttonStyle(.plain)
           }
-          .buttonStyle(.plain)
+        } else {
+          Label(context.state.isPaused ? "Paused in StrideOS" : "Open StrideOS for controls", systemImage: context.state.isPaused ? "pause.fill" : "figure.strengthtraining.traditional")
+            .font(.subheadline.weight(.bold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 9)
+            .background(Color(red: 0.56, green: 0.72, blue: 0.41).opacity(0.16), in: RoundedRectangle(cornerRadius: 12))
+            .foregroundStyle(.white)
         }
       }
     }

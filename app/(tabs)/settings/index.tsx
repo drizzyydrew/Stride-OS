@@ -930,7 +930,7 @@ export default function SettingsScreen() {
         <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
           <View style={styles.settingCopy}>
             <Text style={[styles.settingTitle, { color: C.text }]}>Live Activities</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Lock Screen and Dynamic Island cards for active workouts</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Lock Screen and Dynamic Island cards for active workouts. Display supports iOS 17+; Lock Screen controls require iOS 18+.</Text>
           </View>
           <Switch
             value={liveActivitiesEnabled}
@@ -1020,6 +1020,7 @@ export default function SettingsScreen() {
             <Text style={[styles.settingTitle, { color: C.text }]}>Live Activity Diagnostics</Text>
             <Text style={[styles.settingCaption, { color: C.textMuted }]}>iOS allowed: {liveDiagnostics?.areActivitiesEnabled ? 'Yes' : 'No or unavailable'}</Text>
             <Text style={[styles.settingCaption, { color: C.textMuted }]}>Extension bundled: StrideRunLiveActivity</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Extension support: display iOS 17+, controls iOS 18+</Text>
             <Text style={[styles.settingCaption, { color: C.textMuted }]}>Active count: {(liveDiagnostics?.activeRunActivityCount ?? 0) + (liveDiagnostics?.activeStrengthActivityCount ?? 0)}</Text>
             <Text style={[styles.settingCaption, { color: C.textMuted }]}>Last start: {liveDiagnostics?.lastStartResult || 'None'}</Text>
             <Text style={[styles.settingCaption, { color: C.textMuted }]}>Last update: {liveDiagnostics?.lastUpdateResult || 'None'}</Text>

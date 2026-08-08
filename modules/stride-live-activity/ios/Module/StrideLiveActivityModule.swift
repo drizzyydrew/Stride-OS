@@ -139,7 +139,11 @@ public final class StrideLiveActivityModule: Module {
     }
 
     Function("isAvailable") { () -> Bool in
-      if #available(iOS 16.1, *) {
+      // The Widget extension uses LiveActivityIntent-powered controls, so the
+      // shipped extension requires iOS 17+. Match the JS-facing availability
+      // gate to the extension target; otherwise iOS 16 can report ActivityKit
+      // support even though this extension cannot load.
+      if #available(iOS 17.0, *) {
         return ActivityAuthorizationInfo().areActivitiesEnabled
       }
       return false
@@ -154,7 +158,7 @@ public final class StrideLiveActivityModule: Module {
     }
 
     Function("getDiagnostics") { () -> [String: Any] in
-      if #available(iOS 16.1, *) {
+      if #available(iOS 17.0, *) {
         return [
           "areActivitiesEnabled": ActivityAuthorizationInfo().areActivitiesEnabled,
           "activeRunActivityCount": Activity<StrideRunActivityAttributes>.activities.count,
@@ -171,10 +175,10 @@ public final class StrideLiveActivityModule: Module {
         "activeRunActivityCount": 0,
         "activeStrengthActivityCount": 0,
         "appGroupIdentifier": StrideLiveActivityIdStore.appGroupIdentifier,
-        "lastStartResult": "activitykit_unavailable",
+        "lastStartResult": "live_activity_extension_requires_ios_17",
         "lastUpdateResult": "",
         "lastEndResult": "",
-        "lastRequestError": "",
+        "lastRequestError": "StrideOS Live Activities require iOS 17 or newer because the Lock Screen controls use LiveActivityIntent.",
       ]
     }
 
@@ -204,8 +208,11 @@ public final class StrideLiveActivityModule: Module {
         descentDisplay: String,
         promise: Promise
       ) in
-      guard #available(iOS 16.1, *) else {
-        promise.resolve(nil)
+      guard #available(iOS 17.0, *) else {
+        let message = "StrideOS Live Activities require iOS 17 or newer because the Lock Screen controls use LiveActivityIntent."
+        StrideLiveActivityIdStore.writeResult("unavailable:requires_ios_17", key: StrideLiveActivityIdStore.lastStartResultKey)
+        StrideLiveActivityIdStore.writeResult(message, key: StrideLiveActivityIdStore.lastErrorKey)
+        promise.reject("ERR_STRIDE_LIVE_ACTIVITY_UNAVAILABLE", message)
         return
       }
 
@@ -286,7 +293,7 @@ public final class StrideLiveActivityModule: Module {
         descentDisplay: String,
         promise: Promise
       ) in
-      guard #available(iOS 16.1, *) else {
+      guard #available(iOS 17.0, *) else {
         promise.resolve(nil)
         return
       }
@@ -361,7 +368,7 @@ public final class StrideLiveActivityModule: Module {
         cueText: String,
         promise: Promise
       ) in
-      guard #available(iOS 16.1, *) else {
+      guard #available(iOS 17.0, *) else {
         promise.resolve(nil)
         return
       }
@@ -425,7 +432,13 @@ public final class StrideLiveActivityModule: Module {
         controlState: String,
         promise: Promise
       ) in
-      guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
+      guard #available(iOS 17.0, *) else {
+        let message = "StrideOS Live Activities require iOS 17 or newer because the Lock Screen controls use LiveActivityIntent."
+        StrideLiveActivityIdStore.writeResult("unavailable:requires_ios_17", key: StrideLiveActivityIdStore.lastStartResultKey)
+        StrideLiveActivityIdStore.writeResult(message, key: StrideLiveActivityIdStore.lastErrorKey)
+        promise.reject("ERR_STRIDE_LIVE_ACTIVITY_UNAVAILABLE", message)
+        return
+      }
       Task {
         do {
           await Self.endMatchingStrengthActivityIfNeeded(sessionId: sessionId, sessionSource: sessionSource)
@@ -483,7 +496,7 @@ public final class StrideLiveActivityModule: Module {
         controlState: String,
         promise: Promise
       ) in
-      guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
+      guard #available(iOS 17.0, *) else { promise.resolve(nil); return }
       Task {
         guard let activity = Self.currentStrengthActivity(sessionId: sessionId, sessionSource: sessionSource) else {
           StrideLiveActivityIdStore.writeResult("ignored:no_matching_strength:\(sessionSource):\(sessionId)", key: StrideLiveActivityIdStore.lastUpdateResultKey)
@@ -519,7 +532,7 @@ public final class StrideLiveActivityModule: Module {
     }
 
     AsyncFunction("endStrength") { (sessionId: String, sessionSource: String, promise: Promise) in
-      guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
+      guard #available(iOS 17.0, *) else { promise.resolve(nil); return }
       Task {
         guard let activity = Self.currentStrengthActivity(sessionId: sessionId, sessionSource: sessionSource) else {
           StrideLiveActivityIdStore.writeResult("ignored:no_matching_strength:\(sessionSource):\(sessionId)", key: StrideLiveActivityIdStore.lastEndResultKey)

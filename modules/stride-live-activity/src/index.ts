@@ -283,7 +283,7 @@ export function clearPendingRunControlCommand(id: string): void {
 
 export async function startStrideRunLiveActivity(payload: StrideRunLiveActivityPayload): Promise<string | null> {
   const nativeModule = getNativeModule();
-  if (!nativeModule || !isStrideRunLiveActivityAvailable()) return null;
+  if (!nativeModule) return null;
   return nativeModule.start(
     payload.workoutInstanceId ?? payload.sessionId ?? '',
     payload.sessionSource ?? 'running',
@@ -382,7 +382,7 @@ export function addRunIntentListener(
 // Phase 3: Strength Live Activity
 export async function startStrengthLiveActivity(payload: StrideStrengthLiveActivityPayload): Promise<string | null> {
   const nativeModule = getNativeModule();
-  if (!nativeModule || !isStrideRunLiveActivityAvailable()) return null;
+  if (!nativeModule) return null;
   return nativeModule.startStrength(
     payload.workoutInstanceId ?? payload.sessionId ?? '',
     payload.sessionSource ?? 'training_block',
