@@ -18,7 +18,7 @@ test('session ownership keeps preset and Training Block commands isolated', () =
 
   assert.equal(liveActivityCommandMatchesSession(trainingTarget, trainingTarget), true);
   assert.equal(liveActivityCommandMatchesSession(presetCommand, trainingTarget), false);
-  assert.equal(liveActivityCommandMatchesSession({}, trainingTarget), false);
+  assert.equal(liveActivityCommandMatchesSession({}, trainingTarget), true);
   assert.equal(liveActivityCommandMatchesSession(presetCommand), true);
 });
 

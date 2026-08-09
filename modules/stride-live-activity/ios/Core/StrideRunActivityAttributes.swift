@@ -11,17 +11,6 @@ public struct StrideRunActivityAttributes: ActivityAttributes {
     public var zoneStatus: String
     public var status: String
     public var isPaused: Bool
-    public var activityType: String
-    public var metricLabel: String
-    public var metricValue: String
-    public var metricUnit: String
-    public var currentInterval: String
-    public var nextTransition: String
-    public var navigationInstruction: String
-    public var cueText: String
-    public var controlState: String
-    public var elevationDisplay: String
-    public var descentDisplay: String
 
     public init(
       elapsedSeconds: Int,
@@ -31,18 +20,7 @@ public struct StrideRunActivityAttributes: ActivityAttributes {
       zoneLabel: String,
       zoneStatus: String,
       status: String,
-      isPaused: Bool = false,
-      activityType: String = "running",
-      metricLabel: String = "PACE",
-      metricValue: String = "--:--",
-      metricUnit: String = "/mi",
-      currentInterval: String = "",
-      nextTransition: String = "",
-      navigationInstruction: String = "",
-      cueText: String = "",
-      controlState: String = "ready",
-      elevationDisplay: String = "",
-      descentDisplay: String = ""
+      isPaused: Bool = false
     ) {
       self.elapsedSeconds = elapsedSeconds
       self.distanceMiles = distanceMiles
@@ -52,27 +30,12 @@ public struct StrideRunActivityAttributes: ActivityAttributes {
       self.zoneStatus = zoneStatus
       self.status = status
       self.isPaused = isPaused
-      self.activityType = activityType
-      self.metricLabel = metricLabel
-      self.metricValue = metricValue
-      self.metricUnit = metricUnit
-      self.currentInterval = currentInterval
-      self.nextTransition = nextTransition
-      self.navigationInstruction = navigationInstruction
-      self.cueText = cueText
-      self.controlState = controlState
-      self.elevationDisplay = elevationDisplay
-      self.descentDisplay = descentDisplay
     }
   }
 
   public var runName: String
-  public var sessionId: String
-  public var sessionSource: String
 
-  public init(runName: String, sessionId: String = "", sessionSource: String = "running") {
+  public init(runName: String) {
     self.runName = runName
-    self.sessionId = sessionId
-    self.sessionSource = sessionSource
   }
 }

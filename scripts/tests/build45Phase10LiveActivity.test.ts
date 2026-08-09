@@ -31,6 +31,10 @@ test('Live Activity normalization preserves explicit workout-instance identity',
 });
 
 test('Live Activity commands match by workoutInstanceId when present and reject stale instances', () => {
+  assert.equal(liveActivityCommandMatchesSession({}, {
+    sessionId: 'run:new',
+    sessionSource: 'running',
+  }), true);
   assert.equal(liveActivityCommandMatchesSession({
     workoutInstanceId: 'run:new',
     sessionId: 'run:old',
@@ -65,18 +69,18 @@ test('Live Activity metric configs avoid irrelevant metrics by activity type', (
   assert.equal(liveActivityMetricConfig({ activityType: 'strength' }).primaryMetric, 'sets');
 });
 
-test('Phase 10 source contracts preserve native bridge safety and lock-screen sizing discipline', () => {
+test('Build 53 keeps Build 37 native bridge while retaining app-side adapters', () => {
   const moduleIndex = read('modules/stride-live-activity/src/index.ts');
   const swiftModule = read('modules/stride-live-activity/ios/Module/StrideLiveActivityModule.swift');
   const widget = read('targets/StrideRunLiveActivity/StrideRunLiveActivity.swift');
 
   assert.match(moduleIndex, /workoutInstanceId/);
-  assert.match(moduleIndex, /payload\.workoutInstanceId \?\? payload\.sessionId/);
-  assert.match(swiftModule, /endExistingRunActivityIfNeeded/);
+  assert.match(moduleIndex, /build37_backbone/);
+  assert.match(swiftModule, /endExistingActivityIfNeeded/);
   assert.match(swiftModule, /endExistingStrengthActivityIfNeeded/);
-  assert.match(swiftModule, /controlStatePreservingPending/);
+  assert.doesNotMatch(swiftModule, /controlStatePreservingPending/);
   assert.match(widget, /minimumScaleFactor/);
   assert.match(widget, /LockMetricCell/);
-  assert.match(widget, /CompactRunControls/);
-  assert.match(widget, /activityIcon/);
+  assert.doesNotMatch(widget, /CompactRunControls/);
+  assert.doesNotMatch(widget, /activityIcon/);
 });

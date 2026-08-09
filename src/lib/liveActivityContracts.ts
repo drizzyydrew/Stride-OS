@@ -28,6 +28,7 @@ export function liveActivityCommandMatchesSession(
   target?: { sessionId: string; sessionSource: string },
 ): boolean {
   if (!target) return true;
+  if (!command.workoutInstanceId && !command.sessionId && !command.sessionSource) return true;
   return (command.workoutInstanceId ?? command.sessionId) === target.sessionId
     && command.sessionSource === target.sessionSource;
 }

@@ -2,11 +2,10 @@ import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
 import { requireNativeModule } from 'expo-modules-core';
 
 export type StrideRunLiveActivityPayload = {
+  runName: string;
   workoutInstanceId?: string;
   sessionId?: string;
-  sessionSource?: 'running' | 'outdoor' | string;
-  runName: string;
-  activityType?: string;
+  sessionSource?: string;
   elapsedSeconds: number;
   distanceMiles: number;
   averagePace: string;
@@ -15,23 +14,13 @@ export type StrideRunLiveActivityPayload = {
   zoneStatus: 'in' | 'near' | 'out' | 'unknown' | string;
   status: 'Running' | 'Paused' | 'Finished' | string;
   isPaused?: boolean;
-  metricLabel?: string;
-  metricValue?: string;
-  metricUnit?: string;
-  currentInterval?: string;
-  nextTransition?: string;
-  navigationInstruction?: string;
-  cueText?: string;
-  controlState?: 'ready' | 'pause_pending' | 'resume_pending' | 'complete_pending';
-  elevationDisplay?: string;
-  descentDisplay?: string;
 };
 
 export type StrideStrengthLiveActivityPayload = {
+  workoutName: string;
   workoutInstanceId?: string;
   sessionId?: string;
-  sessionSource?: 'training_block' | 'preset' | string;
-  workoutName: string;
+  sessionSource?: string;
   elapsedSeconds: number;
   currentExercise: string;
   nextExercise: string;
@@ -41,7 +30,6 @@ export type StrideStrengthLiveActivityPayload = {
   prescription?: string;
   loadDisplay?: string;
   progressLabel?: string;
-  controlState?: 'ready' | 'pause_pending' | 'resume_pending' | 'complete_pending';
 };
 
 export type AppleRouteDirectionsResult = {
@@ -56,6 +44,23 @@ export type AppleRouteDirectionsResult = {
   }[];
 };
 
+export type StrideLiveActivityDiagnostics = {
+  areActivitiesEnabled: boolean;
+  activeRunActivityCount: number;
+  activeStrengthActivityCount: number;
+  currentRunActivityId: string;
+  currentStrengthActivityId: string;
+  pendingCommandId: string;
+  pendingCommandAction: string;
+  pendingCommandSessionId: string;
+  pendingCommandSessionSource: string;
+  pendingCommandCreatedAt: number;
+  lastStartResult: string;
+  lastUpdateResult: string;
+  lastEndResult: string;
+  lastRequestError: string;
+};
+
 export type StrideControlAction =
   | 'pause'
   | 'resume'
@@ -68,20 +73,6 @@ export type StrideRunControlCommand = {
   id: string;
   action: StrideControlAction;
   createdAt: number;
-  sessionId?: string;
-  sessionSource?: string;
-  activityKitId?: string;
-};
-
-export type StrideLiveActivityDiagnostics = {
-  areActivitiesEnabled: boolean;
-  activeRunActivityCount: number;
-  activeStrengthActivityCount: number;
-  appGroupIdentifier: string;
-  lastStartResult?: string;
-  lastUpdateResult?: string;
-  lastEndResult?: string;
-  lastRequestError?: string;
 };
 
 const VALID_CONTROL_ACTIONS: readonly StrideControlAction[] = [
@@ -93,10 +84,7 @@ type StrideLiveActivityModule = {
   getPendingRunControlCommand?: () => StrideRunControlCommand | null;
   clearPendingRunControlCommand?: (id: string) => void;
   start: (
-    sessionId: string,
-    sessionSource: string,
     runName: string,
-    activityType: string,
     elapsedSeconds: number,
     distanceMiles: number,
     averagePace: string,
@@ -105,20 +93,8 @@ type StrideLiveActivityModule = {
     zoneStatus: string,
     status: string,
     isPaused: boolean,
-    metricLabel: string,
-    metricValue: string,
-    metricUnit: string,
-    currentInterval: string,
-    nextTransition: string,
-    navigationInstruction: string,
-    cueText: string,
-    controlState: string,
-    elevationDisplay: string,
-    descentDisplay: string,
   ) => Promise<string | null>;
   update: (
-    sessionId: string,
-    sessionSource: string,
     elapsedSeconds: number,
     distanceMiles: number,
     averagePace: string,
@@ -127,20 +103,8 @@ type StrideLiveActivityModule = {
     zoneStatus: string,
     status: string,
     isPaused: boolean,
-    metricLabel: string,
-    metricValue: string,
-    metricUnit: string,
-    currentInterval: string,
-    nextTransition: string,
-    navigationInstruction: string,
-    cueText: string,
-    controlState: string,
-    elevationDisplay: string,
-    descentDisplay: string,
   ) => Promise<void>;
   end: (
-    sessionId: string,
-    sessionSource: string,
     elapsedSeconds: number,
     distanceMiles: number,
     averagePace: string,
@@ -148,48 +112,24 @@ type StrideLiveActivityModule = {
     zoneLabel: string,
     zoneStatus: string,
     status: string,
-    metricLabel: string,
-    metricValue: string,
-    metricUnit: string,
-    currentInterval: string,
-    nextTransition: string,
-    navigationInstruction: string,
-    cueText: string,
   ) => Promise<void>;
   startStrength: (
-    sessionId: string,
-    sessionSource: string,
     workoutName: string,
     elapsedSeconds: number,
     currentExercise: string,
     nextExercise: string,
     setsCompleted: number,
     totalSets: number,
-    prescription: string,
-    loadDisplay: string,
-    progressLabel: string,
-    controlState: string,
   ) => Promise<string | null>;
   updateStrength: (
-    sessionId: string,
-    sessionSource: string,
     elapsedSeconds: number,
     currentExercise: string,
     nextExercise: string,
     setsCompleted: number,
     totalSets: number,
     isPaused: boolean,
-    prescription: string,
-    loadDisplay: string,
-    progressLabel: string,
-    controlState: string,
   ) => Promise<void>;
-  endStrength: (sessionId?: string, sessionSource?: string) => Promise<void>;
-  getDiagnostics?: () => StrideLiveActivityDiagnostics;
-  getRouteDirections?: (
-    coordinates: { latitude: number; longitude: number }[],
-    transport: 'walking' | 'cycling',
-  ) => Promise<AppleRouteDirectionsResult | null>;
+  endStrength: () => Promise<void>;
 };
 
 let cachedNativeModule: StrideLiveActivityModule | null | undefined;
@@ -229,30 +169,6 @@ export function isStrideRunLiveActivityAvailable(): boolean {
   }
 }
 
-export function getStrideLiveActivityDiagnostics(): StrideLiveActivityDiagnostics {
-  const nativeModule = getNativeModule();
-  if (!nativeModule?.getDiagnostics) {
-    return {
-      areActivitiesEnabled: isStrideRunLiveActivityAvailable(),
-      activeRunActivityCount: 0,
-      activeStrengthActivityCount: 0,
-      appGroupIdentifier: 'group.com.mooremovement.strideos',
-      lastStartResult: nativeModule ? 'diagnostics_unavailable' : 'native_module_unavailable',
-    };
-  }
-  try {
-    return nativeModule.getDiagnostics();
-  } catch (error) {
-    return {
-      areActivitiesEnabled: false,
-      activeRunActivityCount: 0,
-      activeStrengthActivityCount: 0,
-      appGroupIdentifier: 'group.com.mooremovement.strideos',
-      lastRequestError: error instanceof Error ? error.message : 'Diagnostics failed',
-    };
-  }
-}
-
 export function getPendingRunControlCommand(): StrideRunControlCommand | null {
   const nativeModule = getNativeModule();
   if (!nativeModule?.getPendingRunControlCommand) return null;
@@ -283,12 +199,9 @@ export function clearPendingRunControlCommand(id: string): void {
 
 export async function startStrideRunLiveActivity(payload: StrideRunLiveActivityPayload): Promise<string | null> {
   const nativeModule = getNativeModule();
-  if (!nativeModule) return null;
+  if (!nativeModule || !isStrideRunLiveActivityAvailable()) return null;
   return nativeModule.start(
-    payload.workoutInstanceId ?? payload.sessionId ?? '',
-    payload.sessionSource ?? 'running',
     payload.runName,
-    payload.activityType ?? 'running',
     Math.max(0, Math.round(payload.elapsedSeconds)),
     Math.max(0, payload.distanceMiles),
     payload.averagePace,
@@ -297,16 +210,6 @@ export async function startStrideRunLiveActivity(payload: StrideRunLiveActivityP
     payload.zoneStatus,
     payload.status,
     payload.isPaused ?? false,
-    payload.metricLabel ?? 'PACE',
-    payload.metricValue ?? payload.averagePace,
-    payload.metricUnit ?? '/mi',
-    payload.currentInterval ?? '',
-    payload.nextTransition ?? '',
-    payload.navigationInstruction ?? '',
-    payload.cueText ?? '',
-    payload.controlState ?? 'ready',
-    payload.elevationDisplay ?? '',
-    payload.descentDisplay ?? '',
   );
 }
 
@@ -314,8 +217,6 @@ export async function updateStrideRunLiveActivity(payload: StrideRunLiveActivity
   const nativeModule = getNativeModule();
   if (!nativeModule || !isStrideRunLiveActivityAvailable()) return;
   await nativeModule.update(
-    payload.workoutInstanceId ?? payload.sessionId ?? '',
-    payload.sessionSource ?? 'running',
     Math.max(0, Math.round(payload.elapsedSeconds)),
     Math.max(0, payload.distanceMiles),
     payload.averagePace,
@@ -324,16 +225,6 @@ export async function updateStrideRunLiveActivity(payload: StrideRunLiveActivity
     payload.zoneStatus,
     payload.status,
     payload.isPaused ?? false,
-    payload.metricLabel ?? 'PACE',
-    payload.metricValue ?? payload.averagePace,
-    payload.metricUnit ?? '/mi',
-    payload.currentInterval ?? '',
-    payload.nextTransition ?? '',
-    payload.navigationInstruction ?? '',
-    payload.cueText ?? '',
-    payload.controlState ?? 'ready',
-    payload.elevationDisplay ?? '',
-    payload.descentDisplay ?? '',
   );
 }
 
@@ -341,8 +232,6 @@ export async function endStrideRunLiveActivity(payload: StrideRunLiveActivityPay
   const nativeModule = getNativeModule();
   if (!nativeModule) return;
   await nativeModule.end(
-    payload.workoutInstanceId ?? payload.sessionId ?? '',
-    payload.sessionSource ?? 'running',
     Math.max(0, Math.round(payload.elapsedSeconds)),
     Math.max(0, payload.distanceMiles),
     payload.averagePace,
@@ -350,23 +239,7 @@ export async function endStrideRunLiveActivity(payload: StrideRunLiveActivityPay
     payload.zoneLabel,
     payload.zoneStatus,
     payload.status,
-    payload.metricLabel ?? 'PACE',
-    payload.metricValue ?? payload.averagePace,
-    payload.metricUnit ?? '/mi',
-    payload.currentInterval ?? '',
-    payload.nextTransition ?? '',
-    payload.navigationInstruction ?? '',
-    payload.cueText ?? '',
   );
-}
-
-export async function getAppleRouteDirections(
-  coordinates: { latitude: number; longitude: number }[],
-  transport: 'walking' | 'cycling',
-): Promise<AppleRouteDirectionsResult | null> {
-  const nativeModule = getNativeModule();
-  if (!nativeModule?.getRouteDirections || coordinates.length < 2) return null;
-  return nativeModule.getRouteDirections(coordinates, transport);
 }
 
 // Phase 2: Run lock screen intent listeners
@@ -382,20 +255,14 @@ export function addRunIntentListener(
 // Phase 3: Strength Live Activity
 export async function startStrengthLiveActivity(payload: StrideStrengthLiveActivityPayload): Promise<string | null> {
   const nativeModule = getNativeModule();
-  if (!nativeModule) return null;
+  if (!nativeModule || !isStrideRunLiveActivityAvailable()) return null;
   return nativeModule.startStrength(
-    payload.workoutInstanceId ?? payload.sessionId ?? '',
-    payload.sessionSource ?? 'training_block',
     payload.workoutName,
     Math.max(0, payload.elapsedSeconds),
     payload.currentExercise,
     payload.nextExercise,
     Math.max(0, payload.setsCompleted),
     Math.max(1, payload.totalSets),
-    payload.prescription ?? '',
-    payload.loadDisplay ?? '',
-    payload.progressLabel ?? '',
-    payload.controlState ?? 'ready',
   );
 }
 
@@ -403,28 +270,19 @@ export async function updateStrengthLiveActivity(payload: StrideStrengthLiveActi
   const nativeModule = getNativeModule();
   if (!nativeModule || !isStrideRunLiveActivityAvailable()) return;
   await nativeModule.updateStrength(
-    payload.workoutInstanceId ?? payload.sessionId ?? '',
-    payload.sessionSource ?? 'training_block',
     Math.max(0, payload.elapsedSeconds),
     payload.currentExercise,
     payload.nextExercise,
     Math.max(0, payload.setsCompleted),
     Math.max(1, payload.totalSets),
     payload.isPaused ?? false,
-    payload.prescription ?? '',
-    payload.loadDisplay ?? '',
-    payload.progressLabel ?? '',
-    payload.controlState ?? 'ready',
   );
 }
 
-export async function endStrengthLiveActivity(payload?: Pick<StrideStrengthLiveActivityPayload, 'workoutInstanceId' | 'sessionId' | 'sessionSource'>): Promise<void> {
+export async function endStrengthLiveActivity(_payload?: Partial<Pick<StrideStrengthLiveActivityPayload, 'workoutInstanceId' | 'sessionId' | 'sessionSource'>>): Promise<void> {
   const nativeModule = getNativeModule();
   if (!nativeModule) return;
-  await nativeModule.endStrength(
-    payload?.workoutInstanceId ?? payload?.sessionId ?? '',
-    payload?.sessionSource ?? 'training_block',
-  );
+  await nativeModule.endStrength();
 }
 
 // Phase 3: Strength lock screen intent listeners
@@ -435,4 +293,27 @@ export function addStrengthIntentListener(
   const emitter = getEmitter();
   if (!emitter) return { remove: () => {} };
   return emitter.addListener(event, listener) as { remove: () => void };
+}
+
+export async function getAppleRouteDirections(): Promise<AppleRouteDirectionsResult | null> {
+  return null;
+}
+
+export function getStrideLiveActivityDiagnostics(): StrideLiveActivityDiagnostics {
+  return {
+    areActivitiesEnabled: isStrideRunLiveActivityAvailable(),
+    activeRunActivityCount: 0,
+    activeStrengthActivityCount: 0,
+    currentRunActivityId: '',
+    currentStrengthActivityId: '',
+    pendingCommandId: '',
+    pendingCommandAction: '',
+    pendingCommandSessionId: '',
+    pendingCommandSessionSource: '',
+    pendingCommandCreatedAt: 0,
+    lastStartResult: 'build37_backbone',
+    lastUpdateResult: '',
+    lastEndResult: '',
+    lastRequestError: '',
+  };
 }
