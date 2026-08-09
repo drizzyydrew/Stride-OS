@@ -69,18 +69,21 @@ test('Live Activity metric configs avoid irrelevant metrics by activity type', (
   assert.equal(liveActivityMetricConfig({ activityType: 'strength' }).primaryMetric, 'sets');
 });
 
-test('Build 53 keeps Build 37 native bridge while retaining app-side adapters', () => {
+test('Build 54 restores Build 38 display payload while keeping Build 37 lifecycle', () => {
   const moduleIndex = read('modules/stride-live-activity/src/index.ts');
   const swiftModule = read('modules/stride-live-activity/ios/Module/StrideLiveActivityModule.swift');
   const widget = read('targets/StrideRunLiveActivity/StrideRunLiveActivity.swift');
 
   assert.match(moduleIndex, /workoutInstanceId/);
-  assert.match(moduleIndex, /build37_backbone/);
+  assert.match(moduleIndex, /build54_display_payload/);
+  assert.match(moduleIndex, /payload\.activityType \?\? 'running'/);
+  assert.match(moduleIndex, /payload\.metricValue \?\? payload\.averagePace/);
   assert.match(swiftModule, /endExistingActivityIfNeeded/);
   assert.match(swiftModule, /endExistingStrengthActivityIfNeeded/);
   assert.doesNotMatch(swiftModule, /controlStatePreservingPending/);
+  assert.doesNotMatch(swiftModule, /getRouteDirections/);
   assert.match(widget, /minimumScaleFactor/);
   assert.match(widget, /LockMetricCell/);
-  assert.doesNotMatch(widget, /CompactRunControls/);
-  assert.doesNotMatch(widget, /activityIcon/);
+  assert.match(widget, /CompactRunControls/);
+  assert.match(widget, /activityIcon/);
 });

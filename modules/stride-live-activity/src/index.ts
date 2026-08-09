@@ -6,6 +6,7 @@ export type StrideRunLiveActivityPayload = {
   workoutInstanceId?: string;
   sessionId?: string;
   sessionSource?: string;
+  activityType?: string;
   elapsedSeconds: number;
   distanceMiles: number;
   averagePace: string;
@@ -14,6 +15,14 @@ export type StrideRunLiveActivityPayload = {
   zoneStatus: 'in' | 'near' | 'out' | 'unknown' | string;
   status: 'Running' | 'Paused' | 'Finished' | string;
   isPaused?: boolean;
+  metricLabel?: string;
+  metricValue?: string;
+  metricUnit?: string;
+  currentInterval?: string;
+  nextTransition?: string;
+  navigationInstruction?: string;
+  cueText?: string;
+  controlState?: 'ready' | 'pause_pending' | 'resume_pending' | 'complete_pending';
 };
 
 export type StrideStrengthLiveActivityPayload = {
@@ -30,6 +39,7 @@ export type StrideStrengthLiveActivityPayload = {
   prescription?: string;
   loadDisplay?: string;
   progressLabel?: string;
+  controlState?: 'ready' | 'pause_pending' | 'resume_pending' | 'complete_pending';
 };
 
 export type AppleRouteDirectionsResult = {
@@ -85,6 +95,7 @@ type StrideLiveActivityModule = {
   clearPendingRunControlCommand?: (id: string) => void;
   start: (
     runName: string,
+    activityType: string,
     elapsedSeconds: number,
     distanceMiles: number,
     averagePace: string,
@@ -93,6 +104,14 @@ type StrideLiveActivityModule = {
     zoneStatus: string,
     status: string,
     isPaused: boolean,
+    metricLabel: string,
+    metricValue: string,
+    metricUnit: string,
+    currentInterval: string,
+    nextTransition: string,
+    navigationInstruction: string,
+    cueText: string,
+    controlState: string,
   ) => Promise<string | null>;
   update: (
     elapsedSeconds: number,
@@ -103,6 +122,14 @@ type StrideLiveActivityModule = {
     zoneStatus: string,
     status: string,
     isPaused: boolean,
+    metricLabel: string,
+    metricValue: string,
+    metricUnit: string,
+    currentInterval: string,
+    nextTransition: string,
+    navigationInstruction: string,
+    cueText: string,
+    controlState: string,
   ) => Promise<void>;
   end: (
     elapsedSeconds: number,
@@ -112,6 +139,13 @@ type StrideLiveActivityModule = {
     zoneLabel: string,
     zoneStatus: string,
     status: string,
+    metricLabel: string,
+    metricValue: string,
+    metricUnit: string,
+    currentInterval: string,
+    nextTransition: string,
+    navigationInstruction: string,
+    cueText: string,
   ) => Promise<void>;
   startStrength: (
     workoutName: string,
@@ -120,6 +154,9 @@ type StrideLiveActivityModule = {
     nextExercise: string,
     setsCompleted: number,
     totalSets: number,
+    prescription: string,
+    loadDisplay: string,
+    progressLabel: string,
   ) => Promise<string | null>;
   updateStrength: (
     elapsedSeconds: number,
@@ -128,6 +165,9 @@ type StrideLiveActivityModule = {
     setsCompleted: number,
     totalSets: number,
     isPaused: boolean,
+    prescription: string,
+    loadDisplay: string,
+    progressLabel: string,
   ) => Promise<void>;
   endStrength: () => Promise<void>;
 };
@@ -202,6 +242,7 @@ export async function startStrideRunLiveActivity(payload: StrideRunLiveActivityP
   if (!nativeModule || !isStrideRunLiveActivityAvailable()) return null;
   return nativeModule.start(
     payload.runName,
+    payload.activityType ?? 'running',
     Math.max(0, Math.round(payload.elapsedSeconds)),
     Math.max(0, payload.distanceMiles),
     payload.averagePace,
@@ -210,6 +251,14 @@ export async function startStrideRunLiveActivity(payload: StrideRunLiveActivityP
     payload.zoneStatus,
     payload.status,
     payload.isPaused ?? false,
+    payload.metricLabel ?? 'PACE',
+    payload.metricValue ?? payload.averagePace,
+    payload.metricUnit ?? '/mi',
+    payload.currentInterval ?? '',
+    payload.nextTransition ?? '',
+    payload.navigationInstruction ?? '',
+    payload.cueText ?? '',
+    payload.controlState ?? 'ready',
   );
 }
 
@@ -225,6 +274,14 @@ export async function updateStrideRunLiveActivity(payload: StrideRunLiveActivity
     payload.zoneStatus,
     payload.status,
     payload.isPaused ?? false,
+    payload.metricLabel ?? 'PACE',
+    payload.metricValue ?? payload.averagePace,
+    payload.metricUnit ?? '/mi',
+    payload.currentInterval ?? '',
+    payload.nextTransition ?? '',
+    payload.navigationInstruction ?? '',
+    payload.cueText ?? '',
+    payload.controlState ?? 'ready',
   );
 }
 
@@ -239,6 +296,13 @@ export async function endStrideRunLiveActivity(payload: StrideRunLiveActivityPay
     payload.zoneLabel,
     payload.zoneStatus,
     payload.status,
+    payload.metricLabel ?? 'PACE',
+    payload.metricValue ?? payload.averagePace,
+    payload.metricUnit ?? '/mi',
+    payload.currentInterval ?? '',
+    payload.nextTransition ?? '',
+    payload.navigationInstruction ?? '',
+    payload.cueText ?? '',
   );
 }
 
@@ -263,6 +327,9 @@ export async function startStrengthLiveActivity(payload: StrideStrengthLiveActiv
     payload.nextExercise,
     Math.max(0, payload.setsCompleted),
     Math.max(1, payload.totalSets),
+    payload.prescription ?? '',
+    payload.loadDisplay ?? '',
+    payload.progressLabel ?? '',
   );
 }
 
@@ -276,6 +343,9 @@ export async function updateStrengthLiveActivity(payload: StrideStrengthLiveActi
     Math.max(0, payload.setsCompleted),
     Math.max(1, payload.totalSets),
     payload.isPaused ?? false,
+    payload.prescription ?? '',
+    payload.loadDisplay ?? '',
+    payload.progressLabel ?? '',
   );
 }
 
@@ -311,7 +381,7 @@ export function getStrideLiveActivityDiagnostics(): StrideLiveActivityDiagnostic
     pendingCommandSessionId: '',
     pendingCommandSessionSource: '',
     pendingCommandCreatedAt: 0,
-    lastStartResult: 'build37_backbone',
+    lastStartResult: 'build54_display_payload',
     lastUpdateResult: '',
     lastEndResult: '',
     lastRequestError: '',

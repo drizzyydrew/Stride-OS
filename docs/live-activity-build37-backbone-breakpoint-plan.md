@@ -310,9 +310,16 @@ If Build 53 fails, the problem is probably outside the Live Activity implementat
 
 ### Build 54: Reintroduce expanded display payload only
 
+Status: implemented as the second isolation slice.
+
 Add back Build 38's extra content-state display fields, but keep Build 37 lifecycle and simple command ownership.
 
 Pass/fail isolates Group A and most of Group D.
+
+Implementation boundary:
+- Restored run display fields: `activityType`, `metricLabel`, `metricValue`, `metricUnit`, `currentInterval`, `nextTransition`, `navigationInstruction`, `cueText`, and passive `controlState`.
+- Restored strength display fields: `prescription`, `loadDisplay`, `progressLabel`, and passive `controlState`.
+- Kept Build 37 start-before-request lifecycle, first-active fallback, simple App Group command shape, no native session/source matching, no MapKit route bridge, and no persisted ActivityKit id store.
 
 ### Build 55: Reintroduce pending controls and App Group command ownership
 
