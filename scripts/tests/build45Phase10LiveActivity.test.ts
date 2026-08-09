@@ -72,8 +72,8 @@ test('Phase 10 source contracts preserve native bridge safety and lock-screen si
 
   assert.match(moduleIndex, /workoutInstanceId/);
   assert.match(moduleIndex, /payload\.workoutInstanceId \?\? payload\.sessionId/);
-  assert.match(swiftModule, /endMatchingRunActivityIfNeeded/);
-  assert.match(swiftModule, /endMatchingStrengthActivityIfNeeded/);
+  assert.match(swiftModule, /endExistingRunActivityIfNeeded/);
+  assert.match(swiftModule, /endExistingStrengthActivityIfNeeded/);
   assert.match(swiftModule, /controlStatePreservingPending/);
   assert.match(widget, /minimumScaleFactor/);
   assert.match(widget, /LockMetricCell/);

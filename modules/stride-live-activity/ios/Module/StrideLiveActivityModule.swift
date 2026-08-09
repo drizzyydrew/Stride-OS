@@ -218,7 +218,7 @@ public final class StrideLiveActivityModule: Module {
 
       Task {
         do {
-          await Self.endMatchingRunActivityIfNeeded(sessionId: sessionId, sessionSource: sessionSource)
+          await Self.endExistingRunActivityIfNeeded()
           let attributes = StrideRunActivityAttributes(
             runName: runName,
             sessionId: sessionId,
@@ -441,7 +441,7 @@ public final class StrideLiveActivityModule: Module {
       }
       Task {
         do {
-          await Self.endMatchingStrengthActivityIfNeeded(sessionId: sessionId, sessionSource: sessionSource)
+          await Self.endExistingStrengthActivityIfNeeded()
           let attributes = StrideStrengthActivityAttributes(
             workoutName: workoutName,
             sessionId: sessionId,
@@ -583,8 +583,10 @@ public final class StrideLiveActivityModule: Module {
   @available(iOS 16.1, *)
   private static func currentStrengthActivity(sessionId: String, sessionSource: String) -> Activity<StrideStrengthActivityAttributes>? {
     if let id = currentStrengthActivityId ?? StrideLiveActivityIdStore.read(StrideLiveActivityIdStore.strengthKey) {
-      if let activity = Activity<StrideStrengthActivityAttributes>.activities.first(where: { $0.id == id }),
-         matches(activity.attributes.sessionId, activity.attributes.sessionSource, sessionId, sessionSource) {
+      if let activity = Activity<StrideStrengthActivityAttributes>.activities.first(where: { $0.id == id }) {
+        if !matches(activity.attributes.sessionId, activity.attributes.sessionSource, sessionId, sessionSource) {
+          StrideLiveActivityIdStore.writeResult("fallback_saved_strength_id:\(activity.attributes.sessionSource):\(activity.attributes.sessionId):requested:\(sessionSource):\(sessionId)", key: StrideLiveActivityIdStore.lastUpdateResultKey)
+        }
         return activity
       }
       currentStrengthActivityId = nil
@@ -602,19 +604,13 @@ public final class StrideLiveActivityModule: Module {
   private static func singleStrengthActivityFallback(sessionId: String, sessionSource: String) -> Activity<StrideStrengthActivityAttributes>? {
     guard Activity<StrideStrengthActivityAttributes>.activities.count == 1,
           let activity = Activity<StrideStrengthActivityAttributes>.activities.first else { return nil }
-    let exactSourceConflict = (
-      !sessionSource.isEmpty
-      && !activity.attributes.sessionSource.isEmpty
-      && activity.attributes.sessionSource != sessionSource
-    )
-    guard !exactSourceConflict else { return nil }
     StrideLiveActivityIdStore.writeResult("fallback_single_strength:\(activity.attributes.sessionSource):\(activity.attributes.sessionId):requested:\(sessionSource):\(sessionId)", key: StrideLiveActivityIdStore.lastUpdateResultKey)
     return activity
   }
 
   @available(iOS 16.1, *)
-  private static func endMatchingStrengthActivityIfNeeded(sessionId: String, sessionSource: String) async {
-    for activity in Activity<StrideStrengthActivityAttributes>.activities where matches(activity.attributes.sessionId, activity.attributes.sessionSource, sessionId, sessionSource) {
+  private static func endExistingStrengthActivityIfNeeded() async {
+    for activity in Activity<StrideStrengthActivityAttributes>.activities {
       if #available(iOS 16.2, *) {
         await activity.end(ActivityContent(state: activity.contentState, staleDate: nil), dismissalPolicy: .immediate)
       } else {
@@ -673,8 +669,10 @@ public final class StrideLiveActivityModule: Module {
   @available(iOS 16.1, *)
   private static func currentActivity(sessionId: String, sessionSource: String) -> Activity<StrideRunActivityAttributes>? {
     if let currentActivityId = currentActivityId ?? StrideLiveActivityIdStore.read(StrideLiveActivityIdStore.runKey) {
-      if let activity = Activity<StrideRunActivityAttributes>.activities.first(where: { $0.id == currentActivityId }),
-         matches(activity.attributes.sessionId, activity.attributes.sessionSource, sessionId, sessionSource) {
+      if let activity = Activity<StrideRunActivityAttributes>.activities.first(where: { $0.id == currentActivityId }) {
+        if !matches(activity.attributes.sessionId, activity.attributes.sessionSource, sessionId, sessionSource) {
+          StrideLiveActivityIdStore.writeResult("fallback_saved_run_id:\(activity.attributes.sessionSource):\(activity.attributes.sessionId):requested:\(sessionSource):\(sessionId)", key: StrideLiveActivityIdStore.lastUpdateResultKey)
+        }
         return activity
       }
       Self.currentActivityId = nil
@@ -692,19 +690,13 @@ public final class StrideLiveActivityModule: Module {
   private static func singleRunActivityFallback(sessionId: String, sessionSource: String) -> Activity<StrideRunActivityAttributes>? {
     guard Activity<StrideRunActivityAttributes>.activities.count == 1,
           let activity = Activity<StrideRunActivityAttributes>.activities.first else { return nil }
-    let exactSourceConflict = (
-      !sessionSource.isEmpty
-      && !activity.attributes.sessionSource.isEmpty
-      && activity.attributes.sessionSource != sessionSource
-    )
-    guard !exactSourceConflict else { return nil }
     StrideLiveActivityIdStore.writeResult("fallback_single_run:\(activity.attributes.sessionSource):\(activity.attributes.sessionId):requested:\(sessionSource):\(sessionId)", key: StrideLiveActivityIdStore.lastUpdateResultKey)
     return activity
   }
 
   @available(iOS 16.1, *)
-  private static func endMatchingRunActivityIfNeeded(sessionId: String, sessionSource: String) async {
-    for activity in Activity<StrideRunActivityAttributes>.activities where matches(activity.attributes.sessionId, activity.attributes.sessionSource, sessionId, sessionSource) {
+  private static func endExistingRunActivityIfNeeded() async {
+    for activity in Activity<StrideRunActivityAttributes>.activities {
       let state = StrideRunActivityAttributes.ContentState(
         elapsedSeconds: activity.contentState.elapsedSeconds,
         distanceMiles: activity.contentState.distanceMiles,

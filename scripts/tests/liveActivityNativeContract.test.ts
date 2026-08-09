@@ -27,15 +27,21 @@ test('native Live Activity recovery keeps the prior single-activity fallback', (
   assert.match(moduleSource, /singleRunActivityFallback\(sessionId: sessionId, sessionSource: sessionSource\)/);
   assert.match(moduleSource, /Activity<StrideRunActivityAttributes>\.activities\.count == 1/);
   assert.match(moduleSource, /fallback_single_run/);
+  assert.doesNotMatch(moduleSource, /exactSourceConflict/);
   assert.match(moduleSource, /singleStrengthActivityFallback\(sessionId: sessionId, sessionSource: sessionSource\)/);
   assert.match(moduleSource, /Activity<StrideStrengthActivityAttributes>\.activities\.count == 1/);
   assert.match(moduleSource, /fallback_single_strength/);
+  assert.match(moduleSource, /fallback_saved_run_id/);
+  assert.match(moduleSource, /fallback_saved_strength_id/);
 });
 
-test('native start paths clean only matching Live Activity instances', () => {
-  assert.match(moduleSource, /await Self\.endMatchingRunActivityIfNeeded\(sessionId: sessionId, sessionSource: sessionSource\)/);
-  assert.match(moduleSource, /AsyncFunction\("startStrength"\)[\s\S]*await Self\.endMatchingStrengthActivityIfNeeded\(sessionId: sessionId, sessionSource: sessionSource\)/);
-  assert.doesNotMatch(moduleSource, /await Self\.endExistingActivityIfNeeded\(\)\s+await Self\.endExistingStrengthActivityIfNeeded\(\)/);
+test('native start paths restore Build 37 single-active Live Activity replacement', () => {
+  assert.match(moduleSource, /await Self\.endExistingRunActivityIfNeeded\(\)/);
+  assert.match(moduleSource, /AsyncFunction\("startStrength"\)[\s\S]*await Self\.endExistingStrengthActivityIfNeeded\(\)/);
+  assert.match(moduleSource, /private static func endExistingRunActivityIfNeeded\(\) async/);
+  assert.match(moduleSource, /private static func endExistingStrengthActivityIfNeeded\(\) async/);
+  assert.doesNotMatch(moduleSource, /endMatchingRunActivityIfNeeded/);
+  assert.doesNotMatch(moduleSource, /endMatchingStrengthActivityIfNeeded/);
 });
 
 test('App Intents publish pending state and suppress rapid duplicate commands', () => {
