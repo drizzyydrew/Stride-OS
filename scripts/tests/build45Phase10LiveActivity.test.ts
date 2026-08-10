@@ -69,18 +69,26 @@ test('Live Activity metric configs avoid irrelevant metrics by activity type', (
   assert.equal(liveActivityMetricConfig({ activityType: 'strength' }).primaryMetric, 'sets');
 });
 
-test('Build 55 keeps expanded native display payload while restoring Build 53 widget rendering', () => {
+test('Build 56 accepts current app payloads but sends only the Build 53 native ActivityKit schema', () => {
   const moduleIndex = read('modules/stride-live-activity/src/index.ts');
   const swiftModule = read('modules/stride-live-activity/ios/Module/StrideLiveActivityModule.swift');
+  const runAttributes = read('modules/stride-live-activity/ios/Core/StrideRunActivityAttributes.swift');
+  const strengthAttributes = read('modules/stride-live-activity/ios/Core/StrideStrengthActivityAttributes.swift');
   const widget = read('targets/StrideRunLiveActivity/StrideRunLiveActivity.swift');
 
   assert.match(moduleIndex, /workoutInstanceId/);
-  assert.match(moduleIndex, /build55_expanded_payload_simple_widget/);
-  assert.match(moduleIndex, /payload\.activityType \?\? 'running'/);
-  assert.match(moduleIndex, /payload\.metricValue \?\? payload\.averagePace/);
-  assert.match(swiftModule, /activityType: String/);
-  assert.match(swiftModule, /metricValue: String/);
-  assert.match(swiftModule, /controlState: String/);
+  assert.match(moduleIndex, /activityType\?: string/);
+  assert.match(moduleIndex, /metricValue\?: string/);
+  assert.match(moduleIndex, /build56_native_payload_reverted/);
+  assert.doesNotMatch(moduleIndex, /payload\.activityType \?\? 'running'/);
+  assert.doesNotMatch(moduleIndex, /payload\.metricValue \?\? payload\.averagePace/);
+  assert.doesNotMatch(swiftModule, /activityType: String/);
+  assert.doesNotMatch(swiftModule, /metricValue: String/);
+  assert.doesNotMatch(swiftModule, /controlState: String/);
+  assert.doesNotMatch(runAttributes, /activityType/);
+  assert.doesNotMatch(runAttributes, /metricValue/);
+  assert.doesNotMatch(strengthAttributes, /prescription/);
+  assert.doesNotMatch(strengthAttributes, /loadDisplay/);
   assert.match(swiftModule, /endExistingActivityIfNeeded/);
   assert.match(swiftModule, /endExistingStrengthActivityIfNeeded/);
   assert.doesNotMatch(swiftModule, /controlStatePreservingPending/);

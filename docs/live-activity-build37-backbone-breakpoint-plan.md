@@ -2,7 +2,7 @@
 
 Date: 2026-08-09
 Branch: build-19-v3-foundation
-Current release under test: Build 55
+Current release under test: Build 56
 Known-good device baseline: Build 37, commit `0526d81`
 First suspected failing boundary: Build 38, commit `e77dced`
 
@@ -323,7 +323,7 @@ Implementation boundary:
 
 ### Build 55: Split Build 54 failure between native payload and widget rendering
 
-Status: implemented as the third isolation slice after Build 54 failed device QA.
+Status: failed device QA. Because the simple Build 53 widget was restored and the build still failed, the failure is most likely in the expanded native ActivityKit content-state schema, not in widget rendering.
 
 Keep Build 54's expanded native content-state fields and JS/native argument passing, but restore the Build 53 widget rendering that only reads the original Build 37/53 display fields.
 
@@ -337,19 +337,35 @@ Implementation boundary:
 - Restored `targets/StrideRunLiveActivity/StrideRunLiveActivity.swift` to the Build 53 simple widget rendering.
 - Still no pending command ownership, no native session/source matching, no MapKit route bridge, and no persisted ActivityKit id store.
 
-### Build 56: Reintroduce pending controls and App Group command ownership
+### Build 56: Revert native ActivityKit content-state schema
+
+Status: implemented after Build 55 failed device QA.
+
+Keep current app-side TypeScript payload compatibility fields, but send only the Build 53 native arguments into Swift and restore the Build 53 `ActivityAttributes.ContentState` fields.
+
+Pass/fail confirms the Build 55 diagnosis:
+- If Build 56 works, the expanded native content-state schema is confirmed as the culprit.
+- If Build 56 fails, the culprit is outside the display payload experiment and we should compare generated/native packaging against Build 53.
+
+Implementation boundary:
+- Removed expanded native run content-state fields: `activityType`, `metricLabel`, `metricValue`, `metricUnit`, `currentInterval`, `nextTransition`, `navigationInstruction`, `cueText`, and `controlState`.
+- Removed expanded native strength content-state fields: `prescription`, `loadDisplay`, `progressLabel`, and `controlState`.
+- Kept TypeScript payload fields accepted as no-op compatibility fields so current app callers do not need to change.
+- Kept Build 53 simple widget rendering, simple command store, first-active fallback, no native session/source matching, no MapKit route bridge, and no persisted ActivityKit id store.
+
+### Build 57: Reintroduce pending controls and App Group command ownership
 
 Add pending control state and command consumption behavior while keeping payload/lifecycle otherwise known-good.
 
 Pass/fail isolates Groups B and C.
 
-### Build 57: Reintroduce multi-source/outdoor/route Live Activity support
+### Build 58: Reintroduce multi-source/outdoor/route Live Activity support
 
 Add outdoor activity, run/walk, cycling/skiing speed-vs-pace payloads, route guidance text, and MapKit bridge if needed.
 
 Pass/fail isolates Groups D and E.
 
-### Build 58: Reintroduce current identity model
+### Build 59: Reintroduce current identity model
 
 Add `workoutInstanceId`, exact source/session matching, diagnostics, and current command reconciler behavior.
 
@@ -381,7 +397,7 @@ My recommendation is the faster ladder first:
 
 1. Build 53: exact Build 37 backbone in Build 52 app. Result: passed device QA.
 2. Build 54: add expanded display payload and widget rendering. Result: failed device QA.
-3. Build 55: keep expanded native payload, restore simple Build 53 widget rendering.
-4. Build 56: if Build 55 passes, add command/session ownership.
+3. Build 55: keep expanded native payload, restore simple Build 53 widget rendering. Result: failed device QA.
+4. Build 56: revert the expanded native ActivityKit content-state fields while keeping current app-side compatibility inputs.
 
-If Build 55 works, focus on the Build 38 widget UI and control rendering. If Build 55 fails, revert the expanded native content-state fields next and keep the simple widget until the exact ActivityKit encoding problem is isolated.
+If Build 56 works, treat the expanded native content-state fields as the confirmed failure source and reintroduce them one at a time in future builds only after the product path needs them. If Build 56 fails, stop spending build numbers on payload slicing and compare generated native packaging/module registration against Build 53.

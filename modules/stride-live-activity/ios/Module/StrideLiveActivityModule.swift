@@ -108,7 +108,6 @@ public final class StrideLiveActivityModule: Module {
     AsyncFunction("start") {
       (
         runName: String,
-        activityType: String,
         elapsedSeconds: Int,
         distanceMiles: Double,
         averagePace: String,
@@ -117,14 +116,6 @@ public final class StrideLiveActivityModule: Module {
         zoneStatus: String,
         status: String,
         isPaused: Bool,
-        metricLabel: String,
-        metricValue: String,
-        metricUnit: String,
-        currentInterval: String,
-        nextTransition: String,
-        navigationInstruction: String,
-        cueText: String,
-        controlState: String,
         promise: Promise
       ) in
       guard #available(iOS 16.1, *) else {
@@ -144,16 +135,7 @@ public final class StrideLiveActivityModule: Module {
             zoneLabel: zoneLabel,
             zoneStatus: zoneStatus,
             status: status,
-            isPaused: isPaused,
-            activityType: activityType,
-            metricLabel: metricLabel,
-            metricValue: metricValue,
-            metricUnit: metricUnit,
-            currentInterval: currentInterval,
-            nextTransition: nextTransition,
-            navigationInstruction: navigationInstruction,
-            cueText: cueText,
-            controlState: controlState
+            isPaused: isPaused
           )
 
           let activity: Activity<StrideRunActivityAttributes>
@@ -186,14 +168,6 @@ public final class StrideLiveActivityModule: Module {
         zoneStatus: String,
         status: String,
         isPaused: Bool,
-        metricLabel: String,
-        metricValue: String,
-        metricUnit: String,
-        currentInterval: String,
-        nextTransition: String,
-        navigationInstruction: String,
-        cueText: String,
-        controlState: String,
         promise: Promise
       ) in
       guard #available(iOS 16.1, *) else {
@@ -215,16 +189,7 @@ public final class StrideLiveActivityModule: Module {
           zoneLabel: zoneLabel,
           zoneStatus: zoneStatus,
           status: status,
-          isPaused: isPaused,
-          activityType: activity.contentState.activityType,
-          metricLabel: metricLabel,
-          metricValue: metricValue,
-          metricUnit: metricUnit,
-          currentInterval: currentInterval,
-          nextTransition: nextTransition,
-          navigationInstruction: navigationInstruction,
-          cueText: cueText,
-          controlState: controlState
+          isPaused: isPaused
         )
 
         if #available(iOS 16.2, *) {
@@ -250,13 +215,6 @@ public final class StrideLiveActivityModule: Module {
         zoneLabel: String,
         zoneStatus: String,
         status: String,
-        metricLabel: String,
-        metricValue: String,
-        metricUnit: String,
-        currentInterval: String,
-        nextTransition: String,
-        navigationInstruction: String,
-        cueText: String,
         promise: Promise
       ) in
       guard #available(iOS 16.1, *) else {
@@ -278,16 +236,7 @@ public final class StrideLiveActivityModule: Module {
           zoneLabel: zoneLabel,
           zoneStatus: zoneStatus,
           status: status.isEmpty ? StrideLiveActivityStatus.finished : status,
-          isPaused: false,
-          activityType: activity.contentState.activityType,
-          metricLabel: metricLabel,
-          metricValue: metricValue,
-          metricUnit: metricUnit,
-          currentInterval: currentInterval,
-          nextTransition: nextTransition,
-          navigationInstruction: navigationInstruction,
-          cueText: cueText,
-          controlState: "ready"
+          isPaused: false
         )
 
         // .immediate: finished runs must not linger on the Lock Screen.
@@ -312,9 +261,6 @@ public final class StrideLiveActivityModule: Module {
         nextExercise: String,
         setsCompleted: Int,
         totalSets: Int,
-        prescription: String,
-        loadDisplay: String,
-        progressLabel: String,
         promise: Promise
       ) in
       guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
@@ -328,11 +274,7 @@ public final class StrideLiveActivityModule: Module {
             nextExercise: nextExercise,
             setsCompleted: max(0, setsCompleted),
             totalSets: max(1, totalSets),
-            isPaused: false,
-            prescription: prescription,
-            loadDisplay: loadDisplay,
-            progressLabel: progressLabel,
-            controlState: "ready"
+            isPaused: false
           )
           let activity: Activity<StrideStrengthActivityAttributes>
           if #available(iOS 16.2, *) {
@@ -360,9 +302,6 @@ public final class StrideLiveActivityModule: Module {
         setsCompleted: Int,
         totalSets: Int,
         isPaused: Bool,
-        prescription: String,
-        loadDisplay: String,
-        progressLabel: String,
         promise: Promise
       ) in
       guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
@@ -374,11 +313,7 @@ public final class StrideLiveActivityModule: Module {
           nextExercise: nextExercise,
           setsCompleted: max(0, setsCompleted),
           totalSets: max(1, totalSets),
-          isPaused: isPaused,
-          prescription: prescription,
-          loadDisplay: loadDisplay,
-          progressLabel: progressLabel,
-          controlState: "ready"
+          isPaused: isPaused
         )
         if #available(iOS 16.2, *) {
           await activity.update(ActivityContent(state: state, staleDate: Date().addingTimeInterval(90), relevanceScore: 0.9))
@@ -437,16 +372,7 @@ public final class StrideLiveActivityModule: Module {
     zoneLabel: String,
     zoneStatus: String,
     status: String,
-    isPaused: Bool = false,
-    activityType: String = "running",
-    metricLabel: String = "PACE",
-    metricValue: String = "--:--",
-    metricUnit: String = "/mi",
-    currentInterval: String = "",
-    nextTransition: String = "",
-    navigationInstruction: String = "",
-    cueText: String = "",
-    controlState: String = "ready"
+    isPaused: Bool = false
   ) -> StrideRunActivityAttributes.ContentState {
     StrideRunActivityAttributes.ContentState(
       elapsedSeconds: max(0, elapsedSeconds),
@@ -456,16 +382,7 @@ public final class StrideLiveActivityModule: Module {
       zoneLabel: zoneLabel,
       zoneStatus: zoneStatus,
       status: status.isEmpty ? StrideLiveActivityStatus.running : status,
-      isPaused: isPaused,
-      activityType: activityType,
-      metricLabel: metricLabel,
-      metricValue: metricValue,
-      metricUnit: metricUnit,
-      currentInterval: currentInterval,
-      nextTransition: nextTransition,
-      navigationInstruction: navigationInstruction,
-      cueText: cueText,
-      controlState: controlState
+      isPaused: isPaused
     )
   }
 
@@ -488,16 +405,7 @@ public final class StrideLiveActivityModule: Module {
         zoneLabel: activity.contentState.zoneLabel,
         zoneStatus: activity.contentState.zoneStatus,
         status: StrideLiveActivityStatus.finished,
-        isPaused: false,
-        activityType: activity.contentState.activityType,
-        metricLabel: activity.contentState.metricLabel,
-        metricValue: activity.contentState.metricValue,
-        metricUnit: activity.contentState.metricUnit,
-        currentInterval: activity.contentState.currentInterval,
-        nextTransition: activity.contentState.nextTransition,
-        navigationInstruction: activity.contentState.navigationInstruction,
-        cueText: activity.contentState.cueText,
-        controlState: "ready"
+        isPaused: false
       )
       if #available(iOS 16.2, *) {
         await activity.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: .immediate)

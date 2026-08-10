@@ -59,10 +59,10 @@ test('Build 53 restores Build 37 extension target and iOS availability gates', (
   assert.match(intentSource, /@available\(iOS 18\.0, \*\)[\s\S]*struct PauseRunIntent/);
 });
 
-test('Build 55 leaves expanded native payload fields unused by the simple Build 53 widget', () => {
-  assert.match(moduleSource, /metricValue: String/);
-  assert.match(moduleSource, /activityType: String/);
-  assert.match(moduleSource, /controlState: String/);
+test('Build 56 restores the Build 53 native content-state schema and simple widget', () => {
+  assert.doesNotMatch(moduleSource, /metricValue: String/);
+  assert.doesNotMatch(moduleSource, /activityType: String/);
+  assert.doesNotMatch(moduleSource, /controlState: String/);
   assert.match(widgetSource, /context\.state\.averagePace/);
   assert.doesNotMatch(widgetSource, /context\.state\.metricValue/);
   assert.doesNotMatch(widgetSource, /context\.state\.metricUnit/);
