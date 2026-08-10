@@ -77,16 +77,16 @@ test('Build 48 Live Activity payload is keyed to workoutInstanceId and rejects w
   ), false);
 });
 
-test('Build 48 auto-pause requires sustained accurate stationary evidence and resumes with hysteresis', () => {
+test('Build 48 auto-pause uses two-second GPS stop and movement windows for run and ride tracking', () => {
   const state = initialAutoPauseState('running', 'running_and_cycling');
   const poorGps = reduceAutoPause(state, sample(0, { horizontalAccuracyMeters: 80 }));
   assert.equal(poorGps.action, 'none');
   assert.equal(poorGps.state.stationarySamples, 0);
 
-  const briefStop = runDetector(state, (next, atMs) => reduceAutoPause(next, sample(atMs)), [0, 4_000, 8_000]);
+  const briefStop = runDetector(state, (next, atMs) => reduceAutoPause(next, sample(atMs)), [0, 1_000]);
   assert.equal(briefStop.action, 'none');
 
-  const paused = runDetector(state, (next, atMs) => reduceAutoPause(next, sample(atMs)), [0, 5_000, 10_000, 15_000]);
+  const paused = runDetector(state, (next, atMs) => reduceAutoPause(next, sample(atMs)), [0, 2_000]);
   assert.equal(paused.action, 'auto_pause');
   assert.equal(paused.state.paused, true);
 
@@ -95,9 +95,16 @@ test('Build 48 auto-pause requires sustained accurate stationary evidence and re
     displacementMeters: 20,
     motion: 'running',
     cadenceRpm: 165,
-  })), [22_000, 27_000, 32_500]);
+  })), [3_000, 5_000]);
   assert.equal(resumed.action, 'auto_resume');
   assert.equal(resumed.state.paused, false);
+
+  const ride = runDetector(initialAutoPauseState('cycling', 'running_and_cycling'), (next, atMs) => reduceAutoPause(next, sample(atMs, {
+    speedMps: 0,
+    displacementMeters: 0.5,
+    horizontalAccuracyMeters: 8,
+  })), [0, 2_000]);
+  assert.equal(ride.action, 'auto_pause');
 });
 
 test('Build 48 activity detection suggests only after sustained opt-in evidence and cooldown blocks repeats', () => {

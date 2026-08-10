@@ -1,4 +1,5 @@
-import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Polyline } from '../../../src/components/maps/MapComponents';
@@ -11,7 +12,9 @@ import { resolveActivityDetail } from '../../../src/utils/activityResolution';
 import { displayLabel } from '../../../src/utils/displayLabels';
 import { useExperienceModeAllows } from '../../../src/hooks/useExperienceMode';
 import { useSettingsStore } from '../../../src/store/settingsStore';
-import { buildActivityShareMessage, buildActivitySummary } from '../../../src/utils/activitySummary';
+import { shareCardUnavailableReason, shareReportCard } from '../../../src/lib/shareCard';
+import ActivityShareCard, { ACTIVITY_SHARE_VARIANTS, type ActivityShareVariant } from '../../../src/components/activity/ActivityShareCard';
+import { buildActivitySummary } from '../../../src/utils/activitySummary';
 
 export default function ActivityDetailScreen() {
   const C = useColors();
@@ -21,6 +24,9 @@ export default function ActivityDetailScreen() {
   const hydrationStatus = useActivityStore(state => state.hydrationStatus);
   const units = useSettingsStore(state => state.units);
   const showDataRichDetails = useExperienceModeAllows('data_rich');
+  const [shareVariant, setShareVariant] = useState<ActivityShareVariant>('performance_dark');
+  const [shareMessage, setShareMessage] = useState<string | null>(shareCardUnavailableReason());
+  const shareCardRef = useRef<View>(null);
   const resolution = resolveActivityDetail(activities, activityId, hydrationStatus);
   if (resolution.status === 'loading') return (
     <SafeAreaView style={[s.safe, s.centered, { backgroundColor: C.bg }]}>
@@ -62,7 +68,12 @@ export default function ActivityDetailScreen() {
 
   async function shareActivity() {
     try {
-      await Share.share({ message: buildActivityShareMessage(activity, units) });
+      setShareMessage(null);
+      const result = await shareReportCard(shareCardRef, {
+        fileName: `strideos-activity-${activity.id}-${shareVariant}`,
+        message: `StrideOS ${summary.title}`,
+      });
+      setShareMessage(result.status === 'shared' ? 'Share PNG created.' : result.reason);
     } catch (error) {
       Alert.alert('Share unavailable', error instanceof Error ? error.message : 'StrideOS could not open the share sheet.');
     }
@@ -81,7 +92,7 @@ export default function ActivityDetailScreen() {
               onPress={shareActivity}
               accessibilityLabel="Share activity"
             >
-              <Ionicons name="share-outline" size={18} color={C.primary} />
+              <Ionicons name="image-outline" size={18} color={C.primary} />
             </TouchableOpacity>
             <TouchableOpacity
               style={[s.editButton, { backgroundColor: C.card, borderColor: C.border }]}
@@ -119,17 +130,38 @@ export default function ActivityDetailScreen() {
             </View>
           ))}
         </View>
-        {summary.sections.map(section => (
-          <View key={section.title} style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
-            <Text style={[s.eyebrow, { color: C.textDim }]}>{section.title.toUpperCase()}</Text>
-            {section.metrics.map(item => (
-              <View key={item.label} style={s.zoneRow}>
-                <Text style={[s.body, { color: C.text }]}>{item.label}</Text>
-                <Text style={[s.bodyValue, { color: C.textMuted }]}>{item.value}</Text>
-              </View>
-            ))}
+        <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[s.eyebrow, { color: C.textDim }]}>SHARE IMAGE</Text>
+          <View style={s.variantGrid}>
+            {ACTIVITY_SHARE_VARIANTS.map(item => {
+              const active = shareVariant === item.id;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[s.variant, { backgroundColor: active ? C.primaryDim : C.cardAlt, borderColor: active ? C.primary : C.border }]}
+                  onPress={() => setShareVariant(item.id)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text style={[s.variantLabel, { color: C.text }]}>{item.label}</Text>
+                  <Text style={[s.variantDescription, { color: C.textMuted }]}>{item.description}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        ))}
+          <View ref={shareCardRef} collapsable={false} style={s.sharePreview}>
+            <ActivityShareCard activity={activity} units={units} variant={shareVariant} />
+          </View>
+          <TouchableOpacity
+            style={[s.sharePrimary, { backgroundColor: C.primary }]}
+            onPress={shareActivity}
+            accessibilityLabel="Create activity share PNG"
+          >
+            <Ionicons name="image-outline" size={17} color={C.onPrimary} />
+            <Text style={[s.sharePrimaryText, { color: C.onPrimary }]}>Create Share PNG</Text>
+          </TouchableOpacity>
+          {shareMessage ? <Text style={[s.shareMessage, { color: C.textMuted }]}>{shareMessage}</Text> : null}
+        </View>
         {activity.notes || activity.symptoms?.length ? (
           <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[s.eyebrow, { color: C.textDim }]}>NOTES</Text>
@@ -168,4 +200,12 @@ const s = StyleSheet.create({
   zoneRow: { flexDirection: 'row', justifyContent: 'space-between' },
   body: { fontSize: 13, lineHeight: 20 },
   bodyValue: { flexShrink: 1, marginLeft: 14, fontSize: 13, lineHeight: 20, textAlign: 'right' },
+  variantGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  variant: { width: '31%', minHeight: 74, borderRadius: 12, borderWidth: 1, padding: 10 },
+  variantLabel: { fontSize: 12, fontWeight: '900' },
+  variantDescription: { fontSize: 10, lineHeight: 14, marginTop: 4 },
+  sharePreview: { width: '100%', borderRadius: 18, overflow: 'hidden', marginTop: 4 },
+  sharePrimary: { minHeight: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
+  sharePrimaryText: { fontSize: 14, fontWeight: '900' },
+  shareMessage: { fontSize: 12, lineHeight: 17 },
 });

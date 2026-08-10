@@ -247,13 +247,15 @@ function estimateSweatRate(input: HydrationCalculatorInput) {
 
 function fluidReplacementFraction(input: HydrationCalculatorInput, sweatRateLh: number) {
   const h = input.durationMin / 60;
-  let fraction = h < 1 ? 0.2 : h < 2 ? 0.45 : h < 4 ? 0.58 : 0.68;
-  if (input.weatherBand === 'hot' || input.weatherBand === 'very_hot') fraction += 0.05;
+  let fraction = h < 0.75 ? 0 : h < 1 ? 0.35 : h < 2 ? 0.6 : h < 4 ? 0.7 : 0.75;
+  if (input.weatherBand === 'hot') fraction += 0.05;
+  if (input.weatherBand === 'very_hot') fraction += 0.1;
+  if (input.effort >= 8) fraction += 0.05;
   if (sweatRateLh >= 1.1) fraction += 0.05;
-  if (input.fluidComfort === 'low') fraction -= 0.05;
+  if (input.fluidComfort === 'low') fraction -= 0.1;
   if (input.goal === 'race_limit') fraction += 0.05;
   if (input.goal === 'finish') fraction -= 0.05;
-  return clamp(fraction, 0, 0.85);
+  return clamp(fraction, 0, 0.9);
 }
 
 function sodiumReplacementFraction(input: HydrationCalculatorInput, sweatRateLh: number) {
@@ -279,7 +281,14 @@ export function calculateHydrationPlan(input: HydrationCalculatorInput): Hydrati
 
   let fluidTargetLh = sweatRateLh * replacementFraction;
   const maxFluid = sweatRateLh > 1.5 && ['hot', 'very_hot'].includes(input.weatherBand) ? 1.2 : 1.0;
-  fluidTargetLh = clamp(fluidTargetLh, input.durationMin < 45 ? 0 : 0.2, maxFluid);
+  const evidenceFloor = input.durationMin < 45
+    ? 0
+    : input.durationMin < 60
+      ? 0.2
+      : input.weatherBand === 'hot' || input.weatherBand === 'very_hot' || input.effort >= 7
+        ? 0.6
+        : 0.4;
+  fluidTargetLh = clamp(fluidTargetLh, evidenceFloor, Math.min(maxFluid, Math.max(0.2, sweatRateLh * 0.9)));
 
   const plannedFluidL = fluidTargetLh * durationHours;
   const projectedDeficitL = totalSweatLossL - plannedFluidL;
@@ -290,7 +299,15 @@ export function calculateHydrationPlan(input: HydrationCalculatorInput): Hydrati
     : clamp(SALT_BASE[input.saltiness] + CRAMP_MOD[input.cramping], 200, 1800);
   const sodiumLossMgH = sweatRateLh * sweatSodiumMgL;
   let sodiumTargetMgH = sodiumLossMgH * sodiumReplacementFraction(input, sweatRateLh);
-  const sodiumMax = input.durationMin >= 180 && input.saltiness !== 'low' ? 1500 : 1000;
+  const concentrationFloorMgL = input.durationMin >= 60
+    ? input.saltiness === 'salty' || input.saltiness === 'very_salty' || input.weatherBand === 'hot' || input.weatherBand === 'very_hot'
+      ? 700
+      : 500
+    : 0;
+  if (fluidTargetLh > 0 && concentrationFloorMgL > 0) {
+    sodiumTargetMgH = Math.max(sodiumTargetMgH, fluidTargetLh * concentrationFloorMgL);
+  }
+  const sodiumMax = input.durationMin >= 180 && input.saltiness !== 'low' ? 1500 : 1200;
   sodiumTargetMgH = clamp(sodiumTargetMgH, 0, sodiumMax);
 
   const sodiumMgPerL = fluidTargetLh > 0 ? sodiumTargetMgH / fluidTargetLh : 0;
@@ -319,6 +336,7 @@ export function calculateHydrationPlan(input: HydrationCalculatorInput): Hydrati
 
   if (!input.sweatRateTestLh) notes.push('Sweat rate is estimated from weather, effort, and sweatiness.');
   if (!input.sweatSodiumMgL) notes.push('Sodium is estimated from saltiness and cramping history.');
+  if (input.durationMin >= 60) notes.push('For efforts over about an hour, the target starts from an evidence-based fluid range and sodium concentration, then adjusts for heat, effort, and sweat profile.');
   if (sodiumMgPerL < 300) notes.push('Low sodium concentration is usually fine for short, cool, low-sweat runs.');
   else if (sodiumMgPerL < 700) notes.push('Moderate sodium concentration.');
   else if (sodiumMgPerL < 1200) notes.push('High sodium concentration, useful for salty sweaters or hot/long runs.');
@@ -332,8 +350,8 @@ export function calculateHydrationPlan(input: HydrationCalculatorInput): Hydrati
   )
     ? {
       fluidMl: [round(input.bodyWeightKg * 5), round(input.bodyWeightKg * 7)] as [number, number],
-      sodiumMgPerL: [1000, 1500] as [number, number],
-      timing: '60-90 min before. Finish most fluid 30-45 min before start.',
+      sodiumMgPerL: [500, 1000] as [number, number],
+      timing: '2-4 hr before. For hot, salty, or long runs, add sodium about 90 min before and finish most fluid 30-45 min before start.',
     }
     : undefined;
 
@@ -355,8 +373,8 @@ export function calculateHydrationPlan(input: HydrationCalculatorInput): Hydrati
       ? 'Good starting plan'
       : 'Rough estimate';
 
-  const fluidLowL = round(fluidTargetLh * 0.85, 2);
-  const fluidHighL = round(fluidTargetLh * 1.15, 2);
+  const fluidLowL = round(input.durationMin >= 60 ? Math.max(evidenceFloor, fluidTargetLh * 0.85) : fluidTargetLh * 0.85, 2);
+  const fluidHighL = round(Math.min(maxFluid, Math.max(fluidLowL, fluidTargetLh * 1.15)), 2);
   const sodiumLowMg = round(sodiumTargetMgH * 0.85);
   const sodiumHighMg = round(sodiumTargetMgH * 1.15);
 

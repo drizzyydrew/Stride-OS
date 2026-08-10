@@ -42,11 +42,6 @@ const ITEMS: NavItem[] = [
     route:       '/(tabs)/more/achievements',
   },
   {
-    label:       'Health Sync',
-    icon:        'heart-outline',
-    route:       '/(tabs)/more/health-sync',
-  },
-  {
     label:       'Movement Lab',
     icon:        'body-outline',
     route:       '/(tabs)/movement',

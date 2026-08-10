@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -18,6 +19,8 @@ import {
   type WorkoutSegmentGroup,
 } from '../../src/utils/structuredWorkout';
 import type { Activity } from '../../src/types/activity';
+
+const read = (path: string) => readFileSync(path, 'utf8');
 
 function activity(overrides: Partial<Activity> & Pick<Activity, 'id' | 'activityType' | 'startTime'>): Activity {
   return {
@@ -176,4 +179,34 @@ test('Build 57 structured workout estimates repeats, reorder, and boundary voice
   const cues = buildSegmentVoiceCues(workout, { countdowns: true });
   assert.ok(cues.some(item => item.text.includes('Workout complete')));
   assert.ok(cues.some(item => item.category === 'countdown' && item.text === '10 seconds.'));
+});
+
+test('Achievement and activity sharing use StrideOS PNG card components with multiple visual options', () => {
+  const achievementBadge = read('src/components/achievements/AchievementBadge.tsx');
+  const achievementShare = read('src/components/achievements/AchievementShareCard.tsx');
+  const activityShare = read('src/components/activity/ActivityShareCard.tsx');
+  const achievementHub = read('app/(tabs)/more/achievements.tsx');
+  const activityDetail = read('app/(tabs)/activity/[activityId].tsx');
+
+  assert.match(achievementBadge, /five|chevron|BadgeMotif|STRIDE_LEVEL_DEFINITIONS|StrideOS|>>>>|Polyline/s);
+  assert.match(achievementShare, /badge_square/);
+  assert.match(achievementShare, /story_poster/);
+  assert.match(achievementShare, /photo_overlay/);
+  assert.match(activityShare, /performance_dark/);
+  assert.match(activityShare, /route_story/);
+  assert.match(activityShare, /photo_overlay/);
+  assert.match(achievementHub, /shareReportCard/);
+  assert.match(activityDetail, /shareReportCard/);
+  assert.match(activityDetail, /Create Share PNG/);
+});
+
+test('Health Sync UI is removed while Apple Health connection can remain for workout heart-rate plumbing', () => {
+  const more = read('app/(tabs)/more/index.tsx');
+  const settings = read('app/(tabs)/settings/index.tsx');
+  const tabs = read('app/(tabs)/_layout.tsx');
+
+  assert.doesNotMatch(more, /Health Sync/);
+  assert.doesNotMatch(settings, /Health Workout Sync|Open Sync Review|health-sync/);
+  assert.doesNotMatch(tabs, /more\/health-sync/);
+  assert.match(settings, /Apple Health/);
 });

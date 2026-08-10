@@ -6,13 +6,15 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useColors } from '../../../src/theme/useColors';
 import { LAYOUT } from '../../../src/constants/layout';
+import { useActivityStore } from '../../../src/store/activityStore';
+import { buildAdaptivePerformanceModel, type AdaptivePerformanceMetric } from '../../../src/utils/adaptivePerformance';
 
 type MetricOpen = 'aero' | 'ana' | 'proc' | null;
 
 interface MetricCardProps {
   title: string;
   subtitle: string;
-  score: number;
+  score: number | null;
   scoreColor: string;
   open: boolean;
   onToggle: () => void;
@@ -34,14 +36,14 @@ function MetricCard({ title, subtitle, score, scoreColor, open, onToggle, explan
           <Text style={[styles.metricSubtitle, { color: C.textMuted }]}>{subtitle}</Text>
         </View>
         <View style={styles.metricRight}>
-          <Text style={[styles.metricScore, { color: scoreColor }]}>{score}</Text>
+          <Text style={[styles.metricScore, { color: scoreColor }]}>{score ?? '--'}</Text>
           <Text style={[styles.metricChev, { color: C.textDim }]}>{open ? '▲' : '▼'}</Text>
         </View>
       </View>
       {open && (
         <View style={[styles.metricDetail, { borderTopColor: C.border }]}>
           <Text style={[styles.metricExplanation, { color: C.textMuted }]}>{explanation}</Text>
-          <View style={styles.rangeRow}>
+          {ranges.length > 0 ? <View style={styles.rangeRow}>
             {ranges.map(r => (
               <View
                 key={r.label}
@@ -56,7 +58,7 @@ function MetricCard({ title, subtitle, score, scoreColor, open, onToggle, explan
                 <Text style={[styles.rangeValue, { color: r.active ? C.primary : C.textMuted }]}>{r.range}</Text>
               </View>
             ))}
-          </View>
+          </View> : null}
         </View>
       )}
     </TouchableOpacity>
@@ -69,8 +71,11 @@ export default function PerformanceScreen() {
   const router = useRouter();
   const [open, setOpen] = useState<MetricOpen>(null);
   const toggle = (key: MetricOpen) => setOpen(p => p === key ? null : key);
+  const activities = useActivityStore(state => state.activities);
+  const model = buildAdaptivePerformanceModel(activities);
 
-  const SCORE = 82;
+  const scoreColor = (metric: AdaptivePerformanceMetric) =>
+    metric.score == null ? C.textDim : metric.score >= 71 ? C.positive : metric.score >= 56 ? C.warning : C.textMuted;
 
   return (
     <ScrollView
@@ -90,63 +95,27 @@ export default function PerformanceScreen() {
 
       {/* Overall score */}
       <View style={[styles.scoreCard, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Text style={[styles.scoreLabel, { color: C.textDim }]}>OVERALL SCORE</Text>
-        <Text style={[styles.scoreNum, { color: C.text }]}>{SCORE}</Text>
-        <Text style={[styles.scoreCaption, { color: C.textMuted }]}>Updates as you train and improve</Text>
+        <Text style={[styles.scoreLabel, { color: C.textDim }]}>{model.ready ? 'OVERALL SCORE' : 'NEEDS MORE WORKOUTS'}</Text>
+        <Text style={[styles.scoreNum, { color: C.text }]}>{model.overallScore ?? '--'}</Text>
+        <Text style={[styles.scoreCaption, { color: C.textMuted }]}>{model.caption}</Text>
         <View style={[styles.scoreBar, { backgroundColor: C.border }]}>
-          <View style={[styles.scoreBarFill, { width: `${SCORE}%`, backgroundColor: C.primary }]} />
+          <View style={[styles.scoreBarFill, { width: `${model.overallScore ?? 0}%`, backgroundColor: C.primary }]} />
         </View>
       </View>
 
-      {/* Aerobic Power */}
-      <MetricCard
-        title="Aerobic Power"
-        subtitle="VO₂max-derived capacity"
-        score={82}
-        scoreColor={C.positive}
-        open={open === 'aero'}
-        onToggle={() => toggle('aero')}
-        explanation="82 = Strong. Aerobic Power measures how efficiently your body uses oxygen to produce energy at high intensity — derived from your VO₂max. Improve with consistent Zone 2 training and VO₂max intervals."
-        ranges={[
-          { label: 'DEVELOPING', range: '0–55', active: false },
-          { label: 'GOOD',       range: '55–70', active: false },
-          { label: 'STRONG',     range: '70–85', active: true },
-          { label: 'ELITE',      range: '85+', active: false },
-        ]}
-      />
-
-      {/* Anaerobic Battery */}
-      <MetricCard
-        title="Anaerobic Battery"
-        subtitle="High-intensity capacity"
-        score={71}
-        scoreColor={C.warning}
-        open={open === 'ana'}
-        onToggle={() => toggle('ana')}
-        explanation="71 = Good. Anaerobic Battery is your capacity for hard efforts above lactate threshold — surges, sprints, and finishing kicks. Build it with short, intense intervals (400m repeats, hill sprints at Z5–Z6)."
-        ranges={[
-          { label: 'LIMITED',  range: '0–50', active: false },
-          { label: 'MODERATE', range: '50–65', active: false },
-          { label: 'GOOD',     range: '65–80', active: true },
-          { label: 'ELITE',    range: '80+', active: false },
-        ]}
-      />
-
-      {/* Processing Power */}
-      <MetricCard
-        title="Processing Power"
-        subtitle="Neuromuscular efficiency"
-        score={88}
-        scoreColor={C.accent}
-        open={open === 'proc'}
-        onToggle={() => toggle('proc')}
-        explanation="88 = Excellent. Processing Power reflects how efficiently your nervous system coordinates movement under fatigue — running economy and neuromuscular coordination. Improve with strides, drills, and strength training."
-        ranges={[
-          { label: 'FAIR',      range: '0–60', active: false },
-          { label: 'GOOD',      range: '60–80', active: false },
-          { label: 'EXCELLENT', range: '80+', active: true },
-        ]}
-      />
+      {model.metrics.map(metric => (
+        <MetricCard
+          key={metric.id}
+          title={metric.title}
+          subtitle={metric.subtitle}
+          score={metric.score}
+          scoreColor={scoreColor(metric)}
+          open={open === metric.id}
+          onToggle={() => toggle(metric.id)}
+          explanation={metric.explanation}
+          ranges={metric.ranges}
+        />
+      ))}
     </ScrollView>
   );
 }

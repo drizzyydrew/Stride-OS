@@ -37,3 +37,22 @@ test('known carbohydrate tolerance is a ceiling, while sodium concentration rema
   assert.ok(plan.hourly.sodiumMg >= 0);
   assert.ok(plan.warnings.some(warning => warning.includes('progression target')));
 });
+
+test('long warm runner hydration uses evidence-based fluid and sodium starting ranges', () => {
+  const plan = calculateHydrationPlan({
+    durationMin: 120,
+    bodyWeightKg: 72,
+    effort: 7,
+    weatherBand: 'hot',
+    sweatiness: 'average',
+    saltiness: 'moderate',
+    cramping: 'rarely',
+    fluidComfort: 'moderate',
+    goal: 'strong',
+  });
+
+  assert.ok(plan.hourly.fluidL >= 0.6);
+  assert.ok(plan.hourly.fluidL <= 1.2);
+  assert.ok(plan.hourly.sodiumMgPerL >= 500);
+  assert.ok(plan.notes.some(note => note.includes('evidence-based fluid range')));
+});

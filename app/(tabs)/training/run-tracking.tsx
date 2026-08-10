@@ -445,7 +445,7 @@ export default function RunTrackingScreen() {
       <View style={[s.controls, { paddingBottom: insets.bottom + spacing.md }]}>
         <Pressable
           style={[s.ctrlBtn, s.ctrlBtnSecondary]}
-          onPress={isPaused ? resumeRun : pauseRun}
+          onPress={() => { if (isPaused) resumeRun(); else pauseRun(); }}
         >
           <Text style={s.ctrlBtnTxt}>{isPaused ? 'Resume' : 'Pause'}</Text>
         </Pressable>

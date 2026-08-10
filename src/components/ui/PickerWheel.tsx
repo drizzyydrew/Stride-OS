@@ -331,6 +331,7 @@ export function ChoicePickerWheel({
 export function DistanceHundredthsPickerWheel({
   visible, title, unitLabel, selectedValue, confirmLabel = 'Confirm', onConfirm, onClose,
 }: DistanceHundredthsPickerWheelProps) {
+  const C = useColors();
   const parts = decomposeDistanceHundredths(selectedValue);
   const [selectedValues, setSelectedValues] = useState<Record<string, number>>(() => ({
     whole: parts.whole,
@@ -372,12 +373,12 @@ export function DistanceHundredthsPickerWheel({
       <View style={styles.distanceColumnsRow}>
         <WheelColumn title="Whole" values={wholeValues} selectedValue={selectedValues.whole ?? 0} visible={visible} onChange={value => change('whole', value)} />
         <View style={styles.decimalColumn} accessible={false}>
-          <Text style={styles.decimalText}>.</Text>
+          <Text style={[styles.decimalText, { color: C.text }]}>.</Text>
         </View>
         <WheelColumn title="Tenths" values={digitValues} selectedValue={selectedValues.tenths ?? 0} visible={visible} onChange={value => change('tenths', value)} />
         <WheelColumn title="Hundredths" values={digitValues} selectedValue={selectedValues.hundredths ?? 0} visible={visible} onChange={value => change('hundredths', value)} />
         <View style={styles.unitColumn} accessible accessibilityLabel={`Distance unit ${unitLabel}`}>
-          <Text style={styles.unitText}>{unitLabel}</Text>
+          <Text style={[styles.unitText, { color: C.text }]}>{unitLabel}</Text>
         </View>
       </View>
     </PickerSheet>

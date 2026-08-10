@@ -25,7 +25,6 @@ test('bottom navigation declares exactly the six approved primary destinations',
     'more/gear',
     'more/stride-report',
     'more/achievements',
-    'more/health-sync',
   ]);
   assert.equal(existsSync('app/(tabs)/activity/_layout.tsx'), true);
   assert.equal(existsSync('app/(tabs)/profile/_layout.tsx'), true);
@@ -46,7 +45,6 @@ test('More contains only valid secondary destinations and does not duplicate pri
     'Gear',
     'Stride Report',
     'Achievements',
-    'Health Sync',
     'Movement Lab',
     'Analytics',
     'Adaptive Performance',
@@ -77,17 +75,25 @@ test('legacy training-history links open unified Activity', () => {
   assert.doesNotMatch(settings, /router\.push\('\/\(tabs\)\/activity-log'/);
 });
 
-test('Build 48 hotfix keeps diagnostics advanced and Health Sync review-only', () => {
+test('Settings uses subpages for voice/workout controls, diagnostics are removed, and Health Sync UI stays removed', () => {
   const settings = read('app/(tabs)/settings/index.tsx');
-  const healthSync = read('app/(tabs)/more/health-sync.tsx');
+  const voice = read('app/(tabs)/settings/voice-coaching.tsx');
+  const workout = read('app/(tabs)/settings/workout-intelligence.tsx');
+  const more = read('app/(tabs)/more/index.tsx');
+  const tabs = read('app/(tabs)/_layout.tsx');
 
-  assert.match(settings, /Show Advanced Diagnostics/);
-  assert.match(settings, /showLiveActivityDiagnostics/);
-  assert.match(settings, /Live Activity Diagnostics/);
-  assert.match(settings, /Automatic background import is not enabled yet/);
-  assert.match(healthSync, /Automatic background import is not enabled yet/);
-  assert.doesNotMatch(settings, /label:\s*'Auto'/);
-  assert.doesNotMatch(healthSync, /label:\s*'Auto'/);
+  assert.match(settings, /settings\/voice-coaching/);
+  assert.match(settings, /settings\/workout-intelligence/);
+  assert.match(voice, /Preview Current Voice Setup/);
+  assert.match(voice, /Starting workout/);
+  assert.match(workout, /2 seconds of stopped GPS movement/);
+  assert.doesNotMatch(settings, /Show Advanced Diagnostics/);
+  assert.doesNotMatch(settings, /showLiveActivityDiagnostics/);
+  assert.doesNotMatch(settings, /Health Workout Sync/);
+  assert.doesNotMatch(settings, /health-sync/);
+  assert.doesNotMatch(more, /Health Sync/);
+  assert.doesNotMatch(tabs, /more\/health-sync/);
+  assert.equal(existsSync('app/(tabs)/more/health-sync.tsx'), false);
 });
 
 test('Build 38 detail screens use shared responsive headers', () => {

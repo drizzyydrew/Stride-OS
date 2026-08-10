@@ -423,7 +423,7 @@ export default function StartOutdoorActivityScreen() {
         </View>
       </ScrollView>
       <View style={s.controls}>
-        <TouchableOpacity onPress={active.isPaused ? active.resume : active.pause} style={[s.control, { backgroundColor: C.card, borderColor: C.border }]}>
+        <TouchableOpacity onPress={() => { if (active.isPaused) active.resume(); else active.pause(); }} style={[s.control, { backgroundColor: C.card, borderColor: C.border }]}>
           <Ionicons name={active.isPaused ? 'play' : 'pause'} size={24} color={C.text} />
           <Text style={[s.controlText, { color: C.text }]}>{active.isPaused ? 'Resume' : 'Pause'}</Text>
         </TouchableOpacity>

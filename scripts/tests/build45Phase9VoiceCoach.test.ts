@@ -77,15 +77,15 @@ test('voice log store keeps a capped newest-first ring buffer', () => {
 test('Phase 9 source contracts install expo-audio, expose test voice, and keep voiceCue as a shim', () => {
   const packageJson = read('package.json');
   const appJson = read('app.json');
-  const settings = read('app/(tabs)/settings/index.tsx');
+  const settings = read('app/(tabs)/settings/voice-coaching.tsx');
   const voiceCue = read('src/lib/voiceCue.ts');
   const voiceCoach = read('src/lib/voiceCoach.ts');
   const training = read('app/(tabs)/training/index.tsx');
 
   assert.match(packageJson, /"expo-audio"/);
   assert.match(appJson, /"expo-audio"/);
-  assert.match(settings, /Test Voice Coaching/);
-  assert.match(settings, /Route navigation/);
+  assert.match(settings, /Preview Current Voice Setup/);
+  assert.match(settings, /Route guidance/);
   assert.match(voiceCue, /enqueueVoiceCoachCue/);
   assert.match(voiceCoach, /setAudioModeAsync/);
   assert.match(voiceCoach, /interruptionMode:\s*'duckOthers'/);

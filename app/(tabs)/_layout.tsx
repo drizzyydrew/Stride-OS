@@ -158,7 +158,6 @@ export default function TabsLayout() {
       <Tabs.Screen name="more/gear" options={{ href: null }} />
       <Tabs.Screen name="more/stride-report" options={{ href: null }} />
       <Tabs.Screen name="more/achievements" options={{ href: null }} />
-      <Tabs.Screen name="more/health-sync" options={{ href: null }} />
     </Tabs>
   );
 }

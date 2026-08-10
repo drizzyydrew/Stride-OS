@@ -892,6 +892,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     goalDoneRef.current = false;
 
     startRun(startWorkout, config);
+    speakCue('Starting workout.', 'interval');
     const activeRun = useActiveRunStore.getState();
     const activeWorkoutInstanceId = activeRun.workoutInstanceId ?? '';
     await startRunLiveActivity({
@@ -909,7 +910,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
     if (pendingEnvironment === 'indoor') {
       const workoutName = startWorkout?.title ?? 'treadmill run';
-      speakCue(`Starting ${workoutName} on the treadmill. Confirm your speed when you start moving.`, 'motivation');
+      speakCue(`${workoutName}. Confirm your speed when you start moving.`, 'motivation');
       return;
     }
 
@@ -917,15 +918,15 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       await startLocationTracking();
       const unitWord = imp ? 'mile' : 'kilometer';
       if (config.mode === 'time') {
-        speakCue(`Starting a ${goalMinutesInput} minute run. Settle into a rhythm.`);
+        speakCue(`${goalMinutesInput} minute run. Settle into a rhythm.`);
       } else if (config.mode === 'distance') {
-        speakCue(`Starting a ${goalMilesInput} ${unitWord} run. Start easy.`);
+        speakCue(`${goalMilesInput} ${unitWord} run. Start easy.`);
       } else if (config.mode === 'race') {
         speakCue(`Race mode. Target pace ${paceLabel(racePaceSecInput)} per ${unitWord} over ${raceMilesInput} ${unitWord}s. Hold back the first ${unitWord}.`, 'pace');
       } else if (config.mode === 'workout' && startWorkout) {
-        speakCue(`Starting ${startWorkout.title}. ${startWorkout.purpose ?? ''}`);
+        speakCue(`${startWorkout.title}. ${startWorkout.purpose ?? ''}`);
       } else if (selectedRoute) {
-        speakCue(`Starting route: ${selectedRoute.name}. ${selectedRoute.segments.length} interval markers set.`, 'navigation');
+        speakCue(`Route: ${selectedRoute.name}. ${selectedRoute.segments.length} interval markers set.`, 'navigation');
       }
     } catch (error) {
       cancelRun();

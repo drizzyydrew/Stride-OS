@@ -23,6 +23,7 @@ import {
 } from '../utils/voiceCoachingEngine';
 import { useSettingsStore } from './settingsStore';
 import { enqueueVoiceCue } from '../lib/voiceCue';
+import { initialAutoPauseState, reduceAutoPause, type AutoPauseState } from '../utils/autoPause';
 
 export type Coordinate = {
   lat:       number;
@@ -110,10 +111,11 @@ export type ActiveRunStore = {
 
   // Distance-split voice-cue state (mile/km announcements). Reset each run.
   splitVoiceState:        DistanceSplitVoiceState;
+  autoPauseState:         AutoPauseState | null;
 
   startRun:          (plannedWorkout: RichWorkout | null, config?: RunModeConfig) => void;
-  pauseRun:          () => void;
-  resumeRun:         () => void;
+  pauseRun:          (source?: 'manual' | 'auto') => void;
+  resumeRun:         (source?: 'manual' | 'auto') => void;
   addLocationUpdate: (loc: LocationObject) => void;
   advanceInterval:   () => void;
   finishRun:         () => void;
@@ -167,9 +169,12 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       treadmillPhonePlacement: 'on_body',
       lastEnvironmentPreference: 'outdoor',
       splitVoiceState:        DEFAULT_DISTANCE_SPLIT_STATE,
+      autoPauseState:         null,
 
   startRun: (plannedWorkout, config) => {
     const now = Date.now();
+    const environment = config?.environment ?? 'outdoor';
+    const settings = useSettingsStore.getState();
     set({
       isActive:               true,
       isPaused:               false,
@@ -191,20 +196,23 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       targetPaceSecPerMile:   config?.targetPaceSecPerMile ?? null,
       completionRequestedAt:  null,
       workoutInstanceId:      buildWorkoutInstanceId(config?.scheduledSessionId ?? null, now),
-      environment:            config?.environment ?? 'outdoor',
+      environment,
       treadmillSegments:      [],
       currentSpeedMph:        null,
       manualDistanceMiles:    null,
       distanceSource:         null,
       treadmillPhonePlacement: config?.treadmillPhonePlacement ?? get().treadmillPhonePlacement,
-      lastEnvironmentPreference: config?.environment ?? get().lastEnvironmentPreference,
+      lastEnvironmentPreference: environment,
       splitVoiceState:        DEFAULT_DISTANCE_SPLIT_STATE,
+      autoPauseState:         environment === 'outdoor'
+        ? initialAutoPauseState('running', settings.autoPauseMode)
+        : null,
     });
   },
 
   setLastEnvironmentPreference: (environment) => set({ lastEnvironmentPreference: environment }),
 
-  pauseRun: () => {
+  pauseRun: (source = 'manual') => {
     const state = get();
     if (!state.isActive || state.isPaused) return;
     const now = Date.now();
@@ -213,10 +221,17 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     const treadmillSegments = state.environment === 'indoor'
       ? closeOpenSegment(state.treadmillSegments, now)
       : state.treadmillSegments;
-    set({ isPaused: true, pausedAt: now, treadmillSegments });
+    set({
+      isPaused: true,
+      pausedAt: now,
+      treadmillSegments,
+      autoPauseState: state.autoPauseState
+        ? { ...state.autoPauseState, paused: true, manualPaused: source === 'manual' }
+        : null,
+    });
   },
 
-  resumeRun: () => {
+  resumeRun: (_source = 'manual') => {
     const state = get();
     if (!state.isActive || !state.isPaused) return;
     const now = Date.now();
@@ -229,6 +244,9 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       pausedAt: null,
       pausedDurationMs: state.pausedDurationMs + pausedFor,
       treadmillSegments,
+      autoPauseState: state.autoPauseState
+        ? { ...state.autoPauseState, paused: false, manualPaused: false }
+        : null,
     });
   },
 
@@ -251,7 +269,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
 
   addLocationUpdate: (loc) => {
     const state = get();
-    if (!state.isActive || state.isPaused) return;
+    if (!state.isActive) return;
     if (typeof loc.coords.accuracy === 'number' && loc.coords.accuracy > MAX_ALLOWED_ACCURACY_METERS) return;
 
     const coord: Coordinate = {
@@ -263,6 +281,47 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
 
     const previousCoord = state.coordinates.at(-1);
     if (previousCoord && coord.timestamp <= previousCoord.timestamp) return;
+
+    if (state.environment === 'outdoor' && state.autoPauseState && previousCoord) {
+      const deltaSeconds = Math.max(0, (coord.timestamp - previousCoord.timestamp) / 1000);
+      const displacementMeters = haversineMiles(previousCoord, coord) * 1609.344;
+      const gpsSpeedMps = typeof loc.coords.speed === 'number' && loc.coords.speed >= 0
+        ? loc.coords.speed
+        : deltaSeconds > 0 ? displacementMeters / deltaSeconds : 0;
+      const decision = reduceAutoPause(state.autoPauseState, {
+        atMs: coord.timestamp,
+        speedMps: gpsSpeedMps,
+        displacementMeters,
+        horizontalAccuracyMeters: loc.coords.accuracy,
+        motion: 'unknown',
+      });
+      if (decision.action === 'auto_pause') {
+        set({ isPaused: true, pausedAt: coord.timestamp, autoPauseState: decision.state });
+        if (useSettingsStore.getState().announceAutoPause) enqueueVoiceCue('Workout paused.', 'interval');
+        return;
+      }
+      if (state.isPaused) {
+        if (decision.action === 'auto_resume') {
+          const pausedFor = state.pausedAt ? coord.timestamp - state.pausedAt : 0;
+          set({
+            isPaused: false,
+            pausedAt: null,
+            pausedDurationMs: state.pausedDurationMs + Math.max(0, pausedFor),
+            coordinates: [...state.coordinates, coord],
+            autoPauseState: decision.state,
+          });
+          if (useSettingsStore.getState().announceAutoResume) enqueueVoiceCue('Workout resumed.', 'interval');
+        } else {
+          set({ autoPauseState: decision.state });
+        }
+        return;
+      }
+      if (decision.state !== state.autoPauseState) {
+        set({ autoPauseState: decision.state });
+      }
+    }
+
+    if (state.isPaused) return;
 
     const coords  = [...state.coordinates, coord];
     let totalDist = state.distanceMiles;
@@ -374,6 +433,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       distanceSource:         null,
       treadmillPhonePlacement: state.treadmillPhonePlacement,
       splitVoiceState:        DEFAULT_DISTANCE_SPLIT_STATE,
+      autoPauseState:         null,
     });
   },
 
@@ -407,6 +467,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       distanceSource:         null,
       treadmillPhonePlacement: state.treadmillPhonePlacement,
       splitVoiceState:        DEFAULT_DISTANCE_SPLIT_STATE,
+      autoPauseState:         null,
     });
   },
 
@@ -432,6 +493,10 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     if (!merged.environment) merged.environment = 'outdoor';
     if (!merged.treadmillSegments) merged.treadmillSegments = [];
     if (!merged.treadmillPhonePlacement) merged.treadmillPhonePlacement = 'on_body';
+    if (merged.environment !== 'outdoor') merged.autoPauseState = null;
+    if (merged.environment === 'outdoor' && !merged.autoPauseState) {
+      merged.autoPauseState = initialAutoPauseState('running', useSettingsStore.getState().autoPauseMode);
+    }
     if (
       !merged.splitVoiceState
       || !Number.isFinite(merged.splitVoiceState.lastSplitIndex)

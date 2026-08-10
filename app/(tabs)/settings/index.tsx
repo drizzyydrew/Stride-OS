@@ -50,8 +50,6 @@ import PickerWheel from '../../../src/components/ui/PickerWheel';
 import { formatYMDForDisplay, parseDisplayDateToYMD } from '../../../src/utils/dateFormatting';
 import StrideDateField from '../../../src/components/ui/StrideDateField';
 import { todayDateOnly } from '../../../src/utils/dateOnly';
-import { testVoiceCoaching } from '../../../src/lib/voiceCoach';
-import { getStrideLiveActivityDiagnostics, type StrideLiveActivityDiagnostics } from 'stride-live-activity';
 
 function formatHeight(heightCm: number, imperial: boolean) {
   if (!heightCm) return '';
@@ -168,6 +166,20 @@ const RACE_PRIORITY_OPTIONS: { key: RacePriority; label: string }[] = [
   { key: 'tune_up', label: 'Tune-Up' },
 ];
 
+const VOICE_MODE_COPY = {
+  silent: 'Silent',
+  minimal: 'Minimal cues',
+  standard: 'Standard cues',
+  coach: 'Coach cues',
+} as const;
+
+const AUTO_PAUSE_COPY = {
+  off: 'Off',
+  running_only: 'Running',
+  cycling_only: 'Cycling',
+  running_and_cycling: 'Running and cycling',
+} as const;
+
 type RaceFormState = {
   id:       string | null; // null = adding a new race
   name:     string;
@@ -189,25 +201,10 @@ export default function SettingsScreen() {
     experienceMode,
     setExperienceMode,
     voiceCueMode,
-    voiceCuePreferences,
     voiceDistanceUpdateInterval,
-    setVoiceCueMode,
-    setVoiceCuePreference,
-    setVoiceDistanceUpdateInterval,
     liveActivitiesEnabled,
-    setLiveActivitiesEnabled,
     autoPauseMode,
-    setAutoPauseMode,
-    announceAutoPause,
-    setAnnounceAutoPause,
-    announceAutoResume,
-    setAnnounceAutoResume,
     activityDetectionMode,
-    setActivityDetectionMode,
-    treadmillPhonePlacementDefault,
-    setTreadmillPhonePlacementDefault,
-    healthWorkoutSyncMode,
-    setHealthWorkoutSyncMode,
   } = useSettingsStore();
   const integrations = useIntegrationsStore();
   const legacyMorningReminderEnabled = useReadinessStore(state => state.reminderEnabled);
@@ -236,18 +233,6 @@ export default function SettingsScreen() {
   const [heightInput, setHeightInput] = useState('');
   const [weightInput, setWeightInput] = useState('');
   const [showNotificationTimePicker, setShowNotificationTimePicker] = useState(false);
-  const [voiceTestResult, setVoiceTestResult] = useState<string | null>(null);
-  const [liveDiagnostics, setLiveDiagnostics] = useState<StrideLiveActivityDiagnostics | null>(null);
-  const [showLiveActivityDiagnostics, setShowLiveActivityDiagnostics] = useState(false);
-  const visibleHealthWorkoutSyncMode = healthWorkoutSyncMode === 'automatic' ? 'review' : healthWorkoutSyncMode;
-
-  useEffect(() => {
-    setLiveDiagnostics(getStrideLiveActivityDiagnostics());
-  }, []);
-
-  useEffect(() => {
-    if (healthWorkoutSyncMode === 'automatic') setHealthWorkoutSyncMode('review');
-  }, [healthWorkoutSyncMode, setHealthWorkoutSyncMode]);
 
   function saveRaceForm() {
     if (!raceForm) return;
@@ -844,191 +829,43 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      {/* Voice coaching */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Text style={[styles.sectionLabel, { color: C.textDim }]}>VOICE COACHING</Text>
-        <Text style={[styles.settingCaption, { color: C.textMuted, marginBottom: 10 }]}>
-          Choose how often StrideOS speaks. The test button runs through the same delivery pipeline used during workouts.
-        </Text>
-        <SegmentControl
-          options={[
-            { label: 'Silent', value: 'silent' },
-            { label: 'Minimal', value: 'minimal' },
-            { label: 'Standard', value: 'standard' },
-            { label: 'Coach', value: 'coach' },
-          ]}
-          value={voiceCueMode}
-          onChange={value => setVoiceCueMode(value as typeof voiceCueMode)}
-          activeTone="primary"
-        />
-        <View style={{ marginTop: 10 }}>
-          {([
-            ['interval', 'Interval changes'],
-            ['pace', 'Pace alerts'],
-            ['heartRate', 'Heart-rate alerts'],
-            ['runWalk', 'Run/walk changes'],
-            ['motivation', 'Motivation'],
-            ['technique', 'Technique cues'],
-            ['fueling', 'Fueling reminders'],
-            ['hydration', 'Hydration reminders'],
-            ['navigation', 'Route navigation'],
-          ] as const).map(([key, label]) => (
-            <View key={key} style={[styles.settingRow, { borderBottomColor: C.border }]}>
-              <Text style={[styles.settingTitle, { color: C.text }]}>{label}</Text>
-              <Switch
-                value={voiceCuePreferences[key]}
-                onValueChange={enabled => setVoiceCuePreference(key, enabled)}
-                disabled={voiceCueMode === 'silent'}
-                trackColor={{ false: C.border, true: C.primaryDim }}
-                thumbColor={voiceCuePreferences[key] && voiceCueMode !== 'silent' ? C.primary : C.textDim}
-              />
-            </View>
-          ))}
+      <TouchableOpacity
+        style={[styles.card, styles.navCard, { backgroundColor: C.card, borderColor: C.border }]}
+        activeOpacity={0.75}
+        onPress={() => router.push('/(tabs)/settings/voice-coaching' as any)}
+      >
+        <View style={[styles.navIcon, { backgroundColor: C.primaryDim }]}>
+          <Ionicons name="volume-high-outline" size={19} color={C.primary} />
         </View>
-        <View style={[styles.settingRow, { borderBottomColor: C.border, flexDirection: 'column', alignItems: 'stretch', gap: 10 }]}>
-          <View style={styles.settingCopy}>
-            <Text style={[styles.settingTitle, { color: C.text }]}>Distance Updates</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>
-              Speak distance, split pace, average pace, and elapsed time during outdoor runs.
-            </Text>
-          </View>
-          <View>
-            <SegmentControl
-              options={[
-                { label: imp ? '0.5 mi' : '0.5 km', value: 'half' },
-                { label: imp ? '1 mi' : '1 km', value: 'one' },
-              ]}
-              value={voiceDistanceUpdateInterval}
-              onChange={value => setVoiceDistanceUpdateInterval(value as typeof voiceDistanceUpdateInterval)}
-              activeTone="primary"
-            />
-          </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.sectionLabel, { color: C.textDim, marginBottom: 4 }]}>VOICE COACHING</Text>
+          <Text style={[styles.settingTitle, { color: C.text }]}>{VOICE_MODE_COPY[voiceCueMode]}</Text>
+          <Text style={[styles.settingCaption, { color: C.textMuted }]}>
+            Examples, test playback, distance updates every {voiceDistanceUpdateInterval === 'half' ? (imp ? '0.5 mi' : '0.5 km') : (imp ? '1 mi' : '1 km')}, and cue categories.
+          </Text>
         </View>
-        <TouchableOpacity
-          style={[styles.testVoiceButton, { borderColor: C.primary, backgroundColor: C.primaryDim }]}
-          activeOpacity={0.75}
-          onPress={() => {
-            const state = testVoiceCoaching();
-            setVoiceTestResult(
-              state === 'unavailable'
-                ? 'Voice delivery is unavailable in this environment. Test on device before release.'
-                : `Voice test ${state}.`,
-            );
-          }}
-        >
-          <Ionicons name="volume-high-outline" size={17} color={C.primary} />
-          <Text style={[styles.testVoiceText, { color: C.primary }]}>Test Voice Coaching</Text>
-        </TouchableOpacity>
-      {voiceTestResult ? (
-          <Text style={[styles.settingCaption, { color: C.textMuted, marginTop: 8 }]}>{voiceTestResult}</Text>
-        ) : null}
-      </View>
+        <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+      </TouchableOpacity>
 
-      {/* Workout intelligence */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Text style={[styles.sectionLabel, { color: C.textDim }]}>WORKOUT INTELLIGENCE</Text>
-        <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
-          <View style={styles.settingCopy}>
-            <Text style={[styles.settingTitle, { color: C.text }]}>Live Activities</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Lock Screen and Dynamic Island cards for active workouts. Display supports iOS 17+; Lock Screen controls require iOS 18+.</Text>
-          </View>
-          <Switch
-            value={liveActivitiesEnabled}
-            onValueChange={setLiveActivitiesEnabled}
-            trackColor={{ false: C.cardAlt, true: C.primary }}
-            thumbColor={C.card}
-          />
+      <TouchableOpacity
+        style={[styles.card, styles.navCard, { backgroundColor: C.card, borderColor: C.border }]}
+        activeOpacity={0.75}
+        onPress={() => router.push('/(tabs)/settings/workout-intelligence' as any)}
+      >
+        <View style={[styles.navIcon, { backgroundColor: C.cardAlt }]}>
+          <Ionicons name="pulse-outline" size={19} color={C.primary} />
         </View>
-        <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'stretch', gap: 10, borderBottomColor: C.border }]}>
-          <View style={styles.settingCopy}>
-            <Text style={[styles.settingTitle, { color: C.text }]}>Auto-Pause</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Uses GPS quality, movement, cadence, and repeated samples before pausing.</Text>
-          </View>
-          <SegmentControl
-            options={[
-              { label: 'Off', value: 'off' },
-              { label: 'Run', value: 'running_only' },
-              { label: 'Ride', value: 'cycling_only' },
-              { label: 'Both', value: 'running_and_cycling' },
-            ]}
-            value={autoPauseMode}
-            onChange={value => setAutoPauseMode(value as typeof autoPauseMode)}
-            activeTone="primary"
-          />
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.sectionLabel, { color: C.textDim, marginBottom: 4 }]}>WORKOUT INTELLIGENCE</Text>
+          <Text style={[styles.settingTitle, { color: C.text }]}>
+            Live Activities {liveActivitiesEnabled ? 'on' : 'off'} · Auto-Pause {AUTO_PAUSE_COPY[autoPauseMode]}
+          </Text>
+          <Text style={[styles.settingCaption, { color: C.textMuted }]}>
+            Lock Screen workout cards, 2-second GPS auto-pause, activity detection, and treadmill defaults. Detection: {activityDetectionMode === 'off' ? 'off' : 'suggestions on'}.
+          </Text>
         </View>
-        <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
-          <View style={styles.settingCopy}>
-            <Text style={[styles.settingTitle, { color: C.text }]}>Announce Auto-Pause</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Voice cue when StrideOS pauses because you stopped moving.</Text>
-          </View>
-          <Switch value={announceAutoPause} onValueChange={setAnnounceAutoPause} trackColor={{ false: C.cardAlt, true: C.primary }} thumbColor={C.card} />
-        </View>
-        <View style={[styles.settingRow, { borderBottomColor: C.border }]}>
-          <View style={styles.settingCopy}>
-            <Text style={[styles.settingTitle, { color: C.text }]}>Announce Auto-Resume</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Voice cue after StrideOS confirms you are moving again.</Text>
-          </View>
-          <Switch value={announceAutoResume} onValueChange={setAnnounceAutoResume} trackColor={{ false: C.cardAlt, true: C.primary }} thumbColor={C.card} />
-        </View>
-        <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'stretch', gap: 10, borderBottomColor: C.border }]}>
-          <View style={styles.settingCopy}>
-            <Text style={[styles.settingTitle, { color: C.text }]}>Activity Detection</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Suggests starting a workout after sustained evidence. It will not start or save workouts silently.</Text>
-          </View>
-          <SegmentControl
-            options={[
-              { label: 'Off', value: 'off' },
-              { label: 'Run', value: 'suggest_running' },
-              { label: 'Ride', value: 'suggest_cycling' },
-              { label: 'Both', value: 'suggest_running_and_cycling' },
-            ]}
-            value={activityDetectionMode}
-            onChange={value => setActivityDetectionMode(value as typeof activityDetectionMode)}
-            activeTone="primary"
-          />
-          <Text style={[styles.settingCaption, { color: C.textMuted }]}>Detection may not run after force-quit or full suspension, and StrideOS does not keep high-accuracy GPS on all day.</Text>
-        </View>
-        <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'stretch', gap: 10 }]}>
-          <View style={styles.settingCopy}>
-            <Text style={[styles.settingTitle, { color: C.text }]}>Treadmill Phone Default</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>You can change this before every treadmill workout.</Text>
-          </View>
-          <SegmentControl
-            options={[
-              { label: 'On body', value: 'on_body' },
-              { label: 'Resting', value: 'resting_on_treadmill' },
-              { label: 'Sensor', value: 'connected_sensor' },
-            ]}
-            value={treadmillPhonePlacementDefault}
-            onChange={value => setTreadmillPhonePlacementDefault(value as typeof treadmillPhonePlacementDefault)}
-            activeTone="primary"
-          />
-        </View>
-        {experienceMode !== 'simple' ? (
-          <TouchableOpacity
-            style={[styles.connectBtn, { backgroundColor: C.cardAlt, alignSelf: 'flex-start', marginTop: 12 }]}
-            onPress={() => setShowLiveActivityDiagnostics(value => !value)}
-            activeOpacity={0.8}
-          >
-            <Text style={{ fontSize: 12, fontWeight: '700', color: C.text }}>
-              {showLiveActivityDiagnostics ? 'Hide Advanced Diagnostics' : 'Show Advanced Diagnostics'}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-        {experienceMode !== 'simple' && showLiveActivityDiagnostics ? (
-          <View style={[styles.diagnosticBox, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
-            <Text style={[styles.settingTitle, { color: C.text }]}>Live Activity Diagnostics</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>iOS allowed: {liveDiagnostics?.areActivitiesEnabled ? 'Yes' : 'No or unavailable'}</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Extension bundled: StrideRunLiveActivity</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Extension support: display iOS 17+, controls iOS 18+</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Active count: {(liveDiagnostics?.activeRunActivityCount ?? 0) + (liveDiagnostics?.activeStrengthActivityCount ?? 0)}</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Last start: {liveDiagnostics?.lastStartResult || 'None'}</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Last update: {liveDiagnostics?.lastUpdateResult || 'None'}</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Last end: {liveDiagnostics?.lastEndResult || 'None'}</Text>
-            <Text style={[styles.settingCaption, { color: liveDiagnostics?.lastRequestError ? C.warning : C.textMuted }]}>Last error: {liveDiagnostics?.lastRequestError || 'None'}</Text>
-          </View>
-        ) : null}
-      </View>
+        <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+      </TouchableOpacity>
 
       {/* Training Definitions */}
       <TouchableOpacity
@@ -1195,29 +1032,6 @@ export default function SettingsScreen() {
             <Text style={[{ fontSize: 12, fontWeight: '700', color: integrations.healthKitEnabled ? C.positive : C.onPrimary }]}>
               {busy === 'health' ? 'Connecting...' : integrations.healthKitEnabled ? '✓ Connected' : 'Connect'}
             </Text>
-          </TouchableOpacity>
-        </View>
-        <View style={[styles.settingRow, { flexDirection: 'column', alignItems: 'stretch', gap: 10, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 14 }]}>
-          <View style={styles.settingCopy}>
-            <Text style={[styles.settingTitle, { color: C.text }]}>Health Workout Sync</Text>
-            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Import completed Apple Fitness workouts into Activity history.</Text>
-          </View>
-          <SegmentControl
-            options={[
-              { label: 'Off', value: 'off' },
-              { label: 'Review', value: 'review' },
-            ]}
-            value={visibleHealthWorkoutSyncMode}
-            onChange={value => setHealthWorkoutSyncMode(value as typeof healthWorkoutSyncMode)}
-            activeTone="primary"
-          />
-          <Text style={[styles.settingCaption, { color: C.textMuted }]}>Automatic background import is not enabled yet. Use Review to choose workouts before importing.</Text>
-          <TouchableOpacity
-            style={[styles.connectBtn, { backgroundColor: C.primary, alignSelf: 'flex-start' }]}
-            onPress={() => router.push('/(tabs)/more/health-sync' as any)}
-            activeOpacity={0.8}
-          >
-            <Text style={{ fontSize: 12, fontWeight: '700', color: C.onPrimary }}>Open Sync Review</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -1422,6 +1236,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 16,
     marginBottom: 10,
+  },
+  navCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  navIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionLabel: {
     fontSize: 11,
