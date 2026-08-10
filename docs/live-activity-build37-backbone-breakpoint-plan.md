@@ -2,7 +2,7 @@
 
 Date: 2026-08-09
 Branch: build-19-v3-foundation
-Current release under test: Build 52, commit `1bce64d9df661ccea5c02543a7a101b4beb93708`
+Current release under test: Build 55
 Known-good device baseline: Build 37, commit `0526d81`
 First suspected failing boundary: Build 38, commit `e77dced`
 
@@ -321,19 +321,35 @@ Implementation boundary:
 - Restored strength display fields: `prescription`, `loadDisplay`, `progressLabel`, and passive `controlState`.
 - Kept Build 37 start-before-request lifecycle, first-active fallback, simple App Group command shape, no native session/source matching, no MapKit route bridge, and no persisted ActivityKit id store.
 
-### Build 55: Reintroduce pending controls and App Group command ownership
+### Build 55: Split Build 54 failure between native payload and widget rendering
+
+Status: implemented as the third isolation slice after Build 54 failed device QA.
+
+Keep Build 54's expanded native content-state fields and JS/native argument passing, but restore the Build 53 widget rendering that only reads the original Build 37/53 display fields.
+
+Pass/fail isolates Group A native payload encoding from Group D widget rendering:
+- If Build 55 works, the Build 54 failure is in the Build 38 widget UI/control rendering.
+- If Build 55 fails, the Build 54 failure is in the expanded ActivityKit content-state/native payload contract itself.
+
+Implementation boundary:
+- Kept expanded run content-state fields in Swift attributes/module and TypeScript bridge arguments.
+- Kept expanded strength content-state fields in Swift attributes/module and TypeScript bridge arguments.
+- Restored `targets/StrideRunLiveActivity/StrideRunLiveActivity.swift` to the Build 53 simple widget rendering.
+- Still no pending command ownership, no native session/source matching, no MapKit route bridge, and no persisted ActivityKit id store.
+
+### Build 56: Reintroduce pending controls and App Group command ownership
 
 Add pending control state and command consumption behavior while keeping payload/lifecycle otherwise known-good.
 
 Pass/fail isolates Groups B and C.
 
-### Build 56: Reintroduce multi-source/outdoor/route Live Activity support
+### Build 57: Reintroduce multi-source/outdoor/route Live Activity support
 
 Add outdoor activity, run/walk, cycling/skiing speed-vs-pace payloads, route guidance text, and MapKit bridge if needed.
 
 Pass/fail isolates Groups D and E.
 
-### Build 57: Reintroduce current identity model
+### Build 58: Reintroduce current identity model
 
 Add `workoutInstanceId`, exact source/session matching, diagnostics, and current command reconciler behavior.
 
@@ -363,8 +379,9 @@ Before making code changes, choose one of these build ladders:
 
 My recommendation is the faster ladder first:
 
-1. Build 53: exact Build 37 backbone in Build 52 app.
-2. Build 54: add expanded display payload.
-3. Build 55: add command/session ownership.
+1. Build 53: exact Build 37 backbone in Build 52 app. Result: passed device QA.
+2. Build 54: add expanded display payload and widget rendering. Result: failed device QA.
+3. Build 55: keep expanded native payload, restore simple Build 53 widget rendering.
+4. Build 56: if Build 55 passes, add command/session ownership.
 
-If Build 53 works and Build 54 fails, the culprit is the expanded payload/widget display contract. If Build 54 works and Build 55 fails, the culprit is command ownership/pending/session identity. If Build 53 fails, we should stop and inspect generated native packaging and JS caller/module-load behavior before spending more build numbers.
+If Build 55 works, focus on the Build 38 widget UI and control rendering. If Build 55 fails, revert the expanded native content-state fields next and keep the simple widget until the exact ActivityKit encoding problem is isolated.

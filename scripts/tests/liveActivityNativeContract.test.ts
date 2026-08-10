@@ -59,18 +59,22 @@ test('Build 53 restores Build 37 extension target and iOS availability gates', (
   assert.match(intentSource, /@available\(iOS 18\.0, \*\)[\s\S]*struct PauseRunIntent/);
 });
 
-test('Build 54 widget reads the Build 38 display payload without changing target setup', () => {
-  assert.match(widgetSource, /context\.state\.metricValue/);
-  assert.match(widgetSource, /context\.state\.metricUnit/);
-  assert.match(widgetSource, /context\.state\.metricLabel/);
-  assert.match(widgetSource, /context\.state\.activityType/);
-  assert.match(widgetSource, /context\.state\.navigationInstruction/);
+test('Build 55 leaves expanded native payload fields unused by the simple Build 53 widget', () => {
+  assert.match(moduleSource, /metricValue: String/);
+  assert.match(moduleSource, /activityType: String/);
+  assert.match(moduleSource, /controlState: String/);
+  assert.match(widgetSource, /context\.state\.averagePace/);
+  assert.doesNotMatch(widgetSource, /context\.state\.metricValue/);
+  assert.doesNotMatch(widgetSource, /context\.state\.metricUnit/);
+  assert.doesNotMatch(widgetSource, /context\.state\.metricLabel/);
+  assert.doesNotMatch(widgetSource, /context\.state\.activityType/);
+  assert.doesNotMatch(widgetSource, /context\.state\.navigationInstruction/);
   assert.match(widgetSource, /context\.state\.zoneLabel/);
   assert.match(widgetSource, /context\.state\.currentExercise/);
   assert.match(widgetSource, /context\.state\.setsCompleted/);
-  assert.match(widgetSource, /context\.state\.prescription/);
-  assert.match(widgetSource, /context\.state\.loadDisplay/);
-  assert.match(widgetSource, /priorityGuidance/);
+  assert.doesNotMatch(widgetSource, /context\.state\.prescription/);
+  assert.doesNotMatch(widgetSource, /context\.state\.loadDisplay/);
+  assert.doesNotMatch(widgetSource, /priorityGuidance/);
   assert.match(widgetSource, /PauseStrengthIntent/);
   assert.match(widgetSource, /ResumeStrengthIntent/);
 });

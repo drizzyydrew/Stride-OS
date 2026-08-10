@@ -69,21 +69,27 @@ test('Live Activity metric configs avoid irrelevant metrics by activity type', (
   assert.equal(liveActivityMetricConfig({ activityType: 'strength' }).primaryMetric, 'sets');
 });
 
-test('Build 54 restores Build 38 display payload while keeping Build 37 lifecycle', () => {
+test('Build 55 keeps expanded native display payload while restoring Build 53 widget rendering', () => {
   const moduleIndex = read('modules/stride-live-activity/src/index.ts');
   const swiftModule = read('modules/stride-live-activity/ios/Module/StrideLiveActivityModule.swift');
   const widget = read('targets/StrideRunLiveActivity/StrideRunLiveActivity.swift');
 
   assert.match(moduleIndex, /workoutInstanceId/);
-  assert.match(moduleIndex, /build54_display_payload/);
+  assert.match(moduleIndex, /build55_expanded_payload_simple_widget/);
   assert.match(moduleIndex, /payload\.activityType \?\? 'running'/);
   assert.match(moduleIndex, /payload\.metricValue \?\? payload\.averagePace/);
+  assert.match(swiftModule, /activityType: String/);
+  assert.match(swiftModule, /metricValue: String/);
+  assert.match(swiftModule, /controlState: String/);
   assert.match(swiftModule, /endExistingActivityIfNeeded/);
   assert.match(swiftModule, /endExistingStrengthActivityIfNeeded/);
   assert.doesNotMatch(swiftModule, /controlStatePreservingPending/);
   assert.doesNotMatch(swiftModule, /getRouteDirections/);
   assert.match(widget, /minimumScaleFactor/);
   assert.match(widget, /LockMetricCell/);
-  assert.match(widget, /CompactRunControls/);
-  assert.match(widget, /activityIcon/);
+  assert.match(widget, /context\.state\.averagePace/);
+  assert.doesNotMatch(widget, /CompactRunControls/);
+  assert.doesNotMatch(widget, /priorityGuidance/);
+  assert.doesNotMatch(widget, /activityIcon/);
+  assert.doesNotMatch(widget, /context\.state\.metricValue/);
 });

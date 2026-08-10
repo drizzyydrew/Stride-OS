@@ -381,7 +381,7 @@ export function getStrideLiveActivityDiagnostics(): StrideLiveActivityDiagnostic
     pendingCommandSessionId: '',
     pendingCommandSessionSource: '',
     pendingCommandCreatedAt: 0,
-    lastStartResult: 'build54_display_payload',
+    lastStartResult: 'build55_expanded_payload_simple_widget',
     lastUpdateResult: '',
     lastEndResult: '',
     lastRequestError: '',
