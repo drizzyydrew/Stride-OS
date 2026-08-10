@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +10,8 @@ import { radiusTokens, typographyTokens } from '../../../src/theme/tokens';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import { describeRunWalk } from '../../../src/utils/scheduledSessions';
+import { useScheduledSessionSelectionStore } from '../../../src/store/scheduledSessionSelectionStore';
+import { toYMD } from '../../../src/utils/calendarEngine';
 
 function line(label: string, value: string | undefined | null): { label: string; value: string } | null {
   if (!value) return null;
@@ -22,6 +24,7 @@ export default function ScheduledWorkoutDetailScreen() {
   const { scheduledSessionId } = useLocalSearchParams<{ scheduledSessionId?: string }>();
   const weekPlan = useWeekPlan();
   const scheduled = useScheduledSessions(weekPlan);
+  const selectForDate = useScheduledSessionSelectionStore(state => state.selectForDate);
   const session = scheduledSessionId ? scheduled.getSessionById(scheduledSessionId) : null;
   const workout = session?.richWorkout ?? null;
 
@@ -44,6 +47,25 @@ export default function ScheduledWorkoutDetailScreen() {
     line('Adaptation context', session.adaptationReason ? 'Updated after a plan decision.' : 'Maintain current progression unless completion history or readiness suggests otherwise.'),
     line('Confidence', session.runWalk ? 'Limited-history pace guidance: effort, RPE, and talk test are primary.' : workout?.paceGuidance.description),
   ].filter(Boolean) as { label: string; value: string }[] : [];
+
+  function startWorkout() {
+    if (!session) return;
+    const today = toYMD(new Date());
+    selectForDate(today, session.scheduledSessionId);
+    if (['run', 'run_walk', 'walk'].includes(session.activityType)) {
+      router.push({ pathname: '/(tabs)/training', params: { tab: 'active', scheduledSessionId: session.scheduledSessionId } } as never);
+      return;
+    }
+    if (session.activityType === 'strength' || session.activityType === 'mobility') {
+      router.push('/(tabs)/strength' as never);
+      return;
+    }
+    if (session.activityType === 'cycling') {
+      router.push({ pathname: '/(tabs)/activity/indoor-ride', params: { scheduledSessionId: session.scheduledSessionId } } as never);
+      return;
+    }
+    router.push({ pathname: '/(tabs)/activity/manual', params: { scheduledSessionId: session.scheduledSessionId, activityType: session.activityType, mode: 'complete' } } as never);
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: C.bg }]} edges={['top']}>
@@ -71,6 +93,15 @@ export default function ScheduledWorkoutDetailScreen() {
                 <Text style={[styles.body, { color: C.text }]}>{item.value}</Text>
               </View>
             ))}
+            <TouchableOpacity
+              style={[styles.startButton, { backgroundColor: C.primary }]}
+              onPress={startWorkout}
+              accessibilityRole="button"
+              accessibilityLabel={`Start workout ${session.title}`}
+            >
+              <Ionicons name="play" size={17} color={C.onPrimary} />
+              <Text style={[styles.startButtonText, { color: C.onPrimary }]}>START WORKOUT</Text>
+            </TouchableOpacity>
           </>
         )}
       </ScrollView>
@@ -86,4 +117,6 @@ const styles = StyleSheet.create({
   title: { fontSize: typographyTokens.sizes.sectionTitle, fontWeight: typographyTokens.weights.black },
   label: { fontSize: typographyTokens.sizes.metricLabel, fontWeight: typographyTokens.weights.black, letterSpacing: 0.7, marginBottom: spacing.xs },
   body: { fontSize: typographyTokens.sizes.body, lineHeight: 20, fontWeight: typographyTokens.weights.medium },
+  startButton: { minHeight: 54, borderRadius: radiusTokens.lg, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  startButtonText: { fontSize: typographyTokens.sizes.button, fontWeight: typographyTokens.weights.black, letterSpacing: 0.7 },
 });

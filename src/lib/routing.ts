@@ -57,7 +57,21 @@ export async function buildRouteGuidance(
   }
 
   try {
-    const result = await getAppleRouteDirections(geometry, mode);
+    const getRouteDirections = getAppleRouteDirections as unknown as (
+      routeGeometry: RoutePoint[],
+      routeMode: RouteNavigationMode,
+    ) => Promise<{
+      geometry: RoutePoint[];
+      steps: {
+        id: string;
+        instruction: string;
+        distanceMeters: number;
+        expectedTravelTimeSeconds: number;
+        start: RoutePoint;
+        end: RoutePoint;
+      }[];
+    } | null>;
+    const result = await getRouteDirections(geometry, mode);
     if (!result || result.geometry.length < 2 || result.steps.length === 0) {
       return createBreadcrumbGuidancePlan(geometry, mode);
     }

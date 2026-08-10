@@ -19,7 +19,9 @@ test('Activity detail waits for legacy hydration and provides designed recovery 
   assert.match(detail, /Back to Activity/);
   assert.match(detail, /Return to Today/);
   assert.doesNotMatch(detail, />Activity not found</);
-  assert.match(detail, /activity\.activityType === 'snowboarding'/);
+  assert.match(detail, /buildActivitySummary/);
+  assert.match(detail, /useSettingsStore/);
+  assert.match(source('src/utils/activitySummary.ts'), /'snowboarding'/);
 });
 
 test('hydration steppers stack on phone widths and embedded content avoids excessive bottom padding', () => {

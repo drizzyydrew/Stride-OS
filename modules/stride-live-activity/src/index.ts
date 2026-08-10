@@ -83,6 +83,9 @@ export type StrideRunControlCommand = {
   id: string;
   action: StrideControlAction;
   createdAt: number;
+  workoutInstanceId?: string;
+  sessionId?: string;
+  sessionSource?: string;
 };
 
 const VALID_CONTROL_ACTIONS: readonly StrideControlAction[] = [

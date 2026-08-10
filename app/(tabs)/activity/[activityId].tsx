@@ -1,4 +1,4 @@
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Polyline } from '../../../src/components/maps/MapComponents';
@@ -10,17 +10,8 @@ import { useColors } from '../../../src/theme/useColors';
 import { resolveActivityDetail } from '../../../src/utils/activityResolution';
 import { displayLabel } from '../../../src/utils/displayLabels';
 import { useExperienceModeAllows } from '../../../src/hooks/useExperienceMode';
-
-function duration(seconds?: number): string {
-  const total = Math.round(seconds ?? 0);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
-
-function pace(secondsPerKm?: number): string {
-  if (!secondsPerKm) return '--';
-  const secondsPerMile = secondsPerKm * 1.609344;
-  return `${Math.floor(secondsPerMile / 60)}:${String(Math.round(secondsPerMile % 60)).padStart(2, '0')}/mi`;
-}
+import { useSettingsStore } from '../../../src/store/settingsStore';
+import { buildActivityShareMessage, buildActivitySummary } from '../../../src/utils/activitySummary';
 
 export default function ActivityDetailScreen() {
   const C = useColors();
@@ -28,6 +19,7 @@ export default function ActivityDetailScreen() {
   const { activityId } = useLocalSearchParams<{ activityId?: string | string[] }>();
   const activities = useActivityStore(state => state.activities);
   const hydrationStatus = useActivityStore(state => state.hydrationStatus);
+  const units = useSettingsStore(state => state.units);
   const showDataRichDetails = useExperienceModeAllows('data_rich');
   const resolution = resolveActivityDetail(activities, activityId, hydrationStatus);
   if (resolution.status === 'loading') return (
@@ -66,24 +58,15 @@ export default function ActivityDetailScreen() {
   const activity = resolution.activity;
 
   const route = activity.metrics.routeCoordinates ?? [];
-  const distanceMiles = (activity.metrics.distanceMeters ?? 0) / 1609.344;
-  const isSpeed = activity.activityType === 'cycling'
-    || activity.activityType.includes('skiing')
-    || activity.activityType === 'snowboarding';
-  const metricCards = [
-    ['Duration', duration(activity.metrics.durationSeconds)],
-    activity.metrics.distanceMeters ? ['Distance', `${distanceMiles.toFixed(2)} mi`] : null,
-    isSpeed && activity.metrics.speed?.averageMetersPerSecond
-      ? ['Average speed', `${(activity.metrics.speed.averageMetersPerSecond * 2.23694).toFixed(1)} mph`]
-      : activity.metrics.pace?.averageSecondsPerKilometer
-        ? ['Average pace', pace(activity.metrics.pace.averageSecondsPerKilometer)]
-        : null,
-    showDataRichDetails && activity.metrics.averageHeartRateBpm ? ['Average HR', `${activity.metrics.averageHeartRateBpm} bpm`] : null,
-    showDataRichDetails && activity.metrics.maximumHeartRateBpm ? ['Maximum HR', `${activity.metrics.maximumHeartRateBpm} bpm`] : null,
-    activity.metrics.elevationGainMeters ? ['Elevation gain', `${Math.round(activity.metrics.elevationGainMeters * 3.28084)} ft`] : null,
-    activity.rpe ? ['RPE', `${activity.rpe}/10`] : null,
-    showDataRichDetails ? ['Whole-body load', `${Math.round(activity.trainingLoad.wholeBody)}`] : null,
-  ].filter((item): item is string[] => Boolean(item));
+  const summary = buildActivitySummary(activity, units, { dataRich: showDataRichDetails });
+
+  async function shareActivity() {
+    try {
+      await Share.share({ message: buildActivityShareMessage(activity, units) });
+    } catch (error) {
+      Alert.alert('Share unavailable', error instanceof Error ? error.message : 'StrideOS could not open the share sheet.');
+    }
+  }
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
@@ -92,13 +75,22 @@ export default function ActivityDetailScreen() {
         title={displayLabel(activity.activityType)}
         onBack={() => router.back()}
         right={(
-          <TouchableOpacity
-            style={[s.editButton, { backgroundColor: C.card, borderColor: C.border }]}
-            onPress={() => router.push({ pathname: '/(tabs)/activity/manual', params: { activityId: activity.id, scheduledSessionId: activity.scheduledSessionId } } as never)}
-            accessibilityLabel="Edit activity"
-          >
-            <Text style={[s.editText, { color: C.primary }]}>Edit</Text>
-          </TouchableOpacity>
+          <View style={s.headerActions}>
+            <TouchableOpacity
+              style={[s.iconButton, { backgroundColor: C.card, borderColor: C.border }]}
+              onPress={shareActivity}
+              accessibilityLabel="Share activity"
+            >
+              <Ionicons name="share-outline" size={18} color={C.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.editButton, { backgroundColor: C.card, borderColor: C.border }]}
+              onPress={() => router.push({ pathname: '/(tabs)/activity/manual', params: { activityId: activity.id, scheduledSessionId: activity.scheduledSessionId } } as never)}
+              accessibilityLabel="Edit activity"
+            >
+              <Text style={[s.editText, { color: C.primary }]}>Edit</Text>
+            </TouchableOpacity>
+          </View>
         )}
       />
       <ScrollView contentContainerStyle={s.content}>
@@ -120,24 +112,24 @@ export default function ActivityDetailScreen() {
           </View>
         ) : null}
         <View style={s.grid}>
-          {metricCards.map(([label, value]) => (
+          {summary.primary.map(({ label, value }) => (
             <View key={label} style={[s.metric, { backgroundColor: C.card, borderColor: C.border }]}>
               <Text style={[s.metricValue, { color: C.text }]}>{value}</Text>
               <Text style={[s.metricLabel, { color: C.textMuted }]}>{label}</Text>
             </View>
           ))}
         </View>
-        {showDataRichDetails && activity.metrics.heartRateZoneSeconds ? (
-          <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
-            <Text style={[s.eyebrow, { color: C.textDim }]}>HEART-RATE ZONES</Text>
-            {Object.entries(activity.metrics.heartRateZoneSeconds).map(([zone, seconds]) => (
-              <View key={zone} style={s.zoneRow}>
-                <Text style={[s.body, { color: C.text }]}>Zone {zone}</Text>
-                <Text style={[s.body, { color: C.textMuted }]}>{Math.round((seconds ?? 0) / 60)} min</Text>
+        {summary.sections.map(section => (
+          <View key={section.title} style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+            <Text style={[s.eyebrow, { color: C.textDim }]}>{section.title.toUpperCase()}</Text>
+            {section.metrics.map(item => (
+              <View key={item.label} style={s.zoneRow}>
+                <Text style={[s.body, { color: C.text }]}>{item.label}</Text>
+                <Text style={[s.bodyValue, { color: C.textMuted }]}>{item.value}</Text>
               </View>
             ))}
           </View>
-        ) : null}
+        ))}
         {activity.notes || activity.symptoms?.length ? (
           <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[s.eyebrow, { color: C.textDim }]}>NOTES</Text>
@@ -159,6 +151,8 @@ const s = StyleSheet.create({
   recoveryPrimary: { width: '100%', minHeight: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   recoverySecondary: { width: '100%', minHeight: 48, borderRadius: 13, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 10 },
   recoveryPrimaryText: { fontSize: 14, fontWeight: '900' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  iconButton: { width: 40, minHeight: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   editButton: { minWidth: 64, minHeight: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   editText: { fontSize: 13, fontWeight: '900' },
   eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
@@ -173,4 +167,5 @@ const s = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 12, gap: 10 },
   zoneRow: { flexDirection: 'row', justifyContent: 'space-between' },
   body: { fontSize: 13, lineHeight: 20 },
+  bodyValue: { flexShrink: 1, marginLeft: 14, fontSize: 13, lineHeight: 20, textAlign: 'right' },
 });

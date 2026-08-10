@@ -3,7 +3,7 @@ import {
   Alert, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import MapView, { Marker, Polyline, type LatLng, type MapViewRef, type Region } from '../../../src/components/maps/MapComponents';
@@ -2749,6 +2749,7 @@ export default function RunningScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const navigation = useNavigation();
+  const params = useLocalSearchParams<{ tab?: string; scheduledSessionId?: string }>();
   const [tab, setTab] = useState<RunTab>('plan');
   const isActive = useActiveRunStore(s => s.isActive);
   const isPaused = useActiveRunStore(s => s.isPaused);
@@ -2770,6 +2771,13 @@ export default function RunningScreen() {
     parent.setOptions({ tabBarStyle: isRunning ? { display: 'none' } : undefined });
     return () => parent.setOptions({ tabBarStyle: undefined });
   }, [isRunning, navigation]);
+
+  useEffect(() => {
+    if (params.tab === 'active') setTab('active');
+    if (params.tab === 'routes') setTab('routes');
+    if (params.tab === 'hydration') setTab('hydration');
+    if (params.tab === 'plan') setTab('plan');
+  }, [params.tab, params.scheduledSessionId]);
 
   if (isRunning) {
     return (
