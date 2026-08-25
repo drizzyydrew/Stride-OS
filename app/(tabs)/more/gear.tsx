@@ -6,6 +6,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
+import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
+import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import { useColors } from '../../../src/theme/useColors';
 import { useGearStore } from '../../../src/store/gearStore';
 import { useActivityStore } from '../../../src/store/activityStore';
@@ -14,6 +16,7 @@ import { getBleUnavailableReason } from '../../../src/lib/ble/manager';
 
 export default function GearScreen() {
   const C = useColors();
+  useFeatureTour('gear');
   const router = useRouter();
   const shoes = useGearStore(s => s.shoes);
   const equipment = useGearStore(s => s.equipment);
@@ -78,7 +81,7 @@ export default function GearScreen() {
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
       <ScreenHeader eyebrow="GEAR" title="Shoes & Equipment" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <FeatureTourTarget targetId="gear.shoes" style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.section, { color: C.textDim }]}>ADD SHOE</Text>
           <View style={s.inputRow}>
             <TextInput
@@ -99,14 +102,15 @@ export default function GearScreen() {
           <TouchableOpacity style={[s.primary, { backgroundColor: C.primary, opacity: brand.trim() && model.trim() ? 1 : 0.55 }]} onPress={saveShoe} disabled={!brand.trim() || !model.trim()}>
             <Text style={[s.primaryText, { color: C.onPrimary }]}>Save Shoe</Text>
           </TouchableOpacity>
-        </View>
+        </FeatureTourTarget>
 
         <Text style={[s.section, { color: C.textDim }]}>VISUAL SHOE CATALOG</Text>
         {shoes.length === 0 ? (
-          <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <FeatureTourTarget targetId="gear.rotation" style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[s.body, { color: C.textMuted }]}>No shoes added yet. Mileage will be derived from linked activities after you assign shoes to runs.</Text>
-          </View>
+          </FeatureTourTarget>
         ) : (
+          <FeatureTourTarget targetId="gear.rotation">
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.shoeCarousel}>
             {shoes.map(shoe => {
               const summary = mileage.find(item => item.shoeId === shoe.id);
@@ -158,9 +162,10 @@ export default function GearScreen() {
               );
             })}
           </ScrollView>
+          </FeatureTourTarget>
         )}
 
-        <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <FeatureTourTarget targetId="gear.equipment" style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.section, { color: C.textDim }]}>ADD EQUIPMENT</Text>
           <Text style={[s.body, { color: C.textMuted, marginBottom: 8 }]}>
             Pairing supports BLE heart-rate straps, treadmills/trainers, foot pods, cycling speed/cadence sensors, and power meters on device. Manual fallback remains available.
@@ -183,13 +188,13 @@ export default function GearScreen() {
               <Text style={[s.link, { color: C.primary }]}>Scan for Bluetooth Equipment</Text>
             </TouchableOpacity>
           )}
-        </View>
+        </FeatureTourTarget>
 
         <Text style={[s.section, { color: C.textDim }]}>EQUIPMENT</Text>
         {equipment.length === 0 ? (
-          <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[s.body, { color: C.textMuted }]}>Equipment will support pairing and source preferences in the Bluetooth phase. Manual fallback stays available.</Text>
-          </View>
+        </View>
         ) : equipment.map(item => (
           <View key={item.id} style={[s.card, { backgroundColor: C.card, borderColor: C.border, opacity: item.active ? 1 : 0.6 }]}>
             <View style={s.row}>

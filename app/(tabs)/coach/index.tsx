@@ -58,6 +58,8 @@ import type { MobilityCompletion } from '../../../src/types/mobility';
 import { generateCoachingOutput } from '../../../src/utils/coachEngine';
 import WeeklyCoachCard from '../../../src/components/coaching/WeeklyCoachCard';
 import CoachInsightsCard from '../../../src/components/coaching/CoachInsightsCard';
+import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
+import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import RaceReadinessCard from '../../../src/components/coaching/RaceReadinessCard';
 import { todayDateKey } from '../../../src/types/checkin';
 import type { CompletedWorkoutRecord } from '../../../src/types/training';
@@ -595,6 +597,7 @@ function buildContextSummary(data: ReturnType<typeof useOnboardingStore.getState
 
 export default function CoachScreen() {
   const C = useColors();
+  useFeatureTour('ai-coach');
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ ask?: string; analysisId?: string }>();
   const data      = useOnboardingStore(s => s.data);
@@ -832,7 +835,7 @@ export default function CoachScreen() {
         </View>
       </View>
 
-      <View style={s.segment}>
+      <FeatureTourTarget targetId="coach.tabs" style={s.segment}>
         <Pressable
           style={[s.segmentBtn, tab === 'chat' && s.segmentBtnActive]}
           onPress={() => setTab('chat')}
@@ -851,7 +854,7 @@ export default function CoachScreen() {
         >
           <Text style={[s.segmentTxt, tab === 'video' && s.segmentTxtActive]}>Video</Text>
         </Pressable>
-      </View>
+      </FeatureTourTarget>
 
       {tab === 'chat' && (!isConfigured || (coachHealth && !coachHealth.ok)) ? (
         <View style={s.noKey}>
@@ -893,10 +896,10 @@ export default function CoachScreen() {
             keyboardShouldPersistTaps="handled"
             onScrollBeginDrag={() => Keyboard.dismiss()}
           >
-            <View style={s.contextCard}>
+            <FeatureTourTarget targetId="coach.context" style={s.contextCard}>
               <Text style={s.contextEyebrow}>Your Training Context</Text>
               <Text style={s.contextTxt}>{contextSummary}</Text>
-            </View>
+            </FeatureTourTarget>
 
             {messages.length === 0 && (
               <View style={s.empty}>
@@ -937,7 +940,7 @@ export default function CoachScreen() {
             )}
           </ScrollView>
 
-          <View style={[s.inputRow, { paddingBottom: insets.bottom + 10 }]}>
+          <FeatureTourTarget targetId="coach.input" style={[s.inputRow, { paddingBottom: insets.bottom + 10 }]}>
             <TextInput
               style={s.input}
               value={input}
@@ -956,7 +959,7 @@ export default function CoachScreen() {
             >
               <Text style={s.sendTxt}>↑</Text>
             </Pressable>
-          </View>
+          </FeatureTourTarget>
         </>
       ) : tab === 'insights' ? (
         <ScrollView style={s.messages} contentContainerStyle={s.videoContent} showsVerticalScrollIndicator={false}>

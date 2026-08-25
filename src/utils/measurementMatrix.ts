@@ -195,6 +195,7 @@ const FRONTAL_PROHIBITED_CHECKLIST_IDS = [
 ];
 
 const CENTER_JOINTS = ['nose', 'neck', 'mid_hip'];
+const LATERAL_DISPLAY_CENTER_JOINTS = ['nose', 'neck'];
 const LOWER_BODY_SIDE_JOINTS = ['shoulder', 'hip', 'knee', 'ankle'];
 const BIKE_FIT_SIDE_JOINTS = ['shoulder', 'elbow', 'wrist', 'hip', 'knee', 'ankle'];
 const FRONTAL_LOWER_BODY_JOINTS = [
@@ -208,7 +209,7 @@ const FRONTAL_LOWER_BODY_JOINTS = [
 function lateralJoints(closestSide?: 'left' | 'right'): string[] {
   if (!closestSide) return CENTER_JOINTS;
   return [
-    ...CENTER_JOINTS,
+    ...LATERAL_DISPLAY_CENTER_JOINTS,
     ...LOWER_BODY_SIDE_JOINTS.map(joint => `${closestSide}_${joint}`),
   ];
 }
@@ -226,7 +227,7 @@ function lateralConnections(closestSide?: 'left' | 'right'): [string, string][] 
 function bikeFitLateralJoints(closestSide?: 'left' | 'right'): string[] {
   if (!closestSide) return CENTER_JOINTS;
   return [
-    ...CENTER_JOINTS,
+    ...LATERAL_DISPLAY_CENTER_JOINTS,
     ...BIKE_FIT_SIDE_JOINTS.map(joint => `${closestSide}_${joint}`),
   ];
 }
@@ -445,7 +446,11 @@ export function filterLandmarksForDisplay(
 ): PoseLandmarkRecord[] | undefined {
   if (!landmarks) return undefined;
   const allowed = new Set(movementOverlayConfiguration(kind, view, closestSide, bodyRegion).visibleJoints);
-  return landmarks.filter(landmark => allowed.has(landmark.name));
+  const filtered = new Map<string, PoseLandmarkRecord>();
+  for (const landmark of landmarks) {
+    if (allowed.has(landmark.name)) filtered.set(landmark.name, landmark);
+  }
+  return Array.from(filtered.values());
 }
 
 export function filterKeyFrames(

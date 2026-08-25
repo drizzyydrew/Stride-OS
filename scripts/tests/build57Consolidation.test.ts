@@ -8,8 +8,10 @@ import {
 } from '../../src/utils/activitySummary';
 import {
   buildAchievementHubModel,
+  calculateCumulativeElevationAchievements,
   calculateMonthlyDistanceMilestones,
   calculatePersonalRecords,
+  CUMULATIVE_ELEVATION_ACHIEVEMENTS,
 } from '../../src/utils/achievements';
 import {
   buildSegmentVoiceCues,
@@ -152,6 +154,111 @@ test('Build 57 hub exposes challenges and Stride Levels from canonical activity 
   assert.ok(hub.strideLevels.some(item => item.id === 'stride_level_pacesetter' && item.complete));
 });
 
+test('Cumulative elevation achievements unlock only at the exact landmark threshold', () => {
+  const hood = CUMULATIVE_ELEVATION_ACHIEVEMENTS.find(item => item.id === 'elevation_mount_hood');
+  assert.ok(hood);
+  const almost = activity({
+    id: 'almost-hood',
+    activityType: 'running',
+    startTime: Date.UTC(2026, 7, 1),
+    metrics: { durationSeconds: 1800, elevationGainMeters: hood.thresholdMeters - 0.01 },
+  });
+  assert.equal(calculateCumulativeElevationAchievements([almost]).find(item => item.id === 'elevation_mount_hood')?.complete, false);
+
+  const exact = activity({
+    id: 'exact-hood',
+    activityType: 'running',
+    startTime: Date.UTC(2026, 7, 2),
+    metrics: { durationSeconds: 1800, elevationGainMeters: hood.thresholdMeters },
+  });
+  const unlocked = calculateCumulativeElevationAchievements([exact]).find(item => item.id === 'elevation_mount_hood');
+  assert.equal(unlocked?.complete, true);
+  assert.equal(unlocked?.unlockedAt, exact.startTime);
+});
+
+test('Cumulative elevation achievements cross multiple mountains from one imported workout without duplicating HealthKit UUIDs', () => {
+  const everest = CUMULATIVE_ELEVATION_ACHIEVEMENTS.find(item => item.id === 'elevation_mount_everest');
+  assert.ok(everest);
+  const imported = activity({
+    id: 'healthkit-big-climb',
+    activityType: 'hiking',
+    source: 'healthkit',
+    startTime: Date.UTC(2026, 7, 3),
+    metrics: { durationSeconds: 12_000, elevationGainMeters: everest.thresholdMeters + 1, metricSources: { elevation: 'healthkit' } },
+    healthKit: {
+      workoutUuid: 'hk-climb-1',
+      sourceBundleIdentifier: 'com.apple.health',
+      originalStartTime: Date.UTC(2026, 7, 3),
+      originalEndTime: Date.UTC(2026, 7, 3, 3),
+      localCalendarDate: '2026-08-03',
+      importedAt: Date.UTC(2026, 7, 3, 4),
+      routeStatus: 'available',
+      importedByStrideOS: true,
+    },
+  });
+  const awards = calculateCumulativeElevationAchievements([imported]);
+  assert.equal(awards.find(item => item.id === 'elevation_denali')?.complete, true);
+  assert.equal(awards.find(item => item.id === 'elevation_mount_everest')?.complete, true);
+  assert.equal(awards.find(item => item.id === 'elevation_mauna_kea')?.complete, false);
+
+  const duplicate = { ...imported, id: 'healthkit-big-climb-duplicate' };
+  const deduped = calculateCumulativeElevationAchievements([imported, duplicate]);
+  assert.equal(deduped.find(item => item.id === 'elevation_mauna_kea')?.complete, false);
+});
+
+test('Cumulative elevation achievements recalculate after edit/delete and preserve backdated crossing dates', () => {
+  const hood = CUMULATIVE_ELEVATION_ACHIEVEMENTS.find(item => item.id === 'elevation_mount_hood');
+  assert.ok(hood);
+  const old = activity({
+    id: 'old-climb',
+    activityType: 'running',
+    startTime: Date.UTC(2026, 6, 1),
+    metrics: { durationSeconds: 1800, elevationGainMeters: 1000 },
+  });
+  const crossing = activity({
+    id: 'crossing-climb',
+    activityType: 'cycling',
+    startTime: Date.UTC(2026, 6, 10),
+    metrics: { durationSeconds: 3600, elevationGainMeters: hood.thresholdMeters },
+  });
+  const complete = calculateCumulativeElevationAchievements([old, crossing]).find(item => item.id === 'elevation_mount_hood');
+  assert.equal(complete?.complete, true);
+  assert.equal(complete?.unlockedAt, crossing.startTime);
+
+  const deleted = calculateCumulativeElevationAchievements([old]).find(item => item.id === 'elevation_mount_hood');
+  assert.equal(deleted?.complete, false);
+
+  const edited = calculateCumulativeElevationAchievements([{ ...old, metrics: { ...old.metrics, elevationGainMeters: hood.thresholdMeters + 1 } }])
+    .find(item => item.id === 'elevation_mount_hood');
+  assert.equal(edited?.complete, true);
+  assert.equal(edited?.unlockedAt, old.startTime);
+});
+
+test('Cumulative elevation progress, display metadata, and unsupported elevation sources are guarded', () => {
+  const hood = CUMULATIVE_ELEVATION_ACHIEVEMENTS.find(item => item.id === 'elevation_mount_hood');
+  assert.ok(hood);
+  const estimated = activity({
+    id: 'estimated-only',
+    activityType: 'running',
+    startTime: Date.UTC(2026, 7, 4),
+    metrics: { elevationGainMeters: hood.thresholdMeters + 1, metricSources: { elevation: 'prescribed_estimate' } },
+  });
+  assert.equal(calculateCumulativeElevationAchievements([estimated]).find(item => item.id === 'elevation_mount_hood')?.complete, false);
+
+  const partial = activity({
+    id: 'partial-climb',
+    activityType: 'running',
+    startTime: Date.UTC(2026, 7, 5),
+    metrics: { elevationGainMeters: 500 },
+  });
+  const progress = calculateCumulativeElevationAchievements([partial]).find(item => item.id === 'elevation_mount_hood');
+  assert.ok(progress);
+  assert.equal(progress.imperialDisplay, '11,240 ft');
+  assert.equal(progress.metricDisplay, '3,426 m');
+  assert.ok(progress.remainingMeters > 0);
+  assert.ok(progress.progressRatio > 0 && progress.progressRatio < 1);
+});
+
 test('Build 57 structured workout estimates repeats, reorder, and boundary voice cues', () => {
   const workout = workoutFromRunWalkTemplate({
     id: 'rw',
@@ -198,6 +305,9 @@ test('Achievement and activity sharing use StrideOS PNG card components with mul
   assert.match(achievementHub, /shareReportCard/);
   assert.match(activityDetail, /shareReportCard/);
   assert.match(activityDetail, /Create Share PNG/);
+  assert.match(achievementShare, /cumulative_elevation/);
+  assert.match(achievementShare, /ImageBackground/);
+  assert.doesNotMatch(achievementShare, /routeCoordinates|symptoms|readiness|notes/);
 });
 
 test('Health Sync UI is removed while Apple Health connection can remain for workout heart-rate plumbing', () => {

@@ -8,6 +8,8 @@ import { LAYOUT } from '../../../src/constants/layout';
 import { useColors } from '../../../src/theme/useColors';
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { experienceModeAllows, useExperienceMode } from '../../../src/hooks/useExperienceMode';
+import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
+import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import type { ExperienceMode } from '../../../src/store/settingsStore';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useAchievementStore } from '../../../src/store/achievementStore';
@@ -78,9 +80,11 @@ export default function MoreScreen() {
   const activities = useActivityStore(state => state.activities);
   const awarded = useAchievementStore(state => state.awarded);
   const recordAwards = useAchievementStore(state => state.recordAwards);
+  const weekPlan = useWeekPlan();
+  const { weekSessions } = useScheduledSessions(weekPlan);
   const earnedAwards = useMemo(
-    () => evaluateAchievementAwards(activities, awarded.map(item => item.id)),
-    [activities, awarded],
+    () => evaluateAchievementAwards(activities, awarded.map(item => item.id), { scheduledSessions: weekSessions }),
+    [activities, awarded, weekSessions],
   );
   const earnedIds = useMemo(() => earnedAwards.map(item => item.id), [earnedAwards]);
   const newestAchievement = HEALTHY_ACHIEVEMENTS.find(item => earnedIds.includes(item.id));

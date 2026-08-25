@@ -7,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LAYOUT } from '../../../src/constants/layout';
 import { useColors } from '../../../src/theme/useColors';
 import InfoButton from '../../../src/components/shared/InfoButton';
+import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
+import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 
 import { useWeekPlan }      from '../../../src/hooks/useWeekPlan';
 import { usePlanTimeline }  from '../../../src/hooks/usePlanTimeline';
@@ -162,6 +164,7 @@ function actionLabelForEntries(entries: CalendarEntry[], isToday: boolean): stri
 
 export default function CalendarScreen() {
   const C = useColors();
+  useFeatureTour('calendar');
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -652,7 +655,7 @@ export default function CalendarScreen() {
     const focus = weekItems.find(i => i.info.macroWeek)?.info.macroWeek?.focus;
 
     return (
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+      <FeatureTourTarget targetId="calendar.week" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         {focus ? (
           <View style={styles.weekFocusRow}>
             <Text style={[styles.weekFocusText, { color: C.textMuted }]}>{focus}</Text>
@@ -715,7 +718,7 @@ export default function CalendarScreen() {
             </View>
           </View>
         ) : null}
-      </View>
+      </FeatureTourTarget>
     );
   }
 
@@ -728,7 +731,7 @@ export default function CalendarScreen() {
     const isCurrentWeek = info.macroWeek && weekPlan.metadata.currentWeek > 0 && info.macroWeek.weekNumber === weekPlan.metadata.currentWeek;
 
     return (
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+      <FeatureTourTarget targetId="calendar.day" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.dayMeta, { color: C.textDim }]}>{monthShort} {selectedDate.getDate()} · {selectedDate.getFullYear()}</Text>
         <Text style={[styles.dayTitle, { color: C.text }]}>{formatDayTitle(selectedDate)}</Text>
 
@@ -811,7 +814,7 @@ export default function CalendarScreen() {
             <Text style={[styles.startButtonText, { color: C.onPrimary }]}>{actionLabelForEntries(info.entries, isToday)}</Text>
           </TouchableOpacity>
         ) : null}
-      </View>
+      </FeatureTourTarget>
     );
   }
 
@@ -847,11 +850,11 @@ export default function CalendarScreen() {
         </View>
       </View>
 
-      <View style={[styles.segmentWrap, { backgroundColor: C.card, borderColor: C.border }]}>
+      <FeatureTourTarget targetId="calendar.view" style={[styles.segmentWrap, { backgroundColor: C.card, borderColor: C.border }]}>
         {renderSegment('Month', 'month')}
         {renderSegment('Week', 'week')}
         {renderSegment('Day', 'day')}
-      </View>
+      </FeatureTourTarget>
 
       {view === 'month' ? renderMonthView() : null}
       {view === 'week' ? renderWeekView() : null}

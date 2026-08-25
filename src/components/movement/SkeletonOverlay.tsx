@@ -74,6 +74,7 @@ export default function SkeletonOverlay({
   const rect = containRect(containerWidth, containerHeight, mediaWidth, mediaHeight);
   const byName = new Map<string, PoseLandmarkRecord>();
   for (const l of landmarks ?? []) byName.set(l.name, l);
+  const displayLandmarks = Array.from(byName.values());
 
   function shoulderMid(): { x: number; y: number } | null {
     const ls = byName.get('left_shoulder');
@@ -105,7 +106,7 @@ export default function SkeletonOverlay({
           );
         })}
 
-        {showSkeleton && (landmarks ?? []).map(j => {
+        {showSkeleton && displayLandmarks.map(j => {
           const low = j.confidence < LANDMARK_CONFIDENCE_FLOOR;
           return (
             <Circle

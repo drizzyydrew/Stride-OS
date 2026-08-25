@@ -31,6 +31,8 @@ import { ANALYSIS_KIND_INFO } from '../../../src/utils/movementEngine';
 import { normalizeAnalysisKind } from '../../../src/utils/measurementMatrix';
 import { dionImagesForKind } from '../../../src/constants/dionImages';
 import DionInstructionCard from '../../../src/components/movement/DionInstructionCard';
+import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
+import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import { colors }  from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
@@ -466,6 +468,7 @@ function AnalysisCard({ analysis }: { analysis: MovementAnalysis }) {
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function MovementIndexScreen() {
+  useFeatureTour('movement-lab');
   const { videos, addVideo, updateVideo, analyses } = useMovementStore();
   const user = useAuthStore(s => s.user);
   const [showAdd,   setShowAdd]   = useState(false);
@@ -529,11 +532,13 @@ export default function MovementIndexScreen() {
 
       <ScrollView style={s.list} contentContainerStyle={s.listContent} showsVerticalScrollIndicator={false}>
         {/* Running/Walking Readiness — single clean entry point */}
-        <ReadinessEntryCard />
+        <FeatureTourTarget targetId="movement.capture">
+          <ReadinessEntryCard />
+        </FeatureTourTarget>
 
         {/* Markerless analysis — pick a movement type */}
         <Text style={s.sectionLabel}>ANALYZE A MOVEMENT</Text>
-        <View style={s.cards}>
+        <FeatureTourTarget targetId="movement.assessments" style={s.cards}>
           {ANALYSIS_KINDS.map(kind => {
             const info = ANALYSIS_KIND_INFO[kind];
             const dionEntry = dionImagesForKind(kind, KIND_DEFAULT_VIEW[kind]);
@@ -556,15 +561,15 @@ export default function MovementIndexScreen() {
               </Pressable>
             );
           })}
-        </View>
+        </FeatureTourTarget>
 
         {/* Saved still-frame analyses */}
         {analyses.length > 0 && (
           <>
             <Text style={s.sectionLabel}>SAVED ANALYSES</Text>
-            <View style={s.cards}>
+            <FeatureTourTarget targetId="movement.results" style={s.cards}>
               {[...analyses].reverse().map(a => <AnalysisCard key={a.id} analysis={a} />)}
-            </View>
+            </FeatureTourTarget>
           </>
         )}
 

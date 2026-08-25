@@ -55,6 +55,8 @@ import {
 import { displayLabel, displayLabels } from '../../../src/utils/displayLabels';
 import { completedExercisesFromActiveSession } from '../../../src/utils/strengthPersistence';
 import StrengthSetEditor from '../../../src/components/strength/StrengthSetEditor';
+import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
+import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import {
   activeSessionStoresHydrated,
   discardActiveSession,
@@ -510,6 +512,7 @@ function dayLabelFor(dateYMD: string, todayYMD: string): string {
 
 export default function StrengthScreen() {
   const C = useColors();
+  useFeatureTour('strength');
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [segment, setSegment] = useState<Segment>('strength');
@@ -1068,7 +1071,9 @@ export default function StrengthScreen() {
         )}
       </View>
 
-      <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
+      <FeatureTourTarget targetId="strength.tabs">
+        <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
+      </FeatureTourTarget>
 
       <ScrollView
         style={{ flex: 1 }}
@@ -1098,7 +1103,7 @@ export default function StrengthScreen() {
         </View>
 
         {/* Session Timer */}
-        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border, alignItems: 'center' }]}>
+        <FeatureTourTarget targetId="strength.today" style={[styles.card, { backgroundColor: C.card, borderColor: C.border, alignItems: 'center' }]}>
           <Text style={[styles.cardLabel, { color: C.primary, marginBottom: 3 }]}>TRAINING BLOCK WORKOUT</Text>
           <Text style={[styles.cardLabel, { color: C.textDim }]}>SESSION TIME</Text>
           <Text style={[styles.timerDisplay, { color: C.text }]}>{fmt(timer)}</Text>
@@ -1171,7 +1176,7 @@ export default function StrengthScreen() {
               </TouchableOpacity>
             </View>
           )}
-        </View>
+        </FeatureTourTarget>
 
         {/* Warm-Up */}
         <TouchableOpacity

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,7 +10,12 @@ import AchievementShareCard, {
   ACHIEVEMENT_SHARE_VARIANTS,
   type AchievementShareVariant,
 } from '../../../src/components/achievements/AchievementShareCard';
+import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
+import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import { LAYOUT } from '../../../src/constants/layout';
+import { getElevationAchievementArtwork } from '../../../src/constants/elevationAchievementAssets';
+import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
+import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { shareCardUnavailableReason, shareReportCard } from '../../../src/lib/shareCard';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useAchievementStore } from '../../../src/store/achievementStore';
@@ -21,6 +26,8 @@ import {
   BUILD57_ACHIEVEMENT_DEFINITIONS,
   type AchievementCategory,
   type AchievementDefinition,
+  type CumulativeElevationAchievement,
+  type StreakAchievement,
 } from '../../../src/utils/achievements';
 import { formatDistance } from '../../../src/lib/units';
 import { formatDuration, formatElevationMeters } from '../../../src/utils/activitySummary';
@@ -30,9 +37,11 @@ const CATEGORY_LABELS: Record<AchievementCategory, string> = {
   personal_record: 'Personal Records',
   monthly_distance: 'Monthly Distance',
   consistency: 'Consistency',
+  streak: 'Streaks',
   training_quality: 'Training Quality',
   challenge: 'Challenges',
   stride_level: 'Stride Levels',
+  cumulative_elevation: 'Cumulative Elevation',
 };
 
 function metersToDisplay(meters: number, units: 'imperial' | 'metric'): string {
@@ -43,8 +52,22 @@ function definitionFor(id: string): AchievementDefinition | undefined {
   return BUILD57_ACHIEVEMENT_DEFINITIONS.find(item => item.id === id);
 }
 
+function elevationThresholdDisplay(item: CumulativeElevationAchievement, units: 'imperial' | 'metric'): string {
+  return units === 'metric' ? item.metricDisplay : item.imperialDisplay;
+}
+
+function streakThresholdDisplay(item: StreakAchievement): string {
+  return item.id === 'streak_6_month' ? '6 months' : `${item.thresholdDays} days`;
+}
+
+function shortDate(timeMs: number | undefined): string {
+  if (!timeMs) return '';
+  return new Date(timeMs).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 export default function AchievementHubScreen() {
   const C = useColors();
+  useFeatureTour('achievements');
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const activities = useActivityStore(state => state.activities);
@@ -53,16 +76,22 @@ export default function AchievementHubScreen() {
   const [shareVariant, setShareVariant] = useState<AchievementShareVariant>('badge_square');
   const [selectedShareId, setSelectedShareId] = useState<string | null>(null);
   const [shareMessage, setShareMessage] = useState<string | null>(shareCardUnavailableReason());
+  const [showStreakLadder, setShowStreakLadder] = useState(false);
   const shareRef = useRef<View>(null);
+  const weekPlan = useWeekPlan();
+  const { weekSessions } = useScheduledSessions(weekPlan);
   const model = useMemo(
-    () => buildAchievementHubModel(activities, awarded.map(item => item.id)),
-    [activities, awarded],
+    () => buildAchievementHubModel(activities, awarded, { scheduledSessions: weekSessions }),
+    [activities, awarded, weekSessions],
   );
 
   const earnedIds = new Set(model.shareable.map(item => item.id));
   const selectedShareDefinition = model.shareable.find(item => item.id === (selectedShareId ?? model.shareable[0]?.id));
+  const selectedElevationShare = model.cumulativeElevation.find(item => item.id === selectedShareDefinition?.id);
+  const selectedStreakShare = model.streak.achievements.find(item => item.id === selectedShareDefinition?.id);
   const activeLevel = [...model.strideLevels].reverse().find(item => item.complete) ?? model.strideLevels[0];
   const nextLevel = model.strideLevels.find(item => !item.complete);
+  const nextElevation = model.cumulativeElevation.find(item => !item.complete);
   const grouped = model.definitions.reduce<Record<string, AchievementDefinition[]>>((acc, definition) => {
     const category = definition.category ?? 'healthy_progress';
     acc[category] = [...(acc[category] ?? []), definition];
@@ -94,7 +123,7 @@ export default function AchievementHubScreen() {
         contentContainerStyle={[s.content, { paddingBottom: LAYOUT.tabBarHeight + Math.max(insets.bottom, 16) + 28 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[s.hero, { backgroundColor: C.card, borderColor: C.primary }]}>
+        <FeatureTourTarget targetId="achievements.hub" style={[s.hero, { backgroundColor: C.card, borderColor: C.primary }]}>
           <AchievementBadge id={activeLevel?.id ?? 'stride_level_starter'} category="stride_level" size="medium" />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={[s.eyebrow, { color: C.textDim }]}>STRIDE PATH</Text>
@@ -104,7 +133,163 @@ export default function AchievementHubScreen() {
               {nextLevel ? ` - next at ${metersToDisplay(nextLevel.thresholdMeters, units)}` : ' - highest level reached'}
             </Text>
           </View>
+        </FeatureTourTarget>
+
+        <View style={[s.section, { borderColor: C.border }]}>
+          <TouchableOpacity
+            style={[s.streakSummary, { backgroundColor: C.card, borderColor: C.border }]}
+            onPress={() => setShowStreakLadder(value => !value)}
+            accessibilityRole="button"
+            accessibilityLabel="Open Streak achievement ladder"
+          >
+            <AchievementBadge
+              id={model.streak.currentTier?.id ?? model.streak.nextMilestone?.id ?? 'streak_3_day'}
+              category="streak"
+              size="medium"
+              earned={Boolean(model.streak.currentTier)}
+            />
+            <View style={s.streakSummaryCopy}>
+              <View style={s.sectionHeaderRow}>
+                <Text style={[s.eyebrow, { color: C.textDim }]}>CURRENT STREAK</Text>
+                <Text style={[s.chevronsSmall, { color: C.primary }]}>{'>>>>>'}</Text>
+              </View>
+              <Text style={[s.streakCount, { color: C.text }]}>{model.streak.currentStreakDays} days</Text>
+              <View style={s.streakStatGrid}>
+                <View style={s.streakStat}>
+                  <Text style={[s.streakStatLabel, { color: C.textDim }]}>CURRENT TIER</Text>
+                  <Text style={[s.streakStatValue, { color: C.text }]}>{model.streak.currentTier?.displayName ?? 'Building'}</Text>
+                </View>
+                <View style={s.streakStat}>
+                  <Text style={[s.streakStatLabel, { color: C.textDim }]}>NEXT</Text>
+                  <Text style={[s.streakStatValue, { color: C.text }]}>{model.streak.nextMilestone?.displayName ?? 'Complete'}</Text>
+                </View>
+              </View>
+              <Text style={[s.body, { color: C.textMuted }]}>
+                {model.streak.nextMilestone ? `${model.streak.daysRemaining} days remaining` : 'Highest streak tier reached'}
+              </Text>
+              <View style={[s.progressTrack, { backgroundColor: C.cardAlt }]}>
+                <View style={[s.progressFill, { width: `${Math.round(model.streak.progressRatio * 100)}%` as `${number}%`, backgroundColor: C.primary }]} />
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          {showStreakLadder ? (
+            <View style={s.streakLadder}>
+              {model.streak.achievements.map(item => {
+                const selected = item.state === 'current';
+                return (
+                  <View
+                    key={item.id}
+                    style={[
+                      s.streakLadderRow,
+                      {
+                        backgroundColor: selected ? C.primaryDim : C.card,
+                        borderColor: selected ? C.primary : item.complete ? item.dominantHeatColor : C.border,
+                      },
+                    ]}
+                  >
+                    <AchievementBadge id={item.id} category="streak" size="small" earned={item.complete} />
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[s.rowTitle, { color: C.text }]}>{item.displayName}</Text>
+                      <Text style={[s.body, { color: C.textMuted }]}>{streakThresholdDisplay(item)}</Text>
+                      {item.complete && item.unlockedAt ? (
+                        <Text style={[s.body, { color: C.textMuted }]}>Earned {shortDate(item.unlockedAt)}</Text>
+                      ) : (
+                        <Text style={[s.body, { color: C.textMuted }]}>Locked</Text>
+                      )}
+                    </View>
+                    {item.complete ? (
+                      <TouchableOpacity
+                        style={[s.iconBtn, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+                        onPress={() => {
+                          const definition = definitionFor(item.id);
+                          if (definition) void shareAchievement(definition);
+                        }}
+                        accessibilityLabel={`Share ${item.displayName}`}
+                      >
+                        <Ionicons name="share-outline" size={17} color={C.primary} />
+                      </TouchableOpacity>
+                    ) : (
+                      <Ionicons name="lock-closed" size={17} color={C.textDim} />
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
         </View>
+
+        <FeatureTourTarget targetId="achievements.elevation" style={[s.section, { borderColor: C.border }]}>
+          <View style={s.sectionHeaderRow}>
+            <Text style={[s.sectionTitle, { color: C.text }]}>Cumulative Elevation</Text>
+            <Text style={[s.chevronsSmall, { color: C.primary }]}>{'>>>>>'}</Text>
+          </View>
+          {nextElevation ? (
+            <View style={[s.nextMountainCard, { backgroundColor: C.card, borderColor: C.border }]}>
+              <View style={s.nextMountainTop}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[s.eyebrow, { color: C.textDim }]}>NEXT LANDMARK</Text>
+                  <Text style={[s.mountainTitle, { color: C.text }]}>{nextElevation.displayName}</Text>
+                  <Text style={[s.body, { color: C.textMuted }]}>
+                    {formatElevationMeters(nextElevation.cumulativeMeters, units)} / {elevationThresholdDisplay(nextElevation, units)}
+                  </Text>
+                </View>
+                <Text style={[s.remaining, { color: C.primary }]}>
+                  {formatElevationMeters(nextElevation.remainingMeters, units)} to go
+                </Text>
+              </View>
+              <View style={[s.progressTrack, { backgroundColor: C.cardAlt }]}>
+                <View style={[s.progressFill, { width: `${Math.round(nextElevation.progressRatio * 100)}%` as `${number}%`, backgroundColor: C.primary }]} />
+              </View>
+            </View>
+          ) : (
+            <View style={[s.nextMountainCard, { backgroundColor: C.card, borderColor: C.primary }]}>
+              <Text style={[s.mountainTitle, { color: C.text }]}>Olympus Mons reached</Text>
+              <Text style={[s.body, { color: C.textMuted }]}>Highest cumulative elevation landmark unlocked.</Text>
+            </View>
+          )}
+          <View style={s.mountainGrid}>
+            {model.cumulativeElevation.map(item => {
+              const artwork = getElevationAchievementArtwork(item.id);
+              const definition = definitionFor(item.id);
+              return (
+                <View key={item.id} style={[s.mountainCard, { backgroundColor: C.card, borderColor: item.complete ? C.primary : C.border }]}>
+                  {artwork ? (
+                    <Image source={artwork} style={[s.mountainImage, { opacity: item.complete ? 1 : 0.48 }]} resizeMode="cover" />
+                  ) : (
+                    <View style={[s.mountainImage, { backgroundColor: C.cardAlt }]} />
+                  )}
+                  <View style={s.mountainShade} />
+                  {!item.complete ? (
+                    <View style={[s.lockPill, { backgroundColor: C.card }]}>
+                      <Ionicons name="lock-closed" size={13} color={C.textMuted} />
+                      <Text style={[s.lockText, { color: C.textMuted }]}>LOCKED</Text>
+                    </View>
+                  ) : null}
+                  <View style={s.mountainCopy}>
+                    <Text style={s.mountainName}>{item.displayName.toUpperCase()}</Text>
+                    <Text style={s.mountainValue}>{elevationThresholdDisplay(item, units).toUpperCase()}</Text>
+                    <Text style={s.mountainDescriptor}>{item.measurementDescriptor}</Text>
+                    {item.complete ? (
+                      <Text style={s.mountainDate}>Unlocked {shortDate(item.unlockedAt)}</Text>
+                    ) : (
+                      <Text style={s.mountainDate}>{formatElevationMeters(item.remainingMeters, units)} remaining</Text>
+                    )}
+                  </View>
+                  {item.complete && definition ? (
+                    <TouchableOpacity
+                      style={s.mountainShare}
+                      onPress={() => { void shareAchievement(definition); }}
+                      accessibilityLabel={`Share ${item.displayName} elevation achievement`}
+                    >
+                      <Ionicons name="share-outline" size={17} color="#F3F1EB" />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
+        </FeatureTourTarget>
 
         {model.personalRecords.length ? (
           <View style={[s.section, { borderColor: C.border }]}>
@@ -169,7 +354,7 @@ export default function AchievementHubScreen() {
 
         {(Object.keys(CATEGORY_LABELS) as AchievementCategory[]).map(category => {
           const definitions = grouped[category] ?? [];
-          if (!definitions.length || category === 'challenge' || category === 'personal_record' || category === 'monthly_distance') return null;
+          if (!definitions.length || category === 'challenge' || category === 'personal_record' || category === 'monthly_distance' || category === 'cumulative_elevation' || category === 'streak') return null;
           return (
             <View key={category} style={[s.section, { borderColor: C.border }]}>
               <Text style={[s.sectionTitle, { color: C.text }]}>{CATEGORY_LABELS[category]}</Text>
@@ -195,7 +380,7 @@ export default function AchievementHubScreen() {
         })}
 
         {selectedShareDefinition ? (
-          <View style={[s.section, { borderColor: C.border }]}>
+          <FeatureTourTarget targetId="achievements.share" style={[s.section, { borderColor: C.border }]}>
             <Text style={[s.sectionTitle, { color: C.text }]}>Share Achievement</Text>
             <View style={s.variantGrid}>
               {ACHIEVEMENT_SHARE_VARIANTS.map(item => {
@@ -215,7 +400,17 @@ export default function AchievementHubScreen() {
               })}
             </View>
             <View ref={shareRef} collapsable={false} style={s.sharePreview}>
-              <AchievementShareCard achievement={selectedShareDefinition} variant={shareVariant} />
+              <AchievementShareCard
+                achievement={selectedShareDefinition}
+                variant={shareVariant}
+                detail={
+                  selectedElevationShare
+                    ? `${elevationThresholdDisplay(selectedElevationShare, units)} ${selectedElevationShare.measurementDescriptor}`
+                    : selectedStreakShare
+                      ? selectedStreakShare.milestoneLabel.toUpperCase()
+                      : undefined
+                }
+              />
             </View>
             <TouchableOpacity
               style={[s.sharePrimary, { backgroundColor: C.primary }]}
@@ -226,7 +421,7 @@ export default function AchievementHubScreen() {
               <Text style={[s.sharePrimaryText, { color: C.onPrimary }]}>Create Achievement PNG</Text>
             </TouchableOpacity>
             {shareMessage ? <Text style={[s.shareMessage, { color: C.textMuted }]}>{shareMessage}</Text> : null}
-          </View>
+          </FeatureTourTarget>
         ) : null}
 
         {model.personalRecords.some(record => record.id === 'pr_highest_ride_elevation') ? (
@@ -248,7 +443,35 @@ const s = StyleSheet.create({
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   heroTitle: { fontSize: 26, fontFamily: 'CormorantGaramond_700Bold' },
   section: { borderTopWidth: 1, paddingTop: 14, marginTop: 4, marginBottom: 18 },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '900', marginBottom: 10 },
+  streakSummary: { borderWidth: 1, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  streakSummaryCopy: { flex: 1, minWidth: 0, gap: 8 },
+  streakCount: { fontSize: 30, lineHeight: 34, fontWeight: '900', fontVariant: ['tabular-nums'] },
+  streakStatGrid: { flexDirection: 'row', gap: 10 },
+  streakStat: { flex: 1, minWidth: 0 },
+  streakStatLabel: { fontSize: 9, lineHeight: 12, fontWeight: '900', letterSpacing: 0.8 },
+  streakStatValue: { fontSize: 12, lineHeight: 16, fontWeight: '900' },
+  streakLadder: { gap: 10, marginTop: 12 },
+  streakLadderRow: { borderWidth: 1, borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  nextMountainCard: { borderWidth: 1, borderRadius: 16, padding: 14, marginBottom: 12 },
+  nextMountainTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
+  mountainTitle: { fontSize: 24, fontFamily: 'CormorantGaramond_700Bold' },
+  remaining: { fontSize: 12, lineHeight: 17, fontWeight: '900', textAlign: 'right', maxWidth: 118 },
+  progressTrack: { height: 8, borderRadius: 999, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 999 },
+  mountainGrid: { gap: 12 },
+  mountainCard: { minHeight: 320, borderWidth: 1, borderRadius: 18, overflow: 'hidden' },
+  mountainImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  mountainShade: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 0, 0, 0.24)' },
+  lockPill: { position: 'absolute', top: 14, left: 14, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  lockText: { fontSize: 10, fontWeight: '900', letterSpacing: 0.8 },
+  mountainCopy: { position: 'absolute', left: 18, right: 18, bottom: 18 },
+  mountainName: { color: '#F3F1EB', fontSize: 32, lineHeight: 36, fontFamily: 'CormorantGaramond_700Bold' },
+  mountainValue: { color: '#F3F1EB', fontSize: 19, fontWeight: '900', letterSpacing: 0.8, marginTop: 3 },
+  mountainDescriptor: { color: '#DCC9B1', fontSize: 11, lineHeight: 15, fontWeight: '900', letterSpacing: 1.1, marginTop: 6 },
+  mountainDate: { color: 'rgba(243, 241, 235, 0.82)', fontSize: 12, lineHeight: 17, fontWeight: '800', marginTop: 8 },
+  mountainShare: { position: 'absolute', top: 14, right: 14, width: 38, height: 38, borderRadius: 999, backgroundColor: 'rgba(14, 14, 15, 0.72)', alignItems: 'center', justifyContent: 'center' },
   row: { borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 10 },
   badgeRow: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 10 },
   rowTitle: { fontSize: 14, fontWeight: '900' },

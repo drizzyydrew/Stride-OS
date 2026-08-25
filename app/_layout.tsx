@@ -22,6 +22,7 @@ import { ThemeProvider as StrideThemeProvider } from '../src/theme/ThemeProvider
 import { getNavigationTheme } from '../src/theme/theme';
 import { useIntegrationsStore } from '../src/store/integrationsStore';
 import { useReadinessStore } from '../src/store/readinessStore';
+import { FeatureTourProvider } from '../src/components/featureTour/FeatureTourProvider';
 import {
   clearTrainingNotifications,
   getNotificationAccessStatus,
@@ -175,6 +176,7 @@ export default function RootLayout() {
     <StrideThemeProvider>
       <NavigationThemeProvider value={getNavigationTheme(mode)}>
         <ToastProvider>
+          <FeatureTourProvider>
       <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
       <Stack>
         <Stack.Screen name="(tabs)"     options={{ headerShown: false }} />
@@ -184,6 +186,7 @@ export default function RootLayout() {
       </Stack>
       <LiveActivityCommandReconciler />
       <NavigationGate />
+          </FeatureTourProvider>
         </ToastProvider>
       </NavigationThemeProvider>
     </StrideThemeProvider>

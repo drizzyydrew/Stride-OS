@@ -4,6 +4,8 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
+import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
+import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import ReportStatPill from '../../../src/components/report/ReportStatPill';
 import ShareCardAchievementFocus from '../../../src/components/report/ShareCardAchievementFocus';
 import ShareCardCleanSummary from '../../../src/components/report/ShareCardCleanSummary';
@@ -79,6 +81,7 @@ function SharePreview({ variant, report, units }: { variant: StrideReportShareVa
 export default function StrideReportScreen() {
   const insets = useSafeAreaInsets();
   const C = useColors();
+  useFeatureTour('stride-report');
   const [period, setPeriod] = useState<StrideReportPeriod>('weekly');
   const [variant, setVariant] = useState<StrideReportShareVariant>('clean_summary');
   const [shareMessage, setShareMessage] = useState<string | null>(shareCardUnavailableReason());
@@ -124,7 +127,7 @@ export default function StrideReportScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={s.segmentRow}>
+        <FeatureTourTarget targetId="stride-report.range" style={s.segmentRow}>
           {PERIODS.map(item => (
             <PeriodButton
               key={item.id}
@@ -133,7 +136,7 @@ export default function StrideReportScreen() {
               onPress={() => setPeriod(item.id)}
             />
           ))}
-        </View>
+        </FeatureTourTarget>
 
         <View style={[s.summaryCard, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>{report.range.label.toUpperCase()}</Text>
@@ -155,7 +158,7 @@ export default function StrideReportScreen() {
           <ReportStatPill label="Strength" value={`${report.totals.strengthSessions}`} detail={`${report.totals.crossTrainingSessions} cross-training`} />
         </View>
 
-        <View style={[s.summaryCard, { backgroundColor: C.card, borderColor: C.border }]}>
+        <FeatureTourTarget targetId="stride-report.highlights" style={[s.summaryCard, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>HIGHLIGHTS</Text>
           {displayHighlights.length > 0 ? displayHighlights.slice(0, 6).map(item => (
             <View key={`${item.label}-${item.value}`} style={[s.highlightRow, { borderBottomColor: C.separator }]}>
@@ -168,7 +171,7 @@ export default function StrideReportScreen() {
           )) : (
             <Text style={[s.copy, { color: C.textMuted }]}>No completed training in this period yet.</Text>
           )}
-        </View>
+        </FeatureTourTarget>
 
         <View style={[s.summaryCard, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>SHOE REPORT</Text>
@@ -219,7 +222,7 @@ export default function StrideReportScreen() {
           <Text style={[s.copy, { color: C.textMuted }]}>Shoe photos and private notes are excluded from shared reports by default.</Text>
         </View>
 
-        <View>
+        <FeatureTourTarget targetId="stride-report.share">
           <Text style={[s.sectionTitle, { color: C.text }]}>Share card</Text>
           <View style={s.variantGrid}>
             {VARIANTS.map(item => {
@@ -242,7 +245,7 @@ export default function StrideReportScreen() {
               );
             })}
           </View>
-        </View>
+        </FeatureTourTarget>
 
         <View ref={cardRef} collapsable={false} style={s.previewWrap}>
           <SharePreview variant={variant} report={report} units={units} />

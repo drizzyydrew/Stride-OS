@@ -77,12 +77,14 @@ test('Bike Fit lateral measurements use one closest rider chain and supported me
   ]);
 
   const landmarks: PoseLandmarkRecord[] = [
+    'nose', 'neck', 'mid_hip',
     'left_shoulder', 'left_elbow', 'left_wrist', 'left_hip', 'left_knee', 'left_ankle',
     'right_shoulder', 'right_elbow', 'right_wrist', 'right_hip', 'right_knee', 'right_ankle',
   ].map((name, index) => ({ name, x: index / 20, y: index / 20, confidence: 0.9 }));
   const display = filterLandmarksForDisplay(landmarks, 'bike_fit', 'side', 'left') ?? [];
   assert.equal(display.some(landmark => landmark.name.startsWith('right_')), false);
   assert.equal(display.some(landmark => landmark.name === 'left_elbow'), true);
+  assert.equal(display.some(landmark => landmark.name === 'mid_hip'), false);
 
   const config = movementOverlayConfiguration('bike_fit', 'side', 'left');
   assert.equal(config.primaryBodyRegion, 'whole_body');

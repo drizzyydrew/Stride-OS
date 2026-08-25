@@ -44,6 +44,7 @@ export default function PoseOverlay({
 
   const byName = new Map<string, PoseLandmarkRecord>();
   for (const l of landmarks ?? []) byName.set(l.name, l);
+  const displayLandmarks = Array.from(byName.values());
 
   const hasPose = (landmarks?.length ?? 0) > 0;
 
@@ -87,7 +88,7 @@ export default function PoseOverlay({
             );
           })}
 
-          {showSkeleton && (landmarks ?? []).map(j => {
+          {showSkeleton && displayLandmarks.map(j => {
             const low = j.confidence < LANDMARK_CONFIDENCE_FLOOR;
             return (
               <Circle

@@ -1173,7 +1173,10 @@ export default function AnalyzeScreen() {
                   onPress={() => extractFrame(keyFrame.timeMs, sequenceResult, true)}
                   disabled={frameBusy !== null}
                 >
-                  <Text style={[s.mediaActionTxt, frame?.timeMs === keyFrame.timeMs && s.pillOnTxt]}>
+                  <Text
+                    style={[s.mediaActionTxt, frame?.timeMs === keyFrame.timeMs && s.pillOnTxt]}
+                    numberOfLines={2}
+                  >
                     {keyFrame.label}
                   </Text>
                 </Pressable>
@@ -1384,14 +1387,18 @@ const s = StyleSheet.create({
     borderRadius:    Radius.md,
     backgroundColor: '#000',
   },
-  mediaActionsRow: { flexDirection: 'row', gap: spacing.sm },
+  mediaActionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   mediaActionBtn: {
     backgroundColor:   colors.border,
     borderRadius:      Radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical:   spacing.xs,
+    flexGrow:          1,
+    flexShrink:        1,
+    flexBasis:         '45%',
+    minWidth:          0,
   },
-  mediaActionTxt: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  mediaActionTxt: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: FontWeight.bold, flexShrink: 1 },
   secondaryActionBtn: {
     alignSelf:        'flex-start',
     backgroundColor:  colors.border,

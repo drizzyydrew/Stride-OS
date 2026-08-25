@@ -170,9 +170,8 @@ function makeStyles(C: Palette) {
     row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     frame: {
       borderRadius:    Radius.md,
-      borderWidth:     1.5,
-      borderColor:     C.primary + '55',
-      borderStyle:     'dashed',
+      borderWidth:     0,
+      borderColor:     'transparent',
       backgroundColor: C.bg,
       alignItems:      'center',
       justifyContent:  'center',

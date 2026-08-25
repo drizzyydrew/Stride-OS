@@ -867,6 +867,24 @@ export default function SettingsScreen() {
         <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={[styles.card, styles.navCard, { backgroundColor: C.card, borderColor: C.border }]}
+        activeOpacity={0.75}
+        onPress={() => router.push('/(tabs)/settings/feature-tours' as any)}
+      >
+        <View style={[styles.navIcon, { backgroundColor: C.primaryDim }]}>
+          <Ionicons name="sparkles-outline" size={19} color={C.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.sectionLabel, { color: C.textDim, marginBottom: 4 }]}>LEARN STRIDEOS</Text>
+          <Text style={[styles.settingTitle, { color: C.text }]}>Feature Tours</Text>
+          <Text style={[styles.settingCaption, { color: C.textMuted }]}>
+            Replay contextual walkthroughs for Today, Running, Achievements, Movement Lab, and other sections.
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+      </TouchableOpacity>
+
       {/* Training Definitions */}
       <TouchableOpacity
         style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}

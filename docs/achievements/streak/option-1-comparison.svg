@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="720" viewBox="0 0 720 720">
+  <rect width="720" height="720" fill="#080808"/>
+  <text x="32" y="44" font-family="Arial, sans-serif" font-size="17" font-weight="900" letter-spacing="2" fill="#F3F1EB">STRIDEOS STREAK ACHIEVEMENTS - OPTION 1 FINAL</text>
+  
+    <g transform="translate(34 92)">
+      <g transform="scale(0.95)">
+  <defs>
+    <linearGradient id="base-streak_3_day" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080808"/>
+      <stop offset="0.62" stop-color="#11100E"/>
+      <stop offset="1" stop-color="#211712"/>
+    </linearGradient>
+    <linearGradient id="flame-streak_3_day" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#B43A28"/>
+      <stop offset="0.48" stop-color="#7A1717"/>
+      <stop offset="1" stop-color="#421010"/>
+    </linearGradient>
+  </defs>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="url(#base-streak_3_day)" stroke="#7A1717" stroke-width="2.8" opacity="1"/>
+  <polygon points="56,10 95,33 95,79 56,102 17,79 17,33" fill="#0E0E0F" opacity="0.93"/>
+  <circle cx="56" cy="58" r="34" fill="#2A0B0B" opacity="0.35"/>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="none" stroke="#7A1717" stroke-width="2.1" opacity="0.88"/>
+  <path d="M56 18 C47 31 39 41 39 58 C39 73 48 83 56 91 C64 83 74 74 75 59 C76 47 69 39 66 29 C62 36 59 40 58 46 C54 37 59 27 56 18 Z" fill="url(#flame-streak_3_day)" opacity="1"/>
+  <path d="M56 43 C50 52 47 60 49 68 C51 76 56 81 56 81 C61 76 65 70 65 63 C65 56 61 51 59 45 C57 49 56 53 56 57 C53 52 55 47 56 43 Z" fill="#B43A28" opacity="0.95"/>
+  <text x="56" y="77" text-anchor="middle" font-family="Avenir Next Condensed, Arial Narrow, Arial, sans-serif" font-size="20" font-weight="900" fill="#F3D0BC" stroke="#0E0E0F" stroke-width="0.7">3</text></g>
+      <text x="53" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="900" fill="#F3F1EB">3-Day Streak</text>
+      <text x="53" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="800" letter-spacing="1.5" fill="#7A1717">TIER 1</text>
+    </g>
+    <g transform="translate(204 92)">
+      <g transform="scale(0.95)">
+  <defs>
+    <linearGradient id="base-streak_1_week" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080808"/>
+      <stop offset="0.62" stop-color="#11100E"/>
+      <stop offset="1" stop-color="#211712"/>
+    </linearGradient>
+    <linearGradient id="flame-streak_1_week" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D9551D"/>
+      <stop offset="0.48" stop-color="#B3221C"/>
+      <stop offset="1" stop-color="#65110F"/>
+    </linearGradient>
+  </defs>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="url(#base-streak_1_week)" stroke="#B3221C" stroke-width="2.8" opacity="1"/>
+  <polygon points="56,10 95,33 95,79 56,102 17,79 17,33" fill="#0E0E0F" opacity="0.93"/>
+  <circle cx="56" cy="58" r="34" fill="#541313" opacity="0.37"/>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="none" stroke="#B3221C" stroke-width="2.1" opacity="0.88"/><polygon points="56,13 93,35 93,77 56,99 19,77 19,35" fill="none" stroke="#D9551D" stroke-width="1.15" opacity="0.73"/>
+  <path d="M56 18 C47 31 39 41 39 58 C39 73 48 83 56 91 C64 83 74 74 75 59 C76 47 69 39 66 29 C62 36 59 40 58 46 C54 37 59 27 56 18 Z" fill="url(#flame-streak_1_week)" opacity="1"/>
+  <path d="M56 43 C50 52 47 60 49 68 C51 76 56 81 56 81 C61 76 65 70 65 63 C65 56 61 51 59 45 C57 49 56 53 56 57 C53 52 55 47 56 43 Z" fill="#D9551D" opacity="0.95"/>
+  <text x="56" y="77" text-anchor="middle" font-family="Avenir Next Condensed, Arial Narrow, Arial, sans-serif" font-size="20" font-weight="900" fill="#F3D0BC" stroke="#0E0E0F" stroke-width="0.7">7</text></g>
+      <text x="53" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="900" fill="#F3F1EB">1-Week Streak</text>
+      <text x="53" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="800" letter-spacing="1.5" fill="#B3221C">TIER 2</text>
+    </g>
+    <g transform="translate(374 92)">
+      <g transform="scale(0.95)">
+  <defs>
+    <linearGradient id="base-streak_30_day" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080808"/>
+      <stop offset="0.62" stop-color="#11100E"/>
+      <stop offset="1" stop-color="#211712"/>
+    </linearGradient>
+    <linearGradient id="flame-streak_30_day" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F29A20"/>
+      <stop offset="0.48" stop-color="#D9551D"/>
+      <stop offset="1" stop-color="#8F2513"/>
+    </linearGradient>
+  </defs>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="url(#base-streak_30_day)" stroke="#D9551D" stroke-width="2.8" opacity="1"/>
+  <polygon points="56,10 95,33 95,79 56,102 17,79 17,33" fill="#0E0E0F" opacity="0.93"/>
+  <circle cx="56" cy="58" r="34" fill="#792113" opacity="0.40"/>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="none" stroke="#D9551D" stroke-width="2.1" opacity="0.88"/><polygon points="56,13 93,35 93,77 56,99 19,77 19,35" fill="none" stroke="#F29A20" stroke-width="1.15" opacity="0.73"/>
+  <path d="M56 18 C47 31 39 41 39 58 C39 73 48 83 56 91 C64 83 74 74 75 59 C76 47 69 39 66 29 C62 36 59 40 58 46 C54 37 59 27 56 18 Z" fill="url(#flame-streak_30_day)" opacity="1"/>
+  <path d="M56 43 C50 52 47 60 49 68 C51 76 56 81 56 81 C61 76 65 70 65 63 C65 56 61 51 59 45 C57 49 56 53 56 57 C53 52 55 47 56 43 Z" fill="#F29A20" opacity="0.95"/>
+  <text x="56" y="77" text-anchor="middle" font-family="Avenir Next Condensed, Arial Narrow, Arial, sans-serif" font-size="20" font-weight="900" fill="#F3D0BC" stroke="#0E0E0F" stroke-width="0.7">30</text></g>
+      <text x="53" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="900" fill="#F3F1EB">30-Day Streak</text>
+      <text x="53" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="800" letter-spacing="1.5" fill="#D9551D">TIER 3</text>
+    </g>
+    <g transform="translate(544 92)">
+      <g transform="scale(0.95)">
+  <defs>
+    <linearGradient id="base-streak_50_day" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080808"/>
+      <stop offset="0.62" stop-color="#11100E"/>
+      <stop offset="1" stop-color="#211712"/>
+    </linearGradient>
+    <linearGradient id="flame-streak_50_day" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD449"/>
+      <stop offset="0.48" stop-color="#F29A20"/>
+      <stop offset="1" stop-color="#B84C14"/>
+    </linearGradient>
+  </defs>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="url(#base-streak_50_day)" stroke="#F29A20" stroke-width="2.8" opacity="1"/>
+  <polygon points="56,10 95,33 95,79 56,102 17,79 17,33" fill="#0E0E0F" opacity="0.93"/>
+  <circle cx="56" cy="58" r="34" fill="#9A3E11" opacity="0.42"/>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="none" stroke="#F29A20" stroke-width="2.1" opacity="0.88"/><polygon points="56,13 93,35 93,77 56,99 19,77 19,35" fill="none" stroke="#DCC9B1" stroke-width="1.15" opacity="0.73"/><polygon points="56,21 86,39 86,73 56,91 26,73 26,39" fill="none" stroke="#FFD449" stroke-width="1.15" opacity="0.58"/>
+  <path d="M56 18 C47 31 39 41 39 58 C39 73 48 83 56 91 C64 83 74 74 75 59 C76 47 69 39 66 29 C62 36 59 40 58 46 C54 37 59 27 56 18 Z" fill="url(#flame-streak_50_day)" opacity="1"/>
+  <path d="M56 43 C50 52 47 60 49 68 C51 76 56 81 56 81 C61 76 65 70 65 63 C65 56 61 51 59 45 C57 49 56 53 56 57 C53 52 55 47 56 43 Z" fill="#FFD449" opacity="0.95"/>
+  <text x="56" y="77" text-anchor="middle" font-family="Avenir Next Condensed, Arial Narrow, Arial, sans-serif" font-size="20" font-weight="900" fill="#F3D0BC" stroke="#0E0E0F" stroke-width="0.7">50</text></g>
+      <text x="53" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="900" fill="#F3F1EB">50-Day Streak</text>
+      <text x="53" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="800" letter-spacing="1.5" fill="#F29A20">TIER 4</text>
+    </g>
+    <g transform="translate(120 392)">
+      <g transform="scale(0.95)">
+  <defs>
+    <linearGradient id="base-streak_60_day" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080808"/>
+      <stop offset="0.62" stop-color="#11100E"/>
+      <stop offset="1" stop-color="#211712"/>
+    </linearGradient>
+    <linearGradient id="flame-streak_60_day" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF1BA"/>
+      <stop offset="0.48" stop-color="#FFD449"/>
+      <stop offset="1" stop-color="#D98216"/>
+    </linearGradient>
+  </defs>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="url(#base-streak_60_day)" stroke="#FFD449" stroke-width="2.8" opacity="1"/>
+  <polygon points="56,10 95,33 95,79 56,102 17,79 17,33" fill="#0E0E0F" opacity="0.93"/>
+  <circle cx="56" cy="58" r="34" fill="#B76A12" opacity="0.45"/>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="none" stroke="#FFD449" stroke-width="2.1" opacity="0.88"/><polygon points="56,13 93,35 93,77 56,99 19,77 19,35" fill="none" stroke="#DCC9B1" stroke-width="1.15" opacity="0.73"/><polygon points="56,21 86,39 86,73 56,91 26,73 26,39" fill="none" stroke="#FFF1BA" stroke-width="1.15" opacity="0.58"/>
+  <path d="M56 18 C47 31 39 41 39 58 C39 73 48 83 56 91 C64 83 74 74 75 59 C76 47 69 39 66 29 C62 36 59 40 58 46 C54 37 59 27 56 18 Z" fill="url(#flame-streak_60_day)" opacity="1"/>
+  <path d="M56 43 C50 52 47 60 49 68 C51 76 56 81 56 81 C61 76 65 70 65 63 C65 56 61 51 59 45 C57 49 56 53 56 57 C53 52 55 47 56 43 Z" fill="#FFF1BA" opacity="0.95"/>
+  <text x="56" y="77" text-anchor="middle" font-family="Avenir Next Condensed, Arial Narrow, Arial, sans-serif" font-size="20" font-weight="900" fill="#17120B" stroke="#0E0E0F" stroke-width="0.7">60</text></g>
+      <text x="53" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="900" fill="#F3F1EB">60-Day Streak</text>
+      <text x="53" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="800" letter-spacing="1.5" fill="#FFD449">TIER 5</text>
+    </g>
+    <g transform="translate(290 392)">
+      <g transform="scale(0.95)">
+  <defs>
+    <linearGradient id="base-streak_90_day" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080808"/>
+      <stop offset="0.62" stop-color="#11100E"/>
+      <stop offset="1" stop-color="#211712"/>
+    </linearGradient>
+    <linearGradient id="flame-streak_90_day" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFDF3"/>
+      <stop offset="0.48" stop-color="#FFF1BA"/>
+      <stop offset="1" stop-color="#E8BB63"/>
+    </linearGradient>
+  </defs>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="url(#base-streak_90_day)" stroke="#FFF1BA" stroke-width="2.8" opacity="1"/>
+  <polygon points="56,10 95,33 95,79 56,102 17,79 17,33" fill="#0E0E0F" opacity="0.93"/>
+  <circle cx="56" cy="58" r="34" fill="#C99C50" opacity="0.47"/>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="none" stroke="#FFF1BA" stroke-width="2.1" opacity="0.88"/><polygon points="56,13 93,35 93,77 56,99 19,77 19,35" fill="none" stroke="#DCC9B1" stroke-width="1.15" opacity="0.73"/><polygon points="56,21 86,39 86,73 56,91 26,73 26,39" fill="none" stroke="#FFFDF3" stroke-width="1.15" opacity="0.58"/>
+  <path d="M56 18 C47 31 39 41 39 58 C39 73 48 83 56 91 C64 83 74 74 75 59 C76 47 69 39 66 29 C62 36 59 40 58 46 C54 37 59 27 56 18 Z" fill="url(#flame-streak_90_day)" opacity="1"/>
+  <path d="M56 43 C50 52 47 60 49 68 C51 76 56 81 56 81 C61 76 65 70 65 63 C65 56 61 51 59 45 C57 49 56 53 56 57 C53 52 55 47 56 43 Z" fill="#FFFDF3" opacity="0.95"/>
+  <text x="56" y="77" text-anchor="middle" font-family="Avenir Next Condensed, Arial Narrow, Arial, sans-serif" font-size="20" font-weight="900" fill="#17120B" stroke="#0E0E0F" stroke-width="0.7">90</text></g>
+      <text x="53" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="900" fill="#F3F1EB">90-Day Streak</text>
+      <text x="53" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="800" letter-spacing="1.5" fill="#FFF1BA">TIER 6</text>
+    </g>
+    <g transform="translate(460 392)">
+      <g transform="scale(0.95)">
+  <defs>
+    <linearGradient id="base-streak_6_month" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080808"/>
+      <stop offset="0.62" stop-color="#11100E"/>
+      <stop offset="1" stop-color="#211712"/>
+    </linearGradient>
+    <linearGradient id="flame-streak_6_month" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.48" stop-color="#FFFDF3"/>
+      <stop offset="1" stop-color="#F2DFB8"/>
+    </linearGradient>
+  </defs>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="url(#base-streak_6_month)" stroke="#FFFDF3" stroke-width="2.8" opacity="1"/>
+  <polygon points="56,10 95,33 95,79 56,102 17,79 17,33" fill="#0E0E0F" opacity="0.93"/>
+  <circle cx="56" cy="58" r="34" fill="#DCC9B1" opacity="0.49"/>
+  <polygon points="56,5 100,31 100,81 56,107 12,81 12,31" fill="none" stroke="#FFFDF3" stroke-width="2.1" opacity="0.88"/><polygon points="56,13 93,35 93,77 56,99 19,77 19,35" fill="none" stroke="#DCC9B1" stroke-width="1.15" opacity="0.73"/><polygon points="56,21 86,39 86,73 56,91 26,73 26,39" fill="none" stroke="#DCC9B1" stroke-width="1.15" opacity="0.58"/><polygon points="56,29 79,43 79,69 56,83 33,69 33,43" fill="none" stroke="#FFFFFF" stroke-width="1.15" opacity="0.43"/>
+  <path d="M56 18 C47 31 39 41 39 58 C39 73 48 83 56 91 C64 83 74 74 75 59 C76 47 69 39 66 29 C62 36 59 40 58 46 C54 37 59 27 56 18 Z" fill="url(#flame-streak_6_month)" opacity="1"/>
+  <path d="M56 43 C50 52 47 60 49 68 C51 76 56 81 56 81 C61 76 65 70 65 63 C65 56 61 51 59 45 C57 49 56 53 56 57 C53 52 55 47 56 43 Z" fill="#FFFFFF" opacity="0.95"/>
+  <text x="56" y="77" text-anchor="middle" font-family="Avenir Next Condensed, Arial Narrow, Arial, sans-serif" font-size="18" font-weight="900" fill="#17120B" stroke="#0E0E0F" stroke-width="0.7">6M</text></g>
+      <text x="53" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="900" fill="#F3F1EB">6-Month Streak</text>
+      <text x="53" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="800" letter-spacing="1.5" fill="#FFFDF3">TIER 7</text>
+    </g>
+</svg>

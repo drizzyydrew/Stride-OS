@@ -66,13 +66,16 @@ test('legacy combined movement kinds migrate by camera view', () => {
 
 test('side-view lower-body overlay contains one clean closest-side chain', () => {
   const landmarks: PoseLandmarkRecord[] = [
+    'nose', 'neck', 'mid_hip',
     'left_shoulder', 'left_hip', 'left_knee', 'left_ankle',
     'right_shoulder', 'right_hip', 'right_knee', 'right_ankle',
   ].map((name, index) => ({ name, x: index / 10, y: index / 10, confidence: 0.95 }));
   const filtered = filterLandmarksForDisplay(landmarks, 'squat', 'side', 'left') ?? [];
   assert.deepEqual(filtered.map(item => item.name), [
+    'nose', 'neck',
     'left_shoulder', 'left_hip', 'left_knee', 'left_ankle',
   ]);
+  assert.equal(filtered.some(item => item.name === 'mid_hip'), false);
   assert.equal(filtered.some(item => item.name.startsWith('right_')), false);
 
   const config = movementOverlayConfiguration('squat', 'side', 'left');
@@ -84,6 +87,17 @@ test('side-view lower-body overlay contains one clean closest-side chain', () =>
   ]);
   assert.equal(config.bilateralDisplayAllowed, false);
   assert.equal(config.symmetryAllowed, false);
+});
+
+test('overlay landmark filtering dedupes repeated marker names', () => {
+  const landmarks: PoseLandmarkRecord[] = [
+    { name: 'left_hip', x: 0.40, y: 0.52, confidence: 0.7 },
+    { name: 'left_hip', x: 0.42, y: 0.54, confidence: 0.95 },
+    { name: 'left_knee', x: 0.50, y: 0.70, confidence: 0.95 },
+  ];
+  const filtered = filterLandmarksForDisplay(landmarks, 'squat', 'side', 'left') ?? [];
+  assert.deepEqual(filtered.map(item => item.name), ['left_hip', 'left_knee']);
+  assert.equal(filtered[0].x, 0.42);
 });
 
 test('frontal configuration is bilateral but suppresses sagittal flexion', () => {

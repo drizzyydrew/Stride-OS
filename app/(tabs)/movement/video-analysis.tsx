@@ -394,7 +394,6 @@ export default function VideoAnalysisScreen() {
     ? overlayAngles.map(angle => ({
         label: `${angle.name}${angle.side !== 'center' ? ` — ${angle.side}` : ''}`,
         degrees: angle.degrees,
-        source: 'current frame',
       }))
     : angleSeries
         .map(series => ({ series, degrees: nearestSeriesDegrees(series, currentMs) }))
@@ -402,7 +401,6 @@ export default function VideoAnalysisScreen() {
         .map(r => ({
           label: `${r.series.name}${r.series.side !== 'center' ? ` — ${r.series.side}` : ''}`,
           degrees: r.degrees,
-          source: 'smoothed series',
         }));
 
   const reps = analysis.repSummaries ?? [];
@@ -607,7 +605,7 @@ export default function VideoAnalysisScreen() {
                 <Text style={s.cardLabel}>CURRENT FRAME</Text>
                 {currentReadout.map((r, i) => (
                   <Text key={i} style={s.detailLine}>
-                    {r.label}: {Math.round(r.degrees)}° Estimated ({r.source})
+                    {r.label}: {Math.round(r.degrees)}° Estimated
                   </Text>
                 ))}
               </View>

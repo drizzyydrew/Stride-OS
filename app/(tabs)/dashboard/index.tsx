@@ -13,6 +13,8 @@ import { useActivityStore } from '../../../src/store/activityStore';
 import { useRecalculationStore } from '../../../src/store/recalculationStore';
 import { todayDateKey } from '../../../src/types/checkin';
 import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckInCard';
+import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
+import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import { LAYOUT } from '../../../src/constants/layout';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
@@ -272,6 +274,7 @@ function getDayLabel(): string {
 
 export default function TodayScreen() {
   const C = useColors();
+  useFeatureTour('today');
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const todayReadiness = useReadinessStore(s => s.todayReadiness);
@@ -447,7 +450,7 @@ export default function TodayScreen() {
       <WeatherCard />
 
       {/* One dominant answer for the day: what to do, how it should feel, and why. */}
-      <View style={[styles.primaryWorkoutCard, { backgroundColor: C.card, borderColor: C.primary }]}>
+      <FeatureTourTarget targetId="today.workout" style={[styles.primaryWorkoutCard, { backgroundColor: C.card, borderColor: C.primary }]}>
         <View style={styles.cardHeaderRow}>
           <Text style={[styles.cardLabel, { color: C.primary }]}>TODAY'S WORKOUT</Text>
           {!beforeStart && (
@@ -543,13 +546,15 @@ export default function TodayScreen() {
             ) : null}
           </>
         )}
-      </View>
+      </FeatureTourTarget>
 
       {/* Readiness stays supportive: interpretation first, numeric mechanics only on request. */}
       {showCheckInForm ? (
-        <ReadinessCheckInCard initialValues={todayReadiness ?? undefined} onSaved={() => setEditingCheckIn(false)} />
+        <FeatureTourTarget targetId="today.readiness">
+          <ReadinessCheckInCard initialValues={todayReadiness ?? undefined} onSaved={() => setEditingCheckIn(false)} />
+        </FeatureTourTarget>
       ) : (
-        <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <FeatureTourTarget targetId="today.readiness" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S READINESS</Text>
           <Text style={[styles.readinessLabel, { color: C.text }]}>{recommendation!.label}</Text>
           <Text style={[styles.readinessInterpretation, { color: C.textMuted }]}>{recommendation!.message}</Text>
@@ -579,11 +584,11 @@ export default function TodayScreen() {
           <TouchableOpacity onPress={() => setEditingCheckIn(true)} style={styles.disclosureButton} hitSlop={8}>
             <Text style={[styles.updateCheckInText, { color: C.primary }]}>Update check-in</Text>
           </TouchableOpacity>
-        </View>
+        </FeatureTourTarget>
       )}
 
       {/* Training Outlook */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+      <FeatureTourTarget targetId="today.outlook" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.cardLabel, { color: C.textDim }]}>TRAINING OUTLOOK</Text>
         <Text style={[styles.outlookTitle, { color: C.text }]}>{trainingOutlook.statusLabel}</Text>
         <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{trainingOutlook.message}</Text>
@@ -634,10 +639,10 @@ export default function TodayScreen() {
             </Text>
           </View>
         ) : null}
-      </View>
+      </FeatureTourTarget>
 
       {/* Performance Forecast */}
-      {showBalancedDetails ? <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+      {showBalancedDetails ? <FeatureTourTarget targetId="today.forecast" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.cardLabel, { color: C.textDim }]}>PERFORMANCE FORECAST</Text>
         <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{performanceForecast.summary}</Text>
         <View style={styles.forecastSummaryGrid}>
@@ -674,7 +679,7 @@ export default function TodayScreen() {
             {performanceForecast.metrics.map(metric => `${metric.label}: ${metric.summary}`).join(' ')} Forecast confidence {performanceForecast.confidence}. {performanceForecast.limitations}
           </Text>
         ) : null}
-      </View> : null}
+      </FeatureTourTarget> : null}
     </ScrollView>
   );
 }

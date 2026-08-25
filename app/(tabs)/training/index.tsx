@@ -76,6 +76,8 @@ import { paceSecPerMileToSecPerKm } from '../../../src/utils/units';
 import { zoneStatusForHeartRate } from '../../../src/utils/heartRateZones';
 import TreadmillPanel from '../../../src/components/run/TreadmillPanel';
 import TreadmillCompletionSheet from '../../../src/components/run/TreadmillCompletionSheet';
+import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
+import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 
 // ─── Sub-tab types ─────────────────────────────────────────────────────────────
 type RunTab = 'plan' | 'active' | 'hydration' | 'routes';
@@ -1549,7 +1551,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       contentContainerStyle={[styles.activeIdleContent, { paddingTop: fullScreen ? insets.top : 0, paddingBottom: (fullScreen ? insets.bottom : 0) + LAYOUT.screenPadBottom }]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.activeMapShellIdle}>
+      <FeatureTourTarget targetId="running.live" style={styles.activeMapShellIdle}>
         {showIndoorSetupPlaceholder ? (
           <View style={[styles.activeRunMapFill, { alignItems: 'center', justifyContent: 'center', backgroundColor: softPanelBg }]}>
             <Ionicons name="walk-outline" size={40} color={C.textMuted} />
@@ -1599,9 +1601,9 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             </TouchableOpacity>
           </View>
         ) : null}
-      </View>
+      </FeatureTourTarget>
 
-      <View style={[styles.runControlPanel, styles.runControlPanelFlow, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: spacing.md }]}>
+      <FeatureTourTarget targetId="running.voice" style={[styles.runControlPanel, styles.runControlPanelFlow, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: spacing.md }]}>
         <View style={styles.runPrimaryRow}>
           <View>
             <Text style={[styles.runPrimaryValue, { color: C.text }]}>{fmt(elapsed)}</Text>
@@ -1629,7 +1631,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         {runState === 'idle' ? (
           <>
             {/* Run mode selector */}
-            <View style={styles.modeRow}>
+            <FeatureTourTarget targetId="running.options" style={styles.modeRow}>
               {RUN_MODE_OPTIONS.map(option => {
                 const active = pendingMode === option.key;
                 return (
@@ -1652,7 +1654,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
                   </TouchableOpacity>
                 );
               })}
-            </View>
+            </FeatureTourTarget>
             <Text style={[styles.modeDesc, { color: C.textDim }]}>
               {RUN_MODE_OPTIONS.find(o => o.key === pendingMode)?.desc}
             </Text>
@@ -1816,6 +1818,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
               )
             ) : null}
 
+            <FeatureTourTarget targetId="running.start">
             <TouchableOpacity
               style={[styles.startRunPill, { backgroundColor: C.primary }]}
               onPress={start}
@@ -1828,6 +1831,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
                 {pendingMode === 'race' ? 'START RACE' : 'START RUN'}
               </Text>
             </TouchableOpacity>
+            </FeatureTourTarget>
           </>
         ) : (
           <>
@@ -1890,7 +1894,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             <Ionicons name="ellipsis-horizontal-circle-outline" size={20} color={C.primary} style={{ position: 'absolute', right: 12, top: 12 }} />
           </TouchableOpacity>
         ) : null}
-      </View>
+      </FeatureTourTarget>
 
       <Modal visible={showRouteActions} transparent animationType="slide" onRequestClose={() => setShowRouteActions(false)}>
         <TouchableOpacity style={styles.pointMenuOverlay} activeOpacity={1} onPress={() => setShowRouteActions(false)}>
@@ -2747,6 +2751,7 @@ function GPSTab() {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function RunningScreen() {
   const C = useColors();
+  useFeatureTour('running');
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const navigation = useNavigation();
@@ -2802,7 +2807,7 @@ export default function RunningScreen() {
       </View>
 
       {/* Sub-tab bar */}
-      <View style={[styles.subTabBar, { backgroundColor: C.card, borderColor: C.border }]}>
+      <FeatureTourTarget targetId="running.tabs" style={[styles.subTabBar, { backgroundColor: C.card, borderColor: C.border }]}>
         {TABS.map(t => (
           <TouchableOpacity
             key={t.key}
@@ -2813,7 +2818,7 @@ export default function RunningScreen() {
             <Text style={[styles.subTabText, { color: tab === t.key ? C.primary : C.textDim }]}>{t.label}</Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </FeatureTourTarget>
 
       {/* Content */}
       <View style={{ flex: 1, paddingHorizontal: 16, paddingBottom: LAYOUT.tabBarPadBottom }}>
