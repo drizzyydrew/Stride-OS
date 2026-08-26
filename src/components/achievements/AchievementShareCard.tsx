@@ -66,7 +66,7 @@ function MountainAchievementShareCard({ achievement, variant, detail }: Props) {
 
   if (!artwork) return null;
   return (
-    <ImageBackground source={artwork} style={[styles.card, styles.mountainPhoto]} imageStyle={styles.mountainPhotoImage} collapsable={false}>
+    <ImageBackground source={artwork} style={[styles.card, styles.mountainPhoto]} imageStyle={styles.mountainPhotoImage}>
       <View style={styles.mountainPhotoShade} />
       <View style={styles.mountainPhotoTop}>
         <Text style={styles.brandLight}>STRIDEOS</Text>
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
   },
   mountainPhotoShade: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.28)',
   },
   mountainPhotoTop: {

@@ -31,6 +31,16 @@ const TONES: Record<AchievementCategory, AchievementBadgeTone> = {
   challenge: { base: '#6F816E', accent: '#DCC9B1', pop: '#F3F1EB', ink: '#10100F', glow: '#4E6A87' },
   stride_level: { base: '#0E0E0F', accent: '#A8B9A1', pop: '#DCC9B1', ink: '#F3F1EB', glow: '#2D4256' },
   cumulative_elevation: { base: '#0E0E0F', accent: '#DCC9B1', pop: '#4E6A87', ink: '#F3F1EB', glow: '#6F816E' },
+  firsts: { base: '#0E0E0F', accent: '#B7835F', pop: '#DCC9B1', ink: '#F3F1EB', glow: '#2E2620' },
+  run_level: { base: '#0E0E0F', accent: '#DCC9B1', pop: '#F3F1EB', ink: '#F3F1EB', glow: '#6F816E' },
+  lifetime_distance: { base: '#0E0E0F', accent: '#4E8AAE', pop: '#DCC9B1', ink: '#F3F1EB', glow: '#2E9A98' },
+  lifetime_running: { base: '#0E0E0F', accent: '#4E8AAE', pop: '#DCC9B1', ink: '#F3F1EB', glow: '#2E9A98' },
+  lifetime_cycling: { base: '#0E0E0F', accent: '#657DB5', pop: '#DCC9B1', ink: '#F3F1EB', glow: '#8B4FA3' },
+  weekly_distance: { base: '#0E0E0F', accent: '#5F7998', pop: '#F3F1EB', ink: '#F3F1EB', glow: '#DCC9B1' },
+  elevation: { base: '#0E0E0F', accent: '#DCC9B1', pop: '#4E6A87', ink: '#F3F1EB', glow: '#6F816E' },
+  strength: { base: '#0E0E0F', accent: '#94A0A6', pop: '#DCC9B1', ink: '#F3F1EB', glow: '#2D4256' },
+  recovery: { base: '#0E0E0F', accent: '#8B9C7C', pop: '#C8D6BE', ink: '#F3F1EB', glow: '#2E9A98' },
+  challenges: { base: '#0E0E0F', accent: '#D99A38', pop: '#F3F1EB', ink: '#F3F1EB', glow: '#C56B3E' },
 };
 
 const SIZE = {
@@ -66,9 +76,16 @@ const HEX_POINTS = [
 
 function categoryFor(id: AchievementId, category?: AchievementCategory): AchievementCategory {
   if (category) return category;
+  if (id.startsWith('first_')) return 'firsts';
+  if (id.startsWith('run_level_')) return 'run_level';
+  if (id.startsWith('lifetime_run_')) return 'lifetime_running';
+  if (id.startsWith('lifetime_cycle_')) return 'lifetime_cycling';
+  if (id.startsWith('weekly_')) return 'weekly_distance';
+  if (id.startsWith('strength_') || id === 'prehab_resilience_block') return 'strength';
+  if (id.startsWith('recovery_')) return 'recovery';
+  if (id.startsWith('challenge_')) return 'challenges';
   if (id.startsWith('pr_')) return 'personal_record';
   if (id.startsWith('monthly_')) return 'monthly_distance';
-  if (id.startsWith('challenge_')) return 'challenge';
   if (id.startsWith('stride_level_')) return 'stride_level';
   if (id.startsWith('elevation_')) return 'cumulative_elevation';
   if (id.startsWith('streak_')) return 'streak';
@@ -158,8 +175,34 @@ function motifFor(id: AchievementId, category: AchievementCategory): 'track' | '
 }
 
 function titleMark(id: AchievementId): string {
+  if (id.includes('half_marathon')) return '13.1';
+  if (id.includes('marathon')) return '26.2';
+  if (id.includes('movement_lab')) return 'LAB';
+  if (id.includes('route')) return 'PIN';
+  if (id.includes('structured')) return 'PLAN';
+  if (id.includes('adapted')) return 'ADAPT';
+  if (id.includes('treadmill')) return 'TM';
+  if (id.includes('run_walk')) return 'R/W';
+  if (id.includes('strength_100') || id.includes('100_sessions')) return '100';
+  if (id.includes('strength_50') || id.includes('50_sessions')) return '50';
+  if (id.includes('strength_25') || id.includes('25_sessions')) return '25';
+  if (id.includes('strength_10') || id.includes('10_sessions')) return '10';
+  if (id.includes('12_weeks')) return '12';
+  if (id.includes('6_weeks')) return '6';
+  if (id.includes('weekly_100k') || id.includes('100k')) return '100';
+  if (id.includes('weekly_75k') || id.includes('75k')) return '75';
+  if (id.includes('weekly_50k') || id.includes('50k')) return '50';
+  if (id.includes('weekly_30k') || id.includes('30k')) return '30';
+  if (id.includes('weekly_25k') || id.includes('25k')) return '25';
+  if (id.includes('weekly_15k') || id.includes('15k')) return '15';
   if (id.includes('10k')) return '10';
   if (id.includes('5k')) return '5';
+  const lifetime = id.match(/lifetime_(?:run|cycle)_([0-9_]+)_mi/);
+  if (lifetime) return lifetime[1].replace('_', '.');
+  if (id === 'first_run') return 'RUN';
+  if (id === 'first_walk') return 'WALK';
+  if (id === 'first_ride') return 'RIDE';
+  if (id === 'first_activity') return '>>';
   if (id.includes('1k')) return '1';
   if (id.includes('200k')) return '200';
   if (id.includes('175k')) return '175';
@@ -178,6 +221,109 @@ function titleMark(id: AchievementId): string {
   if (id.includes('icon')) return 'VII';
   if (id.startsWith('elevation_')) return 'MT';
   return '>>';
+}
+
+function levelTier(id: AchievementId): number {
+  return ['foundation', 'rhythm', 'momentum', 'durability', 'engine', 'peak', 'summit']
+    .findIndex(item => id.includes(item)) + 1 || 1;
+}
+
+function RunLevelBadge({ id, earned, box }: { id: AchievementId; earned: boolean; box: number }) {
+  const tier = levelTier(id);
+  const ring = earned ? ['#F3F1EB', '#B7835F', '#8B9C7C', '#94A0A6', '#5F7998', '#6E4B36', '#DCC9B1'][tier - 1] ?? '#DCC9B1' : '#6F6A61';
+  const opacity = earned ? 1 : 0.42;
+  return (
+    <View style={[styles.wrap, { width: box, height: box, opacity: earned ? 1 : 0.55 }]} accessibilityLabel={`StrideOS run level ${tier} badge`}>
+      <Svg width={box} height={box} viewBox="0 0 112 112">
+        <Polygon points={HEX_POINTS[0]} fill="#0A0A0A" stroke={ring} strokeWidth="2.4" opacity={opacity} />
+        {HEX_POINTS.slice(1, Math.min(4, tier)).map((points, index) => (
+          <Polygon key={points} points={points} fill="none" stroke={index === tier - 2 ? '#F3F1EB' : ring} strokeWidth="1.15" opacity={Math.max(0.2, opacity - index * 0.12)} />
+        ))}
+        <Path d="M31 70 L47 49 L56 61 L66 43 L84 70 Z" fill="none" stroke={ring} strokeWidth="2.2" opacity={opacity} />
+        <SvgText x="56" y="61" textAnchor="middle" fontSize="11" fontWeight="900" fill={earned ? '#F3F1EB' : '#BDB5A9'} letterSpacing="1.1">STRIDEOS</SvgText>
+        <Polyline points="44,72 50,76 44,80 54,80 60,76 54,72 64,72 70,76 64,80" stroke={ring} strokeWidth="2" fill="none" opacity={opacity} />
+      </Svg>
+    </View>
+  );
+}
+
+function DiamondBadge({ id, category, tone, earned, box }: { id: AchievementId; category: AchievementCategory; tone: AchievementBadgeTone; earned: boolean; box: number }) {
+  const mark = titleMark(id);
+  const ring = earned ? tone.accent : '#6F6A61';
+  const pop = earned ? tone.glow : '#8B8378';
+  return (
+    <View style={[styles.wrap, { width: box, height: box, opacity: earned ? 1 : 0.5 }]} accessibilityLabel={`${mark} lifetime distance badge`}>
+      <Svg width={box} height={box} viewBox="0 0 112 112">
+        <Defs>
+          <LinearGradient id={`diamond-${id}`} x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor={earned ? tone.accent : '#514D47'} />
+            <Stop offset="0.55" stopColor={earned ? tone.glow : '#2E2B27'} />
+            <Stop offset="1" stopColor={earned ? tone.pop : '#6F6A61'} />
+          </LinearGradient>
+        </Defs>
+        <Polygon points="56,5 107,56 56,107 5,56" fill="#0A0A0A" stroke={`url(#diamond-${id})`} strokeWidth="2.2" opacity={earned ? 1 : 0.62} />
+        {category === 'lifetime_cycling' ? <Polygon points="56,19 93,56 56,93 19,56" fill="none" stroke={ring} strokeWidth="1.2" opacity={0.52} /> : null}
+        <Path d="M25 72 C37 51, 50 80, 61 52 C70 31, 82 50, 88 35" stroke={pop} strokeWidth="3.4" strokeLinecap="round" fill="none" opacity={earned ? 0.72 : 0.28} />
+        <SvgText x="56" y="55" textAnchor="middle" fontSize={mark.length > 4 ? 18 : 25} fontWeight="900" fill={earned ? '#F3F1EB' : '#CFC6BA'}>{mark}</SvgText>
+        <SvgText x="56" y="70" textAnchor="middle" fontSize="8" fontWeight="900" fill={ring}>MI</SvgText>
+        <Polyline points="44,84 50,88 44,92 54,92 60,88 54,84 64,84 70,88 64,92" stroke={ring} strokeWidth="1.7" fill="none" opacity={earned ? 0.9 : 0.38} />
+      </Svg>
+    </View>
+  );
+}
+
+function OriginalHexBadge({ id, category, tone, earned, box, size }: { id: AchievementId; category: AchievementCategory; tone: AchievementBadgeTone; earned: boolean; box: number; size: AchievementBadgeSize }) {
+  const mark = titleMark(id);
+  const ring = earned ? tone.accent : '#6F6A61';
+  const pop = earned ? tone.pop : '#8B8378';
+  const muted = earned ? tone.glow : '#3A3732';
+  const showMark = category !== 'recovery' && category !== 'firsts';
+  return (
+    <View style={[styles.wrap, { width: box, height: box, opacity: earned ? 1 : 0.5 }]} accessibilityLabel={`${mark} achievement badge`}>
+      <Svg width={box} height={box} viewBox="0 0 112 112">
+        <Polygon points={HEX_POINTS[0]} fill="#0A0A0A" stroke={ring} strokeWidth="2.2" opacity={earned ? 1 : 0.56} />
+        <Polygon points={HEX_POINTS[1]} fill="none" stroke={muted} strokeWidth="1.1" opacity={earned ? 0.45 : 0.22} />
+        {category === 'weekly_distance' ? (
+          <>
+            <SvgText x="56" y="54" textAnchor="middle" fontSize="28" fontWeight="900" fill={pop}>{mark}K</SvgText>
+            <Path d="M39 65 H73" stroke={ring} strokeWidth="2.4" strokeLinecap="round" />
+            <Polyline points="43,76 49,80 43,84 53,84 59,80 53,76 63,76 69,80 63,84" stroke={ring} strokeWidth="1.8" fill="none" />
+          </>
+        ) : category === 'strength' ? (
+          <>
+            <Path d="M25 48 H33 M79 48 H87 M35 39 V57 M42 35 V61 M70 35 V61 M77 39 V57 M42 48 H70" stroke={pop} strokeWidth="4" strokeLinecap="round" />
+            <SvgText x="56" y="76" textAnchor="middle" fontSize={mark.length > 2 ? 13 : 22} fontWeight="900" fill="#F3F1EB">{mark}</SvgText>
+          </>
+        ) : category === 'recovery' ? (
+          <>
+            <Path d="M30 73 C43 49, 55 81, 69 49 C74 38, 82 36, 88 42" stroke={pop} strokeWidth="5" strokeLinecap="round" fill="none" />
+            <Circle cx="38" cy="37" r="10" fill={ring} opacity={0.8} />
+            <Polyline points="53,31 60,25 67,31 60,37 53,31" stroke={muted} strokeWidth="2" fill="none" />
+          </>
+        ) : category === 'challenges' ? (
+          <>
+            <Path d="M31 78 C40 39, 74 39, 83 78" stroke={pop} strokeWidth="7" strokeLinecap="round" fill="none" />
+            <Circle cx="57" cy="50" r="16" fill={ring} opacity={0.52} />
+            <SvgText x="56" y="77" textAnchor="middle" fontSize={mark.length > 3 ? 10 : 15} fontWeight="900" fill="#F3F1EB">{mark}</SvgText>
+          </>
+        ) : category === 'firsts' ? (
+          <>
+            <Path d="M33 75 C42 45, 68 43, 80 25" stroke={pop} strokeWidth="4" strokeLinecap="round" fill="none" />
+            <Circle cx="33" cy="75" r="5" fill={ring} />
+            <Path d="M74 25 L83 24 L80 33" stroke={ring} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <SvgText x="56" y="78" textAnchor="middle" fontSize={mark.length > 4 ? 9 : 12} fontWeight="900" fill="#F3F1EB">{mark}</SvgText>
+          </>
+        ) : (
+          <BadgeMotif id={id} category={category} tone={{ ...tone, accent: ring, pop }} />
+        )}
+      </Svg>
+      {showMark && size !== 'small' ? (
+        <Text style={[styles.mark, { color: earned ? tone.ink : '#CFC6BA' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55}>
+          {mark}
+        </Text>
+      ) : null}
+    </View>
+  );
 }
 
 function BadgeMotif({ id, category, tone }: { id: AchievementId; category: AchievementCategory; tone: AchievementBadgeTone }) {
@@ -254,6 +400,15 @@ export default function AchievementBadge({ id, category, earned = true, size = '
 
   if (resolvedCategory === 'streak') {
     return <StreakBadge id={id} earned={earned} box={box} />;
+  }
+  if (resolvedCategory === 'run_level' || resolvedCategory === 'stride_level') {
+    return <RunLevelBadge id={id} earned={earned} box={box} />;
+  }
+  if (resolvedCategory === 'lifetime_running' || resolvedCategory === 'lifetime_cycling' || resolvedCategory === 'lifetime_distance') {
+    return <DiamondBadge id={id} category={resolvedCategory} tone={tone} earned={earned} box={box} />;
+  }
+  if (['firsts', 'weekly_distance', 'strength', 'recovery', 'challenges'].includes(resolvedCategory)) {
+    return <OriginalHexBadge id={id} category={resolvedCategory} tone={tone} earned={earned} box={box} size={size} />;
   }
 
   return (

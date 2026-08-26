@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dim: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   highlight: {
     position: 'absolute',

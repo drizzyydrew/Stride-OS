@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-label="1,000 Mile Run Lifetime earned StrideOS achievement badge">
+  
+  <path d="M128 22l106 106-106 106L22 128z" fill="#0E0E0F" fill-opacity="0.96" stroke="#C65136" stroke-width="5" stroke-opacity="1"/>
+  <path d="M128 47l81 81-81 81-81-81z" fill="#C65136" fill-opacity="0.16" stroke="#C65136" stroke-width="2.5" stroke-opacity="0.62" />
+  <text x="128" y="137" text-anchor="middle" dominant-baseline="middle" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="36" font-weight="900" fill="#F3F1EB">1,000</text><path d="M92 163h72" stroke="#C65136" stroke-width="4" stroke-linecap="round"/><path d="M94 184l8 6-8 6" fill="none" stroke="#C65136" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M111 184l8 6-8 6" fill="none" stroke="#C65136" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 184l8 6-8 6" fill="none" stroke="#C65136" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M145 184l8 6-8 6" fill="none" stroke="#C65136" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -64,7 +64,8 @@
     "typecheck": "npx -y -p typescript@5.9.3 tsc --project tsconfig.typecheck.json --noEmit --pretty false",
     "expo:check": "expo install --check",
     "check": "npm run typecheck && npm run expo:check",
-    "test": "tsx --test src/utils/__tests__/*.test.ts scripts/tests/*.test.ts"
+    "test": "tsx --test src/utils/__tests__/*.test.ts scripts/tests/*.test.ts",
+    "generate:achievement-assets": "tsx scripts/generate-achievement-system-assets.ts"
   },
   "overrides": {
     "@expo/config-plugins": "56.0.9"

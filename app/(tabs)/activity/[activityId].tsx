@@ -13,7 +13,12 @@ import { displayLabel } from '../../../src/utils/displayLabels';
 import { useExperienceModeAllows } from '../../../src/hooks/useExperienceMode';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { shareCardUnavailableReason, shareReportCard } from '../../../src/lib/shareCard';
-import ActivityShareCard, { ACTIVITY_SHARE_VARIANTS, type ActivityShareVariant } from '../../../src/components/activity/ActivityShareCard';
+import ShareStudio, {
+  SHARE_STUDIO_FORMATS,
+  SHARE_STUDIO_VARIANTS,
+  type ShareStudioFormat,
+  type ShareStudioVariant,
+} from '../../../src/components/share/ShareStudio';
 import { buildActivitySummary } from '../../../src/utils/activitySummary';
 
 export default function ActivityDetailScreen() {
@@ -24,7 +29,8 @@ export default function ActivityDetailScreen() {
   const hydrationStatus = useActivityStore(state => state.hydrationStatus);
   const units = useSettingsStore(state => state.units);
   const showDataRichDetails = useExperienceModeAllows('data_rich');
-  const [shareVariant, setShareVariant] = useState<ActivityShareVariant>('performance_dark');
+  const [shareVariant, setShareVariant] = useState<ShareStudioVariant>('minimal_card');
+  const [shareFormat, setShareFormat] = useState<ShareStudioFormat>('square');
   const [shareMessage, setShareMessage] = useState<string | null>(shareCardUnavailableReason());
   const shareCardRef = useRef<View>(null);
   const resolution = resolveActivityDetail(activities, activityId, hydrationStatus);
@@ -133,7 +139,7 @@ export default function ActivityDetailScreen() {
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>SHARE IMAGE</Text>
           <View style={s.variantGrid}>
-            {ACTIVITY_SHARE_VARIANTS.map(item => {
+            {SHARE_STUDIO_VARIANTS.map(item => {
               const active = shareVariant === item.id;
               return (
                 <TouchableOpacity
@@ -144,13 +150,35 @@ export default function ActivityDetailScreen() {
                   accessibilityState={{ selected: active }}
                 >
                   <Text style={[s.variantLabel, { color: C.text }]}>{item.label}</Text>
-                  <Text style={[s.variantDescription, { color: C.textMuted }]}>{item.description}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
-          <View ref={shareCardRef} collapsable={false} style={s.sharePreview}>
-            <ActivityShareCard activity={activity} units={units} variant={shareVariant} />
+          <View style={s.variantGrid}>
+            {SHARE_STUDIO_FORMATS.map(item => {
+              const active = shareFormat === item.id;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[s.variant, { backgroundColor: active ? C.primaryDim : C.cardAlt, borderColor: active ? C.primary : C.border }]}
+                  onPress={() => setShareFormat(item.id)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text style={[s.variantLabel, { color: C.text }]}>{item.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <View style={s.sharePreview}>
+            <ShareStudio
+              activity={activity}
+              units={units}
+              variant={shareVariant}
+              format={shareFormat}
+              canvasRef={shareCardRef}
+              onRoutePrivacyNotice={(message) => Alert.alert('Route sharing', message)}
+            />
           </View>
           <TouchableOpacity
             style={[s.sharePrimary, { backgroundColor: C.primary }]}

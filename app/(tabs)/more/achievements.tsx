@@ -19,6 +19,8 @@ import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { shareCardUnavailableReason, shareReportCard } from '../../../src/lib/shareCard';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useAchievementStore } from '../../../src/store/achievementStore';
+import { useAssessmentStore } from '../../../src/store/assessmentStore';
+import { useReadinessStore } from '../../../src/store/readinessStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useColors } from '../../../src/theme/useColors';
 import {
@@ -29,10 +31,18 @@ import {
   type CumulativeElevationAchievement,
   type StreakAchievement,
 } from '../../../src/utils/achievements';
+import {
+  ACHIEVEMENT_SYSTEM_CATEGORY_LABELS,
+  achievementFamilyLabel,
+  achievementShareAllowed,
+  evaluateAchievementSystem,
+  type AchievementFamily,
+  type EvaluatedAchievement,
+} from '../../../src/utils/achievementSystem';
 import { formatDistance } from '../../../src/lib/units';
 import { formatDuration, formatElevationMeters } from '../../../src/utils/activitySummary';
 
-const CATEGORY_LABELS: Record<AchievementCategory, string> = {
+const CATEGORY_LABELS: Partial<Record<AchievementCategory, string>> = {
   healthy_progress: 'Healthy Progress',
   personal_record: 'Personal Records',
   monthly_distance: 'Monthly Distance',
@@ -65,6 +75,39 @@ function shortDate(timeMs: number | undefined): string {
   return new Date(timeMs).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+const FAMILY_FILTERS: Array<'all' | AchievementFamily> = [
+  'all',
+  'recent',
+  'run_levels',
+  'firsts',
+  'lifetime_running',
+  'lifetime_cycling',
+  'weekly_distance',
+  'elevation',
+  'strength',
+  'streaks',
+  'recovery',
+  'challenges',
+];
+
+function familyFilterLabel(filter: 'all' | AchievementFamily): string {
+  return filter === 'all' ? 'All' : ACHIEVEMENT_SYSTEM_CATEGORY_LABELS[filter];
+}
+
+function canonicalListForFilter(achievements: readonly EvaluatedAchievement[], filter: 'all' | AchievementFamily): EvaluatedAchievement[] {
+  const sorted = [...achievements].sort((a, b) => {
+    if (a.state !== b.state) return a.state === 'earned' ? -1 : b.state === 'earned' ? 1 : 0;
+    return (a.tier ?? 99) - (b.tier ?? 99) || a.title.localeCompare(b.title);
+  });
+  if (filter === 'all') return sorted;
+  if (filter === 'recent') {
+    return sorted
+      .filter(item => item.state !== 'locked')
+      .sort((a, b) => (b.achievedDate ?? 0) - (a.achievedDate ?? 0));
+  }
+  return sorted.filter(item => item.family === filter);
+}
+
 export default function AchievementHubScreen() {
   const C = useColors();
   useFeatureTour('achievements');
@@ -72,11 +115,14 @@ export default function AchievementHubScreen() {
   const insets = useSafeAreaInsets();
   const activities = useActivityStore(state => state.activities);
   const awarded = useAchievementStore(state => state.awarded);
+  const readinessHistory = useReadinessStore(state => state.history);
+  const assessmentResults = useAssessmentStore(state => state.results);
   const units = useSettingsStore(state => state.units);
   const [shareVariant, setShareVariant] = useState<AchievementShareVariant>('badge_square');
   const [selectedShareId, setSelectedShareId] = useState<string | null>(null);
   const [shareMessage, setShareMessage] = useState<string | null>(shareCardUnavailableReason());
   const [showStreakLadder, setShowStreakLadder] = useState(false);
+  const [familyFilter, setFamilyFilter] = useState<'all' | AchievementFamily>('all');
   const shareRef = useRef<View>(null);
   const weekPlan = useWeekPlan();
   const { weekSessions } = useScheduledSessions(weekPlan);
@@ -97,6 +143,15 @@ export default function AchievementHubScreen() {
     acc[category] = [...(acc[category] ?? []), definition];
     return acc;
   }, {});
+  const canonicalAchievements = useMemo(() => evaluateAchievementSystem({
+    activities,
+    awarded,
+    units,
+    scheduledSessions: weekSessions,
+    readinessHistory,
+    assessmentResults,
+  }), [activities, assessmentResults, awarded, readinessHistory, units, weekSessions]);
+  const canonicalVisible = canonicalListForFilter(canonicalAchievements, familyFilter);
 
   function shareAchievement(definition: AchievementDefinition) {
     setSelectedShareId(definition.id);
@@ -134,6 +189,56 @@ export default function AchievementHubScreen() {
             </Text>
           </View>
         </FeatureTourTarget>
+
+        <View style={[s.section, { borderColor: C.border }]}>
+          <View style={s.sectionHeaderRow}>
+            <Text style={[s.sectionTitle, { color: C.text }]}>Achievement System</Text>
+            <Text style={[s.chevronsSmall, { color: C.primary }]}>{'>>>>>'}</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterRail}>
+            {FAMILY_FILTERS.map(filter => {
+              const active = familyFilter === filter;
+              return (
+                <TouchableOpacity
+                  key={filter}
+                  style={[s.filterChip, { backgroundColor: active ? C.primaryDim : C.card, borderColor: active ? C.primary : C.border }]}
+                  onPress={() => setFamilyFilter(filter)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text style={[s.filterText, { color: active ? C.primary : C.textMuted }]}>{familyFilterLabel(filter)}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          {canonicalVisible.slice(0, familyFilter === 'all' ? 36 : canonicalVisible.length).map(item => {
+            const earned = item.state !== 'locked';
+            return (
+              <TouchableOpacity
+                key={item.id}
+                style={[s.badgeRow, { backgroundColor: earned ? C.primaryDim : C.cardAlt, borderColor: earned ? C.primary : C.border }]}
+                onPress={() => router.push({ pathname: '/(tabs)/more/achievement-detail', params: { id: item.id } } as never)}
+                accessibilityRole="button"
+                accessibilityLabel={item.accessibilityLabel}
+              >
+                <AchievementBadge id={item.id} category={item.category} size="small" earned={earned} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[s.rowTitle, { color: C.text }]}>{item.title}</Text>
+                  <Text style={[s.body, { color: C.textMuted }]}>
+                    {achievementFamilyLabel(item.family)} - {earned && item.achievedDate ? `Earned ${shortDate(item.achievedDate)}` : item.displayRemaining}
+                  </Text>
+                  <View style={[s.progressTrack, { backgroundColor: C.card }]}>
+                    <View style={[s.progressFill, { width: `${Math.round(item.progressPercentage * 100)}%` as `${number}%`, backgroundColor: earned ? C.primary : C.textDim }]} />
+                  </View>
+                </View>
+                <Ionicons name={achievementShareAllowed(item) ? 'share-outline' : 'chevron-forward'} size={18} color={earned ? C.primary : C.textDim} />
+              </TouchableOpacity>
+            );
+          })}
+          {familyFilter === 'all' && canonicalVisible.length > 36 ? (
+            <Text style={[s.body, { color: C.textMuted }]}>Use a family filter to browse all {canonicalVisible.length} canonical achievements.</Text>
+          ) : null}
+        </View>
 
         <View style={[s.section, { borderColor: C.border }]}>
           <TouchableOpacity
@@ -210,7 +315,7 @@ export default function AchievementHubScreen() {
                         <Ionicons name="share-outline" size={17} color={C.primary} />
                       </TouchableOpacity>
                     ) : (
-                      <Ionicons name="lock-closed" size={17} color={C.textDim} />
+                      <View style={[s.dormantDot, { borderColor: C.textDim }]} />
                     )}
                   </View>
                 );
@@ -262,8 +367,8 @@ export default function AchievementHubScreen() {
                   <View style={s.mountainShade} />
                   {!item.complete ? (
                     <View style={[s.lockPill, { backgroundColor: C.card }]}>
-                      <Ionicons name="lock-closed" size={13} color={C.textMuted} />
-                      <Text style={[s.lockText, { color: C.textMuted }]}>LOCKED</Text>
+                      <View style={[s.dormantDotSmall, { borderColor: C.textMuted }]} />
+                      <Text style={[s.lockText, { color: C.textMuted }]}>DORMANT</Text>
                     </View>
                   ) : null}
                   <View style={s.mountainCopy}>
@@ -445,6 +550,9 @@ const s = StyleSheet.create({
   section: { borderTopWidth: 1, paddingTop: 14, marginTop: 4, marginBottom: 18 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '900', marginBottom: 10 },
+  filterRail: { gap: 8, paddingBottom: 10 },
+  filterChip: { minHeight: 36, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
+  filterText: { fontSize: 12, fontWeight: '900' },
   streakSummary: { borderWidth: 1, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 14 },
   streakSummaryCopy: { flex: 1, minWidth: 0, gap: 8 },
   streakCount: { fontSize: 30, lineHeight: 34, fontWeight: '900', fontVariant: ['tabular-nums'] },
@@ -462,8 +570,8 @@ const s = StyleSheet.create({
   progressFill: { height: '100%', borderRadius: 999 },
   mountainGrid: { gap: 12 },
   mountainCard: { minHeight: 320, borderWidth: 1, borderRadius: 18, overflow: 'hidden' },
-  mountainImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  mountainShade: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 0, 0, 0.24)' },
+  mountainImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
+  mountainShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0, 0, 0, 0.24)' },
   lockPill: { position: 'absolute', top: 14, left: 14, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', gap: 5 },
   lockText: { fontSize: 10, fontWeight: '900', letterSpacing: 0.8 },
   mountainCopy: { position: 'absolute', left: 18, right: 18, bottom: 18 },
@@ -476,6 +584,8 @@ const s = StyleSheet.create({
   badgeRow: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 10 },
   rowTitle: { fontSize: 14, fontWeight: '900' },
   body: { fontSize: 12, lineHeight: 18, marginTop: 2 },
+  dormantDot: { width: 18, height: 18, borderRadius: 999, borderWidth: 2, opacity: 0.62 },
+  dormantDotSmall: { width: 11, height: 11, borderRadius: 999, borderWidth: 1.5, opacity: 0.72 },
   iconBtn: { width: 38, height: 38, borderRadius: 11, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   variantGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   variant: { width: '31%', minHeight: 74, borderRadius: 12, borderWidth: 1, padding: 10 },

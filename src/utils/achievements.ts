@@ -1,75 +1,7 @@
 import type { Activity } from '../types/activity';
 import type { ScheduledSession } from './scheduledSessions';
 
-export type AchievementId =
-  | 'long_run_builder'
-  | 'easy_means_easy'
-  | 'strong_strides'
-  | 'recovery_master'
-  | 'consistency'
-  | 'smart_adjustment'
-  | 'back_in_rhythm'
-  | 'consistency_wins'
-  | 'smart_progression'
-  | 'listened_to_your_body'
-  | 'back_on_track'
-  | 'balanced_training'
-  | 'foundation_builder'
-  | 'strength_supports_running'
-  | 'deload_done_right'
-  | 'quality_earned'
-  | 'pr_longest_run'
-  | 'pr_farthest_run'
-  | 'pr_fastest_1k'
-  | 'pr_fastest_mile'
-  | 'pr_fastest_5k'
-  | 'pr_fastest_10k'
-  | 'pr_longest_ride'
-  | 'pr_highest_ride_elevation'
-  | 'monthly_run_10k'
-  | 'monthly_run_25k'
-  | 'monthly_run_50k'
-  | 'monthly_run_75k'
-  | 'monthly_run_100k'
-  | 'monthly_run_125k'
-  | 'monthly_run_150k'
-  | 'monthly_run_175k'
-  | 'monthly_run_200k'
-  | 'three_training_days_week'
-  | 'three_week_consistency'
-  | 'four_week_consistency'
-  | 'six_week_consistency'
-  | 'three_month_consistency'
-  | 'six_month_consistency'
-  | 'streak_3_day'
-  | 'streak_1_week'
-  | 'streak_30_day'
-  | 'streak_50_day'
-  | 'streak_60_day'
-  | 'streak_90_day'
-  | 'streak_6_month'
-  | 'stride_level_starter'
-  | 'stride_level_pacesetter'
-  | 'stride_level_builder'
-  | 'stride_level_endurer'
-  | 'stride_level_advancer'
-  | 'stride_level_elite'
-  | 'stride_level_icon'
-  | 'challenge_25k_month'
-  | 'challenge_50k_month'
-  | 'challenge_100k_month'
-  | 'challenge_four_week_consistency'
-  | 'challenge_strength_run_balance'
-  | 'elevation_mount_hood'
-  | 'elevation_mount_fuji'
-  | 'elevation_mount_rainier'
-  | 'elevation_kilimanjaro'
-  | 'elevation_denali'
-  | 'elevation_aconcagua'
-  | 'elevation_mount_everest'
-  | 'elevation_mauna_kea'
-  | 'elevation_ascraeus_mons'
-  | 'elevation_olympus_mons';
+export type AchievementId = string;
 
 export type AchievementDefinition = {
   id: AchievementId;
@@ -88,7 +20,17 @@ export type AchievementCategory =
   | 'training_quality'
   | 'challenge'
   | 'stride_level'
-  | 'cumulative_elevation';
+  | 'cumulative_elevation'
+  | 'firsts'
+  | 'run_level'
+  | 'lifetime_distance'
+  | 'lifetime_running'
+  | 'lifetime_cycling'
+  | 'weekly_distance'
+  | 'elevation'
+  | 'strength'
+  | 'recovery'
+  | 'challenges';
 
 export type PersonalRecord = {
   id: AchievementId;
@@ -1153,7 +1095,7 @@ export function calculateStreakAchievements(
   const achievements = STREAK_ACHIEVEMENTS.map(definition => {
     const unlockedAt = earnedAt.get(definition.id);
     const complete = Boolean(unlockedAt) || currentStreakDays >= definition.thresholdDays;
-    const state = currentDefinition?.id === definition.id
+    const state: StreakAchievement['state'] = currentDefinition?.id === definition.id
       ? 'current'
       : complete
         ? 'earned'

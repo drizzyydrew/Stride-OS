@@ -5,6 +5,7 @@ import type { UnitSystem } from '../../store/settingsStore';
 import type { Activity, ActivityCoordinate } from '../../types/activity';
 import { buildActivitySummary } from '../../utils/activitySummary';
 import { displayLabel } from '../../utils/displayLabels';
+import { activityHasShareableRoute, normalizeRouteForOverlay, routePointsToSvgPolyline } from '../../utils/routeOverlay';
 
 export type ActivityShareVariant = 'performance_dark' | 'route_story' | 'photo_overlay';
 
@@ -27,24 +28,7 @@ function publicMetrics(activity: Activity, units: UnitSystem) {
 }
 
 function normalizeRoute(route: ActivityCoordinate[]): string {
-  if (route.length < 2) return '28,118 48,76 77,94 99,45 132,67 151,31';
-  const latitudes = route.map(point => point.latitude);
-  const longitudes = route.map(point => point.longitude);
-  const minLat = Math.min(...latitudes);
-  const maxLat = Math.max(...latitudes);
-  const minLon = Math.min(...longitudes);
-  const maxLon = Math.max(...longitudes);
-  const latSpan = Math.max(maxLat - minLat, 0.000001);
-  const lonSpan = Math.max(maxLon - minLon, 0.000001);
-  const step = Math.max(1, Math.floor(route.length / 32));
-  return route
-    .filter((_, index) => index % step === 0)
-    .map(point => {
-      const x = 24 + ((point.longitude - minLon) / lonSpan) * 132;
-      const y = 24 + (1 - ((point.latitude - minLat) / latSpan)) * 112;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
+  return routePointsToSvgPolyline(normalizeRouteForOverlay(route, { width: 180, height: 160 }, 0.13).points);
 }
 
 function MetricRow({ label, value, light = false }: { label: string; value: string; light?: boolean }) {
@@ -58,6 +42,13 @@ function MetricRow({ label, value, light = false }: { label: string; value: stri
 
 function RouteSketch({ route }: { route: ActivityCoordinate[] }) {
   const points = normalizeRoute(route);
+  if (!points) {
+    return (
+      <View style={styles.routeUnavailable}>
+        <Text style={styles.privacyNote}>Route unavailable for this activity.</Text>
+      </View>
+    );
+  }
   return (
     <Svg width="100%" height={180} viewBox="0 0 180 160">
       <Rect x="8" y="8" width="164" height="144" rx="22" fill="#F3F1EB" opacity={0.14} />
@@ -81,7 +72,11 @@ export default function ActivityShareCard({ activity, units, variant }: Props) {
           <Text style={styles.routeBrand}>STRIDEOS</Text>
           <Text style={styles.routeTitle}>{title}</Text>
         </View>
-        <RouteSketch route={route} />
+        {activityHasShareableRoute(activity) ? <RouteSketch route={route} /> : (
+          <View style={styles.routeUnavailable}>
+            <Text style={styles.privacyNote}>No recorded GPS route available.</Text>
+          </View>
+        )}
         <View style={styles.routeGrid}>
           {metrics.slice(0, 4).map(item => (
             <View key={item.label} style={styles.routeMetric}>
@@ -90,7 +85,7 @@ export default function ActivityShareCard({ activity, units, variant }: Props) {
             </View>
           ))}
         </View>
-        <Text style={styles.privacyNote}>Route shown as abstract shape only.</Text>
+        <Text style={styles.privacyNote}>Route shape is drawn from recorded GPS only.</Text>
       </View>
     );
   }
@@ -254,6 +249,15 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 13,
     backgroundColor: 'rgba(243, 241, 235, 0.11)',
+  },
+  routeUnavailable: {
+    minHeight: 180,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(243, 241, 235, 0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 18,
   },
   routeMetricValue: {
     color: '#F3F1EB',
