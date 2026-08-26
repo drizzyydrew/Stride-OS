@@ -71,7 +71,7 @@ test('mode gating reaches the specified Phase 5 presentation surfaces', () => {
 });
 
 test('bottom tab visual contract is centralized and uniform', () => {
-  assert.deepEqual(VISIBLE_BOTTOM_TABS, ['Today', 'Calendar', 'Running', 'Strength', 'AI Coach', 'More']);
+  assert.deepEqual(VISIBLE_BOTTOM_TABS, ['Today', 'Calendar', 'Running', 'AI Coach', 'More']);
   assert.deepEqual(TAB_BAR_VISUAL_CONTRACT, {
     iconSize: 25,
     iconBoxSize: 30,
@@ -85,10 +85,22 @@ test('bottom tab visual contract is centralized and uniform', () => {
 
   const tabs = read('app/(tabs)/_layout.tsx');
   const visibleSection = tabs.slice(tabs.indexOf('<Tabs.Screen'), tabs.indexOf('<Tabs.Screen name="index"'));
-  assert.equal((visibleSection.match(/<Tabs\.Screen/g) ?? []).length, 6);
+  assert.equal((visibleSection.match(/<Tabs\.Screen/g) ?? []).length, 5);
   assert.match(tabs, /TAB_BAR_VISUAL_CONTRACT/);
+  assert.match(tabs, /paddingHorizontal:\s*LAYOUT\.tabBarPadHorizontal/);
   assert.match(tabs, /width:\s*TAB_ICON_BOX_SIZE/);
   assert.match(tabs, /height:\s*TAB_ICON_BOX_SIZE/);
   assert.match(tabs, /minimumFontScale=\{0\.85\}/);
   assert.match(tabs, /includeFontPadding:\s*false/);
+});
+
+test('Today daily check-in is collapsed behind a disclosure and header stays outside scrolling', () => {
+  const dashboard = read('app/(tabs)/dashboard/index.tsx');
+  const returnSection = dashboard.slice(dashboard.indexOf('return ('), dashboard.indexOf('<WeatherCard'));
+  assert.match(dashboard, /checkInOpen/);
+  assert.match(dashboard, /accessibilityState=\{\{ expanded: checkInOpen \}\}/);
+  assert.match(dashboard, /<ReadinessCheckInCard[\s\S]*embedded/);
+  assert.match(dashboard, /styles\.fixedHeader/);
+  assert.match(returnSection, /<View style=\{\[styles\.screen/);
+  assert.match(returnSection, /<ScrollView/);
 });

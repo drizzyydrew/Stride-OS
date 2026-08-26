@@ -278,6 +278,7 @@ export default function TodayScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const todayReadiness = useReadinessStore(s => s.todayReadiness);
+  const [checkInOpen, setCheckInOpen] = useState(false);
   const [editingCheckIn, setEditingCheckIn] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -427,13 +428,9 @@ export default function TodayScreen() {
   ];
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: C.bg }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top + 20, paddingBottom: LAYOUT.screenPadBottom }}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={[styles.screen, { backgroundColor: C.bg }]}>
       {/* Header */}
-      <View style={styles.headerRow}>
+      <View style={[styles.headerRow, styles.fixedHeader, { paddingTop: insets.top + 20, backgroundColor: C.bg, borderBottomColor: C.border }]}>
         <View>
           <Text style={[styles.headerDate, { color: C.textDim }]}>{getDayLabel()}</Text>
           <Text style={[styles.headerGreeting, { color: C.text }]}>Good morning, Drew.</Text>
@@ -446,6 +443,12 @@ export default function TodayScreen() {
           <Ionicons name="person-outline" size={18} color={C.textMuted} />
         </TouchableOpacity>
       </View>
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: LAYOUT.screenPadBottom }}
+        showsVerticalScrollIndicator={false}
+      >
 
       <WeatherCard />
 
@@ -550,8 +553,41 @@ export default function TodayScreen() {
 
       {/* Readiness stays supportive: interpretation first, numeric mechanics only on request. */}
       {showCheckInForm ? (
-        <FeatureTourTarget targetId="today.readiness">
-          <ReadinessCheckInCard initialValues={todayReadiness ?? undefined} onSaved={() => setEditingCheckIn(false)} />
+        <FeatureTourTarget targetId="today.readiness" style={[styles.checkInDisclosureCard, { backgroundColor: C.card, borderColor: C.border }]}>
+          <TouchableOpacity
+            onPress={() => setCheckInOpen(open => !open)}
+            activeOpacity={0.84}
+            style={styles.checkInDisclosureButton}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: checkInOpen }}
+            accessibilityLabel={checkInOpen ? 'Collapse daily check-in' : 'Expand daily check-in'}
+            accessibilityHint="Opens the daily readiness questions"
+          >
+            <View style={styles.checkInDisclosureCopy}>
+              <Text style={[styles.cardLabel, { color: C.textDim }]}>DAILY CHECK-IN</Text>
+              <Text style={[styles.checkInDisclosureTitle, { color: C.text }]}>
+                {editingCheckIn ? "Update today's readiness" : 'Quick readiness check'}
+              </Text>
+              <Text style={[styles.checkInDisclosureSub, { color: C.textMuted }]}>
+                Sleep, body, energy, and stress stay tucked away until you open this.
+              </Text>
+            </View>
+            <View style={[styles.checkInDisclosureIcon, { backgroundColor: C.primaryDim }]}>
+              <Ionicons name={checkInOpen ? 'chevron-up' : 'chevron-down'} size={18} color={C.primary} />
+            </View>
+          </TouchableOpacity>
+          {checkInOpen ? (
+            <View style={styles.checkInFormWrap}>
+              <ReadinessCheckInCard
+                initialValues={todayReadiness ?? undefined}
+                onSaved={() => {
+                  setEditingCheckIn(false);
+                  setCheckInOpen(false);
+                }}
+                embedded
+              />
+            </View>
+          ) : null}
         </FeatureTourTarget>
       ) : (
         <FeatureTourTarget targetId="today.readiness" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
@@ -581,7 +617,7 @@ export default function TodayScreen() {
             </TouchableOpacity>
           ) : null}
           {showDataRichDetails && advancedOpen ? <Text style={[styles.advancedText, { color: C.textDim }]}>Readiness score {readiness}/100 · sleep {todayReadiness!.sleepMinutesTotal} min · sleep contribution {recommendation!.sleepContribution}/100 · {recommendation!.baselineSource === 'personal_28_day' ? 'your 28-day sleep baseline' : 'starter sleep baseline'} {recommendation!.baselineSleepMinutes} min.</Text> : null}
-          <TouchableOpacity onPress={() => setEditingCheckIn(true)} style={styles.disclosureButton} hitSlop={8}>
+          <TouchableOpacity onPress={() => { setEditingCheckIn(true); setCheckInOpen(true); }} style={styles.disclosureButton} hitSlop={8}>
             <Text style={[styles.updateCheckInText, { color: C.primary }]}>Update check-in</Text>
           </TouchableOpacity>
         </FeatureTourTarget>
@@ -680,16 +716,30 @@ export default function TodayScreen() {
           </Text>
         ) : null}
       </FeatureTourTarget> : null}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 16,
+  },
+  fixedHeader: {
+    zIndex: 10,
+    marginBottom: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerDate: {
     fontSize: 12,
@@ -717,6 +767,43 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 16,
     marginBottom: 16,
+  },
+  checkInDisclosureCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 16,
+  },
+  checkInDisclosureButton: {
+    minHeight: 72,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  checkInDisclosureCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 4,
+  },
+  checkInDisclosureTitle: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '800',
+  },
+  checkInDisclosureSub: {
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  checkInDisclosureIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkInFormWrap: {
+    marginTop: 14,
   },
   primaryWorkoutCard: {
     borderRadius: 16,

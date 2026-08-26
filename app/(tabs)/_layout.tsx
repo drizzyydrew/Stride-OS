@@ -83,11 +83,15 @@ export default function TabsLayout() {
           height: LAYOUT.tabBarHeight,
           paddingBottom: LAYOUT.tabBarPadBottom,
           paddingTop: LAYOUT.tabBarPadTop,
+          paddingHorizontal: LAYOUT.tabBarPadHorizontal,
         },
         tabBarItemStyle: {
+          flex: 1,
           paddingHorizontal: 0,
           paddingVertical: 0,
           minWidth: 0,
+          alignItems: 'center',
+          justifyContent: 'center',
         },
       }}
     >
@@ -119,15 +123,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="strength"
-        options={{
-          title: 'Strength',
-          tabBarIcon: ({ focused }) => (
-            <TabBtn name="barbell-outline" label="Strength" focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="coach"
         options={{
           title: 'AI Coach',
@@ -152,12 +147,14 @@ export default function TabsLayout() {
       <Tabs.Screen name="profile" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="movement" options={{ href: null }} />
+      <Tabs.Screen name="strength" options={{ href: null }} />
       <Tabs.Screen name="activity-log" options={{ href: null }} />
       <Tabs.Screen name="activity" options={{ href: null }} />
       <Tabs.Screen name="training/workout-detail" options={{ href: null }} />
       <Tabs.Screen name="more/gear" options={{ href: null }} />
       <Tabs.Screen name="more/stride-report" options={{ href: null }} />
       <Tabs.Screen name="more/achievements" options={{ href: null }} />
+      <Tabs.Screen name="more/achievement-detail" options={{ href: null }} />
     </Tabs>
   );
 }

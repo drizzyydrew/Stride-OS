@@ -43,17 +43,17 @@ test('native splash and React brand splash share one canonical treatment', () =>
   assert.ok(splashPlugin, 'expo-splash-screen plugin missing from app.json');
   const cfg = splashPlugin[1] as { image: string; imageWidth: number; backgroundColor: string; dark?: { image: string; backgroundColor: string } };
 
-  // Native config: the approved dark treatment in both device appearances.
+  // Native config: the logo-led dark treatment in both device appearances.
   assert.equal(cfg.image, './assets/images/splash-icon.png');
-  assert.equal(cfg.backgroundColor, '#2E2620');
+  assert.equal(cfg.backgroundColor, '#11100F');
   assert.equal(cfg.imageWidth, 220);
   assert.equal(cfg.dark?.image, './assets/images/splash-icon.png');
-  assert.equal(cfg.dark?.backgroundColor, '#2E2620');
+  assert.equal(cfg.dark?.backgroundColor, '#11100F');
 
   // React brand splash references the SAME asset, color, and size.
   const layout = read('app/_layout.tsx');
   assert.ok(layout.includes("require('../assets/images/splash-icon.png')"), 'React splash must render the native splash asset');
-  assert.ok(layout.includes("'#2E2620'"), 'React splash must use the native splash background');
+  assert.ok(layout.includes("'#11100F'"), 'React splash must use the native splash background');
   assert.ok(layout.includes('SPLASH_IMAGE_WIDTH = 220'), 'React splash must match the native 220pt image width');
   assert.ok(!layout.includes('AppLogo'), 'React splash must not render a second logo treatment');
 

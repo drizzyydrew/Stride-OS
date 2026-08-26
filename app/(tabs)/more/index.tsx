@@ -29,6 +29,11 @@ const ITEMS: NavItem[] = [
     route:       '/(tabs)/activity',
   },
   {
+    label:       'Strength',
+    icon:        'barbell-outline',
+    route:       '/(tabs)/strength',
+  },
+  {
     label:       'Gear',
     icon:        'trail-sign-outline',
     route:       '/(tabs)/more/gear',

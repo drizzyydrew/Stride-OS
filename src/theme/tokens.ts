@@ -61,7 +61,7 @@ export const elevationTokens = {
     boxShadow: '0 0 0 rgba(0, 0, 0, 0)',
   },
   lg: {
-    boxShadow: '0 0 8px rgba(220, 192, 167, 0.18)',
+    boxShadow: '0 0 8px rgba(94, 126, 146, 0.18)',
   },
 } as const;
 

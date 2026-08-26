@@ -62,14 +62,16 @@ test('AI Coach strips raw Markdown and emoji-like pictographs before display', (
   assert.doesNotMatch(coach, />🔑</);
 });
 
-test('bottom tabs remain exactly six and use the modest larger label/icon contract', () => {
+test('bottom tabs remain evenly spaced after moving Strength into More', () => {
   const tabs = readFileSync('app/(tabs)/_layout.tsx', 'utf8');
   const visibleSection = tabs.slice(tabs.indexOf('<Tabs.Screen'), tabs.indexOf('<Tabs.Screen name="index"'));
-  assert.equal((visibleSection.match(/<Tabs\.Screen/g) ?? []).length, 6);
+  assert.equal((visibleSection.match(/<Tabs\.Screen/g) ?? []).length, 5);
   assert.match(tabs, /TAB_ICON_SIZE\s*=\s*25/);
   assert.match(tabs, /TAB_LABEL_FONT_SIZE\s*=\s*10/);
   assert.match(tabs, /minimumFontScale=\{0\.85\}/);
   assert.match(tabs, /minWidth:\s*0/);
+  assert.match(tabs, /flex:\s*1/);
+  assert.match(tabs, /paddingHorizontal:\s*LAYOUT\.tabBarPadHorizontal/);
 });
 
 test('marker editing allows full-image movement with only edge clamping', () => {

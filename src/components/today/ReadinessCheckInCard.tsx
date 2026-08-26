@@ -334,9 +334,10 @@ function SleepDurationPicker({
 type Props = {
   initialValues?: ReadinessInputs;
   onSaved?:       () => void;
+  embedded?:      boolean;
 };
 
-export default function ReadinessCheckInCard({ initialValues, onSaved }: Props) {
+export default function ReadinessCheckInCard({ initialValues, onSaved, embedded = false }: Props) {
   const C = useColors();
   const submitReadiness = useReadinessStore(s => s.submitReadiness);
   const [inputs, setInputs] = useState<DraftInputs>(() => hydrateInitialValues(initialValues));
@@ -380,7 +381,12 @@ export default function ReadinessCheckInCard({ initialValues, onSaved }: Props) 
   }
 
   return (
-    <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+    <View
+      style={[
+        embedded ? styles.embeddedCard : styles.card,
+        { backgroundColor: embedded ? 'transparent' : C.card, borderColor: embedded ? 'transparent' : C.border, borderTopColor: C.border },
+      ]}
+    >
       <Text style={[styles.title, { color: C.text }]}>Daily Check-In</Text>
       <Text style={[styles.subtitle, { color: C.textMuted }]}>A quick, plain-language check before you train.</Text>
 
@@ -416,6 +422,11 @@ const styles = StyleSheet.create({
     borderWidth:  1,
     padding:      16,
     marginBottom: 16,
+  },
+  embeddedCard: {
+    borderTopWidth: 1,
+    paddingTop: 14,
+    marginBottom: 0,
   },
   title: {
     fontSize:     typographyTokens.sizes.cardTitle,

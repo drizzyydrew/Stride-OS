@@ -4,14 +4,14 @@ import test from 'node:test';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 
-test('bottom navigation declares exactly the six approved primary destinations', () => {
+test('bottom navigation declares exactly the five approved primary destinations', () => {
   const source = read('app/(tabs)/_layout.tsx');
   const visibleSection = source.slice(source.indexOf('<Tabs.Screen'), source.indexOf('<Tabs.Screen name="index"'));
   const names = [...visibleSection.matchAll(/<Tabs\.Screen\s+name="([^"]+)"/g)].map(match => match[1]);
   const hiddenNames = [...source.matchAll(/<Tabs\.Screen name="([^"]+)" options=\{\{ href: null \}\}/g)]
     .map(match => match[1]);
 
-  assert.deepEqual(names, ['dashboard', 'calendar', 'training', 'strength', 'coach', 'more']);
+  assert.deepEqual(names, ['dashboard', 'calendar', 'training', 'coach', 'more']);
   assert.deepEqual(hiddenNames, [
     'index',
     'analytics',
@@ -19,12 +19,14 @@ test('bottom navigation declares exactly the six approved primary destinations',
     'profile',
     'settings',
     'movement',
+    'strength',
     'activity-log',
     'activity',
     'training/workout-detail',
     'more/gear',
     'more/stride-report',
     'more/achievements',
+    'more/achievement-detail',
   ]);
   assert.equal(existsSync('app/(tabs)/activity/_layout.tsx'), true);
   assert.equal(existsSync('app/(tabs)/profile/_layout.tsx'), true);
@@ -42,6 +44,7 @@ test('More contains only valid secondary destinations and does not duplicate pri
 
   assert.deepEqual(labels, [
     'Activity',
+    'Strength',
     'Gear',
     'Stride Report',
     'Achievements',
@@ -52,7 +55,7 @@ test('More contains only valid secondary destinations and does not duplicate pri
     'Settings',
   ]);
   assert.equal(labels.includes('Running'), false);
-  assert.equal(labels.includes('Strength'), false);
+  assert.equal(labels.filter(label => label === 'Strength').length, 1);
 
   for (const route of routes) {
     const relative = route.replace('/(tabs)/', '');

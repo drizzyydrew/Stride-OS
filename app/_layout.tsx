@@ -51,9 +51,9 @@ SplashScreen.preventAutoHideAsync();
 SplashScreen.setOptions({ duration: 500, fade: true });
 
 // Must stay in lockstep with app.json → plugins → expo-splash-screen
-// (backgroundColor #2E2620, imageWidth 220) so both startup frames are the
+// (backgroundColor #11100F, imageWidth 220) so both startup frames are the
 // same visual treatment. scripts/tests/startupBranding.test.ts enforces this.
-const SPLASH_BACKGROUND  = '#2E2620';
+const SPLASH_BACKGROUND  = '#11100F';
 const SPLASH_IMAGE_WIDTH = 220;
 
 export default function RootLayout() {
@@ -157,7 +157,7 @@ export default function RootLayout() {
   if (showBrandSplash) {
     // Canonical startup treatment — identical composition, scale, and
     // background to the native Expo splash (see app.json "expo-splash-screen":
-    // splash-icon.png at 220pt on #2E2620), so the native → React handoff has
+    // splash-icon.png at 220pt on #11100F), so the native → React handoff has
     // no visible logo swap in either device appearance.
     return (
       <View style={{ flex: 1, backgroundColor: SPLASH_BACKGROUND, alignItems: 'center', justifyContent: 'center' }}>

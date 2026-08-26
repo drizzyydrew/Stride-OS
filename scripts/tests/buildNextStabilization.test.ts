@@ -205,10 +205,12 @@ test('Movement Lab marker editor allows full-image normalized movement and block
   assert.doesNotMatch(source, /maxDrag|dragRadius|radiusLimit/i);
 });
 
-test('bottom tabs remain exactly six visible destinations with modest larger icons', () => {
+test('bottom tabs keep Strength in More and preserve the modest icon contract', () => {
   const source = fs.readFileSync('app/(tabs)/_layout.tsx', 'utf8');
-  const visible = [...source.matchAll(/<Tabs\.Screen\s+name="(dashboard|calendar|training|strength|coach|more)"/g)].map(match => match[1]);
-  assert.deepEqual(visible, ['dashboard', 'calendar', 'training', 'strength', 'coach', 'more']);
+  const visibleSection = source.slice(source.indexOf('<Tabs.Screen'), source.indexOf('<Tabs.Screen name="index"'));
+  const visible = [...visibleSection.matchAll(/<Tabs\.Screen\s+name="(dashboard|calendar|training|coach|more)"/g)].map(match => match[1]);
+  assert.deepEqual(visible, ['dashboard', 'calendar', 'training', 'coach', 'more']);
+  assert.match(source, /<Tabs\.Screen name="strength" options=\{\{ href: null \}\}/);
   assert.match(source, /TAB_ICON_SIZE\s*=\s*25/);
   assert.match(source, /TAB_LABEL_FONT_SIZE\s*=\s*10/);
   assert.match(source, /href:\s*null/);

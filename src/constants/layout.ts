@@ -6,6 +6,7 @@ export const LAYOUT = {
   tabBarHeight:    94,
   tabBarPadBottom: 26,
   tabBarPadTop:    10,
+  tabBarPadHorizontal: 8,
 
   // Screen
   screenPadH:      20,
@@ -42,7 +43,7 @@ export const TAB_BAR_VISUAL_CONTRACT = {
   itemPaddingHorizontal: 0,
 } as const;
 
-export const VISIBLE_BOTTOM_TABS = ['Today', 'Calendar', 'Running', 'Strength', 'AI Coach', 'More'] as const;
+export const VISIBLE_BOTTOM_TABS = ['Today', 'Calendar', 'Running', 'AI Coach', 'More'] as const;
 
 // Returns the appropriate max content width for a given screen width.
 //   Phone  (<744px):  fills full width; padding applied by ScrollScreen

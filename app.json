@@ -7,15 +7,15 @@
     "icon": "./assets/images/icon.png",
     "scheme": "strideos",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#14160F",
-    "primaryColor": "#8B927C",
+    "backgroundColor": "#11100F",
+    "primaryColor": "#5E7E92",
     "ios": {
       "supportsTablet": false,
       "appleTeamId": "QBAVJD9497",
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "60",
-      "backgroundColor": "#14160F",
+      "buildNumber": "61",
+      "backgroundColor": "#11100F",
       "entitlements": {
         "com.apple.security.application-groups": [
           "group.com.mooremovement.strideos"
@@ -39,12 +39,12 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#2E2620",
+        "backgroundColor": "#11100F",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "backgroundColor": "#14160F",
+      "backgroundColor": "#11100F",
       "predictiveBackGestureEnabled": false,
       "package": "com.mooremovement.strideos",
       "versionCode": 1,
@@ -113,10 +113,10 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 220,
           "resizeMode": "contain",
-          "backgroundColor": "#2E2620",
+          "backgroundColor": "#11100F",
           "dark": {
             "image": "./assets/images/splash-icon.png",
-            "backgroundColor": "#2E2620"
+            "backgroundColor": "#11100F"
           }
         }
       ],

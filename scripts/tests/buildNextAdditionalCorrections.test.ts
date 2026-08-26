@@ -71,7 +71,7 @@ test('bottom tab labels and icons use one uniform visual contract', () => {
   const tabs = read('app/(tabs)/_layout.tsx');
   const visibleSection = tabs.slice(tabs.indexOf('<Tabs.Screen'), tabs.indexOf('<Tabs.Screen name="index"'));
 
-  assert.equal((visibleSection.match(/<Tabs\.Screen/g) ?? []).length, 6);
+  assert.equal((visibleSection.match(/<Tabs\.Screen/g) ?? []).length, 5);
   assert.match(tabs, /TAB_ICON_SIZE\s*=\s*25/);
   assert.match(tabs, /TAB_ICON_BOX_SIZE\s*=\s*30/);
   assert.match(tabs, /TAB_ITEM_MIN_HEIGHT\s*=\s*54/);
@@ -82,6 +82,8 @@ test('bottom tab labels and icons use one uniform visual contract', () => {
   assert.match(tabs, /minimumFontScale=\{0\.85\}/);
   assert.match(tabs, /tabBarItemStyle:\s*\{/);
   assert.match(tabs, /paddingHorizontal:\s*0/);
+  assert.match(tabs, /paddingHorizontal:\s*LAYOUT\.tabBarPadHorizontal/);
+  assert.match(tabs, /<Tabs\.Screen name="strength" options=\{\{ href: null \}\}/);
   assert.match(tabs, /width:\s*TAB_ICON_BOX_SIZE/);
   assert.match(tabs, /height:\s*TAB_ICON_BOX_SIZE/);
   assert.match(tabs, /minWidth:\s*0/);
