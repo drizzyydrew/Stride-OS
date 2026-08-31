@@ -34,11 +34,11 @@ export const WATCH_PLATFORM_SUPPORT: WearablePlatformSupport[] = [
   },
   {
     id: 'polar_ble',
-    label: 'Polar and BLE straps',
+    label: 'Bluetooth HR straps',
     status: 'works_if_device_broadcasts_ble',
     primaryPath: 'bluetooth',
     liveMetrics: ['Heart rate'],
-    setupNeed: 'Pair from Gear after the strap is awake and broadcasting Bluetooth Heart Rate Service.',
+    setupNeed: 'Wake the strap, keep other fitness apps disconnected, then connect from Gear.',
   },
   {
     id: 'garmin_ble',

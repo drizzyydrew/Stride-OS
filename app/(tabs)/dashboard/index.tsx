@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Linking, Modal, ScrollView, StyleSheet, Text,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
 
 import { useColors } from '../../../src/theme/useColors';
 import { useWeather } from '../../../src/hooks/useWeather';
@@ -93,10 +94,54 @@ function forecastIconName(key: string): keyof typeof Ionicons.glyphMap {
   return 'analytics-outline';
 }
 
-function forecastBars(key: string): number[] {
-  if (key === 'peak_window') return [28, 42, 68, 88, 54];
-  if (key === 'race_readiness') return [46, 58, 70, 76, 82];
-  return [36, 44, 58, 72, 64];
+function ForecastMiniChart({
+  metricKey,
+  color,
+  positive,
+  muted,
+}: {
+  metricKey: string;
+  color: string;
+  positive: string;
+  muted: string;
+}) {
+  if (metricKey === 'peak_window') {
+    return (
+      <Svg width="100%" height="100%" viewBox="0 0 148 56">
+        <Line x1="10" y1="34" x2="138" y2="34" stroke={muted} strokeWidth="2" opacity={0.32} strokeLinecap="round" />
+        <Rect x="62" y="20" width="36" height="28" rx="8" fill={color} opacity={0.16} />
+        {[20, 42, 64, 86, 108, 130].map((x, index) => (
+          <Circle key={x} cx={x} cy="34" r={index === 3 ? 5 : 3.5} fill={index === 3 ? color : muted} opacity={index === 3 ? 0.9 : 0.46} />
+        ))}
+        <Path d="M64 24h32M64 30h32M64 36h32" stroke={color} strokeWidth="1.5" opacity={0.54} strokeLinecap="round" />
+      </Svg>
+    );
+  }
+
+  if (metricKey === 'race_readiness') {
+    return (
+      <Svg width="100%" height="100%" viewBox="0 0 148 56">
+        <Path d="M24 42a50 50 0 0 1 100 0" stroke={muted} strokeWidth="7" opacity={0.24} fill="none" strokeLinecap="round" />
+        <Path d="M24 42a50 50 0 0 1 82-38" stroke={color} strokeWidth="7" opacity={0.7} fill="none" strokeLinecap="round" />
+        <Line x1="74" y1="42" x2="101" y2="19" stroke={color} strokeWidth="3" opacity={0.86} strokeLinecap="round" />
+        <Circle cx="74" cy="42" r="5" fill={color} opacity={0.9} />
+        {[36, 55, 74, 93, 112].map((x, index) => (
+          <Rect key={x} x={x} y={34 - index * 5} width="9" height={8 + index * 5} rx="4.5" fill={color} opacity={0.2 + index * 0.11} />
+        ))}
+      </Svg>
+    );
+  }
+
+  return (
+    <Svg width="100%" height="100%" viewBox="0 0 148 56">
+      <Line x1="10" y1="44" x2="138" y2="44" stroke={muted} strokeWidth="1.5" opacity={0.22} strokeLinecap="round" />
+      <Polyline points="12,35 38,27 64,33 90,18 116,23 136,12" stroke={positive} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.78} />
+      {[['12', '35'], ['38', '27'], ['64', '33'], ['90', '18'], ['116', '23'], ['136', '12']].map(([x, y]) => (
+        <Circle key={`${x}-${y}`} cx={x} cy={y} r="3.5" fill={positive} opacity={0.9} />
+      ))}
+      <Path d="M12 42c25-3 35-10 53-8 27 3 42-17 71-22" stroke={positive} strokeWidth="9" opacity={0.09} fill="none" strokeLinecap="round" />
+    </Svg>
+  );
 }
 
 function cleanFeelLine(target: string | undefined, durationMinutes: number | undefined): string {
@@ -749,20 +794,8 @@ export default function TodayScreen() {
                 <View style={[styles.forecastIconBubble, { backgroundColor: C.primaryDim }]}>
                   <Ionicons name={forecastIconName(metric.key)} size={18} color={metric.key === 'training_load_trend' ? C.positive : C.primary} />
                 </View>
-                <View style={styles.forecastBars}>
-                  {forecastBars(metric.key).map((height, index) => (
-                    <View
-                      key={`${metric.key}-${index}`}
-                      style={[
-                        styles.forecastBar,
-                        {
-                          height,
-                          backgroundColor: metric.key === 'training_load_trend' && index >= 2 ? C.positive : C.primary,
-                          opacity: 0.34 + index * 0.1,
-                        },
-                      ]}
-                    />
-                  ))}
+                <View style={styles.forecastChart}>
+                  <ForecastMiniChart metricKey={metric.key} color={C.primary} positive={C.positive} muted={C.textDim} />
                 </View>
               </View>
               <Text style={[styles.forecastState, { color: C.text }]}>{metric.visualLabel ?? metric.state}</Text>
@@ -1325,40 +1358,32 @@ const styles = StyleSheet.create({
     minWidth: 132,
     borderWidth: 1,
     borderRadius: 8,
-    padding: 12,
+    padding: 11,
   },
   forecastVisual: {
-    height: 76,
+    height: 86,
     borderRadius: 8,
     borderWidth: 1,
     marginTop: 10,
     marginBottom: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
+    overflow: 'hidden',
   },
   forecastIconBubble: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  forecastBars: {
+  forecastChart: {
     flex: 1,
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    gap: 5,
-  },
-  forecastBar: {
-    flex: 1,
-    minWidth: 8,
-    maxWidth: 18,
-    borderRadius: 5,
+    alignSelf: 'stretch',
+    minWidth: 0,
   },
   forecastMetricHeader: {
     minHeight: 44,

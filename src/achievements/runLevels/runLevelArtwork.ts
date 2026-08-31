@@ -40,6 +40,72 @@ function pointString(points: readonly Point[]): string {
   return points.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
 }
 
+function roundedPath(points: readonly Point[], radius: number): string {
+  const commands: string[] = [];
+
+  points.forEach((point, index) => {
+    const previous = points[(index - 1 + points.length) % points.length];
+    const next = points[(index + 1) % points.length];
+    const prevVector = [previous[0] - point[0], previous[1] - point[1]] as const;
+    const nextVector = [next[0] - point[0], next[1] - point[1]] as const;
+    const prevLength = Math.hypot(prevVector[0], prevVector[1]);
+    const nextLength = Math.hypot(nextVector[0], nextVector[1]);
+    const corner = Math.min(radius, prevLength * 0.36, nextLength * 0.36);
+    const start: Point = [
+      point[0] + (prevVector[0] / prevLength) * corner,
+      point[1] + (prevVector[1] / prevLength) * corner,
+    ];
+    const end: Point = [
+      point[0] + (nextVector[0] / nextLength) * corner,
+      point[1] + (nextVector[1] / nextLength) * corner,
+    ];
+
+    if (index === 0) commands.push(`M${start[0].toFixed(2)} ${start[1].toFixed(2)}`);
+    else commands.push(`L${start[0].toFixed(2)} ${start[1].toFixed(2)}`);
+    commands.push(`Q${point[0].toFixed(2)} ${point[1].toFixed(2)} ${end[0].toFixed(2)} ${end[1].toFixed(2)}`);
+  });
+
+  commands.push('Z');
+  return commands.join(' ');
+}
+
+function roundedOpenPath(points: readonly Point[], radius: number): string {
+  const commands: string[] = [`M${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`];
+
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const point = points[index];
+    const previous = points[index - 1];
+    const next = points[index + 1];
+    const prevVector = [previous[0] - point[0], previous[1] - point[1]] as const;
+    const nextVector = [next[0] - point[0], next[1] - point[1]] as const;
+    const prevLength = Math.hypot(prevVector[0], prevVector[1]);
+    const nextLength = Math.hypot(nextVector[0], nextVector[1]);
+    const corner = Math.min(radius, prevLength * 0.36, nextLength * 0.36);
+    const start: Point = [
+      point[0] + (prevVector[0] / prevLength) * corner,
+      point[1] + (prevVector[1] / prevLength) * corner,
+    ];
+    const end: Point = [
+      point[0] + (nextVector[0] / nextLength) * corner,
+      point[1] + (nextVector[1] / nextLength) * corner,
+    ];
+
+    commands.push(`L${start[0].toFixed(2)} ${start[1].toFixed(2)}`);
+    commands.push(`Q${point[0].toFixed(2)} ${point[1].toFixed(2)} ${end[0].toFixed(2)} ${end[1].toFixed(2)}`);
+  }
+
+  const last = points[points.length - 1];
+  commands.push(`L${last[0].toFixed(2)} ${last[1].toFixed(2)}`);
+  return commands.join(' ');
+}
+
+function interpolatePoint(from: Point, to: Point, amount: number): Point {
+  return [
+    from[0] + (to[0] - from[0]) * amount,
+    from[1] + (to[1] - from[1]) * amount,
+  ];
+}
+
 export function runLevelHexPoints(inset: number): Point[] {
   const [cx, cy] = RUN_LEVEL_CENTER;
   const scale = Math.max(0.18, 1 - inset / 125);
@@ -53,8 +119,19 @@ export function runLevelHexPointString(inset: number): string {
   return pointString(runLevelHexPoints(inset));
 }
 
+export function runLevelHexPath(inset: number): string {
+  return roundedPath(runLevelHexPoints(inset), Math.max(3.25, 8 - inset * 0.035));
+}
+
+export function runLevelRingPath(inset: number): string {
+  const [top, upperRight, lowerRight, , lowerLeft, upperLeft] = runLevelHexPoints(inset);
+  const leftStart = interpolatePoint(lowerLeft, upperLeft, 0.38);
+  const rightEnd = interpolatePoint(upperRight, lowerRight, 0.62);
+  return roundedOpenPath([leftStart, upperLeft, top, upperRight, rightEnd], Math.max(2.8, 6.5 - inset * 0.03));
+}
+
 export function runLevelRingInsets(level: RunLevelDefinition): number[] {
-  return Array.from({ length: level.ringCount }, (_, index) => 12 + index * 9);
+  return Array.from({ length: level.ringCount }, (_, index) => 12 + index * 8.25);
 }
 
 export function runLevelBadgeTokens(level: RunLevelDefinition, state: RunLevelBadgeState) {
@@ -116,7 +193,7 @@ function ringMarkup(level: RunLevelDefinition, state: RunLevelBadgeState): strin
     const opacity = Math.max(0.16, tokens.ringOpacityBase - index * tokens.ringOpacityStep);
     const stroke = index % 3 === 0 ? tokens.color.highlight : index % 2 === 0 ? tokens.color.mid : tokens.color.outer;
     const width = index === 0 ? 2.4 : index < 3 ? 1.65 : 1.25;
-    return `<polygon points="${runLevelHexPointString(inset)}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-opacity="${opacity.toFixed(2)}"/>`;
+    return `<path d="${runLevelRingPath(inset)}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${opacity.toFixed(2)}"/>`;
   }).join('\n  ');
 }
 
@@ -133,8 +210,8 @@ export function renderRunLevelBadgeSvg(
   const interiorId = `run-level-${level.slug}-${state}-interior`;
   const edgeId = `run-level-${level.slug}-${state}-edge`;
   const label = runLevelBadgeAccessibilityLabel(level.slug, state);
-  const outer = runLevelHexPointString(0);
-  const inner = runLevelHexPointString(7);
+  const outer = runLevelHexPath(0);
+  const inner = runLevelHexPath(7);
   const titleY = compact ? 178 : 174;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${RUN_LEVEL_VIEWBOX} ${RUN_LEVEL_VIEWBOX}" fill="none" role="img" aria-label="${escapeXml(label)}">
@@ -155,8 +232,8 @@ export function renderRunLevelBadgeSvg(
       <stop offset="1" stop-color="${tokens.color.shadow}"/>
     </linearGradient>
   </defs>
-  <polygon points="${outer}" fill="${tokens.fill}" fill-opacity="${tokens.fillOpacity}" stroke="url(#${edgeId})" stroke-width="4.8" stroke-linejoin="round" stroke-opacity="${tokens.outerOpacity}"/>
-  <polygon points="${inner}" fill="${state === 'share-transparent' ? 'transparent' : `url(#${interiorId})`}" fill-opacity="${tokens.innerFillOpacity}" stroke="${tokens.color.highlight}" stroke-width="1" stroke-opacity="${(tokens.outerOpacity * 0.55).toFixed(2)}"/>
+  <path d="${outer}" fill="${tokens.fill}" fill-opacity="${tokens.fillOpacity}" stroke="url(#${edgeId})" stroke-width="4.8" stroke-linejoin="round" stroke-opacity="${tokens.outerOpacity}"/>
+  <path d="${inner}" fill="${state === 'share-transparent' ? 'transparent' : `url(#${interiorId})`}" fill-opacity="${tokens.innerFillOpacity}" stroke="${tokens.color.highlight}" stroke-width="1" stroke-opacity="${(tokens.outerOpacity * 0.55).toFixed(2)}"/>
   <path d="M44 70 L128 23 L212 70" stroke="${tokens.color.highlight}" stroke-width="1.15" stroke-opacity="${(tokens.outerOpacity * 0.28).toFixed(2)}"/>
   ${ringMarkup(level, state)}
   <ellipse cx="128" cy="129" rx="68" ry="31" fill="${tokens.color.glow}" opacity="${tokens.glowOpacity}"/>

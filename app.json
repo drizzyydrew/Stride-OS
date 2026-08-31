@@ -14,7 +14,7 @@
       "appleTeamId": "QBAVJD9497",
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "64",
+      "buildNumber": "65",
       "backgroundColor": "#11100F",
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -110,12 +110,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/splash-logo-transparent.png",
           "imageWidth": 220,
           "resizeMode": "contain",
           "backgroundColor": "#11100F",
           "dark": {
-            "image": "./assets/images/splash-icon.png",
+            "image": "./assets/images/splash-logo-transparent.png",
             "backgroundColor": "#11100F"
           }
         }

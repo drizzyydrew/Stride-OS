@@ -1,12 +1,13 @@
 import { View, type StyleProp, type ViewStyle } from 'react-native';
-import Svg, { Defs, Ellipse, LinearGradient, Path, Polygon, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Defs, Ellipse, LinearGradient, Path, Stop, Text as SvgText } from 'react-native-svg';
 
 import {
   RUN_LEVEL_MOUNTAIN,
   RUN_LEVEL_VIEWBOX,
   runLevelBadgeAccessibilityLabel,
   runLevelBadgeTokens,
-  runLevelHexPointString,
+  runLevelHexPath,
+  runLevelRingPath,
   runLevelRingInsets,
   type RunLevelBadgeState,
 } from './runLevelArtwork';
@@ -66,9 +67,9 @@ export default function RunLevelBadge({
             <Stop offset="1" stopColor={tokens.color.shadow} />
           </LinearGradient>
         </Defs>
-        <Polygon points={runLevelHexPointString(0)} fill={tokens.fill} fillOpacity={tokens.fillOpacity} stroke={`url(#${edgeId})`} strokeWidth={4.8} strokeLinejoin="round" strokeOpacity={tokens.outerOpacity} />
-        <Polygon
-          points={runLevelHexPointString(7)}
+        <Path d={runLevelHexPath(0)} fill={tokens.fill} fillOpacity={tokens.fillOpacity} stroke={`url(#${edgeId})`} strokeWidth={4.8} strokeLinejoin="round" strokeOpacity={tokens.outerOpacity} />
+        <Path
+          d={runLevelHexPath(7)}
           fill={state === 'share-transparent' ? 'transparent' : `url(#${interiorId})`}
           fillOpacity={tokens.innerFillOpacity}
           stroke={tokens.color.highlight}
@@ -80,12 +81,14 @@ export default function RunLevelBadge({
           const opacity = Math.max(0.16, tokens.ringOpacityBase - index * tokens.ringOpacityStep);
           const stroke = index % 3 === 0 ? tokens.color.highlight : index % 2 === 0 ? tokens.color.mid : tokens.color.outer;
           return (
-            <Polygon
+            <Path
               key={inset}
-              points={runLevelHexPointString(inset)}
+              d={runLevelRingPath(inset)}
               fill="none"
               stroke={stroke}
               strokeWidth={index === 0 ? 2.4 : index < 3 ? 1.65 : 1.25}
+              strokeLinecap="round"
+              strokeLinejoin="round"
               strokeOpacity={opacity}
             />
           );

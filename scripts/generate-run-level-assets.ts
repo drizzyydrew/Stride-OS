@@ -22,7 +22,7 @@ const SVG_VARIANTS: SvgVariant[] = [
 function writeAsset(assetPath: string, contents: string): void {
   const target = path.resolve(process.cwd(), assetPath);
   mkdirSync(path.dirname(target), { recursive: true });
-  writeFileSync(target, contents, 'utf8');
+  writeFileSync(target, `${contents.replace(/[ \t]+$/gm, '').trimEnd()}\n`, 'utf8');
 }
 
 function renderPng(sourceSvgPath: string, targetPngPath: string): void {

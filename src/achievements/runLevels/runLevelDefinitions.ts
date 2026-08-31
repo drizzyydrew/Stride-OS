@@ -65,14 +65,14 @@ export const RUN_LEVEL_DEFINITIONS: RunLevelDefinition[] = SLUGS.map((slug, inde
   tier: index + 1,
   thresholdMiles: RUN_LEVEL_THRESHOLDS_MILES[slug],
   thresholdMeters: runLevelMilesToMeters(RUN_LEVEL_THRESHOLDS_MILES[slug]),
-  ringCount: index + 3,
+  ringCount: [5, 5, 6, 6, 7, 8, 9][index],
   colors: RUN_LEVEL_COLORS[slug],
-  artworkPath: `assets/achievements/run-levels/run-level-${slug}-unlocked.svg`,
-  lockedArtworkPath: `assets/achievements/run-levels/run-level-${slug}-locked.svg`,
-  shareTransparentSvgPath: `assets/achievements/run-levels/run-level-${slug}-share-transparent.svg`,
-  shareTransparentPngPath: `assets/achievements/run-levels/run-level-${slug}-share-transparent.png`,
-  shareOpaqueSvgPath: `assets/achievements/run-levels/run-level-${slug}-share-opaque.svg`,
-  shareOpaquePngPath: `assets/achievements/run-levels/run-level-${slug}-share-opaque.png`,
+  artworkPath: `assets/achievements/system/run-levels/run-level-${slug}-unlocked.svg`,
+  lockedArtworkPath: `assets/achievements/system/run-levels/run-level-${slug}-locked.svg`,
+  shareTransparentSvgPath: `assets/achievements/system/run-levels/run-level-${slug}-share-transparent.svg`,
+  shareTransparentPngPath: `assets/achievements/system/run-levels/run-level-${slug}-share-transparent.png`,
+  shareOpaqueSvgPath: `assets/achievements/system/run-levels/run-level-${slug}-share-opaque.svg`,
+  shareOpaquePngPath: `assets/achievements/system/run-levels/run-level-${slug}-share-opaque.png`,
 }));
 
 export const RUN_LEVEL_BY_SLUG = Object.fromEntries(

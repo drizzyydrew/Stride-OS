@@ -149,7 +149,7 @@ test('canonical run levels contain exactly seven progressive badge definitions a
     'Summit',
   ]);
   assert.deepEqual(RUN_LEVEL_DEFINITIONS.map(level => level.thresholdMiles), [0, 50, 150, 400, 750, 1500, 3000]);
-  assert.deepEqual(RUN_LEVEL_DEFINITIONS.map(level => level.ringCount), [3, 4, 5, 6, 7, 8, 9]);
+  assert.deepEqual(RUN_LEVEL_DEFINITIONS.map(level => level.ringCount), [5, 5, 6, 6, 7, 8, 9]);
   for (const level of RUN_LEVEL_DEFINITIONS) {
     assert.equal(existsSync(path.resolve(process.cwd(), level.artworkPath)), true);
     assert.equal(existsSync(path.resolve(process.cwd(), level.lockedArtworkPath)), true);

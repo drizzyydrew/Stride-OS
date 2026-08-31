@@ -4,7 +4,7 @@ import { PNG } from 'pngjs';
 
 import { RUN_LEVEL_DEFINITIONS } from '../src/achievements/runLevels/runLevelDefinitions';
 
-const ASSET_DIR = path.resolve(process.cwd(), 'assets/achievements/run-levels');
+const ASSET_DIR = path.resolve(process.cwd(), 'assets/achievements/system/run-levels');
 const EXPECTED_VIEWBOX = '0 0 256 256';
 const EXPECTED_PNG_SIZE = 1024;
 
@@ -55,6 +55,7 @@ function assertNoCheckerboard(png: PNG, label: string): void {
 function validateSvg(assetPath: string): void {
   const svg = readFileSync(path.resolve(process.cwd(), assetPath), 'utf8');
   assert(svg.includes(`viewBox="${EXPECTED_VIEWBOX}"`), `${assetPath} has inconsistent viewBox`);
+  assert(/<path d="M\d+\.\d{2} \d+\.\d{2}.* Q\d+\.\d{2}/.test(svg), `${assetPath} does not use softened rounded hex path geometry`);
   assert(!/<image\b/i.test(svg), `${assetPath} embeds an external image`);
   assert(!/nike|strava|apple|garmin/i.test(svg), `${assetPath} contains prohibited third-party brand text`);
   assert(!/padlock|chains?|star|medal|runner silhouette/i.test(svg), `${assetPath} contains prohibited badge motif text`);

@@ -195,29 +195,9 @@ function mi(miles: number): number {
   return miles * M_PER_MI;
 }
 
-function km(kilometers: number): number {
-  return kilometers * M_PER_KM;
-}
-
 function titleCase(text: string): string {
   return text.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
 }
-
-const CHALLENGE_DEFS: Array<[AchievementId, string, AchievementRuleKind, number, AchievementUnitBehavior, string, string]> = [
-  ['challenge_august_base_builder', 'August Base Builder', 'challenge', 1, 'count', 'Complete consistent base work in August.', '#C56B3E'],
-  ['challenge_september_consistency', 'September Consistency Challenge', 'challenge', 1, 'count', 'Complete consistent training in September.', '#5F9A95'],
-  ['challenge_winter_strength_block', 'Winter Strength Block', 'challenge', 1, 'count', 'Complete winter strength work.', '#5F7998'],
-  ['challenge_spring_mileage_build', 'Spring Mileage Build', 'challenge', 1, 'count', 'Build spring mileage progressively.', '#8B9C7C'],
-  ['challenge_summer_long_run', 'Summer Long Run Challenge', 'challenge', 1, 'count', 'Complete summer long-run work.', '#D8775F'],
-  ['challenge_5k_month', '5K Month', 'monthly_distance', km(5), 'fixed_k_identity', 'Complete 5K in a calendar month.', '#C05DA8'],
-  ['challenge_25k_week', '25K Week', 'weekly_distance', km(25), 'fixed_k_identity', 'Complete 25K in a reporting week.', '#657DB5'],
-  ['challenge_50k_month', '50K Month', 'monthly_distance', km(50), 'fixed_k_identity', 'Complete 50K in a calendar month.', '#2E9A98'],
-  ['challenge_100k_month', '100K Month', 'monthly_distance', km(100), 'fixed_k_identity', 'Complete 100K in a calendar month.', '#D99A38'],
-  ['challenge_elevation_month', 'Elevation Month', 'challenge', 914.4, 'unit_sensitive_elevation', 'Gain 3,000 ft of elevation in a calendar month.', '#7D5DB4'],
-  ['challenge_strength_run', 'Strength + Run Challenge', 'strength_run_week', 1, 'count', 'Pair strength and running in one week.', '#B85483'],
-  ['challenge_four_week_foundation', 'Four-Week Foundation Challenge', 'strength_consistency', 4, 'weeks', 'Complete four weeks of consistent foundation work.', '#4E8AAE'],
-  ['challenge_recovery_consistency', 'Recovery Consistency Challenge', 'recovery', 1, 'count', 'Keep recovery behaviors consistent.', '#879B6F'],
-];
 
 function baseDef(input: Omit<AchievementDefinitionV2, 'shareCardEligibility' | 'repeatability' | 'originalArtwork'> & Partial<Pick<AchievementDefinitionV2, 'shareCardEligibility' | 'repeatability'>>): AchievementDefinitionV2 {
   return {
@@ -432,25 +412,6 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     tier: definition.tier,
     dominantColor: RECOVERY_COLORS.primary,
     sourceNotes: 'Original StrideOS Recovery / Readiness hexagon vector system derived from the approved badge reference image.',
-  })),
-  ...CHALLENGE_DEFS.map(([id, title, ruleKind, threshold, unitBehavior, criteria, color], index) => baseDef({
-    id,
-    family: 'challenges',
-    category: 'challenges',
-    title,
-    description: criteria,
-    criteria,
-    ruleKind,
-    unitBehavior,
-    threshold,
-    thresholdUnit: unitBehavior === 'unit_sensitive_elevation' ? 'meters' : ruleKind.includes('distance') ? 'meters' : unitBehavior === 'weeks' ? 'weeks' : 'count',
-    sportApplicability: ['running', 'strength', 'recovery'],
-    artworkKey: `challenge-${index + 1}`,
-    artworkPath: `assets/achievements/system/challenges/${id}.svg`,
-    lockedArtworkPath: `assets/achievements/system/challenges/${id}-locked.svg`,
-    period: id.includes('month') ? 'monthly' : id.includes('week') ? 'weekly' : 'seasonal',
-    tier: index + 1,
-    dominantColor: color,
   })),
 ];
 

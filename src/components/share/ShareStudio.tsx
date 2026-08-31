@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import {
-  Image,
   ImageBackground,
   PanResponder,
   StyleSheet,
@@ -38,6 +37,7 @@ export type ShareStudioVariant = 'minimal_card' | 'transparent_overlay' | 'edito
 export type ShareStudioFormat = 'square' | 'story';
 
 type ToggleKey = 'route' | 'distance' | 'time' | 'pace' | 'elevation' | 'achievement' | 'brand';
+type EditableLayerKey = 'brand' | 'achievement';
 const SHARE_SAFE_MARGIN = 38;
 
 type Props = {
@@ -98,10 +98,16 @@ function toggleLabel(key: ToggleKey, activity?: Activity): string {
 function MovableLayer({
   children,
   initial,
+  baseSize = 64,
+  scale = 1,
+  onSelect,
   style,
 }: {
   children: ReactNode;
   initial: { x: number; y: number };
+  baseSize?: number;
+  scale?: number;
+  onSelect?: () => void;
   style?: ViewStyle;
 }) {
   const [offset, setOffset] = useState(initial);
@@ -111,17 +117,19 @@ function MovableLayer({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: () => {
+      onSelect?.();
       start.current = offset;
     },
     onPanResponderMove: (_, gesture) => {
-      const maxX = Math.max(SHARE_SAFE_MARGIN, bounds.width - 64 - SHARE_SAFE_MARGIN);
-      const maxY = Math.max(SHARE_SAFE_MARGIN, bounds.height - 64 - SHARE_SAFE_MARGIN);
+      const footprint = Math.max(48, baseSize * scale);
+      const maxX = Math.max(SHARE_SAFE_MARGIN, bounds.width - footprint - SHARE_SAFE_MARGIN);
+      const maxY = Math.max(SHARE_SAFE_MARGIN, bounds.height - footprint - SHARE_SAFE_MARGIN);
       setOffset({
         x: Math.max(SHARE_SAFE_MARGIN, Math.min(maxX, start.current.x + gesture.dx)),
         y: Math.max(SHARE_SAFE_MARGIN, Math.min(maxY, start.current.y + gesture.dy)),
       });
     },
-  }), [bounds.height, bounds.width, offset]);
+  }), [baseSize, bounds.height, bounds.width, offset, onSelect, scale]);
   return (
     <View
       onLayout={(event: LayoutChangeEvent) => {
@@ -130,7 +138,7 @@ function MovableLayer({
           setBounds({ width: Math.max(bounds.width, parent.width), height: Math.max(bounds.height, parent.height) });
         }
       }}
-      style={[styles.movable, { left: offset.x, top: offset.y }, style]}
+      style={[styles.movable, { left: offset.x, top: offset.y, transform: [{ scale }] }, style]}
       {...pan.panHandlers}
     >
       {children}
@@ -164,12 +172,17 @@ function StatPill({ label, value }: { label: string; value: string }) {
 
 function StrideOSBrandMark() {
   return (
-    <Image
-      source={require('../../../assets/images/splash-icon.png')}
-      style={styles.logoMark}
-      resizeMode="contain"
-      accessibilityIgnoresInvertColors
-    />
+    <View style={styles.logoMark} accessible accessibilityLabel="StrideOS logo">
+      <Text style={styles.logoWord}>
+        <Text style={styles.logoStride}>Stride</Text>
+        <Text style={styles.logoOS}>OS</Text>
+      </Text>
+      <View style={styles.logoChevronRow}>
+        {['#B8C4A9', '#A6C0B4', '#E3CDB8', '#78A3BE', '#5E7E92'].map((color, index) => (
+          <Text key={`${color}-${index}`} style={[styles.logoChevron, { color }]}>{'>'}</Text>
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -195,6 +208,11 @@ export default function ShareStudio({
   });
   const [layoutEpoch, setLayoutEpoch] = useState(0);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedLayer, setSelectedLayer] = useState<EditableLayerKey>('achievement');
+  const [layerScale, setLayerScale] = useState<Record<EditableLayerKey, number>>({
+    achievement: 1,
+    brand: 1,
+  });
   const routeEnabled = enabled.route && activity && activityHasShareableRoute(activity);
   const isOverlay = variant === 'transparent_overlay';
   const isStory = format === 'story';
@@ -214,6 +232,18 @@ export default function ShareStudio({
     .map(key => ({ key, value: enabled[key] ? metricValue(activity, units, key) : null }))
     .filter((item): item is { key: ToggleKey; value: string } => Boolean(item.value));
   const selectedCount = keys.filter(key => enabled[key]).length;
+  const editableLayers = ([
+    enabled.brand ? 'brand' : null,
+    achievement && enabled.achievement ? 'achievement' : null,
+  ] as Array<EditableLayerKey | null>).filter((item): item is EditableLayerKey => Boolean(item));
+  const activeEditableLayer = editableLayers.includes(selectedLayer) ? selectedLayer : editableLayers[0] ?? null;
+  const adjustSelectedLayerScale = (delta: number) => {
+    if (!activeEditableLayer) return;
+    setLayerScale(current => {
+      const next = Math.max(0.72, Math.min(1.5, Number((current[activeEditableLayer] + delta).toFixed(2))));
+      return { ...current, [activeEditableLayer]: next };
+    });
+  };
 
   const canvas = (
     <View
@@ -230,12 +260,24 @@ export default function ShareStudio({
       {photoUri && !isOverlay ? <View style={styles.photoScrim} /> : null}
       {routeEnabled ? <View style={styles.routeLayer}><RouteOverlay activity={activity} light={foregroundDark} /></View> : null}
       {enabled.brand ? (
-        <MovableLayer initial={{ x: SHARE_SAFE_MARGIN, y: SHARE_SAFE_MARGIN }} style={styles.brandLayer}>
+        <MovableLayer
+          initial={{ x: SHARE_SAFE_MARGIN, y: SHARE_SAFE_MARGIN }}
+          baseSize={112}
+          scale={layerScale.brand}
+          onSelect={() => setSelectedLayer('brand')}
+          style={styles.brandLayer}
+        >
           <StrideOSBrandMark />
         </MovableLayer>
       ) : null}
       {achievement && enabled.achievement ? (
-        <MovableLayer initial={{ x: isStory ? 78 : 54, y: isStory ? 168 : 116 }} style={styles.badgeLayer}>
+        <MovableLayer
+          initial={{ x: isStory ? 78 : 54, y: isStory ? 168 : 116 }}
+          baseSize={156}
+          scale={layerScale.achievement}
+          onSelect={() => setSelectedLayer('achievement')}
+          style={styles.badgeLayer}
+        >
           {runLevelSlug ? (
             <RunLevelBadge
               level={runLevelSlug}
@@ -291,7 +333,10 @@ export default function ShareStudio({
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.toggle, styles.resetToggle]}
-          onPress={() => setLayoutEpoch(current => current + 1)}
+          onPress={() => {
+            setLayerScale({ achievement: 1, brand: 1 });
+            setLayoutEpoch(current => current + 1);
+          }}
           accessibilityRole="button"
           accessibilityLabel="Reset share layout"
         >
@@ -324,6 +369,7 @@ export default function ShareStudio({
                 pace: false,
                 elevation: false,
                 achievement: false,
+                brand: false,
               }))}
               accessibilityRole="button"
             >
@@ -351,6 +397,45 @@ export default function ShareStudio({
           })}
         </View>
       ) : null}
+      {activeEditableLayer ? (
+        <View style={styles.layerControls}>
+          {editableLayers.map(layer => {
+            const active = layer === activeEditableLayer;
+            return (
+              <TouchableOpacity
+                key={layer}
+                style={[styles.layerChip, active ? styles.toggleOn : styles.toggleOff]}
+                onPress={() => setSelectedLayer(layer)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+              >
+                <Text style={[styles.toggleText, active ? styles.toggleTextOn : styles.toggleTextOff]}>
+                  {layer === 'brand' ? 'Logo' : 'Badge'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+          <View style={styles.sizeControls}>
+            <TouchableOpacity
+              style={[styles.sizeButton, styles.toggleOff]}
+              onPress={() => adjustSelectedLayerScale(-0.08)}
+              accessibilityRole="button"
+              accessibilityLabel={`Make ${activeEditableLayer === 'brand' ? 'logo' : 'badge'} smaller`}
+            >
+              <Text style={[styles.toggleText, styles.toggleTextOff]}>-</Text>
+            </TouchableOpacity>
+            <Text style={styles.sizeValue}>{Math.round(layerScale[activeEditableLayer] * 100)}%</Text>
+            <TouchableOpacity
+              style={[styles.sizeButton, styles.toggleOff]}
+              onPress={() => adjustSelectedLayerScale(0.08)}
+              accessibilityRole="button"
+              accessibilityLabel={`Make ${activeEditableLayer === 'brand' ? 'logo' : 'badge'} larger`}
+            >
+              <Text style={[styles.toggleText, styles.toggleTextOff]}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : null}
       <View key={layoutEpoch}>{canvas}</View>
       {keys.includes('route') ? <Text style={styles.privacy}>{routeEnabled ? ROUTE_PRIVACY_NOTE : 'Route is off by default.'}</Text> : null}
       {variant === 'transparent_overlay' ? <Text style={styles.privacy}>Transparent overlay export uses no card background.</Text> : null}
@@ -364,6 +449,11 @@ const styles = StyleSheet.create({
   detailsButton: { flex: 1, minHeight: 38, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
   detailsMenu: { borderRadius: 12, borderWidth: 1, borderColor: 'rgba(94,126,146,0.34)', backgroundColor: 'rgba(14,14,15,0.92)', padding: 10, gap: 8 },
   detailsActions: { flexDirection: 'row', gap: 8 },
+  layerControls: { minHeight: 42, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(94,126,146,0.34)', backgroundColor: 'rgba(14,14,15,0.78)', padding: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  layerChip: { minHeight: 30, borderRadius: 9, borderWidth: 1, paddingHorizontal: 11, alignItems: 'center', justifyContent: 'center' },
+  sizeControls: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 7 },
+  sizeButton: { width: 32, height: 30, borderRadius: 9, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  sizeValue: { color: '#DCC9B1', minWidth: 42, textAlign: 'center', fontSize: 11, fontWeight: '900' },
   smallAction: { minHeight: 32, borderRadius: 9, borderWidth: 1, paddingHorizontal: 11, alignItems: 'center', justifyContent: 'center' },
   detailsRow: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 8 },
   detailsRowOn: { backgroundColor: '#9DB2A0', borderRadius: 8, paddingHorizontal: 8 },
@@ -383,7 +473,12 @@ const styles = StyleSheet.create({
   routeLayer: { ...StyleSheet.absoluteFill },
   movable: { position: 'absolute' },
   brandLayer: { alignItems: 'center', justifyContent: 'center' },
-  logoMark: { width: 112, height: 112, borderRadius: 6 },
+  logoMark: { width: 112, minHeight: 74, alignItems: 'center', justifyContent: 'center' },
+  logoWord: { fontSize: 25, lineHeight: 30, fontWeight: '900', fontFamily: 'CormorantGaramond_700Bold' },
+  logoStride: { color: '#F3F1EB' },
+  logoOS: { color: '#6F97B0' },
+  logoChevronRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 5 },
+  logoChevron: { fontSize: 27, lineHeight: 28, fontWeight: '900' },
   badgeLayer: { alignItems: 'center', justifyContent: 'center' },
   titleLayer: { right: SHARE_SAFE_MARGIN, gap: 4 },
   kicker: { fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },

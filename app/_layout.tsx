@@ -157,13 +157,13 @@ export default function RootLayout() {
   if (showBrandSplash) {
     // Canonical startup treatment — identical composition, scale, and
     // background to the native Expo splash (see app.json "expo-splash-screen":
-    // splash-icon.png at 220pt on #11100F), so the native → React handoff has
+    // splash-logo-transparent.png at 220pt on #11100F), so the native → React handoff has
     // no visible logo swap in either device appearance.
     return (
       <View style={{ flex: 1, backgroundColor: SPLASH_BACKGROUND, alignItems: 'center', justifyContent: 'center' }}>
         <StatusBar style="light" />
         <Image
-          source={require('../assets/images/splash-icon.png')}
+          source={require('../assets/images/splash-logo-transparent.png')}
           style={{ width: SPLASH_IMAGE_WIDTH, height: SPLASH_IMAGE_WIDTH }}
           resizeMode="contain"
           accessibilityLabel="StrideOS"

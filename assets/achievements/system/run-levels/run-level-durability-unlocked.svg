@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-label="Durability run level. Unlocked.">
+  <defs>
+    <linearGradient id="run-level-durability-unlocked-edge" x1="42" y1="34" x2="214" y2="220" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D2DFEC"/>
+      <stop offset="0.54" stop-color="#9FB3CA"/>
+      <stop offset="1" stop-color="#344559"/>
+    </linearGradient>
+    <linearGradient id="run-level-durability-unlocked-interior" x1="128" y1="24" x2="128" y2="231" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#657E98" stop-opacity="0.34"/>
+      <stop offset="0.46" stop-color="#0D0E0E" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#080909" stop-opacity="1.00"/>
+    </linearGradient>
+    <linearGradient id="run-level-durability-unlocked-mountain" x1="82" y1="86" x2="176" y2="146" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D2DFEC"/>
+      <stop offset="0.48" stop-color="#9FB3CA"/>
+      <stop offset="1" stop-color="#344559"/>
+    </linearGradient>
+  </defs>
+  <path d="M121.05 17.97 Q128.00 14.00 134.95 17.97 L219.05 66.03 Q226.00 70.00 226.00 78.00 L226.00 173.00 Q226.00 181.00 219.08 185.02 L134.92 233.98 Q128.00 238.00 121.08 233.98 L36.92 185.02 Q30.00 181.00 30.00 173.00 L30.00 78.00 Q30.00 70.00 36.95 66.03 Z" fill="#080909" fill-opacity="1" stroke="url(#run-level-durability-unlocked-edge)" stroke-width="4.8" stroke-linejoin="round" stroke-opacity="1"/>
+  <path d="M121.27 24.23 Q128.00 20.38 134.73 24.23 L213.78 69.40 Q220.51 73.25 220.51 81.00 L220.51 170.28 Q220.51 178.03 213.81 181.93 L134.70 227.94 Q128.00 231.84 121.30 227.94 L42.19 181.93 Q35.49 178.03 35.49 170.28 L35.49 81.00 Q35.49 73.25 42.22 69.40 Z" fill="url(#run-level-durability-unlocked-interior)" fill-opacity="0.92" stroke="#D2DFEC" stroke-width="1" stroke-opacity="0.55"/>
+  <path d="M44 70 L128 23 L212 70" stroke="#D2DFEC" stroke-width="1.15" stroke-opacity="0.28"/>
+  <path d="M39.41 137.78 L39.41 81.71 Q39.41 75.57 44.74 72.52 L122.67 27.99 Q128.00 24.94 133.33 27.99 L211.26 72.52 Q216.59 75.57 216.59 81.71 L216.59 137.78" fill="none" stroke="#D2DFEC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.82"/>
+  <path d="M45.88 137.07 L45.88 85.29 Q45.88 79.40 50.99 76.47 L122.88 35.39 Q128.00 32.47 133.12 35.39 L205.01 76.47 Q210.12 79.40 210.12 85.29 L210.12 137.07" fill="none" stroke="#9FB3CA" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.77"/>
+  <path d="M52.34 136.35 L52.34 88.87 Q52.34 83.22 57.25 80.42 L123.10 42.79 Q128.00 39.99 132.90 42.79 L198.75 80.42 Q203.66 83.22 203.66 88.87 L203.66 136.35" fill="none" stroke="#657E98" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.72"/>
+  <path d="M58.81 135.64 L58.81 92.45 Q58.81 87.05 63.50 84.37 L123.31 50.19 Q128.00 47.52 132.69 50.19 L192.50 84.37 Q197.19 87.05 197.19 92.45 L197.19 135.64" fill="none" stroke="#D2DFEC" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.66"/>
+  <path d="M65.28 134.92 L65.28 96.03 Q65.28 90.88 69.75 88.32 L123.53 57.60 Q128.00 55.04 132.47 57.60 L186.25 88.32 Q190.72 90.88 190.72 96.03 L190.72 134.92" fill="none" stroke="#657E98" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.61"/>
+  <path d="M71.75 134.21 L71.75 99.61 Q71.75 94.71 76.00 92.28 L123.74 65.00 Q128.00 62.56 132.26 65.00 L180.00 92.28 Q184.25 94.71 184.25 99.61 L184.25 134.21" fill="none" stroke="#9FB3CA" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.56"/>
+  <ellipse cx="128" cy="129" rx="68" ry="31" fill="#7893AE" opacity="0.32"/>
+  <path d="M64 137 L91 121 L106 131 L123 98 L145 128 L160 118 L192 137 L171 136 L158 127 L149 137 L131 132 L118 137 L101 130 L83 137 Z" fill="#344559" opacity="0.52"/>
+  <path d="M70 137 L105 114 L121 126 L136 93 L143 137 Z" fill="url(#run-level-durability-unlocked-mountain)" opacity="1"/>
+  <path d="M136 93 L154 123 L186 137 L148 137 Z" fill="#657E98" opacity="0.92"/>
+  <path d="M136 93 L124 125 L117 137 L106 127 Z" fill="#D2DFEC" opacity="0.82"/>
+  <path d="M105 114 L95 133 L81 137 L114 126 Z" fill="#344559" opacity="0.78"/>
+  <path d="M154 123 L166 137 L144 132 Z" fill="#D2DFEC" opacity="0.48"/>
+  <path d="M66 140 C82 136 94 128 106 117 M118 137 L136 93 L157 124 M146 133 L160 118 L190 140" fill="none" stroke="#D2DFEC" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.70"/>
+
+  <text x="128" y="174" text-anchor="middle" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="1.15" fill="#D2DFEC" fill-opacity="1">DURABILITY</text>
+  <text x="128" y="195" text-anchor="middle" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="10" font-weight="800" letter-spacing="3.2" fill="#F3F1EB" fill-opacity="0.88">STRIDEOS</text>
+  <path d="M103 210 L128 224 L153 210" fill="none" stroke="#9FB3CA" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.9"/>
+  <path d="M107 221 L128 233 L149 221" fill="none" stroke="#D2DFEC" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.9"/>
+</svg>

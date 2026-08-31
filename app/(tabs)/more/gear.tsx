@@ -58,6 +58,33 @@ export default function GearScreen() {
     () => Object.values(liveSensorDevices).filter(device => device.connected),
     [liveSensorDevices],
   );
+  const connectedDeviceIds = useMemo(
+    () => new Set(connectedDevices.map(device => device.id)),
+    [connectedDevices],
+  );
+  const scannedConnectionDevices = useMemo(
+    () => scannedDevices.filter(device => !connectedDeviceIds.has(device.id)),
+    [connectedDeviceIds, scannedDevices],
+  );
+  const pairedBleEquipment = useMemo(
+    () => equipment.filter(item => item.blePeripheralId),
+    [equipment],
+  );
+  const visibleStoredBleEquipment = useMemo(
+    () => pairedBleEquipment.filter(item => {
+      const id = item.blePeripheralId;
+      return id && !connectedDeviceIds.has(id) && !scannedDevices.some(device => device.id === id);
+    }),
+    [connectedDeviceIds, pairedBleEquipment, scannedDevices],
+  );
+  const manualEquipment = useMemo(
+    () => equipment.filter(item => !item.blePeripheralId),
+    [equipment],
+  );
+  const visibleWatchPlatforms = useMemo(
+    () => WATCH_PLATFORM_SUPPORT.filter(platform => platform.id === 'apple_watch' || platform.id === 'polar_ble'),
+    [],
+  );
 
   useEffect(() => () => {
     scanHandleRef.current?.stop();
@@ -126,6 +153,7 @@ export default function GearScreen() {
           }
           return [...current, device].sort((a, b) => (b.rssi ?? -999) - (a.rssi ?? -999));
         });
+        setScanStatus(`Found ${device.name}. Tap Connect while the strap is still awake.`);
       },
       message => {
         setScanStatus(message);
@@ -137,6 +165,11 @@ export default function GearScreen() {
 
   async function connectScannedDevice(device: BleDeviceSummary) {
     setConnectingDeviceId(device.id);
+    if (scanHandleRef.current) {
+      scanHandleRef.current.stop();
+      scanHandleRef.current = null;
+      setScanActive(false);
+    }
     setScanStatus(`Connecting to ${device.name}...`);
     try {
       await connectToBleEquipment(device, {
@@ -186,6 +219,7 @@ export default function GearScreen() {
   async function disconnectDevice(deviceId: string) {
     await disconnectBleEquipment(deviceId);
     markDeviceDisconnected(deviceId);
+    setScanStatus('Bluetooth sensor disconnected.');
   }
 
   function capabilityText(device: Pick<BleDeviceSummary, 'capabilities'>): string {
@@ -314,13 +348,76 @@ export default function GearScreen() {
                 </Text>
               </TouchableOpacity>
               {scanStatus ? <Text style={[s.body, { color: C.textMuted, marginTop: 8 }]}>{scanStatus}</Text> : null}
+              {connectedDevices.length || scannedConnectionDevices.length || visibleStoredBleEquipment.length ? (
+                <View style={[s.connectionList, { borderTopColor: C.border }]}>
+                  {connectedDevices.map(device => (
+                    <View key={`connected-${device.id}`} style={[s.connectionRow, { borderBottomColor: C.border }]}>
+                      <View style={{ flex: 1 }}>
+                        <View style={s.connectionHeader}>
+                          <Text style={[s.title, { color: C.text }]}>{device.name}</Text>
+                          <Text style={[s.badge, { color: C.primary, borderColor: C.primary }]}>Live</Text>
+                        </View>
+                        <Text style={[s.body, { color: C.textMuted }]}>{capabilityText(device)}</Text>
+                        {device.lastError ? <Text style={[s.body, { color: C.warning }]}>{device.lastError}</Text> : null}
+                      </View>
+                      <TouchableOpacity onPress={() => disconnectDevice(device.id)} accessibilityRole="button">
+                        <Text style={[s.link, { color: C.textMuted }]}>Disconnect</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {scannedConnectionDevices.map(device => {
+                    const connecting = connectingDeviceId === device.id;
+                    return (
+                      <View key={`nearby-${device.id}`} style={[s.connectionRow, { borderBottomColor: C.border }]}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[s.title, { color: C.text }]}>{device.name}</Text>
+                          <Text style={[s.body, { color: C.textMuted }]}>
+                            {capabilityText(device)}{typeof device.rssi === 'number' ? ` · signal ${device.rssi}` : ''}
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => connectScannedDevice(device)}
+                          disabled={connecting}
+                          accessibilityRole="button"
+                        >
+                          <Text style={[s.link, { color: connecting ? C.textDim : C.primary }]}>
+                            {connecting ? 'Connecting' : 'Connect'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                  {visibleStoredBleEquipment.map(item => {
+                    const connecting = item.blePeripheralId === connectingDeviceId;
+                    return (
+                      <View key={`stored-${item.id}`} style={[s.connectionRow, { borderBottomColor: C.border }]}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[s.title, { color: C.text }]}>{item.name}</Text>
+                          <Text style={[s.body, { color: C.textMuted }]}>
+                            {(item.bleCapabilities?.length ? item.bleCapabilities.map(capabilityLabel).join(' · ') : 'Bluetooth sensor')} · paired
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => connectStoredEquipment(item)}
+                          disabled={connecting}
+                          accessibilityRole="button"
+                        >
+                          <Text style={[s.link, { color: connecting ? C.textDim : C.primary }]}>
+                            {connecting ? 'Connecting' : 'Connect'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : null}
             </>
           )}
         </FeatureTourTarget>
 
         <Text style={[s.section, { color: C.textDim }]}>WATCH + DEVICE SUPPORT</Text>
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
-          {WATCH_PLATFORM_SUPPORT.map(platform => {
+          {visibleWatchPlatforms.map(platform => {
             const enabled = enabledForCurrentIOSShell(platform);
             return (
               <View key={platform.id} style={[s.platformRow, { borderBottomColor: C.border }]}>
@@ -346,84 +443,22 @@ export default function GearScreen() {
           })}
         </View>
 
-        {!bleUnavailableReason && connectedDevices.length ? (
-          <>
-            <Text style={[s.section, { color: C.textDim }]}>CONNECTED SENSORS</Text>
-            {connectedDevices.map(device => (
-              <View key={device.id} style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
-                <View style={s.row}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.title, { color: C.text }]}>{device.name}</Text>
-                    <Text style={[s.body, { color: C.textMuted }]}>{capabilityText(device)} · live</Text>
-                    {device.lastError ? <Text style={[s.body, { color: C.warning }]}>{device.lastError}</Text> : null}
-                  </View>
-                  <TouchableOpacity onPress={() => disconnectDevice(device.id)} accessibilityRole="button">
-                    <Text style={[s.link, { color: C.textMuted }]}>Disconnect</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </>
-        ) : null}
-
-        {!bleUnavailableReason && scannedDevices.length ? (
-          <>
-            <Text style={[s.section, { color: C.textDim }]}>FOUND NEARBY</Text>
-            {scannedDevices.map(device => {
-              const connected = liveSensorDevices[device.id]?.connected;
-              const connecting = connectingDeviceId === device.id;
-              return (
-                <View key={device.id} style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
-                  <View style={s.row}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[s.title, { color: C.text }]}>{device.name}</Text>
-                      <Text style={[s.body, { color: C.textMuted }]}>
-                        {capabilityText(device)}{typeof device.rssi === 'number' ? ` · signal ${device.rssi}` : ''}
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => connected ? disconnectDevice(device.id) : connectScannedDevice(device)}
-                      disabled={connecting}
-                      accessibilityRole="button"
-                    >
-                      <Text style={[s.link, { color: connecting ? C.textDim : C.primary }]}>
-                        {connecting ? 'Connecting' : connected ? 'Disconnect' : 'Connect'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              );
-            })}
-          </>
-        ) : null}
-
         <Text style={[s.section, { color: C.textDim }]}>EQUIPMENT</Text>
-        {equipment.length === 0 ? (
+        {manualEquipment.length === 0 ? (
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
-            <Text style={[s.body, { color: C.textMuted }]}>Manual equipment and paired Bluetooth sensors will appear here.</Text>
+            <Text style={[s.body, { color: C.textMuted }]}>Manual shoes, bikes, trainers, and other equipment will appear here.</Text>
         </View>
-        ) : equipment.map(item => (
+        ) : manualEquipment.map(item => (
           <View key={item.id} style={[s.card, { backgroundColor: C.card, borderColor: C.border, opacity: item.active ? 1 : 0.6 }]}>
             <View style={s.row}>
               <View>
                 <Text style={[s.title, { color: C.text }]}>{item.name}</Text>
                 <Text style={[s.body, { color: C.textMuted }]}>
                   {item.kind.replaceAll('_', ' ')}
-                  {item.bleCapabilities?.length ? ` · ${item.bleCapabilities.map(capabilityLabel).join(' · ')}` : ''}
-                  {item.blePeripheralId ? ' · paired' : ' · manual fallback ready'}
+                  {' · manual fallback ready'}
                 </Text>
               </View>
               <View style={s.equipmentActions}>
-                {item.blePeripheralId ? (
-                  <TouchableOpacity
-                    onPress={() => liveSensorDevices[item.blePeripheralId!]?.connected ? disconnectDevice(item.blePeripheralId!) : connectStoredEquipment(item)}
-                    accessibilityRole="button"
-                  >
-                    <Text style={[s.link, { color: C.primary }]}>
-                      {liveSensorDevices[item.blePeripheralId]?.connected ? 'Disconnect' : 'Connect'}
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
                 {item.active ? <TouchableOpacity onPress={() => retireEquipment(item.id)}><Text style={[s.link, { color: C.textMuted }]}>Retire</Text></TouchableOpacity> : null}
               </View>
             </View>
@@ -443,6 +478,9 @@ const s = StyleSheet.create({
   input: { flex: 1, minHeight: 44, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, fontSize: 13 },
   primary: { minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 10 },
   secondary: { minHeight: 44, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 10, flexDirection: 'row', gap: 8 },
+  connectionList: { marginTop: 12, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
+  connectionRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  connectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   primaryText: { fontSize: 13, fontWeight: '900' },
   section: { fontSize: 10, fontWeight: '900', letterSpacing: 1, marginBottom: 8 },
   title: { fontSize: 16, fontWeight: '900' },

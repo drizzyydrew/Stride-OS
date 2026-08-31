@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,7 +15,6 @@ import { StreakBadge, StreakProgress } from '../../../src/achievements/streaks';
 import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
 import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import { LAYOUT } from '../../../src/constants/layout';
-import { getElevationAchievementArtwork } from '../../../src/constants/elevationAchievementAssets';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { shareCardUnavailableReason, shareReportCard } from '../../../src/lib/shareCard';
@@ -28,9 +27,7 @@ import { useColors } from '../../../src/theme/useColors';
 import {
   buildAchievementHubModel,
   BUILD57_ACHIEVEMENT_DEFINITIONS,
-  type AchievementCategory,
   type AchievementDefinition,
-  type CumulativeElevationAchievement,
   type StreakAchievement,
 } from '../../../src/utils/achievements';
 import {
@@ -42,19 +39,6 @@ import {
   type EvaluatedAchievement,
 } from '../../../src/utils/achievementSystem';
 import { formatDistance } from '../../../src/lib/units';
-import { formatDuration, formatElevationMeters } from '../../../src/utils/activitySummary';
-
-const CATEGORY_LABELS: Partial<Record<AchievementCategory, string>> = {
-  healthy_progress: 'Healthy Progress',
-  personal_record: 'Personal Records',
-  monthly_distance: 'Monthly Distance',
-  consistency: 'Consistency',
-  streak: 'Streaks',
-  training_quality: 'Training Quality',
-  challenge: 'Challenges',
-  stride_level: 'Stride Levels',
-  cumulative_elevation: 'Cumulative Elevation',
-};
 
 function metersToDisplay(meters: number, units: 'imperial' | 'metric'): string {
   return formatDistance(meters / 1609.344, units);
@@ -62,10 +46,6 @@ function metersToDisplay(meters: number, units: 'imperial' | 'metric'): string {
 
 function definitionFor(id: string): AchievementDefinition | undefined {
   return BUILD57_ACHIEVEMENT_DEFINITIONS.find(item => item.id === id);
-}
-
-function elevationThresholdDisplay(item: CumulativeElevationAchievement, units: 'imperial' | 'metric'): string {
-  return units === 'metric' ? item.metricDisplay : item.imperialDisplay;
 }
 
 function streakThresholdDisplay(item: StreakAchievement): string {
@@ -85,12 +65,21 @@ const FAMILY_FILTERS: Array<'all' | AchievementFamily> = [
   'lifetime_running',
   'lifetime_cycling',
   'weekly_distance',
-  'elevation',
   'strength',
   'streaks',
   'recovery',
-  'challenges',
 ];
+
+const CANONICAL_BADGE_FAMILIES = new Set<AchievementFamily>([
+  'run_levels',
+  'firsts',
+  'lifetime_running',
+  'lifetime_cycling',
+  'weekly_distance',
+  'strength',
+  'streaks',
+  'recovery',
+]);
 
 function familyFilterLabel(filter: 'all' | AchievementFamily): string {
   return filter === 'all' ? 'All' : ACHIEVEMENT_SYSTEM_CATEGORY_LABELS[filter];
@@ -133,18 +122,10 @@ export default function AchievementHubScreen() {
     [activities, awarded, weekSessions],
   );
 
-  const earnedIds = new Set(model.shareable.map(item => item.id));
-  const selectedShareDefinition = model.shareable.find(item => item.id === (selectedShareId ?? model.shareable[0]?.id));
-  const selectedElevationShare = model.cumulativeElevation.find(item => item.id === selectedShareDefinition?.id);
+  const selectedShareDefinition = selectedShareId ? model.shareable.find(item => item.id === selectedShareId) : undefined;
   const selectedStreakShare = model.streak.achievements.find(item => item.id === selectedShareDefinition?.id);
   const activeLevel = [...model.strideLevels].reverse().find(item => item.complete) ?? model.strideLevels[0];
   const nextLevel = model.strideLevels.find(item => !item.complete);
-  const nextElevation = model.cumulativeElevation.find(item => !item.complete);
-  const grouped = model.definitions.reduce<Record<string, AchievementDefinition[]>>((acc, definition) => {
-    const category = definition.category ?? 'healthy_progress';
-    acc[category] = [...(acc[category] ?? []), definition];
-    return acc;
-  }, {});
   const canonicalAchievements = useMemo(() => evaluateAchievementSystem({
     activities,
     awarded,
@@ -152,7 +133,7 @@ export default function AchievementHubScreen() {
     scheduledSessions: weekSessions,
     readinessHistory,
     assessmentResults,
-  }), [activities, assessmentResults, awarded, readinessHistory, units, weekSessions]);
+  }).filter(item => CANONICAL_BADGE_FAMILIES.has(item.family)), [activities, assessmentResults, awarded, readinessHistory, units, weekSessions]);
   const canonicalVisible = canonicalListForFilter(canonicalAchievements, familyFilter);
 
   function shareAchievement(definition: AchievementDefinition) {
@@ -196,7 +177,6 @@ export default function AchievementHubScreen() {
         <View style={[s.section, { borderColor: C.border }]}>
           <View style={s.sectionHeaderRow}>
             <Text style={[s.sectionTitle, { color: C.text }]}>Achievement System</Text>
-            <Text style={[s.chevronsSmall, { color: C.primary }]}>{'>>>>>'}</Text>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterRail}>
             {FAMILY_FILTERS.map(filter => {
@@ -320,166 +300,6 @@ export default function AchievementHubScreen() {
           ) : null}
         </View>
 
-        <FeatureTourTarget targetId="achievements.elevation" style={[s.section, { borderColor: C.border }]}>
-          <View style={s.sectionHeaderRow}>
-            <Text style={[s.sectionTitle, { color: C.text }]}>Cumulative Elevation</Text>
-            <Text style={[s.chevronsSmall, { color: C.primary }]}>{'>>>>>'}</Text>
-          </View>
-          {nextElevation ? (
-            <View style={[s.nextMountainCard, { backgroundColor: C.card, borderColor: C.border }]}>
-              <View style={s.nextMountainTop}>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={[s.eyebrow, { color: C.textDim }]}>NEXT LANDMARK</Text>
-                  <Text style={[s.mountainTitle, { color: C.text }]}>{nextElevation.displayName}</Text>
-                  <Text style={[s.body, { color: C.textMuted }]}>
-                    {formatElevationMeters(nextElevation.cumulativeMeters, units)} / {elevationThresholdDisplay(nextElevation, units)}
-                  </Text>
-                </View>
-                <Text style={[s.remaining, { color: C.primary }]}>
-                  {formatElevationMeters(nextElevation.remainingMeters, units)} to go
-                </Text>
-              </View>
-              <View style={[s.progressTrack, { backgroundColor: C.cardAlt }]}>
-                <View style={[s.progressFill, { width: `${Math.round(nextElevation.progressRatio * 100)}%` as `${number}%`, backgroundColor: C.primary }]} />
-              </View>
-            </View>
-          ) : (
-            <View style={[s.nextMountainCard, { backgroundColor: C.card, borderColor: C.primary }]}>
-              <Text style={[s.mountainTitle, { color: C.text }]}>Olympus Mons reached</Text>
-              <Text style={[s.body, { color: C.textMuted }]}>Highest cumulative elevation landmark unlocked.</Text>
-            </View>
-          )}
-          <View style={s.mountainGrid}>
-            {model.cumulativeElevation.map(item => {
-              const artwork = getElevationAchievementArtwork(item.id);
-              const definition = definitionFor(item.id);
-              return (
-                <View key={item.id} style={[s.mountainCard, { backgroundColor: C.card, borderColor: item.complete ? C.primary : C.border }]}>
-                  {artwork ? (
-                    <Image source={artwork} style={[s.mountainImage, { opacity: item.complete ? 1 : 0.48 }]} resizeMode="cover" />
-                  ) : (
-                    <View style={[s.mountainImage, { backgroundColor: C.cardAlt }]} />
-                  )}
-                  <View style={s.mountainShade} />
-                  {!item.complete ? (
-                    <View style={[s.lockPill, { backgroundColor: C.card }]}>
-                      <View style={[s.dormantDotSmall, { borderColor: C.textMuted }]} />
-                      <Text style={[s.lockText, { color: C.textMuted }]}>DORMANT</Text>
-                    </View>
-                  ) : null}
-                  <View style={s.mountainCopy}>
-                    <Text style={s.mountainName}>{item.displayName.toUpperCase()}</Text>
-                    <Text style={s.mountainValue}>{elevationThresholdDisplay(item, units).toUpperCase()}</Text>
-                    <Text style={s.mountainDescriptor}>{item.measurementDescriptor}</Text>
-                    {item.complete ? (
-                      <Text style={s.mountainDate}>Unlocked {shortDate(item.unlockedAt)}</Text>
-                    ) : (
-                      <Text style={s.mountainDate}>{formatElevationMeters(item.remainingMeters, units)} remaining</Text>
-                    )}
-                  </View>
-                  {item.complete && definition ? (
-                    <TouchableOpacity
-                      style={s.mountainShare}
-                      onPress={() => { void shareAchievement(definition); }}
-                      accessibilityLabel={`Share ${item.displayName} elevation achievement`}
-                    >
-                      <Ionicons name="share-outline" size={17} color="#F3F1EB" />
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-              );
-            })}
-          </View>
-        </FeatureTourTarget>
-
-        {model.personalRecords.length ? (
-          <View style={[s.section, { borderColor: C.border }]}>
-            <Text style={[s.sectionTitle, { color: C.text }]}>Personal Records</Text>
-            {model.personalRecords.map(record => (
-              <View key={record.id} style={[s.row, { borderColor: C.border }]}>
-                <AchievementBadge id={record.id} category="personal_record" size="small" unitSystem={units} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.rowTitle, { color: C.text }]}>{record.title}</Text>
-                  <Text style={[s.body, { color: C.textMuted }]}>
-                    {record.unit === 'seconds' ? formatDuration(record.value) : metersToDisplay(record.value, units)}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={[s.iconBtn, { backgroundColor: C.cardAlt, borderColor: C.border }]}
-                  onPress={() => {
-                    const definition = definitionFor(record.id);
-                    if (definition) void shareAchievement(definition);
-                  }}
-                  accessibilityLabel={`Share ${record.title}`}
-                >
-                  <Ionicons name="share-outline" size={17} color={C.primary} />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        {model.monthlyMilestones.length ? (
-          <View style={[s.section, { borderColor: C.border }]}>
-            <Text style={[s.sectionTitle, { color: C.text }]}>Monthly Distance</Text>
-            {model.monthlyMilestones.slice(-6).reverse().map(milestone => (
-              <View key={`${milestone.id}:${milestone.monthKey}`} style={[s.row, { borderColor: C.border }]}>
-                <AchievementBadge id={milestone.id} category="monthly_distance" size="small" unitSystem={units} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.rowTitle, { color: C.text }]}>{Math.round(milestone.thresholdMeters / 1000)}K Month</Text>
-                  <Text style={[s.body, { color: C.textMuted }]}>{milestone.monthKey} - {metersToDisplay(milestone.distanceMeters, units)}</Text>
-                </View>
-                <Text style={[s.chevronsSmall, { color: C.primary }]}>{'>>>>>'}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        <View style={[s.section, { borderColor: C.border }]}>
-          <Text style={[s.sectionTitle, { color: C.text }]}>Challenges</Text>
-          {model.challengeProgress.map(item => (
-            <View key={item.definition.id} style={[s.row, { borderColor: C.border }]}>
-              <AchievementBadge id={item.definition.id} category="challenge" size="small" earned={item.complete} unitSystem={units} />
-              <View style={{ flex: 1 }}>
-                <Text style={[s.rowTitle, { color: C.text }]}>{item.definition.title}</Text>
-                <Text style={[s.body, { color: C.textMuted }]}>
-                  {item.definition.thresholdMeters
-                    ? `${metersToDisplay(item.progress, units)} / ${metersToDisplay(item.target, units)}`
-                    : `${item.progress} / ${item.target}`}
-                </Text>
-              </View>
-              <Ionicons name={item.complete ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={item.complete ? C.positive : C.textDim} />
-            </View>
-          ))}
-        </View>
-
-        {(Object.keys(CATEGORY_LABELS) as AchievementCategory[]).map(category => {
-          const definitions = grouped[category] ?? [];
-          if (!definitions.length || category === 'challenge' || category === 'personal_record' || category === 'monthly_distance' || category === 'cumulative_elevation' || category === 'streak') return null;
-          return (
-            <View key={category} style={[s.section, { borderColor: C.border }]}>
-              <Text style={[s.sectionTitle, { color: C.text }]}>{CATEGORY_LABELS[category]}</Text>
-              {definitions.map(definition => {
-                const earned = earnedIds.has(definition.id);
-                return (
-                  <View key={definition.id} style={[s.badgeRow, { backgroundColor: earned ? C.primaryDim : C.cardAlt, borderColor: earned ? C.primary : C.border }]}>
-                    <AchievementBadge id={definition.id} category={definition.category} size="small" earned={earned} unitSystem={units} />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={[s.rowTitle, { color: C.text }]}>{definition.title}</Text>
-                      <Text style={[s.body, { color: C.textMuted }]}>{definition.description}</Text>
-                    </View>
-                    {earned ? (
-                      <TouchableOpacity onPress={() => { void shareAchievement(definition); }} accessibilityLabel={`Share ${definition.title}`}>
-                        <Ionicons name="share-outline" size={18} color={C.primary} />
-                      </TouchableOpacity>
-                    ) : null}
-                  </View>
-                );
-              })}
-            </View>
-          );
-        })}
-
         {selectedShareDefinition ? (
           <FeatureTourTarget targetId="achievements.share" style={[s.section, { borderColor: C.border }]}>
             <Text style={[s.sectionTitle, { color: C.text }]}>Share Achievement</Text>
@@ -505,13 +325,7 @@ export default function AchievementHubScreen() {
                 achievement={selectedShareDefinition}
                 variant={shareVariant}
                 units={units}
-                detail={
-                  selectedElevationShare
-                    ? `${elevationThresholdDisplay(selectedElevationShare, units)} ${selectedElevationShare.measurementDescriptor}`
-                    : selectedStreakShare
-                      ? selectedStreakShare.milestoneLabel.toUpperCase()
-                      : undefined
-                }
+                detail={selectedStreakShare ? selectedStreakShare.milestoneLabel.toUpperCase() : undefined}
               />
             </View>
             <TouchableOpacity
@@ -526,11 +340,6 @@ export default function AchievementHubScreen() {
           </FeatureTourTarget>
         ) : null}
 
-        {model.personalRecords.some(record => record.id === 'pr_highest_ride_elevation') ? (
-          <Text style={[s.footnote, { color: C.textDim }]}>
-            Elevation records use stored elevation gain, displayed here as {formatElevationMeters(100, units).replace('100', units === 'metric' ? 'meters' : 'feet')}.
-          </Text>
-        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
