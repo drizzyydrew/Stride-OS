@@ -32,6 +32,7 @@ export default function ActivityDetailScreen() {
   const [shareVariant, setShareVariant] = useState<ShareStudioVariant>('minimal_card');
   const [shareFormat, setShareFormat] = useState<ShareStudioFormat>('square');
   const [shareMessage, setShareMessage] = useState<string | null>(shareCardUnavailableReason());
+  const [shareInteractionActive, setShareInteractionActive] = useState(false);
   const shareCardRef = useRef<View>(null);
   const resolution = resolveActivityDetail(activities, activityId, hydrationStatus);
   if (resolution.status === 'loading') return (
@@ -110,7 +111,7 @@ export default function ActivityDetailScreen() {
           </View>
         )}
       />
-      <ScrollView contentContainerStyle={s.content}>
+      <ScrollView contentContainerStyle={s.content} scrollEnabled={!shareInteractionActive}>
         {route.length > 1 ? (
           <View style={[s.mapCard, { borderColor: C.border }]}>
             <MapView
@@ -178,6 +179,7 @@ export default function ActivityDetailScreen() {
               format={shareFormat}
               canvasRef={shareCardRef}
               onRoutePrivacyNotice={(message) => Alert.alert('Route sharing', message)}
+              onInteractionActiveChange={setShareInteractionActive}
             />
           </View>
           <TouchableOpacity

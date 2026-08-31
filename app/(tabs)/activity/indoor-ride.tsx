@@ -40,6 +40,13 @@ import {
   getConflictingActiveSession,
   isActiveSessionStale,
 } from '../../../src/lib/activeSessionCoordinator';
+import {
+  endStrideWatchWorkout,
+  pauseStrideWatchWorkout,
+  resumeStrideWatchWorkout,
+  setStrideWatchWorkoutContext,
+  startStrideWatchWorkout,
+} from '../../../modules/stride-watch-connectivity/src';
 import { buildIndoorRideActivityDraft } from '../../../src/utils/indoorRide';
 import { summarizeIndoorHeartRate } from '../../../src/utils/indoorHeartRate';
 import { clampStepIndex, flattenWorkoutSteps, totalRemainingMinutes } from '../../../src/utils/workoutSteps';
@@ -201,6 +208,14 @@ export default function IndoorRideScreen() {
       isPaused: false,
       cueText: 'Distance unavailable until entered from equipment.',
     }).catch(() => undefined);
+    await setStrideWatchWorkoutContext({ unitSystem: units }).catch(() => undefined);
+    await startStrideWatchWorkout({
+      workoutKind: 'cycling',
+      workoutInstanceId: started.workoutInstanceId ?? null,
+      title: 'Indoor Ride',
+      environment: 'indoor',
+      targetZone: null,
+    }).catch(() => undefined);
     setElapsedSeconds(0);
     setCadenceInput('');
     setPowerInput('');
@@ -307,6 +322,7 @@ export default function IndoorRideScreen() {
       heartRateBpm: state.heartRateBpm,
       isPaused: false,
     }).catch(() => undefined);
+    await endStrideWatchWorkout().catch(() => undefined);
     const activityId = addActivity(draft);
     ride.finishRide();
     router.replace({ pathname: '/(tabs)/activity/[activityId]', params: { activityId } } as never);
@@ -332,6 +348,7 @@ export default function IndoorRideScreen() {
             heartRateBpm: state.heartRateBpm,
             isPaused: false,
           }).catch(() => undefined).finally(() => ride.cancelRide());
+          void endStrideWatchWorkout().catch(() => undefined);
         },
       },
     ]);
@@ -491,7 +508,15 @@ export default function IndoorRideScreen() {
       </ScrollView>
 
       <View style={s.controls}>
-        <TouchableOpacity onPress={ride.isPaused ? ride.resume : ride.pause} style={[s.control, { backgroundColor: C.card, borderColor: C.border }]}>
+        <TouchableOpacity onPress={() => {
+          if (ride.isPaused) {
+            ride.resume();
+            resumeStrideWatchWorkout().catch(() => undefined);
+          } else {
+            ride.pause();
+            pauseStrideWatchWorkout().catch(() => undefined);
+          }
+        }} style={[s.control, { backgroundColor: C.card, borderColor: C.border }]}>
           <Ionicons name={ride.isPaused ? 'play' : 'pause'} size={22} color={C.text} />
           <Text style={[s.controlText, { color: C.text }]}>{ride.isPaused ? 'Resume' : 'Pause'}</Text>
         </TouchableOpacity>

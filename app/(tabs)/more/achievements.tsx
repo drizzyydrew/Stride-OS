@@ -214,7 +214,6 @@ export default function AchievementHubScreen() {
                     <View style={[s.progressFill, { width: `${Math.round(item.progressPercentage * 100)}%` as `${number}%`, backgroundColor: earned ? C.primary : C.textDim }]} />
                   </View>
                 </View>
-                <Ionicons name={achievementShareAllowed(item) ? 'share-outline' : 'chevron-forward'} size={18} color={earned ? C.primary : C.textDim} />
               </TouchableOpacity>
             );
           })}

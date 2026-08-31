@@ -23,6 +23,9 @@ import { getNavigationTheme } from '../src/theme/theme';
 import { useIntegrationsStore } from '../src/store/integrationsStore';
 import { useReadinessStore } from '../src/store/readinessStore';
 import { FeatureTourProvider } from '../src/components/featureTour/FeatureTourProvider';
+import AchievementAwardReconciler from '../src/components/achievements/AchievementAwardReconciler';
+import AchievementUnlockModal from '../src/components/achievements/AchievementUnlockModal';
+import WatchWorkoutBridge from '../src/components/watch/WatchWorkoutBridge';
 import {
   clearTrainingNotifications,
   getNotificationAccessStatus,
@@ -185,6 +188,9 @@ export default function RootLayout() {
         <Stack.Screen name="modal"      options={{ presentation: 'modal' }} />
       </Stack>
       <LiveActivityCommandReconciler />
+      <WatchWorkoutBridge />
+      <AchievementAwardReconciler />
+      <AchievementUnlockModal />
       <NavigationGate />
           </FeatureTourProvider>
         </ToastProvider>

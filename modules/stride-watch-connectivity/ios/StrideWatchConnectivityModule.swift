@@ -3,10 +3,15 @@ import Foundation
 import WatchConnectivity
 
 private enum StrideWatchMessageType {
+  static let startWorkout = "startWorkout"
   static let startRun = "startRun"
+  static let pauseWorkout = "pauseWorkout"
   static let pauseRun = "pauseRun"
+  static let resumeWorkout = "resumeWorkout"
   static let resumeRun = "resumeRun"
+  static let endWorkout = "endWorkout"
   static let endRun = "endRun"
+  static let setContext = "setContext"
   static let heartRate = "heartRate"
   static let workoutState = "workoutState"
   static let error = "error"
@@ -20,12 +25,14 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
   }
 
   private var eventSink: ((String, [String: Any]) -> Void)?
+  private var pendingEvents: [(String, [String: Any])] = []
   private var lastMessageAt: TimeInterval = 0
   private var lastError: String?
 
   func setEventSink(_ sink: ((String, [String: Any]) -> Void)?) {
     eventSink = sink
     activate()
+    flushPendingEventsIfNeeded()
   }
 
   func activate() {
@@ -45,7 +52,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
         "isReachable": false,
         "activationState": "unsupported",
         "lastMessageAt": lastMessageAt,
-        "lastError": lastError as Any,
+        "lastError": lastError ?? NSNull(),
       ]
     }
 
@@ -56,7 +63,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
       "isReachable": session.isReachable,
       "activationState": activationStateLabel(session.activationState),
       "lastMessageAt": lastMessageAt,
-      "lastError": lastError as Any,
+      "lastError": lastError ?? NSNull(),
     ]
   }
 
@@ -128,30 +135,50 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
 
     switch type {
     case StrideWatchMessageType.heartRate:
-      eventSink?("onWatchHeartRate", sanitizePayload(message))
+      emit("onWatchHeartRate", sanitizePayload(message))
     case StrideWatchMessageType.workoutState:
-      eventSink?("onWatchWorkoutState", sanitizePayload(message))
+      emit("onWatchWorkoutState", sanitizePayload(message))
     case StrideWatchMessageType.error:
       lastError = message["message"] as? String
-      eventSink?("onWatchError", sanitizePayload(message))
+      emit("onWatchError", sanitizePayload(message))
       emitStatus()
     default:
-      eventSink?("onWatchWorkoutState", sanitizePayload(message))
+      emit("onWatchWorkoutState", sanitizePayload(message))
     }
   }
 
   private func emitStatus() {
-    eventSink?("onWatchStatus", snapshot())
+    emit("onWatchStatus", snapshot())
   }
 
   private func recordError(_ message: String) {
     lastError = message
-    eventSink?("onWatchError", [
+    emit("onWatchError", [
       "type": StrideWatchMessageType.error,
       "message": message,
       "timestamp": Date().timeIntervalSince1970 * 1000,
     ])
     emitStatus()
+  }
+
+  private func emit(_ name: String, _ payload: [String: Any]) {
+    if let eventSink {
+      eventSink(name, payload)
+    } else {
+      pendingEvents.append((name, payload))
+      if pendingEvents.count > 50 {
+        pendingEvents.removeFirst(pendingEvents.count - 50)
+      }
+    }
+  }
+
+  private func flushPendingEventsIfNeeded() {
+    guard let eventSink, !pendingEvents.isEmpty else { return }
+    let events = pendingEvents
+    pendingEvents.removeAll()
+    events.forEach { name, payload in
+      eventSink(name, payload)
+    }
   }
 
   private func sanitizePayload(_ payload: [String: Any]) -> [String: Any] {
@@ -242,12 +269,54 @@ public final class StrideWatchConnectivityModule: Module {
       }
     }
 
+    AsyncFunction("startWorkout") {
+      (
+        workoutKind: String?,
+        workoutInstanceId: String?,
+        title: String?,
+        environment: String?,
+        targetZone: Int?,
+        promise: Promise
+      ) in
+      do {
+        var payload: [String: Any] = [:]
+        if let workoutKind {
+          payload["workoutKind"] = workoutKind
+        }
+        if let workoutInstanceId {
+          payload["workoutInstanceId"] = workoutInstanceId
+        }
+        if let title {
+          payload["title"] = title
+        }
+        if let environment {
+          payload["environment"] = environment
+        }
+        if let targetZone {
+          payload["targetZone"] = targetZone
+        }
+        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.startWorkout, payload: payload)
+        promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
+      } catch {
+        promise.reject("ERR_STRIDE_WATCH_START_WORKOUT", error.localizedDescription)
+      }
+    }
+
     AsyncFunction("pauseRun") { (promise: Promise) in
       do {
         try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.pauseRun, payload: [:])
         promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
       } catch {
         promise.reject("ERR_STRIDE_WATCH_PAUSE", error.localizedDescription)
+      }
+    }
+
+    AsyncFunction("pauseWorkout") { (promise: Promise) in
+      do {
+        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.pauseWorkout, payload: [:])
+        promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
+      } catch {
+        promise.reject("ERR_STRIDE_WATCH_PAUSE_WORKOUT", error.localizedDescription)
       }
     }
 
@@ -260,12 +329,55 @@ public final class StrideWatchConnectivityModule: Module {
       }
     }
 
+    AsyncFunction("resumeWorkout") { (promise: Promise) in
+      do {
+        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.resumeWorkout, payload: [:])
+        promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
+      } catch {
+        promise.reject("ERR_STRIDE_WATCH_RESUME_WORKOUT", error.localizedDescription)
+      }
+    }
+
     AsyncFunction("endRun") { (promise: Promise) in
       do {
         try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.endRun, payload: [:])
         promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
       } catch {
         promise.reject("ERR_STRIDE_WATCH_END", error.localizedDescription)
+      }
+    }
+
+    AsyncFunction("endWorkout") { (promise: Promise) in
+      do {
+        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.endWorkout, payload: [:])
+        promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
+      } catch {
+        promise.reject("ERR_STRIDE_WATCH_END_WORKOUT", error.localizedDescription)
+      }
+    }
+
+    AsyncFunction("setWorkoutContext") {
+      (
+        unitSystem: String?,
+        maxHeartRateBpm: Int?,
+        targetZone: Int?,
+        promise: Promise
+      ) in
+      do {
+        var payload: [String: Any] = [:]
+        if let unitSystem {
+          payload["unitSystem"] = unitSystem
+        }
+        if let maxHeartRateBpm {
+          payload["maxHeartRateBpm"] = maxHeartRateBpm
+        }
+        if let targetZone {
+          payload["targetZone"] = targetZone
+        }
+        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.setContext, payload: payload)
+        promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
+      } catch {
+        promise.reject("ERR_STRIDE_WATCH_CONTEXT", error.localizedDescription)
       }
     }
   }

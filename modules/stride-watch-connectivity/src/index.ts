@@ -11,11 +11,17 @@ export type StrideWatchStatus = {
   lastError?: string | null;
 };
 
+export type StrideWatchWorkoutKind = 'run' | 'strength' | 'mobility' | 'cycling';
+
 export type StrideWatchHeartRateEvent = {
   type: 'heartRate';
   heartRate: number;
+  workoutKind?: StrideWatchWorkoutKind | string;
   workoutInstanceId?: string;
   elapsedSeconds?: number;
+  distanceMeters?: number;
+  activeEnergyKilocalories?: number;
+  heartRateZone?: string;
   timestamp: number;
   source?: 'apple_watch';
 };
@@ -23,8 +29,15 @@ export type StrideWatchHeartRateEvent = {
 export type StrideWatchWorkoutStateEvent = {
   type: 'workoutState';
   state: 'running' | 'paused' | 'ended' | 'idle' | 'prepared' | string;
+  workoutKind?: StrideWatchWorkoutKind | string;
   workoutInstanceId?: string;
   elapsedSeconds?: number;
+  distanceMeters?: number;
+  activeEnergyKilocalories?: number;
+  heartRate?: number;
+  heartRateZone?: string;
+  pendingSyncCount?: number;
+  queued?: boolean;
   timestamp: number;
   source?: 'apple_watch';
 };
@@ -47,9 +60,24 @@ type StrideWatchConnectivityNativeModule = {
     environment?: string | null,
     targetZone?: number | null,
   ) => Promise<StrideWatchStatus>;
+  startWorkout: (
+    workoutKind?: string | null,
+    workoutInstanceId?: string | null,
+    title?: string | null,
+    environment?: string | null,
+    targetZone?: number | null,
+  ) => Promise<StrideWatchStatus>;
   pauseRun: () => Promise<StrideWatchStatus>;
+  pauseWorkout: () => Promise<StrideWatchStatus>;
   resumeRun: () => Promise<StrideWatchStatus>;
+  resumeWorkout: () => Promise<StrideWatchStatus>;
   endRun: () => Promise<StrideWatchStatus>;
+  endWorkout: () => Promise<StrideWatchStatus>;
+  setWorkoutContext: (
+    unitSystem?: 'imperial' | 'metric' | string | null,
+    maxHeartRateBpm?: number | null,
+    targetZone?: number | null,
+  ) => Promise<StrideWatchStatus>;
 };
 
 const FALLBACK_STATUS: StrideWatchStatus = {
@@ -124,10 +152,21 @@ export async function startStrideWatchRun(options: {
   environment?: 'outdoor' | 'indoor' | string | null;
   targetZone?: number | null;
 } = {}): Promise<StrideWatchStatus> {
+  return startStrideWatchWorkout({ ...options, workoutKind: 'run' });
+}
+
+export async function startStrideWatchWorkout(options: {
+  workoutKind?: StrideWatchWorkoutKind | string | null;
+  workoutInstanceId?: string | null;
+  title?: string | null;
+  environment?: 'outdoor' | 'indoor' | string | null;
+  targetZone?: number | null;
+} = {}): Promise<StrideWatchStatus> {
   const nativeModule = getNativeModule();
   if (!nativeModule) return FALLBACK_STATUS;
   try {
-    return normalizeStatus(await nativeModule.startRun(
+    return normalizeStatus(await nativeModule.startWorkout(
+      options.workoutKind ?? 'run',
       options.workoutInstanceId ?? null,
       options.title ?? null,
       options.environment ?? null,
@@ -139,30 +178,60 @@ export async function startStrideWatchRun(options: {
 }
 
 export async function pauseStrideWatchRun(): Promise<StrideWatchStatus> {
+  return pauseStrideWatchWorkout();
+}
+
+export async function pauseStrideWatchWorkout(): Promise<StrideWatchStatus> {
   const nativeModule = getNativeModule();
   if (!nativeModule) return FALLBACK_STATUS;
   try {
-    return normalizeStatus(await nativeModule.pauseRun());
+    return normalizeStatus(await nativeModule.pauseWorkout());
   } catch (error) {
     return { ...getStrideWatchStatus(), lastError: messageFromError(error) };
   }
 }
 
 export async function resumeStrideWatchRun(): Promise<StrideWatchStatus> {
+  return resumeStrideWatchWorkout();
+}
+
+export async function resumeStrideWatchWorkout(): Promise<StrideWatchStatus> {
   const nativeModule = getNativeModule();
   if (!nativeModule) return FALLBACK_STATUS;
   try {
-    return normalizeStatus(await nativeModule.resumeRun());
+    return normalizeStatus(await nativeModule.resumeWorkout());
   } catch (error) {
     return { ...getStrideWatchStatus(), lastError: messageFromError(error) };
   }
 }
 
 export async function endStrideWatchRun(): Promise<StrideWatchStatus> {
+  return endStrideWatchWorkout();
+}
+
+export async function endStrideWatchWorkout(): Promise<StrideWatchStatus> {
   const nativeModule = getNativeModule();
   if (!nativeModule) return FALLBACK_STATUS;
   try {
-    return normalizeStatus(await nativeModule.endRun());
+    return normalizeStatus(await nativeModule.endWorkout());
+  } catch (error) {
+    return { ...getStrideWatchStatus(), lastError: messageFromError(error) };
+  }
+}
+
+export async function setStrideWatchWorkoutContext(options: {
+  unitSystem?: 'imperial' | 'metric' | string | null;
+  maxHeartRateBpm?: number | null;
+  targetZone?: number | null;
+} = {}): Promise<StrideWatchStatus> {
+  const nativeModule = getNativeModule();
+  if (!nativeModule) return FALLBACK_STATUS;
+  try {
+    return normalizeStatus(await nativeModule.setWorkoutContext(
+      options.unitSystem ?? null,
+      options.maxHeartRateBpm ?? null,
+      options.targetZone ?? null,
+    ));
   } catch (error) {
     return { ...getStrideWatchStatus(), lastError: messageFromError(error) };
   }
@@ -177,8 +246,12 @@ export function addStrideWatchHeartRateListener(
     listener({
       type: 'heartRate',
       heartRate,
+      workoutKind: typeof event?.workoutKind === 'string' ? event.workoutKind : undefined,
       workoutInstanceId: typeof event?.workoutInstanceId === 'string' ? event.workoutInstanceId : undefined,
       elapsedSeconds: Number.isFinite(Number(event?.elapsedSeconds)) ? Number(event.elapsedSeconds) : undefined,
+      distanceMeters: Number.isFinite(Number(event?.distanceMeters)) ? Number(event.distanceMeters) : undefined,
+      activeEnergyKilocalories: Number.isFinite(Number(event?.activeEnergyKilocalories)) ? Number(event.activeEnergyKilocalories) : undefined,
+      heartRateZone: typeof event?.heartRateZone === 'string' ? event.heartRateZone : undefined,
       timestamp: Number.isFinite(Number(event?.timestamp)) ? Number(event.timestamp) : Date.now(),
       source: 'apple_watch',
     });
@@ -200,8 +273,15 @@ export function addStrideWatchWorkoutStateListener(
     listener({
       type: 'workoutState',
       state: typeof event?.state === 'string' ? event.state : 'unknown',
+      workoutKind: typeof event?.workoutKind === 'string' ? event.workoutKind : undefined,
       workoutInstanceId: typeof event?.workoutInstanceId === 'string' ? event.workoutInstanceId : undefined,
       elapsedSeconds: Number.isFinite(Number(event?.elapsedSeconds)) ? Number(event.elapsedSeconds) : undefined,
+      distanceMeters: Number.isFinite(Number(event?.distanceMeters)) ? Number(event.distanceMeters) : undefined,
+      activeEnergyKilocalories: Number.isFinite(Number(event?.activeEnergyKilocalories)) ? Number(event.activeEnergyKilocalories) : undefined,
+      heartRate: Number.isFinite(Number(event?.heartRate)) ? Number(event.heartRate) : undefined,
+      heartRateZone: typeof event?.heartRateZone === 'string' ? event.heartRateZone : undefined,
+      pendingSyncCount: Number.isFinite(Number(event?.pendingSyncCount)) ? Number(event.pendingSyncCount) : undefined,
+      queued: Boolean(event?.queued),
       timestamp: Number.isFinite(Number(event?.timestamp)) ? Number(event.timestamp) : Date.now(),
       source: 'apple_watch',
     });

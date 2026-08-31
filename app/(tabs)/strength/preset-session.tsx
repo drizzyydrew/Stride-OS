@@ -27,6 +27,11 @@ import { completedExercisesFromActiveSession } from '../../../src/utils/strength
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import StrengthSetEditor from '../../../src/components/strength/StrengthSetEditor';
 import { formatPrescriptionWithSets } from '../../../src/utils/prescriptionFormat';
+import {
+  endStrideWatchWorkout,
+  pauseStrideWatchWorkout,
+  resumeStrideWatchWorkout,
+} from '../../../modules/stride-watch-connectivity/src';
 
 function formatElapsed(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
@@ -153,6 +158,7 @@ export default function PresetStrengthSessionScreen() {
                     style: 'destructive',
                     onPress: () => {
                       endStrengthLiveActivity().catch(console.warn);
+                      endStrideWatchWorkout().catch(() => undefined);
                       clearSession();
                     },
                   },
@@ -198,6 +204,7 @@ export default function PresetStrengthSessionScreen() {
       workoutName: session.workoutName,
     }, fatigueScore);
     endStrengthLiveActivity().catch(console.warn);
+    endStrideWatchWorkout().catch(() => undefined);
     clearSession();
     router.replace({
       pathname: '/(tabs)/strength/preset-complete',
@@ -227,6 +234,7 @@ export default function PresetStrengthSessionScreen() {
         style: 'destructive',
         onPress: () => {
           endStrengthLiveActivity().catch(console.warn);
+          endStrideWatchWorkout().catch(() => undefined);
           clearSession();
           router.replace('/(tabs)/strength' as never);
         },
@@ -242,6 +250,16 @@ export default function PresetStrengthSessionScreen() {
     // the current hydrated session snapshot and then clears the active session.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [completionRequestedAt, session?.source]);
+
+  const pauseSession = () => {
+    pause();
+    pauseStrideWatchWorkout().catch(() => undefined);
+  };
+
+  const resumeSession = () => {
+    resume();
+    resumeStrideWatchWorkout().catch(() => undefined);
+  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: C.bg }]} edges={['top']}>
@@ -265,7 +283,7 @@ export default function PresetStrengthSessionScreen() {
             <View style={[styles.progressFill, { backgroundColor: C.primary, width: `${session.exercises.length ? session.completedExerciseIds.length / session.exercises.length * 100 : 0}%` }]} />
           </View>
           <View style={styles.actions}>
-            <TouchableOpacity style={[styles.secondaryButton, { borderColor: C.border }]} onPress={session.status === 'active' ? pause : resume}>
+            <TouchableOpacity style={[styles.secondaryButton, { borderColor: C.border }]} onPress={session.status === 'active' ? pauseSession : resumeSession}>
               <Ionicons name={session.status === 'active' ? 'pause' : 'play'} size={16} color={C.text} />
               <Text style={[styles.secondaryText, { color: C.text }]}>{session.status === 'active' ? 'Pause' : 'Resume'}</Text>
             </TouchableOpacity>

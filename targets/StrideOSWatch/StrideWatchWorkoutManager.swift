@@ -3,6 +3,90 @@ import Foundation
 import HealthKit
 import WatchConnectivity
 
+enum StrideWatchWorkoutKind: String, CaseIterable, Identifiable {
+  case run
+  case strength
+  case mobility
+  case cycling
+
+  var id: String { rawValue }
+
+  var title: String {
+    switch self {
+    case .run: return "Run"
+    case .strength: return "Strength"
+    case .mobility: return "Mobility"
+    case .cycling: return "Cycling"
+    }
+  }
+
+  var workoutTitle: String {
+    switch self {
+    case .run: return "StrideOS Run"
+    case .strength: return "StrideOS Strength"
+    case .mobility: return "StrideOS Mobility"
+    case .cycling: return "StrideOS Ride"
+    }
+  }
+
+  var symbolName: String {
+    switch self {
+    case .run: return "figure.run"
+    case .strength: return "dumbbell.fill"
+    case .mobility: return "figure.cooldown"
+    case .cycling: return "bicycle"
+    }
+  }
+
+  var activityType: HKWorkoutActivityType {
+    switch self {
+    case .run: return .running
+    case .strength: return .traditionalStrengthTraining
+    case .mobility: return .flexibility
+    case .cycling: return .cycling
+    }
+  }
+
+  var distanceIdentifier: HKQuantityTypeIdentifier? {
+    switch self {
+    case .run: return .distanceWalkingRunning
+    case .cycling: return .distanceCycling
+    case .strength, .mobility: return nil
+    }
+  }
+
+  var tracksDistance: Bool {
+    distanceIdentifier != nil
+  }
+
+  static func from(_ value: String?) -> StrideWatchWorkoutKind {
+    guard let value, let kind = StrideWatchWorkoutKind(rawValue: value) else { return .run }
+    return kind
+  }
+}
+
+enum StrideWatchMetricPage: Int, CaseIterable, Identifiable {
+  case elapsed
+  case heartRate
+  case distance
+  case pace
+  case heartRateZone
+  case energy
+
+  var id: Int { rawValue }
+
+  var title: String {
+    switch self {
+    case .elapsed: return "Time"
+    case .heartRate: return "Heart Rate"
+    case .distance: return "Distance"
+    case .pace: return "Pace"
+    case .heartRateZone: return "HR Zone"
+    case .energy: return "Energy"
+    }
+  }
+}
+
 final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   static let shared = StrideWatchWorkoutManager()
 
@@ -10,6 +94,15 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   @Published private(set) var state: HKWorkoutSessionState = .notStarted
   @Published private(set) var elapsedSeconds: Int = 0
   @Published private(set) var lastError: String?
+  @Published private(set) var selectedWorkoutKind: StrideWatchWorkoutKind = .run
+  @Published private(set) var distanceMeters: Double = 0
+  @Published private(set) var activeEnergyKilocalories: Double = 0
+  @Published private(set) var pendingSyncCount: Int = 0
+  @Published private(set) var preferredUnitSystem: String = "imperial"
+  @Published private(set) var metricPage: StrideWatchMetricPage = .heartRate
+
+  private var maxHeartRateBpm: Int = 190
+  private var targetZone: Int?
 
   private let healthStore = HKHealthStore()
   private var session: HKWorkoutSession?
@@ -47,6 +140,19 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     }
   }
 
+  var syncLabel: String {
+    if pendingSyncCount > 0 {
+      return "\(pendingSyncCount) queued"
+    }
+    return WCSession.isSupported() && WCSession.default.isReachable ? "Phone live" : "Offline ready"
+  }
+
+  var availableMetricPages: [StrideWatchMetricPage] {
+    selectedWorkoutKind.tracksDistance
+      ? [.heartRate, .heartRateZone, .distance, .pace, .elapsed, .energy]
+      : [.heartRate, .heartRateZone, .elapsed, .energy]
+  }
+
   var elapsedLabel: String {
     let hours = elapsedSeconds / 3600
     let minutes = (elapsedSeconds % 3600) / 60
@@ -57,12 +163,71 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     return "\(minutes):\(String(format: "%02d", seconds))"
   }
 
+  var distanceLabel: String {
+    guard selectedWorkoutKind.tracksDistance else { return "--" }
+    let value = preferredUnitSystem == "metric" ? distanceMeters / 1000 : distanceMeters / 1609.344
+    return String(format: value >= 10 ? "%.1f" : "%.2f", value)
+  }
+
+  var distanceUnitLabel: String {
+    preferredUnitSystem == "metric" ? "km" : "mi"
+  }
+
+  var paceLabel: String {
+    guard selectedWorkoutKind.tracksDistance, distanceMeters > 10, elapsedSeconds > 0 else {
+      return "--:--"
+    }
+    let unitDistance = preferredUnitSystem == "metric" ? distanceMeters / 1000 : distanceMeters / 1609.344
+    guard unitDistance > 0 else { return "--:--" }
+    let secondsPerUnit = Int((Double(elapsedSeconds) / unitDistance).rounded())
+    return "\(secondsPerUnit / 60):\(String(format: "%02d", secondsPerUnit % 60))"
+  }
+
+  var paceUnitLabel: String {
+    preferredUnitSystem == "metric" ? "/km" : "/mi"
+  }
+
+  var heartRateZoneLabel: String {
+    guard let bpm = heartRateBpm, bpm > 0 else {
+      return targetZone.map { "Z\($0)" } ?? "Z--"
+    }
+    let ratio = Double(bpm) / Double(max(maxHeartRateBpm, 1))
+    if ratio < 0.60 { return "Z1" }
+    if ratio < 0.70 { return "Z2" }
+    if ratio < 0.80 { return "Z3" }
+    if ratio < 0.90 { return "Z4" }
+    return "Z5"
+  }
+
+  var metricValueLabel: String {
+    switch metricPage {
+    case .elapsed: return elapsedLabel
+    case .heartRate: return heartRateBpm.map(String.init) ?? "--"
+    case .distance: return distanceLabel
+    case .pace: return paceLabel
+    case .heartRateZone: return heartRateZoneLabel
+    case .energy: return String(Int(activeEnergyKilocalories.rounded()))
+    }
+  }
+
+  var metricUnitLabel: String {
+    switch metricPage {
+    case .elapsed: return ""
+    case .heartRate: return "bpm"
+    case .distance: return distanceUnitLabel
+    case .pace: return paceUnitLabel
+    case .heartRateZone: return ""
+    case .energy: return "kcal"
+    }
+  }
+
   private override init() {
     super.init()
     activateWatchConnectivity()
   }
 
   func startWorkout(
+    kind: StrideWatchWorkoutKind = .run,
     title: String?,
     workoutInstanceId: String?,
     environment: String?,
@@ -70,6 +235,9 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   ) {
     lastError = nil
     self.workoutInstanceId = workoutInstanceId
+    self.selectedWorkoutKind = kind
+    self.targetZone = targetZone
+    self.metricPage = kind.tracksDistance ? .heartRate : .elapsed
 
     requestAuthorization { [weak self] granted in
       guard let self else { return }
@@ -79,9 +247,24 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       }
 
       DispatchQueue.main.async {
-        self.beginWorkout(environment: environment)
+        self.beginWorkout(kind: kind, environment: environment)
       }
     }
+  }
+
+  func selectWorkoutKind(_ kind: StrideWatchWorkoutKind) {
+    guard !isActive else { return }
+    selectedWorkoutKind = kind
+    metricPage = kind.tracksDistance ? .heartRate : .elapsed
+  }
+
+  func cycleMetricPage() {
+    let pages = availableMetricPages
+    guard let currentIndex = pages.firstIndex(of: metricPage) else {
+      metricPage = pages.first ?? .heartRate
+      return
+    }
+    metricPage = pages[(currentIndex + 1) % pages.count]
   }
 
   func pauseWorkout() {
@@ -106,7 +289,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     sendWorkoutState("ended")
   }
 
-  private func beginWorkout(environment: String?) {
+  private func beginWorkout(kind: StrideWatchWorkoutKind, environment: String?) {
     if session != nil {
       session?.end()
       session = nil
@@ -114,8 +297,12 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     }
 
     let configuration = HKWorkoutConfiguration()
-    configuration.activityType = .running
-    configuration.locationType = environment == "indoor" ? .indoor : .outdoor
+    configuration.activityType = kind.activityType
+    if kind == .run || kind == .cycling {
+      configuration.locationType = environment == "indoor" ? .indoor : .outdoor
+    } else {
+      configuration.locationType = .indoor
+    }
 
     do {
       let session = try HKWorkoutSession(healthStore: healthStore, configuration: configuration)
@@ -132,6 +319,8 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       pausedSeconds = 0
       elapsedSeconds = 0
       heartRateBpm = nil
+      distanceMeters = 0
+      activeEnergyKilocalories = 0
       session.startActivity(with: now)
       builder.beginCollection(withStart: now) { [weak self] success, error in
         if let error {
@@ -155,8 +344,9 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
     let heartRate = HKObjectType.quantityType(forIdentifier: .heartRate)
     let activeEnergy = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)
-    let distance = HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning)
-    let readTypes = Set([heartRate, activeEnergy, distance].compactMap { $0 })
+    let runDistance = HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning)
+    let cyclingDistance = HKObjectType.quantityType(forIdentifier: .distanceCycling)
+    let readTypes = Set([heartRate, activeEnergy, runDistance, cyclingDistance].compactMap { $0 })
     let shareTypes: Set<HKSampleType> = [HKObjectType.workoutType()]
 
     healthStore.requestAuthorization(toShare: shareTypes, read: readTypes) { granted, error in
@@ -206,6 +396,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       "type": "heartRate",
       "heartRate": bpm,
       "elapsedSeconds": elapsedSeconds,
+      "workoutKind": selectedWorkoutKind.rawValue,
+      "distanceMeters": distanceMeters,
+      "activeEnergyKilocalories": activeEnergyKilocalories,
+      "heartRateZone": heartRateZoneLabel,
       "timestamp": Date().timeIntervalSince1970 * 1000,
       "source": "apple_watch",
     ]
@@ -221,9 +415,17 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       "type": "workoutState",
       "state": label,
       "elapsedSeconds": elapsedSeconds,
+      "workoutKind": selectedWorkoutKind.rawValue,
+      "distanceMeters": distanceMeters,
+      "activeEnergyKilocalories": activeEnergyKilocalories,
+      "heartRateZone": heartRateZoneLabel,
+      "pendingSyncCount": pendingSyncCount,
       "timestamp": Date().timeIntervalSince1970 * 1000,
       "source": "apple_watch",
     ]
+    if let heartRateBpm {
+      payload["heartRate"] = heartRateBpm
+    }
     if let workoutInstanceId {
       payload["workoutInstanceId"] = workoutInstanceId
     }
@@ -239,7 +441,12 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
         self?.publishError(error.localizedDescription)
       }
     } else {
-      session.transferUserInfo(payload)
+      var queuedPayload = payload
+      queuedPayload["queued"] = true
+      session.transferUserInfo(queuedPayload)
+      DispatchQueue.main.async {
+        self.pendingSyncCount += 1
+      }
     }
   }
 
@@ -294,20 +501,41 @@ extension StrideWatchWorkoutManager: HKLiveWorkoutBuilderDelegate {
   func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}
 
   func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {
-    guard
+    if
       let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate),
       collectedTypes.contains(heartRateType),
       let statistics = workoutBuilder.statistics(for: heartRateType),
       let quantity = statistics.mostRecentQuantity()
-    else {
-      return
+    {
+      let bpm = Int(quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute())).rounded())
+      DispatchQueue.main.async {
+        self.heartRateBpm = bpm
+      }
+      sendHeartRate(bpm)
     }
 
-    let bpm = Int(quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute())).rounded())
-    DispatchQueue.main.async {
-      self.heartRateBpm = bpm
+    if
+      let energyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
+      collectedTypes.contains(energyType),
+      let statistics = workoutBuilder.statistics(for: energyType),
+      let quantity = statistics.sumQuantity()
+    {
+      DispatchQueue.main.async {
+        self.activeEnergyKilocalories = quantity.doubleValue(for: .kilocalorie())
+      }
     }
-    sendHeartRate(bpm)
+
+    if
+      let distanceIdentifier = selectedWorkoutKind.distanceIdentifier,
+      let distanceType = HKObjectType.quantityType(forIdentifier: distanceIdentifier),
+      collectedTypes.contains(distanceType),
+      let statistics = workoutBuilder.statistics(for: distanceType),
+      let quantity = statistics.sumQuantity()
+    {
+      DispatchQueue.main.async {
+        self.distanceMeters = quantity.doubleValue(for: .meter())
+      }
+    }
   }
 }
 
@@ -334,21 +562,53 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
     let type = message["type"] as? String
     DispatchQueue.main.async {
       switch type {
-      case "startRun":
+      case "startWorkout":
         self.startWorkout(
+          kind: StrideWatchWorkoutKind.from(message["workoutKind"] as? String),
           title: message["title"] as? String,
           workoutInstanceId: message["workoutInstanceId"] as? String,
           environment: message["environment"] as? String,
           targetZone: message["targetZone"] as? Int
         )
-      case "pauseRun":
+      case "startRun":
+        self.startWorkout(
+          kind: .run,
+          title: message["title"] as? String,
+          workoutInstanceId: message["workoutInstanceId"] as? String,
+          environment: message["environment"] as? String,
+          targetZone: message["targetZone"] as? Int
+        )
+      case "pauseWorkout", "pauseRun":
         self.pauseWorkout()
-      case "resumeRun":
+      case "resumeWorkout", "resumeRun":
         self.resumeWorkout()
-      case "endRun":
+      case "endWorkout", "endRun":
         self.endWorkout()
+      case "setContext":
+        self.applyPhoneContext(message)
       default:
         break
+      }
+    }
+  }
+
+  private func applyPhoneContext(_ message: [String: Any]) {
+    if let unitSystem = message["unitSystem"] as? String {
+      preferredUnitSystem = unitSystem == "metric" ? "metric" : "imperial"
+    }
+    if let maxHeartRate = message["maxHeartRateBpm"] as? Int, maxHeartRate > 0 {
+      maxHeartRateBpm = maxHeartRate
+    }
+    if let targetZone = message["targetZone"] as? Int {
+      self.targetZone = targetZone
+    }
+  }
+
+  func session(_ session: WCSession, didFinish userInfoTransfer: WCSessionUserInfoTransfer, error: Error?) {
+    DispatchQueue.main.async {
+      self.pendingSyncCount = max(0, self.pendingSyncCount - 1)
+      if let error {
+        self.lastError = error.localizedDescription
       }
     }
   }

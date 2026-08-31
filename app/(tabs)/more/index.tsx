@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -84,7 +84,6 @@ export default function MoreScreen() {
   const visibleItems = ITEMS.filter(item => !item.minMode || experienceModeAllows(experienceMode, item.minMode));
   const activities = useActivityStore(state => state.activities);
   const awarded = useAchievementStore(state => state.awarded);
-  const recordAwards = useAchievementStore(state => state.recordAwards);
   const weekPlan = useWeekPlan();
   const { weekSessions } = useScheduledSessions(weekPlan);
   const earnedAwards = useMemo(
@@ -93,10 +92,6 @@ export default function MoreScreen() {
   );
   const earnedIds = useMemo(() => earnedAwards.map(item => item.id), [earnedAwards]);
   const newestAchievement = HEALTHY_ACHIEVEMENTS.find(item => earnedIds.includes(item.id));
-
-  useEffect(() => {
-    recordAwards(earnedAwards);
-  }, [earnedAwards, recordAwards]);
 
   return (
     <View style={[s.root, { backgroundColor: C.bg }]}>

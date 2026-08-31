@@ -25,12 +25,20 @@ import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
 import { evaluateRunWalkCue, intervalAtElapsed } from '../../../src/utils/activityTracking';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
 import { useIntegrationsStore } from '../../../src/store/integrationsStore';
+import { useSettingsStore } from '../../../src/store/settingsStore';
 import {
   activeSessionStoresHydrated,
   discardActiveSession,
   getConflictingActiveSession,
   isActiveSessionStale,
 } from '../../../src/lib/activeSessionCoordinator';
+import {
+  endStrideWatchWorkout,
+  pauseStrideWatchWorkout,
+  resumeStrideWatchWorkout,
+  setStrideWatchWorkoutContext,
+  startStrideWatchWorkout,
+} from '../../../modules/stride-watch-connectivity/src';
 
 const TYPES: { type: ActiveOutdoorType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { type: 'running', label: 'Run', icon: 'walk-outline' },
@@ -57,6 +65,7 @@ export default function StartOutdoorActivityScreen() {
   }>();
   const addActivity = useActivityStore(state => state.addActivity);
   const healthKitEnabled = useIntegrationsStore(state => state.healthKitEnabled);
+  const units = useSettingsStore(state => state.units);
   const active = useActiveActivityStore();
   const routes = useRouteStore(state => state.routes);
   const attachment = useRouteStore(state => state.routeAttachment);
@@ -225,6 +234,16 @@ export default function StartOutdoorActivityScreen() {
       elevationGainMeters: 0,
       elevationLossMeters: 0,
     }).catch(() => undefined);
+    if (selectedType === 'running' || selectedType === 'cycling' || runWalk) {
+      await setStrideWatchWorkoutContext({ unitSystem: units }).catch(() => undefined);
+      await startStrideWatchWorkout({
+        workoutKind: selectedType === 'cycling' ? 'cycling' : 'run',
+        workoutInstanceId: started.workoutInstanceId ?? null,
+        title: runWalk ? 'Run / Walk' : TYPES.find(item => item.type === selectedType)?.label ?? 'Activity',
+        environment: 'outdoor',
+        targetZone: null,
+      }).catch(() => undefined);
+    }
     enqueueVoiceCue(
       runWalk ? 'Begin running.' : `${TYPES.find(item => item.type === selectedType)?.label ?? 'Activity'} started.`,
       runWalk ? 'runWalk' : 'motivation',
@@ -255,6 +274,7 @@ export default function StartOutdoorActivityScreen() {
             elevationGainMeters: latest.aggregate.elevationGainMeters,
             elevationLossMeters: latest.aggregate.elevationLossMeters,
           }).catch(() => undefined);
+          await endStrideWatchWorkout().catch(() => undefined);
           addActivity({
             id: latest.activityId ?? undefined,
             activityType: latest.activityType,
@@ -423,7 +443,15 @@ export default function StartOutdoorActivityScreen() {
         </View>
       </ScrollView>
       <View style={s.controls}>
-        <TouchableOpacity onPress={() => { if (active.isPaused) active.resume(); else active.pause(); }} style={[s.control, { backgroundColor: C.card, borderColor: C.border }]}>
+        <TouchableOpacity onPress={() => {
+          if (active.isPaused) {
+            active.resume();
+            resumeStrideWatchWorkout().catch(() => undefined);
+          } else {
+            active.pause();
+            pauseStrideWatchWorkout().catch(() => undefined);
+          }
+        }} style={[s.control, { backgroundColor: C.card, borderColor: C.border }]}>
           <Ionicons name={active.isPaused ? 'play' : 'pause'} size={24} color={C.text} />
           <Text style={[s.controlText, { color: C.text }]}>{active.isPaused ? 'Resume' : 'Pause'}</Text>
         </TouchableOpacity>

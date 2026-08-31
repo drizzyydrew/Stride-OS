@@ -14,6 +14,12 @@ import {
   activeSessionStoresHydrated,
   getConflictingActiveSession,
 } from '../../../../src/lib/activeSessionCoordinator';
+import {
+  endStrideWatchWorkout,
+  setStrideWatchWorkoutContext,
+  startStrideWatchWorkout,
+} from '../../../../modules/stride-watch-connectivity/src';
+import { useSettingsStore } from '../../../../src/store/settingsStore';
 
 function exerciseSupport(name: string, equipment: string[]) {
   const lower = name.toLowerCase();
@@ -38,6 +44,7 @@ export default function PresetStrengthDetailScreen() {
   const C = useColors();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { units } = useSettingsStore();
   const workout = getStrengthPresetWorkout(String(id));
   const active = useActiveStrengthSessionStore(state => state.session);
   const startSession = useActiveStrengthSessionStore(state => state.startSession);
@@ -88,6 +95,7 @@ export default function PresetStrengthDetailScreen() {
         plannedDurationMin: workout.durationMin,
         exercises,
       });
+      const launchedSession = useActiveStrengthSessionStore.getState().session;
       startStrengthLiveActivity({
         workoutName: workout.title,
         elapsedSeconds: 0,
@@ -96,6 +104,14 @@ export default function PresetStrengthDetailScreen() {
         setsCompleted: 0,
         totalSets: exercises.length,
       }).catch(console.warn);
+      setStrideWatchWorkoutContext({ unitSystem: units }).catch(() => undefined);
+      startStrideWatchWorkout({
+        workoutKind: 'strength',
+        workoutInstanceId: launchedSession?.workoutInstanceId ?? null,
+        title: workout.title,
+        environment: 'indoor',
+        targetZone: null,
+      }).catch(() => undefined);
       router.replace('/(tabs)/strength/preset-session' as never);
     };
 
@@ -119,6 +135,7 @@ export default function PresetStrengthDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             await endStrengthLiveActivity().catch(console.warn);
+            await endStrideWatchWorkout().catch(() => undefined);
             launch();
           },
         },

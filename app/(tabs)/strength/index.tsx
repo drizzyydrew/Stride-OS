@@ -63,6 +63,13 @@ import {
   getConflictingActiveSession,
   isActiveSessionStale,
 } from '../../../src/lib/activeSessionCoordinator';
+import {
+  endStrideWatchWorkout,
+  pauseStrideWatchWorkout,
+  resumeStrideWatchWorkout,
+  setStrideWatchWorkoutContext,
+  startStrideWatchWorkout,
+} from '../../../modules/stride-watch-connectivity/src';
 
 type Segment = 'strength' | 'presets' | 'mobility';
 
@@ -722,6 +729,14 @@ export default function StrengthScreen() {
       setsCompleted: 0,
       totalSets: totalExercises,
     }).catch(console.warn);
+    setStrideWatchWorkoutContext({ unitSystem: units }).catch(() => undefined);
+    startStrideWatchWorkout({
+      workoutKind: 'strength',
+      workoutInstanceId: launchedSession?.workoutInstanceId ?? null,
+      title: wDef.title,
+      environment: 'indoor',
+      targetZone: null,
+    }).catch(() => undefined);
   }
   function start() {
     if (!activeSessionStoresHydrated()) {
@@ -779,6 +794,7 @@ export default function StrengthScreen() {
           style: 'destructive',
           onPress: async () => {
             await endStrengthLiveActivity().catch(console.warn);
+            await endStrideWatchWorkout().catch(() => undefined);
             clearActiveStrengthSession();
             launchTrainingBlock();
           },
@@ -792,12 +808,14 @@ export default function StrengthScreen() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setStrState('paused');
     pauseActiveStrengthSession();
+    pauseStrideWatchWorkout().catch(() => undefined);
   }
   function resume() {
     if (!ownsActiveTrainingBlock) return;
     intervalRef.current = setInterval(() => setTimer(t => t + 1), 1000);
     setStrState('active');
     resumeActiveStrengthSession();
+    resumeStrideWatchWorkout().catch(() => undefined);
   }
 
   // "Do My Own Workout" — freeform custom strength, either standalone or
@@ -831,6 +849,15 @@ export default function StrengthScreen() {
         scheduledSessionId: target?.scheduledSessionId,
         scheduledCategory: target?.scheduledCategory,
       });
+      const launchedSession = useActiveStrengthSessionStore.getState().session;
+      setStrideWatchWorkoutContext({ unitSystem: units }).catch(() => undefined);
+      startStrideWatchWorkout({
+        workoutKind: target?.scheduledCategory === 'mobility' ? 'mobility' : 'strength',
+        workoutInstanceId: launchedSession?.workoutInstanceId ?? null,
+        title: target?.workoutName ?? 'Custom Workout',
+        environment: 'indoor',
+        targetZone: null,
+      }).catch(() => undefined);
       router.push('/(tabs)/strength/custom-session' as never);
     };
     if (!activeStrengthSession) return launch();
@@ -851,6 +878,7 @@ export default function StrengthScreen() {
           style: 'destructive',
           onPress: async () => {
             await endStrengthLiveActivity().catch(console.warn);
+            await endStrideWatchWorkout().catch(() => undefined);
             clearActiveStrengthSession();
             launch();
           },
@@ -890,6 +918,7 @@ export default function StrengthScreen() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (ownsActiveTrainingBlock) {
       endStrengthLiveActivity().catch(console.warn);
+      endStrideWatchWorkout().catch(() => undefined);
       clearActiveStrengthSession();
     }
 

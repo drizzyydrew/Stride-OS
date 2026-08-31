@@ -31,6 +31,7 @@ const DISTANCE_PRIORITY: BleMetricSource[] = [
   'ftms_trainer',
   'foot_pod',
   'wheel_sensor',
+  'apple_watch',
   'confirmed_speed_estimate',
   'manual',
 ];
@@ -79,6 +80,7 @@ function distanceSourceFor(source: BleMetricSource): DistanceSource {
   case 'ftms_trainer': return 'trainer_reported';
   case 'foot_pod': return 'foot_pod';
   case 'wheel_sensor': return 'wheel_sensor';
+  case 'apple_watch': return 'health_import';
   case 'confirmed_speed_estimate': return 'confirmed_speed_estimate';
   default: return 'manual_entry';
   }

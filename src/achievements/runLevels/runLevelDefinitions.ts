@@ -65,7 +65,7 @@ export const RUN_LEVEL_DEFINITIONS: RunLevelDefinition[] = SLUGS.map((slug, inde
   tier: index + 1,
   thresholdMiles: RUN_LEVEL_THRESHOLDS_MILES[slug],
   thresholdMeters: runLevelMilesToMeters(RUN_LEVEL_THRESHOLDS_MILES[slug]),
-  ringCount: [5, 5, 6, 6, 7, 8, 9][index],
+  ringCount: [5, 5, 5, 5, 6, 6, 6][index],
   colors: RUN_LEVEL_COLORS[slug],
   artworkPath: `assets/achievements/system/run-levels/run-level-${slug}-unlocked.svg`,
   lockedArtworkPath: `assets/achievements/system/run-levels/run-level-${slug}-locked.svg`,

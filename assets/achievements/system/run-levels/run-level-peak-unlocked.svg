@@ -1,43 +1,122 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-label="Peak run level. Unlocked.">
   <defs>
-    <linearGradient id="run-level-peak-unlocked-edge" x1="42" y1="34" x2="214" y2="220" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#C8D5E6"/>
-      <stop offset="0.54" stop-color="#8FA0B8"/>
-      <stop offset="1" stop-color="#273140"/>
+    <clipPath id="run-level-peak-unlocked-clip">
+      <path d="M121.05 17.97 Q128.00 14.00 134.95 17.97 L219.05 66.03 Q226.00 70.00 226.00 78.00 L226.00 173.00 Q226.00 181.00 219.08 185.02 L134.92 233.98 Q128.00 238.00 121.08 233.98 L36.92 185.02 Q30.00 181.00 30.00 173.00 L30.00 78.00 Q30.00 70.00 36.95 66.03 Z"/>
+    </clipPath>
+    <linearGradient id="run-level-peak-unlocked-edge" x1="70" y1="20" x2="188" y2="233" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C8D5E6" stop-opacity="0.96"/>
+      <stop offset="0.42" stop-color="#8FA0B8" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#273140" stop-opacity="0.68"/>
     </linearGradient>
     <linearGradient id="run-level-peak-unlocked-interior" x1="128" y1="24" x2="128" y2="231" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#61718A" stop-opacity="0.34"/>
-      <stop offset="0.46" stop-color="#0D0E0E" stop-opacity="0.96"/>
-      <stop offset="1" stop-color="#080909" stop-opacity="1.00"/>
+      <stop offset="0" stop-color="#111211" stop-opacity="1"/>
+      <stop offset="0.42" stop-color="#0D0E0E" stop-opacity="1"/>
+      <stop offset="1" stop-color="#050606" stop-opacity="1"/>
+    </linearGradient>
+    <radialGradient id="run-level-peak-unlocked-upper-glow" cx="50%" cy="29%" r="62%">
+      <stop offset="0" stop-color="#61718A" stop-opacity="0.38"/>
+      <stop offset="0.48" stop-color="#8FA0B8" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#273140" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="run-level-peak-unlocked-mountain-glow" cx="50%" cy="45%" r="33%">
+      <stop offset="0" stop-color="#C8D5E6" stop-opacity="0.24"/>
+      <stop offset="0.52" stop-color="#8FA0B8" stop-opacity="0.07"/>
+      <stop offset="1" stop-color="#8FA0B8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="run-level-peak-unlocked-lower-fade" x1="128" y1="118" x2="128" y2="238" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#050606" stop-opacity="0"/>
+      <stop offset="0.62" stop-color="#050606" stop-opacity="0.33"/>
+      <stop offset="1" stop-color="#050606" stop-opacity="0.52"/>
+    </linearGradient>
+    <linearGradient id="run-level-peak-unlocked-left-vignette" x1="28" y1="128" x2="122" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#050606" stop-opacity="0.58"/>
+      <stop offset="1" stop-color="#050606" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="run-level-peak-unlocked-right-vignette" x1="228" y1="128" x2="134" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#050606" stop-opacity="0.58"/>
+      <stop offset="1" stop-color="#050606" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="run-level-peak-unlocked-mountain" x1="82" y1="86" x2="176" y2="146" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#C8D5E6"/>
-      <stop offset="0.48" stop-color="#8FA0B8"/>
-      <stop offset="1" stop-color="#273140"/>
+      <stop offset="0" stop-color="#C8D5E6" stop-opacity="0.98"/>
+      <stop offset="0.48" stop-color="#8FA0B8" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#273140" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="run-level-peak-unlocked-mountain-side" x1="104" y1="105" x2="178" y2="143" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C8D5E6" stop-opacity="0.62"/>
+      <stop offset="0.5" stop-color="#61718A" stop-opacity="0.76"/>
+      <stop offset="1" stop-color="#273140" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="run-level-peak-unlocked-mountain-shadow" x1="82" y1="118" x2="190" y2="145" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#273140" stop-opacity="0.44"/>
+      <stop offset="0.62" stop-color="#090A0A" stop-opacity="0.62"/>
+      <stop offset="1" stop-color="#273140" stop-opacity="0.36"/>
+    </linearGradient>
+    <linearGradient id="run-level-peak-unlocked-ring-0" x1="128" y1="28" x2="128" y2="178" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C8D5E6" stop-opacity="0.95"/>
+      <stop offset="0.48" stop-color="#8FA0B8" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#273140" stop-opacity="0.28"/>
+    </linearGradient>
+    <linearGradient id="run-level-peak-unlocked-ring-1" x1="128" y1="28" x2="128" y2="178" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C8D5E6" stop-opacity="0.95"/>
+      <stop offset="0.48" stop-color="#8FA0B8" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#273140" stop-opacity="0.28"/>
+    </linearGradient>
+    <linearGradient id="run-level-peak-unlocked-ring-2" x1="128" y1="28" x2="128" y2="178" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C8D5E6" stop-opacity="0.95"/>
+      <stop offset="0.48" stop-color="#8FA0B8" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#273140" stop-opacity="0.28"/>
+    </linearGradient>
+    <linearGradient id="run-level-peak-unlocked-ring-3" x1="128" y1="28" x2="128" y2="178" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C8D5E6" stop-opacity="0.95"/>
+      <stop offset="0.48" stop-color="#8FA0B8" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#273140" stop-opacity="0.28"/>
+    </linearGradient>
+    <linearGradient id="run-level-peak-unlocked-ring-4" x1="128" y1="28" x2="128" y2="178" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C8D5E6" stop-opacity="0.95"/>
+      <stop offset="0.48" stop-color="#8FA0B8" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#273140" stop-opacity="0.28"/>
+    </linearGradient>
+    <linearGradient id="run-level-peak-unlocked-ring-5" x1="128" y1="28" x2="128" y2="178" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C8D5E6" stop-opacity="0.95"/>
+      <stop offset="0.48" stop-color="#8FA0B8" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#273140" stop-opacity="0.28"/>
     </linearGradient>
   </defs>
-  <path d="M121.05 17.97 Q128.00 14.00 134.95 17.97 L219.05 66.03 Q226.00 70.00 226.00 78.00 L226.00 173.00 Q226.00 181.00 219.08 185.02 L134.92 233.98 Q128.00 238.00 121.08 233.98 L36.92 185.02 Q30.00 181.00 30.00 173.00 L30.00 78.00 Q30.00 70.00 36.95 66.03 Z" fill="#080909" fill-opacity="1" stroke="url(#run-level-peak-unlocked-edge)" stroke-width="4.8" stroke-linejoin="round" stroke-opacity="1"/>
-  <path d="M121.27 24.23 Q128.00 20.38 134.73 24.23 L213.78 69.40 Q220.51 73.25 220.51 81.00 L220.51 170.28 Q220.51 178.03 213.81 181.93 L134.70 227.94 Q128.00 231.84 121.30 227.94 L42.19 181.93 Q35.49 178.03 35.49 170.28 L35.49 81.00 Q35.49 73.25 42.22 69.40 Z" fill="url(#run-level-peak-unlocked-interior)" fill-opacity="0.92" stroke="#C8D5E6" stroke-width="1" stroke-opacity="0.55"/>
-  <path d="M44 70 L128 23 L212 70" stroke="#C8D5E6" stroke-width="1.15" stroke-opacity="0.28"/>
-  <path d="M39.41 137.78 L39.41 81.71 Q39.41 75.57 44.74 72.52 L122.67 27.99 Q128.00 24.94 133.33 27.99 L211.26 72.52 Q216.59 75.57 216.59 81.71 L216.59 137.78" fill="none" stroke="#C8D5E6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.82"/>
-  <path d="M45.88 137.07 L45.88 85.29 Q45.88 79.40 50.99 76.47 L122.88 35.39 Q128.00 32.47 133.12 35.39 L205.01 76.47 Q210.12 79.40 210.12 85.29 L210.12 137.07" fill="none" stroke="#8FA0B8" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.77"/>
-  <path d="M52.34 136.35 L52.34 88.87 Q52.34 83.22 57.25 80.42 L123.10 42.79 Q128.00 39.99 132.90 42.79 L198.75 80.42 Q203.66 83.22 203.66 88.87 L203.66 136.35" fill="none" stroke="#61718A" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.72"/>
-  <path d="M58.81 135.64 L58.81 92.45 Q58.81 87.05 63.50 84.37 L123.31 50.19 Q128.00 47.52 132.69 50.19 L192.50 84.37 Q197.19 87.05 197.19 92.45 L197.19 135.64" fill="none" stroke="#C8D5E6" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.66"/>
-  <path d="M65.28 134.92 L65.28 96.03 Q65.28 90.88 69.75 88.32 L123.53 57.60 Q128.00 55.04 132.47 57.60 L186.25 88.32 Q190.72 90.88 190.72 96.03 L190.72 134.92" fill="none" stroke="#61718A" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.61"/>
-  <path d="M71.75 134.21 L71.75 99.61 Q71.75 94.71 76.00 92.28 L123.74 65.00 Q128.00 62.56 132.26 65.00 L180.00 92.28 Q184.25 94.71 184.25 99.61 L184.25 134.21" fill="none" stroke="#8FA0B8" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.56"/>
-  <path d="M78.22 133.50 L78.22 103.19 Q78.22 98.54 82.26 96.23 L123.96 72.40 Q128.00 70.09 132.04 72.40 L173.74 96.23 Q177.78 98.54 177.78 103.19 L177.78 133.50" fill="none" stroke="#C8D5E6" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.51"/>
-  <path d="M84.68 132.78 L84.68 106.77 Q84.68 102.36 88.51 100.18 L124.17 79.80 Q128.00 77.61 131.83 79.80 L167.49 100.18 Q171.32 102.36 171.32 106.77 L171.32 132.78" fill="none" stroke="#8FA0B8" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.46"/>
-  <ellipse cx="128" cy="129" rx="68" ry="31" fill="#71849F" opacity="0.32"/>
-  <path d="M64 137 L91 121 L106 131 L123 98 L145 128 L160 118 L192 137 L171 136 L158 127 L149 137 L131 132 L118 137 L101 130 L83 137 Z" fill="#273140" opacity="0.52"/>
-  <path d="M70 137 L105 114 L121 126 L136 93 L143 137 Z" fill="url(#run-level-peak-unlocked-mountain)" opacity="1"/>
-  <path d="M136 93 L154 123 L186 137 L148 137 Z" fill="#61718A" opacity="0.92"/>
-  <path d="M136 93 L124 125 L117 137 L106 127 Z" fill="#C8D5E6" opacity="0.82"/>
-  <path d="M105 114 L95 133 L81 137 L114 126 Z" fill="#273140" opacity="0.78"/>
-  <path d="M154 123 L166 137 L144 132 Z" fill="#C8D5E6" opacity="0.48"/>
-  <path d="M66 140 C82 136 94 128 106 117 M118 137 L136 93 L157 124 M146 133 L160 118 L190 140" fill="none" stroke="#C8D5E6" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.70"/>
+  <path d="M121.05 17.97 Q128.00 14.00 134.95 17.97 L219.05 66.03 Q226.00 70.00 226.00 78.00 L226.00 173.00 Q226.00 181.00 219.08 185.02 L134.92 233.98 Q128.00 238.00 121.08 233.98 L36.92 185.02 Q30.00 181.00 30.00 173.00 L30.00 78.00 Q30.00 70.00 36.95 66.03 Z" fill="#080909" fill-opacity="1" stroke="url(#run-level-peak-unlocked-edge)" stroke-width="3.1" stroke-linejoin="round" stroke-opacity="0.96"/>
+  <g clip-path="url(#run-level-peak-unlocked-clip)">
+    <rect x="0" y="0" width="256" height="256" fill="url(#run-level-peak-unlocked-interior)" fill-opacity="1"/>
+    <rect x="0" y="0" width="256" height="256" fill="#050606" fill-opacity="0"/>
+    <rect x="0" y="0" width="256" height="256" fill="url(#run-level-peak-unlocked-upper-glow)"/>
+    <rect x="0" y="0" width="256" height="256" fill="url(#run-level-peak-unlocked-mountain-glow)"/>
+    <rect x="0" y="0" width="256" height="256" fill="url(#run-level-peak-unlocked-left-vignette)"/>
+    <rect x="0" y="0" width="256" height="256" fill="url(#run-level-peak-unlocked-right-vignette)"/>
+    <rect x="0" y="0" width="256" height="256" fill="url(#run-level-peak-unlocked-lower-fade)"/>
+  </g>
+  <path d="M121.27 24.23 Q128.00 20.38 134.73 24.23 L213.78 69.40 Q220.51 73.25 220.51 81.00 L220.51 170.28 Q220.51 178.03 213.81 181.93 L134.70 227.94 Q128.00 231.84 121.30 227.94 L42.19 181.93 Q35.49 178.03 35.49 170.28 L35.49 81.00 Q35.49 73.25 42.22 69.40 Z" fill="none" stroke="#C8D5E6" stroke-width="0.82" stroke-opacity="0.34"/>
+  <path d="M40.98 137.61 L40.98 82.58 Q40.98 76.50 46.25 73.48 L122.72 29.78 Q128.00 26.77 133.28 29.78 L209.75 73.48 Q215.02 76.50 215.02 82.58 L215.02 137.61" fill="none" stroke="url(#run-level-peak-unlocked-ring-0)" stroke-width="3.12" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.13"/>
+  <path d="M40.98 137.61 L40.98 82.58 Q40.98 76.50 46.25 73.48 L122.72 29.78 Q128.00 26.77 133.28 29.78 L209.75 73.48 Q215.02 76.50 215.02 82.58 L215.02 137.61" fill="none" stroke="url(#run-level-peak-unlocked-ring-0)" stroke-width="1.32" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.86"/>
+  <path d="M48.50 136.78 L48.50 86.74 Q48.50 80.95 53.53 78.08 L122.97 38.40 Q128.00 35.52 133.03 38.40 L202.47 78.08 Q207.50 80.95 207.50 86.74 L207.50 136.78" fill="none" stroke="url(#run-level-peak-unlocked-ring-1)" stroke-width="2.72" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.13"/>
+  <path d="M48.50 136.78 L48.50 86.74 Q48.50 80.95 53.53 78.08 L122.97 38.40 Q128.00 35.52 133.03 38.40 L202.47 78.08 Q207.50 80.95 207.50 86.74 L207.50 136.78" fill="none" stroke="url(#run-level-peak-unlocked-ring-1)" stroke-width="0.92" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.77"/>
+  <path d="M56.03 135.95 L56.03 90.91 Q56.03 85.40 60.81 82.67 L123.22 47.01 Q128.00 44.28 132.78 47.01 L195.19 82.67 Q199.97 85.40 199.97 90.91 L199.97 135.95" fill="none" stroke="url(#run-level-peak-unlocked-ring-2)" stroke-width="2.72" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.13"/>
+  <path d="M56.03 135.95 L56.03 90.91 Q56.03 85.40 60.81 82.67 L123.22 47.01 Q128.00 44.28 132.78 47.01 L195.19 82.67 Q199.97 85.40 199.97 90.91 L199.97 135.95" fill="none" stroke="url(#run-level-peak-unlocked-ring-2)" stroke-width="0.92" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.68"/>
+  <path d="M63.56 135.12 L63.56 95.08 Q63.56 89.86 68.08 87.27 L123.47 55.62 Q128.00 53.03 132.53 55.62 L187.92 87.27 Q192.44 89.86 192.44 95.08 L192.44 135.12" fill="none" stroke="url(#run-level-peak-unlocked-ring-3)" stroke-width="2.72" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.13"/>
+  <path d="M63.56 135.12 L63.56 95.08 Q63.56 89.86 68.08 87.27 L123.47 55.62 Q128.00 53.03 132.53 55.62 L187.92 87.27 Q192.44 89.86 192.44 95.08 L192.44 135.12" fill="none" stroke="url(#run-level-peak-unlocked-ring-3)" stroke-width="0.92" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.59"/>
+  <path d="M71.08 134.28 L71.08 99.24 Q71.08 94.31 75.36 91.87 L123.72 64.23 Q128.00 61.79 132.28 64.23 L180.64 91.87 Q184.92 94.31 184.92 99.24 L184.92 134.28" fill="none" stroke="url(#run-level-peak-unlocked-ring-4)" stroke-width="2.72" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.13"/>
+  <path d="M71.08 134.28 L71.08 99.24 Q71.08 94.31 75.36 91.87 L123.72 64.23 Q128.00 61.79 132.28 64.23 L180.64 91.87 Q184.92 94.31 184.92 99.24 L184.92 134.28" fill="none" stroke="url(#run-level-peak-unlocked-ring-4)" stroke-width="0.92" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.50"/>
+  <path d="M78.61 133.45 L78.61 103.41 Q78.61 98.77 82.64 96.47 L123.97 72.85 Q128.00 70.54 132.03 72.85 L173.36 96.47 Q177.39 98.77 177.39 103.41 L177.39 133.45" fill="none" stroke="url(#run-level-peak-unlocked-ring-5)" stroke-width="2.72" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.13"/>
+  <path d="M78.61 133.45 L78.61 103.41 Q78.61 98.77 82.64 96.47 L123.97 72.85 Q128.00 70.54 132.03 72.85 L173.36 96.47 Q177.39 98.77 177.39 103.41 L177.39 133.45" fill="none" stroke="url(#run-level-peak-unlocked-ring-5)" stroke-width="0.92" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.41"/>
+  <path d="M61 141 C79 136 92 127 106 120 L121 130 L137 101 L154 124 L166 117 C176 128 187 136 197 141 C180 139 169 133 160 127 L149 140 L130 134 L116 141 L101 132 L84 141 Z" fill="url(#run-level-peak-unlocked-mountain-shadow)" opacity="0.57"/>
+  <path d="M69 140 L103 120 L119 130 L107 137 L89 142 Z" fill="url(#run-level-peak-unlocked-mountain-shadow)" opacity="0.69"/>
+  <path d="M83 140 L111 126 L123 132 L116 141 Z" fill="url(#run-level-peak-unlocked-mountain-side)" opacity="0.86"/>
+  <path d="M120 141 L137 101 L151 140 Z" fill="url(#run-level-peak-unlocked-mountain-shadow)" opacity="0.76"/>
+  <path d="M121 140 L137 101 L131 128 L116 141 Z" fill="url(#run-level-peak-unlocked-mountain)" opacity="0.98"/>
+  <path d="M137 101 L142 126 L151 140 L132 128 Z" fill="url(#run-level-peak-unlocked-mountain-side)" opacity="0.88"/>
+  <path d="M145 140 L154 124 L190 141 L168 139 L158 132 Z" fill="url(#run-level-peak-unlocked-mountain-shadow)" opacity="0.73"/>
+  <path d="M151 140 L160 130 L178 140 Z" fill="url(#run-level-peak-unlocked-mountain-side)" opacity="0.71"/>
+  <path d="M66 141 C82 136 94 129 106 120 M117 140 L137 101 L158 128 M146 136 L160 121 L193 141" fill="none" stroke="#C8D5E6" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.49"/>
 
-  <text x="128" y="174" text-anchor="middle" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="21" font-weight="700" letter-spacing="1.15" fill="#C8D5E6" fill-opacity="1">PEAK</text>
-  <text x="128" y="195" text-anchor="middle" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="10" font-weight="800" letter-spacing="3.2" fill="#F3F1EB" fill-opacity="0.88">STRIDEOS</text>
-  <path d="M103 210 L128 224 L153 210" fill="none" stroke="#8FA0B8" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.9"/>
-  <path d="M107 221 L128 233 L149 221" fill="none" stroke="#C8D5E6" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.9"/>
+  <text x="128" y="174" text-anchor="middle" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="18.2" font-weight="500" letter-spacing="1.45" fill="#C8D5E6" fill-opacity="0.92">PEAK</text>
+  <text x="128" y="195" text-anchor="middle" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="8.8" font-weight="700" letter-spacing="3.4" fill="#F3F1EB" fill-opacity="0.72">STRIDEOS</text>
+  <path d="M105 211 L128 223 L151 211" fill="none" stroke="#8FA0B8" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.78"/>
+  <path d="M109 221 L128 231 L147 221" fill="none" stroke="#C8D5E6" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.78"/>
 </svg>

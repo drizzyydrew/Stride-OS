@@ -48,6 +48,7 @@ export default function AchievementDetailScreen() {
   const [variant, setVariant] = useState<ShareStudioVariant>('minimal_card');
   const [format, setFormat] = useState<ShareStudioFormat>('square');
   const [shareMessage, setShareMessage] = useState<string | null>(shareCardUnavailableReason());
+  const [shareInteractionActive, setShareInteractionActive] = useState(false);
   const shareRef = useRef<View>(null);
   const achievements = useMemo(() => evaluateAchievementSystem({
     activities,
@@ -79,7 +80,7 @@ export default function AchievementDetailScreen() {
   if (!achievement) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
-        <ScreenHeader eyebrow="ACHIEVEMENT" title="Not Found" onBack={() => router.back()} />
+        <ScreenHeader eyebrow="ACHIEVEMENT" title="Not Found" onBack={() => router.replace('/(tabs)/more/achievements' as never)} />
         <View style={s.empty}>
           <Text style={[s.body, { color: C.textMuted }]}>This achievement is not in the canonical registry.</Text>
         </View>
@@ -91,8 +92,8 @@ export default function AchievementDetailScreen() {
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
-      <ScreenHeader eyebrow={achievementFamilyLabel(achievement.family).toUpperCase()} title={achievement.title} onBack={() => router.back()} />
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.content}>
+      <ScreenHeader eyebrow={achievementFamilyLabel(achievement.family).toUpperCase()} title={achievement.title} onBack={() => router.replace('/(tabs)/more/achievements' as never)} />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.content} scrollEnabled={!shareInteractionActive}>
         <View style={[s.hero, { backgroundColor: C.card, borderColor: achievement.state === 'locked' ? C.border : C.primary }]}>
           <AchievementBadge
             id={achievement.id}
@@ -166,7 +167,15 @@ export default function AchievementDetailScreen() {
               );
             })}
           </View>
-          <ShareStudio achievement={achievement} activity={relatedActivity} units={units} variant={variant} format={format} canvasRef={shareRef} />
+          <ShareStudio
+            achievement={achievement}
+            activity={relatedActivity}
+            units={units}
+            variant={variant}
+            format={format}
+            canvasRef={shareRef}
+            onInteractionActiveChange={setShareInteractionActive}
+          />
           <TouchableOpacity
             style={[s.sharePrimary, { backgroundColor: shareEnabled ? C.primary : C.cardAlt }]}
             disabled={!shareEnabled}

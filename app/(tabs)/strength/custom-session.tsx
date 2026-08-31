@@ -23,6 +23,11 @@ import { summarizeStrengthSession } from '../../../src/utils/strengthSummary';
 import { completedExercisesFromActiveSession } from '../../../src/utils/strengthPersistence';
 import { categoryFromScheduledType, classifySubstitution } from '../../../src/utils/substitution';
 import { warmupForSession, type WarmupSessionKind } from '../../../src/utils/warmupProtocols';
+import {
+  endStrideWatchWorkout,
+  pauseStrideWatchWorkout,
+  resumeStrideWatchWorkout,
+} from '../../../modules/stride-watch-connectivity/src';
 
 function formatElapsed(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
@@ -109,6 +114,16 @@ export default function CustomStrengthSessionScreen() {
   // that narrowing — a stable non-null local does.
   const activeSession = session;
 
+  function pauseSession() {
+    pause();
+    pauseStrideWatchWorkout().catch(() => undefined);
+  }
+
+  function resumeSession() {
+    resume();
+    resumeStrideWatchWorkout().catch(() => undefined);
+  }
+
   function commitAddOrSubstitute() {
     if (!newExerciseName.trim()) return;
     addExercise({ name: newExerciseName.trim(), equipmentType: newExerciseEquipment });
@@ -131,6 +146,7 @@ export default function CustomStrengthSessionScreen() {
           style: 'destructive',
           onPress: () => {
             endStrengthLiveActivity().catch(console.warn);
+            endStrideWatchWorkout().catch(() => undefined);
             clearSession();
             router.replace('/(tabs)/strength' as never);
           },
@@ -189,6 +205,7 @@ export default function CustomStrengthSessionScreen() {
     }, fatigueScore);
 
     endStrengthLiveActivity().catch(console.warn);
+    endStrideWatchWorkout().catch(() => undefined);
     clearSession();
 
     const lines = [
@@ -218,7 +235,7 @@ export default function CustomStrengthSessionScreen() {
         <View style={[styles.progressCard, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
           <Text style={[styles.progress, { color: C.text }]}>{session.exercises.filter(e => !e.skipped).length} exercises added</Text>
           <View style={styles.actions}>
-            <TouchableOpacity style={[styles.secondaryButton, { borderColor: C.border }]} onPress={session.status === 'active' ? pause : resume}>
+            <TouchableOpacity style={[styles.secondaryButton, { borderColor: C.border }]} onPress={session.status === 'active' ? pauseSession : resumeSession}>
               <Ionicons name={session.status === 'active' ? 'pause' : 'play'} size={16} color={C.text} />
               <Text style={[styles.secondaryText, { color: C.text }]}>{session.status === 'active' ? 'Pause' : 'Resume'}</Text>
             </TouchableOpacity>

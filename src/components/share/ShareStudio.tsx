@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import {
   ImageBackground,
   PanResponder,
@@ -38,7 +38,7 @@ export type ShareStudioFormat = 'square' | 'story';
 
 type ToggleKey = 'route' | 'distance' | 'time' | 'pace' | 'elevation' | 'achievement' | 'brand';
 type EditableLayerKey = 'brand' | 'achievement';
-const SHARE_SAFE_MARGIN = 38;
+const SHARE_EDGE_MARGIN = 0;
 
 type Props = {
   activity?: Activity;
@@ -49,6 +49,7 @@ type Props = {
   photoUri?: string;
   onRoutePrivacyNotice?: (message: string) => void;
   canvasRef?: RefObject<View | null>;
+  onInteractionActiveChange?: (active: boolean) => void;
 };
 
 export const SHARE_STUDIO_VARIANTS: Array<{ id: ShareStudioVariant; label: string }> = [
@@ -98,46 +99,61 @@ function toggleLabel(key: ToggleKey, activity?: Activity): string {
 function MovableLayer({
   children,
   initial,
-  baseSize = 64,
+  bounds,
+  baseWidth = 64,
+  baseHeight = baseWidth,
   scale = 1,
   onSelect,
+  onInteractionActiveChange,
   style,
 }: {
   children: ReactNode;
   initial: { x: number; y: number };
-  baseSize?: number;
+  bounds: { width: number; height: number };
+  baseWidth?: number;
+  baseHeight?: number;
   scale?: number;
   onSelect?: () => void;
+  onInteractionActiveChange?: (active: boolean) => void;
   style?: ViewStyle;
 }) {
   const [offset, setOffset] = useState(initial);
-  const [bounds, setBounds] = useState({ width: 320, height: 320 });
   const start = useRef(initial);
+  const touched = useRef(false);
+
+  useEffect(() => {
+    if (touched.current) return;
+    start.current = initial;
+    setOffset(initial);
+  }, [initial.x, initial.y]);
+
   const pan = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: () => {
+      touched.current = true;
       onSelect?.();
+      onInteractionActiveChange?.(true);
       start.current = offset;
     },
     onPanResponderMove: (_, gesture) => {
-      const footprint = Math.max(48, baseSize * scale);
-      const maxX = Math.max(SHARE_SAFE_MARGIN, bounds.width - footprint - SHARE_SAFE_MARGIN);
-      const maxY = Math.max(SHARE_SAFE_MARGIN, bounds.height - footprint - SHARE_SAFE_MARGIN);
+      const scaledWidth = Math.max(32, baseWidth * scale);
+      const scaledHeight = Math.max(32, baseHeight * scale);
+      const maxX = Math.max(SHARE_EDGE_MARGIN, bounds.width - scaledWidth - SHARE_EDGE_MARGIN);
+      const maxY = Math.max(SHARE_EDGE_MARGIN, bounds.height - scaledHeight - SHARE_EDGE_MARGIN);
       setOffset({
-        x: Math.max(SHARE_SAFE_MARGIN, Math.min(maxX, start.current.x + gesture.dx)),
-        y: Math.max(SHARE_SAFE_MARGIN, Math.min(maxY, start.current.y + gesture.dy)),
+        x: Math.max(SHARE_EDGE_MARGIN, Math.min(maxX, start.current.x + gesture.dx)),
+        y: Math.max(SHARE_EDGE_MARGIN, Math.min(maxY, start.current.y + gesture.dy)),
       });
     },
-  }), [baseSize, bounds.height, bounds.width, offset, onSelect, scale]);
+    onPanResponderRelease: () => onInteractionActiveChange?.(false),
+    onPanResponderTerminate: () => onInteractionActiveChange?.(false),
+    onPanResponderTerminationRequest: () => false,
+    onShouldBlockNativeResponder: () => true,
+  }), [baseHeight, baseWidth, bounds.height, bounds.width, offset, onInteractionActiveChange, onSelect, scale]);
+
   return (
     <View
-      onLayout={(event: LayoutChangeEvent) => {
-        const parent = event.nativeEvent.layout;
-        if (parent.width > bounds.width || parent.height > bounds.height) {
-          setBounds({ width: Math.max(bounds.width, parent.width), height: Math.max(bounds.height, parent.height) });
-        }
-      }}
       style={[styles.movable, { left: offset.x, top: offset.y, transform: [{ scale }] }, style]}
       {...pan.panHandlers}
     >
@@ -195,6 +211,7 @@ export default function ShareStudio({
   photoUri,
   onRoutePrivacyNotice,
   canvasRef,
+  onInteractionActiveChange,
 }: Props) {
   const keys = availableToggles(activity, achievement);
   const [enabled, setEnabled] = useState<Record<ToggleKey, boolean>>({
@@ -209,6 +226,7 @@ export default function ShareStudio({
   const [layoutEpoch, setLayoutEpoch] = useState(0);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedLayer, setSelectedLayer] = useState<EditableLayerKey>('achievement');
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [layerScale, setLayerScale] = useState<Record<EditableLayerKey, number>>({
     achievement: 1,
     brand: 1,
@@ -237,6 +255,11 @@ export default function ShareStudio({
     achievement && enabled.achievement ? 'achievement' : null,
   ] as Array<EditableLayerKey | null>).filter((item): item is EditableLayerKey => Boolean(item));
   const activeEditableLayer = editableLayers.includes(selectedLayer) ? selectedLayer : editableLayers[0] ?? null;
+  const layerBounds = canvasSize.width > 0 && canvasSize.height > 0 ? canvasSize : { width: 320, height: isStory ? 568 : 320 };
+  const centerLayer = (width: number, height: number) => ({
+    x: Math.max(0, (layerBounds.width - width) / 2),
+    y: Math.max(0, (layerBounds.height - height) / 2),
+  });
   const adjustSelectedLayerScale = (delta: number) => {
     if (!activeEditableLayer) return;
     setLayerScale(current => {
@@ -249,11 +272,18 @@ export default function ShareStudio({
     <View
       ref={canvasRef}
       collapsable={false}
+      onLayout={(event: LayoutChangeEvent) => {
+        const next = event.nativeEvent.layout;
+        setCanvasSize(current => (
+          Math.round(current.width) === Math.round(next.width) && Math.round(current.height) === Math.round(next.height)
+            ? current
+            : { width: next.width, height: next.height }
+        ));
+      }}
       style={[
         styles.canvas,
         isStory ? styles.story : styles.square,
         { backgroundColor: bg },
-        isOverlay && !photoUri ? styles.transparentCanvas : null,
       ]}
     >
       {photoUri ? <ImageBackground source={{ uri: photoUri }} resizeMode="cover" style={StyleSheet.absoluteFill} /> : null}
@@ -261,10 +291,13 @@ export default function ShareStudio({
       {routeEnabled ? <View style={styles.routeLayer}><RouteOverlay activity={activity} light={foregroundDark} /></View> : null}
       {enabled.brand ? (
         <MovableLayer
-          initial={{ x: SHARE_SAFE_MARGIN, y: SHARE_SAFE_MARGIN }}
-          baseSize={112}
+          initial={{ x: 22, y: 22 }}
+          bounds={layerBounds}
+          baseWidth={112}
+          baseHeight={74}
           scale={layerScale.brand}
           onSelect={() => setSelectedLayer('brand')}
+          onInteractionActiveChange={onInteractionActiveChange}
           style={styles.brandLayer}
         >
           <StrideOSBrandMark />
@@ -272,10 +305,13 @@ export default function ShareStudio({
       ) : null}
       {achievement && enabled.achievement ? (
         <MovableLayer
-          initial={{ x: isStory ? 78 : 54, y: isStory ? 168 : 116 }}
-          baseSize={156}
+          initial={centerLayer(156, 156)}
+          bounds={layerBounds}
+          baseWidth={156}
+          baseHeight={156}
           scale={layerScale.achievement}
           onSelect={() => setSelectedLayer('achievement')}
+          onInteractionActiveChange={onInteractionActiveChange}
           style={styles.badgeLayer}
         >
           {runLevelSlug ? (
@@ -298,7 +334,14 @@ export default function ShareStudio({
           )}
         </MovableLayer>
       ) : null}
-      <MovableLayer initial={{ x: SHARE_SAFE_MARGIN, y: isStory ? 470 : 330 }} style={styles.titleLayer}>
+      <MovableLayer
+        initial={{ x: 38, y: isStory ? 470 : 330 }}
+        bounds={layerBounds}
+        baseWidth={244}
+        baseHeight={128}
+        onInteractionActiveChange={onInteractionActiveChange}
+        style={styles.titleLayer}
+      >
         <Text style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent]}>
           {achievement ? 'ACHIEVEMENT UNLOCKED' : activityTitle ? 'ACTIVITY COMPLETE' : 'STRIDEOS'}
         </Text>
@@ -308,7 +351,14 @@ export default function ShareStudio({
         {achievement ? <Text style={[styles.support, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{achievement.displayTarget}</Text> : null}
       </MovableLayer>
       {selectedMetrics.length ? (
-        <MovableLayer initial={{ x: SHARE_SAFE_MARGIN, y: isStory ? 690 : 522 }} style={styles.metricsLayer}>
+        <MovableLayer
+          initial={{ x: 38, y: isStory ? 690 : 522 }}
+          bounds={layerBounds}
+          baseWidth={244}
+          baseHeight={100}
+          onInteractionActiveChange={onInteractionActiveChange}
+          style={styles.metricsLayer}
+        >
           {selectedMetrics.slice(0, 4).map(item => (
             <StatPill key={item.key} label={toggleLabel(item.key, activity).toUpperCase()} value={item.value} />
           ))}
@@ -436,7 +486,7 @@ export default function ShareStudio({
           </View>
         </View>
       ) : null}
-      <View key={layoutEpoch}>{canvas}</View>
+      <View key={layoutEpoch} style={styles.canvasPreviewFrame}>{canvas}</View>
       {keys.includes('route') ? <Text style={styles.privacy}>{routeEnabled ? ROUTE_PRIVACY_NOTE : 'Route is off by default.'}</Text> : null}
       {variant === 'transparent_overlay' ? <Text style={styles.privacy}>Transparent overlay export uses no card background.</Text> : null}
     </View>
@@ -465,10 +515,10 @@ const styles = StyleSheet.create({
   toggleText: { fontSize: 11, fontWeight: '900' },
   toggleTextOn: { color: '#0E0E0F' },
   toggleTextOff: { color: '#DCC9B1' },
-  canvas: { width: '100%', overflow: 'hidden', borderRadius: 18, borderWidth: 1, borderColor: 'rgba(220,201,177,0.28)' },
+  canvasPreviewFrame: { borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(220,201,177,0.18)' },
+  canvas: { width: '100%', overflow: 'hidden', borderRadius: 0 },
   square: { aspectRatio: 1 },
   story: { aspectRatio: 9 / 16 },
-  transparentCanvas: { borderStyle: 'dashed' },
   photoScrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.26)' },
   routeLayer: { ...StyleSheet.absoluteFill },
   movable: { position: 'absolute' },
@@ -480,11 +530,11 @@ const styles = StyleSheet.create({
   logoChevronRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 5 },
   logoChevron: { fontSize: 27, lineHeight: 28, fontWeight: '900' },
   badgeLayer: { alignItems: 'center', justifyContent: 'center' },
-  titleLayer: { right: SHARE_SAFE_MARGIN, gap: 4 },
+  titleLayer: { right: 38, gap: 4 },
   kicker: { fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
   title: { fontSize: 39, lineHeight: 42, fontWeight: '900', letterSpacing: 0 },
   support: { fontSize: 15, lineHeight: 20, fontWeight: '800' },
-  metricsLayer: { right: SHARE_SAFE_MARGIN, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  metricsLayer: { right: 38, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   statPill: { minWidth: 116, borderRadius: 8, padding: 10, backgroundColor: 'rgba(14,14,15,0.68)', borderWidth: 1, borderColor: 'rgba(157,178,160,0.34)' },
   statValue: { color: '#F3F1EB', fontSize: 18, fontWeight: '900' },
   statLabel: { color: '#DCC9B1', fontSize: 9, fontWeight: '900', letterSpacing: 0.8, marginTop: 4 },
