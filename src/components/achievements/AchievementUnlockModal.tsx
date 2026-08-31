@@ -83,7 +83,7 @@ export default function AchievementUnlockModal() {
         <Animated.View style={[s.card, { backgroundColor: C.card, borderColor: C.primary }, cardStyle]}>
           <Text style={[s.eyebrow, { color: C.primary }]}>NEW BADGE UNLOCKED</Text>
           <Text style={[s.title, { color: C.text }]} numberOfLines={2} adjustsFontSizeToFit>{title}</Text>
-          <Text style={[s.copy, { color: C.textMuted }]}>New badge unlocked.</Text>
+          <Text style={[s.copy, { color: C.textMuted }]}>New base unlocked.</Text>
           <View style={s.badgeWrap}>
             <AchievementBadge
               id={definition.id}
