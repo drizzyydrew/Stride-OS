@@ -5,7 +5,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import {
-  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore }    from '../../../src/store/onboardingStore';
 import { useProfileStore }       from '../../../src/store/profileStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
+import type { CustomRunSegment } from '../../../src/types/customWorkout';
 
 import {
   estimateEasyPaceSecPerMi,
@@ -33,14 +34,70 @@ import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type RunType = 'fartlek' | 'tempo' | 'intervals' | 'long_run_strides';
+type RunType = 'fartlek' | 'tempo' | 'intervals' | 'long_run_strides' | 'custom_segments';
 
 const RUN_TYPES: { key: RunType; label: string; icon: string; desc: string }[] = [
   { key: 'fartlek',        label: 'Fartlek',          icon: 'flash-outline',    desc: 'Unstructured surges at feel' },
   { key: 'tempo',          label: 'Tempo',             icon: 'trending-up-outline', desc: 'Sustained comfortably hard effort' },
   { key: 'intervals',      label: 'Intervals',         icon: 'repeat-outline',   desc: 'Hard reps with timed recovery' },
   { key: 'long_run_strides', label: 'Long Run + Strides', icon: 'walk-outline', desc: 'Aerobic base + finishing strides' },
+  { key: 'custom_segments', label: 'Custom Segments', icon: 'options-outline', desc: 'Build time, distance, pace, and HR blocks' },
 ];
+
+const DEFAULT_SEGMENTS: CustomRunSegment[] = [
+  { id: 'seg_warmup', label: 'Warmup', kind: 'warmup', target: 'time', durationMinutes: 10, targetHrZone: 2 },
+  { id: 'seg_work', label: 'Stride', kind: 'run', target: 'distance', distanceMiles: 0.13, targetPaceSecPerMile: 660, targetHrZone: 4 },
+  { id: 'seg_recover', label: 'Recover', kind: 'recovery', target: 'time', durationMinutes: 2, targetHrZone: 2 },
+  { id: 'seg_cooldown', label: 'Cooldown', kind: 'cooldown', target: 'time', durationMinutes: 8, targetHrZone: 1 },
+];
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function paceInputToSeconds(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.includes(':')) {
+    const [min, sec = '0'] = trimmed.split(':');
+    const minutes = Number(min);
+    const seconds = Number(sec);
+    if (Number.isFinite(minutes) && Number.isFinite(seconds) && minutes >= 0 && seconds >= 0) {
+      return Math.max(1, Math.round(minutes * 60 + seconds));
+    }
+    return undefined;
+  }
+  const decimal = Number(trimmed);
+  return Number.isFinite(decimal) && decimal > 0 ? Math.round(decimal * 60) : undefined;
+}
+
+function customSegmentEstimate(segments: CustomRunSegment[], fallbackPaceSecPerMi: number): DurationEstimate {
+  const estimated = segments.map(segment => {
+    const pace = segment.targetPaceSecPerMile ?? fallbackPaceSecPerMi;
+    const distanceMi = segment.target === 'distance'
+      ? segment.distanceMiles ?? 0
+      : ((segment.durationMinutes ?? 0) * 60) / pace;
+    const durationMin = segment.target === 'time'
+      ? segment.durationMinutes ?? 0
+      : ((segment.distanceMiles ?? 0) * pace) / 60;
+    const paceTarget = segment.targetPaceSecPerMile
+      ? `${formatPaceMmSs(segment.targetPaceSecPerMile)} /mi`
+      : segment.targetHrZone
+        ? `Zone ${segment.targetHrZone}`
+        : 'By feel';
+    return {
+      label: `${segment.label}${segment.targetHrZone ? ` · Z${segment.targetHrZone}` : ''}`,
+      paceTarget,
+      durationMin,
+      distanceMi,
+    };
+  });
+  return {
+    estimatedMin: Math.max(1, Math.round(estimated.reduce((sum, segment) => sum + segment.durationMin, 0))),
+    estimatedMi: round2(estimated.reduce((sum, segment) => sum + segment.distanceMi, 0)),
+    segments: estimated,
+  };
+}
 
 // ─── Stepper component ────────────────────────────────────────────────────────
 
@@ -67,6 +124,44 @@ function Stepper({
         <TouchableOpacity style={st.stepBtn} onPress={onIncrement}>
           <Ionicons name="add" size={16} color={colors.text} />
         </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+function displaySegmentKind(kind: CustomRunSegment['kind']): string {
+  if (kind === 'warmup') return 'Warmup';
+  if (kind === 'recovery') return 'Recover';
+  if (kind === 'cooldown') return 'Cooldown';
+  return 'Run';
+}
+
+function SegmentField({
+  label,
+  value,
+  suffix,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  suffix: string;
+  placeholder?: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <View style={st.segmentField}>
+      <Text style={st.segmentFieldLabel}>{label}</Text>
+      <View style={st.segmentFieldRow}>
+        <TextInput
+          value={value}
+          onChangeText={onChange}
+          keyboardType="numbers-and-punctuation"
+          placeholder={placeholder ?? '--'}
+          placeholderTextColor={colors.textSubtle}
+          style={st.segmentFieldInput}
+        />
+        <Text style={st.segmentFieldSuffix}>{suffix}</Text>
       </View>
     </View>
   );
@@ -158,6 +253,7 @@ export default function RunCreatorScreen() {
   const [lrDistanceMi, setLrDistanceMi] = useState(10);
   const [lrStrides,    setLrStrides]    = useState(4);
 
+  const [structuredSegments, setStructuredSegments] = useState<CustomRunSegment[]>(DEFAULT_SEGMENTS);
   const [customName, setCustomName] = useState('');
   const [saved, setSaved] = useState(false);
 
@@ -176,6 +272,7 @@ export default function RunCreatorScreen() {
     setIvCooldownMi(editingRun.parameters.ivCooldownMi);
     setLrDistanceMi(editingRun.parameters.lrDistanceMi);
     setLrStrides(editingRun.parameters.lrStrides);
+    if (editingRun.structuredSegments?.length) setStructuredSegments(editingRun.structuredSegments);
   }, [editingRun]);
 
   const estimate: DurationEstimate = useMemo(() => {
@@ -191,11 +288,13 @@ export default function RunCreatorScreen() {
         );
       case 'long_run_strides':
         return estimateLongRunStrides({ distanceMi: lrDistanceMi, strides: lrStrides }, easyPaceSecPerMi);
+      case 'custom_segments':
+        return customSegmentEstimate(structuredSegments, easyPaceSecPerMi);
     }
   }, [
     runType, fartlekMin, warmupMi, tempoMi, cooldownMi,
     ivWarmupMi, ivReps, ivWorkMi, ivRestMin, ivCooldownMi,
-    lrDistanceMi, lrStrides, easyPaceSecPerMi,
+    lrDistanceMi, lrStrides, structuredSegments, easyPaceSecPerMi,
   ]);
 
   const runTypeLabel: Record<RunType, string> = {
@@ -203,9 +302,45 @@ export default function RunCreatorScreen() {
     tempo:            'Tempo Run',
     intervals:        'Interval Workout',
     long_run_strides: 'Long Run + Strides',
+    custom_segments:  'Custom Workout',
   };
 
+  function updateSegment(id: string, patch: Partial<CustomRunSegment>) {
+    setSaved(false);
+    setStructuredSegments(current => current.map(segment => segment.id === id ? { ...segment, ...patch } : segment));
+  }
+
+  function removeSegment(id: string) {
+    setSaved(false);
+    setStructuredSegments(current => current.length > 1 ? current.filter(segment => segment.id !== id) : current);
+  }
+
+  function addSegment() {
+    setSaved(false);
+    setStructuredSegments(current => [
+      ...current,
+      {
+        id: `seg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        label: `Segment ${current.length + 1}`,
+        kind: 'run',
+        target: 'time',
+        durationMinutes: 5,
+        targetHrZone: 2,
+      },
+    ]);
+  }
+
   function handleSave() {
+    if (runType === 'custom_segments') {
+      const invalid = structuredSegments.find(segment => {
+        const value = segment.target === 'time' ? segment.durationMinutes : segment.distanceMiles;
+        return !segment.label.trim() || !Number.isFinite(value) || (value ?? 0) <= 0;
+      });
+      if (invalid) {
+        Alert.alert('Segment needs a target', 'Each segment needs a name and either a time or distance target before saving.');
+        return;
+      }
+    }
     const segmentSummary = estimate.segments
       .filter(s => s.distanceMi > 0 || s.durationMin > 0)
       .map(s => s.label)
@@ -230,6 +365,7 @@ export default function RunCreatorScreen() {
         lrDistanceMi,
         lrStrides,
       },
+      structuredSegments: runType === 'custom_segments' ? structuredSegments : undefined,
     }, editingRun?.id);
     selectCustomRunToday(id, todayDateKey());
     setSaved(true);
@@ -371,6 +507,108 @@ export default function RunCreatorScreen() {
               />
             </>
           )}
+
+          {runType === 'custom_segments' && (
+            <View style={st.segmentStack}>
+              {structuredSegments.map((segment, index) => {
+                const targetValue = segment.target === 'time'
+                  ? String(segment.durationMinutes ?? '')
+                  : String(segment.distanceMiles ?? '');
+                return (
+                  <View key={segment.id} style={st.segmentCard}>
+                    <View style={st.segmentHeader}>
+                      <Text style={st.segmentTitle}>Segment {index + 1}</Text>
+                      <TouchableOpacity
+                        onPress={() => removeSegment(segment.id)}
+                        disabled={structuredSegments.length <= 1}
+                        style={[st.segmentIconBtn, structuredSegments.length <= 1 && { opacity: 0.35 }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove segment ${index + 1}`}
+                      >
+                        <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+                      </TouchableOpacity>
+                    </View>
+                    <TextInput
+                      style={st.segmentNameInput}
+                      value={segment.label}
+                      onChangeText={label => updateSegment(segment.id, { label })}
+                      placeholder="Segment name"
+                      placeholderTextColor={colors.textSubtle}
+                      maxLength={28}
+                    />
+                    <View style={st.segmentChipRow}>
+                      {(['warmup', 'run', 'recovery', 'cooldown'] as const).map(kind => {
+                        const active = segment.kind === kind;
+                        return (
+                          <TouchableOpacity
+                            key={kind}
+                            style={[st.segmentChip, active && st.segmentChipActive]}
+                            onPress={() => updateSegment(segment.id, { kind })}
+                          >
+                            <Text style={[st.segmentChipText, active && st.segmentChipTextActive]}>{displaySegmentKind(kind)}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                    <View style={st.segmentChipRow}>
+                      {(['time', 'distance'] as const).map(target => {
+                        const active = segment.target === target;
+                        return (
+                          <TouchableOpacity
+                            key={target}
+                            style={[st.segmentChip, active && st.segmentChipActive]}
+                            onPress={() => updateSegment(segment.id, { target })}
+                          >
+                            <Text style={[st.segmentChipText, active && st.segmentChipTextActive]}>
+                              {target === 'time' ? 'Time' : 'Distance'}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                    <View style={st.segmentGrid}>
+                      <SegmentField
+                        label={segment.target === 'time' ? 'Target time' : 'Target distance'}
+                        value={targetValue}
+                        suffix={segment.target === 'time' ? 'min' : 'mi'}
+                        onChange={value => {
+                          const parsed = Number(value);
+                          updateSegment(segment.id, segment.target === 'time'
+                            ? { durationMinutes: Number.isFinite(parsed) ? parsed : undefined }
+                            : { distanceMiles: Number.isFinite(parsed) ? parsed : undefined });
+                        }}
+                      />
+                      <SegmentField
+                        label="Pace"
+                        value={segment.targetPaceSecPerMile ? formatPaceMmSs(segment.targetPaceSecPerMile) : ''}
+                        suffix="/mi"
+                        placeholder="11:00"
+                        onChange={value => updateSegment(segment.id, { targetPaceSecPerMile: paceInputToSeconds(value) })}
+                      />
+                    </View>
+                    <View style={st.segmentChipRow}>
+                      {[1, 2, 3, 4, 5].map(zone => {
+                        const active = segment.targetHrZone === zone;
+                        return (
+                          <TouchableOpacity
+                            key={zone}
+                            style={[st.zoneChip, active && st.zoneChipActive]}
+                            onPress={() => updateSegment(segment.id, { targetHrZone: active ? undefined : zone as 1 | 2 | 3 | 4 | 5 })}
+                          >
+                            <Text style={[st.zoneChipText, active && st.zoneChipTextActive]}>Z{zone}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              })}
+              <TouchableOpacity style={st.addSegmentButton} onPress={addSegment}>
+                <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+                <Text style={st.addSegmentText}>Add Segment</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* Duration estimate */}
@@ -488,6 +726,144 @@ const st = StyleSheet.create({
     height:          1,
     backgroundColor: colors.border,
     marginVertical:  spacing.md,
+  },
+  segmentStack: {
+    gap: spacing.md,
+  },
+  segmentCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: Radius.md,
+    padding: spacing.md,
+    backgroundColor: colors.bg,
+    gap: spacing.sm,
+  },
+  segmentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  segmentTitle: {
+    color: colors.textMuted,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.black,
+  },
+  segmentIconBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.card,
+  },
+  segmentNameInput: {
+    minHeight: 40,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: Radius.sm,
+    paddingHorizontal: spacing.sm,
+    color: colors.text,
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.bold,
+  },
+  segmentChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  segmentChip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 7,
+    backgroundColor: colors.card,
+  },
+  segmentChipActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.accentDim,
+  },
+  segmentChipText: {
+    color: colors.textMuted,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+  },
+  segmentChipTextActive: {
+    color: colors.accent,
+  },
+  segmentGrid: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  segmentField: {
+    flex: 1,
+    minHeight: 64,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: Radius.sm,
+    padding: spacing.sm,
+    backgroundColor: colors.card,
+  },
+  segmentFieldLabel: {
+    color: colors.textDim,
+    fontSize: 9,
+    fontWeight: FontWeight.black,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  segmentFieldRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: 5,
+  },
+  segmentFieldInput: {
+    flex: 1,
+    color: colors.text,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.black,
+    padding: 0,
+  },
+  segmentFieldSuffix: {
+    color: colors.textMuted,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+  },
+  zoneChip: {
+    width: 40,
+    height: 32,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.card,
+  },
+  zoneChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryDim,
+  },
+  zoneChipText: {
+    color: colors.textMuted,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.black,
+  },
+  zoneChipTextActive: {
+    color: colors.primary,
+  },
+  addSegmentButton: {
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: Radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  addSegmentText: {
+    color: colors.primary,
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.bold,
   },
   stepRow: {
     flexDirection:  'row',

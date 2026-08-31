@@ -153,6 +153,23 @@ function computeLoadFields(
   };
 }
 
+function isDuplicateLiveManualLog(
+  record: CompletedWorkoutRecord,
+  entry: ManualLogEntry,
+  now: number,
+): boolean {
+  const liveSource = entry.notes?.startsWith('Saved from live GPS tracking')
+    || entry.notes?.startsWith('Saved from indoor treadmill run');
+  if (!liveSource || record.source !== 'manual' || record.type !== entry.type) return false;
+  const sourcePrefix = entry.notes?.split(' · ')[0] ?? '';
+  if (!record.notes?.startsWith(sourcePrefix)) return false;
+  const recordDuration = record.actualDurationMinutes ?? record.durationMinutes;
+  const recordDistance = record.actualDistanceMiles ?? record.estimatedDistanceMiles;
+  return Math.abs(now - record.timestamp) <= 120_000
+    && Math.abs(recordDuration - entry.durationMinutes) <= 1
+    && Math.abs(recordDistance - entry.distanceMiles) <= 0.03;
+}
+
 export const useWorkoutStore = create<WorkoutStore>()(
   persist(
     (set, get) => ({
@@ -295,6 +312,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
         setFatigueScore, setRecentEasyLoad,
       ) => {
         if (get().completedWorkouts.includes(entry.completionKey)) return;
+        const now = Date.now();
+        if (get().history.some(record => isDuplicateLiveManualLog(record, entry, now))) return;
 
         const intensity = entry.rpe !== undefined
           ? rpeToIntensity(entry.rpe) : entry.intensity;
@@ -311,7 +330,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           durationMinutes:        entry.durationMinutes,
           estimatedLoad,
           estimatedDistanceMiles: entry.distanceMiles,
-          timestamp:              Date.now(),
+          timestamp:              now,
           week:                   currentWeek,
           completed:              true,
           fatigueBefore:          currentFatigue,

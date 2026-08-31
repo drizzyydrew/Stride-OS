@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none" role="img" aria-label="First Structured Workout achievement. Unlocked.">
+  <defs>
+    <linearGradient id="strength-first-structured-workout-share-transparent-edge" x1="14" y1="7" x2="86" y2="93" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F0E3D1"/>
+      <stop offset="0.55" stop-color="#D6C2AE"/>
+      <stop offset="1" stop-color="#66564A"/>
+    </linearGradient>
+    <radialGradient id="strength-first-structured-workout-share-transparent-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 39) rotate(90) scale(34 33)">
+      <stop offset="0" stop-color="#A78768" stop-opacity="0.28"/>
+      <stop offset="0.64" stop-color="#A78768" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#A78768" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <path d="M50 5.5 Q52.3 5.5 54.5 6.8 L85.7 24.8 Q88 26.1 88 28.8 L88 71.2 Q88 73.9 85.7 75.2 L54.5 93.2 Q52.3 94.5 50 94.5 Q47.7 94.5 45.5 93.2 L14.3 75.2 Q12 73.9 12 71.2 L12 28.8 Q12 26.1 14.3 24.8 L45.5 6.8 Q47.7 5.5 50 5.5 Z" fill="transparent" fill-opacity="0" stroke="url(#strength-first-structured-workout-share-transparent-edge)" stroke-width="2.2" stroke-linejoin="round" stroke-opacity="1"/>
+  <path d="M50 5.5 Q52.3 5.5 54.5 6.8 L85.7 24.8 Q88 26.1 88 28.8 L88 71.2 Q88 73.9 85.7 75.2 L54.5 93.2 Q52.3 94.5 50 94.5 Q47.7 94.5 45.5 93.2 L14.3 75.2 Q12 73.9 12 71.2 L12 28.8 Q12 26.1 14.3 24.8 L45.5 6.8 Q47.7 5.5 50 5.5 Z" fill="none" stroke="#F0E3D1" stroke-width="0.62" stroke-linejoin="round" stroke-opacity="0.34" transform="translate(0.9 0.9) scale(0.982)"/>
+  <ellipse cx="50" cy="40" rx="30" ry="29" fill="url(#strength-first-structured-workout-share-transparent-glow)" opacity="0"/>
+  <g>
+    <rect x="31.4" y="22.4" width="37.2" height="34.8" rx="2.8" fill="none" stroke="#D6C2AE" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.96"/>
+    <path d="M39.7 18.4 V27 M60.3 18.4 V27 M31.4 32.4 H68.6" fill="none" stroke="#D6C2AE" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.96"/>
+    <rect x="38.2" y="38.2" width="4.5" height="4.5" rx="0.8" fill="none" stroke="#D6C2AE" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.96"/>
+    <rect x="48" y="38.2" width="4.5" height="4.5" rx="0.8" fill="none" stroke="#D6C2AE" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.96"/>
+    <rect x="57.8" y="38.2" width="4.5" height="4.5" rx="0.8" fill="none" stroke="#D6C2AE" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.96"/>
+    <rect x="38.2" y="48" width="4.5" height="4.5" rx="0.8" fill="none" stroke="#D6C2AE" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.96"/>
+    <rect x="48" y="48" width="4.5" height="4.5" rx="0.8" fill="none" stroke="#D6C2AE" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.96"/>
+    <rect x="57.8" y="48" width="4.5" height="4.5" rx="0.8" fill="none" stroke="#D6C2AE" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.96"/>
+  </g>
+  <text x="50" y="65.2" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="5.6" font-weight="900" letter-spacing="0.26" stroke="#030405" stroke-width="0.36" stroke-opacity="0.72" fill="none">FIRST STRUCTURED</text>
+  <text x="50" y="65.2" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="5.6" font-weight="900" letter-spacing="0.26" fill="#E7D6C4" fill-opacity="0.96">FIRST STRUCTURED</text>
+  <text x="50" y="72" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="5.6" font-weight="900" letter-spacing="0.26" stroke="#030405" stroke-width="0.36" stroke-opacity="0.72" fill="none">WORKOUT</text>
+  <text x="50" y="72" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="5.6" font-weight="900" letter-spacing="0.26" fill="#E7D6C4" fill-opacity="0.96">WORKOUT</text>
+
+  <text x="50" y="77.2" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="3.6" font-weight="900" letter-spacing="1.45" stroke="#030405" stroke-width="0.32" stroke-opacity="0.72" fill="none">STRIDEOS</text>
+  <text x="50" y="77.2" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="3.6" font-weight="900" letter-spacing="1.45" fill="#E7D6C4" fill-opacity="0.76">STRIDEOS</text>
+  <path d="M43.6 82.7 L50 86.5 L56.4 82.7" fill="none" stroke="#D6C2AE" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.88"/>
+  <path d="M44.3 87.8 L50 91.1 L55.7 87.8" fill="none" stroke="#F0E3D1" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.88"/>
+</svg>

@@ -10,9 +10,11 @@ import { formatTemp } from '../../../src/lib/weather';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { useActivityStore } from '../../../src/store/activityStore';
+import { useAchievementStore } from '../../../src/store/achievementStore';
 import { useRecalculationStore } from '../../../src/store/recalculationStore';
 import { todayDateKey } from '../../../src/types/checkin';
 import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckInCard';
+import { StreakBadge, StreakProgress, buildCurrentStreakSummary } from '../../../src/achievements/streaks';
 import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
 import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import { LAYOUT } from '../../../src/constants/layout';
@@ -23,6 +25,7 @@ import { actionLabelForScheduledSession, describeRunWalk } from '../../../src/ut
 import { activityTypeFromScheduledSession } from '../../../src/utils/activityCompletion';
 import { US_AQI_BANDS, aqiVoiceOverLabel, getAqiScalePosition } from '../../../src/utils/aqi';
 import { buildPerformanceForecast, buildTrainingOutlook } from '../../../src/utils/trainingOutlook';
+import { buildAchievementHubModel } from '../../../src/utils/achievements';
 
 function lastUpdatedLabel(fetchedAt: number | null): string | null {
   if (fetchedAt === null) return null;
@@ -82,6 +85,18 @@ function recentTrainingLabel(value: number): string {
   if (value >= 60) return 'Manageable';
   if (value >= 40) return 'Demanding';
   return 'High';
+}
+
+function forecastIconName(key: string): keyof typeof Ionicons.glyphMap {
+  if (key === 'peak_window') return 'calendar-outline';
+  if (key === 'race_readiness') return 'speedometer-outline';
+  return 'analytics-outline';
+}
+
+function forecastBars(key: string): number[] {
+  if (key === 'peak_window') return [28, 42, 68, 88, 54];
+  if (key === 'race_readiness') return [46, 58, 70, 76, 82];
+  return [36, 44, 58, 72, 64];
 }
 
 function cleanFeelLine(target: string | undefined, durationMinutes: number | undefined): string {
@@ -282,6 +297,7 @@ export default function TodayScreen() {
   const [editingCheckIn, setEditingCheckIn] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [outlookOpen, setOutlookOpen] = useState(false);
   const [outlookRationaleOpen, setOutlookRationaleOpen] = useState(false);
   const [outlookHistoryOpen, setOutlookHistoryOpen] = useState(false);
   const [forecastDetailsOpen, setForecastDetailsOpen] = useState(false);
@@ -291,10 +307,19 @@ export default function TodayScreen() {
   const weekPlan = useWeekPlan();
   const scheduled = useScheduledSessions(weekPlan);
   const activities = useActivityStore(s => s.activities);
+  const awarded = useAchievementStore(s => s.awarded);
   const decisionSnapshot = useRecalculationStore(s => s.decisionSnapshot);
   const beforeStart = weekPlan.metadata.currentWeek === 0;
   const primarySession = scheduled.activeTodayPrimary;
   const phaseLabel = weekPlan.metadata.trainingPhase.charAt(0).toUpperCase() + weekPlan.metadata.trainingPhase.slice(1);
+  const streakModel = useMemo(
+    () => buildAchievementHubModel(activities, awarded, { scheduledSessions: scheduled.weekSessions }).streak,
+    [activities, awarded, scheduled.weekSessions],
+  );
+  const currentStreak = useMemo(
+    () => buildCurrentStreakSummary(streakModel.currentStreakDays),
+    [streakModel.currentStreakDays],
+  );
 
   const hasCheckedInToday = todayReadiness?.date === todayDateKey();
   const readiness = hasCheckedInToday ? todayReadiness!.score : null;
@@ -451,6 +476,24 @@ export default function TodayScreen() {
       >
 
       <WeatherCard />
+
+      <TouchableOpacity
+        style={[styles.currentStreakCard, { backgroundColor: C.card, borderColor: C.border }]}
+        onPress={() => router.push('/(tabs)/more/achievements' as never)}
+        activeOpacity={0.86}
+        accessibilityRole="button"
+        accessibilityLabel={currentStreak.accessibilityLabel}
+      >
+        <StreakBadge days={Math.max(1, currentStreak.days)} size={64} compact />
+        <View style={styles.currentStreakCopy}>
+          <View style={styles.cardHeaderRow}>
+            <Text style={[styles.cardLabel, { color: C.textDim }]}>CURRENT STREAK</Text>
+            <Text style={[styles.streakHeatLabel, { color: C.primary }]}>{currentStreak.heatTier.label.toUpperCase()}</Text>
+          </View>
+          <Text style={[styles.currentStreakTitle, { color: C.text }]}>{currentStreak.days} days</Text>
+          <StreakProgress days={currentStreak.days} />
+        </View>
+      </TouchableOpacity>
 
       {/* One dominant answer for the day: what to do, how it should feel, and why. */}
       <FeatureTourTarget targetId="today.workout" style={[styles.primaryWorkoutCard, { backgroundColor: C.card, borderColor: C.primary }]}>
@@ -627,8 +670,16 @@ export default function TodayScreen() {
       <FeatureTourTarget targetId="today.outlook" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.cardLabel, { color: C.textDim }]}>TRAINING OUTLOOK</Text>
         <Text style={[styles.outlookTitle, { color: C.text }]}>{trainingOutlook.statusLabel}</Text>
-        <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{trainingOutlook.message}</Text>
-        {showBalancedDetails ? (
+        <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{trainingOutlook.recommendation}</Text>
+        <TouchableOpacity
+          onPress={() => setOutlookOpen(open => !open)}
+          style={styles.disclosureButton}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: outlookOpen }}
+        >
+          <Text style={[styles.updateCheckInText, { color: C.primary }]}>Training Details {outlookOpen ? '−' : '+'}</Text>
+        </TouchableOpacity>
+        {showBalancedDetails && outlookOpen ? (
           <View style={styles.outlookDecisionStack}>
             <View style={[styles.outlookDecisionRow, { borderColor: C.border, backgroundColor: C.cardAlt }]}>
               <Text style={[styles.forecastCellLabel, { color: C.textDim }]}>Training Focus</Text>
@@ -639,10 +690,8 @@ export default function TodayScreen() {
               <Text style={[styles.outlookValue, { color: C.text }]}>{trainingOutlook.recommendation}</Text>
             </View>
           </View>
-        ) : (
-          <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{trainingOutlook.recommendation}</Text>
-        )}
-        {showBalancedDetails ? (
+        ) : null}
+        {showBalancedDetails && outlookOpen ? (
           <TouchableOpacity
             onPress={() => setOutlookRationaleOpen(open => !open)}
             style={styles.disclosureButton}
@@ -652,13 +701,13 @@ export default function TodayScreen() {
             <Text style={[styles.updateCheckInText, { color: C.primary }]}>Why? {outlookRationaleOpen ? '−' : '+'}</Text>
           </TouchableOpacity>
         ) : null}
-        {showBalancedDetails && outlookRationaleOpen ? (
+        {showBalancedDetails && outlookOpen && outlookRationaleOpen ? (
           <Text style={[styles.outlookCopy, { color: C.textMuted }]}>
             {trainingOutlook.focus ? `Why this is the focus: ${trainingOutlook.focus}. ` : 'Why this is the focus: build consistency before adding more stress. '}
             {trainingOutlook.message}
           </Text>
         ) : null}
-        {showDataRichDetails ? (
+        {showDataRichDetails && outlookOpen ? (
           <TouchableOpacity
             onPress={() => setOutlookHistoryOpen(open => !open)}
             style={styles.disclosureButton}
@@ -668,7 +717,7 @@ export default function TodayScreen() {
             <Text style={[styles.advancedLink, { color: C.textDim }]}>History and Confidence {outlookHistoryOpen ? '−' : '+'}</Text>
           </TouchableOpacity>
         ) : null}
-        {showDataRichDetails && outlookHistoryOpen ? (
+        {showDataRichDetails && outlookOpen && outlookHistoryOpen ? (
           <View style={[styles.outlookDataBox, { borderTopColor: C.border }]}>
             <Text style={[styles.advancedText, { color: C.textDim }]}>
               History {trainingOutlook.historyWeeks} week{trainingOutlook.historyWeeks === 1 ? '' : 's'} · completed {trainingOutlook.completedActivities} · adherence and workload analysis update after completed, skipped, edited, deleted, backdated, deload, interruption, readiness, and plan-change events · confidence {trainingOutlook.confidence}
@@ -695,6 +744,26 @@ export default function TodayScreen() {
                 >
                   <Ionicons name="information-circle-outline" size={19} color={C.primary} />
                 </TouchableOpacity>
+              </View>
+              <View style={[styles.forecastVisual, { backgroundColor: C.bg, borderColor: C.border }]}>
+                <View style={[styles.forecastIconBubble, { backgroundColor: C.primaryDim }]}>
+                  <Ionicons name={forecastIconName(metric.key)} size={18} color={metric.key === 'training_load_trend' ? C.positive : C.primary} />
+                </View>
+                <View style={styles.forecastBars}>
+                  {forecastBars(metric.key).map((height, index) => (
+                    <View
+                      key={`${metric.key}-${index}`}
+                      style={[
+                        styles.forecastBar,
+                        {
+                          height,
+                          backgroundColor: metric.key === 'training_load_trend' && index >= 2 ? C.positive : C.primary,
+                          opacity: 0.34 + index * 0.1,
+                        },
+                      ]}
+                    />
+                  ))}
+                </View>
               </View>
               <Text style={[styles.forecastState, { color: C.text }]}>{metric.visualLabel ?? metric.state}</Text>
             </View>
@@ -767,6 +836,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 16,
     marginBottom: 16,
+  },
+  currentStreakCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  currentStreakCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 6,
+  },
+  currentStreakTitle: {
+    fontSize: 24,
+    lineHeight: 28,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+  },
+  streakHeatLabel: {
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: '900',
+    letterSpacing: 0.6,
   },
   checkInDisclosureCard: {
     borderRadius: 12,
@@ -1231,6 +1326,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
+  },
+  forecastVisual: {
+    height: 76,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 10,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  forecastIconBubble: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  forecastBars: {
+    flex: 1,
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: 5,
+  },
+  forecastBar: {
+    flex: 1,
+    minWidth: 8,
+    maxWidth: 18,
+    borderRadius: 5,
   },
   forecastMetricHeader: {
     minHeight: 44,

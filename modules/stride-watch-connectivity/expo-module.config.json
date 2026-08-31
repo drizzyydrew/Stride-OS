@@ -1,0 +1,8 @@
+{
+  "platforms": ["apple"],
+  "apple": {
+    "modules": ["StrideWatchConnectivityModule"],
+    "podspecPath": "ios/StrideWatchConnectivity.podspec",
+    "swiftModuleName": "StrideWatchConnectivity"
+  }
+}

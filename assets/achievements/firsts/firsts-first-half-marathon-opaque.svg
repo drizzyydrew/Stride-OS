@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none" role="img" aria-label="First Half Marathon achievement. Unlocked. 13.1 miles.">
+  <defs>
+    <linearGradient id="firsts-first-half-marathon-unlocked-edge" x1="14" y1="7" x2="86" y2="93" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F3DFBF"/>
+      <stop offset="0.54" stop-color="#DCC0A7"/>
+      <stop offset="1" stop-color="#6F4F3D"/>
+    </linearGradient>
+    <radialGradient id="firsts-first-half-marathon-unlocked-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 42) rotate(90) scale(35 34)">
+      <stop offset="0" stop-color="#C89364" stop-opacity="0.33"/>
+      <stop offset="0.64" stop-color="#C89364" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#C89364" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <path d="M50 5.5 Q52.3 5.5 54.5 6.8 L85.7 24.8 Q88 26.1 88 28.8 L88 71.2 Q88 73.9 85.7 75.2 L54.5 93.2 Q52.3 94.5 50 94.5 Q47.7 94.5 45.5 93.2 L14.3 75.2 Q12 73.9 12 71.2 L12 28.8 Q12 26.1 14.3 24.8 L45.5 6.8 Q47.7 5.5 50 5.5 Z" fill="#090A09" fill-opacity="1" stroke="url(#firsts-first-half-marathon-unlocked-edge)" stroke-width="2.25" stroke-linejoin="round" stroke-opacity="1"/>
+  <path d="M50 5.5 Q52.3 5.5 54.5 6.8 L85.7 24.8 Q88 26.1 88 28.8 L88 71.2 Q88 73.9 85.7 75.2 L54.5 93.2 Q52.3 94.5 50 94.5 Q47.7 94.5 45.5 93.2 L14.3 75.2 Q12 73.9 12 71.2 L12 28.8 Q12 26.1 14.3 24.8 L45.5 6.8 Q47.7 5.5 50 5.5 Z" fill="none" stroke="#F3DFBF" stroke-width="0.68" stroke-linejoin="round" stroke-opacity="0.36" transform="translate(0.9 0.9) scale(0.982)"/>
+  <ellipse cx="50" cy="42" rx="31" ry="30" fill="url(#firsts-first-half-marathon-unlocked-glow)" opacity="0.18"/>
+  <g>
+    <path d="M35.7 22.7 Q50 17.7 64.3 22.7 L64.3 38.6 Q64.3 48.1 50 54.2 Q35.7 48.1 35.7 38.6 Z" fill="none" stroke="#DCC0A7" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.96"/>
+  <text x="50" y="39.7" text-anchor="middle" dominant-baseline="middle" font-family="Didot, 'Bodoni 72', Georgia, serif" font-size="12.4" font-weight="700" fill="#DCC0A7" fill-opacity="0.96">13.1</text>
+  </g>
+  <text x="50" y="63.2" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="5.7" font-weight="900" letter-spacing="0.35" fill="#E8D3B8" fill-opacity="0.96">FIRST HALF</text>
+  <text x="50" y="69.8" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="5.7" font-weight="900" letter-spacing="0.35" fill="#E8D3B8" fill-opacity="0.96">MARATHON</text>
+
+
+  <text x="50" y="76.3" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="3.6" font-weight="900" letter-spacing="1.45" fill="#E8D3B8" fill-opacity="0.76">STRIDEOS</text>
+  <path d="M43.6 82 L50 85.8 L56.4 82" fill="none" stroke="#DCC0A7" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.9"/>
+  <path d="M44.3 87.2 L50 90.5 L55.7 87.2" fill="none" stroke="#F3DFBF" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.9"/>
+</svg>

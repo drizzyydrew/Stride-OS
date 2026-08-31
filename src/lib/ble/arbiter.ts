@@ -6,6 +6,7 @@ export type BleMetricSource =
   | 'foot_pod'
   | 'wheel_sensor'
   | 'ble_hr'
+  | 'apple_watch'
   | 'power_meter'
   | 'confirmed_speed_estimate'
   | 'manual';
@@ -53,10 +54,15 @@ export function arbitrateHeartRate(
   now: number,
   staleAfterMs = 10_000,
 ): ArbitedMetric {
+  const priority: BleMetricSource[] = ['ble_hr', 'apple_watch'];
   const best = readings
     .filter(item => item.metric === 'heartRate' && Number.isFinite(item.value) && item.value > 0)
     .filter(item => now - item.observedAt <= staleAfterMs)
-    .sort((a, b) => (a.source === 'ble_hr' ? -1 : 0) - (b.source === 'ble_hr' ? -1 : 0))[0];
+    .sort((a, b) => {
+      const aRank = priority.includes(a.source) ? priority.indexOf(a.source) : priority.length;
+      const bRank = priority.includes(b.source) ? priority.indexOf(b.source) : priority.length;
+      return aRank - bRank || b.observedAt - a.observedAt;
+    })[0];
   return best
     ? { value: best.value, source: best.source, stale: false }
     : { value: null, source: null, stale: true, reason: 'no_current_hr_source' };

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import { createAppJSONStorage } from './persistStorage';
+import type { BleEquipmentCapability } from '../lib/ble/deviceClassifier';
 
 export type Shoe = {
   id: string;
@@ -35,6 +36,9 @@ export type EquipmentItem = {
   name: string;
   notes?: string;
   blePeripheralId?: string;
+  bleServiceUUIDs?: string[];
+  bleCapabilities?: BleEquipmentCapability[];
+  bleLastConnectedAt?: number;
   active: boolean;
   addedAt: number;
 };
@@ -115,7 +119,7 @@ export const useGearStore = create<GearStore>()(
     }),
     {
       name: 'gear-store',
-      version: 1,
+      version: 2,
       storage: createAppJSONStorage(),
       merge: (persisted, current) => {
         const saved = persisted as Partial<GearStore> | undefined;

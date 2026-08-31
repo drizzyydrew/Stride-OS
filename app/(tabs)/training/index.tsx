@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  Alert, Modal, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -12,7 +12,7 @@ import { useColors } from '../../../src/theme/useColors';
 import { spacing } from '../../../src/theme/spacing';
 import { radiusTokens, typographyTokens } from '../../../src/theme/tokens';
 import { useThemeMode } from '../../../src/store/themeStore';
-import { useSettingsStore } from '../../../src/store/settingsStore';
+import { useSettingsStore, type VoiceCuePreferences } from '../../../src/store/settingsStore';
 import { evaluateRunReminders } from '../../../src/utils/runReminderScheduler';
 import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
 import type { VoiceCueCategory } from '../../../src/utils/voiceCoaching';
@@ -47,6 +47,25 @@ import {
 } from '../../../src/store/routeStore';
 import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
+import {
+  selectLatestLiveMetric,
+  selectLiveDistance,
+  selectLiveHeartRate,
+  useLiveSensorStore,
+} from '../../../src/store/liveSensorStore';
+import {
+  activateStrideWatchConnectivity,
+  addStrideWatchErrorListener,
+  addStrideWatchHeartRateListener,
+  addStrideWatchStatusListener,
+  addStrideWatchWorkoutStateListener,
+  endStrideWatchRun,
+  getStrideWatchStatus,
+  pauseStrideWatchRun,
+  resumeStrideWatchRun,
+  startStrideWatchRun,
+  type StrideWatchStatus,
+} from 'stride-watch-connectivity';
 import { sendRunAlertNotification } from '../../../src/lib/notifications';
 import { endRunLiveActivity, startRunLiveActivity, updateRunLiveActivity } from '../../../src/lib/runLiveActivity';
 import {
@@ -67,9 +86,9 @@ import {
   getConflictingActiveSession,
   isActiveSessionStale,
 } from '../../../src/lib/activeSessionCoordinator';
-import { evaluateSustainedEffortCue, type EffortCueState } from '../../../src/utils/activityTracking';
+import { evaluateRunWalkCue, evaluateSustainedEffortCue, type EffortCueState } from '../../../src/utils/activityTracking';
 import { estimateDistanceMiles, estimateMilesFromPrescription, safePaceSecPerMile, type FinalDistanceResult } from '../../../src/utils/treadmill';
-import type { DistanceSource } from '../../../src/types/activity';
+import type { DistanceSource, RunWalkInterval } from '../../../src/types/activity';
 import { treadmillMetricAvailability, type TreadmillPhonePlacement } from '../../../src/utils/treadmillPlacement';
 import { labelForMetricSource } from '../../../src/utils/metricSources';
 import { paceSecPerMileToSecPerKm } from '../../../src/utils/units';
@@ -78,6 +97,7 @@ import TreadmillPanel from '../../../src/components/run/TreadmillPanel';
 import TreadmillCompletionSheet from '../../../src/components/run/TreadmillCompletionSheet';
 import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
 import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
+import { customRunToRichWorkout } from '../../../src/utils/customRunWorkout';
 
 // ─── Sub-tab types ─────────────────────────────────────────────────────────────
 type RunTab = 'plan' | 'active' | 'hydration' | 'routes';
@@ -95,6 +115,18 @@ const RUN_MODE_OPTIONS: { key: RunMode; label: string; icon: keyof typeof Ionico
   { key: 'distance', label: 'Distance',    icon: 'flag-outline',    desc: 'Run to a set distance.' },
   { key: 'workout',  label: 'Workout',     icon: 'list-outline',    desc: "Follow today's structured plan." },
   { key: 'race',     label: 'Race',        icon: 'trophy-outline',  desc: 'Target pace, predicted finish, fueling cues.' },
+];
+
+const RUN_VOICE_OPTIONS: { key: keyof VoiceCuePreferences; label: string; detail: string }[] = [
+  { key: 'interval', label: 'Starts + Segments', detail: 'Start, pause, resume, segment changes, and workout complete.' },
+  { key: 'pace', label: 'Pace + Distance', detail: 'Split updates and pace guidance.' },
+  { key: 'heartRate', label: 'Heart Rate', detail: 'Zone target feedback when a target exists.' },
+  { key: 'runWalk', label: 'Run/Walk', detail: 'Run and walk interval transitions.' },
+  { key: 'hydration', label: 'Hydration', detail: 'Drink reminders from the hydration planner.' },
+  { key: 'fueling', label: 'Fuel', detail: 'Carb reminders from the hydration planner.' },
+  { key: 'navigation', label: 'Route Guidance', detail: 'Attached route marker guidance.' },
+  { key: 'technique', label: 'Technique', detail: 'Occasional form reminders.' },
+  { key: 'motivation', label: 'Motivation', detail: 'Sparse encouragement during longer runs.' },
 ];
 
 const TREADMILL_PLACEMENT_OPTIONS: {
@@ -343,6 +375,55 @@ function speakCue(text: string, category: VoiceCueCategory = 'motivation'): void
   enqueueVoiceCue(text, category);
 }
 
+function workoutSegments(workout: RichWorkout | null): RichWorkout['mainSet'] {
+  if (!workout) return [];
+  return [workout.warmup, ...workout.mainSet, workout.cooldown].filter(segment => segment.duration.trim().length > 0);
+}
+
+function segmentTarget(segment: RichWorkout['mainSet'][number]): { kind: 'time'; seconds: number } | { kind: 'distance'; miles: number } | null {
+  const raw = segment.duration.trim().toLowerCase();
+  const value = Number(raw.match(/[\d.]+/)?.[0]);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  if (raw.includes('mile') || raw.includes(' mi')) return { kind: 'distance', miles: value };
+  if (raw.includes('km') || raw.includes('kilometer')) return { kind: 'distance', miles: value / 1.609344 };
+  if (raw.includes('meter') || raw.endsWith('m')) return { kind: 'distance', miles: value / 1609.344 };
+  if (raw.includes('sec') || raw.endsWith('s')) return { kind: 'time', seconds: Math.round(value) };
+  return { kind: 'time', seconds: Math.round(value * 60) };
+}
+
+function segmentCueText(segment: RichWorkout['mainSet'][number], index: number): string {
+  return `Segment ${index + 1}: ${segment.label}. ${segment.duration} at ${segment.paceGuide}. Target Zone ${segment.hrZone}.`;
+}
+
+function coachingMoments(totalSeconds: number): number[] {
+  if (totalSeconds < 1800) return [Math.round(totalSeconds * 0.55)];
+  if (totalSeconds < 5400) return [Math.round(totalSeconds * 0.42), Math.round(totalSeconds * 0.78)];
+  return [Math.round(totalSeconds * 0.25), Math.round(totalSeconds * 0.55), Math.round(totalSeconds * 0.82)];
+}
+
+function nearDistanceSplit(distanceMiles: number, intervalMiles: number): boolean {
+  if (distanceMiles <= 0 || intervalMiles <= 0) return false;
+  const offset = distanceMiles % intervalMiles;
+  return offset <= 0.04 || intervalMiles - offset <= 0.04;
+}
+
+function runWalkIntervalsForSession(session: ReturnType<typeof useScheduledSessions>['activeTodayRun']): RunWalkInterval[] {
+  const prescription = session?.runWalk;
+  if (!prescription) return [];
+  const intervals: RunWalkInterval[] = [];
+  if (prescription.warmupMinutes > 0) {
+    intervals.push({ kind: 'walk', durationSeconds: prescription.warmupMinutes * 60 });
+  }
+  for (let i = 0; i < prescription.rounds; i += 1) {
+    intervals.push({ kind: 'run', durationSeconds: prescription.runSeconds });
+    intervals.push({ kind: 'walk', durationSeconds: prescription.walkSeconds });
+  }
+  if (prescription.cooldownMinutes > 0) {
+    intervals.push({ kind: 'walk', durationSeconds: prescription.cooldownMinutes * 60 });
+  }
+  return intervals;
+}
+
 // ─── Plan Tab ─────────────────────────────────────────────────────────────────
 function PlanTab() {
   const C = useColors();
@@ -543,6 +624,14 @@ function PlanTab() {
           <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S RUN</Text>
           <Text style={[styles.subTitle, { color: C.text, marginTop: 8 }]}>Rest Day</Text>
           <Text style={[{ fontSize: 13, color: C.textMuted, marginTop: 6 }]}>No structured session today — prioritize sleep and recovery.</Text>
+          <TouchableOpacity
+            style={{ alignSelf: 'flex-start', marginTop: 12, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: C.primaryDim }}
+            onPress={() => router.push('/(tabs)/training/run-creator' as never)}
+            accessibilityRole="button"
+            accessibilityLabel="Build custom running workout"
+          >
+            <Text style={{ color: C.primary, fontSize: 12, fontWeight: '800' }}>Build Workout</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
@@ -661,7 +750,18 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const router = useRouter();
   const mode = useThemeMode();
   const insets = useSafeAreaInsets();
-  const { units, treadmillPhonePlacementDefault, setTreadmillPhonePlacementDefault } = useSettingsStore();
+  const {
+    units,
+    treadmillPhonePlacementDefault,
+    setTreadmillPhonePlacementDefault,
+    voiceCuePreferences,
+    setVoiceCuePreference,
+    announceAutoPause,
+    announceAutoResume,
+    setAnnounceAutoPause,
+    setAnnounceAutoResume,
+    voiceDistanceUpdateInterval,
+  } = useSettingsStore();
   const healthKitEnabled = useIntegrationsStore(s => s.healthKitEnabled);
   const calibration = useCalibration();
   const {
@@ -709,6 +809,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     lastEnvironmentPreference,
     confirmTreadmillSpeed,
     setManualLiveDistance,
+    setEquipmentLiveDistance,
+    setEquipmentLiveSpeed,
     advanceInterval,
     setLastEnvironmentPreference,
   } = useActiveRunStore();
@@ -716,20 +818,40 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const activeScheduled = useScheduledSessions(weekPlan);
   const todayPlannedSession = activeScheduled.activeTodayRun;
   const todayPlannedWorkout = todayPlannedSession?.richWorkout ?? null;
+  const todayYMD = toYMD(new Date());
+  const customRuns = useCustomWorkoutStore(s => s.customRuns);
+  const selectedTodayCustomRunId = useCustomWorkoutStore(s => s.selectedTodayCustomRunId);
+  const selectedTodayDate = useCustomWorkoutStore(s => s.selectedTodayDate);
+  const selectedCustomRun = selectedTodayDate === todayYMD
+    ? customRuns.find(run => run.id === selectedTodayCustomRunId) ?? null
+    : null;
+  const selectedCustomWorkout = useMemo(
+    () => selectedCustomRun ? customRunToRichWorkout(selectedCustomRun) : null,
+    [selectedCustomRun],
+  );
+  const workoutForStart = todayPlannedWorkout ?? selectedCustomWorkout;
   const routeAttachment = useRouteStore(s => s.routeAttachment);
   const attachedRoute = useRouteStore(s => s.routes.find(r => r.id === s.routeAttachment.routeId) ?? null);
   const selectedRoute = effectiveAttachedRoute(attachedRoute, routeAttachment);
   const detachRouteFromToday = useRouteStore(s => s.detachRouteFromToday);
   const reverseAttachedRoute = useRouteStore(s => s.reverseAttachedRoute);
+  const liveSensorReadings = useLiveSensorStore(s => s.readings);
+  const recordLiveSensorReading = useLiveSensorStore(s => s.recordBleReading);
+  const markLiveSensorConnected = useLiveSensorStore(s => s.markDeviceConnected);
+  const markLiveSensorDisconnected = useLiveSensorStore(s => s.markDeviceDisconnected);
+  const markLiveSensorError = useLiveSensorStore(s => s.markDeviceError);
   const [showRouteActions, setShowRouteActions] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [heartRateBpm, setHeartRateBpm] = useState<number | null>(null);
+  const [healthKitHeartRateBpm, setHealthKitHeartRateBpm] = useState<number | null>(null);
+  const [watchStatus, setWatchStatus] = useState<StrideWatchStatus>(() => getStrideWatchStatus());
+  const [watchWorkoutState, setWatchWorkoutState] = useState<string | null>(null);
   const [permission, setPermission] = useState<TrackingPermissionState>({ foreground: 'unknown', background: 'unknown' });
   const [routeSegmentIndex, setRouteSegmentIndex] = useState(0);
   const [pendingMode, setPendingMode] = useState<RunMode>('quick');
   const [pendingEnvironment, setPendingEnvironment] = useState<RunEnvironment>(() => lastEnvironmentPreference);
   const [pendingTreadmillPlacement, setPendingTreadmillPlacement] = useState<TreadmillPhonePlacement>(() => treadmillPhonePlacementDefault);
   const [showTreadmillCompletion, setShowTreadmillCompletion] = useState(false);
+  const [voicePanelOpen, setVoicePanelOpen] = useState(false);
   const treadmillCompletionRef = useRef<{ estimateMiles: number; movingSeconds: number; estimateSource: DistanceSource } | null>(null);
   const [goalMinutesInput, setGoalMinutesInput] = useState(45);
   const [goalMilesInput, setGoalMilesInput] = useState(5);
@@ -737,13 +859,62 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [racePaceSecInput, setRacePaceSecInput] = useState(540);
   const [goalPickerFor, setGoalPickerFor] = useState<null | 'time' | 'distance' | 'raceDist' | 'racePace'>(null);
   const segmentStartRef = useRef<{ index: number; time: number } | null>(null);
+  const workoutSegmentStartRef = useRef<{ index: number; elapsed: number; miles: number } | null>(null);
   const maxRouteProgressRef = useRef(0);
+  const routeNoticeRef = useRef<string | null>(null);
   const effortCueRef = useRef<EffortCueState>({ consecutiveHighSamples: 0, consecutiveLowSamples: 0, wasOutOfRange: false, lastCueElapsedSeconds: -9999 });
   const reminderCueRef = useRef({ lastHydrationCueSec: 0, lastFuelCueSec: 0 });
+  const runWalkCueRef = useRef(0);
+  const coachMomentRef = useRef(0);
   const goalDoneRef = useRef(false);
   const activeMapRef = useRef<MapViewRef>(null);
   const [mapType, setMapType] = useState<'standard' | 'hybrid'>('standard');
   const runState: RunState = !isActive ? 'idle' : isPaused ? 'paused' : 'active';
+
+  useEffect(() => {
+    const appleWatchDevice = {
+      id: 'apple_watch',
+      name: 'Apple Watch',
+      serviceUUIDs: [],
+      capabilities: ['heart_rate' as const],
+      kind: 'other' as const,
+    };
+
+    const statusSub = addStrideWatchStatusListener(setWatchStatus);
+    const heartRateSub = addStrideWatchHeartRateListener(event => {
+      markLiveSensorConnected(appleWatchDevice, event.timestamp);
+      recordLiveSensorReading({
+        deviceId: appleWatchDevice.id,
+        deviceName: appleWatchDevice.name,
+        capability: 'heart_rate',
+        metric: 'heartRate',
+        value: event.heartRate,
+        source: 'apple_watch',
+        observedAt: event.timestamp,
+      });
+    });
+    const stateSub = addStrideWatchWorkoutStateListener(event => {
+      setWatchWorkoutState(event.state);
+      if (event.state === 'ended' || event.state === 'idle') {
+        markLiveSensorDisconnected(appleWatchDevice.id, event.timestamp);
+      } else {
+        markLiveSensorConnected(appleWatchDevice, event.timestamp);
+      }
+    });
+    const errorSub = addStrideWatchErrorListener(event => {
+      markLiveSensorError(appleWatchDevice.id, event.message, event.timestamp);
+      setWatchStatus(current => ({ ...current, lastError: event.message }));
+    });
+
+    activateStrideWatchConnectivity().then(setWatchStatus).catch(() => undefined);
+
+    return () => {
+      statusSub?.remove();
+      heartRateSub?.remove();
+      stateSub?.remove();
+      errorSub?.remove();
+    };
+  }, [markLiveSensorConnected, markLiveSensorDisconnected, markLiveSensorError, recordLiveSensorReading]);
 
   async function centerOnMyLocation() {
     const lastCoord = coordinates.at(-1);
@@ -779,12 +950,12 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
     async function refreshHeartRate() {
       if (!healthKitEnabled || !isActive || isPaused || Platform.OS !== 'ios') {
-        if (!cancelled) setHeartRateBpm(null);
+        if (!cancelled) setHealthKitHeartRateBpm(null);
         return;
       }
 
       const latest = await getLatestHeartRateBpm().catch(() => null);
-      if (!cancelled) setHeartRateBpm(latest);
+      if (!cancelled) setHealthKitHeartRateBpm(latest);
     }
 
     refreshHeartRate();
@@ -798,12 +969,17 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   useEffect(() => {
     setRouteSegmentIndex(0);
     maxRouteProgressRef.current = 0;
+    routeNoticeRef.current = null;
     segmentStartRef.current = isActive ? { index: 0, time: Date.now() } : null;
+    workoutSegmentStartRef.current = isActive ? { index: 0, elapsed: 0, miles: 0 } : null;
+    runWalkCueRef.current = 0;
+    coachMomentRef.current = 0;
   }, [isActive, selectedRoute?.id]);
 
   useEffect(() => {
     setRouteSegmentIndex(0);
     maxRouteProgressRef.current = 0;
+    routeNoticeRef.current = null;
     segmentStartRef.current = selectedRoute && isActive ? { index: 0, time: Date.now() } : null;
   }, [routeAttachment.direction, routeAttachment.status]);
 
@@ -851,7 +1027,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       return;
     }
     setLastEnvironmentPreference(pendingEnvironment);
-    const startWorkout = pendingMode === 'workout' ? todayPlannedWorkout : null;
+    const startWorkout = pendingMode === 'workout' ? workoutForStart : null;
     // Picker values are in display units; the store always holds miles and sec/mi.
     const toMiles = (v: number) => imp ? v : v / 1.609344;
     const toSecPerMile = (v: number) => imp ? v : v * 1.609344;
@@ -859,7 +1035,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       pendingMode === 'time'     ? { mode: 'time', goalMinutes: goalMinutesInput } :
       pendingMode === 'distance' ? { mode: 'distance', goalMiles: toMiles(goalMilesInput) } :
       pendingMode === 'race'     ? { mode: 'race', goalMiles: toMiles(raceMilesInput), targetPaceSecPerMile: toSecPerMile(racePaceSecInput) } :
-      pendingMode === 'workout' && startWorkout ? { mode: 'workout', scheduledSessionId: todayPlannedSession?.scheduledSessionId } :
+      pendingMode === 'workout' && startWorkout ? { mode: 'workout', scheduledSessionId: todayPlannedWorkout ? todayPlannedSession?.scheduledSessionId : undefined } :
       { mode: 'quick' };
     config.environment = pendingEnvironment;
     if (pendingEnvironment === 'indoor') {
@@ -889,12 +1065,18 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
     setRouteSegmentIndex(0);
     maxRouteProgressRef.current = 0;
+    routeNoticeRef.current = null;
     segmentStartRef.current = { index: 0, time: Date.now() };
+    workoutSegmentStartRef.current = { index: 0, elapsed: 0, miles: 0 };
     reminderCueRef.current = { lastHydrationCueSec: 0, lastFuelCueSec: 0 };
+    runWalkCueRef.current = 0;
+    coachMomentRef.current = 0;
     goalDoneRef.current = false;
 
     startRun(startWorkout, config);
     speakCue('Starting workout.', 'interval');
+    const firstSegment = startWorkout ? workoutSegments(startWorkout)[0] : null;
+    if (firstSegment) speakCue(segmentCueText(firstSegment, 0), 'interval');
     const activeRun = useActiveRunStore.getState();
     const activeWorkoutInstanceId = activeRun.workoutInstanceId ?? '';
     await startRunLiveActivity({
@@ -909,6 +1091,12 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       zoneStatus: 'unknown',
       isPaused: false,
     }).catch(console.warn);
+    startStrideWatchRun({
+      workoutInstanceId: activeWorkoutInstanceId,
+      title: startWorkout?.title ?? (pendingMode === 'race' ? 'StrideOS Race' : 'StrideOS Run'),
+      environment: pendingEnvironment,
+      targetZone: pendingMode === 'race' ? 3 : startWorkout?.hrZoneTarget ?? null,
+    }).then(setWatchStatus).catch(() => undefined);
 
     if (pendingEnvironment === 'indoor') {
       const workoutName = startWorkout?.title ?? 'treadmill run';
@@ -931,6 +1119,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         speakCue(`Route: ${selectedRoute.name}. ${selectedRoute.segments.length} interval markers set.`, 'navigation');
       }
     } catch (error) {
+      endStrideWatchRun().then(setWatchStatus).catch(() => undefined);
       cancelRun();
       setRouteSegmentIndex(0);
       maxRouteProgressRef.current = 0;
@@ -941,10 +1130,14 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
   function pause() {
     pauseRun();
+    pauseStrideWatchRun().then(setWatchStatus).catch(() => undefined);
+    speakCue('Pausing run.', 'interval');
   }
 
   function resume() {
     resumeRun();
+    resumeStrideWatchRun().then(setWatchStatus).catch(() => undefined);
+    speakCue('Resuming run.', 'interval');
   }
 
   async function stop() {
@@ -984,6 +1177,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       elapsedSeconds: finalElapsed,
       isPaused: false,
     }).catch(console.warn);
+    endStrideWatchRun().then(setWatchStatus).catch(() => undefined);
+    speakCue(`Run complete. ${finalDurationMin} minutes, ${finalDistanceMiles.toFixed(2)} miles saved.`, 'motivation');
     finishRun();
     setElapsed(0);
     setRouteSegmentIndex(0);
@@ -1062,6 +1257,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       distanceMiles: result.distanceMiles,
       isPaused: false,
     }).catch(console.warn);
+    endStrideWatchRun().then(setWatchStatus).catch(() => undefined);
+    speakCue(`Run complete. ${finalDurationMin} minutes, ${finalDistanceMiles.toFixed(2)} miles saved.`, 'motivation');
     finishRun();
     setElapsed(0);
     onFinished?.();
@@ -1127,8 +1324,49 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const pace = imp ? paceLabel(currentPaceSecPerMile) : paceLabel(currentPaceSecPerMile / 1.609344);
   const avgPaceSecPerMile = averagePaceSecPerMile || (distanceMiles > 0 && elapsed > 0 ? elapsed / distanceMiles : 0);
   const avgPace = imp ? paceLabel(avgPaceSecPerMile) : paceLabel(avgPaceSecPerMile / 1.609344);
-  const targetZone = 2;
-  const zoneStatus = zoneStatusForHeartRate(heartRateBpm, targetZone, calibration?.hrZones);
+  const activeWorkoutSegments = useMemo(() => workoutSegments(plannedWorkout), [plannedWorkout]);
+  const currentWorkoutSegment = runMode === 'workout' && activeWorkoutSegments.length
+    ? activeWorkoutSegments[Math.min(currentIntervalIndex, activeWorkoutSegments.length - 1)]
+    : null;
+  const liveBleHeartRate = useMemo(
+    () => selectLiveHeartRate(liveSensorReadings, Date.now()),
+    [liveSensorReadings],
+  );
+  const liveBleDistance = useMemo(
+    () => selectLiveDistance(liveSensorReadings, Date.now()),
+    [liveSensorReadings],
+  );
+  const liveBleSpeed = useMemo(
+    () => selectLatestLiveMetric(liveSensorReadings, 'speed', Date.now()),
+    [liveSensorReadings],
+  );
+  const heartRateBpm = typeof liveBleHeartRate.value === 'number'
+    ? Math.round(liveBleHeartRate.value)
+    : healthKitHeartRateBpm;
+  const heartRateSourceLabel = typeof liveBleHeartRate.value === 'number'
+    ? liveBleHeartRate.source === 'apple_watch' ? 'Apple Watch live' : 'Bluetooth live'
+    : healthKitHeartRateBpm
+      ? 'Apple Health'
+      : 'No live source';
+  const watchStatusText = watchStatus.isWatchAppInstalled
+    ? watchStatus.isReachable
+      ? 'Apple Watch ready'
+      : 'Open watch app for live HR'
+    : watchStatus.isPaired
+      ? 'Install StrideOS on Apple Watch'
+      : 'No paired Apple Watch';
+  const targetZone = currentWorkoutSegment?.hrZone ?? (runMode === 'workout' ? plannedWorkout?.hrZoneTarget ?? null : runMode === 'race' ? 3 : null);
+  const zoneStatus = targetZone
+    ? zoneStatusForHeartRate(heartRateBpm, targetZone, calibration?.hrZones)
+    : { label: heartRateBpm ? `${heartRateBpm}` : 'HR', detail: heartRateBpm ? 'bpm' : 'NO TARGET', tone: 'unknown' as const, guidance: null };
+  const runWalkIntervals = useMemo(() => runWalkIntervalsForSession(todayPlannedSession), [todayPlannedSession]);
+  const coachingTotalSeconds = runMode === 'workout' && plannedWorkout
+    ? plannedWorkout.durationMinutes * 60
+    : runMode === 'time' && goalMinutes
+      ? goalMinutes * 60
+      : runMode === 'distance' && goalMiles && avgPaceSecPerMile
+        ? goalMiles * avgPaceSecPerMile
+        : Math.max(1800, elapsed + 1);
   const zoneToneColor = zoneStatus.tone === 'in'
     ? C.positive
     : zoneStatus.tone === 'near'
@@ -1199,6 +1437,25 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const softPanelBg = mode === 'light' ? C.card : C.cardElevated;
   const pendingTreadmillAvailability = treadmillMetricAvailability({ placement: pendingTreadmillPlacement });
 
+  useEffect(() => {
+    if (!isActive || isPaused || environment !== 'indoor') return;
+    if (typeof liveBleDistance.value === 'number' && liveBleDistance.distanceSource) {
+      setEquipmentLiveDistance(liveBleDistance.value / 1609.344, liveBleDistance.distanceSource);
+    }
+    if (typeof liveBleSpeed.value === 'number' && liveBleSpeed.value >= 0) {
+      setEquipmentLiveSpeed(liveBleSpeed.value * 2.2369362921);
+    }
+  }, [
+    environment,
+    isActive,
+    isPaused,
+    liveBleDistance.distanceSource,
+    liveBleDistance.value,
+    liveBleSpeed.value,
+    setEquipmentLiveDistance,
+    setEquipmentLiveSpeed,
+  ]);
+
   const distDisplayFactor = imp ? 1 : 1.609344;
   const goalPanel = isActive && runMode !== 'quick' ? (
     <View style={[styles.goalPanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
@@ -1253,6 +1510,11 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       {runMode === 'workout' && plannedWorkout ? (
         <>
           <Text style={[styles.goalPanelLine, { color: C.text }]}>{plannedWorkout.title}</Text>
+          {currentWorkoutSegment ? (
+            <Text style={[styles.goalPanelLine, { color: C.primary }]}>
+              Now: {currentWorkoutSegment.label} · {currentWorkoutSegment.duration} · {currentWorkoutSegment.paceGuide} · Z{currentWorkoutSegment.hrZone}
+            </Text>
+          ) : null}
           <Text style={[styles.goalPanelLine, { color: C.textMuted }]} numberOfLines={2}>
             {plannedWorkout.paceRange
               ? `Target ${paceLabel(plannedWorkout.paceRange.minSecPerMi)}–${paceLabel(plannedWorkout.paceRange.maxSecPerMi)} /mi · Zone ${plannedWorkout.hrZoneTarget}`
@@ -1274,6 +1536,12 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     if (maxRouteProgressRef.current + 0.03 < nextSegment.distanceMiles) return;
 
     const distanceToMarker = metersBetween(currentPoint, nextSegment.point);
+    const noticeKey = `${routeSegmentIndex}:${nextSegment.label}`;
+    if (distanceToMarker <= 110 && distanceToMarker > 75 && routeNoticeRef.current !== noticeKey) {
+      routeNoticeRef.current = noticeKey;
+      speakCue(`In about 100 yards, segment ${nextSegment.label}.`, 'navigation');
+      return;
+    }
     if (distanceToMarker > 75) return;
 
     const now = Date.now();
@@ -1292,7 +1560,65 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   }, [selectedRoute?.id, currentPoint?.latitude, currentPoint?.longitude, nextSegment?.label, nextSegment?.distanceMiles, isActive, isPaused, routeProgress, routeSegmentIndex, startTime]);
 
   useEffect(() => {
-    if (!isActive || isPaused || !heartRateBpm || zoneStatus.tone === 'unknown') return;
+    if (!isActive || isPaused || runMode !== 'workout' || !currentWorkoutSegment) return;
+    const start = workoutSegmentStartRef.current;
+    if (!start || start.index !== currentIntervalIndex) {
+      workoutSegmentStartRef.current = { index: currentIntervalIndex, elapsed, miles: distanceMiles };
+      return;
+    }
+    const target = segmentTarget(currentWorkoutSegment);
+    if (!target) return;
+    const complete = target.kind === 'time'
+      ? elapsed - start.elapsed >= target.seconds
+      : distanceMiles - start.miles >= target.miles;
+    if (!complete) return;
+
+    const nextIndex = currentIntervalIndex + 1;
+    if (nextIndex >= activeWorkoutSegments.length) {
+      if (!goalDoneRef.current) {
+        goalDoneRef.current = true;
+        speakCue('Structured workout complete. Finish whenever you are ready.', 'interval');
+      }
+      return;
+    }
+
+    const next = activeWorkoutSegments[nextIndex];
+    workoutSegmentStartRef.current = { index: nextIndex, elapsed, miles: distanceMiles };
+    advanceInterval();
+    speakCue(segmentCueText(next, nextIndex), 'interval');
+  }, [activeWorkoutSegments, advanceInterval, currentIntervalIndex, currentWorkoutSegment, distanceMiles, elapsed, isActive, isPaused, runMode]);
+
+  useEffect(() => {
+    if (!isActive || isPaused || runMode !== 'workout' || !todayPlannedSession?.runWalk || runWalkIntervals.length === 0) return;
+    const cue = evaluateRunWalkCue({
+      intervals: runWalkIntervals,
+      elapsedSeconds: elapsed,
+      previousElapsedSeconds: runWalkCueRef.current,
+    });
+    runWalkCueRef.current = elapsed;
+    if (cue) speakCue(cue.text, 'runWalk');
+  }, [elapsed, isActive, isPaused, runMode, runWalkIntervals, todayPlannedSession?.runWalk]);
+
+  useEffect(() => {
+    if (!isActive || isPaused || elapsed < 240 || (!voiceCuePreferences.technique && !voiceCuePreferences.motivation)) return;
+    const moments = coachingMoments(coachingTotalSeconds);
+    const nextMoment = moments[coachMomentRef.current];
+    const splitIntervalMiles = voiceDistanceUpdateInterval === 'half' ? 0.5 : 1;
+    if (!nextMoment || elapsed < nextMoment || nearDistanceSplit(distanceMiles, splitIntervalMiles)) return;
+    const useTechnique = voiceCuePreferences.technique
+      && (!voiceCuePreferences.motivation || coachMomentRef.current % 2 === 0);
+    const category: VoiceCueCategory = useTechnique ? 'technique' : 'motivation';
+    speakCue(
+      useTechnique
+        ? 'Quick form check: relax your shoulders, keep your cadence smooth, and run tall.'
+        : 'Good work. Stay controlled and keep stacking steady minutes.',
+      category,
+    );
+    coachMomentRef.current += 1;
+  }, [coachingTotalSeconds, distanceMiles, elapsed, isActive, isPaused, voiceCuePreferences.motivation, voiceCuePreferences.technique, voiceDistanceUpdateInterval]);
+
+  useEffect(() => {
+    if (!isActive || isPaused || !targetZone || !heartRateBpm || zoneStatus.tone === 'unknown') return;
     const result = evaluateSustainedEffortCue({
       state: effortCueRef.current,
       elapsedSeconds: elapsed,
@@ -1306,7 +1632,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     if (!result.text) return;
     speakCue(result.text, 'heartRate');
     sendRunAlertNotification(result.text).catch(() => undefined);
-  }, [elapsed, heartRateBpm, isActive, isPaused, zoneStatus.guidance, zoneStatus.tone]);
+  }, [elapsed, heartRateBpm, isActive, isPaused, targetZone, zoneStatus.guidance, zoneStatus.tone]);
 
   const activeReminderPlan = useMemo(() => calculateHydrationPlan({
     distanceMiles: plannerReminder.distanceMi,
@@ -1434,6 +1760,24 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             zoneTone={zoneStatus.tone}
             isPaused={isPaused}
           />
+          <View style={[styles.watchStatusPanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+            <View style={styles.watchStatusLead}>
+              <Ionicons
+                name="watch-outline"
+                size={17}
+                color={watchStatus.isReachable ? C.positive : watchStatus.isWatchAppInstalled ? C.warning : C.textMuted}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.watchStatusTitle, { color: C.text }]}>Apple Watch</Text>
+                <Text style={[styles.watchStatusText, { color: C.textMuted }]}>
+                  {watchStatusText}{watchWorkoutState ? ` · ${watchWorkoutState}` : ''}
+                </Text>
+              </View>
+            </View>
+            {watchStatus.lastError ? (
+              <Text style={[styles.watchStatusError, { color: C.warning }]} numberOfLines={2}>{watchStatus.lastError}</Text>
+            ) : null}
+          </View>
         </ScrollView>
         <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: (fullScreen ? insets.bottom : 0) + spacing.md }]}>
           {isPaused ? (
@@ -1620,11 +1964,96 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             <RunStat key={metric.label} {...metric} color={C.text} muted={C.textMuted} />
           ))}
         </View>
+        <TouchableOpacity
+          style={[styles.voiceDisclosure, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+          onPress={() => setVoicePanelOpen(open => !open)}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: voicePanelOpen }}
+          accessibilityLabel="Voice coaching controls"
+        >
+          <View>
+            <Text style={[styles.metricLabel, { color: C.textDim }]}>VOICE COACHING</Text>
+            <Text style={[styles.voiceDisclosureText, { color: C.text }]}>
+              {RUN_VOICE_OPTIONS.filter(option => voiceCuePreferences[option.key]).length} cues on · splits every {voiceDistanceUpdateInterval === 'half' ? '0.5 mi' : '1 mi'}
+            </Text>
+          </View>
+          <Ionicons name={voicePanelOpen ? 'chevron-up' : 'chevron-down'} size={18} color={C.primary} />
+        </TouchableOpacity>
+        {voicePanelOpen ? (
+          <View style={[styles.voicePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+            {RUN_VOICE_OPTIONS.map(option => (
+              <View key={option.key} style={[styles.voiceRow, { borderBottomColor: C.border }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.voiceLabel, { color: C.text }]}>{option.label}</Text>
+                  <Text style={[styles.voiceDetail, { color: C.textMuted }]}>{option.detail}</Text>
+                </View>
+                <Switch
+                  value={voiceCuePreferences[option.key]}
+                  onValueChange={enabled => setVoiceCuePreference(option.key, enabled)}
+                  trackColor={{ false: C.border, true: C.primaryDim }}
+                  thumbColor={voiceCuePreferences[option.key] ? C.primary : C.textMuted}
+                />
+              </View>
+            ))}
+            <View style={[styles.voiceRow, { borderBottomColor: C.border }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.voiceLabel, { color: C.text }]}>Auto-Pause</Text>
+                <Text style={[styles.voiceDetail, { color: C.textMuted }]}>Say “pausing run” when movement stops.</Text>
+              </View>
+              <Switch
+                value={announceAutoPause}
+                onValueChange={setAnnounceAutoPause}
+                trackColor={{ false: C.border, true: C.primaryDim }}
+                thumbColor={announceAutoPause ? C.primary : C.textMuted}
+              />
+            </View>
+            <View style={styles.voiceRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.voiceLabel, { color: C.text }]}>Auto-Resume</Text>
+                <Text style={[styles.voiceDetail, { color: C.textMuted }]}>Say “resuming run” when movement resumes.</Text>
+              </View>
+              <Switch
+                value={announceAutoResume}
+                onValueChange={setAnnounceAutoResume}
+                trackColor={{ false: C.border, true: C.primaryDim }}
+                thumbColor={announceAutoResume ? C.primary : C.textMuted}
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.inlineDetailButton, { backgroundColor: C.card, borderColor: C.border }]}
+              onPress={() => router.push('/(tabs)/training/hydration' as never)}
+              accessibilityRole="button"
+              accessibilityLabel="Open hydration reminder settings"
+            >
+              <Text style={[styles.inlineDetailText, { color: C.text }]}>Hydration + Fuel Timing</Text>
+              <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+        <View style={[styles.watchStatusPanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+          <View style={styles.watchStatusLead}>
+            <Ionicons
+              name="watch-outline"
+              size={17}
+              color={watchStatus.isReachable ? C.positive : watchStatus.isWatchAppInstalled ? C.warning : C.textMuted}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.watchStatusTitle, { color: C.text }]}>Apple Watch</Text>
+              <Text style={[styles.watchStatusText, { color: C.textMuted }]}>
+                {watchStatusText}{watchWorkoutState ? ` · ${watchWorkoutState}` : ''}
+              </Text>
+            </View>
+          </View>
+          {watchStatus.lastError ? (
+            <Text style={[styles.watchStatusError, { color: C.warning }]} numberOfLines={2}>{watchStatus.lastError}</Text>
+          ) : null}
+        </View>
         {goalPanel}
         {runState === 'active' && heartRateBpm ? (
           <View style={styles.runStatusChipRow}>
             <View style={[styles.runStatusChip, { backgroundColor: zoneToneColor + '22', borderColor: zoneToneColor }]}>
-              <Text style={[styles.runStatusChipText, { color: zoneToneColor }]}>{zoneStatus.label} · {zoneStatus.detail}</Text>
+              <Text style={[styles.runStatusChipText, { color: zoneToneColor }]}>{zoneStatus.label} · {zoneStatus.detail} · {heartRateSourceLabel}</Text>
             </View>
           </View>
         ) : null}
@@ -1765,12 +2194,12 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
               </>
             ) : null}
             {pendingMode === 'workout' ? (
-              todayPlannedWorkout ? (
+              workoutForStart ? (
                 <View style={[styles.workoutDetailCard, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
                   <View style={{ flex: 1, gap: 6 }}>
-                    <Text style={[styles.goalConfigValue, { color: C.text }]}>{todayPlannedWorkout.title}</Text>
+                    <Text style={[styles.goalConfigValue, { color: C.text }]}>{workoutForStart.title}</Text>
                     <Text style={[styles.goalConfigLabel, { color: C.textMuted }]}>
-                      {todayPlannedWorkout.purpose}
+                      {workoutForStart.purpose}
                     </Text>
                     {todayPlannedSession?.runWalk ? (
                       <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
@@ -1778,43 +2207,68 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
                       </Text>
                     ) : (
                       <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
-                        {todayPlannedWorkout.durationMinutes} min · Zone {todayPlannedWorkout.hrZoneTarget} · RPE {todayPlannedWorkout.rpeRange[0]}-{todayPlannedWorkout.rpeRange[1]}
+                        {workoutForStart.durationMinutes} min · Zone {workoutForStart.hrZoneTarget} · RPE {workoutForStart.rpeRange[0]}-{workoutForStart.rpeRange[1]}
                       </Text>
                     )}
                     <Text style={[styles.workoutDetailText, { color: C.textMuted }]} numberOfLines={2}>
-                      {todayPlannedSession?.mainSet ?? todayPlannedWorkout.mainSet.map(segment => segment.instructions).join(' ')}
+                      {todayPlannedSession?.mainSet ?? workoutForStart.mainSet.map(segment => segment.instructions).join(' ')}
                     </Text>
-                    <TouchableOpacity
-                      style={[styles.inlineDetailButton, { backgroundColor: C.card, borderColor: C.border }]}
-                      onPress={() => router.push({ pathname: '/(tabs)/training/workout-detail', params: { scheduledSessionId: todayPlannedSession?.scheduledSessionId } } as never)}
-                      accessibilityRole="button"
-                      accessibilityLabel="View workout details"
-                    >
-                      <Text style={[styles.inlineDetailText, { color: C.text }]}>View Workout Details</Text>
-                      <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.inlineCompletionButton, { backgroundColor: C.primary }]}
-                      onPress={() => {
-                        if (todayPlannedSession?.completedActivityId) {
-                          router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: todayPlannedSession.completedActivityId } } as never);
-                          return;
-                        }
-                        router.push({ pathname: '/(tabs)/activity/manual', params: { scheduledSessionId: todayPlannedSession?.scheduledSessionId, activityType: todayPlannedSession?.activityType, mode: 'complete' } } as never);
-                      }}
-                      accessibilityLabel={todayPlannedSession?.completedActivityId ? 'View completed running activity' : 'Log completion for scheduled running workout'}
-                      accessibilityRole="button"
-                    >
-                      <Text style={[styles.inlineCompletionText, { color: C.onPrimary }]}>
-                        {todayPlannedSession?.completedActivityId ? 'View Completed Activity' : 'Log Completion'}
-                      </Text>
-                    </TouchableOpacity>
+                    {todayPlannedWorkout ? (
+                      <>
+                        <TouchableOpacity
+                          style={[styles.inlineDetailButton, { backgroundColor: C.card, borderColor: C.border }]}
+                          onPress={() => router.push({ pathname: '/(tabs)/training/workout-detail', params: { scheduledSessionId: todayPlannedSession?.scheduledSessionId } } as never)}
+                          accessibilityRole="button"
+                          accessibilityLabel="View workout details"
+                        >
+                          <Text style={[styles.inlineDetailText, { color: C.text }]}>View Workout Details</Text>
+                          <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.inlineCompletionButton, { backgroundColor: C.primary }]}
+                          onPress={() => {
+                            if (todayPlannedSession?.completedActivityId) {
+                              router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: todayPlannedSession.completedActivityId } } as never);
+                              return;
+                            }
+                            router.push({ pathname: '/(tabs)/activity/manual', params: { scheduledSessionId: todayPlannedSession?.scheduledSessionId, activityType: todayPlannedSession?.activityType, mode: 'complete' } } as never);
+                          }}
+                          accessibilityLabel={todayPlannedSession?.completedActivityId ? 'View completed running activity' : 'Log completion for scheduled running workout'}
+                          accessibilityRole="button"
+                        >
+                          <Text style={[styles.inlineCompletionText, { color: C.onPrimary }]}>
+                            {todayPlannedSession?.completedActivityId ? 'View Completed Activity' : 'Log Completion'}
+                          </Text>
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <TouchableOpacity
+                        style={[styles.inlineDetailButton, { backgroundColor: C.card, borderColor: C.border }]}
+                        onPress={() => router.push({ pathname: '/(tabs)/training/run-creator', params: { editId: selectedCustomRun?.id } } as never)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Edit custom workout"
+                      >
+                        <Text style={[styles.inlineDetailText, { color: C.text }]}>Edit Custom Workout</Text>
+                        <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
               ) : (
-                <Text style={[styles.modeDesc, { color: C.textDim }]}>
-                  No structured workout planned today — starting will track a free run instead.
-                </Text>
+                <View style={[styles.workoutDetailCard, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+                  <Text style={[styles.goalConfigValue, { color: C.text }]}>No workout selected</Text>
+                  <Text style={[styles.workoutDetailText, { color: C.textMuted }]}>
+                    Build a time, distance, pace, and HR-zone workout for outdoor runs or treadmill sessions.
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.inlineCompletionButton, { backgroundColor: C.primary }]}
+                    onPress={() => router.push('/(tabs)/training/run-creator' as never)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Build custom running workout"
+                  >
+                    <Text style={[styles.inlineCompletionText, { color: C.onPrimary }]}>Build Workout</Text>
+                  </TouchableOpacity>
+                </View>
               )
             ) : null}
 
@@ -2470,12 +2924,19 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
         zoneStatus: 'unknown',
         isPaused: false,
       }).catch(console.warn);
+      startStrideWatchRun({
+        workoutInstanceId: useActiveRunStore.getState().workoutInstanceId,
+        title: route.name,
+        environment: 'outdoor',
+        targetZone: null,
+      }).catch(() => undefined);
       await startLocationTracking();
       speakCue(route.segments.length > 0
         ? `Starting route: ${route.name}. ${route.segments.length} interval markers set.`
         : `Starting route: ${route.name}.`, 'navigation');
       onStartRoute();
     } catch (error) {
+      endStrideWatchRun().catch(() => undefined);
       cancelRun();
       Alert.alert('Location unavailable', error instanceof Error ? error.message : 'Could not start GPS tracking.');
     }
@@ -2774,9 +3235,18 @@ export default function RunningScreen() {
   useEffect(() => {
     const parent = navigation.getParent();
     if (!parent) return;
-    parent.setOptions({ tabBarStyle: isRunning ? { display: 'none' } : undefined });
-    return () => parent.setOptions({ tabBarStyle: undefined });
-  }, [isRunning, navigation]);
+    const tabBarStyle = {
+      backgroundColor: C.bg,
+      borderTopColor: C.border,
+      borderTopWidth: 1,
+      height: LAYOUT.tabBarHeight,
+      paddingBottom: LAYOUT.tabBarPadBottom,
+      paddingTop: LAYOUT.tabBarPadTop,
+      paddingHorizontal: LAYOUT.tabBarPadHorizontal,
+    };
+    parent.setOptions({ tabBarStyle: isRunning ? { display: 'none' } : tabBarStyle });
+    return () => parent.setOptions({ tabBarStyle });
+  }, [C.bg, C.border, isRunning, navigation]);
 
   useEffect(() => {
     if (params.tab === 'active') setTab('active');
@@ -2952,6 +3422,74 @@ const styles = StyleSheet.create({
   runSecondaryRow: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  voiceDisclosure: {
+    minHeight: 52,
+    borderWidth: 1,
+    borderRadius: radiusTokens.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  voiceDisclosureText: {
+    fontSize: 13,
+    fontWeight: typographyTokens.weights.bold,
+    marginTop: 3,
+  },
+  voicePanel: {
+    borderWidth: 1,
+    borderRadius: radiusTokens.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  voiceRow: {
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  voiceLabel: {
+    fontSize: 13,
+    fontWeight: typographyTokens.weights.black,
+  },
+  voiceDetail: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 2,
+  },
+  watchStatusPanel: {
+    borderWidth: 1,
+    borderRadius: radiusTokens.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+  },
+  watchStatusLead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  watchStatusTitle: {
+    fontSize: 12,
+    fontWeight: typographyTokens.weights.black,
+  },
+  watchStatusText: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 2,
+  },
+  watchStatusError: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginLeft: 25,
   },
   runStatCell: {
     flex: 1,

@@ -10,6 +10,8 @@ import AchievementShareCard, {
   ACHIEVEMENT_SHARE_VARIANTS,
   type AchievementShareVariant,
 } from '../../../src/components/achievements/AchievementShareCard';
+import RunLevelProgress from '../../../src/achievements/runLevels/RunLevelProgress';
+import { StreakBadge, StreakProgress } from '../../../src/achievements/streaks';
 import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
 import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import { LAYOUT } from '../../../src/constants/layout';
@@ -67,7 +69,7 @@ function elevationThresholdDisplay(item: CumulativeElevationAchievement, units: 
 }
 
 function streakThresholdDisplay(item: StreakAchievement): string {
-  return item.id === 'streak_6_month' ? '6 months' : `${item.thresholdDays} days`;
+  return `${item.thresholdDays} days`;
 }
 
 function shortDate(timeMs: number | undefined): string {
@@ -179,14 +181,15 @@ export default function AchievementHubScreen() {
         showsVerticalScrollIndicator={false}
       >
         <FeatureTourTarget targetId="achievements.hub" style={[s.hero, { backgroundColor: C.card, borderColor: C.primary }]}>
-          <AchievementBadge id={activeLevel?.id ?? 'stride_level_starter'} category="stride_level" size="medium" />
+          <AchievementBadge id={activeLevel?.id ?? 'run_level_foundation'} category="run_level" size="medium" unitSystem={units} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={[s.eyebrow, { color: C.textDim }]}>STRIDE PATH</Text>
             <Text style={[s.heroTitle, { color: C.text }]}>{activeLevel?.title ?? 'Starter'}</Text>
             <Text style={[s.body, { color: C.textMuted }]}>
-              {metersToDisplay(activeLevel?.cumulativeMeters ?? 0, units)} cumulative movement
+              {metersToDisplay(activeLevel?.cumulativeMeters ?? 0, units)} lifetime running
               {nextLevel ? ` - next at ${metersToDisplay(nextLevel.thresholdMeters, units)}` : ' - highest level reached'}
             </Text>
+            <RunLevelProgress currentMeters={activeLevel?.cumulativeMeters ?? 0} units={units} style={s.runLevelProgress} />
           </View>
         </FeatureTourTarget>
 
@@ -221,7 +224,7 @@ export default function AchievementHubScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={item.accessibilityLabel}
               >
-                <AchievementBadge id={item.id} category={item.category} size="small" earned={earned} />
+                <AchievementBadge id={item.id} category={item.category} size="small" earned={earned} unitSystem={units} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={[s.rowTitle, { color: C.text }]}>{item.title}</Text>
                   <Text style={[s.body, { color: C.textMuted }]}>
@@ -247,12 +250,7 @@ export default function AchievementHubScreen() {
             accessibilityRole="button"
             accessibilityLabel="Open Streak achievement ladder"
           >
-            <AchievementBadge
-              id={model.streak.currentTier?.id ?? model.streak.nextMilestone?.id ?? 'streak_3_day'}
-              category="streak"
-              size="medium"
-              earned={Boolean(model.streak.currentTier)}
-            />
+              <StreakBadge days={Math.max(1, model.streak.currentStreakDays)} size={78} compact={model.streak.currentStreakDays >= 1000} />
             <View style={s.streakSummaryCopy}>
               <View style={s.sectionHeaderRow}>
                 <Text style={[s.eyebrow, { color: C.textDim }]}>CURRENT STREAK</Text>
@@ -272,9 +270,7 @@ export default function AchievementHubScreen() {
               <Text style={[s.body, { color: C.textMuted }]}>
                 {model.streak.nextMilestone ? `${model.streak.daysRemaining} days remaining` : 'Highest streak tier reached'}
               </Text>
-              <View style={[s.progressTrack, { backgroundColor: C.cardAlt }]}>
-                <View style={[s.progressFill, { width: `${Math.round(model.streak.progressRatio * 100)}%` as `${number}%`, backgroundColor: C.primary }]} />
-              </View>
+              <StreakProgress days={model.streak.currentStreakDays} />
             </View>
           </TouchableOpacity>
 
@@ -293,7 +289,7 @@ export default function AchievementHubScreen() {
                       },
                     ]}
                   >
-                    <AchievementBadge id={item.id} category="streak" size="small" earned={item.complete} />
+                    <AchievementBadge id={item.id} category="streak" size="small" earned={item.complete} unitSystem={units} remainingDays={item.remainingDays} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={[s.rowTitle, { color: C.text }]}>{item.displayName}</Text>
                       <Text style={[s.body, { color: C.textMuted }]}>{streakThresholdDisplay(item)}</Text>
@@ -401,7 +397,7 @@ export default function AchievementHubScreen() {
             <Text style={[s.sectionTitle, { color: C.text }]}>Personal Records</Text>
             {model.personalRecords.map(record => (
               <View key={record.id} style={[s.row, { borderColor: C.border }]}>
-                <AchievementBadge id={record.id} category="personal_record" size="small" />
+                <AchievementBadge id={record.id} category="personal_record" size="small" unitSystem={units} />
                 <View style={{ flex: 1 }}>
                   <Text style={[s.rowTitle, { color: C.text }]}>{record.title}</Text>
                   <Text style={[s.body, { color: C.textMuted }]}>
@@ -428,7 +424,7 @@ export default function AchievementHubScreen() {
             <Text style={[s.sectionTitle, { color: C.text }]}>Monthly Distance</Text>
             {model.monthlyMilestones.slice(-6).reverse().map(milestone => (
               <View key={`${milestone.id}:${milestone.monthKey}`} style={[s.row, { borderColor: C.border }]}>
-                <AchievementBadge id={milestone.id} category="monthly_distance" size="small" />
+                <AchievementBadge id={milestone.id} category="monthly_distance" size="small" unitSystem={units} />
                 <View style={{ flex: 1 }}>
                   <Text style={[s.rowTitle, { color: C.text }]}>{Math.round(milestone.thresholdMeters / 1000)}K Month</Text>
                   <Text style={[s.body, { color: C.textMuted }]}>{milestone.monthKey} - {metersToDisplay(milestone.distanceMeters, units)}</Text>
@@ -443,7 +439,7 @@ export default function AchievementHubScreen() {
           <Text style={[s.sectionTitle, { color: C.text }]}>Challenges</Text>
           {model.challengeProgress.map(item => (
             <View key={item.definition.id} style={[s.row, { borderColor: C.border }]}>
-              <AchievementBadge id={item.definition.id} category="challenge" size="small" earned={item.complete} />
+              <AchievementBadge id={item.definition.id} category="challenge" size="small" earned={item.complete} unitSystem={units} />
               <View style={{ flex: 1 }}>
                 <Text style={[s.rowTitle, { color: C.text }]}>{item.definition.title}</Text>
                 <Text style={[s.body, { color: C.textMuted }]}>
@@ -467,7 +463,7 @@ export default function AchievementHubScreen() {
                 const earned = earnedIds.has(definition.id);
                 return (
                   <View key={definition.id} style={[s.badgeRow, { backgroundColor: earned ? C.primaryDim : C.cardAlt, borderColor: earned ? C.primary : C.border }]}>
-                    <AchievementBadge id={definition.id} category={definition.category} size="small" earned={earned} />
+                    <AchievementBadge id={definition.id} category={definition.category} size="small" earned={earned} unitSystem={units} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={[s.rowTitle, { color: C.text }]}>{definition.title}</Text>
                       <Text style={[s.body, { color: C.textMuted }]}>{definition.description}</Text>
@@ -508,6 +504,7 @@ export default function AchievementHubScreen() {
               <AchievementShareCard
                 achievement={selectedShareDefinition}
                 variant={shareVariant}
+                units={units}
                 detail={
                   selectedElevationShare
                     ? `${elevationThresholdDisplay(selectedElevationShare, units)} ${selectedElevationShare.measurementDescriptor}`
@@ -543,6 +540,7 @@ const s = StyleSheet.create({
   safe: { flex: 1 },
   content: { paddingHorizontal: 18 },
   hero: { borderWidth: 1.5, borderRadius: 16, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'center', marginBottom: 14 },
+  runLevelProgress: { marginTop: 10 },
   chevrons: { fontSize: 17, fontWeight: '900', letterSpacing: 0 },
   chevronsSmall: { fontSize: 13, fontWeight: '900', letterSpacing: 0 },
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },

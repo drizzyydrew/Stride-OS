@@ -180,7 +180,7 @@ export default function ActivityScreen() {
             onPress={() => router.push('/(tabs)/activity/start' as never)}
           >
             <Ionicons name="navigate-outline" size={18} color={C.onPrimary} />
-            <Text style={[s.actionText, { color: C.onPrimary }]}>Track Outdoor</Text>
+            <Text style={[s.actionText, { color: C.onPrimary }]}>Track Workout</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[s.action, { backgroundColor: C.card, borderColor: C.border }]}

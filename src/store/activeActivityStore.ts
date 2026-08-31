@@ -223,7 +223,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
             });
             if (decision.action === 'auto_pause') {
               set({ isPaused: true, pausedAt: point.timestamp, autoPauseState: decision.state });
-              if (useSettingsStore.getState().announceAutoPause) enqueueVoiceCue('Workout paused.', 'interval');
+              if (useSettingsStore.getState().announceAutoPause) enqueueVoiceCue('Pausing workout.', 'interval');
               return;
             }
             if (state.isPaused) {
@@ -236,7 +236,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
                   aggregate: { ...state.aggregate, points: [...state.aggregate.points, point] },
                   autoPauseState: decision.state,
                 });
-                if (useSettingsStore.getState().announceAutoResume) enqueueVoiceCue('Workout resumed.', 'interval');
+                if (useSettingsStore.getState().announceAutoResume) enqueueVoiceCue('Resuming workout.', 'interval');
               } else {
                 set({ autoPauseState: decision.state });
               }

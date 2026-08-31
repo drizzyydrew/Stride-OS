@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import {
+  Image,
   ImageBackground,
   PanResponder,
   StyleSheet,
@@ -9,8 +10,16 @@ import {
   type LayoutChangeEvent,
   type ViewStyle,
 } from 'react-native';
-import Svg, { Circle, Polyline, Rect } from 'react-native-svg';
+import Svg, { Circle, Polyline } from 'react-native-svg';
 
+import { RunLevelBadge, runLevelSlugFromId } from '../../achievements/runLevels';
+import { firstAchievementDefinitionFromAchievementId } from '../../achievements/firsts';
+import { strengthAchievementDefinitionFromAchievementId } from '../../achievements/strength';
+import { recoveryAchievementDefinitionFromAchievementId } from '../../achievements/recovery';
+import { lifetimeDistanceCyclingDefinitionFromAchievementId } from '../../achievements/lifetimeDistanceCycling';
+import { lifetimeDistanceRunningDefinitionFromAchievementId } from '../../achievements/lifetimeDistanceRunning';
+import { streakDefinitionFromAchievementId } from '../../achievements/streaks';
+import { weeklyDistanceDefinitionFromAchievementId } from '../../achievements/weeklyDistance';
 import AchievementBadge from '../achievements/AchievementBadge';
 import type { UnitSystem } from '../../store/settingsStore';
 import type { Activity } from '../../types/activity';
@@ -29,6 +38,7 @@ export type ShareStudioVariant = 'minimal_card' | 'transparent_overlay' | 'edito
 export type ShareStudioFormat = 'square' | 'story';
 
 type ToggleKey = 'route' | 'distance' | 'time' | 'pace' | 'elevation' | 'achievement' | 'brand';
+const SHARE_SAFE_MARGIN = 38;
 
 type Props = {
   activity?: Activity;
@@ -104,11 +114,11 @@ function MovableLayer({
       start.current = offset;
     },
     onPanResponderMove: (_, gesture) => {
-      const maxX = Math.max(0, bounds.width - 64);
-      const maxY = Math.max(0, bounds.height - 64);
+      const maxX = Math.max(SHARE_SAFE_MARGIN, bounds.width - 64 - SHARE_SAFE_MARGIN);
+      const maxY = Math.max(SHARE_SAFE_MARGIN, bounds.height - 64 - SHARE_SAFE_MARGIN);
       setOffset({
-        x: Math.max(0, Math.min(maxX, start.current.x + gesture.dx)),
-        y: Math.max(0, Math.min(maxY, start.current.y + gesture.dy)),
+        x: Math.max(SHARE_SAFE_MARGIN, Math.min(maxX, start.current.x + gesture.dx)),
+        y: Math.max(SHARE_SAFE_MARGIN, Math.min(maxY, start.current.y + gesture.dy)),
       });
     },
   }), [bounds.height, bounds.width, offset]);
@@ -152,6 +162,17 @@ function StatPill({ label, value }: { label: string; value: string }) {
   );
 }
 
+function StrideOSBrandMark() {
+  return (
+    <Image
+      source={require('../../../assets/images/splash-icon.png')}
+      style={styles.logoMark}
+      resizeMode="contain"
+      accessibilityIgnoresInvertColors
+    />
+  );
+}
+
 export default function ShareStudio({
   activity,
   achievement,
@@ -173,15 +194,26 @@ export default function ShareStudio({
     brand: true,
   });
   const [layoutEpoch, setLayoutEpoch] = useState(0);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const routeEnabled = enabled.route && activity && activityHasShareableRoute(activity);
   const isOverlay = variant === 'transparent_overlay';
   const isStory = format === 'story';
   const activityTitle = activity ? displayLabel(activity.subtype === 'run_walk' ? 'run_walk' : activity.activityType).toUpperCase() : null;
+  const runLevelSlug = achievement ? runLevelSlugFromId(achievement.id) : null;
+  const lifetimeRunDefinition = achievement ? lifetimeDistanceRunningDefinitionFromAchievementId(achievement.id) : null;
+  const lifetimeCyclingDefinition = achievement ? lifetimeDistanceCyclingDefinitionFromAchievementId(achievement.id) : null;
+  const weeklyDistanceDefinition = achievement ? weeklyDistanceDefinitionFromAchievementId(achievement.id) : null;
+  const streakDefinition = achievement ? streakDefinitionFromAchievementId(achievement.id) : null;
+  const firstDefinition = achievement ? firstAchievementDefinitionFromAchievementId(achievement.id) : null;
+  const strengthDefinition = achievement ? strengthAchievementDefinitionFromAchievementId(achievement.id) : null;
+  const recoveryDefinition = achievement ? recoveryAchievementDefinitionFromAchievementId(achievement.id) : null;
+  const canonicalBadgeDefinition = lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition;
   const bg = isOverlay ? 'transparent' : variant === 'editorial_card' ? '#F3F1EB' : '#0E0E0F';
   const foregroundDark = variant === 'editorial_card';
   const selectedMetrics = (['distance', 'time', 'pace', 'elevation'] as ToggleKey[])
     .map(key => ({ key, value: enabled[key] ? metricValue(activity, units, key) : null }))
     .filter((item): item is { key: ToggleKey; value: string } => Boolean(item.value));
+  const selectedCount = keys.filter(key => enabled[key]).length;
 
   const canvas = (
     <View
@@ -198,17 +230,33 @@ export default function ShareStudio({
       {photoUri && !isOverlay ? <View style={styles.photoScrim} /> : null}
       {routeEnabled ? <View style={styles.routeLayer}><RouteOverlay activity={activity} light={foregroundDark} /></View> : null}
       {enabled.brand ? (
-        <MovableLayer initial={{ x: 24, y: 24 }} style={styles.brandLayer}>
-          <Text style={[styles.brand, foregroundDark ? styles.darkInk : styles.lightInk]}>STRIDEOS</Text>
-          <Text style={[styles.chevrons, foregroundDark ? styles.darkAccent : styles.lightAccent]}>{'>>>>>'}</Text>
+        <MovableLayer initial={{ x: SHARE_SAFE_MARGIN, y: SHARE_SAFE_MARGIN }} style={styles.brandLayer}>
+          <StrideOSBrandMark />
         </MovableLayer>
       ) : null}
       {achievement && enabled.achievement ? (
         <MovableLayer initial={{ x: isStory ? 78 : 54, y: isStory ? 168 : 116 }} style={styles.badgeLayer}>
-          <AchievementBadge id={achievement.id} category={achievement.category} earned={achievement.state !== 'locked'} size="large" />
+          {runLevelSlug ? (
+            <RunLevelBadge
+              level={runLevelSlug}
+              state={isOverlay ? 'share-transparent' : achievement.state === 'locked' ? 'locked' : 'share-opaque'}
+              size={156}
+              remainingMeters={achievement.remaining}
+              units={units}
+            />
+          ) : (
+            <AchievementBadge
+              id={achievement.id}
+              category={achievement.category}
+              earned={achievement.state !== 'locked'}
+              size="large"
+              unitSystem={units}
+              badgeState={canonicalBadgeDefinition ? (isOverlay ? 'share-transparent' : achievement.state === 'locked' ? 'locked' : 'share-opaque') : undefined}
+            />
+          )}
         </MovableLayer>
       ) : null}
-      <MovableLayer initial={{ x: 26, y: isStory ? 470 : 330 }} style={styles.titleLayer}>
+      <MovableLayer initial={{ x: SHARE_SAFE_MARGIN, y: isStory ? 470 : 330 }} style={styles.titleLayer}>
         <Text style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent]}>
           {achievement ? 'ACHIEVEMENT UNLOCKED' : activityTitle ? 'ACTIVITY COMPLETE' : 'STRIDEOS'}
         </Text>
@@ -218,7 +266,7 @@ export default function ShareStudio({
         {achievement ? <Text style={[styles.support, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{achievement.displayTarget}</Text> : null}
       </MovableLayer>
       {selectedMetrics.length ? (
-        <MovableLayer initial={{ x: 24, y: isStory ? 690 : 522 }} style={styles.metricsLayer}>
+        <MovableLayer initial={{ x: SHARE_SAFE_MARGIN, y: isStory ? 690 : 522 }} style={styles.metricsLayer}>
           {selectedMetrics.slice(0, 4).map(item => (
             <StatPill key={item.key} label={toggleLabel(item.key, activity).toUpperCase()} value={item.value} />
           ))}
@@ -229,25 +277,18 @@ export default function ShareStudio({
 
   return (
     <View style={styles.shell}>
-      <View style={styles.toggleRow}>
-        {keys.map(key => {
-          const active = enabled[key];
-          return (
-            <TouchableOpacity
-              key={key}
-              style={[styles.toggle, active ? styles.toggleOn : styles.toggleOff]}
-              onPress={() => {
-                if (key === 'route' && !active) onRoutePrivacyNotice?.(ROUTE_PRIVACY_NOTE);
-                setEnabled(current => ({ ...current, [key]: !current[key] }));
-              }}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={`${toggleLabel(key, activity)} ${active ? 'enabled' : 'disabled'}`}
-            >
-              <Text style={[styles.toggleText, active ? styles.toggleTextOn : styles.toggleTextOff]}>{toggleLabel(key, activity)}</Text>
-            </TouchableOpacity>
-          );
-        })}
+      <View style={styles.controlBar}>
+        <TouchableOpacity
+          style={[styles.detailsButton, detailsOpen ? styles.toggleOn : styles.toggleOff]}
+          onPress={() => setDetailsOpen(open => !open)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: detailsOpen }}
+          accessibilityLabel="Share detail selector"
+        >
+          <Text style={[styles.toggleText, detailsOpen ? styles.toggleTextOn : styles.toggleTextOff]}>
+            Share Details · {selectedCount}/{keys.length}
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.toggle, styles.resetToggle]}
           onPress={() => setLayoutEpoch(current => current + 1)}
@@ -257,6 +298,59 @@ export default function ShareStudio({
           <Text style={[styles.toggleText, styles.toggleTextOff]}>Reset</Text>
         </TouchableOpacity>
       </View>
+      {detailsOpen ? (
+        <View style={styles.detailsMenu}>
+          <View style={styles.detailsActions}>
+            <TouchableOpacity
+              style={[styles.smallAction, styles.toggleOn]}
+              onPress={() => {
+                if (keys.includes('route') && !enabled.route) onRoutePrivacyNotice?.(ROUTE_PRIVACY_NOTE);
+                setEnabled(current => ({
+                  ...current,
+                  ...Object.fromEntries(keys.map(key => [key, true])),
+                }));
+              }}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.toggleText, styles.toggleTextOn]}>Select All</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.smallAction, styles.toggleOff]}
+              onPress={() => setEnabled(current => ({
+                ...current,
+                route: false,
+                distance: false,
+                time: false,
+                pace: false,
+                elevation: false,
+                achievement: false,
+              }))}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.toggleText, styles.toggleTextOff]}>Clear</Text>
+            </TouchableOpacity>
+          </View>
+          {keys.map(key => {
+            const active = enabled[key];
+            return (
+              <TouchableOpacity
+                key={key}
+                style={[styles.detailsRow, active && styles.detailsRowOn]}
+                onPress={() => {
+                  if (key === 'route' && !active) onRoutePrivacyNotice?.(ROUTE_PRIVACY_NOTE);
+                  setEnabled(current => ({ ...current, [key]: !current[key] }));
+                }}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: active }}
+                accessibilityLabel={`${toggleLabel(key, activity)} ${active ? 'enabled' : 'disabled'}`}
+              >
+                <Text style={[styles.detailsCheck, active ? styles.toggleTextOn : styles.toggleTextOff]}>{active ? '✓' : ''}</Text>
+                <Text style={[styles.toggleText, active ? styles.toggleTextOn : styles.toggleTextOff]}>{toggleLabel(key, activity)}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ) : null}
       <View key={layoutEpoch}>{canvas}</View>
       {keys.includes('route') ? <Text style={styles.privacy}>{routeEnabled ? ROUTE_PRIVACY_NOTE : 'Route is off by default.'}</Text> : null}
       {variant === 'transparent_overlay' ? <Text style={styles.privacy}>Transparent overlay export uses no card background.</Text> : null}
@@ -266,11 +360,18 @@ export default function ShareStudio({
 
 const styles = StyleSheet.create({
   shell: { gap: 10 },
-  toggleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  controlBar: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  detailsButton: { flex: 1, minHeight: 38, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
+  detailsMenu: { borderRadius: 12, borderWidth: 1, borderColor: 'rgba(94,126,146,0.34)', backgroundColor: 'rgba(14,14,15,0.92)', padding: 10, gap: 8 },
+  detailsActions: { flexDirection: 'row', gap: 8 },
+  smallAction: { minHeight: 32, borderRadius: 9, borderWidth: 1, paddingHorizontal: 11, alignItems: 'center', justifyContent: 'center' },
+  detailsRow: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  detailsRowOn: { backgroundColor: '#9DB2A0', borderRadius: 8, paddingHorizontal: 8 },
+  detailsCheck: { width: 18, height: 18, borderRadius: 5, borderWidth: 1, borderColor: 'rgba(220,201,177,0.34)', textAlign: 'center', fontSize: 12, lineHeight: 17, fontWeight: '900' },
   toggle: { minHeight: 34, borderRadius: 10, borderWidth: 1, paddingHorizontal: 11, alignItems: 'center', justifyContent: 'center' },
-  toggleOn: { backgroundColor: '#DCC9B1', borderColor: '#DCC9B1' },
-  toggleOff: { backgroundColor: 'rgba(243,241,235,0.08)', borderColor: 'rgba(243,241,235,0.18)' },
-  resetToggle: { backgroundColor: 'rgba(14,14,15,0.82)', borderColor: 'rgba(220,201,177,0.34)' },
+  toggleOn: { backgroundColor: '#9DB2A0', borderColor: '#9DB2A0' },
+  toggleOff: { backgroundColor: 'rgba(243,241,235,0.08)', borderColor: 'rgba(94,126,146,0.32)' },
+  resetToggle: { backgroundColor: 'rgba(14,14,15,0.82)', borderColor: 'rgba(94,126,146,0.42)' },
   toggleText: { fontSize: 11, fontWeight: '900' },
   toggleTextOn: { color: '#0E0E0F' },
   toggleTextOff: { color: '#DCC9B1' },
@@ -281,16 +382,15 @@ const styles = StyleSheet.create({
   photoScrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.26)' },
   routeLayer: { ...StyleSheet.absoluteFill },
   movable: { position: 'absolute' },
-  brandLayer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  brand: { fontSize: 11, fontWeight: '900', letterSpacing: 2 },
-  chevrons: { fontSize: 14, fontWeight: '900', letterSpacing: 0 },
+  brandLayer: { alignItems: 'center', justifyContent: 'center' },
+  logoMark: { width: 112, height: 112, borderRadius: 6 },
   badgeLayer: { alignItems: 'center', justifyContent: 'center' },
-  titleLayer: { right: 20, gap: 4 },
+  titleLayer: { right: SHARE_SAFE_MARGIN, gap: 4 },
   kicker: { fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
   title: { fontSize: 39, lineHeight: 42, fontWeight: '900', letterSpacing: 0 },
   support: { fontSize: 15, lineHeight: 20, fontWeight: '800' },
-  metricsLayer: { right: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  statPill: { minWidth: 116, borderRadius: 8, padding: 10, backgroundColor: 'rgba(14,14,15,0.68)', borderWidth: 1, borderColor: 'rgba(220,201,177,0.32)' },
+  metricsLayer: { right: SHARE_SAFE_MARGIN, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  statPill: { minWidth: 116, borderRadius: 8, padding: 10, backgroundColor: 'rgba(14,14,15,0.68)', borderWidth: 1, borderColor: 'rgba(157,178,160,0.34)' },
   statValue: { color: '#F3F1EB', fontSize: 18, fontWeight: '900' },
   statLabel: { color: '#DCC9B1', fontSize: 9, fontWeight: '900', letterSpacing: 0.8, marginTop: 4 },
   lightInk: { color: '#F3F1EB' },

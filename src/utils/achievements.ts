@@ -1,4 +1,13 @@
 import type { Activity } from '../types/activity';
+import type { AssessmentResult } from '../types/assessment';
+import { FIRST_ACHIEVEMENT_DEFINITIONS } from '../achievements/firsts/firstsDefinitions';
+import { LIFETIME_DISTANCE_CYCLING_DEFINITIONS } from '../achievements/lifetimeDistanceCycling/lifetimeDistanceCyclingDefinitions';
+import { LIFETIME_DISTANCE_RUNNING_DEFINITIONS } from '../achievements/lifetimeDistanceRunning/lifetimeDistanceRunningDefinitions';
+import { RECOVERY_ACHIEVEMENT_DEFINITIONS } from '../achievements/recovery/recoveryDefinitions';
+import { RUN_LEVEL_DEFINITIONS } from '../achievements/runLevels/runLevelDefinitions';
+import { STRENGTH_REGISTRY_DEFINITIONS } from '../achievements/strength/strengthDefinitions';
+import { STREAK_MILESTONE_DEFINITIONS } from '../achievements/streaks/streakDefinitions';
+import { WEEKLY_DISTANCE_DEFINITIONS } from '../achievements/weeklyDistance/weeklyDistanceDefinitions';
 import type { ScheduledSession } from './scheduledSessions';
 
 export type AchievementId = string;
@@ -206,137 +215,15 @@ export const CHALLENGE_DEFINITIONS: ChallengeDefinition[] = [
   { id: 'challenge_strength_run_balance', title: 'Strength + Run Balance', description: 'Pair running or walking with strength support in the same week.', category: 'balance', requiredWeeks: 1 },
 ];
 
-export const STRIDE_LEVEL_DEFINITIONS: Omit<StrideLevel, 'cumulativeMeters' | 'complete'>[] = [
-  { id: 'stride_level_starter', title: 'Starter', tier: 1, thresholdMeters: 0 },
-  { id: 'stride_level_pacesetter', title: 'Pacesetter', tier: 2, thresholdMeters: 50_000 },
-  { id: 'stride_level_builder', title: 'Builder', tier: 3, thresholdMeters: 150_000 },
-  { id: 'stride_level_endurer', title: 'Endurer', tier: 4, thresholdMeters: 400_000 },
-  { id: 'stride_level_advancer', title: 'Advancer', tier: 5, thresholdMeters: 800_000 },
-  { id: 'stride_level_elite', title: 'Elite', tier: 6, thresholdMeters: 1_600_000 },
-  { id: 'stride_level_icon', title: 'Icon', tier: 7, thresholdMeters: 3_200_000 },
-];
+export const STRIDE_LEVEL_DEFINITIONS: Omit<StrideLevel, 'cumulativeMeters' | 'complete'>[] =
+  RUN_LEVEL_DEFINITIONS.map(level => ({
+    id: level.id,
+    title: level.title,
+    tier: level.tier,
+    thresholdMeters: level.thresholdMeters,
+  }));
 
-export const STREAK_ACHIEVEMENTS: StreakAchievementDefinition[] = [
-  {
-    id: 'streak_3_day',
-    slug: '3-day',
-    displayName: '3-Day Streak',
-    thresholdDays: 3,
-    milestoneLabel: '3 days',
-    badgeText: '3',
-    tier: 1,
-    artworkPath: 'assets/achievements/streak/badges/streak-3-day.svg',
-    lockedArtworkPath: 'assets/achievements/streak/badges/streak-3-day-locked.svg',
-    dominantHeatColor: '#7A1717',
-    shareAssetPaths: {
-      cleanDark: 'assets/achievements/streak/share/streak-3-day-clean.svg',
-      overlay: 'assets/achievements/streak/share/streak-3-day-overlay.svg',
-    },
-    sortOrder: 1,
-  },
-  {
-    id: 'streak_1_week',
-    slug: '1-week',
-    displayName: '1-Week Streak',
-    thresholdDays: 7,
-    milestoneLabel: '7 days',
-    badgeText: '7',
-    tier: 2,
-    artworkPath: 'assets/achievements/streak/badges/streak-1-week.svg',
-    lockedArtworkPath: 'assets/achievements/streak/badges/streak-1-week-locked.svg',
-    dominantHeatColor: '#B3221C',
-    shareAssetPaths: {
-      cleanDark: 'assets/achievements/streak/share/streak-1-week-clean.svg',
-      overlay: 'assets/achievements/streak/share/streak-1-week-overlay.svg',
-    },
-    sortOrder: 2,
-  },
-  {
-    id: 'streak_30_day',
-    slug: '30-day',
-    displayName: '30-Day Streak',
-    thresholdDays: 30,
-    milestoneLabel: '30 days',
-    badgeText: '30',
-    tier: 3,
-    artworkPath: 'assets/achievements/streak/badges/streak-30-day.svg',
-    lockedArtworkPath: 'assets/achievements/streak/badges/streak-30-day-locked.svg',
-    dominantHeatColor: '#D9551D',
-    shareAssetPaths: {
-      cleanDark: 'assets/achievements/streak/share/streak-30-day-clean.svg',
-      overlay: 'assets/achievements/streak/share/streak-30-day-overlay.svg',
-    },
-    sortOrder: 3,
-  },
-  {
-    id: 'streak_50_day',
-    slug: '50-day',
-    displayName: '50-Day Streak',
-    thresholdDays: 50,
-    milestoneLabel: '50 days',
-    badgeText: '50',
-    tier: 4,
-    artworkPath: 'assets/achievements/streak/badges/streak-50-day.svg',
-    lockedArtworkPath: 'assets/achievements/streak/badges/streak-50-day-locked.svg',
-    dominantHeatColor: '#F29A20',
-    shareAssetPaths: {
-      cleanDark: 'assets/achievements/streak/share/streak-50-day-clean.svg',
-      overlay: 'assets/achievements/streak/share/streak-50-day-overlay.svg',
-    },
-    sortOrder: 4,
-  },
-  {
-    id: 'streak_60_day',
-    slug: '60-day',
-    displayName: '60-Day Streak',
-    thresholdDays: 60,
-    milestoneLabel: '60 days',
-    badgeText: '60',
-    tier: 5,
-    artworkPath: 'assets/achievements/streak/badges/streak-60-day.svg',
-    lockedArtworkPath: 'assets/achievements/streak/badges/streak-60-day-locked.svg',
-    dominantHeatColor: '#FFD449',
-    shareAssetPaths: {
-      cleanDark: 'assets/achievements/streak/share/streak-60-day-clean.svg',
-      overlay: 'assets/achievements/streak/share/streak-60-day-overlay.svg',
-    },
-    sortOrder: 5,
-  },
-  {
-    id: 'streak_90_day',
-    slug: '90-day',
-    displayName: '90-Day Streak',
-    thresholdDays: 90,
-    milestoneLabel: '90 days',
-    badgeText: '90',
-    tier: 6,
-    artworkPath: 'assets/achievements/streak/badges/streak-90-day.svg',
-    lockedArtworkPath: 'assets/achievements/streak/badges/streak-90-day-locked.svg',
-    dominantHeatColor: '#FFF1BA',
-    shareAssetPaths: {
-      cleanDark: 'assets/achievements/streak/share/streak-90-day-clean.svg',
-      overlay: 'assets/achievements/streak/share/streak-90-day-overlay.svg',
-    },
-    sortOrder: 6,
-  },
-  {
-    id: 'streak_6_month',
-    slug: '6-month',
-    displayName: '6-Month Streak',
-    thresholdDays: 183,
-    milestoneLabel: '6 months',
-    badgeText: '6M',
-    tier: 7,
-    artworkPath: 'assets/achievements/streak/badges/streak-6-month.svg',
-    lockedArtworkPath: 'assets/achievements/streak/badges/streak-6-month-locked.svg',
-    dominantHeatColor: '#FFFDF3',
-    shareAssetPaths: {
-      cleanDark: 'assets/achievements/streak/share/streak-6-month-clean.svg',
-      overlay: 'assets/achievements/streak/share/streak-6-month-overlay.svg',
-    },
-    sortOrder: 7,
-  },
-];
+export const STREAK_ACHIEVEMENTS: StreakAchievementDefinition[] = STREAK_MILESTONE_DEFINITIONS;
 
 const FEET_PER_METER = 3.28084;
 
@@ -588,6 +475,13 @@ export const BUILD57_ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     criteria: 'Sum completed running distance by calendar month using canonical meters.',
     category: 'monthly_distance' as const,
   })),
+  ...WEEKLY_DISTANCE_DEFINITIONS.map(definition => ({
+    id: definition.id,
+    title: `${definition.milestoneLabel} Per Week`,
+    description: `${definition.thresholdKm} kilometers completed in one canonical local reporting week.`,
+    criteria: 'Sum completed running distance by canonical local Monday-start reporting week.',
+    category: 'weekly_distance' as const,
+  })),
   { id: 'three_training_days_week', title: 'Three Training Days', description: 'Three completed training days in a calendar week.', criteria: 'Three distinct completed training dates in the same week.', category: 'consistency' },
   { id: 'three_week_consistency', title: '3-Week Consistency', description: 'Appropriate training consistency for three consecutive weeks.', criteria: 'At least three completed training days in each of three consecutive weeks.', category: 'consistency' },
   { id: 'four_week_consistency', title: '4-Week Consistency', description: 'Appropriate training consistency for four consecutive weeks.', criteria: 'At least three completed training days in each of four consecutive weeks.', category: 'consistency' },
@@ -601,12 +495,35 @@ export const BUILD57_ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     criteria: `Maintain schedule adherence for ${item.milestoneLabel}; planned rest, recovery, taper, and confirmed adaptations preserve the streak.`,
     category: 'streak' as const,
   })),
+  ...FIRST_ACHIEVEMENT_DEFINITIONS.map(definition => ({
+    id: definition.id,
+    title: definition.title,
+    description: definition.description,
+    criteria: definition.criteria,
+    category: 'firsts' as const,
+  })),
   ...STRIDE_LEVEL_DEFINITIONS.map(level => ({
     id: level.id,
-    title: `Stride Level: ${level.title}`,
-    description: 'Long-term distance progression on the Stride Path.',
-    criteria: `Reach ${Math.round(level.thresholdMeters / 1000)} kilometers of cumulative running, walking, hiking, or cycling distance.`,
-    category: 'stride_level' as const,
+    title: level.title,
+    description: 'Lifetime running progression on the StrideOS run path.',
+    criteria: level.thresholdMeters === 0
+      ? 'Start the StrideOS run path.'
+      : `Reach ${Math.round(level.thresholdMeters / 1609.344).toLocaleString()} miles of lifetime running distance.`,
+    category: 'run_level' as const,
+  })),
+  ...LIFETIME_DISTANCE_RUNNING_DEFINITIONS.map(definition => ({
+    id: definition.id,
+    title: `${definition.milestoneLabel} MI`,
+    description: 'Lifetime running distance milestone.',
+    criteria: `Reach ${definition.milestoneLabel} miles of lifetime running distance using completed running activities.`,
+    category: 'lifetime_running' as const,
+  })),
+  ...LIFETIME_DISTANCE_CYCLING_DEFINITIONS.map(definition => ({
+    id: definition.id,
+    title: `${definition.milestoneLabel} MI`,
+    description: 'Lifetime cycling distance milestone.',
+    criteria: `Reach ${definition.milestoneLabel} miles of lifetime cycling distance using completed cycling activities.`,
+    category: 'lifetime_cycling' as const,
   })),
   ...CUMULATIVE_ELEVATION_ACHIEVEMENTS.map(item => ({
     id: item.id,
@@ -614,6 +531,20 @@ export const BUILD57_ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     description: `${item.imperialDisplay} ${item.measurementDescriptor.toLowerCase()}.`,
     criteria: `Reach ${item.imperialDisplay} of eligible cumulative elevation gain using stored activity elevation data.`,
     category: 'cumulative_elevation' as const,
+  })),
+  ...STRENGTH_REGISTRY_DEFINITIONS.map(definition => ({
+    id: definition.id,
+    title: definition.title,
+    description: definition.description,
+    criteria: definition.criteria,
+    category: 'strength' as const,
+  })),
+  ...RECOVERY_ACHIEVEMENT_DEFINITIONS.map(definition => ({
+    id: definition.id,
+    title: definition.title,
+    description: definition.description,
+    criteria: definition.criteria,
+    category: 'recovery' as const,
   })),
   ...CHALLENGE_DEFINITIONS.map(challenge => ({
     id: challenge.id,
@@ -638,6 +569,76 @@ function completedActivities(activities: readonly Activity[]): Activity[] {
 function distanceMeters(activity: Activity): number {
   const value = activity.metrics.distanceMeters ?? 0;
   return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function isLifetimeRunningActivity(activity: Activity): boolean {
+  return activity.activityType === 'running' || activity.subtype === 'run_walk';
+}
+
+function isLifetimeCyclingActivity(activity: Activity): boolean {
+  return activity.activityType === 'cycling' || activity.activityType === 'indoor_cycling';
+}
+
+function isRunWalkActivity(activity: Activity): boolean {
+  return activity.subtype === 'run_walk' || Boolean(activity.metrics.runWalkIntervals?.length);
+}
+
+function isStructuredActivity(activity: Activity): boolean {
+  return Boolean(activity.scheduledSessionId || activity.metrics.runWalkIntervals?.length || activity.workoutKit);
+}
+
+function hasCompletedRoute(activity: Activity): boolean {
+  return Boolean(activity.metrics.routeId) || (activity.metrics.routeCoordinates?.length ?? 0) >= 2;
+}
+
+function isAdaptedCompletion(activity: Activity): boolean {
+  return ['modified', 'partial', 'stopped_early', 'equivalent_substitute'].includes(activity.completionClassification ?? '');
+}
+
+function completedLifetimeRunningActivities(activities: readonly Activity[]): Activity[] {
+  const seenHealthKit = new Set<string>();
+  const trackedTimes = activities
+    .filter(activity => activity.source === 'tracked')
+    .map(activity => `${activity.startTime}:${activity.endTime ?? activity.startTime}`);
+
+  return completedActivities(activities)
+    .filter(isLifetimeRunningActivity)
+    .filter(activity => {
+      const uuid = activity.healthKit?.workoutUuid;
+      if (!uuid) return true;
+      const key = `${activity.healthKit?.sourceBundleIdentifier ?? ''}:${uuid}`;
+      if (seenHealthKit.has(key)) return false;
+      seenHealthKit.add(key);
+      if (!activity.healthKit?.importedByStrideOS) return true;
+      return !trackedTimes.some(time => {
+        const [start, end] = time.split(':').map(Number);
+        return Math.abs(activity.startTime - start) < 30_000
+          && Math.abs((activity.endTime ?? activity.startTime) - end) < 30_000;
+      });
+    });
+}
+
+function completedLifetimeCyclingActivities(activities: readonly Activity[]): Activity[] {
+  const seenHealthKit = new Set<string>();
+  const trackedTimes = activities
+    .filter(activity => activity.source === 'tracked')
+    .map(activity => `${activity.startTime}:${activity.endTime ?? activity.startTime}`);
+
+  return completedActivities(activities)
+    .filter(isLifetimeCyclingActivity)
+    .filter(activity => {
+      const uuid = activity.healthKit?.workoutUuid;
+      if (!uuid) return true;
+      const key = `${activity.healthKit?.sourceBundleIdentifier ?? ''}:${uuid}`;
+      if (seenHealthKit.has(key)) return false;
+      seenHealthKit.add(key);
+      if (!activity.healthKit?.importedByStrideOS) return true;
+      return !trackedTimes.some(time => {
+        const [start, end] = time.split(':').map(Number);
+        return Math.abs(activity.startTime - start) < 30_000
+          && Math.abs((activity.endTime ?? activity.startTime) - end) < 30_000;
+      });
+    });
 }
 
 function durationSeconds(activity: Activity): number {
@@ -786,6 +787,37 @@ function latestConsecutiveQualifiedWeeks(activities: readonly Activity[], now: n
   return count;
 }
 
+function countConsecutiveStrengthWeeks(activities: readonly Activity[]): number {
+  const weeks = [...new Set(completedActivities(activities)
+    .filter(activity => activity.activityType === 'strength')
+    .map(activity => weekKey(activity.startTime)))]
+    .sort();
+  if (!weeks.length) return 0;
+  let best = 1;
+  let current = 1;
+  for (let index = 1; index < weeks.length; index += 1) {
+    const previous = new Date(weeks[index - 1]).getTime();
+    const next = new Date(weeks[index]).getTime();
+    if (Math.round((next - previous) / WEEK_MS) === 1) {
+      current += 1;
+      best = Math.max(best, current);
+    } else {
+      current = 1;
+    }
+  }
+  return best;
+}
+
+function hasPrehabResilienceCompletion(activity: Activity): boolean {
+  return activity.activityType === 'mobility' || /prehab|resilience|mobility|stability/i.test(activity.notes ?? '');
+}
+
+function activityWeeks(activities: readonly Activity[]): Map<string, Activity[]> {
+  const weeks = new Map<string, Activity[]>();
+  activities.forEach(activity => weeks.set(weekKey(activity.startTime), [...(weeks.get(weekKey(activity.startTime)) ?? []), activity]));
+  return weeks;
+}
+
 export function calculateConsistencyAwards(
   activities: readonly Activity[],
   now = Date.now(),
@@ -815,7 +847,7 @@ export function calculateConsistencyAwards(
 
 export function calculateStrideLevels(activities: readonly Activity[]): StrideLevel[] {
   const cumulativeMeters = completedActivities(activities)
-    .filter(activity => ['running', 'walking', 'hiking', 'cycling', 'indoor_cycling'].includes(activity.activityType))
+    .filter(activity => activity.activityType === 'running' || activity.subtype === 'run_walk')
     .reduce((sum, activity) => sum + distanceMeters(activity), 0);
   return STRIDE_LEVEL_DEFINITIONS.map(level => ({
     ...level,
@@ -895,6 +927,9 @@ export type AchievementAwardReference = AchievementId | {
 export type AchievementEvaluationOptions = {
   now?: number;
   scheduledSessions?: readonly ScheduledSession[];
+  assessmentResults?: readonly AssessmentResult[];
+  readinessHistory?: readonly { date: string; sleepMinutesTotal?: number | null }[];
+  checkInDates?: readonly string[];
 };
 
 function achievementIdFromReference(item: AchievementAwardReference): AchievementId {
@@ -912,10 +947,21 @@ function existingAwardDateMap(existing: readonly AchievementAwardReference[]): M
 }
 
 function resolveEvaluationOptions(nowOrOptions?: number | AchievementEvaluationOptions): Required<AchievementEvaluationOptions> {
-  if (typeof nowOrOptions === 'number') return { now: nowOrOptions, scheduledSessions: [] };
+  if (typeof nowOrOptions === 'number') {
+    return {
+      now: nowOrOptions,
+      scheduledSessions: [],
+      assessmentResults: [],
+      readinessHistory: [],
+      checkInDates: [],
+    };
+  }
   return {
     now: nowOrOptions?.now ?? Date.now(),
     scheduledSessions: nowOrOptions?.scheduledSessions ?? [],
+    assessmentResults: nowOrOptions?.assessmentResults ?? [],
+    readinessHistory: nowOrOptions?.readinessHistory ?? [],
+    checkInDates: nowOrOptions?.checkInDates ?? [],
   };
 }
 
@@ -933,6 +979,24 @@ function addDateKey(dateKey: string, days: number): string {
   const date = new Date(localDateMs(dateKey));
   date.setDate(date.getDate() + days);
   return localDateKey(date.getTime());
+}
+
+function longestDateStreak(dateKeys: readonly string[]): number {
+  const sorted = [...new Set(dateKeys)].sort();
+  if (!sorted.length) return 0;
+  let best = 1;
+  let current = 1;
+  for (let index = 1; index < sorted.length; index += 1) {
+    const previous = localDateMs(sorted[index - 1]);
+    const next = localDateMs(sorted[index]);
+    if (Math.round((next - previous) / DAY_MS) === 1) {
+      current += 1;
+      best = Math.max(best, current);
+    } else {
+      current = 1;
+    }
+  }
+  return best;
 }
 
 function isCompletedForStreak(activity: Activity): boolean {
@@ -1027,16 +1091,19 @@ export function calculateStreakAchievements(
 
   const dateKeys = [...new Set([...activitiesByDate.keys(), ...sessionsByDate.keys()])].sort();
   if (!dateKeys.length) {
-    const achievements = STREAK_ACHIEVEMENTS.map(definition => ({
-      ...definition,
-      currentStreakDays: 0,
-      remainingDays: definition.thresholdDays,
-      progressRatio: 0,
-      complete: false,
-      unlockedAt: existingDates.get(definition.id),
-      supportingActivityIds: [],
-      state: 'locked' as const,
-    }));
+    const achievements = STREAK_ACHIEVEMENTS.map(definition => {
+      const unlockedAt = existingDates.get(definition.id);
+      return {
+        ...definition,
+        currentStreakDays: 0,
+        remainingDays: definition.thresholdDays,
+        progressRatio: 0,
+        complete: Boolean(unlockedAt),
+        unlockedAt,
+        supportingActivityIds: [],
+        state: unlockedAt ? 'earned' as const : 'locked' as const,
+      };
+    });
     return {
       currentStreakDays: 0,
       currentTier: null,
@@ -1285,10 +1352,151 @@ export function evaluateAchievementAwards(
   if (quality && last7.length >= 3) {
     award('quality_earned', [quality]);
   }
+  const firstActivity = completed[0];
+  if (firstActivity) award('first_activity', [firstActivity]);
+  const firstRun = completed.find(activity => activity.activityType === 'running');
+  if (firstRun) award('first_run', [firstRun]);
+  const firstWalk = completed.find(activity => activity.activityType === 'walking');
+  if (firstWalk) award('first_walk', [firstWalk]);
+  const firstRunWalk = completed.find(isRunWalkActivity);
+  if (firstRunWalk) award('first_run_walk', [firstRunWalk]);
+  const firstRide = completed.find(isLifetimeCyclingActivity);
+  if (firstRide) award('first_ride', [firstRide]);
+  const firstMobility = completed.find(activity => activity.activityType === 'mobility');
+  if (firstMobility) award('first_mobility_workout', [firstMobility]);
+  const firstStrength = completed.find(activity => activity.activityType === 'strength');
+  if (firstStrength) {
+    award('first_strength_workout', [firstStrength]);
+    award('first_strength_session', [firstStrength]);
+  }
+  const firstRoute = completed.find(hasCompletedRoute);
+  if (firstRoute) award('first_route_completed', [firstRoute]);
+  const firstStructured = completed.find(isStructuredActivity);
+  if (firstStructured) award('first_structured_workout', [firstStructured]);
+  const firstAdapted = completed.find(isAdaptedCompletion);
+  if (firstAdapted) award('first_adapted_workout', [firstAdapted]);
+  if (options.assessmentResults.length > 0) {
+    award('first_movement_lab_analysis', []);
+  }
+  const strengthActivities = completed.filter(activity => activity.activityType === 'strength');
+  for (const definition of STRENGTH_REGISTRY_DEFINITIONS) {
+    if (definition.ruleKind !== 'strength_count' || definition.id === 'first_strength_session') continue;
+    if (strengthActivities.length >= definition.threshold) {
+      award(definition.id, strengthActivities.slice(0, definition.threshold));
+    }
+  }
+  const strengthWeekCount = countConsecutiveStrengthWeeks(activities);
+  for (const definition of STRENGTH_REGISTRY_DEFINITIONS) {
+    if (definition.ruleKind !== 'strength_consistency') continue;
+    if (strengthWeekCount >= definition.threshold) {
+      award(definition.id, strengthActivities);
+    }
+  }
+  const sameWeekStrengthRun = [...activityWeeks(completed).values()].find(weekActivities =>
+    weekActivities.some(activity => isLifetimeRunningActivity(activity))
+    && weekActivities.some(activity => activity.activityType === 'strength'));
+  if (sameWeekStrengthRun) {
+    award('strength_run_week_completed', sameWeekStrengthRun.filter(activity => isLifetimeRunningActivity(activity) || activity.activityType === 'strength'));
+  }
+  const prehab = completed.find(hasPrehabResilienceCompletion);
+  if (prehab) {
+    award('prehab_resilience_block', [prehab]);
+  }
+  if (recovery) {
+    award('recovery_week_completed', [recovery]);
+  }
+  const plannedRest = options.scheduledSessions.find(session =>
+    session.activityType === 'rest'
+    || /rest|recovery|taper|deload/i.test(`${session.title} ${session.purpose} ${session.adaptationReason ?? ''}`),
+  );
+  if (plannedRest) {
+    award('recovery_smart_rest_day', []);
+  }
+  if (adjusted) {
+    award('recovery_readiness_respected', [adjusted]);
+  }
+  const symptomReport = completed.find(activity => (activity.symptoms?.length ?? 0) > 0);
+  if (symptomReport) {
+    award('recovery_symptoms_reported_early', [symptomReport]);
+  }
+  const readinessDates = options.readinessHistory.map(item => item.date);
+  const checkInStreak = longestDateStreak([...readinessDates, ...options.checkInDates]);
+  if (checkInStreak >= 7) {
+    award('recovery_check_in_streak', []);
+  }
+  const sleepStreak = longestDateStreak(options.readinessHistory
+    .filter(item => (item.sleepMinutesTotal ?? 0) > 0)
+    .map(item => item.date));
+  if (sleepStreak >= 7) {
+    award('recovery_sleep_consistency', []);
+  }
+  const gradualReturn = completed.slice(1).find((activity, index) =>
+    activity.startTime - completed[index].startTime >= 7 * DAY_MS
+    && (activity.rpe ?? 4) <= 5);
+  if (gradualReturn) {
+    award('recovery_returned_gradually', [gradualReturn]);
+  }
+  for (const definition of FIRST_ACHIEVEMENT_DEFINITIONS) {
+    if (definition.thresholdUnit !== 'meters') continue;
+    const firstDistanceRun = completed.find(activity => isLifetimeRunningActivity(activity) && distanceMeters(activity) >= definition.threshold);
+    if (firstDistanceRun) award(definition.id, [firstDistanceRun]);
+  }
   const streak = calculateStreakAchievements(activities, options, existing);
   for (const item of streak.achievements) {
     if (item.complete) {
       award(item.id, completed.filter(activity => item.supportingActivityIds.includes(activity.id)));
+    }
+  }
+  const lifetimeRunningActivities = completedLifetimeRunningActivities(activities);
+  const lifetimeRunningSupport: Activity[] = [];
+  const lifetimeRunningAwarded = new Set<AchievementId>(existing);
+  let lifetimeRunningMeters = 0;
+  for (const activity of lifetimeRunningActivities) {
+    const distance = distanceMeters(activity);
+    if (distance <= 0) continue;
+    lifetimeRunningMeters += distance;
+    lifetimeRunningSupport.push(activity);
+    for (const definition of LIFETIME_DISTANCE_RUNNING_DEFINITIONS) {
+      if (!lifetimeRunningAwarded.has(definition.id) && lifetimeRunningMeters >= definition.thresholdMeters) {
+        lifetimeRunningAwarded.add(definition.id);
+        award(definition.id, lifetimeRunningSupport);
+      }
+    }
+  }
+  const lifetimeCyclingActivities = completedLifetimeCyclingActivities(activities);
+  const lifetimeCyclingSupport: Activity[] = [];
+  const lifetimeCyclingAwarded = new Set<AchievementId>(existing);
+  let lifetimeCyclingMeters = 0;
+  for (const activity of lifetimeCyclingActivities) {
+    const distance = distanceMeters(activity);
+    if (distance <= 0) continue;
+    lifetimeCyclingMeters += distance;
+    lifetimeCyclingSupport.push(activity);
+    for (const definition of LIFETIME_DISTANCE_CYCLING_DEFINITIONS) {
+      if (!lifetimeCyclingAwarded.has(definition.id) && lifetimeCyclingMeters >= definition.thresholdMeters) {
+        lifetimeCyclingAwarded.add(definition.id);
+        award(definition.id, lifetimeCyclingSupport);
+      }
+    }
+  }
+  const weeklyDistanceAwarded = new Set<AchievementId>(existing);
+  const weeklyDistanceByWeek = new Map<string, { distanceMeters: number; activities: Activity[] }>();
+  for (const activity of completed) {
+    if (!isLifetimeRunningActivity(activity)) continue;
+    const distance = distanceMeters(activity);
+    if (distance <= 0) continue;
+    const key = weekKey(activity.startTime);
+    const current = weeklyDistanceByWeek.get(key) ?? { distanceMeters: 0, activities: [] };
+    current.distanceMeters += distance;
+    current.activities.push(activity);
+    weeklyDistanceByWeek.set(key, current);
+  }
+  for (const value of weeklyDistanceByWeek.values()) {
+    for (const definition of WEEKLY_DISTANCE_DEFINITIONS) {
+      if (!weeklyDistanceAwarded.has(definition.id) && value.distanceMeters >= definition.thresholdMeters) {
+        weeklyDistanceAwarded.add(definition.id);
+        award(definition.id, value.activities);
+      }
     }
   }
 

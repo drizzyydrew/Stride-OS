@@ -1,5 +1,14 @@
 import { ImageBackground, StyleSheet, Text, View } from 'react-native';
 
+import { RunLevelBadge, runLevelSlugFromId } from '../../achievements/runLevels';
+import { lifetimeDistanceCyclingDefinitionFromAchievementId } from '../../achievements/lifetimeDistanceCycling';
+import { lifetimeDistanceRunningDefinitionFromAchievementId } from '../../achievements/lifetimeDistanceRunning';
+import { firstAchievementDefinitionFromAchievementId } from '../../achievements/firsts';
+import { strengthAchievementDefinitionFromAchievementId } from '../../achievements/strength';
+import { recoveryAchievementDefinitionFromAchievementId } from '../../achievements/recovery';
+import { streakDefinitionFromAchievementId } from '../../achievements/streaks';
+import { weeklyDistanceDefinitionFromAchievementId } from '../../achievements/weeklyDistance';
+import type { UnitSystem } from '../../store/settingsStore';
 import { getElevationAchievementArtwork } from '../../constants/elevationAchievementAssets';
 import type { AchievementDefinition } from '../../utils/achievements';
 import AchievementBadge from './AchievementBadge';
@@ -10,6 +19,7 @@ type Props = {
   achievement: AchievementDefinition;
   variant: AchievementShareVariant;
   detail?: string;
+  units?: UnitSystem;
 };
 
 const VARIANT_COPY: Record<AchievementShareVariant, string> = {
@@ -83,6 +93,7 @@ function MountainAchievementShareCard({ achievement, variant, detail }: Props) {
 function StreakAchievementShareCard({ achievement, variant, detail }: Props) {
   const title = achievement.title.toUpperCase();
   const milestone = (detail ?? achievement.title).toUpperCase();
+  const badgeState = variant === 'photo_overlay' ? 'share-transparent' : 'share-opaque';
 
   if (variant === 'photo_overlay') {
     return (
@@ -93,7 +104,7 @@ function StreakAchievementShareCard({ achievement, variant, detail }: Props) {
             <Text style={styles.streakChevrons}>{'>>>>>'}</Text>
           </View>
           <View style={styles.streakOverlayBody}>
-            <AchievementBadge id={achievement.id} category="streak" size="medium" />
+            <AchievementBadge id={achievement.id} category="streak" size="medium" badgeState={badgeState} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={styles.streakOverlayTitle}>{title}</Text>
               <Text style={styles.streakOverlayCopy}>CONSISTENCY BUILT OVER TIME</Text>
@@ -113,7 +124,7 @@ function StreakAchievementShareCard({ achievement, variant, detail }: Props) {
         <Text style={styles.streakChevrons}>{'>>>>>'}</Text>
       </View>
       <View style={styles.streakShareBadge}>
-        <AchievementBadge id={achievement.id} category="streak" size="large" />
+        <AchievementBadge id={achievement.id} category="streak" size="large" badgeState={badgeState} />
       </View>
       <View>
         <Text style={poster ? styles.streakPosterTitle : styles.streakSquareTitle}>{title}</Text>
@@ -125,7 +136,50 @@ function StreakAchievementShareCard({ achievement, variant, detail }: Props) {
   );
 }
 
-export default function AchievementShareCard({ achievement, variant, detail }: Props) {
+function RunLevelAchievementShareCard({ achievement, variant, detail }: Props) {
+  const level = runLevelSlugFromId(achievement.id);
+  if (!level) return null;
+  const title = achievement.title.toUpperCase();
+  const badgeState = variant === 'photo_overlay' ? 'share-transparent' : 'share-opaque';
+
+  if (variant === 'photo_overlay') {
+    return (
+      <View style={[styles.card, styles.runLevelOverlay]} collapsable={false}>
+        <RunLevelBadge level={level} state={badgeState} size={178} />
+        <Text style={styles.runLevelOverlayBrand}>STRIDEOS</Text>
+      </View>
+    );
+  }
+
+  const poster = variant === 'story_poster';
+  return (
+    <View style={[styles.card, poster ? styles.runLevelPoster : styles.runLevelSquare]} collapsable={false}>
+      <Text style={styles.brandLight}>STRIDEOS</Text>
+      <View style={styles.runLevelShareBadge}>
+        <RunLevelBadge level={level} state={badgeState} size={poster ? 224 : 196} />
+      </View>
+      <View>
+        <Text style={poster ? styles.runLevelPosterTitle : styles.runLevelSquareTitle}>{title}</Text>
+        <Text style={styles.runLevelShareCopy}>{detail ?? 'LIFETIME RUNNING LEVEL'}</Text>
+      </View>
+      <Text style={styles.posterChevrons}>RUN THE PATH</Text>
+    </View>
+  );
+}
+
+export default function AchievementShareCard({ achievement, variant, detail, units = 'imperial' }: Props) {
+  const lifetimeRunDefinition = lifetimeDistanceRunningDefinitionFromAchievementId(achievement.id);
+  const lifetimeCyclingDefinition = lifetimeDistanceCyclingDefinitionFromAchievementId(achievement.id);
+  const weeklyDistanceDefinition = weeklyDistanceDefinitionFromAchievementId(achievement.id);
+  const streakDefinition = streakDefinitionFromAchievementId(achievement.id);
+  const firstDefinition = firstAchievementDefinitionFromAchievementId(achievement.id);
+  const strengthDefinition = strengthAchievementDefinitionFromAchievementId(achievement.id);
+  const recoveryDefinition = recoveryAchievementDefinitionFromAchievementId(achievement.id);
+  const canonicalBadgeDefinition = lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition;
+
+  if (achievement.category === 'run_level') {
+    return <RunLevelAchievementShareCard achievement={achievement} variant={variant} detail={detail} units={units} />;
+  }
   if (achievement.category === 'cumulative_elevation') {
     return <MountainAchievementShareCard achievement={achievement} variant={variant} detail={detail} />;
   }
@@ -141,7 +195,13 @@ export default function AchievementShareCard({ achievement, variant, detail }: P
           <Text style={styles.posterKicker}>ACHIEVEMENT</Text>
         </View>
         <View style={styles.badgeHero}>
-          <AchievementBadge id={achievement.id} category={achievement.category} size="large" />
+          <AchievementBadge
+            id={achievement.id}
+            category={achievement.category}
+            size="large"
+            unitSystem={units}
+            badgeState={canonicalBadgeDefinition ? 'share-opaque' : undefined}
+          />
         </View>
         <View>
           <Text style={styles.posterTitle}>{achievement.title}</Text>
@@ -160,7 +220,13 @@ export default function AchievementShareCard({ achievement, variant, detail }: P
           <Text style={styles.overlayLabel}>{VARIANT_COPY[variant].toUpperCase()}</Text>
         </View>
         <View style={styles.overlayRow}>
-          <AchievementBadge id={achievement.id} category={achievement.category} size="medium" />
+          <AchievementBadge
+            id={achievement.id}
+            category={achievement.category}
+            size="medium"
+            unitSystem={units}
+            badgeState={canonicalBadgeDefinition ? 'share-transparent' : undefined}
+          />
           <View style={styles.overlayCopyWrap}>
             <Text style={styles.overlayTitle}>{achievement.title}</Text>
             <Text style={styles.overlayCopy}>{detail ?? achievement.description}</Text>
@@ -175,7 +241,13 @@ export default function AchievementShareCard({ achievement, variant, detail }: P
     <View style={[styles.card, styles.square]} collapsable={false}>
       <Text style={styles.brandDark}>STRIDEOS</Text>
       <View style={styles.squareBadge}>
-        <AchievementBadge id={achievement.id} category={achievement.category} size="large" />
+        <AchievementBadge
+          id={achievement.id}
+          category={achievement.category}
+          size="large"
+          unitSystem={units}
+          badgeState={canonicalBadgeDefinition ? 'share-opaque' : undefined}
+        />
       </View>
       <View>
         <Text style={styles.squareKicker}>NEW ACHIEVEMENT</Text>
@@ -431,6 +503,67 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 1,
     marginTop: 3,
+  },
+  runLevelOverlay: {
+    minHeight: 320,
+    backgroundColor: 'rgba(0, 0, 0, 0)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  runLevelOverlayBrand: {
+    color: '#F3F1EB',
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '900',
+    letterSpacing: 2.4,
+    textShadowColor: 'rgba(0, 0, 0, 0.72)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  runLevelSquare: {
+    borderRadius: 28,
+    padding: 24,
+    minHeight: 520,
+    backgroundColor: '#0E0E0F',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  runLevelPoster: {
+    borderRadius: 30,
+    padding: 28,
+    minHeight: 620,
+    backgroundColor: '#0E0E0F',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  runLevelShareBadge: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+  },
+  runLevelSquareTitle: {
+    color: '#F3F1EB',
+    fontSize: 34,
+    lineHeight: 38,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  runLevelPosterTitle: {
+    color: '#F3F1EB',
+    fontSize: 48,
+    lineHeight: 53,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  runLevelShareCopy: {
+    color: '#DCC9B1',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '900',
+    letterSpacing: 1.1,
+    marginTop: 8,
+    textAlign: 'center',
   },
   square: {
     borderRadius: 28,

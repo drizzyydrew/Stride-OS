@@ -1,0 +1,86 @@
+[
+  {
+    "id": "recovery_week_completed",
+    "slug": "week-completed",
+    "title": "Recovery Week Completed",
+    "glyph": "recoveryWeek",
+    "artworkPath": "assets/achievements/recovery/recovery-week-completed-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/recovery/recovery-week-completed-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-week-completed-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/recovery/recovery-week-completed-transparent.png",
+    "shareOpaqueSvgPath": "assets/achievements/recovery/recovery-week-completed-opaque.svg",
+    "shareOpaquePngPath": "assets/achievements/recovery/recovery-week-completed-opaque.png"
+  },
+  {
+    "id": "recovery_sleep_consistency",
+    "slug": "sleep-consistency",
+    "title": "Sleep Consistency Achieved",
+    "glyph": "sleepCycle",
+    "artworkPath": "assets/achievements/recovery/recovery-sleep-consistency-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/recovery/recovery-sleep-consistency-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-sleep-consistency-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/recovery/recovery-sleep-consistency-transparent.png",
+    "shareOpaqueSvgPath": "assets/achievements/recovery/recovery-sleep-consistency-opaque.svg",
+    "shareOpaquePngPath": "assets/achievements/recovery/recovery-sleep-consistency-opaque.png"
+  },
+  {
+    "id": "recovery_smart_rest_day",
+    "slug": "smart-rest-day",
+    "title": "Smart Rest Day",
+    "glyph": "smartRest",
+    "artworkPath": "assets/achievements/recovery/recovery-smart-rest-day-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/recovery/recovery-smart-rest-day-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-smart-rest-day-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/recovery/recovery-smart-rest-day-transparent.png",
+    "shareOpaqueSvgPath": "assets/achievements/recovery/recovery-smart-rest-day-opaque.svg",
+    "shareOpaquePngPath": "assets/achievements/recovery/recovery-smart-rest-day-opaque.png"
+  },
+  {
+    "id": "recovery_readiness_respected",
+    "slug": "readiness-respected",
+    "title": "Readiness Respected",
+    "glyph": "readinessHammock",
+    "artworkPath": "assets/achievements/recovery/recovery-readiness-respected-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/recovery/recovery-readiness-respected-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-readiness-respected-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/recovery/recovery-readiness-respected-transparent.png",
+    "shareOpaqueSvgPath": "assets/achievements/recovery/recovery-readiness-respected-opaque.svg",
+    "shareOpaquePngPath": "assets/achievements/recovery/recovery-readiness-respected-opaque.png"
+  },
+  {
+    "id": "recovery_symptoms_reported_early",
+    "slug": "symptoms-reported-early",
+    "title": "Symptoms Reported Early",
+    "glyph": "symptomsSignal",
+    "artworkPath": "assets/achievements/recovery/recovery-symptoms-reported-early-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/recovery/recovery-symptoms-reported-early-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-symptoms-reported-early-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/recovery/recovery-symptoms-reported-early-transparent.png",
+    "shareOpaqueSvgPath": "assets/achievements/recovery/recovery-symptoms-reported-early-opaque.svg",
+    "shareOpaquePngPath": "assets/achievements/recovery/recovery-symptoms-reported-early-opaque.png"
+  },
+  {
+    "id": "recovery_check_in_streak",
+    "slug": "check-in-streak",
+    "title": "Check-In Streak",
+    "glyph": "checkInRipples",
+    "artworkPath": "assets/achievements/recovery/recovery-check-in-streak-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/recovery/recovery-check-in-streak-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-check-in-streak-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/recovery/recovery-check-in-streak-transparent.png",
+    "shareOpaqueSvgPath": "assets/achievements/recovery/recovery-check-in-streak-opaque.svg",
+    "shareOpaquePngPath": "assets/achievements/recovery/recovery-check-in-streak-opaque.png"
+  },
+  {
+    "id": "recovery_returned_gradually",
+    "slug": "returned-gradually",
+    "title": "Returned Gradually",
+    "glyph": "returnedGradually",
+    "artworkPath": "assets/achievements/recovery/recovery-returned-gradually-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/recovery/recovery-returned-gradually-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-returned-gradually-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/recovery/recovery-returned-gradually-transparent.png",
+    "shareOpaqueSvgPath": "assets/achievements/recovery/recovery-returned-gradually-opaque.svg",
+    "shareOpaquePngPath": "assets/achievements/recovery/recovery-returned-gradually-opaque.png"
+  }
+]

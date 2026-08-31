@@ -138,20 +138,20 @@ test('Build 57 monthly milestones use canonical metric thresholds regardless of 
   assert.ok(!milestones.some(item => item.id === 'monthly_run_75k'));
 });
 
-test('Build 57 hub exposes challenges and Stride Levels from canonical activity history', () => {
+test('Build 57 hub exposes challenges and Run Levels from canonical activity history', () => {
   const now = Date.UTC(2026, 7, 9, 12);
   const items = Array.from({ length: 4 }, (_, week) =>
     [0, 1, 2].map(day => activity({
       id: `run-${week}-${day}`,
       activityType: 'running',
       startTime: now - (week * 7 + day) * 24 * 60 * 60 * 1000,
-      metrics: { durationSeconds: 1800, distanceMeters: 5000 },
+      metrics: { durationSeconds: 1800, distanceMeters: 7000 },
     })),
   ).flat();
   const hub = buildAchievementHubModel(items, [], now);
   assert.ok(hub.consistencyAwards.some(item => item.id === 'four_week_consistency'));
   assert.ok(hub.challengeProgress.some(item => item.definition.id === 'challenge_four_week_consistency' && item.complete));
-  assert.ok(hub.strideLevels.some(item => item.id === 'stride_level_pacesetter' && item.complete));
+  assert.ok(hub.strideLevels.some(item => item.id === 'run_level_rhythm' && item.complete));
 });
 
 test('Cumulative elevation achievements unlock only at the exact landmark threshold', () => {

@@ -78,10 +78,21 @@ export default function TreadmillPanel({
   }, [isPaused]);
 
   const estimateMiles = estimateDistanceMiles(segments, now);
-  const usingManual = distanceSource === 'manual_entry' && manualDistanceMiles != null;
-  const liveDistanceMiles = usingManual ? (manualDistanceMiles as number) : estimateMiles;
+  const usingExternalDistance = manualDistanceMiles != null
+    && distanceSource != null
+    && distanceSource !== 'confirmed_speed_estimate';
+  const liveDistanceMiles = usingExternalDistance ? (manualDistanceMiles as number) : estimateMiles;
   const distanceDisplay = imperial ? liveDistanceMiles : (milesToKm(liveDistanceMiles) ?? 0);
   const distUnit = imperial ? 'mi' : 'km';
+  const distanceLabel = distanceSource === 'manual_entry'
+    ? 'Manual distance'
+    : distanceSource === 'treadmill_reported'
+      ? 'Treadmill reported'
+      : distanceSource === 'foot_pod'
+        ? 'Foot pod reported'
+        : usingExternalDistance
+          ? 'Equipment reported'
+          : 'Estimated (confirmed speed)';
 
   const steps = plannedWorkout ? flattenWorkoutSteps(plannedWorkout) : [];
   const stepIndex = clampStepIndex(steps, currentStepIndex);
@@ -150,7 +161,7 @@ export default function TreadmillPanel({
             {distanceDisplay.toFixed(2)}<Text style={s.primaryUnit}> {distUnit}</Text>
           </Text>
           <Text style={[s.metricLabel, { color: C.textMuted }]}>
-            {usingManual ? 'Manual distance' : 'Estimated (confirmed speed)'}
+            {distanceLabel}
           </Text>
         </View>
       </View>

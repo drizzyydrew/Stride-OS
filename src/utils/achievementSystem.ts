@@ -14,6 +14,53 @@ import {
 import { formatDistance, formatPaceSecPerMile } from '../lib/units';
 import { formatDuration, formatElevationMeters } from './activitySummary';
 import type { ScheduledSession } from './scheduledSessions';
+import { RUN_LEVEL_DEFINITIONS } from '../achievements/runLevels/runLevelDefinitions';
+import { LIFETIME_DISTANCE_CYCLING_DEFINITIONS } from '../achievements/lifetimeDistanceCycling/lifetimeDistanceCyclingDefinitions';
+import {
+  formatLifetimeCyclingDistanceMeters,
+  formatLifetimeCyclingMilestoneTarget,
+  formatLifetimeCyclingRemainingMeters,
+  lifetimeDistanceCyclingDefinitionFromAchievementId,
+  lifetimeCyclingAchievementAccessibilityLabel,
+} from '../achievements/lifetimeDistanceCycling/lifetimeDistanceCyclingUtils';
+import { LIFETIME_DISTANCE_RUNNING_DEFINITIONS } from '../achievements/lifetimeDistanceRunning/lifetimeDistanceRunningDefinitions';
+import {
+  formatLifetimeRunningDistanceMeters,
+  formatLifetimeRunningMilestoneTarget,
+  formatLifetimeRunningRemainingMeters,
+  lifetimeDistanceRunningDefinitionFromAchievementId,
+  lifetimeRunningAchievementAccessibilityLabel,
+} from '../achievements/lifetimeDistanceRunning/lifetimeDistanceRunningUtils';
+import { WEEKLY_DISTANCE_DEFINITIONS } from '../achievements/weeklyDistance/weeklyDistanceDefinitions';
+import {
+  formatWeeklyDistanceMeters,
+  formatWeeklyDistanceRemainingMeters,
+  weeklyDistanceAchievementAccessibilityLabel,
+  weeklyDistanceDefinitionFromAchievementId,
+} from '../achievements/weeklyDistance/weeklyDistanceUtils';
+import { streakDefinitionFromAchievementId } from '../achievements/streaks/streakDefinitions';
+import { streakAchievementAccessibilityLabel } from '../achievements/streaks/streakUtils';
+import { FIRST_ACHIEVEMENT_DEFINITIONS } from '../achievements/firsts/firstsDefinitions';
+import {
+  firstAchievementAccessibilityLabel,
+  firstAchievementDefinitionFromAchievementId,
+  firstAchievementSupportValue,
+} from '../achievements/firsts/firstsUtils';
+import { STRENGTH_COLORS } from '../achievements/strength/strengthTokens';
+import { STRENGTH_REGISTRY_DEFINITIONS } from '../achievements/strength/strengthDefinitions';
+import {
+  strengthAchievementAccessibilityLabel,
+  strengthAchievementDefinitionFromAchievementId,
+  strengthAchievementSupportValue,
+} from '../achievements/strength/strengthUtils';
+import { RECOVERY_COLORS } from '../achievements/recovery/recoveryTokens';
+import { RECOVERY_ACHIEVEMENT_DEFINITIONS } from '../achievements/recovery/recoveryDefinitions';
+import {
+  recoveryAchievementAccessibilityLabel,
+  recoveryAchievementDefinitionFromAchievementId,
+  recoveryAchievementProgressText,
+  recoveryAchievementSupportValue,
+} from '../achievements/recovery/recoveryUtils';
 
 const M_PER_MI = 1609.344;
 const M_PER_KM = 1000;
@@ -156,59 +203,6 @@ function titleCase(text: string): string {
   return text.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
 }
 
-const RUN_LEVELS: Array<[AchievementId, string, number, string]> = [
-  ['run_level_foundation', 'Foundation', 0, '#F3F1EB'],
-  ['run_level_rhythm', 'Rhythm', 50_000, '#B7835F'],
-  ['run_level_momentum', 'Momentum', 150_000, '#8B9C7C'],
-  ['run_level_durability', 'Durability', 400_000, '#94A0A6'],
-  ['run_level_engine', 'Engine', 800_000, '#5F7998'],
-  ['run_level_peak', 'Peak', 1_600_000, '#6E4B36'],
-  ['run_level_summit', 'Summit', 3_200_000, '#DCC9B1'],
-];
-
-const FIRSTS: Array<[AchievementId, string, number, AchievementUnitBehavior, string]> = [
-  ['first_activity', 'First Activity', 1, 'count', 'Complete any activity.'],
-  ['first_run', 'First Run', 1, 'count', 'Complete a run.'],
-  ['first_walk', 'First Walk', 1, 'count', 'Complete a walk.'],
-  ['first_run_walk', 'First Run/Walk', 1, 'count', 'Complete a run/walk session.'],
-  ['first_strength_session', 'First Strength Session', 1, 'count', 'Complete a strength session.'],
-  ['first_ride', 'First Ride', 1, 'count', 'Complete a ride.'],
-  ['first_treadmill_run', 'First Treadmill Run', 1, 'count', 'Complete a treadmill run.'],
-  ['first_5k', 'First 5K', km(5), 'fixed_k_identity', 'Complete one running activity of at least 5K.'],
-  ['first_10k', 'First 10K', km(10), 'fixed_k_identity', 'Complete one running activity of at least 10K.'],
-  ['first_half_marathon', 'First Half Marathon', mi(13.1094), 'race_distance_class', 'Complete one half-marathon distance run.'],
-  ['first_marathon', 'First Marathon', mi(26.2188), 'race_distance_class', 'Complete one marathon distance run.'],
-  ['first_route_completed', 'First Route Completed', 1, 'count', 'Complete an activity with a recorded route.'],
-  ['first_structured_workout', 'First Structured Workout', 1, 'count', 'Complete a structured or scheduled workout.'],
-  ['first_adapted_week', 'First Adapted Week', 1, 'count', 'Complete an approved adapted week or equivalent substitute.'],
-  ['first_movement_lab_assessment', 'First Movement Lab Assessment', 1, 'count', 'Complete a Movement Lab assessment.'],
-];
-
-const LIFETIME_RUNNING_MI = [1, 5, 10, 26.2, 50, 100, 250, 500, 1000, 10000] as const;
-const LIFETIME_CYCLING_MI = [10, 50, 100, 250, 500, 1000, 2500, 5000, 10000] as const;
-const WEEKLY_DISTANCE_KM = [5, 10, 15, 25, 30, 50, 75, 100] as const;
-
-const STRENGTH_DEFS: Array<[AchievementId, string, AchievementRuleKind, number, AchievementUnitBehavior, string]> = [
-  ['strength_10_sessions', '10 Strength Sessions', 'strength_count', 10, 'count', 'Complete 10 strength sessions.'],
-  ['strength_25_sessions', '25 Strength Sessions', 'strength_count', 25, 'count', 'Complete 25 strength sessions.'],
-  ['strength_50_sessions', '50 Strength Sessions', 'strength_count', 50, 'count', 'Complete 50 strength sessions.'],
-  ['strength_100_sessions', '100 Strength Sessions', 'strength_count', 100, 'count', 'Complete 100 strength sessions.'],
-  ['strength_6_weeks_consistent', '6 Weeks Consistent Strength', 'strength_consistency', 6, 'weeks', 'Complete strength training in six consistent weeks.'],
-  ['strength_12_weeks_consistent', '12 Weeks Consistent Strength', 'strength_consistency', 12, 'weeks', 'Complete strength training in twelve consistent weeks.'],
-  ['strength_run_week_completed', 'Strength + Run Week Completed', 'strength_run_week', 1, 'count', 'Complete running and strength in the same week.'],
-  ['prehab_resilience_block', 'Prehab & Resilience Block', 'prehab_resilience', 1, 'count', 'Complete a resilience or mobility-focused block.'],
-];
-
-const RECOVERY_DEFS: Array<[AchievementId, string, number, string]> = [
-  ['recovery_check_in_streak', 'Check-In Streak', 7, 'Complete seven consecutive readiness check-ins.'],
-  ['recovery_week_completed', 'Recovery Week Completed', 1, 'Complete a week with recovery work respected.'],
-  ['recovery_sleep_consistency', 'Sleep Consistency', 7, 'Log seven days of consistent sleep data.'],
-  ['recovery_smart_rest_day', 'Smart Rest Day', 1, 'Respect a planned rest or recovery day.'],
-  ['recovery_readiness_respected', 'Readiness Respected', 1, 'Modify training appropriately when readiness calls for it.'],
-  ['recovery_symptoms_reported_early', 'Symptoms Reported Early', 1, 'Report symptoms early so training can adapt.'],
-  ['recovery_returned_gradually', 'Returned Gradually', 1, 'Return with controlled training after an interruption.'],
-];
-
 const CHALLENGE_DEFS: Array<[AchievementId, string, AchievementRuleKind, number, AchievementUnitBehavior, string, string]> = [
   ['challenge_august_base_builder', 'August Base Builder', 'challenge', 1, 'count', 'Complete consistent base work in August.', '#C56B3E'],
   ['challenge_september_consistency', 'September Consistency Challenge', 'challenge', 1, 'count', 'Complete consistent training in September.', '#5F9A95'],
@@ -235,104 +229,119 @@ function baseDef(input: Omit<AchievementDefinitionV2, 'shareCardEligibility' | '
 }
 
 export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
-  ...RUN_LEVELS.map(([id, title, threshold, color], index) => baseDef({
-    id,
+  ...RUN_LEVEL_DEFINITIONS.map(level => baseDef({
+    id: level.id,
     family: 'run_levels',
     category: 'run_level',
-    title,
+    title: level.title,
     description: 'Lifetime running progression on the StrideOS run path.',
-    criteria: threshold === 0 ? 'Start the StrideOS run path.' : `Reach ${formatDistance(threshold / M_PER_MI, 'imperial')} of lifetime running distance.`,
+    criteria: level.thresholdMeters === 0 ? 'Start the StrideOS run path.' : `Reach ${formatDistance(level.thresholdMeters / M_PER_MI, 'imperial')} of lifetime running distance.`,
     ruleKind: 'run_level',
     unitBehavior: 'unit_sensitive_distance',
-    threshold,
+    threshold: level.thresholdMeters,
     thresholdUnit: 'meters',
     sportApplicability: ['running'],
-    artworkKey: `run-level-${index + 1}`,
-    artworkPath: `assets/achievements/system/run-levels/${id}.svg`,
-    lockedArtworkPath: `assets/achievements/system/run-levels/${id}-locked.svg`,
+    artworkKey: `run-level-${level.slug}`,
+    artworkPath: level.artworkPath,
+    lockedArtworkPath: level.lockedArtworkPath,
+    shareArtPath: level.shareOpaquePngPath,
+    shareOverlayPath: level.shareTransparentPngPath,
     period: 'lifetime',
-    tier: index + 1,
-    dominantColor: color,
+    tier: level.tier,
+    dominantColor: level.colors.outer,
+    sourceNotes: 'Original StrideOS Run Level vector system derived from the approved badge reference image.',
   })),
-  ...FIRSTS.map(([id, title, threshold, unitBehavior, criteria], index) => baseDef({
-    id,
+  ...FIRST_ACHIEVEMENT_DEFINITIONS.map(definition => baseDef({
+    id: definition.id,
     family: 'firsts',
     category: 'firsts',
-    title,
-    shortTitle: title.replace(/^First /, ''),
-    description: criteria,
-    criteria,
+    title: definition.title,
+    shortTitle: definition.compactTitle,
+    description: definition.description,
+    criteria: definition.criteria,
     ruleKind: 'first',
-    unitBehavior,
-    threshold,
-    thresholdUnit: threshold > 1 && typeof threshold === 'number' ? 'meters' : 'count',
-    sportApplicability: ['running', 'walking', 'cycling', 'strength', 'mobility'],
-    artworkKey: `firsts-${index + 1}`,
-    artworkPath: `assets/achievements/system/firsts/${id}.svg`,
-    lockedArtworkPath: `assets/achievements/system/firsts/${id}-locked.svg`,
+    unitBehavior: definition.unitBehavior,
+    threshold: definition.threshold,
+    thresholdUnit: definition.thresholdUnit,
+    sportApplicability: [...definition.sportApplicability],
+    artworkKey: `firsts-${definition.slug}`,
+    artworkPath: definition.artworkPath,
+    lockedArtworkPath: definition.lockedArtworkPath,
+    shareArtPath: definition.shareOpaquePngPath,
+    shareOverlayPath: definition.shareTransparentPngPath,
     period: 'one_time',
-    tier: index + 1,
-    dominantColor: '#B7835F',
+    tier: definition.tier,
+    dominantColor: '#DCC0A7',
+    sourceNotes: 'Original StrideOS Firsts hexagon vector system derived from the approved badge reference image.',
   })),
-  ...LIFETIME_RUNNING_MI.map((miles, index) => baseDef({
-    id: `lifetime_run_${String(miles).replace('.', '_')}_mi`,
+  ...LIFETIME_DISTANCE_RUNNING_DEFINITIONS.map(definition => baseDef({
+    id: definition.id,
     family: 'lifetime_running',
     category: 'lifetime_running',
-    title: `${miles.toLocaleString()} Mile Run Lifetime`,
-    shortTitle: `${miles.toLocaleString()} mi`,
+    title: `${definition.milestoneLabel} Mile Run Lifetime`,
+    shortTitle: `${definition.milestoneLabel} mi`,
     description: 'Cumulative lifetime running distance.',
-    criteria: `Reach ${miles.toLocaleString()} miles of completed running.`,
+    criteria: `Reach ${definition.milestoneLabel} miles of completed running.`,
     ruleKind: 'lifetime_distance',
     unitBehavior: 'unit_sensitive_distance',
-    threshold: mi(miles),
+    threshold: definition.thresholdMeters,
     thresholdUnit: 'meters',
     sportApplicability: ['running'],
-    artworkKey: `lifetime-running-${index + 1}`,
-    artworkPath: `assets/achievements/system/lifetime-running/lifetime-run-${String(miles).replace('.', '-')}.svg`,
-    lockedArtworkPath: `assets/achievements/system/lifetime-running/lifetime-run-${String(miles).replace('.', '-')}-locked.svg`,
+    artworkKey: `lifetime-running-${definition.slug}`,
+    artworkPath: definition.artworkPath,
+    lockedArtworkPath: definition.lockedArtworkPath,
+    shareArtPath: definition.shareOpaquePngPath,
+    shareOverlayPath: definition.shareTransparentPngPath,
     period: 'lifetime',
-    tier: index + 1,
-    dominantColor: ['#879B6F', '#2E9A98', '#4E8AAE', '#7D5DB4', '#C95D4A', '#5F7998', '#6653A6', '#8B4FA3', '#C65136', '#D99A38'][index] ?? '#DCC9B1',
+    tier: definition.tier,
+    dominantColor: definition.colors.primary,
+    sourceNotes: 'Original StrideOS Lifetime Distance - Running diamond vector system derived from the approved badge reference image.',
   })),
-  ...LIFETIME_CYCLING_MI.map((miles, index) => baseDef({
-    id: `lifetime_cycle_${String(miles).replace('.', '_')}_mi`,
+  ...LIFETIME_DISTANCE_CYCLING_DEFINITIONS.map(definition => baseDef({
+    id: definition.id,
     family: 'lifetime_cycling',
     category: 'lifetime_cycling',
-    title: `${miles.toLocaleString()} Mile Cycling Lifetime`,
-    shortTitle: `${miles.toLocaleString()} mi`,
+    title: `${definition.milestoneLabel} Mile Cycling Lifetime`,
+    shortTitle: `${definition.milestoneLabel} mi`,
     description: 'Cumulative lifetime cycling distance.',
-    criteria: `Reach ${miles.toLocaleString()} miles of completed cycling.`,
+    criteria: `Reach ${definition.milestoneLabel} miles of completed cycling.`,
     ruleKind: 'lifetime_distance',
     unitBehavior: 'unit_sensitive_distance',
-    threshold: mi(miles),
+    threshold: definition.thresholdMeters,
     thresholdUnit: 'meters',
     sportApplicability: ['cycling', 'indoor_cycling'],
-    artworkKey: `lifetime-cycling-${index + 1}`,
-    artworkPath: `assets/achievements/system/lifetime-cycling/lifetime-cycle-${String(miles).replace('.', '-')}.svg`,
-    lockedArtworkPath: `assets/achievements/system/lifetime-cycling/lifetime-cycle-${String(miles).replace('.', '-')}-locked.svg`,
+    artworkKey: `lifetime-cycling-${definition.slug}`,
+    artworkPath: definition.artworkPath,
+    lockedArtworkPath: definition.lockedArtworkPath,
+    shareArtPath: definition.shareOpaquePngPath,
+    shareOverlayPath: definition.shareTransparentPngPath,
     period: 'lifetime',
-    tier: index + 1,
-    dominantColor: ['#879B6F', '#2E9A98', '#4E8AAE', '#7D5DB4', '#D99A38', '#2E9A98', '#657DB5', '#8B4FA3', '#D99A38'][index] ?? '#DCC9B1',
+    tier: definition.tier,
+    dominantColor: definition.colors.primary,
+    sourceNotes: 'Original StrideOS Lifetime Distance - Cycling diamond vector system derived from the approved badge reference image.',
   })),
-  ...WEEKLY_DISTANCE_KM.map((kilometers, index) => baseDef({
-    id: `weekly_${kilometers}k`,
+  ...WEEKLY_DISTANCE_DEFINITIONS.map(definition => baseDef({
+    id: definition.id,
     family: 'weekly_distance',
     category: 'weekly_distance',
-    title: `${kilometers}K Week`,
-    shortTitle: `${kilometers}K`,
-    description: `Complete ${kilometers} kilometers in one reporting week.`,
-    criteria: `Complete ${kilometers}K in a canonical local reporting week.`,
+    title: `${definition.milestoneLabel} Per Week`,
+    shortTitle: definition.milestoneLabel,
+    description: `Complete ${definition.thresholdKm} kilometers in one reporting week.`,
+    criteria: `Complete ${definition.milestoneLabel} in a canonical local reporting week.`,
     ruleKind: 'weekly_distance',
     unitBehavior: 'fixed_k_identity',
-    threshold: km(kilometers),
+    threshold: definition.thresholdMeters,
     thresholdUnit: 'meters',
-    sportApplicability: ['running', 'walking'],
-    artworkKey: `weekly-distance-${index + 1}`,
-    artworkPath: `assets/achievements/system/weekly-distance/weekly-${kilometers}k.svg`,
-    lockedArtworkPath: `assets/achievements/system/weekly-distance/weekly-${kilometers}k-locked.svg`,
+    sportApplicability: ['running'],
+    artworkKey: `weekly-distance-${definition.slug}`,
+    artworkPath: definition.artworkPath,
+    lockedArtworkPath: definition.lockedArtworkPath,
+    shareArtPath: definition.shareOpaquePngPath,
+    shareOverlayPath: definition.shareTransparentPngPath,
     period: 'weekly',
-    tier: index + 1,
-    dominantColor: ['#879B6F', '#2E9A98', '#657DB5', '#9A5BAE', '#5F7998', '#6E8FA6', '#C65136', '#D99A38'][index] ?? '#DCC9B1',
+    tier: definition.tier,
+    dominantColor: definition.colors.primary,
+    sourceNotes: 'Original StrideOS Weekly Distance fixed-K hexagon vector system derived from the approved badge reference image.',
   })),
   ...CUMULATIVE_ELEVATION_ACHIEVEMENTS.map(item => baseDef({
     id: item.id,
@@ -356,24 +365,28 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     dominantColor: '#DCC9B1',
     sourceNotes: `${item.authoritativeSource}; ${item.measurementDescriptor}; original StrideOS artwork.`,
   })),
-  ...STRENGTH_DEFS.map(([id, title, ruleKind, threshold, unitBehavior, criteria], index) => baseDef({
-    id,
+  ...STRENGTH_REGISTRY_DEFINITIONS.map(definition => baseDef({
+    id: definition.id,
     family: 'strength',
     category: 'strength',
-    title,
-    description: criteria,
-    criteria,
-    ruleKind,
-    unitBehavior,
-    threshold,
-    thresholdUnit: unitBehavior === 'weeks' ? 'weeks' : 'sessions',
-    sportApplicability: ['strength', 'running'],
-    artworkKey: `strength-${index + 1}`,
-    artworkPath: `assets/achievements/system/strength/${id}.svg`,
-    lockedArtworkPath: `assets/achievements/system/strength/${id}-locked.svg`,
-    period: ruleKind === 'strength_count' ? 'lifetime' : 'rolling',
-    tier: index + 1,
-    dominantColor: '#94A0A6',
+    title: definition.title,
+    shortTitle: definition.compactTitle,
+    description: definition.description,
+    criteria: definition.criteria,
+    ruleKind: definition.ruleKind,
+    unitBehavior: definition.unitBehavior,
+    threshold: definition.threshold,
+    thresholdUnit: definition.thresholdUnit,
+    sportApplicability: [...definition.sportApplicability],
+    artworkKey: `strength-${definition.slug}`,
+    artworkPath: definition.artworkPath,
+    lockedArtworkPath: definition.lockedArtworkPath,
+    shareArtPath: definition.shareOpaquePngPath,
+    shareOverlayPath: definition.shareTransparentPngPath,
+    period: definition.ruleKind === 'strength_count' ? 'lifetime' : 'rolling',
+    tier: definition.tier,
+    dominantColor: STRENGTH_COLORS.primary,
+    sourceNotes: 'Original StrideOS Strength hexagon vector system derived from the approved badge reference image; session-count badges share one canonical dumbbell glyph.',
   })),
   ...STREAK_ACHIEVEMENTS.map(item => baseDef({
     id: item.id,
@@ -384,7 +397,7 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     description: "Consistency built by following the athlete's actual training schedule.",
     criteria: `Maintain schedule adherence for ${item.milestoneLabel}; planned rest, recovery, taper, and approved adaptations preserve the streak.`,
     ruleKind: 'streak',
-    unitBehavior: item.id === 'streak_6_month' ? 'months' : 'days',
+    unitBehavior: 'days',
     threshold: item.thresholdDays,
     thresholdUnit: 'days',
     sportApplicability: ['scheduled_training'],
@@ -397,24 +410,28 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     tier: item.tier,
     dominantColor: item.dominantHeatColor,
   })),
-  ...RECOVERY_DEFS.map(([id, title, threshold, criteria], index) => baseDef({
-    id,
+  ...RECOVERY_ACHIEVEMENT_DEFINITIONS.map(definition => baseDef({
+    id: definition.id,
     family: 'recovery',
     category: 'recovery',
-    title,
-    description: criteria,
-    criteria,
+    title: definition.title,
+    shortTitle: definition.compactTitle,
+    description: definition.description,
+    criteria: definition.criteria,
     ruleKind: 'recovery',
-    unitBehavior: ['recovery_check_in_streak', 'recovery_sleep_consistency'].includes(id) ? 'days' : 'count',
-    threshold,
-    thresholdUnit: ['recovery_check_in_streak', 'recovery_sleep_consistency'].includes(id) ? 'days' : 'count',
-    sportApplicability: ['recovery', 'readiness', 'mobility'],
-    artworkKey: `recovery-${index + 1}`,
-    artworkPath: `assets/achievements/system/recovery/${id}.svg`,
-    lockedArtworkPath: `assets/achievements/system/recovery/${id}-locked.svg`,
+    unitBehavior: definition.unitBehavior,
+    threshold: definition.threshold,
+    thresholdUnit: definition.thresholdUnit,
+    sportApplicability: [...definition.sportApplicability],
+    artworkKey: `recovery-${definition.slug}`,
+    artworkPath: definition.artworkPath,
+    lockedArtworkPath: definition.lockedArtworkPath,
+    shareArtPath: definition.shareOpaquePngPath,
+    shareOverlayPath: definition.shareTransparentPngPath,
     period: 'rolling',
-    tier: index + 1,
-    dominantColor: '#8B9C7C',
+    tier: definition.tier,
+    dominantColor: RECOVERY_COLORS.primary,
+    sourceNotes: 'Original StrideOS Recovery / Readiness hexagon vector system derived from the approved badge reference image.',
   })),
   ...CHALLENGE_DEFS.map(([id, title, ruleKind, threshold, unitBehavior, criteria, color], index) => baseDef({
     id,
@@ -620,10 +637,87 @@ function displayValue(value: number, def: AchievementDefinitionV2, units: UnitSy
   return `${Math.round(value).toLocaleString()}`;
 }
 
+function displayRunLevelDistance(meters: number, units: UnitSystem): string {
+  if (units === 'metric') return `${Math.round(meters / M_PER_KM).toLocaleString()} km`;
+  return `${Math.round(meters / M_PER_MI).toLocaleString()} mi`;
+}
+
 export function formatAchievementSupportValue(def: AchievementDefinitionV2, units: UnitSystem): string {
-  if (def.id === 'first_half_marathon') return units === 'metric' ? '21.1 km' : '13.1 mi';
-  if (def.id === 'first_marathon') return units === 'metric' ? '42.2 km' : '26.2 mi';
+  if (def.family === 'run_levels') return displayRunLevelDistance(def.threshold, units);
+  if (def.family === 'lifetime_running') {
+    const lifetimeRun = lifetimeDistanceRunningDefinitionFromAchievementId(def.id);
+    return lifetimeRun
+      ? formatLifetimeRunningMilestoneTarget(lifetimeRun.thresholdMiles, units)
+      : formatLifetimeRunningDistanceMeters(def.threshold, units);
+  }
+  if (def.family === 'lifetime_cycling') {
+    const lifetimeCycling = lifetimeDistanceCyclingDefinitionFromAchievementId(def.id);
+    return lifetimeCycling
+      ? formatLifetimeCyclingMilestoneTarget(lifetimeCycling.thresholdMiles, units)
+      : formatLifetimeCyclingDistanceMeters(def.threshold, units);
+  }
+  if (def.family === 'weekly_distance') return formatWeeklyDistanceMeters(def.threshold, units);
+  if (def.family === 'firsts') {
+    const first = firstAchievementDefinitionFromAchievementId(def.id);
+    if (first) return firstAchievementSupportValue(first, units);
+  }
+  if (def.family === 'strength') {
+    const strength = strengthAchievementDefinitionFromAchievementId(def.id);
+    if (strength) return strengthAchievementSupportValue(strength);
+  }
+  if (def.family === 'recovery') {
+    const recovery = recoveryAchievementDefinitionFromAchievementId(def.id);
+    if (recovery) return recoveryAchievementSupportValue(recovery);
+  }
   return displayValue(def.threshold, def, units);
+}
+
+function displayAchievementProgressValue(value: number, def: AchievementDefinitionV2, units: UnitSystem): string {
+  if (def.family === 'run_levels') return displayRunLevelDistance(value, units);
+  if (def.family === 'lifetime_running') return formatLifetimeRunningDistanceMeters(value, units);
+  if (def.family === 'lifetime_cycling') return formatLifetimeCyclingDistanceMeters(value, units);
+  if (def.family === 'weekly_distance') return formatWeeklyDistanceMeters(value, units);
+  return displayValue(value, def, units);
+}
+
+function achievementAccessibilityLabel(
+  def: AchievementDefinitionV2,
+  state: EvaluatedAchievement['state'],
+  complete: boolean,
+  remaining: number,
+  remainingText: string,
+  progressPercentage: number,
+  units: UnitSystem,
+): string {
+  if (def.family === 'lifetime_running') {
+    const lifetimeRun = lifetimeDistanceRunningDefinitionFromAchievementId(def.id);
+    if (lifetimeRun) return lifetimeRunningAchievementAccessibilityLabel(lifetimeRun, state, units, remaining);
+  }
+  if (def.family === 'lifetime_cycling') {
+    const lifetimeCycling = lifetimeDistanceCyclingDefinitionFromAchievementId(def.id);
+    if (lifetimeCycling) return lifetimeCyclingAchievementAccessibilityLabel(lifetimeCycling, state, units, remaining);
+  }
+  if (def.family === 'weekly_distance') {
+    const weeklyDistance = weeklyDistanceDefinitionFromAchievementId(def.id);
+    if (weeklyDistance) return weeklyDistanceAchievementAccessibilityLabel(weeklyDistance, state, units, remaining);
+  }
+  if (def.family === 'streaks') {
+    const streak = streakDefinitionFromAchievementId(def.id);
+    if (streak) return streakAchievementAccessibilityLabel(streak.thresholdDays, complete ? 'earned' : 'locked', remaining, streak.subtitle);
+  }
+  if (def.family === 'firsts') {
+    const first = firstAchievementDefinitionFromAchievementId(def.id);
+    if (first) return firstAchievementAccessibilityLabel(first, complete ? 'earned' : 'locked', units);
+  }
+  if (def.family === 'strength') {
+    const strength = strengthAchievementDefinitionFromAchievementId(def.id);
+    if (strength) return strengthAchievementAccessibilityLabel(strength, complete ? 'earned' : 'locked', remaining);
+  }
+  if (def.family === 'recovery') {
+    const recovery = recoveryAchievementDefinitionFromAchievementId(def.id);
+    if (recovery) return recoveryAchievementAccessibilityLabel(recovery, complete ? 'earned' : 'locked', remaining);
+  }
+  return `${def.title} achievement. ${complete ? 'Earned' : `Locked. ${remainingText}`}. Progress ${Math.round(progressPercentage * 100)} percent.`;
 }
 
 function evaluateFirst(def: AchievementDefinitionV2, ctx: EvaluationContext): DefinitionEvaluationResult {
@@ -632,20 +726,20 @@ function evaluateFirst(def: AchievementDefinitionV2, ctx: EvaluationContext): De
     if (def.id === 'first_run') return activity.activityType === 'running';
     if (def.id === 'first_walk') return activity.activityType === 'walking';
     if (def.id === 'first_run_walk') return activity.subtype === 'run_walk' || Boolean(activity.metrics.runWalkIntervals?.length);
-    if (def.id === 'first_strength_session') return activity.activityType === 'strength';
+    if (def.id === 'first_strength_workout') return activity.activityType === 'strength';
     if (def.id === 'first_ride') return isRide(activity);
-    if (def.id === 'first_treadmill_run') return activity.activityType === 'running' && (activity.indoor || activity.subtype === 'treadmill' || activity.metrics.distanceSource === 'treadmill_reported');
+    if (def.id === 'first_mobility_workout') return activity.activityType === 'mobility';
     if (def.id === 'first_5k' || def.id === 'first_10k' || def.id === 'first_half_marathon' || def.id === 'first_marathon') {
       return isRun(activity) && distanceMeters(activity) >= def.threshold;
     }
     if (def.id === 'first_route_completed') return hasRoute(activity);
     if (def.id === 'first_structured_workout') return isStructured(activity);
-    if (def.id === 'first_adapted_week') {
+    if (def.id === 'first_adapted_workout') {
       return ['modified', 'equivalent_substitute', 'partial', 'stopped_early'].includes(activity.completionClassification ?? '');
     }
     return false;
   });
-  if (def.id === 'first_movement_lab_assessment') {
+  if (def.id === 'first_movement_lab_analysis') {
     const firstAssessment = [...ctx.input.assessmentResults].sort((a, b) => a.testedAt - b.testedAt)[0];
     return {
       complete: Boolean(firstAssessment),
@@ -837,12 +931,27 @@ export function evaluateAchievementSystem(input: AchievementEvaluationInput): Ev
     const target = Math.max(1, def.threshold);
     const remaining = Math.max(0, def.threshold - current);
     const progressPercentage = Math.max(0, Math.min(1, current / target));
+    const recoveryDefinition = def.family === 'recovery'
+      ? recoveryAchievementDefinitionFromAchievementId(def.id)
+      : null;
     const state: EvaluatedAchievement['state'] = complete
       ? ctx.existingAwards.has(def.id) && result.achievedAt && result.achievedAt > (ctx.existingAwards.get(def.id) ?? 0)
         ? 'newly_earned'
         : 'earned'
       : 'locked';
-    const remainingText = remaining === 0 ? 'Ready to unlock' : `${displayValue(remaining, def, ctx.input.units)} remaining`;
+    const remainingText = def.family === 'run_levels' && remaining > 0
+      ? `${displayRunLevelDistance(remaining, ctx.input.units)} to ${def.title}`
+      : def.family === 'lifetime_running' && remaining > 0
+        ? `${formatLifetimeRunningRemainingMeters(remaining, ctx.input.units)} remaining`
+      : def.family === 'lifetime_cycling' && remaining > 0
+        ? `${formatLifetimeCyclingRemainingMeters(remaining, ctx.input.units)} remaining`
+      : def.family === 'weekly_distance' && remaining > 0
+        ? `${formatWeeklyDistanceRemainingMeters(remaining, ctx.input.units)} remaining this week`
+      : recoveryDefinition && remaining > 0
+        ? recoveryAchievementProgressText(recoveryDefinition, current)
+      : remaining === 0
+        ? 'Ready to unlock'
+        : `${displayAchievementProgressValue(remaining, def, ctx.input.units)} remaining`;
     return {
       ...def,
       state,
@@ -853,10 +962,10 @@ export function evaluateAchievementSystem(input: AchievementEvaluationInput): Ev
       targetProgress: def.threshold,
       remaining,
       progressPercentage,
-      displayProgress: displayValue(current, def, ctx.input.units),
+      displayProgress: displayAchievementProgressValue(current, def, ctx.input.units),
       displayTarget: formatAchievementSupportValue(def, ctx.input.units),
       displayRemaining: remainingText,
-      accessibilityLabel: `${def.title} achievement. ${complete ? 'Earned' : `Locked. ${remainingText}`}. Progress ${Math.round(progressPercentage * 100)} percent.`,
+      accessibilityLabel: achievementAccessibilityLabel(def, state, complete, remaining, remainingText, progressPercentage, ctx.input.units),
       currentPeriodKey: result.currentPeriodKey,
     };
   });

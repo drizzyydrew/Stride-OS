@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none" role="img" aria-label="Returned Gradually achievement. Unlocked.">
+  <defs>
+    <linearGradient id="recovery-returned-gradually-unlocked-edge" x1="14" y1="7" x2="86" y2="93" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D5E7C4"/>
+      <stop offset="0.54" stop-color="#9FBF8D"/>
+      <stop offset="1" stop-color="#516F5D"/>
+    </linearGradient>
+    <radialGradient id="recovery-returned-gradually-unlocked-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 41) rotate(90) scale(35 34)">
+      <stop offset="0" stop-color="#7DAE86" stop-opacity="0.3"/>
+      <stop offset="0.64" stop-color="#7DAE86" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#7DAE86" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <path d="M50 5.5 Q52.3 5.5 54.5 6.8 L85.7 24.8 Q88 26.1 88 28.8 L88 71.2 Q88 73.9 85.7 75.2 L54.5 93.2 Q52.3 94.5 50 94.5 Q47.7 94.5 45.5 93.2 L14.3 75.2 Q12 73.9 12 71.2 L12 28.8 Q12 26.1 14.3 24.8 L45.5 6.8 Q47.7 5.5 50 5.5 Z" fill="#090A09" fill-opacity="1" stroke="url(#recovery-returned-gradually-unlocked-edge)" stroke-width="2.2" stroke-linejoin="round" stroke-opacity="1"/>
+  <path d="M50 5.5 Q52.3 5.5 54.5 6.8 L85.7 24.8 Q88 26.1 88 28.8 L88 71.2 Q88 73.9 85.7 75.2 L54.5 93.2 Q52.3 94.5 50 94.5 Q47.7 94.5 45.5 93.2 L14.3 75.2 Q12 73.9 12 71.2 L12 28.8 Q12 26.1 14.3 24.8 L45.5 6.8 Q47.7 5.5 50 5.5 Z" fill="none" stroke="#D5E7C4" stroke-width="0.62" stroke-linejoin="round" stroke-opacity="0.34" transform="translate(0.9 0.9) scale(0.982)"/>
+  <ellipse cx="50" cy="42" rx="31" ry="30" fill="url(#recovery-returned-gradually-unlocked-glow)" opacity="0.18"/>
+  <g>
+    <ellipse cx="35.1" cy="60.5" rx="10.3" ry="3.5" fill="#9FBF8D" fill-opacity="0.768" transform="rotate(-5 35.1 60.5)"/>
+    <ellipse cx="47.8" cy="51.9" rx="8.4" ry="3.1" fill="#9FBF8D" fill-opacity="0.6911999999999999" transform="rotate(-4 47.8 51.9)"/>
+    <ellipse cx="59.1" cy="43.9" rx="6.7" ry="2.6" fill="#9FBF8D" fill-opacity="0.6144" transform="rotate(-3 59.1 43.9)"/>
+    <ellipse cx="67.5" cy="36" rx="4.9" ry="2" fill="#9FBF8D" fill-opacity="0.5376000000000001" transform="rotate(-2 67.5 36)"/>
+    <path d="M63.6 27.1 C68.9 26.5 71.8 24.2 73.5 20.2 M63.6 31 C68.5 31.5 71.8 33.8 73.8 37.3 M60.4 29.2 C64.2 29.3 68.4 29.1 72.9 28.6" fill="none" stroke="#9FBF8D" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.6911999999999999"/>
+  </g>
+
+  <text x="50" y="64" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="5.6" font-weight="900" letter-spacing="0.28" fill="#BFD6AE" fill-opacity="0.96">RETURNED</text>
+
+  <text x="50" y="70.7" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="5.6" font-weight="900" letter-spacing="0.28" fill="#BFD6AE" fill-opacity="0.96">GRADUALLY</text>
+
+
+  <text x="50" y="77.2" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="3.6" font-weight="900" letter-spacing="1.45" fill="#BFD6AE" fill-opacity="0.76">STRIDEOS</text>
+  <path d="M43.6 82.8 L50 86.6 L56.4 82.8" fill="none" stroke="#9FBF8D" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.88"/>
+  <path d="M44.3 87.9 L50 91.2 L55.7 87.9" fill="none" stroke="#D5E7C4" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.88"/>
+</svg>

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none" role="img" aria-label="7-day streak achievement. Unlocked.">
+  <defs>
+    <linearGradient id="streak-7-day-share-transparent-edge" x1="17" y1="8" x2="84" y2="91" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D8FFC0"/>
+      <stop offset="0.5" stop-color="#A5EC70"/>
+      <stop offset="1" stop-color="#4A8D43"/>
+    </linearGradient>
+    <linearGradient id="streak-7-day-share-transparent-flame" x1="43" y1="19" x2="58" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F2FFE3"/>
+      <stop offset="0.42" stop-color="#D8FFC0"/>
+      <stop offset="0.7" stop-color="#A5EC70"/>
+      <stop offset="1" stop-color="#4A8D43"/>
+    </linearGradient>
+    <radialGradient id="streak-7-day-share-transparent-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 43) rotate(90) scale(36 32)">
+      <stop offset="0" stop-color="#69C85D" stop-opacity="0.36"/>
+      <stop offset="0.66" stop-color="#69C85D" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#69C85D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <path d="M50 7.5 Q52.3 7.5 54.4 8.7 L82.9 25.1 Q85.2 26.4 85.2 29.1 L85.2 70.9 Q85.2 73.6 82.9 74.9 L54.4 91.3 Q52.3 92.5 50 92.5 Q47.7 92.5 45.6 91.3 L17.1 74.9 Q14.8 73.6 14.8 70.9 L14.8 29.1 Q14.8 26.4 17.1 25.1 L45.6 8.7 Q47.7 7.5 50 7.5 Z" fill="transparent" fill-opacity="0" stroke="url(#streak-7-day-share-transparent-edge)" stroke-width="2.35" stroke-linejoin="round" stroke-opacity="1"/>
+  <path d="M50 7.5 Q52.3 7.5 54.4 8.7 L82.9 25.1 Q85.2 26.4 85.2 29.1 L85.2 70.9 Q85.2 73.6 82.9 74.9 L54.4 91.3 Q52.3 92.5 50 92.5 Q47.7 92.5 45.6 91.3 L17.1 74.9 Q14.8 73.6 14.8 70.9 L14.8 29.1 Q14.8 26.4 17.1 25.1 L45.6 8.7 Q47.7 7.5 50 7.5 Z" fill="none" stroke="#D8FFC0" stroke-width="0.75" stroke-linejoin="round" stroke-opacity="0.42" transform="translate(0.9 0.9) scale(0.982)"/>
+  <ellipse cx="50" cy="44" rx="31" ry="29" fill="url(#streak-7-day-share-transparent-glow)" opacity="0"/>
+  <path d="M50.6 18.8 C43.7 27.5 35.8 36 35.8 48.3 C35.8 61.4 45 68.9 50.4 72.2 C57.2 67.6 65.1 60.5 65.1 49.2 C65.1 40.7 60.2 34.1 58.9 27.4 C55.6 32.7 53.3 36.5 52.7 41.7 C49.1 36 53.1 27.4 50.6 18.8 Z" fill="url(#streak-7-day-share-transparent-flame)" opacity="1" transform="translate(16 4) scale(0.68)"/>
+  <path d="M40.7 42.6 C36.6 48.6 36.1 56.3 40.5 62.4 C43.5 66.4 47.5 69 50 70.3 C47.1 64.9 48.1 59 51.2 53.7 C45.5 56 42.6 51.5 43.4 45.2 C42.2 45.6 41.3 44.8 40.7 42.6 Z" fill="#A5EC70" opacity="0.72" transform="translate(16 4) scale(0.68)"/>
+  <path d="M51.4 43.3 C47.7 48.9 45.8 54.8 47.6 60.8 C49.1 65.6 52.2 68.2 52.2 68.2 C56.1 64.5 58.6 60 58.6 55.1 C58.6 50.4 55.6 47.2 54.4 43.3 C53.4 46.1 52.6 48.5 52.6 51.6 C50.3 48.8 50.6 45.8 51.4 43.3 Z" fill="#0B0D10" opacity="0.18" transform="translate(16 4) scale(0.68)"/>
+  <path d="M51.4 43.3 C47.7 48.9 45.8 54.8 47.6 60.8 C49.1 65.6 52.2 68.2 52.2 68.2 C56.1 64.5 58.6 60 58.6 55.1 C58.6 50.4 55.6 47.2 54.4 43.3 C53.4 46.1 52.6 48.5 52.6 51.6 C50.3 48.8 50.6 45.8 51.4 43.3 Z" fill="#F2FFE3" opacity="0.18" transform="translate(16 4) scale(0.68) translate(1.1 -1.2) scale(0.94)"/>
+  <text x="50" y="65.8" text-anchor="middle" dominant-baseline="middle" font-family="Didot, 'Bodoni 72', Georgia, serif" font-size="25" font-weight="600" stroke="#030405" stroke-width="1.05" stroke-opacity="0.72" fill="none">7</text>
+  <text x="50" y="65.8" text-anchor="middle" dominant-baseline="middle" font-family="Didot, 'Bodoni 72', Georgia, serif" font-size="25" font-weight="600" fill="#A5EC70" fill-opacity="1">7</text>
+
+  <text x="50" y="75.2" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="5.6" font-weight="900" letter-spacing="0.7" stroke="#030405" stroke-width="0.45" stroke-opacity="0.72" fill="none">DAY STREAK</text>
+  <text x="50" y="75.2" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="5.6" font-weight="900" letter-spacing="0.7" fill="#A5EC70" fill-opacity="0.96">DAY STREAK</text>
+  <text x="50" y="82.8" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="3.6" font-weight="900" letter-spacing="1.45" stroke="#030405" stroke-width="0.35" stroke-opacity="0.72" fill="none">STRIDEOS</text>
+  <text x="50" y="82.8" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="3.6" font-weight="900" letter-spacing="1.45" fill="#A5EC70" fill-opacity="0.82">STRIDEOS</text>
+  <path d="M43.6 86.8 L50 90.6 L56.4 86.8" fill="none" stroke="#A5EC70" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.9"/>
+  <path d="M44.4 91 L50 94.3 L55.6 91" fill="none" stroke="#D8FFC0" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.9"/>
+</svg>

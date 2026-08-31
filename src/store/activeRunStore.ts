@@ -124,6 +124,8 @@ export type ActiveRunStore = {
   clearCompletionRequest: () => void;
   confirmTreadmillSpeed:  (speedMph: number) => void;
   setManualLiveDistance:  (miles: number) => void;
+  setEquipmentLiveDistance: (miles: number, source: DistanceSource) => void;
+  setEquipmentLiveSpeed: (speedMph: number) => void;
   setLastEnvironmentPreference: (environment: RunEnvironment) => void;
 };
 
@@ -267,6 +269,18 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     set({ manualDistanceMiles: miles, distanceSource: 'manual_entry' });
   },
 
+  setEquipmentLiveDistance: (miles, source) => {
+    const state = get();
+    if (state.environment !== 'indoor' || !Number.isFinite(miles) || miles < 0) return;
+    set({ manualDistanceMiles: miles, distanceSource: source });
+  },
+
+  setEquipmentLiveSpeed: (speedMph) => {
+    const state = get();
+    if (state.environment !== 'indoor' || !Number.isFinite(speedMph) || speedMph < 0) return;
+    set({ currentSpeedMph: speedMph, distanceSource: state.distanceSource ?? 'treadmill_reported' });
+  },
+
   addLocationUpdate: (loc) => {
     const state = get();
     if (!state.isActive) return;
@@ -297,7 +311,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       });
       if (decision.action === 'auto_pause') {
         set({ isPaused: true, pausedAt: coord.timestamp, autoPauseState: decision.state });
-        if (useSettingsStore.getState().announceAutoPause) enqueueVoiceCue('Workout paused.', 'interval');
+        if (useSettingsStore.getState().announceAutoPause) enqueueVoiceCue('Pausing run.', 'interval');
         return;
       }
       if (state.isPaused) {
@@ -310,7 +324,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
             coordinates: [...state.coordinates, coord],
             autoPauseState: decision.state,
           });
-          if (useSettingsStore.getState().announceAutoResume) enqueueVoiceCue('Workout resumed.', 'interval');
+          if (useSettingsStore.getState().announceAutoResume) enqueueVoiceCue('Resuming run.', 'interval');
         } else {
           set({ autoPauseState: decision.state });
         }

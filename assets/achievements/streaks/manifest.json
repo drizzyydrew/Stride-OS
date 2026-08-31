@@ -1,0 +1,92 @@
+[
+  {
+    "achievementId": "streak_1_week",
+    "days": 7,
+    "heatToken": "streakHeatGreen",
+    "artworkPath": "assets/achievements/streaks/streak-7-day-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/streaks/streak-7-day-locked.svg",
+    "shareOverlayPath": "assets/achievements/streaks/streak-7-day-transparent.svg",
+    "shareOpaquePath": "assets/achievements/streaks/streak-7-day-opaque.svg"
+  },
+  {
+    "achievementId": "streak_30_day",
+    "days": 30,
+    "heatToken": "streakHeatYellow",
+    "artworkPath": "assets/achievements/streaks/streak-30-day-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/streaks/streak-30-day-locked.svg",
+    "shareOverlayPath": "assets/achievements/streaks/streak-30-day-transparent.svg",
+    "shareOpaquePath": "assets/achievements/streaks/streak-30-day-opaque.svg"
+  },
+  {
+    "achievementId": "streak_50_day",
+    "days": 50,
+    "heatToken": "streakHeatYellow",
+    "artworkPath": "assets/achievements/streaks/streak-50-day-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/streaks/streak-50-day-locked.svg",
+    "shareOverlayPath": "assets/achievements/streaks/streak-50-day-transparent.svg",
+    "shareOpaquePath": "assets/achievements/streaks/streak-50-day-opaque.svg"
+  },
+  {
+    "achievementId": "streak_75_day",
+    "days": 75,
+    "heatToken": "streakHeatOrange",
+    "artworkPath": "assets/achievements/streaks/streak-75-day-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/streaks/streak-75-day-locked.svg",
+    "shareOverlayPath": "assets/achievements/streaks/streak-75-day-transparent.svg",
+    "shareOpaquePath": "assets/achievements/streaks/streak-75-day-opaque.svg"
+  },
+  {
+    "achievementId": "streak_100_day",
+    "days": 100,
+    "heatToken": "streakHeatOrange",
+    "artworkPath": "assets/achievements/streaks/streak-100-day-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/streaks/streak-100-day-locked.svg",
+    "shareOverlayPath": "assets/achievements/streaks/streak-100-day-transparent.svg",
+    "shareOpaquePath": "assets/achievements/streaks/streak-100-day-opaque.svg"
+  },
+  {
+    "achievementId": "streak_150_day",
+    "days": 150,
+    "heatToken": "streakHeatRedOrange",
+    "artworkPath": "assets/achievements/streaks/streak-150-day-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/streaks/streak-150-day-locked.svg",
+    "shareOverlayPath": "assets/achievements/streaks/streak-150-day-transparent.svg",
+    "shareOpaquePath": "assets/achievements/streaks/streak-150-day-opaque.svg"
+  },
+  {
+    "achievementId": "streak_200_day",
+    "days": 200,
+    "heatToken": "streakHeatHotPink",
+    "artworkPath": "assets/achievements/streaks/streak-200-day-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/streaks/streak-200-day-locked.svg",
+    "shareOverlayPath": "assets/achievements/streaks/streak-200-day-transparent.svg",
+    "shareOpaquePath": "assets/achievements/streaks/streak-200-day-opaque.svg"
+  },
+  {
+    "achievementId": "streak_250_day",
+    "days": 250,
+    "heatToken": "streakHeatViolet",
+    "artworkPath": "assets/achievements/streaks/streak-250-day-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/streaks/streak-250-day-locked.svg",
+    "shareOverlayPath": "assets/achievements/streaks/streak-250-day-transparent.svg",
+    "shareOpaquePath": "assets/achievements/streaks/streak-250-day-opaque.svg"
+  },
+  {
+    "achievementId": "streak_300_day",
+    "days": 300,
+    "heatToken": "streakHeatBlue",
+    "artworkPath": "assets/achievements/streaks/streak-300-day-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/streaks/streak-300-day-locked.svg",
+    "shareOverlayPath": "assets/achievements/streaks/streak-300-day-transparent.svg",
+    "shareOpaquePath": "assets/achievements/streaks/streak-300-day-opaque.svg"
+  },
+  {
+    "achievementId": "streak_365_day",
+    "days": 365,
+    "heatToken": "streakHeatWhiteHot",
+    "artworkPath": "assets/achievements/streaks/streak-365-day-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/streaks/streak-365-day-locked.svg",
+    "shareOverlayPath": "assets/achievements/streaks/streak-365-day-transparent.svg",
+    "shareOpaquePath": "assets/achievements/streaks/streak-365-day-opaque.svg"
+  }
+]

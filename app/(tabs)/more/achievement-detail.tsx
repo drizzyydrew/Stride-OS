@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import RunLevelProgress from '../../../src/achievements/runLevels/RunLevelProgress';
 import AchievementBadge from '../../../src/components/achievements/AchievementBadge';
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import ShareStudio, {
@@ -93,18 +94,31 @@ export default function AchievementDetailScreen() {
       <ScreenHeader eyebrow={achievementFamilyLabel(achievement.family).toUpperCase()} title={achievement.title} onBack={() => router.back()} />
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.content}>
         <View style={[s.hero, { backgroundColor: C.card, borderColor: achievement.state === 'locked' ? C.border : C.primary }]}>
-          <AchievementBadge id={achievement.id} category={achievement.category} earned={achievement.state !== 'locked'} size="large" />
+          <AchievementBadge
+            id={achievement.id}
+            category={achievement.category}
+            earned={achievement.state !== 'locked'}
+            size="large"
+            unitSystem={units}
+            remainingDays={achievement.family === 'streaks' ? achievement.remaining : 0}
+          />
           <Text style={[s.title, { color: C.text }]}>{achievement.title}</Text>
           <Text style={[s.body, { color: C.textMuted }]}>{achievement.description}</Text>
           <Text style={[s.state, { color: achievement.state === 'locked' ? C.textMuted : C.primary }]}>
             {achievement.state === 'locked' ? achievement.displayRemaining : `Earned ${shortDate(achievement.achievedDate)}`}
           </Text>
-          <View style={[s.progressTrack, { backgroundColor: C.cardAlt }]}>
-            <View style={[s.progressFill, { width: `${Math.round(achievement.progressPercentage * 100)}%` as `${number}%`, backgroundColor: C.primary }]} />
-          </View>
-          <Text style={[s.progressText, { color: C.textMuted }]}>
-            {achievement.displayProgress} / {achievement.displayTarget}
-          </Text>
+          {achievement.family === 'run_levels' ? (
+            <RunLevelProgress currentMeters={achievement.currentProgress} units={units} style={s.runLevelProgress} />
+          ) : (
+            <>
+              <View style={[s.progressTrack, { backgroundColor: C.cardAlt }]}>
+                <View style={[s.progressFill, { width: `${Math.round(achievement.progressPercentage * 100)}%` as `${number}%`, backgroundColor: C.primary }]} />
+              </View>
+              <Text style={[s.progressText, { color: C.textMuted }]}>
+                {achievement.displayProgress} / {achievement.displayTarget}
+              </Text>
+            </>
+          )}
         </View>
 
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
@@ -180,6 +194,7 @@ const s = StyleSheet.create({
   progressTrack: { width: '100%', height: 8, borderRadius: 999, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 999 },
   progressText: { fontSize: 12, lineHeight: 17, fontWeight: '800' },
+  runLevelProgress: { width: '100%', marginTop: 4 },
   card: { borderWidth: 1, borderRadius: 16, padding: 16, gap: 10 },
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   variantGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

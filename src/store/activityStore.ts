@@ -75,6 +75,22 @@ function healthKitDuplicateIndex(activities: readonly Activity[], activity: Acti
   });
 }
 
+function liveTrackedDuplicateIndex(activities: readonly Activity[], activity: Activity): number {
+  const liveNote = activity.notes?.startsWith('Saved from live GPS tracking')
+    || activity.notes?.startsWith('Saved from indoor treadmill run');
+  if (!liveNote || activity.activityType !== 'running') return -1;
+  const duration = activity.metrics.durationSeconds ?? 0;
+  const distance = activity.metrics.distanceMeters ?? 0;
+  return activities.findIndex(item => {
+    const itemLiveNote = item.notes?.startsWith('Saved from live GPS tracking')
+      || item.notes?.startsWith('Saved from indoor treadmill run');
+    if (!itemLiveNote || item.activityType !== activity.activityType || item.subtype !== activity.subtype) return false;
+    return Math.abs(item.startTime - activity.startTime) <= 120_000
+      && Math.abs((item.metrics.durationSeconds ?? 0) - duration) <= 60
+      && Math.abs((item.metrics.distanceMeters ?? 0) - distance) <= 50;
+  });
+}
+
 export function migrateActivityStoreState(persisted: unknown): Pick<ActivityStore, 'schemaVersion' | 'activities'> {
   const source = (persisted ?? {}) as Partial<ActivityStore>;
   const normalized = Array.isArray(source.activities)
@@ -101,13 +117,24 @@ export const useActivityStore = create<ActivityStore>()(
 
       addActivity: (input) => {
         const activity = normalizeActivity(input);
+        let savedActivityId = activity.id;
         set(state => {
           const existingIndex = state.activities.findIndex(item => item.id === activity.id);
           if (existingIndex < 0) {
             const healthKitIndex = healthKitDuplicateIndex(state.activities, activity);
             if (healthKitIndex >= 0) {
+              savedActivityId = state.activities[healthKitIndex]?.id ?? activity.id;
               return {
                 activities: state.activities.map((item, index) => index === healthKitIndex
+                  ? { ...item, ...activity, id: item.id, createdAt: item.createdAt, updatedAt: Date.now() }
+                  : item),
+              };
+            }
+            const liveDuplicateIndex = liveTrackedDuplicateIndex(state.activities, activity);
+            if (liveDuplicateIndex >= 0) {
+              savedActivityId = state.activities[liveDuplicateIndex]?.id ?? activity.id;
+              return {
+                activities: state.activities.map((item, index) => index === liveDuplicateIndex
                   ? { ...item, ...activity, id: item.id, createdAt: item.createdAt, updatedAt: Date.now() }
                   : item),
               };
@@ -115,6 +142,7 @@ export const useActivityStore = create<ActivityStore>()(
             if (activity.scheduledSessionId) {
               const linkedIndex = state.activities.findIndex(item => item.scheduledSessionId === activity.scheduledSessionId);
               if (linkedIndex >= 0) {
+                savedActivityId = state.activities[linkedIndex]?.id ?? activity.id;
                 return {
                   activities: state.activities.map(item => item.scheduledSessionId === activity.scheduledSessionId
                     ? { ...activity, id: item.id, createdAt: item.createdAt, updatedAt: Date.now() }
@@ -131,7 +159,7 @@ export const useActivityStore = create<ActivityStore>()(
         // After state settles — synchronous, no dangling promise.
         runRecalculation('activity_added', get().activities);
         return get().activities.find(item => item.scheduledSessionId && item.scheduledSessionId === activity.scheduledSessionId)?.id
-          ?? activity.id;
+          ?? savedActivityId;
       },
 
       updateActivity: (id, patch) => {

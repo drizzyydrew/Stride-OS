@@ -125,7 +125,21 @@ export type CustomWorkoutLog = {
   fatigueImpact:  number;   // fatigue score contribution: 0–20
 };
 
-export type CustomRunBuilderType = 'fartlek' | 'tempo' | 'intervals' | 'long_run_strides';
+export type CustomRunBuilderType = 'fartlek' | 'tempo' | 'intervals' | 'long_run_strides' | 'custom_segments';
+
+export type CustomRunSegmentKind = 'run' | 'recovery' | 'warmup' | 'cooldown';
+export type CustomRunSegmentTarget = 'time' | 'distance';
+
+export type CustomRunSegment = {
+  id: string;
+  label: string;
+  kind: CustomRunSegmentKind;
+  target: CustomRunSegmentTarget;
+  durationMinutes?: number;
+  distanceMiles?: number;
+  targetPaceSecPerMile?: number;
+  targetHrZone?: 1 | 2 | 3 | 4 | 5;
+};
 
 export type CustomRunParameters = {
   fartlekMin: number;
@@ -151,6 +165,7 @@ export type CustomRunDefinition = {
   distanceMiles: number;
   segmentSummary: string;
   parameters: CustomRunParameters;
+  structuredSegments?: CustomRunSegment[];
   createdAt: number;
   updatedAt: number;
 };

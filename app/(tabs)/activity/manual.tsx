@@ -135,6 +135,14 @@ export default function ManualActivityScreen() {
         ?? 'running';
   const initialDurationSeconds = prefillActivity?.metrics.durationSeconds ?? (scheduledSession ? scheduledSession.durationMinutes * 60 : 45 * 60);
   const initialStartTime = prefillActivity?.startTime ?? Date.now();
+  const initialDistance = prefillActivity?.metrics.distanceMeters
+    ? (prefillActivity.metrics.distanceMeters / 1609.344).toFixed(2)
+    : '';
+  const initialAverageHr = prefillActivity?.metrics.averageHeartRateBpm ? String(prefillActivity.metrics.averageHeartRateBpm) : '';
+  const initialMaximumHr = prefillActivity?.metrics.maximumHeartRateBpm ? String(prefillActivity.metrics.maximumHeartRateBpm) : '';
+  const initialRpe = prefillActivity?.rpe ? String(prefillActivity.rpe) : '5';
+  const initialNotes = prefillActivity?.notes ?? '';
+  const initialPool = prefillActivity?.subtype !== 'open_water';
 
   const [activityKey, setActivityKey] = useState(initialKey);
   const selectedType = TYPES.find(item => item.key === activityKey) ?? TYPES[0]!;
@@ -143,20 +151,21 @@ export default function ManualActivityScreen() {
   const [durationMinutes, setDurationMinutes] = useState(String(Math.round(initialDurationSeconds / 60)));
   const [activityDate, setActivityDate] = useState(timestampToDateOnly(initialStartTime));
   const [refreshResult, setRefreshResult] = useState<'idle' | 'success' | 'error'>('idle');
-  const [distance, setDistance] = useState('');
+  const [distance, setDistance] = useState(initialDistance);
   const [distanceUnit, setDistanceUnit] = useState<'mi' | 'km'>('mi');
-  const [averageHr, setAverageHr] = useState('');
-  const [maximumHr, setMaximumHr] = useState('');
-  const [rpe, setRpe] = useState('5');
+  const [averageHr, setAverageHr] = useState(initialAverageHr);
+  const [maximumHr, setMaximumHr] = useState(initialMaximumHr);
+  const [rpe, setRpe] = useState(initialRpe);
   const [laps, setLaps] = useState('');
   const [cadence, setCadence] = useState('');
   const [power, setPower] = useState('');
   const [rounds, setRounds] = useState('');
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(initialNotes);
   const [routeId, setRouteId] = useState<string | null>(prefillActivity?.metrics.routeId ?? null);
   const [shoeId, setShoeId] = useState<string | null>(prefillActivity?.shoeId ?? defaultShoeId ?? null);
-  const [pool, setPool] = useState(true);
+  const [pool, setPool] = useState(initialPool);
   const hydratedRef = useRef(false);
+  const baselineSnapshotRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (hydratedRef.current || !prefillActivity) return;
@@ -186,6 +195,35 @@ export default function ManualActivityScreen() {
     Math.round((numeric(durationMinutes) ?? 0) * 60),
     distanceUnit,
   ), [activityType, distance, distanceUnit, durationMinutes]);
+
+  const formSnapshot = useMemo(() => JSON.stringify({
+    activityKey,
+    completionState,
+    durationMinutes,
+    activityDate,
+    distance,
+    distanceUnit,
+    averageHr,
+    maximumHr,
+    rpe,
+    laps,
+    cadence,
+    power,
+    rounds,
+    notes,
+    routeId,
+    shoeId,
+    pool,
+  }), [
+    activityKey, completionState, durationMinutes, activityDate, distance, distanceUnit,
+    averageHr, maximumHr, rpe, laps, cadence, power, rounds, notes, routeId, shoeId, pool,
+  ]);
+
+  useEffect(() => {
+    if (baselineSnapshotRef.current === null) baselineSnapshotRef.current = formSnapshot;
+  }, [formSnapshot]);
+
+  const hasUnsavedChanges = baselineSnapshotRef.current !== null && baselineSnapshotRef.current !== formSnapshot;
 
   // When the athlete is logging against a scheduled session whose category
   // doesn't match what they actually picked (e.g. the schedule says a run,
@@ -289,16 +327,32 @@ export default function ManualActivityScreen() {
     );
   }
 
+  function handleBack() {
+    if (!hasUnsavedChanges) {
+      router.back();
+      return;
+    }
+    Alert.alert(
+      'Save changes?',
+      'You have unsaved activity changes.',
+      [
+        { text: 'Save', onPress: save },
+        { text: 'Continue Without Saving', style: 'destructive', onPress: () => router.back() },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
+  }
+
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
       <KeyboardAvoidingView style={s.safe} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScreenHeader
           eyebrow={scheduledSession ? 'WORKOUT COMPLETION' : 'QUICK ENTRY'}
           title={scheduledSession ? 'Complete Workout' : prefillActivity ? 'Edit Activity' : 'Log Activity'}
-          onBack={() => router.back()}
+          onBack={handleBack}
           right={(
             <TouchableOpacity onPress={save} style={[s.saveButton, { backgroundColor: C.primary }]}>
-              <Text style={[s.saveText, { color: C.onPrimary }]}>Save</Text>
+              <Text style={[s.saveText, { color: C.onPrimary }]}>{prefillActivity ? 'Save Changes' : 'Save'}</Text>
             </TouchableOpacity>
           )}
         />
@@ -538,6 +592,15 @@ export default function ManualActivityScreen() {
             </View>
             <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={save}
+            activeOpacity={0.82}
+            style={[s.bottomSaveButton, { backgroundColor: C.primary }]}
+            accessibilityRole="button"
+            accessibilityLabel={prefillActivity ? 'Save activity changes' : 'Save activity'}
+          >
+            <Text style={[s.bottomSaveText, { color: C.onPrimary }]}>{prefillActivity ? 'Save Changes' : 'Save'}</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -595,4 +658,6 @@ const s = StyleSheet.create({
   shoeImage: { width: '100%', height: '100%' },
   refreshPlanButton: { minHeight: 70, borderWidth: 1, borderRadius: 16, padding: 13, flexDirection: 'row', gap: 12, alignItems: 'center', marginTop: 14 },
   refreshIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  bottomSaveButton: { minHeight: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  bottomSaveText: { fontSize: 14, fontWeight: '900' },
 });

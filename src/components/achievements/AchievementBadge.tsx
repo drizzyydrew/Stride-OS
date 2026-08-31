@@ -1,7 +1,43 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Polygon, Polyline, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
-import { STREAK_ACHIEVEMENTS } from '../../utils/achievements';
+import {
+  LifetimeDistanceCyclingBadge,
+  lifetimeDistanceCyclingDefinitionFromAchievementId,
+  type LifetimeDistanceCyclingBadgeState,
+} from '../../achievements/lifetimeDistanceCycling';
+import {
+  LifetimeDistanceRunningBadge,
+  lifetimeDistanceRunningDefinitionFromAchievementId,
+  type LifetimeDistanceRunningBadgeState,
+} from '../../achievements/lifetimeDistanceRunning';
+import { RunLevelBadge as CanonicalRunLevelBadge, runLevelSlugFromId } from '../../achievements/runLevels';
+import {
+  WeeklyDistanceBadge,
+  weeklyDistanceDefinitionFromAchievementId,
+  type WeeklyDistanceBadgeState,
+} from '../../achievements/weeklyDistance';
+import {
+  StreakBadge as CanonicalStreakBadge,
+  streakDefinitionFromAchievementId,
+  type StreakBadgeState,
+} from '../../achievements/streaks';
+import {
+  FirstAchievementBadge,
+  firstAchievementDefinitionFromAchievementId,
+  type FirstAchievementBadgeState,
+} from '../../achievements/firsts';
+import {
+  StrengthAchievementBadge,
+  strengthAchievementDefinitionFromAchievementId,
+  type StrengthAchievementBadgeState,
+} from '../../achievements/strength';
+import {
+  RecoveryAchievementBadge,
+  recoveryAchievementDefinitionFromAchievementId,
+  type RecoveryAchievementBadgeState,
+} from '../../achievements/recovery';
+import type { UnitSystem } from '../../store/settingsStore';
 import type { AchievementCategory, AchievementId } from '../../utils/achievements';
 
 type AchievementBadgeTone = {
@@ -19,6 +55,9 @@ type Props = {
   category?: AchievementCategory;
   earned?: boolean;
   size?: AchievementBadgeSize;
+  unitSystem?: UnitSystem;
+  badgeState?: LifetimeDistanceRunningBadgeState | LifetimeDistanceCyclingBadgeState | WeeklyDistanceBadgeState | StreakBadgeState | FirstAchievementBadgeState | StrengthAchievementBadgeState | RecoveryAchievementBadgeState;
+  remainingDays?: number;
 };
 
 const TONES: Record<AchievementCategory, AchievementBadgeTone> = {
@@ -49,24 +88,6 @@ const SIZE = {
   large: 156,
 };
 
-const STREAK_HEAT: Record<string, {
-  outer: string;
-  mid: string;
-  core: string;
-  ring: string;
-  glow: string;
-  ink: string;
-  ringCount: number;
-}> = {
-  streak_3_day: { outer: '#421010', mid: '#7A1717', core: '#B43A28', ring: '#7A1717', glow: '#2A0B0B', ink: '#F3D0BC', ringCount: 1 },
-  streak_1_week: { outer: '#65110F', mid: '#B3221C', core: '#D9551D', ring: '#B3221C', glow: '#541313', ink: '#F7D8C0', ringCount: 2 },
-  streak_30_day: { outer: '#8F2513', mid: '#D9551D', core: '#F29A20', ring: '#D9551D', glow: '#792113', ink: '#FFE0B0', ringCount: 2 },
-  streak_50_day: { outer: '#B84C14', mid: '#F29A20', core: '#FFD449', ring: '#F29A20', glow: '#9A3E11', ink: '#FFF0C7', ringCount: 3 },
-  streak_60_day: { outer: '#D98216', mid: '#FFD449', core: '#FFF1BA', ring: '#FFD449', glow: '#B76A12', ink: '#17120B', ringCount: 3 },
-  streak_90_day: { outer: '#E8BB63', mid: '#FFF1BA', core: '#FFFDF3', ring: '#FFF1BA', glow: '#C99C50', ink: '#17120B', ringCount: 3 },
-  streak_6_month: { outer: '#F2DFB8', mid: '#FFFDF3', core: '#FFFFFF', ring: '#FFFDF3', glow: '#DCC9B1', ink: '#11100E', ringCount: 4 },
-};
-
 const HEX_POINTS = [
   '56,5 100,31 100,81 56,107 12,81 12,31',
   '56,13 93,35 93,77 56,99 19,77 19,35',
@@ -76,6 +97,7 @@ const HEX_POINTS = [
 
 function categoryFor(id: AchievementId, category?: AchievementCategory): AchievementCategory {
   if (category) return category;
+  if (id === 'first_strength_session') return 'strength';
   if (id.startsWith('first_')) return 'firsts';
   if (id.startsWith('run_level_')) return 'run_level';
   if (id.startsWith('lifetime_run_')) return 'lifetime_running';
@@ -92,76 +114,6 @@ function categoryFor(id: AchievementId, category?: AchievementCategory): Achieve
   if (id.includes('consistency') || id.includes('training_days')) return 'consistency';
   if (id.includes('easy') || id.includes('quality') || id.includes('deload') || id.includes('strength')) return 'training_quality';
   return 'healthy_progress';
-}
-
-function StreakBadge({ id, earned, box }: { id: AchievementId; earned: boolean; box: number }) {
-  const definition = STREAK_ACHIEVEMENTS.find(item => item.id === id);
-  const heat = STREAK_HEAT[id] ?? STREAK_HEAT.streak_3_day;
-  const locked = !earned;
-  const flameId = `streak-flame-${id}-${locked ? 'locked' : 'earned'}`;
-  const fillId = `streak-fill-${id}-${locked ? 'locked' : 'earned'}`;
-  const ringColor = locked ? '#6F6A61' : heat.ring;
-  const coreColor = locked ? '#C7BBA9' : heat.core;
-  const midColor = locked ? '#7F756A' : heat.mid;
-  const outerColor = locked ? '#393530' : heat.outer;
-  const ink = locked ? '#D8D0C1' : heat.ink;
-  const ringOpacity = locked ? 0.42 : 0.88;
-  const glowOpacity = locked ? 0.12 : 0.32 + Math.min(0.22, (definition?.tier ?? 1) * 0.025);
-  const rings = HEX_POINTS.slice(0, heat.ringCount);
-
-  return (
-    <View style={[styles.wrap, { width: box, height: box }]} accessibilityLabel={`${definition?.displayName ?? 'Streak'} achievement badge`}>
-      <Svg width={box} height={box} viewBox="0 0 112 112">
-        <Defs>
-          <LinearGradient id={fillId} x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor="#080808" />
-            <Stop offset="0.62" stopColor="#11100E" />
-            <Stop offset="1" stopColor={locked ? '#201D1A' : '#211712'} />
-          </LinearGradient>
-          <LinearGradient id={flameId} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={coreColor} />
-            <Stop offset="0.48" stopColor={midColor} />
-            <Stop offset="1" stopColor={outerColor} />
-          </LinearGradient>
-        </Defs>
-        <Polygon points={HEX_POINTS[0]} fill={`url(#${fillId})`} stroke={ringColor} strokeWidth="2.8" opacity={locked ? 0.72 : 1} />
-        <Polygon points="56,10 95,33 95,79 56,102 17,79 17,33" fill="#0E0E0F" opacity={locked ? 0.8 : 0.93} />
-        <Circle cx="56" cy="58" r="34" fill={locked ? '#28241F' : heat.glow} opacity={glowOpacity} />
-        {rings.map((points, index) => (
-          <Polygon
-            key={points}
-            points={points}
-            fill="none"
-            stroke={index === 0 ? ringColor : index === rings.length - 1 ? coreColor : '#DCC9B1'}
-            strokeWidth={index === 0 ? 2.1 : 1.15}
-            opacity={Math.max(0.22, ringOpacity - index * 0.15)}
-          />
-        ))}
-        <Path
-          d="M56 18 C47 31 39 41 39 58 C39 73 48 83 56 91 C64 83 74 74 75 59 C76 47 69 39 66 29 C62 36 59 40 58 46 C54 37 59 27 56 18 Z"
-          fill={`url(#${flameId})`}
-          opacity={locked ? 0.64 : 1}
-        />
-        <Path
-          d="M56 43 C50 52 47 60 49 68 C51 76 56 81 56 81 C61 76 65 70 65 63 C65 56 61 51 59 45 C57 49 56 53 56 57 C53 52 55 47 56 43 Z"
-          fill={coreColor}
-          opacity={locked ? 0.56 : 0.95}
-        />
-        <SvgText
-          x="56"
-          y="77"
-          textAnchor="middle"
-          fontSize={definition?.badgeText === '6M' ? 18 : 20}
-          fontWeight="900"
-          fill={ink}
-          stroke="#0E0E0F"
-          strokeWidth={0.7}
-        >
-          {definition?.badgeText ?? ''}
-        </SvgText>
-      </Svg>
-    </View>
-  );
 }
 
 function motifFor(id: AchievementId, category: AchievementCategory): 'track' | 'mountain' | 'moon' | 'bolt' | 'path' | 'rings' | 'flag' {
@@ -228,7 +180,7 @@ function levelTier(id: AchievementId): number {
     .findIndex(item => id.includes(item)) + 1 || 1;
 }
 
-function RunLevelBadge({ id, earned, box }: { id: AchievementId; earned: boolean; box: number }) {
+function LegacyStrideLevelBadge({ id, earned, box }: { id: AchievementId; earned: boolean; box: number }) {
   const tier = levelTier(id);
   const ring = earned ? ['#F3F1EB', '#B7835F', '#8B9C7C', '#94A0A6', '#5F7998', '#6E4B36', '#DCC9B1'][tier - 1] ?? '#DCC9B1' : '#6F6A61';
   const opacity = earned ? 1 : 0.42;
@@ -283,13 +235,7 @@ function OriginalHexBadge({ id, category, tone, earned, box, size }: { id: Achie
       <Svg width={box} height={box} viewBox="0 0 112 112">
         <Polygon points={HEX_POINTS[0]} fill="#0A0A0A" stroke={ring} strokeWidth="2.2" opacity={earned ? 1 : 0.56} />
         <Polygon points={HEX_POINTS[1]} fill="none" stroke={muted} strokeWidth="1.1" opacity={earned ? 0.45 : 0.22} />
-        {category === 'weekly_distance' ? (
-          <>
-            <SvgText x="56" y="54" textAnchor="middle" fontSize="28" fontWeight="900" fill={pop}>{mark}K</SvgText>
-            <Path d="M39 65 H73" stroke={ring} strokeWidth="2.4" strokeLinecap="round" />
-            <Polyline points="43,76 49,80 43,84 53,84 59,80 53,76 63,76 69,80 63,84" stroke={ring} strokeWidth="1.8" fill="none" />
-          </>
-        ) : category === 'strength' ? (
+        {category === 'strength' ? (
           <>
             <Path d="M25 48 H33 M79 48 H87 M35 39 V57 M42 35 V61 M70 35 V61 M77 39 V57 M42 48 H70" stroke={pop} strokeWidth="4" strokeLinecap="round" />
             <SvgText x="56" y="76" textAnchor="middle" fontSize={mark.length > 2 ? 13 : 22} fontWeight="900" fill="#F3F1EB">{mark}</SvgText>
@@ -392,22 +338,120 @@ function BadgeMotif({ id, category, tone }: { id: AchievementId; category: Achie
   );
 }
 
-export default function AchievementBadge({ id, category, earned = true, size = 'medium' }: Props) {
+export default function AchievementBadge({ id, category, earned = true, size = 'medium', unitSystem = 'imperial', badgeState, remainingDays = 0 }: Props) {
   const resolvedCategory = categoryFor(id, category);
   const tone = TONES[resolvedCategory];
   const dimmed = !earned;
   const box = SIZE[size];
 
   if (resolvedCategory === 'streak') {
-    return <StreakBadge id={id} earned={earned} box={box} />;
+    const definition = streakDefinitionFromAchievementId(id);
+    const days = definition?.thresholdDays ?? Number(id.match(/streak_(\d+)_day/)?.[1] ?? 7);
+    return (
+      <CanonicalStreakBadge
+        days={days}
+        state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+        size={box}
+        compact={size === 'small'}
+        remainingDays={remainingDays}
+      />
+    );
   }
-  if (resolvedCategory === 'run_level' || resolvedCategory === 'stride_level') {
-    return <RunLevelBadge id={id} earned={earned} box={box} />;
+  if (resolvedCategory === 'firsts') {
+    const definition = firstAchievementDefinitionFromAchievementId(id);
+    if (definition) {
+      return (
+        <FirstAchievementBadge
+          achievement={definition.id}
+          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          size={box}
+          compact={size === 'small'}
+          unitSystem={unitSystem}
+        />
+      );
+    }
+  }
+  if (resolvedCategory === 'strength') {
+    const definition = strengthAchievementDefinitionFromAchievementId(id);
+    if (definition) {
+      return (
+        <StrengthAchievementBadge
+          achievement={definition.id}
+          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          size={box}
+          compact={size === 'small'}
+        />
+      );
+    }
+  }
+  if (resolvedCategory === 'recovery') {
+    const definition = recoveryAchievementDefinitionFromAchievementId(id);
+    if (definition) {
+      return (
+        <RecoveryAchievementBadge
+          achievement={definition.id}
+          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          size={box}
+          compact={size === 'small'}
+        />
+      );
+    }
+  }
+  if (resolvedCategory === 'run_level') {
+    const level = runLevelSlugFromId(id);
+    if (level) {
+      return <CanonicalRunLevelBadge level={level} state={earned ? 'unlocked' : 'locked'} size={box} compact={size === 'small'} />;
+    }
+  }
+  if (resolvedCategory === 'stride_level') {
+    return <LegacyStrideLevelBadge id={id} earned={earned} box={box} />;
+  }
+  if (resolvedCategory === 'lifetime_running' || (resolvedCategory === 'lifetime_distance' && id.startsWith('lifetime_run_'))) {
+    const definition = lifetimeDistanceRunningDefinitionFromAchievementId(id);
+    if (definition) {
+      return (
+        <LifetimeDistanceRunningBadge
+          milestone={definition.thresholdMiles}
+          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          unitSystem={unitSystem}
+          size={box}
+          compact={size === 'small'}
+        />
+      );
+    }
+  }
+  if (resolvedCategory === 'lifetime_cycling' || (resolvedCategory === 'lifetime_distance' && id.startsWith('lifetime_cycle_'))) {
+    const definition = lifetimeDistanceCyclingDefinitionFromAchievementId(id);
+    if (definition) {
+      return (
+        <LifetimeDistanceCyclingBadge
+          milestone={definition.thresholdMiles}
+          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          unitSystem={unitSystem}
+          size={box}
+          compact={size === 'small'}
+        />
+      );
+    }
+  }
+  if (resolvedCategory === 'weekly_distance') {
+    const definition = weeklyDistanceDefinitionFromAchievementId(id);
+    if (definition) {
+      return (
+        <WeeklyDistanceBadge
+          milestoneKm={definition.thresholdKm}
+          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          size={box}
+          compact={size === 'small'}
+          unitSystem={unitSystem}
+        />
+      );
+    }
   }
   if (resolvedCategory === 'lifetime_running' || resolvedCategory === 'lifetime_cycling' || resolvedCategory === 'lifetime_distance') {
     return <DiamondBadge id={id} category={resolvedCategory} tone={tone} earned={earned} box={box} />;
   }
-  if (['firsts', 'weekly_distance', 'strength', 'recovery', 'challenges'].includes(resolvedCategory)) {
+  if (['strength', 'recovery', 'challenges'].includes(resolvedCategory)) {
     return <OriginalHexBadge id={id} category={resolvedCategory} tone={tone} earned={earned} box={box} size={size} />;
   }
 
