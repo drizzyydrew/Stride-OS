@@ -103,6 +103,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
   private var maxHeartRateBpm: Int = 190
   private var targetZone: Int?
+  private var workoutEnvironment: String = "outdoor"
 
   private let healthStore = HKHealthStore()
   private var session: HKWorkoutSession?
@@ -234,8 +235,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     targetZone: Int?
   ) {
     lastError = nil
-    self.workoutInstanceId = workoutInstanceId
+    let resolvedEnvironment = environment ?? ((kind == .run || kind == .cycling) ? "outdoor" : "indoor")
+    self.workoutInstanceId = workoutInstanceId ?? "watch_\(kind.rawValue)_\(Int(Date().timeIntervalSince1970 * 1000))"
     self.selectedWorkoutKind = kind
+    self.workoutEnvironment = resolvedEnvironment
     self.targetZone = targetZone
     self.metricPage = kind.tracksDistance ? .heartRate : .elapsed
 
@@ -247,7 +250,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       }
 
       DispatchQueue.main.async {
-        self.beginWorkout(kind: kind, environment: environment)
+        self.beginWorkout(kind: kind, environment: resolvedEnvironment)
       }
     }
   }
@@ -397,6 +400,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       "heartRate": bpm,
       "elapsedSeconds": elapsedSeconds,
       "workoutKind": selectedWorkoutKind.rawValue,
+      "environment": workoutEnvironment,
       "distanceMeters": distanceMeters,
       "activeEnergyKilocalories": activeEnergyKilocalories,
       "heartRateZone": heartRateZoneLabel,
@@ -416,6 +420,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       "state": label,
       "elapsedSeconds": elapsedSeconds,
       "workoutKind": selectedWorkoutKind.rawValue,
+      "environment": workoutEnvironment,
       "distanceMeters": distanceMeters,
       "activeEnergyKilocalories": activeEnergyKilocalories,
       "heartRateZone": heartRateZoneLabel,

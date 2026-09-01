@@ -74,6 +74,7 @@ type ActiveActivityStore = {
     scheduledSessionId?: string;
     associatedTrainingBlockId?: string;
     associatedGoalId?: string;
+    workoutInstanceId?: string;
   }) => void;
   pause: (source?: 'manual' | 'auto') => void;
   resume: (source?: 'manual' | 'auto') => void;
@@ -164,7 +165,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
           nextInstruction: null,
           lastRunWalkCueElapsedSeconds: 0,
           completionRequestedAt: null,
-          workoutInstanceId: buildWorkoutInstanceId(input.scheduledSessionId ?? null, now),
+          workoutInstanceId: input.workoutInstanceId ?? buildWorkoutInstanceId(input.scheduledSessionId ?? null, now),
           autoPauseState: autoPauseActivity
             ? initialAutoPauseState(autoPauseActivity, useSettingsStore.getState().autoPauseMode)
             : null,

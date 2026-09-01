@@ -18,6 +18,7 @@ export type StrideWatchHeartRateEvent = {
   heartRate: number;
   workoutKind?: StrideWatchWorkoutKind | string;
   workoutInstanceId?: string;
+  environment?: string;
   elapsedSeconds?: number;
   distanceMeters?: number;
   activeEnergyKilocalories?: number;
@@ -31,6 +32,7 @@ export type StrideWatchWorkoutStateEvent = {
   state: 'running' | 'paused' | 'ended' | 'idle' | 'prepared' | string;
   workoutKind?: StrideWatchWorkoutKind | string;
   workoutInstanceId?: string;
+  environment?: string;
   elapsedSeconds?: number;
   distanceMeters?: number;
   activeEnergyKilocalories?: number;
@@ -248,6 +250,7 @@ export function addStrideWatchHeartRateListener(
       heartRate,
       workoutKind: typeof event?.workoutKind === 'string' ? event.workoutKind : undefined,
       workoutInstanceId: typeof event?.workoutInstanceId === 'string' ? event.workoutInstanceId : undefined,
+      environment: typeof event?.environment === 'string' ? event.environment : undefined,
       elapsedSeconds: Number.isFinite(Number(event?.elapsedSeconds)) ? Number(event.elapsedSeconds) : undefined,
       distanceMeters: Number.isFinite(Number(event?.distanceMeters)) ? Number(event.distanceMeters) : undefined,
       activeEnergyKilocalories: Number.isFinite(Number(event?.activeEnergyKilocalories)) ? Number(event.activeEnergyKilocalories) : undefined,
@@ -275,6 +278,7 @@ export function addStrideWatchWorkoutStateListener(
       state: typeof event?.state === 'string' ? event.state : 'unknown',
       workoutKind: typeof event?.workoutKind === 'string' ? event.workoutKind : undefined,
       workoutInstanceId: typeof event?.workoutInstanceId === 'string' ? event.workoutInstanceId : undefined,
+      environment: typeof event?.environment === 'string' ? event.environment : undefined,
       elapsedSeconds: Number.isFinite(Number(event?.elapsedSeconds)) ? Number(event.elapsedSeconds) : undefined,
       distanceMeters: Number.isFinite(Number(event?.distanceMeters)) ? Number(event.distanceMeters) : undefined,
       activeEnergyKilocalories: Number.isFinite(Number(event?.activeEnergyKilocalories)) ? Number(event.activeEnergyKilocalories) : undefined,

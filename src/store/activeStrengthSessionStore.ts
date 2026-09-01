@@ -58,6 +58,7 @@ type StartSessionInput = {
   // used to link the finished Activity and drive substitution classification.
   scheduledSessionId?: string;
   scheduledCategory?: string;
+  workoutInstanceId?: string;
 };
 
 type ActiveStrengthSessionStore = {
@@ -127,7 +128,7 @@ export const useActiveStrengthSessionStore = create<ActiveStrengthSessionStore>(
             pausedAt: null,
             pausedDurationMs: 0,
             status: 'active',
-            workoutInstanceId: buildWorkoutInstanceId(input.workoutId ?? null, now),
+            workoutInstanceId: input.workoutInstanceId ?? buildWorkoutInstanceId(input.workoutId ?? null, now),
           },
           completionRequestedAt: null,
         });
