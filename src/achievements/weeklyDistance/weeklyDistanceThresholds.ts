@@ -1,12 +1,11 @@
 export const WEEKLY_DISTANCE_KM_THRESHOLDS = [
-  5,
   10,
   15,
   25,
-  30,
   50,
   75,
   100,
+  150,
 ] as const;
 
 export type WeeklyDistanceMilestoneKm = typeof WEEKLY_DISTANCE_KM_THRESHOLDS[number];

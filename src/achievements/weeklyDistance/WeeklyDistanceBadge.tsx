@@ -80,11 +80,11 @@ export default function WeeklyDistanceBadge({
         </SvgText>
         {tokens.keylineOpacity > 0 ? (
           <SvgText x={50} y={56.5} textAnchor="middle" fontFamily={WEEKLY_DISTANCE_LABEL_FONT} fontSize={7} fontWeight="800" letterSpacing={1.3} stroke="#030405" strokeWidth={0.5} strokeOpacity={tokens.keylineOpacity} fill="none">
-            PER WEEK
+            WEEK
           </SvgText>
         ) : null}
         <SvgText x={50} y={56.5} textAnchor="middle" fontFamily={WEEKLY_DISTANCE_LABEL_FONT} fontSize={7} fontWeight="800" letterSpacing={1.3} fill={tokens.primary} fillOpacity={tokens.labelOpacity}>
-          PER WEEK
+          WEEK
         </SvgText>
         {!compact ? (
           <>

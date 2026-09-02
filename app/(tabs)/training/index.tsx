@@ -46,6 +46,14 @@ import {
   type RoutePoint,
 } from '../../../src/store/routeStore';
 import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
+import {
+  buildRouteGuidance,
+  formatTurnAnnouncement,
+  turnAnnouncementPhase,
+  updateRouteGuidanceProgress,
+  type RouteGuidancePlan,
+  type RouteGuidanceProgress,
+} from '../../../src/lib/routing';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
 import {
   selectLatestLiveMetric,
@@ -847,6 +855,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [watchWorkoutState, setWatchWorkoutState] = useState<string | null>(null);
   const [permission, setPermission] = useState<TrackingPermissionState>({ foreground: 'unknown', background: 'unknown' });
   const [routeSegmentIndex, setRouteSegmentIndex] = useState(0);
+  const [turnGuidance, setTurnGuidance] = useState<RouteGuidancePlan | null>(null);
+  const [turnGuidanceProgress, setTurnGuidanceProgress] = useState<RouteGuidanceProgress | null>(null);
   const [pendingMode, setPendingMode] = useState<RunMode>('quick');
   const [pendingEnvironment, setPendingEnvironment] = useState<RunEnvironment>(() => lastEnvironmentPreference);
   const [pendingTreadmillPlacement, setPendingTreadmillPlacement] = useState<TreadmillPhonePlacement>(() => treadmillPhonePlacementDefault);
@@ -862,6 +872,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const workoutSegmentStartRef = useRef<{ index: number; elapsed: number; miles: number } | null>(null);
   const maxRouteProgressRef = useRef(0);
   const routeNoticeRef = useRef<string | null>(null);
+  const previousTurnGuidanceProgress = useRef<RouteGuidanceProgress | null>(null);
+  const lastTurnAnnouncementRef = useRef<string | null>(null);
   const effortCueRef = useRef<EffortCueState>({ consecutiveHighSamples: 0, consecutiveLowSamples: 0, wasOutOfRange: false, lastCueElapsedSeconds: -9999 });
   const reminderCueRef = useRef({ lastHydrationCueSec: 0, lastFuelCueSec: 0 });
   const runWalkCueRef = useRef(0);
@@ -970,6 +982,9 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     setRouteSegmentIndex(0);
     maxRouteProgressRef.current = 0;
     routeNoticeRef.current = null;
+    previousTurnGuidanceProgress.current = null;
+    lastTurnAnnouncementRef.current = null;
+    setTurnGuidanceProgress(null);
     segmentStartRef.current = isActive ? { index: 0, time: Date.now() } : null;
     workoutSegmentStartRef.current = isActive ? { index: 0, elapsed: 0, miles: 0 } : null;
     runWalkCueRef.current = 0;
@@ -980,8 +995,32 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     setRouteSegmentIndex(0);
     maxRouteProgressRef.current = 0;
     routeNoticeRef.current = null;
+    previousTurnGuidanceProgress.current = null;
+    lastTurnAnnouncementRef.current = null;
+    setTurnGuidanceProgress(null);
     segmentStartRef.current = selectedRoute && isActive ? { index: 0, time: Date.now() } : null;
   }, [routeAttachment.direction, routeAttachment.status]);
+
+  useEffect(() => {
+    let cancelled = false;
+    previousTurnGuidanceProgress.current = null;
+    lastTurnAnnouncementRef.current = null;
+    setTurnGuidanceProgress(null);
+    if (!selectedRoute) {
+      setTurnGuidance(null);
+      return undefined;
+    }
+    buildRouteGuidance(selectedRoute.points, 'walking')
+      .then(plan => {
+        if (!cancelled) setTurnGuidance(plan);
+      })
+      .catch(() => {
+        if (!cancelled) setTurnGuidance(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [routeAttachment.direction, selectedRoute?.id, selectedRoute?.points.length]);
 
   function removeRouteFromToday() {
     detachRouteFromToday();
@@ -989,6 +1028,10 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     setRouteSegmentIndex(0);
     maxRouteProgressRef.current = 0;
     segmentStartRef.current = null;
+    setTurnGuidance(null);
+    setTurnGuidanceProgress(null);
+    previousTurnGuidanceProgress.current = null;
+    lastTurnAnnouncementRef.current = null;
     speakCue('Route guidance stopped. Continuing in free run mode.', 'navigation');
   }
 
@@ -1396,6 +1439,11 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   } : null;
   const routeProgress = selectedRoute && currentPoint ? routeProgressForLocation(selectedRoute, currentPoint) : 0;
   const nextSegment = selectedRoute?.segments[routeSegmentIndex] ?? null;
+  const turnInstructionText = turnGuidanceProgress?.isOffRoute
+    ? 'You appear to be off route.'
+    : turnGuidanceProgress?.nextInstruction && turnGuidanceProgress.distanceToNextStepMeters !== null
+      ? formatTurnAnnouncement(turnGuidanceProgress.nextInstruction, turnGuidanceProgress.distanceToNextStepMeters)
+      : null;
   // Live GPS climb while running; planned-route gain as the idle preview.
   const elevationDisplay = isActive
     ? Math.round(imp ? elevationGainFt : elevationGainFt * 0.3048).toString()
@@ -1436,6 +1484,43 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const panelBg = mode === 'light' ? C.cardAlt : C.bg;
   const softPanelBg = mode === 'light' ? C.card : C.cardElevated;
   const pendingTreadmillAvailability = treadmillMetricAvailability({ placement: pendingTreadmillPlacement });
+
+  useEffect(() => {
+    if (!selectedRoute || !currentPoint || !isActive || isPaused || !turnGuidance) return;
+    const progress = updateRouteGuidanceProgress({
+      point: currentPoint,
+      plan: turnGuidance,
+      previous: previousTurnGuidanceProgress.current,
+    });
+    previousTurnGuidanceProgress.current = progress;
+    setTurnGuidanceProgress(progress);
+
+    if (!voiceCuePreferences.navigation) return;
+    if (progress.isOffRoute) {
+      const key = `off-route:${progress.offRouteSampleCount}`;
+      if (lastTurnAnnouncementRef.current !== key) {
+        lastTurnAnnouncementRef.current = key;
+        speakCue('You appear to be off route.', 'navigation');
+      }
+      return;
+    }
+    if (!progress.nextInstruction || progress.distanceToNextStepMeters === null) return;
+    if (progress.distanceToNextStepMeters > 320) return;
+    const text = formatTurnAnnouncement(progress.nextInstruction, progress.distanceToNextStepMeters);
+    const key = `${progress.nextStepIndex}:${turnAnnouncementPhase(progress.distanceToNextStepMeters)}`;
+    if (text && lastTurnAnnouncementRef.current !== key) {
+      lastTurnAnnouncementRef.current = key;
+      speakCue(text, 'navigation');
+    }
+  }, [
+    currentPoint?.latitude,
+    currentPoint?.longitude,
+    isActive,
+    isPaused,
+    selectedRoute?.id,
+    turnGuidance,
+    voiceCuePreferences.navigation,
+  ]);
 
   useEffect(() => {
     if (!isActive || isPaused || environment !== 'indoor') return;
@@ -1532,6 +1617,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
   useEffect(() => {
     if (!selectedRoute || !currentPoint || !nextSegment || !isActive || isPaused) return;
+    if (turnGuidance?.kind === 'turn_by_turn') return;
     maxRouteProgressRef.current = Math.max(maxRouteProgressRef.current, routeProgress);
     if (maxRouteProgressRef.current + 0.03 < nextSegment.distanceMiles) return;
 
@@ -1557,7 +1643,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     const nextIndex = routeSegmentIndex + 1;
     setRouteSegmentIndex(nextIndex);
     segmentStartRef.current = { index: nextIndex, time: now };
-  }, [selectedRoute?.id, currentPoint?.latitude, currentPoint?.longitude, nextSegment?.label, nextSegment?.distanceMiles, isActive, isPaused, routeProgress, routeSegmentIndex, startTime]);
+  }, [selectedRoute?.id, currentPoint?.latitude, currentPoint?.longitude, nextSegment?.label, nextSegment?.distanceMiles, isActive, isPaused, routeProgress, routeSegmentIndex, startTime, turnGuidance?.kind]);
 
   useEffect(() => {
     if (!isActive || isPaused || runMode !== 'workout' || !currentWorkoutSegment) return;
@@ -2317,7 +2403,21 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             </Text>
           </View>
         ) : null}
-        {selectedRoute && nextSegment ? (
+        {selectedRoute && turnInstructionText ? (
+          <TouchableOpacity
+            style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+            onPress={() => setShowRouteActions(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`Route guidance for ${selectedRoute.name}`}
+          >
+            <Text style={[styles.metricLabel, { color: C.textDim }]}>NEXT TURN</Text>
+            <Text style={[styles.routeProgressTitle, { color: C.text }]}>{turnInstructionText}</Text>
+            <Text style={[styles.metricUnit, { color: C.textMuted }]}>
+              {routeProgress.toFixed(2)} / {selectedRoute.distanceMiles.toFixed(1)} mi route progress
+            </Text>
+            <Ionicons name="ellipsis-horizontal-circle-outline" size={20} color={C.primary} style={{ position: 'absolute', right: 12, top: 12 }} />
+          </TouchableOpacity>
+        ) : selectedRoute && nextSegment ? (
           <TouchableOpacity
             style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}
             onPress={() => setShowRouteActions(true)}

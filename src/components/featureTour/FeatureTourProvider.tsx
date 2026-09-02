@@ -165,6 +165,7 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
   }
 
   const highlightRect = highlightRectForTarget(targetRect, dimensions.width);
+  const dimColor = 'rgba(0,0,0,0.82)';
   const card = activeStep
     ? cardPlacementForTarget({
       target: targetRect,
@@ -191,7 +192,16 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
           accessibilityViewIsModal
           accessibilityLabel={activeStep && activeTour ? featureTourAccessibilityLabel(activeStep, stepIndex, totalSteps) : undefined}
         >
-          <View style={[styles.dim, { backgroundColor: C.overlay }]} />
+          {highlightRect ? (
+            <>
+              <View style={[styles.dimBlock, { left: 0, top: 0, right: 0, height: highlightRect.y, backgroundColor: dimColor }]} />
+              <View style={[styles.dimBlock, { left: 0, top: highlightRect.y, width: highlightRect.x, height: highlightRect.height, backgroundColor: dimColor }]} />
+              <View style={[styles.dimBlock, { left: highlightRect.x + highlightRect.width, top: highlightRect.y, right: 0, height: highlightRect.height, backgroundColor: dimColor }]} />
+              <View style={[styles.dimBlock, { left: 0, top: highlightRect.y + highlightRect.height, right: 0, bottom: 0, backgroundColor: dimColor }]} />
+            </>
+          ) : (
+            <View style={[styles.dim, { backgroundColor: C.overlay }]} />
+          )}
           {highlightRect ? (
             <View
               pointerEvents="none"
@@ -203,7 +213,7 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
                   width: highlightRect.width,
                   height: highlightRect.height,
                   borderColor: C.primary,
-                  backgroundColor: C.primaryDim,
+                  backgroundColor: 'transparent',
                 },
               ]}
             />
@@ -307,10 +317,16 @@ const styles = StyleSheet.create({
   dim: {
     ...StyleSheet.absoluteFill,
   },
+  dimBlock: {
+    position: 'absolute',
+  },
   highlight: {
     position: 'absolute',
     borderWidth: 2,
     borderRadius: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.45,
+    shadowRadius: 18,
   },
   card: {
     position: 'absolute',

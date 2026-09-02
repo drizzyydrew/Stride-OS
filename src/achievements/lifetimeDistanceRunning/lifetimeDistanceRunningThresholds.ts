@@ -4,7 +4,6 @@ export const LIFETIME_DISTANCE_RUNNING_THRESHOLDS_MILES = [
   1,
   5,
   10,
-  26.2,
   50,
   100,
   250,

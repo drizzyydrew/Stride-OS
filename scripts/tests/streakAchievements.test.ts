@@ -173,67 +173,42 @@ test('specialty milestones inherit heat range colors', () => {
   );
 });
 
-test('scheduled rest and recovery days preserve streaks without requiring daily exercise', () => {
-  const dates = ['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07'];
-  const sessions = [
-    session(dates[0]!),
-    session(dates[1]!, { activityType: 'rest', subtype: 'rest', title: 'Rest Day', purpose: 'Scheduled rest', completedActivityId: undefined }),
-    session(dates[2]!, { activityType: 'strength', subtype: 'strength', title: 'Strength' }),
-    session(dates[3]!, { activityType: 'mobility', subtype: 'recovery', title: 'Recovery Mobility', purpose: 'Scheduled recovery', priority: 'optional', completedActivityId: undefined }),
-    session(dates[4]!),
-  ];
+test('any completed workout day of at least five minutes counts toward streaks', () => {
   const activities = [
-    activity(dates[0]!),
-    activity(dates[2]!, { activityType: 'strength' }),
-    activity(dates[4]!),
+    activity('2026-08-03', { activityType: 'running', metrics: { durationSeconds: 300 } }),
+    activity('2026-08-04', { activityType: 'walking', metrics: { durationSeconds: 600 } }),
+    activity('2026-08-05', { activityType: 'strength', metrics: { durationSeconds: 1200 } }),
+    activity('2026-08-06', { activityType: 'mobility', metrics: { durationSeconds: 900 } }),
+    activity('2026-08-07', { activityType: 'cycling', metrics: { durationSeconds: 1800 } }),
   ];
 
-  const streak = calculateStreakAchievements(activities, { now: at(dates[4]!), scheduledSessions: sessions });
+  const streak = calculateStreakAchievements(activities, { now: at('2026-08-07') });
   assert.equal(streak.currentStreakDays, 5);
   assert.equal(streak.currentTier, null);
   assert.equal(streak.nextMilestone?.id, 'streak_1_week');
 });
 
-test('missed required workouts break the current streak while later adherence can rebuild', () => {
-  const sessions = [
-    session('2026-08-03'),
-    session('2026-08-04'),
-    session('2026-08-05', { status: 'missed', completedActivityId: undefined }),
-    session('2026-08-06'),
-    session('2026-08-07'),
-  ];
+test('empty days break the current streak while later workout days rebuild', () => {
   const activities = [
     activity('2026-08-03'),
     activity('2026-08-04'),
     activity('2026-08-06'),
     activity('2026-08-07'),
   ];
-  const streak = calculateStreakAchievements(activities, { now: at('2026-08-07'), scheduledSessions: sessions });
+  const streak = calculateStreakAchievements(activities, { now: at('2026-08-07') });
   assert.equal(streak.currentStreakDays, 2);
   assert.equal(streak.currentTier, null);
   assert.equal(streak.achievements.find(item => item.id === 'streak_1_week')?.state, 'locked');
 });
 
-test('confirmed adaptations and body-listening completion classifications preserve streaks', () => {
-  const sessions = [
-    session('2026-08-03'),
-    session('2026-08-04', {
-      activityType: 'rest',
-      subtype: 'adapted_rest',
-      title: 'Adapted Rest',
-      purpose: 'Coach-driven recovery modification',
-      status: 'replaced',
-      completedActivityId: undefined,
-      adaptationReason: 'Replaced with rest after the athlete confirmed the change.',
-    }),
-    session('2026-08-05'),
-  ];
+test('sub-five-minute workouts do not continue streaks', () => {
   const activities = [
-    activity('2026-08-03', { completionClassification: 'modified' }),
-    activity('2026-08-05', { completionClassification: 'equivalent_substitute' }),
+    activity('2026-08-03'),
+    activity('2026-08-04', { metrics: { durationSeconds: 299 } }),
+    activity('2026-08-05'),
   ];
-  const streak = calculateStreakAchievements(activities, { now: at('2026-08-05'), scheduledSessions: sessions });
-  assert.equal(streak.currentStreakDays, 3);
+  const streak = calculateStreakAchievements(activities, { now: at('2026-08-05') });
+  assert.equal(streak.currentStreakDays, 1);
   assert.equal(streak.currentTier, null);
 });
 

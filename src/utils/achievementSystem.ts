@@ -38,6 +38,13 @@ import {
   weeklyDistanceAchievementAccessibilityLabel,
   weeklyDistanceDefinitionFromAchievementId,
 } from '../achievements/weeklyDistance/weeklyDistanceUtils';
+import { MONTHLY_DISTANCE_DEFINITIONS } from '../achievements/monthlyDistance/monthlyDistanceDefinitions';
+import {
+  formatMonthlyDistanceMeters,
+  formatMonthlyDistanceRemainingMeters,
+  monthlyDistanceAchievementAccessibilityLabel,
+  monthlyDistanceDefinitionFromAchievementId,
+} from '../achievements/monthlyDistance/monthlyDistanceUtils';
 import { streakDefinitionFromAchievementId } from '../achievements/streaks/streakDefinitions';
 import { streakAchievementAccessibilityLabel } from '../achievements/streaks/streakUtils';
 import { FIRST_ACHIEVEMENT_DEFINITIONS } from '../achievements/firsts/firstsDefinitions';
@@ -304,7 +311,7 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     id: definition.id,
     family: 'weekly_distance',
     category: 'weekly_distance',
-    title: `${definition.milestoneLabel} Per Week`,
+    title: `${definition.milestoneLabel} Week`,
     shortTitle: definition.milestoneLabel,
     description: `Complete ${definition.thresholdKm} kilometers in one reporting week.`,
     criteria: `Complete ${definition.milestoneLabel} in a canonical local reporting week.`,
@@ -322,6 +329,29 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     tier: definition.tier,
     dominantColor: definition.colors.primary,
     sourceNotes: 'Original StrideOS Weekly Distance fixed-K hexagon vector system derived from the approved badge reference image.',
+  })),
+  ...MONTHLY_DISTANCE_DEFINITIONS.map(definition => baseDef({
+    id: definition.id,
+    family: 'monthly_challenges',
+    category: 'monthly_distance',
+    title: `${definition.milestoneLabel} Month`,
+    shortTitle: definition.milestoneLabel,
+    description: `Complete ${definition.thresholdKm} kilometers in one calendar month.`,
+    criteria: `Complete ${definition.milestoneLabel} in a canonical local calendar month.`,
+    ruleKind: 'monthly_distance',
+    unitBehavior: 'fixed_k_identity',
+    threshold: definition.thresholdMeters,
+    thresholdUnit: 'meters',
+    sportApplicability: ['running'],
+    artworkKey: `monthly-distance-${definition.slug}`,
+    artworkPath: definition.artworkPath,
+    lockedArtworkPath: definition.lockedArtworkPath,
+    shareArtPath: definition.shareOpaquePngPath,
+    shareOverlayPath: definition.shareTransparentPngPath,
+    period: 'monthly',
+    tier: definition.tier,
+    dominantColor: definition.colors.primary,
+    sourceNotes: 'Original StrideOS Monthly Distance fixed-K hexagon vector system derived from the canonical weekly distance architecture.',
   })),
   ...CUMULATIVE_ELEVATION_ACHIEVEMENTS.map(item => baseDef({
     id: item.id,
@@ -374,8 +404,8 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     category: 'streak',
     title: item.displayName,
     shortTitle: item.milestoneLabel,
-    description: "Consistency built by following the athlete's actual training schedule.",
-    criteria: `Maintain schedule adherence for ${item.milestoneLabel}; planned rest, recovery, taper, and approved adaptations preserve the streak.`,
+    description: 'Consistency built by logging completed workout days.',
+    criteria: `Log a completed workout of at least five minutes on each consecutive day for ${item.milestoneLabel}.`,
     ruleKind: 'streak',
     unitBehavior: 'days',
     threshold: item.thresholdDays,
@@ -423,7 +453,7 @@ export const ACHIEVEMENT_SYSTEM_CATEGORY_LABELS: Record<AchievementFamily, strin
   lifetime_running: 'Lifetime Distance - Running',
   lifetime_cycling: 'Lifetime Distance - Cycling',
   weekly_distance: 'Weekly Distance',
-  monthly_challenges: 'Monthly / Challenges',
+  monthly_challenges: 'Monthly Distance',
   elevation: 'Cumulative Elevation',
   strength: 'Strength',
   streaks: 'Streaks',
@@ -617,7 +647,8 @@ export function formatAchievementSupportValue(def: AchievementDefinitionV2, unit
       ? formatLifetimeCyclingMilestoneTarget(lifetimeCycling.thresholdMiles, units)
       : formatLifetimeCyclingDistanceMeters(def.threshold, units);
   }
-  if (def.family === 'weekly_distance') return formatWeeklyDistanceMeters(def.threshold, units);
+  if (def.family === 'weekly_distance') return `${Math.round(def.threshold / M_PER_KM).toLocaleString()}K WEEK`;
+  if (def.family === 'monthly_challenges') return `${Math.round(def.threshold / M_PER_KM).toLocaleString()}K MONTH`;
   if (def.family === 'firsts') {
     const first = firstAchievementDefinitionFromAchievementId(def.id);
     if (first) return firstAchievementSupportValue(first, units);
@@ -638,6 +669,7 @@ function displayAchievementProgressValue(value: number, def: AchievementDefiniti
   if (def.family === 'lifetime_running') return formatLifetimeRunningDistanceMeters(value, units);
   if (def.family === 'lifetime_cycling') return formatLifetimeCyclingDistanceMeters(value, units);
   if (def.family === 'weekly_distance') return formatWeeklyDistanceMeters(value, units);
+  if (def.family === 'monthly_challenges') return formatMonthlyDistanceMeters(value, units);
   return displayValue(value, def, units);
 }
 
@@ -661,6 +693,10 @@ function achievementAccessibilityLabel(
   if (def.family === 'weekly_distance') {
     const weeklyDistance = weeklyDistanceDefinitionFromAchievementId(def.id);
     if (weeklyDistance) return weeklyDistanceAchievementAccessibilityLabel(weeklyDistance, state, units, remaining);
+  }
+  if (def.family === 'monthly_challenges') {
+    const monthlyDistance = monthlyDistanceDefinitionFromAchievementId(def.id);
+    if (monthlyDistance) return monthlyDistanceAchievementAccessibilityLabel(monthlyDistance, state, units, remaining);
   }
   if (def.family === 'streaks') {
     const streak = streakDefinitionFromAchievementId(def.id);
@@ -908,6 +944,8 @@ export function evaluateAchievementSystem(input: AchievementEvaluationInput): Ev
         ? `${formatLifetimeCyclingRemainingMeters(remaining, ctx.input.units)} remaining`
       : def.family === 'weekly_distance' && remaining > 0
         ? `${formatWeeklyDistanceRemainingMeters(remaining, ctx.input.units)} remaining this week`
+      : def.family === 'monthly_challenges' && remaining > 0
+        ? `${formatMonthlyDistanceRemainingMeters(remaining, ctx.input.units)} remaining this month`
       : recoveryDefinition && remaining > 0
         ? recoveryAchievementProgressText(recoveryDefinition, current)
       : remaining === 0

@@ -3,6 +3,7 @@ import type { AssessmentResult } from '../types/assessment';
 import { FIRST_ACHIEVEMENT_DEFINITIONS } from '../achievements/firsts/firstsDefinitions';
 import { LIFETIME_DISTANCE_CYCLING_DEFINITIONS } from '../achievements/lifetimeDistanceCycling/lifetimeDistanceCyclingDefinitions';
 import { LIFETIME_DISTANCE_RUNNING_DEFINITIONS } from '../achievements/lifetimeDistanceRunning/lifetimeDistanceRunningDefinitions';
+import { MONTHLY_DISTANCE_DEFINITIONS } from '../achievements/monthlyDistance/monthlyDistanceDefinitions';
 import { RECOVERY_ACHIEVEMENT_DEFINITIONS } from '../achievements/recovery/recoveryDefinitions';
 import { RUN_LEVEL_DEFINITIONS } from '../achievements/runLevels/runLevelDefinitions';
 import { STRENGTH_REGISTRY_DEFINITIONS } from '../achievements/strength/strengthDefinitions';
@@ -193,24 +194,20 @@ export const PERSONAL_RECORD_DEFINITIONS: AchievementDefinition[] = [
   { id: 'pr_highest_ride_elevation', title: 'Highest Ride Climb', description: 'Most elevation gain in a completed ride.', criteria: 'Highest stored elevation gain for cycling.', category: 'personal_record' },
 ];
 
-export const MONTHLY_DISTANCE_THRESHOLDS_KM = [10, 25, 50, 75, 100, 125, 150, 175, 200] as const;
+export const MONTHLY_DISTANCE_THRESHOLDS_KM = MONTHLY_DISTANCE_DEFINITIONS.map(definition => definition.thresholdKm);
 
-const MONTHLY_DISTANCE_IDS: Record<number, AchievementId> = {
-  10: 'monthly_run_10k',
-  25: 'monthly_run_25k',
-  50: 'monthly_run_50k',
-  75: 'monthly_run_75k',
-  100: 'monthly_run_100k',
-  125: 'monthly_run_125k',
-  150: 'monthly_run_150k',
-  175: 'monthly_run_175k',
-  200: 'monthly_run_200k',
-};
+const MONTHLY_DISTANCE_IDS: Record<number, AchievementId> = Object.fromEntries(
+  MONTHLY_DISTANCE_DEFINITIONS.map(definition => [definition.thresholdKm, definition.id]),
+);
 
 export const CHALLENGE_DEFINITIONS: ChallengeDefinition[] = [
-  { id: 'challenge_25k_month', title: '25K Month', description: 'Complete 25 kilometers of running in a calendar month.', category: 'monthly_distance', thresholdMeters: 25_000 },
-  { id: 'challenge_50k_month', title: '50K Month', description: 'Complete 50 kilometers of running in a calendar month.', category: 'monthly_distance', thresholdMeters: 50_000 },
-  { id: 'challenge_100k_month', title: '100K Month', description: 'Complete 100 kilometers of running in a calendar month.', category: 'monthly_distance', thresholdMeters: 100_000 },
+  ...MONTHLY_DISTANCE_DEFINITIONS.map(definition => ({
+    id: definition.id,
+    title: `${definition.milestoneLabel} Month`,
+    description: `Complete ${definition.thresholdKm} kilometers of running in a calendar month.`,
+    category: 'monthly_distance' as const,
+    thresholdMeters: definition.thresholdMeters,
+  })),
   { id: 'challenge_four_week_consistency', title: 'Four-Week Consistency', description: 'Complete appropriate training in four consecutive weeks.', category: 'consistency', requiredWeeks: 4 },
   { id: 'challenge_strength_run_balance', title: 'Strength + Run Balance', description: 'Pair running or walking with strength support in the same week.', category: 'balance', requiredWeeks: 1 },
 ];
@@ -468,16 +465,16 @@ export const CUMULATIVE_ELEVATION_ACHIEVEMENTS: CumulativeElevationDefinition[] 
 export const BUILD57_ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   ...HEALTHY_ACHIEVEMENTS.map(item => ({ ...item, category: item.category ?? 'healthy_progress' as const })),
   ...PERSONAL_RECORD_DEFINITIONS,
-  ...MONTHLY_DISTANCE_THRESHOLDS_KM.map(km => ({
-    id: MONTHLY_DISTANCE_IDS[km],
-    title: `${km}K Month`,
-    description: `${km} kilometers completed in one calendar month.`,
+  ...MONTHLY_DISTANCE_DEFINITIONS.map(definition => ({
+    id: definition.id,
+    title: `${definition.milestoneLabel} Month`,
+    description: `${definition.thresholdKm} kilometers completed in one calendar month.`,
     criteria: 'Sum completed running distance by calendar month using canonical meters.',
     category: 'monthly_distance' as const,
   })),
   ...WEEKLY_DISTANCE_DEFINITIONS.map(definition => ({
     id: definition.id,
-    title: `${definition.milestoneLabel} Per Week`,
+    title: `${definition.milestoneLabel} Week`,
     description: `${definition.thresholdKm} kilometers completed in one canonical local reporting week.`,
     criteria: 'Sum completed running distance by canonical local Monday-start reporting week.',
     category: 'weekly_distance' as const,
@@ -491,8 +488,8 @@ export const BUILD57_ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   ...STREAK_ACHIEVEMENTS.map(item => ({
     id: item.id,
     title: item.displayName,
-    description: "Consistency built by following the athlete's actual training schedule.",
-    criteria: `Maintain schedule adherence for ${item.milestoneLabel}; planned rest, recovery, taper, and confirmed adaptations preserve the streak.`,
+    description: 'Consistency built through consecutive days with completed workouts.',
+    criteria: `Log a completed workout of at least five minutes on each consecutive day for ${item.milestoneLabel}.`,
     category: 'streak' as const,
   })),
   ...FIRST_ACHIEVEMENT_DEFINITIONS.map(definition => ({
@@ -743,11 +740,11 @@ export function calculateMonthlyDistanceMilestones(activities: readonly Activity
   }
   const milestones: MonthlyDistanceMilestone[] = [];
   for (const [key, value] of byMonth) {
-    for (const km of MONTHLY_DISTANCE_THRESHOLDS_KM) {
-      const thresholdMeters = km * 1000;
+    for (const definition of MONTHLY_DISTANCE_DEFINITIONS) {
+      const thresholdMeters = definition.thresholdMeters;
       if (value.distanceMeters >= thresholdMeters) {
         milestones.push({
-          id: MONTHLY_DISTANCE_IDS[km],
+          id: definition.id,
           monthKey: key,
           thresholdMeters,
           distanceMeters: value.distanceMeters,
@@ -1073,23 +1070,18 @@ export function calculateStreakAchievements(
   options: AchievementEvaluationOptions = {},
   existing: readonly AchievementAwardReference[] = [],
 ): StreakAchievementSummary {
-  const { now, scheduledSessions } = resolveEvaluationOptions(options);
-  const todayKey = localDateKey(now);
-  const activitiesByDate = new Map<string, Activity[]>();
-  const sessionsByDate = new Map<string, ScheduledSession[]>();
+  const { now } = resolveEvaluationOptions(options);
   const existingDates = existingAwardDateMap(existing);
 
-  for (const activity of activities) {
+  const activitiesByDate = new Map<string, Activity[]>();
+  for (const activity of completedActivities(activities)) {
     if (activity.startTime > now) continue;
+    if ((activity.metrics.durationSeconds ?? 0) < 5 * 60) continue;
     const key = localDateKey(activity.startTime);
     activitiesByDate.set(key, [...(activitiesByDate.get(key) ?? []), activity]);
   }
-  for (const session of scheduledSessions) {
-    if (session.date > todayKey) continue;
-    sessionsByDate.set(session.date, [...(sessionsByDate.get(session.date) ?? []), session]);
-  }
 
-  const dateKeys = [...new Set([...activitiesByDate.keys(), ...sessionsByDate.keys()])].sort();
+  const dateKeys = [...activitiesByDate.keys()].sort();
   if (!dateKeys.length) {
     const achievements = STREAK_ACHIEVEMENTS.map(definition => {
       const unlockedAt = existingDates.get(definition.id);
@@ -1115,37 +1107,33 @@ export function calculateStreakAchievements(
     };
   }
 
-  let cursor = dateKeys[0]!;
-  let currentStreakDays = 0;
-  let segmentStarted = false;
-  let segmentSupportingActivityIds: string[] = [];
   const earnedAt = new Map<AchievementId, number>(existingDates);
   const supportByAward = new Map<AchievementId, string[]>();
+  let currentStreakDays = 0;
+  let segmentSupportingActivityIds: string[] = [];
+  let previousDateKey: string | null = null;
 
-  while (cursor <= todayKey) {
-    const activitiesForDay = activitiesByDate.get(cursor) ?? [];
-    const sessionsForDay = sessionsByDate.get(cursor) ?? [];
-    const outcome = streakOutcomeForDay(cursor, todayKey, activitiesForDay, sessionsForDay);
-
-    if (outcome.breaks) {
-      currentStreakDays = 0;
-      segmentStarted = false;
+  for (const dateKey of dateKeys) {
+    const daysSincePrevious = previousDateKey
+      ? Math.round((localDateMs(dateKey) - localDateMs(previousDateKey)) / DAY_MS)
+      : 1;
+    if (daysSincePrevious === 1) {
+      currentStreakDays += 1;
+    } else {
+      currentStreakDays = 1;
       segmentSupportingActivityIds = [];
-    } else if (segmentStarted || outcome.startsOrCounts) {
-      segmentStarted = true;
-      if (outcome.startsOrCounts || currentStreakDays > 0) {
-        currentStreakDays += 1;
-      }
-      segmentSupportingActivityIds = [...segmentSupportingActivityIds, ...outcome.supportingActivityIds];
-      for (const definition of STREAK_ACHIEVEMENTS) {
-        if (!earnedAt.has(definition.id) && currentStreakDays >= definition.thresholdDays) {
-          earnedAt.set(definition.id, localDateMs(cursor));
-          supportByAward.set(definition.id, [...segmentSupportingActivityIds]);
-        }
+    }
+    segmentSupportingActivityIds = [
+      ...segmentSupportingActivityIds,
+      ...(activitiesByDate.get(dateKey) ?? []).map(activity => activity.id),
+    ];
+    for (const definition of STREAK_ACHIEVEMENTS) {
+      if (!earnedAt.has(definition.id) && currentStreakDays >= definition.thresholdDays) {
+        earnedAt.set(definition.id, localDateMs(dateKey));
+        supportByAward.set(definition.id, [...segmentSupportingActivityIds]);
       }
     }
-
-    cursor = addDateKey(cursor, 1);
+    previousDateKey = dateKey;
   }
 
   const currentDefinition = [...STREAK_ACHIEVEMENTS].reverse()

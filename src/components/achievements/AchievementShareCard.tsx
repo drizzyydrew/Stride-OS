@@ -8,6 +8,7 @@ import { strengthAchievementDefinitionFromAchievementId } from '../../achievemen
 import { recoveryAchievementDefinitionFromAchievementId } from '../../achievements/recovery';
 import { streakDefinitionFromAchievementId } from '../../achievements/streaks';
 import { weeklyDistanceDefinitionFromAchievementId } from '../../achievements/weeklyDistance';
+import { monthlyDistanceDefinitionFromAchievementId } from '../../achievements/monthlyDistance';
 import type { UnitSystem } from '../../store/settingsStore';
 import { getElevationAchievementArtwork } from '../../constants/elevationAchievementAssets';
 import type { AchievementDefinition } from '../../utils/achievements';
@@ -171,11 +172,12 @@ export default function AchievementShareCard({ achievement, variant, detail, uni
   const lifetimeRunDefinition = lifetimeDistanceRunningDefinitionFromAchievementId(achievement.id);
   const lifetimeCyclingDefinition = lifetimeDistanceCyclingDefinitionFromAchievementId(achievement.id);
   const weeklyDistanceDefinition = weeklyDistanceDefinitionFromAchievementId(achievement.id);
+  const monthlyDistanceDefinition = monthlyDistanceDefinitionFromAchievementId(achievement.id);
   const streakDefinition = streakDefinitionFromAchievementId(achievement.id);
   const firstDefinition = firstAchievementDefinitionFromAchievementId(achievement.id);
   const strengthDefinition = strengthAchievementDefinitionFromAchievementId(achievement.id);
   const recoveryDefinition = recoveryAchievementDefinitionFromAchievementId(achievement.id);
-  const canonicalBadgeDefinition = lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition;
+  const canonicalBadgeDefinition = lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? monthlyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition;
 
   if (achievement.category === 'run_level') {
     return <RunLevelAchievementShareCard achievement={achievement} variant={variant} detail={detail} units={units} />;

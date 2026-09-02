@@ -87,6 +87,8 @@ export function createTurnByTurnGuidancePlan(input: {
   mode: Exclude<RouteNavigationMode, 'off'>;
   geometry: GuidancePoint[];
   steps: RouteGuidanceStep[];
+  provider?: RouteGuidanceProvider;
+  supportsRerouting?: boolean;
 }): RouteGuidancePlan {
   const steps = input.steps.filter(step =>
     step.instruction.trim().length > 0
@@ -98,13 +100,29 @@ export function createTurnByTurnGuidancePlan(input: {
   return {
     mode: input.mode,
     kind: 'turn_by_turn',
-    provider: 'mapkit',
+    provider: input.provider ?? 'mapkit',
     geometry: [...input.geometry],
     steps,
     supportsTurnAnnouncements: true,
-    supportsRerouting: true,
+    supportsRerouting: input.supportsRerouting ?? true,
     limitation: null,
   };
+}
+
+export function createSavedRouteTurnGuidancePlan(
+  geometry: GuidancePoint[],
+  mode: RouteNavigationMode,
+): RouteGuidancePlan {
+  if (mode === 'off' || geometry.length < 2) return createBreadcrumbGuidancePlan(geometry, mode);
+  const steps = generatedStepsFromGeometry(geometry, mode);
+  if (!steps.length) return createBreadcrumbGuidancePlan(geometry, mode);
+  return createTurnByTurnGuidancePlan({
+    mode,
+    geometry,
+    steps,
+    provider: 'saved_route',
+    supportsRerouting: false,
+  });
 }
 
 export function updateRouteGuidanceProgress(input: {
@@ -162,6 +180,12 @@ export function formatTurnAnnouncement(instruction: string, distanceMeters: numb
   return `In ${miles < 1 ? miles.toFixed(1) : miles.toFixed(1)} miles, ${lowercaseFirst(cleanInstruction)}`;
 }
 
+export function turnAnnouncementPhase(distanceMeters: number): 'approach' | 'near' | 'now' {
+  if (distanceMeters <= 35) return 'now';
+  if (distanceMeters < 160.934) return 'near';
+  return 'approach';
+}
+
 function distanceToPolylineMeters(point: GuidancePoint, geometry: GuidancePoint[]): number {
   if (geometry.length === 0) return Number.POSITIVE_INFINITY;
   if (geometry.length === 1) return metersBetweenGuidancePoints(point, geometry[0]);
@@ -191,6 +215,86 @@ function distanceToSegmentMeters(point: GuidancePoint, start: GuidancePoint, end
 
 function degreesToRadians(value: number): number {
   return value * Math.PI / 180;
+}
+
+function radiansToDegrees(value: number): number {
+  return value * 180 / Math.PI;
+}
+
+function bearingDegrees(a: GuidancePoint, b: GuidancePoint): number {
+  const lat1 = degreesToRadians(a.latitude);
+  const lat2 = degreesToRadians(b.latitude);
+  const deltaLng = degreesToRadians(b.longitude - a.longitude);
+  const y = Math.sin(deltaLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2)
+    - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
+  return (radiansToDegrees(Math.atan2(y, x)) + 360) % 360;
+}
+
+function signedTurnDegrees(inbound: number, outbound: number): number {
+  return ((outbound - inbound + 540) % 360) - 180;
+}
+
+function turnInstruction(turnDegrees: number): string | null {
+  const magnitude = Math.abs(turnDegrees);
+  if (magnitude < 28) return null;
+  const direction = turnDegrees > 0 ? 'right' : 'left';
+  if (magnitude >= 135) return `Make a sharp ${direction}`;
+  if (magnitude >= 70) return `Turn ${direction}`;
+  return `Bear ${direction}`;
+}
+
+function geometryDistance(points: readonly GuidancePoint[], startIndex: number, endIndex: number): number {
+  let distance = 0;
+  for (let index = startIndex + 1; index <= endIndex; index += 1) {
+    distance += metersBetweenGuidancePoints(points[index - 1]!, points[index]!);
+  }
+  return distance;
+}
+
+function generatedStepsFromGeometry(
+  geometry: readonly GuidancePoint[],
+  mode: Exclude<RouteNavigationMode, 'off'>,
+): RouteGuidanceStep[] {
+  const steps: RouteGuidanceStep[] = [];
+  let segmentStartIndex = 0;
+  const expectedSpeedMetersPerSecond = mode === 'cycling' ? 5.5 : 2.2;
+
+  for (let index = 1; index < geometry.length - 1; index += 1) {
+    const previous = geometry[index - 1];
+    const current = geometry[index];
+    const next = geometry[index + 1];
+    if (!previous || !current || !next) continue;
+    if (metersBetweenGuidancePoints(previous, current) < 8 || metersBetweenGuidancePoints(current, next) < 8) continue;
+    const instruction = turnInstruction(signedTurnDegrees(
+      bearingDegrees(previous, current),
+      bearingDegrees(current, next),
+    ));
+    if (!instruction) continue;
+    const distanceMeters = Math.round(geometryDistance(geometry, segmentStartIndex, index));
+    steps.push({
+      id: `saved-route-turn-${steps.length + 1}`,
+      instruction,
+      distanceMeters,
+      expectedTravelTimeSeconds: Math.round(distanceMeters / expectedSpeedMetersPerSecond),
+      start: geometry[segmentStartIndex]!,
+      end: current,
+    });
+    segmentStartIndex = index;
+  }
+
+  const finishIndex = geometry.length - 1;
+  const finalDistance = Math.round(geometryDistance(geometry, segmentStartIndex, finishIndex));
+  steps.push({
+    id: 'saved-route-finish',
+    instruction: steps.length ? 'Continue to finish' : 'Continue straight to finish',
+    distanceMeters: finalDistance,
+    expectedTravelTimeSeconds: Math.round(finalDistance / expectedSpeedMetersPerSecond),
+    start: geometry[segmentStartIndex]!,
+    end: geometry[finishIndex]!,
+  });
+
+  return steps;
 }
 
 function lowercaseFirst(value: string): string {

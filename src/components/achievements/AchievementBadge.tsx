@@ -18,6 +18,11 @@ import {
   type WeeklyDistanceBadgeState,
 } from '../../achievements/weeklyDistance';
 import {
+  MonthlyDistanceBadge,
+  monthlyDistanceDefinitionFromAchievementId,
+  type MonthlyDistanceBadgeState,
+} from '../../achievements/monthlyDistance';
+import {
   StreakBadge as CanonicalStreakBadge,
   streakDefinitionFromAchievementId,
   type StreakBadgeState,
@@ -56,7 +61,7 @@ type Props = {
   earned?: boolean;
   size?: AchievementBadgeSize;
   unitSystem?: UnitSystem;
-  badgeState?: LifetimeDistanceRunningBadgeState | LifetimeDistanceCyclingBadgeState | WeeklyDistanceBadgeState | StreakBadgeState | FirstAchievementBadgeState | StrengthAchievementBadgeState | RecoveryAchievementBadgeState;
+  badgeState?: LifetimeDistanceRunningBadgeState | LifetimeDistanceCyclingBadgeState | WeeklyDistanceBadgeState | MonthlyDistanceBadgeState | StreakBadgeState | FirstAchievementBadgeState | StrengthAchievementBadgeState | RecoveryAchievementBadgeState;
   remainingDays?: number;
 };
 
@@ -141,6 +146,7 @@ function titleMark(id: AchievementId): string {
   if (id.includes('strength_10') || id.includes('10_sessions')) return '10';
   if (id.includes('12_weeks')) return '12';
   if (id.includes('6_weeks')) return '6';
+  if (id.includes('weekly_150k') || id.includes('150k')) return '150';
   if (id.includes('weekly_100k') || id.includes('100k')) return '100';
   if (id.includes('weekly_75k') || id.includes('75k')) return '75';
   if (id.includes('weekly_50k') || id.includes('50k')) return '50';
@@ -439,6 +445,20 @@ export default function AchievementBadge({ id, category, earned = true, size = '
     if (definition) {
       return (
         <WeeklyDistanceBadge
+          milestoneKm={definition.thresholdKm}
+          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          size={box}
+          compact={size === 'small'}
+          unitSystem={unitSystem}
+        />
+      );
+    }
+  }
+  if (resolvedCategory === 'monthly_distance') {
+    const definition = monthlyDistanceDefinitionFromAchievementId(id);
+    if (definition) {
+      return (
+        <MonthlyDistanceBadge
           milestoneKm={definition.thresholdKm}
           state={badgeState ?? (earned ? 'unlocked' : 'locked')}
           size={box}

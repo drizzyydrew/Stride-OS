@@ -20,7 +20,7 @@ import {
   updateOutdoorLiveActivity,
 } from '../../../src/lib/runLiveActivity';
 import { buildRouteGuidance } from '../../../src/lib/routing';
-import { updateRouteGuidanceProgress, type RouteGuidancePlan } from '../../../src/lib/routeGuidance';
+import { formatTurnAnnouncement, turnAnnouncementPhase, updateRouteGuidanceProgress, type RouteGuidancePlan, type RouteGuidanceProgress } from '../../../src/lib/routeGuidance';
 import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
 import { evaluateRunWalkCue, intervalAtElapsed } from '../../../src/utils/activityTracking';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
@@ -79,6 +79,7 @@ export default function StartOutdoorActivityScreen() {
   const [guidance, setGuidance] = useState<RouteGuidancePlan | null>(null);
   const previousElapsed = useRef(0);
   const lastAnnouncedStep = useRef<string | null>(null);
+  const previousGuidanceProgress = useRef<RouteGuidanceProgress | null>(null);
 
   const activeSeconds = activeOutdoorElapsedSeconds(active);
   const miles = active.aggregate.distanceMeters / 1609.344;
@@ -131,18 +132,22 @@ export default function StartOutdoorActivityScreen() {
   useEffect(() => {
     if (!active.isActive || !active.navigationPromptsEnabled || !guidance || !active.aggregate.points.length) return;
     const point = active.aggregate.points.at(-1)!;
-    const progress = updateRouteGuidanceProgress({ point, plan: guidance });
-    active.setNextInstruction(progress.isOffRoute ? 'You appear to be off route.' : progress.nextInstruction);
+    const progress = updateRouteGuidanceProgress({ point, plan: guidance, previous: previousGuidanceProgress.current });
+    previousGuidanceProgress.current = progress;
+    const turnText = progress.nextInstruction && progress.distanceToNextStepMeters != null
+      ? formatTurnAnnouncement(progress.nextInstruction, progress.distanceToNextStepMeters)
+      : progress.nextInstruction;
+    active.setNextInstruction(progress.isOffRoute ? 'You appear to be off route.' : turnText);
     if (progress.isOffRoute) {
       enqueueVoiceCue('You appear to be off route.', 'technique');
     } else if (
-      progress.nextInstruction
+      turnText
       && progress.distanceToNextStepMeters != null
-      && progress.distanceToNextStepMeters <= 100
-      && lastAnnouncedStep.current !== progress.nextInstruction
+      && progress.distanceToNextStepMeters <= 320
+      && lastAnnouncedStep.current !== `${progress.nextStepIndex}:${turnAnnouncementPhase(progress.distanceToNextStepMeters)}`
     ) {
-      lastAnnouncedStep.current = progress.nextInstruction;
-      enqueueVoiceCue(progress.nextInstruction, 'technique');
+      lastAnnouncedStep.current = `${progress.nextStepIndex}:${turnAnnouncementPhase(progress.distanceToNextStepMeters)}`;
+      enqueueVoiceCue(turnText, 'technique');
     }
   }, [active.aggregate.points.length, active.isActive, active.navigationPromptsEnabled, guidance]);
 
@@ -214,10 +219,14 @@ export default function StartOutdoorActivityScreen() {
       associatedGoalId: params.associatedGoalId,
     });
     previousElapsed.current = 0;
+    previousGuidanceProgress.current = null;
+    lastAnnouncedStep.current = null;
     setElapsedSeconds(0);
     if (attached && mode !== 'off') {
       const plan = await buildRouteGuidance(attached.points, mode);
       setGuidance(plan);
+    } else {
+      setGuidance(null);
     }
     await startActivityLocationTracking();
     const started = useActiveActivityStore.getState();
@@ -370,6 +379,18 @@ export default function StartOutdoorActivityScreen() {
               <Text style={[s.typeText, { color: C.text }]}>Indoor Cycling</Text>
             </TouchableOpacity>
           </View>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/training/run-creator' as never)}
+            style={[s.builderCard, { backgroundColor: C.card, borderColor: C.primary }]}
+            accessibilityRole="button"
+            accessibilityLabel="Build workout"
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={[s.cardTitle, { color: C.text }]}>Build Workout</Text>
+              <Text style={[s.helper, { color: C.textMuted }]}>Create a custom run, interval session, or structured workout.</Text>
+            </View>
+            <Ionicons name="construct-outline" size={22} color={C.primary} />
+          </TouchableOpacity>
           {selectedType === 'running' || selectedType === 'walking' ? (
             <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
               <View style={s.row}>
@@ -478,6 +499,7 @@ const s = StyleSheet.create({
   typeCard: { width: '48%', minHeight: 92, borderWidth: 1, borderRadius: 17, padding: 15, justifyContent: 'space-between' },
   typeText: { fontSize: 14, fontWeight: '900' },
   card: { borderWidth: 1, borderRadius: 17, padding: 16, marginBottom: 12 },
+  builderCard: { minHeight: 78, borderWidth: 1, borderRadius: 17, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   cardTitle: { fontSize: 15, fontWeight: '900' },
   helper: { fontSize: 12, lineHeight: 17, marginTop: 5 },

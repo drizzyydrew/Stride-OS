@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   createBreadcrumbGuidancePlan,
+  createSavedRouteTurnGuidancePlan,
   createTurnByTurnGuidancePlan,
   formatTurnAnnouncement,
   updateRouteGuidanceProgress,
@@ -26,6 +27,22 @@ test('manual routes remain breadcrumb guidance and never claim turn-by-turn step
   assert.equal(plan.provider, 'saved_route');
   assert.equal(plan.supportsTurnAnnouncements, false);
   assert.match(plan.limitation ?? '', /does not include routable steps/i);
+});
+
+test('saved route geometry can synthesize turn-by-turn prompts when native steps are unavailable', () => {
+  const plan = createSavedRouteTurnGuidancePlan([
+    { latitude: 44.0580, longitude: -121.3150 },
+    { latitude: 44.0590, longitude: -121.3150 },
+    { latitude: 44.0590, longitude: -121.3138 },
+    { latitude: 44.0600, longitude: -121.3138 },
+  ], 'walking');
+
+  assert.equal(plan.kind, 'turn_by_turn');
+  assert.equal(plan.provider, 'saved_route');
+  assert.equal(plan.supportsTurnAnnouncements, true);
+  assert.equal(plan.supportsRerouting, false);
+  assert.ok(plan.steps.some(step => /turn|bear|sharp/i.test(step.instruction)));
+  assert.equal(plan.steps.at(-1)?.instruction.includes('finish'), true);
 });
 
 test('MapKit steps create turn-by-turn walking and cycling guidance', () => {

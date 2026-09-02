@@ -36,6 +36,11 @@ import {
 } from '../../src/achievements/weeklyDistance/weeklyDistanceDefinitions';
 import { renderWeeklyDistanceBadgeSvg } from '../../src/achievements/weeklyDistance/weeklyDistanceArtwork';
 import { WEEKLY_DISTANCE_TIER_COLORS } from '../../src/achievements/weeklyDistance/weeklyDistanceTokens';
+import {
+  MONTHLY_DISTANCE_DEFINITIONS,
+} from '../../src/achievements/monthlyDistance/monthlyDistanceDefinitions';
+import { renderMonthlyDistanceBadgeSvg } from '../../src/achievements/monthlyDistance/monthlyDistanceArtwork';
+import { MONTHLY_DISTANCE_TIER_COLORS } from '../../src/achievements/monthlyDistance/monthlyDistanceTokens';
 import { buildAchievementHubModel, evaluateAchievementAwards } from '../../src/utils/achievements';
 import { activityHasShareableRoute, normalizeRouteForOverlay } from '../../src/utils/routeOverlay';
 
@@ -158,12 +163,11 @@ test('canonical run levels contain exactly seven progressive badge definitions a
   }
 });
 
-test('canonical Lifetime Distance - Running ladder has ten original diamond badge definitions', () => {
+test('canonical Lifetime Distance - Running ladder excludes marathon-style 26.2 badge', () => {
   assert.deepEqual(LIFETIME_DISTANCE_RUNNING_DEFINITIONS.map(item => item.thresholdMiles), [
     1,
     5,
     10,
-    26.2,
     50,
     100,
     250,
@@ -175,7 +179,6 @@ test('canonical Lifetime Distance - Running ladder has ten original diamond badg
     'lifetime_run_1_mi',
     'lifetime_run_5_mi',
     'lifetime_run_10_mi',
-    'lifetime_run_26_2_mi',
     'lifetime_run_50_mi',
     'lifetime_run_100_mi',
     'lifetime_run_250_mi',
@@ -194,7 +197,6 @@ test('canonical Lifetime Distance - Running ladder has ten original diamond badg
 test('Lifetime Distance - Running badge numbers convert for metric display without duplicating achievements', () => {
   assert.equal(formatLifetimeRunningMilestoneNumber(1, 'metric'), '1.6');
   assert.equal(formatLifetimeRunningMilestoneNumber(5, 'metric'), '8');
-  assert.equal(formatLifetimeRunningMilestoneNumber(26.2, 'metric'), '42.2');
   assert.equal(formatLifetimeRunningMilestoneNumber(500, 'metric'), '805');
   assert.equal(formatLifetimeRunningMilestoneNumber(1000, 'metric'), '1,609');
   assert.equal(formatLifetimeRunningMilestoneNumber(10000, 'metric'), '16,093');
@@ -400,17 +402,16 @@ test('run level progress follows the canonical unit toggle without changing badg
   assert.equal(engineImperial?.artworkKey, engineMetric?.artworkKey);
 });
 
-test('canonical Weekly Distance ladder has eight fixed-K original hex badge definitions', () => {
-  assert.deepEqual(WEEKLY_DISTANCE_DEFINITIONS.map(item => item.thresholdKm), [5, 10, 15, 25, 30, 50, 75, 100]);
+test('canonical Weekly Distance ladder has seven fixed-K original hex badge definitions', () => {
+  assert.deepEqual(WEEKLY_DISTANCE_DEFINITIONS.map(item => item.thresholdKm), [10, 15, 25, 50, 75, 100, 150]);
   assert.deepEqual(WEEKLY_DISTANCE_DEFINITIONS.map(item => item.id), [
-    'weekly_5k',
     'weekly_10k',
     'weekly_15k',
     'weekly_25k',
-    'weekly_30k',
     'weekly_50k',
     'weekly_75k',
     'weekly_100k',
+    'weekly_150k',
   ]);
   for (const definition of WEEKLY_DISTANCE_DEFINITIONS) {
     assert.equal(existsSync(path.resolve(process.cwd(), definition.artworkPath)), true);
@@ -426,20 +427,21 @@ test('Weekly Distance badge identity stays fixed-K while supporting progress fol
   const weeklyImperial = imperial.find(item => item.id === 'weekly_25k')!;
   const weeklyMetric = metric.find(item => item.id === 'weekly_25k')!;
 
-  assert.equal(weeklyImperial.title, '25K Per Week');
-  assert.equal(weeklyMetric.title, '25K Per Week');
+  assert.equal(weeklyImperial.title, '25K Week');
+  assert.equal(weeklyMetric.title, '25K Week');
   assert.equal(weeklyImperial.shortTitle, '25K');
   assert.equal(weeklyMetric.shortTitle, '25K');
   assert.equal(weeklyImperial.displayProgress, '12.4 mi');
-  assert.equal(weeklyImperial.displayTarget, '15.5 mi');
+  assert.equal(weeklyImperial.displayTarget, '25K WEEK');
   assert.equal(weeklyMetric.displayProgress, '20 km');
-  assert.equal(weeklyMetric.displayTarget, '25 km');
+  assert.equal(weeklyMetric.displayTarget, '25K WEEK');
   assert.equal(weeklyImperial.id, weeklyMetric.id);
   assert.equal(weeklyImperial.artworkKey, weeklyMetric.artworkKey);
 
   const svg = renderWeeklyDistanceBadgeSvg(25, 'unlocked');
   assert.equal(svg.includes('25K'), true);
-  assert.equal(svg.includes('PER WEEK'), true);
+  assert.equal(svg.includes('WEEK'), true);
+  assert.equal(svg.includes('PER WEEK'), false);
   assert.equal(/\bMI\b|\bKM\b/.test(svg), false);
 });
 
@@ -502,7 +504,7 @@ test('Weekly Distance awards persist through the legacy award emitter and hub mo
   const awards = evaluateAchievementAwards(activities, [], baseTime);
   const awardIds = awards.map(item => item.id);
   assert.equal(awardIds.includes('weekly_25k'), true);
-  assert.equal(awardIds.includes('weekly_30k'), false);
+  assert.equal(awardIds.includes('weekly_50k'), false);
   assert.deepEqual(
     awards.find(item => item.id === 'weekly_25k')?.supportingActivityIds,
     ['legacy-weekly25'],
@@ -523,7 +525,8 @@ test('Weekly Distance exports preserve transparent alpha, locked hue removal, no
 
   const unlockedSvg = readFileSync(path.resolve(process.cwd(), definition.artworkPath), 'utf8');
   const lockedSvg = readFileSync(path.resolve(process.cwd(), definition.lockedArtworkPath), 'utf8').toLowerCase();
-  assert.equal(unlockedSvg.includes('PER WEEK'), true);
+  assert.equal(unlockedSvg.includes('WEEK'), true);
+  assert.equal(unlockedSvg.includes('PER WEEK'), false);
   assert.equal(unlockedSvg.includes('M39 65 H73'), false);
   const tierHexes = Object.values(WEEKLY_DISTANCE_TIER_COLORS).flatMap(colors => Object.values(colors).map(value => value.toLowerCase()));
   for (const hex of tierHexes) assert.equal(lockedSvg.includes(hex), false, `${definition.lockedArtworkPath} contains tier hue ${hex}`);
@@ -541,6 +544,48 @@ test('Weekly Distance accessibility labels include fixed achievement identity an
   assert.equal(below.accessibilityLabel, '25 kilometer weekly distance achievement. Locked. 3.1 miles remaining this week.');
   assert.equal(metric.accessibilityLabel, '25 kilometer weekly distance achievement. Locked. 4.6 kilometers remaining this week.');
   assert.equal(earned.accessibilityLabel, '25 kilometer weekly distance achievement. Unlocked.');
+});
+
+test('Monthly Distance ladder has seven fixed-K original hex badge definitions', () => {
+  assert.deepEqual(MONTHLY_DISTANCE_DEFINITIONS.map(item => item.thresholdKm), [25, 50, 100, 150, 200, 250, 300]);
+  assert.deepEqual(MONTHLY_DISTANCE_DEFINITIONS.map(item => item.id), [
+    'monthly_run_25k',
+    'monthly_run_50k',
+    'monthly_run_100k',
+    'monthly_run_150k',
+    'monthly_run_200k',
+    'monthly_run_250k',
+    'monthly_run_300k',
+  ]);
+  for (const definition of MONTHLY_DISTANCE_DEFINITIONS) {
+    assert.equal(existsSync(path.resolve(process.cwd(), definition.artworkPath)), true);
+    assert.equal(existsSync(path.resolve(process.cwd(), definition.lockedArtworkPath)), true);
+    assert.equal(existsSync(path.resolve(process.cwd(), definition.shareTransparentPngPath)), true);
+    assert.equal(existsSync(path.resolve(process.cwd(), definition.shareOpaquePngPath)), true);
+  }
+});
+
+test('Monthly Distance evaluates calendar-month running totals and keeps K-month identity', () => {
+  const below = evaluateAchievementSystem({ activities: [run('month-below', 0, 90)], units: 'imperial' }).find(item => item.id === 'monthly_run_150k')!;
+  const exact = evaluateAchievementSystem({ activities: [activity({ id: 'month-exact', activityType: 'running', startTime: baseTime, metrics: { distanceMeters: 150_000 } })], units: 'metric' }).find(item => item.id === 'monthly_run_150k')!;
+  assert.equal(below.state, 'locked');
+  assert.equal(below.displayTarget, '150K MONTH');
+  assert.equal(below.displayRemaining.endsWith('remaining this month'), true);
+  assert.equal(exact.state, 'earned');
+  assert.equal(exact.displayTarget, '150K MONTH');
+  assert.equal(renderMonthlyDistanceBadgeSvg(150, 'unlocked').includes('MONTH'), true);
+});
+
+test('Monthly Distance exports preserve transparent alpha, locked hue removal, and opaque parity', () => {
+  const definition = MONTHLY_DISTANCE_DEFINITIONS.find(item => item.thresholdKm === 150)!;
+  const transparent = PNG.sync.read(readFileSync(path.resolve(process.cwd(), definition.shareTransparentPngPath)));
+  assert.equal(transparent.data[3], 0);
+  assert.equal(transparent.data[(transparent.width * 512 + 512) * 4 + 3], 0);
+
+  const lockedSvg = readFileSync(path.resolve(process.cwd(), definition.lockedArtworkPath), 'utf8').toLowerCase();
+  const tierHexes = Object.values(MONTHLY_DISTANCE_TIER_COLORS).flatMap(colors => Object.values(colors).map(value => value.toLowerCase()));
+  for (const hex of tierHexes) assert.equal(lockedSvg.includes(hex), false, `${definition.lockedArtworkPath} contains tier hue ${hex}`);
+  assert.equal(renderMonthlyDistanceBadgeSvg(150, 'share-opaque'), renderMonthlyDistanceBadgeSvg(150, 'unlocked'));
 });
 
 test('first 5K boundary unlocks at exact threshold and keeps fixed-K identity', () => {
@@ -577,39 +622,26 @@ test('half and full marathon support values follow unit preference while names s
   assert.equal(formatAchievementSupportValue(full, 'metric'), '42.2 km');
 });
 
-test('scheduled rest and recovery days preserve schedule-based streaks', () => {
-  const scheduledSessions = [
-    session('2026-08-03', { status: 'completed', completedActivityId: 'mon' }),
-    session('2026-08-04', { activityType: 'rest', title: 'Rest Day', priority: 'optional' }),
-    session('2026-08-05', { activityType: 'strength', status: 'completed', completedActivityId: 'wed' }),
-    session('2026-08-06', { status: 'completed', completedActivityId: 'thu' }),
-    session('2026-08-07', { activityType: 'mobility', title: 'Recovery Mobility', priority: 'optional' }),
-    session('2026-08-08', { status: 'completed', completedActivityId: 'sat' }),
-    session('2026-08-09', { status: 'completed', completedActivityId: 'sun' }),
-  ];
-  const activities = [
-    run('mon', 0, 3, { scheduled: true, scheduledSessionId: 'session_2026-08-03' }),
-    activity({ id: 'wed', activityType: 'strength', startTime: baseTime + 2 * DAY_MS, scheduled: true, scheduledSessionId: 'session_2026-08-05' }),
-    run('thu', 3, 3, { scheduled: true, scheduledSessionId: 'session_2026-08-06' }),
-    run('sat', 5, 3, { scheduled: true, scheduledSessionId: 'session_2026-08-08' }),
-    run('sun', 6, 3, { scheduled: true, scheduledSessionId: 'session_2026-08-09' }),
-  ];
-  const evaluated = evaluateAchievementSystem({ activities, units: 'imperial', scheduledSessions, now: new Date('2026-08-09T18:00:00').getTime() });
+test('streaks require consecutive completed workout days of at least five minutes', () => {
+  const activities = Array.from({ length: 7 }, (_, index) => activity({
+    id: `streak-day-${index}`,
+    activityType: index % 2 === 0 ? 'running' : 'strength',
+    startTime: baseTime + index * DAY_MS,
+    metrics: { durationSeconds: 300 },
+  }));
+  const evaluated = evaluateAchievementSystem({ activities, units: 'imperial', now: baseTime + 6 * DAY_MS });
   assert.equal(evaluated.find(item => item.id === 'streak_1_week')?.state, 'earned');
 });
 
-test('missed required scheduled session interrupts streak progress', () => {
-  const scheduledSessions = [
-    session('2026-08-03', { status: 'completed', completedActivityId: 'mon' }),
-    session('2026-08-04', { status: 'missed' }),
-    session('2026-08-05', { status: 'completed', completedActivityId: 'wed' }),
-  ];
+test('streaks ignore sub-five-minute completions and break on empty days', () => {
   const activities = [
-    run('mon', 0, 3, { scheduled: true, scheduledSessionId: 'session_2026-08-03' }),
-    run('wed', 2, 3, { scheduled: true, scheduledSessionId: 'session_2026-08-05' }),
+    activity({ id: 'short', activityType: 'running', startTime: baseTime, metrics: { durationSeconds: 299 } }),
+    activity({ id: 'day-3', activityType: 'walking', startTime: baseTime + 2 * DAY_MS, metrics: { durationSeconds: 600 } }),
+    activity({ id: 'day-4', activityType: 'mobility', startTime: baseTime + 3 * DAY_MS, metrics: { durationSeconds: 600 } }),
   ];
-  const evaluated = evaluateAchievementSystem({ activities, units: 'imperial', scheduledSessions, now: new Date('2026-08-05T18:00:00').getTime() });
+  const evaluated = evaluateAchievementSystem({ activities, units: 'imperial', now: baseTime + 3 * DAY_MS });
   assert.equal(evaluated.find(item => item.id === 'streak_1_week')?.state, 'locked');
+  assert.equal(evaluated.find(item => item.id === 'streak_1_week')?.currentProgress, 2);
 });
 
 test('activity edit, delete, and backdate recalculate lifetime and weekly achievements', () => {
@@ -642,7 +674,7 @@ test('HealthKit duplicate of StrideOS-tracked workout is not double counted', ()
   });
   const evaluated = evaluateAchievementSystem({ activities: [tracked, imported], units: 'imperial' });
   assert.equal(evaluated.find(item => item.id === 'lifetime_run_10_mi')?.state, 'earned');
-  assert.equal(evaluated.find(item => item.id === 'lifetime_run_26_2_mi')?.state, 'locked');
+  assert.equal(evaluated.some(item => item.id === 'lifetime_run_26_2_mi'), false);
 });
 
 test('strength counts and consistency use canonical completed strength activities', () => {

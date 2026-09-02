@@ -70,8 +70,12 @@ function formatDistanceMeters(meters: number | null | undefined, units: UnitSyst
 
 function averagePace(metrics: ActivityMetrics, units: UnitSystem): string | null {
   const secPerKm = metrics.pace?.averageSecondsPerKilometer;
-  if (!finitePositive(secPerKm)) return null;
-  return formatPaceSecPerMile(secPerKm * 1.609344, units);
+  const fallbackSecPerKm = finitePositive(metrics.durationSeconds) && finitePositive(metrics.distanceMeters)
+    ? metrics.durationSeconds / (metrics.distanceMeters / 1000)
+    : null;
+  const value = finitePositive(secPerKm) ? secPerKm : fallbackSecPerKm;
+  if (!finitePositive(value)) return null;
+  return formatPaceSecPerMile(value * 1.609344, units);
 }
 
 function splitSummary(metrics: ActivityMetrics, units: UnitSystem): string | null {
@@ -130,7 +134,12 @@ export function buildActivitySummary(
   pushMetric(primary, metric('Duration', formatDuration(metrics.durationSeconds), 'primary'));
   if (endurance) pushMetric(primary, metric('Distance', formatDistanceMeters(metrics.distanceMeters, units), 'primary'));
   if (speedBased) {
-    pushMetric(primary, metric('Average speed', finitePositive(metrics.speed?.averageMetersPerSecond) ? formatSpeedMps(metrics.speed.averageMetersPerSecond, units) : null, 'primary'));
+    const averageMetersPerSecond = finitePositive(metrics.speed?.averageMetersPerSecond)
+      ? metrics.speed.averageMetersPerSecond
+      : finitePositive(metrics.distanceMeters) && finitePositive(metrics.durationSeconds)
+        ? metrics.distanceMeters / metrics.durationSeconds
+        : null;
+    pushMetric(primary, metric('Average speed', finitePositive(averageMetersPerSecond) ? formatSpeedMps(averageMetersPerSecond, units) : null, 'primary'));
   } else if (['running', 'walking', 'hiking'].includes(activity.activityType)) {
     pushMetric(primary, metric('Average pace', averagePace(metrics, units), 'primary'));
   }

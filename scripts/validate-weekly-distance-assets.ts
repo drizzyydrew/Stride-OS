@@ -98,7 +98,8 @@ for (const definition of WEEKLY_DISTANCE_DEFINITIONS) {
   const lockedSvg = validateSvg(definition.lockedArtworkPath);
   const transparentSvg = validateSvg(definition.shareTransparentSvgPath);
   const opaqueSvg = validateSvg(definition.shareOpaqueSvgPath);
-  assert(unlockedSvg.includes('PER WEEK'), `${definition.artworkPath} is missing PER WEEK`);
+  assert(unlockedSvg.includes('WEEK'), `${definition.artworkPath} is missing WEEK`);
+  assert(!unlockedSvg.includes('PER WEEK'), `${definition.artworkPath} still contains retired PER WEEK copy`);
   assert(unlockedSvg.includes('STRIDEOS'), `${definition.artworkPath} is missing STRIDEOS`);
   assert(transparentSvg.includes('fill="transparent" fill-opacity="0"'), `${definition.shareTransparentSvgPath} does not clear the hexagon interior`);
   assert(normalizeOpaqueSvg(opaqueSvg) === unlockedSvg, `${definition.shareOpaqueSvgPath} does not match unlocked SVG artwork`);

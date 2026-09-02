@@ -19,6 +19,7 @@ import { lifetimeDistanceCyclingDefinitionFromAchievementId } from '../../achiev
 import { lifetimeDistanceRunningDefinitionFromAchievementId } from '../../achievements/lifetimeDistanceRunning';
 import { streakDefinitionFromAchievementId } from '../../achievements/streaks';
 import { weeklyDistanceDefinitionFromAchievementId } from '../../achievements/weeklyDistance';
+import { monthlyDistanceDefinitionFromAchievementId } from '../../achievements/monthlyDistance';
 import AchievementBadge from '../achievements/AchievementBadge';
 import type { UnitSystem } from '../../store/settingsStore';
 import type { Activity } from '../../types/activity';
@@ -94,6 +95,15 @@ function toggleLabel(key: ToggleKey, activity?: Activity): string {
   if (key === 'achievement') return 'Badge';
   if (key === 'brand') return 'StrideOS';
   return displayLabel(key);
+}
+
+function shareActivityLabel(activity: Activity | undefined): string | null {
+  if (!activity) return null;
+  if (activity.subtype === 'run_walk') return 'RUN / WALK';
+  if (activity.activityType === 'running') return 'RUN';
+  if (activity.activityType === 'walking') return 'WALK';
+  if (activity.activityType === 'cycling' || activity.activityType === 'indoor_cycling') return 'RIDE';
+  return displayLabel(activity.activityType).toUpperCase();
 }
 
 function MovableLayer({
@@ -223,8 +233,20 @@ export default function ShareStudio({
     achievement: Boolean(achievement && achievementShareAllowed(achievement)),
     brand: true,
   });
+  useEffect(() => {
+    setEnabled(current => ({
+      ...current,
+      distance: current.distance || keys.includes('distance'),
+      time: current.time || keys.includes('time'),
+      pace: current.pace || keys.includes('pace'),
+      elevation: current.elevation || keys.includes('elevation'),
+      achievement: current.achievement || Boolean(achievement && achievementShareAllowed(achievement)),
+      brand: current.brand || keys.includes('brand'),
+    }));
+  }, [achievement?.id, achievement?.state, keys.join('|')]);
   const [layoutEpoch, setLayoutEpoch] = useState(0);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [showStoryActivityTitle, setShowStoryActivityTitle] = useState(true);
   const [selectedLayer, setSelectedLayer] = useState<EditableLayerKey>('achievement');
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [layerScale, setLayerScale] = useState<Record<EditableLayerKey, number>>({
@@ -234,16 +256,25 @@ export default function ShareStudio({
   const routeEnabled = enabled.route && activity && activityHasShareableRoute(activity);
   const isOverlay = variant === 'transparent_overlay';
   const isStory = format === 'story';
-  const activityTitle = activity ? displayLabel(activity.subtype === 'run_walk' ? 'run_walk' : activity.activityType).toUpperCase() : null;
+  const activityTitle = shareActivityLabel(activity);
   const runLevelSlug = achievement ? runLevelSlugFromId(achievement.id) : null;
   const lifetimeRunDefinition = achievement ? lifetimeDistanceRunningDefinitionFromAchievementId(achievement.id) : null;
   const lifetimeCyclingDefinition = achievement ? lifetimeDistanceCyclingDefinitionFromAchievementId(achievement.id) : null;
   const weeklyDistanceDefinition = achievement ? weeklyDistanceDefinitionFromAchievementId(achievement.id) : null;
+  const monthlyDistanceDefinition = achievement ? monthlyDistanceDefinitionFromAchievementId(achievement.id) : null;
   const streakDefinition = achievement ? streakDefinitionFromAchievementId(achievement.id) : null;
   const firstDefinition = achievement ? firstAchievementDefinitionFromAchievementId(achievement.id) : null;
   const strengthDefinition = achievement ? strengthAchievementDefinitionFromAchievementId(achievement.id) : null;
   const recoveryDefinition = achievement ? recoveryAchievementDefinitionFromAchievementId(achievement.id) : null;
-  const canonicalBadgeDefinition = lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition;
+  const canonicalBadgeDefinition = lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? monthlyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition;
+  const achievementShareTitle = weeklyDistanceDefinition
+    ? `${weeklyDistanceDefinition.milestoneLabel} WEEK`
+    : monthlyDistanceDefinition
+      ? `${monthlyDistanceDefinition.milestoneLabel} MONTH`
+      : achievement?.title.toUpperCase();
+  const achievementSupport = weeklyDistanceDefinition || monthlyDistanceDefinition
+    ? null
+    : achievement?.displayTarget;
   const bg = isOverlay ? 'transparent' : variant === 'editorial_card' ? '#F3F1EB' : '#0E0E0F';
   const foregroundDark = variant === 'editorial_card';
   const selectedMetrics = (['distance', 'time', 'pace', 'elevation'] as ToggleKey[])
@@ -263,10 +294,19 @@ export default function ShareStudio({
   const adjustSelectedLayerScale = (delta: number) => {
     if (!activeEditableLayer) return;
     setLayerScale(current => {
-      const next = Math.max(0.72, Math.min(1.5, Number((current[activeEditableLayer] + delta).toFixed(2))));
+      const next = Math.max(0.5, Math.min(2, Number((current[activeEditableLayer] + delta).toFixed(2))));
       return { ...current, [activeEditableLayer]: next };
     });
   };
+  const titleInitial = {
+    x: 28,
+    y: isStory ? Math.max(24, layerBounds.height - 156) : 24,
+  };
+  const metricsInitial = {
+    x: 28,
+    y: isStory ? Math.max(24, layerBounds.height - 284) : Math.max(24, layerBounds.height - 100),
+  };
+  const showTitleLayer = !(isStory && activityTitle && !showStoryActivityTitle);
 
   const canvas = (
     <View
@@ -334,25 +374,29 @@ export default function ShareStudio({
           )}
         </MovableLayer>
       ) : null}
-      <MovableLayer
-        initial={{ x: 38, y: isStory ? 470 : 330 }}
-        bounds={layerBounds}
-        baseWidth={244}
-        baseHeight={128}
-        onInteractionActiveChange={onInteractionActiveChange}
-        style={styles.titleLayer}
-      >
-        <Text style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent]}>
-          {achievement ? 'ACHIEVEMENT UNLOCKED' : activityTitle ? 'ACTIVITY COMPLETE' : 'STRIDEOS'}
-        </Text>
-        <Text style={[styles.title, foregroundDark ? styles.darkInk : styles.lightInk]} numberOfLines={3} adjustsFontSizeToFit>
-          {variant === 'activity_achievement' && activityTitle ? activityTitle : achievement?.title.toUpperCase() ?? activityTitle ?? 'TRAINING'}
-        </Text>
-        {achievement ? <Text style={[styles.support, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{achievement.displayTarget}</Text> : null}
-      </MovableLayer>
+      {showTitleLayer ? (
+        <MovableLayer
+          initial={titleInitial}
+          bounds={layerBounds}
+          baseWidth={244}
+          baseHeight={128}
+          onInteractionActiveChange={onInteractionActiveChange}
+          style={styles.titleLayer}
+        >
+          <Text style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent]}>
+            {achievement ? 'ACHIEVEMENT UNLOCKED' : activityTitle ? 'ACTIVITY COMPLETE' : 'STRIDEOS'}
+          </Text>
+          <Text style={[styles.title, foregroundDark ? styles.darkInk : styles.lightInk]} numberOfLines={3} adjustsFontSizeToFit>
+            {variant === 'activity_achievement' && activityTitle && achievementShareTitle
+              ? `${activityTitle} + ${achievementShareTitle}`
+              : achievementShareTitle ?? activityTitle ?? 'TRAINING'}
+          </Text>
+          {achievementSupport ? <Text style={[styles.support, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{achievementSupport}</Text> : null}
+        </MovableLayer>
+      ) : null}
       {selectedMetrics.length ? (
         <MovableLayer
-          initial={{ x: 38, y: isStory ? 690 : 522 }}
+          initial={metricsInitial}
           bounds={layerBounds}
           baseWidth={244}
           baseHeight={100}
@@ -445,6 +489,18 @@ export default function ShareStudio({
               </TouchableOpacity>
             );
           })}
+          {isStory && activityTitle ? (
+            <TouchableOpacity
+              style={[styles.detailsRow, showStoryActivityTitle && styles.detailsRowOn]}
+              onPress={() => setShowStoryActivityTitle(current => !current)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: showStoryActivityTitle }}
+              accessibilityLabel={`Activity title ${showStoryActivityTitle ? 'enabled' : 'disabled'}`}
+            >
+              <Text style={[styles.detailsCheck, showStoryActivityTitle ? styles.toggleTextOn : styles.toggleTextOff]}>{showStoryActivityTitle ? '✓' : ''}</Text>
+              <Text style={[styles.toggleText, showStoryActivityTitle ? styles.toggleTextOn : styles.toggleTextOff]}>Activity Title</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       ) : null}
       {activeEditableLayer ? (
@@ -515,7 +571,7 @@ const styles = StyleSheet.create({
   toggleText: { fontSize: 11, fontWeight: '900' },
   toggleTextOn: { color: '#0E0E0F' },
   toggleTextOff: { color: '#DCC9B1' },
-  canvasPreviewFrame: { borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(220,201,177,0.18)' },
+  canvasPreviewFrame: { borderRadius: 18, overflow: 'hidden' },
   canvas: { width: '100%', overflow: 'hidden', borderRadius: 0 },
   square: { aspectRatio: 1 },
   story: { aspectRatio: 9 / 16 },

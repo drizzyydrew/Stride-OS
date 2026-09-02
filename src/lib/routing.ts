@@ -21,6 +21,7 @@ import { milesBetween } from '../store/routeStore';
 import { getAppleRouteDirections } from 'stride-live-activity';
 import {
   createBreadcrumbGuidancePlan,
+  createSavedRouteTurnGuidancePlan,
   createTurnByTurnGuidancePlan,
   type RouteGuidancePlan,
   type RouteGuidanceStep,
@@ -73,7 +74,7 @@ export async function buildRouteGuidance(
     } | null>;
     const result = await getRouteDirections(geometry, mode);
     if (!result || result.geometry.length < 2 || result.steps.length === 0) {
-      return createBreadcrumbGuidancePlan(geometry, mode);
+      return createSavedRouteTurnGuidancePlan(geometry, mode);
     }
     const steps: RouteGuidanceStep[] = result.steps.map((step, index) => ({
       id: step.id || `mapkit-step-${index}`,
@@ -89,7 +90,7 @@ export async function buildRouteGuidance(
       steps,
     });
   } catch {
-    return createBreadcrumbGuidancePlan(geometry, mode);
+    return createSavedRouteTurnGuidancePlan(geometry, mode);
   }
 }
 
