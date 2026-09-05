@@ -84,14 +84,14 @@ export default function WorkoutIntelligenceSettingsScreen() {
         <View style={[styles.settingRow, { borderBottomColor: C.border, marginTop: 16 }]}>
           <View style={{ flex: 1, paddingRight: 12 }}>
             <Text style={[styles.settingTitle, { color: C.text }]}>Announce pause</Text>
-            <Text style={[styles.caption, { color: C.textMuted }]}>Speaks "Workout paused" after auto-pause.</Text>
+            <Text style={[styles.caption, { color: C.textMuted }]}>Speaks "Pausing workout" after auto-pause.</Text>
           </View>
           <Switch value={announceAutoPause} onValueChange={setAnnounceAutoPause} trackColor={{ false: C.cardAlt, true: C.primary }} thumbColor={C.card} />
         </View>
         <View style={styles.settingRow}>
           <View style={{ flex: 1, paddingRight: 12 }}>
             <Text style={[styles.settingTitle, { color: C.text }]}>Announce resume</Text>
-            <Text style={[styles.caption, { color: C.textMuted }]}>Speaks "Workout resumed" after auto-resume.</Text>
+            <Text style={[styles.caption, { color: C.textMuted }]}>Speaks "Resuming workout" after auto-resume.</Text>
           </View>
           <Switch value={announceAutoResume} onValueChange={setAnnounceAutoResume} trackColor={{ false: C.cardAlt, true: C.primary }} thumbColor={C.card} />
         </View>

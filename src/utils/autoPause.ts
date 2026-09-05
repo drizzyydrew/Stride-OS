@@ -34,8 +34,8 @@ const PARAMS = {
   running: {
     pauseSpeedMps: 0.45,
     resumeSpeedMps: 0.75,
-    pauseWindowMs: 2_000,
-    resumeWindowMs: 2_000,
+    pauseWindowMs: 1_000,
+    resumeWindowMs: 1_000,
     requiredSamples: 2,
     resumeSamples: 2,
     accuracyMaxMeters: 35,

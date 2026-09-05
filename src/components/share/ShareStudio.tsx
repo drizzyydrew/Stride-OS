@@ -40,6 +40,7 @@ export type ShareStudioFormat = 'square' | 'story';
 type ToggleKey = 'route' | 'distance' | 'time' | 'pace' | 'elevation' | 'achievement' | 'brand';
 type EditableLayerKey = 'brand' | 'achievement';
 const SHARE_EDGE_MARGIN = 0;
+const ROUTE_TRACE_ACCENT = '#9DB2A0';
 
 type Props = {
   activity?: Activity;
@@ -179,8 +180,8 @@ function RouteOverlay({ activity, light = false }: { activity?: Activity; light?
   const points = routePointsToSvgPolyline(route.points);
   return (
     <Svg width="100%" height="100%" viewBox={`0 0 ${route.viewBox.width} ${route.viewBox.height}`} pointerEvents="none">
-      <Polyline points={points} stroke={light ? '#0E0E0F' : '#F3F1EB'} strokeWidth={22} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.22} />
-      <Polyline points={points} stroke={light ? '#DCC9B1' : '#DCC9B1'} strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.9} />
+      <Polyline points={points} stroke={light ? '#0E0E0F' : '#F3F1EB'} strokeWidth={22} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.28} />
+      <Polyline points={points} stroke={ROUTE_TRACE_ACCENT} strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.96} />
       {route.points[0] ? <Circle cx={route.points[0].x} cy={route.points[0].y} r={18} fill="#A8B9A1" /> : null}
       {route.points.at(-1) ? <Circle cx={route.points.at(-1)!.x} cy={route.points.at(-1)!.y} r={18} fill="#DCC9B1" /> : null}
     </Svg>

@@ -147,7 +147,7 @@ export default function RouteDetailScreen() {
           rotateEnabled={false}
         >
           {route.points.length > 1 ? (
-            <Polyline coordinates={route.points} strokeColor={C.chartSeriesPrimary} strokeWidth={4} />
+            <Polyline coordinates={route.points} strokeColor={C.positive} strokeWidth={5} />
           ) : null}
           {route.points[0] ? <Marker coordinate={route.points[0]} title="Start" pinColor={C.positive} /> : null}
         </MapView>

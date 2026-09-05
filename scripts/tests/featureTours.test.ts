@@ -45,6 +45,15 @@ test('feature tour definitions are versioned and compact', () => {
   }
 });
 
+test('Movement Lab replay only targets always-visible walkthrough regions', () => {
+  const movement = FEATURE_TOURS.find(tour => tour.id === 'movement-lab');
+  assert.ok(movement, 'movement-lab tour is defined');
+  const alwaysVisibleTargets = new Set(['movement.assessments', 'movement.capture']);
+  for (const step of movement.steps) {
+    assert.equal(alwaysVisibleTargets.has(step.targetId), true, `${step.id} targets an always-visible Movement Lab region`);
+  }
+});
+
 test('first-use tours start only when current version has not been seen', () => {
   const definition = { version: 2 };
   assert.equal(shouldAutoStartTour(definition, undefined), true);
@@ -79,6 +88,7 @@ test('missing target uses safe centered placement instead of failing', () => {
   });
   assert.equal(placement.placement, 'center');
   assert.ok(placement.top >= 59);
+  assert.ok(placement.top <= 260);
   assert.ok(placement.left >= 16);
   assert.ok(placement.width <= 288);
 });

@@ -25,7 +25,7 @@ import { experienceModeAllows, useExperienceMode } from '../../../src/hooks/useE
 import { actionLabelForScheduledSession, describeRunWalk } from '../../../src/utils/scheduledSessions';
 import { activityTypeFromScheduledSession } from '../../../src/utils/activityCompletion';
 import { US_AQI_BANDS, aqiVoiceOverLabel, getAqiScalePosition } from '../../../src/utils/aqi';
-import { buildPerformanceForecast, buildTrainingOutlook } from '../../../src/utils/trainingOutlook';
+import { buildPerformanceForecast, buildTrainingOutlook, type PerformanceForecastMetric } from '../../../src/utils/trainingOutlook';
 import { buildAchievementHubModel } from '../../../src/utils/achievements';
 
 function lastUpdatedLabel(fetchedAt: number | null): string | null {
@@ -95,51 +95,67 @@ function forecastIconName(key: string): keyof typeof Ionicons.glyphMap {
 }
 
 function ForecastMiniChart({
-  metricKey,
+  metric,
   color,
   positive,
   muted,
 }: {
-  metricKey: string;
+  metric: PerformanceForecastMetric;
   color: string;
   positive: string;
   muted: string;
 }) {
-  if (metricKey === 'peak_window') {
+  const values = metric.chartValues.length > 0 ? metric.chartValues : [0];
+  const maxValue = Math.max(1, ...values);
+
+  if (metric.key === 'peak_window') {
+    const points = values.map((value, index) => {
+      const x = 18 + (index * (112 / Math.max(1, values.length - 1)));
+      const y = 42 - (Math.min(maxValue, value) / maxValue) * 28;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
     return (
       <Svg width="100%" height="100%" viewBox="0 0 148 56">
-        <Line x1="10" y1="34" x2="138" y2="34" stroke={muted} strokeWidth="2" opacity={0.32} strokeLinecap="round" />
-        <Rect x="62" y="20" width="36" height="28" rx="8" fill={color} opacity={0.16} />
-        {[20, 42, 64, 86, 108, 130].map((x, index) => (
-          <Circle key={x} cx={x} cy="34" r={index === 3 ? 5 : 3.5} fill={index === 3 ? color : muted} opacity={index === 3 ? 0.9 : 0.46} />
-        ))}
-        <Path d="M64 24h32M64 30h32M64 36h32" stroke={color} strokeWidth="1.5" opacity={0.54} strokeLinecap="round" />
+        <Line x1="14" y1="44" x2="134" y2="44" stroke={muted} strokeWidth="1.2" opacity={0.26} strokeLinecap="round" />
+        <Rect x="74" y="12" width="34" height="34" rx="9" fill={color} opacity={0.12} />
+        <Polyline points={points} stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.78} />
+        {points.split(' ').map(point => {
+          const [x, y] = point.split(',');
+          return <Circle key={point} cx={x} cy={y} r="3.2" fill={color} opacity={0.9} />;
+        })}
       </Svg>
     );
   }
 
-  if (metricKey === 'race_readiness') {
+  if (metric.key === 'race_readiness') {
+    const readiness = Math.min(100, Math.max(0, values[values.length - 1] ?? 0));
+    const needleX = 74 + Math.cos(Math.PI - (readiness / 100) * Math.PI) * 42;
+    const needleY = 44 - Math.sin((readiness / 100) * Math.PI) * 32;
     return (
       <Svg width="100%" height="100%" viewBox="0 0 148 56">
-        <Path d="M24 42a50 50 0 0 1 100 0" stroke={muted} strokeWidth="7" opacity={0.24} fill="none" strokeLinecap="round" />
-        <Path d="M24 42a50 50 0 0 1 82-38" stroke={color} strokeWidth="7" opacity={0.7} fill="none" strokeLinecap="round" />
-        <Line x1="74" y1="42" x2="101" y2="19" stroke={color} strokeWidth="3" opacity={0.86} strokeLinecap="round" />
-        <Circle cx="74" cy="42" r="5" fill={color} opacity={0.9} />
-        {[36, 55, 74, 93, 112].map((x, index) => (
-          <Rect key={x} x={x} y={34 - index * 5} width="9" height={8 + index * 5} rx="4.5" fill={color} opacity={0.2 + index * 0.11} />
+        <Path d="M24 44a50 50 0 0 1 100 0" stroke={muted} strokeWidth="6" opacity={0.22} fill="none" strokeLinecap="round" />
+        <Path d={`M24 44a50 50 0 0 1 ${Math.max(24, Math.min(124, needleX + 16)).toFixed(1)} ${Math.max(10, needleY + 4).toFixed(1)}`} stroke={color} strokeWidth="6" opacity={0.58} fill="none" strokeLinecap="round" />
+        <Line x1="74" y1="44" x2={needleX.toFixed(1)} y2={needleY.toFixed(1)} stroke={color} strokeWidth="3" opacity={0.86} strokeLinecap="round" />
+        <Circle cx="74" cy="44" r="4.5" fill={color} opacity={0.9} />
+        {values.slice(0, 4).map((value, index) => (
+          <Rect key={`${metric.key}-${index}`} x={28 + index * 23} y={42 - Math.max(5, value / 3)} width="9" height={Math.max(5, value / 3)} rx="4.5" fill={color} opacity={0.22 + index * 0.13} />
         ))}
       </Svg>
     );
   }
 
+  const bars = values.map((value, index) => {
+    const height = 8 + (Math.min(maxValue, value) / maxValue) * 30;
+    return { x: 32 + index * 34, y: 44 - height, height, key: `${index}-${value}` };
+  });
   return (
     <Svg width="100%" height="100%" viewBox="0 0 148 56">
       <Line x1="10" y1="44" x2="138" y2="44" stroke={muted} strokeWidth="1.5" opacity={0.22} strokeLinecap="round" />
-      <Polyline points="12,35 38,27 64,33 90,18 116,23 136,12" stroke={positive} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.78} />
-      {[['12', '35'], ['38', '27'], ['64', '33'], ['90', '18'], ['116', '23'], ['136', '12']].map(([x, y]) => (
-        <Circle key={`${x}-${y}`} cx={x} cy={y} r="3.5" fill={positive} opacity={0.9} />
+      {bars.map(bar => (
+        <Rect key={bar.key} x={bar.x} y={bar.y} width="13" height={bar.height} rx="6.5" fill={positive} opacity={0.34 + bar.x / 360} />
       ))}
-      <Path d="M12 42c25-3 35-10 53-8 27 3 42-17 71-22" stroke={positive} strokeWidth="9" opacity={0.09} fill="none" strokeLinecap="round" />
+      <Polyline points={bars.map(bar => `${bar.x + 6.5},${bar.y}`).join(' ')} stroke={positive} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.74} />
+      <Path d="M24 42c23-2 34-8 51-6 21 2 35-12 53-15" stroke={positive} strokeWidth="9" opacity={0.08} fill="none" strokeLinecap="round" />
     </Svg>
   );
 }
@@ -398,11 +414,13 @@ export default function TodayScreen() {
   const performanceForecast = useMemo(() => buildPerformanceForecast(trainingOutlook, {
     weeksToRace: weekPlan.metadata.weeksToRace,
     trainingPhase: weekPlan.metadata.trainingPhase,
+    readinessScore: readiness ?? undefined,
     decisionSnapshot,
   }), [
     trainingOutlook,
     weekPlan.metadata.weeksToRace,
     weekPlan.metadata.trainingPhase,
+    readiness,
     decisionSnapshot,
   ]);
   const primaryDayIndex = primarySession
@@ -795,13 +813,24 @@ export default function TodayScreen() {
                   <Ionicons name={forecastIconName(metric.key)} size={18} color={metric.key === 'training_load_trend' ? C.positive : C.primary} />
                 </View>
                 <View style={styles.forecastChart}>
-                  <ForecastMiniChart metricKey={metric.key} color={C.primary} positive={C.positive} muted={C.textDim} />
+                  <ForecastMiniChart metric={metric} color={C.primary} positive={C.positive} muted={C.textDim} />
                 </View>
               </View>
+              <Text style={[styles.forecastValue, { color: C.primary }]}>{metric.valueLabel}</Text>
+              <Text style={[styles.forecastHorizon, { color: C.textDim }]}>{metric.horizonLabel}</Text>
               <Text style={[styles.forecastState, { color: C.text }]}>{metric.visualLabel ?? metric.state}</Text>
             </View>
           ))}
         </View>
+        <TouchableOpacity
+          onPress={() => router.push({ pathname: '/(tabs)/performance', params: { view: 'forecast' } } as never)}
+          style={[styles.forecastDrillButton, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+          accessibilityRole="button"
+          accessibilityLabel="Open full performance forecast"
+        >
+          <Text style={[styles.forecastDrillText, { color: C.primary }]}>Open Full Forecast</Text>
+          <Ionicons name="arrow-forward" size={16} color={C.primary} />
+        </TouchableOpacity>
         {showDataRichDetails ? (
           <TouchableOpacity
             onPress={() => setForecastDetailsOpen(open => !open)}
@@ -1361,13 +1390,13 @@ const styles = StyleSheet.create({
     padding: 11,
   },
   forecastVisual: {
-    height: 86,
+    height: 78,
     borderRadius: 8,
     borderWidth: 1,
     marginTop: 10,
-    marginBottom: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
+    marginBottom: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -1397,6 +1426,31 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: '900',
     marginTop: 3,
+  },
+  forecastValue: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: '900',
+  },
+  forecastHorizon: {
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  forecastDrillButton: {
+    marginTop: 12,
+    minHeight: 44,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  forecastDrillText: {
+    fontSize: 13,
+    fontWeight: '900',
   },
   metricInfoButton: {
     width: 44,

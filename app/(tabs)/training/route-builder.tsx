@@ -208,7 +208,7 @@ export default function RouteBuilderScreen() {
   }
 
   const mapStyle = mode === 'light' ? MAP_STYLE_LIGHT : MAP_STYLE_DARK;
-  const lineColor = C.chartSeriesPrimary;
+  const lineColor = C.positive;
   const panelBg = mode === 'light' ? C.card : C.cardElevated;
 
   const providerLabel = waypoints.length < 2

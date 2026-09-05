@@ -9,6 +9,8 @@ import { activityHasShareableRoute, normalizeRouteForOverlay, routePointsToSvgPo
 
 export type ActivityShareVariant = 'performance_dark' | 'route_story' | 'photo_overlay';
 
+const ROUTE_TRACE_ACCENT = '#9DB2A0';
+
 type Props = {
   activity: Activity;
   units: UnitSystem;
@@ -54,8 +56,8 @@ function RouteSketch({ route }: { route: ActivityCoordinate[] }) {
       <Rect x="8" y="8" width="164" height="144" rx="22" fill="#F3F1EB" opacity={0.14} />
       <Circle cx="33" cy="121" r="7" fill="#A8B9A1" />
       <Circle cx="145" cy="39" r="7" fill="#DCC9B1" />
-      <Polyline points={points} stroke="#DCC9B1" strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <Polyline points={points} stroke="#2D4256" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.8} />
+      <Polyline points={points} stroke="#F3F1EB" strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.34} />
+      <Polyline points={points} stroke={ROUTE_TRACE_ACCENT} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.96} />
     </Svg>
   );
 }

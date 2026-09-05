@@ -80,6 +80,7 @@ export default function StartOutdoorActivityScreen() {
   const previousElapsed = useRef(0);
   const lastAnnouncedStep = useRef<string | null>(null);
   const previousGuidanceProgress = useRef<RouteGuidanceProgress | null>(null);
+  const saveInFlightRef = useRef(false);
 
   const activeSeconds = activeOutdoorElapsedSeconds(active);
   const miles = active.aggregate.distanceMeters / 1609.344;
@@ -260,6 +261,9 @@ export default function StartOutdoorActivityScreen() {
   }
 
   async function saveAndFinish() {
+          if (saveInFlightRef.current) return;
+          saveInFlightRef.current = true;
+          try {
           const latest = useActiveActivityStore.getState();
           if (!latest.isActive) return;
           const elapsedToSave = latest.startedAt
@@ -328,6 +332,9 @@ export default function StartOutdoorActivityScreen() {
           });
           useActiveActivityStore.getState().discard();
           router.replace('/(tabs)/activity' as never);
+          } finally {
+            saveInFlightRef.current = false;
+          }
   }
 
   useEffect(() => {

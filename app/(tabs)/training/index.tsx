@@ -753,6 +753,15 @@ function PlanTab() {
 }
 
 // ─── Active Tab ────────────────────────────────────────────────────────────────
+function liveRunCompletionKey(
+  kind: 'gps_run' | 'treadmill_run',
+  workoutInstanceId: string | null | undefined,
+  startedAt: number | null | undefined,
+): string {
+  const raw = workoutInstanceId || (startedAt ? `started_${startedAt}` : `fallback_${Date.now()}`);
+  return `${kind}_${raw.replace(/[^A-Za-z0-9_-]+/g, '_')}`;
+}
+
 function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void; fullScreen?: boolean }) {
   const C = useColors();
   const router = useRouter();
@@ -862,7 +871,13 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [pendingTreadmillPlacement, setPendingTreadmillPlacement] = useState<TreadmillPhonePlacement>(() => treadmillPhonePlacementDefault);
   const [showTreadmillCompletion, setShowTreadmillCompletion] = useState(false);
   const [voicePanelOpen, setVoicePanelOpen] = useState(false);
-  const treadmillCompletionRef = useRef<{ estimateMiles: number; movingSeconds: number; estimateSource: DistanceSource } | null>(null);
+  const treadmillCompletionRef = useRef<{
+    estimateMiles: number;
+    movingSeconds: number;
+    estimateSource: DistanceSource;
+    workoutInstanceId: string | null;
+    startedAt: number | null;
+  } | null>(null);
   const [goalMinutesInput, setGoalMinutesInput] = useState(45);
   const [goalMilesInput, setGoalMilesInput] = useState(5);
   const [raceMilesInput, setRaceMilesInput] = useState(13.1);
@@ -879,6 +894,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const runWalkCueRef = useRef(0);
   const coachMomentRef = useRef(0);
   const goalDoneRef = useRef(false);
+  const stopInFlightRef = useRef(false);
   const activeMapRef = useRef<MapViewRef>(null);
   const [mapType, setMapType] = useState<'standard' | 'hybrid'>('standard');
   const runState: RunState = !isActive ? 'idle' : isPaused ? 'paused' : 'active';
@@ -1174,17 +1190,18 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   function pause() {
     pauseRun();
     pauseStrideWatchRun().then(setWatchStatus).catch(() => undefined);
-    speakCue('Pausing run.', 'interval');
+    speakCue('Pausing workout.', 'interval');
   }
 
   function resume() {
     resumeRun();
     resumeStrideWatchRun().then(setWatchStatus).catch(() => undefined);
-    speakCue('Resuming run.', 'interval');
+    speakCue('Resuming workout.', 'interval');
   }
 
   async function stop() {
     if (environment === 'indoor') {
+      if (treadmillCompletionRef.current || showTreadmillCompletion) return;
       // Capture the estimate + moving time before finishRun() resets the
       // store, then hand off to the completion-correction sheet — the actual
       // save happens in completeIndoorRun() once the athlete resolves it.
@@ -1201,17 +1218,24 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         estimateMiles: prescribedEstimate ?? confirmedEstimate,
         movingSeconds,
         estimateSource: prescribedEstimate != null ? 'prescribed_estimate' : 'confirmed_speed_estimate',
+        workoutInstanceId: finalState.workoutInstanceId,
+        startedAt: finalState.startTime,
       };
       setShowTreadmillCompletion(true);
       return;
     }
-    const finalElapsed = activeRunElapsedSeconds(useActiveRunStore.getState());
+    if (stopInFlightRef.current) return;
+    stopInFlightRef.current = true;
+    try {
+    const finalState = useActiveRunStore.getState();
+    const finalElapsed = activeRunElapsedSeconds(finalState);
     const finalDurationMin = Math.max(1, Math.round(finalElapsed / 60));
     const finalDistanceMiles = Math.round(distanceMiles * 100) / 100;
     const routeCoordinates = [...coordinates];
+    const id = liveRunCompletionKey('gps_run', finalState.workoutInstanceId, finalState.startTime);
     // Captured before finishRun() resets the store — this is the link back to
     // the scheduled session the athlete started this run against, if any.
-    const completedScheduledSessionId = useActiveRunStore.getState().scheduledSessionId ?? undefined;
+    const completedScheduledSessionId = finalState.scheduledSessionId ?? undefined;
     const completedTrainingBlockId = todayPlannedSession?.trainingBlockId;
     const completedGoalPlanId = todayPlannedSession?.goalPlanId;
 
@@ -1231,7 +1255,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     onFinished?.();
 
     if (finalElapsed >= 300) {
-      const id = `gps_run_${Date.now()}`;
       const modeNote =
         runMode === 'time' && goalMinutes ? ` · Time goal ${goalMinutes} min` :
         runMode === 'distance' && goalMiles ? ` · Distance goal ${goalMiles.toFixed(1)} mi` :
@@ -1276,6 +1299,9 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     } else {
       Alert.alert('Run discarded', 'Runs under 5 minutes are not saved.');
     }
+    } finally {
+      stopInFlightRef.current = false;
+    }
   }
 
   function cancelTreadmillCompletion() {
@@ -1284,13 +1310,22 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   }
 
   async function completeIndoorRun(result: FinalDistanceResult) {
+    if (stopInFlightRef.current) return;
+    stopInFlightRef.current = true;
+    try {
     setShowTreadmillCompletion(false);
     const captured = treadmillCompletionRef.current;
     treadmillCompletionRef.current = null;
+    const latestState = useActiveRunStore.getState();
     const movingSeconds = captured?.movingSeconds ?? activeRunElapsedSeconds(useActiveRunStore.getState());
     const finalDurationMin = Math.max(1, Math.round(movingSeconds / 60));
     const finalDistanceMiles = Math.round(result.distanceMiles * 100) / 100;
-    const completedScheduledSessionId = useActiveRunStore.getState().scheduledSessionId ?? undefined;
+    const id = liveRunCompletionKey(
+      'treadmill_run',
+      captured?.workoutInstanceId ?? latestState.workoutInstanceId,
+      captured?.startedAt ?? latestState.startTime,
+    );
+    const completedScheduledSessionId = latestState.scheduledSessionId ?? undefined;
     const completedTrainingBlockId = todayPlannedSession?.trainingBlockId;
     const completedGoalPlanId = todayPlannedSession?.goalPlanId;
 
@@ -1307,7 +1342,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     onFinished?.();
 
     if (movingSeconds >= 300) {
-      const id = `treadmill_run_${Date.now()}`;
       const modeNote =
         runMode === 'time' && goalMinutes ? ` · Time goal ${goalMinutes} min` :
         runMode === 'workout' && plannedWorkout ? ` · Workout: ${plannedWorkout.title}` :
@@ -1358,6 +1392,9 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       Alert.alert('Run saved', `${finalDurationMin} min · ${finalDistanceMiles.toFixed(2)} mi saved to Activity Log.`);
     } else {
       Alert.alert('Run discarded', 'Runs under 5 minutes are not saved.');
+    }
+    } finally {
+      stopInFlightRef.current = false;
     }
   }
 
@@ -1479,7 +1516,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     { label: 'Heart Rate', value: heartRateBpm ? String(heartRateBpm) : '--', unit: 'bpm' },
     { label: 'Elev Gain', value: elevationDisplay, unit: elevationUnit },
   ];
-  const mapLineColor = C.chartSeriesPrimary;
+  const mapLineColor = C.positive;
   const plannedRouteColor = C.chartSeriesSecondary;
   const panelBg = mode === 'light' ? C.cardAlt : C.bg;
   const softPanelBg = mode === 'light' ? C.card : C.cardElevated;
@@ -2085,7 +2122,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             <View style={[styles.voiceRow, { borderBottomColor: C.border }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.voiceLabel, { color: C.text }]}>Auto-Pause</Text>
-                <Text style={[styles.voiceDetail, { color: C.textMuted }]}>Say “pausing run” when movement stops.</Text>
+                <Text style={[styles.voiceDetail, { color: C.textMuted }]}>Say “pausing workout” when movement stops.</Text>
               </View>
               <Switch
                 value={announceAutoPause}
@@ -2097,7 +2134,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             <View style={styles.voiceRow}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.voiceLabel, { color: C.text }]}>Auto-Resume</Text>
-                <Text style={[styles.voiceDetail, { color: C.textMuted }]}>Say “resuming run” when movement resumes.</Text>
+                <Text style={[styles.voiceDetail, { color: C.textMuted }]}>Say “resuming workout” when movement resumes.</Text>
               </View>
               <Switch
                 value={announceAutoResume}

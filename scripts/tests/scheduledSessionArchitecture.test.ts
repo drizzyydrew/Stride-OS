@@ -433,7 +433,8 @@ test('GPS tracked activity (activity/start.tsx) and the primary Running tab both
   assert.match(start, /scheduledSessionId\?:\s*string/);
 
   const training = read('app/(tabs)/training/index.tsx');
-  assert.match(training, /completedScheduledSessionId\s*=\s*useActiveRunStore\.getState\(\)\.scheduledSessionId/);
+  assert.match(training, /const finalState = useActiveRunStore\.getState\(\)/);
+  assert.match(training, /completedScheduledSessionId\s*=\s*finalState\.scheduledSessionId/);
   assert.match(training, /updateActivity\(`activity_workout_\$\{id\}`/);
 });
 

@@ -25,6 +25,21 @@ const APPLE_WATCH_DEVICE = {
   kind: 'other' as const,
 };
 
+const COMPLETED_WATCH_EVENT_TTL_MS = 15 * 60 * 1000;
+const completedWatchWorkoutEvents = new Map<string, number>();
+
+function rememberCompletedWatchWorkout(id: string, timestamp: number): boolean {
+  const now = Date.now();
+  for (const [key, completedAt] of completedWatchWorkoutEvents) {
+    if (now - completedAt > COMPLETED_WATCH_EVENT_TTL_MS) {
+      completedWatchWorkoutEvents.delete(key);
+    }
+  }
+  if (completedWatchWorkoutEvents.has(id)) return false;
+  completedWatchWorkoutEvents.set(id, Number.isFinite(timestamp) ? timestamp : now);
+  return true;
+}
+
 function outdoorTypeFromWatch(kind: string | undefined): ActiveOutdoorType | null {
   if (kind === 'run') return 'running';
   if (kind === 'cycling') return 'cycling';
@@ -111,6 +126,7 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
       const active = useActiveActivityStore.getState();
       const activeStrength = useActiveStrengthSessionStore.getState().session;
       const id = eventWorkoutId(event);
+      if (completedWatchWorkoutEvents.has(id)) return;
       const hasConflict = active.isActive
         && active.workoutInstanceId !== id
         && active.activityType !== outdoorType;
@@ -151,6 +167,7 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
       const state = useActiveStrengthSessionStore.getState();
       const session = state.session;
       const id = eventWorkoutId(event);
+      if (completedWatchWorkoutEvents.has(id)) return;
       if (useActiveActivityStore.getState().isActive) return;
       if (!session) {
         useActiveStrengthSessionStore.getState().startSession({
@@ -208,14 +225,16 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
   }
 
   if (event.state === 'ended') {
+    const id = eventWorkoutId(event);
     if (outdoorType) {
       const active = useActiveActivityStore.getState();
       if (!active.isActive) return;
-      if (active.workoutInstanceId && active.workoutInstanceId !== eventWorkoutId(event)) return;
+      if (active.workoutInstanceId && active.workoutInstanceId !== id) return;
+      if (!rememberCompletedWatchWorkout(id, event.timestamp)) return;
       void stopActivityLocationTracking().catch(() => undefined);
       void endOutdoorLiveActivity({
-        sessionId: active.workoutInstanceId ?? active.activityId ?? eventWorkoutId(event),
-        workoutInstanceId: active.workoutInstanceId ?? eventWorkoutId(event),
+        sessionId: active.workoutInstanceId ?? active.activityId ?? id,
+        workoutInstanceId: active.workoutInstanceId ?? id,
         sessionSource: 'outdoor',
         activityName: active.name,
         activityType: active.activityType,
@@ -235,7 +254,8 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
     }
     if (strengthKind) {
       const session = useActiveStrengthSessionStore.getState().session;
-      if (!session || session.workoutInstanceId !== eventWorkoutId(event)) return;
+      if (!session || session.workoutInstanceId !== id) return;
+      if (!rememberCompletedWatchWorkout(id, event.timestamp)) return;
       void endStrengthLiveActivity({
         workoutInstanceId: session.workoutInstanceId,
         sessionId: strengthLiveActivitySessionId(session),

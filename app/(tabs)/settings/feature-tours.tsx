@@ -70,9 +70,7 @@ export default function FeatureToursScreen() {
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[s.title, { color: C.text }]}>{tour.entryLabel}</Text>
                 <Text style={[s.copy, { color: C.textMuted }]}>{tour.description}</Text>
-                <Text style={[s.status, { color: C.textDim }]}>
-                  Version {tour.version} · {status?.completed ? 'completed' : status?.skipped ? 'skipped' : 'not seen yet'}
-                </Text>
+                <Text style={[s.status, { color: C.textDim }]}>Tap to replay walkthrough</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
             </TouchableOpacity>

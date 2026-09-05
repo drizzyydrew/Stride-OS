@@ -127,7 +127,7 @@ export default function ActivityDetailScreen() {
               scrollEnabled={false}
               zoomEnabled={false}
             >
-              <Polyline coordinates={route} strokeColor={C.primary} strokeWidth={5} />
+              <Polyline coordinates={route} strokeColor={C.positive} strokeWidth={5} />
             </MapView>
           </View>
         ) : null}

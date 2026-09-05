@@ -150,6 +150,58 @@ test('Performance Forecast has tappable info controls on Today', () => {
   assert.match(dashboard, /contributing data, confidence, and limitations/);
 });
 
+test('Performance Forecast exposes data-driven chart points and a detailed tab', () => {
+  const outlook = buildTrainingOutlook({
+    activities: [
+      {
+        id: 'old',
+        startTime: Date.parse('2026-07-01T12:00:00Z'),
+        activityType: 'running',
+        status: 'completed',
+        metrics: { durationSeconds: 2400 },
+        trainingLoad: { running: 32, walking: 0, crossTraining: 0, strength: 0, impactBearing: 32, nonImpactAerobic: 0, wholeBody: 32 },
+      },
+      {
+        id: 'recent',
+        startTime: Date.parse('2026-07-28T12:00:00Z'),
+        activityType: 'running',
+        status: 'completed',
+        metrics: { durationSeconds: 3000 },
+        trainingLoad: { running: 50, walking: 0, crossTraining: 0, strength: 0, impactBearing: 50, nonImpactAerobic: 0, wholeBody: 50 },
+      },
+      {
+        id: 'recent_strength',
+        startTime: Date.parse('2026-07-29T12:00:00Z'),
+        activityType: 'strength',
+        status: 'completed',
+        metrics: { durationSeconds: 1800 },
+        trainingLoad: { running: 0, walking: 0, crossTraining: 0, strength: 40, impactBearing: 40, nonImpactAerobic: 0, wholeBody: 40 },
+      },
+    ] as never,
+    currentWeek: 6,
+    trainingPhase: 'build',
+    weeksToRace: 8,
+    readinessScore: 76,
+    now: Date.parse('2026-07-30T12:00:00Z'),
+  });
+  const forecast = buildPerformanceForecast(outlook, { weeksToRace: 8, trainingPhase: 'build', readinessScore: 76 });
+  for (const metric of forecast.metrics) {
+    assert.ok(metric.valueLabel.length > 0);
+    assert.ok(metric.horizonLabel.length > 0);
+    assert.ok(metric.chartValues.length > 0);
+    assert.equal(metric.chartValues.every(Number.isFinite), true);
+  }
+  assert.match(forecast.metrics.find(metric => metric.key === 'race_readiness')?.valueLabel ?? '', /\/100/);
+  assert.match(forecast.metrics.find(metric => metric.key === 'training_load_trend')?.valueLabel ?? '', /ratio/);
+
+  const dashboard = readFileSync('app/(tabs)/dashboard/index.tsx', 'utf8');
+  const performance = readFileSync('app/(tabs)/performance/index.tsx', 'utf8');
+  assert.match(dashboard, /Open Full Forecast/);
+  assert.match(dashboard, /params: \{ view: 'forecast' \}/);
+  assert.match(performance, /ForecastMetricCard/);
+  assert.match(performance, /forecast\.metrics\.map/);
+});
+
 test('shoe catalog stores optional local image metadata and exposes replace/remove affordances', () => {
   const store = readFileSync('src/store/gearStore.ts', 'utf8');
   const gear = readFileSync('app/(tabs)/more/gear.tsx', 'utf8');

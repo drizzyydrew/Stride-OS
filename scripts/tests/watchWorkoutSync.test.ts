@@ -7,6 +7,8 @@ const moduleIndex = readFileSync('modules/stride-watch-connectivity/src/index.ts
 const bridge = readFileSync('src/components/watch/WatchWorkoutBridge.tsx', 'utf8');
 const activeOutdoorStore = readFileSync('src/store/activeActivityStore.ts', 'utf8');
 const activeStrengthStore = readFileSync('src/store/activeStrengthSessionStore.ts', 'utf8');
+const runScreen = readFileSync('app/(tabs)/training/index.tsx', 'utf8');
+const outdoorStartScreen = readFileSync('app/(tabs)/activity/start.tsx', 'utf8');
 
 function read(path: string): string {
   return readFileSync(path, 'utf8');
@@ -48,4 +50,27 @@ test('phone session stores can reuse watch-provided workout instance ids', () =>
   assert.match(activeOutdoorStore, /input\.workoutInstanceId \?\? buildWorkoutInstanceId/);
   assert.match(activeStrengthStore, /workoutInstanceId\?: string/);
   assert.match(activeStrengthStore, /input\.workoutInstanceId \?\? buildWorkoutInstanceId/);
+});
+
+test('watch and phone completion handling is idempotent for duplicate stop events', () => {
+  const endWorkoutBody = watchManager.slice(
+    watchManager.indexOf('func endWorkout()'),
+    watchManager.indexOf('private func beginWorkout', watchManager.indexOf('func endWorkout()')),
+  );
+  assert.match(watchManager, /private var endedStateSentForWorkoutInstanceId/);
+  assert.match(watchManager, /sendEndedStateOnce\(\)/);
+  assert.doesNotMatch(endWorkoutBody, /sendWorkoutState\("ended"\)/);
+  assert.match(watchManager, /lastHandledPhoneCommandKey/);
+  assert.match(bridge, /completedWatchWorkoutEvents/);
+  assert.match(bridge, /rememberCompletedWatchWorkout\(id, event\.timestamp\)/);
+});
+
+test('live run and outdoor activity saves do not create fresh ids for repeated finish events', () => {
+  assert.match(runScreen, /function liveRunCompletionKey/);
+  assert.match(runScreen, /liveRunCompletionKey\('gps_run', finalState\.workoutInstanceId, finalState\.startTime\)/);
+  assert.match(runScreen, /liveRunCompletionKey\(\s*'treadmill_run',/);
+  assert.doesNotMatch(runScreen, /const id = `gps_run_\$\{Date\.now\(\)\}`/);
+  assert.doesNotMatch(runScreen, /const id = `treadmill_run_\$\{Date\.now\(\)\}`/);
+  assert.match(runScreen, /stopInFlightRef/);
+  assert.match(outdoorStartScreen, /saveInFlightRef/);
 });

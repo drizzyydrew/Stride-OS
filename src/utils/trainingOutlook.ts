@@ -56,6 +56,10 @@ export type PerformanceForecastMetric = {
   label: string;
   state: 'Estimated' | 'Developing' | 'Insufficient History' | 'On Track' | 'Progressing Cautiously' | 'Recovery Needed' | 'Maintaining' | 'Updated After Plan Change';
   visualLabel?: string;
+  valueLabel: string;
+  horizonLabel: string;
+  chartValues: number[];
+  chartLabels: string[];
   summary: string;
   info: string;
 };
@@ -68,6 +72,30 @@ export type PerformanceForecast = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function roundedPercent(value: number): number {
+  return Math.round(clamp(value, 0, 100));
+}
+
+function confidencePercent(confidence: TrainingOutlook['confidence']): number {
+  if (confidence === 'strong') return 86;
+  if (confidence === 'moderate') return 64;
+  return 34;
+}
+
+function formatProjectedWindow(generatedAt: number, weeksToRace: number, confidence: TrainingOutlook['confidence']): string {
+  if (confidence !== 'strong' || weeksToRace > 52) return 'More history needed';
+  const startWeeks = Math.max(1, weeksToRace <= 2 ? 0 : weeksToRace - 3);
+  const endWeeks = Math.max(startWeeks, weeksToRace <= 2 ? 1 : weeksToRace - 1);
+  const fmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+  const start = fmt.format(new Date(generatedAt + startWeeks * 7 * DAY_MS));
+  const end = fmt.format(new Date(generatedAt + endWeeks * 7 * DAY_MS));
+  return `${start}-${end}`;
+}
 
 const STATUS_LABEL: Record<OutlookStatus, string> = {
   building_foundation: 'Building Foundation',
@@ -222,10 +250,29 @@ export function buildTrainingOutlook(input: TrainingOutlookInput): TrainingOutlo
   };
 }
 
-export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<TrainingOutlookInput, 'weeksToRace' | 'trainingPhase' | 'decisionSnapshot'> = {}): PerformanceForecast {
+export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<TrainingOutlookInput, 'weeksToRace' | 'trainingPhase' | 'decisionSnapshot' | 'readinessScore'> = {}): PerformanceForecast {
   const weeksToRace = Math.max(0, Math.round(input.weeksToRace ?? 999));
   const updatedAfterPlanChange = Boolean(input.decisionSnapshot?.decision && input.decisionSnapshot.decision !== 'maintain');
   const insufficient = outlook.confidence === 'limited' || !outlook.dateClaimAllowed;
+  const confidenceScore = confidencePercent(outlook.confidence);
+  const loadRatio = Number.isFinite(outlook.loadTrend.ratio) ? outlook.loadTrend.ratio : 1;
+  const loadBalanceScore = roundedPercent(100 - Math.min(70, Math.abs(loadRatio - 1) * 90));
+  const readinessScore = roundedPercent(input.readinessScore ?? (
+    outlook.status === 'recovery_needed' ? 42 :
+    outlook.status === 'ready_for_current_goal' ? 82 :
+    outlook.status === 'progressing_cautiously' ? 61 :
+    outlook.status === 'insufficient_history' ? 50 :
+    70
+  ));
+  const readinessProjection = roundedPercent((readinessScore * 0.55) + (loadBalanceScore * 0.25) + (confidenceScore * 0.2));
+  const peakWindowLabel = formatProjectedWindow(outlook.generatedAt, weeksToRace, outlook.confidence);
+  const peakDevelopment = roundedPercent(
+    insufficient
+      ? Math.min(56, outlook.historyWeeks * 8 + outlook.completedActivities * 3)
+      : weeksToRace <= 2
+        ? 88
+        : 78,
+  );
 
   const readinessState: PerformanceForecastMetric['state'] =
     outlook.status === 'recovery_needed' ? 'Recovery Needed' :
@@ -276,6 +323,12 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         label: 'Peak Window',
         state: peakState,
         visualLabel: insufficient ? 'Not Yet Available' : peakState,
+        valueLabel: insufficient ? `${Math.max(0, 8 - outlook.historyWeeks)} more history wk` : peakWindowLabel,
+        horizonLabel: weeksToRace > 52 ? 'No race date set' : `${weeksToRace} wk to goal`,
+        chartValues: insufficient
+          ? [Math.max(8, outlook.historyWeeks * 12), Math.max(14, outlook.completedActivities * 7), peakDevelopment]
+          : [48, 62, 76, peakDevelopment, Math.max(66, peakDevelopment - 8)],
+        chartLabels: insufficient ? ['history', 'sessions', 'confidence'] : ['now', 'build', 'peak', 'race', 'settle'],
         summary: peakSummary,
         info: 'Uses phase, weeks to race, completed sessions, adherence depth, load trend, deload timing, and recent plan edits. It avoids a precise date when confidence is limited.',
       },
@@ -284,6 +337,15 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         label: 'Race Readiness',
         state: readinessState,
         visualLabel: insufficient ? 'Developing' : readinessState,
+        valueLabel: `${readinessProjection}/100`,
+        horizonLabel: input.readinessScore == null ? 'No check-in today' : `Today ${readinessScore}/100`,
+        chartValues: [
+          readinessScore,
+          loadBalanceScore,
+          confidenceScore,
+          readinessProjection,
+        ],
+        chartLabels: ['readiness', 'load fit', 'confidence', 'projected'],
         summary: outlook.status === 'recovery_needed'
           ? 'Recovery signals should lead before projecting race readiness.'
           : outlook.status === 'progressing_cautiously'
@@ -298,6 +360,14 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         label: 'Training Load Trend',
         state: loadState,
         visualLabel: loadVisualLabel,
+        valueLabel: `${loadRatio.toFixed(2)} ratio`,
+        horizonLabel: `${outlook.loadTrend.acute.toFixed(1)} acute / ${outlook.loadTrend.chronic.toFixed(1)} chronic`,
+        chartValues: [
+          Math.max(0, outlook.loadTrend.chronic),
+          Math.max(0, outlook.loadTrend.acute),
+          Math.max(0, outlook.loadTrend.ratio * 50),
+        ],
+        chartLabels: ['chronic', 'acute', 'ratio'],
         summary: `Current workload ratio is ${outlook.loadTrend.ratio.toFixed(2)} with ${outlook.completedActivities} completed session${outlook.completedActivities === 1 ? '' : 's'} in scope.`,
         info: 'Compares recent completed training load with prior load while preserving completed history separately from planned sessions. Sudden edits or backdated entries can change this.',
       },

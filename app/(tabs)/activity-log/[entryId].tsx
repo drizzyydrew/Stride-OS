@@ -101,7 +101,7 @@ function RunSummary({ record }: { record: CompletedWorkoutRecord }) {
             rotateEnabled={false}
             pitchEnabled={false}
           >
-            <Polyline coordinates={routeCoords} strokeColor={C.primary} strokeWidth={5} />
+            <Polyline coordinates={routeCoords} strokeColor={C.positive} strokeWidth={5} />
           </MapView>
         </View>
       ) : null}

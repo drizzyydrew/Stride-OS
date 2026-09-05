@@ -113,6 +113,8 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private var pausedAt: Date?
   private var pausedSeconds: TimeInterval = 0
   private var timer: Timer?
+  private var endedStateSentForWorkoutInstanceId: String?
+  private var lastHandledPhoneCommandKey: String?
 
   var isActive: Bool {
     state == .running || state == .paused || state == .prepared
@@ -237,6 +239,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     lastError = nil
     let resolvedEnvironment = environment ?? ((kind == .run || kind == .cycling) ? "outdoor" : "indoor")
     self.workoutInstanceId = workoutInstanceId ?? "watch_\(kind.rawValue)_\(Int(Date().timeIntervalSince1970 * 1000))"
+    self.endedStateSentForWorkoutInstanceId = nil
     self.selectedWorkoutKind = kind
     self.workoutEnvironment = resolvedEnvironment
     self.targetZone = targetZone
@@ -271,12 +274,14 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   func pauseWorkout() {
+    guard isActive, !isPaused else { return }
     session?.pause()
     pausedAt = Date()
     sendWorkoutState("paused")
   }
 
   func resumeWorkout() {
+    guard isPaused else { return }
     if let pausedAt {
       pausedSeconds += Date().timeIntervalSince(pausedAt)
     }
@@ -286,10 +291,13 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   func endWorkout() {
+    guard session != nil || isActive else { return }
     session?.end()
     timer?.invalidate()
     timer = nil
-    sendWorkoutState("ended")
+    if session == nil {
+      sendEndedStateOnce()
+    }
   }
 
   private func beginWorkout(kind: StrideWatchWorkoutKind, environment: String?) {
@@ -437,6 +445,13 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     sendToPhone(payload)
   }
 
+  private func sendEndedStateOnce() {
+    let key = workoutInstanceId ?? "ended_\(selectedWorkoutKind.rawValue)"
+    guard endedStateSentForWorkoutInstanceId != key else { return }
+    endedStateSentForWorkoutInstanceId = key
+    sendWorkoutState("ended")
+  }
+
   private func sendToPhone(_ payload: [String: Any]) {
     guard WCSession.isSupported() else { return }
     let session = WCSession.default
@@ -485,7 +500,7 @@ extension StrideWatchWorkoutManager: HKWorkoutSessionDelegate {
       sendWorkoutState("paused")
     case .ended:
       finishBuilderIfNeeded()
-      sendWorkoutState("ended")
+      sendEndedStateOnce()
       DispatchQueue.main.async {
         self.timer?.invalidate()
         self.timer = nil
@@ -569,7 +584,23 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
 
   private func handlePhoneCommand(_ message: [String: Any]) {
     let type = message["type"] as? String
+    let commandWorkoutInstanceId = message["workoutInstanceId"] as? String ?? ""
+    let sentAt: Double
+    if let value = message["sentAt"] as? NSNumber {
+      sentAt = value.doubleValue
+    } else if let value = message["sentAt"] as? Double {
+      sentAt = value
+    } else {
+      sentAt = 0
+    }
+    let commandKey = "\(type ?? "")|\(commandWorkoutInstanceId)|\(Int(sentAt.rounded()))"
     DispatchQueue.main.async {
+      if sentAt > 0 && self.lastHandledPhoneCommandKey == commandKey {
+        return
+      }
+      if sentAt > 0 {
+        self.lastHandledPhoneCommandKey = commandKey
+      }
       switch type {
       case "startWorkout":
         self.startWorkout(

@@ -311,7 +311,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       });
       if (decision.action === 'auto_pause') {
         set({ isPaused: true, pausedAt: coord.timestamp, autoPauseState: decision.state });
-        if (useSettingsStore.getState().announceAutoPause) enqueueVoiceCue('Pausing run.', 'interval');
+        if (useSettingsStore.getState().announceAutoPause) enqueueVoiceCue('Pausing workout.', 'interval');
         return;
       }
       if (state.isPaused) {
@@ -324,7 +324,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
             coordinates: [...state.coordinates, coord],
             autoPauseState: decision.state,
           });
-          if (useSettingsStore.getState().announceAutoResume) enqueueVoiceCue('Resuming run.', 'interval');
+          if (useSettingsStore.getState().announceAutoResume) enqueueVoiceCue('Resuming workout.', 'interval');
         } else {
           set({ autoPauseState: decision.state });
         }

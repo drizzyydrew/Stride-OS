@@ -194,8 +194,6 @@ export const FEATURE_TOURS: FeatureTourDefinition[] = [
     steps: [
       { id: 'movement-assessments', targetId: 'movement.assessments', title: 'Choose Assessment', description: 'Select the movement you want to record and review.', preferredPlacement: 'bottom' },
       { id: 'movement-capture', targetId: 'movement.capture', title: 'Capture Setup', description: 'The capture guidance helps position the camera so measurements are more usable.', preferredPlacement: 'top' },
-      { id: 'movement-results', targetId: 'movement.results', title: 'Estimated Findings', description: 'Automated measurements are estimated two-dimensional values, not clinical diagnoses.', preferredPlacement: 'top' },
-      { id: 'movement-coach', targetId: 'movement.coach', title: 'Coach Handoff', description: 'When available, Movement Lab can pass concise findings into AI Coach for training context.', preferredPlacement: 'top' },
     ],
   },
   {
@@ -268,7 +266,7 @@ export function cardPlacementForTarget(params: {
   const maxBottom = params.viewportHeight - params.insets.bottom - 12;
   const width = Math.min(params.viewportWidth - horizontalMargin * 2, 360);
   const left = Math.max(horizontalMargin, Math.min(params.viewportWidth - width - horizontalMargin, params.target ? params.target.x : horizontalMargin));
-  const fallbackTop = Math.max(minTop, Math.min(maxBottom - 190, Math.round(params.viewportHeight * 0.52)));
+  const fallbackTop = Math.max(minTop, Math.min(maxBottom - 190, Math.round(params.viewportHeight * 0.36)));
 
   if (!params.target) {
     return { top: fallbackTop, left, width, placement: 'center' };
