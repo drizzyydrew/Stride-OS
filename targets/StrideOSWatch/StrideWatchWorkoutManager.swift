@@ -100,6 +100,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   @Published private(set) var pendingSyncCount: Int = 0
   @Published private(set) var preferredUnitSystem: String = "imperial"
   @Published private(set) var metricPage: StrideWatchMetricPage = .heartRate
+  @Published private(set) var isStartingWorkout: Bool = false
 
   private var maxHeartRateBpm: Int = 190
   private var targetZone: Int?
@@ -115,6 +116,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private var timer: Timer?
   private var endedStateSentForWorkoutInstanceId: String?
   private var lastHandledPhoneCommandKey: String?
+  private var queuedOutboundPayloads: [[String: Any]] = []
 
   var isActive: Bool {
     state == .running || state == .paused || state == .prepared
@@ -236,7 +238,9 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     environment: String?,
     targetZone: Int?
   ) {
+    guard !isActive && !isStartingWorkout else { return }
     lastError = nil
+    isStartingWorkout = true
     let resolvedEnvironment = environment ?? ((kind == .run || kind == .cycling) ? "outdoor" : "indoor")
     self.workoutInstanceId = workoutInstanceId ?? "watch_\(kind.rawValue)_\(Int(Date().timeIntervalSince1970 * 1000))"
     self.endedStateSentForWorkoutInstanceId = nil
@@ -248,6 +252,9 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     requestAuthorization { [weak self] granted in
       guard let self else { return }
       guard granted else {
+        DispatchQueue.main.async {
+          self.isStartingWorkout = false
+        }
         self.publishError("Health permission needed")
         return
       }
@@ -340,9 +347,11 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
           self?.publishError("Workout collection did not start")
         }
       }
+      isStartingWorkout = false
       startTimer()
       sendWorkoutState("running")
     } catch {
+      isStartingWorkout = false
       publishError(error.localizedDescription)
     }
   }
@@ -455,6 +464,11 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private func sendToPhone(_ payload: [String: Any]) {
     guard WCSession.isSupported() else { return }
     let session = WCSession.default
+    guard session.activationState == .activated else {
+      queuedOutboundPayloads.append(payload)
+      session.activate()
+      return
+    }
 
     if session.isReachable {
       session.sendMessage(payload, replyHandler: nil) { [weak self] error in
@@ -468,6 +482,13 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
         self.pendingSyncCount += 1
       }
     }
+  }
+
+  private func flushQueuedOutboundPayloads() {
+    guard WCSession.isSupported(), WCSession.default.activationState == .activated else { return }
+    let payloads = queuedOutboundPayloads
+    queuedOutboundPayloads.removeAll()
+    payloads.forEach { sendToPhone($0) }
   }
 
   private func publishError(_ message: String) {
@@ -567,6 +588,9 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
   ) {
     if let error {
       publishError(error.localizedDescription)
+    }
+    DispatchQueue.main.async {
+      self.flushQueuedOutboundPayloads()
     }
   }
 

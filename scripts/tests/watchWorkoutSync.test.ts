@@ -38,11 +38,16 @@ test('watch face keeps controls above rounded bottom edge and applies latest pho
   const watchApp = read('targets/StrideOSWatch/StrideOSWatchApp.swift');
   const watchManager = read('targets/StrideOSWatch/StrideWatchWorkoutManager.swift');
   const watchModule = read('modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift');
+  const watchInfoPlist = read('targets/StrideOSWatch/Info.plist');
+  const watchTargetConfig = read('targets/StrideOSWatch/expo-target.config.js');
 
   assert.match(watchApp, /topPadding = isCompact \? 4 : 6/);
   assert.match(watchApp, /bottomPadding = isCompact \? 16 : 18/);
   assert.match(watchManager, /didReceiveApplicationContext/);
   assert.match(watchModule, /updateApplicationContext/);
+  assert.match(watchInfoPlist, /WKBackgroundModes/);
+  assert.match(watchInfoPlist, /workout-processing/);
+  assert.match(watchTargetConfig, /WKBackgroundModes: \['workout-processing'\]/);
 });
 
 test('phone session stores can reuse watch-provided workout instance ids', () => {
@@ -73,4 +78,15 @@ test('live run and outdoor activity saves do not create fresh ids for repeated f
   assert.doesNotMatch(runScreen, /const id = `treadmill_run_\$\{Date\.now\(\)\}`/);
   assert.match(runScreen, /stopInFlightRef/);
   assert.match(outdoorStartScreen, /saveInFlightRef/);
+});
+
+test('watch workout start is guarded against pre-activation connectivity sends and duplicate starts', () => {
+  const watchManager = read('targets/StrideOSWatch/StrideWatchWorkoutManager.swift');
+
+  assert.match(watchManager, /@Published private\(set\) var isStartingWorkout: Bool = false/);
+  assert.match(watchManager, /guard !isActive && !isStartingWorkout else \{ return \}/);
+  assert.match(watchManager, /private var queuedOutboundPayloads: \[\[String: Any\]\] = \[\]/);
+  assert.match(watchManager, /guard session\.activationState == \.activated else/);
+  assert.match(watchManager, /queuedOutboundPayloads\.append\(payload\)/);
+  assert.match(watchManager, /flushQueuedOutboundPayloads\(\)/);
 });

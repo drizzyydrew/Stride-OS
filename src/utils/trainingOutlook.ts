@@ -58,6 +58,9 @@ export type PerformanceForecastMetric = {
   visualLabel?: string;
   valueLabel: string;
   horizonLabel: string;
+  chartXAxisLabel: string;
+  chartYAxisLabel: string;
+  chartValueUnit: string;
   chartValues: number[];
   chartLabels: string[];
   summary: string;
@@ -325,6 +328,9 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         visualLabel: insufficient ? 'Not Yet Available' : peakState,
         valueLabel: insufficient ? `${Math.max(0, 8 - outlook.historyWeeks)} more history wk` : peakWindowLabel,
         horizonLabel: weeksToRace > 52 ? 'No race date set' : `${weeksToRace} wk to goal`,
+        chartXAxisLabel: insufficient ? 'Required history inputs' : 'Training timeline toward the goal',
+        chartYAxisLabel: 'Forecast development score from 0 to 100',
+        chartValueUnit: 'score',
         chartValues: insufficient
           ? [Math.max(8, outlook.historyWeeks * 12), Math.max(14, outlook.completedActivities * 7), peakDevelopment]
           : [48, 62, 76, peakDevelopment, Math.max(66, peakDevelopment - 8)],
@@ -339,6 +345,9 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         visualLabel: insufficient ? 'Developing' : readinessState,
         valueLabel: `${readinessProjection}/100`,
         horizonLabel: input.readinessScore == null ? 'No check-in today' : `Today ${readinessScore}/100`,
+        chartXAxisLabel: 'Readiness inputs used in the estimate',
+        chartYAxisLabel: 'Readiness score from 0 to 100',
+        chartValueUnit: 'score',
         chartValues: [
           readinessScore,
           loadBalanceScore,
@@ -362,6 +371,9 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         visualLabel: loadVisualLabel,
         valueLabel: `${loadRatio.toFixed(2)} ratio`,
         horizonLabel: `${outlook.loadTrend.acute.toFixed(1)} acute / ${outlook.loadTrend.chronic.toFixed(1)} chronic`,
+        chartXAxisLabel: 'Load inputs and acute-to-chronic ratio',
+        chartYAxisLabel: 'Training load units, with ratio scaled for comparison',
+        chartValueUnit: 'load',
         chartValues: [
           Math.max(0, outlook.loadTrend.chronic),
           Math.max(0, outlook.loadTrend.acute),

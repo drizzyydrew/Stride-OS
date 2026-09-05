@@ -18,6 +18,7 @@ import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckIn
 import { StreakBadge, StreakProgress, buildCurrentStreakSummary } from '../../../src/achievements/streaks';
 import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
 import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
+import ForecastChartDetailModal from '../../../src/components/performance/ForecastChartDetailModal';
 import { LAYOUT } from '../../../src/constants/layout';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
@@ -362,6 +363,7 @@ export default function TodayScreen() {
   const [outlookRationaleOpen, setOutlookRationaleOpen] = useState(false);
   const [outlookHistoryOpen, setOutlookHistoryOpen] = useState(false);
   const [forecastDetailsOpen, setForecastDetailsOpen] = useState(false);
+  const [forecastChartMetric, setForecastChartMetric] = useState<PerformanceForecastMetric | null>(null);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [openOptionSection, setOpenOptionSection] = useState<'today' | 'plan' | 'help' | null>(null);
   const experienceMode = useExperienceMode();
@@ -808,14 +810,21 @@ export default function TodayScreen() {
                   <Ionicons name="information-circle-outline" size={19} color={C.primary} />
                 </TouchableOpacity>
               </View>
-              <View style={[styles.forecastVisual, { backgroundColor: C.bg, borderColor: C.border }]}>
+              <TouchableOpacity
+                onPress={() => setForecastChartMetric(metric)}
+                style={[styles.forecastVisual, { backgroundColor: C.bg, borderColor: C.border }]}
+                activeOpacity={0.82}
+                accessibilityRole="button"
+                accessibilityLabel={`${metric.label} chart details`}
+                accessibilityHint="Shows the chart axes and plotted values."
+              >
                 <View style={[styles.forecastIconBubble, { backgroundColor: C.primaryDim }]}>
                   <Ionicons name={forecastIconName(metric.key)} size={18} color={metric.key === 'training_load_trend' ? C.positive : C.primary} />
                 </View>
                 <View style={styles.forecastChart}>
                   <ForecastMiniChart metric={metric} color={C.primary} positive={C.positive} muted={C.textDim} />
                 </View>
-              </View>
+              </TouchableOpacity>
               <Text style={[styles.forecastValue, { color: C.primary }]}>{metric.valueLabel}</Text>
               <Text style={[styles.forecastHorizon, { color: C.textDim }]}>{metric.horizonLabel}</Text>
               <Text style={[styles.forecastState, { color: C.text }]}>{metric.visualLabel ?? metric.state}</Text>
@@ -848,6 +857,12 @@ export default function TodayScreen() {
         ) : null}
       </FeatureTourTarget> : null}
       </ScrollView>
+      <ForecastChartDetailModal
+        metric={forecastChartMetric}
+        confidence={performanceForecast.confidence}
+        limitations={performanceForecast.limitations}
+        onClose={() => setForecastChartMetric(null)}
+      />
     </View>
   );
 }
@@ -1390,13 +1405,13 @@ const styles = StyleSheet.create({
     padding: 11,
   },
   forecastVisual: {
-    height: 78,
+    minHeight: 88,
     borderRadius: 8,
     borderWidth: 1,
     marginTop: 10,
     marginBottom: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,

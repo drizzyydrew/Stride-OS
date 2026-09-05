@@ -12,6 +12,7 @@ import { useReadinessStore } from '../../../src/store/readinessStore';
 import { useRecalculationStore } from '../../../src/store/recalculationStore';
 import { todayDateKey } from '../../../src/types/checkin';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
+import ForecastChartDetailModal from '../../../src/components/performance/ForecastChartDetailModal';
 import { buildPerformanceForecast, buildTrainingOutlook, type PerformanceForecastMetric } from '../../../src/utils/trainingOutlook';
 
 type MetricOpen = 'aero' | 'ana' | 'proc' | null;
@@ -71,7 +72,7 @@ function MetricCard({ title, subtitle, score, scoreColor, open, onToggle, explan
   );
 }
 
-function ForecastMetricCard({ metric }: { metric: PerformanceForecastMetric }) {
+function ForecastMetricCard({ metric, onChartPress }: { metric: PerformanceForecastMetric; onChartPress: () => void }) {
   const C = useColors();
   const maxValue = Math.max(1, ...metric.chartValues);
   return (
@@ -85,7 +86,14 @@ function ForecastMetricCard({ metric }: { metric: PerformanceForecastMetric }) {
           <Text style={[styles.metricScoreSmall, { color: C.primary }]}>{metric.valueLabel}</Text>
         </View>
       </View>
-      <View style={styles.forecastBars}>
+      <TouchableOpacity
+        onPress={onChartPress}
+        style={[styles.forecastBars, { backgroundColor: C.cardAlt, borderColor: C.border }]}
+        activeOpacity={0.82}
+        accessibilityRole="button"
+        accessibilityLabel={`${metric.label} chart details`}
+        accessibilityHint="Shows the chart axes and plotted values."
+      >
         {metric.chartValues.map((value, index) => (
           <View key={`${metric.key}-${metric.chartLabels[index] ?? index}`} style={styles.forecastBarColumn}>
             <View style={[styles.forecastBarTrack, { backgroundColor: C.cardAlt }]}>
@@ -104,7 +112,7 @@ function ForecastMetricCard({ metric }: { metric: PerformanceForecastMetric }) {
             </Text>
           </View>
         ))}
-      </View>
+      </TouchableOpacity>
       <Text style={[styles.metricExplanation, { color: C.textMuted }]}>{metric.summary}</Text>
       <Text style={[styles.metricExplanation, { color: C.textDim }]}>{metric.info}</Text>
     </View>
@@ -118,6 +126,7 @@ export default function PerformanceScreen() {
   const params = useLocalSearchParams<{ view?: string }>();
   const [open, setOpen] = useState<MetricOpen>(null);
   const [view, setView] = useState<PerformanceView>(params.view === 'forecast' ? 'forecast' : 'scores');
+  const [forecastChartMetric, setForecastChartMetric] = useState<PerformanceForecastMetric | null>(null);
   const toggle = (key: MetricOpen) => setOpen(p => p === key ? null : key);
   const activities = useActivityStore(state => state.activities);
   const todayReadiness = useReadinessStore(state => state.todayReadiness);
@@ -188,7 +197,7 @@ export default function PerformanceScreen() {
             <Text style={[styles.scoreCaption, { color: C.textDim }]}>{forecast.limitations}</Text>
           </View>
           {forecast.metrics.map(metric => (
-            <ForecastMetricCard key={metric.key} metric={metric} />
+            <ForecastMetricCard key={metric.key} metric={metric} onChartPress={() => setForecastChartMetric(metric)} />
           ))}
         </>
       ) : (
@@ -218,6 +227,12 @@ export default function PerformanceScreen() {
       ))}
         </>
       )}
+      <ForecastChartDetailModal
+        metric={forecastChartMetric}
+        confidence={forecast.confidence}
+        limitations={forecast.limitations}
+        onClose={() => setForecastChartMetric(null)}
+      />
     </ScrollView>
   );
 }
@@ -368,6 +383,11 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 14,
     marginBottom: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   forecastBarColumn: {
     flex: 1,

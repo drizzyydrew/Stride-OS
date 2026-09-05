@@ -10,6 +10,9 @@ module.exports = (config) => ({
   entitlements: {
     'com.apple.developer.healthkit': true,
   },
+  plist: {
+    WKBackgroundModes: ['workout-processing'],
+  },
   colors: {
     $accent: '#A8B094',
   },

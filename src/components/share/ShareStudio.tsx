@@ -79,11 +79,12 @@ function metricValue(activity: Activity | undefined, units: UnitSystem, key: Tog
 
 function availableToggles(activity: Activity | undefined, achievement: EvaluatedAchievement | undefined): ToggleKey[] {
   const keys: ToggleKey[] = [];
-  if (metricValue(activity, 'imperial', 'distance')) keys.push('distance');
-  if (metricValue(activity, 'imperial', 'time')) keys.push('time');
-  if (metricValue(activity, 'imperial', 'pace')) keys.push('pace');
-  if (metricValue(activity, 'imperial', 'elevation')) keys.push('elevation');
-  if (activity && activityHasShareableRoute(activity)) keys.push('route');
+  const isRunLevelAchievement = Boolean(achievement && runLevelSlugFromId(achievement.id));
+  if (!isRunLevelAchievement && metricValue(activity, 'imperial', 'distance')) keys.push('distance');
+  if (!isRunLevelAchievement && metricValue(activity, 'imperial', 'time')) keys.push('time');
+  if (!isRunLevelAchievement && metricValue(activity, 'imperial', 'pace')) keys.push('pace');
+  if (!isRunLevelAchievement && metricValue(activity, 'imperial', 'elevation')) keys.push('elevation');
+  if (!isRunLevelAchievement && activity && activityHasShareableRoute(activity)) keys.push('route');
   if (achievement && achievementShareAllowed(achievement)) keys.push('achievement');
   keys.push('brand');
   return keys;
@@ -175,15 +176,16 @@ function MovableLayer({
 
 function RouteOverlay({ activity, light = false }: { activity?: Activity; light?: boolean }) {
   if (!activity || !activityHasShareableRoute(activity)) return null;
-  const route = normalizeRouteForOverlay(activity.metrics.routeCoordinates, { width: 1080, height: 1080 }, 0.18);
+  const route = normalizeRouteForOverlay(activity.metrics.routeCoordinates, { width: 1080, height: 1080 }, 0.035);
   if (!route.hasRoute) return null;
   const points = routePointsToSvgPolyline(route.points);
   return (
     <Svg width="100%" height="100%" viewBox={`0 0 ${route.viewBox.width} ${route.viewBox.height}`} pointerEvents="none">
-      <Polyline points={points} stroke={light ? '#0E0E0F' : '#F3F1EB'} strokeWidth={22} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.28} />
-      <Polyline points={points} stroke={ROUTE_TRACE_ACCENT} strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.96} />
-      {route.points[0] ? <Circle cx={route.points[0].x} cy={route.points[0].y} r={18} fill="#A8B9A1" /> : null}
-      {route.points.at(-1) ? <Circle cx={route.points.at(-1)!.x} cy={route.points.at(-1)!.y} r={18} fill="#DCC9B1" /> : null}
+      <Polyline points={points} stroke={light ? '#0E0E0F' : '#F3F1EB'} strokeWidth={38} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.38} />
+      <Polyline points={points} stroke={ROUTE_TRACE_ACCENT} strokeWidth={20} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.98} />
+      <Polyline points={points} stroke="#F3F1EB" strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.42} />
+      {route.points[0] ? <Circle cx={route.points[0].x} cy={route.points[0].y} r={25} fill="#A8B9A1" /> : null}
+      {route.points.at(-1) ? <Circle cx={route.points.at(-1)!.x} cy={route.points.at(-1)!.y} r={25} fill="#DCC9B1" /> : null}
     </Svg>
   );
 }
@@ -254,7 +256,7 @@ export default function ShareStudio({
     achievement: 1,
     brand: 1,
   });
-  const routeEnabled = enabled.route && activity && activityHasShareableRoute(activity);
+  const routeEnabled = keys.includes('route') && enabled.route && activity && activityHasShareableRoute(activity);
   const isOverlay = variant === 'transparent_overlay';
   const isStory = format === 'story';
   const activityTitle = shareActivityLabel(activity);
@@ -279,7 +281,7 @@ export default function ShareStudio({
   const bg = isOverlay ? 'transparent' : variant === 'editorial_card' ? '#F3F1EB' : '#0E0E0F';
   const foregroundDark = variant === 'editorial_card';
   const selectedMetrics = (['distance', 'time', 'pace', 'elevation'] as ToggleKey[])
-    .map(key => ({ key, value: enabled[key] ? metricValue(activity, units, key) : null }))
+    .map(key => ({ key, value: keys.includes(key) && enabled[key] ? metricValue(activity, units, key) : null }))
     .filter((item): item is { key: ToggleKey; value: string } => Boolean(item.value));
   const selectedCount = keys.filter(key => enabled[key]).length;
   const fixedActivityLayout = Boolean(activity);
@@ -438,7 +440,7 @@ export default function ShareStudio({
             {achievement ? 'ACHIEVEMENT UNLOCKED' : activityTitle ? 'ACTIVITY COMPLETE' : 'STRIDEOS'}
           </Text>
           <Text style={[styles.title, styles.fixedActivityTitle, foregroundDark ? styles.darkInk : styles.lightInk, !foregroundDark && styles.overlayTextShadow]} numberOfLines={3} adjustsFontSizeToFit>
-            {variant === 'activity_achievement' && activityTitle && achievementShareTitle
+            {variant === 'activity_achievement' && activityTitle && achievementShareTitle && !runLevelSlug
               ? `${activityTitle} + ${achievementShareTitle}`
               : achievementShareTitle ?? activityTitle ?? 'TRAINING'}
           </Text>
@@ -457,7 +459,7 @@ export default function ShareStudio({
             {achievement ? 'ACHIEVEMENT UNLOCKED' : activityTitle ? 'ACTIVITY COMPLETE' : 'STRIDEOS'}
           </Text>
           <Text style={[styles.title, foregroundDark ? styles.darkInk : styles.lightInk]} numberOfLines={3} adjustsFontSizeToFit>
-            {variant === 'activity_achievement' && activityTitle && achievementShareTitle
+            {variant === 'activity_achievement' && activityTitle && achievementShareTitle && !runLevelSlug
               ? `${activityTitle} + ${achievementShareTitle}`
               : achievementShareTitle ?? activityTitle ?? 'TRAINING'}
           </Text>
@@ -681,19 +683,19 @@ const styles = StyleSheet.create({
   support: { fontSize: 15, lineHeight: 20, fontWeight: '800' },
   metricsLayer: { right: 38, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   fixedMetrics: { position: 'absolute', flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  fixedMetricsSquare: { left: 24, right: 24, bottom: 108, justifyContent: 'center' },
-  fixedMetricsStory: { left: 34, right: 34, top: 142, justifyContent: 'center' },
-  fixedMetricsSquareEditorial: { left: 28, right: 28, top: 104, justifyContent: 'center' },
-  fixedMetricsStoryEditorial: { left: 34, right: 34, top: 150, justifyContent: 'center' },
-  fixedMetricsSquareActivity: { left: 24, right: 24, bottom: 96, justifyContent: 'center' },
-  fixedMetricsStoryActivity: { left: 34, right: 34, top: 132, justifyContent: 'center' },
+  fixedMetricsSquare: { left: 24, right: 24, top: 128, justifyContent: 'center' },
+  fixedMetricsStory: { left: 34, right: 34, top: 164, justifyContent: 'center' },
+  fixedMetricsSquareEditorial: { left: 28, right: 28, top: 112, justifyContent: 'center' },
+  fixedMetricsStoryEditorial: { left: 34, right: 34, top: 166, justifyContent: 'center' },
+  fixedMetricsSquareActivity: { left: 24, right: 24, top: 156, justifyContent: 'center' },
+  fixedMetricsStoryActivity: { left: 34, right: 34, top: 184, justifyContent: 'center' },
   fixedRoute: { position: 'absolute' },
-  fixedRouteSquare: { left: 62, right: 62, top: 118, bottom: 126 },
-  fixedRouteStory: { left: 56, right: 56, top: 260, bottom: 176 },
-  fixedRouteSquareEditorial: { left: 62, right: 62, top: 148, bottom: 118 },
-  fixedRouteStoryEditorial: { left: 56, right: 56, top: 292, bottom: 180 },
-  fixedRouteSquareActivity: { left: 68, right: 68, top: 158, bottom: 144 },
-  fixedRouteStoryActivity: { left: 56, right: 56, top: 318, bottom: 198 },
+  fixedRouteSquare: { left: 76, right: 76, top: 226, bottom: 118 },
+  fixedRouteStory: { left: 64, right: 64, top: 382, bottom: 172 },
+  fixedRouteSquareEditorial: { left: 78, right: 78, top: 228, bottom: 116 },
+  fixedRouteStoryEditorial: { left: 64, right: 64, top: 392, bottom: 172 },
+  fixedRouteSquareActivity: { left: 82, right: 82, top: 246, bottom: 116 },
+  fixedRouteStoryActivity: { left: 64, right: 64, top: 430, bottom: 178 },
   statPill: { minWidth: 116, borderRadius: 8, padding: 10, backgroundColor: 'rgba(14,14,15,0.68)', borderWidth: 1, borderColor: 'rgba(157,178,160,0.34)' },
   statPillTransparent: { minWidth: 84, padding: 2, backgroundColor: 'transparent', borderWidth: 0, borderColor: 'transparent', alignItems: 'center' },
   statValue: { color: '#F3F1EB', fontSize: 18, fontWeight: '900' },
