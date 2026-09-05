@@ -1,6 +1,6 @@
 import type { PerformanceForecastMetric } from './trainingOutlook';
 
-function formatChartValue(metric: PerformanceForecastMetric, value: number): string {
+export function formatForecastChartValue(metric: PerformanceForecastMetric, value: number): string {
   if (metric.key === 'training_load_trend') {
     return value >= 10 ? value.toFixed(1) : value.toFixed(2);
   }
@@ -11,7 +11,7 @@ export function buildForecastChartDetail(metric: PerformanceForecastMetric): str
   const points = metric.chartValues
     .map((value, index) => {
       const label = metric.chartLabels[index] ?? `point ${index + 1}`;
-      return `${label}: ${formatChartValue(metric, value)}`;
+      return `${label}: ${formatForecastChartValue(metric, value)}`;
     })
     .join('\n');
 

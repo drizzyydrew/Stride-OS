@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { normalizeRouteForOverlay } from '../../src/utils/routeOverlay';
 
 function read(path: string): string {
   return readFileSync(path, 'utf8');
@@ -31,11 +32,26 @@ test('run level achievement shares stay level-focused and do not inherit activit
 test('activity plus route share keeps a large fixed route drawing area', () => {
   const shareStudio = read('src/components/share/ShareStudio.tsx');
 
-  assert.match(shareStudio, /normalizeRouteForOverlay\(activity\.metrics\.routeCoordinates, \{ width: 1080, height: 1080 \}, 0\.035\)/);
-  assert.match(shareStudio, /strokeWidth=\{20\}/);
-  assert.match(shareStudio, /fixedMetricsSquareActivity: \{ left: 24, right: 24, top: 156/);
-  assert.match(shareStudio, /fixedRouteSquareActivity: \{ left: 82, right: 82, top: 246, bottom: 116 \}/);
-  assert.match(shareStudio, /fixedRouteStoryActivity: \{ left: 64, right: 64, top: 430, bottom: 178 \}/);
+  assert.match(shareStudio, /normalizeRouteForOverlay\(activity\.metrics\.routeCoordinates, \{ width: 1080, height: 1080 \}, 0\.06\)/);
+  assert.match(shareStudio, /strokeWidth=\{28\}/);
+  assert.match(shareStudio, /fixedMetricsSquareActivity: \{ left: '8%', right: '8%', top: '28%'/);
+  assert.match(shareStudio, /fixedRouteSquareActivity: \{ left: '20%', right: '20%', top: '48%', bottom: '21%' \}/);
+  assert.match(shareStudio, /fixedRouteStoryActivity: \{ left: '16%', right: '16%', top: '44%', bottom: '26%' \}/);
+});
+
+test('route overlay framing resists isolated GPS outliers so selected routes stay visible', () => {
+  const route = [
+    ...Array.from({ length: 40 }, (_, index) => ({
+      latitude: 44.05 + index * 0.00025,
+      longitude: -121.3 + Math.sin(index / 4) * 0.001,
+    })),
+    { latitude: 45.5, longitude: -123.1 },
+  ];
+  const overlay = normalizeRouteForOverlay(route, { width: 1080, height: 1080 }, 0.06);
+
+  assert.equal(overlay.hasRoute, true);
+  assert.ok(Math.max(...overlay.points.map(point => point.x)) - Math.min(...overlay.points.map(point => point.x)) > 120);
+  assert.ok(Math.max(...overlay.points.map(point => point.y)) - Math.min(...overlay.points.map(point => point.y)) > 740);
 });
 
 test('activity detail surfaces run splits before share image controls', () => {

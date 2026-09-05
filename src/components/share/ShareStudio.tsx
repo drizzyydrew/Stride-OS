@@ -176,16 +176,16 @@ function MovableLayer({
 
 function RouteOverlay({ activity, light = false }: { activity?: Activity; light?: boolean }) {
   if (!activity || !activityHasShareableRoute(activity)) return null;
-  const route = normalizeRouteForOverlay(activity.metrics.routeCoordinates, { width: 1080, height: 1080 }, 0.035);
+  const route = normalizeRouteForOverlay(activity.metrics.routeCoordinates, { width: 1080, height: 1080 }, 0.06);
   if (!route.hasRoute) return null;
   const points = routePointsToSvgPolyline(route.points);
   return (
     <Svg width="100%" height="100%" viewBox={`0 0 ${route.viewBox.width} ${route.viewBox.height}`} pointerEvents="none">
-      <Polyline points={points} stroke={light ? '#0E0E0F' : '#F3F1EB'} strokeWidth={38} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.38} />
-      <Polyline points={points} stroke={ROUTE_TRACE_ACCENT} strokeWidth={20} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.98} />
-      <Polyline points={points} stroke="#F3F1EB" strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.42} />
-      {route.points[0] ? <Circle cx={route.points[0].x} cy={route.points[0].y} r={25} fill="#A8B9A1" /> : null}
-      {route.points.at(-1) ? <Circle cx={route.points.at(-1)!.x} cy={route.points.at(-1)!.y} r={25} fill="#DCC9B1" /> : null}
+      <Polyline points={points} stroke={light ? '#0E0E0F' : '#F3F1EB'} strokeWidth={48} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.42} />
+      <Polyline points={points} stroke={ROUTE_TRACE_ACCENT} strokeWidth={28} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.98} />
+      <Polyline points={points} stroke="#F3F1EB" strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.5} />
+      {route.points[0] ? <Circle cx={route.points[0].x} cy={route.points[0].y} r={34} fill="#A8B9A1" /> : null}
+      {route.points.at(-1) ? <Circle cx={route.points.at(-1)!.x} cy={route.points.at(-1)!.y} r={34} fill="#DCC9B1" /> : null}
     </Svg>
   );
 }
@@ -683,19 +683,19 @@ const styles = StyleSheet.create({
   support: { fontSize: 15, lineHeight: 20, fontWeight: '800' },
   metricsLayer: { right: 38, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   fixedMetrics: { position: 'absolute', flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  fixedMetricsSquare: { left: 24, right: 24, top: 128, justifyContent: 'center' },
-  fixedMetricsStory: { left: 34, right: 34, top: 164, justifyContent: 'center' },
-  fixedMetricsSquareEditorial: { left: 28, right: 28, top: 112, justifyContent: 'center' },
-  fixedMetricsStoryEditorial: { left: 34, right: 34, top: 166, justifyContent: 'center' },
-  fixedMetricsSquareActivity: { left: 24, right: 24, top: 156, justifyContent: 'center' },
-  fixedMetricsStoryActivity: { left: 34, right: 34, top: 184, justifyContent: 'center' },
+  fixedMetricsSquare: { left: '8%', right: '8%', top: '26%', justifyContent: 'center' },
+  fixedMetricsStory: { left: '10%', right: '10%', top: '24%', justifyContent: 'center' },
+  fixedMetricsSquareEditorial: { left: '8%', right: '8%', top: '24%', justifyContent: 'center' },
+  fixedMetricsStoryEditorial: { left: '10%', right: '10%', top: '24%', justifyContent: 'center' },
+  fixedMetricsSquareActivity: { left: '8%', right: '8%', top: '28%', justifyContent: 'center' },
+  fixedMetricsStoryActivity: { left: '10%', right: '10%', top: '25%', justifyContent: 'center' },
   fixedRoute: { position: 'absolute' },
-  fixedRouteSquare: { left: 76, right: 76, top: 226, bottom: 118 },
-  fixedRouteStory: { left: 64, right: 64, top: 382, bottom: 172 },
-  fixedRouteSquareEditorial: { left: 78, right: 78, top: 228, bottom: 116 },
-  fixedRouteStoryEditorial: { left: 64, right: 64, top: 392, bottom: 172 },
-  fixedRouteSquareActivity: { left: 82, right: 82, top: 246, bottom: 116 },
-  fixedRouteStoryActivity: { left: 64, right: 64, top: 430, bottom: 178 },
+  fixedRouteSquare: { left: '20%', right: '20%', top: '48%', bottom: '20%' },
+  fixedRouteStory: { left: '16%', right: '16%', top: '44%', bottom: '25%' },
+  fixedRouteSquareEditorial: { left: '20%', right: '20%', top: '48%', bottom: '20%' },
+  fixedRouteStoryEditorial: { left: '16%', right: '16%', top: '44%', bottom: '25%' },
+  fixedRouteSquareActivity: { left: '20%', right: '20%', top: '48%', bottom: '21%' },
+  fixedRouteStoryActivity: { left: '16%', right: '16%', top: '44%', bottom: '26%' },
   statPill: { minWidth: 116, borderRadius: 8, padding: 10, backgroundColor: 'rgba(14,14,15,0.68)', borderWidth: 1, borderColor: 'rgba(157,178,160,0.34)' },
   statPillTransparent: { minWidth: 84, padding: 2, backgroundColor: 'transparent', borderWidth: 0, borderColor: 'transparent', alignItems: 'center' },
   statValue: { color: '#F3F1EB', fontSize: 18, fontWeight: '900' },

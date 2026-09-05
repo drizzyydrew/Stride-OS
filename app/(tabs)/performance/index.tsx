@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   forecastBars: {
-    minHeight: 96,
+    height: 116,
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,

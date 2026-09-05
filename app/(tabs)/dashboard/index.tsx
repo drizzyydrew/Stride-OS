@@ -1397,15 +1397,15 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   forecastSummaryCell: {
-    flexGrow: 1,
-    flexBasis: 148,
+    flexGrow: 0,
+    flexBasis: '48%',
     minWidth: 132,
     borderWidth: 1,
     borderRadius: 8,
     padding: 11,
   },
   forecastVisual: {
-    minHeight: 88,
+    height: 104,
     borderRadius: 8,
     borderWidth: 1,
     marginTop: 10,
@@ -1426,7 +1426,7 @@ const styles = StyleSheet.create({
   },
   forecastChart: {
     flex: 1,
-    alignSelf: 'stretch',
+    height: 64,
     minWidth: 0,
   },
   forecastMetricHeader: {

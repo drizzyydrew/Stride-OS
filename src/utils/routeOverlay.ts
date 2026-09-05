@@ -17,6 +17,13 @@ function finiteCoordinate(point: ActivityCoordinate): boolean {
   return Number.isFinite(point.latitude) && Number.isFinite(point.longitude);
 }
 
+function percentile(values: number[], ratio: number): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.round((sorted.length - 1) * ratio)));
+  return sorted[index];
+}
+
 export function activityHasShareableRoute(activity: Activity): boolean {
   const route = activity.metrics.routeCoordinates ?? [];
   return route.filter(finiteCoordinate).length >= 2 && !activity.indoor && activity.metrics.distanceSource !== 'treadmill_reported';
@@ -32,10 +39,12 @@ export function normalizeRouteForOverlay(
     return { points: [], viewBox: size, hasRoute: false };
   }
 
-  const minLat = Math.min(...valid.map(point => point.latitude));
-  const maxLat = Math.max(...valid.map(point => point.latitude));
-  const minLon = Math.min(...valid.map(point => point.longitude));
-  const maxLon = Math.max(...valid.map(point => point.longitude));
+  const latitudes = valid.map(point => point.latitude);
+  const longitudes = valid.map(point => point.longitude);
+  const minLat = percentile(latitudes, valid.length >= 12 ? 0.02 : 0);
+  const maxLat = percentile(latitudes, valid.length >= 12 ? 0.98 : 1);
+  const minLon = percentile(longitudes, valid.length >= 12 ? 0.02 : 0);
+  const maxLon = percentile(longitudes, valid.length >= 12 ? 0.98 : 1);
   const lonSpan = Math.max(maxLon - minLon, 0.000001);
   const latSpan = Math.max(maxLat - minLat, 0.000001);
   const safePadding = Math.max(0, Math.min(0.35, paddingRatio));
@@ -53,8 +62,8 @@ export function normalizeRouteForOverlay(
     points: valid
       .filter((_, index) => index % step === 0 || index === valid.length - 1)
       .map(point => ({
-        x: offsetX + ((point.longitude - minLon) / lonSpan) * drawWidth,
-        y: offsetY + (1 - ((point.latitude - minLat) / latSpan)) * drawHeight,
+        x: Math.max(safePadding * size.width, Math.min(size.width - safePadding * size.width, offsetX + ((point.longitude - minLon) / lonSpan) * drawWidth)),
+        y: Math.max(safePadding * size.height, Math.min(size.height - safePadding * size.height, offsetY + (1 - ((point.latitude - minLat) / latSpan)) * drawHeight)),
       })),
     viewBox: size,
     hasRoute: true,

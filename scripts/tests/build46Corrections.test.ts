@@ -198,13 +198,20 @@ test('Performance Forecast exposes data-driven chart points and a detailed tab',
 
   const dashboard = readFileSync('app/(tabs)/dashboard/index.tsx', 'utf8');
   const performance = readFileSync('app/(tabs)/performance/index.tsx', 'utf8');
+  const modal = readFileSync('src/components/performance/ForecastChartDetailModal.tsx', 'utf8');
   assert.match(dashboard, /Open Full Forecast/);
   assert.match(dashboard, /params: \{ view: 'forecast' \}/);
   assert.match(dashboard, /ForecastChartDetailModal/);
   assert.match(dashboard, /setForecastChartMetric\(metric\)/);
+  assert.match(dashboard, /height: 104/);
   assert.match(performance, /ForecastMetricCard/);
   assert.match(performance, /forecast\.metrics\.map/);
   assert.match(performance, /onChartPress=\{\(\) => setForecastChartMetric\(metric\)\}/);
+  assert.match(performance, /height: 116/);
+  assert.match(modal, /ForecastDetailChart/);
+  assert.match(modal, /SvgText/);
+  assert.match(modal, /legendChip/);
+  assert.match(modal, /selectedLegend/);
 });
 
 test('shoe catalog stores optional local image metadata and exposes replace/remove affordances', () => {
