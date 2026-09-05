@@ -79,6 +79,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     var message = payload
     message["type"] = type
     message["sentAt"] = Date().timeIntervalSince1970 * 1000
+    try? session.updateApplicationContext(message)
 
     if session.isReachable {
       session.sendMessage(message, replyHandler: nil) { [weak self] error in
@@ -127,6 +128,10 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
 
   func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
     handleIncoming(userInfo)
+  }
+
+  func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+    handleIncoming(applicationContext)
   }
 
   private func handleIncoming(_ message: [String: Any]) {

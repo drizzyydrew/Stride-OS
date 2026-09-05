@@ -187,11 +187,11 @@ function RouteOverlay({ activity, light = false }: { activity?: Activity; light?
   );
 }
 
-function StatPill({ label, value }: { label: string; value: string }) {
+function StatPill({ label, value, transparent = false }: { label: string; value: string; transparent?: boolean }) {
   return (
-    <View style={styles.statPill}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <View style={[styles.statPill, transparent && styles.statPillTransparent]}>
+      <Text style={[styles.statValue, transparent && styles.overlayTextShadow]}>{value}</Text>
+      <Text style={[styles.statLabel, transparent && styles.overlayTextShadow]}>{label}</Text>
     </View>
   );
 }
@@ -281,7 +281,8 @@ export default function ShareStudio({
     .map(key => ({ key, value: enabled[key] ? metricValue(activity, units, key) : null }))
     .filter((item): item is { key: ToggleKey; value: string } => Boolean(item.value));
   const selectedCount = keys.filter(key => enabled[key]).length;
-  const editableLayers = ([
+  const fixedActivityLayout = Boolean(activity);
+  const editableLayers = fixedActivityLayout ? [] : ([
     enabled.brand ? 'brand' : null,
     achievement && enabled.achievement ? 'achievement' : null,
   ] as Array<EditableLayerKey | null>).filter((item): item is EditableLayerKey => Boolean(item));
@@ -307,6 +308,37 @@ export default function ShareStudio({
     y: isStory ? Math.max(24, layerBounds.height - 284) : Math.max(24, layerBounds.height - 100),
   };
   const showTitleLayer = !(isStory && activityTitle && !showStoryActivityTitle);
+  const fixedRouteStyle = [
+    styles.fixedRoute,
+    variant === 'editorial_card'
+      ? (isStory ? styles.fixedRouteStoryEditorial : styles.fixedRouteSquareEditorial)
+      : variant === 'activity_achievement'
+        ? (isStory ? styles.fixedRouteStoryActivity : styles.fixedRouteSquareActivity)
+        : (isStory ? styles.fixedRouteStory : styles.fixedRouteSquare),
+  ];
+  const fixedBrandStyle = [
+    styles.fixedBrand,
+    isStory ? styles.fixedBrandStory : styles.fixedBrandSquare,
+    variant === 'editorial_card' && styles.fixedBrandEditorial,
+  ];
+  const fixedTitleStyle = [
+    styles.fixedTitle,
+    variant === 'editorial_card'
+      ? (isStory ? styles.fixedTitleStoryEditorial : styles.fixedTitleSquareEditorial)
+      : (isStory ? styles.fixedTitleStory : styles.fixedTitleSquare),
+  ];
+  const fixedMetricsStyle = [
+    styles.fixedMetrics,
+    variant === 'editorial_card'
+      ? (isStory ? styles.fixedMetricsStoryEditorial : styles.fixedMetricsSquareEditorial)
+      : variant === 'activity_achievement'
+        ? (isStory ? styles.fixedMetricsStoryActivity : styles.fixedMetricsSquareActivity)
+        : (isStory ? styles.fixedMetricsStory : styles.fixedMetricsSquare),
+  ];
+  const fixedAchievementStyle = [
+    styles.fixedAchievement,
+    isStory ? styles.fixedAchievementStory : styles.fixedAchievementSquare,
+  ];
 
   const canvas = (
     <View
@@ -328,8 +360,12 @@ export default function ShareStudio({
     >
       {photoUri ? <ImageBackground source={{ uri: photoUri }} resizeMode="cover" style={StyleSheet.absoluteFill} /> : null}
       {photoUri && !isOverlay ? <View style={styles.photoScrim} /> : null}
-      {routeEnabled ? <View style={styles.routeLayer}><RouteOverlay activity={activity} light={foregroundDark} /></View> : null}
-      {enabled.brand ? (
+      {routeEnabled ? <View style={fixedActivityLayout ? fixedRouteStyle : styles.routeLayer}><RouteOverlay activity={activity} light={foregroundDark} /></View> : null}
+      {enabled.brand && fixedActivityLayout ? (
+        <View style={fixedBrandStyle}>
+          <StrideOSBrandMark />
+        </View>
+      ) : enabled.brand ? (
         <MovableLayer
           initial={{ x: 22, y: 22 }}
           bounds={layerBounds}
@@ -343,7 +379,28 @@ export default function ShareStudio({
           <StrideOSBrandMark />
         </MovableLayer>
       ) : null}
-      {achievement && enabled.achievement ? (
+      {achievement && enabled.achievement && fixedActivityLayout ? (
+        <View style={fixedAchievementStyle}>
+          {runLevelSlug ? (
+            <RunLevelBadge
+              level={runLevelSlug}
+              state={isOverlay ? 'share-transparent' : achievement.state === 'locked' ? 'locked' : 'share-opaque'}
+              size={132}
+              remainingMeters={achievement.remaining}
+              units={units}
+            />
+          ) : (
+            <AchievementBadge
+              id={achievement.id}
+              category={achievement.category}
+              earned={achievement.state !== 'locked'}
+              size="large"
+              unitSystem={units}
+              badgeState={canonicalBadgeDefinition ? (isOverlay ? 'share-transparent' : achievement.state === 'locked' ? 'locked' : 'share-opaque') : undefined}
+            />
+          )}
+        </View>
+      ) : achievement && enabled.achievement ? (
         <MovableLayer
           initial={centerLayer(156, 156)}
           bounds={layerBounds}
@@ -374,7 +431,19 @@ export default function ShareStudio({
           )}
         </MovableLayer>
       ) : null}
-      {showTitleLayer ? (
+      {showTitleLayer && fixedActivityLayout ? (
+        <View style={fixedTitleStyle}>
+          <Text style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent, styles.overlayTextShadow]}>
+            {achievement ? 'ACHIEVEMENT UNLOCKED' : activityTitle ? 'ACTIVITY COMPLETE' : 'STRIDEOS'}
+          </Text>
+          <Text style={[styles.title, styles.fixedActivityTitle, foregroundDark ? styles.darkInk : styles.lightInk, !foregroundDark && styles.overlayTextShadow]} numberOfLines={3} adjustsFontSizeToFit>
+            {variant === 'activity_achievement' && activityTitle && achievementShareTitle
+              ? `${activityTitle} + ${achievementShareTitle}`
+              : achievementShareTitle ?? activityTitle ?? 'TRAINING'}
+          </Text>
+          {achievementSupport ? <Text style={[styles.support, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted, !foregroundDark && styles.overlayTextShadow]}>{achievementSupport}</Text> : null}
+        </View>
+      ) : showTitleLayer ? (
         <MovableLayer
           initial={titleInitial}
           bounds={layerBounds}
@@ -394,7 +463,13 @@ export default function ShareStudio({
           {achievementSupport ? <Text style={[styles.support, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{achievementSupport}</Text> : null}
         </MovableLayer>
       ) : null}
-      {selectedMetrics.length ? (
+      {selectedMetrics.length && fixedActivityLayout ? (
+        <View style={fixedMetricsStyle}>
+          {selectedMetrics.slice(0, 6).map(item => (
+            <StatPill key={item.key} label={toggleLabel(item.key, activity).toUpperCase()} value={item.value} transparent />
+          ))}
+        </View>
+      ) : selectedMetrics.length ? (
         <MovableLayer
           initial={metricsInitial}
           bounds={layerBounds}
@@ -579,6 +654,10 @@ const styles = StyleSheet.create({
   routeLayer: { ...StyleSheet.absoluteFill },
   movable: { position: 'absolute' },
   brandLayer: { alignItems: 'center', justifyContent: 'center' },
+  fixedBrand: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
+  fixedBrandSquare: { left: 0, right: 0, bottom: 22 },
+  fixedBrandStory: { left: 0, right: 0, bottom: 42 },
+  fixedBrandEditorial: { opacity: 0.94 },
   logoMark: { width: 112, minHeight: 74, alignItems: 'center', justifyContent: 'center' },
   logoWord: { fontSize: 25, lineHeight: 30, fontWeight: '900', fontFamily: 'CormorantGaramond_700Bold' },
   logoStride: { color: '#F3F1EB' },
@@ -586,14 +665,39 @@ const styles = StyleSheet.create({
   logoChevronRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 5 },
   logoChevron: { fontSize: 27, lineHeight: 28, fontWeight: '900' },
   badgeLayer: { alignItems: 'center', justifyContent: 'center' },
+  fixedAchievement: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
+  fixedAchievementSquare: { left: 0, right: 0, top: '32%' },
+  fixedAchievementStory: { left: 0, right: 0, top: '38%' },
   titleLayer: { right: 38, gap: 4 },
+  fixedTitle: { position: 'absolute', gap: 2 },
+  fixedTitleSquare: { left: 24, right: 24, top: 24, alignItems: 'flex-start' },
+  fixedTitleStory: { left: 28, right: 28, top: 42, alignItems: 'center' },
+  fixedTitleSquareEditorial: { left: 24, right: 24, top: 28, alignItems: 'center' },
+  fixedTitleStoryEditorial: { left: 28, right: 28, top: 54, alignItems: 'center' },
   kicker: { fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
   title: { fontSize: 39, lineHeight: 42, fontWeight: '900', letterSpacing: 0 },
+  fixedActivityTitle: { fontSize: 34, lineHeight: 36, maxWidth: 260 },
   support: { fontSize: 15, lineHeight: 20, fontWeight: '800' },
   metricsLayer: { right: 38, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  fixedMetrics: { position: 'absolute', flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  fixedMetricsSquare: { left: 24, right: 24, bottom: 108, justifyContent: 'center' },
+  fixedMetricsStory: { left: 34, right: 34, top: 142, justifyContent: 'center' },
+  fixedMetricsSquareEditorial: { left: 28, right: 28, top: 104, justifyContent: 'center' },
+  fixedMetricsStoryEditorial: { left: 34, right: 34, top: 150, justifyContent: 'center' },
+  fixedMetricsSquareActivity: { left: 24, right: 24, bottom: 96, justifyContent: 'center' },
+  fixedMetricsStoryActivity: { left: 34, right: 34, top: 132, justifyContent: 'center' },
+  fixedRoute: { position: 'absolute' },
+  fixedRouteSquare: { left: 62, right: 62, top: 118, bottom: 126 },
+  fixedRouteStory: { left: 56, right: 56, top: 260, bottom: 176 },
+  fixedRouteSquareEditorial: { left: 62, right: 62, top: 148, bottom: 118 },
+  fixedRouteStoryEditorial: { left: 56, right: 56, top: 292, bottom: 180 },
+  fixedRouteSquareActivity: { left: 68, right: 68, top: 158, bottom: 144 },
+  fixedRouteStoryActivity: { left: 56, right: 56, top: 318, bottom: 198 },
   statPill: { minWidth: 116, borderRadius: 8, padding: 10, backgroundColor: 'rgba(14,14,15,0.68)', borderWidth: 1, borderColor: 'rgba(157,178,160,0.34)' },
+  statPillTransparent: { minWidth: 84, padding: 2, backgroundColor: 'transparent', borderWidth: 0, borderColor: 'transparent', alignItems: 'center' },
   statValue: { color: '#F3F1EB', fontSize: 18, fontWeight: '900' },
   statLabel: { color: '#DCC9B1', fontSize: 9, fontWeight: '900', letterSpacing: 0.8, marginTop: 4 },
+  overlayTextShadow: { textShadowColor: 'rgba(0,0,0,0.62)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   lightInk: { color: '#F3F1EB' },
   lightInkMuted: { color: '#DCC9B1' },
   lightAccent: { color: '#DCC9B1' },

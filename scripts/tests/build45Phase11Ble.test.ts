@@ -131,7 +131,9 @@ test('Phase 11 source contracts configure BLE safely and preserve web fallback',
   assert.match(watchIconContents, /App-Icon-1024x1024@1x\.png/);
   assert.match(watchManager, /HKWorkoutSession/);
   assert.match(watchManager, /HKLiveWorkoutBuilder/);
+  assert.match(watchManager, /didReceiveApplicationContext/);
   assert.match(watchModule, /WatchConnectivity/);
+  assert.match(watchModule, /updateApplicationContext/);
 });
 
 test('wearable support matrix distinguishes shippable BLE/watchOS from vendor-specific app work', () => {

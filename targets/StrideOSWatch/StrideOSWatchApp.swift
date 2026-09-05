@@ -301,19 +301,19 @@ private struct StrideWatchLayoutMetrics {
     let isCompact = shortSide < 180
 
     horizontalPadding = isCompact ? 10 : 12
-    topPadding = isCompact ? 9 : 11
-    bottomPadding = isCompact ? 8 : 10
-    verticalSpacing = isCompact ? 6 : 7
+    topPadding = isCompact ? 4 : 6
+    bottomPadding = isCompact ? 16 : 18
+    verticalSpacing = isCompact ? 5 : 6
     logoFontSize = isCompact ? 15 : 16
     statusFontSize = isCompact ? 10 : 10.5
     captionFontSize = isCompact ? 9 : 9.5
     rowFontSize = isCompact ? 12.5 : 13.5
-    metricFontSize = isCompact ? 30 : 34
+    metricFontSize = isCompact ? 28 : 31
     unitFontSize = isCompact ? 10.5 : 11.5
     elapsedFontSize = isCompact ? 13 : 14
     hintFontSize = isCompact ? 8.5 : 9
-    metricPadding = isCompact ? 10 : 12
-    endButtonSize = isCompact ? 32 : 36
+    metricPadding = isCompact ? 8 : 10
+    endButtonSize = isCompact ? 30 : 32
   }
 }
 

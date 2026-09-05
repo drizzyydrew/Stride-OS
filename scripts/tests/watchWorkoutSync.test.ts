@@ -8,6 +8,10 @@ const bridge = readFileSync('src/components/watch/WatchWorkoutBridge.tsx', 'utf8
 const activeOutdoorStore = readFileSync('src/store/activeActivityStore.ts', 'utf8');
 const activeStrengthStore = readFileSync('src/store/activeStrengthSessionStore.ts', 'utf8');
 
+function read(path: string): string {
+  return readFileSync(path, 'utf8');
+}
+
 test('Apple Watch started workouts publish a shared workout identity and environment', () => {
   assert.match(watchManager, /workoutInstanceId \?\? "watch_\\\(kind\.rawValue\)_/);
   assert.match(watchManager, /private var workoutEnvironment: String = "outdoor"/);
@@ -26,6 +30,17 @@ test('watch workout state events drive the phone active-session stores', () => {
   assert.match(bridge, /requestCompletion\(\)/);
   assert.match(bridge, /enqueueVoiceCue\('Pausing workout\.', 'interval'\)/);
   assert.match(bridge, /enqueueVoiceCue\('Resuming workout\.', 'interval'\)/);
+});
+
+test('watch face keeps controls above rounded bottom edge and applies latest phone command context', () => {
+  const watchApp = read('targets/StrideOSWatch/StrideOSWatchApp.swift');
+  const watchManager = read('targets/StrideOSWatch/StrideWatchWorkoutManager.swift');
+  const watchModule = read('modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift');
+
+  assert.match(watchApp, /topPadding = isCompact \? 4 : 6/);
+  assert.match(watchApp, /bottomPadding = isCompact \? 16 : 18/);
+  assert.match(watchManager, /didReceiveApplicationContext/);
+  assert.match(watchModule, /updateApplicationContext/);
 });
 
 test('phone session stores can reuse watch-provided workout instance ids', () => {

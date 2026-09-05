@@ -20,6 +20,7 @@ import ShareStudio, {
   type ShareStudioVariant,
 } from '../../../src/components/share/ShareStudio';
 import { buildActivitySummary } from '../../../src/utils/activitySummary';
+import { buildRunSplits } from '../../../src/utils/activitySplits';
 
 export default function ActivityDetailScreen() {
   const C = useColors();
@@ -72,6 +73,7 @@ export default function ActivityDetailScreen() {
 
   const route = activity.metrics.routeCoordinates ?? [];
   const summary = buildActivitySummary(activity, units, { dataRich: showDataRichDetails });
+  const runSplits = buildRunSplits(activity, units);
 
   async function shareActivity() {
     try {
@@ -137,6 +139,34 @@ export default function ActivityDetailScreen() {
             </View>
           ))}
         </View>
+        {runSplits.length ? (
+          <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+            <Text style={[s.eyebrow, { color: C.textDim }]}>RUN SPLITS</Text>
+            <View style={s.splitList}>
+              {runSplits.map(split => {
+                const trendColor = split.trend === 'faster'
+                  ? '#9DB2A0'
+                  : split.trend === 'slower'
+                    ? '#D07063'
+                    : C.textMuted;
+                return (
+                  <View key={`${split.label}-${split.index}`} style={[s.splitRow, { borderColor: C.border }]}>
+                    <View>
+                      <Text style={[s.splitLabel, { color: C.text }]}>{split.label}</Text>
+                      <Text style={[s.splitDistance, { color: C.textMuted }]}>{split.distanceLabel}</Text>
+                    </View>
+                    <View style={s.splitRight}>
+                      <Text style={[s.splitPace, { color: C.text }]}>{split.paceLabel}</Text>
+                      <Text style={[s.splitTrend, { color: trendColor }]}>
+                        {split.deltaLabel ?? 'Baseline'}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>SHARE IMAGE</Text>
           <View style={s.variantGrid}>
@@ -238,4 +268,11 @@ const s = StyleSheet.create({
   sharePrimary: { minHeight: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
   sharePrimaryText: { fontSize: 14, fontWeight: '900' },
   shareMessage: { fontSize: 12, lineHeight: 17 },
+  splitList: { gap: 8 },
+  splitRow: { minHeight: 56, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  splitLabel: { fontSize: 14, fontWeight: '900' },
+  splitDistance: { fontSize: 11, marginTop: 3, fontWeight: '700' },
+  splitRight: { alignItems: 'flex-end' },
+  splitPace: { fontSize: 15, fontWeight: '900' },
+  splitTrend: { fontSize: 11, marginTop: 3, fontWeight: '900' },
 });
