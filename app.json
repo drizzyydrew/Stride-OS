@@ -14,7 +14,7 @@
       "appleTeamId": "QBAVJD9497",
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "70",
+      "buildNumber": "71",
       "backgroundColor": "#11100F",
       "entitlements": {
         "com.apple.security.application-groups": [

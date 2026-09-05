@@ -21,11 +21,17 @@ import { useColors } from '../../../src/theme/useColors';
 import { useThemeMode } from '../../../src/store/themeStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
-import { useRouteStore, routeDistanceMiles, type RoutePoint, type RunRoute } from '../../../src/store/routeStore';
+import { useRouteStore, routeDistanceMiles, type RoutePoint, type RunRoute, type RouteSurface } from '../../../src/store/routeStore';
 import {
   buildDirectPath, fetchRouteElevation, snapRouteToPaths, TANGENTS_EDUCATION_COPY,
   type ElevationSummary, type RoutedPath,
 } from '../../../src/lib/routing';
+import {
+  buildGeneratedRouteWaypoints,
+  type GeneratedRouteElevationIntent,
+  type GeneratedRouteHillIntent,
+  type GeneratedRouteShape,
+} from '../../../src/utils/routeGeneration';
 import { estimateEasyPaceSecPerMi } from '../../../src/utils/hydrationEngine';
 import { DEFAULT_MAP_REGION, MAP_STYLE_DARK, MAP_STYLE_LIGHT, regionForPoints } from '../../../src/constants/mapStyles';
 
@@ -35,6 +41,15 @@ const FOLDERS: { key: RunRoute['folder']; label: string }[] = [
   { key: 'long', label: 'Long Run' },
   { key: 'custom', label: 'Custom' },
 ];
+
+type PlaceSearchResult = {
+  id: string;
+  label: string;
+  subtitle: string;
+  point: RoutePoint;
+};
+
+type AutoAnchorMode = 'current' | 'to_place' | 'from_place' | 'around_place';
 
 function fmtDuration(min: number): string {
   const h = Math.floor(min / 60);
@@ -63,7 +78,20 @@ export default function RouteBuilderScreen() {
   const [showInfo, setShowInfo] = useState(false);
   const [routeName, setRouteName] = useState('');
   const [routeFolder, setRouteFolder] = useState<RunRoute['folder']>('custom');
+  const [routeSurfaceType, setRouteSurfaceType] = useState<RunRoute['surfaceType']>('unknown');
   const [routeNotes, setRouteNotes] = useState('');
+  const [autoRouteOpen, setAutoRouteOpen] = useState(false);
+  const [autoDistanceInput, setAutoDistanceInput] = useState('5');
+  const [autoSurface, setAutoSurface] = useState<Exclude<RouteSurface, 'unknown'>>('mixed');
+  const [autoHills, setAutoHills] = useState<GeneratedRouteHillIntent>('rolling');
+  const [autoElevation, setAutoElevation] = useState<GeneratedRouteElevationIntent>('moderate');
+  const [autoShape, setAutoShape] = useState<GeneratedRouteShape>('loop');
+  const [autoGenerating, setAutoGenerating] = useState(false);
+  const [placeQuery, setPlaceQuery] = useState('');
+  const [placeSearching, setPlaceSearching] = useState(false);
+  const [placeResults, setPlaceResults] = useState<PlaceSearchResult[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<PlaceSearchResult | null>(null);
+  const [autoAnchorMode, setAutoAnchorMode] = useState<AutoAnchorMode>('current');
   const requestIdRef = useRef(0);
   const mapRef = useRef<MapViewRef>(null);
   const routeNameInputRef = useRef<TextInput>(null);
@@ -180,6 +208,83 @@ export default function RouteBuilderScreen() {
     mapRef.current?.animateToRegion({ ...point, latitudeDelta: 0.02, longitudeDelta: 0.02 }, 400);
   }
 
+  async function currentRoutePoint(): Promise<RoutePoint | null> {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Location needed', 'Allow location to use your current position for route creation.');
+      return null;
+    }
+    const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+    return { latitude: location.coords.latitude, longitude: location.coords.longitude };
+  }
+
+  function placeResultLabel(query: string, index: number, address?: Location.LocationGeocodedAddress | null): Pick<PlaceSearchResult, 'label' | 'subtitle'> {
+    const compactQuery = query.trim();
+    const labelParts = [
+      address?.name,
+      address?.street,
+      address?.city,
+    ].filter(Boolean);
+    const label = labelParts.length > 0 ? labelParts.join(', ') : compactQuery || `Search result ${index + 1}`;
+    const subtitleParts = [
+      address?.city,
+      address?.region,
+      address?.country,
+    ].filter(Boolean);
+    return {
+      label,
+      subtitle: subtitleParts.length > 0 ? subtitleParts.join(', ') : 'Tap to use this location',
+    };
+  }
+
+  async function searchPlaces() {
+    const query = placeQuery.trim();
+    if (query.length < 2) {
+      Alert.alert('Search a place', 'Enter a park, trailhead, address, or landmark.');
+      return;
+    }
+
+    setPlaceSearching(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Location needed', 'Allow location to search for places and route from them.');
+        return;
+      }
+      const geocoded = await Location.geocodeAsync(query);
+      if (geocoded.length === 0) {
+        setPlaceResults([]);
+        Alert.alert('No place found', 'Try a more specific place name or address.');
+        return;
+      }
+
+      const results = await Promise.all(geocoded.slice(0, 4).map(async (result, index) => {
+        const point = { latitude: result.latitude, longitude: result.longitude };
+        let address: Location.LocationGeocodedAddress | null = null;
+        try {
+          const reverse = await Location.reverseGeocodeAsync(point);
+          address = reverse[0] ?? null;
+        } catch {
+          address = null;
+        }
+        const label = placeResultLabel(query, index, address);
+        return {
+          id: `${result.latitude.toFixed(5)}:${result.longitude.toFixed(5)}:${index}`,
+          ...label,
+          point,
+        };
+      }));
+
+      setPlaceResults(results);
+      setSelectedPlace(results[0] ?? null);
+      mapRef.current?.animateToRegion({ ...results[0].point, latitudeDelta: 0.03, longitudeDelta: 0.03 }, 400);
+    } catch (error) {
+      Alert.alert('Search failed', error instanceof Error ? error.message : 'Could not search for that location.');
+    } finally {
+      setPlaceSearching(false);
+    }
+  }
+
   function saveRoute() {
     if (!canSave) return;
     const name = routeName.trim() || 'Custom Route';
@@ -199,7 +304,7 @@ export default function RouteBuilderScreen() {
       elevationGainMeters: elevation?.gainMeters,
       elevationLossMeters: elevation?.lossMeters,
       estimatedDurationMin: Math.max(1, estimatedMin),
-      surfaceType: 'unknown',
+      surfaceType: routeSurfaceType,
       routingProvider: routed?.provider ?? 'direct',
       notes: routeNotes.trim() || undefined,
     });
@@ -229,6 +334,70 @@ export default function RouteBuilderScreen() {
     { label: 'EST TIME', value: estimatedMin > 0 ? fmtDuration(estimatedMin) : '—', unit: '' },
     { label: 'POINTS', value: String(waypoints.length), unit: '' },
   ]), [gainDisplay, lossDisplay, elevUnit, estimatedMin, waypoints.length]);
+
+  async function generateAutoRoute() {
+    const targetMiles = Number(autoDistanceInput.replace(',', '.'));
+    if (!Number.isFinite(targetMiles) || targetMiles <= 0) {
+      Alert.alert('Route distance needed', 'Enter a target distance like 3, 5, or 7 miles.');
+      return;
+    }
+
+    setAutoGenerating(true);
+    try {
+      const placeRequired = autoAnchorMode !== 'current';
+      if (placeRequired && !selectedPlace) {
+        Alert.alert('Choose a place', 'Search for a location first, then choose whether to run to it, from it, or around it.');
+        return;
+      }
+
+      if (autoAnchorMode === 'to_place' && selectedPlace) {
+        const current = await currentRoutePoint();
+        if (!current) return;
+        const waypointsForPlace = [current, selectedPlace.point];
+        setSnapEnabled(true);
+        setWaypoints(waypointsForPlace);
+        setRouteName(`Run to ${selectedPlace.label}`);
+        setRouteNotes(`Auto-created destination route to ${selectedPlace.label}. Snapping and elevation are resolved after generation.`);
+        setRouteSurfaceType(autoSurface);
+        setRouteFolder(targetMiles >= 8 ? 'long' : autoHills === 'hilly' ? 'tempo' : 'easy');
+        setAutoRouteOpen(false);
+        mapRef.current?.animateToRegion(regionForPoints(waypointsForPlace), 400);
+        return;
+      }
+
+      const start = selectedPlace && autoAnchorMode !== 'current'
+        ? selectedPlace.point
+        : await currentRoutePoint();
+      if (!start) return;
+
+      const generated = buildGeneratedRouteWaypoints({
+        start,
+        distanceMiles: targetMiles,
+        surface: autoSurface,
+        hills: autoHills,
+        elevation: autoElevation,
+        shape: autoShape,
+        seed: Math.round(Date.now() / 1000),
+      });
+      setSnapEnabled(true);
+      setWaypoints(generated.waypoints);
+      const placePrefix = selectedPlace && autoAnchorMode !== 'current'
+        ? `${autoAnchorMode === 'around_place' ? 'Around' : 'From'} ${selectedPlace.label}`
+        : generated.name;
+      setRouteName(placePrefix);
+      setRouteNotes(selectedPlace && autoAnchorMode !== 'current'
+        ? `${generated.notes} Anchor location: ${selectedPlace.label}.`
+        : generated.notes);
+      setRouteSurfaceType(autoSurface);
+      setRouteFolder(targetMiles >= 8 ? 'long' : autoHills === 'hilly' ? 'tempo' : 'easy');
+      setAutoRouteOpen(false);
+      mapRef.current?.animateToRegion(regionForPoints(generated.waypoints), 400);
+    } catch (error) {
+      Alert.alert('Could not create route', error instanceof Error ? error.message : 'Route generation failed. Try again near your start point.');
+    } finally {
+      setAutoGenerating(false);
+    }
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -393,6 +562,164 @@ export default function RouteBuilderScreen() {
               </Text>
             </View>
           ))}
+        </View>
+
+        <View style={[s.autoCard, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+          <TouchableOpacity
+            style={s.autoHeader}
+            onPress={() => setAutoRouteOpen(open => !open)}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel="Auto create route from filters"
+          >
+            <View style={s.autoTitleRow}>
+              <Ionicons name="sparkles-outline" size={16} color={C.positive} />
+              <Text style={[s.autoTitle, { color: C.text }]}>Auto Create Route</Text>
+            </View>
+            <Ionicons name={autoRouteOpen ? 'chevron-up' : 'chevron-down'} size={18} color={C.textMuted} />
+          </TouchableOpacity>
+          {autoRouteOpen ? (
+            <View style={s.autoBody}>
+              <View style={s.autoDistanceRow}>
+                <Text style={[s.autoLabel, { color: C.textDim }]}>MILEAGE</Text>
+                <TextInput
+                  value={autoDistanceInput}
+                  onChangeText={setAutoDistanceInput}
+                  keyboardType="decimal-pad"
+                  placeholder="5"
+                  placeholderTextColor={C.textDim}
+                  selectionColor={C.primary}
+                  style={[s.autoInput, { color: C.text, borderColor: C.border, backgroundColor: C.card }]}
+                />
+              </View>
+              <FilterRow
+                label="START"
+                items={[
+                  { value: 'current' as const, label: 'Current' },
+                  { value: 'to_place' as const, label: 'Run to place' },
+                  { value: 'from_place' as const, label: 'From place' },
+                  { value: 'around_place' as const, label: 'Around place' },
+                ]}
+                value={autoAnchorMode}
+                onChange={setAutoAnchorMode}
+              />
+              <View style={s.placeSearchBlock}>
+                <Text style={[s.autoLabel, { color: C.textDim }]}>LOCATION SEARCH</Text>
+                <View style={s.placeSearchRow}>
+                  <TextInput
+                    value={placeQuery}
+                    onChangeText={setPlaceQuery}
+                    onSubmitEditing={searchPlaces}
+                    returnKeyType="search"
+                    placeholder="Park, trailhead, address..."
+                    placeholderTextColor={C.textDim}
+                    selectionColor={C.primary}
+                    style={[s.placeSearchInput, { color: C.text, borderColor: C.border, backgroundColor: C.card }]}
+                  />
+                  <TouchableOpacity
+                    style={[s.placeSearchBtn, { backgroundColor: C.primary, opacity: placeSearching ? 0.7 : 1 }]}
+                    onPress={searchPlaces}
+                    disabled={placeSearching}
+                    activeOpacity={0.86}
+                    accessibilityRole="button"
+                    accessibilityLabel="Search route locations"
+                  >
+                    {placeSearching ? <ActivityIndicator size="small" color={C.onPrimary} /> : <Ionicons name="search-outline" size={16} color={C.onPrimary} />}
+                  </TouchableOpacity>
+                </View>
+                {selectedPlace ? (
+                  <Text style={[s.selectedPlaceText, { color: C.positive }]}>Selected: {selectedPlace.label}</Text>
+                ) : (
+                  <Text style={[s.autoHint, { color: C.textDim }]}>
+                    Search to generate a route to, from, or around a selected location.
+                  </Text>
+                )}
+                {placeResults.length > 0 ? (
+                  <View style={s.placeResults}>
+                    {placeResults.map(result => {
+                      const selected = selectedPlace?.id === result.id;
+                      return (
+                        <TouchableOpacity
+                          key={result.id}
+                          style={[
+                            s.placeResult,
+                            {
+                              backgroundColor: selected ? C.primaryDim : C.card,
+                              borderColor: selected ? C.primary : C.border,
+                            },
+                          ]}
+                          onPress={() => {
+                            setSelectedPlace(result);
+                            mapRef.current?.animateToRegion({ ...result.point, latitudeDelta: 0.03, longitudeDelta: 0.03 }, 350);
+                          }}
+                          activeOpacity={0.84}
+                        >
+                          <Ionicons name={selected ? 'radio-button-on' : 'location-outline'} size={16} color={selected ? C.primary : C.textMuted} />
+                          <View style={s.placeResultTextWrap}>
+                            <Text style={[s.placeResultTitle, { color: selected ? C.primary : C.text }]} numberOfLines={1}>{result.label}</Text>
+                            <Text style={[s.placeResultSubtitle, { color: C.textDim }]} numberOfLines={1}>{result.subtitle}</Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ) : null}
+              </View>
+              <FilterRow
+                label="SURFACE"
+                items={[
+                  { value: 'mixed' as const, label: 'Mixed' },
+                  { value: 'road' as const, label: 'Road' },
+                  { value: 'trail' as const, label: 'Trail' },
+                ]}
+                value={autoSurface}
+                onChange={setAutoSurface}
+              />
+              <FilterRow
+                label="HILLS"
+                items={[
+                  { value: 'flat' as const, label: 'Flat' },
+                  { value: 'rolling' as const, label: 'Rolling' },
+                  { value: 'hilly' as const, label: 'Hilly' },
+                ]}
+                value={autoHills}
+                onChange={setAutoHills}
+              />
+              <FilterRow
+                label="ELEVATION"
+                items={[
+                  { value: 'low' as const, label: 'Low' },
+                  { value: 'moderate' as const, label: 'Moderate' },
+                  { value: 'high' as const, label: 'High' },
+                ]}
+                value={autoElevation}
+                onChange={setAutoElevation}
+              />
+              <FilterRow
+                label="SHAPE"
+                items={[
+                  { value: 'loop' as const, label: 'Loop' },
+                  { value: 'out_and_back' as const, label: 'Out & Back' },
+                ]}
+                value={autoShape}
+                onChange={setAutoShape}
+              />
+              <TouchableOpacity
+                style={[s.generateBtn, { backgroundColor: C.positive, opacity: autoGenerating ? 0.7 : 1 }]}
+                onPress={generateAutoRoute}
+                disabled={autoGenerating}
+                activeOpacity={0.86}
+              >
+                {autoGenerating ? <ActivityIndicator size="small" color="#0E0E0F" /> : <Ionicons name="shuffle-outline" size={16} color="#0E0E0F" />}
+                <Text style={[s.generateBtnText, { color: '#0E0E0F' }]}>
+                  {autoGenerating ? 'Creating Route' : 'Generate From Filters'}
+                </Text>
+              </TouchableOpacity>
+              <Text style={[s.autoHint, { color: C.textDim }]}>
+                Generated waypoints are snapped to paths next; review the final distance and elevation before saving.
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={s.actionRow}>
@@ -655,6 +982,103 @@ const s = StyleSheet.create({
   statLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
   statValue: { fontSize: 14, fontWeight: '800', fontVariant: ['tabular-nums'] },
   statUnit: { fontSize: 10, fontWeight: '600' },
+  autoCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  autoHeader: {
+    minHeight: 48,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  autoTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  autoTitle: { fontSize: 13, fontWeight: '900' },
+  autoBody: {
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    gap: 10,
+  },
+  autoDistanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  autoLabel: { fontSize: 9, fontWeight: '900', letterSpacing: 0.8 },
+  autoInput: {
+    width: 88,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  placeSearchBlock: { gap: 8 },
+  placeSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  placeSearchInput: {
+    flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  placeSearchBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedPlaceText: { fontSize: 11, fontWeight: '800' },
+  placeResults: { gap: 7 },
+  placeResult: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 11,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  placeResultTextWrap: { flex: 1, minWidth: 0 },
+  placeResultTitle: { fontSize: 12, fontWeight: '900' },
+  placeResultSubtitle: { fontSize: 10, fontWeight: '700', marginTop: 1 },
+  filterBlock: { gap: 7 },
+  filterRow: { gap: 7, paddingRight: 4 },
+  filterChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+  },
+  filterChipText: { fontSize: 11, fontWeight: '800' },
+  generateBtn: {
+    minHeight: 43,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    marginTop: 2,
+  },
+  generateBtnText: { fontSize: 13, fontWeight: '900' },
+  autoHint: { fontSize: 10, fontWeight: '700', lineHeight: 14 },
   actionRow: { flexDirection: 'row', gap: 8 },
   secondaryBtn: {
     flexDirection: 'row',
@@ -723,3 +1147,43 @@ const s = StyleSheet.create({
   infoEyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 0.8, marginBottom: 8 },
   infoBody: { fontSize: 13, lineHeight: 20 },
 });
+
+function FilterRow<T extends string>({
+  label,
+  items,
+  value,
+  onChange,
+}: {
+  label: string;
+  items: Array<{ value: T; label: string }>;
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  const C = useColors();
+  return (
+    <View style={s.filterBlock}>
+      <Text style={[s.autoLabel, { color: C.textDim }]}>{label}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterRow}>
+        {items.map(item => {
+          const selected = item.value === value;
+          return (
+            <TouchableOpacity
+              key={item.value}
+              style={[
+                s.filterChip,
+                {
+                  backgroundColor: selected ? C.primaryDim : C.card,
+                  borderColor: selected ? C.primary : C.border,
+                },
+              ]}
+              onPress={() => onChange(item.value)}
+              activeOpacity={0.82}
+            >
+              <Text style={[s.filterChipText, { color: selected ? C.primary : C.textMuted }]}>{item.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
