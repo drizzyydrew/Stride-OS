@@ -26,6 +26,7 @@ import { FeatureTourProvider } from '../src/components/featureTour/FeatureTourPr
 import AchievementAwardReconciler from '../src/components/achievements/AchievementAwardReconciler';
 import AchievementUnlockModal from '../src/components/achievements/AchievementUnlockModal';
 import WatchWorkoutBridge from '../src/components/watch/WatchWorkoutBridge';
+import ActiveLocationTrackingReconciler from '../src/components/activity/ActiveLocationTrackingReconciler';
 import {
   clearTrainingNotifications,
   getNotificationAccessStatus,
@@ -188,6 +189,7 @@ export default function RootLayout() {
         <Stack.Screen name="modal"      options={{ presentation: 'modal' }} />
       </Stack>
       <LiveActivityCommandReconciler />
+      <ActiveLocationTrackingReconciler />
       <WatchWorkoutBridge />
       <AchievementAwardReconciler />
       <AchievementUnlockModal />

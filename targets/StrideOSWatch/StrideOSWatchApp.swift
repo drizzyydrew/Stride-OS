@@ -85,10 +85,14 @@ private struct WorkoutPickerFace: View {
             targetZone: nil
           )
         } label: {
-          Label("Start \(workout.selectedWorkoutKind.title)", systemImage: "play.fill")
+          Label(
+            workout.isStartingWorkout ? "Starting..." : "Start \(workout.selectedWorkoutKind.title)",
+            systemImage: workout.isStartingWorkout ? "hourglass" : "play.fill"
+          )
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(StrideWatchCapsuleButtonStyle(tint: StrideWatchPalette.sage))
+        .disabled(workout.isStartingWorkout)
         .accessibilityLabel("Start \(workout.selectedWorkoutKind.title) workout")
 
         Text(workout.syncLabel)
@@ -301,8 +305,8 @@ private struct StrideWatchLayoutMetrics {
     let isCompact = shortSide < 180
 
     horizontalPadding = isCompact ? 10 : 12
-    topPadding = isCompact ? 4 : 6
-    bottomPadding = isCompact ? 16 : 18
+    topPadding = isCompact ? 2 : 4
+    bottomPadding = isCompact ? 22 : 24
     verticalSpacing = isCompact ? 5 : 6
     logoFontSize = isCompact ? 15 : 16
     statusFontSize = isCompact ? 10 : 10.5

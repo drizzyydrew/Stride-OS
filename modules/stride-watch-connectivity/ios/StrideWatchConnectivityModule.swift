@@ -87,6 +87,8 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
       }
     } else if session.activationState == .activated && session.isPaired && session.isWatchAppInstalled {
       session.transferUserInfo(message)
+    } else if session.activationState != .activated || (session.isPaired && session.isWatchAppInstalled) {
+      return
     } else {
       throw NSError(domain: "StrideWatchConnectivity", code: 2, userInfo: [
         NSLocalizedDescriptionKey: "Install and open the StrideOS Apple Watch app, then try again.",

@@ -41,8 +41,8 @@ test('watch face keeps controls above rounded bottom edge and applies latest pho
   const watchInfoPlist = read('targets/StrideOSWatch/Info.plist');
   const watchTargetConfig = read('targets/StrideOSWatch/expo-target.config.js');
 
-  assert.match(watchApp, /topPadding = isCompact \? 4 : 6/);
-  assert.match(watchApp, /bottomPadding = isCompact \? 16 : 18/);
+  assert.match(watchApp, /topPadding = isCompact \? 2 : 4/);
+  assert.match(watchApp, /bottomPadding = isCompact \? 22 : 24/);
   assert.match(watchManager, /didReceiveApplicationContext/);
   assert.match(watchModule, /updateApplicationContext/);
   assert.match(watchInfoPlist, /WKBackgroundModes/);
@@ -89,4 +89,9 @@ test('watch workout start is guarded against pre-activation connectivity sends a
   assert.match(watchManager, /guard session\.activationState == \.activated else/);
   assert.match(watchManager, /queuedOutboundPayloads\.append\(payload\)/);
   assert.match(watchManager, /flushQueuedOutboundPayloads\(\)/);
+  assert.match(watchManager, /recordLocalError/);
+  assert.match(watchManager, /reportFailures: false/);
+  assert.match(watchManager, /isStaleControlCommand/);
+  assert.match(moduleIndex, /startWorkout/);
+  assert.match(read('modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift'), /session\.isPaired && session\.isWatchAppInstalled/);
 });

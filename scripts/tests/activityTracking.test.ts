@@ -96,3 +96,20 @@ test('background activity tracking owns run-walk cues from location updates', ()
   assert.match(store, /enqueueVoiceCue\(cue\.text, 'runWalk'\)/);
   assert.match(task, /location\.timestamp - state\.startedAt - state\.pausedDurationMs/);
 });
+
+test('background GPS tasks wait for persisted workout state and re-arm active sessions', () => {
+  const runTask = readFileSync('src/lib/gpsTracking.ts', 'utf8');
+  const activityTask = readFileSync('src/lib/activityGpsTracking.ts', 'utf8');
+  const reconciler = readFileSync('src/components/activity/ActiveLocationTrackingReconciler.tsx', 'utf8');
+  const rootLayout = readFileSync('app/_layout.tsx', 'utf8');
+
+  assert.match(runTask, /waitForPersistedStoreHydration\(useActiveRunStore\)/);
+  assert.match(runTask, /resumeRunLocationTrackingIfPermitted/);
+  assert.match(activityTask, /waitForPersistedStoreHydration\(useActiveActivityStore\)/);
+  assert.match(activityTask, /resumeActivityLocationTrackingIfPermitted/);
+  assert.match(reconciler, /waitForActiveSessionStores/);
+  assert.match(reconciler, /AppState\.addEventListener\('change'/);
+  assert.match(reconciler, /resumeRunLocationTrackingIfPermitted/);
+  assert.match(reconciler, /resumeActivityLocationTrackingIfPermitted/);
+  assert.match(rootLayout, /ActiveLocationTrackingReconciler/);
+});

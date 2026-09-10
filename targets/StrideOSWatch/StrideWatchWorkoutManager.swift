@@ -117,6 +117,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private var endedStateSentForWorkoutInstanceId: String?
   private var lastHandledPhoneCommandKey: String?
   private var queuedOutboundPayloads: [[String: Any]] = []
+  private let stalePhoneCommandWindowMs: Double = 2 * 60 * 1000
 
   var isActive: Bool {
     state == .running || state == .paused || state == .prepared
@@ -149,7 +150,11 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     if pendingSyncCount > 0 {
       return "\(pendingSyncCount) queued"
     }
-    return WCSession.isSupported() && WCSession.default.isReachable ? "Phone live" : "Offline ready"
+    guard WCSession.isSupported() else { return "Watch only" }
+    let session = WCSession.default
+    if session.isReachable { return "Phone live" }
+    if session.activationState == .activated { return "Sync ready" }
+    return "Offline ready"
   }
 
   var availableMetricPages: [StrideWatchMetricPage] {
@@ -371,7 +376,9 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
     healthStore.requestAuthorization(toShare: shareTypes, read: readTypes) { granted, error in
       if let error {
-        self.publishError(error.localizedDescription)
+        DispatchQueue.main.async {
+          self.publishError(error.localizedDescription)
+        }
       }
       completion(granted)
     }
@@ -380,17 +387,27 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private func startTimer() {
     timer?.invalidate()
     timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-      self?.refreshElapsed()
+      self?.updateElapsedOnMain()
     }
   }
 
-  private func refreshElapsed() {
+  private func currentElapsedSeconds() -> Int {
     guard let startedAt else {
-      elapsedSeconds = 0
-      return
+      return 0
     }
     let activePause = pausedAt.map { Date().timeIntervalSince($0) } ?? 0
-    elapsedSeconds = max(0, Int(Date().timeIntervalSince(startedAt) - pausedSeconds - activePause))
+    return max(0, Int(Date().timeIntervalSince(startedAt) - pausedSeconds - activePause))
+  }
+
+  private func updateElapsedOnMain() {
+    let nextElapsed = currentElapsedSeconds()
+    if Thread.isMainThread {
+      elapsedSeconds = nextElapsed
+    } else {
+      DispatchQueue.main.async {
+        self.elapsedSeconds = nextElapsed
+      }
+    }
   }
 
   private func finishBuilderIfNeeded() {
@@ -412,10 +429,11 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   private func sendHeartRate(_ bpm: Int) {
+    let elapsed = currentElapsedSeconds()
     var payload: [String: Any] = [
       "type": "heartRate",
       "heartRate": bpm,
-      "elapsedSeconds": elapsedSeconds,
+      "elapsedSeconds": elapsed,
       "workoutKind": selectedWorkoutKind.rawValue,
       "environment": workoutEnvironment,
       "distanceMeters": distanceMeters,
@@ -431,11 +449,14 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   private func sendWorkoutState(_ label: String) {
-    refreshElapsed()
+    let elapsed = currentElapsedSeconds()
+    DispatchQueue.main.async {
+      self.elapsedSeconds = elapsed
+    }
     var payload: [String: Any] = [
       "type": "workoutState",
       "state": label,
-      "elapsedSeconds": elapsedSeconds,
+      "elapsedSeconds": elapsed,
       "workoutKind": selectedWorkoutKind.rawValue,
       "environment": workoutEnvironment,
       "distanceMeters": distanceMeters,
@@ -461,7 +482,13 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     sendWorkoutState("ended")
   }
 
-  private func sendToPhone(_ payload: [String: Any]) {
+  private func sendToPhone(_ payload: [String: Any], reportFailures: Bool = true) {
+    guard Thread.isMainThread else {
+      DispatchQueue.main.async {
+        self.sendToPhone(payload, reportFailures: reportFailures)
+      }
+      return
+    }
     guard WCSession.isSupported() else { return }
     let session = WCSession.default
     guard session.activationState == .activated else {
@@ -472,7 +499,8 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
     if session.isReachable {
       session.sendMessage(payload, replyHandler: nil) { [weak self] error in
-        self?.publishError(error.localizedDescription)
+        guard reportFailures else { return }
+        self?.recordLocalError(error.localizedDescription)
       }
     } else {
       var queuedPayload = payload
@@ -492,14 +520,18 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   private func publishError(_ message: String) {
-    DispatchQueue.main.async {
-      self.lastError = message
-    }
+    recordLocalError(message)
     sendToPhone([
       "type": "error",
       "message": message,
       "timestamp": Date().timeIntervalSince1970 * 1000,
-    ])
+    ], reportFailures: false)
+  }
+
+  private func recordLocalError(_ message: String) {
+    DispatchQueue.main.async {
+      self.lastError = message
+    }
   }
 }
 
@@ -512,24 +544,22 @@ extension StrideWatchWorkoutManager: HKWorkoutSessionDelegate {
   ) {
     DispatchQueue.main.async {
       self.state = toState
-    }
 
-    switch toState {
-    case .running:
-      sendWorkoutState("running")
-    case .paused:
-      sendWorkoutState("paused")
-    case .ended:
-      finishBuilderIfNeeded()
-      sendEndedStateOnce()
-      DispatchQueue.main.async {
+      switch toState {
+      case .running:
+        self.sendWorkoutState("running")
+      case .paused:
+        self.sendWorkoutState("paused")
+      case .ended:
+        self.finishBuilderIfNeeded()
+        self.sendEndedStateOnce()
         self.timer?.invalidate()
         self.timer = nil
         self.session = nil
         self.builder = nil
+      default:
+        self.sendWorkoutState(self.statusLabel.lowercased())
       }
-    default:
-      sendWorkoutState(statusLabel.lowercased())
     }
   }
 
@@ -551,8 +581,8 @@ extension StrideWatchWorkoutManager: HKLiveWorkoutBuilderDelegate {
       let bpm = Int(quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute())).rounded())
       DispatchQueue.main.async {
         self.heartRateBpm = bpm
+        self.sendHeartRate(bpm)
       }
-      sendHeartRate(bpm)
     }
 
     if
@@ -619,6 +649,9 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
     }
     let commandKey = "\(type ?? "")|\(commandWorkoutInstanceId)|\(Int(sentAt.rounded()))"
     DispatchQueue.main.async {
+      if self.isStaleControlCommand(type: type, sentAt: sentAt) {
+        return
+      }
       if sentAt > 0 && self.lastHandledPhoneCommandKey == commandKey {
         return
       }
@@ -666,6 +699,23 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
     if let targetZone = message["targetZone"] as? Int {
       self.targetZone = targetZone
     }
+  }
+
+  private func isStaleControlCommand(type: String?, sentAt: Double) -> Bool {
+    guard sentAt > 0, let type else { return false }
+    let controlCommands = [
+      "startWorkout",
+      "startRun",
+      "pauseWorkout",
+      "pauseRun",
+      "resumeWorkout",
+      "resumeRun",
+      "endWorkout",
+      "endRun",
+    ]
+    guard controlCommands.contains(type) else { return false }
+    let nowMs = Date().timeIntervalSince1970 * 1000
+    return nowMs - sentAt > stalePhoneCommandWindowMs
   }
 
   func session(_ session: WCSession, didFinish userInfoTransfer: WCSessionUserInfoTransfer, error: Error?) {
