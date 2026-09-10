@@ -14,13 +14,13 @@ export function waitForPersistedStoreHydration(
   return new Promise(resolve => {
     let settled = false;
     let unsubscribe: (() => void) | null = null;
-    let timer: ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
     const finish = (hydrated: boolean) => {
       if (settled) return;
       settled = true;
       if (unsubscribe) unsubscribe();
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
       resolve(hydrated);
     };
 
