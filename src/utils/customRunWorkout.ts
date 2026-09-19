@@ -9,9 +9,18 @@ function formatPace(seconds: number): string {
   return `${min}:${sec.toString().padStart(2, '0')}/mi`;
 }
 
+function formatSegmentPace(secondsPerMile: number, unit: CustomRunSegment['targetPaceUnit'] = 'mi'): string {
+  const seconds = unit === 'km' ? Math.round(secondsPerMile / 1.609344) : Math.round(secondsPerMile);
+  const min = Math.floor(seconds / 60);
+  const sec = seconds % 60;
+  return `${min}:${sec.toString().padStart(2, '0')}/${unit}`;
+}
+
 function durationLabel(segment: CustomRunSegment): string {
   if (segment.target === 'distance') {
     const miles = segment.distanceMiles ?? 0;
+    if (segment.distanceUnit === 'km') return `${(miles * 1.609344).toFixed(miles >= 0.62 ? 1 : 2)} km`;
+    if (segment.distanceUnit === 'm') return `${Math.round(miles * 1609.344)}m`;
     if (miles < 0.2) return `${Math.round(miles * 1609.344)}m`;
     return `${miles.toFixed(miles >= 1 ? 1 : 2)} mi`;
   }
@@ -19,7 +28,7 @@ function durationLabel(segment: CustomRunSegment): string {
 }
 
 function segmentPaceGuide(segment: CustomRunSegment): string {
-  if (segment.targetPaceSecPerMile) return formatPace(segment.targetPaceSecPerMile);
+  if (segment.targetPaceSecPerMile) return formatSegmentPace(segment.targetPaceSecPerMile, segment.targetPaceUnit);
   if (segment.targetHrZone) return `Zone ${segment.targetHrZone}`;
   return segment.kind === 'recovery' || segment.kind === 'cooldown' ? 'Easy' : 'By feel';
 }

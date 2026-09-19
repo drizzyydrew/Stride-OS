@@ -11,10 +11,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
+import MultiColumnPickerSheet from '../../../src/components/ui/MultiColumnPickerSheet';
 import { useOnboardingStore }    from '../../../src/store/onboardingStore';
 import { useProfileStore }       from '../../../src/store/profileStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
-import type { CustomRunSegment } from '../../../src/types/customWorkout';
+import type { CustomRunDistanceUnit, CustomRunPaceUnit, CustomRunSegment } from '../../../src/types/customWorkout';
 
 import {
   estimateEasyPaceSecPerMi,
@@ -46,29 +47,70 @@ const RUN_TYPES: { key: RunType; label: string; icon: string; desc: string }[] =
 
 const DEFAULT_SEGMENTS: CustomRunSegment[] = [
   { id: 'seg_warmup', label: 'Warmup', kind: 'warmup', target: 'time', durationMinutes: 10, targetHrZone: 2 },
-  { id: 'seg_work', label: 'Stride', kind: 'run', target: 'distance', distanceMiles: 0.13, targetPaceSecPerMile: 660, targetHrZone: 4 },
+  { id: 'seg_work', label: 'Stride', kind: 'run', target: 'distance', distanceMiles: 0.13, distanceUnit: 'm', targetPaceSecPerMile: 660, targetPaceUnit: 'mi', targetHrZone: 4 },
   { id: 'seg_recover', label: 'Recover', kind: 'recovery', target: 'time', durationMinutes: 2, targetHrZone: 2 },
   { id: 'seg_cooldown', label: 'Cooldown', kind: 'cooldown', target: 'time', durationMinutes: 8, targetHrZone: 1 },
 ];
+
+const DISTANCE_UNITS: CustomRunDistanceUnit[] = ['mi', 'km', 'm'];
+const PACE_UNITS: CustomRunPaceUnit[] = ['mi', 'km'];
+const PACE_MINUTES = Array.from({ length: 28 }, (_, index) => index + 3);
+const PACE_SECONDS = Array.from({ length: 60 }, (_, index) => index);
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function paceInputToSeconds(value: string): number | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  if (trimmed.includes(':')) {
-    const [min, sec = '0'] = trimmed.split(':');
-    const minutes = Number(min);
-    const seconds = Number(sec);
-    if (Number.isFinite(minutes) && Number.isFinite(seconds) && minutes >= 0 && seconds >= 0) {
-      return Math.max(1, Math.round(minutes * 60 + seconds));
-    }
-    return undefined;
+function distanceToMiles(value: number, unit: CustomRunDistanceUnit): number {
+  if (unit === 'm') return value / 1609.344;
+  if (unit === 'km') return value / 1.609344;
+  return value;
+}
+
+function milesToDistance(valueMiles: number | undefined, unit: CustomRunDistanceUnit): number {
+  const miles = valueMiles ?? 0;
+  if (unit === 'm') return miles * 1609.344;
+  if (unit === 'km') return miles * 1.609344;
+  return miles;
+}
+
+function distanceDisplayValue(valueMiles: number | undefined, unit: CustomRunDistanceUnit): string {
+  if (!Number.isFinite(valueMiles) || !valueMiles) return '';
+  const value = milesToDistance(valueMiles, unit);
+  if (unit === 'm') return String(Math.round(value));
+  const rounded = unit === 'km' ? Math.round(value * 100) / 100 : Math.round(value * 1000) / 1000;
+  return String(rounded).replace(/\.0+$/, '');
+}
+
+function normalizeDistanceInput(value: string): string {
+  return value.replace(/[^\d.]/g, '').replace(/^(\d*\.\d*).*$/, '$1');
+}
+
+function paceSecondsForUnit(secPerMile: number | undefined, unit: CustomRunPaceUnit): number {
+  const seconds = secPerMile ?? 660;
+  return unit === 'km' ? Math.round(seconds / 1.609344) : Math.round(seconds);
+}
+
+function paceSecondsPerMileFromUnit(minutes: number, seconds: number, unit: CustomRunPaceUnit): number {
+  const secPerUnit = minutes * 60 + seconds;
+  return unit === 'km' ? Math.round(secPerUnit * 1.609344) : secPerUnit;
+}
+
+function formatPaceForUnit(secPerMile: number | undefined, unit: CustomRunPaceUnit): string {
+  if (!secPerMile) return '--:--';
+  const secPerUnit = paceSecondsForUnit(secPerMile, unit);
+  return `${Math.floor(secPerUnit / 60)}:${String(secPerUnit % 60).padStart(2, '0')}`;
+}
+
+function formatDistanceForUnit(valueMiles: number | undefined, unit: CustomRunDistanceUnit = 'mi'): string {
+  if (!valueMiles) return '0 mi';
+  if (unit === 'm') return `${Math.round(valueMiles * 1609.344)} m`;
+  if (unit === 'km') {
+    const km = valueMiles * 1.609344;
+    return `${km.toFixed(km >= 1 ? 1 : 2)} km`;
   }
-  const decimal = Number(trimmed);
-  return Number.isFinite(decimal) && decimal > 0 ? Math.round(decimal * 60) : undefined;
+  if (valueMiles < 0.2) return `${Math.round(valueMiles * 1609.344)} m`;
+  return `${valueMiles.toFixed(valueMiles >= 1 ? 1 : 2)} mi`;
 }
 
 function customSegmentEstimate(segments: CustomRunSegment[], fallbackPaceSecPerMi: number): DurationEstimate {
@@ -80,13 +122,14 @@ function customSegmentEstimate(segments: CustomRunSegment[], fallbackPaceSecPerM
     const durationMin = segment.target === 'time'
       ? segment.durationMinutes ?? 0
       : ((segment.distanceMiles ?? 0) * pace) / 60;
+    const paceUnit = segment.targetPaceUnit ?? 'mi';
     const paceTarget = segment.targetPaceSecPerMile
-      ? `${formatPaceMmSs(segment.targetPaceSecPerMile)} /mi`
+      ? `${formatPaceForUnit(segment.targetPaceSecPerMile, paceUnit)} /${paceUnit}`
       : segment.targetHrZone
         ? `Zone ${segment.targetHrZone}`
         : 'By feel';
     return {
-      label: `${segment.label}${segment.targetHrZone ? ` · Z${segment.targetHrZone}` : ''}`,
+      label: `${segment.label}${segment.target === 'distance' ? ` · ${formatDistanceForUnit(segment.distanceMiles, segment.distanceUnit)}` : ''}${segment.targetHrZone ? ` · Z${segment.targetHrZone}` : ''}`,
       paceTarget,
       durationMin,
       distanceMi,
@@ -163,6 +206,124 @@ function SegmentField({
         />
         <Text style={st.segmentFieldSuffix}>{suffix}</Text>
       </View>
+    </View>
+  );
+}
+
+function DistanceTargetField({
+  segment,
+  onChange,
+}: {
+  segment: CustomRunSegment;
+  onChange: (patch: Partial<CustomRunSegment>) => void;
+}) {
+  const unit = segment.distanceUnit ?? 'mi';
+  const [draft, setDraft] = useState(() => distanceDisplayValue(segment.distanceMiles, unit));
+
+  useEffect(() => {
+    setDraft(distanceDisplayValue(segment.distanceMiles, unit));
+  }, [segment.distanceMiles, unit]);
+
+  function commit(value: string, nextUnit = unit) {
+    const parsed = Number(value);
+    onChange({
+      distanceUnit: nextUnit,
+      distanceMiles: Number.isFinite(parsed) && parsed > 0 ? distanceToMiles(parsed, nextUnit) : undefined,
+    });
+  }
+
+  function switchUnit(nextUnit: CustomRunDistanceUnit) {
+    const converted = distanceDisplayValue(segment.distanceMiles, nextUnit);
+    setDraft(converted);
+    onChange({ distanceUnit: nextUnit });
+  }
+
+  return (
+    <View style={st.segmentFieldWide}>
+      <Text style={st.segmentFieldLabel}>Target distance</Text>
+      <View style={st.distanceInputRow}>
+        <TextInput
+          value={draft}
+          onChangeText={value => {
+            const next = normalizeDistanceInput(value);
+            setDraft(next);
+            commit(next);
+          }}
+          onEndEditing={() => commit(draft)}
+          keyboardType="decimal-pad"
+          placeholder={unit === 'm' ? '400' : '0.25'}
+          placeholderTextColor={colors.textSubtle}
+          style={st.segmentFieldInput}
+        />
+        <View style={st.unitPillRow}>
+          {DISTANCE_UNITS.map(option => {
+            const active = unit === option;
+            return (
+              <TouchableOpacity
+                key={option}
+                onPress={() => switchUnit(option)}
+                style={[st.unitPill, active && st.unitPillActive]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+              >
+                <Text style={[st.unitPillText, active && st.unitPillTextActive]}>{option}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function PaceTargetField({
+  segment,
+  onChange,
+}: {
+  segment: CustomRunSegment;
+  onChange: (patch: Partial<CustomRunSegment>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const unit = segment.targetPaceUnit ?? 'mi';
+  const selectedSeconds = paceSecondsForUnit(segment.targetPaceSecPerMile, unit);
+  const selectedMinutes = Math.max(3, Math.min(30, Math.floor(selectedSeconds / 60)));
+  const selectedRemainder = Math.max(0, Math.min(59, selectedSeconds % 60));
+
+  return (
+    <View style={st.segmentFieldWide}>
+      <Text style={st.segmentFieldLabel}>Pace</Text>
+      <TouchableOpacity
+        onPress={() => setOpen(true)}
+        style={st.pacePickerButton}
+        accessibilityRole="button"
+        accessibilityHint="Opens minute, second, and unit picker"
+      >
+        <Text style={st.pacePickerValue}>
+          {formatPaceForUnit(segment.targetPaceSecPerMile, unit)}
+        </Text>
+        <Text style={st.pacePickerUnit}>/{unit}</Text>
+        <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
+      </TouchableOpacity>
+      <MultiColumnPickerSheet<number | string>
+        visible={open}
+        title="Target Pace"
+        columns={[
+          { key: 'minutes', title: 'Minutes', values: PACE_MINUTES, selectedValue: selectedMinutes, formatValue: value => `${value}` },
+          { key: 'seconds', title: 'Seconds', values: PACE_SECONDS, selectedValue: selectedRemainder, formatValue: value => String(value).padStart(2, '0') },
+          { key: 'unit', title: 'Unit', values: PACE_UNITS, selectedValue: unit, formatValue: value => `/${value}` },
+        ]}
+        onClose={() => setOpen(false)}
+        onConfirm={values => {
+          const nextUnit = values.unit as CustomRunPaceUnit;
+          const minutes = Number(values.minutes);
+          const seconds = Number(values.seconds);
+          onChange({
+            targetPaceUnit: nextUnit,
+            targetPaceSecPerMile: paceSecondsPerMileFromUnit(minutes, seconds, nextUnit),
+          });
+          setOpen(false);
+        }}
+      />
     </View>
   );
 }
@@ -325,6 +486,8 @@ export default function RunCreatorScreen() {
         kind: 'run',
         target: 'time',
         durationMinutes: 5,
+        distanceUnit: 'mi',
+        targetPaceUnit: 'mi',
         targetHrZone: 2,
       },
     ]);
@@ -567,23 +730,25 @@ export default function RunCreatorScreen() {
                       })}
                     </View>
                     <View style={st.segmentGrid}>
-                      <SegmentField
-                        label={segment.target === 'time' ? 'Target time' : 'Target distance'}
-                        value={targetValue}
-                        suffix={segment.target === 'time' ? 'min' : 'mi'}
-                        onChange={value => {
-                          const parsed = Number(value);
-                          updateSegment(segment.id, segment.target === 'time'
-                            ? { durationMinutes: Number.isFinite(parsed) ? parsed : undefined }
-                            : { distanceMiles: Number.isFinite(parsed) ? parsed : undefined });
-                        }}
-                      />
-                      <SegmentField
-                        label="Pace"
-                        value={segment.targetPaceSecPerMile ? formatPaceMmSs(segment.targetPaceSecPerMile) : ''}
-                        suffix="/mi"
-                        placeholder="11:00"
-                        onChange={value => updateSegment(segment.id, { targetPaceSecPerMile: paceInputToSeconds(value) })}
+                      {segment.target === 'time' ? (
+                        <SegmentField
+                          label="Target time"
+                          value={targetValue}
+                          suffix="min"
+                          onChange={value => {
+                            const parsed = Number(value);
+                            updateSegment(segment.id, { durationMinutes: Number.isFinite(parsed) ? parsed : undefined });
+                          }}
+                        />
+                      ) : (
+                        <DistanceTargetField
+                          segment={segment}
+                          onChange={patch => updateSegment(segment.id, patch)}
+                        />
+                      )}
+                      <PaceTargetField
+                        segment={segment}
+                        onChange={patch => updateSegment(segment.id, patch)}
                       />
                     </View>
                     <View style={st.segmentChipRow}>
@@ -794,10 +959,20 @@ const st = StyleSheet.create({
   segmentGrid: {
     flexDirection: 'row',
     gap: spacing.sm,
+    alignItems: 'stretch',
   },
   segmentField: {
     flex: 1,
     minHeight: 64,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: Radius.sm,
+    padding: spacing.sm,
+    backgroundColor: colors.card,
+  },
+  segmentFieldWide: {
+    flex: 1,
+    minHeight: 70,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: Radius.sm,
@@ -822,11 +997,60 @@ const st = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: FontWeight.black,
     padding: 0,
+    minWidth: 0,
   },
   segmentFieldSuffix: {
     color: colors.textMuted,
     fontSize: FontSize.xs,
     fontWeight: FontWeight.bold,
+  },
+  distanceInputRow: {
+    gap: 7,
+    marginTop: 5,
+  },
+  unitPillRow: {
+    flexDirection: 'row',
+    gap: 5,
+  },
+  unitPill: {
+    minHeight: 26,
+    minWidth: 34,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg,
+  },
+  unitPillActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryDim,
+  },
+  unitPillText: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: FontWeight.black,
+  },
+  unitPillTextActive: {
+    color: colors.primary,
+  },
+  pacePickerButton: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+    marginTop: 8,
+  },
+  pacePickerValue: {
+    color: colors.text,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.black,
+  },
+  pacePickerUnit: {
+    color: colors.textMuted,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    flex: 1,
   },
   zoneChip: {
     width: 40,

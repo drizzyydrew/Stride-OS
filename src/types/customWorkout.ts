@@ -129,6 +129,8 @@ export type CustomRunBuilderType = 'fartlek' | 'tempo' | 'intervals' | 'long_run
 
 export type CustomRunSegmentKind = 'run' | 'recovery' | 'warmup' | 'cooldown';
 export type CustomRunSegmentTarget = 'time' | 'distance';
+export type CustomRunDistanceUnit = 'mi' | 'km' | 'm';
+export type CustomRunPaceUnit = 'mi' | 'km';
 
 export type CustomRunSegment = {
   id: string;
@@ -137,7 +139,9 @@ export type CustomRunSegment = {
   target: CustomRunSegmentTarget;
   durationMinutes?: number;
   distanceMiles?: number;
+  distanceUnit?: CustomRunDistanceUnit;
   targetPaceSecPerMile?: number;
+  targetPaceUnit?: CustomRunPaceUnit;
   targetHrZone?: 1 | 2 | 3 | 4 | 5;
 };
 

@@ -49,8 +49,8 @@ test('watch face keeps controls above rounded bottom edge and applies latest pho
   const watchInfoPlist = read('targets/StrideOSWatch/Info.plist');
   const watchTargetConfig = read('targets/StrideOSWatch/expo-target.config.js');
 
-  assert.match(watchApp, /topPadding = isCompact \? 2 : 4/);
-  assert.match(watchApp, /bottomPadding = isCompact \? 22 : 24/);
+  assert.match(watchApp, /topPadding = 1/);
+  assert.match(watchApp, /bottomPadding = isCompact \? 6 : 8/);
   assert.match(watchManager, /didReceiveApplicationContext/);
   assert.match(watchManager, /private func handleApplicationContext/);
   assert.match(watchManager, /guard \(applicationContext\["type"\] as\? String\) == "setContext" else \{ return \}/);
@@ -160,6 +160,9 @@ test('watch workout start is guarded against pre-activation connectivity sends a
   assert.match(watchManager, /@Published private\(set\) var isStartingWorkout: Bool = false/);
   assert.match(watchManager, /guard !isActive && !isStartingWorkout else \{ return \}/);
   assert.match(watchManager, /private var queuedOutboundPayloads: \[\[String: Any\]\] = \[\]/);
+  assert.match(watchManager, /@Published private\(set\) var watchOnlyActive: Bool = false/);
+  assert.match(watchManager, /private func startWatchOnlyWorkout/);
+  assert.match(watchManager, /HealthKit did not start/);
   assert.match(watchManager, /guard session\.activationState == \.activated else/);
   assert.match(watchManager, /queuedOutboundPayloads\.append\(payload\)/);
   assert.match(watchManager, /flushQueuedOutboundPayloads\(\)/);

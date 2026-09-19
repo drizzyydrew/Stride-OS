@@ -42,67 +42,64 @@ private struct WorkoutPickerFace: View {
   let metrics: StrideWatchLayoutMetrics
 
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: metrics.verticalSpacing) {
-        StrideWatchHeader(metrics: metrics)
+    VStack(alignment: .leading, spacing: metrics.verticalSpacing) {
+      StrideWatchHeader(metrics: metrics)
 
-        Text("Choose Workout")
-          .font(.system(size: metrics.captionFontSize, weight: .bold))
-          .foregroundStyle(StrideWatchPalette.cream.opacity(0.78))
-          .textCase(.uppercase)
+      Text("Choose Workout")
+        .font(.system(size: metrics.captionFontSize, weight: .bold))
+        .foregroundStyle(StrideWatchPalette.cream.opacity(0.78))
+        .textCase(.uppercase)
 
-        VStack(spacing: 6) {
-          ForEach(StrideWatchWorkoutKind.allCases) { kind in
-            Button {
-              workout.selectWorkoutKind(kind)
-            } label: {
-              HStack(spacing: 8) {
-                Image(systemName: kind.symbolName)
-                  .font(.system(size: 14, weight: .semibold))
-                  .frame(width: 18)
-                Text(kind.title)
-                  .font(.system(size: metrics.rowFontSize, weight: .bold))
-                Spacer(minLength: 4)
-                if workout.selectedWorkoutKind == kind {
-                  Image(systemName: "checkmark")
-                    .font(.system(size: 12, weight: .heavy))
-                }
+      VStack(spacing: metrics.rowSpacing) {
+        ForEach(StrideWatchWorkoutKind.allCases) { kind in
+          Button {
+            workout.selectWorkoutKind(kind)
+          } label: {
+            HStack(spacing: 8) {
+              Image(systemName: kind.symbolName)
+                .font(.system(size: 13, weight: .semibold))
+                .frame(width: 17)
+              Text(kind.title)
+                .font(.system(size: metrics.rowFontSize, weight: .bold))
+              Spacer(minLength: 4)
+              if workout.selectedWorkoutKind == kind {
+                Image(systemName: "checkmark")
+                  .font(.system(size: 12, weight: .heavy))
               }
-              .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(StrideWatchRowButtonStyle(selected: workout.selectedWorkoutKind == kind))
-            .accessibilityLabel("\(kind.title) workout")
+            .frame(maxWidth: .infinity, alignment: .leading)
           }
+          .buttonStyle(StrideWatchRowButtonStyle(selected: workout.selectedWorkoutKind == kind, metrics: metrics))
+          .accessibilityLabel("\(kind.title) workout")
         }
-
-        Button {
-          let kind = workout.selectedWorkoutKind
-          workout.startWorkout(
-            kind: kind,
-            title: kind.workoutTitle,
-            workoutInstanceId: nil,
-            environment: kind == .run || kind == .cycling ? "outdoor" : "indoor",
-            targetZone: nil
-          )
-        } label: {
-          Label(
-            workout.isStartingWorkout ? "Starting..." : "Start \(workout.selectedWorkoutKind.title)",
-            systemImage: workout.isStartingWorkout ? "hourglass" : "play.fill"
-          )
-            .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(StrideWatchCapsuleButtonStyle(tint: StrideWatchPalette.sage))
-        .disabled(workout.isStartingWorkout)
-        .accessibilityLabel("Start \(workout.selectedWorkoutKind.title) workout")
-
-        Text(workout.syncLabel)
-          .font(.system(size: metrics.statusFontSize, weight: .semibold))
-          .foregroundStyle(StrideWatchPalette.steel)
-          .lineLimit(1)
-          .minimumScaleFactor(0.82)
       }
+
+      Button {
+        let kind = workout.selectedWorkoutKind
+        workout.startWorkout(
+          kind: kind,
+          title: kind.workoutTitle,
+          workoutInstanceId: nil,
+          environment: kind == .run || kind == .cycling ? "outdoor" : "indoor",
+          targetZone: nil
+        )
+      } label: {
+        Label(
+          workout.isStartingWorkout ? "Starting..." : "Start \(workout.selectedWorkoutKind.title)",
+          systemImage: workout.isStartingWorkout ? "hourglass" : "play.fill"
+        )
+          .frame(maxWidth: .infinity)
+      }
+      .buttonStyle(StrideWatchCapsuleButtonStyle(tint: StrideWatchPalette.sage, compact: metrics.isCompact))
+      .disabled(workout.isStartingWorkout)
+      .accessibilityLabel("Start \(workout.selectedWorkoutKind.title) workout")
+
+      Text(workout.syncLabel)
+        .font(.system(size: metrics.statusFontSize, weight: .semibold))
+        .foregroundStyle(StrideWatchPalette.steel)
+        .lineLimit(1)
+        .minimumScaleFactor(0.82)
     }
-    .scrollIndicators(.hidden)
   }
 }
 
@@ -247,12 +244,13 @@ private struct StrideWatchCapsuleButtonStyle: ButtonStyle {
 
 private struct StrideWatchRowButtonStyle: ButtonStyle {
   let selected: Bool
+  let metrics: StrideWatchLayoutMetrics
 
   func makeBody(configuration: Configuration) -> some View {
     configuration.label
       .foregroundStyle(selected ? Color.black : StrideWatchPalette.cream)
-      .padding(.horizontal, 10)
-      .frame(minHeight: 32)
+      .padding(.horizontal, 9)
+      .frame(minHeight: metrics.rowHeight)
       .background(
         selected
           ? StrideWatchPalette.sage.opacity(configuration.isPressed ? 0.72 : 1)
@@ -289,6 +287,8 @@ private struct StrideWatchLayoutMetrics {
   let topPadding: CGFloat
   let bottomPadding: CGFloat
   let verticalSpacing: CGFloat
+  let rowSpacing: CGFloat
+  let rowHeight: CGFloat
   let logoFontSize: CGFloat
   let statusFontSize: CGFloat
   let captionFontSize: CGFloat
@@ -299,19 +299,22 @@ private struct StrideWatchLayoutMetrics {
   let hintFontSize: CGFloat
   let metricPadding: CGFloat
   let endButtonSize: CGFloat
+  let isCompact: Bool
 
   init(size: CGSize) {
     let shortSide = min(size.width, size.height)
-    let isCompact = shortSide < 180
+    isCompact = shortSide < 180
 
-    horizontalPadding = isCompact ? 10 : 12
-    topPadding = isCompact ? 2 : 4
-    bottomPadding = isCompact ? 22 : 24
-    verticalSpacing = isCompact ? 5 : 6
+    horizontalPadding = isCompact ? 9 : 11
+    topPadding = 1
+    bottomPadding = isCompact ? 6 : 8
+    verticalSpacing = isCompact ? 4 : 5
+    rowSpacing = isCompact ? 4 : 5
+    rowHeight = isCompact ? 28 : 30
     logoFontSize = isCompact ? 15 : 16
-    statusFontSize = isCompact ? 10 : 10.5
-    captionFontSize = isCompact ? 9 : 9.5
-    rowFontSize = isCompact ? 12.5 : 13.5
+    statusFontSize = isCompact ? 9.5 : 10
+    captionFontSize = isCompact ? 8.5 : 9
+    rowFontSize = isCompact ? 12 : 13
     metricFontSize = isCompact ? 28 : 31
     unitFontSize = isCompact ? 10.5 : 11.5
     elapsedFontSize = isCompact ? 13 : 14

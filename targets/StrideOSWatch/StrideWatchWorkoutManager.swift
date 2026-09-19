@@ -101,6 +101,8 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   @Published private(set) var preferredUnitSystem: String = "imperial"
   @Published private(set) var metricPage: StrideWatchMetricPage = .heartRate
   @Published private(set) var isStartingWorkout: Bool = false
+  @Published private(set) var watchOnlyActive: Bool = false
+  @Published private(set) var watchOnlyPaused: Bool = false
 
   private var maxHeartRateBpm: Int = 190
   private var targetZone: Int?
@@ -120,15 +122,15 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private let stalePhoneCommandWindowMs: Double = 2 * 60 * 1000
 
   var isActive: Bool {
-    state == .running || state == .paused || state == .prepared
+    watchOnlyActive || state == .running || state == .paused || state == .prepared
   }
 
   var isRunning: Bool {
-    state == .running
+    watchOnlyActive ? !watchOnlyPaused : state == .running
   }
 
   var isPaused: Bool {
-    state == .paused
+    watchOnlyActive ? watchOnlyPaused : state == .paused
   }
 
   var statusLabel: String {
@@ -253,6 +255,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     self.workoutEnvironment = resolvedEnvironment
     self.targetZone = targetZone
     self.metricPage = kind.tracksDistance ? .heartRate : .elapsed
+    startWatchOnlyWorkout()
 
     requestAuthorization { [weak self] granted in
       guard let self else { return }
@@ -260,7 +263,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
         DispatchQueue.main.async {
           self.isStartingWorkout = false
         }
-        self.publishError("Health permission needed")
+        self.publishError("Health permission needed. Timer is still running.")
         return
       }
 
@@ -287,8 +290,9 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
   func pauseWorkout() {
     guard isActive, !isPaused else { return }
-    session?.pause()
     pausedAt = Date()
+    watchOnlyPaused = true
+    session?.pause()
     sendWorkoutState("paused")
   }
 
@@ -298,12 +302,15 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       pausedSeconds += Date().timeIntervalSince(pausedAt)
     }
     pausedAt = nil
+    watchOnlyPaused = false
     session?.resume()
     sendWorkoutState("running")
   }
 
   func endWorkout() {
     guard session != nil || isActive else { return }
+    watchOnlyPaused = false
+    watchOnlyActive = false
     session?.end()
     timer?.invalidate()
     timer = nil
@@ -352,13 +359,29 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
           self?.publishError("Workout collection did not start")
         }
       }
-      isStartingWorkout = false
       startTimer()
       sendWorkoutState("running")
     } catch {
       isStartingWorkout = false
-      publishError(error.localizedDescription)
+      publishError("Watch timer started. HealthKit did not start: \(error.localizedDescription)")
     }
+  }
+
+  private func startWatchOnlyWorkout() {
+    state = .running
+    watchOnlyActive = true
+    watchOnlyPaused = false
+    let now = Date()
+    startedAt = now
+    pausedAt = nil
+    pausedSeconds = 0
+    elapsedSeconds = 0
+    heartRateBpm = nil
+    distanceMeters = 0
+    activeEnergyKilocalories = 0
+    isStartingWorkout = false
+    startTimer()
+    sendWorkoutState("running")
   }
 
   private func requestAuthorization(_ completion: @escaping (Bool) -> Void) {
@@ -547,12 +570,17 @@ extension StrideWatchWorkoutManager: HKWorkoutSessionDelegate {
 
       switch toState {
       case .running:
+        self.watchOnlyActive = false
+        self.watchOnlyPaused = false
         self.sendWorkoutState("running")
       case .paused:
+        self.watchOnlyPaused = true
         self.sendWorkoutState("paused")
       case .ended:
         self.finishBuilderIfNeeded()
         self.sendEndedStateOnce()
+        self.watchOnlyActive = false
+        self.watchOnlyPaused = false
         self.timer?.invalidate()
         self.timer = nil
         self.session = nil
