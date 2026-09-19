@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { withFinalizedMod, withInfoPlist } = require('@expo/config-plugins');
+const { withFinalizedMod, withInfoPlist, withXcodeProject } = require('@expo/config-plugins');
 const plist = require('@expo/plist').default;
 
 const REQUIRED_BACKGROUND_MODES = ['audio', 'location'];
@@ -15,10 +15,31 @@ function addRequiredModes(plistObject) {
   return plistObject;
 }
 
-module.exports = function withIosWorkoutBackgroundModes(config) {
+function syncNativeTargetBuildNumbers(project, buildNumber) {
+  if (!buildNumber) return;
+  const configs = project.hash?.project?.objects?.XCBuildConfiguration ?? {};
+  for (const [key, buildConfig] of Object.entries(configs)) {
+    if (key.endsWith('_comment')) continue;
+    const buildSettings = buildConfig?.buildSettings;
+    const infoPlistFile = String(buildSettings?.INFOPLIST_FILE ?? '');
+    if (
+      infoPlistFile.includes('../targets/StrideOSWatch/Info.plist')
+      || infoPlistFile.includes('../targets/StrideRunLiveActivity/Info.plist')
+    ) {
+      buildSettings.CURRENT_PROJECT_VERSION = buildNumber;
+    }
+  }
+}
+
+function withIosWorkoutBackgroundModes(config) {
   config = withInfoPlist(config, (configWithPlist) => {
     addRequiredModes(configWithPlist.modResults);
     return configWithPlist;
+  });
+
+  config = withXcodeProject(config, (configWithProject) => {
+    syncNativeTargetBuildNumbers(configWithProject.modResults, configWithProject.ios?.buildNumber);
+    return configWithProject;
   });
 
   return withFinalizedMod(config, ['ios', (configWithMod) => {
@@ -32,4 +53,7 @@ module.exports = function withIosWorkoutBackgroundModes(config) {
     fs.writeFileSync(infoPlistPath, plist.build(addRequiredModes(parsed)));
     return configWithMod;
   }]);
-};
+}
+
+module.exports = withIosWorkoutBackgroundModes;
+module.exports.syncNativeTargetBuildNumbers = syncNativeTargetBuildNumbers;

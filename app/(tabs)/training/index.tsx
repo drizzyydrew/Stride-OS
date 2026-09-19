@@ -928,6 +928,13 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       } else {
         markLiveSensorConnected(appleWatchDevice, event.timestamp);
       }
+      if (event.state === 'paused') {
+        useActiveRunStore.getState().pauseRun('manual');
+      } else if (event.state === 'running') {
+        useActiveRunStore.getState().resumeRun('manual');
+      } else if (event.state === 'ended') {
+        useActiveRunStore.getState().requestCompletion();
+      }
     });
     const errorSub = addStrideWatchErrorListener(event => {
       markLiveSensorError(appleWatchDevice.id, event.message, event.timestamp);
@@ -1191,6 +1198,11 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     pauseRun();
     pauseStrideWatchRun().then(setWatchStatus).catch(() => undefined);
     speakCue('Pausing workout.', 'interval');
+  }
+
+  async function syncWatchNow() {
+    const status = await activateStrideWatchConnectivity();
+    setWatchStatus(status);
   }
 
   function resume() {
@@ -1900,6 +1912,16 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             {watchStatus.lastError ? (
               <Text style={[styles.watchStatusError, { color: C.warning }]} numberOfLines={2}>{watchStatus.lastError}</Text>
             ) : null}
+            <TouchableOpacity
+              style={[styles.watchSyncButton, { borderColor: C.border, backgroundColor: C.card }]}
+              onPress={syncWatchNow}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityLabel="Sync Apple Watch"
+            >
+              <Ionicons name="sync" size={14} color={C.primary} />
+              <Text style={[styles.watchSyncText, { color: C.primary }]}>Sync Watch</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
         <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: (fullScreen ? insets.bottom : 0) + spacing.md }]}>
@@ -2171,6 +2193,16 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
           {watchStatus.lastError ? (
             <Text style={[styles.watchStatusError, { color: C.warning }]} numberOfLines={2}>{watchStatus.lastError}</Text>
           ) : null}
+          <TouchableOpacity
+            style={[styles.watchSyncButton, { borderColor: C.border, backgroundColor: C.card }]}
+            onPress={syncWatchNow}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel="Sync Apple Watch"
+          >
+            <Ionicons name="sync" size={14} color={C.primary} />
+            <Text style={[styles.watchSyncText, { color: C.primary }]}>Sync Watch</Text>
+          </TouchableOpacity>
         </View>
         {goalPanel}
         {runState === 'active' && heartRateBpm ? (
@@ -3627,6 +3659,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
     marginLeft: 25,
+  },
+  watchSyncButton: {
+    minHeight: 32,
+    borderWidth: 1,
+    borderRadius: radiusTokens.sm,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  watchSyncText: {
+    fontSize: 11,
+    fontWeight: typographyTokens.weights.black,
   },
   runStatCell: {
     flex: 1,

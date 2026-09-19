@@ -79,7 +79,10 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     var message = payload
     message["type"] = type
     message["sentAt"] = Date().timeIntervalSince1970 * 1000
-    try? session.updateApplicationContext(message)
+
+    if type == StrideWatchMessageType.setContext {
+      try? session.updateApplicationContext(message)
+    }
 
     if session.isReachable {
       session.sendMessage(message, replyHandler: nil) { [weak self] error in
@@ -87,11 +90,9 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
       }
     } else if session.activationState == .activated && session.isPaired && session.isWatchAppInstalled {
       session.transferUserInfo(message)
-    } else if session.activationState != .activated || (session.isPaired && session.isWatchAppInstalled) {
-      return
     } else {
       throw NSError(domain: "StrideWatchConnectivity", code: 2, userInfo: [
-        NSLocalizedDescriptionKey: "Install and open the StrideOS Apple Watch app, then try again.",
+        NSLocalizedDescriptionKey: "Open StrideOS on Apple Watch, then try again.",
       ])
     }
   }

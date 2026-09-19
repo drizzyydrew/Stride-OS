@@ -633,7 +633,14 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
   }
 
   func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-    handlePhoneCommand(applicationContext)
+    handleApplicationContext(applicationContext)
+  }
+
+  private func handleApplicationContext(_ applicationContext: [String: Any]) {
+    guard (applicationContext["type"] as? String) == "setContext" else { return }
+    DispatchQueue.main.async {
+      self.applyPhoneContext(applicationContext)
+    }
   }
 
   private func handlePhoneCommand(_ message: [String: Any]) {
