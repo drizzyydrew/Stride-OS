@@ -1,5 +1,6 @@
 .env
 .env.*
+.git/
 node_modules
 
 # Claude Design handoff artifacts - keep local, never upload to EAS Build
