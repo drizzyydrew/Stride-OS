@@ -26,6 +26,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
 
   private var eventSink: ((String, [String: Any]) -> Void)?
   private var pendingEvents: [(String, [String: Any])] = []
+  private var pendingCommands: [[String: Any]] = []
   private var lastMessageAt: TimeInterval = 0
   private var lastError: String?
 
@@ -80,7 +81,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     message["type"] = type
     message["sentAt"] = Date().timeIntervalSince1970 * 1000
 
-    if type == StrideWatchMessageType.setContext {
+    if shouldPublishAsLatestContext(type) && session.isPaired && session.isWatchAppInstalled {
       try? session.updateApplicationContext(message)
     }
 
@@ -90,6 +91,14 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
       }
     } else if session.activationState == .activated && session.isPaired && session.isWatchAppInstalled {
       session.transferUserInfo(message)
+    } else if session.isPaired && session.isWatchAppInstalled {
+      pendingCommands.append(message)
+      if pendingCommands.count > 20 {
+        pendingCommands.removeFirst(pendingCommands.count - 20)
+      }
+      if session.activationState == .notActivated {
+        session.activate()
+      }
     } else {
       throw NSError(domain: "StrideWatchConnectivity", code: 2, userInfo: [
         NSLocalizedDescriptionKey: "Open StrideOS on Apple Watch, then try again.",
@@ -105,6 +114,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     if let error {
       recordError(error.localizedDescription)
     }
+    flushPendingCommandsIfPossible()
     emitStatus()
   }
 
@@ -118,6 +128,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
   }
 
   func sessionReachabilityDidChange(_ session: WCSession) {
+    flushPendingCommandsIfPossible()
     emitStatus()
   }
 
@@ -157,6 +168,43 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
 
   private func emitStatus() {
     emit("onWatchStatus", snapshot())
+  }
+
+  private func flushPendingCommandsIfPossible() {
+    guard let session, session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else {
+      return
+    }
+    let commands = pendingCommands
+    pendingCommands.removeAll()
+    for command in commands {
+      if shouldPublishAsLatestContext(command["type"] as? String) {
+        try? session.updateApplicationContext(command)
+      }
+      if session.isReachable {
+        session.sendMessage(command, replyHandler: nil) { [weak self] error in
+          self?.recordError(error.localizedDescription)
+        }
+      } else {
+        session.transferUserInfo(command)
+      }
+    }
+  }
+
+  private func shouldPublishAsLatestContext(_ type: String?) -> Bool {
+    switch type {
+    case StrideWatchMessageType.startWorkout,
+      StrideWatchMessageType.startRun,
+      StrideWatchMessageType.pauseWorkout,
+      StrideWatchMessageType.pauseRun,
+      StrideWatchMessageType.resumeWorkout,
+      StrideWatchMessageType.resumeRun,
+      StrideWatchMessageType.endWorkout,
+      StrideWatchMessageType.endRun,
+      StrideWatchMessageType.setContext:
+      return true
+    default:
+      return false
+    }
   }
 
   private func recordError(_ message: String) {

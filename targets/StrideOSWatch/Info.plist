@@ -23,7 +23,7 @@
       </dict>
     </dict>
     <key>NSHealthShareUsageDescription</key>
-  <string>StrideOS reads Apple Watch heart rate during workouts you start from StrideOS.</string>
+    <string>StrideOS reads Apple Watch heart rate during workouts you start from StrideOS.</string>
     <key>NSHealthUpdateUsageDescription</key>
     <string>StrideOS starts workout sessions on Apple Watch so heart rate and workout metrics can be measured during StrideOS activities.</string>
     <key>WKBackgroundModes</key>
@@ -32,5 +32,5 @@
     </array>
     <key>WKApplication</key>
     <true/>
-</dict>
+  </dict>
 </plist>

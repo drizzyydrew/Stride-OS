@@ -35,12 +35,14 @@ export default function ActiveLocationTrackingReconciler() {
     };
 
     run();
+    const interval = setInterval(run, 30_000);
     const subscription = AppState.addEventListener('change', state => {
       if (state === 'active') run();
     });
 
     return () => {
       cancelled = true;
+      clearInterval(interval);
       subscription.remove();
     };
   }, []);

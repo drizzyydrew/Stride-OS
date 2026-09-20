@@ -108,6 +108,8 @@ test('background GPS tasks wait for persisted workout state and re-arm active se
   assert.match(activityTask, /waitForPersistedStoreHydration\(useActiveActivityStore\)/);
   assert.match(activityTask, /resumeActivityLocationTrackingIfPermitted/);
   assert.match(reconciler, /waitForActiveSessionStores/);
+  assert.match(reconciler, /setInterval\(run, 30_000\)/);
+  assert.match(reconciler, /clearInterval\(interval\)/);
   assert.match(reconciler, /AppState\.addEventListener\('change'/);
   assert.match(reconciler, /resumeRunLocationTrackingIfPermitted/);
   assert.match(reconciler, /resumeActivityLocationTrackingIfPermitted/);

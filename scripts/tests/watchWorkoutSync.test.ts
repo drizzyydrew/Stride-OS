@@ -49,13 +49,12 @@ test('watch face keeps controls above rounded bottom edge and applies latest pho
   const watchInfoPlist = read('targets/StrideOSWatch/Info.plist');
   const watchTargetConfig = read('targets/StrideOSWatch/expo-target.config.js');
 
-  assert.match(watchApp, /topPadding = 1/);
-  assert.match(watchApp, /bottomPadding = isCompact \? 6 : 8/);
+  assert.match(watchApp, /ScrollView/);
+  assert.match(watchApp, /\.scrollIndicators\(\.hidden\)/);
   assert.match(watchManager, /didReceiveApplicationContext/);
-  assert.match(watchManager, /private func handleApplicationContext/);
-  assert.match(watchManager, /guard \(applicationContext\["type"\] as\? String\) == "setContext" else \{ return \}/);
+  assert.match(watchManager, /handlePhoneCommand\(applicationContext, fromApplicationContext: true\)/);
   assert.match(watchModule, /updateApplicationContext/);
-  assert.match(watchModule, /if type == StrideWatchMessageType\.setContext/);
+  assert.match(watchModule, /shouldPublishAsLatestContext/);
   assert.doesNotMatch(watchModule, /session\.activationState != \.activated \|\|/);
   assert.match(watchInfoPlist, /WKBackgroundModes/);
   assert.match(watchInfoPlist, /workout-processing/);
@@ -156,12 +155,14 @@ test('live run and outdoor activity saves do not create fresh ids for repeated f
 
 test('watch workout start is guarded against pre-activation connectivity sends and duplicate starts', () => {
   const watchManager = read('targets/StrideOSWatch/StrideWatchWorkoutManager.swift');
+  const watchModule = read('modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift');
 
   assert.match(watchManager, /@Published private\(set\) var isStartingWorkout: Bool = false/);
   assert.match(watchManager, /guard !isActive && !isStartingWorkout else \{ return \}/);
   assert.match(watchManager, /private var queuedOutboundPayloads: \[\[String: Any\]\] = \[\]/);
-  assert.match(watchManager, /@Published private\(set\) var watchOnlyActive: Bool = false/);
-  assert.match(watchManager, /private func startWatchOnlyWorkout/);
+  assert.doesNotMatch(watchManager, /watchOnlyActive/);
+  assert.doesNotMatch(watchManager, /watchOnlyPaused/);
+  assert.doesNotMatch(watchManager, /private func startWatchOnlyWorkout/);
   assert.match(watchManager, /HealthKit did not start/);
   assert.match(watchManager, /guard session\.activationState == \.activated else/);
   assert.match(watchManager, /queuedOutboundPayloads\.append\(payload\)/);
@@ -169,8 +170,12 @@ test('watch workout start is guarded against pre-activation connectivity sends a
   assert.match(watchManager, /recordLocalError/);
   assert.match(watchManager, /reportFailures: false/);
   assert.match(watchManager, /isStaleControlCommand/);
+  assert.match(watchManager, /stalePhoneContextWindowMs/);
   assert.match(moduleIndex, /startWorkout/);
-  assert.match(read('modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift'), /session\.isPaired && session\.isWatchAppInstalled/);
+  assert.match(watchModule, /session\.isPaired && session\.isWatchAppInstalled/);
+  assert.match(watchModule, /pendingCommands\.append\(message\)/);
+  assert.match(watchModule, /flushPendingCommandsIfPossible\(\)/);
+  assert.match(watchModule, /transferUserInfo\(command\)/);
 });
 
 test('run screen exposes manual Apple Watch sync for queued watch activity', () => {
