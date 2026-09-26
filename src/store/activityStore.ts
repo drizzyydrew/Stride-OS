@@ -91,6 +91,28 @@ function liveTrackedDuplicateIndex(activities: readonly Activity[], activity: Ac
   });
 }
 
+function nearDuplicateTrackedIndex(activities: readonly Activity[], activity: Activity): number {
+  if (activity.scheduledSessionId || activity.source === 'manual') return -1;
+  const duration = activity.metrics.durationSeconds ?? activity.metrics.elapsedTimeSeconds ?? 0;
+  const distance = activity.metrics.distanceMeters ?? 0;
+  const endTime = activity.endTime ?? activity.startTime + duration * 1000;
+
+  return activities.findIndex(item => {
+    if (item.id === activity.id || item.scheduledSessionId) return false;
+    if (item.activityType !== activity.activityType || item.source === 'manual') return false;
+    const itemDuration = item.metrics.durationSeconds ?? item.metrics.elapsedTimeSeconds ?? 0;
+    const itemDistance = item.metrics.distanceMeters ?? 0;
+    const itemEndTime = item.endTime ?? item.startTime + itemDuration * 1000;
+    const startClose = Math.abs(item.startTime - activity.startTime) <= 180_000;
+    const endClose = Math.abs(itemEndTime - endTime) <= 180_000;
+    const durationClose = Math.abs(itemDuration - duration) <= 180;
+    const distanceClose = distance > 0 && itemDistance > 0
+      ? Math.abs(itemDistance - distance) <= Math.max(120, distance * 0.05)
+      : true;
+    return startClose && endClose && durationClose && distanceClose;
+  });
+}
+
 export function migrateActivityStoreState(persisted: unknown): Pick<ActivityStore, 'schemaVersion' | 'activities'> {
   const source = (persisted ?? {}) as Partial<ActivityStore>;
   const normalized = Array.isArray(source.activities)
@@ -135,6 +157,15 @@ export const useActivityStore = create<ActivityStore>()(
               savedActivityId = state.activities[liveDuplicateIndex]?.id ?? activity.id;
               return {
                 activities: state.activities.map((item, index) => index === liveDuplicateIndex
+                  ? { ...item, ...activity, id: item.id, createdAt: item.createdAt, updatedAt: Date.now() }
+                  : item),
+              };
+            }
+            const nearDuplicateIndex = nearDuplicateTrackedIndex(state.activities, activity);
+            if (nearDuplicateIndex >= 0) {
+              savedActivityId = state.activities[nearDuplicateIndex]?.id ?? activity.id;
+              return {
+                activities: state.activities.map((item, index) => index === nearDuplicateIndex
                   ? { ...item, ...activity, id: item.id, createdAt: item.createdAt, updatedAt: Date.now() }
                   : item),
               };

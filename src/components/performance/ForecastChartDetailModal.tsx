@@ -14,7 +14,7 @@ type Props = {
   onClose: () => void;
 };
 
-type LegendKey = 'series' | 'x' | 'y' | 'confidence';
+type LegendKey = 'forecast' | 'dates' | 'measure' | 'confidence';
 
 function ForecastDetailChart({
   metric,
@@ -33,7 +33,7 @@ function ForecastDetailChart({
   const maxValue = Math.max(1, ...values);
   const minValue = Math.min(0, ...values);
   const span = Math.max(1, maxValue - minValue);
-  const chart = { width: 320, height: 220, left: 46, right: 18, top: 22, bottom: 52 };
+  const chart = { width: 320, height: 204, left: 38, right: 18, top: 18, bottom: 48 };
   const plotWidth = chart.width - chart.left - chart.right;
   const plotHeight = chart.height - chart.top - chart.bottom;
   const points = values.map((value, index) => {
@@ -46,13 +46,13 @@ function ForecastDetailChart({
   return (
     <View style={[styles.chartFrame, { backgroundColor: bgColor, borderColor: mutedColor }]}>
       <Svg width="100%" height="100%" viewBox={`0 0 ${chart.width} ${chart.height}`}>
-        <Line x1={chart.left} y1={chart.top} x2={chart.left} y2={chart.top + plotHeight} stroke={mutedColor} strokeWidth="1.4" opacity={0.7} />
-        <Line x1={chart.left} y1={chart.top + plotHeight} x2={chart.left + plotWidth} y2={chart.top + plotHeight} stroke={mutedColor} strokeWidth="1.4" opacity={0.7} />
+        <Line x1={chart.left} y1={chart.top} x2={chart.left} y2={chart.top + plotHeight} stroke={mutedColor} strokeWidth="1.2" opacity={0.55} />
+        <Line x1={chart.left} y1={chart.top + plotHeight} x2={chart.left + plotWidth} y2={chart.top + plotHeight} stroke={mutedColor} strokeWidth="1.2" opacity={0.55} />
         {[0, 0.5, 1].map(ratio => {
           const y = chart.top + plotHeight * ratio;
           const value = maxValue - span * ratio;
           return (
-            <SvgText key={`y-${ratio}`} x={chart.left - 8} y={y + 4} fill={textColor} fontSize="9" fontWeight="700" textAnchor="end" opacity={0.72}>
+            <SvgText key={`y-${ratio}`} x={chart.left - 7} y={y + 4} fill={textColor} fontSize="9" fontWeight="700" textAnchor="end" opacity={0.72}>
               {formatForecastChartValue(metric, value)}
             </SvgText>
           );
@@ -73,17 +73,11 @@ function ForecastDetailChart({
         {points.map(point => (
           <Circle key={`point-${point.label}`} cx={point.x} cy={point.y} r="5" fill={lineColor} stroke="#0E0E0F" strokeWidth="2" />
         ))}
-        {points.map(point => (
-          <SvgText key={`x-${point.label}`} x={point.x} y={chart.height - 26} fill={textColor} fontSize="9" fontWeight="800" textAnchor="middle" opacity={0.76}>
+        {points.map((point, index) => (
+          <SvgText key={`x-${point.label}`} x={point.x} y={chart.height - 22} fill={textColor} fontSize="9" fontWeight="800" textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'} opacity={0.76}>
             {point.label.toUpperCase()}
           </SvgText>
         ))}
-        <SvgText x={chart.left + plotWidth / 2} y={chart.height - 7} fill={textColor} fontSize="10" fontWeight="900" textAnchor="middle" opacity={0.82}>
-          {metric.chartXAxisLabel}
-        </SvgText>
-        <SvgText x="12" y={chart.top + plotHeight / 2} fill={textColor} fontSize="10" fontWeight="900" textAnchor="middle" rotation="-90" origin={`12 ${chart.top + plotHeight / 2}`} opacity={0.82}>
-          {metric.chartYAxisLabel}
-        </SvgText>
       </Svg>
     </View>
   );
@@ -91,17 +85,17 @@ function ForecastDetailChart({
 
 export default function ForecastChartDetailModal({ metric, confidence, limitations, onClose }: Props) {
   const C = useColors();
-  const [selectedLegend, setSelectedLegend] = useState<LegendKey>('series');
+  const [selectedLegend, setSelectedLegend] = useState<LegendKey>('forecast');
   const legendCopy = useMemo(() => {
     if (!metric) return '';
-    if (selectedLegend === 'x') return metric.chartXAxisLabel;
-    if (selectedLegend === 'y') return metric.chartYAxisLabel;
+    if (selectedLegend === 'dates') return metric.chartXAxisLabel;
+    if (selectedLegend === 'measure') return metric.chartYAxisLabel;
     if (selectedLegend === 'confidence') return `Confidence: ${confidence}. ${limitations}`;
-    return `The ${metric.chartValueUnit} series plots ${metric.chartLabels.length} current data point${metric.chartLabels.length === 1 ? '' : 's'} used by ${metric.label}.`;
+    return metric.info;
   }, [confidence, limitations, metric, selectedLegend]);
 
   useEffect(() => {
-    setSelectedLegend('series');
+    setSelectedLegend('forecast');
   }, [metric?.key]);
 
   return (
@@ -134,9 +128,9 @@ export default function ForecastChartDetailModal({ metric, confidence, limitatio
                 />
                 <View style={styles.legendRow}>
                   {([
-                    ['series', metric.chartValueUnit.toUpperCase()],
-                    ['x', 'X-AXIS'],
-                    ['y', 'Y-AXIS'],
+                    ['forecast', 'FORECAST'],
+                    ['dates', 'DATES'],
+                    ['measure', 'MEASURE'],
                     ['confidence', 'CONFIDENCE'],
                   ] as Array<[LegendKey, string]>).map(([key, label]) => {
                     const active = selectedLegend === key;
@@ -155,13 +149,9 @@ export default function ForecastChartDetailModal({ metric, confidence, limitatio
                   })}
                 </View>
                 <Text selectable style={[styles.legendCopy, { color: C.textMuted }]}>{legendCopy}</Text>
-                <View style={[styles.axisBox, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
-                  <Text style={[styles.axisLabel, { color: C.primary }]}>X-axis</Text>
-                  <Text style={[styles.axisValue, { color: C.textMuted }]}>{metric.chartXAxisLabel}</Text>
-                </View>
-                <View style={[styles.axisBox, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
-                  <Text style={[styles.axisLabel, { color: C.primary }]}>Y-axis</Text>
-                  <Text style={[styles.axisValue, { color: C.textMuted }]}>{metric.chartYAxisLabel}</Text>
+                <View style={[styles.summaryBox, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+                  <Text style={[styles.axisLabel, { color: C.primary }]}>Current projection</Text>
+                  <Text style={[styles.axisValue, { color: C.textMuted }]}>{metric.valueLabel} · {metric.horizonLabel}</Text>
                 </View>
                 <Text selectable style={[styles.detailText, { color: C.textMuted }]}>
                   {buildForecastChartDetail(metric)}
@@ -219,14 +209,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   body: {
-    maxHeight: 420,
+    maxHeight: 398,
   },
   bodyContent: {
     gap: 10,
     paddingBottom: 4,
   },
   chartFrame: {
-    height: 238,
+    height: 220,
     borderWidth: 1,
     borderRadius: 14,
     padding: 8,
@@ -256,7 +246,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontWeight: '700',
   },
-  axisBox: {
+  summaryBox: {
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,

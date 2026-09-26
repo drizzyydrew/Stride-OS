@@ -7,6 +7,7 @@ import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import MapView, { Marker, Polyline, type LatLng, type MapViewRef, type Region } from '../../../src/components/maps/MapComponents';
+import RoutePreviewMap from '../../../src/components/maps/RoutePreviewMap';
 
 import { useColors } from '../../../src/theme/useColors';
 import { spacing } from '../../../src/theme/spacing';
@@ -45,6 +46,15 @@ import {
   type RunRoute,
   type RoutePoint,
 } from '../../../src/store/routeStore';
+import {
+  deleteRouteOfflinePack,
+  downloadRouteOfflinePack,
+  routeOfflineButtonLabel,
+  routeOfflineDeleteButtonLabel,
+  routeOfflinePackName,
+  routeOfflineStatusLabel,
+} from '../../../src/lib/mapboxOffline';
+import { isMapboxConfigured } from '../../../src/lib/mapboxConfig';
 import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
 import {
   buildRouteGuidance,
@@ -457,6 +467,7 @@ function PlanTab() {
   const selectCustomRunToday = useCustomWorkoutStore(s => s.selectCustomRunToday);
   const dismissCustomRunToday = useCustomWorkoutStore(s => s.dismissCustomRunToday);
   const restoreCustomRunToday = useCustomWorkoutStore(s => s.restoreCustomRunToday);
+  const deleteCustomRun = useCustomWorkoutStore(s => s.deleteCustomRun);
   const selectedCustomRunToday = selectedTodayDate === todayYMD
     ? customRuns.find(run => run.id === selectedTodayCustomRunId)
     : undefined;
@@ -472,6 +483,21 @@ function PlanTab() {
     log.date === todayYMD && log.category === 'running' && notTodayLogIds.includes(log.id),
   );
   const customRunToday = selectedCustomRunToday ?? legacyCustomRunToday;
+
+  function confirmDeleteCustomRun(runId: string, runName: string) {
+    Alert.alert(
+      'Delete Custom Run?',
+      `Delete "${runName}" from your saved custom runs? This does not delete logged activities.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteCustomRun(runId),
+        },
+      ],
+    );
+  }
 
   // Single source of truth for "today's workout": activeTodaySessions applies
   // the same selection/removal overrides (scheduledSessionSelectionStore)
@@ -613,12 +639,22 @@ function PlanTab() {
             <Text style={{ color: C.textMuted, fontSize: 12, fontWeight: '700' }}>Not Today</Text>
           </TouchableOpacity>
           {'parameters' in customRunToday ? (
-            <TouchableOpacity
-              style={{ alignSelf: 'flex-start', marginTop: 8, paddingVertical: 6, paddingHorizontal: 10 }}
-              onPress={() => router.push({ pathname: '/(tabs)/training/run-creator', params: { editId: customRunToday.id } } as never)}
-            >
-              <Text style={{ color: C.primary, fontSize: 12, fontWeight: '700' }}>Edit Workout</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+              <TouchableOpacity
+                style={{ alignSelf: 'flex-start', marginTop: 8, paddingVertical: 6, paddingHorizontal: 10 }}
+                onPress={() => router.push({ pathname: '/(tabs)/training/run-creator', params: { editId: customRunToday.id } } as never)}
+              >
+                <Text style={{ color: C.primary, fontSize: 12, fontWeight: '700' }}>Edit Workout</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ alignSelf: 'flex-start', marginTop: 8, paddingVertical: 6, paddingHorizontal: 10 }}
+                onPress={() => confirmDeleteCustomRun(customRunToday.id, customRunToday.name)}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete ${customRunToday.name}`}
+              >
+                <Text style={{ color: C.critical, fontSize: 12, fontWeight: '700' }}>Delete Workout</Text>
+              </TouchableOpacity>
+            </View>
           ) : null}
         </View>
       ) : todayRaceEntry ? (
@@ -676,14 +712,28 @@ function PlanTab() {
           <Text style={[styles.cardLabel, { color: C.textDim }]}>SAVED CUSTOM RUNS</Text>
           <View style={{ gap: 8, marginTop: 8 }}>
             {customRuns.slice(0, 5).map(run => (
-              <TouchableOpacity
+              <View
                 key={run.id}
-                style={{ paddingVertical: 9, paddingHorizontal: 10, borderRadius: 8, backgroundColor: C.cardAlt }}
-                onPress={() => selectCustomRunToday(run.id, todayYMD)}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9, paddingHorizontal: 10, borderRadius: 8, backgroundColor: C.cardAlt }}
               >
-                <Text style={{ color: C.text, fontSize: 13, fontWeight: '700' }}>{run.name}</Text>
-                <Text style={{ color: C.textMuted, fontSize: 11, marginTop: 2 }}>{run.durationMinutes} min · {run.distanceMiles.toFixed(2)} mi · Select for today</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1 }}
+                  onPress={() => selectCustomRunToday(run.id, todayYMD)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${run.name} for today`}
+                >
+                  <Text style={{ color: C.text, fontSize: 13, fontWeight: '700' }}>{run.name}</Text>
+                  <Text style={{ color: C.textMuted, fontSize: 11, marginTop: 2 }}>{run.durationMinutes} min · {run.distanceMiles.toFixed(2)} mi · Select for today</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => confirmDeleteCustomRun(run.id, run.name)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete ${run.name}`}
+                >
+                  <Ionicons name="trash-outline" size={17} color={C.critical} />
+                </TouchableOpacity>
+              </View>
             ))}
           </View>
         </View>
@@ -824,6 +874,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     distanceSource,
     currentIntervalIndex,
     lastEnvironmentPreference,
+    autoPauseState,
     confirmTreadmillSpeed,
     setManualLiveDistance,
     setEquipmentLiveDistance,
@@ -846,7 +897,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     () => selectedCustomRun ? customRunToRichWorkout(selectedCustomRun) : null,
     [selectedCustomRun],
   );
-  const workoutForStart = todayPlannedWorkout ?? selectedCustomWorkout;
+  const workoutForStart = selectedCustomWorkout ?? todayPlannedWorkout;
+  const usingCustomWorkout = Boolean(selectedCustomWorkout);
   const routeAttachment = useRouteStore(s => s.routeAttachment);
   const attachedRoute = useRouteStore(s => s.routes.find(r => r.id === s.routeAttachment.routeId) ?? null);
   const selectedRoute = effectiveAttachedRoute(attachedRoute, routeAttachment);
@@ -895,6 +947,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const coachMomentRef = useRef(0);
   const goalDoneRef = useRef(false);
   const stopInFlightRef = useRef(false);
+  const lastMirroredAutoPauseDecisionRef = useRef<number | null>(null);
   const activeMapRef = useRef<MapViewRef>(null);
   const [mapType, setMapType] = useState<'standard' | 'hybrid'>('standard');
   const runState: RunState = !isActive ? 'idle' : isPaused ? 'paused' : 'active';
@@ -927,6 +980,10 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         markLiveSensorDisconnected(appleWatchDevice.id, event.timestamp);
       } else {
         markLiveSensorConnected(appleWatchDevice, event.timestamp);
+      }
+      const activeRun = useActiveRunStore.getState();
+      if (activeRun.workoutInstanceId && event.workoutInstanceId && activeRun.workoutInstanceId !== event.workoutInstanceId) {
+        return;
       }
       if (event.state === 'paused') {
         useActiveRunStore.getState().pauseRun('manual');
@@ -979,6 +1036,27 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [isPaused, pausedAt, pausedDurationMs, startTime]);
+
+  useEffect(() => {
+    if (!isActive || environment !== 'outdoor' || !autoPauseState?.lastDecisionAtMs) return;
+    if (autoPauseState.manualPaused) return;
+    if (lastMirroredAutoPauseDecisionRef.current === autoPauseState.lastDecisionAtMs) return;
+
+    lastMirroredAutoPauseDecisionRef.current = autoPauseState.lastDecisionAtMs;
+    if (autoPauseState.paused && isPaused) {
+      pauseStrideWatchRun(workoutInstanceId).then(setWatchStatus).catch(() => undefined);
+    } else if (!autoPauseState.paused && !isPaused) {
+      resumeStrideWatchRun(workoutInstanceId).then(setWatchStatus).catch(() => undefined);
+    }
+  }, [
+    autoPauseState?.lastDecisionAtMs,
+    autoPauseState?.manualPaused,
+    autoPauseState?.paused,
+    environment,
+    isActive,
+    isPaused,
+    workoutInstanceId,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1101,7 +1179,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       pendingMode === 'time'     ? { mode: 'time', goalMinutes: goalMinutesInput } :
       pendingMode === 'distance' ? { mode: 'distance', goalMiles: toMiles(goalMilesInput) } :
       pendingMode === 'race'     ? { mode: 'race', goalMiles: toMiles(raceMilesInput), targetPaceSecPerMile: toSecPerMile(racePaceSecInput) } :
-      pendingMode === 'workout' && startWorkout ? { mode: 'workout', scheduledSessionId: todayPlannedWorkout ? todayPlannedSession?.scheduledSessionId : undefined } :
+      pendingMode === 'workout' && startWorkout ? { mode: 'workout', scheduledSessionId: usingCustomWorkout ? undefined : todayPlannedSession?.scheduledSessionId } :
       { mode: 'quick' };
     config.environment = pendingEnvironment;
     if (pendingEnvironment === 'indoor') {
@@ -1185,7 +1263,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         speakCue(`Route: ${selectedRoute.name}. ${selectedRoute.segments.length} interval markers set.`, 'navigation');
       }
     } catch (error) {
-      endStrideWatchRun().then(setWatchStatus).catch(() => undefined);
+      endStrideWatchRun(workoutInstanceId).then(setWatchStatus).catch(() => undefined);
       cancelRun();
       setRouteSegmentIndex(0);
       maxRouteProgressRef.current = 0;
@@ -1196,18 +1274,13 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
   function pause() {
     pauseRun();
-    pauseStrideWatchRun().then(setWatchStatus).catch(() => undefined);
+    pauseStrideWatchRun(workoutInstanceId).then(setWatchStatus).catch(() => undefined);
     speakCue('Pausing workout.', 'interval');
-  }
-
-  async function syncWatchNow() {
-    const status = await activateStrideWatchConnectivity();
-    setWatchStatus(status);
   }
 
   function resume() {
     resumeRun();
-    resumeStrideWatchRun().then(setWatchStatus).catch(() => undefined);
+    resumeStrideWatchRun(workoutInstanceId).then(setWatchStatus).catch(() => undefined);
     speakCue('Resuming workout.', 'interval');
   }
 
@@ -1256,7 +1329,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       elapsedSeconds: finalElapsed,
       isPaused: false,
     }).catch(console.warn);
-    endStrideWatchRun().then(setWatchStatus).catch(() => undefined);
+    endStrideWatchRun(finalState.workoutInstanceId).then(setWatchStatus).catch(() => undefined);
     speakCue(`Run complete. ${finalDurationMin} minutes, ${finalDistanceMiles.toFixed(2)} miles saved.`, 'motivation');
     finishRun();
     setElapsed(0);
@@ -1347,7 +1420,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       distanceMiles: result.distanceMiles,
       isPaused: false,
     }).catch(console.warn);
-    endStrideWatchRun().then(setWatchStatus).catch(() => undefined);
+    endStrideWatchRun(captured?.workoutInstanceId ?? latestState.workoutInstanceId).then(setWatchStatus).catch(() => undefined);
     speakCue(`Run complete. ${finalDurationMin} minutes, ${finalDistanceMiles.toFixed(2)} miles saved.`, 'motivation');
     finishRun();
     setElapsed(0);
@@ -1912,16 +1985,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             {watchStatus.lastError ? (
               <Text style={[styles.watchStatusError, { color: C.warning }]} numberOfLines={2}>{watchStatus.lastError}</Text>
             ) : null}
-            <TouchableOpacity
-              style={[styles.watchSyncButton, { borderColor: C.border, backgroundColor: C.card }]}
-              onPress={syncWatchNow}
-              activeOpacity={0.82}
-              accessibilityRole="button"
-              accessibilityLabel="Sync Apple Watch"
-            >
-              <Ionicons name="sync" size={14} color={C.primary} />
-              <Text style={[styles.watchSyncText, { color: C.primary }]}>Sync Watch</Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
         <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: (fullScreen ? insets.bottom : 0) + spacing.md }]}>
@@ -2193,16 +2256,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
           {watchStatus.lastError ? (
             <Text style={[styles.watchStatusError, { color: C.warning }]} numberOfLines={2}>{watchStatus.lastError}</Text>
           ) : null}
-          <TouchableOpacity
-            style={[styles.watchSyncButton, { borderColor: C.border, backgroundColor: C.card }]}
-            onPress={syncWatchNow}
-            activeOpacity={0.82}
-            accessibilityRole="button"
-            accessibilityLabel="Sync Apple Watch"
-          >
-            <Ionicons name="sync" size={14} color={C.primary} />
-            <Text style={[styles.watchSyncText, { color: C.primary }]}>Sync Watch</Text>
-          </TouchableOpacity>
         </View>
         {goalPanel}
         {runState === 'active' && heartRateBpm ? (
@@ -2368,7 +2421,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
                     <Text style={[styles.workoutDetailText, { color: C.textMuted }]} numberOfLines={2}>
                       {todayPlannedSession?.mainSet ?? workoutForStart.mainSet.map(segment => segment.instructions).join(' ')}
                     </Text>
-                    {todayPlannedWorkout ? (
+                    {!usingCustomWorkout && todayPlannedWorkout ? (
                       <>
                         <TouchableOpacity
                           style={[styles.inlineDetailButton, { backgroundColor: C.card, borderColor: C.border }]}
@@ -3048,10 +3101,123 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
   const routes = useRouteStore(s => s.routes);
   const selectedRouteId = useRouteStore(s => s.selectedRouteId);
   const attachRoute = useRouteStore(s => s.attachRoute);
+  const updateRoute = useRouteStore(s => s.updateRoute);
+  const removeRoute = useRouteStore(s => s.removeRoute);
   const [expanded, setExpanded] = useState<string | null>(selectedRouteId);
   const [folderFilter, setFolderFilter] = useState<RunRoute['folder'] | 'all'>('all');
+  const [offlineDownloadingRouteId, setOfflineDownloadingRouteId] = useState<string | null>(null);
+  const [offlineDeletingRouteId, setOfflineDeletingRouteId] = useState<string | null>(null);
 
   const filteredRoutes = routes.filter(route => folderFilter === 'all' || route.folder === folderFilter);
+
+  async function saveRouteOfflineMap(route: RunRoute) {
+    if (offlineDownloadingRouteId || offlineDeletingRouteId) return;
+
+    if (!isMapboxConfigured()) {
+      Alert.alert(
+        'Mapbox token required',
+        'Add EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN to the build environment before offline route maps can download in TestFlight.',
+      );
+      return;
+    }
+
+    const packName = routeOfflinePackName(route.id);
+    setOfflineDownloadingRouteId(route.id);
+    updateRoute(route.id, {
+      offlineMap: {
+        provider: 'mapbox',
+        status: 'downloading',
+        packName,
+        progress: 0,
+        updatedAt: Date.now(),
+      },
+    });
+
+    try {
+      const options = await downloadRouteOfflinePack(route, progress => {
+        updateRoute(route.id, {
+          offlineMap: {
+            provider: 'mapbox',
+            status: 'downloading',
+            packName,
+            progress: progress.percentage,
+            updatedAt: Date.now(),
+          },
+        });
+      });
+      updateRoute(route.id, {
+        offlineMap: {
+          provider: 'mapbox',
+          status: 'ready',
+          packName: options.name,
+          progress: 100,
+          updatedAt: Date.now(),
+        },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Offline map download failed.';
+      updateRoute(route.id, {
+        offlineMap: {
+          provider: 'mapbox',
+          status: 'failed',
+          packName,
+          updatedAt: Date.now(),
+          error: message,
+        },
+      });
+      Alert.alert('Offline map unavailable', message);
+    } finally {
+      setOfflineDownloadingRouteId(null);
+    }
+  }
+
+  async function removeRouteOfflineMap(route: RunRoute) {
+    if (offlineDeletingRouteId || offlineDownloadingRouteId) return;
+
+    Alert.alert(
+      'Delete offline map?',
+      `Remove the downloaded offline map for "${route.name}"? The saved route will stay in your Routes tab.`,
+      [
+        { text: 'Keep', style: 'cancel' },
+        {
+          text: 'Delete Map',
+          style: 'destructive',
+          onPress: () => {
+            setOfflineDeletingRouteId(route.id);
+            deleteRouteOfflinePack(route)
+              .catch(() => undefined)
+              .finally(() => {
+                updateRoute(route.id, {
+                  offlineMap: {
+                    provider: 'mapbox',
+                    status: 'not_downloaded',
+                    updatedAt: Date.now(),
+                  },
+                });
+                setOfflineDeletingRouteId(null);
+              });
+          },
+        },
+      ],
+    );
+  }
+
+  function confirmDeleteRoute(route: RunRoute) {
+    Alert.alert('Delete route?', `Remove "${route.name}" from your saved routes?`, [
+      { text: 'Keep', style: 'cancel' },
+      {
+        text: 'Delete Route',
+        style: 'destructive',
+        onPress: () => {
+          if (route.offlineMap?.status === 'ready') {
+            deleteRouteOfflinePack(route).catch(() => undefined);
+          }
+          removeRoute(route.id);
+          setExpanded(current => current === route.id ? null : current);
+        },
+      },
+    ]);
+  }
 
   async function startRoute(route: RunRoute) {
     if (!activeSessionStoresHydrated()) {
@@ -3082,6 +3248,7 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
     try {
       startRun(null);
       const startedAt = useActiveRunStore.getState().startTime;
+      const startedWorkoutInstanceId = useActiveRunStore.getState().workoutInstanceId;
       await startRunLiveActivity({
         sessionId: startedAt ? `run:${startedAt}` : '',
         sessionSource: 'running',
@@ -3094,7 +3261,7 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
         isPaused: false,
       }).catch(console.warn);
       startStrideWatchRun({
-        workoutInstanceId: useActiveRunStore.getState().workoutInstanceId,
+        workoutInstanceId: startedWorkoutInstanceId,
         title: route.name,
         environment: 'outdoor',
         targetZone: null,
@@ -3105,7 +3272,7 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
         : `Starting route: ${route.name}.`, 'navigation');
       onStartRoute();
     } catch (error) {
-      endStrideWatchRun().catch(() => undefined);
+      endStrideWatchRun(useActiveRunStore.getState().workoutInstanceId).catch(() => undefined);
       cancelRun();
       Alert.alert('Location unavailable', error instanceof Error ? error.message : 'Could not start GPS tracking.');
     }
@@ -3158,6 +3325,10 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
             const isExpanded = expanded === r.id;
             const dist = imp ? r.distanceMiles : r.distanceMiles * 1.609344;
             const elev = imp ? r.elevationGainFt : r.elevationGainFt * 0.3048;
+            const offlineStatus = r.offlineMap?.status ?? 'not_downloaded';
+            const isDownloadingOfflineMap = offlineDownloadingRouteId === r.id || offlineStatus === 'downloading';
+            const isDeletingOfflineMap = offlineDeletingRouteId === r.id;
+            const offlineProgress = Math.round(r.offlineMap?.progress ?? 0);
             return (
         <TouchableOpacity
           key={r.id}
@@ -3178,30 +3349,20 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
             <Text style={[{ fontSize: 12, color: C.textMuted }]}>+{Math.round(elev)} {imp ? 'ft' : 'm'} gain</Text>
             <Text style={[{ fontSize: 12, color: C.textMuted }]}>{r.estimatedMinutes} min</Text>
             <Text style={[{ fontSize: 12, color: C.textMuted }]}>{r.segments.length} segments</Text>
+            <Text style={[{ fontSize: 12, color: offlineStatus === 'ready' ? C.positive : offlineStatus === 'failed' ? C.warning : C.textMuted }]}>
+              {offlineStatus === 'downloading' ? `${offlineProgress}% offline` : routeOfflineStatusLabel(offlineStatus)}
+            </Text>
           </View>
           {isExpanded && (
             <View style={[{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border }]}>
-              <MapView
+              <RoutePreviewMap
+                points={r.points}
+                segments={r.segments}
                 style={styles.routePreviewMap}
-                initialRegion={routeRegion(r.points)}
+                lineColor={C.primary}
+                segmentColor={C.warning}
                 customMapStyle={DARK_MAP_STYLE}
-                scrollEnabled={false}
-                zoomEnabled={false}
-                pitchEnabled={false}
-                rotateEnabled={false}
-              >
-                <Polyline coordinates={routePointsToLatLng(r.points)} strokeColor={C.primary} strokeWidth={4} />
-                {r.points[0] ? <Marker coordinate={r.points[0]} title="Start" /> : null}
-                {r.segments.map(segment => (
-                  <Marker
-                    key={segment.label}
-                    coordinate={segment.point}
-                    title={`Segment ${segment.label}`}
-                    description={`${segment.distanceMiles.toFixed(2)} mi from start`}
-                    pinColor={C.warning}
-                  />
-                ))}
-              </MapView>
+              />
               {r.segments.length ? (
                 <View style={{ gap: 6, marginBottom: 10 }}>
                   <Text style={[styles.cardLabel, { color: C.textDim }]}>INTERVALS</Text>
@@ -3227,6 +3388,40 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
                 activeOpacity={0.8}
               >
                 <Text style={[styles.bigBtnText, { color: C.onPrimary }]}>Start on This Route</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.bigBtn, { backgroundColor: C.cardAlt, marginTop: 8, opacity: isDownloadingOfflineMap ? 0.68 : 1 }]}
+                onPress={() => saveRouteOfflineMap(r)}
+                disabled={isDownloadingOfflineMap || isDeletingOfflineMap}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.bigBtnText, { color: offlineStatus === 'ready' ? C.positive : C.text }]}>
+                  {routeOfflineButtonLabel(offlineStatus)}
+                </Text>
+              </TouchableOpacity>
+              {offlineStatus === 'ready' || offlineStatus === 'failed' ? (
+                <TouchableOpacity
+                  style={[styles.bigBtn, { backgroundColor: C.cardAlt, marginTop: 8, opacity: isDeletingOfflineMap ? 0.68 : 1 }]}
+                  onPress={() => removeRouteOfflineMap(r)}
+                  disabled={isDeletingOfflineMap || isDownloadingOfflineMap}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.bigBtnText, { color: C.warning }]}>
+                    {isDeletingOfflineMap ? 'Deleting Offline Map...' : routeOfflineDeleteButtonLabel(offlineStatus)}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+              {r.offlineMap?.error ? (
+                <Text style={[{ color: C.warning, fontSize: 12, marginTop: 6, lineHeight: 16 }]} numberOfLines={2}>
+                  {r.offlineMap.error}
+                </Text>
+              ) : null}
+              <TouchableOpacity
+                style={[styles.bigBtn, { backgroundColor: C.cardAlt, marginTop: 8 }]}
+                onPress={() => confirmDeleteRoute(r)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.bigBtnText, { color: C.critical }]}>Delete Saved Route</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.bigBtn, { backgroundColor: C.cardAlt, marginTop: 8 }]}

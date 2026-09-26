@@ -39,6 +39,7 @@ type CustomWorkoutStore = {
   markNotToday: (id: string) => void;
   restoreLegacyLogToday: (id: string) => void;
   saveCustomRun: (run: Omit<CustomRunDefinition, 'id' | 'createdAt' | 'updatedAt'>, editId?: string) => string;
+  deleteCustomRun: (id: string) => void;
   selectCustomRunToday: (id: string, date: string) => void;
   dismissCustomRunToday: (date: string) => void;
   restoreCustomRunToday: (date: string) => void;
@@ -125,6 +126,12 @@ export const useCustomWorkoutStore = create<CustomWorkoutStore>()(
         }));
         return id;
       },
+
+      deleteCustomRun: (id) => set(state => ({
+        customRuns: state.customRuns.filter(run => run.id !== id),
+        selectedTodayCustomRunId: state.selectedTodayCustomRunId === id ? null : state.selectedTodayCustomRunId,
+        dismissedTodayCustomRunId: state.dismissedTodayCustomRunId === id ? null : state.dismissedTodayCustomRunId,
+      })),
 
       selectCustomRunToday: (id, date) => set(state => selectCustomRunForDate(state, id, date)),
       dismissCustomRunToday: (date) => set(state => dismissCustomRunForDate(state, date)),

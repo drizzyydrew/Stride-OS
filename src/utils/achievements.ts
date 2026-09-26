@@ -555,6 +555,7 @@ export const BUILD57_ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
 ];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const STREAK_CONTINUATION_WINDOW_MS = DAY_MS + 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
 
 function completedActivities(activities: readonly Activity[]): Activity[] {
@@ -1000,6 +1001,10 @@ function isCompletedForStreak(activity: Activity): boolean {
   return activity.status !== 'skipped' && activity.completionClassification !== 'skipped';
 }
 
+function streakActivityTime(activity: Activity): number {
+  return activity.endTime && activity.endTime > activity.startTime ? activity.endTime : activity.startTime;
+}
+
 function isSkippedRequiredActivity(activity: Activity): boolean {
   return Boolean(activity.scheduled || activity.scheduledSessionId) && (
     activity.status === 'skipped' || activity.completionClassification === 'skipped'
@@ -1112,12 +1117,19 @@ export function calculateStreakAchievements(
   let currentStreakDays = 0;
   let segmentSupportingActivityIds: string[] = [];
   let previousDateKey: string | null = null;
+  let previousWorkoutTime: number | null = null;
+  let mostRecentWorkoutTime = 0;
 
   for (const dateKey of dateKeys) {
+    const dayActivities = [...(activitiesByDate.get(dateKey) ?? [])].sort((a, b) => streakActivityTime(a) - streakActivityTime(b));
+    const dayWorkoutTime = dayActivities[dayActivities.length - 1] ? streakActivityTime(dayActivities[dayActivities.length - 1]) : localDateMs(dateKey);
     const daysSincePrevious = previousDateKey
       ? Math.round((localDateMs(dateKey) - localDateMs(previousDateKey)) / DAY_MS)
       : 1;
-    if (daysSincePrevious === 1) {
+    const hoursSincePreviousWorkout = previousWorkoutTime === null
+      ? 0
+      : dayWorkoutTime - previousWorkoutTime;
+    if (daysSincePrevious === 1 && hoursSincePreviousWorkout <= STREAK_CONTINUATION_WINDOW_MS) {
       currentStreakDays += 1;
     } else {
       currentStreakDays = 1;
@@ -1125,7 +1137,7 @@ export function calculateStreakAchievements(
     }
     segmentSupportingActivityIds = [
       ...segmentSupportingActivityIds,
-      ...(activitiesByDate.get(dateKey) ?? []).map(activity => activity.id),
+      ...dayActivities.map(activity => activity.id),
     ];
     for (const definition of STREAK_ACHIEVEMENTS) {
       if (!earnedAt.has(definition.id) && currentStreakDays >= definition.thresholdDays) {
@@ -1134,6 +1146,13 @@ export function calculateStreakAchievements(
       }
     }
     previousDateKey = dateKey;
+    previousWorkoutTime = dayWorkoutTime;
+    mostRecentWorkoutTime = dayWorkoutTime;
+  }
+
+  if (mostRecentWorkoutTime > 0 && now - mostRecentWorkoutTime > DAY_MS) {
+    currentStreakDays = 0;
+    segmentSupportingActivityIds = [];
   }
 
   const currentDefinition = [...STREAK_ACHIEVEMENTS].reverse()

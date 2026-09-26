@@ -75,7 +75,7 @@ test('off-route state requires sustained samples instead of one noisy location',
   assert.equal(first.isOffRoute, false);
   assert.equal(second.isOffRoute, false);
   assert.equal(third.isOffRoute, true);
-  assert.equal(third.nextInstruction, 'Follow saved route');
+  assert.equal(third.nextInstruction, 'Off route — return to the saved route');
 });
 
 test('turn guidance exposes the next step and advances after reaching its endpoint', () => {

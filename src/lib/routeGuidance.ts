@@ -143,7 +143,9 @@ export function updateRouteGuidanceProgress(input: {
       isOffRoute,
       offRouteSampleCount,
       nextStepIndex: null,
-      nextInstruction: plan.kind === 'breadcrumb' ? 'Follow saved route' : null,
+      nextInstruction: isOffRoute
+        ? 'Off route — return to the saved route'
+        : plan.kind === 'breadcrumb' ? 'Follow saved route' : null,
       distanceToNextStepMeters: null,
     };
   }
@@ -163,7 +165,7 @@ export function updateRouteGuidanceProgress(input: {
     isOffRoute,
     offRouteSampleCount,
     nextStepIndex,
-    nextInstruction: nextStep.instruction,
+    nextInstruction: isOffRoute ? 'Off route — recalculating' : nextStep.instruction,
     distanceToNextStepMeters: Math.round(metersBetweenGuidancePoints(point, nextStep.end)),
   };
 }

@@ -100,6 +100,17 @@ function formatProjectedWindow(generatedAt: number, weeksToRace: number, confide
   return `${start}-${end}`;
 }
 
+function formatShortDate(timestamp: number): string {
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(timestamp));
+}
+
+function projectedPeakTimestamp(generatedAt: number, weeksToRace: number): number {
+  const weeksOut = weeksToRace > 0 && weeksToRace <= 52
+    ? Math.max(1, weeksToRace <= 2 ? 1 : weeksToRace - 2)
+    : 8;
+  return generatedAt + weeksOut * 7 * DAY_MS;
+}
+
 const STATUS_LABEL: Record<OutlookStatus, string> = {
   building_foundation: 'Building Foundation',
   on_track: 'On Track',
@@ -269,6 +280,12 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
   ));
   const readinessProjection = roundedPercent((readinessScore * 0.55) + (loadBalanceScore * 0.25) + (confidenceScore * 0.2));
   const peakWindowLabel = formatProjectedWindow(outlook.generatedAt, weeksToRace, outlook.confidence);
+  const peakTimestamp = projectedPeakTimestamp(outlook.generatedAt, weeksToRace);
+  const todayLabel = formatShortDate(outlook.generatedAt);
+  const peakDateLabel = formatShortDate(peakTimestamp);
+  const raceDateLabel = weeksToRace > 52
+    ? formatShortDate(outlook.generatedAt + 12 * 7 * DAY_MS)
+    : formatShortDate(outlook.generatedAt + Math.max(1, weeksToRace) * 7 * DAY_MS);
   const peakDevelopment = roundedPercent(
     insufficient
       ? Math.min(56, outlook.historyWeeks * 8 + outlook.completedActivities * 3)
@@ -326,17 +343,19 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         label: 'Peak Window',
         state: peakState,
         visualLabel: insufficient ? 'Not Yet Available' : peakState,
-        valueLabel: insufficient ? `${Math.max(0, 8 - outlook.historyWeeks)} more history wk` : peakWindowLabel,
-        horizonLabel: weeksToRace > 52 ? 'No race date set' : `${weeksToRace} wk to goal`,
-        chartXAxisLabel: insufficient ? 'Required history inputs' : 'Training timeline toward the goal',
-        chartYAxisLabel: 'Forecast development score from 0 to 100',
-        chartValueUnit: 'score',
+        valueLabel: insufficient ? `Projected ${peakDateLabel}` : peakDateLabel,
+        horizonLabel: insufficient ? `${Math.max(0, 8 - outlook.historyWeeks)} more history wk` : peakWindowLabel,
+        chartXAxisLabel: 'Projected dates from today',
+        chartYAxisLabel: 'Peak confidence percent',
+        chartValueUnit: 'readiness',
         chartValues: insufficient
           ? [Math.max(8, outlook.historyWeeks * 12), Math.max(14, outlook.completedActivities * 7), peakDevelopment]
-          : [48, 62, 76, peakDevelopment, Math.max(66, peakDevelopment - 8)],
-        chartLabels: insufficient ? ['history', 'sessions', 'confidence'] : ['now', 'build', 'peak', 'race', 'settle'],
+          : [readinessScore, Math.max(readinessScore + 6, peakDevelopment - 14), peakDevelopment, Math.max(66, peakDevelopment - 8)],
+        chartLabels: insufficient
+          ? [todayLabel, formatShortDate(outlook.generatedAt + 4 * 7 * DAY_MS), peakDateLabel]
+          : [todayLabel, formatShortDate(outlook.generatedAt + Math.max(1, Math.round((peakTimestamp - outlook.generatedAt) / DAY_MS / 2)) * DAY_MS), peakDateLabel, raceDateLabel],
         summary: peakSummary,
-        info: 'Uses phase, weeks to race, completed sessions, adherence depth, load trend, deload timing, and recent plan edits. It avoids a precise date when confidence is limited.',
+        info: 'Measures projected peak confidence from recent completed training, load balance, readiness, phase, and time to goal. Dates update as new workouts and readiness data are logged.',
       },
       {
         key: 'race_readiness',
@@ -345,16 +364,15 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         visualLabel: insufficient ? 'Developing' : readinessState,
         valueLabel: `${readinessProjection}/100`,
         horizonLabel: input.readinessScore == null ? 'No check-in today' : `Today ${readinessScore}/100`,
-        chartXAxisLabel: 'Readiness inputs used in the estimate',
-        chartYAxisLabel: 'Readiness score from 0 to 100',
-        chartValueUnit: 'score',
+        chartXAxisLabel: 'Projected dates from today',
+        chartYAxisLabel: 'Race readiness percent',
+        chartValueUnit: 'readiness',
         chartValues: [
           readinessScore,
-          loadBalanceScore,
-          confidenceScore,
+          Math.round((readinessScore + readinessProjection) / 2),
           readinessProjection,
         ],
-        chartLabels: ['readiness', 'load fit', 'confidence', 'projected'],
+        chartLabels: [todayLabel, formatShortDate(outlook.generatedAt + Math.max(7, Math.round(Math.max(1, weeksToRace) * 3.5)) * DAY_MS), raceDateLabel],
         summary: outlook.status === 'recovery_needed'
           ? 'Recovery signals should lead before projecting race readiness.'
           : outlook.status === 'progressing_cautiously'
@@ -369,19 +387,19 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         label: 'Training Load Trend',
         state: loadState,
         visualLabel: loadVisualLabel,
-        valueLabel: `${loadRatio.toFixed(2)} ratio`,
-        horizonLabel: `${outlook.loadTrend.acute.toFixed(1)} acute / ${outlook.loadTrend.chronic.toFixed(1)} chronic`,
-        chartXAxisLabel: 'Load inputs and acute-to-chronic ratio',
-        chartYAxisLabel: 'Training load units, with ratio scaled for comparison',
+        valueLabel: outlook.loadStateLabel,
+        horizonLabel: `${outlook.loadTrend.acute.toFixed(1)} recent / ${outlook.loadTrend.chronic.toFixed(1)} baseline`,
+        chartXAxisLabel: 'Recent load compared with baseline',
+        chartYAxisLabel: 'Training load units',
         chartValueUnit: 'load',
         chartValues: [
           Math.max(0, outlook.loadTrend.chronic),
           Math.max(0, outlook.loadTrend.acute),
-          Math.max(0, outlook.loadTrend.ratio * 50),
+          Math.max(0, Math.max(outlook.loadTrend.chronic, outlook.loadTrend.acute) * loadRatio),
         ],
-        chartLabels: ['chronic', 'acute', 'ratio'],
-        summary: `Current workload ratio is ${outlook.loadTrend.ratio.toFixed(2)} with ${outlook.completedActivities} completed session${outlook.completedActivities === 1 ? '' : 's'} in scope.`,
-        info: 'Compares recent completed training load with prior load while preserving completed history separately from planned sessions. Sudden edits or backdated entries can change this.',
+        chartLabels: ['Baseline', 'Recent', 'Balance'],
+        summary: `Recent load is ${outlook.loadTrend.acute.toFixed(1)} against a ${outlook.loadTrend.chronic.toFixed(1)} baseline across ${outlook.completedActivities} completed session${outlook.completedActivities === 1 ? '' : 's'}.`,
+        info: 'Measures recent completed training load against your longer baseline. Higher recent load means sharper ramp risk; lower recent load means recovery or detraining pressure.',
       },
     ],
   };

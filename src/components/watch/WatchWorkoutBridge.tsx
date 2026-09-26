@@ -9,11 +9,13 @@ import {
   addStrideWatchWorkoutStateListener,
   type StrideWatchWorkoutStateEvent,
 } from '../../../modules/stride-watch-connectivity/src';
-import { startActivityLocationTracking, stopActivityLocationTracking } from '../../lib/activityGpsTracking';
-import { endOutdoorLiveActivity, startOutdoorLiveActivity, updateOutdoorLiveActivity } from '../../lib/runLiveActivity';
-import { endStrengthLiveActivity, startStrengthLiveActivity, strengthLiveActivitySessionId, updateStrengthLiveActivity } from '../../lib/strengthLiveActivity';
+import { stopActivityLocationTracking } from '../../lib/activityGpsTracking';
+import { stopLocationTracking } from '../../lib/gpsTracking';
+import { endOutdoorLiveActivity, updateOutdoorLiveActivity } from '../../lib/runLiveActivity';
+import { endStrengthLiveActivity, strengthLiveActivitySessionId, updateStrengthLiveActivity } from '../../lib/strengthLiveActivity';
 import { enqueueVoiceCue } from '../../lib/voiceCue';
 import { activeOutdoorElapsedSeconds, useActiveActivityStore, type ActiveOutdoorType } from '../../store/activeActivityStore';
+import { activeRunElapsedSeconds, useActiveRunStore } from '../../store/activeRunStore';
 import { activeStrengthElapsedSeconds, useActiveStrengthSessionStore } from '../../store/activeStrengthSessionStore';
 import { useLiveSensorStore } from '../../store/liveSensorStore';
 
@@ -59,8 +61,33 @@ function labelForWatchKind(kind: string | undefined): string {
 }
 
 function eventWorkoutId(event: StrideWatchWorkoutStateEvent): string {
-  return event.workoutInstanceId?.trim()
-    || `watch_${event.workoutKind ?? 'workout'}_${Math.round(event.timestamp)}`;
+  const providedId = event.workoutInstanceId?.trim();
+  if (providedId) return providedId;
+
+  if (event.workoutKind === 'run') {
+    const activeRun = useActiveRunStore.getState();
+    if (activeRun.isActive) {
+      return activeRun.workoutInstanceId ?? `watch_run_${Math.round(event.timestamp)}`;
+    }
+  }
+
+  const outdoorType = outdoorTypeFromWatch(event.workoutKind);
+  if (outdoorType) {
+    const active = useActiveActivityStore.getState();
+    if (active.isActive && active.activityType === outdoorType) {
+      return active.workoutInstanceId ?? active.activityId ?? `watch_${event.workoutKind ?? 'workout'}_${Math.round(event.timestamp)}`;
+    }
+  }
+
+  const strengthKind = strengthKindFromWatch(event.workoutKind);
+  if (strengthKind) {
+    const session = useActiveStrengthSessionStore.getState().session;
+    if (session && (session.status === 'active' || session.status === 'paused')) {
+      return session.workoutInstanceId;
+    }
+  }
+
+  return `watch_${event.workoutKind ?? 'workout'}_${Math.round(event.timestamp)}`;
 }
 
 function distanceMiles(event: Pick<StrideWatchWorkoutStateEvent, 'distanceMeters'>): number {
@@ -117,6 +144,81 @@ function syncStrengthLiveActivity(event: StrideWatchWorkoutStateEvent, isPaused:
 }
 
 function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
+  if (event.workoutKind === 'run') {
+    const id = eventWorkoutId(event);
+    if (completedWatchWorkoutEvents.has(id)) return;
+
+    if (event.state === 'running') {
+      const activeRun = useActiveRunStore.getState();
+      if (!activeRun.isActive) return;
+      if (activeRun.isPaused && (!activeRun.workoutInstanceId || activeRun.workoutInstanceId === id)) {
+        useActiveRunStore.getState().resumeRun('manual');
+        void updateOutdoorLiveActivity({
+          sessionId: activeRun.workoutInstanceId ?? id,
+          workoutInstanceId: activeRun.workoutInstanceId ?? id,
+          sessionSource: 'running',
+          activityName: 'Training Run',
+          activityType: 'running',
+          elapsedSeconds: activeRunElapsedSeconds(useActiveRunStore.getState()),
+          distanceMiles: Math.max(activeRun.distanceMiles, distanceMiles(event)),
+          averagePace: paceLabel(event),
+          heartRateBpm: event.heartRate ?? null,
+          zoneLabel: event.heartRateZone,
+          isPaused: false,
+        }).catch(() => undefined);
+        enqueueVoiceCue('Resuming workout.', 'interval');
+      }
+      return;
+    }
+
+    if (event.state === 'paused') {
+      const activeRun = useActiveRunStore.getState();
+      if (!activeRun.isActive || activeRun.isPaused) return;
+      if (activeRun.workoutInstanceId && event.workoutInstanceId && activeRun.workoutInstanceId !== event.workoutInstanceId) return;
+      useActiveRunStore.getState().pauseRun('manual');
+      void updateOutdoorLiveActivity({
+        sessionId: activeRun.workoutInstanceId ?? id,
+        workoutInstanceId: activeRun.workoutInstanceId ?? id,
+        sessionSource: 'running',
+        activityName: 'Training Run',
+        activityType: 'running',
+        elapsedSeconds: activeRunElapsedSeconds(useActiveRunStore.getState()),
+        distanceMiles: Math.max(activeRun.distanceMiles, distanceMiles(event)),
+        averagePace: paceLabel(event),
+        heartRateBpm: event.heartRate ?? null,
+        zoneLabel: event.heartRateZone,
+        isPaused: true,
+      }).catch(() => undefined);
+      enqueueVoiceCue('Pausing workout.', 'interval');
+      return;
+    }
+
+    if (event.state === 'ended') {
+      const activeRun = useActiveRunStore.getState();
+      if (!activeRun.isActive) return;
+      if (activeRun.workoutInstanceId && event.workoutInstanceId && activeRun.workoutInstanceId !== event.workoutInstanceId) return;
+      const completionId = activeRun.workoutInstanceId ?? id;
+      if (!rememberCompletedWatchWorkout(completionId, event.timestamp)) return;
+      void stopLocationTracking().catch(() => undefined);
+      void endOutdoorLiveActivity({
+        sessionId: activeRun.workoutInstanceId ?? completionId,
+        workoutInstanceId: activeRun.workoutInstanceId ?? completionId,
+        sessionSource: 'running',
+        activityName: 'Training Run',
+        activityType: 'running',
+        elapsedSeconds: activeRunElapsedSeconds(activeRun),
+        distanceMiles: Math.max(activeRun.distanceMiles, distanceMiles(event)),
+        averagePace: paceLabel(event),
+        heartRateBpm: event.heartRate ?? null,
+        zoneLabel: event.heartRateZone,
+        isPaused: false,
+      }).catch(() => undefined);
+      useActiveRunStore.getState().finishRun();
+      enqueueVoiceCue('Workout ended.', 'motivation');
+      return;
+    }
+  }
+
   const outdoorType = outdoorTypeFromWatch(event.workoutKind);
   const strengthKind = strengthKindFromWatch(event.workoutKind);
   if (!outdoorType && !strengthKind) return;
@@ -124,37 +226,9 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
   if (event.state === 'running') {
     if (outdoorType) {
       const active = useActiveActivityStore.getState();
-      const activeStrength = useActiveStrengthSessionStore.getState().session;
       const id = eventWorkoutId(event);
       if (completedWatchWorkoutEvents.has(id)) return;
-      const hasConflict = active.isActive
-        && active.workoutInstanceId !== id
-        && active.activityType !== outdoorType;
-      if (hasConflict || activeStrength) return;
-      if (!active.isActive) {
-        useActiveActivityStore.getState().start({
-          activityType: outdoorType,
-          subtype: event.environment === 'indoor' ? 'indoor' : 'outdoor',
-          name: labelForWatchKind(event.workoutKind),
-          workoutInstanceId: id,
-        });
-        void startActivityLocationTracking().catch(() => undefined);
-        void startOutdoorLiveActivity({
-          sessionId: id,
-          workoutInstanceId: id,
-          sessionSource: 'outdoor',
-          activityName: labelForWatchKind(event.workoutKind),
-          activityType: outdoorType,
-          elapsedSeconds: event.elapsedSeconds ?? 0,
-          distanceMiles: distanceMiles(event),
-          averagePace: paceLabel(event),
-          heartRateBpm: event.heartRate ?? null,
-          zoneLabel: event.heartRateZone,
-          isPaused: false,
-        }).catch(() => undefined);
-        enqueueVoiceCue(`${labelForWatchKind(event.workoutKind)} started.`, 'motivation');
-        return;
-      }
+      if (!active.isActive || active.activityType !== outdoorType) return;
       if (active.isPaused && (active.workoutInstanceId === id || active.activityType === outdoorType)) {
         useActiveActivityStore.getState().resume('manual');
         syncOutdoorLiveActivity(event, false);
@@ -168,32 +242,7 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
       const session = state.session;
       const id = eventWorkoutId(event);
       if (completedWatchWorkoutEvents.has(id)) return;
-      if (useActiveActivityStore.getState().isActive) return;
-      if (!session) {
-        useActiveStrengthSessionStore.getState().startSession({
-          source: 'custom',
-          workoutId: id,
-          workoutName: `Watch ${labelForWatchKind(event.workoutKind)}`,
-          plannedDurationMin: strengthKind === 'mobility' ? 15 : 30,
-          exercises: [],
-          workoutInstanceId: id,
-        });
-        const launched = useActiveStrengthSessionStore.getState().session;
-        void startStrengthLiveActivity({
-          workoutName: launched?.workoutName ?? `Watch ${labelForWatchKind(event.workoutKind)}`,
-          sessionId: launched ? strengthLiveActivitySessionId(launched) : id,
-          sessionSource: 'custom',
-          workoutInstanceId: id,
-          elapsedSeconds: event.elapsedSeconds ?? 0,
-          currentExercise: `${labelForWatchKind(event.workoutKind)} in progress`,
-          nextExercise: '',
-          setsCompleted: 0,
-          totalSets: 1,
-          progressLabel: 'Apple Watch live',
-        }).catch(() => undefined);
-        enqueueVoiceCue(`${labelForWatchKind(event.workoutKind)} started.`, 'motivation');
-        return;
-      }
+      if (!session) return;
       if (session.status === 'paused' && session.workoutInstanceId === id) {
         useActiveStrengthSessionStore.getState().resume();
         syncStrengthLiveActivity(event, false);
@@ -225,11 +274,11 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
   }
 
   if (event.state === 'ended') {
-    const id = eventWorkoutId(event);
     if (outdoorType) {
       const active = useActiveActivityStore.getState();
+      const id = active.workoutInstanceId ?? eventWorkoutId(event);
       if (!active.isActive) return;
-      if (active.workoutInstanceId && active.workoutInstanceId !== id) return;
+      if (active.workoutInstanceId && event.workoutInstanceId && active.workoutInstanceId !== event.workoutInstanceId) return;
       if (!rememberCompletedWatchWorkout(id, event.timestamp)) return;
       void stopActivityLocationTracking().catch(() => undefined);
       void endOutdoorLiveActivity({
@@ -248,12 +297,15 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
         elevationGainMeters: active.aggregate.elevationGainMeters,
         elevationLossMeters: active.aggregate.elevationLossMeters,
       }).catch(() => undefined);
-      useActiveActivityStore.getState().requestCompletion();
+      if (!active.completionRequestedAt) {
+        useActiveActivityStore.getState().requestCompletion();
+      }
       enqueueVoiceCue('Workout ended.', 'motivation');
       return;
     }
     if (strengthKind) {
       const session = useActiveStrengthSessionStore.getState().session;
+      const id = session?.workoutInstanceId ?? eventWorkoutId(event);
       if (!session || session.workoutInstanceId !== id) return;
       if (!rememberCompletedWatchWorkout(id, event.timestamp)) return;
       void endStrengthLiveActivity({
@@ -261,7 +313,9 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
         sessionId: strengthLiveActivitySessionId(session),
         sessionSource: session.source,
       }).catch(() => undefined);
-      useActiveStrengthSessionStore.getState().requestCompletion();
+      if (!useActiveStrengthSessionStore.getState().completionRequestedAt) {
+        useActiveStrengthSessionStore.getState().requestCompletion();
+      }
       enqueueVoiceCue('Workout ended.', 'motivation');
     }
   }

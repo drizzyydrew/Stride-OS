@@ -1,11 +1,8 @@
 // ─── Shared map styling ───────────────────────────────────────────────────────
 //
-// StrideOS map appearance for react-native-maps, matching the live-run map
-// styles in app/(tabs)/training/index.tsx (kept duplicated there deliberately
-// — that file is run-critical and wasn't churned for a constants move; new
-// map surfaces should import from here).
+// StrideOS map appearance shared by map-backed surfaces.
 
-import type { Region } from 'react-native-maps';
+import type { Region } from '../components/maps/MapComponents';
 
 export const DEFAULT_MAP_REGION: Region = {
   latitude: 44.0582,

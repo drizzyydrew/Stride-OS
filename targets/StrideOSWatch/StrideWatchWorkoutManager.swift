@@ -104,12 +104,12 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
   private var maxHeartRateBpm: Int = 190
   private var targetZone: Int?
-  private var workoutEnvironment: String = "outdoor"
 
   private let healthStore = HKHealthStore()
   private var session: HKWorkoutSession?
   private var builder: HKLiveWorkoutBuilder?
   private var workoutInstanceId: String?
+  private var workoutEnvironment: String = "outdoor"
   private var startedAt: Date?
   private var pausedAt: Date?
   private var pausedSeconds: TimeInterval = 0
@@ -117,6 +117,8 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private var endedStateSentForWorkoutInstanceId: String?
   private var lastHandledPhoneCommandKey: String?
   private var queuedOutboundPayloads: [[String: Any]] = []
+  private var pendingConnectivityActivationWorkItem: DispatchWorkItem?
+  private var suppressNextConnectivityActivationError = false
   private let stalePhoneCommandWindowMs: Double = 2 * 60 * 1000
   private let stalePhoneContextWindowMs: Double = 4 * 60 * 60 * 1000
 
@@ -230,7 +232,11 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
   private override init() {
     super.init()
-    activateWatchConnectivity()
+  }
+
+  func prepareForPhoneControl() {
+    guard WCSession.isSupported() else { return }
+    scheduleConnectivityActivation(reportErrors: false, delay: 1.5)
   }
 
   func startWorkout(
@@ -334,13 +340,15 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       self.builder = builder
 
       let now = Date()
-      startedAt = now
-      pausedAt = nil
-      pausedSeconds = 0
-      elapsedSeconds = 0
-      heartRateBpm = nil
-      distanceMeters = 0
-      activeEnergyKilocalories = 0
+      DispatchQueue.main.async {
+        self.startedAt = now
+        self.pausedAt = nil
+        self.pausedSeconds = 0
+        self.elapsedSeconds = 0
+        self.heartRateBpm = nil
+        self.distanceMeters = 0
+        self.activeEnergyKilocalories = 0
+      }
       session.startActivity(with: now)
       builder.beginCollection(withStart: now) { [weak self] success, error in
         if let error {
@@ -351,9 +359,13 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       }
       startTimer()
       sendWorkoutState("running")
-      isStartingWorkout = false
+      DispatchQueue.main.async {
+        self.isStartingWorkout = false
+      }
     } catch {
-      isStartingWorkout = false
+      DispatchQueue.main.async {
+        self.isStartingWorkout = false
+      }
       publishError("HealthKit did not start: \(error.localizedDescription)")
     }
   }
@@ -406,11 +418,24 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     }
   }
 
-  private func activateWatchConnectivity() {
+  private func activateWatchConnectivity(reportErrors: Bool = true) {
     guard WCSession.isSupported() else { return }
     let session = WCSession.default
     session.delegate = self
-    session.activate()
+    if session.activationState == .notActivated {
+      suppressNextConnectivityActivationError = !reportErrors
+      session.activate()
+    }
+  }
+
+  private func scheduleConnectivityActivation(reportErrors: Bool = false, delay: TimeInterval = 2.0) {
+    guard WCSession.isSupported() else { return }
+    pendingConnectivityActivationWorkItem?.cancel()
+    let workItem = DispatchWorkItem { [weak self] in
+      self?.activateWatchConnectivity(reportErrors: reportErrors)
+    }
+    pendingConnectivityActivationWorkItem = workItem
+    DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
   }
 
   private func sendHeartRate(_ bpm: Int) {
@@ -466,9 +491,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private func sendToPhone(_ payload: [String: Any], reportFailures: Bool = true) {
     guard WCSession.isSupported() else { return }
     let session = WCSession.default
+
     guard session.activationState == .activated else {
       queuedOutboundPayloads.append(payload)
-      session.activate()
+      scheduleConnectivityActivation(reportErrors: false)
       return
     }
 
@@ -603,8 +629,16 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
     activationDidCompleteWith activationState: WCSessionActivationState,
     error: Error?
   ) {
+    pendingConnectivityActivationWorkItem?.cancel()
+    pendingConnectivityActivationWorkItem = nil
     if let error {
-      publishError(error.localizedDescription)
+      let shouldSuppress = suppressNextConnectivityActivationError
+      suppressNextConnectivityActivationError = false
+      if !shouldSuppress {
+        publishError(error.localizedDescription)
+      }
+    } else {
+      suppressNextConnectivityActivationError = false
     }
     DispatchQueue.main.async {
       self.flushQueuedOutboundPayloads()
@@ -663,10 +697,13 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
           targetZone: message["targetZone"] as? Int
         )
       case "pauseWorkout", "pauseRun":
+        guard self.shouldApplyControlCommand(message) else { return }
         self.pauseWorkout()
       case "resumeWorkout", "resumeRun":
+        guard self.shouldApplyControlCommand(message) else { return }
         self.resumeWorkout()
       case "endWorkout", "endRun":
+        guard self.shouldApplyControlCommand(message) else { return }
         self.endWorkout()
       case "setContext":
         self.applyPhoneContext(message)
@@ -674,6 +711,16 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
         break
       }
     }
+  }
+
+  private func shouldApplyControlCommand(_ message: [String: Any]) -> Bool {
+    guard let requestedId = message["workoutInstanceId"] as? String, !requestedId.isEmpty else {
+      return true
+    }
+    guard let currentId = workoutInstanceId, !currentId.isEmpty else {
+      return true
+    }
+    return requestedId == currentId
   }
 
   private func isStaleControlCommand(type: String?, sentAt: Double, fromApplicationContext: Bool = false) -> Bool {

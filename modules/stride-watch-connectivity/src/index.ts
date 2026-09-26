@@ -69,12 +69,12 @@ type StrideWatchConnectivityNativeModule = {
     environment?: string | null,
     targetZone?: number | null,
   ) => Promise<StrideWatchStatus>;
-  pauseRun: () => Promise<StrideWatchStatus>;
-  pauseWorkout: () => Promise<StrideWatchStatus>;
-  resumeRun: () => Promise<StrideWatchStatus>;
-  resumeWorkout: () => Promise<StrideWatchStatus>;
-  endRun: () => Promise<StrideWatchStatus>;
-  endWorkout: () => Promise<StrideWatchStatus>;
+  pauseRun: (workoutInstanceId?: string | null) => Promise<StrideWatchStatus>;
+  pauseWorkout: (workoutInstanceId?: string | null) => Promise<StrideWatchStatus>;
+  resumeRun: (workoutInstanceId?: string | null) => Promise<StrideWatchStatus>;
+  resumeWorkout: (workoutInstanceId?: string | null) => Promise<StrideWatchStatus>;
+  endRun: (workoutInstanceId?: string | null) => Promise<StrideWatchStatus>;
+  endWorkout: (workoutInstanceId?: string | null) => Promise<StrideWatchStatus>;
   setWorkoutContext: (
     unitSystem?: 'imperial' | 'metric' | string | null,
     maxHeartRateBpm?: number | null,
@@ -179,43 +179,43 @@ export async function startStrideWatchWorkout(options: {
   }
 }
 
-export async function pauseStrideWatchRun(): Promise<StrideWatchStatus> {
-  return pauseStrideWatchWorkout();
+export async function pauseStrideWatchRun(workoutInstanceId?: string | null): Promise<StrideWatchStatus> {
+  return pauseStrideWatchWorkout(workoutInstanceId);
 }
 
-export async function pauseStrideWatchWorkout(): Promise<StrideWatchStatus> {
+export async function pauseStrideWatchWorkout(workoutInstanceId?: string | null): Promise<StrideWatchStatus> {
   const nativeModule = getNativeModule();
   if (!nativeModule) return FALLBACK_STATUS;
   try {
-    return normalizeStatus(await nativeModule.pauseWorkout());
+    return normalizeStatus(await nativeModule.pauseWorkout(workoutInstanceId ?? null));
   } catch (error) {
     return { ...getStrideWatchStatus(), lastError: messageFromError(error) };
   }
 }
 
-export async function resumeStrideWatchRun(): Promise<StrideWatchStatus> {
-  return resumeStrideWatchWorkout();
+export async function resumeStrideWatchRun(workoutInstanceId?: string | null): Promise<StrideWatchStatus> {
+  return resumeStrideWatchWorkout(workoutInstanceId);
 }
 
-export async function resumeStrideWatchWorkout(): Promise<StrideWatchStatus> {
+export async function resumeStrideWatchWorkout(workoutInstanceId?: string | null): Promise<StrideWatchStatus> {
   const nativeModule = getNativeModule();
   if (!nativeModule) return FALLBACK_STATUS;
   try {
-    return normalizeStatus(await nativeModule.resumeWorkout());
+    return normalizeStatus(await nativeModule.resumeWorkout(workoutInstanceId ?? null));
   } catch (error) {
     return { ...getStrideWatchStatus(), lastError: messageFromError(error) };
   }
 }
 
-export async function endStrideWatchRun(): Promise<StrideWatchStatus> {
-  return endStrideWatchWorkout();
+export async function endStrideWatchRun(workoutInstanceId?: string | null): Promise<StrideWatchStatus> {
+  return endStrideWatchWorkout(workoutInstanceId);
 }
 
-export async function endStrideWatchWorkout(): Promise<StrideWatchStatus> {
+export async function endStrideWatchWorkout(workoutInstanceId?: string | null): Promise<StrideWatchStatus> {
   const nativeModule = getNativeModule();
   if (!nativeModule) return FALLBACK_STATUS;
   try {
-    return normalizeStatus(await nativeModule.endWorkout());
+    return normalizeStatus(await nativeModule.endWorkout(workoutInstanceId ?? null));
   } catch (error) {
     return { ...getStrideWatchStatus(), lastError: messageFromError(error) };
   }

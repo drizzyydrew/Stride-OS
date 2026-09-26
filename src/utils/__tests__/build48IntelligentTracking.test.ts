@@ -77,25 +77,33 @@ test('Build 48 Live Activity payload is keyed to workoutInstanceId and rejects w
   ), false);
 });
 
-test('Build 48 auto-pause uses one-second running stop and two-second cycling stop windows', () => {
+test('Build 48 auto-pause uses two-second sustained stop and movement windows', () => {
   const state = initialAutoPauseState('running', 'running_and_cycling');
   const poorGps = reduceAutoPause(state, sample(0, { horizontalAccuracyMeters: 80 }));
   assert.equal(poorGps.action, 'none');
   assert.equal(poorGps.state.stationarySamples, 0);
 
-  const briefStop = runDetector(state, (next, atMs) => reduceAutoPause(next, sample(atMs)), [0, 500]);
+  const briefStop = runDetector(state, (next, atMs) => reduceAutoPause(next, sample(atMs)), [0, 1_000]);
   assert.equal(briefStop.action, 'none');
 
-  const paused = runDetector(state, (next, atMs) => reduceAutoPause(next, sample(atMs)), [0, 1_000]);
+  const paused = runDetector(state, (next, atMs) => reduceAutoPause(next, sample(atMs)), [0, 2_000]);
   assert.equal(paused.action, 'auto_pause');
   assert.equal(paused.state.paused, true);
+
+  const briefMovement = runDetector(paused.state, (next, atMs) => reduceAutoPause(next, sample(atMs, {
+    speedMps: 1.4,
+    displacementMeters: 20,
+    motion: 'running',
+    cadenceRpm: 165,
+  })), [3_000, 4_000]);
+  assert.equal(briefMovement.action, 'none');
 
   const resumed = runDetector(paused.state, (next, atMs) => reduceAutoPause(next, sample(atMs, {
     speedMps: 1.4,
     displacementMeters: 20,
     motion: 'running',
     cadenceRpm: 165,
-  })), [2_000, 3_000]);
+  })), [3_000, 5_000]);
   assert.equal(resumed.action, 'auto_resume');
   assert.equal(resumed.state.paused, false);
 

@@ -49,6 +49,8 @@ export type RunModeConfig = {
   scheduledSessionId?:    string;
   environment?:           RunEnvironment;
   treadmillPhonePlacement?: TreadmillPhonePlacement;
+  workoutInstanceId?:     string | null;
+  startedAtMs?:           number | null;
 };
 
 // Rolling window for pace calculation (seconds of data to average)
@@ -175,12 +177,15 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
 
   startRun: (plannedWorkout, config) => {
     const now = Date.now();
+    const startedAt = Number.isFinite(config?.startedAtMs ?? NaN) && (config?.startedAtMs ?? 0) > 0
+      ? Number(config?.startedAtMs)
+      : now;
     const environment = config?.environment ?? 'outdoor';
     const settings = useSettingsStore.getState();
     set({
       isActive:               true,
       isPaused:               false,
-      startTime:              now,
+      startTime:              startedAt,
       pausedAt:               null,
       pausedDurationMs:       0,
       distanceMiles:          0,
@@ -197,7 +202,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       goalMiles:              config?.goalMiles ?? null,
       targetPaceSecPerMile:   config?.targetPaceSecPerMile ?? null,
       completionRequestedAt:  null,
-      workoutInstanceId:      buildWorkoutInstanceId(config?.scheduledSessionId ?? null, now),
+      workoutInstanceId:      config?.workoutInstanceId ?? buildWorkoutInstanceId(config?.scheduledSessionId ?? null, startedAt),
       environment,
       treadmillSegments:      [],
       currentSpeedMph:        null,

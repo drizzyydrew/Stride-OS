@@ -50,6 +50,14 @@ export type RunRoute = {
   estimatedDurationMin?: number;       // canonical; `estimatedMinutes` kept for legacy consumers
   surfaceType?:         RouteSurface;
   routingProvider?:     'osrm_foot' | 'osrm_road' | 'direct';
+  offlineMap?: {
+    provider: 'mapbox';
+    status: 'not_downloaded' | 'downloading' | 'ready' | 'failed';
+    packName?: string;
+    progress?: number;
+    updatedAt?: number;
+    error?: string;
+  };
   notes?:               string;
   linkedWorkoutId?:     string;
 };

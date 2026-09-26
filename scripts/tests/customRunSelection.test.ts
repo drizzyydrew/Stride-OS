@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 import {
@@ -27,4 +28,16 @@ test('Not Today is persistent, reversible, and does not mutate the custom run', 
   assert.equal(restored.selectedTodayCustomRunId, run.id);
   assert.equal(restored.dismissedTodayCustomRunId, null);
   assert.equal(run.completed, false);
+});
+
+test('saved custom runs can be deleted and selected custom workouts drive Active start', () => {
+  const store = readFileSync('src/store/customWorkoutStore.ts', 'utf8');
+  const training = readFileSync('app/(tabs)/training/index.tsx', 'utf8');
+
+  assert.match(store, /deleteCustomRun: \(id: string\) => void/);
+  assert.match(store, /customRuns: state\.customRuns\.filter\(run => run\.id !== id\)/);
+  assert.match(store, /selectedTodayCustomRunId: state\.selectedTodayCustomRunId === id \? null/);
+  assert.match(training, /Delete Workout/);
+  assert.match(training, /const workoutForStart = selectedCustomWorkout \?\? todayPlannedWorkout/);
+  assert.match(training, /scheduledSessionId: usingCustomWorkout \? undefined : todayPlannedSession\?\.scheduledSessionId/);
 });

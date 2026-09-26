@@ -3,8 +3,7 @@
 // Map-first route creation: tap to drop waypoints, drag to reshape, and the
 // route line snaps to runnable roads/paths/trails via OSRM's foot profile
 // (see src/lib/routing.ts for the provider decision). Distance, elevation
-// gain/loss, and estimated time update live. Falls back to direct lines —
-// clearly labeled — whenever the router is unreachable.
+// gain/loss, and estimated time update live.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -41,6 +40,8 @@ const FOLDERS: { key: RunRoute['folder']; label: string }[] = [
   { key: 'long', label: 'Long Run' },
   { key: 'custom', label: 'Custom' },
 ];
+
+const SHOW_AUTO_ROUTE_BUILDER = false;
 
 type PlaceSearchResult = {
   id: string;
@@ -113,8 +114,8 @@ export default function RouteBuilderScreen() {
   // Re-route + re-fetch elevation whenever the control points change.
   // Debounced, and guarded with a request id so a stale response can never
   // overwrite a newer route. Snap failure is a first-class state — the
-  // athlete sees an error and can retry or explicitly switch to Direct;
-  // there is no silent straight-line substitution.
+  // athlete sees an error and can retry; there is no silent straight-line
+  // substitution in the visible route-building flow.
   useEffect(() => {
     const requestId = ++requestIdRef.current;
     if (waypoints.length < 2) {
@@ -325,8 +326,8 @@ export default function RouteBuilderScreen() {
         : routed?.provider === 'osrm_road'
           ? 'Snapped to roads · trail data unavailable'
           : snapEnabled
-            ? 'Snap failed — retry or switch to Direct'
-            : 'Direct lines (manual mode)';
+            ? 'Snap failed — retry to rebuild the path'
+            : 'Route line unavailable';
 
   const statCells = useMemo(() => ([
     { label: 'ELEV GAIN', value: gainDisplay !== null ? `+${gainDisplay}` : '—', unit: gainDisplay !== null ? elevUnit : '' },
@@ -415,8 +416,8 @@ export default function RouteBuilderScreen() {
             <Polyline
               coordinates={geometry}
               strokeColor={snapUnresolved ? C.textMuted : lineColor}
-              strokeWidth={snapUnresolved ? 3 : 4}
-              lineDashPattern={snapUnresolved || (!snapEnabled && routed?.provider === 'direct') ? [10, 8] : undefined}
+              strokeWidth={snapUnresolved ? 4 : 6}
+              lineDashPattern={snapUnresolved ? [10, 8] : undefined}
             />
           ) : null}
           {waypoints.map((point, index) => {
@@ -433,7 +434,17 @@ export default function RouteBuilderScreen() {
                 description="Drag to move · tap this bubble to delete"
                 pinColor={isStart ? C.positive : isEnd ? C.critical : undefined}
                 anchor={{ x: 0.5, y: 1 }}
-              />
+              >
+                <View style={[
+                  s.routeMarker,
+                  {
+                    backgroundColor: isStart ? C.positive : isEnd ? C.primary : C.card,
+                    borderColor: isStart ? C.positive : isEnd ? C.primary : C.primary,
+                  },
+                ]}>
+                  <View style={s.routeMarkerCore} />
+                </View>
+              </Marker>
             );
           })}
         </MapView>
@@ -463,20 +474,11 @@ export default function RouteBuilderScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Snap toggle */}
+        {/* Route mode */}
         <View style={[s.snapToggle, { top: insets.top + 58, backgroundColor: panelBg, borderColor: C.border }]}>
-          {([true, false] as const).map(value => (
-            <TouchableOpacity
-              key={String(value)}
-              style={[s.snapOption, snapEnabled === value && { backgroundColor: C.primaryDim }]}
-              onPress={() => setSnapEnabled(value)}
-              activeOpacity={0.8}
-            >
-              <Text style={[s.snapOptionText, { color: snapEnabled === value ? C.primary : C.textMuted }]}>
-                {value ? 'Snap to paths' : 'Direct'}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <View style={[s.snapOption, { backgroundColor: C.primaryDim }]}>
+            <Text style={[s.snapOptionText, { color: C.primary }]}>Snap to paths</Text>
+          </View>
         </View>
 
         {/* Route helpers */}
@@ -564,7 +566,7 @@ export default function RouteBuilderScreen() {
           ))}
         </View>
 
-        <View style={[s.autoCard, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
+        {SHOW_AUTO_ROUTE_BUILDER ? <View style={[s.autoCard, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
           <TouchableOpacity
             style={s.autoHeader}
             onPress={() => setAutoRouteOpen(open => !open)}
@@ -627,8 +629,8 @@ export default function RouteBuilderScreen() {
                     {placeSearching ? <ActivityIndicator size="small" color={C.onPrimary} /> : <Ionicons name="search-outline" size={16} color={C.onPrimary} />}
                   </TouchableOpacity>
                 </View>
-                {selectedPlace ? (
-                  <Text style={[s.selectedPlaceText, { color: C.positive }]}>Selected: {selectedPlace.label}</Text>
+                {selectedPlace !== null ? (
+                  <Text style={[s.selectedPlaceText, { color: C.positive }]}>Selected: {selectedPlace?.label ?? ''}</Text>
                 ) : (
                   <Text style={[s.autoHint, { color: C.textDim }]}>
                     Search to generate a route to, from, or around a selected location.
@@ -720,7 +722,7 @@ export default function RouteBuilderScreen() {
               </Text>
             </View>
           ) : null}
-        </View>
+        </View> : null}
 
         <View style={s.actionRow}>
           <TouchableOpacity
@@ -854,11 +856,11 @@ export default function RouteBuilderScreen() {
               cheating, it is how the course was measured.
             </Text>
             <TouchableOpacity
-              style={[s.primaryBtn, { backgroundColor: C.primary, marginTop: 14 }]}
+              style={[s.primaryBtn, { backgroundColor: C.primary, marginTop: 14, minHeight: 44 }]}
               onPress={() => setShowInfo(false)}
               activeOpacity={0.85}
             >
-              <Text style={[s.primaryBtnText, { color: C.onPrimary }]}>Got it</Text>
+              <Text style={[s.primaryBtnText, { color: '#FFFFFF' }]}>Close</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -891,6 +893,24 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   headerPillText: { fontSize: 13, fontWeight: '800' },
+  routeMarker: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  routeMarkerCore: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFFFFF',
+  },
   snapToggle: {
     position: 'absolute',
     alignSelf: 'center',

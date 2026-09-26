@@ -86,9 +86,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     }
 
     if session.isReachable {
-      session.sendMessage(message, replyHandler: nil) { [weak self] error in
-        self?.recordError(error.localizedDescription)
-      }
+      sendReachableOrQueue(message, session: session)
     } else if session.activationState == .activated && session.isPaired && session.isWatchAppInstalled {
       session.transferUserInfo(message)
     } else if session.isPaired && session.isWatchAppInstalled {
@@ -181,11 +179,25 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
         try? session.updateApplicationContext(command)
       }
       if session.isReachable {
-        session.sendMessage(command, replyHandler: nil) { [weak self] error in
-          self?.recordError(error.localizedDescription)
-        }
+        sendReachableOrQueue(command, session: session)
       } else {
         session.transferUserInfo(command)
+      }
+    }
+  }
+
+  private func sendReachableOrQueue(_ message: [String: Any], session: WCSession) {
+    session.sendMessage(message, replyHandler: nil) { [weak self] error in
+      guard let self else { return }
+      if session.activationState == .activated && session.isPaired && session.isWatchAppInstalled {
+        session.transferUserInfo(message)
+        if self.shouldPublishAsLatestContext(message["type"] as? String) {
+          try? session.updateApplicationContext(message)
+        }
+        self.lastError = nil
+        self.emitStatus()
+      } else {
+        self.recordError(error.localizedDescription)
       }
     }
   }
@@ -358,54 +370,78 @@ public final class StrideWatchConnectivityModule: Module {
       }
     }
 
-    AsyncFunction("pauseRun") { (promise: Promise) in
+    AsyncFunction("pauseRun") { (workoutInstanceId: String?, promise: Promise) in
       do {
-        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.pauseRun, payload: [:])
+        var payload: [String: Any] = [:]
+        if let workoutInstanceId {
+          payload["workoutInstanceId"] = workoutInstanceId
+        }
+        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.pauseRun, payload: payload)
         promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
       } catch {
         promise.reject("ERR_STRIDE_WATCH_PAUSE", error.localizedDescription)
       }
     }
 
-    AsyncFunction("pauseWorkout") { (promise: Promise) in
+    AsyncFunction("pauseWorkout") { (workoutInstanceId: String?, promise: Promise) in
       do {
-        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.pauseWorkout, payload: [:])
+        var payload: [String: Any] = [:]
+        if let workoutInstanceId {
+          payload["workoutInstanceId"] = workoutInstanceId
+        }
+        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.pauseWorkout, payload: payload)
         promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
       } catch {
         promise.reject("ERR_STRIDE_WATCH_PAUSE_WORKOUT", error.localizedDescription)
       }
     }
 
-    AsyncFunction("resumeRun") { (promise: Promise) in
+    AsyncFunction("resumeRun") { (workoutInstanceId: String?, promise: Promise) in
       do {
-        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.resumeRun, payload: [:])
+        var payload: [String: Any] = [:]
+        if let workoutInstanceId {
+          payload["workoutInstanceId"] = workoutInstanceId
+        }
+        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.resumeRun, payload: payload)
         promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
       } catch {
         promise.reject("ERR_STRIDE_WATCH_RESUME", error.localizedDescription)
       }
     }
 
-    AsyncFunction("resumeWorkout") { (promise: Promise) in
+    AsyncFunction("resumeWorkout") { (workoutInstanceId: String?, promise: Promise) in
       do {
-        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.resumeWorkout, payload: [:])
+        var payload: [String: Any] = [:]
+        if let workoutInstanceId {
+          payload["workoutInstanceId"] = workoutInstanceId
+        }
+        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.resumeWorkout, payload: payload)
         promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
       } catch {
         promise.reject("ERR_STRIDE_WATCH_RESUME_WORKOUT", error.localizedDescription)
       }
     }
 
-    AsyncFunction("endRun") { (promise: Promise) in
+    AsyncFunction("endRun") { (workoutInstanceId: String?, promise: Promise) in
       do {
-        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.endRun, payload: [:])
+        var payload: [String: Any] = [:]
+        if let workoutInstanceId {
+          payload["workoutInstanceId"] = workoutInstanceId
+        }
+        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.endRun, payload: payload)
         promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
       } catch {
         promise.reject("ERR_STRIDE_WATCH_END", error.localizedDescription)
       }
     }
 
-    AsyncFunction("endWorkout") { (promise: Promise) in
+    AsyncFunction("endWorkout") { (workoutInstanceId: String?, promise: Promise) in
       do {
-        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.endWorkout, payload: [:])
+        var payload: [String: Any] = [:]
+        if let workoutInstanceId {
+          payload["workoutInstanceId"] = workoutInstanceId
+        }
+        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.endWorkout, payload: payload)
         promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
       } catch {
         promise.reject("ERR_STRIDE_WATCH_END_WORKOUT", error.localizedDescription)

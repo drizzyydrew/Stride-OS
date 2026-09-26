@@ -142,6 +142,77 @@ function customSegmentEstimate(segments: CustomRunSegment[], fallbackPaceSecPerM
   };
 }
 
+function presetSegmentsForRunType(
+  runType: Exclude<RunType, 'custom_segments'>,
+  params: {
+    fartlekMin: number;
+    warmupMi: number;
+    tempoMi: number;
+    cooldownMi: number;
+    ivWarmupMi: number;
+    ivReps: number;
+    ivWorkMi: number;
+    ivRestMin: number;
+    ivCooldownMi: number;
+    lrDistanceMi: number;
+    lrStrides: number;
+  },
+  easyPaceSecPerMi: number,
+): CustomRunSegment[] {
+  const easy = Math.round(easyPaceSecPerMi);
+  const tempo = Math.round(easyPaceSecPerMi * 0.85);
+  const interval = Math.round(easyPaceSecPerMi * 0.78);
+  const stride = Math.round(easyPaceSecPerMi * 0.68);
+  if (runType === 'fartlek') {
+    const workBlocks = Math.max(2, Math.min(8, Math.floor(params.fartlekMin / 6)));
+    const remaining = Math.max(0, params.fartlekMin - 10);
+    const hardMin = Math.max(1, Math.round((remaining / workBlocks) * 0.42));
+    const easyMin = Math.max(1, Math.round((remaining / workBlocks) - hardMin));
+    const segments: CustomRunSegment[] = [
+      { id: 'fartlek_warmup', label: 'Warmup', kind: 'warmup', target: 'time', durationMinutes: 10, targetPaceSecPerMile: easy, targetPaceUnit: 'mi', targetHrZone: 2 },
+    ];
+    for (let i = 0; i < workBlocks; i += 1) {
+      segments.push(
+        { id: `fartlek_surge_${i + 1}`, label: `Surge ${i + 1}`, kind: 'run', target: 'time', durationMinutes: hardMin, targetPaceSecPerMile: interval, targetPaceUnit: 'mi', targetHrZone: 4 },
+        { id: `fartlek_float_${i + 1}`, label: `Float ${i + 1}`, kind: 'recovery', target: 'time', durationMinutes: easyMin, targetPaceSecPerMile: easy, targetPaceUnit: 'mi', targetHrZone: 2 },
+      );
+    }
+    return segments;
+  }
+  if (runType === 'tempo') {
+    return [
+      { id: 'tempo_warmup', label: 'Warmup', kind: 'warmup', target: 'distance', distanceMiles: params.warmupMi, distanceUnit: 'mi', targetPaceSecPerMile: easy, targetPaceUnit: 'mi', targetHrZone: 2 },
+      { id: 'tempo_main', label: 'Tempo', kind: 'run', target: 'distance', distanceMiles: params.tempoMi, distanceUnit: 'mi', targetPaceSecPerMile: tempo, targetPaceUnit: 'mi', targetHrZone: 4 },
+      { id: 'tempo_cooldown', label: 'Cooldown', kind: 'cooldown', target: 'distance', distanceMiles: params.cooldownMi, distanceUnit: 'mi', targetPaceSecPerMile: easy, targetPaceUnit: 'mi', targetHrZone: 1 },
+    ];
+  }
+  if (runType === 'intervals') {
+    const segments: CustomRunSegment[] = [
+      { id: 'interval_warmup', label: 'Warmup', kind: 'warmup', target: 'distance', distanceMiles: params.ivWarmupMi, distanceUnit: 'mi', targetPaceSecPerMile: easy, targetPaceUnit: 'mi', targetHrZone: 2 },
+    ];
+    for (let i = 0; i < params.ivReps; i += 1) {
+      segments.push(
+        { id: `interval_work_${i + 1}`, label: `Rep ${i + 1}`, kind: 'run', target: 'distance', distanceMiles: params.ivWorkMi, distanceUnit: 'mi', targetPaceSecPerMile: interval, targetPaceUnit: 'mi', targetHrZone: 5 },
+        { id: `interval_rest_${i + 1}`, label: `Recover ${i + 1}`, kind: 'recovery', target: 'time', durationMinutes: params.ivRestMin, targetPaceSecPerMile: easy, targetPaceUnit: 'mi', targetHrZone: 2 },
+      );
+    }
+    segments.push({ id: 'interval_cooldown', label: 'Cooldown', kind: 'cooldown', target: 'distance', distanceMiles: params.ivCooldownMi, distanceUnit: 'mi', targetPaceSecPerMile: easy, targetPaceUnit: 'mi', targetHrZone: 1 });
+    return segments;
+  }
+  const strideDistance = Math.min(0.08, params.lrDistanceMi / Math.max(20, params.lrStrides * 6));
+  const easyDistance = Math.max(0.1, params.lrDistanceMi - strideDistance * params.lrStrides);
+  const segments: CustomRunSegment[] = [
+    { id: 'long_base', label: 'Easy Long Run', kind: 'run', target: 'distance', distanceMiles: round2(easyDistance), distanceUnit: 'mi', targetPaceSecPerMile: easy, targetPaceUnit: 'mi', targetHrZone: 2 },
+  ];
+  for (let i = 0; i < params.lrStrides; i += 1) {
+    segments.push(
+      { id: `long_stride_${i + 1}`, label: `Stride ${i + 1}`, kind: 'run', target: 'distance', distanceMiles: round2(strideDistance), distanceUnit: 'mi', targetPaceSecPerMile: stride, targetPaceUnit: 'mi', targetHrZone: 4 },
+      { id: `long_recover_${i + 1}`, label: `Recover ${i + 1}`, kind: 'recovery', target: 'time', durationMinutes: 1, targetPaceSecPerMile: easy, targetPaceUnit: 'mi', targetHrZone: 2 },
+    );
+  }
+  return segments;
+}
+
 // ─── Stepper component ────────────────────────────────────────────────────────
 
 function Stepper({
@@ -493,7 +564,7 @@ export default function RunCreatorScreen() {
     ]);
   }
 
-  function handleSave() {
+  function saveRunForToday(): string | null {
     if (runType === 'custom_segments') {
       const invalid = structuredSegments.find(segment => {
         const value = segment.target === 'time' ? segment.durationMinutes : segment.distanceMiles;
@@ -501,9 +572,24 @@ export default function RunCreatorScreen() {
       });
       if (invalid) {
         Alert.alert('Segment needs a target', 'Each segment needs a name and either a time or distance target before saving.');
-        return;
+        return null;
       }
     }
+    const savedSegments = runType === 'custom_segments'
+      ? structuredSegments
+      : presetSegmentsForRunType(runType, {
+        fartlekMin,
+        warmupMi,
+        tempoMi,
+        cooldownMi,
+        ivWarmupMi,
+        ivReps,
+        ivWorkMi,
+        ivRestMin,
+        ivCooldownMi,
+        lrDistanceMi,
+        lrStrides,
+      }, easyPaceSecPerMi);
     const segmentSummary = estimate.segments
       .filter(s => s.distanceMi > 0 || s.durationMin > 0)
       .map(s => s.label)
@@ -528,15 +614,21 @@ export default function RunCreatorScreen() {
         lrDistanceMi,
         lrStrides,
       },
-      structuredSegments: runType === 'custom_segments' ? structuredSegments : undefined,
+      structuredSegments: savedSegments,
     }, editingRun?.id);
     selectCustomRunToday(id, todayDateKey());
     setSaved(true);
+    return id;
+  }
+
+  function handleSave() {
+    saveRunForToday();
   }
 
   function handleStartGPS() {
-    // Navigate to GPS run tracking with no planned workout (free run)
-    router.push('/training/run-tracking' as never);
+    const id = saveRunForToday();
+    if (!id) return;
+    router.push({ pathname: '/(tabs)/training', params: { tab: 'active' } } as never);
   }
 
   return (
@@ -609,29 +701,29 @@ export default function RunCreatorScreen() {
 
           {runType === 'tempo' && (
             <>
-              <Stepper label="Warmup" value={warmupMi} unit="mi" min={0.5} step={0.5}
-                onDecrement={() => setWarmupMi(v => Math.max(0.5, Math.round((v - 0.5) * 2) / 2))}
-                onIncrement={() => setWarmupMi(v => Math.round((v + 0.5) * 2) / 2)}
+              <Stepper label="Warmup" value={warmupMi} unit="mi" min={0.1} step={0.1}
+                onDecrement={() => setWarmupMi(v => Math.max(0.1, Math.round((v - 0.1) * 10) / 10))}
+                onIncrement={() => setWarmupMi(v => Math.round((v + 0.1) * 10) / 10)}
               />
               <View style={st.divider} />
               <Stepper label="Tempo Segment" sub="Comfortably hard effort"
-                value={tempoMi} unit="mi" min={1} step={0.5}
-                onDecrement={() => setTempoMi(v => Math.max(1, Math.round((v - 0.5) * 2) / 2))}
-                onIncrement={() => setTempoMi(v => Math.round((v + 0.5) * 2) / 2)}
+                value={tempoMi} unit="mi" min={0.1} step={0.1}
+                onDecrement={() => setTempoMi(v => Math.max(0.1, Math.round((v - 0.1) * 10) / 10))}
+                onIncrement={() => setTempoMi(v => Math.round((v + 0.1) * 10) / 10)}
               />
               <View style={st.divider} />
-              <Stepper label="Cooldown" value={cooldownMi} unit="mi" min={0.5} step={0.5}
-                onDecrement={() => setCooldownMi(v => Math.max(0.5, Math.round((v - 0.5) * 2) / 2))}
-                onIncrement={() => setCooldownMi(v => Math.round((v + 0.5) * 2) / 2)}
+              <Stepper label="Cooldown" value={cooldownMi} unit="mi" min={0.1} step={0.1}
+                onDecrement={() => setCooldownMi(v => Math.max(0.1, Math.round((v - 0.1) * 10) / 10))}
+                onIncrement={() => setCooldownMi(v => Math.round((v + 0.1) * 10) / 10)}
               />
             </>
           )}
 
           {runType === 'intervals' && (
             <>
-              <Stepper label="Warmup" value={ivWarmupMi} unit="mi" min={0.5} step={0.5}
-                onDecrement={() => setIvWarmupMi(v => Math.max(0.5, Math.round((v - 0.5) * 2) / 2))}
-                onIncrement={() => setIvWarmupMi(v => Math.round((v + 0.5) * 2) / 2)}
+              <Stepper label="Warmup" value={ivWarmupMi} unit="mi" min={0.1} step={0.1}
+                onDecrement={() => setIvWarmupMi(v => Math.max(0.1, Math.round((v - 0.1) * 10) / 10))}
+                onIncrement={() => setIvWarmupMi(v => Math.round((v + 0.1) * 10) / 10)}
               />
               <View style={st.divider} />
               <Stepper label="Reps" value={ivReps} unit="reps" min={1}
@@ -639,9 +731,9 @@ export default function RunCreatorScreen() {
                 onIncrement={() => setIvReps(v => v + 1)}
               />
               <View style={st.divider} />
-              <Stepper label="Work Distance" sub="Per rep" value={ivWorkMi} unit="mi" min={0.25} step={0.25}
-                onDecrement={() => setIvWorkMi(v => Math.max(0.25, Math.round((v - 0.25) * 4) / 4))}
-                onIncrement={() => setIvWorkMi(v => Math.round((v + 0.25) * 4) / 4)}
+              <Stepper label="Work Distance" sub="Per rep" value={ivWorkMi} unit="mi" min={0.1} step={0.1}
+                onDecrement={() => setIvWorkMi(v => Math.max(0.1, Math.round((v - 0.1) * 10) / 10))}
+                onIncrement={() => setIvWorkMi(v => Math.round((v + 0.1) * 10) / 10)}
               />
               <View style={st.divider} />
               <Stepper label="Rest Between Reps" value={ivRestMin} unit="min" min={1}
@@ -649,18 +741,18 @@ export default function RunCreatorScreen() {
                 onIncrement={() => setIvRestMin(v => v + 1)}
               />
               <View style={st.divider} />
-              <Stepper label="Cooldown" value={ivCooldownMi} unit="mi" min={0.5} step={0.5}
-                onDecrement={() => setIvCooldownMi(v => Math.max(0.5, Math.round((v - 0.5) * 2) / 2))}
-                onIncrement={() => setIvCooldownMi(v => Math.round((v + 0.5) * 2) / 2)}
+              <Stepper label="Cooldown" value={ivCooldownMi} unit="mi" min={0.1} step={0.1}
+                onDecrement={() => setIvCooldownMi(v => Math.max(0.1, Math.round((v - 0.1) * 10) / 10))}
+                onIncrement={() => setIvCooldownMi(v => Math.round((v + 0.1) * 10) / 10)}
               />
             </>
           )}
 
           {runType === 'long_run_strides' && (
             <>
-              <Stepper label="Total Distance" value={lrDistanceMi} unit="mi" min={4}
-                onDecrement={() => setLrDistanceMi(v => Math.max(4, v - 1))}
-                onIncrement={() => setLrDistanceMi(v => v + 1)}
+              <Stepper label="Total Distance" value={lrDistanceMi} unit="mi" min={1} step={0.1}
+                onDecrement={() => setLrDistanceMi(v => Math.max(1, Math.round((v - 0.1) * 10) / 10))}
+                onIncrement={() => setLrDistanceMi(v => Math.round((v + 0.1) * 10) / 10)}
               />
               <View style={st.divider} />
               <Stepper label="Strides" sub="20s hard, 45s recovery each"
@@ -783,7 +875,7 @@ export default function RunCreatorScreen() {
         <View style={st.actions}>
           <TouchableOpacity style={st.btnPrimary} onPress={handleStartGPS}>
             <Ionicons name="location-outline" size={18} color={colors.text} />
-            <Text style={st.btnPrimaryTxt}>Start GPS Run</Text>
+            <Text style={st.btnPrimaryTxt}>Save & Open Active Run</Text>
           </TouchableOpacity>
 
           {saved ? (

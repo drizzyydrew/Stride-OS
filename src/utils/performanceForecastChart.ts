@@ -4,7 +4,7 @@ export function formatForecastChartValue(metric: PerformanceForecastMetric, valu
   if (metric.key === 'training_load_trend') {
     return value >= 10 ? value.toFixed(1) : value.toFixed(2);
   }
-  return `${Math.round(value)}/100`;
+  return `${Math.round(value)}%`;
 }
 
 export function buildForecastChartDetail(metric: PerformanceForecastMetric): string {
@@ -16,12 +16,11 @@ export function buildForecastChartDetail(metric: PerformanceForecastMetric): str
     .join('\n');
 
   return [
-    `X-axis: ${metric.chartXAxisLabel}`,
-    `Y-axis: ${metric.chartYAxisLabel}`,
+    metric.summary,
     '',
-    'Data points:',
+    'Points:',
     points,
     '',
-    metric.summary,
+    metric.info,
   ].join('\n');
 }

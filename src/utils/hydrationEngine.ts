@@ -580,7 +580,7 @@ export function estimateLongRunStrides(p: LongRunStridesParams, easySecPerMi: nu
   const mainMin = (p.distanceMi * easySecPerMi) / 60;
   const stridesMin = (p.strides * (20 + 45)) / 60;
   return {
-    estimatedMin: Math.round(mainMin + stridesMin),
+    estimatedMin: Math.round(mainMin),
     estimatedMi: round(p.distanceMi, 1),
     segments: [
       { label: 'Long Run', paceTarget: `${formatPaceMmSs(easySecPerMi)} /mi`, durationMin: mainMin, distanceMi: p.distanceMi },

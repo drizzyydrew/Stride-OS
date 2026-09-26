@@ -212,6 +212,43 @@ test('sub-five-minute workouts do not continue streaks', () => {
   assert.equal(streak.currentTier, null);
 });
 
+test('current streak expires after twenty-four hours without another qualifying workout', () => {
+  const activities = [
+    activity('2026-08-03', { startTime: at('2026-08-03', 7), endTime: at('2026-08-03', 7) + 30 * 60 * 1000 }),
+    activity('2026-08-04', { startTime: at('2026-08-04', 7), endTime: at('2026-08-04', 7) + 30 * 60 * 1000 }),
+  ];
+
+  assert.equal(
+    calculateStreakAchievements(activities, { now: at('2026-08-05', 7) + 29 * 60 * 1000 }).currentStreakDays,
+    2,
+  );
+  assert.equal(
+    calculateStreakAchievements(activities, { now: at('2026-08-05', 7) + 31 * 60 * 1000 }).currentStreakDays,
+    0,
+  );
+});
+
+test('streak does not advance from scheduled days without a logged workout', () => {
+  const sessions = [
+    session('2026-08-03'),
+    session('2026-08-04'),
+    session('2026-08-05'),
+  ];
+  const activities = [activity('2026-08-03')];
+  const streak = calculateStreakAchievements(activities, { now: at('2026-08-04', 13), scheduledSessions: sessions });
+  assert.equal(streak.currentStreakDays, 0);
+  assert.equal(streak.achievements.find(item => item.id === 'streak_1_week')?.state, 'locked');
+});
+
+test('workouts more than twenty-four hours apart start a new current streak', () => {
+  const activities = [
+    activity('2026-08-03', { startTime: at('2026-08-03', 7), endTime: at('2026-08-03', 7) + 30 * 60 * 1000 }),
+    activity('2026-08-04', { startTime: at('2026-08-04', 9), endTime: at('2026-08-04', 9) + 30 * 60 * 1000 }),
+  ];
+  const streak = calculateStreakAchievements(activities, { now: at('2026-08-04', 10) });
+  assert.equal(streak.currentStreakDays, 1);
+});
+
 test('next milestone progress and earned dates use exact crossing dates', () => {
   const range = completedScheduledRange('2026-07-01', 42);
   const streak = calculateStreakAchievements(range.activities, { now: range.now, scheduledSessions: range.sessions });

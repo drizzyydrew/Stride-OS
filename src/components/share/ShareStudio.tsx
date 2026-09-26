@@ -58,7 +58,6 @@ export const SHARE_STUDIO_VARIANTS: Array<{ id: ShareStudioVariant; label: strin
   { id: 'minimal_card', label: 'Minimal' },
   { id: 'transparent_overlay', label: 'Overlay' },
   { id: 'editorial_card', label: 'Editorial' },
-  { id: 'activity_achievement', label: 'Activity +' },
 ];
 
 export const SHARE_STUDIO_FORMATS: Array<{ id: ShareStudioFormat; label: string }> = [
@@ -226,7 +225,8 @@ export default function ShareStudio({
   canvasRef,
   onInteractionActiveChange,
 }: Props) {
-  const keys = availableToggles(activity, achievement);
+  const isStory = format === 'story';
+  const keys = availableToggles(activity, achievement).filter(key => key !== 'route' || isStory);
   const [enabled, setEnabled] = useState<Record<ToggleKey, boolean>>({
     route: false,
     distance: keys.includes('distance'),
@@ -258,7 +258,6 @@ export default function ShareStudio({
   });
   const routeEnabled = keys.includes('route') && enabled.route && activity && activityHasShareableRoute(activity);
   const isOverlay = variant === 'transparent_overlay';
-  const isStory = format === 'story';
   const activityTitle = shareActivityLabel(activity);
   const runLevelSlug = achievement ? runLevelSlugFromId(achievement.id) : null;
   const lifetimeRunDefinition = achievement ? lifetimeDistanceRunningDefinitionFromAchievementId(achievement.id) : null;

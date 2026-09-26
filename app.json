@@ -14,7 +14,7 @@
       "appleTeamId": "QBAVJD9497",
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.mooremovement.strideos",
-      "buildNumber": "77",
+      "buildNumber": "86",
       "backgroundColor": "#11100F",
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -93,6 +93,7 @@
           "isIosBackgroundLocationEnabled": true
         }
       ],
+      "@rnmapbox/maps",
       [
         "expo-notifications",
         {

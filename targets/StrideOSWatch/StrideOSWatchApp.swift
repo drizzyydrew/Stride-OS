@@ -16,38 +16,33 @@ struct StrideWatchContentView: View {
   @EnvironmentObject private var workout: StrideWatchWorkoutManager
 
   var body: some View {
-    GeometryReader { proxy in
-      let metrics = StrideWatchLayoutMetrics(size: proxy.size)
-
-      Group {
-        if workout.isActive {
-          ActiveWorkoutFace(metrics: metrics)
-            .environmentObject(workout)
-        } else {
-          WorkoutPickerFace(metrics: metrics)
-            .environmentObject(workout)
-        }
+    Group {
+      if workout.isActive {
+        ActiveWorkoutFace()
+          .environmentObject(workout)
+      } else {
+        WorkoutPickerFace()
+          .environmentObject(workout)
       }
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .padding(.horizontal, metrics.horizontalPadding)
-      .padding(.top, metrics.topPadding)
-      .padding(.bottom, metrics.bottomPadding)
-      .background(Color.black)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(Color.black)
+    .task {
+      workout.prepareForPhoneControl()
     }
   }
 }
 
 private struct WorkoutPickerFace: View {
   @EnvironmentObject private var workout: StrideWatchWorkoutManager
-  let metrics: StrideWatchLayoutMetrics
 
   var body: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: metrics.verticalSpacing) {
-        StrideWatchHeader(metrics: metrics)
+      VStack(alignment: .leading, spacing: 8) {
+        StrideWatchHeader()
 
         Text("Choose Workout")
-          .font(.system(size: metrics.captionFontSize, weight: .bold))
+          .font(.system(size: 10, weight: .bold))
           .foregroundStyle(StrideWatchPalette.cream.opacity(0.78))
           .textCase(.uppercase)
 
@@ -61,7 +56,7 @@ private struct WorkoutPickerFace: View {
                   .font(.system(size: 14, weight: .semibold))
                   .frame(width: 18)
                 Text(kind.title)
-                  .font(.system(size: metrics.rowFontSize, weight: .bold))
+                  .font(.system(size: 13.5, weight: .bold))
                 Spacer(minLength: 4)
                 if workout.selectedWorkoutKind == kind {
                   Image(systemName: "checkmark")
@@ -75,114 +70,112 @@ private struct WorkoutPickerFace: View {
           }
         }
 
-        Button {
-          let kind = workout.selectedWorkoutKind
-          workout.startWorkout(
-            kind: kind,
-            title: kind.workoutTitle,
-            workoutInstanceId: nil,
-            environment: kind == .run || kind == .cycling ? "outdoor" : "indoor",
-            targetZone: nil
-          )
-        } label: {
-          Label(
-            workout.isStartingWorkout ? "Starting..." : "Start \(workout.selectedWorkoutKind.title)",
-            systemImage: workout.isStartingWorkout ? "hourglass" : "play.fill"
-          )
-            .frame(maxWidth: .infinity)
+        HStack(spacing: 8) {
+          Image(systemName: "iphone")
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(StrideWatchPalette.sage)
+          Text("Start from iPhone")
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(StrideWatchPalette.cream)
+          Spacer(minLength: 4)
         }
-        .buttonStyle(StrideWatchCapsuleButtonStyle(tint: StrideWatchPalette.sage))
-        .disabled(workout.isStartingWorkout)
-        .accessibilityLabel("Start \(workout.selectedWorkoutKind.title) workout")
+        .padding(.horizontal, 10)
+        .frame(minHeight: 36)
+        .background(StrideWatchPalette.graphite.opacity(0.72), in: Capsule())
+        .accessibilityLabel("Start workouts from iPhone")
 
         Text(workout.syncLabel)
-          .font(.system(size: metrics.statusFontSize, weight: .semibold))
+          .font(.system(size: 10.5, weight: .semibold))
           .foregroundStyle(StrideWatchPalette.steel)
           .lineLimit(1)
           .minimumScaleFactor(0.82)
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
     }
+    .scenePadding(.horizontal)
+    .padding(.vertical, 8)
     .scrollIndicators(.hidden)
   }
 }
 
 private struct ActiveWorkoutFace: View {
   @EnvironmentObject private var workout: StrideWatchWorkoutManager
-  let metrics: StrideWatchLayoutMetrics
 
   var body: some View {
-    VStack(alignment: .leading, spacing: metrics.verticalSpacing) {
-      StrideWatchHeader(metrics: metrics)
+    ScrollView {
+      VStack(alignment: .leading, spacing: 8) {
+        StrideWatchHeader()
 
-      HStack(spacing: 6) {
-        Image(systemName: workout.selectedWorkoutKind.symbolName)
-          .font(.system(size: 11, weight: .bold))
-          .foregroundStyle(StrideWatchPalette.sage)
-        Text("\(workout.selectedWorkoutKind.title) · \(workout.statusLabel)")
-          .font(.system(size: metrics.statusFontSize, weight: .semibold))
-          .foregroundStyle(StrideWatchPalette.sage)
-          .lineLimit(1)
-          .minimumScaleFactor(0.72)
-      }
-
-      Button {
-        workout.cycleMetricPage()
-      } label: {
-        VStack(alignment: .leading, spacing: 4) {
-          Text(workout.metricPage.title)
-            .font(.system(size: metrics.captionFontSize, weight: .bold))
-            .foregroundStyle(StrideWatchPalette.steel)
-            .textCase(.uppercase)
-          HStack(alignment: .firstTextBaseline, spacing: 4) {
-            Text(workout.metricValueLabel)
-              .font(.system(size: metrics.metricFontSize, weight: .heavy, design: .rounded))
-              .monospacedDigit()
-              .foregroundStyle(.white)
-              .lineLimit(1)
-              .minimumScaleFactor(0.58)
-            if !workout.metricUnitLabel.isEmpty {
-              Text(workout.metricUnitLabel)
-                .font(.system(size: metrics.unitFontSize, weight: .bold))
-                .foregroundStyle(StrideWatchPalette.clay)
-            }
-          }
-          Text("Tap to change")
-            .font(.system(size: metrics.hintFontSize, weight: .semibold))
-            .foregroundStyle(StrideWatchPalette.cream.opacity(0.58))
+        HStack(spacing: 6) {
+          Image(systemName: workout.selectedWorkoutKind.symbolName)
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(StrideWatchPalette.sage)
+          Text("\(workout.selectedWorkoutKind.title) · \(workout.statusLabel)")
+            .font(.system(size: 10.5, weight: .semibold))
+            .foregroundStyle(StrideWatchPalette.sage)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 10)
-        .padding(.vertical, metrics.metricPadding)
+
+        Button {
+          workout.cycleMetricPage()
+        } label: {
+          VStack(alignment: .leading, spacing: 4) {
+            Text(workout.metricPage.title)
+              .font(.system(size: 10, weight: .bold))
+              .foregroundStyle(StrideWatchPalette.steel)
+              .textCase(.uppercase)
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+              Text(workout.metricValueLabel)
+                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.58)
+              if !workout.metricUnitLabel.isEmpty {
+                Text(workout.metricUnitLabel)
+                  .font(.system(size: 11, weight: .bold))
+                  .foregroundStyle(StrideWatchPalette.clay)
+              }
+            }
+            Text("Tap to change")
+              .font(.system(size: 9, weight: .semibold))
+              .foregroundStyle(StrideWatchPalette.cream.opacity(0.58))
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal, 10)
+          .padding(.vertical, 12)
+        }
+        .buttonStyle(StrideWatchMetricButtonStyle())
+        .accessibilityLabel("\(workout.metricPage.title), \(workout.metricValueLabel) \(workout.metricUnitLabel). Tap to change metric.")
+
+        HStack(spacing: 8) {
+          Text(workout.elapsedLabel)
+            .font(.system(size: 14, weight: .bold, design: .rounded))
+            .monospacedDigit()
+            .foregroundStyle(StrideWatchPalette.cream)
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+          Spacer(minLength: 4)
+          Text(workout.syncLabel)
+            .font(.system(size: 9, weight: .semibold))
+            .foregroundStyle(StrideWatchPalette.steel)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+        }
+
+        StrideWatchControls()
+          .environmentObject(workout)
       }
-      .buttonStyle(StrideWatchMetricButtonStyle())
-      .accessibilityLabel("\(workout.metricPage.title), \(workout.metricValueLabel) \(workout.metricUnitLabel). Tap to change metric.")
-
-      HStack(spacing: 8) {
-        Text(workout.elapsedLabel)
-          .font(.system(size: metrics.elapsedFontSize, weight: .bold, design: .rounded))
-          .monospacedDigit()
-          .foregroundStyle(StrideWatchPalette.cream)
-          .lineLimit(1)
-          .minimumScaleFactor(0.82)
-        Spacer(minLength: 4)
-        Text(workout.syncLabel)
-          .font(.system(size: metrics.hintFontSize, weight: .semibold))
-          .foregroundStyle(StrideWatchPalette.steel)
-          .lineLimit(1)
-          .minimumScaleFactor(0.72)
-      }
-
-      Spacer(minLength: 0)
-
-      StrideWatchControls(metrics: metrics)
-        .environmentObject(workout)
+      .frame(maxWidth: .infinity, alignment: .leading)
     }
+    .scenePadding(.horizontal)
+    .padding(.vertical, 8)
+    .scrollIndicators(.hidden)
   }
 }
 
 private struct StrideWatchHeader: View {
-  let metrics: StrideWatchLayoutMetrics
-
   var body: some View {
     HStack(spacing: 0) {
       Text("Stride")
@@ -190,7 +183,7 @@ private struct StrideWatchHeader: View {
       Text("OS")
         .foregroundStyle(StrideWatchPalette.steel)
     }
-    .font(.system(size: metrics.logoFontSize, weight: .bold, design: .serif))
+    .font(.system(size: 16, weight: .bold, design: .serif))
     .lineLimit(1)
     .minimumScaleFactor(0.7)
     .frame(maxWidth: .infinity, alignment: .center)
@@ -200,7 +193,6 @@ private struct StrideWatchHeader: View {
 
 private struct StrideWatchControls: View {
   @EnvironmentObject private var workout: StrideWatchWorkoutManager
-  let metrics: StrideWatchLayoutMetrics
 
   var body: some View {
     HStack(spacing: 7) {
@@ -222,7 +214,7 @@ private struct StrideWatchControls: View {
         workout.endWorkout()
       } label: {
         Image(systemName: "stop.fill")
-          .frame(width: metrics.endButtonSize, height: metrics.endButtonSize)
+          .frame(width: 34, height: 34)
       }
       .buttonStyle(StrideWatchCapsuleButtonStyle(tint: StrideWatchPalette.end, compact: true))
       .accessibilityLabel("End workout")

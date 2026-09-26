@@ -82,7 +82,7 @@ export const useSettingsStore = create<SettingsStore>()(
       voiceCuePreferences: DEFAULT_VOICE_CUE_PREFERENCES,
       voiceDistanceUpdateInterval: 'half',
       liveActivitiesEnabled: true,
-      autoPauseMode: 'off',
+      autoPauseMode: 'running_and_cycling',
       announceAutoPause: true,
       announceAutoResume: true,
       activityDetectionMode: 'off',
@@ -124,7 +124,9 @@ export const useSettingsStore = create<SettingsStore>()(
           },
           voiceDistanceUpdateInterval: saved?.voiceDistanceUpdateInterval === 'one' ? 'one' : 'half',
           liveActivitiesEnabled: saved?.liveActivitiesEnabled ?? true,
-          autoPauseMode: saved?.autoPauseMode ?? 'off',
+          autoPauseMode: saved?.autoPauseMode === 'off' || saved?.autoPauseMode == null
+            ? 'running_and_cycling'
+            : saved.autoPauseMode,
           announceAutoPause: saved?.announceAutoPause ?? true,
           announceAutoResume: saved?.announceAutoResume ?? true,
           activityDetectionMode: saved?.activityDetectionMode ?? 'off',

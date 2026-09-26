@@ -83,7 +83,6 @@ export default function IndoorRideScreen() {
     : undefined;
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [cadenceInput, setCadenceInput] = useState('');
   const [powerInput, setPowerInput] = useState('');
   const [resistanceInput, setResistanceInput] = useState('');
   const [rpeInput, setRpeInput] = useState('');
@@ -217,7 +216,6 @@ export default function IndoorRideScreen() {
       targetZone: null,
     }).catch(() => undefined);
     setElapsedSeconds(0);
-    setCadenceInput('');
     setPowerInput('');
     setResistanceInput('');
     setRpeInput('');
@@ -235,10 +233,6 @@ export default function IndoorRideScreen() {
     } as never);
   }
 
-  function commitCadence() {
-    const parsed = parseFloat(cadenceInput);
-    ride.setCadenceRpm(Number.isFinite(parsed) && parsed >= 0 ? parsed : null);
-  }
   function commitPower() {
     const parsed = parseFloat(powerInput);
     ride.setPowerWatts(Number.isFinite(parsed) && parsed >= 0 ? parsed : null);
@@ -448,6 +442,16 @@ export default function IndoorRideScreen() {
         ) : null}
 
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[s.label, { color: C.textDim }]}>HEART RATE</Text>
+          <Text style={[s.metricValue, { color: C.text }]}>
+            {ride.heartRateBpm ? `${ride.heartRateBpm} bpm` : healthKitEnabled ? 'Waiting...' : 'Not connected'}
+          </Text>
+          <Text style={[s.helper, { color: zoneToneColor, marginTop: 2 }]}>
+            {ride.heartRateBpm ? `${zoneStatus.label} · ${zoneStatus.detail}` : 'Open Apple Watch or enable HealthKit for live heart rate.'}
+          </Text>
+        </View>
+
+        <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.label, { color: C.textDim }]}>DISTANCE</Text>
           {ride.equipmentDistance ? (
             <Text style={[s.metricValue, { color: C.text }]}>
@@ -473,14 +477,6 @@ export default function IndoorRideScreen() {
 
         <View style={s.grid}>
           <LiveField
-            label="Cadence"
-            value={cadenceInput}
-            onChange={setCadenceInput}
-            onCommit={commitCadence}
-            suffix="rpm"
-            placeholder={ride.cadenceRpm != null ? String(ride.cadenceRpm) : '--'}
-          />
-          <LiveField
             label="Power"
             value={powerInput}
             onChange={setPowerInput}
@@ -505,6 +501,9 @@ export default function IndoorRideScreen() {
             placeholder={ride.rpe != null ? String(ride.rpe) : '--'}
           />
         </View>
+        <Text style={[s.helper, { color: C.textMuted }]}>
+          Power is entered from your bike, trainer, or power meter display until direct cycling sensor support is added.
+        </Text>
       </ScrollView>
 
       <View style={s.controls}>
