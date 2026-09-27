@@ -85,6 +85,8 @@ export type ActiveRunStore = {
   elevationGainFt:        number;
   elevationRefM:          number | null;
   coordinates:            Coordinate[];
+  /** Timestamp of the last fix that passed the accuracy filter (drives the weak-GPS indicator). */
+  lastGoodFixAt:          number | null;
   lastRunCoordinates:     Coordinate[];
   currentIntervalIndex:   number;
   plannedWorkout:         RichWorkout | null;
@@ -155,6 +157,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
   elevationGainFt:        0,
   elevationRefM:          null,
   coordinates:            [],
+  lastGoodFixAt:          null,
   lastRunCoordinates:     [],
   currentIntervalIndex:   0,
   plannedWorkout:         null,
@@ -194,6 +197,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       elevationGainFt:        0,
       elevationRefM:          null,
       coordinates:            [],
+      lastGoodFixAt:          null,
       currentIntervalIndex:   0,
       plannedWorkout,
       scheduledSessionId:     config?.scheduledSessionId ?? null,
@@ -300,6 +304,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
 
     const previousCoord = state.coordinates.at(-1);
     if (previousCoord && coord.timestamp <= previousCoord.timestamp) return;
+    set({ lastGoodFixAt: coord.timestamp });
 
     if (state.environment === 'outdoor' && state.autoPauseState && previousCoord) {
       const deltaSeconds = Math.max(0, (coord.timestamp - previousCoord.timestamp) / 1000);
@@ -341,6 +346,11 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     }
 
     if (state.isPaused) return;
+
+    // Fixes now arrive every second even when standing still (auto-pause needs
+    // them). Don't store points that haven't moved: long workouts would grow
+    // and re-persist the coordinate array every second for no distance.
+    if (previousCoord && haversineMiles(previousCoord, coord) * 1609.344 < MIN_DISTANCE_DELTA_METERS) return;
 
     const coords  = [...state.coordinates, coord];
     let totalDist = state.distanceMiles;
@@ -435,6 +445,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       elevationGainFt:        0,
       elevationRefM:          null,
       coordinates:            [],
+      lastGoodFixAt:          null,
       currentIntervalIndex:   0,
       plannedWorkout:         null,
       scheduledSessionId:     null,
@@ -470,6 +481,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       elevationGainFt:        0,
       elevationRefM:          null,
       coordinates:            [],
+      lastGoodFixAt:          null,
       currentIntervalIndex:   0,
       plannedWorkout:         null,
       scheduledSessionId:     null,

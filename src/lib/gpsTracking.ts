@@ -30,7 +30,10 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
 const RUN_LOCATION_OPTIONS: Location.LocationTaskOptions = {
   accuracy:         Location.Accuracy.BestForNavigation,
   timeInterval:     1000,
-  distanceInterval: 5,
+  // 0 = deliver a fix every timeInterval even when standing still. A distance
+  // filter starves auto-pause (no samples while stopped) and leaves the Live
+  // Activity without wake-ups under weak GPS.
+  distanceInterval: 0,
   pausesUpdatesAutomatically: false,
   activityType: Location.ActivityType.Fitness,
   showsBackgroundLocationIndicator: true,

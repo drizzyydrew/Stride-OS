@@ -31,7 +31,7 @@ struct StrideRunLiveActivity: Widget {
     } dynamicIsland: { context in
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
-          IslandMetric(label: "TIME", value: formatElapsed(context.state.elapsedSeconds), unit: "")
+          IslandMetric(label: "TIME", value: formatElapsed(context.state.elapsedSeconds), unit: "", timerStart: liveTimerStart(context.state))
         }
         DynamicIslandExpandedRegion(.trailing) {
           IslandMetric(label: "DISTANCE", value: String(format: "%.2f", context.state.distanceMiles), unit: "mi")
@@ -75,7 +75,7 @@ struct StrideRunLiveActivity: Widget {
           Image(systemName: context.state.isPaused ? "pause.circle.fill" : "figure.run")
             .font(.caption.weight(.bold))
             .foregroundStyle(context.state.isPaused ? StrideDesign.clay : StrideDesign.sage)
-          Text(formatElapsed(context.state.elapsedSeconds))
+          ElapsedText(state: context.state)
             .font(.caption.weight(.bold))
             .foregroundStyle(.white)
         }
@@ -123,7 +123,7 @@ private struct LockScreenRunView: View {
 
       // Single metrics row — four cells, equal width, no vertical stacking
       HStack(alignment: .top, spacing: 8) {
-        LockMetricCell(value: formatElapsed(context.state.elapsedSeconds), unit: nil, label: "TIME", primary: primaryText, secondary: secondaryText)
+        LockMetricCell(value: formatElapsed(context.state.elapsedSeconds), unit: nil, label: "TIME", primary: primaryText, secondary: secondaryText, timerStart: liveTimerStart(context.state))
         LockMetricCell(value: String(format: "%.2f", context.state.distanceMiles), unit: "mi", label: "DISTANCE", primary: primaryText, secondary: secondaryText)
         LockMetricCell(value: context.state.averagePace, unit: "/mi", label: "PACE", primary: primaryText, secondary: secondaryText)
         LockMetricCell(value: context.state.heartRate > 0 ? "\(context.state.heartRate)" : "--", unit: "bpm", label: "HEART RATE", primary: primaryText, secondary: secondaryText)
@@ -173,11 +173,12 @@ private struct LockMetricCell: View {
   let label: String
   let primary: Color
   let secondary: Color
+  var timerStart: Date? = nil
 
   var body: some View {
     VStack(alignment: .leading, spacing: 2) {
       HStack(alignment: .firstTextBaseline, spacing: 2) {
-        Text(value)
+        metricText
           .font(.system(size: 22, weight: .heavy, design: .rounded))
           .monospacedDigit()
           .lineLimit(1)
@@ -196,6 +197,13 @@ private struct LockMetricCell: View {
         .minimumScaleFactor(0.8)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private var metricText: Text {
+    if let timerStart {
+      return Text(timerStart, style: .timer)
+    }
+    return Text(value)
   }
 }
 
@@ -222,10 +230,11 @@ private struct IslandMetric: View {
   let label: String
   let value: String
   let unit: String
+  var timerStart: Date? = nil
 
   var body: some View {
     VStack(alignment: .leading, spacing: 2) {
-      Text(value)
+      (timerStart.map { Text($0, style: .timer) } ?? Text(value))
         .font(.system(.headline, design: .rounded).weight(.heavy))
         .monospacedDigit()
         .foregroundStyle(StrideDesign.textPrimaryDark)
@@ -268,6 +277,26 @@ private func shortZoneLabel(_ label: String) -> String {
     return "Z" + trimmed.replacingOccurrences(of: "Zone ", with: "")
   }
   return trimmed
+}
+
+/// While running, the widget counts time itself from the moment the last state
+/// was produced; paused/finished (or states without a timestamp) show the
+/// static value from the app.
+private func liveTimerStart(_ state: StrideRunActivityAttributes.ContentState) -> Date? {
+  guard !state.isPaused, state.status != "Finished", let updatedAt = state.updatedAt else { return nil }
+  return Date(timeIntervalSince1970: updatedAt - Double(max(0, state.elapsedSeconds)))
+}
+
+private struct ElapsedText: View {
+  let state: StrideRunActivityAttributes.ContentState
+
+  var body: some View {
+    if let start = liveTimerStart(state) {
+      Text(start, style: .timer)
+    } else {
+      Text(formatElapsed(state.elapsedSeconds))
+    }
+  }
 }
 
 private func formatElapsed(_ seconds: Int) -> String {

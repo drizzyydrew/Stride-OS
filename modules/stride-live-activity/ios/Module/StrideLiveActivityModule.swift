@@ -382,7 +382,8 @@ public final class StrideLiveActivityModule: Module {
       zoneLabel: zoneLabel,
       zoneStatus: zoneStatus,
       status: status.isEmpty ? StrideLiveActivityStatus.running : status,
-      isPaused: isPaused
+      isPaused: isPaused,
+      updatedAt: Date().timeIntervalSince1970
     )
   }
 

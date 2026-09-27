@@ -81,7 +81,14 @@ export function reduceAutoPause(state: AutoPauseState, sample: AutoPauseSample):
     return { action: 'none', state: resetCandidates(state) };
   }
   if ((sample.horizontalAccuracyMeters ?? 0) > params.accuracyMaxMeters) {
-    return { action: 'none', state: resetCandidates(state) };
+    // Degraded fixes (lost Wi-Fi/cell assistance, tree cover) never cause an
+    // auto-pause. But an auto-paused workout must not stay stuck paused while
+    // the athlete is clearly moving: Doppler speed stays usable when position
+    // accuracy does not, so let it drive the resume path.
+    const dopplerMoving = typeof sample.speedMps === 'number' && sample.speedMps >= params.resumeSpeedMps;
+    if (!state.paused || !dopplerMoving) {
+      return { action: 'none', state: resetCandidates(state) };
+    }
   }
 
   const speed = sample.speedMps;

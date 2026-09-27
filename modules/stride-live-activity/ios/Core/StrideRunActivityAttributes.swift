@@ -11,6 +11,11 @@ public struct StrideRunActivityAttributes: ActivityAttributes {
     public var zoneStatus: String
     public var status: String
     public var isPaused: Bool
+    /// Unix seconds when this state was produced. Lets the widget run a native
+    /// self-updating timer (start = updatedAt - elapsedSeconds) instead of
+    /// freezing between app updates while the phone is locked. Optional so
+    /// states encoded before this field existed still decode.
+    public var updatedAt: Double?
 
     public init(
       elapsedSeconds: Int,
@@ -20,7 +25,8 @@ public struct StrideRunActivityAttributes: ActivityAttributes {
       zoneLabel: String,
       zoneStatus: String,
       status: String,
-      isPaused: Bool = false
+      isPaused: Bool = false,
+      updatedAt: Double? = nil
     ) {
       self.elapsedSeconds = elapsedSeconds
       self.distanceMiles = distanceMiles
@@ -30,6 +36,7 @@ public struct StrideRunActivityAttributes: ActivityAttributes {
       self.zoneStatus = zoneStatus
       self.status = status
       self.isPaused = isPaused
+      self.updatedAt = updatedAt
     }
   }
 

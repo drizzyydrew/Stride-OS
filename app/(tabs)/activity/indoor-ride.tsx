@@ -8,7 +8,7 @@
 // or power. It is either what the athlete entered from the bike/trainer's
 // own display, or it is honestly absent. See src/utils/indoorRide.ts.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -51,6 +51,7 @@ import { buildIndoorRideActivityDraft } from '../../../src/utils/indoorRide';
 import { summarizeIndoorHeartRate } from '../../../src/utils/indoorHeartRate';
 import { clampStepIndex, flattenWorkoutSteps, totalRemainingMinutes } from '../../../src/utils/workoutSteps';
 import { zoneStatusForHeartRate } from '../../../src/utils/heartRateZones';
+import { selectLatestLiveMetric, selectLiveHeartRate, useLiveSensorStore } from '../../../src/store/liveSensorStore';
 import { milesToKm } from '../../../src/utils/units';
 
 const DISTANCE_UNAVAILABLE_COPY =
@@ -133,13 +134,37 @@ export default function IndoorRideScreen() {
     }).catch(() => undefined);
   }, [currentStep?.label, elapsedSeconds, ride.equipmentDistance, ride.heartRateBpm, ride.isActive, ride.isPaused, ride.workoutInstanceId]);
 
+  // Live heart rate: Apple Watch (via WatchWorkoutBridge) or a Bluetooth strap
+  // first, since this screen already starts a watch cycling workout; Apple
+  // Health is the fallback when no live source is streaming.
+  const liveSensorReadings = useLiveSensorStore(s => s.readings);
+  const liveHeartRate = useMemo(() => selectLiveHeartRate(liveSensorReadings, Date.now()), [liveSensorReadings]);
+  const liveHeartRateBpm = !liveHeartRate.stale && typeof liveHeartRate.value === 'number' ? Math.round(liveHeartRate.value) : null;
+
+  useEffect(() => {
+    if (!ride.isActive || ride.isPaused || liveHeartRateBpm == null) return;
+    ride.setHeartRateBpm(liveHeartRateBpm);
+  }, [liveHeartRateBpm, ride.isActive, ride.isPaused]);
+
+  // Power only ever comes from a real device: a live Bluetooth power meter
+  // when connected, otherwise what the athlete reads off the bike display.
+  const livePower = useMemo(() => selectLatestLiveMetric(liveSensorReadings, 'power', Date.now()), [liveSensorReadings]);
+  const livePowerWatts = !livePower.stale && typeof livePower.value === 'number' ? Math.round(livePower.value) : null;
+  useEffect(() => {
+    if (!ride.isActive || ride.isPaused || livePowerWatts == null) return;
+    ride.setPowerWatts(livePowerWatts);
+  }, [livePowerWatts, ride.isActive, ride.isPaused]);
+
   useEffect(() => {
     let cancelled = false;
     async function refreshHeartRate() {
-      if (!healthKitEnabled || !ride.isActive || ride.isPaused || Platform.OS !== 'ios') {
+      if (!ride.isActive || ride.isPaused) {
         if (!cancelled) ride.setHeartRateBpm(null);
         return;
       }
+      // A live source is streaming; don't overwrite it with an older sample.
+      if (liveHeartRateBpm != null) return;
+      if (!healthKitEnabled || Platform.OS !== 'ios') return;
       const latest = await getLatestHeartRateSample().catch(() => null);
       if (!cancelled) ride.setHeartRateBpm(latest?.bpm ?? null, latest?.sampledAt);
     }
@@ -149,7 +174,7 @@ export default function IndoorRideScreen() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [ride.isActive, ride.isPaused, healthKitEnabled]);
+  }, [ride.isActive, ride.isPaused, healthKitEnabled, liveHeartRateBpm != null]);
 
   const targetZone = 2;
   const zoneStatus = zoneStatusForHeartRate(ride.heartRateBpm, targetZone, calibration?.hrZones);
@@ -447,7 +472,9 @@ export default function IndoorRideScreen() {
             {ride.heartRateBpm ? `${ride.heartRateBpm} bpm` : healthKitEnabled ? 'Waiting...' : 'Not connected'}
           </Text>
           <Text style={[s.helper, { color: zoneToneColor, marginTop: 2 }]}>
-            {ride.heartRateBpm ? `${zoneStatus.label} · ${zoneStatus.detail}` : 'Open Apple Watch or enable HealthKit for live heart rate.'}
+            {ride.heartRateBpm
+              ? `${zoneStatus.label} · ${zoneStatus.detail}${liveHeartRate.source === 'apple_watch' ? ' · Apple Watch live' : liveHeartRateBpm != null ? ' · Sensor live' : ' · Apple Health'}`
+              : 'Open StrideOS on Apple Watch or enable Apple Health for live heart rate.'}
           </Text>
         </View>
 
@@ -476,14 +503,25 @@ export default function IndoorRideScreen() {
         ) : null}
 
         <View style={s.grid}>
-          <LiveField
-            label="Power"
-            value={powerInput}
-            onChange={setPowerInput}
-            onCommit={commitPower}
-            suffix="W"
-            placeholder={ride.powerWatts != null ? String(ride.powerWatts) : '--'}
-          />
+          {livePowerWatts != null ? (
+            <LiveField
+              label="Power · sensor"
+              value={String(livePowerWatts)}
+              onChange={() => undefined}
+              onCommit={() => undefined}
+              suffix="W"
+              placeholder="--"
+            />
+          ) : (
+            <LiveField
+              label="Power"
+              value={powerInput}
+              onChange={setPowerInput}
+              onCommit={commitPower}
+              suffix="W"
+              placeholder={ride.powerWatts != null ? String(ride.powerWatts) : '--'}
+            />
+          )}
           <LiveField
             label="Resistance"
             value={resistanceInput}

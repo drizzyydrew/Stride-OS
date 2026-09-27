@@ -205,6 +205,8 @@ export default function SettingsScreen() {
     liveActivitiesEnabled,
     autoPauseMode,
     activityDetectionMode,
+    showWatchSyncDetails,
+    setShowWatchSyncDetails,
   } = useSettingsStore();
   const integrations = useIntegrationsStore();
   const legacyMorningReminderEnabled = useReadinessStore(state => state.reminderEnabled);
@@ -1065,6 +1067,23 @@ export default function SettingsScreen() {
           <Switch
             value={integrations.locationEnabled}
             onValueChange={setLocationEnabled}
+            trackColor={{ false: C.cardAlt, true: C.primary }}
+            thumbColor={C.card}
+          />
+        </View>
+      </View>
+
+      {/* Apple Watch */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.sectionLabel, { color: C.textDim }]}>APPLE WATCH</Text>
+        <View style={styles.settingRow}>
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Show Watch Sync Details</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Shows connection, command, and acknowledgement details on the run screen for troubleshooting</Text>
+          </View>
+          <Switch
+            value={showWatchSyncDetails}
+            onValueChange={setShowWatchSyncDetails}
             trackColor={{ false: C.cardAlt, true: C.primary }}
             thumbColor={C.card}
           />

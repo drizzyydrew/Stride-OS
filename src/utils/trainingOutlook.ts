@@ -65,6 +65,15 @@ export type PerformanceForecastMetric = {
   chartLabels: string[];
   summary: string;
   info: string;
+  /** Large left-side figure in the chart detail, always a percentage. */
+  headlinePercent: number;
+  /** One line explaining what the percentage means. */
+  headlineExplanation: string;
+  /** The date that matters for this chart (projected peak / race day / as-of). */
+  keyDateTitle: string;
+  keyDateLabel: string;
+  /** Index into chartValues/chartLabels of the key date's point. */
+  keyPointIndex: number;
 };
 
 export type PerformanceForecast = {
@@ -271,6 +280,8 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
   const confidenceScore = confidencePercent(outlook.confidence);
   const loadRatio = Number.isFinite(outlook.loadTrend.ratio) ? outlook.loadTrend.ratio : 1;
   const loadBalanceScore = roundedPercent(100 - Math.min(70, Math.abs(loadRatio - 1) * 90));
+  // Not clamped to 100: a ramp above baseline is the point of the load chart.
+  const loadPercent = Math.round(Math.min(300, Math.max(0, loadRatio) * 100));
   const readinessScore = roundedPercent(input.readinessScore ?? (
     outlook.status === 'recovery_needed' ? 42 :
     outlook.status === 'ready_for_current_goal' ? 82 :
@@ -356,6 +367,13 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
           : [todayLabel, formatShortDate(outlook.generatedAt + Math.max(1, Math.round((peakTimestamp - outlook.generatedAt) / DAY_MS / 2)) * DAY_MS), peakDateLabel, raceDateLabel],
         summary: peakSummary,
         info: 'Measures projected peak confidence from recent completed training, load balance, readiness, phase, and time to goal. Dates update as new workouts and readiness data are logged.',
+        headlinePercent: peakDevelopment,
+        headlineExplanation: insufficient
+          ? 'How much training history supports naming a peak date yet.'
+          : 'Confidence you will be at peak fitness on the projected date.',
+        keyDateTitle: 'Projected peak',
+        keyDateLabel: peakDateLabel,
+        keyPointIndex: 2,
       },
       {
         key: 'race_readiness',
@@ -381,6 +399,11 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
               ? 'Current signals support the goal with continued controlled training.'
               : 'Readiness is being estimated from completed work and recent recovery signals.',
         info: 'Uses readiness trend, adherence, current phase/focus, progression or regression decisions, interruptions, and available historical depth. It is not a race guarantee.',
+        headlinePercent: readinessProjection,
+        headlineExplanation: 'Projected readiness on race day from recovery, adherence, and load balance.',
+        keyDateTitle: 'Race day',
+        keyDateLabel: raceDateLabel,
+        keyPointIndex: 2,
       },
       {
         key: 'training_load_trend',
@@ -390,16 +413,19 @@ export function buildPerformanceForecast(outlook: TrainingOutlook, input: Pick<T
         valueLabel: outlook.loadStateLabel,
         horizonLabel: `${outlook.loadTrend.acute.toFixed(1)} recent / ${outlook.loadTrend.chronic.toFixed(1)} baseline`,
         chartXAxisLabel: 'Recent load compared with baseline',
-        chartYAxisLabel: 'Training load units',
-        chartValueUnit: 'load',
-        chartValues: [
-          Math.max(0, outlook.loadTrend.chronic),
-          Math.max(0, outlook.loadTrend.acute),
-          Math.max(0, Math.max(outlook.loadTrend.chronic, outlook.loadTrend.acute) * loadRatio),
-        ],
-        chartLabels: ['Baseline', 'Recent', 'Balance'],
+        chartYAxisLabel: 'Recent load as a percent of baseline',
+        chartValueUnit: 'percent',
+        // As a percentage of the 4-week baseline (100% = steady), dated from
+        // today, so it reads like the other two forecast charts.
+        chartValues: [100, loadPercent],
+        chartLabels: [formatShortDate(outlook.generatedAt - 28 * DAY_MS), todayLabel],
         summary: `Recent load is ${outlook.loadTrend.acute.toFixed(1)} against a ${outlook.loadTrend.chronic.toFixed(1)} baseline across ${outlook.completedActivities} completed session${outlook.completedActivities === 1 ? '' : 's'}.`,
         info: 'Measures recent completed training load against your longer baseline. Higher recent load means sharper ramp risk; lower recent load means recovery or detraining pressure.',
+        headlinePercent: loadPercent,
+        headlineExplanation: 'This week\'s load compared with your 4-week baseline. 100% is steady; well above 130% is a sharp ramp.',
+        keyDateTitle: 'As of',
+        keyDateLabel: todayLabel,
+        keyPointIndex: 1,
       },
     ],
   };

@@ -9,6 +9,13 @@ import * as Location from 'expo-location';
 import MapView, { Marker, Polyline, type LatLng, type MapViewRef, type Region } from '../../../src/components/maps/MapComponents';
 import RoutePreviewMap from '../../../src/components/maps/RoutePreviewMap';
 import WatchStatusDiagnostics from '../../../src/components/watch/WatchStatusDiagnostics';
+import GpsSignalChip from '../../../src/components/activity/GpsSignalChip';
+import {
+  evaluateSegmentPaceCue,
+  segmentFeedbackCue,
+  segmentStartCue,
+  segmentTarget,
+} from '../../../src/utils/workoutSegmentCoaching';
 
 import { useColors } from '../../../src/theme/useColors';
 import { spacing } from '../../../src/theme/spacing';
@@ -60,8 +67,12 @@ import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gp
 import {
   buildRouteGuidance,
   formatTurnAnnouncement,
+  guidanceAlertCue,
+  guidanceDisplayText,
+  INITIAL_GUIDANCE_ALERT_STATE,
   turnAnnouncementPhase,
   updateRouteGuidanceProgress,
+  type GuidanceAlertState,
   type RouteGuidancePlan,
   type RouteGuidanceProgress,
 } from '../../../src/lib/routing';
@@ -398,20 +409,6 @@ function workoutSegments(workout: RichWorkout | null): RichWorkout['mainSet'] {
   return [workout.warmup, ...workout.mainSet, workout.cooldown].filter(segment => segment.duration.trim().length > 0);
 }
 
-function segmentTarget(segment: RichWorkout['mainSet'][number]): { kind: 'time'; seconds: number } | { kind: 'distance'; miles: number } | null {
-  const raw = segment.duration.trim().toLowerCase();
-  const value = Number(raw.match(/[\d.]+/)?.[0]);
-  if (!Number.isFinite(value) || value <= 0) return null;
-  if (raw.includes('mile') || raw.includes(' mi')) return { kind: 'distance', miles: value };
-  if (raw.includes('km') || raw.includes('kilometer')) return { kind: 'distance', miles: value / 1.609344 };
-  if (raw.includes('meter') || raw.endsWith('m')) return { kind: 'distance', miles: value / 1609.344 };
-  if (raw.includes('sec') || raw.endsWith('s')) return { kind: 'time', seconds: Math.round(value) };
-  return { kind: 'time', seconds: Math.round(value * 60) };
-}
-
-function segmentCueText(segment: RichWorkout['mainSet'][number], index: number): string {
-  return `Segment ${index + 1}: ${segment.label}. ${segment.duration} at ${segment.paceGuide}. Target Zone ${segment.hrZone}.`;
-}
 
 function coachingMoments(totalSeconds: number): number[] {
   if (totalSeconds < 1800) return [Math.round(totalSeconds * 0.55)];
@@ -689,6 +686,15 @@ function PlanTab() {
               <Text style={[{ fontSize: 11, color: C.textMuted, lineHeight: 16 }]}>{todayWorkout.paceGuidance.description}</Text>
             </View>
           </View>
+          {/* Scheduled and deload days can still be replaced with a custom build. */}
+          <TouchableOpacity
+            style={{ alignSelf: 'flex-start', marginTop: 12, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: C.primaryDim }}
+            onPress={() => router.push('/(tabs)/training/run-creator' as never)}
+            accessibilityRole="button"
+            accessibilityLabel="Build a custom workout instead of today's scheduled run"
+          >
+            <Text style={{ color: C.primary, fontSize: 12, fontWeight: '800' }}>Build Custom Workout Instead</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -827,6 +833,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     announceAutoResume,
     setAnnounceAutoPause,
     setAnnounceAutoResume,
+    showWatchSyncDetails,
     voiceDistanceUpdateInterval,
   } = useSettingsStore();
   const healthKitEnabled = useIntegrationsStore(s => s.healthKitEnabled);
@@ -847,6 +854,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     isActive,
     isPaused,
     startTime,
+    lastGoodFixAt,
     pausedAt,
     pausedDurationMs,
     distanceMiles,
@@ -914,7 +922,12 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [routeSegmentIndex, setRouteSegmentIndex] = useState(0);
   const [turnGuidance, setTurnGuidance] = useState<RouteGuidancePlan | null>(null);
   const [turnGuidanceProgress, setTurnGuidanceProgress] = useState<RouteGuidanceProgress | null>(null);
-  const [pendingMode, setPendingMode] = useState<RunMode>('quick');
+  const [pendingMode, setPendingMode] = useState<RunMode>(() => (selectedCustomWorkout ? 'workout' : 'quick'));
+  // "Save & use today" from the builder selects a custom run for today; the
+  // Active tab must then be ready to run it, not fall back to Quick Start.
+  useEffect(() => {
+    if (selectedCustomWorkout?.id && !isActive) setPendingMode('workout');
+  }, [selectedCustomWorkout?.id, isActive]);
   const [pendingEnvironment, setPendingEnvironment] = useState<RunEnvironment>(() => lastEnvironmentPreference);
   const [pendingTreadmillPlacement, setPendingTreadmillPlacement] = useState<TreadmillPhonePlacement>(() => treadmillPhonePlacementDefault);
   const [showTreadmillCompletion, setShowTreadmillCompletion] = useState(false);
@@ -933,10 +946,12 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [goalPickerFor, setGoalPickerFor] = useState<null | 'time' | 'distance' | 'raceDist' | 'racePace'>(null);
   const segmentStartRef = useRef<{ index: number; time: number } | null>(null);
   const workoutSegmentStartRef = useRef<{ index: number; elapsed: number; miles: number } | null>(null);
+  const lastSegmentPaceCueRef = useRef<number | null>(null);
   const maxRouteProgressRef = useRef(0);
   const routeNoticeRef = useRef<string | null>(null);
   const previousTurnGuidanceProgress = useRef<RouteGuidanceProgress | null>(null);
   const lastTurnAnnouncementRef = useRef<string | null>(null);
+  const guidanceAlertRef = useRef<GuidanceAlertState>(INITIAL_GUIDANCE_ALERT_STATE);
   const effortCueRef = useRef<EffortCueState>({ consecutiveHighSamples: 0, consecutiveLowSamples: 0, wasOutOfRange: false, lastCueElapsedSeconds: -9999 });
   const reminderCueRef = useRef({ lastHydrationCueSec: 0, lastFuelCueSec: 0 });
   const runWalkCueRef = useRef(0);
@@ -1182,7 +1197,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     startRun(startWorkout, config);
     speakCue('Starting workout.', 'interval');
     const firstSegment = startWorkout ? workoutSegments(startWorkout)[0] : null;
-    if (firstSegment) speakCue(segmentCueText(firstSegment, 0), 'interval');
+    if (firstSegment) speakCue(segmentStartCue(firstSegment, 0, imp), 'interval');
     const activeRun = useActiveRunStore.getState();
     const activeWorkoutInstanceId = activeRun.workoutInstanceId ?? '';
     await startRunLiveActivity({
@@ -1523,8 +1538,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   } : null;
   const routeProgress = selectedRoute && currentPoint ? routeProgressForLocation(selectedRoute, currentPoint) : 0;
   const nextSegment = selectedRoute?.segments[routeSegmentIndex] ?? null;
-  const turnInstructionText = turnGuidanceProgress?.isOffRoute
-    ? 'You appear to be off route.'
+  const turnInstructionText = turnGuidanceProgress?.isOffRoute || turnGuidanceProgress?.isWrongWay
+    ? guidanceDisplayText(turnGuidanceProgress)
     : turnGuidanceProgress?.nextInstruction && turnGuidanceProgress.distanceToNextStepMeters !== null
       ? formatTurnAnnouncement(turnGuidanceProgress.nextInstruction, turnGuidanceProgress.distanceToNextStepMeters)
       : null;
@@ -1579,13 +1594,11 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     previousTurnGuidanceProgress.current = progress;
     setTurnGuidanceProgress(progress);
 
+    const alert = guidanceAlertCue(progress, guidanceAlertRef.current, Date.now());
+    guidanceAlertRef.current = alert.state;
     if (!voiceCuePreferences.navigation) return;
-    if (progress.isOffRoute) {
-      const key = `off-route:${progress.offRouteSampleCount}`;
-      if (lastTurnAnnouncementRef.current !== key) {
-        lastTurnAnnouncementRef.current = key;
-        speakCue('You appear to be off route.', 'navigation');
-      }
+    if (progress.isOffRoute || progress.isWrongWay) {
+      if (alert.cue) speakCue(alert.cue, 'navigation');
       return;
     }
     if (!progress.nextInstruction || progress.distanceToNextStepMeters === null) return;
@@ -1744,19 +1757,51 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     if (!complete) return;
 
     const nextIndex = currentIntervalIndex + 1;
-    if (nextIndex >= activeWorkoutSegments.length) {
-      if (!goalDoneRef.current) {
-        goalDoneRef.current = true;
-        speakCue('Structured workout complete. Finish whenever you are ready.', 'interval');
-      }
+    const lastSegment = nextIndex >= activeWorkoutSegments.length;
+    if (lastSegment && goalDoneRef.current) return;
+
+    // How the finished segment actually went (outdoor GPS only; a treadmill
+    // estimate isn't precise enough to grade pace against).
+    if (environment === 'outdoor') {
+      speakCue(segmentFeedbackCue({
+        index: currentIntervalIndex,
+        segmentSeconds: elapsed - start.elapsed,
+        segmentMiles: distanceMiles - start.miles,
+        targetPaceSecPerMile: currentWorkoutSegment.targetPaceSecPerMile,
+        imperial: imp,
+      }), 'pace');
+    }
+
+    if (lastSegment) {
+      goalDoneRef.current = true;
+      speakCue('Structured workout complete. Finish whenever you are ready.', 'interval');
       return;
     }
 
     const next = activeWorkoutSegments[nextIndex];
     workoutSegmentStartRef.current = { index: nextIndex, elapsed, miles: distanceMiles };
+    lastSegmentPaceCueRef.current = null;
     advanceInterval();
-    speakCue(segmentCueText(next, nextIndex), 'interval');
-  }, [activeWorkoutSegments, advanceInterval, currentIntervalIndex, currentWorkoutSegment, distanceMiles, elapsed, isActive, isPaused, runMode]);
+    speakCue(segmentStartCue(next, nextIndex, imp), 'interval');
+  }, [activeWorkoutSegments, advanceInterval, currentIntervalIndex, currentWorkoutSegment, distanceMiles, elapsed, environment, imp, isActive, isPaused, runMode]);
+
+  // Live "speed up / ease off" against the current segment's target pace.
+  useEffect(() => {
+    if (!isActive || isPaused || runMode !== 'workout' || environment !== 'outdoor' || !currentWorkoutSegment) return;
+    const start = workoutSegmentStartRef.current;
+    if (!start || start.index !== currentIntervalIndex) return;
+    const lastCueAt = lastSegmentPaceCueRef.current;
+    const cue = evaluateSegmentPaceCue({
+      targetPaceSecPerMile: currentWorkoutSegment.targetPaceSecPerMile,
+      currentPaceSecPerMile,
+      segmentElapsedSeconds: elapsed - start.elapsed,
+      secondsSinceLastPaceCue: lastCueAt == null ? null : elapsed - lastCueAt,
+      imperial: imp,
+    });
+    if (!cue) return;
+    lastSegmentPaceCueRef.current = elapsed;
+    speakCue(cue.text, 'pace');
+  }, [currentIntervalIndex, currentPaceSecPerMile, currentWorkoutSegment, elapsed, environment, imp, isActive, isPaused, runMode]);
 
   useEffect(() => {
     if (!isActive || isPaused || runMode !== 'workout' || !todayPlannedSession?.runWalk || runWalkIntervals.length === 0) return;
@@ -1944,7 +1989,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
                 </Text>
               </View>
             </View>
-            <WatchStatusDiagnostics status={watchStatus} mutedColor={C.textMuted} warningColor={C.warning} />
+            <WatchStatusDiagnostics status={watchStatus} mutedColor={C.textMuted} warningColor={C.warning} detailed={showWatchSyncDetails} />
           </View>
         </ScrollView>
         <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: (fullScreen ? insets.bottom : 0) + spacing.md }]}>
@@ -2213,8 +2258,11 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
               </Text>
             </View>
           </View>
-          <WatchStatusDiagnostics status={watchStatus} mutedColor={C.textMuted} warningColor={C.warning} />
+          <WatchStatusDiagnostics status={watchStatus} mutedColor={C.textMuted} warningColor={C.warning} detailed={showWatchSyncDetails} />
         </View>
+        {environment === 'outdoor' ? (
+          <GpsSignalChip active={isActive} paused={isPaused} lastGoodFixAt={lastGoodFixAt} startedAt={startTime} />
+        ) : null}
         {goalPanel}
         {runState === 'active' && heartRateBpm ? (
           <View style={styles.runStatusChipRow}>

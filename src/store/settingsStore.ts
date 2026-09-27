@@ -55,6 +55,8 @@ type SettingsStore = {
   activityDetectionMode: ActivityDetectionMode;
   treadmillPhonePlacementDefault: TreadmillPhonePlacement;
   healthWorkoutSyncMode: HealthWorkoutSyncMode;
+  /** Show phone<->watch sync diagnostics on the run screen (off by default). */
+  showWatchSyncDetails: boolean;
   setUnits: (units: UnitSystem) => void;
   setExperienceMode: (mode: ExperienceMode) => void;
   setFuelingReminderIntervalMin: (minutes: FuelingReminderIntervalMin) => void;
@@ -68,6 +70,7 @@ type SettingsStore = {
   setActivityDetectionMode: (mode: ActivityDetectionMode) => void;
   setTreadmillPhonePlacementDefault: (placement: TreadmillPhonePlacement) => void;
   setHealthWorkoutSyncMode: (mode: HealthWorkoutSyncMode) => void;
+  setShowWatchSyncDetails: (enabled: boolean) => void;
 };
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -88,6 +91,7 @@ export const useSettingsStore = create<SettingsStore>()(
       activityDetectionMode: 'off',
       treadmillPhonePlacementDefault: 'on_body',
       healthWorkoutSyncMode: 'review',
+      showWatchSyncDetails: false,
       setUnits: (units) => set({ units }),
       setExperienceMode: (experienceMode) => set({ experienceMode }),
       setFuelingReminderIntervalMin: (fuelingReminderIntervalMin) => set({ fuelingReminderIntervalMin }),
@@ -103,6 +107,7 @@ export const useSettingsStore = create<SettingsStore>()(
       setActivityDetectionMode: (activityDetectionMode) => set({ activityDetectionMode }),
       setTreadmillPhonePlacementDefault: (treadmillPhonePlacementDefault) => set({ treadmillPhonePlacementDefault }),
       setHealthWorkoutSyncMode: (healthWorkoutSyncMode) => set({ healthWorkoutSyncMode }),
+      setShowWatchSyncDetails: (showWatchSyncDetails) => set({ showWatchSyncDetails }),
     }),
     {
       name:    'settings-store',
@@ -132,6 +137,7 @@ export const useSettingsStore = create<SettingsStore>()(
           activityDetectionMode: saved?.activityDetectionMode ?? 'off',
           treadmillPhonePlacementDefault: saved?.treadmillPhonePlacementDefault ?? 'on_body',
           healthWorkoutSyncMode: saved?.healthWorkoutSyncMode ?? 'review',
+          showWatchSyncDetails: saved?.showWatchSyncDetails ?? false,
         };
       },
     },

@@ -28,7 +28,9 @@ function activityLocationOptions(): Location.LocationTaskOptions {
   return {
     accuracy: Location.Accuracy.BestForNavigation,
     timeInterval: 1000,
-    distanceInterval: activity.activityType === 'cycling' ? 8 : 4,
+    // 0 = a fix every second even when stationary (auto-pause needs samples
+    // while stopped); movement noise is filtered in appendTrackingPoint.
+    distanceInterval: 0,
     showsBackgroundLocationIndicator: true,
     pausesUpdatesAutomatically: false,
     activityType: activity.activityType === 'cycling'

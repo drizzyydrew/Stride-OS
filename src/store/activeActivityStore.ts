@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { LocationObject } from 'expo-location';
+import { MAX_TRACKING_ACCURACY_METERS } from '../utils/activityTracking';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createAppJSONStorage } from './persistStorage';
@@ -49,6 +50,8 @@ type ActiveActivityStore = {
   pausedAt: number | null;
   pausedDurationMs: number;
   aggregate: TrackingAggregate;
+  /** Timestamp of the last fix that passed the accuracy filter (drives the weak-GPS indicator). */
+  lastGoodFixAt: number | null;
   runWalkIntervals: RunWalkInterval[];
   paceCoachingEnabled: boolean;
   heartRateCoachingEnabled: boolean;
@@ -125,6 +128,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
       pausedAt: null,
       pausedDurationMs: 0,
       aggregate: EMPTY_AGGREGATE,
+      lastGoodFixAt: null,
       runWalkIntervals: [],
       paceCoachingEnabled: true,
       heartRateCoachingEnabled: true,
@@ -159,6 +163,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
           pausedAt: null,
           pausedDurationMs: 0,
           aggregate: EMPTY_AGGREGATE,
+      lastGoodFixAt: null,
           runWalkIntervals: input.runWalkIntervals ?? [],
           routeId: input.routeId ?? null,
           navigationMode: input.navigationMode ?? 'off',
@@ -207,6 +212,9 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
           altitudeMeters: location.coords.altitude ?? undefined,
           accuracyMeters: location.coords.accuracy ?? undefined,
         };
+        if ((point.accuracyMeters ?? 0) <= MAX_TRACKING_ACCURACY_METERS) {
+          set({ lastGoodFixAt: point.timestamp });
+        }
         if (state.autoPauseState && (state.activityType === 'running' || state.activityType === 'cycling')) {
           const previous = state.aggregate.points.at(-1);
           if (previous && point.timestamp > previous.timestamp) {
@@ -302,6 +310,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
         pausedAt: null,
         pausedDurationMs: 0,
         aggregate: EMPTY_AGGREGATE,
+      lastGoodFixAt: null,
         runWalkIntervals: [],
         routeId: null,
         navigationMode: 'off',

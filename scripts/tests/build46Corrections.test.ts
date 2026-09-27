@@ -194,7 +194,17 @@ test('Performance Forecast exposes data-driven chart points and a detailed tab',
     assert.equal(metric.chartValues.every(Number.isFinite), true);
   }
   assert.match(forecast.metrics.find(metric => metric.key === 'race_readiness')?.valueLabel ?? '', /\/100/);
-  assert.match(forecast.metrics.find(metric => metric.key === 'training_load_trend')?.valueLabel ?? '', /ratio/);
+  // Training load is charted as a percent of the 4-week baseline, like the
+  // other forecast charts (Build 90 minimalist chart spec).
+  const load = forecast.metrics.find(metric => metric.key === 'training_load_trend');
+  assert.equal(load?.chartValueUnit, 'percent');
+  assert.equal(load?.chartValues[0], 100);
+  for (const metric of forecast.metrics) {
+    assert.equal(Number.isFinite(metric.headlinePercent), true);
+    assert.ok(metric.headlineExplanation.length > 0);
+    assert.ok(metric.keyDateLabel.length > 0);
+    assert.ok(metric.keyPointIndex >= 0 && metric.keyPointIndex < metric.chartValues.length);
+  }
 
   const dashboard = readFileSync('app/(tabs)/dashboard/index.tsx', 'utf8');
   const performance = readFileSync('app/(tabs)/performance/index.tsx', 'utf8');
@@ -208,10 +218,17 @@ test('Performance Forecast exposes data-driven chart points and a detailed tab',
   assert.match(performance, /forecast\.metrics\.map/);
   assert.match(performance, /onChartPress=\{\(\) => setForecastChartMetric\(metric\)\}/);
   assert.match(performance, /height: 116/);
-  assert.match(modal, /ForecastDetailChart/);
-  assert.match(modal, /SvgText/);
-  assert.match(modal, /legendChip/);
-  assert.match(modal, /selectedLegend/);
+  // Minimalist detail chart: line + key point, headline percent with its
+  // explanation, key date row, real Close button; no axes, axis/score text,
+  // legend chips, or raw points dump.
+  assert.match(modal, /function ForecastLine/);
+  assert.match(modal, /metric\.headlinePercent/);
+  assert.match(modal, /metric\.headlineExplanation/);
+  assert.match(modal, /metric\.keyDateTitle/);
+  assert.match(modal, />Close</);
+  assert.doesNotMatch(modal, /SvgText/);
+  assert.doesNotMatch(modal, /legendChip/);
+  assert.doesNotMatch(modal, /buildForecastChartDetail/);
 });
 
 test('shoe catalog stores optional local image metadata and exposes replace/remove affordances', () => {

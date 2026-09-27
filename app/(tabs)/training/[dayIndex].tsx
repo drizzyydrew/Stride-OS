@@ -386,8 +386,10 @@ export default function SessionDetailScreen() {
                     workout.type === 'intervals' || workout.type === 'recovery_run' ||
                     workout.type === 'vo2' || workout.type === 'marathon_pace') && (
                     <Button
-                      label="GPS Run"
-                      onPress={() => router.push(`/training/run-tracking?dayIndex=${dayIndex}`)}
+                      label="Start Run"
+                      // Same Start Run flow as the Active tab (watch sync, GPS,
+                      // structured segments), not the legacy tracker screen.
+                      onPress={() => router.push({ pathname: '/(tabs)/training', params: { tab: 'active' } } as never)}
                       variant="secondary"
                       style={styles.flex1}
                     />

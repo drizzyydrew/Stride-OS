@@ -1,9 +1,7 @@
 import type { PerformanceForecastMetric } from './trainingOutlook';
 
 export function formatForecastChartValue(metric: PerformanceForecastMetric, value: number): string {
-  if (metric.key === 'training_load_trend') {
-    return value >= 10 ? value.toFixed(1) : value.toFixed(2);
-  }
+  // All forecast charts are percentages (training load: % of 4-week baseline).
   return `${Math.round(value)}%`;
 }
 

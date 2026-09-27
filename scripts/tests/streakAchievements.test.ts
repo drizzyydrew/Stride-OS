@@ -228,6 +228,24 @@ test('current streak expires after twenty-four hours without another qualifying 
   );
 });
 
+test('streak continues only if the next workout comes within 24 h of the last one', () => {
+  const thirty = 30 * 60 * 1000;
+  const within = [
+    activity('2026-08-03', { startTime: at('2026-08-03', 7), endTime: at('2026-08-03', 7) + thirty }),
+    // 7:30 -> next day 7:15 start: 23.75 h gap, continues even though this
+    // day's workout ends later than yesterday's did.
+    activity('2026-08-04', { startTime: at('2026-08-04', 7) + 15 * 60 * 1000, endTime: at('2026-08-04', 7) + 45 * 60 * 1000 }),
+  ];
+  assert.equal(calculateStreakAchievements(within, { now: at('2026-08-04', 9) }).currentStreakDays, 2);
+
+  const tooLate = [
+    activity('2026-08-03', { startTime: at('2026-08-03', 7), endTime: at('2026-08-03', 7) + thirty }),
+    // 7:30 -> next day 8:00: 24.5 h without a logged workout, streak restarts.
+    activity('2026-08-04', { startTime: at('2026-08-04', 8), endTime: at('2026-08-04', 8) + thirty }),
+  ];
+  assert.equal(calculateStreakAchievements(tooLate, { now: at('2026-08-04', 9) }).currentStreakDays, 1);
+});
+
 test('streak does not advance from scheduled days without a logged workout', () => {
   const sessions = [
     session('2026-08-03'),

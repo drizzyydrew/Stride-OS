@@ -7,7 +7,18 @@ type Props = {
   status: StrideWatchStatus;
   mutedColor: string;
   warningColor: string;
+  /** Full troubleshooting lines. When false only real errors are shown. */
+  detailed: boolean;
 };
+
+// The phone's own Stop sends endWorkout after a watch-side stop has already
+// ended the watch session; the watch correctly reports there is nothing to
+// end. That is expected, not a failure.
+function isBenignAck(status: StrideWatchStatus): boolean {
+  return status.lastAckAccepted === false
+    && status.lastAckReason === 'no_active_workout'
+    && (status.lastAckCommand === 'endWorkout' || status.lastAckCommand === 'endRun');
+}
 
 function age(timestamp: number | undefined, now: number): string {
   if (!timestamp) return 'never';
@@ -21,16 +32,26 @@ function age(timestamp: number | undefined, now: number): string {
  * how it was delivered, what the watch acknowledged, and the last workout
  * state the watch reported. Lets a TestFlight tester see which hop failed.
  */
-export default function WatchStatusDiagnostics({ status, mutedColor, warningColor }: Props) {
+export default function WatchStatusDiagnostics({ status, mutedColor, warningColor, detailed }: Props) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
+    if (!detailed) return undefined;
     const id = setInterval(() => setNow(Date.now()), 2000);
     return () => clearInterval(id);
-  }, []);
+  }, [detailed]);
 
   const mark = (value: boolean) => (value ? '✓' : '✗');
-  const ackRejected = status.lastAckAt && status.lastAckAccepted === false;
+  const benignAck = isBenignAck(status);
+  const ackRejected = Boolean(status.lastAckAt) && status.lastAckAccepted === false && !benignAck;
+
+  if (!detailed) {
+    return status.lastError ? (
+      <View style={styles.wrap}>
+        <Text style={[styles.line, { color: warningColor }]} numberOfLines={2}>{status.lastError}</Text>
+      </View>
+    ) : null;
+  }
 
   return (
     <View style={styles.wrap}>
@@ -44,7 +65,7 @@ export default function WatchStatusDiagnostics({ status, mutedColor, warningColo
       </Text>
       <Text style={[styles.line, { color: ackRejected ? warningColor : mutedColor }]}>
         Watch ack: {status.lastAckAt
-          ? `${status.lastAckCommand ?? 'command'} ${status.lastAckAccepted ? '✓' : `✗ ${status.lastAckReason ?? ''}`} · ${age(status.lastAckAt, now)}`
+          ? `${status.lastAckCommand ?? 'command'} ${status.lastAckAccepted ? '✓' : benignAck ? '· already ended' : `✗ ${status.lastAckReason ?? ''}`} · ${age(status.lastAckAt, now)}`
           : 'none'}
       </Text>
       <Text style={[styles.line, { color: mutedColor }]}>

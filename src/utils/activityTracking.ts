@@ -42,6 +42,8 @@ const MAX_SPEED_MPS: Partial<Record<ActivityType, number>> = {
 };
 
 const MIN_DISTANCE_METERS = 2.5;
+/** Fixes worse than this are too noisy to add distance from. */
+export const MAX_TRACKING_ACCURACY_METERS = 65;
 const ELEVATION_NOISE_METERS = 2;
 
 function radians(value: number): number {
@@ -65,7 +67,7 @@ export function appendTrackingPoint(
   activityType: ActivityType,
   activeSeconds: number,
 ): TrackingAggregate {
-  if ((point.accuracyMeters ?? 0) > 65) return aggregate;
+  if ((point.accuracyMeters ?? 0) > MAX_TRACKING_ACCURACY_METERS) return aggregate;
   const previous = aggregate.points.at(-1);
   if (previous && point.timestamp <= previous.timestamp) return aggregate;
   if (!previous) return { ...aggregate, points: [point] };
@@ -75,7 +77,10 @@ export function appendTrackingPoint(
   const speed = seconds > 0 ? delta / seconds : 0;
   if (speed > (MAX_SPEED_MPS[activityType] ?? 12)) return aggregate;
 
-  const acceptedDistance = delta >= MIN_DISTANCE_METERS ? delta : 0;
+  // Fixes arrive every second even when stationary; a point that hasn't moved
+  // adds nothing but storage, so keep the previous anchor instead.
+  if (delta < MIN_DISTANCE_METERS) return aggregate;
+  const acceptedDistance = delta;
   let elevationGainMeters = aggregate.elevationGainMeters;
   let elevationLossMeters = aggregate.elevationLossMeters;
   if (point.altitudeMeters != null && previous.altitudeMeters != null) {

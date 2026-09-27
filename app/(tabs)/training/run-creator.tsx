@@ -625,10 +625,36 @@ export default function RunCreatorScreen() {
     saveRunForToday();
   }
 
-  function handleStartGPS() {
+  // Saves, selects the run for today, and lands on the Active tab's Start Run
+  // flow (which opens in Workout mode for a selected custom run).
+  function handleGoToStartRun() {
     const id = saveRunForToday();
     if (!id) return;
     router.push({ pathname: '/(tabs)/training', params: { tab: 'active' } } as never);
+  }
+
+  // Expands a preset into the full segment editor so every warmup, rep, and
+  // cooldown can be set by time or distance (m/km/mi) with its own pace.
+  function customizePresetSegments() {
+    if (runType === 'custom_segments') return;
+    const expanded = presetSegmentsForRunType(runType, {
+      fartlekMin,
+      warmupMi,
+      tempoMi,
+      cooldownMi,
+      ivWarmupMi,
+      ivReps,
+      ivWorkMi,
+      ivRestMin,
+      ivCooldownMi,
+      lrDistanceMi,
+      lrStrides,
+    }, easyPaceSecPerMi);
+    const stamp = Date.now();
+    setStructuredSegments(expanded.map((segment, index) => ({ ...segment, id: `${segment.id}_${stamp}_${index}` })));
+    setCustomName(current => current.trim() || runTypeLabel[runType]);
+    setRunType('custom_segments');
+    setSaved(false);
   }
 
   return (
@@ -763,6 +789,13 @@ export default function RunCreatorScreen() {
             </>
           )}
 
+          {runType !== 'custom_segments' && (
+            <TouchableOpacity style={st.addSegmentButton} onPress={customizePresetSegments} accessibilityHint="Edit each segment's time or distance and target pace">
+              <Ionicons name="options-outline" size={18} color={colors.primary} />
+              <Text style={st.addSegmentText}>Customize every segment (time or distance, pace)</Text>
+            </TouchableOpacity>
+          )}
+
           {runType === 'custom_segments' && (
             <View style={st.segmentStack}>
               {structuredSegments.map((segment, index) => {
@@ -873,9 +906,9 @@ export default function RunCreatorScreen() {
 
         {/* Actions */}
         <View style={st.actions}>
-          <TouchableOpacity style={st.btnPrimary} onPress={handleStartGPS}>
-            <Ionicons name="location-outline" size={18} color={colors.text} />
-            <Text style={st.btnPrimaryTxt}>Save & Open Active Run</Text>
+          <TouchableOpacity style={st.btnPrimary} onPress={handleGoToStartRun} accessibilityHint="Saves this workout for today and opens Start Run">
+            <Ionicons name="play-circle-outline" size={18} color={colors.text} />
+            <Text style={st.btnPrimaryTxt}>Save & Go to Start Run</Text>
           </TouchableOpacity>
 
           {saved ? (

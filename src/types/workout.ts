@@ -81,6 +81,11 @@ export type WorkoutSegment = {
   hrZone:       number;            // 1–5
   rpe:          [number, number];  // [low, high] on 1–10 Borg scale
   instructions: string;
+  // Exact numeric targets (custom workouts). When present these drive segment
+  // completion and pace cues instead of re-parsing the display strings.
+  targetSeconds?:        number;
+  targetMiles?:          number;
+  targetPaceSecPerMile?: number;
 };
 
 export type IntervalBlock = {

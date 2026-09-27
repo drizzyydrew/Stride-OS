@@ -161,7 +161,10 @@ test('Build 47 Performance Forecast insufficient-history states are confidence-s
   const forecast = buildPerformanceForecast(outlook, { weeksToRace: 12 });
   assert.equal(forecast.metrics.find(metric => metric.key === 'peak_window')?.visualLabel, 'Not Yet Available');
   assert.equal(forecast.metrics.find(metric => metric.key === 'race_readiness')?.visualLabel, 'Developing');
-  assert.doesNotMatch(JSON.stringify(forecast), /\b[A-Z][a-z]{2}\s+\d{1,2}\b/);
+  // Dates are shown (the athlete asked for exact dates from today), but with
+  // limited history the peak is framed as not yet available, never promised.
+  const peak = forecast.metrics.find(metric => metric.key === 'peak_window');
+  assert.match(peak?.headlineExplanation ?? '', /history/i);
   assert.doesNotMatch(JSON.stringify(forecast), /guaranteed performance|race-ready prediction/i);
 });
 

@@ -555,7 +555,16 @@ export const BUILD57_ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
 ];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const STREAK_CONTINUATION_WINDOW_MS = DAY_MS + 60 * 60 * 1000;
+// A streak continues only if the next qualifying workout comes within 24 h of
+// the previous one (last workout -> next day's first workout), and ends once
+// 24 h pass without one. Measured in wall-clock time so daylight-saving days
+// (23 h / 25 h long) neither break nor stretch a same-time-daily streak.
+const STREAK_CONTINUATION_WINDOW_MS = DAY_MS;
+
+function wallClockGapMs(fromMs: number, toMs: number): number {
+  const offsetShiftMinutes = new Date(toMs).getTimezoneOffset() - new Date(fromMs).getTimezoneOffset();
+  return toMs - fromMs - offsetShiftMinutes * 60 * 1000;
+}
 const WEEK_MS = 7 * DAY_MS;
 
 function completedActivities(activities: readonly Activity[]): Activity[] {
@@ -1123,12 +1132,17 @@ export function calculateStreakAchievements(
   for (const dateKey of dateKeys) {
     const dayActivities = [...(activitiesByDate.get(dateKey) ?? [])].sort((a, b) => streakActivityTime(a) - streakActivityTime(b));
     const dayWorkoutTime = dayActivities[dayActivities.length - 1] ? streakActivityTime(dayActivities[dayActivities.length - 1]) : localDateMs(dateKey);
+    // When today's first workout STARTED (the gap ends once a workout begins).
+    const dayFirstWorkoutTime = dayActivities.length
+      ? Math.min(...dayActivities.map(activity => activity.startTime))
+      : localDateMs(dateKey);
     const daysSincePrevious = previousDateKey
       ? Math.round((localDateMs(dateKey) - localDateMs(previousDateKey)) / DAY_MS)
       : 1;
+    // Gap without a workout: previous day's last workout -> today's first.
     const hoursSincePreviousWorkout = previousWorkoutTime === null
       ? 0
-      : dayWorkoutTime - previousWorkoutTime;
+      : wallClockGapMs(previousWorkoutTime, dayFirstWorkoutTime);
     if (daysSincePrevious === 1 && hoursSincePreviousWorkout <= STREAK_CONTINUATION_WINDOW_MS) {
       currentStreakDays += 1;
     } else {
@@ -1150,7 +1164,7 @@ export function calculateStreakAchievements(
     mostRecentWorkoutTime = dayWorkoutTime;
   }
 
-  if (mostRecentWorkoutTime > 0 && now - mostRecentWorkoutTime > DAY_MS) {
+  if (mostRecentWorkoutTime > 0 && wallClockGapMs(mostRecentWorkoutTime, now) > STREAK_CONTINUATION_WINDOW_MS) {
     currentStreakDays = 0;
     segmentSupportingActivityIds = [];
   }

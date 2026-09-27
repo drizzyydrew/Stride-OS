@@ -16,15 +16,24 @@ function formatSegmentPace(secondsPerMile: number, unit: CustomRunSegment['targe
   return `${min}:${sec.toString().padStart(2, '0')}/${unit}`;
 }
 
+/** Up to 2 decimals without trailing zeros: 1.25 -> "1.25", 3 -> "3", .5 -> "0.5". */
+function trimNumber(value: number): string {
+  return String(Math.round(value * 100) / 100);
+}
+
 function durationLabel(segment: CustomRunSegment): string {
   if (segment.target === 'distance') {
     const miles = segment.distanceMiles ?? 0;
-    if (segment.distanceUnit === 'km') return `${(miles * 1.609344).toFixed(miles >= 0.62 ? 1 : 2)} km`;
-    if (segment.distanceUnit === 'm') return `${Math.round(miles * 1609.344)}m`;
-    if (miles < 0.2) return `${Math.round(miles * 1609.344)}m`;
-    return `${miles.toFixed(miles >= 1 ? 1 : 2)} mi`;
+    if (segment.distanceUnit === 'km') return `${trimNumber(miles * 1.609344)} km`;
+    if (segment.distanceUnit === 'm') return `${Math.round(miles * 1609.344)} m`;
+    if (segment.distanceUnit === 'mi') return `${trimNumber(miles)} mi`;
+    if (miles < 0.2) return `${Math.round(miles * 1609.344)} m`;
+    return `${trimNumber(miles)} mi`;
   }
-  return `${Math.round(segment.durationMinutes ?? 0)} min`;
+  const totalSeconds = Math.round((segment.durationMinutes ?? 0) * 60);
+  if (totalSeconds % 60 === 0) return `${totalSeconds / 60} min`;
+  if (totalSeconds < 60) return `${totalSeconds} sec`;
+  return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, '0')} min`;
 }
 
 function segmentPaceGuide(segment: CustomRunSegment): string {
@@ -43,6 +52,7 @@ function segmentRpe(zone: number): [number, number] {
 
 function toWorkoutSegment(segment: CustomRunSegment): WorkoutSegment {
   const hrZone = segment.targetHrZone ?? (segment.kind === 'run' ? 3 : 2);
+  const isDistance = segment.target === 'distance';
   return {
     label: segment.label.trim() || 'Segment',
     duration: durationLabel(segment),
@@ -50,8 +60,22 @@ function toWorkoutSegment(segment: CustomRunSegment): WorkoutSegment {
     hrZone,
     rpe: segmentRpe(hrZone),
     instructions: `${segment.label.trim() || 'Segment'}: ${durationLabel(segment)} at ${segmentPaceGuide(segment)}.`,
+    targetMiles: isDistance && (segment.distanceMiles ?? 0) > 0 ? segment.distanceMiles : undefined,
+    targetSeconds: !isDistance && (segment.durationMinutes ?? 0) > 0 ? Math.round((segment.durationMinutes ?? 0) * 60) : undefined,
+    targetPaceSecPerMile: segment.targetPaceSecPerMile && segment.targetPaceSecPerMile > 0 ? segment.targetPaceSecPerMile : undefined,
   };
 }
+
+// A warmup/cooldown slot the athlete didn't define. Empty duration means the
+// run screen skips it (workoutSegments filters on duration).
+const EMPTY_SEGMENT: WorkoutSegment = {
+  label: '',
+  duration: '',
+  paceGuide: '',
+  hrZone: 2,
+  rpe: [3, 4],
+  instructions: '',
+};
 
 function mapRunType(run: CustomRunDefinition): {
   type: WorkoutType;
@@ -82,12 +106,14 @@ function fallbackSegments(run: CustomRunDefinition): CustomRunSegment[] {
 export function customRunToRichWorkout(run: CustomRunDefinition): RichWorkout {
   const segments = run.structuredSegments?.length ? run.structuredSegments : fallbackSegments(run);
   const mappedSegments = segments.map(toWorkoutSegment);
-  const warmup = mappedSegments.find((_, index) => segments[index]?.kind === 'warmup') ?? mappedSegments[0]!;
-  const cooldown = mappedSegments.find((_, index) => segments[index]?.kind === 'cooldown') ?? mappedSegments[mappedSegments.length - 1]!;
-  const mainSet = mappedSegments.filter((_, index) => {
-    const kind = segments[index]?.kind;
-    return kind !== 'warmup' && kind !== 'cooldown';
-  });
+  // Preserve the athlete's exact order: a leading warmup and trailing cooldown
+  // fill those slots; everything else (including extra warmup/cooldown
+  // segments) stays in the main set in place. Nothing is dropped or doubled.
+  const hasWarmup = segments[0]?.kind === 'warmup';
+  const hasCooldown = segments.length > 1 && segments[segments.length - 1]?.kind === 'cooldown';
+  const warmup = hasWarmup ? mappedSegments[0]! : EMPTY_SEGMENT;
+  const cooldown = hasCooldown ? mappedSegments[mappedSegments.length - 1]! : EMPTY_SEGMENT;
+  const mainSet = mappedSegments.slice(hasWarmup ? 1 : 0, hasCooldown ? mappedSegments.length - 1 : mappedSegments.length);
   const runTargets = segments.filter(segment => segment.kind === 'run' && (segment.targetPaceSecPerMile || segment.targetHrZone));
   const paces = segments.map(segment => segment.targetPaceSecPerMile).filter((pace): pace is number => Boolean(pace));
   const primaryZone = runTargets[0]?.targetHrZone ?? segments.find(segment => segment.targetHrZone)?.targetHrZone ?? 2;

@@ -1,3 +1,4 @@
+import GpsSignalChip from '../../../src/components/activity/GpsSignalChip';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -20,7 +21,7 @@ import {
   updateOutdoorLiveActivity,
 } from '../../../src/lib/runLiveActivity';
 import { buildRouteGuidance } from '../../../src/lib/routing';
-import { formatTurnAnnouncement, turnAnnouncementPhase, updateRouteGuidanceProgress, type RouteGuidancePlan, type RouteGuidanceProgress } from '../../../src/lib/routeGuidance';
+import { formatTurnAnnouncement, guidanceAlertCue, guidanceDisplayText, INITIAL_GUIDANCE_ALERT_STATE, turnAnnouncementPhase, updateRouteGuidanceProgress, type GuidanceAlertState, type RouteGuidancePlan, type RouteGuidanceProgress } from '../../../src/lib/routeGuidance';
 import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
 import { evaluateRunWalkCue, intervalAtElapsed } from '../../../src/utils/activityTracking';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
@@ -78,6 +79,7 @@ export default function StartOutdoorActivityScreen() {
   const [heartRateBpm, setHeartRateBpm] = useState<number | null>(null);
   const [guidance, setGuidance] = useState<RouteGuidancePlan | null>(null);
   const previousElapsed = useRef(0);
+  const guidanceAlert = useRef<GuidanceAlertState>(INITIAL_GUIDANCE_ALERT_STATE);
   const lastAnnouncedStep = useRef<string | null>(null);
   const previousGuidanceProgress = useRef<RouteGuidanceProgress | null>(null);
   const saveInFlightRef = useRef(false);
@@ -138,9 +140,11 @@ export default function StartOutdoorActivityScreen() {
     const turnText = progress.nextInstruction && progress.distanceToNextStepMeters != null
       ? formatTurnAnnouncement(progress.nextInstruction, progress.distanceToNextStepMeters)
       : progress.nextInstruction;
-    active.setNextInstruction(progress.isOffRoute ? 'You appear to be off route.' : turnText);
-    if (progress.isOffRoute) {
-      enqueueVoiceCue('You appear to be off route.', 'technique');
+    active.setNextInstruction(guidanceDisplayText(progress));
+    const alert = guidanceAlertCue(progress, guidanceAlert.current, Date.now());
+    guidanceAlert.current = alert.state;
+    if (progress.isOffRoute || progress.isWrongWay) {
+      if (alert.cue) enqueueVoiceCue(alert.cue, 'navigation');
     } else if (
       turnText
       && progress.distanceToNextStepMeters != null
@@ -148,7 +152,7 @@ export default function StartOutdoorActivityScreen() {
       && lastAnnouncedStep.current !== `${progress.nextStepIndex}:${turnAnnouncementPhase(progress.distanceToNextStepMeters)}`
     ) {
       lastAnnouncedStep.current = `${progress.nextStepIndex}:${turnAnnouncementPhase(progress.distanceToNextStepMeters)}`;
-      enqueueVoiceCue(turnText, 'technique');
+      enqueueVoiceCue(turnText, 'navigation');
     }
   }, [active.aggregate.points.length, active.isActive, active.navigationPromptsEnabled, guidance]);
 
@@ -223,13 +227,16 @@ export default function StartOutdoorActivityScreen() {
     previousGuidanceProgress.current = null;
     lastAnnouncedStep.current = null;
     setElapsedSeconds(0);
+    // Start GPS before any route-guidance lookup: guidance may call Apple Maps
+    // directions, which waits on the network and must never delay recording
+    // (offline starts were recording nothing until that request timed out).
+    await startActivityLocationTracking();
     if (attached && mode !== 'off') {
-      const plan = await buildRouteGuidance(attached.points, mode);
+      const plan = await buildRouteGuidance(attached.points, mode).catch(() => null);
       setGuidance(plan);
     } else {
       setGuidance(null);
     }
-    await startActivityLocationTracking();
     const started = useActiveActivityStore.getState();
     await startOutdoorLiveActivity({
       sessionId: started.workoutInstanceId ?? started.activityId ?? '',
@@ -434,6 +441,7 @@ export default function StartOutdoorActivityScreen() {
         <Text style={[s.eyebrow, { color: C.primary }]}>{active.isPaused ? 'PAUSED' : 'ACTIVE'}</Text>
         <Text style={[s.activeTitle, { color: C.text }]}>{active.name}</Text>
         <Text style={[s.timer, { color: C.text }]}>{time(elapsedSeconds || activeSeconds)}</Text>
+        <GpsSignalChip active={active.isActive} paused={active.isPaused} lastGoodFixAt={active.lastGoodFixAt} startedAt={active.startedAt} />
       </View>
       <View style={s.stats}>
         <Stat label="Distance" value={`${miles.toFixed(2)} mi`} />
