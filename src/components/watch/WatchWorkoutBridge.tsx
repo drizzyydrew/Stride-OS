@@ -10,7 +10,6 @@ import {
   type StrideWatchWorkoutStateEvent,
 } from '../../../modules/stride-watch-connectivity/src';
 import { stopActivityLocationTracking } from '../../lib/activityGpsTracking';
-import { stopLocationTracking } from '../../lib/gpsTracking';
 import { endOutdoorLiveActivity, updateOutdoorLiveActivity } from '../../lib/runLiveActivity';
 import { endStrengthLiveActivity, strengthLiveActivitySessionId, updateStrengthLiveActivity } from '../../lib/strengthLiveActivity';
 import { enqueueVoiceCue } from '../../lib/voiceCue';
@@ -28,6 +27,16 @@ const APPLE_WATCH_DEVICE = {
 };
 
 const COMPLETED_WATCH_EVENT_TTL_MS = 15 * 60 * 1000;
+// Pause/resume from the watch only mirror onto the phone while they are live.
+// A queued or late "paused" can otherwise land after the phone has already
+// auto-resumed and leave the run manually paused (no distance recorded).
+const WATCH_CONTROL_EVENT_MAX_AGE_MS = 5 * 1000;
+
+function isStaleWatchControlEvent(event: StrideWatchWorkoutStateEvent): boolean {
+  if (event.state !== 'paused' && event.state !== 'running') return false;
+  if (event.queued) return true;
+  return Date.now() - event.timestamp > WATCH_CONTROL_EVENT_MAX_AGE_MS;
+}
 const completedWatchWorkoutEvents = new Map<string, number>();
 
 function rememberCompletedWatchWorkout(id: string, timestamp: number): boolean {
@@ -144,6 +153,9 @@ function syncStrengthLiveActivity(event: StrideWatchWorkoutStateEvent, isPaused:
 }
 
 function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
+  // "ended" is never dropped for staleness; it is de-duplicated by id instead.
+  if (isStaleWatchControlEvent(event)) return;
+
   if (event.workoutKind === 'run') {
     const id = eventWorkoutId(event);
     if (completedWatchWorkoutEvents.has(id)) return;
@@ -199,21 +211,13 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
       if (activeRun.workoutInstanceId && event.workoutInstanceId && activeRun.workoutInstanceId !== event.workoutInstanceId) return;
       const completionId = activeRun.workoutInstanceId ?? id;
       if (!rememberCompletedWatchWorkout(completionId, event.timestamp)) return;
-      void stopLocationTracking().catch(() => undefined);
-      void endOutdoorLiveActivity({
-        sessionId: activeRun.workoutInstanceId ?? completionId,
-        workoutInstanceId: activeRun.workoutInstanceId ?? completionId,
-        sessionSource: 'running',
-        activityName: 'Training Run',
-        activityType: 'running',
-        elapsedSeconds: activeRunElapsedSeconds(activeRun),
-        distanceMiles: Math.max(activeRun.distanceMiles, distanceMiles(event)),
-        averagePace: paceLabel(event),
-        heartRateBpm: event.heartRate ?? null,
-        zoneLabel: event.heartRateZone,
-        isPaused: false,
-      }).catch(() => undefined);
-      useActiveRunStore.getState().finishRun();
+      // Route through the same completion path as the phone's Stop button
+      // (training screen stop()), which saves the activity, ends the live
+      // activity, and stops GPS. Resetting the run store directly here would
+      // drop the run without ever logging an activity.
+      if (!activeRun.completionRequestedAt) {
+        useActiveRunStore.getState().requestCompletion();
+      }
       enqueueVoiceCue('Workout ended.', 'motivation');
       return;
     }

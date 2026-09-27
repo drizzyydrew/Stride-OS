@@ -124,18 +124,6 @@ function layerSafeId(value: string): string {
   return value.replace(/[^a-zA-Z0-9_-]/g, '-');
 }
 
-function coordinateKey(point: LatLng | undefined): string {
-  if (!point) return 'none';
-  return `${point.latitude.toFixed(5)}-${point.longitude.toFixed(5)}`;
-}
-
-function routeGeometryDigest(coordinates: LatLng[]): string {
-  const first = coordinates[0];
-  const middle = coordinates[Math.floor(coordinates.length / 2)];
-  const last = coordinates[coordinates.length - 1];
-  return layerSafeId(`${coordinates.length}-${coordinateKey(first)}-${coordinateKey(middle)}-${coordinateKey(last)}`);
-}
-
 const MapView = forwardRef<MapViewRef, MapViewProps>(({
   children,
   style,
@@ -245,54 +233,72 @@ export function Polyline({
   strokeWidth = 4,
   lineDashPattern,
 }: PolylineProps) {
+  // Stable ids: the ShapeSource updates its geometry in place. Ids that change
+  // with the geometry remount the source and layers on every waypoint edit,
+  // which flickers and can leave a stale layer behind.
   const idRef = useRef<string | null>(null);
-  if (!idRef.current) idRef.current = `polyline-${Math.random().toString(36).slice(2)}`;
+  if (!idRef.current) idRef.current = layerSafeId(`polyline-${Math.random().toString(36).slice(2)}`);
   const shape = useMemo(() => lineFeature(coordinates), [coordinates]);
   if (coordinates.length < 2) return null;
-  const id = layerSafeId(`${idRef.current}-${routeGeometryDigest(coordinates)}-${strokeColor}-${strokeWidth}-${lineDashPattern?.join('-') ?? 'solid'}`);
-  const borderWidth = Math.max(strokeWidth + 5, 8);
-  const visibleLineWidth = Math.max(strokeWidth, 6);
-  const lineDashStyle = lineDashPattern ? { lineDasharray: lineDashPattern } : null;
+  const id = idRef.current;
+
+  // Unresolved / unsnapped path: one thin dashed line, no casing. Dashing the
+  // casing and shadow as well makes their (different-width) dash periods drift
+  // apart and reads as a beaded trail.
+  if (lineDashPattern) {
+    return (
+      <ShapeSource id={id} shape={shape}>
+        <LineLayer
+          id={`${id}-dashed-layer`}
+          style={{
+            lineColor: strokeColor,
+            lineWidth: strokeWidth,
+            lineCap: 'butt',
+            lineJoin: 'round',
+            lineOpacity: 0.9,
+            lineDasharray: lineDashPattern,
+          }}
+        />
+      </ShapeSource>
+    );
+  }
+
+  // Solid route: soft outer shadow, white casing, then the colored line on
+  // top. Layers added after the style loads already render above the basemap
+  // road/trail layers, so no layerIndex or slot is needed (slots only exist in
+  // the Mapbox Standard style).
+  const lineWidth = Math.max(strokeWidth, 5);
+  const casingWidth = lineWidth + 4;
+  const shadowWidth = casingWidth + 3;
 
   return (
     <ShapeSource id={id} shape={shape}>
       <LineLayer
-        id={`${id}-border-layer`}
-        layerIndex={998}
-        slot="top"
+        id={`${id}-shadow-layer`}
         style={{
-          lineColor: 'rgba(255, 255, 255, 0.96)',
-          lineWidth: borderWidth,
+          lineColor: 'rgba(9, 8, 7, 0.22)',
+          lineWidth: shadowWidth,
           lineCap: 'round',
           lineJoin: 'round',
-          lineOpacity: 1,
-          ...lineDashStyle,
+          lineBlur: 1.5,
         }}
       />
       <LineLayer
-        id={`${id}-shadow-layer`}
-        layerIndex={999}
-        slot="top"
+        id={`${id}-casing-layer`}
         style={{
-          lineColor: 'rgba(9, 8, 7, 0.34)',
-          lineWidth: Math.max(visibleLineWidth + 2, 8),
+          lineColor: '#FFFFFF',
+          lineWidth: casingWidth,
           lineCap: 'round',
           lineJoin: 'round',
-          lineOpacity: 1,
-          ...lineDashStyle,
         }}
       />
       <LineLayer
         id={`${id}-line-layer`}
-        layerIndex={1000}
-        slot="top"
         style={{
           lineColor: strokeColor,
-          lineWidth: visibleLineWidth,
+          lineWidth,
           lineCap: 'round',
           lineJoin: 'round',
-          lineOpacity: 1,
-          ...lineDashStyle,
         }}
       />
     </ShapeSource>
@@ -306,18 +312,18 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   marker: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#FFFFFF',
   },
   markerCore: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: '#FFFFFF',
   },
 });

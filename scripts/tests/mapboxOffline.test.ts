@@ -97,23 +97,47 @@ test('route builder keeps snap-to-path visible without exposing direct mode', ()
   assert.match(routeBuilder, /routeMarkerCore/);
   assert.match(routeBuilder, /backgroundColor: isStart \? C\.positive : isEnd \? C\.primary : C\.card/);
   assert.match(routeBuilder, /backgroundColor: '#FFFFFF'/);
-  assert.match(routeBuilder, /lineDashPattern=\{snapUnresolved \? \[10, 8\] : undefined\}/);
+  // Crisp 18px marker with a 6px white core; no drop shadow (annotations are
+  // rasterized and a shadow blurs into a blob).
+  assert.match(routeBuilder, /routeMarker: \{\s+width: 18,\s+height: 18,/);
+  assert.match(routeBuilder, /routeMarkerCore: \{\s+width: 6,\s+height: 6,/);
+  assert.doesNotMatch(routeBuilder, /shadowOpacity: 0\.18/);
+  // Width-relative dash units, applied to the main line only.
+  assert.match(routeBuilder, /lineDashPattern=\{snapUnresolved \? \[2, 1\.5\] : undefined\}/);
   assert.doesNotMatch(routeBuilder, /routed\?\.provider === 'direct'/);
   assert.doesNotMatch(routeBuilder, /routeMarkerText/);
 });
 
+test('planned and saved route lines are solid; only snap failure is dashed and labeled', () => {
+  const runScreen = fs.readFileSync('app/(tabs)/training/index.tsx', 'utf8');
+  const routeBuilder = fs.readFileSync('app/(tabs)/training/route-builder.tsx', 'utf8');
+  assert.doesNotMatch(runScreen, /lineDashPattern/);
+  assert.equal((routeBuilder.match(/lineDashPattern=/g) ?? []).length, 1);
+  assert.match(routeBuilder, /Couldn't snap to roads or paths\. This is not a valid route yet\./);
+  assert.match(routeBuilder, /Snap failed — retry to rebuild the path/);
+});
+
 test('native Mapbox route lines render as solid cased lines without route-dot fallback', () => {
   const nativeMap = fs.readFileSync('src/components/maps/MapComponents.native.tsx', 'utf8');
-  assert.match(nativeMap, /id=\{`\$\{id\}-border-layer`\}/);
-  assert.match(nativeMap, /slot="top"/);
-  assert.match(nativeMap, /layerIndex=\{998\}/);
-  assert.match(nativeMap, /layerIndex=\{999\}/);
-  assert.match(nativeMap, /layerIndex=\{1000\}/);
-  assert.match(nativeMap, /lineColor: 'rgba\(255, 255, 255, 0\.96\)'/);
-  assert.match(nativeMap, /lineColor: 'rgba\(9, 8, 7, 0\.34\)'/);
-  assert.match(nativeMap, /lineOpacity: 1/);
-  assert.match(nativeMap, /routeGeometryDigest/);
-  assert.match(nativeMap, /id=\{`\$\{id\}-line-layer`\}/);
+  // Layers are declared shadow -> casing -> line so the colored line is on top.
+  const shadowAt = nativeMap.indexOf('-shadow-layer');
+  const casingAt = nativeMap.indexOf('-casing-layer');
+  const lineAt = nativeMap.indexOf('-line-layer');
+  assert.ok(shadowAt > 0 && casingAt > shadowAt && lineAt > casingAt, 'layer order must be shadow, casing, line');
+  // layerIndex/slot are not valid for the classic outdoors style and can
+  // prevent the line from rendering at all.
+  assert.doesNotMatch(nativeMap, /layerIndex=/);
+  assert.doesNotMatch(nativeMap, /slot="top"/);
+  assert.doesNotMatch(nativeMap, /aboveLayerID/);
+  assert.match(nativeMap, /lineColor: '#FFFFFF'/);
+  assert.match(nativeMap, /lineColor: 'rgba\(9, 8, 7, 0\.22\)'/);
+  // Stable source id: geometry changes update in place instead of remounting.
+  assert.doesNotMatch(nativeMap, /routeGeometryDigest/);
+  assert.match(nativeMap, /const id = idRef\.current;/);
+  // Dashing is limited to the single unresolved-path line, with butt caps.
+  assert.match(nativeMap, /if \(lineDashPattern\) \{/);
+  assert.match(nativeMap, /lineCap: 'butt'/);
+  assert.equal((nativeMap.match(/lineDasharray/g) ?? []).length, 1);
   assert.doesNotMatch(nativeMap, /routeDotCoordinates/);
   assert.doesNotMatch(nativeMap, /MAX_ROUTE_DOT_ANNOTATIONS/);
   assert.doesNotMatch(nativeMap, /routeDotCore/);

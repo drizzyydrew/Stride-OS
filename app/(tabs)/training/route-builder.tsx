@@ -417,7 +417,7 @@ export default function RouteBuilderScreen() {
               coordinates={geometry}
               strokeColor={snapUnresolved ? C.textMuted : lineColor}
               strokeWidth={snapUnresolved ? 4 : 6}
-              lineDashPattern={snapUnresolved ? [10, 8] : undefined}
+              lineDashPattern={snapUnresolved ? [2, 1.5] : undefined}
             />
           ) : null}
           {waypoints.map((point, index) => {
@@ -433,13 +433,13 @@ export default function RouteBuilderScreen() {
                 title={isStart ? 'Start' : isEnd ? 'Finish' : `Point ${index + 1}`}
                 description="Drag to move · tap this bubble to delete"
                 pinColor={isStart ? C.positive : isEnd ? C.critical : undefined}
-                anchor={{ x: 0.5, y: 1 }}
+                anchor={{ x: 0.5, y: 0.5 }}
               >
                 <View style={[
                   s.routeMarker,
                   {
                     backgroundColor: isStart ? C.positive : isEnd ? C.primary : C.card,
-                    borderColor: isStart ? C.positive : isEnd ? C.primary : C.primary,
+                    borderColor: isStart || isEnd ? '#FFFFFF' : C.primary,
                   },
                 ]}>
                   <View style={s.routeMarkerCore} />
@@ -893,17 +893,16 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   headerPillText: { fontSize: 13, fontWeight: '800' },
+  // Map annotations are rasterized to a bitmap by Mapbox; a drop shadow blurs
+  // into a soft blob. Keep the marker a flat, crisp ring with a white core.
   routeMarker: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     borderWidth: 2,
+    borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
   },
   routeMarkerCore: {
     width: 6,

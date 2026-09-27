@@ -89,6 +89,9 @@ private struct WorkoutPickerFace: View {
           .foregroundStyle(StrideWatchPalette.steel)
           .lineLimit(1)
           .minimumScaleFactor(0.82)
+
+        StrideWatchDiagnostics()
+          .environmentObject(workout)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -166,6 +169,9 @@ private struct ActiveWorkoutFace: View {
 
         StrideWatchControls()
           .environmentObject(workout)
+
+        StrideWatchDiagnostics()
+          .environmentObject(workout)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -188,6 +194,40 @@ private struct StrideWatchHeader: View {
     .minimumScaleFactor(0.7)
     .frame(maxWidth: .infinity, alignment: .center)
     .accessibilityHidden(true)
+  }
+}
+
+/// Runtime diagnostics for phone-to-watch sync. Small on purpose; it sits at
+/// the bottom of the scrollable faces so it never crowds the workout metrics.
+private struct StrideWatchDiagnostics: View {
+  @EnvironmentObject private var workout: StrideWatchWorkoutManager
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 2) {
+      Text(workout.connectivityLabel)
+      Text(commandLine)
+      Text(workout.healthKitLabel)
+      Text(workout.workoutIdLabel)
+      if let error = workout.lastError {
+        Text("Err: \(error)")
+          .foregroundStyle(StrideWatchPalette.clay)
+      }
+    }
+    .font(.system(size: 9, weight: .medium, design: .monospaced))
+    .foregroundStyle(StrideWatchPalette.cream.opacity(0.62))
+    .lineLimit(2)
+    .minimumScaleFactor(0.8)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.top, 4)
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel("Sync diagnostics")
+  }
+
+  private var commandLine: String {
+    if let age = workout.lastCommandAgeLabel {
+      return "\(workout.lastCommandLabel) · \(age)"
+    }
+    return workout.lastCommandLabel
   }
 }
 

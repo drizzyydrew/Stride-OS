@@ -101,6 +101,11 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   @Published private(set) var preferredUnitSystem: String = "imperial"
   @Published private(set) var metricPage: StrideWatchMetricPage = .heartRate
   @Published private(set) var isStartingWorkout: Bool = false
+  // Runtime diagnostics shown on the watch screen (main thread only).
+  @Published private(set) var connectivityLabel: String = "WC: not activated"
+  @Published private(set) var lastCommandLabel: String = "Cmd: none"
+  @Published private(set) var healthKitLabel: String = "HK: idle"
+  @Published private(set) var workoutIdLabel: String = "ID: --"
 
   private var maxHeartRateBpm: Int = 190
   private var targetZone: Int?
@@ -115,7 +120,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private var pausedSeconds: TimeInterval = 0
   private var timer: Timer?
   private var endedStateSentForWorkoutInstanceId: String?
-  private var lastHandledPhoneCommandKey: String?
+  private var handledPhoneCommandKeys: [String] = []
+  private var isEnding = false
+  private var startWatchdog: DispatchWorkItem?
+  private var lastCommandReceivedAt: Date?
   private var queuedOutboundPayloads: [[String: Any]] = []
   private var pendingConnectivityActivationWorkItem: DispatchWorkItem?
   private var suppressNextConnectivityActivationError = false
@@ -234,43 +242,65 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     super.init()
   }
 
+  // MARK: - Threading
+  //
+  // HealthKit and WatchConnectivity deliver delegate callbacks on background
+  // queues. Every method below that touches published state, the outbound
+  // queue, or the workout session runs on the main thread; callbacks hop in
+  // before doing anything else.
+
+  private func onMain(_ block: @escaping () -> Void) {
+    if Thread.isMainThread {
+      block()
+    } else {
+      DispatchQueue.main.async(execute: block)
+    }
+  }
+
   func prepareForPhoneControl() {
     guard WCSession.isSupported() else { return }
     scheduleConnectivityActivation(reportErrors: false, delay: 1.5)
   }
 
+  /// Returns nil when the start was accepted, or a short rejection reason.
+  /// Must be called on the main thread.
+  @discardableResult
   func startWorkout(
     kind: StrideWatchWorkoutKind = .run,
     title: String?,
     workoutInstanceId: String?,
     environment: String?,
     targetZone: Int?
-  ) {
-    guard !isActive && !isStartingWorkout else { return }
+  ) -> String? {
+    guard !isActive else { return "already_active" }
+    guard !isStartingWorkout else { return "already_starting" }
     lastError = nil
     isStartingWorkout = true
+    isEnding = false
+    healthKitLabel = "HK: requesting auth"
     let resolvedEnvironment = environment ?? ((kind == .run || kind == .cycling) ? "outdoor" : "indoor")
-    self.workoutInstanceId = workoutInstanceId ?? "watch_\(kind.rawValue)_\(Int(Date().timeIntervalSince1970 * 1000))"
+    let resolvedId = workoutInstanceId ?? "watch_\(kind.rawValue)_\(Int(Date().timeIntervalSince1970 * 1000))"
+    self.workoutInstanceId = resolvedId
+    self.workoutIdLabel = "ID: \(String(resolvedId.suffix(8)))"
     self.endedStateSentForWorkoutInstanceId = nil
     self.selectedWorkoutKind = kind
     self.workoutEnvironment = resolvedEnvironment
     self.targetZone = targetZone
     self.metricPage = kind.tracksDistance ? .heartRate : .elapsed
+    armStartWatchdog()
 
     requestAuthorization { [weak self] granted in
       guard let self else { return }
-      guard granted else {
-        DispatchQueue.main.async {
-          self.isStartingWorkout = false
+      self.onMain {
+        guard granted else {
+          self.failStart("Health permission needed.", label: "HK: auth denied")
+          return
         }
-        self.publishError("Health permission needed.")
-        return
-      }
-
-      DispatchQueue.main.async {
+        self.healthKitLabel = "HK: starting"
         self.beginWorkout(kind: kind, environment: resolvedEnvironment)
       }
     }
+    return nil
   }
 
   func selectWorkoutKind(_ kind: StrideWatchWorkoutKind) {
@@ -289,35 +319,70 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   func pauseWorkout() {
-    guard isActive, !isPaused else { return }
-    session?.pause()
+    guard let session, session.state == .running else { return }
+    session.pause()
     pausedAt = Date()
-    sendWorkoutState("paused")
+    // "paused" is published from the HealthKit delegate callback.
   }
 
   func resumeWorkout() {
-    guard isPaused else { return }
+    guard let session, session.state == .paused else { return }
     if let pausedAt {
       pausedSeconds += Date().timeIntervalSince(pausedAt)
     }
     pausedAt = nil
-    session?.resume()
-    sendWorkoutState("running")
+    session.resume()
+    // "running" is published from the HealthKit delegate callback.
   }
 
   func endWorkout() {
-    guard session != nil || isActive else { return }
-    session?.end()
+    guard !isEnding else { return }
+    guard let session else {
+      if isActive {
+        isEnding = true
+        timer?.invalidate()
+        timer = nil
+        sendEndedStateOnce()
+      }
+      return
+    }
+    // HealthKit throws "Unable to perform 'end' from current state" if end()
+    // is called again once the session is stopping or ended.
+    guard session.state == .running || session.state == .paused || session.state == .prepared else { return }
+    isEnding = true
+    healthKitLabel = "HK: ending"
+    session.end()
     timer?.invalidate()
     timer = nil
-    if session == nil {
-      sendEndedStateOnce()
+  }
+
+  private func armStartWatchdog() {
+    startWatchdog?.cancel()
+    let item = DispatchWorkItem { [weak self] in
+      guard let self, self.isStartingWorkout, self.state != .running else { return }
+      self.failStart("Workout did not start. Try again from iPhone.", label: "HK: start timed out")
     }
+    startWatchdog = item
+    DispatchQueue.main.asyncAfter(deadline: .now() + 12, execute: item)
+  }
+
+  private func clearStartWatchdog() {
+    startWatchdog?.cancel()
+    startWatchdog = nil
+  }
+
+  private func failStart(_ message: String, label: String) {
+    clearStartWatchdog()
+    isStartingWorkout = false
+    healthKitLabel = label
+    publishError(message)
   }
 
   private func beginWorkout(kind: StrideWatchWorkoutKind, environment: String?) {
-    if session != nil {
-      session?.end()
+    if let existing = session {
+      if existing.state == .running || existing.state == .paused || existing.state == .prepared {
+        existing.end()
+      }
       session = nil
       builder = nil
     }
@@ -340,33 +405,29 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       self.builder = builder
 
       let now = Date()
-      DispatchQueue.main.async {
-        self.startedAt = now
-        self.pausedAt = nil
-        self.pausedSeconds = 0
-        self.elapsedSeconds = 0
-        self.heartRateBpm = nil
-        self.distanceMeters = 0
-        self.activeEnergyKilocalories = 0
-      }
+      startedAt = now
+      pausedAt = nil
+      pausedSeconds = 0
+      elapsedSeconds = 0
+      heartRateBpm = nil
+      distanceMeters = 0
+      activeEnergyKilocalories = 0
+
       session.startActivity(with: now)
       builder.beginCollection(withStart: now) { [weak self] success, error in
+        guard let self else { return }
         if let error {
-          self?.publishError(error.localizedDescription)
+          self.publishError(error.localizedDescription)
         } else if !success {
-          self?.publishError("Workout collection did not start")
+          self.publishError("Workout collection did not start")
         }
       }
       startTimer()
-      sendWorkoutState("running")
-      DispatchQueue.main.async {
-        self.isStartingWorkout = false
-      }
+      // isStartingWorkout stays true and "running" is published only when the
+      // HealthKit delegate reports .running, so the phone never sees a running
+      // workout that HealthKit has not actually started.
     } catch {
-      DispatchQueue.main.async {
-        self.isStartingWorkout = false
-      }
-      publishError("HealthKit did not start: \(error.localizedDescription)")
+      failStart("HealthKit did not start: \(error.localizedDescription)", label: "HK: error")
     }
   }
 
@@ -383,9 +444,9 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     let readTypes = Set([heartRate, activeEnergy, runDistance, cyclingDistance].compactMap { $0 })
     let shareTypes: Set<HKSampleType> = [HKObjectType.workoutType()]
 
-    healthStore.requestAuthorization(toShare: shareTypes, read: readTypes) { granted, error in
+    healthStore.requestAuthorization(toShare: shareTypes, read: readTypes) { [weak self] granted, error in
       if let error {
-        self.publishError(error.localizedDescription)
+        self?.publishError(error.localizedDescription)
       }
       completion(granted)
     }
@@ -426,6 +487,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       suppressNextConnectivityActivationError = !reportErrors
       session.activate()
     }
+    refreshConnectivityLabel()
   }
 
   private func scheduleConnectivityActivation(reportErrors: Bool = false, delay: TimeInterval = 2.0) {
@@ -438,7 +500,29 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
   }
 
+  private func refreshConnectivityLabel() {
+    onMain {
+      guard WCSession.isSupported() else {
+        self.connectivityLabel = "WC: unsupported"
+        return
+      }
+      let session = WCSession.default
+      let activation: String
+      switch session.activationState {
+      case .activated: activation = "active"
+      case .inactive: activation = "inactive"
+      case .notActivated: activation = "not activated"
+      @unknown default: activation = "unknown"
+      }
+      self.connectivityLabel = "WC: \(activation) · \(session.isReachable ? "reachable" : "not reachable")"
+    }
+  }
+
   private func sendHeartRate(_ bpm: Int) {
+    guard Thread.isMainThread else {
+      DispatchQueue.main.async { self.sendHeartRate(bpm) }
+      return
+    }
     var payload: [String: Any] = [
       "type": "heartRate",
       "heartRate": bpm,
@@ -458,6 +542,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   private func sendWorkoutState(_ label: String) {
+    guard Thread.isMainThread else {
+      DispatchQueue.main.async { self.sendWorkoutState(label) }
+      return
+    }
     refreshElapsed()
     var payload: [String: Any] = [
       "type": "workoutState",
@@ -482,39 +570,86 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   private func sendEndedStateOnce() {
+    guard Thread.isMainThread else {
+      DispatchQueue.main.async { self.sendEndedStateOnce() }
+      return
+    }
     let key = workoutInstanceId ?? "ended_\(selectedWorkoutKind.rawValue)"
     guard endedStateSentForWorkoutInstanceId != key else { return }
     endedStateSentForWorkoutInstanceId = key
     sendWorkoutState("ended")
   }
 
+  private func sendCommandAck(
+    command: String,
+    message: [String: Any],
+    reason: String?
+  ) {
+    var payload: [String: Any] = [
+      "type": "commandAck",
+      "command": command,
+      "accepted": reason == nil,
+      "healthKitState": statusLabel.lowercased(),
+      "timestamp": Date().timeIntervalSince1970 * 1000,
+    ]
+    if let reason {
+      payload["reason"] = reason
+    }
+    if let id = (message["workoutInstanceId"] as? String) ?? workoutInstanceId {
+      payload["workoutInstanceId"] = id
+    }
+    sendToPhone(payload)
+  }
+
   private func sendToPhone(_ payload: [String: Any], reportFailures: Bool = true) {
+    guard Thread.isMainThread else {
+      DispatchQueue.main.async { self.sendToPhone(payload, reportFailures: reportFailures) }
+      return
+    }
     guard WCSession.isSupported() else { return }
     let session = WCSession.default
 
     guard session.activationState == .activated else {
       queuedOutboundPayloads.append(payload)
+      if queuedOutboundPayloads.count > 40 {
+        queuedOutboundPayloads.removeFirst(queuedOutboundPayloads.count - 40)
+      }
       scheduleConnectivityActivation(reportErrors: false)
       return
     }
 
     if session.isReachable {
       session.sendMessage(payload, replyHandler: nil) { [weak self] error in
+        guard let self else { return }
+        // Live delivery failed (phone went unreachable mid-send). State, acks,
+        // and errors must still reach the phone, so queue them; heart-rate
+        // samples are high-frequency and superseded, so they are dropped.
+        let type = payload["type"] as? String
+        if type == "workoutState" || type == "commandAck" || type == "error" {
+          DispatchQueue.main.async {
+            var queuedPayload = payload
+            queuedPayload["queued"] = true
+            WCSession.default.transferUserInfo(queuedPayload)
+            self.pendingSyncCount += 1
+          }
+        }
         if reportFailures {
-          self?.recordLocalError(error.localizedDescription)
+          self.recordLocalError(error.localizedDescription)
         }
       }
     } else {
       var queuedPayload = payload
       queuedPayload["queued"] = true
       session.transferUserInfo(queuedPayload)
-      DispatchQueue.main.async {
-        self.pendingSyncCount += 1
-      }
+      pendingSyncCount += 1
     }
   }
 
   private func flushQueuedOutboundPayloads() {
+    guard Thread.isMainThread else {
+      DispatchQueue.main.async { self.flushQueuedOutboundPayloads() }
+      return
+    }
     guard WCSession.isSupported(), WCSession.default.activationState == .activated else { return }
     let payloads = queuedOutboundPayloads
     queuedOutboundPayloads.removeAll()
@@ -522,14 +657,14 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   private func publishError(_ message: String) {
-    DispatchQueue.main.async {
+    onMain {
       self.lastError = message
+      self.sendToPhone([
+        "type": "error",
+        "message": message,
+        "timestamp": Date().timeIntervalSince1970 * 1000,
+      ], reportFailures: false)
     }
-    sendToPhone([
-      "type": "error",
-      "message": message,
-      "timestamp": Date().timeIntervalSince1970 * 1000,
-    ], reportFailures: false)
   }
 
   private func recordLocalError(_ message: String) {
@@ -537,98 +672,47 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       self.lastError = message
     }
   }
-}
 
-extension StrideWatchWorkoutManager: HKWorkoutSessionDelegate {
-  func workoutSession(
-    _ workoutSession: HKWorkoutSession,
-    didChangeTo toState: HKWorkoutSessionState,
-    from fromState: HKWorkoutSessionState,
-    date: Date
-  ) {
-    DispatchQueue.main.async {
-      self.state = toState
-    }
+  fileprivate func handleWorkoutSessionStateChange(_ toState: HKWorkoutSessionState) {
+    state = toState
 
     switch toState {
     case .running:
-      DispatchQueue.main.async {
-        self.isStartingWorkout = false
-      }
+      clearStartWatchdog()
+      isStartingWorkout = false
+      healthKitLabel = "HK: running"
       sendWorkoutState("running")
     case .paused:
+      healthKitLabel = "HK: paused"
       sendWorkoutState("paused")
     case .ended:
+      clearStartWatchdog()
+      healthKitLabel = "HK: ended"
       finishBuilderIfNeeded()
       sendEndedStateOnce()
-      DispatchQueue.main.async {
-        self.isStartingWorkout = false
-        self.timer?.invalidate()
-        self.timer = nil
-        self.session = nil
-        self.builder = nil
-      }
+      isStartingWorkout = false
+      isEnding = false
+      timer?.invalidate()
+      timer = nil
+      session = nil
+      builder = nil
+    case .prepared:
+      healthKitLabel = "HK: prepared"
+    case .stopped:
+      healthKitLabel = "HK: stopping"
     default:
-      sendWorkoutState(statusLabel.lowercased())
+      break
     }
   }
 
-  func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
-    DispatchQueue.main.async {
-      self.isStartingWorkout = false
-    }
+  fileprivate func handleWorkoutSessionFailure(_ error: Error) {
+    clearStartWatchdog()
+    isStartingWorkout = false
+    healthKitLabel = "HK: error"
     publishError(error.localizedDescription)
   }
-}
 
-extension StrideWatchWorkoutManager: HKLiveWorkoutBuilderDelegate {
-  func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}
-
-  func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {
-    if
-      let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate),
-      collectedTypes.contains(heartRateType),
-      let statistics = workoutBuilder.statistics(for: heartRateType),
-      let quantity = statistics.mostRecentQuantity()
-    {
-      let bpm = Int(quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute())).rounded())
-      DispatchQueue.main.async {
-        self.heartRateBpm = bpm
-      }
-      sendHeartRate(bpm)
-    }
-
-    if
-      let energyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
-      collectedTypes.contains(energyType),
-      let statistics = workoutBuilder.statistics(for: energyType),
-      let quantity = statistics.sumQuantity()
-    {
-      DispatchQueue.main.async {
-        self.activeEnergyKilocalories = quantity.doubleValue(for: .kilocalorie())
-      }
-    }
-
-    if
-      let distanceIdentifier = selectedWorkoutKind.distanceIdentifier,
-      let distanceType = HKObjectType.quantityType(forIdentifier: distanceIdentifier),
-      collectedTypes.contains(distanceType),
-      let statistics = workoutBuilder.statistics(for: distanceType),
-      let quantity = statistics.sumQuantity()
-    {
-      DispatchQueue.main.async {
-        self.distanceMeters = quantity.doubleValue(for: .meter())
-      }
-    }
-  }
-}
-
-extension StrideWatchWorkoutManager: WCSessionDelegate {
-  func session(
-    _ session: WCSession,
-    activationDidCompleteWith activationState: WCSessionActivationState,
-    error: Error?
-  ) {
+  fileprivate func handleActivationCompleted(error: Error?) {
     pendingConnectivityActivationWorkItem?.cancel()
     pendingConnectivityActivationWorkItem = nil
     if let error {
@@ -640,24 +724,20 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
     } else {
       suppressNextConnectivityActivationError = false
     }
-    DispatchQueue.main.async {
-      self.flushQueuedOutboundPayloads()
-    }
+    refreshConnectivityLabel()
+    flushQueuedOutboundPayloads()
   }
 
-  func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
-    handlePhoneCommand(message)
+  fileprivate func noteCommand(_ type: String, via: String, result: String) {
+    lastCommandReceivedAt = Date()
+    lastCommandLabel = "Cmd: \(type) \(via) \(result)"
   }
 
-  func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
-    handlePhoneCommand(userInfo)
-  }
-
-  func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-    handlePhoneCommand(applicationContext, fromApplicationContext: true)
-  }
-
-  private func handlePhoneCommand(_ message: [String: Any], fromApplicationContext: Bool = false) {
+  fileprivate func handlePhoneCommand(
+    _ message: [String: Any],
+    via: String,
+    fromApplicationContext: Bool = false
+  ) {
     let type = message["type"] as? String
     let commandWorkoutInstanceId = message["workoutInstanceId"] as? String ?? ""
     let sentAt: Double
@@ -669,58 +749,74 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
       sentAt = 0
     }
     let commandKey = "\(type ?? "")|\(commandWorkoutInstanceId)|\(Int(sentAt.rounded()))"
-    DispatchQueue.main.async {
+    onMain {
+      guard let type else { return }
+      self.refreshConnectivityLabel()
       if self.isStaleControlCommand(type: type, sentAt: sentAt, fromApplicationContext: fromApplicationContext) {
+        self.noteCommand(type, via: via, result: "stale")
         return
       }
-      if sentAt > 0 && self.lastHandledPhoneCommandKey == commandKey {
-        return
-      }
+      // The same command normally arrives over several channels (message,
+      // userInfo, applicationContext). Remember recent keys so replays and
+      // late duplicates never restart or re-end a workout.
       if sentAt > 0 {
-        self.lastHandledPhoneCommandKey = commandKey
+        if self.handledPhoneCommandKeys.contains(commandKey) {
+          self.noteCommand(type, via: via, result: "dup")
+          return
+        }
+        self.handledPhoneCommandKeys.append(commandKey)
+        if self.handledPhoneCommandKeys.count > 40 {
+          self.handledPhoneCommandKeys.removeFirst(self.handledPhoneCommandKeys.count - 40)
+        }
       }
+
       switch type {
-      case "startWorkout":
-        self.startWorkout(
-          kind: StrideWatchWorkoutKind.from(message["workoutKind"] as? String),
+      case "startWorkout", "startRun":
+        let kind: StrideWatchWorkoutKind = type == "startRun"
+          ? .run
+          : StrideWatchWorkoutKind.from(message["workoutKind"] as? String)
+        let reason = self.startWorkout(
+          kind: kind,
           title: message["title"] as? String,
           workoutInstanceId: message["workoutInstanceId"] as? String,
           environment: message["environment"] as? String,
           targetZone: message["targetZone"] as? Int
         )
-      case "startRun":
-        self.startWorkout(
-          kind: .run,
-          title: message["title"] as? String,
-          workoutInstanceId: message["workoutInstanceId"] as? String,
-          environment: message["environment"] as? String,
-          targetZone: message["targetZone"] as? Int
-        )
+        self.noteCommand(type, via: via, result: reason ?? "ok")
+        self.sendCommandAck(command: type, message: message, reason: reason)
       case "pauseWorkout", "pauseRun":
-        guard self.shouldApplyControlCommand(message) else { return }
-        self.pauseWorkout()
+        let reason = self.controlRejection(message)
+        if reason == nil { self.pauseWorkout() }
+        self.noteCommand(type, via: via, result: reason ?? "ok")
+        self.sendCommandAck(command: type, message: message, reason: reason)
       case "resumeWorkout", "resumeRun":
-        guard self.shouldApplyControlCommand(message) else { return }
-        self.resumeWorkout()
+        let reason = self.controlRejection(message)
+        if reason == nil { self.resumeWorkout() }
+        self.noteCommand(type, via: via, result: reason ?? "ok")
+        self.sendCommandAck(command: type, message: message, reason: reason)
       case "endWorkout", "endRun":
-        guard self.shouldApplyControlCommand(message) else { return }
-        self.endWorkout()
+        let reason = self.controlRejection(message)
+        if reason == nil { self.endWorkout() }
+        self.noteCommand(type, via: via, result: reason ?? "ok")
+        self.sendCommandAck(command: type, message: message, reason: reason)
       case "setContext":
         self.applyPhoneContext(message)
+        self.noteCommand(type, via: via, result: "ok")
       default:
         break
       }
     }
   }
 
-  private func shouldApplyControlCommand(_ message: [String: Any]) -> Bool {
-    guard let requestedId = message["workoutInstanceId"] as? String, !requestedId.isEmpty else {
-      return true
+  /// nil when a pause/resume/end command applies to the current workout.
+  private func controlRejection(_ message: [String: Any]) -> String? {
+    guard isActive || session != nil else { return "no_active_workout" }
+    if let requestedId = message["workoutInstanceId"] as? String, !requestedId.isEmpty,
+      let currentId = workoutInstanceId, !currentId.isEmpty, requestedId != currentId
+    {
+      return "id_mismatch"
     }
-    guard let currentId = workoutInstanceId, !currentId.isEmpty else {
-      return true
-    }
-    return requestedId == currentId
+    return nil
   }
 
   private func isStaleControlCommand(type: String?, sentAt: Double, fromApplicationContext: Bool = false) -> Bool {
@@ -751,6 +847,108 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
     if let targetZone = message["targetZone"] as? Int {
       self.targetZone = targetZone
     }
+  }
+
+  var lastCommandAgeLabel: String? {
+    guard let lastCommandReceivedAt else { return nil }
+    let seconds = Int(Date().timeIntervalSince(lastCommandReceivedAt))
+    return seconds < 60 ? "\(seconds)s ago" : "\(seconds / 60)m ago"
+  }
+}
+
+extension StrideWatchWorkoutManager: HKWorkoutSessionDelegate {
+  func workoutSession(
+    _ workoutSession: HKWorkoutSession,
+    didChangeTo toState: HKWorkoutSessionState,
+    from fromState: HKWorkoutSessionState,
+    date: Date
+  ) {
+    DispatchQueue.main.async {
+      // A previous session can report .ended after a new workout has started;
+      // it must not clear or end the current session.
+      guard workoutSession === self.session else { return }
+      self.handleWorkoutSessionStateChange(toState)
+    }
+  }
+
+  func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
+    DispatchQueue.main.async {
+      guard workoutSession === self.session else { return }
+      self.handleWorkoutSessionFailure(error)
+    }
+  }
+}
+
+extension StrideWatchWorkoutManager: HKLiveWorkoutBuilderDelegate {
+  func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}
+
+  func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {
+    if
+      let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate),
+      collectedTypes.contains(heartRateType),
+      let statistics = workoutBuilder.statistics(for: heartRateType),
+      let quantity = statistics.mostRecentQuantity()
+    {
+      let bpm = Int(quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute())).rounded())
+      DispatchQueue.main.async {
+        self.heartRateBpm = bpm
+        self.sendHeartRate(bpm)
+      }
+    }
+
+    if
+      let energyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
+      collectedTypes.contains(energyType),
+      let statistics = workoutBuilder.statistics(for: energyType),
+      let quantity = statistics.sumQuantity()
+    {
+      let kilocalories = quantity.doubleValue(for: .kilocalorie())
+      DispatchQueue.main.async {
+        self.activeEnergyKilocalories = kilocalories
+      }
+    }
+
+    DispatchQueue.main.async {
+      guard
+        let distanceIdentifier = self.selectedWorkoutKind.distanceIdentifier,
+        let distanceType = HKObjectType.quantityType(forIdentifier: distanceIdentifier),
+        collectedTypes.contains(distanceType),
+        let statistics = workoutBuilder.statistics(for: distanceType),
+        let quantity = statistics.sumQuantity()
+      else { return }
+      self.distanceMeters = quantity.doubleValue(for: .meter())
+    }
+  }
+}
+
+extension StrideWatchWorkoutManager: WCSessionDelegate {
+  func session(
+    _ session: WCSession,
+    activationDidCompleteWith activationState: WCSessionActivationState,
+    error: Error?
+  ) {
+    DispatchQueue.main.async {
+      self.handleActivationCompleted(error: error)
+    }
+  }
+
+  func sessionReachabilityDidChange(_ session: WCSession) {
+    DispatchQueue.main.async {
+      self.refreshConnectivityLabel()
+      self.flushQueuedOutboundPayloads()
+    }
+  }
+
+  func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+    handlePhoneCommand(message, via: "msg")
+  }
+
+  func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+    handlePhoneCommand(userInfo, via: "info")
+  }
+
+  func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+    handlePhoneCommand(applicationContext, via: "ctx", fromApplicationContext: true)
   }
 
   func session(_ session: WCSession, didFinish userInfoTransfer: WCSessionUserInfoTransfer, error: Error?) {

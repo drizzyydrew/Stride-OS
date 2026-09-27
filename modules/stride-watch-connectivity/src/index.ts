@@ -1,4 +1,4 @@
-import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { requireNativeModule } from 'expo-modules-core';
 
 export type StrideWatchStatus = {
@@ -9,6 +9,26 @@ export type StrideWatchStatus = {
   activationState: 'activated' | 'inactive' | 'notActivated' | 'unsupported' | 'unknown' | string;
   lastMessageAt: number;
   lastError?: string | null;
+  // Runtime diagnostics (phone side).
+  lastCommandType?: string | null;
+  lastCommandAt?: number;
+  lastCommandMethod?: 'sendMessage' | 'transferUserInfo' | 'queued' | 'none' | string | null;
+  lastAckAt?: number;
+  lastAckCommand?: string | null;
+  lastAckAccepted?: boolean | null;
+  lastAckReason?: string | null;
+  lastWatchStateAt?: number;
+  lastWatchState?: string | null;
+};
+
+export type StrideWatchAckEvent = {
+  type: 'commandAck';
+  command: string;
+  accepted: boolean;
+  reason?: string;
+  workoutInstanceId?: string;
+  healthKitState?: string;
+  timestamp: number;
 };
 
 export type StrideWatchWorkoutKind = 'run' | 'strength' | 'mobility' | 'cycling';
@@ -52,7 +72,13 @@ export type StrideWatchErrorEvent = {
 
 type Subscription = { remove: () => void };
 
+type StrideWatchEventName = 'onWatchStatus' | 'onWatchHeartRate' | 'onWatchWorkoutState' | 'onWatchError' | 'onWatchAck';
+
 type StrideWatchConnectivityNativeModule = {
+  // Expo modules are their own event emitters. They are NOT registered in
+  // react-native's legacy native-module registry, so an emitter built from that
+  // registry is null and never receives events.
+  addListener: (eventName: StrideWatchEventName, listener: (event: any) => void) => Subscription;
   isSupported: () => boolean;
   snapshot: () => StrideWatchStatus;
   activate: () => Promise<StrideWatchStatus>;
@@ -93,7 +119,6 @@ const FALLBACK_STATUS: StrideWatchStatus = {
 };
 
 let cachedNativeModule: StrideWatchConnectivityNativeModule | null | undefined;
-let cachedEmitter: NativeEventEmitter | null | undefined;
 
 function getNativeModule(): StrideWatchConnectivityNativeModule | null {
   if (Platform.OS !== 'ios') return null;
@@ -106,16 +131,14 @@ function getNativeModule(): StrideWatchConnectivityNativeModule | null {
   return cachedNativeModule;
 }
 
-function getEmitter(): NativeEventEmitter | null {
-  if (Platform.OS !== 'ios') return null;
-  if (cachedEmitter !== undefined) return cachedEmitter;
+function subscribe(eventName: StrideWatchEventName, listener: (event: any) => void): Subscription | null {
+  const nativeModule = getNativeModule();
+  if (!nativeModule || typeof nativeModule.addListener !== 'function') return null;
   try {
-    const nativeModule = NativeModules['StrideWatchConnectivity'];
-    cachedEmitter = nativeModule ? new NativeEventEmitter(nativeModule) : null;
+    return nativeModule.addListener(eventName, listener);
   } catch {
-    cachedEmitter = null;
+    return null;
   }
-  return cachedEmitter;
 }
 
 export function isStrideWatchConnectivityAvailable(): boolean {
@@ -242,7 +265,7 @@ export async function setStrideWatchWorkoutContext(options: {
 export function addStrideWatchHeartRateListener(
   listener: (event: StrideWatchHeartRateEvent) => void,
 ): Subscription | null {
-  return getEmitter()?.addListener('onWatchHeartRate', event => {
+  return subscribe('onWatchHeartRate', event => {
     const heartRate = Number(event?.heartRate);
     if (!Number.isFinite(heartRate) || heartRate <= 0) return;
     listener({
@@ -258,21 +281,21 @@ export function addStrideWatchHeartRateListener(
       timestamp: Number.isFinite(Number(event?.timestamp)) ? Number(event.timestamp) : Date.now(),
       source: 'apple_watch',
     });
-  }) ?? null;
+  });
 }
 
 export function addStrideWatchStatusListener(
   listener: (status: StrideWatchStatus) => void,
 ): Subscription | null {
-  return getEmitter()?.addListener('onWatchStatus', event => {
+  return subscribe('onWatchStatus', event => {
     listener(normalizeStatus(event));
-  }) ?? null;
+  });
 }
 
 export function addStrideWatchWorkoutStateListener(
   listener: (event: StrideWatchWorkoutStateEvent) => void,
 ): Subscription | null {
-  return getEmitter()?.addListener('onWatchWorkoutState', event => {
+  return subscribe('onWatchWorkoutState', event => {
     listener({
       type: 'workoutState',
       state: typeof event?.state === 'string' ? event.state : 'unknown',
@@ -289,19 +312,35 @@ export function addStrideWatchWorkoutStateListener(
       timestamp: Number.isFinite(Number(event?.timestamp)) ? Number(event.timestamp) : Date.now(),
       source: 'apple_watch',
     });
-  }) ?? null;
+  });
 }
 
 export function addStrideWatchErrorListener(
   listener: (event: StrideWatchErrorEvent) => void,
 ): Subscription | null {
-  return getEmitter()?.addListener('onWatchError', event => {
+  return subscribe('onWatchError', event => {
     listener({
       type: 'error',
       message: typeof event?.message === 'string' ? event.message : 'Apple Watch connection error.',
       timestamp: Number.isFinite(Number(event?.timestamp)) ? Number(event.timestamp) : Date.now(),
     });
-  }) ?? null;
+  });
+}
+
+export function addStrideWatchAckListener(
+  listener: (event: StrideWatchAckEvent) => void,
+): Subscription | null {
+  return subscribe('onWatchAck', event => {
+    listener({
+      type: 'commandAck',
+      command: typeof event?.command === 'string' ? event.command : 'unknown',
+      accepted: Boolean(event?.accepted),
+      reason: typeof event?.reason === 'string' ? event.reason : undefined,
+      workoutInstanceId: typeof event?.workoutInstanceId === 'string' ? event.workoutInstanceId : undefined,
+      healthKitState: typeof event?.healthKitState === 'string' ? event.healthKitState : undefined,
+      timestamp: Number.isFinite(Number(event?.timestamp)) ? Number(event.timestamp) : Date.now(),
+    });
+  });
 }
 
 function normalizeStatus(input: Partial<StrideWatchStatus> | null | undefined): StrideWatchStatus {
@@ -313,7 +352,20 @@ function normalizeStatus(input: Partial<StrideWatchStatus> | null | undefined): 
     activationState: input?.activationState ?? 'unknown',
     lastMessageAt: Number.isFinite(Number(input?.lastMessageAt)) ? Number(input?.lastMessageAt) : 0,
     lastError: typeof input?.lastError === 'string' ? input.lastError : null,
+    lastCommandType: typeof input?.lastCommandType === 'string' ? input.lastCommandType : null,
+    lastCommandAt: finiteOrZero(input?.lastCommandAt),
+    lastCommandMethod: typeof input?.lastCommandMethod === 'string' ? input.lastCommandMethod : null,
+    lastAckAt: finiteOrZero(input?.lastAckAt),
+    lastAckCommand: typeof input?.lastAckCommand === 'string' ? input.lastAckCommand : null,
+    lastAckAccepted: typeof input?.lastAckAccepted === 'boolean' ? input.lastAckAccepted : null,
+    lastAckReason: typeof input?.lastAckReason === 'string' ? input.lastAckReason : null,
+    lastWatchStateAt: finiteOrZero(input?.lastWatchStateAt),
+    lastWatchState: typeof input?.lastWatchState === 'string' ? input.lastWatchState : null,
   };
+}
+
+function finiteOrZero(value: unknown): number {
+  return Number.isFinite(Number(value)) ? Number(value) : 0;
 }
 
 function messageFromError(error: unknown): string {

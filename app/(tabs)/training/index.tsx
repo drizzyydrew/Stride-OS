@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import MapView, { Marker, Polyline, type LatLng, type MapViewRef, type Region } from '../../../src/components/maps/MapComponents';
 import RoutePreviewMap from '../../../src/components/maps/RoutePreviewMap';
+import WatchStatusDiagnostics from '../../../src/components/watch/WatchStatusDiagnostics';
 
 import { useColors } from '../../../src/theme/useColors';
 import { spacing } from '../../../src/theme/spacing';
@@ -74,7 +75,6 @@ import {
 import {
   activateStrideWatchConnectivity,
   addStrideWatchErrorListener,
-  addStrideWatchHeartRateListener,
   addStrideWatchStatusListener,
   addStrideWatchWorkoutStateListener,
   endStrideWatchRun,
@@ -905,10 +905,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const detachRouteFromToday = useRouteStore(s => s.detachRouteFromToday);
   const reverseAttachedRoute = useRouteStore(s => s.reverseAttachedRoute);
   const liveSensorReadings = useLiveSensorStore(s => s.readings);
-  const recordLiveSensorReading = useLiveSensorStore(s => s.recordBleReading);
-  const markLiveSensorConnected = useLiveSensorStore(s => s.markDeviceConnected);
-  const markLiveSensorDisconnected = useLiveSensorStore(s => s.markDeviceDisconnected);
-  const markLiveSensorError = useLiveSensorStore(s => s.markDeviceError);
   const [showRouteActions, setShowRouteActions] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [healthKitHeartRateBpm, setHealthKitHeartRateBpm] = useState<number | null>(null);
@@ -952,49 +948,16 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [mapType, setMapType] = useState<'standard' | 'hybrid'>('standard');
   const runState: RunState = !isActive ? 'idle' : isPaused ? 'paused' : 'active';
 
+  // Display-only watch listeners. Applying watch pause/resume/end to the run
+  // store, sensor readings, and live activities is owned solely by
+  // WatchWorkoutBridge (mounted once in app/_layout.tsx); doing it here as well
+  // would double-apply events and could save a run twice.
   useEffect(() => {
-    const appleWatchDevice = {
-      id: 'apple_watch',
-      name: 'Apple Watch',
-      serviceUUIDs: [],
-      capabilities: ['heart_rate' as const],
-      kind: 'other' as const,
-    };
-
     const statusSub = addStrideWatchStatusListener(setWatchStatus);
-    const heartRateSub = addStrideWatchHeartRateListener(event => {
-      markLiveSensorConnected(appleWatchDevice, event.timestamp);
-      recordLiveSensorReading({
-        deviceId: appleWatchDevice.id,
-        deviceName: appleWatchDevice.name,
-        capability: 'heart_rate',
-        metric: 'heartRate',
-        value: event.heartRate,
-        source: 'apple_watch',
-        observedAt: event.timestamp,
-      });
-    });
     const stateSub = addStrideWatchWorkoutStateListener(event => {
       setWatchWorkoutState(event.state);
-      if (event.state === 'ended' || event.state === 'idle') {
-        markLiveSensorDisconnected(appleWatchDevice.id, event.timestamp);
-      } else {
-        markLiveSensorConnected(appleWatchDevice, event.timestamp);
-      }
-      const activeRun = useActiveRunStore.getState();
-      if (activeRun.workoutInstanceId && event.workoutInstanceId && activeRun.workoutInstanceId !== event.workoutInstanceId) {
-        return;
-      }
-      if (event.state === 'paused') {
-        useActiveRunStore.getState().pauseRun('manual');
-      } else if (event.state === 'running') {
-        useActiveRunStore.getState().resumeRun('manual');
-      } else if (event.state === 'ended') {
-        useActiveRunStore.getState().requestCompletion();
-      }
     });
     const errorSub = addStrideWatchErrorListener(event => {
-      markLiveSensorError(appleWatchDevice.id, event.message, event.timestamp);
       setWatchStatus(current => ({ ...current, lastError: event.message }));
     });
 
@@ -1002,11 +965,10 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
     return () => {
       statusSub?.remove();
-      heartRateSub?.remove();
       stateSub?.remove();
       errorSub?.remove();
     };
-  }, [markLiveSensorConnected, markLiveSensorDisconnected, markLiveSensorError, recordLiveSensorReading]);
+  }, []);
 
   async function centerOnMyLocation() {
     const lastCoord = coordinates.at(-1);
@@ -1924,7 +1886,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       followsUserLocation={followsUser}
     >
       {routeCoords.length > 1 ? (
-        <Polyline coordinates={routeCoords} strokeColor={plannedRouteColor} strokeWidth={3} lineDashPattern={[8, 8]} />
+        <Polyline coordinates={routeCoords} strokeColor={plannedRouteColor} strokeWidth={3} />
       ) : null}
       {selectedRoute?.segments.map(segment => (
         <Marker
@@ -1982,9 +1944,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
                 </Text>
               </View>
             </View>
-            {watchStatus.lastError ? (
-              <Text style={[styles.watchStatusError, { color: C.warning }]} numberOfLines={2}>{watchStatus.lastError}</Text>
-            ) : null}
+            <WatchStatusDiagnostics status={watchStatus} mutedColor={C.textMuted} warningColor={C.warning} />
           </View>
         </ScrollView>
         <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: (fullScreen ? insets.bottom : 0) + spacing.md }]}>
@@ -2253,9 +2213,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
               </Text>
             </View>
           </View>
-          {watchStatus.lastError ? (
-            <Text style={[styles.watchStatusError, { color: C.warning }]} numberOfLines={2}>{watchStatus.lastError}</Text>
-          ) : null}
+          <WatchStatusDiagnostics status={watchStatus} mutedColor={C.textMuted} warningColor={C.warning} />
         </View>
         {goalPanel}
         {runState === 'active' && heartRateBpm ? (
@@ -3513,7 +3471,7 @@ function GPSTab() {
           }}
         >
           {routeCoords.length > 1 ? (
-            <Polyline coordinates={routeCoords} strokeColor={C.textMuted} strokeWidth={3} lineDashPattern={[8, 8]} />
+            <Polyline coordinates={routeCoords} strokeColor={C.textMuted} strokeWidth={3} />
           ) : null}
           {selectedRoute?.segments.map(segment => (
             <Marker

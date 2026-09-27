@@ -14,6 +14,7 @@ private enum StrideWatchMessageType {
   static let setContext = "setContext"
   static let heartRate = "heartRate"
   static let workoutState = "workoutState"
+  static let commandAck = "commandAck"
   static let error = "error"
 }
 
@@ -24,14 +25,32 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     WCSession.isSupported() ? WCSession.default : nil
   }
 
+  // WCSession delegate callbacks arrive on a background queue while JS calls
+  // arrive on the module queue. All mutable state below is guarded by `lock`.
+  private let lock = NSLock()
   private var eventSink: ((String, [String: Any]) -> Void)?
   private var pendingEvents: [(String, [String: Any])] = []
   private var pendingCommands: [[String: Any]] = []
   private var lastMessageAt: TimeInterval = 0
   private var lastError: String?
+  private var lastCommandType: String?
+  private var lastCommandAt: TimeInterval = 0
+  private var lastCommandMethod: String?
+  private var lastAckAt: TimeInterval = 0
+  private var lastAckCommand: String?
+  private var lastAckAccepted: Bool?
+  private var lastAckReason: String?
+  private var lastWatchStateAt: TimeInterval = 0
+  private var lastWatchState: String?
+
+  private func locked<T>(_ body: () -> T) -> T {
+    lock.lock()
+    defer { lock.unlock() }
+    return body()
+  }
 
   func setEventSink(_ sink: ((String, [String: Any]) -> Void)?) {
-    eventSink = sink
+    locked { eventSink = sink }
     activate()
     flushPendingEventsIfNeeded()
   }
@@ -45,27 +64,38 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
   }
 
   func snapshot() -> [String: Any] {
-    guard let session else {
-      return [
-        "isSupported": false,
-        "isPaired": false,
-        "isWatchAppInstalled": false,
-        "isReachable": false,
-        "activationState": "unsupported",
+    let diagnostics: [String: Any] = locked {
+      [
         "lastMessageAt": lastMessageAt,
         "lastError": lastError ?? NSNull(),
+        "lastCommandType": lastCommandType ?? NSNull(),
+        "lastCommandAt": lastCommandAt,
+        "lastCommandMethod": lastCommandMethod ?? NSNull(),
+        "lastAckAt": lastAckAt,
+        "lastAckCommand": lastAckCommand ?? NSNull(),
+        "lastAckAccepted": lastAckAccepted.map { $0 as Any } ?? NSNull(),
+        "lastAckReason": lastAckReason ?? NSNull(),
+        "lastWatchStateAt": lastWatchStateAt,
+        "lastWatchState": lastWatchState ?? NSNull(),
       ]
     }
 
-    return [
-      "isSupported": true,
-      "isPaired": session.isPaired,
-      "isWatchAppInstalled": session.isWatchAppInstalled,
-      "isReachable": session.isReachable,
-      "activationState": activationStateLabel(session.activationState),
-      "lastMessageAt": lastMessageAt,
-      "lastError": lastError ?? NSNull(),
-    ]
+    var result = diagnostics
+    guard let session else {
+      result["isSupported"] = false
+      result["isPaired"] = false
+      result["isWatchAppInstalled"] = false
+      result["isReachable"] = false
+      result["activationState"] = "unsupported"
+      return result
+    }
+
+    result["isSupported"] = true
+    result["isPaired"] = session.isPaired
+    result["isWatchAppInstalled"] = session.isWatchAppInstalled
+    result["isReachable"] = session.isReachable
+    result["activationState"] = activationStateLabel(session.activationState)
+    return result
   }
 
   func sendCommand(_ type: String, payload: [String: Any]) throws {
@@ -81,26 +111,38 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     message["type"] = type
     message["sentAt"] = Date().timeIntervalSince1970 * 1000
 
-    if shouldPublishAsLatestContext(type) && session.isPaired && session.isWatchAppInstalled {
+    guard session.isPaired && session.isWatchAppInstalled else {
+      recordCommand(type, method: "none")
+      throw NSError(domain: "StrideWatchConnectivity", code: 2, userInfo: [
+        NSLocalizedDescriptionKey: "Open StrideOS on Apple Watch, then try again.",
+      ])
+    }
+
+    if shouldPublishAsLatestContext(type) && session.activationState == .activated {
       try? session.updateApplicationContext(message)
     }
 
-    if session.isReachable {
-      sendReachableOrQueue(message, session: session)
-    } else if session.activationState == .activated && session.isPaired && session.isWatchAppInstalled {
-      session.transferUserInfo(message)
-    } else if session.isPaired && session.isWatchAppInstalled {
-      pendingCommands.append(message)
-      if pendingCommands.count > 20 {
-        pendingCommands.removeFirst(pendingCommands.count - 20)
+    if session.activationState != .activated {
+      // Not activated yet: hold the command and flush from the activation callback.
+      recordCommand(type, method: "queued")
+      locked {
+        pendingCommands.append(message)
+        if pendingCommands.count > 20 {
+          pendingCommands.removeFirst(pendingCommands.count - 20)
+        }
       }
       if session.activationState == .notActivated {
         session.activate()
       }
+      return
+    }
+
+    if session.isReachable {
+      recordCommand(type, method: "sendMessage")
+      sendReachableOrFallback(message, session: session)
     } else {
-      throw NSError(domain: "StrideWatchConnectivity", code: 2, userInfo: [
-        NSLocalizedDescriptionKey: "Open StrideOS on Apple Watch, then try again.",
-      ])
+      recordCommand(type, method: "transferUserInfo")
+      session.transferUserInfo(message)
     }
   }
 
@@ -147,21 +189,47 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
   }
 
   private func handleIncoming(_ message: [String: Any]) {
-    lastMessageAt = Date().timeIntervalSince1970 * 1000
+    let now = Date().timeIntervalSince1970 * 1000
     let type = message["type"] as? String ?? ""
+    locked { lastMessageAt = now }
 
     switch type {
     case StrideWatchMessageType.heartRate:
       emit("onWatchHeartRate", sanitizePayload(message))
     case StrideWatchMessageType.workoutState:
+      locked {
+        lastWatchStateAt = now
+        lastWatchState = message["state"] as? String
+      }
       emit("onWatchWorkoutState", sanitizePayload(message))
+      emitStatus()
+    case StrideWatchMessageType.commandAck:
+      locked {
+        lastAckAt = now
+        lastAckCommand = message["command"] as? String
+        lastAckAccepted = message["accepted"] as? Bool
+        lastAckReason = message["reason"] as? String
+      }
+      emit("onWatchAck", sanitizePayload(message))
+      emitStatus()
     case StrideWatchMessageType.error:
-      lastError = message["message"] as? String
+      locked { lastError = message["message"] as? String }
       emit("onWatchError", sanitizePayload(message))
       emitStatus()
     default:
-      emit("onWatchWorkoutState", sanitizePayload(message))
+      // Unknown types (including echoed phone commands from applicationContext)
+      // must not be treated as watch workout state.
+      break
     }
+  }
+
+  private func recordCommand(_ type: String, method: String) {
+    locked {
+      lastCommandType = type
+      lastCommandAt = Date().timeIntervalSince1970 * 1000
+      lastCommandMethod = method
+    }
+    emitStatus()
   }
 
   private func emitStatus() {
@@ -172,29 +240,34 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     guard let session, session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else {
       return
     }
-    let commands = pendingCommands
-    pendingCommands.removeAll()
+    let commands: [[String: Any]] = locked {
+      let queued = pendingCommands
+      pendingCommands.removeAll()
+      return queued
+    }
     for command in commands {
-      if shouldPublishAsLatestContext(command["type"] as? String) {
+      let type = command["type"] as? String
+      if shouldPublishAsLatestContext(type) {
         try? session.updateApplicationContext(command)
       }
       if session.isReachable {
-        sendReachableOrQueue(command, session: session)
+        recordCommand(type ?? "unknown", method: "sendMessage")
+        sendReachableOrFallback(command, session: session)
       } else {
+        recordCommand(type ?? "unknown", method: "transferUserInfo")
         session.transferUserInfo(command)
       }
     }
   }
 
-  private func sendReachableOrQueue(_ message: [String: Any], session: WCSession) {
+  private func sendReachableOrFallback(_ message: [String: Any], session: WCSession) {
     session.sendMessage(message, replyHandler: nil) { [weak self] error in
       guard let self else { return }
       if session.activationState == .activated && session.isPaired && session.isWatchAppInstalled {
+        // Live delivery failed; make sure the watch still gets it when it wakes.
         session.transferUserInfo(message)
-        if self.shouldPublishAsLatestContext(message["type"] as? String) {
-          try? session.updateApplicationContext(message)
-        }
-        self.lastError = nil
+        self.recordCommand(message["type"] as? String ?? "unknown", method: "transferUserInfo")
+        self.locked { self.lastError = "sendMessage failed: \(error.localizedDescription)" }
         self.emitStatus()
       } else {
         self.recordError(error.localizedDescription)
@@ -220,7 +293,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
   }
 
   private func recordError(_ message: String) {
-    lastError = message
+    locked { lastError = message }
     emit("onWatchError", [
       "type": StrideWatchMessageType.error,
       "message": message,
@@ -230,22 +303,28 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
   }
 
   private func emit(_ name: String, _ payload: [String: Any]) {
-    if let eventSink {
-      eventSink(name, payload)
-    } else {
-      pendingEvents.append((name, payload))
-      if pendingEvents.count > 50 {
-        pendingEvents.removeFirst(pendingEvents.count - 50)
+    let sink: ((String, [String: Any]) -> Void)? = locked {
+      if eventSink == nil {
+        pendingEvents.append((name, payload))
+        if pendingEvents.count > 50 {
+          pendingEvents.removeFirst(pendingEvents.count - 50)
+        }
       }
+      return eventSink
     }
+    sink?(name, payload)
   }
 
   private func flushPendingEventsIfNeeded() {
-    guard let eventSink, !pendingEvents.isEmpty else { return }
-    let events = pendingEvents
-    pendingEvents.removeAll()
+    let (sink, events): (((String, [String: Any]) -> Void)?, [(String, [String: Any])]) = locked {
+      guard eventSink != nil, !pendingEvents.isEmpty else { return (nil, []) }
+      let events = pendingEvents
+      pendingEvents.removeAll()
+      return (eventSink, events)
+    }
+    guard let sink else { return }
     events.forEach { name, payload in
-      eventSink(name, payload)
+      sink(name, payload)
     }
   }
 
@@ -278,7 +357,7 @@ public final class StrideWatchConnectivityModule: Module {
   public func definition() -> ModuleDefinition {
     Name("StrideWatchConnectivity")
 
-    Events("onWatchStatus", "onWatchHeartRate", "onWatchWorkoutState", "onWatchError")
+    Events("onWatchStatus", "onWatchHeartRate", "onWatchWorkoutState", "onWatchError", "onWatchAck")
 
     OnCreate {
       StrideWatchConnectivityCoordinator.shared.activate()
