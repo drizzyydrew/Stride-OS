@@ -291,7 +291,9 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     isEnding = false
     healthKitLabel = "HK: requesting auth"
     let resolvedEnvironment = environment ?? ((kind == .run || kind == .cycling) ? "outdoor" : "indoor")
-    let resolvedId = workoutInstanceId ?? "watch_\(kind.rawValue)_\(Int(Date().timeIntervalSince1970 * 1000))"
+    // Int64: on 32-bit watches (arm64_32: Series 4-8, SE) Int is 32-bit and a
+    // millisecond timestamp overflows it, which traps and kills the app.
+    let resolvedId = workoutInstanceId ?? "watch_\(kind.rawValue)_\(Int64(Date().timeIntervalSince1970 * 1000))"
     self.workoutInstanceId = resolvedId
     self.workoutIdLabel = "ID: \(String(resolvedId.suffix(8)))"
     self.endedStateSentForWorkoutInstanceId = nil
@@ -777,7 +779,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     } else {
       sentAt = 0
     }
-    let commandKey = "\(type ?? "")|\(commandWorkoutInstanceId)|\(Int(sentAt.rounded()))"
+    // sentAt is a millisecond timestamp (~1.8e12). It must never go through
+    // Int: on 32-bit watches that conversion traps on every phone command.
+    let sentAtKey = sentAt.isFinite ? Int64(sentAt.rounded()) : 0
+    let commandKey = "\(type ?? "")|\(commandWorkoutInstanceId)|\(sentAtKey)"
     onMain {
       guard let type else { return }
       self.refreshConnectivityLabel()
@@ -1025,7 +1030,7 @@ enum StrideWatchStartTrail {
     lock.lock()
     defer { lock.unlock() }
     starting = !terminal
-    let line = "\(terminal ? "T" : "S")|\(Int(Date().timeIntervalSince1970))|\(step)"
+    let line = "\(terminal ? "T" : "S")|\(Int64(Date().timeIntervalSince1970))|\(step)"
     try? Data(line.utf8).write(to: fileURL, options: .atomic)
   }
 

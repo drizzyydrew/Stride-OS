@@ -201,6 +201,19 @@ test('watch layout uses system margins, top bar brand, and a non-scrolling worko
   assert.match(active, /StrideWatchControls\(\)/);
 });
 
+test('watch never converts epoch or millisecond timestamps with 32-bit-unsafe Int()', () => {
+  // Series 4-8 and SE run the arm64_32 slice, where Int is 32-bit. A phone
+  // command's millisecond sentAt (~1.8e12) through Int(...) traps and killed
+  // the watch app on every command it received.
+  for (const file of ['StrideWatchWorkoutManager.swift', 'StrideOSWatchApp.swift']) {
+    const src = read(`targets/StrideOSWatch/${file}`);
+    assert.doesNotMatch(src, /\bInt\([^)]*sentAt/, `${file}: sentAt through Int()`);
+    assert.doesNotMatch(src, /\bInt\([^)]*timeIntervalSince1970/, `${file}: epoch through Int()`);
+  }
+  assert.match(watchManager, /Int64\(sentAt\.rounded\(\)\)/);
+  assert.match(watchManager, /Int64\(Date\(\)\.timeIntervalSince1970 \* 1000\)/);
+});
+
 test('watch face keeps controls above rounded bottom edge and applies latest phone command context', () => {
   const watchApp = read('targets/StrideOSWatch/StrideOSWatchApp.swift');
   const watchManager = read('targets/StrideOSWatch/StrideWatchWorkoutManager.swift');
