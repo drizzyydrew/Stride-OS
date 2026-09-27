@@ -293,3 +293,50 @@ test('watch sync details are opt-in on the phone and folded on the watch', () =>
   assert.match(watchApp, /Text\("Sync details"\)/);
   assert.doesNotMatch(watchApp, /Text\("Workout type"\)/);
 });
+
+// ─── Auto-launch (protected path: invariants pinned) ─────────────────────────
+
+test('auto-launch: provisional branches are unreachable from a normal open-app start', () => {
+  const manager = read('targets/StrideOSWatch/StrideWatchWorkoutManager.swift');
+  // isProvisionalLaunch is set only by the launch entry point, and by the
+  // discard-when-running branch, which itself is only armed by the launch
+  // timeout (discardWhenRunning = true appears once, in armProvisionalTimeout).
+  assert.equal((manager.match(/isProvisionalLaunch = true/g) ?? []).length, 2);
+  assert.equal((manager.match(/discardWhenRunning = true/g) ?? []).length, 1);
+  const timeoutFn = manager.slice(manager.indexOf('private func armProvisionalTimeout'), manager.indexOf('private func sendHeartRate') > 0 ? manager.indexOf('private func armProvisionalTimeout') + 1200 : undefined);
+  assert.match(timeoutFn, /self\.discardWhenRunning = true/);
+  assert.match(manager, /if discardWhenRunning \{\s+discardWhenRunning = false\s+discardSession = session\s+isProvisionalLaunch = true/);
+  const launchFn = manager.slice(manager.indexOf('func startProvisionalWorkoutFromLaunch'), manager.indexOf('private func adoptPhoneStartIfProvisional'));
+  assert.match(launchFn, /self\.isProvisionalLaunch = true/);
+  // Adoption is a no-op unless provisional.
+  assert.match(manager, /guard isProvisionalLaunch, isActive \|\| isStartingWorkout,\s+!isEnding, discardSession == nil, !discardWhenRunning else \{ return false \}/);
+  // Any new start clears leftover launch state before the launch path re-arms it.
+  assert.match(manager, /discardWhenRunning = false\s+isProvisionalLaunch = false\s+provisionalTimeout\?\.cancel\(\)/);
+  // Normal start path still begins with the Build 89 guards.
+  assert.match(manager, /guard !isActive else \{ return "already_active" \}\s+guard !isStartingWorkout else \{ return "already_starting" \}/);
+  // Provisional id is 32-bit safe.
+  assert.match(manager, /"launch_\\\(Int64\(Date\(\)\.timeIntervalSince1970 \* 1000\)\)"/);
+  // Unadopted launch sessions are discarded, not saved to Health.
+  // Discard is tied to the exact session object (weak), never a free-standing
+  // flag that could outlive it and discard/silence a later real workout.
+  assert.match(manager, /private weak var discardSession: HKWorkoutSession\?/);
+  assert.doesNotMatch(manager, /discardOnEnd/);
+  assert.match(manager, /if discarding \{\s+builder\?\.discardWorkout\(\)\s+\} else \{\s+finishBuilderIfNeeded\(\)/);
+  // Unadopted/discarded sessions never report state to the phone.
+  assert.match(manager, /if isProvisionalLaunch \|\| isDiscardingCurrentSession \{ return \}/);
+  assert.match(manager, /if !suppressEndedState \{\s+sendEndedStateOnce\(\)/);
+  const app = read('targets/StrideOSWatch/StrideOSWatchApp.swift');
+  assert.match(app, /@WKApplicationDelegateAdaptor\(StrideWatchAppDelegate\.self\)/);
+  assert.match(app, /func handle\(_ workoutConfiguration: HKWorkoutConfiguration\) \{\s+StrideWatchWorkoutManager\.shared\.startProvisionalWorkoutFromLaunch\(workoutConfiguration\)/);
+});
+
+test('auto-launch (phone): launches only when unreachable; end clears; resend on reachability', () => {
+  const module = read('modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift');
+  assert.match(module, /guard !session\.isReachable, HKHealthStore\.isHealthDataAvailable\(\) else \{ return \}/);
+  assert.match(module, /healthStore\.startWatchApp\(with: configuration\)/);
+  assert.match(module, /if type == StrideWatchMessageType\.endWorkout \|\| type == StrideWatchMessageType\.endRun \{\s+clearPendingLiveStart\(\)/);
+  assert.match(module, /func sessionReachabilityDidChange\(_ session: WCSession\) \{\s+flushPendingCommandsIfPossible\(\)\s+resendPendingLiveStartIfReachable\(\)/);
+  // Follow-up pause/resume is re-sent with a fresh sentAt (dedupe-safe).
+  assert.match(module, /"sentAt": Date\(\)\.timeIntervalSince1970 \* 1000,/);
+  assert.match(read('modules/stride-watch-connectivity/ios/StrideWatchConnectivity.podspec'), /'WatchConnectivity', 'HealthKit'/);
+});

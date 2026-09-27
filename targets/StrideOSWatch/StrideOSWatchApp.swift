@@ -1,7 +1,20 @@
+import HealthKit
 import SwiftUI
+import WatchKit
+
+/// Receives HealthKit's watch-app launch when the iPhone starts a workout
+/// while this app isn't running (HKHealthStore.startWatchApp). Starts a
+/// provisional session (Apple's contract; it also keeps the app reachable),
+/// which the phone's live start then adopts. See StrideWatchWorkoutManager.
+final class StrideWatchAppDelegate: NSObject, WKApplicationDelegate {
+  func handle(_ workoutConfiguration: HKWorkoutConfiguration) {
+    StrideWatchWorkoutManager.shared.startProvisionalWorkoutFromLaunch(workoutConfiguration)
+  }
+}
 
 @main
 struct StrideOSWatchApp: App {
+  @WKApplicationDelegateAdaptor(StrideWatchAppDelegate.self) private var appDelegate
   @StateObject private var workoutManager = StrideWatchWorkoutManager.shared
 
   var body: some Scene {
@@ -76,36 +89,6 @@ private struct WorkoutPickerFace: View {
           .foregroundStyle(StrideWatchPalette.steel)
           .lineLimit(1)
           .minimumScaleFactor(0.82)
-
-        Text("Workout type")
-          .font(.system(size: 10, weight: .bold))
-          .foregroundStyle(StrideWatchPalette.cream.opacity(0.78))
-          .textCase(.uppercase)
-          .padding(.top, 2)
-
-        VStack(spacing: 6) {
-          ForEach(StrideWatchWorkoutKind.allCases) { kind in
-            Button {
-              workout.selectWorkoutKind(kind)
-            } label: {
-              HStack(spacing: 8) {
-                Image(systemName: kind.symbolName)
-                  .font(.system(size: 14, weight: .semibold))
-                  .frame(width: 18)
-                Text(kind.title)
-                  .font(.system(size: 13.5, weight: .bold))
-                Spacer(minLength: 4)
-                if workout.selectedWorkoutKind == kind {
-                  Image(systemName: "checkmark")
-                    .font(.system(size: 12, weight: .heavy))
-                }
-              }
-              .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(StrideWatchRowButtonStyle(selected: workout.selectedWorkoutKind == kind))
-            .accessibilityLabel("\(kind.title) workout")
-          }
-        }
 
         StrideWatchDiagnostics()
       }
@@ -225,8 +208,39 @@ private struct StrideWatchHeader: View {
 /// the bottom of the scrollable faces so it never crowds the workout metrics.
 private struct StrideWatchDiagnostics: View {
   @EnvironmentObject private var workout: StrideWatchWorkoutManager
+  @State private var expanded = false
 
   var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Button {
+        expanded.toggle()
+      } label: {
+        HStack(spacing: 4) {
+          Text("Sync details")
+          Image(systemName: expanded ? "chevron.up" : "chevron.down")
+            .font(.system(size: 8, weight: .bold))
+        }
+        .font(.system(size: 10, weight: .semibold))
+        .foregroundStyle(StrideWatchPalette.steel)
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel(expanded ? "Hide sync details" : "Show sync details")
+
+      if expanded {
+        details
+      } else if let error = workout.lastError {
+        Text("Err: \(error)")
+          .font(.system(size: 9, weight: .medium, design: .monospaced))
+          .foregroundStyle(StrideWatchPalette.clay)
+          .lineLimit(2)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.top, 4)
+    .padding(.bottom, 6)
+  }
+
+  private var details: some View {
     VStack(alignment: .leading, spacing: 2) {
       Text(workout.connectivityLabel)
       Text(commandLine)
@@ -242,8 +256,6 @@ private struct StrideWatchDiagnostics: View {
     .lineLimit(2)
     .minimumScaleFactor(0.8)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(.top, 4)
-    .padding(.bottom, 6)
     .accessibilityElement(children: .combine)
     .accessibilityLabel("Sync diagnostics")
   }

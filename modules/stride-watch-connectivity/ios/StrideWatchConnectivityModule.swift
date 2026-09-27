@@ -1,5 +1,6 @@
 import ExpoModulesCore
 import Foundation
+import HealthKit
 import WatchConnectivity
 
 private enum StrideWatchMessageType {
@@ -42,6 +43,16 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
   private var lastAckReason: String?
   private var lastWatchStateAt: TimeInterval = 0
   private var lastWatchState: String?
+  // Auto-launch: a start sent while the watch app wasn't running. Resent over
+  // the live channel once the launched app becomes reachable (the watch only
+  // starts HealthKit from a live start), then cleared. An end clears it.
+  private var pendingLiveStart: [String: Any]?
+  private var pendingLiveStartExpiresAt: TimeInterval = 0
+  // Latest pause/resume sent while a launch start was pending; re-sent (with a
+  // fresh sentAt, so the watch's dedupe doesn't drop it) right after the start.
+  private var pendingLiveFollowUpType: String?
+  private let pendingLiveStartWindowSeconds: TimeInterval = 90
+  private let healthStore = HKHealthStore()
 
   private func locked<T>(_ body: () -> T) -> T {
     lock.lock()
@@ -98,7 +109,8 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     return result
   }
 
-  func sendCommand(_ type: String, payload: [String: Any]) throws {
+  @discardableResult
+  func sendCommand(_ type: String, payload: [String: Any]) throws -> [String: Any] {
     guard let session else {
       throw NSError(domain: "StrideWatchConnectivity", code: 1, userInfo: [
         NSLocalizedDescriptionKey: "Apple Watch connectivity is unavailable on this device.",
@@ -110,6 +122,15 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     var message = payload
     message["type"] = type
     message["sentAt"] = Date().timeIntervalSince1970 * 1000
+
+    if type == StrideWatchMessageType.endWorkout || type == StrideWatchMessageType.endRun {
+      clearPendingLiveStart()
+    } else if type == StrideWatchMessageType.pauseWorkout || type == StrideWatchMessageType.pauseRun
+      || type == StrideWatchMessageType.resumeWorkout || type == StrideWatchMessageType.resumeRun {
+      locked {
+        if pendingLiveStart != nil { pendingLiveFollowUpType = type }
+      }
+    }
 
     guard session.isPaired && session.isWatchAppInstalled else {
       recordCommand(type, method: "none")
@@ -134,7 +155,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
       if session.activationState == .notActivated {
         session.activate()
       }
-      return
+      return message
     }
 
     if session.isReachable {
@@ -143,6 +164,75 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     } else {
       recordCommand(type, method: "transferUserInfo")
       session.transferUserInfo(message)
+    }
+    return message
+  }
+
+  /// When a start could not be delivered live (watch app not running), ask
+  /// HealthKit to launch the StrideOS watch app and remember the start so it
+  /// is resent live as soon as the app is reachable. No-op when the watch app
+  /// is already reachable, so the proven open-app path is unchanged.
+  func launchWatchAppIfNeeded(forStart message: [String: Any]) {
+    guard let session, session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else { return }
+    guard !session.isReachable, HKHealthStore.isHealthDataAvailable() else { return }
+
+    locked {
+      pendingLiveStart = message
+      pendingLiveStartExpiresAt = Date().timeIntervalSince1970 + pendingLiveStartWindowSeconds
+    }
+
+    let configuration = HKWorkoutConfiguration()
+    let kind = message["workoutKind"] as? String
+    let environment = message["environment"] as? String
+    switch kind {
+    case "cycling": configuration.activityType = .cycling
+    case "strength": configuration.activityType = .traditionalStrengthTraining
+    case "mobility": configuration.activityType = .flexibility
+    default: configuration.activityType = .running
+    }
+    configuration.locationType = (kind == "strength" || kind == "mobility" || environment == "indoor") ? .indoor : .outdoor
+
+    healthStore.startWatchApp(with: configuration) { [weak self] success, error in
+      guard let self else { return }
+      if !success {
+        self.locked { self.lastError = "Watch app launch failed: \(error?.localizedDescription ?? "unknown")" }
+        self.emitStatus()
+      }
+    }
+  }
+
+  private func clearPendingLiveStart() {
+    locked {
+      pendingLiveStart = nil
+      pendingLiveStartExpiresAt = 0
+      pendingLiveFollowUpType = nil
+    }
+  }
+
+  /// Resends a pending auto-launch start over the live channel once reachable.
+  private func resendPendingLiveStartIfReachable() {
+    guard let session, session.activationState == .activated, session.isReachable else { return }
+    let (message, followUpType): ([String: Any]?, String?) = locked {
+      let followUp = pendingLiveFollowUpType
+      pendingLiveFollowUpType = nil
+      guard let pending = pendingLiveStart, Date().timeIntervalSince1970 <= pendingLiveStartExpiresAt else {
+        pendingLiveStart = nil
+        return (nil, nil)
+      }
+      pendingLiveStart = nil
+      return (pending, followUp)
+    }
+    guard let message else { return }
+    recordCommand(message["type"] as? String ?? StrideWatchMessageType.startWorkout, method: "sendMessage")
+    sendReachableOrFallback(message, session: session)
+    if let followUpType {
+      var followUp: [String: Any] = [
+        "type": followUpType,
+        "sentAt": Date().timeIntervalSince1970 * 1000,
+      ]
+      if let id = message["workoutInstanceId"] { followUp["workoutInstanceId"] = id }
+      recordCommand(followUpType, method: "sendMessage")
+      sendReachableOrFallback(followUp, session: session)
     }
   }
 
@@ -169,6 +259,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
 
   func sessionReachabilityDidChange(_ session: WCSession) {
     flushPendingCommandsIfPossible()
+    resendPendingLiveStartIfReachable()
     emitStatus()
   }
 
@@ -409,7 +500,8 @@ public final class StrideWatchConnectivityModule: Module {
         if let targetZone {
           payload["targetZone"] = targetZone
         }
-        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.startRun, payload: payload)
+        let message = try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.startRun, payload: payload)
+        StrideWatchConnectivityCoordinator.shared.launchWatchAppIfNeeded(forStart: message)
         promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
       } catch {
         promise.reject("ERR_STRIDE_WATCH_START", error.localizedDescription)
@@ -442,7 +534,8 @@ public final class StrideWatchConnectivityModule: Module {
         if let targetZone {
           payload["targetZone"] = targetZone
         }
-        try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.startWorkout, payload: payload)
+        let message = try StrideWatchConnectivityCoordinator.shared.sendCommand(StrideWatchMessageType.startWorkout, payload: payload)
+        StrideWatchConnectivityCoordinator.shared.launchWatchAppIfNeeded(forStart: message)
         promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
       } catch {
         promise.reject("ERR_STRIDE_WATCH_START_WORKOUT", error.localizedDescription)

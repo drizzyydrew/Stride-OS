@@ -127,6 +127,20 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private var handledPhoneCommandKeys: [String] = []
   private var isEnding = false
   private var startWatchdog: DispatchWorkItem?
+  // Auto-launch (iPhone called HKHealthStore.startWatchApp while this app
+  // wasn't running). The session starts under a provisional id so the app is
+  // reachable; the phone's live start then adopts it. These flags are only
+  // ever set by startProvisionalWorkoutFromLaunch, so a normal open-app start
+  // never enters any of the provisional branches.
+  private var isProvisionalLaunch = false
+  // Identity, not a flag: only this exact session is discarded, so a stale
+  // marker can never discard (or silence) a later real workout.
+  private weak var discardSession: HKWorkoutSession?
+  // Launch timed out before HealthKit created the session: discard it as
+  // soon as it reports running.
+  private var discardWhenRunning = false
+  private var provisionalTimeout: DispatchWorkItem?
+  private let provisionalLaunchWindowSeconds: TimeInterval = 60
   private var lastCommandReceivedAt: Date?
   private var queuedOutboundPayloads: [[String: Any]] = []
   private var pendingConnectivityActivationWorkItem: DispatchWorkItem?
@@ -273,6 +287,91 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     scheduleConnectivityActivation(reportErrors: false, delay: 1.5)
   }
 
+  /// The iPhone launched this app to start a workout (HKHealthStore
+  /// .startWatchApp -> WKApplicationDelegate.handle). Per Apple's contract the
+  /// app starts the session here; a running session is what makes the app
+  /// reachable so the phone's live start (with the real workoutInstanceId)
+  /// can arrive and be adopted. Discarded if no phone start comes.
+  func startProvisionalWorkoutFromLaunch(_ configuration: HKWorkoutConfiguration) {
+    onMain {
+      // Connect right away (no 1.5 s launch delay): the phone is waiting to
+      // resend its start the moment this app becomes reachable.
+      self.scheduleConnectivityActivation(reportErrors: false, delay: 0)
+      guard !self.isActive, !self.isStartingWorkout else { return }
+      let kind: StrideWatchWorkoutKind
+      switch configuration.activityType {
+      case .cycling: kind = .cycling
+      case .traditionalStrengthTraining: kind = .strength
+      case .flexibility: kind = .mobility
+      default: kind = .run
+      }
+      let environment = configuration.locationType == .indoor ? "indoor" : "outdoor"
+      // Int64: 32-bit watches (Series 4-8, SE) trap on Int(ms).
+      let provisionalId = "launch_\(Int64(Date().timeIntervalSince1970 * 1000))"
+      StrideWatchStartTrail.mark("L launched by iPhone (\(kind.rawValue))")
+      guard self.startWorkout(
+        kind: kind,
+        title: nil,
+        workoutInstanceId: provisionalId,
+        environment: environment,
+        targetZone: nil
+      ) == nil else { return }
+      self.isProvisionalLaunch = true
+      self.armProvisionalTimeout()
+    }
+  }
+
+  /// A live phone start while a provisional launch session is starting or
+  /// running: take the phone's workoutInstanceId instead of rejecting it as
+  /// already active. Returns false (no-op) outside a provisional launch.
+  private func adoptPhoneStartIfProvisional(_ message: [String: Any]) -> Bool {
+    // Never adopt into a session that is ending or being discarded; the phone
+    // start then goes through the normal start path instead.
+    guard isProvisionalLaunch, isActive || isStartingWorkout,
+      !isEnding, discardSession == nil, !discardWhenRunning else { return false }
+    isProvisionalLaunch = false
+    provisionalTimeout?.cancel()
+    provisionalTimeout = nil
+    if let id = message["workoutInstanceId"] as? String, !id.isEmpty {
+      workoutInstanceId = id
+      workoutIdLabel = "ID: \(String(id.suffix(8)))"
+      endedStateSentForWorkoutInstanceId = nil
+    }
+    if let zone = message["targetZone"] as? Int {
+      targetZone = zone
+    }
+    if state == .running {
+      StrideWatchStartTrail.mark("running OK (adopted phone start)", terminal: true)
+      sendWorkoutState("running")
+    }
+    return true
+  }
+
+  private var isDiscardingCurrentSession: Bool {
+    guard let discardSession, let session else { return false }
+    return discardSession === session
+  }
+
+  private func armProvisionalTimeout() {
+    provisionalTimeout?.cancel()
+    let item = DispatchWorkItem { [weak self] in
+      guard let self, self.isProvisionalLaunch else { return }
+      StrideWatchStartTrail.mark("launch discarded: no phone start", terminal: true)
+      guard let session = self.session else {
+        // HealthKit hasn't created the session yet; drop it when it runs.
+        self.isProvisionalLaunch = false
+        self.discardWhenRunning = true
+        return
+      }
+      // Nothing to keep: end without saving an empty workout to Health.
+      // isProvisionalLaunch stays true until .ended so no state is reported.
+      self.discardSession = session
+      self.endWorkout()
+    }
+    provisionalTimeout = item
+    DispatchQueue.main.asyncAfter(deadline: .now() + provisionalLaunchWindowSeconds, execute: item)
+  }
+
   /// Returns nil when the start was accepted, or a short rejection reason.
   /// Must be called on the main thread.
   @discardableResult
@@ -285,6 +384,12 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   ) -> String? {
     guard !isActive else { return "already_active" }
     guard !isStartingWorkout else { return "already_starting" }
+    // A new start supersedes any pending launch state. (A launch start sets
+    // isProvisionalLaunch again right after this returns.)
+    discardWhenRunning = false
+    isProvisionalLaunch = false
+    provisionalTimeout?.cancel()
+    provisionalTimeout = nil
     StrideWatchStartTrail.mark("2 start accepted (\(kind.rawValue))")
     lastError = nil
     isStartingWorkout = true
@@ -573,6 +678,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       DispatchQueue.main.async { self.sendWorkoutState(label) }
       return
     }
+    // A provisional launch session (not yet adopted by the phone) or one being
+    // discarded must not report state: the phone would apply "running"/"ended"
+    // to whatever it has active. Both flags are false outside auto-launch.
+    if isProvisionalLaunch || isDiscardingCurrentSession { return }
     refreshElapsed()
     var payload: [String: Any] = [
       "type": "workoutState",
@@ -705,6 +814,15 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
     switch toState {
     case .running:
+      if discardWhenRunning {
+        discardWhenRunning = false
+        discardSession = session
+        isProvisionalLaunch = true
+        clearStartWatchdog()
+        isStartingWorkout = false
+        endWorkout()
+        return
+      }
       if isStartingWorkout {
         StrideWatchStartTrail.mark("running OK", terminal: true)
       }
@@ -718,8 +836,22 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     case .ended:
       clearStartWatchdog()
       healthKitLabel = "HK: ended"
-      finishBuilderIfNeeded()
-      sendEndedStateOnce()
+      // An unadopted launch session never reported state, so it must not
+      // report "ended" either (false on every normal-path workout).
+      let discarding = isDiscardingCurrentSession
+      let suppressEndedState = isProvisionalLaunch || discarding
+      isProvisionalLaunch = false
+      provisionalTimeout?.cancel()
+      provisionalTimeout = nil
+      discardSession = nil
+      if discarding {
+        builder?.discardWorkout()
+      } else {
+        finishBuilderIfNeeded()
+      }
+      if !suppressEndedState {
+        sendEndedStateOnce()
+      }
       isStartingWorkout = false
       isEnding = false
       timer?.invalidate()
@@ -736,6 +868,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   fileprivate func handleWorkoutSessionFailure(_ error: Error) {
+    if isDiscardingCurrentSession { discardSession = nil }
     StrideWatchStartTrail.mark("HK failure: \(error.localizedDescription)", terminal: true)
     clearStartWatchdog()
     isStartingWorkout = false
@@ -818,6 +951,11 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
       switch type {
       case "startWorkout", "startRun":
+        if self.adoptPhoneStartIfProvisional(message) {
+          self.noteCommand(type, via: via, result: "adopted")
+          self.sendCommandAck(command: type, message: message, reason: nil)
+          break
+        }
         StrideWatchStartTrail.mark("1 cmd \(type) live")
         let kind: StrideWatchWorkoutKind = type == "startRun"
           ? .run
