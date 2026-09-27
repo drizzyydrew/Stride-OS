@@ -106,6 +106,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   @Published private(set) var lastCommandLabel: String = "Cmd: none"
   @Published private(set) var healthKitLabel: String = "HK: idle"
   @Published private(set) var workoutIdLabel: String = "ID: --"
+  /// Where the previous workout start ended up. When the last recorded step is
+  /// not terminal, the app was killed during that step (i.e. it crashed there).
+  @Published private(set) var startTrailLabel: String?
+  @Published private(set) var startTrailCrashed: Bool = false
 
   private var maxHeartRateBpm: Int = 190
   private var targetZone: Int?
@@ -240,6 +244,13 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
   private override init() {
     super.init()
+    StrideWatchStartTrail.installExceptionHandler()
+    if let previous = StrideWatchStartTrail.read() {
+      startTrailCrashed = !previous.terminal
+      startTrailLabel = previous.terminal
+        ? "Last start: \(previous.step)"
+        : "Crashed at: \(previous.step)"
+    }
   }
 
   // MARK: - Threading
@@ -274,6 +285,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   ) -> String? {
     guard !isActive else { return "already_active" }
     guard !isStartingWorkout else { return "already_starting" }
+    StrideWatchStartTrail.mark("2 start accepted (\(kind.rawValue))")
     lastError = nil
     isStartingWorkout = true
     isEnding = false
@@ -289,9 +301,12 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     self.metricPage = kind.tracksDistance ? .heartRate : .elapsed
     armStartWatchdog()
 
+    StrideWatchStartTrail.mark("3 auth request")
     requestAuthorization { [weak self] granted in
       guard let self else { return }
+      StrideWatchStartTrail.mark("5 auth done granted=\(granted)")
       self.onMain {
+        StrideWatchStartTrail.mark("6 main hop")
         guard granted else {
           self.failStart("Health permission needed.", label: "HK: auth denied")
           return
@@ -372,6 +387,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   private func failStart(_ message: String, label: String) {
+    StrideWatchStartTrail.mark("failed: \(message)", terminal: true)
     clearStartWatchdog()
     isStartingWorkout = false
     healthKitLabel = label
@@ -396,9 +412,13 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     }
 
     do {
+      StrideWatchStartTrail.mark("7 create session")
       let session = try HKWorkoutSession(healthStore: healthStore, configuration: configuration)
+      StrideWatchStartTrail.mark("8 get builder")
       let builder = session.associatedWorkoutBuilder()
+      StrideWatchStartTrail.mark("9 data source")
       builder.dataSource = HKLiveWorkoutDataSource(healthStore: healthStore, workoutConfiguration: configuration)
+      StrideWatchStartTrail.mark("10 set delegates")
       session.delegate = self
       builder.delegate = self
       self.session = session
@@ -413,8 +433,11 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       distanceMeters = 0
       activeEnergyKilocalories = 0
 
+      StrideWatchStartTrail.mark("11 startActivity")
       session.startActivity(with: now)
+      StrideWatchStartTrail.mark("12 beginCollection")
       builder.beginCollection(withStart: now) { [weak self] success, error in
+        StrideWatchStartTrail.mark("14 collection cb ok=\(success)")
         guard let self else { return }
         if let error {
           self.publishError(error.localizedDescription)
@@ -422,6 +445,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
           self.publishError("Workout collection did not start")
         }
       }
+      StrideWatchStartTrail.mark("13 timer")
       startTimer()
       // isStartingWorkout stays true and "running" is published only when the
       // HealthKit delegate reports .running, so the phone never sees a running
@@ -445,6 +469,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     let shareTypes: Set<HKSampleType> = [HKObjectType.workoutType()]
 
     healthStore.requestAuthorization(toShare: shareTypes, read: readTypes) { [weak self] granted, error in
+      StrideWatchStartTrail.mark("4 auth callback")
       if let error {
         self?.publishError(error.localizedDescription)
       }
@@ -678,6 +703,9 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
     switch toState {
     case .running:
+      if isStartingWorkout {
+        StrideWatchStartTrail.mark("running OK", terminal: true)
+      }
       clearStartWatchdog()
       isStartingWorkout = false
       healthKitLabel = "HK: running"
@@ -706,6 +734,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   fileprivate func handleWorkoutSessionFailure(_ error: Error) {
+    StrideWatchStartTrail.mark("HK failure: \(error.localizedDescription)", terminal: true)
     clearStartWatchdog()
     isStartingWorkout = false
     healthKitLabel = "HK: error"
@@ -759,11 +788,23 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       // The same command normally arrives over several channels (message,
       // userInfo, applicationContext). Remember recent keys so replays and
       // late duplicates never restart or re-end a workout.
+      if sentAt > 0 && self.handledPhoneCommandKeys.contains(commandKey) {
+        self.noteCommand(type, via: via, result: "dup")
+        return
+      }
+      // Only a live start (phone sent it while this app was open) may start
+      // HealthKit. Starts queued while the app was closed are replayed on the
+      // next launch; running them there turned one bad start into a crash on
+      // every launch. The key is not recorded here, so the live copy of the
+      // same start (which may arrive after its applicationContext copy) still
+      // runs.
+      let isStart = type == "startWorkout" || type == "startRun"
+      if isStart && via != "msg" {
+        self.noteCommand(type, via: via, result: "queued_start_ignored")
+        self.sendCommandAck(command: type, message: message, reason: "queued_start_ignored")
+        return
+      }
       if sentAt > 0 {
-        if self.handledPhoneCommandKeys.contains(commandKey) {
-          self.noteCommand(type, via: via, result: "dup")
-          return
-        }
         self.handledPhoneCommandKeys.append(commandKey)
         if self.handledPhoneCommandKeys.count > 40 {
           self.handledPhoneCommandKeys.removeFirst(self.handledPhoneCommandKeys.count - 40)
@@ -772,6 +813,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
       switch type {
       case "startWorkout", "startRun":
+        StrideWatchStartTrail.mark("1 cmd \(type) live")
         let kind: StrideWatchWorkoutKind = type == "startRun"
           ? .run
           : StrideWatchWorkoutKind.from(message["workoutKind"] as? String)
@@ -863,6 +905,9 @@ extension StrideWatchWorkoutManager: HKWorkoutSessionDelegate {
     from fromState: HKWorkoutSessionState,
     date: Date
   ) {
+    if toState != .running {
+      StrideWatchStartTrail.markIfStarting("15 HK state \(toState.rawValue)")
+    }
     DispatchQueue.main.async {
       // A previous session can report .ended after a new workout has started;
       // it must not clear or end the current session.
@@ -957,6 +1002,57 @@ extension StrideWatchWorkoutManager: WCSessionDelegate {
       if let error {
         self.lastError = error.localizedDescription
       }
+    }
+  }
+}
+
+/// Records each step of a workout start synchronously to a small file so the
+/// next launch can show exactly where a start died. A step marked terminal is
+/// a clean outcome (running, failed, ended); a non-terminal last step means the
+/// process was killed during it.
+enum StrideWatchStartTrail {
+  private static let fileURL: URL = {
+    let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+      ?? FileManager.default.temporaryDirectory
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    return dir.appendingPathComponent("stride-start-trail.txt")
+  }()
+
+  private static let lock = NSLock()
+  private static var starting = false
+
+  static func mark(_ step: String, terminal: Bool = false) {
+    lock.lock()
+    defer { lock.unlock() }
+    starting = !terminal
+    let line = "\(terminal ? "T" : "S")|\(Int(Date().timeIntervalSince1970))|\(step)"
+    try? Data(line.utf8).write(to: fileURL, options: .atomic)
+  }
+
+  /// Marks only while a start is in flight, so steady-state callbacks never
+  /// overwrite the outcome of the last start.
+  static func markIfStarting(_ step: String) {
+    lock.lock()
+    let isStarting = starting
+    lock.unlock()
+    if isStarting { mark(step) }
+  }
+
+  static func read() -> (step: String, terminal: Bool, at: Date)? {
+    guard let text = try? String(contentsOf: fileURL, encoding: .utf8) else { return nil }
+    let parts = text.split(separator: "|", maxSplits: 2, omittingEmptySubsequences: false)
+    guard parts.count == 3, let seconds = TimeInterval(parts[1]) else { return nil }
+    return (String(parts[2]), parts[0] == "T", Date(timeIntervalSince1970: seconds))
+  }
+
+  /// Captures Objective-C exceptions (HealthKit raises these for invalid use)
+  /// with the step they happened in. Swift traps cannot be caught; for those
+  /// the last non-terminal step is the evidence.
+  static func installExceptionHandler() {
+    NSSetUncaughtExceptionHandler { exception in
+      let previous = StrideWatchStartTrail.read()?.step ?? "no step"
+      let reason = String((exception.reason ?? "").prefix(160))
+      StrideWatchStartTrail.mark("EXC \(exception.name.rawValue) during [\(previous)]: \(reason)")
     }
   }
 }

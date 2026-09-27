@@ -12,21 +12,33 @@ struct StrideOSWatchApp: App {
   }
 }
 
+// Layout follows the watchOS system geometry instead of fixed paddings:
+// - The brand mark lives in the top bar beside the clock (watchOS 10+), so no
+//   content has to share or scroll under the time.
+// - Horizontal margins come from scenePadding(), which the system sizes per
+//   watch model, so both sides are equal on every case size.
+// - Top/bottom insets come from the safe area (rounded corners, clock), not
+//   hand-tuned vertical padding.
 struct StrideWatchContentView: View {
   @EnvironmentObject private var workout: StrideWatchWorkoutManager
 
   var body: some View {
-    Group {
-      if workout.isActive {
-        ActiveWorkoutFace()
-          .environmentObject(workout)
-      } else {
-        WorkoutPickerFace()
-          .environmentObject(workout)
+    NavigationStack {
+      Group {
+        if workout.isActive {
+          ActiveWorkoutFace()
+        } else {
+          WorkoutPickerFace()
+        }
       }
+      .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          StrideWatchHeader()
+        }
+      }
+      .containerBackground(Color.black, for: .navigation)
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Color.black)
+    .environmentObject(workout)
     .task {
       workout.prepareForPhoneControl()
     }
@@ -39,12 +51,37 @@ private struct WorkoutPickerFace: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 8) {
-        StrideWatchHeader()
+        if let trail = workout.startTrailLabel {
+          StrideWatchStartTrailCard(text: trail, crashed: workout.startTrailCrashed)
+        }
 
-        Text("Choose Workout")
+        HStack(spacing: 8) {
+          Image(systemName: "iphone")
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(StrideWatchPalette.sage)
+          Text("Start from iPhone")
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(StrideWatchPalette.cream)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+          Spacer(minLength: 4)
+        }
+        .padding(.horizontal, 10)
+        .frame(minHeight: 36)
+        .background(StrideWatchPalette.graphite.opacity(0.72), in: Capsule())
+        .accessibilityLabel("Start workouts from iPhone")
+
+        Text(workout.syncLabel)
+          .font(.system(size: 10.5, weight: .semibold))
+          .foregroundStyle(StrideWatchPalette.steel)
+          .lineLimit(1)
+          .minimumScaleFactor(0.82)
+
+        Text("Workout type")
           .font(.system(size: 10, weight: .bold))
           .foregroundStyle(StrideWatchPalette.cream.opacity(0.78))
           .textCase(.uppercase)
+          .padding(.top, 2)
 
         VStack(spacing: 6) {
           ForEach(StrideWatchWorkoutKind.allCases) { kind in
@@ -70,114 +107,102 @@ private struct WorkoutPickerFace: View {
           }
         }
 
-        HStack(spacing: 8) {
-          Image(systemName: "iphone")
-            .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(StrideWatchPalette.sage)
-          Text("Start from iPhone")
-            .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(StrideWatchPalette.cream)
-          Spacer(minLength: 4)
-        }
-        .padding(.horizontal, 10)
-        .frame(minHeight: 36)
-        .background(StrideWatchPalette.graphite.opacity(0.72), in: Capsule())
-        .accessibilityLabel("Start workouts from iPhone")
-
-        Text(workout.syncLabel)
-          .font(.system(size: 10.5, weight: .semibold))
-          .foregroundStyle(StrideWatchPalette.steel)
-          .lineLimit(1)
-          .minimumScaleFactor(0.82)
-
         StrideWatchDiagnostics()
-          .environmentObject(workout)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
     }
     .scenePadding(.horizontal)
-    .padding(.vertical, 8)
     .scrollIndicators(.hidden)
   }
 }
 
+/// Fixed, non-scrolling workout screen: status row, flexible metric card, and
+/// controls pinned inside the bottom safe area. Nothing is ever pushed below
+/// the fold, on any case size.
 private struct ActiveWorkoutFace: View {
   @EnvironmentObject private var workout: StrideWatchWorkoutManager
 
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 8) {
-        StrideWatchHeader()
-
-        HStack(spacing: 6) {
-          Image(systemName: workout.selectedWorkoutKind.symbolName)
-            .font(.system(size: 11, weight: .bold))
-            .foregroundStyle(StrideWatchPalette.sage)
-          Text("\(workout.selectedWorkoutKind.title) · \(workout.statusLabel)")
-            .font(.system(size: 10.5, weight: .semibold))
-            .foregroundStyle(StrideWatchPalette.sage)
-            .lineLimit(1)
-            .minimumScaleFactor(0.72)
-        }
-
-        Button {
-          workout.cycleMetricPage()
-        } label: {
-          VStack(alignment: .leading, spacing: 4) {
-            Text(workout.metricPage.title)
-              .font(.system(size: 10, weight: .bold))
-              .foregroundStyle(StrideWatchPalette.steel)
-              .textCase(.uppercase)
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-              Text(workout.metricValueLabel)
-                .font(.system(size: 32, weight: .heavy, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.58)
-              if !workout.metricUnitLabel.isEmpty {
-                Text(workout.metricUnitLabel)
-                  .font(.system(size: 11, weight: .bold))
-                  .foregroundStyle(StrideWatchPalette.clay)
-              }
-            }
-            Text("Tap to change")
-              .font(.system(size: 9, weight: .semibold))
-              .foregroundStyle(StrideWatchPalette.cream.opacity(0.58))
-          }
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .padding(.horizontal, 10)
-          .padding(.vertical, 12)
-        }
-        .buttonStyle(StrideWatchMetricButtonStyle())
-        .accessibilityLabel("\(workout.metricPage.title), \(workout.metricValueLabel) \(workout.metricUnitLabel). Tap to change metric.")
-
-        HStack(spacing: 8) {
-          Text(workout.elapsedLabel)
-            .font(.system(size: 14, weight: .bold, design: .rounded))
-            .monospacedDigit()
-            .foregroundStyle(StrideWatchPalette.cream)
-            .lineLimit(1)
-            .minimumScaleFactor(0.82)
-          Spacer(minLength: 4)
-          Text(workout.syncLabel)
-            .font(.system(size: 9, weight: .semibold))
-            .foregroundStyle(StrideWatchPalette.steel)
-            .lineLimit(1)
-            .minimumScaleFactor(0.72)
-        }
-
-        StrideWatchControls()
-          .environmentObject(workout)
-
-        StrideWatchDiagnostics()
-          .environmentObject(workout)
+    VStack(alignment: .leading, spacing: 6) {
+      HStack(spacing: 5) {
+        Image(systemName: workout.selectedWorkoutKind.symbolName)
+          .font(.system(size: 11, weight: .bold))
+        Text(workout.statusLabel)
+          .font(.system(size: 11, weight: .semibold))
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+        Spacer(minLength: 4)
+        Text(workout.elapsedLabel)
+          .font(.system(size: 14, weight: .bold, design: .rounded))
+          .monospacedDigit()
+          .foregroundStyle(StrideWatchPalette.cream)
+          .lineLimit(1)
+          .layoutPriority(1)
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
+      .foregroundStyle(StrideWatchPalette.sage)
+
+      Button {
+        workout.cycleMetricPage()
+      } label: {
+        VStack(alignment: .leading, spacing: 2) {
+          Text(workout.metricPage.title)
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(StrideWatchPalette.steel)
+            .textCase(.uppercase)
+          Spacer(minLength: 0)
+          HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text(workout.metricValueLabel)
+              .font(.system(size: 40, weight: .heavy, design: .rounded))
+              .monospacedDigit()
+              .foregroundStyle(.white)
+              .lineLimit(1)
+              .minimumScaleFactor(0.5)
+            if !workout.metricUnitLabel.isEmpty {
+              Text(workout.metricUnitLabel)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(StrideWatchPalette.clay)
+            }
+          }
+          Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+      }
+      .buttonStyle(StrideWatchMetricButtonStyle())
+      .frame(maxHeight: .infinity)
+      .accessibilityLabel("\(workout.metricPage.title), \(workout.metricValueLabel) \(workout.metricUnitLabel). Tap to change metric.")
+
+      StrideWatchControls()
     }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     .scenePadding(.horizontal)
-    .padding(.vertical, 8)
-    .scrollIndicators(.hidden)
+    // Use the system bottom margin instead of the (larger) container inset so
+    // the controls sit the same standard distance from the edge on every size.
+    .scenePadding(.bottom)
+    .ignoresSafeArea(.container, edges: .bottom)
+  }
+}
+
+/// Shown on the idle screen after a start: where the last start ended up.
+/// When it did not reach a clean outcome, it names the step the app died in.
+private struct StrideWatchStartTrailCard: View {
+  let text: String
+  let crashed: Bool
+
+  var body: some View {
+    HStack(alignment: .top, spacing: 6) {
+      Image(systemName: crashed ? "exclamationmark.triangle.fill" : "checkmark.circle")
+        .font(.system(size: 11, weight: .bold))
+      Text(text)
+        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    .foregroundStyle(crashed ? StrideWatchPalette.clay : StrideWatchPalette.cream.opacity(0.7))
+    .padding(8)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(StrideWatchPalette.graphite.opacity(crashed ? 0.95 : 0.6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    .accessibilityElement(children: .combine)
   }
 }
 
@@ -189,11 +214,10 @@ private struct StrideWatchHeader: View {
       Text("OS")
         .foregroundStyle(StrideWatchPalette.steel)
     }
-    .font(.system(size: 16, weight: .bold, design: .serif))
+    .font(.system(size: 15, weight: .bold, design: .serif))
     .lineLimit(1)
-    .minimumScaleFactor(0.7)
-    .frame(maxWidth: .infinity, alignment: .center)
-    .accessibilityHidden(true)
+    .fixedSize()
+    .accessibilityLabel("StrideOS")
   }
 }
 
@@ -219,6 +243,7 @@ private struct StrideWatchDiagnostics: View {
     .minimumScaleFactor(0.8)
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(.top, 4)
+    .padding(.bottom, 6)
     .accessibilityElement(children: .combine)
     .accessibilityLabel("Sync diagnostics")
   }
@@ -313,43 +338,6 @@ private struct StrideWatchMetricButtonStyle: ButtonStyle {
           .stroke(StrideWatchPalette.steel.opacity(0.38), lineWidth: 1)
       }
       .scaleEffect(configuration.isPressed ? 0.98 : 1)
-  }
-}
-
-private struct StrideWatchLayoutMetrics {
-  let horizontalPadding: CGFloat
-  let topPadding: CGFloat
-  let bottomPadding: CGFloat
-  let verticalSpacing: CGFloat
-  let logoFontSize: CGFloat
-  let statusFontSize: CGFloat
-  let captionFontSize: CGFloat
-  let rowFontSize: CGFloat
-  let metricFontSize: CGFloat
-  let unitFontSize: CGFloat
-  let elapsedFontSize: CGFloat
-  let hintFontSize: CGFloat
-  let metricPadding: CGFloat
-  let endButtonSize: CGFloat
-
-  init(size: CGSize) {
-    let shortSide = min(size.width, size.height)
-    let isCompact = shortSide < 180
-
-    horizontalPadding = isCompact ? 10 : 12
-    topPadding = isCompact ? 9 : 11
-    bottomPadding = isCompact ? 8 : 10
-    verticalSpacing = isCompact ? 6 : 7
-    logoFontSize = isCompact ? 15 : 16
-    statusFontSize = isCompact ? 10 : 10.5
-    captionFontSize = isCompact ? 9 : 9.5
-    rowFontSize = isCompact ? 12.5 : 13.5
-    metricFontSize = isCompact ? 30 : 34
-    unitFontSize = isCompact ? 10.5 : 11.5
-    elapsedFontSize = isCompact ? 13 : 14
-    hintFontSize = isCompact ? 8.5 : 9
-    metricPadding = isCompact ? 10 : 12
-    endButtonSize = isCompact ? 32 : 36
   }
 }
 

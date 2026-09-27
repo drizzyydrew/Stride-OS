@@ -99,7 +99,7 @@ test('watch manager mutates state on the main thread and ends a session at most 
   // "running" is published only from the HealthKit delegate, not also from beginWorkout.
   const beginBody = watchManager.slice(watchManager.indexOf('private func beginWorkout'), watchManager.indexOf('private func requestAuthorization'));
   assert.doesNotMatch(beginBody, /sendWorkoutState\("running"\)/);
-  assert.match(watchManager, /case \.running:[\s\S]{0,200}sendWorkoutState\("running"\)/);
+  assert.match(watchManager, /case \.running:[\s\S]{0,400}sendWorkoutState\("running"\)/);
   // end() is idempotent and guarded by HealthKit session state.
   const endBody = watchManager.slice(watchManager.indexOf('func endWorkout()'), watchManager.indexOf('private func armStartWatchdog'));
   assert.match(endBody, /guard !isEnding else \{ return \}/);
@@ -163,6 +163,42 @@ test('watch falls back to transferUserInfo for state, acks, and errors but not h
 test('HealthKit callbacks from a previous session cannot end or clear the current one', () => {
   assert.match(watchManager, /guard workoutSession === self\.session else \{ return \}\s+self\.handleWorkoutSessionStateChange\(toState\)/);
   assert.match(watchManager, /guard workoutSession === self\.session else \{ return \}\s+self\.handleWorkoutSessionFailure\(error\)/);
+});
+
+test('watch records each start step to disk and shows where the last start died', () => {
+  const app = read('targets/StrideOSWatch/StrideOSWatchApp.swift');
+  assert.match(watchManager, /enum StrideWatchStartTrail/);
+  assert.match(watchManager, /write\(to: fileURL, options: \.atomic\)/);
+  assert.match(watchManager, /NSSetUncaughtExceptionHandler/);
+  for (const step of ['1 cmd', '2 start accepted', '3 auth request', '4 auth callback', '5 auth done', '6 main hop', '7 create session', '8 get builder', '9 data source', '10 set delegates', '11 startActivity', '12 beginCollection', '13 timer', '14 collection cb']) {
+    assert.ok(watchManager.includes(`StrideWatchStartTrail.mark("${step}`), `missing step ${step}`);
+  }
+  assert.match(watchManager, /StrideWatchStartTrail\.mark\("running OK", terminal: true\)/);
+  assert.match(watchManager, /StrideWatchStartTrail\.mark\("failed: /);
+  assert.match(watchManager, /"Crashed at: \\\(previous\.step\)"/);
+  assert.match(app, /StrideWatchStartTrailCard\(text: trail, crashed: workout\.startTrailCrashed\)/);
+});
+
+test('queued start commands are acknowledged and ignored; live starts still run', () => {
+  const block = watchManager.slice(watchManager.indexOf('handledPhoneCommandKeys.contains(commandKey)'), watchManager.indexOf('case "startWorkout", "startRun":'));
+  // Dedupe check happens before the queued-start rejection, and the rejection
+  // does not record the key, so the live copy of the same start still runs.
+  assert.match(block, /if isStart && via != "msg" \{[\s\S]*?reason: "queued_start_ignored"[\s\S]*?return\s*\}/);
+  const rejection = block.slice(block.indexOf('if isStart && via != "msg"'), block.indexOf('self.handledPhoneCommandKeys.append(commandKey)'));
+  assert.doesNotMatch(rejection, /handledPhoneCommandKeys\.append/);
+  assert.ok(block.indexOf('if isStart && via != "msg"') < block.indexOf('self.handledPhoneCommandKeys.append(commandKey)'));
+});
+
+test('watch layout uses system margins, top bar brand, and a non-scrolling workout face', () => {
+  const app = read('targets/StrideOSWatch/StrideOSWatchApp.swift');
+  assert.match(app, /NavigationStack \{/);
+  assert.match(app, /ToolbarItem\(placement: \.topBarLeading\) \{\s+StrideWatchHeader\(\)/);
+  assert.doesNotMatch(app, /\.padding\(\.vertical, 8\)\n\s+\.scrollIndicators/);
+  const active = app.slice(app.indexOf('private struct ActiveWorkoutFace'), app.indexOf('private struct StrideWatchStartTrailCard'));
+  assert.doesNotMatch(active, /ScrollView/);
+  assert.match(active, /\.scenePadding\(\.horizontal\)\s+[\s\S]*?\.scenePadding\(\.bottom\)/);
+  assert.match(active, /\.frame\(maxHeight: \.infinity\)/);
+  assert.match(active, /StrideWatchControls\(\)/);
 });
 
 test('watch face keeps controls above rounded bottom edge and applies latest phone command context', () => {
