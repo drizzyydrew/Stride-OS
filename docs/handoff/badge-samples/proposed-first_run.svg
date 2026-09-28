@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 100 100" fill="none" role="img" aria-label="First Run achievement. Unlocked.">
+  <defs>
+    <linearGradient id="firsts-first-run-unlocked-edge" x1="14" y1="7" x2="86" y2="93" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F4DCA9"/>
+      <stop offset="0.54" stop-color="#E3BC7E"/>
+      <stop offset="1" stop-color="#A8844F"/>
+    </linearGradient>
+    <radialGradient id="firsts-first-run-unlocked-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 42) rotate(90) scale(35 34)">
+      <stop offset="0" stop-color="#C99A55" stop-opacity="0.33"/>
+      <stop offset="0.64" stop-color="#C99A55" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#C99A55" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <path d="M 50 5.5 Q 52.12 5.5 54.14 6.8 L 82.84 24.8 Q 84.96 26.1 84.96 28.8 L 84.96 71.2 Q 84.96 73.9 82.84 75.2 L 54.14 93.2 Q 52.12 94.5 50 94.5 Q 47.88 94.5 45.86 93.2 L 17.16 75.2 Q 15.04 73.9 15.04 71.2 L 15.04 28.8 Q 15.04 26.1 17.16 24.8 L 45.86 6.8 Q 47.88 5.5 50 5.5Z" fill="#090A09" fill-opacity="1" stroke="url(#firsts-first-run-unlocked-edge)" stroke-width="1.35" stroke-linejoin="round" stroke-opacity="1"/>
+  <ellipse cx="50" cy="42" rx="31" ry="30" fill="url(#firsts-first-run-unlocked-glow)" opacity="0.18"/>
+  <g transform="">
+    <g stroke="#E3BC7E" stroke-width="1.05" stroke-linecap="round" fill="none">
+          <path d="M22.5 27.2 H38.6" stroke-opacity="0.9119999999999999"/>
+          <path d="M18.4 31.2 H37.2" stroke-opacity="0.816"/>
+          <path d="M20.6 35.2 H36.8" stroke-opacity="0.72"/>
+          <path d="M24.2 39.2 H37.8" stroke-opacity="0.576"/>
+          <path d="M28.8 43.2 H38.4" stroke-opacity="0.432"/>
+        </g>
+        <g transform="translate(51.5 34) scale(1.14) translate(-51.5 -34)">
+        <mask id="run-E3BC7E-1" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="#000"/><path d="M51.60 24.60 L53.00 23.50 L55.40 23.20 L57.40 24.00 L57.60 25.40 L54.20 32.80 L51.20 34.00 L49.00 33.00 Z" fill="#fff" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/><path d="M55.28 26.32 L61.02 31.77 L66.85 28.18 L65.95 26.62 L61.38 29.03 L57.12 24.48 Z" fill="#fff" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/><path d="M53.32 23.93 L46.64 25.60 L42.55 30.18 L43.85 31.42 L47.76 27.60 L53.88 26.47 Z" fill="#fff" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/><path d="M51.31 32.97 L56.88 38.38 L55.45 46.45 L59.64 48.43 L61.73 48.40 L61.87 47.00 L60.16 46.57 L57.75 45.35 L59.92 37.62 L54.49 30.23 Z" fill="#fff" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/><path d="M48.53 30.94 L44.31 40.65 L39.14 44.79 L38.28 48.69 L39.72 49.11 L40.86 46.01 L46.49 42.55 L52.27 32.86 Z" fill="#fff" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/><path d="M51.60 24.60 L53.00 23.50 L55.40 23.20 L57.40 24.00 L57.60 25.40 L54.20 32.80 L51.20 34.00 L49.00 33.00 Z" fill="#000"/><path d="M55.28 26.32 L61.02 31.77 L66.85 28.18 L65.95 26.62 L61.38 29.03 L57.12 24.48 Z" fill="#000"/><path d="M53.32 23.93 L46.64 25.60 L42.55 30.18 L43.85 31.42 L47.76 27.60 L53.88 26.47 Z" fill="#000"/><path d="M51.31 32.97 L56.88 38.38 L55.45 46.45 L59.64 48.43 L61.73 48.40 L61.87 47.00 L60.16 46.57 L57.75 45.35 L59.92 37.62 L54.49 30.23 Z" fill="#000"/><path d="M48.53 30.94 L44.31 40.65 L39.14 44.79 L38.28 48.69 L39.72 49.11 L40.86 46.01 L46.49 42.55 L52.27 32.86 Z" fill="#000"/><path d="M55.75 47.65 L59.37 49.35 L61.63 49.34 L61.97 46.06 L60.43 45.65 L57.45 44.15 Z M38.13 44.86 L37.37 48.43 L40.63 49.37 L41.87 45.94 Z" fill="#fff" stroke="#fff" stroke-width="0.3" stroke-linejoin="round"/></mask>
+        <rect width="100" height="100" fill="#E3BC7E" fill-opacity="0.96" mask="url(#run-E3BC7E-1)"/>
+        <circle cx="57.9" cy="18.4" r="3.2" fill="none" stroke="#E3BC7E" stroke-width="0.95" stroke-opacity="0.96"/>
+        </g>
+  </g>
+  <text x="50" y="65.2" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="7" font-weight="500" letter-spacing="0.35" fill="#F4DCA9" fill-opacity="0.96">FIRST RUN</text>
+  
+  
+  <text x="50" y="74.2" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="3.7" font-weight="600" letter-spacing="0.9" fill="#F4DCA9" fill-opacity="0.76">STRIDEOS</text>
+  <path d="M43.6 79.8 L50 83.6 L56.4 79.8" fill="none" stroke="#E3BC7E" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.9"/>
+  <path d="M44.3 83.6 L50 86.89999999999999 L55.7 83.6" fill="none" stroke="#E3BC7E" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.9"/>
+</svg>
