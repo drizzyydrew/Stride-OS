@@ -21,7 +21,7 @@ import {
   updateOutdoorLiveActivity,
 } from '../../../src/lib/runLiveActivity';
 import { buildRouteGuidance } from '../../../src/lib/routing';
-import { formatTurnAnnouncement, guidanceAlertCue, guidanceDisplayText, INITIAL_GUIDANCE_ALERT_STATE, turnAnnouncementPhase, updateRouteGuidanceProgress, type GuidanceAlertState, type RouteGuidancePlan, type RouteGuidanceProgress } from '../../../src/lib/routeGuidance';
+import { formatTurnAnnouncement, guidanceAlertCue, guidanceDisplayText, INITIAL_GUIDANCE_ALERT_STATE, isSilentGuidanceInstruction, turnAnnouncementPhase, updateRouteGuidanceProgress, type GuidanceAlertState, type RouteGuidancePlan, type RouteGuidanceProgress } from '../../../src/lib/routeGuidance';
 import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
 import { evaluateRunWalkCue, intervalAtElapsed } from '../../../src/utils/activityTracking';
 import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
@@ -147,6 +147,7 @@ export default function StartOutdoorActivityScreen() {
       if (alert.cue) enqueueVoiceCue(alert.cue, 'navigation');
     } else if (
       turnText
+      && !isSilentGuidanceInstruction(progress.nextInstruction)
       && progress.distanceToNextStepMeters != null
       && progress.distanceToNextStepMeters <= 320
       && lastAnnouncedStep.current !== `${progress.nextStepIndex}:${turnAnnouncementPhase(progress.distanceToNextStepMeters)}`
@@ -232,7 +233,7 @@ export default function StartOutdoorActivityScreen() {
     // (offline starts were recording nothing until that request timed out).
     await startActivityLocationTracking();
     if (attached && mode !== 'off') {
-      const plan = await buildRouteGuidance(attached.points, mode).catch(() => null);
+      const plan = await buildRouteGuidance(attached.points, mode, attached.maneuvers).catch(() => null);
       setGuidance(plan);
     } else {
       setGuidance(null);

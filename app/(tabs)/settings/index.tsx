@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import HealthRestoreCard from '../../../src/components/activity/HealthRestoreCard';
 import {
   Alert,
   Image,
@@ -1071,6 +1072,15 @@ export default function SettingsScreen() {
             thumbColor={C.card}
           />
         </View>
+      </View>
+
+      {/* Data & backup */}
+      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Text style={[styles.sectionLabel, { color: C.textDim }]}>DATA & BACKUP</Text>
+        <Text style={[styles.settingCaption, { color: C.textMuted }]}>
+          While signed in, your training history is backed up to your StrideOS account. Apple Health workouts (with routes) can rebuild your Activity log at any time.
+        </Text>
+        <HealthRestoreCard compact />
       </View>
 
       {/* Apple Watch */}

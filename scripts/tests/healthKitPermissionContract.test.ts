@@ -28,5 +28,9 @@ test('HealthKit does not request unsupported write categories', () => {
   assert.doesNotMatch(block, /HKQuantityTypeIdentifierActiveEnergyBurned/);
   assert.doesNotMatch(block, /HKQuantityTypeIdentifierHeartRate/);
   assert.doesNotMatch(block, /HKQuantityTypeIdentifierStepCount/);
-  assert.doesNotMatch(block, /HKWorkoutRouteTypeIdentifier/);
+});
+
+test('HealthKit route write is requested because StrideOS saves GPS routes with workouts', () => {
+  assert.match(shareTypesBlock(), /HKWorkoutRouteTypeIdentifier/);
+  assert.match(healthKitSource, /saved\.saveWorkoutRoute\(/);
 });

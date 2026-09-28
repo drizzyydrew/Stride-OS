@@ -8,8 +8,8 @@
 import { Platform } from 'react-native';
 import type { CompletedWorkoutRecord } from '../types/training';
 import type { StrengthLogRecord } from '../types/strength';
-import type { ActivityType } from '../types/activity';
-import type { HealthKitWorkoutCandidate } from '../utils/healthKitImport';
+import type { Activity, ActivityCoordinate, ActivityType } from '../types/activity';
+import { downsampleCoordinates, type HealthKitWorkoutCandidate } from '../utils/healthKitImport';
 
 type HealthKitModule = {
   default?: HealthKitModule;
@@ -67,6 +67,15 @@ type HealthKitModule = {
     mindAndBody?: number;
     functionalStrengthTraining?: number;
     traditionalStrengthTraining?: number;
+    flexibility?: number;
+    elliptical?: number;
+    rowing?: number;
+    stairClimbing?: number;
+    downhillSkiing?: number;
+    crossCountrySkiing?: number;
+    snowboarding?: number;
+    mixedCardio?: number;
+    other?: number;
   };
 };
 
@@ -111,6 +120,9 @@ const READ_TYPES = [
 const SHARE_TYPES = [
   'HKQuantityTypeIdentifierDistanceWalkingRunning',
   'HKQuantityTypeIdentifierDistanceCycling',
+  // Routes: lets StrideOS save GPS routes with workouts. HealthKit shares this
+  // grant with the Apple Watch app, which records routes when the phone can't.
+  'HKWorkoutRouteTypeIdentifier',
   WORKOUT_TYPE,
 ] as const;
 
@@ -201,25 +213,64 @@ export async function getLatestHeartRateBpm(maxAgeMinutes = 10): Promise<number 
 }
 
 export async function getRecentHealthKitWorkoutCandidates(days = 30): Promise<HealthKitWorkoutCandidate[]> {
+  return getHealthKitWorkoutHistory({ days, limit: 100 });
+}
+
+/**
+ * Apple Health workout history for restoring the Activity log: every workout
+ * in range (from StrideOS, the StrideOS watch app, Apple Workout, …), with
+ * GPS routes when requested.
+ */
+export async function getHealthKitWorkoutHistory(options: {
+  days: number;
+  limit: number;
+  includeRoutes?: boolean;
+  onProgress?: (processed: number, total: number) => void;
+}): Promise<HealthKitWorkoutCandidate[]> {
   if (!Health?.queryWorkoutSamples) return [];
   const available = await isAppleHealthAvailable();
   if (!available) return [];
 
   const endDate = new Date();
-  const startDate = new Date(endDate.getTime() - Math.max(1, days) * 24 * 60 * 60 * 1000);
+  const startDate = new Date(endDate.getTime() - Math.max(1, options.days) * 24 * 60 * 60 * 1000);
   const samples = await Health.queryWorkoutSamples({
-    limit: 100,
+    limit: options.limit,
     ascending: false,
     filter: { date: { startDate, endDate } },
   }).catch(() => []);
 
   const candidates: HealthKitWorkoutCandidate[] = [];
-  for (const proxy of samples) {
+  for (let index = 0; index < samples.length; index += 1) {
+    const proxy = samples[index]!;
     const raw = typeof proxy.toJSON === 'function' ? proxy.toJSON() : proxy;
-    const candidate = await candidateFromWorkoutProxy(raw, proxy).catch(() => null);
+    const candidate = await candidateFromWorkoutProxy(raw, proxy, Boolean(options.includeRoutes)).catch(() => null);
     if (candidate) candidates.push(candidate);
+    options.onProgress?.(index + 1, samples.length);
   }
   return candidates;
+}
+
+function routeCoordinatesFrom(routes: readonly unknown[]): ActivityCoordinate[] {
+  const points: ActivityCoordinate[] = [];
+  for (const route of routes) {
+    const locations = (route as { locations?: readonly Record<string, unknown>[] })?.locations ?? [];
+    for (const location of locations) {
+      const latitude = Number(location.latitude);
+      const longitude = Number(location.longitude);
+      const timestamp = dateMs(location.date as string | Date | undefined);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !Number.isFinite(timestamp)) continue;
+      const altitude = Number(location.altitude);
+      const accuracy = Number(location.horizontalAccuracy);
+      points.push({
+        latitude,
+        longitude,
+        timestamp,
+        altitudeMeters: Number.isFinite(altitude) ? altitude : undefined,
+        horizontalAccuracyMeters: Number.isFinite(accuracy) ? accuracy : undefined,
+      });
+    }
+  }
+  return downsampleCoordinates(points.sort((a, b) => a.timestamp - b.timestamp));
 }
 
 export async function writeWorkout(workout: CompletedWorkoutRecord): Promise<void> {
@@ -248,6 +299,67 @@ export async function writeWorkout(workout: CompletedWorkoutRecord): Promise<voi
   });
 }
 
+/**
+ * Saves a completed StrideOS activity to Apple Health, with its GPS route when
+ * one was recorded. Apple Health then holds a second copy of the athlete's
+ * history (the Activity-log restore reads it back).
+ */
+export async function writeActivityToHealth(activity: Activity): Promise<boolean> {
+  if (!Health?.saveWorkoutSample) return false;
+  const types = Health.WorkoutActivityType;
+  const map: Partial<Record<ActivityType, number | undefined>> = {
+    running: types?.running,
+    walking: types?.walking,
+    hiking: types?.hiking,
+    cycling: types?.cycling,
+    indoor_cycling: types?.cycling,
+    swimming: types?.swimming,
+    hiit: types?.highIntensityIntervalTraining,
+    strength: types?.traditionalStrengthTraining ?? types?.functionalStrengthTraining,
+    mobility: types?.flexibility ?? types?.mindAndBody,
+    elliptical: types?.elliptical,
+    rowing: types?.rowing,
+    stair_climbing: types?.stairClimbing,
+    downhill_skiing: types?.downhillSkiing,
+    cross_country_skiing: types?.crossCountrySkiing,
+    snowboarding: types?.snowboarding,
+    mixed_modal: types?.mixedCardio,
+  };
+  const activityType = map[activity.activityType] ?? types?.other;
+  if (typeof activityType !== 'number') return false;
+
+  const durationSeconds = activity.metrics.durationSeconds ?? 0;
+  const startDate = new Date(activity.startTime);
+  const endDate = new Date(activity.endTime ?? activity.startTime + durationSeconds * 1000);
+  if (!(endDate.getTime() > startDate.getTime())) return false;
+
+  const totals: { distance?: number; energyBurned?: number } = {};
+  const distance = activity.metrics.distanceMeters;
+  if (typeof distance === 'number' && Number.isFinite(distance) && distance > 0) totals.distance = distance;
+  const calories = activity.metrics.estimatedCalories;
+  if (typeof calories === 'number' && Number.isFinite(calories) && calories > 0) totals.energyBurned = calories;
+
+  const saved = await Health.saveWorkoutSample(activityType, [], startDate, endDate, totals, {
+    HKMetadataKeyWorkoutBrandName: 'StrideOS',
+    StrideOSActivityId: activity.id,
+  }) as { saveWorkoutRoute?: (locations: readonly unknown[]) => Promise<boolean> } | undefined;
+
+  const route = activity.metrics.routeCoordinates ?? [];
+  if (route.length >= 2 && typeof saved?.saveWorkoutRoute === 'function') {
+    await saved.saveWorkoutRoute(route.map(point => ({
+      latitude: point.latitude,
+      longitude: point.longitude,
+      altitude: point.altitudeMeters ?? 0,
+      date: new Date(point.timestamp),
+      horizontalAccuracy: point.horizontalAccuracyMeters ?? 10,
+      verticalAccuracy: 10,
+      course: -1,
+      speed: -1,
+    }))).catch(() => false);
+  }
+  return true;
+}
+
 export async function writeStrengthSession(session: StrengthLogRecord): Promise<void> {
   if (!Health) return;
 
@@ -265,7 +377,7 @@ export async function writeStrengthSession(session: StrengthLogRecord): Promise<
   });
 }
 
-async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthWorkoutProxy): Promise<HealthKitWorkoutCandidate | null> {
+async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthWorkoutProxy, includeRoutes = false): Promise<HealthKitWorkoutCandidate | null> {
   const startTime = dateMs(raw.startDate);
   const endTime = dateMs(raw.endDate);
   if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime <= startTime) return null;
@@ -294,9 +406,11 @@ async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthW
     averageHeartRateBpm: numberOrUndefined(heartRateStats?.averageQuantity),
     maximumHeartRateBpm: numberOrUndefined(heartRateStats?.maximumQuantity),
     routeAvailable: routes.length > 0,
+    routeCoordinates: includeRoutes && routes.length > 0 ? routeCoordinatesFrom(routes) : undefined,
     importedByStrideOS: raw.metadata?.HKMetadataKeyWorkoutBrandName === 'StrideOS'
       || typeof raw.metadata?.StrideOSWorkoutId === 'string'
-      || typeof raw.metadata?.StrideOSStrengthSessionId === 'string',
+      || typeof raw.metadata?.StrideOSStrengthSessionId === 'string'
+      || typeof raw.metadata?.StrideOSActivityId === 'string',
   };
 }
 

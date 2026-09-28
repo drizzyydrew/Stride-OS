@@ -16,11 +16,12 @@
 // (>8s), or returns no route, the leg falls back to a direct line and the
 // result is tagged so the UI can say so honestly. No fake snapping.
 
-import type { RoutePoint } from '../store/routeStore';
+import type { RouteManeuver, RoutePoint } from '../store/routeStore';
 import { milesBetween } from '../store/routeStore';
 import { getAppleRouteDirections } from 'stride-live-activity';
 import {
   createBreadcrumbGuidancePlan,
+  createNamedTurnGuidancePlan,
   createSavedRouteTurnGuidancePlan,
   createTurnByTurnGuidancePlan,
   type RouteGuidancePlan,
@@ -36,6 +37,7 @@ export type RoutedPath = {
   provider:       RoutingProvider;
   geometry:       RoutePoint[];  // full snapped polyline (or the waypoints themselves when direct)
   distanceMeters: number;
+  maneuvers?:     RouteManeuver[];
 };
 
 export type ElevationSummary = {
@@ -52,9 +54,16 @@ export type ElevationSummary = {
 export async function buildRouteGuidance(
   geometry: RoutePoint[],
   mode: RouteNavigationMode,
+  maneuvers?: RouteManeuver[],
 ): Promise<RouteGuidancePlan> {
   if (mode === 'off' || geometry.length < 2) {
     return createBreadcrumbGuidancePlan(geometry, mode);
+  }
+  // Street-named directions from the saved route: speak only when the street
+  // changes (no "turn" at every intersection while running straight).
+  if (maneuvers?.length) {
+    const named = createNamedTurnGuidancePlan(geometry, mode, maneuvers);
+    if (named) return named;
   }
 
   try {
@@ -146,14 +155,18 @@ async function requestProvider(
   const coords = waypoints
     .map(p => `${p.longitude.toFixed(6)},${p.latitude.toFixed(6)}`)
     .join(';');
-  const url = `${provider.base}/${coords}?overview=full&geometries=geojson&steps=false&continue_straight=false`;
+  const url = `${provider.base}/${coords}?overview=full&geometries=geojson&steps=true&continue_straight=false`;
 
   const response = await fetchWithTimeout(url);
   if (!response.ok) return null;
 
   const json = await response.json() as {
     code?: string;
-    routes?: { distance?: number; geometry?: { coordinates?: [number, number][] } }[];
+    routes?: {
+      distance?: number;
+      geometry?: { coordinates?: [number, number][] };
+      legs?: { steps?: { name?: string; maneuver?: { location?: [number, number]; type?: string; modifier?: string } }[] }[];
+    }[];
   };
   const route = json.routes?.[0];
   const coordinates = route?.geometry?.coordinates;
@@ -170,7 +183,22 @@ async function requestProvider(
   const startSnapDeviation = milesBetween(geometry[0], waypoints[0]) * 1609.344;
   if (startSnapDeviation > 1000 || (distanceMeters < 1 && directMeters > 100)) return null;
 
-  return { provider: provider.name, geometry, distanceMeters };
+  const maneuvers: RouteManeuver[] = [];
+  for (const leg of route?.legs ?? []) {
+    for (const step of leg.steps ?? []) {
+      const location = step.maneuver?.location;
+      if (!location || location.length < 2) continue;
+      maneuvers.push({
+        longitude: location[0],
+        latitude: location[1],
+        type: step.maneuver?.type ?? 'turn',
+        modifier: step.maneuver?.modifier,
+        name: (step.name ?? '').trim(),
+      });
+    }
+  }
+
+  return { provider: provider.name, geometry, distanceMeters, maneuvers: maneuvers.length ? maneuvers : undefined };
 }
 
 // Routes through ALL waypoints in order with one call so the line stays

@@ -26,6 +26,12 @@
     <string>StrideOS reads Apple Watch heart rate during workouts you start from StrideOS.</string>
     <key>NSHealthUpdateUsageDescription</key>
     <string>StrideOS starts workout sessions on Apple Watch so heart rate and workout metrics can be measured during StrideOS activities.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>StrideOS records your route on Apple Watch during outdoor workouts, so your run or hike is mapped even if your iPhone is off.</string>
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>location</string>
+    </array>
     <key>WKBackgroundModes</key>
     <array>
       <string>workout-processing</string>

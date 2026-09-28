@@ -178,9 +178,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       await supabaseState.client.auth.signOut();
     }
     set({ session: null, user: null });
-    useWorkoutStore.setState({ completedWorkouts: [], history: [] });
-    useStrengthStore.setState({ completedSessions: [], history: [] });
-    useCustomWorkoutStore.setState({ logs: [], overrides: [] });
-    useCheckInStore.setState({ todayCheckIn: null, postWorkoutNotes: [] });
+    // Local training history is intentionally kept on sign-out. Clearing it
+    // here (then "restoring" from an empty cloud on sign-in) destroyed data.
   },
 }));

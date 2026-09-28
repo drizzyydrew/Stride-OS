@@ -6,12 +6,15 @@ module.exports = (config) => ({
   bundleIdentifier: '.watch',
   deploymentTarget: '10.0',
   icon: '../../assets/images/icon.png',
-  frameworks: ['HealthKit', 'SwiftUI', 'WatchConnectivity'],
+  frameworks: ['HealthKit', 'SwiftUI', 'WatchConnectivity', 'CoreLocation'],
   entitlements: {
     'com.apple.developer.healthkit': true,
   },
   plist: {
     WKBackgroundModes: ['workout-processing'],
+    UIBackgroundModes: ['location'],
+    NSLocationWhenInUseUsageDescription:
+      'StrideOS records your route on Apple Watch during outdoor workouts, so your run or hike is mapped even if your iPhone is off.',
   },
   colors: {
     $accent: '#A8B094',

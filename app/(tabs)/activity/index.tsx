@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
+import HealthRestoreCard from '../../../src/components/activity/HealthRestoreCard';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useRecalculationStore } from '../../../src/store/recalculationStore';
 import { runRecalculation } from '../../../src/lib/recalculation';
@@ -167,6 +168,7 @@ export default function ActivityScreen() {
             <Text style={[s.actionText, { color: C.text }]}>View Today’s Plan</Text>
           </TouchableOpacity>
         </View>
+        {meaningful.length === 0 ? <HealthRestoreCard /> : null}
       </View>
     );
   }

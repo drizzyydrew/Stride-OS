@@ -1,4 +1,4 @@
-import type { Activity, ActivityDraft, ActivityType, TelemetrySource } from '../types/activity';
+import type { Activity, ActivityCoordinate, ActivityDraft, ActivityType, TelemetrySource } from '../types/activity';
 import type { ScheduledSession } from './scheduledSessions';
 import { toYMD } from './calendarEngine';
 
@@ -19,15 +19,48 @@ export type HealthKitWorkoutCandidate = {
   averageHeartRateBpm?: number;
   maximumHeartRateBpm?: number;
   routeAvailable?: boolean;
+  /** GPS route from Apple Health (downsampled), when requested and available. */
+  routeCoordinates?: ActivityCoordinate[];
   importedByStrideOS?: boolean;
 };
+
+/** Keeps at most `max` points, always including the first and last. */
+export function downsampleCoordinates(points: readonly ActivityCoordinate[], max = 2000): ActivityCoordinate[] {
+  if (points.length <= max) return [...points];
+  const step = (points.length - 1) / (max - 1);
+  const out: ActivityCoordinate[] = [];
+  for (let i = 0; i < max; i += 1) out.push(points[Math.round(i * step)]!);
+  return out;
+}
 
 export type ScheduleReconciliation =
   | { status: 'matched'; scheduledSessionId: string; confidence: 'high'; reason: string }
   | { status: 'ambiguous'; candidates: string[]; reason: string }
   | { status: 'none'; reason: string };
 
+const SAME_FAMILY: Partial<Record<ActivityType, string>> = {
+  running: 'foot', walking: 'foot', hiking: 'foot',
+  cycling: 'bike', indoor_cycling: 'bike',
+};
+
+function activityFamily(type: ActivityType): string {
+  return SAME_FAMILY[type] ?? type;
+}
+
+/** The same session recorded twice (e.g. phone GPS + watch HealthKit). */
+export function overlapsExistingActivity(candidate: HealthKitWorkoutCandidate, activities: readonly Activity[]): boolean {
+  return activities.some(activity => {
+    if (activityFamily(activity.activityType) !== activityFamily(candidate.activityType)) return false;
+    const start = activity.startTime;
+    const end = activity.endTime ?? activity.startTime + (activity.metrics.durationSeconds ?? 0) * 1000;
+    const overlap = Math.min(end, candidate.endTime) - Math.max(start, candidate.startTime);
+    const shorter = Math.min(end - start, candidate.endTime - candidate.startTime);
+    return shorter > 0 && overlap / shorter >= 0.5;
+  });
+}
+
 export function isDuplicateHealthKitWorkout(candidate: HealthKitWorkoutCandidate, activities: readonly Activity[]): boolean {
+  if (overlapsExistingActivity(candidate, activities)) return true;
   return activities.some(activity => {
     if (activity.healthKit?.workoutUuid === candidate.uuid
       && activity.healthKit.sourceBundleIdentifier === candidate.sourceBundleIdentifier) return true;
@@ -83,6 +116,7 @@ export function buildHealthKitActivityDraft(input: {
     endTime: candidate.endTime,
     indoor: candidate.activityType === 'indoor_cycling',
     metrics: {
+      routeCoordinates: candidate.routeCoordinates?.length ? candidate.routeCoordinates : undefined,
       durationSeconds: candidate.durationSeconds,
       activeTimeSeconds: candidate.durationSeconds,
       distanceMeters: candidate.distanceMeters,

@@ -145,3 +145,63 @@ export function segmentFeedbackCue(args: {
     ? `${base}, ${seconds} second${seconds === 1 ? '' : 's'} slower than target. Too slow.`
     : `${base}, ${seconds} second${seconds === 1 ? '' : 's'} faster than target. Too fast.`;
 }
+
+// ─── Paced cueing (Build 91) ─────────────────────────────────────────────────
+// Like the heart-rate zone cues: speak only after the athlete has been off
+// pace for a sustained stretch, never more than once per PACE_CUE_MIN_GAP,
+// and give an occasional "on pace" check-in so silence doesn't feel broken.
+export const PACE_OFF_SUSTAIN_SECONDS = 20;
+export const PACE_CUE_MIN_GAP_SECONDS = 120;
+export const PACE_ON_TARGET_CHECKIN_SECONDS = 300;
+
+export type PaceCueState = {
+  offPaceSince: number | null;
+  direction: 'faster' | 'slower' | null;
+  lastCueAt: number | null;
+};
+
+export const INITIAL_PACE_CUE_STATE: PaceCueState = { offPaceSince: null, direction: null, lastCueAt: null };
+
+export function nextPaceCue(
+  state: PaceCueState,
+  input: {
+    targetPaceSecPerMile: number | undefined;
+    currentPaceSecPerMile: number;
+    segmentElapsedSeconds: number;
+    elapsedSeconds: number;
+    imperial: boolean;
+  },
+): { cue: string | null; state: PaceCueState } {
+  const target = input.targetPaceSecPerMile;
+  const pace = input.currentPaceSecPerMile;
+  if (!target || target <= 0 || !Number.isFinite(pace) || pace <= 0 || pace > 30 * 60) {
+    return { cue: null, state: { ...state, offPaceSince: null, direction: null } };
+  }
+  if (input.segmentElapsedSeconds < PACE_CUE_GRACE_SECONDS) {
+    return { cue: null, state: { ...state, offPaceSince: null, direction: null } };
+  }
+  const now = input.elapsedSeconds;
+  const sinceLastCue = state.lastCueAt == null ? Number.POSITIVE_INFINITY : now - state.lastCueAt;
+  const delta = pace - target;
+  const tolerance = paceToleranceSecPerMile(target);
+  const targetText = spokenPace(target, input.imperial);
+
+  if (Math.abs(delta) <= tolerance) {
+    const next: PaceCueState = { ...state, offPaceSince: null, direction: null };
+    if (sinceLastCue >= PACE_ON_TARGET_CHECKIN_SECONDS) {
+      return { cue: `On pace. ${spokenPace(pace, input.imperial)}.`, state: { ...next, lastCueAt: now } };
+    }
+    return { cue: null, state: next };
+  }
+
+  const direction: 'faster' | 'slower' = delta > 0 ? 'faster' : 'slower';
+  const offPaceSince = state.direction === direction && state.offPaceSince != null ? state.offPaceSince : now;
+  const next: PaceCueState = { ...state, offPaceSince, direction };
+  if (now - offPaceSince < PACE_OFF_SUSTAIN_SECONDS || sinceLastCue < PACE_CUE_MIN_GAP_SECONDS) {
+    return { cue: null, state: next };
+  }
+  const text = direction === 'faster'
+    ? `Speed up. Target ${targetText}.`
+    : `Ease off. Target ${targetText}.`;
+  return { cue: text, state: { ...next, lastCueAt: now } };
+}

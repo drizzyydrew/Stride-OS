@@ -61,6 +61,10 @@ const WRONG_WAY_MIN_MOVE_METERS = 5;
 const TURN_WINDOW_METERS = 25;
 const TURN_CLUSTER_METERS = 30;
 const STEP_ADVANCE_TOLERANCE_METERS = 15;
+const GEOMETRY_TURN_MIN_DEGREES = 60;
+// A route's maneuvers belong to its original direction; if the first one
+// isn't at the start, the route is being run in reverse.
+const MANEUVER_START_MATCH_METERS = 75;
 // Along-route search window (keeps out-and-back routes from snapping to the
 // other leg of the course).
 const ALONG_SEARCH_BACK_METERS = 60;
@@ -301,9 +305,14 @@ export function formatTurnAnnouncement(instruction: string, distanceMeters: numb
 }
 
 export function turnAnnouncementPhase(distanceMeters: number): 'approach' | 'near' | 'now' {
+  // Two cues per turn at most: one heads-up on approach, one at the turn.
   if (distanceMeters <= 35) return 'now';
-  if (distanceMeters < 160.934) return 'near';
   return 'approach';
+}
+
+/** Instructions that are shown on screen but never spoken (not a turn). */
+export function isSilentGuidanceInstruction(instruction: string | null | undefined): boolean {
+  return !instruction || /^continue\b/i.test(instruction.trim()) || /^follow saved route/i.test(instruction.trim());
 }
 
 function distanceToPolylineMeters(point: GuidancePoint, geometry: GuidancePoint[]): number {
@@ -361,11 +370,12 @@ function signedTurnDegrees(inbound: number, outbound: number): number {
 
 function turnInstruction(turnDegrees: number): string | null {
   const magnitude = Math.abs(turnDegrees);
-  if (magnitude < 35) return null;
+  // Routes without street names: speak only clear turns. Gentle bends at
+  // intersections read as "turns" in the line's shape but are not.
+  if (magnitude < GEOMETRY_TURN_MIN_DEGREES) return null;
   const direction = turnDegrees > 0 ? 'right' : 'left';
   if (magnitude >= 135) return `Make a sharp ${direction}`;
-  if (magnitude >= 70) return `Turn ${direction}`;
-  return `Bear ${direction}`;
+  return `Turn ${direction}`;
 }
 
 /** Point on the geometry at a given distance from the start (linear interp). */
@@ -405,7 +415,7 @@ function generatedStepsFromGeometry(
     const after = pointAtAlong(geometry, cumulative, along + TURN_WINDOW_METERS);
     const current = geometry[index]!;
     const degrees = signedTurnDegrees(bearingDegrees(before, current), bearingDegrees(current, after));
-    if (Math.abs(degrees) >= 35) candidates.push({ index, along, degrees });
+    if (Math.abs(degrees) >= GEOMETRY_TURN_MIN_DEGREES) candidates.push({ index, along, degrees });
   }
 
   // 2. One turn per corner: within TURN_CLUSTER_METERS keep the strongest.
@@ -495,4 +505,95 @@ export function guidanceDisplayText(progress: RouteGuidanceProgress | null | und
     return formatTurnAnnouncement(progress.nextInstruction, progress.distanceToNextStepMeters);
   }
   return progress.nextInstruction;
+}
+
+
+// ─── Street-named directions ─────────────────────────────────────────────────
+// Spoken only when the street changes with a turn: "In 0.2 miles, turn right
+// onto Greenwood Avenue". Staying on the same street, or continuing straight
+// onto a new name, is silent so cues don't interrupt the run.
+
+export type NamedRouteManeuver = {
+  latitude: number;
+  longitude: number;
+  type: string;
+  modifier?: string;
+  name: string;
+};
+
+function namedTurnVerb(modifier: string | undefined, type: string): string | null {
+  if (type === 'arrive' || type === 'depart') return null;
+  switch (modifier) {
+    case 'left': return 'Turn left';
+    case 'right': return 'Turn right';
+    case 'slight left': return 'Bear left';
+    case 'slight right': return 'Bear right';
+    case 'sharp left': return 'Make a sharp left';
+    case 'sharp right': return 'Make a sharp right';
+    case 'uturn': return 'Make a U-turn';
+    default: return null; // straight / unknown: never a spoken turn
+  }
+}
+
+export function namedTurnSteps(maneuvers: readonly NamedRouteManeuver[]): { index: number; instruction: string }[] {
+  const out: { index: number; instruction: string }[] = [];
+  let currentName = (maneuvers[0]?.name ?? '').trim().toLowerCase();
+  for (let index = 1; index < maneuvers.length; index += 1) {
+    const maneuver = maneuvers[index]!;
+    const name = maneuver.name.trim();
+    const key = name.toLowerCase();
+    if (maneuver.type === 'arrive') break;
+    if (key === currentName) continue;
+    currentName = key;
+    const verb = namedTurnVerb(maneuver.modifier, maneuver.type);
+    if (!verb) continue;
+    out.push({ index, instruction: name ? `${verb} onto ${name}` : `${verb} onto the path` });
+  }
+  return out;
+}
+
+export function createNamedTurnGuidancePlan(
+  geometry: GuidancePoint[],
+  mode: RouteNavigationMode,
+  maneuvers: readonly NamedRouteManeuver[],
+): RouteGuidancePlan | null {
+  if (mode === 'off' || geometry.length < 2 || maneuvers.length < 2) return null;
+  if (metersBetweenGuidancePoints(maneuvers[0]!, geometry[0]!) > MANEUVER_START_MATCH_METERS) return null;
+
+  const cumulative = cumulativeDistances(geometry);
+  const total = cumulative[cumulative.length - 1] ?? 0;
+  const expectedSpeedMetersPerSecond = mode === 'cycling' ? 5.5 : 2.2;
+  const steps: RouteGuidanceStep[] = [];
+  let previousAlong = 0;
+  let segmentStart: GuidancePoint = geometry[0]!;
+
+  for (const turn of namedTurnSteps(maneuvers)) {
+    const maneuver = maneuvers[turn.index]!;
+    const point = { latitude: maneuver.latitude, longitude: maneuver.longitude };
+    const along = projectAlongRoute(point, geometry, previousAlong) ?? previousAlong;
+    const distanceMeters = Math.max(0, Math.round(along - previousAlong));
+    steps.push({
+      id: `named-turn-${steps.length + 1}`,
+      instruction: turn.instruction,
+      distanceMeters,
+      expectedTravelTimeSeconds: Math.round(distanceMeters / expectedSpeedMetersPerSecond),
+      start: segmentStart,
+      end: point,
+      endAlongMeters: along,
+    });
+    previousAlong = along;
+    segmentStart = point;
+  }
+
+  const finalDistance = Math.max(0, Math.round(total - previousAlong));
+  steps.push({
+    id: 'named-route-finish',
+    instruction: steps.length ? 'Continue to finish' : 'Continue straight to finish',
+    distanceMeters: finalDistance,
+    expectedTravelTimeSeconds: Math.round(finalDistance / expectedSpeedMetersPerSecond),
+    start: segmentStart,
+    end: geometry[geometry.length - 1]!,
+    endAlongMeters: total,
+  });
+  return createTurnByTurnGuidancePlan({ mode, geometry, steps, provider: 'saved_route', supportsRerouting: false });
 }

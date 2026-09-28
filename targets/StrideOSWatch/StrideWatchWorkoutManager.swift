@@ -1,4 +1,5 @@
 import Combine
+import CoreLocation
 import Foundation
 import HealthKit
 import WatchConnectivity
@@ -141,6 +142,12 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private var discardWhenRunning = false
   private var provisionalTimeout: DispatchWorkItem?
   private let provisionalLaunchWindowSeconds: TimeInterval = 60
+  // Watch GPS route (Build 91): recorded into Health for outdoor distance
+  // workouts so the route survives even if the iPhone dies. Only active when
+  // permission already exists — never prompts inside a start.
+  private var locationManager: CLLocationManager?
+  private var routeBuilder: HKWorkoutRouteBuilder?
+  private var routePermissionsRequested = false
   private var lastCommandReceivedAt: Date?
   private var queuedOutboundPayloads: [[String: Any]] = []
   private var pendingConnectivityActivationWorkItem: DispatchWorkItem?
@@ -285,6 +292,78 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   func prepareForPhoneControl() {
     guard WCSession.isSupported() else { return }
     scheduleConnectivityActivation(reportErrors: false, delay: 1.5)
+    requestRoutePermissionsWhenIdle()
+  }
+
+  /// Asks once, while the watch app is open and idle, for location access.
+  /// Never called from a start. The Health route permission is NOT requested
+  /// here: HealthKit serializes permission sheets, so a watch-side request
+  /// could stall a phone start. It is granted on the iPhone (shared with the
+  /// watch app); without it the watch simply records no route.
+  private func requestRoutePermissionsWhenIdle() {
+    onMain {
+      guard !self.routePermissionsRequested, !self.isActive, !self.isStartingWorkout else { return }
+      DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+        guard !self.routePermissionsRequested, !self.isActive, !self.isStartingWorkout else { return }
+        self.routePermissionsRequested = true
+        let manager = CLLocationManager()
+        if manager.authorizationStatus == .notDetermined {
+          self.locationManager = manager
+          manager.requestWhenInUseAuthorization()
+        }
+      }
+    }
+  }
+
+  /// allowsBackgroundLocationUpdates raises an exception unless the bundle
+  /// declares the location background mode, so only enable it when present.
+  private static let bundleAllowsBackgroundLocation: Bool = {
+    let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] ?? []
+    return modes.contains("location")
+  }()
+
+  private var canRecordRoute: Bool {
+    let status = (locationManager ?? CLLocationManager()).authorizationStatus
+    let locationOK = status == .authorizedWhenInUse || status == .authorizedAlways
+    return locationOK && healthStore.authorizationStatus(for: HKSeriesType.workoutRoute()) == .sharingAuthorized
+  }
+
+  private func startRouteRecordingIfPossible(kind: StrideWatchWorkoutKind, environment: String?) {
+    guard kind.tracksDistance, environment != "indoor", canRecordRoute else { return }
+    let manager = locationManager ?? CLLocationManager()
+    manager.delegate = self
+    manager.desiredAccuracy = kCLLocationAccuracyBest
+    manager.activityType = kind == .cycling ? .otherNavigation : .fitness
+    manager.distanceFilter = kCLDistanceFilterNone
+    if Self.bundleAllowsBackgroundLocation {
+      manager.allowsBackgroundLocationUpdates = true
+    }
+    locationManager = manager
+    routeBuilder = HKWorkoutRouteBuilder(healthStore: healthStore, device: nil)
+    manager.startUpdatingLocation()
+  }
+
+  private func stopRouteRecording() {
+    locationManager?.stopUpdatingLocation()
+    locationManager?.delegate = nil
+  }
+
+  /// Stops GPS and drops any unfinished route (failed or replaced session).
+  private func abandonRoute() {
+    stopRouteRecording()
+    finishRoute(for: nil)
+  }
+
+  /// Attaches the recorded route to the saved workout (or drops it).
+  private func finishRoute(for workout: HKWorkout?) {
+    let routeBuilder = self.routeBuilder
+    self.routeBuilder = nil
+    guard let routeBuilder else { return }
+    if let workout {
+      routeBuilder.finishRoute(with: workout, metadata: nil) { _, _ in }
+    } else {
+      routeBuilder.discard()
+    }
   }
 
   /// The iPhone launched this app to start a workout (HKHealthStore
@@ -498,10 +577,12 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     clearStartWatchdog()
     isStartingWorkout = false
     healthKitLabel = label
+    abandonRoute()
     publishError(message)
   }
 
   private func beginWorkout(kind: StrideWatchWorkoutKind, environment: String?) {
+    abandonRoute()
     if let existing = session {
       if existing.state == .running || existing.state == .paused || existing.state == .prepared {
         existing.end()
@@ -554,6 +635,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       }
       StrideWatchStartTrail.mark("13 timer")
       startTimer()
+      startRouteRecordingIfPossible(kind: kind, environment: environment)
       // isStartingWorkout stays true and "running" is published only when the
       // HealthKit delegate reports .running, so the phone never sees a running
       // workout that HealthKit has not actually started.
@@ -601,9 +683,23 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   private func finishBuilderIfNeeded() {
-    guard let builder else { return }
+    // Take this workout's route now, so a quick restart can't hand the next
+    // workout's route builder to this workout's completion.
+    let routeBuilder = self.routeBuilder
+    self.routeBuilder = nil
+    guard let builder else {
+      routeBuilder?.discard()
+      return
+    }
     builder.endCollection(withEnd: Date()) { [weak self] _, _ in
-      builder.finishWorkout { _, error in
+      builder.finishWorkout { workout, error in
+        if let routeBuilder {
+          if let workout {
+            routeBuilder.finishRoute(with: workout, metadata: nil) { _, _ in }
+          } else {
+            routeBuilder.discard()
+          }
+        }
         if let error {
           self?.publishError(error.localizedDescription)
         }
@@ -774,6 +870,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
         }
       }
     } else {
+      // Unreachable phone: queue only what still matters when it arrives
+      // late. Heart-rate samples are superseded every few seconds (the full
+      // workout, with HR, is saved to Apple Health), so they are not queued.
+      if (payload["type"] as? String) == "heartRate" { return }
       var queuedPayload = payload
       queuedPayload["queued"] = true
       session.transferUserInfo(queuedPayload)
@@ -844,8 +944,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       provisionalTimeout?.cancel()
       provisionalTimeout = nil
       discardSession = nil
+      stopRouteRecording()
       if discarding {
         builder?.discardWorkout()
+        finishRoute(for: nil)
       } else {
         finishBuilderIfNeeded()
       }
@@ -873,6 +975,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     clearStartWatchdog()
     isStartingWorkout = false
     healthKitLabel = "HK: error"
+    abandonRoute()
     publishError(error.localizedDescription)
   }
 
@@ -1198,4 +1301,18 @@ enum StrideWatchStartTrail {
       StrideWatchStartTrail.mark("EXC \(exception.name.rawValue) during [\(previous)]: \(reason)")
     }
   }
+}
+
+
+extension StrideWatchWorkoutManager: CLLocationManagerDelegate {
+  func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    // Accurate fixes only; the route is a map, not a distance source.
+    let usable = locations.filter { $0.horizontalAccuracy > 0 && $0.horizontalAccuracy <= 50 }
+    guard !usable.isEmpty else { return }
+    DispatchQueue.main.async {
+      self.routeBuilder?.insertRouteData(usable) { _, _ in }
+    }
+  }
+
+  func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
 }

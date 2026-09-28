@@ -307,6 +307,7 @@ export default function RouteBuilderScreen() {
       estimatedDurationMin: Math.max(1, estimatedMin),
       surfaceType: routeSurfaceType,
       routingProvider: routed?.provider ?? 'direct',
+      maneuvers: routed?.maneuvers,
       notes: routeNotes.trim() || undefined,
     });
     setShowSave(false);

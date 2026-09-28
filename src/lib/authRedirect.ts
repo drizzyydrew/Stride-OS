@@ -6,6 +6,7 @@ import { useCheckInStore } from '../store/checkInStore';
 import { useCustomWorkoutStore } from '../store/customWorkoutStore';
 import { useStrengthStore } from '../store/strengthStore';
 import { useWorkoutStore } from '../store/workoutStore';
+import { useActivityStore } from '../store/activityStore';
 
 export const AUTH_CALLBACK_PATH = 'auth/callback';
 
@@ -34,6 +35,7 @@ export async function hydrateUserData(): Promise<void> {
   useStrengthStore.getState().hydrateStrength(result.strengthLogs);
   useCustomWorkoutStore.getState().hydrateLogs(result.customLogs);
   useCheckInStore.getState().hydrateCheckIns(result.checkIns);
+  useActivityStore.getState().mergeRestoredActivities(result.activities);
 }
 
 export async function completeSupabaseAuthFromUrl(url: string): Promise<AuthCompletionResult> {

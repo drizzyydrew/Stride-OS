@@ -321,7 +321,7 @@ test('auto-launch: provisional branches are unreachable from a normal open-app s
   // flag that could outlive it and discard/silence a later real workout.
   assert.match(manager, /private weak var discardSession: HKWorkoutSession\?/);
   assert.doesNotMatch(manager, /discardOnEnd/);
-  assert.match(manager, /if discarding \{\s+builder\?\.discardWorkout\(\)\s+\} else \{\s+finishBuilderIfNeeded\(\)/);
+  assert.match(manager, /if discarding \{\s+builder\?\.discardWorkout\(\)\s+finishRoute\(for: nil\)\s+\} else \{\s+finishBuilderIfNeeded\(\)/);
   // Unadopted/discarded sessions never report state to the phone.
   assert.match(manager, /if isProvisionalLaunch \|\| isDiscardingCurrentSession \{ return \}/);
   assert.match(manager, /if !suppressEndedState \{\s+sendEndedStateOnce\(\)/);

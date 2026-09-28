@@ -11,7 +11,9 @@ import RoutePreviewMap from '../../../src/components/maps/RoutePreviewMap';
 import WatchStatusDiagnostics from '../../../src/components/watch/WatchStatusDiagnostics';
 import GpsSignalChip from '../../../src/components/activity/GpsSignalChip';
 import {
-  evaluateSegmentPaceCue,
+  INITIAL_PACE_CUE_STATE,
+  nextPaceCue,
+  type PaceCueState,
   segmentFeedbackCue,
   segmentStartCue,
   segmentTarget,
@@ -70,6 +72,7 @@ import {
   guidanceAlertCue,
   guidanceDisplayText,
   INITIAL_GUIDANCE_ALERT_STATE,
+  isSilentGuidanceInstruction,
   turnAnnouncementPhase,
   updateRouteGuidanceProgress,
   type GuidanceAlertState,
@@ -946,7 +949,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [goalPickerFor, setGoalPickerFor] = useState<null | 'time' | 'distance' | 'raceDist' | 'racePace'>(null);
   const segmentStartRef = useRef<{ index: number; time: number } | null>(null);
   const workoutSegmentStartRef = useRef<{ index: number; elapsed: number; miles: number } | null>(null);
-  const lastSegmentPaceCueRef = useRef<number | null>(null);
+  const paceCueStateRef = useRef<PaceCueState>(INITIAL_PACE_CUE_STATE);
   const maxRouteProgressRef = useRef(0);
   const routeNoticeRef = useRef<string | null>(null);
   const previousTurnGuidanceProgress = useRef<RouteGuidanceProgress | null>(null);
@@ -1088,7 +1091,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       setTurnGuidance(null);
       return undefined;
     }
-    buildRouteGuidance(selectedRoute.points, 'walking')
+    buildRouteGuidance(selectedRoute.points, 'walking', selectedRoute.maneuvers)
       .then(plan => {
         if (!cancelled) setTurnGuidance(plan);
       })
@@ -1193,6 +1196,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     runWalkCueRef.current = 0;
     coachMomentRef.current = 0;
     goalDoneRef.current = false;
+    paceCueStateRef.current = INITIAL_PACE_CUE_STATE;
 
     startRun(startWorkout, config);
     speakCue('Starting workout.', 'interval');
@@ -1602,6 +1606,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       return;
     }
     if (!progress.nextInstruction || progress.distanceToNextStepMeters === null) return;
+    if (isSilentGuidanceInstruction(progress.nextInstruction)) return;
     if (progress.distanceToNextStepMeters > 320) return;
     const text = formatTurnAnnouncement(progress.nextInstruction, progress.distanceToNextStepMeters);
     const key = `${progress.nextStepIndex}:${turnAnnouncementPhase(progress.distanceToNextStepMeters)}`;
@@ -1780,7 +1785,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
     const next = activeWorkoutSegments[nextIndex];
     workoutSegmentStartRef.current = { index: nextIndex, elapsed, miles: distanceMiles };
-    lastSegmentPaceCueRef.current = null;
+    // New segment: keep the 2-minute spacing, but reset the off-pace streak.
+    paceCueStateRef.current = { ...paceCueStateRef.current, offPaceSince: null, direction: null };
     advanceInterval();
     speakCue(segmentStartCue(next, nextIndex, imp), 'interval');
   }, [activeWorkoutSegments, advanceInterval, currentIntervalIndex, currentWorkoutSegment, distanceMiles, elapsed, environment, imp, isActive, isPaused, runMode]);
@@ -1790,17 +1796,15 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     if (!isActive || isPaused || runMode !== 'workout' || environment !== 'outdoor' || !currentWorkoutSegment) return;
     const start = workoutSegmentStartRef.current;
     if (!start || start.index !== currentIntervalIndex) return;
-    const lastCueAt = lastSegmentPaceCueRef.current;
-    const cue = evaluateSegmentPaceCue({
+    const result = nextPaceCue(paceCueStateRef.current, {
       targetPaceSecPerMile: currentWorkoutSegment.targetPaceSecPerMile,
       currentPaceSecPerMile,
       segmentElapsedSeconds: elapsed - start.elapsed,
-      secondsSinceLastPaceCue: lastCueAt == null ? null : elapsed - lastCueAt,
+      elapsedSeconds: elapsed,
       imperial: imp,
     });
-    if (!cue) return;
-    lastSegmentPaceCueRef.current = elapsed;
-    speakCue(cue.text, 'pace');
+    paceCueStateRef.current = result.state;
+    if (result.cue) speakCue(result.cue, 'pace');
   }, [currentIntervalIndex, currentPaceSecPerMile, currentWorkoutSegment, elapsed, environment, imp, isActive, isPaused, runMode]);
 
   useEffect(() => {

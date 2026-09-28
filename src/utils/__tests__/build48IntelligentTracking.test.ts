@@ -197,7 +197,12 @@ test('Build 48 HealthKit import dedupes by uuid/source and reconciles high-confi
   assert.equal(draft.healthKit?.routeStatus, 'available');
 
   assert.equal(isDuplicateHealthKitWorkout(candidate, [draft as Activity]), true);
-  assert.equal(isDuplicateHealthKitWorkout({ ...candidate, uuid: 'hk-2' }, [draft as Activity]), false);
+  // Same kind of workout over the same time is the same session (e.g. watch + phone).
+  assert.equal(isDuplicateHealthKitWorkout({ ...candidate, uuid: 'hk-2' }, [draft as Activity]), true);
+  const nextDay = 24 * 60 * 60 * 1000;
+  assert.equal(isDuplicateHealthKitWorkout({
+    ...candidate, uuid: 'hk-3', startTime: candidate.startTime + nextDay, endTime: candidate.endTime + nextDay,
+  }, [draft as Activity]), false);
 });
 
 test('Build 48 Stride Report formats Most climbing in selected units and has shoe share payload', () => {

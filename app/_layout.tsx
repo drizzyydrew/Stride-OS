@@ -26,6 +26,8 @@ import { FeatureTourProvider } from '../src/components/featureTour/FeatureTourPr
 import AchievementAwardReconciler from '../src/components/achievements/AchievementAwardReconciler';
 import AchievementUnlockModal from '../src/components/achievements/AchievementUnlockModal';
 import WatchWorkoutBridge from '../src/components/watch/WatchWorkoutBridge';
+import CloudBackupBridge from '../src/components/sync/CloudBackupBridge';
+import HealthActivityWriter from '../src/components/sync/HealthActivityWriter';
 import ActiveLocationTrackingReconciler from '../src/components/activity/ActiveLocationTrackingReconciler';
 import {
   clearTrainingNotifications,
@@ -191,6 +193,8 @@ export default function RootLayout() {
       <LiveActivityCommandReconciler />
       <ActiveLocationTrackingReconciler />
       <WatchWorkoutBridge />
+      <CloudBackupBridge />
+      <HealthActivityWriter />
       <AchievementAwardReconciler />
       <AchievementUnlockModal />
       <NavigationGate />

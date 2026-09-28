@@ -12,6 +12,17 @@ import {
   type RouteAttachmentState,
 } from '../utils/routeAttachment';
 
+export type RouteManeuver = {
+  latitude: number;
+  longitude: number;
+  /** OSRM maneuver type: depart, turn, new name, fork, end of road, continue, arrive, … */
+  type: string;
+  /** left, right, slight left, sharp right, straight, uturn, … */
+  modifier?: string;
+  /** Name of the street/path taken AFTER this maneuver ('' when unnamed). */
+  name: string;
+};
+
 export type RoutePoint = {
   latitude: number;
   longitude: number;
@@ -50,6 +61,9 @@ export type RunRoute = {
   estimatedDurationMin?: number;       // canonical; `estimatedMinutes` kept for legacy consumers
   surfaceType?:         RouteSurface;
   routingProvider?:     'osrm_foot' | 'osrm_road' | 'direct';
+  // Street-level maneuvers from the router (turns with street names) so
+  // navigation can speak only when the street changes.
+  maneuvers?:           RouteManeuver[];
   offlineMap?: {
     provider: 'mapbox';
     status: 'not_downloaded' | 'downloading' | 'ready' | 'failed';

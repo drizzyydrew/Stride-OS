@@ -30,6 +30,8 @@ type ActivityStore = {
   importLegacyStrength: (records: StrengthLogRecord[]) => void;
   importLegacyMobility: (records: MobilityCompletion[]) => void;
   setHydrationStatus: (status: ActivityStore['hydrationStatus']) => void;
+  /** Adds activities whose ids aren't already present (never overwrites or deletes). */
+  mergeRestoredActivities: (records: readonly Activity[]) => number;
 };
 
 function uid(now = Date.now()): string {
@@ -136,6 +138,21 @@ export const useActivityStore = create<ActivityStore>()(
       schemaVersion: ACTIVITY_STORE_SCHEMA_VERSION,
       activities: [],
       hydrationStatus: 'loading',
+
+      mergeRestoredActivities: (records) => {
+        let added = 0;
+        set(state => {
+          const existing = new Set(state.activities.map(item => item.id));
+          const incoming = records
+            .filter(record => record && typeof record.id === 'string' && !existing.has(record.id))
+            .map(record => normalizeActivity(record, record.updatedAt ?? Date.now()));
+          added = incoming.length;
+          if (added === 0) return state;
+          const merged = [...state.activities, ...incoming].sort((a, b) => b.startTime - a.startTime);
+          return { activities: remapLegacyScheduledSessionIds(merged) };
+        });
+        return added;
+      },
 
       addActivity: (input) => {
         const activity = normalizeActivity(input);
