@@ -45,8 +45,7 @@ for (const definition of STREAK_MILESTONE_DEFINITIONS) {
   const variants: Variant[] = [
     { state: 'unlocked', svgPath: definition.artworkPath, pngPath: definition.unlockedPngPath },
     { state: 'locked', svgPath: definition.lockedArtworkPath, pngPath: definition.lockedPngPath },
-    { state: 'share-transparent', svgPath: definition.shareAssetPaths.overlay, pngPath: definition.shareTransparentPngPath },
-    { state: 'share-opaque', svgPath: definition.shareAssetPaths.cleanDark, pngPath: definition.shareOpaquePngPath },
+    { state: 'transparent', svgPath: definition.shareTransparentSvgPath, pngPath: definition.shareTransparentPngPath },
   ];
 
   for (const variant of variants) {
@@ -73,8 +72,7 @@ writeAsset(
       heatToken: definition.heatToken,
       artworkPath: definition.artworkPath,
       lockedArtworkPath: definition.lockedArtworkPath,
-      shareOverlayPath: definition.shareAssetPaths.overlay,
-      shareOpaquePath: definition.shareAssetPaths.cleanDark,
+      shareTransparentPath: definition.shareTransparentSvgPath,
     })),
     null,
     2,

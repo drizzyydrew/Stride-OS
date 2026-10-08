@@ -99,7 +99,7 @@ test('Firsts registry contains exactly the approved 15 achievements with no stal
   assert.equal(firsts.some(item => /yoga|pilates/i.test(`${item.id} ${item.title}`)), false);
 });
 
-test('Firsts generated assets exist for all four canonical states', () => {
+test('Firsts generated assets exist for exactly the three canonical states', () => {
   for (const definition of FIRST_ACHIEVEMENT_DEFINITIONS) {
     for (const assetPath of [
       definition.artworkPath,
@@ -108,11 +108,11 @@ test('Firsts generated assets exist for all four canonical states', () => {
       definition.lockedPngPath,
       definition.shareTransparentSvgPath,
       definition.shareTransparentPngPath,
-      definition.shareOpaqueSvgPath,
-      definition.shareOpaquePngPath,
     ]) {
       assert.equal(existsSync(path.resolve(process.cwd(), assetPath)), true, `${definition.id} missing ${assetPath}`);
     }
+    assert.equal(existsSync(path.resolve(process.cwd(), `assets/achievements/firsts/firsts-${definition.slug}-opaque.svg`)), false);
+    assert.equal(existsSync(path.resolve(process.cwd(), `assets/achievements/firsts/firsts-${definition.slug}-opaque.png`)), false);
   }
 });
 
@@ -206,11 +206,12 @@ test('Firsts unit behavior keeps 5K and 10K fixed while race badges switch suppo
 test('Firsts renderer states preserve one canonical geometry and export semantics', () => {
   const unlocked = renderFirstAchievementBadgeSvg('first_run', 'unlocked');
   const locked = renderFirstAchievementBadgeSvg('first_run', 'locked').toLowerCase();
-  const transparent = renderFirstAchievementBadgeSvg('first_run', 'share-transparent');
+  const transparent = renderFirstAchievementBadgeSvg('first_run', 'transparent');
+  assert.equal(renderFirstAchievementBadgeSvg('first_run', 'share-opaque'), unlocked);
+  assert.equal(renderFirstAchievementBadgeSvg('first_run', 'share-transparent'), transparent);
   assert.equal(unlocked.includes('FIRST RUN'), true);
   assert.equal(unlocked.includes('STRIDEOS'), true);
   assert.equal(transparent.includes('fill="transparent" fill-opacity="0"'), true);
-  assert.equal(renderFirstAchievementBadgeSvg('first_run', 'share-opaque'), unlocked);
   for (const hex of Object.values(FIRSTS_COLORS).map(value => value.toLowerCase())) {
     assert.equal(locked.includes(hex), false, `locked Firsts renderer contains warm hue ${hex}`);
   }
@@ -226,11 +227,11 @@ test('Firsts glyph contracts distinguish the approved concepts', () => {
   const firstWalk = renderFirstAchievementBadgeSvg('first_walk', 'unlocked');
   const runWalk = renderFirstAchievementBadgeSvg('first_run_walk', 'unlocked');
   const movementLab = renderFirstAchievementBadgeSvg('first_movement_lab_analysis', 'unlocked');
-  assert.match(firstActivity, /Q36\.1 23\.5 42 34\.4/);
-  assert.match(firstRun, /H31\.7/);
-  assert.doesNotMatch(firstWalk, /H31\.7/);
+  assert.match(firstActivity, /C34\.2 27\.8 39\.7 27\.8 42\.1 34\.1/);
+  assert.match(firstRun, /H30\.6/);
+  assert.doesNotMatch(firstWalk, /H30\.6/);
   assert.match(runWalk, /stroke-dasharray="1\.1 2\.7"/);
-  assert.match(renderFirstAchievementBadgeSvg('first_strength_workout', 'unlocked'), /M25\.3 40\.5 H74\.7/);
+  assert.match(renderFirstAchievementBadgeSvg('first_strength_workout', 'unlocked'), /canonical-strength-dumbbell/);
   assert.match(movementLab, /H36\.6/);
   assert.match(movementLab, /L50 31 L57\.1 32\.6/);
   assert.doesNotMatch(movementLab, /stroke-dasharray/);

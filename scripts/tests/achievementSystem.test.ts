@@ -159,15 +159,15 @@ test('canonical run levels contain exactly seven progressive badge definitions a
     assert.equal(existsSync(path.resolve(process.cwd(), level.artworkPath)), true);
     assert.equal(existsSync(path.resolve(process.cwd(), level.lockedArtworkPath)), true);
     assert.equal(existsSync(path.resolve(process.cwd(), level.shareTransparentPngPath)), true);
-    assert.equal(existsSync(path.resolve(process.cwd(), level.shareOpaquePngPath)), true);
   }
 });
 
-test('canonical Lifetime Distance - Running ladder excludes marathon-style 26.2 badge', () => {
+test('canonical Lifetime Distance - Running ladder includes the approved 26.2mi marathon-distance tier as a distinct achievement from First Marathon', () => {
   assert.deepEqual(LIFETIME_DISTANCE_RUNNING_DEFINITIONS.map(item => item.thresholdMiles), [
     1,
     5,
     10,
+    26.2,
     50,
     100,
     250,
@@ -179,6 +179,7 @@ test('canonical Lifetime Distance - Running ladder excludes marathon-style 26.2 
     'lifetime_run_1_mi',
     'lifetime_run_5_mi',
     'lifetime_run_10_mi',
+    'lifetime_run_26_2_mi',
     'lifetime_run_50_mi',
     'lifetime_run_100_mi',
     'lifetime_run_250_mi',
@@ -190,8 +191,12 @@ test('canonical Lifetime Distance - Running ladder excludes marathon-style 26.2 
     assert.equal(existsSync(path.resolve(process.cwd(), definition.artworkPath)), true);
     assert.equal(existsSync(path.resolve(process.cwd(), definition.lockedArtworkPath)), true);
     assert.equal(existsSync(path.resolve(process.cwd(), definition.shareTransparentPngPath)), true);
-    assert.equal(existsSync(path.resolve(process.cwd(), definition.shareOpaquePngPath)), true);
   }
+  // lifetime_run_26_2_mi (cumulative lifetime distance) and first_marathon (a single marathon-distance run)
+  // are deliberately distinct IDs with different criteria — not a duplicate.
+  const ids = ACHIEVEMENT_SYSTEM_REGISTRY.map(item => item.id);
+  assert.equal(ids.filter(id => id === 'lifetime_run_26_2_mi').length, 1);
+  assert.equal(ids.filter(id => id === 'first_marathon').length, 1);
 });
 
 test('Lifetime Distance - Running badge numbers convert for metric display without duplicating achievements', () => {
@@ -296,7 +301,6 @@ test('canonical Lifetime Distance - Cycling ladder has nine original diamond bad
     assert.equal(existsSync(path.resolve(process.cwd(), definition.artworkPath)), true);
     assert.equal(existsSync(path.resolve(process.cwd(), definition.lockedArtworkPath)), true);
     assert.equal(existsSync(path.resolve(process.cwd(), definition.shareTransparentPngPath)), true);
-    assert.equal(existsSync(path.resolve(process.cwd(), definition.shareOpaquePngPath)), true);
   }
 });
 
@@ -402,22 +406,39 @@ test('run level progress follows the canonical unit toggle without changing badg
   assert.equal(engineImperial?.artworkKey, engineMetric?.artworkKey);
 });
 
-test('canonical Weekly Distance ladder has seven fixed-K original hex badge definitions', () => {
-  assert.deepEqual(WEEKLY_DISTANCE_DEFINITIONS.map(item => item.thresholdKm), [10, 15, 25, 50, 75, 100, 150]);
+test('run level, lifetime running, and lifetime cycling criteria text follows the real unit setting instead of a hardcoded imperial default', () => {
+  const activities = [run('run512', 0, 512)];
+  const imperial = evaluateAchievementSystem({ activities, units: 'imperial' });
+  const metric = evaluateAchievementSystem({ activities, units: 'metric' });
+  assert.match(imperial.find(item => item.id === 'run_level_engine')!.criteria, /750 mi/);
+  assert.match(metric.find(item => item.id === 'run_level_engine')!.criteria, /1,207 km/);
+  assert.match(imperial.find(item => item.id === 'lifetime_run_500_mi')!.criteria, /500 mi/);
+  assert.match(metric.find(item => item.id === 'lifetime_run_500_mi')!.criteria, /km/);
+  assert.match(imperial.find(item => item.id === 'lifetime_cycle_500_mi')!.criteria, /500 mi/);
+  assert.match(metric.find(item => item.id === 'lifetime_cycle_500_mi')!.criteria, /km/);
+  assert.equal(
+    imperial.find(item => item.id === 'run_level_foundation')!.criteria,
+    'Start the StrideOS run path.',
+    'the zero-threshold Foundation level criteria must stay unchanged',
+  );
+});
+
+test('canonical Weekly Distance ladder has eight fixed-K original hex badge definitions', () => {
+  assert.deepEqual(WEEKLY_DISTANCE_DEFINITIONS.map(item => item.thresholdKm), [5, 10, 15, 25, 30, 50, 75, 100]);
   assert.deepEqual(WEEKLY_DISTANCE_DEFINITIONS.map(item => item.id), [
+    'weekly_5k',
     'weekly_10k',
     'weekly_15k',
     'weekly_25k',
+    'weekly_30k',
     'weekly_50k',
     'weekly_75k',
     'weekly_100k',
-    'weekly_150k',
   ]);
   for (const definition of WEEKLY_DISTANCE_DEFINITIONS) {
     assert.equal(existsSync(path.resolve(process.cwd(), definition.artworkPath)), true);
     assert.equal(existsSync(path.resolve(process.cwd(), definition.lockedArtworkPath)), true);
     assert.equal(existsSync(path.resolve(process.cwd(), definition.shareTransparentPngPath)), true);
-    assert.equal(existsSync(path.resolve(process.cwd(), definition.shareOpaquePngPath)), true);
   }
 });
 
@@ -561,7 +582,6 @@ test('Monthly Distance ladder has seven fixed-K original hex badge definitions',
     assert.equal(existsSync(path.resolve(process.cwd(), definition.artworkPath)), true);
     assert.equal(existsSync(path.resolve(process.cwd(), definition.lockedArtworkPath)), true);
     assert.equal(existsSync(path.resolve(process.cwd(), definition.shareTransparentPngPath)), true);
-    assert.equal(existsSync(path.resolve(process.cwd(), definition.shareOpaquePngPath)), true);
   }
 });
 
@@ -674,7 +694,7 @@ test('HealthKit duplicate of StrideOS-tracked workout is not double counted', ()
   });
   const evaluated = evaluateAchievementSystem({ activities: [tracked, imported], units: 'imperial' });
   assert.equal(evaluated.find(item => item.id === 'lifetime_run_10_mi')?.state, 'earned');
-  assert.equal(evaluated.some(item => item.id === 'lifetime_run_26_2_mi'), false);
+  assert.equal(evaluated.find(item => item.id === 'lifetime_run_26_2_mi')?.state, 'locked');
 });
 
 test('strength counts and consistency use canonical completed strength activities', () => {

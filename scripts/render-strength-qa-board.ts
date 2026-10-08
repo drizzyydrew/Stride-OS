@@ -9,8 +9,7 @@ const OUT_DIR = '/tmp';
 const STATES: Array<{ label: string; state: StrengthAchievementBadgeState }> = [
   { label: 'UNLOCKED', state: 'unlocked' },
   { label: 'LOCKED', state: 'locked' },
-  { label: 'TRANSPARENT', state: 'share-transparent' },
-  { label: 'OPAQUE', state: 'share-opaque' },
+  { label: 'TRANSPARENT', state: 'transparent' },
 ];
 const SESSION_IDS = new Set([
   'first_strength_session',

@@ -127,11 +127,11 @@ export type StreakAchievementDefinition = {
   tier: number;
   artworkPath: string;
   lockedArtworkPath: string;
+  unlockedPngPath: string;
+  lockedPngPath: string;
   dominantHeatColor: string;
-  shareAssetPaths: {
-    cleanDark: string;
-    overlay: string;
-  };
+  shareTransparentSvgPath: string;
+  shareTransparentPngPath: string;
   sortOrder: number;
 };
 
@@ -1084,7 +1084,7 @@ export function calculateStreakAchievements(
   options: AchievementEvaluationOptions = {},
   existing: readonly AchievementAwardReference[] = [],
 ): StreakAchievementSummary {
-  const { now } = resolveEvaluationOptions(options);
+  const { now, scheduledSessions } = resolveEvaluationOptions(options);
   const existingDates = existingAwardDateMap(existing);
 
   const activitiesByDate = new Map<string, Activity[]>();
@@ -1093,6 +1093,30 @@ export function calculateStreakAchievements(
     if ((activity.metrics.durationSeconds ?? 0) < 5 * 60) continue;
     const key = localDateKey(activity.startTime);
     activitiesByDate.set(key, [...(activitiesByDate.get(key) ?? []), activity]);
+  }
+
+  const sessionsByDate = new Map<string, ScheduledSession[]>();
+  for (const scheduled of scheduledSessions) {
+    sessionsByDate.set(scheduled.date, [...(sessionsByDate.get(scheduled.date) ?? []), scheduled]);
+  }
+  // A calendar day only bridges a streak gap when it was EXPLICITLY scheduled as a rest/recovery
+  // day (or every scheduled session that day was actually completed) — never merely because
+  // nothing happened to be scheduled. An unscheduled gap day must still break the streak (that's
+  // the ordinary "missed a day" case); only a deliberate planned rest day is protected.
+  function dateBridgesStreak(dateKey: string): boolean {
+    const sessionsForDay = sessionsByDate.get(dateKey) ?? [];
+    if (sessionsForDay.length === 0) return false;
+    return sessionsForDay.every(session => !isRequiredStreakSession(session) || isSessionCompletedForStreak(session, activitiesByDate.get(dateKey) ?? []));
+  }
+  function gapBridgedByRestDays(previousDateKey: string, dateKey: string): boolean {
+    let cursor = addDateKey(previousDateKey, 1);
+    let guard = 0;
+    while (cursor < dateKey && guard < 400) {
+      if (!dateBridgesStreak(cursor)) return false;
+      cursor = addDateKey(cursor, 1);
+      guard += 1;
+    }
+    return true;
   }
 
   const dateKeys = [...activitiesByDate.keys()].sort();
@@ -1143,8 +1167,10 @@ export function calculateStreakAchievements(
     const hoursSincePreviousWorkout = previousWorkoutTime === null
       ? 0
       : wallClockGapMs(previousWorkoutTime, dayFirstWorkoutTime);
-    if (daysSincePrevious === 1 && hoursSincePreviousWorkout <= STREAK_CONTINUATION_WINDOW_MS) {
-      currentStreakDays += 1;
+    const gapBridged = daysSincePrevious > 1 && previousDateKey !== null && gapBridgedByRestDays(previousDateKey, dateKey);
+    const continuationWindowMs = gapBridged ? STREAK_CONTINUATION_WINDOW_MS * daysSincePrevious : STREAK_CONTINUATION_WINDOW_MS;
+    if ((daysSincePrevious === 1 || gapBridged) && hoursSincePreviousWorkout <= continuationWindowMs) {
+      currentStreakDays += gapBridged ? daysSincePrevious : 1;
     } else {
       currentStreakDays = 1;
       segmentSupportingActivityIds = [];
@@ -1518,6 +1544,72 @@ export function evaluateAchievementAwards(
         weeklyDistanceAwarded.add(definition.id);
         award(definition.id, value.activities);
       }
+    }
+  }
+
+  // Run Levels share the same cumulative lifetime-running distance as the Lifetime Running
+  // family (lifetimeRunningMeters/lifetimeRunningSupport accumulated above).
+  for (const level of RUN_LEVEL_DEFINITIONS) {
+    if (lifetimeRunningMeters >= level.thresholdMeters) {
+      award(level.id, lifetimeRunningSupport);
+    }
+  }
+
+  const monthlyMilestones = calculateMonthlyDistanceMilestones(activities);
+  const completedById = new Map(completed.map(activity => [activity.id, activity]));
+  for (const milestone of monthlyMilestones) {
+    const matches = milestone.activityIds
+      .map(id => completedById.get(id))
+      .filter((activity): activity is Activity => Boolean(activity));
+    award(milestone.id, matches);
+  }
+
+  const elevationAchievements = calculateCumulativeElevationAchievements(activities);
+  for (const item of elevationAchievements) {
+    if (!item.complete) continue;
+    const matches = item.supportingActivityIds
+      .map(id => completedById.get(id))
+      .filter((activity): activity is Activity => Boolean(activity));
+    award(item.id, matches);
+  }
+
+  // Challenges: mirror the seasonal/elevation-month criteria already implemented (but not
+  // persisted) in achievementSystem.ts's evaluateChallenge(). Unlike that function's live
+  // display check, persistence must not require the CURRENT calendar month to match the
+  // challenge's season — once historically crossed, it should stay earned.
+  const CHALLENGE_SEASON_MONTHS: Record<string, number[]> = {
+    challenge_august_base_builder: [7],
+    challenge_september_consistency: [8],
+    challenge_winter_strength_block: [11, 0, 1],
+    challenge_spring_mileage_build: [2, 3, 4],
+    challenge_summer_long_run: [5, 6, 7],
+  };
+  for (const [id, months] of Object.entries(CHALLENGE_SEASON_MONTHS)) {
+    const seasonActivities = completed.filter(activity => months.includes(new Date(activity.startTime).getMonth()));
+    if (seasonActivities.length >= 3) {
+      award(id, seasonActivities);
+    }
+  }
+  // Elevation Month has NO approved monthly elevation-gain threshold anywhere in the codebase,
+  // docs, or reference image (confirmed by repeated search). Per explicit product direction this
+  // stays PENDING — intentionally never awarded — rather than silently approved at a guessed
+  // number. Do not add a threshold/award call here without explicit confirmation.
+  const CHALLENGE_5K_MONTH_THRESHOLD_METERS = 5000;
+  const runningByMonth = new Map<string, { meters: number; activities: Activity[] }>();
+  for (const activity of completed) {
+    if (!isLifetimeRunningActivity(activity)) continue;
+    const distance = distanceMeters(activity);
+    if (distance <= 0) continue;
+    const key = monthKey(activity.startTime);
+    const current = runningByMonth.get(key) ?? { meters: 0, activities: [] };
+    current.meters += distance;
+    current.activities.push(activity);
+    runningByMonth.set(key, current);
+  }
+  for (const value of runningByMonth.values()) {
+    if (value.meters >= CHALLENGE_5K_MONTH_THRESHOLD_METERS) {
+      award('challenge_5k_month', value.activities);
+      break;
     }
   }
 

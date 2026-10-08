@@ -168,11 +168,11 @@ test('Strength assets exist for all four states with real transparent PNG alpha'
       definition.lockedPngPath,
       definition.shareTransparentSvgPath,
       definition.shareTransparentPngPath,
-      definition.shareOpaqueSvgPath,
-      definition.shareOpaquePngPath,
     ]) {
       assert.equal(existsSync(path.resolve(process.cwd(), assetPath)), true, `${assetPath} missing`);
     }
+    assert.equal(existsSync(path.resolve(process.cwd(), `assets/achievements/strength/strength-${definition.slug}-opaque.svg`)), false);
+    assert.equal(existsSync(path.resolve(process.cwd(), `assets/achievements/strength/strength-${definition.slug}-opaque.png`)), false);
     const transparent = PNG.sync.read(readFileSync(path.resolve(process.cwd(), definition.shareTransparentPngPath)));
     const cornerAlpha = transparent.data[3];
     const openInteriorPoints = [
@@ -195,8 +195,7 @@ test('Strength locked state contains no warm hue and opaque share matches unlock
       assert.equal(lockedSvg.includes(hex), false, `${definition.id} locked render contains ${hex}`);
     }
     assert.equal(
-      renderStrengthAchievementBadgeSvg(definition.id, 'share-opaque')
-        .replace(/strength-[^"]+-opaque-/g, match => match.replace('-opaque-', '-unlocked-')),
+      renderStrengthAchievementBadgeSvg(definition.id, 'share-opaque'),
       renderStrengthAchievementBadgeSvg(definition.id, 'unlocked'),
     );
   }

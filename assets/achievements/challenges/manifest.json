@@ -1,0 +1,134 @@
+[
+  {
+    "id": "challenge_august_base_builder",
+    "slug": "august-base-builder",
+    "title": "August Base Builder",
+    "glyph": "augustBaseBuilder",
+    "includeInGlobalRegistry": true,
+    "artworkPath": "assets/achievements/challenges/challenges-august-base-builder-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/challenges/challenges-august-base-builder-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-august-base-builder-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/challenges/challenges-august-base-builder-transparent.png"
+  },
+  {
+    "id": "challenge_september_consistency",
+    "slug": "september-consistency",
+    "title": "September Consistency Challenge",
+    "glyph": "septemberConsistency",
+    "includeInGlobalRegistry": true,
+    "artworkPath": "assets/achievements/challenges/challenges-september-consistency-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/challenges/challenges-september-consistency-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-september-consistency-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/challenges/challenges-september-consistency-transparent.png"
+  },
+  {
+    "id": "challenge_winter_strength_block",
+    "slug": "winter-strength-block",
+    "title": "Winter Strength Block",
+    "glyph": "winterStrengthBlock",
+    "includeInGlobalRegistry": true,
+    "artworkPath": "assets/achievements/challenges/challenges-winter-strength-block-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/challenges/challenges-winter-strength-block-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-winter-strength-block-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/challenges/challenges-winter-strength-block-transparent.png"
+  },
+  {
+    "id": "challenge_spring_mileage_build",
+    "slug": "spring-mileage-build",
+    "title": "Spring Mileage Build",
+    "glyph": "springMileageBuild",
+    "includeInGlobalRegistry": true,
+    "artworkPath": "assets/achievements/challenges/challenges-spring-mileage-build-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/challenges/challenges-spring-mileage-build-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-spring-mileage-build-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/challenges/challenges-spring-mileage-build-transparent.png"
+  },
+  {
+    "id": "challenge_summer_long_run",
+    "slug": "summer-long-run",
+    "title": "Summer Long Run Challenge",
+    "glyph": "summerLongRun",
+    "includeInGlobalRegistry": true,
+    "artworkPath": "assets/achievements/challenges/challenges-summer-long-run-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/challenges/challenges-summer-long-run-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-summer-long-run-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/challenges/challenges-summer-long-run-transparent.png"
+  },
+  {
+    "id": "challenge_elevation_month",
+    "slug": "elevation-month",
+    "title": "Elevation Month",
+    "glyph": "elevationMonth",
+    "includeInGlobalRegistry": true,
+    "artworkPath": "assets/achievements/challenges/challenges-elevation-month-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/challenges/challenges-elevation-month-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-elevation-month-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/challenges/challenges-elevation-month-transparent.png"
+  },
+  {
+    "id": "challenge_5k_month",
+    "slug": "5k-month",
+    "title": "5K Month",
+    "glyph": "numericBadge",
+    "includeInGlobalRegistry": true,
+    "artworkPath": "assets/achievements/challenges/challenges-5k-month-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/challenges/challenges-5k-month-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-5k-month-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/challenges/challenges-5k-month-transparent.png"
+  },
+  {
+    "id": "weekly_25k",
+    "slug": "25k-week",
+    "title": "25K Week",
+    "glyph": "numericBadge",
+    "includeInGlobalRegistry": false,
+    "artworkPath": "assets/achievements/challenges/challenges-25k-week-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/challenges/challenges-25k-week-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-25k-week-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/challenges/challenges-25k-week-transparent.png"
+  },
+  {
+    "id": "monthly_run_50k",
+    "slug": "50k-month",
+    "title": "50K Month",
+    "glyph": "numericBadge",
+    "includeInGlobalRegistry": false,
+    "artworkPath": "assets/achievements/challenges/challenges-50k-month-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/challenges/challenges-50k-month-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-50k-month-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/challenges/challenges-50k-month-transparent.png"
+  },
+  {
+    "id": "monthly_run_100k",
+    "slug": "100k-month",
+    "title": "100K Month",
+    "glyph": "numericBadge",
+    "includeInGlobalRegistry": false,
+    "artworkPath": "assets/achievements/challenges/challenges-100k-month-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/challenges/challenges-100k-month-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-100k-month-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/challenges/challenges-100k-month-transparent.png"
+  },
+  {
+    "id": "strength_run_week_completed",
+    "slug": "strength-run",
+    "title": "Strength + Run Challenge",
+    "glyph": "strengthRun",
+    "includeInGlobalRegistry": false,
+    "artworkPath": "assets/achievements/challenges/challenges-strength-run-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/challenges/challenges-strength-run-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-strength-run-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/challenges/challenges-strength-run-transparent.png"
+  },
+  {
+    "id": "recovery_check_in_streak",
+    "slug": "recovery-consistency",
+    "title": "Recovery Consistency Challenge",
+    "glyph": "recoveryConsistency",
+    "includeInGlobalRegistry": false,
+    "artworkPath": "assets/achievements/challenges/challenges-recovery-consistency-unlocked.svg",
+    "lockedArtworkPath": "assets/achievements/challenges/challenges-recovery-consistency-locked.svg",
+    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-recovery-consistency-transparent.svg",
+    "shareTransparentPngPath": "assets/achievements/challenges/challenges-recovery-consistency-transparent.png"
+  }
+]

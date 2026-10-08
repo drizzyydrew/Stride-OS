@@ -37,8 +37,18 @@ export type FirstAchievementGlyph =
 export type FirstAchievementBadgeState =
   | 'unlocked'
   | 'locked'
-  | 'share-transparent'
-  | 'share-opaque';
+  | 'transparent';
+
+export type FirstAchievementBadgeInputState =
+  | FirstAchievementBadgeState
+  | 'share-opaque'
+  | 'share-transparent';
+
+export function normalizeFirstAchievementBadgeState(state?: FirstAchievementBadgeInputState): FirstAchievementBadgeState {
+  if (state === 'locked') return 'locked';
+  if (state === 'transparent' || state === 'share-transparent') return 'transparent';
+  return 'unlocked';
+}
 
 export type FirstAchievementDefinition = {
   id: FirstAchievementId;
@@ -61,19 +71,17 @@ export type FirstAchievementDefinition = {
   lockedPngPath: string;
   shareTransparentSvgPath: string;
   shareTransparentPngPath: string;
-  shareOpaqueSvgPath: string;
-  shareOpaquePngPath: string;
 };
 
 const M_PER_MI = 1609.344;
 const M_PER_KM = 1000;
 
-function assetPath(slug: string, variant: 'unlocked' | 'locked' | 'transparent' | 'opaque', ext: 'svg' | 'png'): string {
+function assetPath(slug: string, variant: 'unlocked' | 'locked' | 'transparent', ext: 'svg' | 'png'): string {
   return `assets/achievements/firsts/firsts-${slug}-${variant}.${ext}`;
 }
 
 function makeDefinition(
-  input: Omit<FirstAchievementDefinition, 'artworkPath' | 'lockedArtworkPath' | 'unlockedPngPath' | 'lockedPngPath' | 'shareTransparentSvgPath' | 'shareTransparentPngPath' | 'shareOpaqueSvgPath' | 'shareOpaquePngPath'>,
+  input: Omit<FirstAchievementDefinition, 'artworkPath' | 'lockedArtworkPath' | 'unlockedPngPath' | 'lockedPngPath' | 'shareTransparentSvgPath' | 'shareTransparentPngPath'>,
 ): FirstAchievementDefinition {
   return {
     ...input,
@@ -83,8 +91,6 @@ function makeDefinition(
     lockedPngPath: assetPath(input.slug, 'locked', 'png'),
     shareTransparentSvgPath: assetPath(input.slug, 'transparent', 'svg'),
     shareTransparentPngPath: assetPath(input.slug, 'transparent', 'png'),
-    shareOpaqueSvgPath: assetPath(input.slug, 'opaque', 'svg'),
-    shareOpaquePngPath: assetPath(input.slug, 'opaque', 'png'),
   };
 }
 

@@ -17,8 +17,20 @@ export type { LifetimeDistanceRunningMilestone } from './lifetimeDistanceRunning
 export type LifetimeDistanceRunningBadgeState =
   | 'unlocked'
   | 'locked'
-  | 'share-transparent'
-  | 'share-opaque';
+  | 'transparent';
+
+export type LifetimeDistanceRunningBadgeInputState =
+  | LifetimeDistanceRunningBadgeState
+  | 'share-opaque'
+  | 'share-transparent';
+
+export function normalizeLifetimeDistanceRunningBadgeState(
+  state?: LifetimeDistanceRunningBadgeInputState,
+): LifetimeDistanceRunningBadgeState {
+  if (state === 'locked') return 'locked';
+  if (state === 'transparent' || state === 'share-transparent') return 'transparent';
+  return 'unlocked';
+}
 
 export type LifetimeDistanceRunningDefinition = {
   id: `lifetime_run_${string}_mi`;
@@ -35,8 +47,6 @@ export type LifetimeDistanceRunningDefinition = {
   lockedPngPath: string;
   shareTransparentSvgPath: string;
   shareTransparentPngPath: string;
-  shareOpaqueSvgPath: string;
-  shareOpaquePngPath: string;
 };
 
 function displayMiles(miles: number): string {
@@ -62,8 +72,6 @@ export const LIFETIME_DISTANCE_RUNNING_DEFINITIONS: LifetimeDistanceRunningDefin
       lockedPngPath: `assets/achievements/lifetime-distance-running/lifetime-run-${slug}-locked.png`,
       shareTransparentSvgPath: `assets/achievements/lifetime-distance-running/lifetime-run-${slug}-transparent.svg`,
       shareTransparentPngPath: `assets/achievements/lifetime-distance-running/lifetime-run-${slug}-transparent.png`,
-      shareOpaqueSvgPath: `assets/achievements/lifetime-distance-running/lifetime-run-${slug}-opaque.svg`,
-      shareOpaquePngPath: `assets/achievements/lifetime-distance-running/lifetime-run-${slug}-opaque.png`,
     };
   });
 

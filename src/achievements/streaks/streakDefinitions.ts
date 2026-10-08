@@ -7,8 +7,18 @@ import {
 export type StreakBadgeState =
   | 'unlocked'
   | 'locked'
-  | 'share-transparent'
-  | 'share-opaque';
+  | 'transparent';
+
+export type StreakBadgeInputState =
+  | StreakBadgeState
+  | 'share-opaque'
+  | 'share-transparent';
+
+export function normalizeStreakBadgeState(state?: StreakBadgeInputState): StreakBadgeState {
+  if (state === 'locked') return 'locked';
+  if (state === 'transparent' || state === 'share-transparent') return 'transparent';
+  return 'unlocked';
+}
 
 export type StreakHeatTier = {
   minDays: number;
@@ -37,12 +47,8 @@ export type StreakMilestoneDefinition = {
   unlockedPngPath: string;
   lockedPngPath: string;
   dominantHeatColor: string;
-  shareAssetPaths: {
-    cleanDark: string;
-    overlay: string;
-  };
+  shareTransparentSvgPath: string;
   shareTransparentPngPath: string;
-  shareOpaquePngPath: string;
   sortOrder: number;
 };
 
@@ -105,12 +111,8 @@ export const STREAK_MILESTONE_DEFINITIONS: StreakMilestoneDefinition[] = STREAK_
     unlockedPngPath: `assets/achievements/streaks/streak-${slug}-unlocked.png`,
     lockedPngPath: `assets/achievements/streaks/streak-${slug}-locked.png`,
     dominantHeatColor: colors.primary,
-    shareAssetPaths: {
-      cleanDark: `assets/achievements/streaks/streak-${slug}-opaque.svg`,
-      overlay: `assets/achievements/streaks/streak-${slug}-transparent.svg`,
-    },
+    shareTransparentSvgPath: `assets/achievements/streaks/streak-${slug}-transparent.svg`,
     shareTransparentPngPath: `assets/achievements/streaks/streak-${slug}-transparent.png`,
-    shareOpaquePngPath: `assets/achievements/streaks/streak-${slug}-opaque.png`,
     sortOrder: index + 1,
   };
 });

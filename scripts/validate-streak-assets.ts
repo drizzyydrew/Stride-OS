@@ -57,10 +57,6 @@ function validateSvg(assetPath: string): string {
   return svg;
 }
 
-function normalizeOpaqueSvg(svg: string): string {
-  return svg.replace(/streak-[^"]+-opaque-/g, match => match.replace('-opaque-', '-unlocked-'));
-}
-
 let checked = 0;
 const neutralLockedHexes = new Set([
   STREAK_LOCKED_GRAY.toLowerCase(),
@@ -83,10 +79,8 @@ for (const definition of STREAK_MILESTONE_DEFINITIONS) {
     definition.lockedArtworkPath,
     definition.unlockedPngPath,
     definition.lockedPngPath,
-    definition.shareAssetPaths.overlay,
+    definition.shareTransparentSvgPath,
     definition.shareTransparentPngPath,
-    definition.shareAssetPaths.cleanDark,
-    definition.shareOpaquePngPath,
   ];
 
   for (const assetPath of allPaths) {
@@ -98,19 +92,17 @@ for (const definition of STREAK_MILESTONE_DEFINITIONS) {
 
   const unlockedSvg = validateSvg(definition.artworkPath);
   const lockedSvg = validateSvg(definition.lockedArtworkPath).toLowerCase();
-  const transparentSvg = validateSvg(definition.shareAssetPaths.overlay);
-  const opaqueSvg = validateSvg(definition.shareAssetPaths.cleanDark);
-  assert(transparentSvg.includes('fill="transparent" fill-opacity="0"'), `${definition.shareAssetPaths.overlay} does not clear the hexagon interior`);
-  assert(normalizeOpaqueSvg(opaqueSvg) === unlockedSvg, `${definition.shareAssetPaths.cleanDark} does not match unlocked SVG artwork`);
+  const transparentSvg = validateSvg(definition.shareTransparentSvgPath);
+  assert(transparentSvg.includes('fill="transparent" fill-opacity="0"'), `${definition.shareTransparentSvgPath} does not clear the hexagon interior`);
   for (const hex of tierHexes) {
     assert(!lockedSvg.includes(hex), `${definition.lockedArtworkPath} contains tier hue ${hex}`);
   }
+  assert(!/streak-[^"]+-opaque/.test(unlockedSvg + lockedSvg + transparentSvg), `${definition.id} references obsolete opaque Streak assets`);
 
   for (const pngPath of [
     definition.unlockedPngPath,
     definition.lockedPngPath,
     definition.shareTransparentPngPath,
-    definition.shareOpaquePngPath,
   ]) {
     const png = readPng(pngPath);
     assert(png.width === EXPECTED_PNG_SIZE && png.height === EXPECTED_PNG_SIZE, `${pngPath} has inconsistent dimensions`);
@@ -129,8 +121,6 @@ const expectedNames = new Set([
     `streak-${definition.slug}-locked.png`,
     `streak-${definition.slug}-transparent.svg`,
     `streak-${definition.slug}-transparent.png`,
-    `streak-${definition.slug}-opaque.svg`,
-    `streak-${definition.slug}-opaque.png`,
   ]),
 ]);
 const actualNames = new Set(readdirSync(ASSET_DIR));

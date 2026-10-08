@@ -169,7 +169,7 @@ test('Recovery locked progress uses real progress only where applicable', () => 
   assert.equal(checkIns.remaining, 3);
 });
 
-test('Recovery assets exist for all four states with real transparent PNG alpha', () => {
+test('Recovery assets exist for all three states with real transparent PNG alpha', () => {
   for (const definition of RECOVERY_ACHIEVEMENT_DEFINITIONS) {
     for (const assetPath of [
       definition.artworkPath,
@@ -178,8 +178,6 @@ test('Recovery assets exist for all four states with real transparent PNG alpha'
       definition.lockedPngPath,
       definition.shareTransparentSvgPath,
       definition.shareTransparentPngPath,
-      definition.shareOpaqueSvgPath,
-      definition.shareOpaquePngPath,
     ]) {
       assert.equal(existsSync(path.resolve(process.cwd(), assetPath)), true, `${assetPath} missing`);
     }
@@ -196,16 +194,17 @@ test('Recovery assets exist for all four states with real transparent PNG alpha'
   }
 });
 
-test('Recovery renderer states preserve one geometry, remove hue when locked, and keep opaque parity', () => {
+test('Recovery renderer states preserve one geometry and remove hue when locked', () => {
   for (const definition of RECOVERY_ACHIEVEMENT_DEFINITIONS) {
     const unlocked = renderRecoveryAchievementBadgeSvg(definition.id, 'unlocked');
     const locked = renderRecoveryAchievementBadgeSvg(definition.id, 'locked').toLowerCase();
-    const transparent = renderRecoveryAchievementBadgeSvg(definition.id, 'share-transparent');
+    const transparent = renderRecoveryAchievementBadgeSvg(definition.id, 'transparent');
     for (const word of definition.titleLines.join(' ').split(' ')) {
       assert.equal(unlocked.includes(word), true);
     }
     assert.equal(transparent.includes('fill="transparent" fill-opacity="0"'), true);
     assert.equal(renderRecoveryAchievementBadgeSvg(definition.id, 'share-opaque'), unlocked);
+    assert.equal(renderRecoveryAchievementBadgeSvg(definition.id, 'share-transparent'), transparent);
     for (const hex of Object.values(RECOVERY_COLORS).map(value => value.toLowerCase())) {
       assert.equal(locked.includes(hex), false, `${definition.id} locked render contains recovery hue ${hex}`);
     }

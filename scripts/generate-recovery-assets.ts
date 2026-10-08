@@ -9,15 +9,14 @@ const PNG_SIZE = 1024;
 
 type Variant = {
   state: RecoveryAchievementBadgeState;
-  svgPathKey: 'artworkPath' | 'lockedArtworkPath' | 'shareTransparentSvgPath' | 'shareOpaqueSvgPath';
-  pngPathKey: 'unlockedPngPath' | 'lockedPngPath' | 'shareTransparentPngPath' | 'shareOpaquePngPath';
+  svgPathKey: 'artworkPath' | 'lockedArtworkPath' | 'shareTransparentSvgPath';
+  pngPathKey: 'unlockedPngPath' | 'lockedPngPath' | 'shareTransparentPngPath';
 };
 
 const VARIANTS: Variant[] = [
   { state: 'unlocked', svgPathKey: 'artworkPath', pngPathKey: 'unlockedPngPath' },
   { state: 'locked', svgPathKey: 'lockedArtworkPath', pngPathKey: 'lockedPngPath' },
-  { state: 'share-transparent', svgPathKey: 'shareTransparentSvgPath', pngPathKey: 'shareTransparentPngPath' },
-  { state: 'share-opaque', svgPathKey: 'shareOpaqueSvgPath', pngPathKey: 'shareOpaquePngPath' },
+  { state: 'transparent', svgPathKey: 'shareTransparentSvgPath', pngPathKey: 'shareTransparentPngPath' },
 ];
 
 function writeAsset(assetPath: string, contents: string): void {
@@ -69,8 +68,6 @@ const manifest = RECOVERY_ACHIEVEMENT_DEFINITIONS.map(definition => ({
   lockedArtworkPath: definition.lockedArtworkPath,
   shareTransparentSvgPath: definition.shareTransparentSvgPath,
   shareTransparentPngPath: definition.shareTransparentPngPath,
-  shareOpaqueSvgPath: definition.shareOpaqueSvgPath,
-  shareOpaquePngPath: definition.shareOpaquePngPath,
 }));
 writeAsset('assets/achievements/recovery/manifest.json', `${JSON.stringify(manifest, null, 2)}\n`);
 

@@ -2,6 +2,7 @@ export type LifetimeDistanceRunningTierTokenName =
   | 'lifetimeRunTier1'
   | 'lifetimeRunTier2'
   | 'lifetimeRunTier3'
+  | 'lifetimeRunTierMarathon'
   | 'lifetimeRunTier4'
   | 'lifetimeRunTier5'
   | 'lifetimeRunTier6'
@@ -24,6 +25,7 @@ export const LIFETIME_DISTANCE_RUNNING_TIER_COLORS: Record<LifetimeDistanceRunni
   lifetimeRunTier1: { primary: '#9DE67B', highlight: '#C5F6A3', shadow: '#4F7943', glow: '#7BCC5D' },
   lifetimeRunTier2: { primary: '#24D8D0', highlight: '#8EF7F1', shadow: '#087A7B', glow: '#14B6B3' },
   lifetimeRunTier3: { primary: '#33B7F0', highlight: '#91DBFF', shadow: '#0E5D8B', glow: '#168BC9' },
+  lifetimeRunTierMarathon: { primary: '#9B5DE5', highlight: '#D4B3FF', shadow: '#4A2B82', glow: '#8347C9' },
   lifetimeRunTier4: { primary: '#FF5E59', highlight: '#FFB0A9', shadow: '#9D241F', glow: '#E7463E' },
   lifetimeRunTier5: { primary: '#65CEF2', highlight: '#B5EEFF', shadow: '#287799', glow: '#3EADD4' },
   lifetimeRunTier6: { primary: '#766DFF', highlight: '#BAB5FF', shadow: '#34328C', glow: '#6156DD' },
@@ -36,6 +38,7 @@ export const LIFETIME_DISTANCE_RUNNING_TIER_NAMES: LifetimeDistanceRunningTierTo
   'lifetimeRunTier1',
   'lifetimeRunTier2',
   'lifetimeRunTier3',
+  'lifetimeRunTierMarathon',
   'lifetimeRunTier4',
   'lifetimeRunTier5',
   'lifetimeRunTier6',

@@ -4,7 +4,8 @@ import Svg, { Defs, Ellipse, LinearGradient, Path, RadialGradient, Stop, Text as
 import type { UnitSystem } from '../../store/settingsStore';
 import {
   WEEKLY_DISTANCE_BY_KM,
-  type WeeklyDistanceBadgeState,
+  normalizeWeeklyDistanceBadgeState,
+  type WeeklyDistanceBadgeInputState,
   type WeeklyDistanceMilestoneKm,
 } from './weeklyDistanceDefinitions';
 import {
@@ -23,7 +24,7 @@ import {
 
 type Props = {
   milestoneKm: WeeklyDistanceMilestoneKm;
-  state?: WeeklyDistanceBadgeState;
+  state?: WeeklyDistanceBadgeInputState;
   compact?: boolean;
   size?: number;
   remainingMeters?: number;
@@ -41,7 +42,7 @@ export default function WeeklyDistanceBadge({
   style,
 }: Props) {
   const definition = WEEKLY_DISTANCE_BY_KM[milestoneKm];
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
+  const visualState = normalizeWeeklyDistanceBadgeState(state);
   const tokens = weeklyDistanceBadgeTokens(definition, visualState);
   const number = formatWeeklyDistanceBadgeText(definition.thresholdKm);
   const numberSize = weeklyDistanceNumberFontSize(number, compact);
@@ -64,7 +65,7 @@ export default function WeeklyDistanceBadge({
           </LinearGradient>
           <RadialGradient id={glowId} cx="50" cy="39" r="38" gradientUnits="userSpaceOnUse">
             <Stop offset="0" stopColor={tokens.glow} stopOpacity={visualState === 'locked' ? 0.14 : 0.34} />
-            <Stop offset="0.62" stopColor={tokens.glow} stopOpacity={visualState === 'share-transparent' ? 0.04 : 0.12} />
+            <Stop offset="0.62" stopColor={tokens.glow} stopOpacity={visualState === 'transparent' ? 0.04 : 0.12} />
             <Stop offset="1" stopColor={tokens.glow} stopOpacity={0} />
           </RadialGradient>
         </Defs>

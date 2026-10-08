@@ -1,5 +1,7 @@
 import {
   STRENGTH_ACHIEVEMENT_BY_ID,
+  normalizeStrengthAchievementBadgeState,
+  type StrengthAchievementBadgeInputState,
   type StrengthAchievementBadgeState,
   type StrengthAchievementDefinition,
   type StrengthAchievementId,
@@ -11,7 +13,7 @@ import {
 } from './strengthTokens';
 import { strengthAchievementAccessibilityLabel } from './strengthUtils';
 
-export type { StrengthAchievementBadgeState } from './strengthDefinitions';
+export type { StrengthAchievementBadgeInputState, StrengthAchievementBadgeState } from './strengthDefinitions';
 
 export const STRENGTH_VIEWBOX = 100;
 export const STRENGTH_HEXAGON_PATH =
@@ -42,9 +44,8 @@ export type StrengthRenderTokens = {
 };
 
 export function strengthBadgeTokens(state: StrengthAchievementBadgeState): StrengthRenderTokens {
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
-  const locked = visualState === 'locked';
-  const transparent = visualState === 'share-transparent';
+  const locked = state === 'locked';
+  const transparent = state === 'transparent';
   const colors = locked ? STRENGTH_LOCKED_COLORS : STRENGTH_COLORS;
   return {
     ...colors,
@@ -168,17 +169,17 @@ export function strengthSessionDumbbellFragment(svg: string): string | null {
 
 export function renderStrengthAchievementBadgeSvg(
   achievement: StrengthAchievementId,
-  state: StrengthAchievementBadgeState = 'unlocked',
+  state: StrengthAchievementBadgeInputState = 'unlocked',
   options: { compact?: boolean; size?: number; remaining?: number } = {},
 ): string {
   const definition = STRENGTH_ACHIEVEMENT_BY_ID[achievement];
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
+  const resolvedState = normalizeStrengthAchievementBadgeState(state);
   const compact = options.compact ?? false;
   const size = options.size ?? STRENGTH_VIEWBOX;
-  const tokens = strengthBadgeTokens(visualState);
-  const edgeId = `strength-${definition.slug}-${visualState}-edge`;
-  const glowId = `strength-${definition.slug}-${visualState}-glow`;
-  const label = strengthAchievementAccessibilityLabel(definition, visualState === 'locked' ? 'locked' : 'earned', options.remaining);
+  const tokens = strengthBadgeTokens(resolvedState);
+  const edgeId = `strength-${definition.slug}-${resolvedState}-edge`;
+  const glowId = `strength-${definition.slug}-${resolvedState}-glow`;
+  const label = strengthAchievementAccessibilityLabel(definition, resolvedState === 'locked' ? 'locked' : 'earned', options.remaining);
   const wordmarkY = definition.titleLines.length > 1 || definition.glyph !== 'sessionDumbbell' ? 77.2 : 74.4;
   const chevOneY = definition.titleLines.length > 1 || definition.glyph !== 'sessionDumbbell' ? 82.7 : 81.7;
   const chevTwoY = definition.titleLines.length > 1 || definition.glyph !== 'sessionDumbbell' ? 87.8 : 86.8;
@@ -191,8 +192,8 @@ export function renderStrengthAchievementBadgeSvg(
       <stop offset="1" stop-color="${tokens.shadow}"/>
     </linearGradient>
     <radialGradient id="${glowId}" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 39) rotate(90) scale(34 33)">
-      <stop offset="0" stop-color="${tokens.glow}" stop-opacity="${visualState === 'locked' ? '0.1' : '0.28'}"/>
-      <stop offset="0.64" stop-color="${tokens.glow}" stop-opacity="${visualState === 'share-transparent' ? '0.03' : '0.09'}"/>
+      <stop offset="0" stop-color="${tokens.glow}" stop-opacity="${resolvedState === 'locked' ? '0.1' : '0.28'}"/>
+      <stop offset="0.64" stop-color="${tokens.glow}" stop-opacity="${resolvedState === 'transparent' ? '0.03' : '0.09'}"/>
       <stop offset="1" stop-color="${tokens.glow}" stop-opacity="0"/>
     </radialGradient>
   </defs>

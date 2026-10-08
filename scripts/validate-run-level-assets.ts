@@ -67,11 +67,11 @@ for (const level of RUN_LEVEL_DEFINITIONS) {
     level.artworkPath,
     level.lockedArtworkPath,
     level.shareTransparentSvgPath,
-    level.shareOpaqueSvgPath,
   ];
   const pngPaths = [
+    level.unlockedPngPath,
+    level.lockedPngPath,
     level.shareTransparentPngPath,
-    level.shareOpaquePngPath,
   ];
 
   for (const assetPath of [...svgPaths, ...pngPaths]) {
@@ -82,11 +82,17 @@ for (const level of RUN_LEVEL_DEFINITIONS) {
   }
 
   svgPaths.forEach(validateSvg);
+  svgPaths.forEach(svgPath => {
+    const svg = readFileSync(path.resolve(process.cwd(), svgPath), 'utf8');
+    assert(!/-opaque/.test(svg), `${svgPath} references obsolete opaque run-level assets`);
+  });
 
+  const unlocked = readPng(level.unlockedPngPath);
+  const locked = readPng(level.lockedPngPath);
   const transparent = readPng(level.shareTransparentPngPath);
-  const opaque = readPng(level.shareOpaquePngPath);
+  assert(unlocked.width === EXPECTED_PNG_SIZE && unlocked.height === EXPECTED_PNG_SIZE, `${level.unlockedPngPath} has inconsistent dimensions`);
+  assert(locked.width === EXPECTED_PNG_SIZE && locked.height === EXPECTED_PNG_SIZE, `${level.lockedPngPath} has inconsistent dimensions`);
   assert(transparent.width === EXPECTED_PNG_SIZE && transparent.height === EXPECTED_PNG_SIZE, `${level.shareTransparentPngPath} has inconsistent dimensions`);
-  assert(opaque.width === EXPECTED_PNG_SIZE && opaque.height === EXPECTED_PNG_SIZE, `${level.shareOpaquePngPath} has inconsistent dimensions`);
   assert(hasTransparentCorner(transparent), `${level.shareTransparentPngPath} does not have transparent background corners`);
   assert(hasAlphaVariation(transparent), `${level.shareTransparentPngPath} does not contain usable alpha transparency`);
   assertNoCheckerboard(transparent, level.shareTransparentPngPath);
@@ -95,11 +101,11 @@ for (const level of RUN_LEVEL_DEFINITIONS) {
 const expectedNames = new Set(
   RUN_LEVEL_DEFINITIONS.flatMap(level => [
     `run-level-${level.slug}-unlocked.svg`,
+    `run-level-${level.slug}-unlocked.png`,
     `run-level-${level.slug}-locked.svg`,
-    `run-level-${level.slug}-share-transparent.svg`,
-    `run-level-${level.slug}-share-transparent.png`,
-    `run-level-${level.slug}-share-opaque.svg`,
-    `run-level-${level.slug}-share-opaque.png`,
+    `run-level-${level.slug}-locked.png`,
+    `run-level-${level.slug}-transparent.svg`,
+    `run-level-${level.slug}-transparent.png`,
   ]),
 );
 const actualNames = new Set(readdirSync(ASSET_DIR));

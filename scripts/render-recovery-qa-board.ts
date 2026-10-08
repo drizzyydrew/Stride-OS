@@ -9,8 +9,7 @@ const OUT_DIR = '/tmp';
 const STATES: Array<{ label: string; state: RecoveryAchievementBadgeState }> = [
   { label: 'UNLOCKED', state: 'unlocked' },
   { label: 'LOCKED', state: 'locked' },
-  { label: 'TRANSPARENT', state: 'share-transparent' },
-  { label: 'OPAQUE', state: 'share-opaque' },
+  { label: 'TRANSPARENT', state: 'transparent' },
 ];
 
 function nest(svg: string, x: number, y: number, size: number): string {

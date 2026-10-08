@@ -31,10 +31,10 @@ export type RunLevelDefinition = {
   colors: RunLevelColorTokens;
   artworkPath: string;
   lockedArtworkPath: string;
+  unlockedPngPath: string;
+  lockedPngPath: string;
   shareTransparentSvgPath: string;
   shareTransparentPngPath: string;
-  shareOpaqueSvgPath: string;
-  shareOpaquePngPath: string;
 };
 
 const SLUGS: RunLevelSlug[] = [
@@ -69,10 +69,10 @@ export const RUN_LEVEL_DEFINITIONS: RunLevelDefinition[] = SLUGS.map((slug, inde
   colors: RUN_LEVEL_COLORS[slug],
   artworkPath: `assets/achievements/system/run-levels/run-level-${slug}-unlocked.svg`,
   lockedArtworkPath: `assets/achievements/system/run-levels/run-level-${slug}-locked.svg`,
-  shareTransparentSvgPath: `assets/achievements/system/run-levels/run-level-${slug}-share-transparent.svg`,
-  shareTransparentPngPath: `assets/achievements/system/run-levels/run-level-${slug}-share-transparent.png`,
-  shareOpaqueSvgPath: `assets/achievements/system/run-levels/run-level-${slug}-share-opaque.svg`,
-  shareOpaquePngPath: `assets/achievements/system/run-levels/run-level-${slug}-share-opaque.png`,
+  unlockedPngPath: `assets/achievements/system/run-levels/run-level-${slug}-unlocked.png`,
+  lockedPngPath: `assets/achievements/system/run-levels/run-level-${slug}-locked.png`,
+  shareTransparentSvgPath: `assets/achievements/system/run-levels/run-level-${slug}-transparent.svg`,
+  shareTransparentPngPath: `assets/achievements/system/run-levels/run-level-${slug}-transparent.png`,
 }));
 
 export const RUN_LEVEL_BY_SLUG = Object.fromEntries(

@@ -85,10 +85,6 @@ function validateSvg(assetPath: string): string {
   return svg;
 }
 
-function normalizeOpaqueSvg(svg: string): string {
-  return svg.replace(/strength-[^"]+-opaque-/g, match => match.replace('-opaque-', '-unlocked-'));
-}
-
 const strengthHexes = Object.values(STRENGTH_COLORS).map(value => value.toLowerCase());
 let checked = 0;
 let sessionDumbbellReference: string | null = null;
@@ -101,8 +97,6 @@ for (const definition of STRENGTH_ACHIEVEMENT_DEFINITIONS) {
     definition.lockedPngPath,
     definition.shareTransparentSvgPath,
     definition.shareTransparentPngPath,
-    definition.shareOpaqueSvgPath,
-    definition.shareOpaquePngPath,
   ];
 
   for (const assetPath of allPaths) {
@@ -115,9 +109,8 @@ for (const definition of STRENGTH_ACHIEVEMENT_DEFINITIONS) {
   const unlockedSvg = validateSvg(definition.artworkPath);
   const lockedSvg = validateSvg(definition.lockedArtworkPath);
   const transparentSvg = validateSvg(definition.shareTransparentSvgPath);
-  const opaqueSvg = validateSvg(definition.shareOpaqueSvgPath);
   assert(transparentSvg.includes('fill="transparent" fill-opacity="0"'), `${definition.shareTransparentSvgPath} does not clear the hexagon interior`);
-  assert(normalizeOpaqueSvg(opaqueSvg) === unlockedSvg, `${definition.shareOpaqueSvgPath} does not match unlocked SVG artwork`);
+  assert(!/strength-[^"]+-opaque/.test(unlockedSvg + lockedSvg + transparentSvg), `${definition.id} references obsolete opaque Strength assets`);
   for (const hex of strengthHexes) {
     assert(!lockedSvg.toLowerCase().includes(hex), `${definition.lockedArtworkPath} contains warm Strength hue ${hex}`);
   }
@@ -147,7 +140,6 @@ for (const definition of STRENGTH_ACHIEVEMENT_DEFINITIONS) {
     definition.unlockedPngPath,
     definition.lockedPngPath,
     definition.shareTransparentPngPath,
-    definition.shareOpaquePngPath,
   ]) {
     const png = readPng(pngPath);
     assert(png.width === EXPECTED_PNG_SIZE && png.height === EXPECTED_PNG_SIZE, `${pngPath} has inconsistent dimensions`);
@@ -168,8 +160,6 @@ const expectedNames = new Set([
     `strength-${definition.slug}-locked.png`,
     `strength-${definition.slug}-transparent.svg`,
     `strength-${definition.slug}-transparent.png`,
-    `strength-${definition.slug}-opaque.svg`,
-    `strength-${definition.slug}-opaque.png`,
   ]),
 ]);
 const actualNames = new Set(readdirSync(ASSET_DIR));

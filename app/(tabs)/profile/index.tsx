@@ -12,8 +12,18 @@ import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useActiveProfile } from '../../../src/store/profileStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
+import { useActivityStore } from '../../../src/store/activityStore';
+import { useAchievementStore } from '../../../src/store/achievementStore';
+import AchievementBadge from '../../../src/components/achievements/AchievementBadge';
+import RunLevelProgress from '../../../src/achievements/runLevels/RunLevelProgress';
 import { formatPace, formatRaceTime } from '../../../src/utils/calibrationEngine';
+import { formatDistance } from '../../../src/lib/units';
 import { displayLabel } from '../../../src/utils/displayLabels';
+import { buildAchievementHubModel } from '../../../src/utils/achievements';
+
+function metersToDisplay(meters: number, units: 'imperial' | 'metric'): string {
+  return formatDistance(meters / 1609.344, units);
+}
 
 function formatHeight(heightCm: number, imperial: boolean) {
   if (!heightCm) return '';
@@ -50,6 +60,11 @@ export default function ProfileScreen() {
   const profile = useActiveProfile();
   const weeklyMileage = useAthleteStore(s => s.weeklyMileage);
   const goalRace = useAthleteStore(s => s.goalRace);
+  const activities = useActivityStore(s => s.activities);
+  const awarded = useAchievementStore(s => s.awarded);
+  const hubModel = useMemo(() => buildAchievementHubModel(activities, awarded), [activities, awarded]);
+  const activeRunLevel = [...hubModel.strideLevels].reverse().find(item => item.complete) ?? hubModel.strideLevels[0];
+  const nextRunLevel = hubModel.strideLevels.find(item => !item.complete);
 
   const [ageInput, setAgeInput] = useState('');
   const [heightInput, setHeightInput] = useState('');
@@ -167,6 +182,28 @@ export default function ProfileScreen() {
 
       <TouchableOpacity
         style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}
+        onPress={() => router.push('/(tabs)/more/achievements' as any)}
+        activeOpacity={0.78}
+      >
+        <View style={styles.cardHeaderRow}>
+          <Text style={[styles.sectionLabel, { color: C.textDim }]}>RUN LEVEL</Text>
+          <Ionicons name="chevron-forward" size={18} color={C.primary} />
+        </View>
+        <View style={styles.runLevelRow}>
+          <AchievementBadge id={activeRunLevel?.id ?? 'run_level_foundation'} category="run_level" size="medium" unitSystem={units} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={[styles.profileName, { color: C.text }]}>{activeRunLevel?.title ?? 'Foundation'}</Text>
+            <Text style={[styles.body, { color: C.textMuted }]}>
+              {metersToDisplay(activeRunLevel?.cumulativeMeters ?? 0, units)} lifetime running
+              {nextRunLevel ? ` · next at ${metersToDisplay(nextRunLevel.thresholdMeters, units)}` : ' · highest level reached'}
+            </Text>
+            <RunLevelProgress currentMeters={activeRunLevel?.cumulativeMeters ?? 0} units={units} style={{ marginTop: 8 }} />
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}
         onPress={() => router.push('/(tabs)/profile/calibration' as any)}
         activeOpacity={0.78}
       >
@@ -264,6 +301,7 @@ const styles = StyleSheet.create({
   profileInput: { flex: 1, borderWidth: 1, borderRadius: 8, padding: 8, paddingHorizontal: 10, fontSize: 13 },
   unit: { fontSize: 12, width: 38 },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
+  runLevelRow: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   sectionLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
   metricsRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   metric: { flex: 1, minHeight: 58, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.12)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },

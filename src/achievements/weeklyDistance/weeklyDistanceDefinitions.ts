@@ -17,8 +17,18 @@ export type { WeeklyDistanceMilestoneKm } from './weeklyDistanceThresholds';
 export type WeeklyDistanceBadgeState =
   | 'unlocked'
   | 'locked'
-  | 'share-transparent'
-  | 'share-opaque';
+  | 'transparent';
+
+export type WeeklyDistanceBadgeInputState =
+  | WeeklyDistanceBadgeState
+  | 'share-opaque'
+  | 'share-transparent';
+
+export function normalizeWeeklyDistanceBadgeState(state?: WeeklyDistanceBadgeInputState): WeeklyDistanceBadgeState {
+  if (state === 'locked') return 'locked';
+  if (state === 'transparent' || state === 'share-transparent') return 'transparent';
+  return 'unlocked';
+}
 
 export type WeeklyDistanceDefinition = {
   id: `weekly_${number}k`;
@@ -35,8 +45,6 @@ export type WeeklyDistanceDefinition = {
   lockedPngPath: string;
   shareTransparentSvgPath: string;
   shareTransparentPngPath: string;
-  shareOpaqueSvgPath: string;
-  shareOpaquePngPath: string;
 };
 
 export const WEEKLY_DISTANCE_DEFINITIONS: WeeklyDistanceDefinition[] =
@@ -58,8 +66,6 @@ export const WEEKLY_DISTANCE_DEFINITIONS: WeeklyDistanceDefinition[] =
       lockedPngPath: `assets/achievements/weekly-distance/weekly-distance-${slug}-locked.png`,
       shareTransparentSvgPath: `assets/achievements/weekly-distance/weekly-distance-${slug}-transparent.svg`,
       shareTransparentPngPath: `assets/achievements/weekly-distance/weekly-distance-${slug}-transparent.png`,
-      shareOpaqueSvgPath: `assets/achievements/weekly-distance/weekly-distance-${slug}-opaque.svg`,
-      shareOpaquePngPath: `assets/achievements/weekly-distance/weekly-distance-${slug}-opaque.png`,
     };
   });
 

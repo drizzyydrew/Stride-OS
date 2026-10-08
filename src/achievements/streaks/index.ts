@@ -7,6 +7,8 @@ export {
   STREAK_SPECIALTY_DAYS,
   streakDefinitionFromAchievementId,
   streakHeatTierForDays,
+  normalizeStreakBadgeState,
+  type StreakBadgeInputState,
   type StreakBadgeState,
   type StreakHeatTier,
   type StreakMilestoneDefinition,

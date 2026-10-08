@@ -1,5 +1,7 @@
 import {
   RECOVERY_ACHIEVEMENT_BY_ID,
+  normalizeRecoveryAchievementBadgeState,
+  type RecoveryAchievementBadgeInputState,
   type RecoveryAchievementBadgeState,
   type RecoveryAchievementDefinition,
   type RecoveryAchievementId,
@@ -11,7 +13,7 @@ import {
 } from './recoveryTokens';
 import { recoveryAchievementAccessibilityLabel } from './recoveryUtils';
 
-export type { RecoveryAchievementBadgeState } from './recoveryDefinitions';
+export type { RecoveryAchievementBadgeInputState, RecoveryAchievementBadgeState } from './recoveryDefinitions';
 
 export const RECOVERY_VIEWBOX = 100;
 export const RECOVERY_HEXAGON_PATH =
@@ -38,9 +40,8 @@ export type RecoveryRenderTokens = {
 };
 
 export function recoveryBadgeTokens(state: RecoveryAchievementBadgeState): RecoveryRenderTokens {
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
-  const locked = visualState === 'locked';
-  const transparent = visualState === 'share-transparent';
+  const locked = state === 'locked';
+  const transparent = state === 'transparent';
   const colors = locked ? RECOVERY_LOCKED_COLORS : RECOVERY_COLORS;
   return {
     ...colors,
@@ -184,11 +185,11 @@ function renderTitleLines(lines: readonly string[], tokens: RecoveryRenderTokens
 
 export function renderRecoveryAchievementBadgeSvg(
   achievement: RecoveryAchievementId,
-  state: RecoveryAchievementBadgeState = 'unlocked',
+  state: RecoveryAchievementBadgeInputState = 'unlocked',
   options: { compact?: boolean; size?: number; remaining?: number } = {},
 ): string {
   const definition = RECOVERY_ACHIEVEMENT_BY_ID[achievement];
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
+  const visualState = normalizeRecoveryAchievementBadgeState(state);
   const compact = options.compact ?? false;
   const size = options.size ?? RECOVERY_VIEWBOX;
   const tokens = recoveryBadgeTokens(visualState);
@@ -208,7 +209,7 @@ export function renderRecoveryAchievementBadgeSvg(
     </linearGradient>
     <radialGradient id="${glowId}" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 41) rotate(90) scale(35 34)">
       <stop offset="0" stop-color="${tokens.glow}" stop-opacity="${visualState === 'locked' ? '0.1' : '0.3'}"/>
-      <stop offset="0.64" stop-color="${tokens.glow}" stop-opacity="${visualState === 'share-transparent' ? '0.03' : '0.1'}"/>
+      <stop offset="0.64" stop-color="${tokens.glow}" stop-opacity="${visualState === 'transparent' ? '0.03' : '0.1'}"/>
       <stop offset="1" stop-color="${tokens.glow}" stop-opacity="0"/>
     </radialGradient>
   </defs>

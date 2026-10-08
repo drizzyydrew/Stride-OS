@@ -4,12 +4,13 @@ import Svg, { ClipPath, Defs, G, LinearGradient, Path, RadialGradient, Rect, Sto
 import {
   RUN_LEVEL_MOUNTAIN,
   RUN_LEVEL_VIEWBOX,
+  normalizeRunLevelBadgeState,
   runLevelBadgeAccessibilityLabel,
   runLevelBadgeTokens,
   runLevelHexPath,
   runLevelRingPath,
   runLevelRingInsets,
-  type RunLevelBadgeState,
+  type RunLevelBadgeInputState,
 } from './runLevelArtwork';
 import {
   RUN_LEVEL_BY_SLUG,
@@ -20,7 +21,7 @@ import type { UnitSystem } from '../../store/settingsStore';
 
 type Props = {
   level: RunLevelSlug;
-  state?: RunLevelBadgeState;
+  state?: RunLevelBadgeInputState;
   size?: number;
   compact?: boolean;
   remainingMeters?: number;
@@ -38,25 +39,26 @@ export default function RunLevelBadge({
   style,
 }: Props) {
   const definition = RUN_LEVEL_BY_SLUG[level];
-  const tokens = runLevelBadgeTokens(definition, state);
-  const edgeId = `rl-${level}-${state}-edge`;
-  const interiorId = `rl-${level}-${state}-interior`;
-  const mountainId = `rl-${level}-${state}-mountain`;
-  const mountainSideId = `rl-${level}-${state}-mountain-side`;
-  const mountainShadowId = `rl-${level}-${state}-mountain-shadow`;
-  const upperGlowId = `rl-${level}-${state}-upper-glow`;
-  const mountainGlowId = `rl-${level}-${state}-mountain-glow`;
-  const lowerFadeId = `rl-${level}-${state}-lower-fade`;
-  const leftVignetteId = `rl-${level}-${state}-left-vignette`;
-  const rightVignetteId = `rl-${level}-${state}-right-vignette`;
-  const clipId = `rl-${level}-${state}-clip`;
+  const resolvedState = normalizeRunLevelBadgeState(state);
+  const tokens = runLevelBadgeTokens(definition, resolvedState);
+  const edgeId = `rl-${level}-${resolvedState}-edge`;
+  const interiorId = `rl-${level}-${resolvedState}-interior`;
+  const mountainId = `rl-${level}-${resolvedState}-mountain`;
+  const mountainSideId = `rl-${level}-${resolvedState}-mountain-side`;
+  const mountainShadowId = `rl-${level}-${resolvedState}-mountain-shadow`;
+  const upperGlowId = `rl-${level}-${resolvedState}-upper-glow`;
+  const mountainGlowId = `rl-${level}-${resolvedState}-mountain-glow`;
+  const lowerFadeId = `rl-${level}-${resolvedState}-lower-fade`;
+  const leftVignetteId = `rl-${level}-${resolvedState}-left-vignette`;
+  const rightVignetteId = `rl-${level}-${resolvedState}-right-vignette`;
+  const clipId = `rl-${level}-${resolvedState}-clip`;
   const titleY = compact ? 178 : 174;
   const titleSize = definition.titleUpper.length > 8 ? 15.2 : 18.2;
 
   return (
     <View
       style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}
-      accessibilityLabel={runLevelBadgeAccessibilityLabel(level, state, remainingMeters, units)}
+      accessibilityLabel={runLevelBadgeAccessibilityLabel(level, resolvedState, remainingMeters, units)}
     >
       <Svg width={size} height={size} viewBox={`0 0 ${RUN_LEVEL_VIEWBOX} ${RUN_LEVEL_VIEWBOX}`}>
         <Defs>
@@ -112,7 +114,7 @@ export default function RunLevelBadge({
             <Stop offset="1" stopColor={tokens.color.shadow} stopOpacity={0.36} />
           </LinearGradient>
           {runLevelRingInsets(definition).map((_, index) => (
-            <LinearGradient key={index} id={`rl-${level}-${state}-ring-${index}`} x1="128" y1="28" x2="128" y2="178" gradientUnits="userSpaceOnUse">
+            <LinearGradient key={index} id={`rl-${level}-${resolvedState}-ring-${index}`} x1="128" y1="28" x2="128" y2="178" gradientUnits="userSpaceOnUse">
               <Stop offset="0" stopColor={tokens.color.highlight} stopOpacity={0.95} />
               <Stop offset="0.48" stopColor={tokens.color.outer} stopOpacity={0.78} />
               <Stop offset="1" stopColor={tokens.color.shadow} stopOpacity={0.28} />
@@ -121,7 +123,7 @@ export default function RunLevelBadge({
         </Defs>
         <Path d={runLevelHexPath(0)} fill={tokens.fill} fillOpacity={tokens.fillOpacity} stroke={`url(#${edgeId})`} strokeWidth={3.1} strokeLinejoin="round" strokeOpacity={tokens.outerOpacity} />
         <G clipPath={`url(#${clipId})`}>
-          <Rect x={0} y={0} width={256} height={256} fill={state === 'share-transparent' ? 'transparent' : `url(#${interiorId})`} fillOpacity={tokens.innerFillOpacity} />
+          <Rect x={0} y={0} width={256} height={256} fill={resolvedState === 'transparent' ? 'transparent' : `url(#${interiorId})`} fillOpacity={tokens.innerFillOpacity} />
           <Rect x={0} y={0} width={256} height={256} fill="#050606" fillOpacity={tokens.transparentWashOpacity} />
           <Rect x={0} y={0} width={256} height={256} fill={`url(#${upperGlowId})`} />
           <Rect x={0} y={0} width={256} height={256} fill={`url(#${mountainGlowId})`} />
@@ -132,7 +134,7 @@ export default function RunLevelBadge({
         <Path d={runLevelHexPath(7)} fill="none" stroke={tokens.color.highlight} strokeWidth={0.82} strokeOpacity={tokens.innerEdgeOpacity} />
         {runLevelRingInsets(definition).map((inset, index) => {
           const opacity = Math.max(0.16, tokens.ringOpacityBase - index * tokens.ringOpacityStep);
-          const ringId = `rl-${level}-${state}-ring-${index}`;
+          const ringId = `rl-${level}-${resolvedState}-ring-${index}`;
           return (
             <G key={inset}>
               <Path
@@ -190,7 +192,7 @@ export default function RunLevelBadge({
           fontSize={titleSize}
           fontWeight="500"
           letterSpacing={1.45}
-          fill={state === 'locked' ? RUN_LEVEL_LOCKED_GRAY : tokens.color.highlight}
+          fill={resolvedState === 'locked' ? RUN_LEVEL_LOCKED_GRAY : tokens.color.highlight}
           fillOpacity={tokens.titleOpacity}
         >
           {definition.titleUpper}
@@ -205,13 +207,13 @@ export default function RunLevelBadge({
               fontSize={8.8}
               fontWeight="700"
               letterSpacing={3.4}
-              fill={state === 'locked' ? RUN_LEVEL_LOCKED_GRAY : '#F3F1EB'}
+              fill={resolvedState === 'locked' ? RUN_LEVEL_LOCKED_GRAY : '#F3F1EB'}
               fillOpacity={tokens.wordmarkOpacity}
             >
               STRIDEOS
             </SvgText>
-            <Path d="M105 211 L128 223 L151 211" fill="none" stroke={state === 'locked' ? RUN_LEVEL_LOCKED_GRAY : tokens.color.outer} strokeWidth={2.05} strokeLinecap="round" strokeLinejoin="round" strokeOpacity={tokens.chevronOpacity} />
-            <Path d="M109 221 L128 231 L147 221" fill="none" stroke={state === 'locked' ? RUN_LEVEL_LOCKED_GRAY : tokens.color.highlight} strokeWidth={2.05} strokeLinecap="round" strokeLinejoin="round" strokeOpacity={tokens.chevronOpacity} />
+            <Path d="M105 211 L128 223 L151 211" fill="none" stroke={resolvedState === 'locked' ? RUN_LEVEL_LOCKED_GRAY : tokens.color.outer} strokeWidth={2.05} strokeLinecap="round" strokeLinejoin="round" strokeOpacity={tokens.chevronOpacity} />
+            <Path d="M109 221 L128 231 L147 221" fill="none" stroke={resolvedState === 'locked' ? RUN_LEVEL_LOCKED_GRAY : tokens.color.highlight} strokeWidth={2.05} strokeLinecap="round" strokeLinejoin="round" strokeOpacity={tokens.chevronOpacity} />
           </>
         )}
       </Svg>

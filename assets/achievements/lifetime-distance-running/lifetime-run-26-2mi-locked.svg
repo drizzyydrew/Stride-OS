@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none" role="img" aria-label="26.2 mile lifetime running distance achievement. Locked. 0 miles remaining.">
+  <defs>
+    <linearGradient id="lifetime-run-26-2mi-locked-MI-edge" x1="17" y1="14" x2="84" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C8C8C4"/>
+      <stop offset="0.52" stop-color="#8C8C8A"/>
+      <stop offset="1" stop-color="#4E504E"/>
+    </linearGradient>
+    <radialGradient id="lifetime-run-26-2mi-locked-MI-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 42) rotate(90) scale(32 35)">
+      <stop offset="0" stop-color="#7B7D7A" stop-opacity="0.18"/>
+      <stop offset="0.55" stop-color="#7B7D7A" stop-opacity="0.13"/>
+      <stop offset="1" stop-color="#7B7D7A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <path d="M50 7.5 Q52.4 7.5 54.4 9.6 L90.4 45.6 Q92.5 47.7 92.5 50 Q92.5 52.3 90.4 54.4 L54.4 90.4 Q52.3 92.5 50 92.5 Q47.7 92.5 45.6 90.4 L9.6 54.4 Q7.5 52.3 7.5 50 Q7.5 47.7 9.6 45.6 L45.6 9.6 Q47.7 7.5 50 7.5 Z" fill="#050607" fill-opacity="1" stroke="url(#lifetime-run-26-2mi-locked-MI-edge)" stroke-width="2.2" stroke-linejoin="round" stroke-opacity="0.48"/>
+  <ellipse cx="50" cy="43" rx="30" ry="25" fill="url(#lifetime-run-26-2mi-locked-MI-glow)" opacity="0.08"/>
+
+  <text x="50" y="44" text-anchor="middle" dominant-baseline="middle" font-family="Didot, 'Bodoni 72', Georgia, serif" font-size="18" font-weight="400" fill="#8C8C8A" fill-opacity="0.54">26.2</text>
+
+  <text x="50" y="58.5" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="7.4" font-weight="800" letter-spacing="1.4" fill="#8C8C8A" fill-opacity="0.42">MI</text>
+
+  <text x="50" y="68.5" text-anchor="middle" font-family="'Avenir Next', Inter, Arial, sans-serif" font-size="4.4" font-weight="800" letter-spacing="1.7" fill="#8C8C8A" fill-opacity="0.32">STRIDEOS</text>
+  <path d="M42.5 76.8 L50 81.9 L57.5 76.8" fill="none" stroke="#8C8C8A" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.3"/>
+  <path d="M43 82.7 L50 87.2 L57 82.7" fill="none" stroke="#C8C8C4" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.3"/>
+</svg>

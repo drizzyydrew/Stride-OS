@@ -77,10 +77,6 @@ function validateSvg(assetPath: string): string {
   return svg;
 }
 
-function normalizeOpaqueSvg(svg: string): string {
-  return svg.replace(/firsts-[^"]+-opaque-/g, match => match.replace('-opaque-', '-unlocked-'));
-}
-
 const warmHexes = Object.values(FIRSTS_COLORS).map(value => value.toLowerCase());
 let checked = 0;
 
@@ -92,8 +88,6 @@ for (const definition of FIRST_ACHIEVEMENT_DEFINITIONS) {
     definition.lockedPngPath,
     definition.shareTransparentSvgPath,
     definition.shareTransparentPngPath,
-    definition.shareOpaqueSvgPath,
-    definition.shareOpaquePngPath,
   ];
 
   for (const assetPath of allPaths) {
@@ -106,25 +100,23 @@ for (const definition of FIRST_ACHIEVEMENT_DEFINITIONS) {
   const unlockedSvg = validateSvg(definition.artworkPath);
   const lockedSvg = validateSvg(definition.lockedArtworkPath);
   const transparentSvg = validateSvg(definition.shareTransparentSvgPath);
-  const opaqueSvg = validateSvg(definition.shareOpaqueSvgPath);
   assert(transparentSvg.includes('fill="transparent" fill-opacity="0"'), `${definition.shareTransparentSvgPath} does not clear the hexagon interior`);
-  assert(normalizeOpaqueSvg(opaqueSvg) === unlockedSvg, `${definition.shareOpaqueSvgPath} does not match unlocked SVG artwork`);
   for (const hex of warmHexes) {
     assert(!lockedSvg.toLowerCase().includes(hex), `${definition.lockedArtworkPath} contains warm Firsts hue ${hex}`);
   }
 
-  if (definition.id === 'first_run') assert(/H31\.7/.test(unlockedSvg), 'First Run glyph is missing horizontal speed lines');
-  if (definition.id === 'first_walk') assert(!/H31\.7/.test(unlockedSvg), 'First Walk glyph incorrectly contains run speed lines');
+  if (definition.id === 'first_run') assert(/H30\.6/.test(unlockedSvg), 'First Run glyph is missing horizontal speed lines');
+  if (definition.id === 'first_walk') assert(!/H30\.6/.test(unlockedSvg), 'First Walk glyph incorrectly contains run speed lines');
   if (definition.id === 'first_movement_lab_analysis') {
     assert(/H36\.6/.test(unlockedSvg) && /L50 31/.test(unlockedSvg), 'Movement Lab glyph is missing capture brackets or landmark segments');
     assert(!/stroke-dasharray/.test(unlockedSvg), 'Movement Lab glyph must not use motion/speed lines');
   }
+  assert(!/firsts-[^"]+-opaque/.test(unlockedSvg + lockedSvg + transparentSvg), `${definition.id} references obsolete opaque Firsts assets`);
 
   for (const pngPath of [
     definition.unlockedPngPath,
     definition.lockedPngPath,
     definition.shareTransparentPngPath,
-    definition.shareOpaquePngPath,
   ]) {
     const png = readPng(pngPath);
     assert(png.width === EXPECTED_PNG_SIZE && png.height === EXPECTED_PNG_SIZE, `${pngPath} has inconsistent dimensions`);
@@ -145,8 +137,6 @@ const expectedNames = new Set([
     `firsts-${definition.slug}-locked.png`,
     `firsts-${definition.slug}-transparent.svg`,
     `firsts-${definition.slug}-transparent.png`,
-    `firsts-${definition.slug}-opaque.svg`,
-    `firsts-${definition.slug}-opaque.png`,
   ]),
 ]);
 const actualNames = new Set(readdirSync(ASSET_DIR));

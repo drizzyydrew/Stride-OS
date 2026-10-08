@@ -16,14 +16,15 @@ import {
 } from './streakArtwork';
 import {
   STREAK_MILESTONE_BY_ID,
-  type StreakBadgeState,
+  normalizeStreakBadgeState,
+  type StreakBadgeInputState,
 } from './streakDefinitions';
 import { STREAK_PANEL_BLACK } from './streakTokens';
 import { streakAchievementAccessibilityLabel } from './streakUtils';
 
 type Props = {
   days: number;
-  state?: StreakBadgeState;
+  state?: StreakBadgeInputState;
   compact?: boolean;
   size?: number;
   remainingDays?: number;
@@ -39,7 +40,7 @@ export default function StreakBadge({
   style,
 }: Props) {
   const safeDays = Math.max(1, Math.floor(Number.isFinite(days) ? days : 1));
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
+  const visualState = normalizeStreakBadgeState(state);
   const tokens = streakBadgeTokens(safeDays, visualState);
   const text = String(safeDays);
   const numberSize = streakNumberFontSize(text, compact);
@@ -70,7 +71,7 @@ export default function StreakBadge({
           </LinearGradient>
           <RadialGradient id={glowId} cx="50" cy="43" r="38" gradientUnits="userSpaceOnUse">
             <Stop offset="0" stopColor={tokens.glow} stopOpacity={visualState === 'locked' ? 0.13 : 0.36} />
-            <Stop offset="0.66" stopColor={tokens.glow} stopOpacity={visualState === 'share-transparent' ? 0.04 : 0.12} />
+            <Stop offset="0.66" stopColor={tokens.glow} stopOpacity={visualState === 'transparent' ? 0.04 : 0.12} />
             <Stop offset="1" stopColor={tokens.glow} stopOpacity={0} />
           </RadialGradient>
         </Defs>
@@ -79,7 +80,7 @@ export default function StreakBadge({
         <Ellipse cx={50} cy={44} rx={31} ry={29} fill={`url(#${glowId})`} opacity={tokens.ambientOpacity} />
         <Path d={STREAK_FLAME_OUTER_PATH} fill={`url(#${flameId})`} opacity={tokens.flameOpacity} transform={STREAK_FLAME_TRANSFORM} />
         <Path d={STREAK_FLAME_LEFT_PATH} fill={tokens.primary} opacity={visualState === 'locked' ? 0.28 : 0.72} transform={STREAK_FLAME_TRANSFORM} />
-        <Path d={STREAK_FLAME_INNER_PATH} fill={visualState === 'locked' ? '#111315' : STREAK_PANEL_BLACK} opacity={visualState === 'share-transparent' ? 0.18 : 0.92} transform={STREAK_FLAME_TRANSFORM} />
+        <Path d={STREAK_FLAME_INNER_PATH} fill={visualState === 'locked' ? '#111315' : STREAK_PANEL_BLACK} opacity={visualState === 'transparent' ? 0.18 : 0.92} transform={STREAK_FLAME_TRANSFORM} />
         <Path d={STREAK_FLAME_INNER_PATH} fill={tokens.center} opacity={visualState === 'locked' ? 0.22 : 0.18} transform={`${STREAK_FLAME_TRANSFORM} translate(1.1 -1.2) scale(0.94)`} />
         {tokens.keylineOpacity > 0 ? (
           <SvgText x={numberX} y={65.8} textAnchor="middle" alignmentBaseline="middle" fontFamily={STREAK_NUMBER_FONT} fontSize={numberSize} fontWeight="600" stroke="#030405" strokeWidth={1.05} strokeOpacity={tokens.keylineOpacity} fill="none">

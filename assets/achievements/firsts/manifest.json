@@ -7,9 +7,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-activity-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-activity-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-activity-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-activity-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-activity-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-activity-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-activity-transparent.png"
   },
   {
     "id": "first_run",
@@ -19,9 +17,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-run-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-run-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-run-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-run-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-run-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-run-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-run-transparent.png"
   },
   {
     "id": "first_walk",
@@ -31,9 +27,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-walk-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-walk-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-walk-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-walk-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-walk-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-walk-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-walk-transparent.png"
   },
   {
     "id": "first_run_walk",
@@ -43,9 +37,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-run-walk-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-run-walk-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-run-walk-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-run-walk-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-run-walk-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-run-walk-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-run-walk-transparent.png"
   },
   {
     "id": "first_ride",
@@ -55,9 +47,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-ride-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-ride-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-ride-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-ride-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-ride-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-ride-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-ride-transparent.png"
   },
   {
     "id": "first_mobility_workout",
@@ -67,9 +57,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-mobility-workout-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-mobility-workout-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-mobility-workout-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-mobility-workout-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-mobility-workout-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-mobility-workout-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-mobility-workout-transparent.png"
   },
   {
     "id": "first_5k",
@@ -79,9 +67,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-5k-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-5k-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-5k-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-5k-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-5k-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-5k-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-5k-transparent.png"
   },
   {
     "id": "first_10k",
@@ -91,9 +77,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-10k-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-10k-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-10k-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-10k-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-10k-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-10k-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-10k-transparent.png"
   },
   {
     "id": "first_half_marathon",
@@ -103,9 +87,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-half-marathon-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-half-marathon-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-half-marathon-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-half-marathon-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-half-marathon-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-half-marathon-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-half-marathon-transparent.png"
   },
   {
     "id": "first_marathon",
@@ -115,9 +97,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-marathon-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-marathon-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-marathon-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-marathon-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-marathon-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-marathon-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-marathon-transparent.png"
   },
   {
     "id": "first_route_completed",
@@ -127,9 +107,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-route-completed-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-route-completed-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-route-completed-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-route-completed-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-route-completed-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-route-completed-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-route-completed-transparent.png"
   },
   {
     "id": "first_structured_workout",
@@ -139,9 +117,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-structured-workout-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-structured-workout-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-structured-workout-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-structured-workout-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-structured-workout-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-structured-workout-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-structured-workout-transparent.png"
   },
   {
     "id": "first_adapted_workout",
@@ -151,9 +127,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-adapted-workout-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-adapted-workout-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-adapted-workout-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-adapted-workout-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-adapted-workout-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-adapted-workout-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-adapted-workout-transparent.png"
   },
   {
     "id": "first_strength_workout",
@@ -163,9 +137,7 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-strength-workout-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-strength-workout-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-strength-workout-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-strength-workout-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-strength-workout-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-strength-workout-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-strength-workout-transparent.png"
   },
   {
     "id": "first_movement_lab_analysis",
@@ -175,8 +147,6 @@
     "artworkPath": "assets/achievements/firsts/firsts-first-movement-lab-analysis-unlocked.svg",
     "lockedArtworkPath": "assets/achievements/firsts/firsts-first-movement-lab-analysis-locked.svg",
     "shareTransparentSvgPath": "assets/achievements/firsts/firsts-first-movement-lab-analysis-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-movement-lab-analysis-transparent.png",
-    "shareOpaqueSvgPath": "assets/achievements/firsts/firsts-first-movement-lab-analysis-opaque.svg",
-    "shareOpaquePngPath": "assets/achievements/firsts/firsts-first-movement-lab-analysis-opaque.png"
+    "shareTransparentPngPath": "assets/achievements/firsts/firsts-first-movement-lab-analysis-transparent.png"
   }
 ]

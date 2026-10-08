@@ -21,6 +21,7 @@ import { streakDefinitionFromAchievementId } from '../../achievements/streaks';
 import { weeklyDistanceDefinitionFromAchievementId } from '../../achievements/weeklyDistance';
 import { monthlyDistanceDefinitionFromAchievementId } from '../../achievements/monthlyDistance';
 import AchievementBadge from '../achievements/AchievementBadge';
+import ShareBrandMark from './ShareBrandMark';
 import type { UnitSystem } from '../../store/settingsStore';
 import type { Activity } from '../../types/activity';
 import type { EvaluatedAchievement } from '../../utils/achievementSystem';
@@ -56,9 +57,15 @@ type Props = {
 
 export const SHARE_STUDIO_VARIANTS: Array<{ id: ShareStudioVariant; label: string }> = [
   { id: 'minimal_card', label: 'Minimal' },
-  { id: 'transparent_overlay', label: 'Overlay' },
+  { id: 'transparent_overlay', label: 'Transparent Overlay' },
   { id: 'editorial_card', label: 'Editorial' },
 ];
+
+// Only meaningful when a real activity with metrics is available alongside the achievement
+// (e.g. the achievement-detail screen's "related activity"); the plain activity-share screen
+// has no achievement context, so it should not offer this variant.
+export const SHARE_STUDIO_ACHIEVEMENT_VARIANT: { id: ShareStudioVariant; label: string } =
+  { id: 'activity_achievement', label: 'Activity + Achievement' };
 
 export const SHARE_STUDIO_FORMATS: Array<{ id: ShareStudioFormat; label: string }> = [
   { id: 'square', label: 'Square' },
@@ -76,13 +83,13 @@ function metricValue(activity: Activity | undefined, units: UnitSystem, key: Tog
   return null;
 }
 
-function availableToggles(activity: Activity | undefined, achievement: EvaluatedAchievement | undefined): ToggleKey[] {
+function availableToggles(activity: Activity | undefined, achievement: EvaluatedAchievement | undefined, units: UnitSystem): ToggleKey[] {
   const keys: ToggleKey[] = [];
   const isRunLevelAchievement = Boolean(achievement && runLevelSlugFromId(achievement.id));
-  if (!isRunLevelAchievement && metricValue(activity, 'imperial', 'distance')) keys.push('distance');
-  if (!isRunLevelAchievement && metricValue(activity, 'imperial', 'time')) keys.push('time');
-  if (!isRunLevelAchievement && metricValue(activity, 'imperial', 'pace')) keys.push('pace');
-  if (!isRunLevelAchievement && metricValue(activity, 'imperial', 'elevation')) keys.push('elevation');
+  if (!isRunLevelAchievement && metricValue(activity, units, 'distance')) keys.push('distance');
+  if (!isRunLevelAchievement && metricValue(activity, units, 'time')) keys.push('time');
+  if (!isRunLevelAchievement && metricValue(activity, units, 'pace')) keys.push('pace');
+  if (!isRunLevelAchievement && metricValue(activity, units, 'elevation')) keys.push('elevation');
   if (!isRunLevelAchievement && activity && activityHasShareableRoute(activity)) keys.push('route');
   if (achievement && achievementShareAllowed(achievement)) keys.push('achievement');
   keys.push('brand');
@@ -198,22 +205,6 @@ function StatPill({ label, value, transparent = false }: { label: string; value:
   );
 }
 
-function StrideOSBrandMark() {
-  return (
-    <View style={styles.logoMark} accessible accessibilityLabel="StrideOS logo">
-      <Text style={styles.logoWord}>
-        <Text style={styles.logoStride}>Stride</Text>
-        <Text style={styles.logoOS}>OS</Text>
-      </Text>
-      <View style={styles.logoChevronRow}>
-        {['#B8C4A9', '#A6C0B4', '#E3CDB8', '#78A3BE', '#5E7E92'].map((color, index) => (
-          <Text key={`${color}-${index}`} style={[styles.logoChevron, { color }]}>{'>'}</Text>
-        ))}
-      </View>
-    </View>
-  );
-}
-
 export default function ShareStudio({
   activity,
   achievement,
@@ -226,7 +217,7 @@ export default function ShareStudio({
   onInteractionActiveChange,
 }: Props) {
   const isStory = format === 'story';
-  const keys = availableToggles(activity, achievement).filter(key => key !== 'route' || isStory);
+  const keys = availableToggles(activity, achievement, units).filter(key => key !== 'route' || isStory);
   const [enabled, setEnabled] = useState<Record<ToggleKey, boolean>>({
     route: false,
     distance: keys.includes('distance'),
@@ -269,6 +260,13 @@ export default function ShareStudio({
   const strengthDefinition = achievement ? strengthAchievementDefinitionFromAchievementId(achievement.id) : null;
   const recoveryDefinition = achievement ? recoveryAchievementDefinitionFromAchievementId(achievement.id) : null;
   const canonicalBadgeDefinition = lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? monthlyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition;
+  const canonicalBadgeState = canonicalBadgeDefinition
+    ? isOverlay
+      ? 'transparent'
+      : achievement?.state === 'locked'
+        ? 'locked'
+        : 'unlocked'
+    : undefined;
   const achievementShareTitle = weeklyDistanceDefinition
     ? `${weeklyDistanceDefinition.milestoneLabel} WEEK`
     : monthlyDistanceDefinition
@@ -365,7 +363,7 @@ export default function ShareStudio({
       {routeEnabled ? <View style={fixedActivityLayout ? fixedRouteStyle : styles.routeLayer}><RouteOverlay activity={activity} light={foregroundDark} /></View> : null}
       {enabled.brand && fixedActivityLayout ? (
         <View style={fixedBrandStyle}>
-          <StrideOSBrandMark />
+          <ShareBrandMark />
         </View>
       ) : enabled.brand ? (
         <MovableLayer
@@ -378,7 +376,7 @@ export default function ShareStudio({
           onInteractionActiveChange={onInteractionActiveChange}
           style={styles.brandLayer}
         >
-          <StrideOSBrandMark />
+          <ShareBrandMark />
         </MovableLayer>
       ) : null}
       {achievement && enabled.achievement && fixedActivityLayout ? (
@@ -386,7 +384,7 @@ export default function ShareStudio({
           {runLevelSlug ? (
             <RunLevelBadge
               level={runLevelSlug}
-              state={isOverlay ? 'share-transparent' : achievement.state === 'locked' ? 'locked' : 'share-opaque'}
+              state={isOverlay ? 'transparent' : achievement.state === 'locked' ? 'locked' : 'unlocked'}
               size={132}
               remainingMeters={achievement.remaining}
               units={units}
@@ -398,7 +396,7 @@ export default function ShareStudio({
               earned={achievement.state !== 'locked'}
               size="large"
               unitSystem={units}
-              badgeState={canonicalBadgeDefinition ? (isOverlay ? 'share-transparent' : achievement.state === 'locked' ? 'locked' : 'share-opaque') : undefined}
+              badgeState={canonicalBadgeState}
             />
           )}
         </View>
@@ -416,7 +414,7 @@ export default function ShareStudio({
           {runLevelSlug ? (
             <RunLevelBadge
               level={runLevelSlug}
-              state={isOverlay ? 'share-transparent' : achievement.state === 'locked' ? 'locked' : 'share-opaque'}
+              state={isOverlay ? 'transparent' : achievement.state === 'locked' ? 'locked' : 'unlocked'}
               size={156}
               remainingMeters={achievement.remaining}
               units={units}
@@ -428,7 +426,7 @@ export default function ShareStudio({
               earned={achievement.state !== 'locked'}
               size="large"
               unitSystem={units}
-              badgeState={canonicalBadgeDefinition ? (isOverlay ? 'share-transparent' : achievement.state === 'locked' ? 'locked' : 'share-opaque') : undefined}
+              badgeState={canonicalBadgeState}
             />
           )}
         </MovableLayer>
@@ -660,12 +658,6 @@ const styles = StyleSheet.create({
   fixedBrandSquare: { left: 0, right: 0, bottom: 22 },
   fixedBrandStory: { left: 0, right: 0, bottom: 42 },
   fixedBrandEditorial: { opacity: 0.94 },
-  logoMark: { width: 112, minHeight: 74, alignItems: 'center', justifyContent: 'center' },
-  logoWord: { fontSize: 25, lineHeight: 30, fontWeight: '900', fontFamily: 'CormorantGaramond_700Bold' },
-  logoStride: { color: '#F3F1EB' },
-  logoOS: { color: '#6F97B0' },
-  logoChevronRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 5 },
-  logoChevron: { fontSize: 27, lineHeight: 28, fontWeight: '900' },
   badgeLayer: { alignItems: 'center', justifyContent: 'center' },
   fixedAchievement: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   fixedAchievementSquare: { left: 0, right: 0, top: '32%' },

@@ -65,9 +65,11 @@ const FAMILY_FILTERS: Array<'all' | AchievementFamily> = [
   'lifetime_running',
   'lifetime_cycling',
   'weekly_distance',
+  'monthly_challenges',
   'strength',
   'streaks',
   'recovery',
+  'challenges',
 ];
 
 const CANONICAL_BADGE_FAMILIES = new Set<AchievementFamily>([
@@ -76,9 +78,11 @@ const CANONICAL_BADGE_FAMILIES = new Set<AchievementFamily>([
   'lifetime_running',
   'lifetime_cycling',
   'weekly_distance',
+  'monthly_challenges',
   'strength',
   'streaks',
   'recovery',
+  'challenges',
 ]);
 
 function familyFilterLabel(filter: 'all' | AchievementFamily): string {

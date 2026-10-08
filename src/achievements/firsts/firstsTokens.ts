@@ -13,18 +13,18 @@ export const FIRSTS_LOCKED_GRAY = '#8E8E88';
 
 export const FIRSTS_COLORS: FirstsColorTokens = {
   primary: '#DCC0A7',
-  secondary: '#B7835F',
-  highlight: '#F3DFBF',
-  shadow: '#6F4F3D',
-  glow: '#C89364',
-  text: '#E8D3B8',
+  secondary: '#C79C70',
+  highlight: '#F0D7B6',
+  shadow: '#8D6847',
+  glow: '#C79C70',
+  text: '#E4C8A6',
 };
 
 export const FIRSTS_LOCKED_COLORS: FirstsColorTokens = {
   primary: FIRSTS_LOCKED_GRAY,
-  secondary: '#62625E',
-  highlight: '#CACAC4',
-  shadow: '#444541',
-  glow: '#767670',
-  text: '#A9A9A3',
+  secondary: '#74736E',
+  highlight: '#C5C5BF',
+  shadow: '#3F403C',
+  glow: '#6E6E68',
+  text: '#B5B5AF',
 };

@@ -3,7 +3,8 @@ import { SvgXml } from 'react-native-svg';
 
 import type { UnitSystem } from '../../store/settingsStore';
 import {
-  type FirstAchievementBadgeState,
+  normalizeFirstAchievementBadgeState,
+  type FirstAchievementBadgeInputState,
   type FirstAchievementId,
 } from './firstsDefinitions';
 import { FIRSTS_VIEWBOX, renderFirstAchievementBadgeSvg } from './firstsArtwork';
@@ -12,7 +13,7 @@ import { firstAchievementAccessibilityLabel } from './firstsUtils';
 
 type Props = {
   achievement: FirstAchievementId;
-  state?: FirstAchievementBadgeState;
+  state?: FirstAchievementBadgeInputState;
   compact?: boolean;
   size?: number;
   unitSystem?: UnitSystem;
@@ -28,14 +29,14 @@ export default function FirstAchievementBadge({
   style,
 }: Props) {
   const definition = FIRST_ACHIEVEMENT_BY_ID[achievement];
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
+  const resolvedState = normalizeFirstAchievementBadgeState(state);
   return (
     <View
       style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}
-      accessibilityLabel={firstAchievementAccessibilityLabel(definition, visualState === 'locked' ? 'locked' : 'earned', unitSystem)}
+      accessibilityLabel={firstAchievementAccessibilityLabel(definition, resolvedState === 'locked' ? 'locked' : 'earned', unitSystem)}
     >
       <SvgXml
-        xml={renderFirstAchievementBadgeSvg(achievement, state, { compact, size: FIRSTS_VIEWBOX, unitSystem })}
+        xml={renderFirstAchievementBadgeSvg(achievement, resolvedState, { compact, size: FIRSTS_VIEWBOX, unitSystem })}
         width={size}
         height={size}
       />

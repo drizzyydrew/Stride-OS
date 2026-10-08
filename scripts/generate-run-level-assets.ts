@@ -9,14 +9,13 @@ const PNG_SIZE = 1024;
 
 type SvgVariant = {
   state: RunLevelBadgeState;
-  pathKey: 'artworkPath' | 'lockedArtworkPath' | 'shareTransparentSvgPath' | 'shareOpaqueSvgPath';
+  pathKey: 'artworkPath' | 'lockedArtworkPath' | 'shareTransparentSvgPath';
 };
 
 const SVG_VARIANTS: SvgVariant[] = [
   { state: 'unlocked', pathKey: 'artworkPath' },
   { state: 'locked', pathKey: 'lockedArtworkPath' },
-  { state: 'share-transparent', pathKey: 'shareTransparentSvgPath' },
-  { state: 'share-opaque', pathKey: 'shareOpaqueSvgPath' },
+  { state: 'transparent', pathKey: 'shareTransparentSvgPath' },
 ];
 
 function writeAsset(assetPath: string, contents: string): void {
@@ -50,9 +49,10 @@ for (const level of RUN_LEVEL_DEFINITIONS) {
     svgCount += 1;
   }
 
+  renderPng(level.artworkPath, level.unlockedPngPath);
+  renderPng(level.lockedArtworkPath, level.lockedPngPath);
   renderPng(level.shareTransparentSvgPath, level.shareTransparentPngPath);
-  renderPng(level.shareOpaqueSvgPath, level.shareOpaquePngPath);
-  pngCount += 2;
+  pngCount += 3;
 }
 
 console.log(`Generated ${svgCount} run-level SVG assets and ${pngCount} PNG share assets.`);

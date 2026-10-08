@@ -20,8 +20,18 @@ export type StrengthAchievementGlyph =
 export type StrengthAchievementBadgeState =
   | 'unlocked'
   | 'locked'
-  | 'share-transparent'
-  | 'share-opaque';
+  | 'transparent';
+
+export type StrengthAchievementBadgeInputState =
+  | StrengthAchievementBadgeState
+  | 'share-opaque'
+  | 'share-transparent';
+
+export function normalizeStrengthAchievementBadgeState(state?: StrengthAchievementBadgeInputState): StrengthAchievementBadgeState {
+  if (state === 'locked') return 'locked';
+  if (state === 'transparent' || state === 'share-transparent') return 'transparent';
+  return 'unlocked';
+}
 
 export type StrengthAchievementDefinition = {
   id: StrengthAchievementId;
@@ -47,16 +57,14 @@ export type StrengthAchievementDefinition = {
   lockedPngPath: string;
   shareTransparentSvgPath: string;
   shareTransparentPngPath: string;
-  shareOpaqueSvgPath: string;
-  shareOpaquePngPath: string;
 };
 
-function assetPath(slug: string, variant: 'unlocked' | 'locked' | 'transparent' | 'opaque', ext: 'svg' | 'png'): string {
+function assetPath(slug: string, variant: 'unlocked' | 'locked' | 'transparent', ext: 'svg' | 'png'): string {
   return `assets/achievements/strength/strength-${slug}-${variant}.${ext}`;
 }
 
 function makeDefinition(
-  input: Omit<StrengthAchievementDefinition, 'artworkPath' | 'lockedArtworkPath' | 'unlockedPngPath' | 'lockedPngPath' | 'shareTransparentSvgPath' | 'shareTransparentPngPath' | 'shareOpaqueSvgPath' | 'shareOpaquePngPath'>,
+  input: Omit<StrengthAchievementDefinition, 'artworkPath' | 'lockedArtworkPath' | 'unlockedPngPath' | 'lockedPngPath' | 'shareTransparentSvgPath' | 'shareTransparentPngPath'>,
 ): StrengthAchievementDefinition {
   return {
     ...input,
@@ -66,8 +74,6 @@ function makeDefinition(
     lockedPngPath: assetPath(input.slug, 'locked', 'png'),
     shareTransparentSvgPath: assetPath(input.slug, 'transparent', 'svg'),
     shareTransparentPngPath: assetPath(input.slug, 'transparent', 'png'),
-    shareOpaqueSvgPath: assetPath(input.slug, 'opaque', 'svg'),
-    shareOpaquePngPath: assetPath(input.slug, 'opaque', 'png'),
   };
 }
 

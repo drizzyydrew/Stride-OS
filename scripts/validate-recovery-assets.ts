@@ -77,10 +77,6 @@ function validateSvg(assetPath: string): string {
   return svg;
 }
 
-function normalizeOpaqueSvg(svg: string): string {
-  return svg.replace(/recovery-[^"]+-opaque-/g, match => match.replace('-opaque-', '-unlocked-'));
-}
-
 const recoveryHexes = Object.values(RECOVERY_COLORS).map(value => value.toLowerCase());
 const glyphMarkers = new Set<string>();
 let checked = 0;
@@ -93,8 +89,6 @@ for (const definition of RECOVERY_ACHIEVEMENT_DEFINITIONS) {
     definition.lockedPngPath,
     definition.shareTransparentSvgPath,
     definition.shareTransparentPngPath,
-    definition.shareOpaqueSvgPath,
-    definition.shareOpaquePngPath,
   ];
 
   for (const assetPath of allPaths) {
@@ -107,9 +101,8 @@ for (const definition of RECOVERY_ACHIEVEMENT_DEFINITIONS) {
   const unlockedSvg = validateSvg(definition.artworkPath);
   const lockedSvg = validateSvg(definition.lockedArtworkPath);
   const transparentSvg = validateSvg(definition.shareTransparentSvgPath);
-  const opaqueSvg = validateSvg(definition.shareOpaqueSvgPath);
   assert(transparentSvg.includes('fill="transparent" fill-opacity="0"'), `${definition.shareTransparentSvgPath} does not clear the hexagon interior`);
-  assert(normalizeOpaqueSvg(opaqueSvg) === unlockedSvg, `${definition.shareOpaqueSvgPath} does not match unlocked SVG artwork`);
+  assert(!/recovery-[^"]+-opaque/.test(unlockedSvg + lockedSvg + transparentSvg), `${definition.id} references obsolete opaque Recovery assets`);
   for (const hex of recoveryHexes) {
     assert(!lockedSvg.toLowerCase().includes(hex), `${definition.lockedArtworkPath} contains Recovery hue ${hex}`);
   }
@@ -127,7 +120,6 @@ for (const definition of RECOVERY_ACHIEVEMENT_DEFINITIONS) {
     definition.unlockedPngPath,
     definition.lockedPngPath,
     definition.shareTransparentPngPath,
-    definition.shareOpaquePngPath,
   ]) {
     const png = readPng(pngPath);
     assert(png.width === EXPECTED_PNG_SIZE && png.height === EXPECTED_PNG_SIZE, `${pngPath} has inconsistent dimensions`);
@@ -150,8 +142,6 @@ const expectedNames = new Set([
     `recovery-${definition.slug}-locked.png`,
     `recovery-${definition.slug}-transparent.svg`,
     `recovery-${definition.slug}-transparent.png`,
-    `recovery-${definition.slug}-opaque.svg`,
-    `recovery-${definition.slug}-opaque.png`,
   ]),
 ]);
 const actualNames = new Set(readdirSync(ASSET_DIR));

@@ -10,6 +10,12 @@ const EXPECTED_VIEWBOX = '0 0 100 100';
 const EXPECTED_PNG_SIZE = 1024;
 const FORBIDDEN_INNER_DIAMOND_FRAGMENT = 'M50 12 Q51.9 12 53.5 13.6';
 const FORBIDDEN_UNDER_UNIT_LINE_FRAGMENT = 'M25 61 C35 59 42 62 50 60';
+const EXPECTED_NUMBER_X_BY_MILESTONE = new Map<number, string>([
+  [1, '44'],
+  [5, '48'],
+  [10, '47.3'],
+  [50, '48.3'],
+]);
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -70,8 +76,13 @@ function validateSvg(assetPath: string): string {
   return svg;
 }
 
-function normalizeOpaqueSvg(svg: string): string {
-  return svg.replace(/lifetime-run-[^"]+-opaque-/g, match => match.replace('-opaque-', '-unlocked-'));
+function assertNumberX(svg: string, expectedNumber: string, expectedX: string, assetPath: string): void {
+  const escapedNumber = expectedNumber.replace('.', '\\.');
+  const matches = [...svg.matchAll(new RegExp(`<text x="([^"]+)" y="44"[^>]*>${escapedNumber}</text>`, 'g'))];
+  assert(matches.length > 0, `${assetPath} is missing the ${expectedNumber} numeral text`);
+  for (const match of matches) {
+    assert(match[1] === expectedX, `${assetPath} positions ${expectedNumber} at x=${match[1]} instead of ${expectedX}`);
+  }
 }
 
 let checked = 0;
@@ -85,8 +96,6 @@ for (const definition of LIFETIME_DISTANCE_RUNNING_DEFINITIONS) {
     definition.lockedPngPath,
     definition.shareTransparentSvgPath,
     definition.shareTransparentPngPath,
-    definition.shareOpaqueSvgPath,
-    definition.shareOpaquePngPath,
   ];
 
   for (const assetPath of allPaths) {
@@ -99,9 +108,18 @@ for (const definition of LIFETIME_DISTANCE_RUNNING_DEFINITIONS) {
   const unlockedSvg = validateSvg(definition.artworkPath);
   const lockedSvg = validateSvg(definition.lockedArtworkPath);
   const transparentSvg = validateSvg(definition.shareTransparentSvgPath);
-  const opaqueSvg = validateSvg(definition.shareOpaqueSvgPath);
+  const expectedNumberX = EXPECTED_NUMBER_X_BY_MILESTONE.get(definition.thresholdMiles);
+  if (expectedNumberX !== undefined) {
+    for (const [assetPath, svg] of [
+      [definition.artworkPath, unlockedSvg],
+      [definition.lockedArtworkPath, lockedSvg],
+      [definition.shareTransparentSvgPath, transparentSvg],
+    ] as const) {
+      assertNumberX(svg, definition.milestoneLabel, expectedNumberX, assetPath);
+    }
+  }
   assert(transparentSvg.includes('fill="transparent" fill-opacity="0"'), `${definition.shareTransparentSvgPath} does not clear the diamond interior`);
-  assert(normalizeOpaqueSvg(opaqueSvg) === unlockedSvg, `${definition.shareOpaqueSvgPath} does not match unlocked SVG artwork`);
+  assert(!/lifetime-run-[^"]+-opaque/.test(unlockedSvg + lockedSvg + transparentSvg), `${definition.id} references obsolete opaque Lifetime Distance - Running assets`);
   for (const hex of tierHexes) {
     assert(!lockedSvg.toLowerCase().includes(hex), `${definition.lockedArtworkPath} contains tier hue ${hex}`);
   }
@@ -110,7 +128,6 @@ for (const definition of LIFETIME_DISTANCE_RUNNING_DEFINITIONS) {
     definition.unlockedPngPath,
     definition.lockedPngPath,
     definition.shareTransparentPngPath,
-    definition.shareOpaquePngPath,
   ]) {
     const png = readPng(pngPath);
     assert(png.width === EXPECTED_PNG_SIZE && png.height === EXPECTED_PNG_SIZE, `${pngPath} has inconsistent dimensions`);
@@ -128,8 +145,6 @@ const expectedNames = new Set(
     `lifetime-run-${definition.slug}-locked.png`,
     `lifetime-run-${definition.slug}-transparent.svg`,
     `lifetime-run-${definition.slug}-transparent.png`,
-    `lifetime-run-${definition.slug}-opaque.svg`,
-    `lifetime-run-${definition.slug}-opaque.png`,
   ]),
 );
 const actualNames = new Set(readdirSync(ASSET_DIR));

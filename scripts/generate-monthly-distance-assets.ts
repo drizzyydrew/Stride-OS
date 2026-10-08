@@ -12,15 +12,14 @@ const PNG_SIZE = 1024;
 
 type Variant = {
   state: MonthlyDistanceBadgeState;
-  svgPathKey: 'artworkPath' | 'lockedArtworkPath' | 'shareTransparentSvgPath' | 'shareOpaqueSvgPath';
-  pngPathKey: 'unlockedPngPath' | 'lockedPngPath' | 'shareTransparentPngPath' | 'shareOpaquePngPath';
+  svgPathKey: 'artworkPath' | 'lockedArtworkPath' | 'shareTransparentSvgPath';
+  pngPathKey: 'unlockedPngPath' | 'lockedPngPath' | 'shareTransparentPngPath';
 };
 
 const VARIANTS: Variant[] = [
   { state: 'unlocked', svgPathKey: 'artworkPath', pngPathKey: 'unlockedPngPath' },
   { state: 'locked', svgPathKey: 'lockedArtworkPath', pngPathKey: 'lockedPngPath' },
-  { state: 'share-transparent', svgPathKey: 'shareTransparentSvgPath', pngPathKey: 'shareTransparentPngPath' },
-  { state: 'share-opaque', svgPathKey: 'shareOpaqueSvgPath', pngPathKey: 'shareOpaquePngPath' },
+  { state: 'transparent', svgPathKey: 'shareTransparentSvgPath', pngPathKey: 'shareTransparentPngPath' },
 ];
 
 function writeAsset(assetPath: string, contents: string): void {

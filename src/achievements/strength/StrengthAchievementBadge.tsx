@@ -3,7 +3,8 @@ import { SvgXml } from 'react-native-svg';
 
 import {
   STRENGTH_ACHIEVEMENT_BY_ID,
-  type StrengthAchievementBadgeState,
+  normalizeStrengthAchievementBadgeState,
+  type StrengthAchievementBadgeInputState,
   type StrengthAchievementId,
 } from './strengthDefinitions';
 import { STRENGTH_VIEWBOX, renderStrengthAchievementBadgeSvg } from './strengthArtwork';
@@ -11,7 +12,7 @@ import { strengthAchievementAccessibilityLabel } from './strengthUtils';
 
 type Props = {
   achievement: StrengthAchievementId;
-  state?: StrengthAchievementBadgeState;
+  state?: StrengthAchievementBadgeInputState;
   compact?: boolean;
   size?: number;
   remaining?: number;
@@ -27,11 +28,11 @@ export default function StrengthAchievementBadge({
   style,
 }: Props) {
   const definition = STRENGTH_ACHIEVEMENT_BY_ID[achievement];
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
+  const resolvedState = normalizeStrengthAchievementBadgeState(state);
   return (
     <View
       style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}
-      accessibilityLabel={strengthAchievementAccessibilityLabel(definition, visualState === 'locked' ? 'locked' : 'earned', remaining)}
+      accessibilityLabel={strengthAchievementAccessibilityLabel(definition, resolvedState === 'locked' ? 'locked' : 'earned', remaining)}
     >
       <SvgXml
         xml={renderStrengthAchievementBadgeSvg(achievement, state, { compact, size: STRENGTH_VIEWBOX, remaining })}

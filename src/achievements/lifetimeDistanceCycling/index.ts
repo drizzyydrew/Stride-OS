@@ -3,6 +3,8 @@ export {
   LIFETIME_DISTANCE_CYCLING_BY_ID,
   LIFETIME_DISTANCE_CYCLING_BY_MILESTONE,
   LIFETIME_DISTANCE_CYCLING_DEFINITIONS,
+  normalizeLifetimeDistanceCyclingBadgeState,
+  type LifetimeDistanceCyclingBadgeInputState,
   type LifetimeDistanceCyclingBadgeState,
   type LifetimeDistanceCyclingDefinition,
   type LifetimeDistanceCyclingMilestone,

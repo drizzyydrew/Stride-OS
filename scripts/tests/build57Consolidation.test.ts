@@ -11,6 +11,7 @@ import {
   calculateCumulativeElevationAchievements,
   calculateMonthlyDistanceMilestones,
   calculatePersonalRecords,
+  evaluateAchievementAwards,
   CUMULATIVE_ELEVATION_ACHIEVEMENTS,
 } from '../../src/utils/achievements';
 import {
@@ -152,6 +153,84 @@ test('Build 57 hub exposes challenges and Run Levels from canonical activity his
   assert.ok(hub.consistencyAwards.some(item => item.id === 'four_week_consistency'));
   assert.ok(hub.challengeProgress.some(item => item.definition.id === 'challenge_four_week_consistency' && item.complete));
   assert.ok(hub.strideLevels.some(item => item.id === 'run_level_rhythm' && item.complete));
+});
+
+test('Award engine persists Monthly Distance, Run Level, and Elevation achievements, and recalculates after edits', () => {
+  const now = Date.UTC(2026, 7, 9, 12);
+  const monthlyRuns = [0, 1, 7, 8].map(dayOffset => activity({
+    id: `monthly-run-${dayOffset}`,
+    activityType: 'running',
+    startTime: Date.UTC(2026, 7, 1 + dayOffset, 8),
+    metrics: { durationSeconds: 5400, distanceMeters: 13_000 },
+  }));
+  const monthlyAwards = evaluateAchievementAwards(monthlyRuns, [], now);
+  assert.ok(monthlyAwards.some(item => item.id === 'monthly_run_50k'), 'award engine should surface Monthly Distance achievements');
+
+  const removedMonthlyAwards = evaluateAchievementAwards(monthlyRuns.slice(0, 2), [], now);
+  assert.ok(!removedMonthlyAwards.some(item => item.id === 'monthly_run_50k'), 'deleting activities should un-cross a Monthly Distance threshold on recalculation');
+
+  const lifetimeRuns = Array.from({ length: 8 }, (_, index) => activity({
+    id: `lifetime-run-${index}`,
+    activityType: 'running',
+    startTime: now - index * 7 * 24 * 60 * 60 * 1000,
+    metrics: { durationSeconds: 3600, distanceMeters: 11_000 },
+  }));
+  const runLevelAwards = evaluateAchievementAwards(lifetimeRuns, [], now);
+  assert.ok(runLevelAwards.some(item => item.id === 'run_level_rhythm'), 'award engine should surface Run Level achievements from cumulative lifetime running distance');
+
+  const editedLifetimeRuns = lifetimeRuns.map((item, index) => (index === 0 ? { ...item, metrics: { ...item.metrics, distanceMeters: 100 } } : item));
+  const editedRunLevelAwards = evaluateAchievementAwards(editedLifetimeRuns, [], now);
+  assert.ok(!editedRunLevelAwards.some(item => item.id === 'run_level_rhythm'), 'editing an activity down should recalculate the Run Level award on next evaluation');
+
+  const hike = activity({
+    id: 'hike-hood',
+    activityType: 'running',
+    startTime: now - 24 * 60 * 60 * 1000,
+    metrics: { durationSeconds: 14_400, distanceMeters: 16_000, elevationGainMeters: 3_600 },
+  });
+  const elevationAwards = evaluateAchievementAwards([hike], [], now);
+  assert.ok(elevationAwards.some(item => item.id === 'elevation_mount_hood'), 'award engine should surface Cumulative Elevation achievements');
+
+  const deletedElevationAwards = evaluateAchievementAwards([], [], now);
+  assert.ok(!deletedElevationAwards.some(item => item.id === 'elevation_mount_hood'), 'deleting the supporting activity should un-cross the Elevation award on recalculation');
+});
+
+test('Award engine persists new Challenges achievements and recalculates them after edits', () => {
+  const now = Date.UTC(2026, 11, 15, 12);
+
+  const winterActivities = [
+    activity({ id: 'winter-1', activityType: 'strength', startTime: Date.UTC(2026, 11, 2, 8) }),
+    activity({ id: 'winter-2', activityType: 'strength', startTime: Date.UTC(2026, 11, 9, 8) }),
+    activity({ id: 'winter-3', activityType: 'strength', startTime: Date.UTC(2026, 11, 16, 8) }),
+  ];
+  const seasonalAwards = evaluateAchievementAwards(winterActivities, [], now);
+  assert.ok(seasonalAwards.some(item => item.id === 'challenge_winter_strength_block'), 'award engine should surface a seasonal Challenge once 3+ activities fall in its months');
+
+  const deletedSeasonalAwards = evaluateAchievementAwards(winterActivities.slice(0, 2), [], now);
+  assert.ok(!deletedSeasonalAwards.some(item => item.id === 'challenge_winter_strength_block'), 'deleting an activity should un-cross a seasonal Challenge on recalculation');
+
+  const juneActivities = [
+    activity({ id: 'june-1', activityType: 'running', startTime: Date.UTC(2026, 5, 2, 8) }),
+    activity({ id: 'june-2', activityType: 'running', startTime: Date.UTC(2026, 5, 9, 8) }),
+    activity({ id: 'june-3', activityType: 'running', startTime: Date.UTC(2026, 5, 16, 8) }),
+  ];
+  const summerAwards = evaluateAchievementAwards(juneActivities, [], now);
+  assert.ok(summerAwards.some(item => item.id === 'challenge_summer_long_run'), 'a seasonal Challenge earned in a past season should stay earned regardless of the current month (unlike the live V2 display check)');
+
+  // Elevation Month has no approved threshold anywhere in the codebase/docs/reference image, so
+  // it must stay PENDING — never awarded, even with a large elevation month — until a real number
+  // is confirmed. See the comment above the (intentionally absent) award call in achievements.ts.
+  const massiveClimbs = [
+    activity({ id: 'climb-1', activityType: 'running', startTime: Date.UTC(2026, 6, 3, 8), metrics: { durationSeconds: 36_000, distanceMeters: 40_000, elevationGainMeters: 5_000 } }),
+    activity({ id: 'climb-2', activityType: 'running', startTime: Date.UTC(2026, 6, 10, 8), metrics: { durationSeconds: 36_000, distanceMeters: 40_000, elevationGainMeters: 5_000 } }),
+  ];
+  const elevationMonthAwards = evaluateAchievementAwards(massiveClimbs, [], now);
+  assert.ok(!elevationMonthAwards.some(item => item.id === 'challenge_elevation_month'), 'Elevation Month must stay pending and never be awarded until an approved threshold exists');
+
+  const fiveK = [activity({ id: '5k-run', activityType: 'running', startTime: Date.UTC(2026, 6, 5, 8), metrics: { durationSeconds: 1800, distanceMeters: 5000 } })];
+  const fiveKAwards = evaluateAchievementAwards(fiveK, [], now);
+  assert.ok(fiveKAwards.some(item => item.id === 'challenge_5k_month'), 'award engine should surface the new 5K Month Challenge without affecting the existing Monthly Distance ladder');
+  assert.ok(!calculateMonthlyDistanceMilestones(fiveK).some(item => item.id === 'monthly_run_5k'), 'the 5K Month Challenge must not have been added to the existing Monthly Distance family ladder');
 });
 
 test('Cumulative elevation achievements unlock only at the exact landmark threshold', () => {

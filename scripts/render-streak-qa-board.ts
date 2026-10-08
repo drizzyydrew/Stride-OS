@@ -66,7 +66,7 @@ function blitScaled(target: PNG, source: PNG, dx: number, dy: number, size: numb
   }
 }
 
-function dynamicPng(days: number, state: 'unlocked' | 'locked' | 'share-transparent' | 'share-opaque', compact = false): PNG {
+function dynamicPng(days: number, state: 'unlocked' | 'locked' | 'transparent', compact = false): PNG {
   mkdirSync(TEMP_DIR, { recursive: true });
   const slug = `${days}-${state}-${compact ? 'compact' : 'full'}`;
   const svgPath = path.join(TEMP_DIR, `${slug}.svg`);
@@ -85,7 +85,6 @@ function writeBoard(): void {
     { label: 'SPECIALTY', days: STREAK_MILESTONE_DEFINITIONS.map(item => item.thresholdDays), state: 'unlocked' as const },
     { label: 'LOCKED', days: STREAK_MILESTONE_DEFINITIONS.map(item => item.thresholdDays), state: 'locked' as const },
     { label: 'TRANSPARENT', days: STREAK_MILESTONE_DEFINITIONS.map(item => item.thresholdDays), state: 'transparent' as const },
-    { label: 'OPAQUE', days: STREAK_MILESTONE_DEFINITIONS.map(item => item.thresholdDays), state: 'opaque' as const },
     { label: 'CURRENT', days: [8, 35, 75, 142, 188, 225, 276, 330, 365, 428], state: 'unlocked' as const },
   ];
 
@@ -100,8 +99,7 @@ function writeBoard(): void {
       const assetPath =
         config.state === 'locked' ? definition?.lockedPngPath
           : config.state === 'transparent' ? definition?.shareTransparentPngPath
-            : config.state === 'opaque' ? definition?.shareOpaquePngPath
-              : definition?.unlockedPngPath;
+            : definition?.unlockedPngPath;
       const png = assetPath ? load(assetPath) : dynamicPng(days, 'unlocked');
       blitScaled(board, png, startX + index * (size + gap), rowY[row]!, size);
       drawTextPlaceholder(board, String(days), startX + index * (size + gap) + 48, rowY[row]! + size + 16);

@@ -3,6 +3,8 @@ export {
   MONTHLY_DISTANCE_BY_ID,
   MONTHLY_DISTANCE_BY_KM,
   MONTHLY_DISTANCE_DEFINITIONS,
+  normalizeMonthlyDistanceBadgeState,
+  type MonthlyDistanceBadgeInputState,
   type MonthlyDistanceBadgeState,
   type MonthlyDistanceDefinition,
   type MonthlyDistanceMilestoneKm,

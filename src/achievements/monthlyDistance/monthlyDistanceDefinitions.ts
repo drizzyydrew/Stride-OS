@@ -17,8 +17,18 @@ export type { MonthlyDistanceMilestoneKm } from './monthlyDistanceThresholds';
 export type MonthlyDistanceBadgeState =
   | 'unlocked'
   | 'locked'
-  | 'share-transparent'
-  | 'share-opaque';
+  | 'transparent';
+
+export type MonthlyDistanceBadgeInputState =
+  | MonthlyDistanceBadgeState
+  | 'share-opaque'
+  | 'share-transparent';
+
+export function normalizeMonthlyDistanceBadgeState(state?: MonthlyDistanceBadgeInputState): MonthlyDistanceBadgeState {
+  if (state === 'locked') return 'locked';
+  if (state === 'transparent' || state === 'share-transparent') return 'transparent';
+  return 'unlocked';
+}
 
 export type MonthlyDistanceDefinition = {
   id: `monthly_run_${number}k`;
@@ -35,8 +45,6 @@ export type MonthlyDistanceDefinition = {
   lockedPngPath: string;
   shareTransparentSvgPath: string;
   shareTransparentPngPath: string;
-  shareOpaqueSvgPath: string;
-  shareOpaquePngPath: string;
 };
 
 export const MONTHLY_DISTANCE_DEFINITIONS: MonthlyDistanceDefinition[] =
@@ -58,8 +66,6 @@ export const MONTHLY_DISTANCE_DEFINITIONS: MonthlyDistanceDefinition[] =
       lockedPngPath: `assets/achievements/monthly-distance/monthly-distance-${slug}-locked.png`,
       shareTransparentSvgPath: `assets/achievements/monthly-distance/monthly-distance-${slug}-transparent.svg`,
       shareTransparentPngPath: `assets/achievements/monthly-distance/monthly-distance-${slug}-transparent.png`,
-      shareOpaqueSvgPath: `assets/achievements/monthly-distance/monthly-distance-${slug}-opaque.svg`,
-      shareOpaquePngPath: `assets/achievements/monthly-distance/monthly-distance-${slug}-opaque.png`,
     };
   });
 

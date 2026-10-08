@@ -23,16 +23,21 @@ type Props = {
   units?: UnitSystem;
 };
 
+// Variant ids kept as-is (they're baked into export filenames); labels renamed to match the
+// four approved Share Studio layout names, mapped to whichever existing id's default rendering
+// already matches that design: badge_square's light card with kicker/headline/copy/chevron rail
+// reads as "Editorial"; story_poster's dark centered-badge card reads as "Minimal";
+// photo_overlay's transparent badge+text pairing is literally "Transparent Overlay".
 const VARIANT_COPY: Record<AchievementShareVariant, string> = {
-  badge_square: 'Badge',
-  story_poster: 'Poster',
-  photo_overlay: 'Overlay',
+  badge_square: 'Editorial',
+  story_poster: 'Minimal',
+  photo_overlay: 'Transparent Overlay',
 };
 
 export const ACHIEVEMENT_SHARE_VARIANTS: Array<{ id: AchievementShareVariant; label: string; description: string }> = [
-  { id: 'badge_square', label: 'Badge', description: 'Square achievement art' },
-  { id: 'story_poster', label: 'Poster', description: 'Tall story-ready card' },
-  { id: 'photo_overlay', label: 'Overlay', description: 'Transparent-friendly stat layer' },
+  { id: 'story_poster', label: 'Minimal', description: 'Clean centered badge card' },
+  { id: 'photo_overlay', label: 'Transparent Overlay', description: 'Transparent-friendly stat layer' },
+  { id: 'badge_square', label: 'Editorial', description: 'Headline card with supporting copy' },
 ];
 
 function MountainAchievementShareCard({ achievement, variant, detail }: Props) {
@@ -94,7 +99,7 @@ function MountainAchievementShareCard({ achievement, variant, detail }: Props) {
 function StreakAchievementShareCard({ achievement, variant, detail }: Props) {
   const title = achievement.title.toUpperCase();
   const milestone = (detail ?? achievement.title).toUpperCase();
-  const badgeState = variant === 'photo_overlay' ? 'share-transparent' : 'share-opaque';
+  const badgeState = variant === 'photo_overlay' ? 'transparent' : 'unlocked';
 
   if (variant === 'photo_overlay') {
     return (
@@ -141,7 +146,7 @@ function RunLevelAchievementShareCard({ achievement, variant, detail }: Props) {
   const level = runLevelSlugFromId(achievement.id);
   if (!level) return null;
   const title = achievement.title.toUpperCase();
-  const badgeState = variant === 'photo_overlay' ? 'share-transparent' : 'share-opaque';
+  const badgeState = variant === 'photo_overlay' ? 'transparent' : 'unlocked';
 
   if (variant === 'photo_overlay') {
     return (
@@ -202,7 +207,7 @@ export default function AchievementShareCard({ achievement, variant, detail, uni
             category={achievement.category}
             size="large"
             unitSystem={units}
-            badgeState={canonicalBadgeDefinition ? 'share-opaque' : undefined}
+            badgeState={canonicalBadgeDefinition ? 'unlocked' : undefined}
           />
         </View>
         <View>
@@ -227,7 +232,7 @@ export default function AchievementShareCard({ achievement, variant, detail, uni
             category={achievement.category}
             size="medium"
             unitSystem={units}
-            badgeState={canonicalBadgeDefinition ? 'share-transparent' : undefined}
+            badgeState={canonicalBadgeDefinition ? 'transparent' : undefined}
           />
           <View style={styles.overlayCopyWrap}>
             <Text style={styles.overlayTitle}>{achievement.title}</Text>
@@ -248,7 +253,7 @@ export default function AchievementShareCard({ achievement, variant, detail, uni
           category={achievement.category}
           size="large"
           unitSystem={units}
-          badgeState={canonicalBadgeDefinition ? 'share-opaque' : undefined}
+          badgeState={canonicalBadgeDefinition ? 'unlocked' : undefined}
         />
       </View>
       <View>

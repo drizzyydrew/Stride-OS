@@ -4,44 +4,40 @@ import Svg, { Circle, Defs, LinearGradient, Path, Polygon, Polyline, Rect, Stop,
 import {
   LifetimeDistanceCyclingBadge,
   lifetimeDistanceCyclingDefinitionFromAchievementId,
-  type LifetimeDistanceCyclingBadgeState,
 } from '../../achievements/lifetimeDistanceCycling';
 import {
   LifetimeDistanceRunningBadge,
   lifetimeDistanceRunningDefinitionFromAchievementId,
-  type LifetimeDistanceRunningBadgeState,
 } from '../../achievements/lifetimeDistanceRunning';
 import { RunLevelBadge as CanonicalRunLevelBadge, runLevelSlugFromId } from '../../achievements/runLevels';
 import {
   WeeklyDistanceBadge,
   weeklyDistanceDefinitionFromAchievementId,
-  type WeeklyDistanceBadgeState,
 } from '../../achievements/weeklyDistance';
 import {
   MonthlyDistanceBadge,
   monthlyDistanceDefinitionFromAchievementId,
-  type MonthlyDistanceBadgeState,
 } from '../../achievements/monthlyDistance';
 import {
   StreakBadge as CanonicalStreakBadge,
   streakDefinitionFromAchievementId,
-  type StreakBadgeState,
 } from '../../achievements/streaks';
 import {
   FirstAchievementBadge,
   firstAchievementDefinitionFromAchievementId,
-  type FirstAchievementBadgeState,
 } from '../../achievements/firsts';
 import {
   StrengthAchievementBadge,
   strengthAchievementDefinitionFromAchievementId,
-  type StrengthAchievementBadgeState,
 } from '../../achievements/strength';
 import {
   RecoveryAchievementBadge,
   recoveryAchievementDefinitionFromAchievementId,
-  type RecoveryAchievementBadgeState,
 } from '../../achievements/recovery';
+import {
+  ChallengeBadge,
+  challengeAchievementDefinitionFromAchievementId,
+} from '../../achievements/challenges';
 import type { UnitSystem } from '../../store/settingsStore';
 import type { AchievementCategory, AchievementId } from '../../utils/achievements';
 
@@ -61,7 +57,7 @@ type Props = {
   earned?: boolean;
   size?: AchievementBadgeSize;
   unitSystem?: UnitSystem;
-  badgeState?: LifetimeDistanceRunningBadgeState | LifetimeDistanceCyclingBadgeState | WeeklyDistanceBadgeState | MonthlyDistanceBadgeState | StreakBadgeState | FirstAchievementBadgeState | StrengthAchievementBadgeState | RecoveryAchievementBadgeState;
+  badgeState?: 'unlocked' | 'locked' | 'transparent';
   remainingDays?: number;
 };
 
@@ -349,6 +345,7 @@ export default function AchievementBadge({ id, category, earned = true, size = '
   const tone = TONES[resolvedCategory];
   const dimmed = !earned;
   const box = SIZE[size];
+  const resolvedBadgeState = badgeState ?? (earned ? 'unlocked' : 'locked');
 
   if (resolvedCategory === 'streak') {
     const definition = streakDefinitionFromAchievementId(id);
@@ -356,7 +353,7 @@ export default function AchievementBadge({ id, category, earned = true, size = '
     return (
       <CanonicalStreakBadge
         days={days}
-        state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+        state={resolvedBadgeState}
         size={box}
         compact={size === 'small'}
         remainingDays={remainingDays}
@@ -369,7 +366,7 @@ export default function AchievementBadge({ id, category, earned = true, size = '
       return (
         <FirstAchievementBadge
           achievement={definition.id}
-          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          state={resolvedBadgeState}
           size={box}
           compact={size === 'small'}
           unitSystem={unitSystem}
@@ -383,7 +380,7 @@ export default function AchievementBadge({ id, category, earned = true, size = '
       return (
         <StrengthAchievementBadge
           achievement={definition.id}
-          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          state={resolvedBadgeState}
           size={box}
           compact={size === 'small'}
         />
@@ -396,7 +393,20 @@ export default function AchievementBadge({ id, category, earned = true, size = '
       return (
         <RecoveryAchievementBadge
           achievement={definition.id}
-          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          state={resolvedBadgeState}
+          size={box}
+          compact={size === 'small'}
+        />
+      );
+    }
+  }
+  if (resolvedCategory === 'challenges') {
+    const definition = challengeAchievementDefinitionFromAchievementId(id);
+    if (definition) {
+      return (
+        <ChallengeBadge
+          achievement={definition.id}
+          state={resolvedBadgeState}
           size={box}
           compact={size === 'small'}
         />
@@ -406,7 +416,7 @@ export default function AchievementBadge({ id, category, earned = true, size = '
   if (resolvedCategory === 'run_level') {
     const level = runLevelSlugFromId(id);
     if (level) {
-      return <CanonicalRunLevelBadge level={level} state={earned ? 'unlocked' : 'locked'} size={box} compact={size === 'small'} />;
+      return <CanonicalRunLevelBadge level={level} state={resolvedBadgeState} size={box} compact={size === 'small'} units={unitSystem} />;
     }
   }
   if (resolvedCategory === 'stride_level') {
@@ -418,7 +428,7 @@ export default function AchievementBadge({ id, category, earned = true, size = '
       return (
         <LifetimeDistanceRunningBadge
           milestone={definition.thresholdMiles}
-          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          state={resolvedBadgeState}
           unitSystem={unitSystem}
           size={box}
           compact={size === 'small'}
@@ -432,7 +442,7 @@ export default function AchievementBadge({ id, category, earned = true, size = '
       return (
         <LifetimeDistanceCyclingBadge
           milestone={definition.thresholdMiles}
-          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          state={resolvedBadgeState}
           unitSystem={unitSystem}
           size={box}
           compact={size === 'small'}
@@ -446,7 +456,7 @@ export default function AchievementBadge({ id, category, earned = true, size = '
       return (
         <WeeklyDistanceBadge
           milestoneKm={definition.thresholdKm}
-          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          state={resolvedBadgeState}
           size={box}
           compact={size === 'small'}
           unitSystem={unitSystem}
@@ -460,7 +470,7 @@ export default function AchievementBadge({ id, category, earned = true, size = '
       return (
         <MonthlyDistanceBadge
           milestoneKm={definition.thresholdKm}
-          state={badgeState ?? (earned ? 'unlocked' : 'locked')}
+          state={resolvedBadgeState}
           size={box}
           compact={size === 'small'}
           unitSystem={unitSystem}

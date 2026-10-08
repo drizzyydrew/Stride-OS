@@ -3,6 +3,8 @@ export {
   WEEKLY_DISTANCE_BY_ID,
   WEEKLY_DISTANCE_BY_KM,
   WEEKLY_DISTANCE_DEFINITIONS,
+  normalizeWeeklyDistanceBadgeState,
+  type WeeklyDistanceBadgeInputState,
   type WeeklyDistanceBadgeState,
   type WeeklyDistanceDefinition,
   type WeeklyDistanceMilestoneKm,

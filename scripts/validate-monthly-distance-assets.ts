@@ -67,10 +67,6 @@ function validateSvg(assetPath: string): string {
   return svg;
 }
 
-function normalizeOpaqueSvg(svg: string): string {
-  return svg.replace(/monthly-distance-[^"]+-opaque-/g, match => match.replace('-opaque-', '-unlocked-'));
-}
-
 let checked = 0;
 const tierHexes = Object.values(MONTHLY_DISTANCE_TIER_COLORS).flatMap(colors => Object.values(colors).map(value => value.toLowerCase()));
 
@@ -82,8 +78,6 @@ for (const definition of MONTHLY_DISTANCE_DEFINITIONS) {
     definition.lockedPngPath,
     definition.shareTransparentSvgPath,
     definition.shareTransparentPngPath,
-    definition.shareOpaqueSvgPath,
-    definition.shareOpaquePngPath,
   ];
 
   for (const assetPath of allPaths) {
@@ -96,20 +90,18 @@ for (const definition of MONTHLY_DISTANCE_DEFINITIONS) {
   const unlockedSvg = validateSvg(definition.artworkPath);
   const lockedSvg = validateSvg(definition.lockedArtworkPath);
   const transparentSvg = validateSvg(definition.shareTransparentSvgPath);
-  const opaqueSvg = validateSvg(definition.shareOpaqueSvgPath);
   assert(unlockedSvg.includes('MONTH'), `${definition.artworkPath} is missing MONTH`);
   assert(unlockedSvg.includes('STRIDEOS'), `${definition.artworkPath} is missing STRIDEOS`);
   assert(transparentSvg.includes('fill="transparent" fill-opacity="0"'), `${definition.shareTransparentSvgPath} does not clear the hexagon interior`);
-  assert(normalizeOpaqueSvg(opaqueSvg) === unlockedSvg, `${definition.shareOpaqueSvgPath} does not match unlocked SVG artwork`);
   for (const hex of tierHexes) {
     assert(!lockedSvg.toLowerCase().includes(hex), `${definition.lockedArtworkPath} contains tier hue ${hex}`);
   }
+  assert(!/monthly-distance-[^"]+-opaque/.test(unlockedSvg + lockedSvg + transparentSvg), `${definition.id} references obsolete opaque Monthly Distance assets`);
 
   for (const pngPath of [
     definition.unlockedPngPath,
     definition.lockedPngPath,
     definition.shareTransparentPngPath,
-    definition.shareOpaquePngPath,
   ]) {
     const png = readPng(pngPath);
     assert(png.width === EXPECTED_PNG_SIZE && png.height === EXPECTED_PNG_SIZE, `${pngPath} has inconsistent dimensions`);
@@ -127,8 +119,6 @@ const expectedNames = new Set(
     `monthly-distance-${definition.slug}-locked.png`,
     `monthly-distance-${definition.slug}-transparent.svg`,
     `monthly-distance-${definition.slug}-transparent.png`,
-    `monthly-distance-${definition.slug}-opaque.svg`,
-    `monthly-distance-${definition.slug}-opaque.png`,
   ]),
 );
 const actualNames = new Set(readdirSync(ASSET_DIR));

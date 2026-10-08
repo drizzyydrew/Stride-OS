@@ -14,5 +14,7 @@ export { RUN_LEVEL_COLORS } from './runLevelColors';
 export {
   renderRunLevelBadgeSvg,
   runLevelBadgeAccessibilityLabel,
+  normalizeRunLevelBadgeState,
+  type RunLevelBadgeInputState,
   type RunLevelBadgeState,
 } from './runLevelArtwork';

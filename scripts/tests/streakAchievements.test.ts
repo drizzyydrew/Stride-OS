@@ -258,6 +258,30 @@ test('streak does not advance from scheduled days without a logged workout', () 
   assert.equal(streak.achievements.find(item => item.id === 'streak_1_week')?.state, 'locked');
 });
 
+test('a planned rest day does not break the current streak', () => {
+  const sessions = [
+    session('2026-08-03'),
+    session('2026-08-04'),
+    session('2026-08-05', { activityType: 'rest', subtype: 'rest_day', title: 'Rest Day', priority: 'optional', status: 'completed', completedActivityId: undefined }),
+    session('2026-08-06'),
+  ];
+  const activities = [activity('2026-08-03'), activity('2026-08-04'), activity('2026-08-06')];
+  const streak = calculateStreakAchievements(activities, { now: at('2026-08-06', 13), scheduledSessions: sessions });
+  assert.equal(streak.currentStreakDays, 4, 'a scheduled rest day with no logged activity should not break the streak');
+});
+
+test('a scheduled recovery/mobility session also does not break the current streak', () => {
+  const sessions = [
+    session('2026-08-03'),
+    session('2026-08-04'),
+    session('2026-08-05', { activityType: 'mobility', subtype: 'recovery', title: 'Recovery Mobility', purpose: 'Active recovery / taper', priority: 'optional', status: 'completed', completedActivityId: undefined }),
+    session('2026-08-06'),
+  ];
+  const activities = [activity('2026-08-03'), activity('2026-08-04'), activity('2026-08-06')];
+  const streak = calculateStreakAchievements(activities, { now: at('2026-08-06', 13), scheduledSessions: sessions });
+  assert.equal(streak.currentStreakDays, 4, 'a scheduled recovery/mobility day with no logged activity should not break the streak');
+});
+
 test('workouts more than twenty-four hours apart start a new current streak', () => {
   const activities = [
     activity('2026-08-03', { startTime: at('2026-08-03', 7), endTime: at('2026-08-03', 7) + 30 * 60 * 1000 }),

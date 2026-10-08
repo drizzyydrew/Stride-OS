@@ -23,7 +23,7 @@ test('run level achievement shares stay level-focused and do not inherit activit
   const shareStudio = read('src/components/share/ShareStudio.tsx');
 
   assert.match(shareStudio, /isRunLevelAchievement = Boolean\(achievement && runLevelSlugFromId\(achievement\.id\)\)/);
-  assert.match(shareStudio, /!isRunLevelAchievement && metricValue\(activity, 'imperial', 'distance'\)/);
+  assert.match(shareStudio, /!isRunLevelAchievement && metricValue\(activity, units, 'distance'\)/);
   assert.match(shareStudio, /keys\.includes\(key\) && enabled\[key\]/);
   assert.match(shareStudio, /keys\.includes\('route'\) && enabled\.route/);
   assert.match(shareStudio, /activityTitle && achievementShareTitle && !runLevelSlug/);

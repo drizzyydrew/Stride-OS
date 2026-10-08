@@ -8,6 +8,7 @@ import RunLevelProgress from '../../../src/achievements/runLevels/RunLevelProgre
 import AchievementBadge from '../../../src/components/achievements/AchievementBadge';
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import ShareStudio, {
+  SHARE_STUDIO_ACHIEVEMENT_VARIANT,
   SHARE_STUDIO_FORMATS,
   SHARE_STUDIO_VARIANTS,
   type ShareStudioFormat,
@@ -134,7 +135,7 @@ export default function AchievementDetailScreen() {
           <Text style={[s.eyebrow, { color: C.textDim }]}>SHARE STUDIO</Text>
           {!shareEnabled ? <Text style={[s.body, { color: C.textMuted }]}>Sharing unlocks after this achievement is earned.</Text> : null}
           <View style={s.variantGrid}>
-            {SHARE_STUDIO_VARIANTS.map(item => {
+            {(relatedActivity ? [...SHARE_STUDIO_VARIANTS, SHARE_STUDIO_ACHIEVEMENT_VARIANT] : SHARE_STUDIO_VARIANTS).map(item => {
               const active = item.id === variant;
               return (
                 <TouchableOpacity

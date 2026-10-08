@@ -3,7 +3,8 @@ import { SvgXml } from 'react-native-svg';
 
 import {
   RECOVERY_ACHIEVEMENT_BY_ID,
-  type RecoveryAchievementBadgeState,
+  normalizeRecoveryAchievementBadgeState,
+  type RecoveryAchievementBadgeInputState,
   type RecoveryAchievementId,
 } from './recoveryDefinitions';
 import { RECOVERY_VIEWBOX, renderRecoveryAchievementBadgeSvg } from './recoveryArtwork';
@@ -11,7 +12,7 @@ import { recoveryAchievementAccessibilityLabel } from './recoveryUtils';
 
 type Props = {
   achievement: RecoveryAchievementId;
-  state?: RecoveryAchievementBadgeState;
+  state?: RecoveryAchievementBadgeInputState;
   compact?: boolean;
   size?: number;
   remaining?: number;
@@ -27,7 +28,7 @@ export default function RecoveryAchievementBadge({
   style,
 }: Props) {
   const definition = RECOVERY_ACHIEVEMENT_BY_ID[achievement];
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
+  const visualState = normalizeRecoveryAchievementBadgeState(state);
   return (
     <View
       style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}

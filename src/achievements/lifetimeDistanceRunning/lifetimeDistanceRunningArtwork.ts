@@ -1,6 +1,8 @@
 import type { UnitSystem } from '../../store/settingsStore';
 import {
   LIFETIME_DISTANCE_RUNNING_BY_MILESTONE,
+  normalizeLifetimeDistanceRunningBadgeState,
+  type LifetimeDistanceRunningBadgeInputState,
   type LifetimeDistanceRunningBadgeState,
   type LifetimeDistanceRunningDefinition,
   type LifetimeDistanceRunningMilestone,
@@ -42,7 +44,7 @@ export function lifetimeDistanceRunningBadgeTokens(
   state: LifetimeDistanceRunningBadgeState,
 ): LifetimeDistanceRunningRenderTokens {
   const locked = state === 'locked';
-  const transparent = state === 'share-transparent';
+  const transparent = state === 'transparent';
   const colors = locked
     ? {
         primary: LIFETIME_DISTANCE_RUNNING_LOCKED_GRAY,
@@ -71,7 +73,16 @@ export function lifetimeDistanceRunningNumberFontSize(text: string, compact = fa
   return compact ? Math.max(12, base - 2) : base;
 }
 
+const LIFETIME_DISTANCE_RUNNING_NUMBER_X_OVERRIDES: Record<string, number> = {
+  '1': 44,
+  '5': 48,
+  '10': 47.3,
+  '50': 48.3,
+};
+
 export function lifetimeDistanceRunningNumberX(text: string): number {
+  const override = LIFETIME_DISTANCE_RUNNING_NUMBER_X_OVERRIDES[text];
+  if (override !== undefined) return override;
   if (text.includes(',')) return 49.2;
   if (/^\d{3,}$/.test(text)) return text.startsWith('1') ? 48.4 : 48.8;
   if (text.startsWith('1') && text.length >= 3) return 48.4;
@@ -86,11 +97,11 @@ function escapeXml(text: string): string {
 
 export function renderLifetimeDistanceRunningBadgeSvg(
   milestone: LifetimeDistanceRunningMilestone,
-  state: LifetimeDistanceRunningBadgeState = 'unlocked',
+  state: LifetimeDistanceRunningBadgeInputState = 'unlocked',
   options: { unitSystem?: UnitSystem; compact?: boolean; size?: number; remainingMeters?: number } = {},
 ): string {
   const definition = LIFETIME_DISTANCE_RUNNING_BY_MILESTONE[milestone];
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
+  const visualState = normalizeLifetimeDistanceRunningBadgeState(state);
   const unitSystem = options.unitSystem ?? 'imperial';
   const compact = options.compact ?? false;
   const size = options.size ?? LIFETIME_DISTANCE_RUNNING_VIEWBOX;
@@ -113,7 +124,7 @@ export function renderLifetimeDistanceRunningBadgeSvg(
     </linearGradient>
     <radialGradient id="${glowId}" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 42) rotate(90) scale(32 35)">
       <stop offset="0" stop-color="${tokens.glow}" stop-opacity="${visualState === 'locked' ? '0.18' : '0.38'}"/>
-      <stop offset="0.55" stop-color="${tokens.glow}" stop-opacity="${visualState === 'share-transparent' ? '0.05' : '0.13'}"/>
+      <stop offset="0.55" stop-color="${tokens.glow}" stop-opacity="${visualState === 'transparent' ? '0.05' : '0.13'}"/>
       <stop offset="1" stop-color="${tokens.glow}" stop-opacity="0"/>
     </radialGradient>
   </defs>

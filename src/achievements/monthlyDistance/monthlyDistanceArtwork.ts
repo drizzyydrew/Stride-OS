@@ -1,5 +1,7 @@
 import {
   MONTHLY_DISTANCE_BY_KM,
+  normalizeMonthlyDistanceBadgeState,
+  type MonthlyDistanceBadgeInputState,
   type MonthlyDistanceBadgeState,
   type MonthlyDistanceDefinition,
   type MonthlyDistanceMilestoneKm,
@@ -13,7 +15,7 @@ import {
   monthlyDistanceAchievementAccessibilityLabel,
 } from './monthlyDistanceUtils';
 
-export type { MonthlyDistanceBadgeState } from './monthlyDistanceDefinitions';
+export type { MonthlyDistanceBadgeInputState, MonthlyDistanceBadgeState } from './monthlyDistanceDefinitions';
 
 export const MONTHLY_DISTANCE_VIEWBOX = 100;
 export const MONTHLY_DISTANCE_HEXAGON_PATH =
@@ -42,7 +44,7 @@ export function monthlyDistanceBadgeTokens(
   state: MonthlyDistanceBadgeState,
 ): MonthlyDistanceRenderTokens {
   const locked = state === 'locked';
-  const transparent = state === 'share-transparent';
+  const transparent = state === 'transparent';
   const colors = locked
     ? {
         primary: MONTHLY_DISTANCE_LOCKED_GRAY,
@@ -82,11 +84,11 @@ function escapeXml(text: string): string {
 
 export function renderMonthlyDistanceBadgeSvg(
   milestoneKm: MonthlyDistanceMilestoneKm,
-  state: MonthlyDistanceBadgeState = 'unlocked',
+  state: MonthlyDistanceBadgeInputState = 'unlocked',
   options: { compact?: boolean; size?: number; remainingMeters?: number } = {},
 ): string {
   const definition = MONTHLY_DISTANCE_BY_KM[milestoneKm];
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
+  const visualState = normalizeMonthlyDistanceBadgeState(state);
   const compact = options.compact ?? false;
   const size = options.size ?? MONTHLY_DISTANCE_VIEWBOX;
   const tokens = monthlyDistanceBadgeTokens(definition, visualState);
@@ -107,7 +109,7 @@ export function renderMonthlyDistanceBadgeSvg(
     </linearGradient>
     <radialGradient id="${glowId}" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 39) rotate(90) scale(34 38)">
       <stop offset="0" stop-color="${tokens.glow}" stop-opacity="${visualState === 'locked' ? '0.14' : '0.34'}"/>
-      <stop offset="0.62" stop-color="${tokens.glow}" stop-opacity="${visualState === 'share-transparent' ? '0.04' : '0.12'}"/>
+      <stop offset="0.62" stop-color="${tokens.glow}" stop-opacity="${visualState === 'transparent' ? '0.04' : '0.12'}"/>
       <stop offset="1" stop-color="${tokens.glow}" stop-opacity="0"/>
     </radialGradient>
   </defs>

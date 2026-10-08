@@ -1,6 +1,8 @@
 import {
   STREAK_MILESTONE_BY_ID,
   streakHeatTierForDays,
+  normalizeStreakBadgeState,
+  type StreakBadgeInputState,
   type StreakBadgeState,
 } from './streakDefinitions';
 import {
@@ -11,7 +13,7 @@ import {
 } from './streakTokens';
 import { streakAchievementAccessibilityLabel } from './streakUtils';
 
-export type { StreakBadgeState } from './streakDefinitions';
+export type { StreakBadgeInputState, StreakBadgeState } from './streakDefinitions';
 
 export const STREAK_VIEWBOX = 100;
 export const STREAK_HEXAGON_PATH =
@@ -46,9 +48,8 @@ export type StreakRenderTokens = {
 };
 
 export function streakBadgeTokens(days: number, state: StreakBadgeState): StreakRenderTokens {
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
-  const locked = visualState === 'locked';
-  const transparent = visualState === 'share-transparent';
+  const locked = state === 'locked';
+  const transparent = state === 'transparent';
   const heatTier = streakHeatTierForDays(days);
   const colors = locked
     ? {
@@ -92,11 +93,11 @@ function escapeXml(text: string): string {
 
 export function renderStreakBadgeSvg(
   days: number,
-  state: StreakBadgeState = 'unlocked',
+  state: StreakBadgeInputState = 'unlocked',
   options: { compact?: boolean; size?: number; remainingDays?: number } = {},
 ): string {
   const safeDays = Math.max(1, Math.floor(Number.isFinite(days) ? days : 1));
-  const visualState = state === 'share-opaque' ? 'unlocked' : state;
+  const visualState = normalizeStreakBadgeState(state);
   const compact = options.compact ?? false;
   const size = options.size ?? STREAK_VIEWBOX;
   const tokens = streakBadgeTokens(safeDays, visualState);
@@ -126,7 +127,7 @@ export function renderStreakBadgeSvg(
     </linearGradient>
     <radialGradient id="${glowId}" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 43) rotate(90) scale(36 32)">
       <stop offset="0" stop-color="${tokens.glow}" stop-opacity="${visualState === 'locked' ? '0.13' : '0.36'}"/>
-      <stop offset="0.66" stop-color="${tokens.glow}" stop-opacity="${visualState === 'share-transparent' ? '0.04' : '0.12'}"/>
+      <stop offset="0.66" stop-color="${tokens.glow}" stop-opacity="${visualState === 'transparent' ? '0.04' : '0.12'}"/>
       <stop offset="1" stop-color="${tokens.glow}" stop-opacity="0"/>
     </radialGradient>
   </defs>
@@ -135,7 +136,7 @@ export function renderStreakBadgeSvg(
   <ellipse cx="50" cy="44" rx="31" ry="29" fill="url(#${glowId})" opacity="${tokens.ambientOpacity}"/>
   <path d="${STREAK_FLAME_OUTER_PATH}" fill="url(#${flameId})" opacity="${tokens.flameOpacity}" transform="${STREAK_FLAME_TRANSFORM}"/>
   <path d="${STREAK_FLAME_LEFT_PATH}" fill="${tokens.primary}" opacity="${visualState === 'locked' ? 0.28 : 0.72}" transform="${STREAK_FLAME_TRANSFORM}"/>
-  <path d="${STREAK_FLAME_INNER_PATH}" fill="${visualState === 'locked' ? '#111315' : STREAK_PANEL_BLACK}" opacity="${visualState === 'share-transparent' ? 0.18 : 0.92}" transform="${STREAK_FLAME_TRANSFORM}"/>
+  <path d="${STREAK_FLAME_INNER_PATH}" fill="${visualState === 'locked' ? '#111315' : STREAK_PANEL_BLACK}" opacity="${visualState === 'transparent' ? 0.18 : 0.92}" transform="${STREAK_FLAME_TRANSFORM}"/>
   <path d="${STREAK_FLAME_INNER_PATH}" fill="${tokens.center}" opacity="${visualState === 'locked' ? 0.22 : 0.18}" transform="${STREAK_FLAME_TRANSFORM} translate(1.1 -1.2) scale(0.94)"/>
   ${tokens.keylineOpacity > 0 ? `<text x="${numberX}" y="65.8" text-anchor="middle" dominant-baseline="middle" font-family="${STREAK_NUMBER_FONT}" font-size="${numberSize}" font-weight="600" stroke="#030405" stroke-width="1.05" stroke-opacity="${tokens.keylineOpacity}" fill="none">${escapeXml(text)}</text>` : ''}
   <text x="${numberX}" y="65.8" text-anchor="middle" dominant-baseline="middle" font-family="${STREAK_NUMBER_FONT}" font-size="${numberSize}" font-weight="600" fill="${tokens.primary}" fill-opacity="${tokens.numberOpacity}">${escapeXml(text)}</text>

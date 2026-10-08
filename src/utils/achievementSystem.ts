@@ -68,6 +68,12 @@ import {
   recoveryAchievementProgressText,
   recoveryAchievementSupportValue,
 } from '../achievements/recovery/recoveryUtils';
+import { CHALLENGES_COLORS } from '../achievements/challenges/challengesTokens';
+import { CHALLENGE_REGISTRY_DEFINITIONS } from '../achievements/challenges/challengesDefinitions';
+import {
+  challengeAchievementAccessibilityLabel,
+  challengeAchievementDefinitionFromAchievementId,
+} from '../achievements/challenges/challengesUtils';
 
 const M_PER_MI = 1609.344;
 const M_PER_KM = 1000;
@@ -215,6 +221,31 @@ function baseDef(input: Omit<AchievementDefinitionV2, 'shareCardEligibility' | '
   };
 }
 
+type ChallengeEvaluationParams = {
+  ruleKind: AchievementRuleKind;
+  unitBehavior: AchievementUnitBehavior;
+  threshold: number;
+  thresholdUnit: AchievementDefinitionV2['thresholdUnit'];
+  period: AchievementPeriod;
+};
+
+// Elevation Month has NO approved threshold anywhere in the codebase/docs/reference image for a
+// monthly elevation-gain challenge (confirmed by repeated search). Per explicit product direction,
+// this must stay PENDING rather than silently approved at a guessed number — threshold is set to
+// Infinity so the badge is visible (shows "pending" criteria text) but can never be earned until a
+// real number is supplied. Do not change this to a finite value without explicit confirmation.
+const CHALLENGE_ELEVATION_MONTH_THRESHOLD_METERS = Number.POSITIVE_INFINITY;
+
+const CHALLENGE_EVALUATION_PARAMS: Record<string, ChallengeEvaluationParams> = {
+  challenge_august_base_builder: { ruleKind: 'challenge', unitBehavior: 'count', threshold: 3, thresholdUnit: 'count', period: 'seasonal' },
+  challenge_september_consistency: { ruleKind: 'challenge', unitBehavior: 'count', threshold: 3, thresholdUnit: 'count', period: 'seasonal' },
+  challenge_winter_strength_block: { ruleKind: 'challenge', unitBehavior: 'count', threshold: 3, thresholdUnit: 'count', period: 'seasonal' },
+  challenge_spring_mileage_build: { ruleKind: 'challenge', unitBehavior: 'count', threshold: 3, thresholdUnit: 'count', period: 'seasonal' },
+  challenge_summer_long_run: { ruleKind: 'challenge', unitBehavior: 'count', threshold: 3, thresholdUnit: 'count', period: 'seasonal' },
+  challenge_elevation_month: { ruleKind: 'challenge', unitBehavior: 'unit_sensitive_elevation', threshold: CHALLENGE_ELEVATION_MONTH_THRESHOLD_METERS, thresholdUnit: 'meters', period: 'monthly' },
+  challenge_5k_month: { ruleKind: 'monthly_distance', unitBehavior: 'fixed_k_identity', threshold: 5000, thresholdUnit: 'meters', period: 'monthly' },
+};
+
 export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
   ...RUN_LEVEL_DEFINITIONS.map(level => baseDef({
     id: level.id,
@@ -231,7 +262,7 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     artworkKey: `run-level-${level.slug}`,
     artworkPath: level.artworkPath,
     lockedArtworkPath: level.lockedArtworkPath,
-    shareArtPath: level.shareOpaquePngPath,
+    shareArtPath: level.unlockedPngPath,
     shareOverlayPath: level.shareTransparentPngPath,
     period: 'lifetime',
     tier: level.tier,
@@ -254,7 +285,7 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     artworkKey: `firsts-${definition.slug}`,
     artworkPath: definition.artworkPath,
     lockedArtworkPath: definition.lockedArtworkPath,
-    shareArtPath: definition.shareOpaquePngPath,
+    shareArtPath: definition.unlockedPngPath,
     shareOverlayPath: definition.shareTransparentPngPath,
     period: 'one_time',
     tier: definition.tier,
@@ -277,7 +308,7 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     artworkKey: `lifetime-running-${definition.slug}`,
     artworkPath: definition.artworkPath,
     lockedArtworkPath: definition.lockedArtworkPath,
-    shareArtPath: definition.shareOpaquePngPath,
+    shareArtPath: definition.unlockedPngPath,
     shareOverlayPath: definition.shareTransparentPngPath,
     period: 'lifetime',
     tier: definition.tier,
@@ -300,7 +331,7 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     artworkKey: `lifetime-cycling-${definition.slug}`,
     artworkPath: definition.artworkPath,
     lockedArtworkPath: definition.lockedArtworkPath,
-    shareArtPath: definition.shareOpaquePngPath,
+    shareArtPath: definition.unlockedPngPath,
     shareOverlayPath: definition.shareTransparentPngPath,
     period: 'lifetime',
     tier: definition.tier,
@@ -323,7 +354,7 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     artworkKey: `weekly-distance-${definition.slug}`,
     artworkPath: definition.artworkPath,
     lockedArtworkPath: definition.lockedArtworkPath,
-    shareArtPath: definition.shareOpaquePngPath,
+    shareArtPath: definition.unlockedPngPath,
     shareOverlayPath: definition.shareTransparentPngPath,
     period: 'weekly',
     tier: definition.tier,
@@ -346,7 +377,7 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     artworkKey: `monthly-distance-${definition.slug}`,
     artworkPath: definition.artworkPath,
     lockedArtworkPath: definition.lockedArtworkPath,
-    shareArtPath: definition.shareOpaquePngPath,
+    shareArtPath: definition.unlockedPngPath,
     shareOverlayPath: definition.shareTransparentPngPath,
     period: 'monthly',
     tier: definition.tier,
@@ -391,7 +422,7 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     artworkKey: `strength-${definition.slug}`,
     artworkPath: definition.artworkPath,
     lockedArtworkPath: definition.lockedArtworkPath,
-    shareArtPath: definition.shareOpaquePngPath,
+    shareArtPath: definition.unlockedPngPath,
     shareOverlayPath: definition.shareTransparentPngPath,
     period: definition.ruleKind === 'strength_count' ? 'lifetime' : 'rolling',
     tier: definition.tier,
@@ -414,8 +445,8 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     artworkKey: `streak-${item.slug}`,
     artworkPath: item.artworkPath,
     lockedArtworkPath: item.lockedArtworkPath,
-    shareArtPath: item.shareAssetPaths.cleanDark,
-    shareOverlayPath: item.shareAssetPaths.overlay,
+    shareArtPath: item.unlockedPngPath,
+    shareOverlayPath: item.shareTransparentPngPath,
     period: 'current_streak',
     tier: item.tier,
     dominantColor: item.dominantHeatColor,
@@ -436,13 +467,39 @@ export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
     artworkKey: `recovery-${definition.slug}`,
     artworkPath: definition.artworkPath,
     lockedArtworkPath: definition.lockedArtworkPath,
-    shareArtPath: definition.shareOpaquePngPath,
+    shareArtPath: definition.unlockedPngPath,
     shareOverlayPath: definition.shareTransparentPngPath,
     period: 'rolling',
     tier: definition.tier,
     dominantColor: RECOVERY_COLORS.primary,
     sourceNotes: 'Original StrideOS Recovery / Readiness hexagon vector system derived from the approved badge reference image.',
   })),
+  ...CHALLENGE_REGISTRY_DEFINITIONS.map(definition => {
+    const params = CHALLENGE_EVALUATION_PARAMS[definition.id];
+    return baseDef({
+      id: definition.id,
+      family: 'challenges',
+      category: 'challenges',
+      title: definition.title,
+      shortTitle: definition.compactTitle,
+      description: definition.description,
+      criteria: definition.criteria,
+      ruleKind: params.ruleKind,
+      unitBehavior: params.unitBehavior,
+      threshold: params.threshold,
+      thresholdUnit: params.thresholdUnit,
+      sportApplicability: ['running', 'walking', 'cycling', 'strength', 'mobility'],
+      artworkKey: `challenges-${definition.slug}`,
+      artworkPath: definition.artworkPath,
+      lockedArtworkPath: definition.lockedArtworkPath,
+      shareArtPath: definition.unlockedPngPath,
+      shareOverlayPath: definition.shareTransparentPngPath,
+      period: params.period,
+      tier: definition.tier,
+      dominantColor: CHALLENGES_COLORS[definition.colorToken].primary,
+      sourceNotes: 'Original StrideOS Challenges hexagon vector system derived from the approved badge reference image.',
+    });
+  }),
 ];
 
 export const ACHIEVEMENT_SYSTEM_CATEGORY_LABELS: Record<AchievementFamily, string> = {
@@ -633,6 +690,20 @@ function displayRunLevelDistance(meters: number, units: UnitSystem): string {
   return `${Math.round(meters / M_PER_MI).toLocaleString()} mi`;
 }
 
+// The static `criteria` sentence on run_levels/lifetime_running/lifetime_cycling definitions was
+// baked at module-load time with a hardcoded 'imperial' unit, so metric users always saw it in
+// miles regardless of their setting. Override it live per-evaluation using the same unit-aware
+// formatter already used for displayTarget, rather than changing the definitions' static text
+// (which stays as a safe non-unit-specific fallback for every other family).
+function unitAwareCriteria(def: AchievementDefinitionV2, units: UnitSystem): string {
+  if (def.family === 'run_levels') {
+    return def.threshold === 0 ? def.criteria : `Reach ${formatAchievementSupportValue(def, units)} of lifetime running distance.`;
+  }
+  if (def.family === 'lifetime_running') return `Reach ${formatAchievementSupportValue(def, units)} of completed running.`;
+  if (def.family === 'lifetime_cycling') return `Reach ${formatAchievementSupportValue(def, units)} of completed cycling.`;
+  return def.criteria;
+}
+
 export function formatAchievementSupportValue(def: AchievementDefinitionV2, units: UnitSystem): string {
   if (def.family === 'run_levels') return displayRunLevelDistance(def.threshold, units);
   if (def.family === 'lifetime_running') {
@@ -713,6 +784,10 @@ function achievementAccessibilityLabel(
   if (def.family === 'recovery') {
     const recovery = recoveryAchievementDefinitionFromAchievementId(def.id);
     if (recovery) return recoveryAchievementAccessibilityLabel(recovery, complete ? 'earned' : 'locked', remaining);
+  }
+  if (def.family === 'challenges') {
+    const challenge = challengeAchievementDefinitionFromAchievementId(def.id);
+    if (challenge) return challengeAchievementAccessibilityLabel(challenge, complete ? 'earned' : 'locked');
   }
   return `${def.title} achievement. ${complete ? 'Earned' : `Locked. ${remainingText}`}. Progress ${Math.round(progressPercentage * 100)} percent.`;
 }
@@ -936,7 +1011,9 @@ export function evaluateAchievementSystem(input: AchievementEvaluationInput): Ev
         ? 'newly_earned'
         : 'earned'
       : 'locked';
-    const remainingText = def.family === 'run_levels' && remaining > 0
+    const remainingText = def.id === 'challenge_elevation_month'
+      ? 'Threshold pending confirmation'
+      : def.family === 'run_levels' && remaining > 0
       ? `${displayRunLevelDistance(remaining, ctx.input.units)} to ${def.title}`
       : def.family === 'lifetime_running' && remaining > 0
         ? `${formatLifetimeRunningRemainingMeters(remaining, ctx.input.units)} remaining`
@@ -953,6 +1030,7 @@ export function evaluateAchievementSystem(input: AchievementEvaluationInput): Ev
         : `${displayAchievementProgressValue(remaining, def, ctx.input.units)} remaining`;
     return {
       ...def,
+      criteria: unitAwareCriteria(def, ctx.input.units),
       state,
       achievedDate,
       achievedActivityId: result.activityId,
