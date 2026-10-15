@@ -4,11 +4,11 @@ import { StyleSheet, Text, View } from 'react-native';
 // (ShareStudio's movable/fixed brand layer and AchievementShareCard's static brand rows).
 export const SHARE_CHEVRON_COLORS = ['#B8C4A9', '#A6C0B4', '#E3CDB8', '#78A3BE', '#5E7E92'];
 
-export default function ShareBrandMark() {
+export default function ShareBrandMark({ darkInk = false }: { darkInk?: boolean }) {
   return (
     <View style={styles.logoMark} accessible accessibilityLabel="StrideOS logo">
       <Text style={styles.logoWord}>
-        <Text style={styles.logoStride}>Stride</Text>
+        <Text style={[styles.logoStride, darkInk && { color: '#24201C' }]}>Stride</Text>
         <Text style={styles.logoOS}>OS</Text>
       </Text>
       <View style={styles.logoChevronRow}>

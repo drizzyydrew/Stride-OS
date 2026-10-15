@@ -58,7 +58,8 @@ test('activity detail surfaces run splits before share image controls', () => {
   const activityDetail = read('app/(tabs)/activity/[activityId].tsx');
 
   assert.match(activityDetail, /buildRunSplits\(activity, units\)/);
-  assert.match(activityDetail, /RUN SPLITS/);
-  assert.match(activityDetail, /split\.trend === 'faster'/);
-  assert.match(activityDetail, /split\.trend === 'slower'/);
+  assert.match(activityDetail, /buildOutdoorSplits\(activity, units\)/);
+  assert.match(activityDetail, /SPLITS/);
+  assert.match(activityDetail, /ActivityRouteReview/);
+  assert.ok(activityDetail.indexOf('runSplits.map') < activityDetail.indexOf('<ShareStudio\n'));
 });

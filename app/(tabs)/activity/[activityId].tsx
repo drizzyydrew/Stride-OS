@@ -1,8 +1,7 @@
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Polyline } from '../../../src/components/maps/MapComponents';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
@@ -10,7 +9,6 @@ import { useActivityStore } from '../../../src/store/activityStore';
 import { useColors } from '../../../src/theme/useColors';
 import { resolveActivityDetail } from '../../../src/utils/activityResolution';
 import { displayLabel } from '../../../src/utils/displayLabels';
-import { useExperienceModeAllows } from '../../../src/hooks/useExperienceMode';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { shareCardUnavailableReason, shareReportCard } from '../../../src/lib/shareCard';
 import ShareStudio, {
@@ -21,6 +19,10 @@ import ShareStudio, {
 } from '../../../src/components/share/ShareStudio';
 import { buildActivitySummary } from '../../../src/utils/activitySummary';
 import { buildRunSplits } from '../../../src/utils/activitySplits';
+import ActivityRouteReview from '../../../src/components/activity/ActivityRouteReview';
+import ActivityPowerPanel from '../../../src/components/activity/ActivityPowerPanel';
+import { analyzeSnowSegments, buildOutdoorSplits } from '../../../src/utils/outdoorAnalysis';
+import { formatDistance } from '../../../src/lib/units';
 
 export default function ActivityDetailScreen() {
   const C = useColors();
@@ -29,7 +31,6 @@ export default function ActivityDetailScreen() {
   const activities = useActivityStore(state => state.activities);
   const hydrationStatus = useActivityStore(state => state.hydrationStatus);
   const units = useSettingsStore(state => state.units);
-  const showDataRichDetails = useExperienceModeAllows('data_rich');
   const [shareVariant, setShareVariant] = useState<ShareStudioVariant>('minimal_card');
   const [shareFormat, setShareFormat] = useState<ShareStudioFormat>('square');
   const [shareMessage, setShareMessage] = useState<string | null>(shareCardUnavailableReason());
@@ -71,9 +72,15 @@ export default function ActivityDetailScreen() {
   );
   const activity = resolution.activity;
 
-  const route = activity.metrics.routeCoordinates ?? [];
-  const summary = buildActivitySummary(activity, units, { dataRich: showDataRichDetails });
-  const runSplits = buildRunSplits(activity, units);
+  const summary = buildActivitySummary(activity, units, { dataRich: true });
+  const outdoorSplits = buildOutdoorSplits(activity, units);
+  const runSplits = outdoorSplits.length ? outdoorSplits.map(split => ({
+    index: split.index, label: `${units === 'metric' ? 'Km' : 'Mile'} ${split.index}${split.complete ? '' : ' (partial)'}`,
+    distanceLabel: formatDistance(split.distanceMeters / 1609.344, units), paceLabel: split.paceLabel,
+    trend: 'even' as const, deltaLabel: split.averageHeartRateBpm == null ? 'HR unavailable' : `${split.averageHeartRateBpm} bpm`,
+  })) : buildRunSplits(activity, units);
+  const snowSegments = analyzeSnowSegments(activity);
+  const descents = snowSegments.filter(segment => segment.kind === 'descent');
 
   async function shareActivity() {
     try {
@@ -114,23 +121,7 @@ export default function ActivityDetailScreen() {
         )}
       />
       <ScrollView contentContainerStyle={s.content} scrollEnabled={!shareInteractionActive}>
-        {route.length > 1 ? (
-          <View style={[s.mapCard, { borderColor: C.border }]}>
-            <MapView
-              style={s.map}
-              initialRegion={{
-                latitude: route[0].latitude,
-                longitude: route[0].longitude,
-                latitudeDelta: 0.04,
-                longitudeDelta: 0.04,
-              }}
-              scrollEnabled={false}
-              zoomEnabled={false}
-            >
-              <Polyline coordinates={route} strokeColor={C.positive} strokeWidth={5} />
-            </MapView>
-          </View>
-        ) : null}
+        <ActivityRouteReview activity={activity} units={units} onInteractionActiveChange={setShareInteractionActive} />
         <View style={s.grid}>
           {summary.primary.map(({ label, value }) => (
             <View key={label} style={[s.metric, { backgroundColor: C.card, borderColor: C.border }]}>
@@ -141,7 +132,7 @@ export default function ActivityDetailScreen() {
         </View>
         {runSplits.length ? (
           <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
-            <Text style={[s.eyebrow, { color: C.textDim }]}>RUN SPLITS</Text>
+            <Text style={[s.eyebrow, { color: C.textDim }]}>DISTANCE SPLITS</Text>
             <View style={s.splitList}>
               {runSplits.map(split => {
                 const trendColor = split.trend === 'faster'
@@ -167,6 +158,24 @@ export default function ActivityDetailScreen() {
             </View>
           </View>
         ) : null}
+        {summary.sections.map(section => <View key={section.title} style={{ paddingVertical: 14, gap: 10 }}>
+          <Text style={[s.eyebrow, { color: C.textDim }]}>{section.title.toUpperCase()}</Text>
+          {section.metrics.map(metric => <View key={metric.label} style={s.zoneRow}>
+            <Text style={[s.body, { color: C.textMuted }]}>{metric.label}</Text>
+            <Text style={[s.bodyValue, { color: C.text }]}>{metric.value}</Text>
+          </View>)}
+        </View>)}
+        {snowSegments.length ? <View style={{ paddingVertical: 16, gap: 10 }}>
+          <Text style={[s.eyebrow, { color: C.textDim }]}>ESTIMATED TERRAIN SEGMENTS</Text>
+          <Text style={[s.body, { color: C.text }]}>{descents.length} descents · {snowSegments.length - descents.length} ascents</Text>
+          <Text style={[s.body, { color: C.textMuted }]}>GPS/elevation classification, not confirmed lift or human-powered climbing. Short/noisy segments and recording gaps are excluded.</Text>
+          {descents.length ? <Text style={[s.body, { color: C.text }]}>Longest descent {formatDistance(Math.max(...descents.map(segment => segment.distanceMeters)) / 1609.344, units)} · Largest vertical descent {Math.round(Math.max(...descents.map(segment => segment.elevationMeters)) * (units === 'metric' ? 1 : 3.28084))} {units === 'metric' ? 'm' : 'ft'}</Text> : null}
+          {snowSegments.map((segment, index) => <View key={segment.id} style={s.zoneRow}>
+            <Text style={[s.body, { color: C.textMuted }]}>{index + 1}. {segment.kind === 'descent' ? 'Descent' : 'Ascent'}</Text>
+            <Text style={[s.bodyValue, { color: C.text }]}>{formatDistance(segment.distanceMeters / 1609.344, units)} · {Math.round(segment.elevationMeters * (units === 'metric' ? 1 : 3.28084))} {units === 'metric' ? 'm' : 'ft'}</Text>
+          </View>)}
+        </View> : null}
+        <ActivityPowerPanel activity={activity} units={units} />
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>SHARE IMAGE</Text>
           <View style={s.variantGrid}>
@@ -258,7 +267,7 @@ const s = StyleSheet.create({
   metricLabel: { fontSize: 11, marginTop: 5 },
   card: { borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 12, gap: 10 },
   zoneRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  body: { fontSize: 13, lineHeight: 20 },
+  body: { fontSize: 13, lineHeight: 20, flexShrink: 1 },
   bodyValue: { flexShrink: 1, marginLeft: 14, fontSize: 13, lineHeight: 20, textAlign: 'right' },
   variantGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   variant: { width: '31%', minHeight: 74, borderRadius: 12, borderWidth: 1, padding: 10 },

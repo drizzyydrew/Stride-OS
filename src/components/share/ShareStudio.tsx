@@ -15,6 +15,7 @@ import { RunLevelBadge, runLevelSlugFromId } from '../../achievements/runLevels'
 import { firstAchievementDefinitionFromAchievementId } from '../../achievements/firsts';
 import { strengthAchievementDefinitionFromAchievementId } from '../../achievements/strength';
 import { recoveryAchievementDefinitionFromAchievementId } from '../../achievements/recovery';
+import { challengeAchievementDefinitionFromAchievementId } from '../../achievements/challenges';
 import { lifetimeDistanceCyclingDefinitionFromAchievementId } from '../../achievements/lifetimeDistanceCycling';
 import { lifetimeDistanceRunningDefinitionFromAchievementId } from '../../achievements/lifetimeDistanceRunning';
 import { streakDefinitionFromAchievementId } from '../../achievements/streaks';
@@ -28,6 +29,8 @@ import type { EvaluatedAchievement } from '../../utils/achievementSystem';
 import { achievementShareAllowed } from '../../utils/achievementSystem';
 import { buildActivitySummary } from '../../utils/activitySummary';
 import { displayLabel } from '../../utils/displayLabels';
+import { sharePowerMetric } from '../../utils/outdoorPower';
+import { useColors } from '../../theme/useColors';
 import {
   ROUTE_PRIVACY_NOTE,
   activityHasShareableRoute,
@@ -38,7 +41,7 @@ import {
 export type ShareStudioVariant = 'minimal_card' | 'transparent_overlay' | 'editorial_card' | 'activity_achievement';
 export type ShareStudioFormat = 'square' | 'story';
 
-type ToggleKey = 'route' | 'distance' | 'time' | 'pace' | 'elevation' | 'achievement' | 'brand';
+type ToggleKey = 'route' | 'distance' | 'time' | 'pace' | 'elevation' | 'power' | 'achievement' | 'brand';
 type EditableLayerKey = 'brand' | 'achievement';
 const SHARE_EDGE_MARGIN = 0;
 const ROUTE_TRACE_ACCENT = '#9DB2A0';
@@ -74,6 +77,7 @@ export const SHARE_STUDIO_FORMATS: Array<{ id: ShareStudioFormat; label: string 
 
 function metricValue(activity: Activity | undefined, units: UnitSystem, key: ToggleKey): string | null {
   if (!activity) return null;
+  if (key === 'power') return sharePowerMetric(activity)?.value ?? null;
   const summary = buildActivitySummary(activity, units, { dataRich: false, includePrivate: false });
   const metrics = summary.primary.filter(item => item.privacy === 'public');
   if (key === 'distance') return metrics.find(item => item.label === 'Distance')?.value ?? null;
@@ -90,6 +94,7 @@ function availableToggles(activity: Activity | undefined, achievement: Evaluated
   if (!isRunLevelAchievement && metricValue(activity, units, 'time')) keys.push('time');
   if (!isRunLevelAchievement && metricValue(activity, units, 'pace')) keys.push('pace');
   if (!isRunLevelAchievement && metricValue(activity, units, 'elevation')) keys.push('elevation');
+  if (!isRunLevelAchievement && metricValue(activity, units, 'power')) keys.push('power');
   if (!isRunLevelAchievement && activity && activityHasShareableRoute(activity)) keys.push('route');
   if (achievement && achievementShareAllowed(achievement)) keys.push('achievement');
   keys.push('brand');
@@ -97,6 +102,7 @@ function availableToggles(activity: Activity | undefined, achievement: Evaluated
 }
 
 function toggleLabel(key: ToggleKey, activity?: Activity): string {
+  if (key === 'power') return activity ? sharePowerMetric(activity)?.label ?? 'Power' : 'Power';
   if (key === 'route') return 'Route';
   if (key === 'time') return 'Time';
   if (key === 'pace') return activity && ['cycling', 'indoor_cycling'].includes(activity.activityType) ? 'Speed' : 'Pace';
@@ -216,14 +222,16 @@ export default function ShareStudio({
   canvasRef,
   onInteractionActiveChange,
 }: Props) {
+  const C = useColors();
   const isStory = format === 'story';
-  const keys = availableToggles(activity, achievement, units).filter(key => key !== 'route' || isStory);
+  const keys = availableToggles(activity, achievement, units).filter(key => (key !== 'route' || isStory) && (isStory || !achievement || key === 'achievement' || key === 'distance'));
   const [enabled, setEnabled] = useState<Record<ToggleKey, boolean>>({
     route: false,
     distance: keys.includes('distance'),
     time: keys.includes('time'),
     pace: keys.includes('pace'),
     elevation: keys.includes('elevation'),
+    power: false,
     achievement: Boolean(achievement && achievementShareAllowed(achievement)),
     brand: true,
   });
@@ -259,7 +267,8 @@ export default function ShareStudio({
   const firstDefinition = achievement ? firstAchievementDefinitionFromAchievementId(achievement.id) : null;
   const strengthDefinition = achievement ? strengthAchievementDefinitionFromAchievementId(achievement.id) : null;
   const recoveryDefinition = achievement ? recoveryAchievementDefinitionFromAchievementId(achievement.id) : null;
-  const canonicalBadgeDefinition = lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? monthlyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition;
+  const challengeDefinition = achievement?.category === 'challenges' ? challengeAchievementDefinitionFromAchievementId(achievement.id) : null;
+  const canonicalBadgeDefinition = challengeDefinition ?? lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? monthlyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition;
   const canonicalBadgeState = canonicalBadgeDefinition
     ? isOverlay
       ? 'transparent'
@@ -277,11 +286,13 @@ export default function ShareStudio({
     : achievement?.displayTarget;
   const bg = isOverlay ? 'transparent' : variant === 'editorial_card' ? '#F3F1EB' : '#0E0E0F';
   const foregroundDark = variant === 'editorial_card';
-  const selectedMetrics = (['distance', 'time', 'pace', 'elevation'] as ToggleKey[])
+  const selectedMetrics = (['distance', 'time', 'pace', 'elevation', 'power'] as ToggleKey[])
     .map(key => ({ key, value: keys.includes(key) && enabled[key] ? metricValue(activity, units, key) : null }))
     .filter((item): item is { key: ToggleKey; value: string } => Boolean(item.value));
   const selectedCount = keys.filter(key => enabled[key]).length;
   const fixedActivityLayout = Boolean(activity);
+  const squareComposition = !isStory;
+  const squareBadgeSize = Math.max(72, Math.min(120, (canvasSize.width || 320) * 0.34));
   const editableLayers = fixedActivityLayout ? [] : ([
     enabled.brand ? 'brand' : null,
     achievement && enabled.achievement ? 'achievement' : null,
@@ -360,12 +371,30 @@ export default function ShareStudio({
     >
       {photoUri ? <ImageBackground source={{ uri: photoUri }} resizeMode="cover" style={StyleSheet.absoluteFill} /> : null}
       {photoUri && !isOverlay ? <View style={styles.photoScrim} /> : null}
+      {squareComposition ? <View style={styles.squareComposition}>
+        {showTitleLayer ? <View style={styles.squareTitleGroup}>
+          <Text style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent]}>{achievement ? 'ACHIEVEMENT UNLOCKED' : 'ACTIVITY COMPLETE'}</Text>
+          <Text style={[styles.squareTitle, foregroundDark ? styles.darkInk : styles.lightInk]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>{achievementShareTitle ?? activityTitle ?? 'TRAINING'}</Text>
+          {activity ? <Text style={[styles.squareContext, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]} numberOfLines={1}>{enabled.distance && metricValue(activity, units, 'distance') ? `${metricValue(activity, units, 'distance')} · ` : ''}{new Date(activity.startTime).toLocaleDateString()}</Text> : achievementSupport ? <Text style={[styles.squareContext, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{achievementSupport}</Text> : null}
+        </View> : null}
+        {achievement && enabled.achievement ? <View style={{ width: squareBadgeSize, height: squareBadgeSize, alignItems: 'center', justifyContent: 'center' }}>
+          {runLevelSlug ? <RunLevelBadge level={runLevelSlug} state={isOverlay ? 'transparent' : achievement.state === 'locked' ? 'locked' : 'unlocked'} size={squareBadgeSize} units={units} />
+            : <View style={{ transform: [{ scale: squareBadgeSize / 156 }] }}><AchievementBadge id={achievement.id} category={achievement.category} earned={achievement.state !== 'locked'} size="large" unitSystem={units} badgeState={canonicalBadgeState} /></View>}
+        </View> : null}
+        {!achievement && selectedMetrics.length ? <View style={styles.squareMetrics}>
+          {selectedMetrics.map(item => <View key={item.key} style={[styles.squareMetric, { flexBasis: selectedMetrics.length > 4 ? '28%' : '43%' }]}>
+            <Text style={[styles.squareStatValue, foregroundDark ? styles.darkInk : styles.lightInk]} numberOfLines={1} adjustsFontSizeToFit>{item.value}</Text>
+            <Text style={[styles.squareStatLabel, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]} numberOfLines={2}>{toggleLabel(item.key, activity)}</Text>
+          </View>)}
+        </View> : null}
+        {!achievement && enabled.brand ? <View style={styles.squareBrand}><ShareBrandMark darkInk={foregroundDark} /></View> : null}
+      </View> : null}
       {routeEnabled ? <View style={fixedActivityLayout ? fixedRouteStyle : styles.routeLayer}><RouteOverlay activity={activity} light={foregroundDark} /></View> : null}
-      {enabled.brand && fixedActivityLayout ? (
+      {enabled.brand && fixedActivityLayout && !squareComposition ? (
         <View style={fixedBrandStyle}>
-          <ShareBrandMark />
+          <ShareBrandMark darkInk={foregroundDark} />
         </View>
-      ) : enabled.brand ? (
+      ) : enabled.brand && !squareComposition ? (
         <MovableLayer
           initial={{ x: 22, y: 22 }}
           bounds={layerBounds}
@@ -376,10 +405,10 @@ export default function ShareStudio({
           onInteractionActiveChange={onInteractionActiveChange}
           style={styles.brandLayer}
         >
-          <ShareBrandMark />
+          <ShareBrandMark darkInk={foregroundDark} />
         </MovableLayer>
       ) : null}
-      {achievement && enabled.achievement && fixedActivityLayout ? (
+      {achievement && enabled.achievement && fixedActivityLayout && !squareComposition ? (
         <View style={fixedAchievementStyle}>
           {runLevelSlug ? (
             <RunLevelBadge
@@ -400,7 +429,7 @@ export default function ShareStudio({
             />
           )}
         </View>
-      ) : achievement && enabled.achievement ? (
+      ) : achievement && enabled.achievement && !squareComposition ? (
         <MovableLayer
           initial={centerLayer(156, 156)}
           bounds={layerBounds}
@@ -431,7 +460,7 @@ export default function ShareStudio({
           )}
         </MovableLayer>
       ) : null}
-      {showTitleLayer && fixedActivityLayout ? (
+      {showTitleLayer && fixedActivityLayout && !squareComposition ? (
         <View style={fixedTitleStyle}>
           <Text style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent, styles.overlayTextShadow]}>
             {achievement ? 'ACHIEVEMENT UNLOCKED' : activityTitle ? 'ACTIVITY COMPLETE' : 'STRIDEOS'}
@@ -443,7 +472,7 @@ export default function ShareStudio({
           </Text>
           {achievementSupport ? <Text style={[styles.support, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted, !foregroundDark && styles.overlayTextShadow]}>{achievementSupport}</Text> : null}
         </View>
-      ) : showTitleLayer ? (
+      ) : showTitleLayer && !squareComposition ? (
         <MovableLayer
           initial={titleInitial}
           bounds={layerBounds}
@@ -463,13 +492,13 @@ export default function ShareStudio({
           {achievementSupport ? <Text style={[styles.support, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{achievementSupport}</Text> : null}
         </MovableLayer>
       ) : null}
-      {selectedMetrics.length && fixedActivityLayout ? (
+      {selectedMetrics.length && fixedActivityLayout && !squareComposition ? (
         <View style={fixedMetricsStyle}>
           {selectedMetrics.slice(0, 6).map(item => (
             <StatPill key={item.key} label={toggleLabel(item.key, activity).toUpperCase()} value={item.value} transparent />
           ))}
         </View>
-      ) : selectedMetrics.length ? (
+      ) : selectedMetrics.length && !squareComposition ? (
         <MovableLayer
           initial={metricsInitial}
           bounds={layerBounds}
@@ -490,13 +519,13 @@ export default function ShareStudio({
     <View style={styles.shell}>
       <View style={styles.controlBar}>
         <TouchableOpacity
-          style={[styles.detailsButton, detailsOpen ? styles.toggleOn : styles.toggleOff]}
+          style={[styles.detailsButton, detailsOpen ? styles.toggleOn : styles.toggleOff, !detailsOpen && { backgroundColor: C.card, borderColor: C.border }]}
           onPress={() => setDetailsOpen(open => !open)}
           accessibilityRole="button"
           accessibilityState={{ expanded: detailsOpen }}
           accessibilityLabel="Share detail selector"
         >
-          <Text style={[styles.toggleText, detailsOpen ? styles.toggleTextOn : styles.toggleTextOff]}>
+          <Text style={[styles.toggleText, detailsOpen ? styles.toggleTextOn : styles.toggleTextOff, !detailsOpen && { color: C.text }]}>
             Share Details · {selectedCount}/{keys.length}
           </Text>
         </TouchableOpacity>
@@ -537,6 +566,7 @@ export default function ShareStudio({
                 time: false,
                 pace: false,
                 elevation: false,
+                power: false,
                 achievement: false,
                 brand: false,
               }))}
@@ -649,6 +679,15 @@ const styles = StyleSheet.create({
   canvasPreviewFrame: { borderRadius: 18, overflow: 'hidden' },
   canvas: { width: '100%', overflow: 'hidden', borderRadius: 0 },
   square: { aspectRatio: 1 },
+  squareComposition: { flex: 1, padding: 20, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  squareTitleGroup: { width: '100%', alignItems: 'center', gap: 4 },
+  squareTitle: { fontSize: 22, lineHeight: 25, fontWeight: '700', textAlign: 'center' },
+  squareContext: { fontSize: 11, lineHeight: 15, textAlign: 'center' },
+  squareMetrics: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 },
+  squareMetric: { flexGrow: 1, alignItems: 'center', minWidth: 0 },
+  squareStatValue: { fontSize: 18, lineHeight: 22, fontWeight: '700' },
+  squareStatLabel: { fontSize: 9, lineHeight: 12, textAlign: 'center', marginTop: 2 },
+  squareBrand: { height: 52, width: 112, alignItems: 'center', justifyContent: 'center', transform: [{ scale: 0.7 }] },
   story: { aspectRatio: 9 / 16 },
   photoScrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.26)' },
   routeLayer: { ...StyleSheet.absoluteFill },

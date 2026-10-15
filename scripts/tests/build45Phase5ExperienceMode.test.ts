@@ -60,7 +60,6 @@ test('mode gating reaches the specified Phase 5 presentation surfaces', () => {
     'app/(tabs)/dashboard/index.tsx',
     'app/(tabs)/training/index.tsx',
     'app/(tabs)/strength/index.tsx',
-    'app/(tabs)/activity/[activityId].tsx',
     'app/(tabs)/more/index.tsx',
     'src/components/today/ReadinessCard.tsx',
   ];
@@ -68,6 +67,8 @@ test('mode gating reaches the specified Phase 5 presentation surfaces', () => {
   for (const file of files) {
     assert.match(read(file), /useExperienceMode|experienceModeAllows|useExperienceModeAllows/, `${file} should consume experience mode`);
   }
+  // Recorded evidence is never hidden behind an experience-mode preference.
+  assert.match(read('app/(tabs)/activity/[activityId].tsx'), /dataRich: true/);
 });
 
 test('bottom tab visual contract is centralized and uniform', () => {
