@@ -181,11 +181,11 @@ test('Calendar exposes completion and linked-activity actions from scheduled ses
   assert.match(calendar, /scheduledSessionId: entry\.scheduledSessionId/);
 });
 
-test('Activity store prevents duplicate completion records by scheduledSessionId', () => {
+test('Activity store deduplicates exact recording identity, not a shared schedule alone', () => {
   const source = read('src/store/activityStore.ts');
-  assert.match(source, /activity\.scheduledSessionId/);
-  assert.match(source, /findIndex\(item => item\.scheduledSessionId === activity\.scheduledSessionId\)/);
-  assert.match(source, /id: item\.id/);
+  assert.match(source, /sameRecording\(item, activity\)/);
+  assert.match(source, /mergeRecording\(item, activity\)/);
+  assert.doesNotMatch(source, /findIndex\(item => item\.scheduledSessionId === activity\.scheduledSessionId\)/);
 });
 
 test('Running, Strength, Today, Activity, and Coach expose linked completion paths', () => {

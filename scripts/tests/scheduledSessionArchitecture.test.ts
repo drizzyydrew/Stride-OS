@@ -429,13 +429,16 @@ test('Calendar exposes Skip and routes Reschedule through the validated adaptati
 
 test('GPS tracked activity (activity/start.tsx) and the primary Running tab both stamp scheduledSessionId on completion', () => {
   const start = read('app/(tabs)/activity/start.tsx');
-  assert.match(start, /scheduledSessionId:\s*latest\.scheduledSessionId/);
+  assert.match(start, /await completeOutdoorCommand\(\{ workoutInstanceId: latest\.workoutInstanceId/);
+  assert.match(read('src/lib/outdoorCompletion.ts'), /captureOutdoorCompletion\(state, command\)/);
+  assert.match(read('src/utils/outdoorCompletionSnapshot.ts'), /scheduledSessionId:\s*state\.scheduledSessionId/);
   assert.match(start, /scheduledSessionId\?:\s*string/);
 
   const training = read('app/(tabs)/training/index.tsx');
   assert.match(training, /const finalState = useActiveRunStore\.getState\(\)/);
   assert.match(training, /completedScheduledSessionId\s*=\s*finalState\.scheduledSessionId/);
-  assert.match(training, /updateActivity\(`activity_workout_\$\{id\}`/);
+  assert.match(training, /await saveLiveRun\(/);
+  assert.match(training, /scheduledSessionId: completedScheduledSessionId/);
 });
 
 test('strength completion from the Strength screen passes its canonical scheduledSessionId through to the store write', () => {

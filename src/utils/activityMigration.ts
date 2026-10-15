@@ -6,6 +6,7 @@ import { calculateActivityLoad, sanitizeActivityMetrics } from './activityLoad';
 import { toYMD } from './calendarEngine';
 import { runScheduledSessionId, strengthScheduledSessionId } from './scheduledSessionIds';
 import { summarizeStrengthSession } from './strengthSummary';
+import { matchingWatchRecording, mergeRecording, sameRecording, type RunWorkoutRecord } from './runCompletionIdentity';
 
 // `completeWorkout`/`skipWorkout`/manual-log-from-day-detail all build their
 // completionKey as `w${week}_${workoutId}_${dayIndex}` (see workoutStore.ts,
@@ -50,13 +51,14 @@ export function legacyWorkoutActivityType(type: WorkoutType): ActivityType {
 }
 
 export function activityFromWorkoutRecord(
-  record: CompletedWorkoutRecord,
+  record: RunWorkoutRecord,
   legacyImport = true,
 ): Activity {
   const activityType = legacyWorkoutActivityType(record.type);
   const durationMinutes = record.actualDurationMinutes ?? record.durationMinutes;
   const distanceMiles = record.actualDistanceMiles ?? record.estimatedDistanceMiles;
   const metrics = sanitizeActivityMetrics(activityType, {
+    ...record.activityMetrics,
     durationSeconds: durationMinutes * 60,
     elapsedTimeSeconds: durationMinutes * 60,
     activeTimeSeconds: durationMinutes * 60,
@@ -69,6 +71,11 @@ export function activityFromWorkoutRecord(
         }))
       : undefined,
     runWalkIntervals: record.type === 'run_walk' ? [] : undefined,
+    distanceSource: record.distanceSource ?? record.activityMetrics?.distanceSource,
+    metricSources: {
+      ...record.activityMetrics?.metricSources,
+      ...(record.distanceSource === 'gps' ? { distance: 'phone_gps' as const } : {}),
+    },
   });
   const load = record.skipped
     ? calculateActivityLoad({ activityType, durationMinutes: 0 })
@@ -80,27 +87,31 @@ export function activityFromWorkoutRecord(
 
   return {
     id: `activity_workout_${record.id}`,
+    workoutInstanceId: record.workoutInstanceId,
+    watchRecording: matchingWatchRecording(record.watchRecording, record.workoutInstanceId, record.actualStartTime),
     activityType,
-    subtype: record.type === 'run_walk' ? 'run_walk' : 'general',
+    subtype: record.activitySubtype ?? (record.type === 'run_walk' ? 'run_walk' : 'general'),
     source: legacyImport
       ? 'legacy_import'
-      : record.source === 'manual' ? 'manual' : 'training_plan',
+      : record.workoutInstanceId ? 'tracked' : record.source === 'manual' ? 'manual' : 'training_plan',
     status: record.skipped ? 'skipped' : 'completed',
     completionClassification: record.skipped ? 'skipped' : 'completed_as_prescribed',
-    scheduled: record.source === 'generated',
-    scheduledSessionId: canonicalRunScheduledSessionId(record) ?? (record.workoutId || undefined),
-    startTime: record.timestamp,
-    endTime: record.timestamp + durationMinutes * 60_000,
+    scheduled: Boolean(record.scheduledSessionId) || record.source === 'generated',
+    associatedTrainingBlockId: record.associatedTrainingBlockId,
+    associatedGoalId: record.associatedGoalId,
+    scheduledSessionId: record.scheduledSessionId ?? canonicalRunScheduledSessionId(record) ?? (record.workoutId || undefined),
+    startTime: record.actualStartTime ?? record.timestamp,
+    endTime: record.actualEndTime ?? record.timestamp + durationMinutes * 60_000,
     rpe: record.rpe,
     notes: record.notes,
     symptoms: [],
-    indoor: activityType === 'strength' || activityType === 'mobility',
+    indoor: record.indoor ?? (activityType === 'strength' || activityType === 'mobility'),
     metrics,
     trainingLoad: load,
     legacyWorkoutId: record.id,
     createdAt: record.timestamp,
     updatedAt: record.timestamp,
-  };
+  } as Activity;
 }
 
 export function migrateLegacyWorkoutHistory(
@@ -110,7 +121,11 @@ export function migrateLegacyWorkoutHistory(
   const byId = new Map(existingActivities.map(activity => [activity.id, activity]));
   for (const record of records) {
     const migrated = activityFromWorkoutRecord(record);
-    if (!byId.has(migrated.id)) byId.set(migrated.id, migrated);
+    if (!byId.has(migrated.id)) {
+      const alias = [...byId.values()].find(activity => sameRecording(activity, migrated));
+      if (alias) byId.set(alias.id, mergeRecording(alias, migrated));
+      else byId.set(migrated.id, migrated);
+    }
   }
   return [...byId.values()];
 }

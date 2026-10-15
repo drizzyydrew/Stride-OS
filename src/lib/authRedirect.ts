@@ -2,6 +2,7 @@ import * as Linking from 'expo-linking';
 
 import { getSupabaseAvailability, supabaseUnavailableMessage } from './supabase';
 import { hydrateFromSupabase } from './syncService';
+import { ownerLeaseIsCurrent } from './localDataOwner';
 import { useCheckInStore } from '../store/checkInStore';
 import { useCustomWorkoutStore } from '../store/customWorkoutStore';
 import { useStrengthStore } from '../store/strengthStore';
@@ -31,6 +32,9 @@ function authParams(url: string): URLSearchParams {
 
 export async function hydrateUserData(): Promise<void> {
   const result = await hydrateFromSupabase();
+  if (!ownerLeaseIsCurrent(result.ownerLease, true)) {
+    throw new Error('Account changed during cloud restore. Please retry.');
+  }
   useWorkoutStore.getState().hydrateWorkouts(result.workoutLogs);
   useStrengthStore.getState().hydrateStrength(result.strengthLogs);
   useCustomWorkoutStore.getState().hydrateLogs(result.customLogs);

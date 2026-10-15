@@ -15,6 +15,9 @@ import {
   remapLegacyScheduledSessionIds,
 } from '../utils/activityMigration';
 import { runRecalculation } from '../lib/recalculation';
+import { captureOwnerLease, ownerLeaseIsCurrent, type OwnerLease } from '../lib/localDataOwner';
+import { mergeRecording, sameRecording } from '../utils/runCompletionIdentity';
+import { waitForPersistedStoreHydration } from '../lib/trackingTaskHydration';
 
 export const ACTIVITY_STORE_SCHEMA_VERSION = 3;
 
@@ -23,6 +26,9 @@ type ActivityStore = {
   activities: Activity[];
   hydrationStatus: 'loading' | 'ready' | 'error';
   addActivity: (input: Activity | ActivityDraft) => string;
+  /** Caller journals the first End before invoking this; resolves only after durable history readback. */
+  addActivityAndPersist: (input: Activity | ActivityDraft, lease: OwnerLease) => Promise<string>;
+  awaitPersistence: (lease: OwnerLease) => Promise<void>;
   updateActivity: (id: string, patch: Partial<Activity>) => void;
   removeActivity: (id: string) => void;
   getById: (id: string) => Activity | undefined;
@@ -33,6 +39,70 @@ type ActivityStore = {
   /** Adds activities whose ids aren't already present (never overwrites or deletes). */
   mergeRestoredActivities: (records: readonly Activity[]) => number;
 };
+
+let activityWriteQueue: Promise<unknown> = Promise.resolve();
+function serializeActivityWrite<T>(action: () => T | Promise<T>): Promise<T> {
+  const write = activityWriteQueue.then(action);
+  activityWriteQueue = write.catch(() => undefined);
+  return write;
+}
+
+// Explicit commits share ordering with every normal middleware write.
+const activityJSONStorage = createAppJSONStorage();
+const activityStorage: typeof activityJSONStorage = activityJSONStorage && {
+  ...activityJSONStorage,
+  setItem: (name, value) => serializeActivityWrite(() => activityJSONStorage.setItem(name, value)),
+  removeItem: name => serializeActivityWrite(() => activityJSONStorage.removeItem(name)),
+};
+let activityCommitQueue: Promise<unknown> = Promise.resolve();
+function serializeActivityCommit<T>(action: () => Promise<T>): Promise<T> {
+  const commit = activityCommitQueue.then(action);
+  activityCommitQueue = commit.catch(() => undefined);
+  return commit;
+}
+
+function requireActivityOwner(lease: OwnerLease) {
+  if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed before activity persistence completed');
+}
+
+async function waitForActivityHistory(lease: OwnerLease) {
+  requireActivityOwner(lease);
+  const hydrated = await waitForPersistedStoreHydration(useActivityStore);
+  requireActivityOwner(lease);
+  if (!hydrated) throw new Error('Activity history is not yet readable; retry after unlocking the device');
+  if (useActivityStore.getState().hydrationStatus === 'loading') {
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => { unsubscribe(); reject(new Error('Activity history migration is not yet ready')); }, 2_000);
+      const unsubscribe = useActivityStore.subscribe(state => {
+        if (state.hydrationStatus === 'loading') return;
+        clearTimeout(timer);
+        unsubscribe();
+        resolve();
+      });
+      if (useActivityStore.getState().hydrationStatus !== 'loading') {
+        clearTimeout(timer);
+        unsubscribe();
+        resolve();
+      }
+    });
+  }
+  requireActivityOwner(lease);
+  if (useActivityStore.getState().hydrationStatus !== 'ready') throw new Error('Activity history could not be loaded safely');
+}
+
+async function flushActivityHistory(lease: OwnerLease) {
+  await serializeActivityWrite(async () => {
+    requireActivityOwner(lease);
+    const state = useActivityStore.getState();
+    const encoded = JSON.stringify({ state: { schemaVersion: state.schemaVersion, activities: state.activities }, version: ACTIVITY_STORE_SCHEMA_VERSION });
+    const storage = getAppStorage();
+    await storage.setItem('activity-store', encoded);
+    requireActivityOwner(lease);
+    const saved = await storage.getItem('activity-store');
+    requireActivityOwner(lease);
+    if (saved !== encoded) throw new Error('Activity history persistence could not be confirmed');
+  });
+}
 
 function uid(now = Date.now()): string {
   return `activity_${now}_${Math.random().toString(36).slice(2, 8)}`;
@@ -62,59 +132,6 @@ function normalizeActivity(input: Activity | ActivityDraft, now = Date.now()): A
   };
 }
 
-function healthKitDuplicateIndex(activities: readonly Activity[], activity: Activity): number {
-  const metadata = activity.healthKit;
-  if (!metadata) return -1;
-  return activities.findIndex(item => {
-    if (
-      item.healthKit?.workoutUuid === metadata.workoutUuid &&
-      item.healthKit.sourceBundleIdentifier === metadata.sourceBundleIdentifier
-    ) return true;
-    return metadata.importedByStrideOS
-      && item.source === 'tracked'
-      && Math.abs(item.startTime - metadata.originalStartTime) < 30_000
-      && Math.abs((item.endTime ?? item.startTime) - metadata.originalEndTime) < 30_000;
-  });
-}
-
-function liveTrackedDuplicateIndex(activities: readonly Activity[], activity: Activity): number {
-  const liveNote = activity.notes?.startsWith('Saved from live GPS tracking')
-    || activity.notes?.startsWith('Saved from indoor treadmill run');
-  if (!liveNote || activity.activityType !== 'running') return -1;
-  const duration = activity.metrics.durationSeconds ?? 0;
-  const distance = activity.metrics.distanceMeters ?? 0;
-  return activities.findIndex(item => {
-    const itemLiveNote = item.notes?.startsWith('Saved from live GPS tracking')
-      || item.notes?.startsWith('Saved from indoor treadmill run');
-    if (!itemLiveNote || item.activityType !== activity.activityType || item.subtype !== activity.subtype) return false;
-    return Math.abs(item.startTime - activity.startTime) <= 120_000
-      && Math.abs((item.metrics.durationSeconds ?? 0) - duration) <= 60
-      && Math.abs((item.metrics.distanceMeters ?? 0) - distance) <= 50;
-  });
-}
-
-function nearDuplicateTrackedIndex(activities: readonly Activity[], activity: Activity): number {
-  if (activity.scheduledSessionId || activity.source === 'manual') return -1;
-  const duration = activity.metrics.durationSeconds ?? activity.metrics.elapsedTimeSeconds ?? 0;
-  const distance = activity.metrics.distanceMeters ?? 0;
-  const endTime = activity.endTime ?? activity.startTime + duration * 1000;
-
-  return activities.findIndex(item => {
-    if (item.id === activity.id || item.scheduledSessionId) return false;
-    if (item.activityType !== activity.activityType || item.source === 'manual') return false;
-    const itemDuration = item.metrics.durationSeconds ?? item.metrics.elapsedTimeSeconds ?? 0;
-    const itemDistance = item.metrics.distanceMeters ?? 0;
-    const itemEndTime = item.endTime ?? item.startTime + itemDuration * 1000;
-    const startClose = Math.abs(item.startTime - activity.startTime) <= 180_000;
-    const endClose = Math.abs(itemEndTime - endTime) <= 180_000;
-    const durationClose = Math.abs(itemDuration - duration) <= 180;
-    const distanceClose = distance > 0 && itemDistance > 0
-      ? Math.abs(itemDistance - distance) <= Math.max(120, distance * 0.05)
-      : true;
-    return startClose && endClose && durationClose && distanceClose;
-  });
-}
-
 export function migrateActivityStoreState(persisted: unknown): Pick<ActivityStore, 'schemaVersion' | 'activities'> {
   const source = (persisted ?? {}) as Partial<ActivityStore>;
   const normalized = Array.isArray(source.activities)
@@ -139,78 +156,68 @@ export const useActivityStore = create<ActivityStore>()(
       activities: [],
       hydrationStatus: 'loading',
 
+      addActivityAndPersist: (input, lease) => {
+        const snapshot = JSON.parse(JSON.stringify(input)) as Activity | ActivityDraft;
+        const owner = { ...lease };
+        return serializeActivityCommit(async () => {
+          await waitForActivityHistory(owner);
+          if (!snapshot.id && !snapshot.workoutInstanceId) throw new Error('A durable activity requires a stable ID or recording instance');
+          const id = get().addActivity(snapshot);
+          await flushActivityHistory(owner);
+          requireActivityOwner(owner);
+          return id;
+        });
+      },
+
+      awaitPersistence: lease => serializeActivityCommit(async () => {
+        await waitForActivityHistory(lease);
+        await flushActivityHistory(lease);
+        requireActivityOwner(lease);
+      }),
+
       mergeRestoredActivities: (records) => {
+        if (!captureOwnerLease()) throw new Error('Local history is locked until its owner is confirmed');
         let added = 0;
         set(state => {
-          const existing = new Set(state.activities.map(item => item.id));
-          const incoming = records
-            .filter(record => record && typeof record.id === 'string' && !existing.has(record.id))
-            .map(record => normalizeActivity(record, record.updatedAt ?? Date.now()));
-          added = incoming.length;
-          if (added === 0) return state;
-          const merged = [...state.activities, ...incoming].sort((a, b) => b.startTime - a.startTime);
+          const merged = [...state.activities];
+          for (const record of records) {
+            if (!record || typeof record.id !== 'string') continue;
+            const incoming = normalizeActivity(record, record.updatedAt ?? Date.now());
+            const index = merged.findIndex(item => sameRecording(item, incoming));
+            if (index < 0) { merged.push(incoming); added += 1; }
+          }
+          merged.sort((a, b) => b.startTime - a.startTime);
           return { activities: remapLegacyScheduledSessionIds(merged) };
         });
         return added;
       },
 
       addActivity: (input) => {
+        if (!captureOwnerLease()) throw new Error('Local history is locked until its owner is confirmed');
         const activity = normalizeActivity(input);
         let savedActivityId = activity.id;
         set(state => {
           const existingIndex = state.activities.findIndex(item => item.id === activity.id);
           if (existingIndex < 0) {
-            const healthKitIndex = healthKitDuplicateIndex(state.activities, activity);
-            if (healthKitIndex >= 0) {
-              savedActivityId = state.activities[healthKitIndex]?.id ?? activity.id;
-              return {
-                activities: state.activities.map((item, index) => index === healthKitIndex
-                  ? { ...item, ...activity, id: item.id, createdAt: item.createdAt, updatedAt: Date.now() }
-                  : item),
-              };
-            }
-            const liveDuplicateIndex = liveTrackedDuplicateIndex(state.activities, activity);
-            if (liveDuplicateIndex >= 0) {
-              savedActivityId = state.activities[liveDuplicateIndex]?.id ?? activity.id;
-              return {
-                activities: state.activities.map((item, index) => index === liveDuplicateIndex
-                  ? { ...item, ...activity, id: item.id, createdAt: item.createdAt, updatedAt: Date.now() }
-                  : item),
-              };
-            }
-            const nearDuplicateIndex = nearDuplicateTrackedIndex(state.activities, activity);
-            if (nearDuplicateIndex >= 0) {
-              savedActivityId = state.activities[nearDuplicateIndex]?.id ?? activity.id;
-              return {
-                activities: state.activities.map((item, index) => index === nearDuplicateIndex
-                  ? { ...item, ...activity, id: item.id, createdAt: item.createdAt, updatedAt: Date.now() }
-                  : item),
-              };
-            }
-            if (activity.scheduledSessionId) {
-              const linkedIndex = state.activities.findIndex(item => item.scheduledSessionId === activity.scheduledSessionId);
-              if (linkedIndex >= 0) {
-                savedActivityId = state.activities[linkedIndex]?.id ?? activity.id;
-                return {
-                  activities: state.activities.map(item => item.scheduledSessionId === activity.scheduledSessionId
-                    ? { ...activity, id: item.id, createdAt: item.createdAt, updatedAt: Date.now() }
-                    : item),
-                };
-              }
+            const recordingIndex = state.activities.findIndex(item => sameRecording(item, activity));
+            if (recordingIndex >= 0) {
+              savedActivityId = state.activities[recordingIndex].id;
+              return { activities: state.activities.map((item, index) => index === recordingIndex
+                ? mergeRecording(item, activity) : item) };
             }
             return { activities: [...state.activities, activity] };
           }
           return {
-            activities: state.activities.map(item => item.id === activity.id ? activity : item),
+            activities: state.activities.map(item => item.id === activity.id ? mergeRecording(item, activity) : item),
           };
         });
         // After state settles — synchronous, no dangling promise.
         runRecalculation('activity_added', get().activities);
-        return get().activities.find(item => item.scheduledSessionId && item.scheduledSessionId === activity.scheduledSessionId)?.id
-          ?? savedActivityId;
+        return savedActivityId;
       },
 
       updateActivity: (id, patch) => {
+        if (!captureOwnerLease()) throw new Error('Local history is locked until its owner is confirmed');
         set(state => ({
           activities: state.activities.map(activity => {
             if (activity.id !== id) return activity;
@@ -229,6 +236,7 @@ export const useActivityStore = create<ActivityStore>()(
       },
 
       removeActivity: (id) => {
+        if (!captureOwnerLease()) throw new Error('Local history is locked until its owner is confirmed');
         set(state => ({ activities: state.activities.filter(activity => activity.id !== id) }));
         runRecalculation('activity_removed', get().activities);
       },
@@ -255,7 +263,7 @@ export const useActivityStore = create<ActivityStore>()(
     {
       name: 'activity-store',
       version: ACTIVITY_STORE_SCHEMA_VERSION,
-      storage: createAppJSONStorage(),
+      storage: activityStorage,
       partialize: state => ({
         schemaVersion: state.schemaVersion,
         activities: state.activities,
