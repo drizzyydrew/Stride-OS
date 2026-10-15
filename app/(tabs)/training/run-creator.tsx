@@ -1,3 +1,4 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 // ─── Run Creator ──────────────────────────────────────────────────────────────
 //
 // Builds a custom run (fartlek, tempo, intervals, long run + strides) and
@@ -7,7 +8,7 @@ import { useEffect, useState, useMemo } from 'react';
 import {
   Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -661,9 +662,7 @@ export default function RunCreatorScreen() {
     <SafeAreaView style={st.safe} edges={['top']}>
       {/* Header */}
       <View style={st.header}>
-        <TouchableOpacity onPress={() => router.back()} style={st.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </TouchableOpacity>
+        <LegacyBackControl onBack={() => router.back()} />
         <Text style={st.title}>{editingRun ? 'Edit Run' : 'Build a Run'}</Text>
         <View style={{ width: 40 }} />
       </View>

@@ -1,3 +1,4 @@
+import Modal from '../ui/RecoverableModal';
 // ─── Treadmill Completion Correction Sheet ───────────────────────────────────
 //
 // Shown when ending an indoor/treadmill run. Lets the athlete reconcile
@@ -6,7 +7,7 @@
 // estimate is always preserved (see resolveFinalDistance in treadmill.ts).
 
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useColors } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
@@ -58,8 +59,8 @@ export default function TreadmillCompletionSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
-      <View style={s.overlay}>
-        <View style={[s.sheet, { backgroundColor: C.card, borderColor: C.border }]}>
+      <Pressable style={s.overlay} onPress={onCancel} accessible={false}>
+        <Pressable style={[s.sheet, { backgroundColor: C.card, borderColor: C.border }]} onPress={event => event.stopPropagation()} accessible={false}>
           <Text style={[s.title, { color: C.text }]}>Confirm treadmill distance</Text>
           <Text style={[s.copy, { color: C.textMuted }]}>
             {estimateSource === 'prescribed_estimate'
@@ -123,8 +124,8 @@ export default function TreadmillCompletionSheet({
               <Text style={[s.btnText, { color: C.onPrimary }]}>Save Run</Text>
             </Pressable>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }

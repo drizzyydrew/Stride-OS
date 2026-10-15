@@ -4,6 +4,7 @@ import { RunLevelBadge, runLevelSlugFromId } from '../../achievements/runLevels'
 import { lifetimeDistanceCyclingDefinitionFromAchievementId } from '../../achievements/lifetimeDistanceCycling';
 import { lifetimeDistanceRunningDefinitionFromAchievementId } from '../../achievements/lifetimeDistanceRunning';
 import { firstAchievementDefinitionFromAchievementId } from '../../achievements/firsts';
+import { challengeAchievementDefinitionFromAchievementId } from '../../achievements/challenges';
 import { strengthAchievementDefinitionFromAchievementId } from '../../achievements/strength';
 import { recoveryAchievementDefinitionFromAchievementId } from '../../achievements/recovery';
 import { streakDefinitionFromAchievementId } from '../../achievements/streaks';
@@ -182,7 +183,8 @@ export default function AchievementShareCard({ achievement, variant, detail, uni
   const firstDefinition = firstAchievementDefinitionFromAchievementId(achievement.id);
   const strengthDefinition = strengthAchievementDefinitionFromAchievementId(achievement.id);
   const recoveryDefinition = recoveryAchievementDefinitionFromAchievementId(achievement.id);
-  const canonicalBadgeDefinition = lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? monthlyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition;
+  const challengeDefinition = challengeAchievementDefinitionFromAchievementId(achievement.id);
+  const canonicalBadgeDefinition = lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? monthlyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition ?? challengeDefinition;
 
   if (achievement.category === 'run_level') {
     return <RunLevelAchievementShareCard achievement={achievement} variant={variant} detail={detail} units={units} />;

@@ -1,3 +1,4 @@
+import Modal from '../ui/RecoverableModal';
 // ─── Log Workout Modal ────────────────────────────────────────────────────────
 //
 // Universal custom workout logger. Supports running, strength, cross-training,
@@ -6,17 +7,7 @@
 // Business logic: customWorkoutEngine.ts + customWorkoutStore.ts
 // No business logic lives in this component.
 
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useState } from 'react';
 
 import NumberInput from '../ui/NumberInput';

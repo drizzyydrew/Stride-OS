@@ -15,6 +15,8 @@ import { colors }  from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight } from '../../theme/tokens';
 import { ONBOARDING_TOTAL_STEPS } from '../../store/onboardingStore';
+import { useFixedBackAction } from '../layout/NavigationEscape';
+import BrandChevrons from '../ui/BrandChevrons';
 
 type Props = {
   step:        number;      // 0 = welcome (no progress bar shown), 1–9 = data steps
@@ -42,6 +44,7 @@ export default function OnboardingShell({
   onSkip,
 }: Props) {
   const DATA_STEPS = ONBOARDING_TOTAL_STEPS - 1;   // 9 data steps
+  const fixedBack = useFixedBackAction(onBack);
   const showProgress = step > 0;
   const progress = step / DATA_STEPS;
 
@@ -53,9 +56,9 @@ export default function OnboardingShell({
       >
         {/* ── Top bar ─────────────────────────────────────────────── */}
         <View style={styles.topBar}>
-          {onBack ? (
+          {onBack && !fixedBack ? (
             <Pressable onPress={onBack} style={styles.backBtn} hitSlop={12}>
-              <Text style={styles.backText}>←</Text>
+              <BrandChevrons />
             </Pressable>
           ) : (
             <View style={styles.backPlaceholder} />

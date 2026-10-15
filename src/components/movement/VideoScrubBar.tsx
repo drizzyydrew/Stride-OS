@@ -18,6 +18,7 @@ type Props = {
   onScrubEnd?: (fraction: number) => void;
   onScrubCancel?: () => void;
   markers?:    number[];            // 0…1 positions — e.g. key frames
+  accessibilityLabel?: string;
 };
 
 const TRACK_HEIGHT = 4;
@@ -30,6 +31,7 @@ export default function VideoScrubBar({
   onScrubEnd,
   onScrubCancel,
   markers,
+  accessibilityLabel = 'Video timeline',
 }: Props) {
   const [width, setWidth] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -85,7 +87,7 @@ export default function VideoScrubBar({
       {...panResponder.panHandlers}
       onLayout={handleLayout}
       accessibilityRole="adjustable"
-      accessibilityLabel="Video timeline"
+      accessibilityLabel={accessibilityLabel}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(shown * 100) }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={event => {

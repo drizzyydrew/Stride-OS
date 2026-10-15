@@ -1,14 +1,6 @@
+import Modal from '../ui/RecoverableModal';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Image,
-  Modal,
-  PanResponder,
-  Pressable,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { Alert, Image, PanResponder, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -40,15 +32,16 @@ const DEFAULT_EDITABLE_NAMES = new Set(
 );
 const HANDLE_SIZE = 44;
 
-function sameLandmarks(a: PoseLandmarkRecord[], b: PoseLandmarkRecord[]): boolean {
+function sameLandmarks(a: PoseLandmarkRecord[], b: PoseLandmarkRecord[], exact = false): boolean {
   if (a.length !== b.length) return false;
   const byName = new Map(b.map(item => [item.name, item]));
   return a.every(item => {
     const other = byName.get(item.name);
-    return other
-      && Math.abs(item.x - other.x) < 0.001
+    return Boolean(other && (exact
+      ? item.x === other.x && item.y === other.y && item.confidence === other.confidence
+      : Math.abs(item.x - other.x) < 0.001
       && Math.abs(item.y - other.y) < 0.001
-      && Math.abs(item.confidence - other.confidence) < 0.001;
+      && Math.abs(item.confidence - other.confidence) < 0.001));
   });
 }
 
@@ -146,7 +139,8 @@ export default function LandmarkEditor({
     [allowedLandmarkNames],
   );
   const initialNames = useMemo(() => new Set(landmarks.map(item => item.name)), [landmarks]);
-  const [draft, setDraft] = useState<PoseLandmarkRecord[]>(landmarks);
+  const initialLandmarks = useRef(landmarks.map(joint => ({ ...joint })));
+  const [draft, setDraft] = useState<PoseLandmarkRecord[]>(() => initialLandmarks.current.map(joint => ({ ...joint })));
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const [selected, setSelected] = useState<string | null>(
     landmarks.find(joint => allowedNames.has(joint.name))?.name ?? null,
@@ -187,9 +181,21 @@ export default function LandmarkEditor({
     onSave(draft, !sameLandmarks(draft, autoLandmarks));
   }
 
+  function requestCancel() {
+    if (sameLandmarks(draft, initialLandmarks.current, true)) {
+      onCancel();
+      return;
+    }
+    Alert.alert('Discard marker adjustments?', 'Your marker changes have not been saved.', [
+      { text: 'Keep Editing', style: 'cancel' },
+      { text: 'Discard Changes', style: 'destructive', onPress: onCancel },
+    ]);
+  }
+
   return (
-    <Modal visible animationType="slide" presentationStyle="fullScreen" onRequestClose={onCancel}>
-      <View style={[styles.modalRoot, { paddingTop: insets.top + spacing.sm, paddingBottom: insets.bottom + spacing.sm }]}>
+    <Modal visible animationType="slide" presentationStyle="fullScreen" onRequestClose={requestCancel}>
+      {/* RecoverableModal owns the top safe area; the editor retains the bottom. */}
+      <View style={[styles.modalRoot, { paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.sm }]}>
         <View style={styles.modalHeader}>
           <View>
             <Text style={styles.modalEyebrow}>LOCKED EDIT MODE</Text>
@@ -255,7 +261,7 @@ export default function LandmarkEditor({
         <View style={styles.buttonRow}>
           <Pressable
             style={styles.cancelBtn}
-            onPress={onCancel}
+            onPress={requestCancel}
             accessibilityRole="button"
             accessibilityLabel="Cancel marker adjustments"
           >

@@ -1,6 +1,7 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -162,9 +163,7 @@ export default function PerformanceScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={20} color={C.primary} />
-        </TouchableOpacity>
+        <LegacyBackControl onBack={() => router.back()} />
         <View style={{ marginLeft: 10 }}>
           <Text style={[styles.headerLabel, { color: C.textDim }]}>ADAPTIVE</Text>
           <Text style={[styles.headerTitle, { color: C.text }]}>Endurance Performance</Text>

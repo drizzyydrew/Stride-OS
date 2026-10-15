@@ -1,3 +1,4 @@
+import Modal from '../ui/RecoverableModal';
 // ─── Override / Acknowledgement Modal ────────────────────────────────────────
 //
 // Shown when the athlete chooses to train against a rest/reduce recommendation.
@@ -7,17 +8,7 @@
 // Flow: readiness warning → checkbox acknowledge → optional reason → Confirm
 //       → calls onConfirmed(overrideId) so parent can open LogWorkoutModal
 
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useState } from 'react';
 
 import { colors }  from '../../theme/colors';

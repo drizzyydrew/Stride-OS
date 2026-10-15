@@ -1,3 +1,4 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useMemo, useState } from 'react';
 import {
   Alert,
@@ -9,7 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -228,9 +230,7 @@ export default function ActivityLogScreen() {
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
       <View style={[s.header, { paddingTop: Math.max(8, insets.top ? 0 : 8) }]}>
-        <TouchableOpacity onPress={() => router.back()} style={s.iconBtn} hitSlop={12}>
-          <Ionicons name="chevron-back" size={24} color={C.text} />
-        </TouchableOpacity>
+        <LegacyBackControl onBack={() => router.back()} />
         <View style={s.headerCopy}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>TRAINING</Text>
           <Text style={[s.title, { color: C.text }]}>Activity Log</Text>

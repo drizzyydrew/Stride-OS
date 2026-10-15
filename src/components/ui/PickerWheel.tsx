@@ -1,5 +1,6 @@
+import Modal from './RecoverableModal';
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Button from './Button';
@@ -172,9 +173,9 @@ function PickerSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay} pointerEvents="auto">
+      <Pressable style={styles.overlay} onPress={onClose} accessible={false}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardWrap}>
-          <View style={[styles.sheet, { backgroundColor: C.card, borderColor: C.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
+          <Pressable style={[styles.sheet, { backgroundColor: C.card, borderColor: C.border, paddingBottom: Math.max(insets.bottom, 16) }]} onPress={event => event.stopPropagation()} accessible={false}>
             <View style={[styles.dragIndicator, { backgroundColor: C.border }]} />
             <View style={styles.header}>
               <Text style={[styles.title, { color: C.text }]}>{title}</Text>
@@ -190,9 +191,9 @@ function PickerSheet({
             <View style={styles.actions}>
               {footer}
             </View>
-          </View>
+          </Pressable>
         </KeyboardAvoidingView>
-      </View>
+      </Pressable>
     </Modal>
   );
 }

@@ -1,7 +1,8 @@
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useMemo, useState } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useRouter } from 'expo-router';
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { Ionicons } from '@expo/vector-icons';
 
 import { LAYOUT } from '../../../src/constants/layout';
@@ -379,9 +380,7 @@ export default function CalibrationScreen() {
 function Header({ C, title, onBack }: { C: ReturnType<typeof useColors>; title: string; onBack: () => void }) {
   return (
     <View style={styles.header}>
-      <TouchableOpacity onPress={onBack} hitSlop={12}>
-        <Ionicons name="arrow-back" size={20} color={C.primary} />
-      </TouchableOpacity>
+      <LegacyBackControl onBack={onBack} />
       <View style={{ marginLeft: 10 }}>
         <Text style={[styles.headerLabel, { color: C.textDim }]}>PROFILE</Text>
         <Text style={[styles.headerTitle, { color: C.text }]}>{title}</Text>

@@ -1,11 +1,13 @@
 import { useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import AchievementBadge from '../../../src/components/achievements/AchievementBadge';
+import { badgeFamilyPresentationRows } from '../../../src/achievements/badgePresentation';
 import AchievementShareCard, {
   ACHIEVEMENT_SHARE_VARIANTS,
   type AchievementShareVariant,
@@ -90,8 +92,9 @@ function familyFilterLabel(filter: 'all' | AchievementFamily): string {
 }
 
 function canonicalListForFilter(achievements: readonly EvaluatedAchievement[], filter: 'all' | AchievementFamily): EvaluatedAchievement[] {
-  const sorted = [...achievements].sort((a, b) => {
+  const sorted = badgeFamilyPresentationRows(achievements, filter).sort((a, b) => {
     if (a.state !== b.state) return a.state === 'earned' ? -1 : b.state === 'earned' ? 1 : 0;
+    if (filter === 'challenges' || filter === 'strength') return 0;
     return (a.tier ?? 99) - (b.tier ?? 99) || a.title.localeCompare(b.title);
   });
   if (filter === 'all') return sorted;
@@ -100,7 +103,7 @@ function canonicalListForFilter(achievements: readonly EvaluatedAchievement[], f
       .filter(item => item.state !== 'locked')
       .sort((a, b) => (b.achievedDate ?? 0) - (a.achievedDate ?? 0));
   }
-  return sorted.filter(item => item.family === filter);
+  return filter === 'challenges' || filter === 'strength' ? sorted : sorted.filter(item => item.family === filter);
 }
 
 export default function AchievementHubScreen() {
@@ -204,7 +207,7 @@ export default function AchievementHubScreen() {
               <TouchableOpacity
                 key={item.id}
                 style={[s.badgeRow, { backgroundColor: earned ? C.primaryDim : C.cardAlt, borderColor: earned ? C.primary : C.border }]}
-                onPress={() => router.push({ pathname: '/(tabs)/more/achievement-detail', params: { id: item.id } } as never)}
+                onPress={() => router.push({ pathname: '/(tabs)/more/achievement-detail', params: { id: item.id, ...(familyFilter === 'challenges' || familyFilter === 'strength' ? { badgeFamily: familyFilter } : {}) } } as never)}
                 accessibilityRole="button"
                 accessibilityLabel={item.accessibilityLabel}
               >

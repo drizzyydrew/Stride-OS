@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import { useColors } from '../../theme/useColors';
+import { useFixedBackAction } from './NavigationEscape';
+import BrandChevrons from '../ui/BrandChevrons';
 
 type Props = {
   title: string;
@@ -27,10 +28,11 @@ export default function ScreenHeader({
   titleNumberOfLines = 2,
 }: Props) {
   const C = useColors();
+  const fixedBack = useFixedBackAction(onBack);
 
   return (
     <View style={styles.header}>
-      {onBack ? (
+      {onBack && !fixedBack ? (
         <Pressable
           onPress={onBack}
           style={({ pressed }) => [styles.action, pressed && styles.pressed]}
@@ -38,7 +40,7 @@ export default function ScreenHeader({
           accessibilityLabel={backLabel}
           hitSlop={4}
         >
-          <Ionicons name="chevron-back" size={25} color={C.text} />
+          <BrandChevrons />
         </Pressable>
       ) : null}
       <View style={styles.copy}>

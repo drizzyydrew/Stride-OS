@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';

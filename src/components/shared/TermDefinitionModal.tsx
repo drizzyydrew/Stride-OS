@@ -1,4 +1,5 @@
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Modal from '../ui/RecoverableModal';
+import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -36,9 +37,9 @@ export default function TermDefinitionModal({ visible, term, onClose }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+      <Pressable style={styles.overlay} onPress={onClose} accessible={false}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={[styles.sheet, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Pressable style={[styles.sheet, { backgroundColor: C.card, borderColor: C.border }]} onPress={event => event.stopPropagation()} accessible={false}>
           <View style={styles.handleRow}>
             <View style={[styles.handle, { backgroundColor: C.border }]} />
           </View>
@@ -95,8 +96,8 @@ export default function TermDefinitionModal({ visible, term, onClose }: Props) {
               </Text>
             </View>
           )}
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }

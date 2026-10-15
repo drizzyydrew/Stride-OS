@@ -1,6 +1,7 @@
+import Modal from '../../../src/components/ui/RecoverableModal';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, type DimensionValue } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, type DimensionValue } from 'react-native';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
@@ -275,8 +276,8 @@ function WeatherCard() {
         </TouchableOpacity>
       ) : null}
       <Modal visible={infoOpen} transparent animationType="slide" onRequestClose={() => setInfoOpen(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.infoSheet, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Pressable style={styles.modalOverlay} onPress={() => setInfoOpen(false)} accessible={false}>
+          <Pressable style={[styles.infoSheet, { backgroundColor: C.card, borderColor: C.border }]} onPress={event => event.stopPropagation()} accessible={false}>
             <Text style={[styles.infoTitle, { color: C.text }]}>Weather and AQI</Text>
             <Text style={[styles.infoCopy, { color: C.textMuted }]}>
               AQI is the U.S. Air Quality Index. It summarizes outdoor air pollution on a 0–500 scale; higher values generally mean more reason to reduce exposure or intensity.
@@ -334,8 +335,8 @@ function WeatherCard() {
             <TouchableOpacity style={[styles.infoClose, { backgroundColor: C.primary }]} onPress={() => setInfoOpen(false)}>
               <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>Done</Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );

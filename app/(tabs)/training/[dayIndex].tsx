@@ -1,10 +1,9 @@
+import Modal from '../../../src/components/ui/RecoverableModal';
 import { useState } from 'react';
-import {
-  Alert, Modal, Pressable,
-  ScrollView, StyleSheet, Text, View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
@@ -109,8 +108,8 @@ function SkipModal({ visible, onSkip, onCancel }: SkipModalProps) {
   const [reason, setReason] = useState('');
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalSheet}>
+      <Pressable style={styles.modalOverlay} onPress={onCancel} accessible={false}>
+        <Pressable style={styles.modalSheet} onPress={event => event.stopPropagation()} accessible={false}>
           <Text style={styles.modalTitle}>Skip this session?</Text>
           <Text style={styles.modalSub}>Skipping is fine — recovery is part of training.</Text>
 
@@ -138,8 +137,8 @@ function SkipModal({ visible, onSkip, onCancel }: SkipModalProps) {
 
           <Button label="Skip Session" onPress={() => { onSkip(reason); setReason(''); }} variant="secondary" style={{ marginTop: spacing.xl }} />
           <Button label="Go Back" onPress={onCancel} variant="secondary" style={{ marginTop: spacing.sm }} />
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
@@ -204,6 +203,13 @@ export default function SessionDetailScreen() {
   const [showLogModal,     setShowLogModal]     = useState(false);
   const [showSkipModal,    setShowSkipModal]    = useState(false);
   const [showEditModal,    setShowEditModal]    = useState(false);
+
+  function closeWorkoutLog() {
+    Alert.alert('Discard unsaved workout edits?', 'Your recorded workout will not change unless you save these edits.', [
+      { text: 'Keep Editing', style: 'cancel' },
+      { text: 'Discard Edits', style: 'destructive', onPress: () => { setShowLogModal(false); setShowEditModal(false); } },
+    ]);
+  }
 
   if (!workout) {
     return (
@@ -308,9 +314,7 @@ export default function SessionDetailScreen() {
     <SafeAreaView style={styles.safe}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-          <Text style={styles.backText}>‹ Back</Text>
-        </Pressable>
+        <LegacyBackControl onBack={() => router.back()} />
         <Text style={styles.headerDay}>{dayName}</Text>
         <View style={styles.headerSpacer} />
       </View>
@@ -470,10 +474,10 @@ export default function SessionDetailScreen() {
         visible={showLogModal || showEditModal}
         transparent
         animationType="slide"
-        onRequestClose={() => { setShowLogModal(false); setShowEditModal(false); }}
+        onRequestClose={closeWorkoutLog}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
+        <Pressable style={styles.modalOverlay} onPress={closeWorkoutLog} accessible={false}>
+          <Pressable style={styles.modalSheet} onPress={event => event.stopPropagation()} accessible={false}>
             <ScrollView keyboardShouldPersistTaps="handled">
               <WorkoutLogForm
                 plannedDurationMinutes={
@@ -495,11 +499,11 @@ export default function SessionDetailScreen() {
                     }); }
                   : (isStarted ? handleLogSave : handleManualLog)
                 }
-                onCancel={() => { setShowLogModal(false); setShowEditModal(false); }}
+                onCancel={closeWorkoutLog}
               />
             </ScrollView>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* ── Skip modal ──────────────────────────────────────────────────────── */}

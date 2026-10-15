@@ -1,3 +1,4 @@
+import { LegacyBackControl } from '../../src/components/layout/NavigationEscape';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -95,9 +96,7 @@ export default function ForgotPasswordScreen() {
           </Pressable>
         </View>
 
-        <Pressable style={s.back} onPress={() => router.back()}>
-          <Text style={s.backTxt}>← Back to Sign In</Text>
-        </Pressable>
+        <LegacyBackControl onBack={() => router.back()} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

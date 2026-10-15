@@ -1,5 +1,6 @@
+import Modal from './RecoverableModal';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import Button from './Button';
 import { useColors } from '../../theme/useColors';
@@ -42,8 +43,8 @@ export default function MultiColumnPickerSheet<T extends string | number>({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={[styles.sheet, { backgroundColor: C.card, borderColor: C.border }]}>
+      <Pressable style={styles.overlay} onPress={onClose} accessible={false}>
+        <Pressable style={[styles.sheet, { backgroundColor: C.card, borderColor: C.border }]} onPress={event => event.stopPropagation()} accessible={false}>
           <Text style={[styles.title, { color: C.text }]}>{title}</Text>
           <View style={styles.columns}>
             {columns.map(column => {
@@ -84,8 +85,8 @@ export default function MultiColumnPickerSheet<T extends string | number>({
             <Button label="Cancel" onPress={onClose} variant="secondary" style={{ flex: 1 }} />
             <Button label="Confirm" onPress={() => onConfirm(selected)} style={{ flex: 1 }} />
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }

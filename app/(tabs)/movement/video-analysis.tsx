@@ -19,7 +19,8 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useEvent } from 'expo';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
@@ -417,9 +418,7 @@ export default function VideoAnalysisScreen() {
 
         {/* Header */}
         <View style={s.headerRow}>
-          <Pressable onPress={() => router.back()} hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}>
-            <Text style={s.back}>‹ Back</Text>
-          </Pressable>
+          <LegacyBackControl onBack={() => router.back()} />
         </View>
         <View style={s.titleBlock}>
           <Text style={s.eyebrow}>MOVEMENT LAB · VIDEO ANALYSIS</Text>

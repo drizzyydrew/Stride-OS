@@ -1,5 +1,6 @@
+import Modal from './RecoverableModal';
 import type { ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '../../theme';
 
@@ -14,8 +15,8 @@ export default function BottomSheet({ visible, children, onDismiss }: BottomShee
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
-      <Pressable style={[styles.backdrop, { backgroundColor: theme.colors.overlay }]} onPress={onDismiss}>
-        <Pressable style={[styles.sheet, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+      <Pressable style={[styles.backdrop, { backgroundColor: theme.colors.overlay }]} onPress={onDismiss} accessible={false}>
+        <Pressable style={[styles.sheet, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]} onPress={event => event.stopPropagation()} accessible={false}>
           <View style={[styles.grabber, { backgroundColor: theme.colors.textDim }]} />
           {children}
         </Pressable>

@@ -1,5 +1,6 @@
+import Modal from '../ui/RecoverableModal';
 import { useEffect } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
   Easing,

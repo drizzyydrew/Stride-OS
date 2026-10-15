@@ -1,3 +1,4 @@
+import Modal from '../../../src/components/ui/RecoverableModal';
 // ─── Indoor Cycling: Live Screen ──────────────────────────────────────────
 //
 // Free ride, scheduled workout, or a shortcut to log a ride already
@@ -9,9 +10,9 @@
 // own display, or it is honestly absent. See src/utils/indoorRide.ts.
 
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Pressable, Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
@@ -567,8 +568,8 @@ export default function IndoorRideScreen() {
       </TouchableOpacity>
 
       <Modal visible={distanceModalOpen} transparent animationType="fade" onRequestClose={() => setDistanceModalOpen(false)}>
-        <View style={s.modalOverlay}>
-          <View style={[s.modalCard, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Pressable style={s.modalOverlay} onPress={() => setDistanceModalOpen(false)} accessible={false}>
+          <Pressable style={[s.modalCard, { backgroundColor: C.card, borderColor: C.border }]} onPress={event => event.stopPropagation()} accessible={false}>
             <Text style={[s.modalTitle, { color: C.text }]}>Bike/trainer displayed distance</Text>
             <Text style={[s.modalCopy, { color: C.textMuted }]}>Enter what the bike or trainer's own display shows.</Text>
             <View style={s.unitToggleRow}>
@@ -599,8 +600,8 @@ export default function IndoorRideScreen() {
                 <Text style={[s.modalBtnText, { color: C.onPrimary }]}>Save</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );

@@ -1,6 +1,7 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -124,9 +125,7 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={20} color={C.primary} />
-        </TouchableOpacity>
+        <LegacyBackControl onBack={() => router.back()} />
         <View style={{ marginLeft: 10 }}>
           <Text style={[styles.headerLabel, { color: C.textDim }]}>PROFILE</Text>
           <Text style={[styles.headerTitle, { color: C.text }]}>Athlete Profile</Text>

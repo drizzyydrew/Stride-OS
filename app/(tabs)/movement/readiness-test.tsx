@@ -18,12 +18,13 @@ import {
 } from 'react-native';
 import { useMemo, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { detectPoseSequence } from 'stride-pose';
 
 import { useColors } from '../../../src/theme/useColors';
+import { useFixedBackAction } from '../../../src/components/layout/NavigationEscape';
 import type { Palette } from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../../src/theme/tokens';
@@ -469,6 +470,7 @@ export default function ReadinessTestScreen() {
     }
     setScreenIndex(i => i - 1);
   }
+  useFixedBackAction(goBack);
 
   function handleSkipStep(current: StepDef) {
     commitStepResults(current.key, current.testIds.map(testId => ({ testId, method: 'manual' as ReadinessTestMethod, skipped: true })));

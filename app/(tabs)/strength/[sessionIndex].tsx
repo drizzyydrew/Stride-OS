@@ -1,10 +1,9 @@
+import Modal from '../../../src/components/ui/RecoverableModal';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Alert, FlatList, Modal, Pressable,
-  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 
 import { useAthleteStore }  from '../../../src/store/athleteStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
@@ -142,9 +141,9 @@ function WeightPickerModal({ visible, unitLabel, currentLb, onConfirm, onClose }
   }, [visible]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalSheet, { paddingBottom: 32 }]}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.modalOverlay} onPress={onClose} accessible={false}>
+        <Pressable style={[styles.modalSheet, { paddingBottom: 32 }]} onPress={event => event.stopPropagation()} accessible={false}>
           <Text style={styles.pickerTitle}>Set Weight ({unitLabel})</Text>
 
           <View style={styles.pickerContainer}>
@@ -191,8 +190,8 @@ function WeightPickerModal({ visible, unitLabel, currentLb, onConfirm, onClose }
             <Button label="Cancel" onPress={onClose} variant="secondary" />
             <Button label="Set Weight" onPress={() => onConfirm(selected)} />
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
@@ -338,6 +337,38 @@ export default function StrengthSessionDetailScreen() {
   const [showLogModal,  setShowLogModal]  = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
 
+  function closeStrengthLog() {
+    Alert.alert('Discard unsaved strength log edits?', 'Your session will not be saved unless you choose Save Session.', [
+      { text: 'Keep Editing', style: 'cancel' },
+      { text: 'Discard Edits', style: 'destructive', onPress: () => setShowLogModal(false) },
+    ]);
+  }
+
+  function handleBack() {
+    if (showLogModal) {
+      closeStrengthLog();
+      return;
+    }
+    if (weightPickerFor !== null) {
+      setWeightPickerFor(null);
+      return;
+    }
+    if (showSkipModal) {
+      setShowSkipModal(false);
+      return;
+    }
+    const unsavedExercises = Object.values(exerciseStatus).some(status => status !== 'pending')
+      || Object.keys(exerciseWeightsLb).length > 0;
+    if (isActive || (!isComplete && unsavedExercises)) {
+      Alert.alert('Leave unsaved strength session?', 'Your local timer and exercise changes will be lost. This session has not been saved.', [
+        { text: 'Keep Training', style: 'cancel' },
+        { text: 'Leave Without Saving', style: 'destructive', onPress: () => router.back() },
+      ]);
+      return;
+    }
+    router.back();
+  }
+
   if (!session) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -417,9 +448,7 @@ export default function StrengthSessionDetailScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         {/* Back */}
-        <TouchableOpacity style={styles.backRow} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Strength</Text>
-        </TouchableOpacity>
+        <LegacyBackControl onBack={handleBack} />
 
         {/* Session header */}
         <View style={styles.headerCard}>
@@ -604,24 +633,24 @@ export default function StrengthSessionDetailScreen() {
       </ScrollView>
 
       {/* Log modal */}
-      <Modal visible={showLogModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
+      <Modal visible={showLogModal} animationType="slide" transparent onRequestClose={closeStrengthLog}>
+        <Pressable style={styles.modalOverlay} onPress={closeStrengthLog} accessible={false}>
+          <Pressable style={styles.modalSheet} onPress={event => event.stopPropagation()} accessible={false}>
             <SessionLogForm
               plannedDuration={sessionStartTime
                 ? Math.round((Date.now() - sessionStartTime) / 60000)
                 : session.targetDuration}
               onSave={handleLogSave}
-              onCancel={() => setShowLogModal(false)}
+              onCancel={closeStrengthLog}
             />
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* Skip modal */}
-      <Modal visible={showSkipModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
+      <Modal visible={showSkipModal} animationType="slide" transparent onRequestClose={() => setShowSkipModal(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setShowSkipModal(false)} accessible={false}>
+          <Pressable style={styles.modalSheet} onPress={event => event.stopPropagation()} accessible={false}>
             <Text style={styles.skipTitle}>Why are you skipping?</Text>
             {SKIP_REASONS.map(reason => (
               <Pressable key={reason} style={styles.skipReason} onPress={() => handleSkip(reason)}>
@@ -629,8 +658,8 @@ export default function StrengthSessionDetailScreen() {
               </Pressable>
             ))}
             <Button label="Cancel" onPress={() => setShowSkipModal(false)} variant="secondary" />
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* Weight picker */}

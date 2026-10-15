@@ -1,3 +1,4 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 // ─── AI Coach ─────────────────────────────────────────────────────────────────
 //
 // Chat interface powered by Claude. Builds a system prompt from the user's
@@ -19,7 +20,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useMovementStore }   from '../../../src/store/movementStore';
@@ -826,9 +827,7 @@ export default function CoachScreen() {
       keyboardVerticalOffset={0}
     >
       <View style={[s.header, { paddingTop: insets.top + 6 }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={20} color={C.primary} />
-        </Pressable>
+        <LegacyBackControl onBack={() => router.back()} />
         <View>
           <Text style={s.headerLabel}>AI COACH</Text>
           <Text style={s.headerTitle}>AI Coaching</Text>

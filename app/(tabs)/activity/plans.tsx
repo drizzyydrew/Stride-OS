@@ -1,16 +1,8 @@
+import Modal from '../../../src/components/ui/RecoverableModal';
 import { useMemo, useState } from 'react';
-import {
-  Modal,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Pressable, Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
@@ -270,8 +262,8 @@ export default function TrainingPathsScreen() {
       </ScrollView>
 
       <Modal visible={acknowledgeVisible} transparent animationType="fade" onRequestClose={() => setAcknowledgeVisible(false)}>
-        <View style={s.modalBackdrop}>
-          <View style={[s.modalCard, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Pressable style={s.modalBackdrop} onPress={() => setAcknowledgeVisible(false)} accessible={false}>
+          <Pressable style={[s.modalCard, { backgroundColor: C.card, borderColor: C.border }]} onPress={event => event.stopPropagation()} accessible={false}>
             <Text style={[s.cardTitle, { color: C.text }]}>Faster than recommended</Text>
             <Text style={[s.body, { color: C.textMuted }]}>
               This requested timeline is faster than StrideOS recommends. Faster progression may increase fatigue, symptoms, or recovery problems. The plan cannot guarantee completion or prevent injury, and it may still reduce or delay sessions based on readiness or symptoms. Medical concerns require an appropriate clinician.
@@ -288,8 +280,8 @@ export default function TrainingPathsScreen() {
                 <Text style={[s.primaryText, { color: C.onPrimary }]}>Confirm Timeline</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );

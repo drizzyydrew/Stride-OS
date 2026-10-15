@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';

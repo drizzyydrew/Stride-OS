@@ -1,20 +1,11 @@
+import Modal from '../../../src/components/ui/RecoverableModal';
 // ─── Movement Lab ─────────────────────────────────────────────────────────────
 //
 // Manual-first movement analysis. Users select a video from their camera roll,
 // which uploads to Supabase Storage (private, per-user). Analysis observations
 // are entered manually. Future AI hook: pose estimation (MediaPipe, MoveNet).
 
-import {
-  ActivityIndicator,
-  Alert,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';

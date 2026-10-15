@@ -1,22 +1,13 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
+import Modal from '../../../src/components/ui/RecoverableModal';
 // ─── Movement Analysis Detail ─────────────────────────────────────────────────
 //
 // Shows analysis session for a video record. Tabs: Overview | Gait | Angles | Flags
 // All analysis is entered manually. AI pose estimation is a future integration point.
 
-import {
-  ActivityIndicator,
-  Alert,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system';
@@ -418,7 +409,7 @@ export default function VideoDetailScreen() {
     return (
       <View style={s.notFound}>
         <Text style={s.notFoundTxt}>Analysis not found</Text>
-        <Pressable onPress={() => router.back()}><Text style={s.back}>← Back</Text></Pressable>
+        <LegacyBackControl onBack={() => router.back()} />
       </View>
     );
   }
@@ -472,9 +463,7 @@ export default function VideoDetailScreen() {
     <View style={s.root}>
       {/* Nav bar */}
       <View style={[s.nav, { paddingTop: insets.top + spacing.sm }]}>
-        <Pressable onPress={() => router.back()} hitSlop={HIT_SLOP}>
-          <Text style={s.navBack}>‹ Back</Text>
-        </Pressable>
+        <LegacyBackControl onBack={() => router.back()} />
         <Pressable onPress={handleDelete} hitSlop={HIT_SLOP}>
           <Text style={s.navDelete}>Delete</Text>
         </Pressable>

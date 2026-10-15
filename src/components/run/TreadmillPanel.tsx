@@ -1,3 +1,4 @@
+import Modal from '../ui/RecoverableModal';
 // ─── Treadmill Live Panel ────────────────────────────────────────────────────
 //
 // Rendered by the primary Running tab (training/index.tsx) instead of the
@@ -6,7 +7,7 @@
 // speed segments (src/utils/treadmill.ts), correctable at completion.
 
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useColors } from '../../theme/useColors';
@@ -240,8 +241,8 @@ export default function TreadmillPanel({
 
       {/* Speed confirm/adjust modal */}
       <Modal visible={speedModalOpen} transparent animationType="fade" onRequestClose={() => setSpeedModalOpen(false)}>
-        <View style={s.modalOverlay}>
-          <View style={[s.modalCard, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Pressable style={s.modalOverlay} onPress={() => setSpeedModalOpen(false)} accessible={false}>
+          <Pressable style={[s.modalCard, { backgroundColor: C.card, borderColor: C.border }]} onPress={event => event.stopPropagation()} accessible={false}>
             <Text style={[s.modalTitle, { color: C.text }]}>Confirm treadmill speed</Text>
             <Text style={[s.modalCopy, { color: C.textMuted }]}>
               Enter the speed shown on the treadmill display ({imperial ? 'mph' : 'km/h'}).
@@ -263,14 +264,14 @@ export default function TreadmillPanel({
                 <Text style={[s.modalBtnText, { color: C.onPrimary }]}>Confirm</Text>
               </Pressable>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* Manual distance entry modal */}
       <Modal visible={distanceModalOpen} transparent animationType="fade" onRequestClose={() => setDistanceModalOpen(false)}>
-        <View style={s.modalOverlay}>
-          <View style={[s.modalCard, { backgroundColor: C.card, borderColor: C.border }]}>
+        <Pressable style={s.modalOverlay} onPress={() => setDistanceModalOpen(false)} accessible={false}>
+          <Pressable style={[s.modalCard, { backgroundColor: C.card, borderColor: C.border }]} onPress={event => event.stopPropagation()} accessible={false}>
             <Text style={[s.modalTitle, { color: C.text }]}>Enter live distance</Text>
             <Text style={[s.modalCopy, { color: C.textMuted }]}>
               Overrides the confirmed-speed estimate with a manual reading ({distUnit}).
@@ -292,8 +293,8 @@ export default function TreadmillPanel({
                 <Text style={[s.modalBtnText, { color: C.onPrimary }]}>Save</Text>
               </Pressable>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );

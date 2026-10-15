@@ -3,7 +3,7 @@ import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';

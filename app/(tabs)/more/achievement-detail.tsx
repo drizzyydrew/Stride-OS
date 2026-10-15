@@ -1,11 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { Ionicons } from '@expo/vector-icons';
 
 import RunLevelProgress from '../../../src/achievements/runLevels/RunLevelProgress';
 import AchievementBadge from '../../../src/components/achievements/AchievementBadge';
+import { achievementBadgePresentation } from '../../../src/achievements/badgePresentation';
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import ShareStudio, {
   SHARE_STUDIO_ACHIEVEMENT_VARIANT,
@@ -37,7 +38,7 @@ function shortDate(timeMs: number | undefined): string {
 export default function AchievementDetailScreen() {
   const C = useColors();
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[]; badgeFamily?: string | string[] }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const activities = useActivityStore(state => state.activities);
   const awarded = useAchievementStore(state => state.awarded);
@@ -59,7 +60,9 @@ export default function AchievementDetailScreen() {
     readinessHistory,
     assessmentResults,
   }), [activities, assessmentResults, awarded, readinessHistory, units, weekSessions]);
-  const achievement = achievements.find(item => item.id === id);
+  const canonicalAchievement = achievements.find(item => item.id === id);
+  const badgeFamily = Array.isArray(params.badgeFamily) ? params.badgeFamily[0] : params.badgeFamily;
+  const achievement = canonicalAchievement ? achievementBadgePresentation(canonicalAchievement, badgeFamily) : undefined;
   const relatedActivity = achievement?.achievedActivityId
     ? activities.find(activity => activity.id === achievement.achievedActivityId)
     : undefined;

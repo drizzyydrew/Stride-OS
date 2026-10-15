@@ -1,3 +1,4 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
@@ -8,7 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -1028,9 +1029,7 @@ export default function StrengthScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: C.bg }}>
         <View style={[styles.screenHeader, { paddingTop: insets.top + 6, backgroundColor: C.bg }]}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={20} color={C.primary} />
-          </TouchableOpacity>
+          <LegacyBackControl onBack={() => router.back()} />
           <View style={{ marginLeft: 10, flex: 1 }}>
             <Text style={[styles.headerLabel, { color: C.textDim }]}>STRENGTH</Text>
             <Text style={[styles.headerTitle, { color: C.text }]}>Strength</Text>
@@ -1059,9 +1058,7 @@ export default function StrengthScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: C.bg }}>
         <View style={[styles.screenHeader, { paddingTop: insets.top + 6, backgroundColor: C.bg }]}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={20} color={C.primary} />
-          </TouchableOpacity>
+          <LegacyBackControl onBack={() => router.back()} />
           <View style={{ marginLeft: 10, flex: 1 }}>
             <Text style={[styles.headerLabel, { color: C.textDim }]}>STRENGTH</Text>
             <Text style={[styles.headerTitle, { color: C.text }]}>Strength</Text>
@@ -1086,9 +1083,7 @@ export default function StrengthScreen() {
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       {/* Header */}
       <View style={[styles.screenHeader, { paddingTop: insets.top + 6, backgroundColor: C.bg }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={20} color={C.primary} />
-        </TouchableOpacity>
+        <LegacyBackControl onBack={() => router.back()} />
         <View style={{ marginLeft: 10, flex: 1 }}>
           <Text style={[styles.headerLabel, { color: C.textDim }]}>{wDef.label.toUpperCase()}</Text>
           <Text style={[styles.headerTitle, { color: C.text }]}>{wDef.title}</Text>

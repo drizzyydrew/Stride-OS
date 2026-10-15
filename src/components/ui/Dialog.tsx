@@ -1,4 +1,5 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import Modal from './RecoverableModal';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '../../theme';
 import Button from './Button';
@@ -30,11 +31,11 @@ export default function Dialog({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-      <Pressable style={[styles.backdrop, { backgroundColor: theme.colors.overlay }]} onPress={onDismiss}>
+      <Pressable style={[styles.backdrop, { backgroundColor: theme.colors.overlay }]} onPress={onDismiss} accessible={false}>
         <Pressable
           accessibilityRole="alert"
-          style={[styles.dialog, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
-        >
+          style={[styles.dialog, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]} onPress={event => event.stopPropagation()}
+         accessible={false}>
           <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
           {message ? <Text selectable style={[styles.message, { color: theme.colors.textMuted }]}>{message}</Text> : null}
           <View style={styles.actions}>

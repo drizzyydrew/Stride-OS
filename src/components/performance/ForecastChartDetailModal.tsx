@@ -1,4 +1,5 @@
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Modal from '../ui/RecoverableModal';
+import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 
@@ -70,8 +71,8 @@ export default function ForecastChartDetailModal({ metric, confidence, limitatio
 
   return (
     <Modal visible={Boolean(metric)} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={[styles.sheet, { backgroundColor: C.card, borderColor: C.border }]}>
+      <Pressable style={styles.backdrop} onPress={onClose} accessible={false}>
+        <Pressable style={[styles.sheet, { backgroundColor: C.card, borderColor: C.border }]} onPress={event => event.stopPropagation()} accessible={false}>
           <View style={styles.header}>
             <Text style={[styles.title, { color: C.text }]}>{metric?.label ?? 'Forecast'}</Text>
             <TouchableOpacity
@@ -125,8 +126,8 @@ export default function ForecastChartDetailModal({ metric, confidence, limitatio
           >
             <Text style={[styles.doneText, { color: C.onPrimary ?? '#FFFFFF' }]}>Close</Text>
           </TouchableOpacity>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }

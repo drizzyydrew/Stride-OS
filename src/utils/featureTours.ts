@@ -259,30 +259,32 @@ export function cardPlacementForTarget(params: {
   viewportHeight: number;
   insets: Pick<EdgeInsets, 'top' | 'bottom'>;
   preferredPlacement?: FeatureTourPlacement;
+  cardHeight?: number;
 }): FeatureTourCardPlacement {
   const horizontalMargin = 16;
   const verticalGap = 12;
   const minTop = params.insets.top + 12;
-  const maxBottom = params.viewportHeight - params.insets.bottom - 12;
-  const width = Math.min(params.viewportWidth - horizontalMargin * 2, 360);
+  const maxBottom = Math.max(minTop + 1, params.viewportHeight - params.insets.bottom - 12);
+  const cardHeight = Math.min(Math.max(120, params.cardHeight ?? 260), maxBottom - minTop);
+  const width = Math.max(1, Math.min(params.viewportWidth - horizontalMargin * 2, 360));
   const left = Math.max(horizontalMargin, Math.min(params.viewportWidth - width - horizontalMargin, params.target ? params.target.x : horizontalMargin));
-  const fallbackTop = Math.max(minTop, Math.min(maxBottom - 190, Math.round(params.viewportHeight * 0.36)));
+  const fallbackTop = Math.max(minTop, Math.min(maxBottom - cardHeight, Math.round(params.viewportHeight * 0.28)));
 
   if (!params.target) {
     return { top: fallbackTop, left, width, placement: 'center' };
   }
 
   const below = params.target.y + params.target.height + verticalGap;
-  const above = params.target.y - 190 - verticalGap;
-  const preferred = params.preferredPlacement ?? (below < maxBottom - 120 ? 'bottom' : 'top');
+  const above = params.target.y - cardHeight - verticalGap;
+  const preferred = params.preferredPlacement ?? (below + cardHeight <= maxBottom ? 'bottom' : 'top');
 
-  if (preferred === 'bottom' && below < maxBottom - 110) {
+  if (preferred === 'bottom' && below + cardHeight <= maxBottom) {
     return { top: below, left, width, placement: 'bottom' };
   }
   if (preferred === 'top' && above > minTop) {
     return { top: above, left, width, placement: 'top' };
   }
-  if (below < maxBottom - 110) {
+  if (below + cardHeight <= maxBottom) {
     return { top: below, left, width, placement: 'bottom' };
   }
   if (above > minTop) {
@@ -291,14 +293,18 @@ export function cardPlacementForTarget(params: {
   return { top: fallbackTop, left, width, placement: 'center' };
 }
 
-export function highlightRectForTarget(target: FeatureTourRect | null, viewportWidth: number): FeatureTourRect | null {
-  if (!target) return null;
+export function highlightRectForTarget(target: FeatureTourRect | null, viewportWidth: number, viewportHeight = Number.MAX_SAFE_INTEGER): FeatureTourRect | null {
+  if (!target || ![target.x, target.y, target.width, target.height].every(Number.isFinite)
+    || target.width <= 0 || target.height <= 0 || target.x >= viewportWidth || target.y >= viewportHeight
+    || target.x + target.width <= 0 || target.y + target.height <= 0) return null;
   const pad = 8;
+  const x = Math.max(8, target.x - pad);
+  const y = Math.max(8, target.y - pad);
   return {
-    x: Math.max(8, target.x - pad),
-    y: Math.max(8, target.y - pad),
-    width: Math.min(viewportWidth - 16, target.width + pad * 2),
-    height: Math.max(44, target.height + pad * 2),
+    x,
+    y,
+    width: Math.max(1, Math.min(viewportWidth - 8 - x, target.x + target.width + pad - x)),
+    height: Math.max(1, Math.min(viewportHeight - 8 - y, Math.max(44, target.y + target.height + pad - y))),
   };
 }
 

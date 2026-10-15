@@ -21,6 +21,7 @@ import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 export default function SignInScreen() {
   const signIn          = useAuthStore(s => s.signIn);
   const resendConfirmation = useAuthStore(s => s.resendConfirmation);
+  const localAccessReason = useAuthStore(s => s.localAccessReason);
 
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
@@ -74,6 +75,7 @@ export default function SignInScreen() {
 
           {error ? <Text style={s.error}>{error}</Text> : null}
           {notice ? <Text style={s.notice}>{notice}</Text> : null}
+          {!error && localAccessReason ? <Text style={s.notice}>{localAccessReason}</Text> : null}
 
           <View style={s.field}>
             <Text style={s.label}>EMAIL</Text>

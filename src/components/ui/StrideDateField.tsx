@@ -1,5 +1,6 @@
+import Modal from './RecoverableModal';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -143,8 +144,8 @@ export default function StrideDateField({
       </View>
 
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
-        <View style={styles.overlay}>
-          <View style={[styles.sheet, { backgroundColor: C.card, borderColor: C.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <Pressable style={styles.overlay} onPress={() => setOpen(false)} accessible={false}>
+          <Pressable style={[styles.sheet, { backgroundColor: C.card, borderColor: C.border, paddingBottom: Math.max(insets.bottom, 16) }]} onPress={event => event.stopPropagation()} accessible={false}>
             <View style={[styles.dragIndicator, { backgroundColor: C.border }]} />
             <View style={styles.sheetHeader}>
               <Pressable onPress={() => setOpen(false)} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Cancel ${label} selection`}>
@@ -221,8 +222,8 @@ export default function StrideDateField({
                 </Pressable>
               ))}
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       <TwoColumnPickerWheel

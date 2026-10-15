@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
@@ -185,7 +186,7 @@ export default function AdaptMyWeekScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
+        <LegacyBackControl onBack={() => router.back()} />
         <Text style={styles.headerTitle}>{isMissedMode(mode) ? 'Missed Workout' : isHealthMode(mode) ? 'Not Feeling 100%' : 'Adapt My Week'}</Text>
         <View style={{ width: 48 }} />
       </View>

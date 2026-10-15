@@ -1,3 +1,4 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 // ─── Running/Walking Readiness — Report ───────────────────────────────────────
 //
 // Renders a saved ReadinessAssessment: overall category, per-domain findings
@@ -12,7 +13,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useMemo } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useColors } from '../../../src/theme/useColors';
@@ -95,9 +96,7 @@ export default function ReadinessReportScreen() {
     return (
       <View style={s.root}>
         <View style={[s.header, { paddingTop: insets.top + 6 }]}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={20} color={C.primary} />
-          </Pressable>
+          <LegacyBackControl onBack={() => router.back()} />
         </View>
         <Text style={s.explain}>Assessment not found.</Text>
       </View>
@@ -120,9 +119,7 @@ export default function ReadinessReportScreen() {
   return (
     <View style={s.root}>
       <View style={[s.header, { paddingTop: insets.top + 6 }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={20} color={C.primary} />
-        </Pressable>
+        <LegacyBackControl onBack={() => router.back()} />
         <View style={{ marginLeft: 10 }}>
           <Text style={s.eyebrow}>READINESS REPORT</Text>
           <Text style={s.title}>{assessment.activityFocus === 'running' ? 'Running' : 'Walking'} Readiness</Text>

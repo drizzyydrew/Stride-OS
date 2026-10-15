@@ -1,3 +1,4 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 // ─── Route Detail ─────────────────────────────────────────────────────────────
 //
 // Saved-route view: map preview, distance / elevation / estimated time,
@@ -9,7 +10,7 @@ import { useMemo, useState } from 'react';
 import {
   Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker, Polyline } from '../../../src/components/maps/MapComponents';
@@ -151,13 +152,7 @@ export default function RouteDetailScreen() {
           ) : null}
           {route.points[0] ? <Marker coordinate={route.points[0]} title="Start" pinColor={C.positive} /> : null}
         </MapView>
-        <TouchableOpacity
-          style={[st.backBtn, { top: insets.top + 6, backgroundColor: C.card, borderColor: C.border }]}
-          onPress={() => router.back()}
-          hitSlop={10}
-        >
-          <Ionicons name="arrow-back" size={19} color={C.text} />
-        </TouchableOpacity>
+        <LegacyBackControl onBack={() => router.back()} />
       </View>
 
       <View style={{ paddingHorizontal: 16, marginTop: -20 }}>

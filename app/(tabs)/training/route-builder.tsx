@@ -1,3 +1,5 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
+import Modal from '../../../src/components/ui/RecoverableModal';
 // ─── Route Builder ────────────────────────────────────────────────────────────
 //
 // Map-first route creation: tap to drop waypoints, drag to reshape, and the
@@ -6,11 +8,8 @@
 // gain/loss, and estimated time update live.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, ScrollView,
-  StyleSheet, Text, TextInput, TouchableOpacity, View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -452,15 +451,7 @@ export default function RouteBuilderScreen() {
 
         {/* Header overlay */}
         <View style={[s.headerOverlay, { top: insets.top + 6 }]}>
-          <TouchableOpacity
-            style={[s.roundBtn, { backgroundColor: panelBg, borderColor: C.border }]}
-            onPress={() => router.back()}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-          >
-            <Ionicons name="arrow-back" size={19} color={C.text} />
-          </TouchableOpacity>
+          <LegacyBackControl onBack={() => router.back()} />
           <View style={[s.headerPill, { backgroundColor: panelBg, borderColor: C.border }]}>
             <Text style={[s.headerPillText, { color: C.text }]}>Route Builder</Text>
           </View>
@@ -765,8 +756,8 @@ export default function RouteBuilderScreen() {
         onShow={() => requestAnimationFrame(() => routeNameInputRef.current?.focus())}
       >
         <KeyboardAvoidingView style={s.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={s.modalOverlay}>
-          <View style={[s.modalSheet, { backgroundColor: C.card, paddingBottom: insets.bottom + 12 }]}>
+        <Pressable style={s.modalOverlay} onPress={() => setShowSave(false)} accessible={false}>
+          <Pressable style={[s.modalSheet, { backgroundColor: C.card, paddingBottom: insets.bottom + 12 }]} onPress={event => event.stopPropagation()} accessible={false}>
             <Text style={[s.modalTitle, { color: C.text }]}>Save Route</Text>
             <Text style={[s.modalMeta, { color: C.textMuted }]}>
               {distDisplay.toFixed(2)} {distUnit}
@@ -837,8 +828,8 @@ export default function RouteBuilderScreen() {
                 <Text style={[s.primaryBtnText, { color: C.onPrimary }]}>Save</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
         </KeyboardAvoidingView>
       </Modal>
 

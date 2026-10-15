@@ -1,6 +1,7 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Polyline, type Region } from '../../../src/components/maps/MapComponents';
@@ -193,9 +194,7 @@ export default function ActivityDetailScreen() {
       <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]}>
         <View style={s.center}>
           <Text style={[s.title, { color: C.text }]}>Workout not found</Text>
-          <TouchableOpacity onPress={() => router.back()} style={[s.backPill, { backgroundColor: C.cardAlt }]}>
-            <Text style={[s.backPillText, { color: C.text }]}>Go back</Text>
-          </TouchableOpacity>
+          <LegacyBackControl onBack={() => router.back()} />
         </View>
       </SafeAreaView>
     );
@@ -207,9 +206,7 @@ export default function ActivityDetailScreen() {
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.iconBtn} hitSlop={12}>
-          <Ionicons name="chevron-back" size={24} color={C.text} />
-        </TouchableOpacity>
+        <LegacyBackControl onBack={() => router.back()} />
         <View style={s.headerCopy}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>{entry.kind === 'run' ? 'RUN SUMMARY' : 'STRENGTH SUMMARY'}</Text>
           <Text style={[s.title, { color: C.text }]}>{title}</Text>

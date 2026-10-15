@@ -16,7 +16,6 @@ import { useOnboardingStore } from '../src/store/onboardingStore';
 import { useAuthStore }       from '../src/store/authStore';
 import { useThemeStore }      from '../src/store/themeStore';
 import { completeSupabaseAuthFromUrl } from '../src/lib/authRedirect';
-import { getSupabaseAvailability } from '../src/lib/supabase';
 import { ToastProvider } from '../src/components/ui/Toast';
 import { ThemeProvider as StrideThemeProvider } from '../src/theme/ThemeProvider';
 import { getNavigationTheme } from '../src/theme/theme';
@@ -26,6 +25,8 @@ import { FeatureTourProvider } from '../src/components/featureTour/FeatureTourPr
 import AchievementAwardReconciler from '../src/components/achievements/AchievementAwardReconciler';
 import AchievementUnlockModal from '../src/components/achievements/AchievementUnlockModal';
 import WatchWorkoutBridge from '../src/components/watch/WatchWorkoutBridge';
+import RunTelemetryBridge from '../src/components/watch/RunTelemetryBridge';
+import RunCompletionRecovery from '../src/components/watch/RunCompletionRecovery';
 import CloudBackupBridge from '../src/components/sync/CloudBackupBridge';
 import HealthActivityWriter from '../src/components/sync/HealthActivityWriter';
 import ActiveLocationTrackingReconciler from '../src/components/activity/ActiveLocationTrackingReconciler';
@@ -35,6 +36,7 @@ import {
   scheduleTrainingNotifications,
 } from '../src/lib/notifications';
 import LiveActivityCommandReconciler from '../src/components/liveActivity/LiveActivityCommandReconciler';
+import { FixedNavigationBanner, NavigationEscapeProvider } from '../src/components/layout/NavigationEscape';
 
 // Register GPS background task at module level (required by expo-task-manager)
 import '../src/lib/gpsTracking';
@@ -64,6 +66,7 @@ const SPLASH_IMAGE_WIDTH = 220;
 
 export default function RootLayout() {
   const initialize = useAuthStore(s => s.initialize);
+  const canAccessLocalData = useAuthStore(s => s.canAccessLocalData);
   const mode = useThemeStore(s => s.mode);
   const [showBrandSplash, setShowBrandSplash] = useState(true);
   const [loaded, error] = useFonts({
@@ -184,19 +187,27 @@ export default function RootLayout() {
         <ToastProvider>
           <FeatureTourProvider>
       <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
-      <Stack>
-        <Stack.Screen name="(tabs)"     options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-        <Stack.Screen name="auth"       options={{ headerShown: false }} />
+      <NavigationEscapeProvider>
+      <Stack screenOptions={{ gestureEnabled: false, fullScreenGestureEnabled: false, header: () => <FixedNavigationBanner /> }}>
+        <Stack.Protected guard={canAccessLocalData}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="onboarding" />
         <Stack.Screen name="modal"      options={{ presentation: 'modal' }} />
+        </Stack.Protected>
+        <Stack.Screen name="auth" />
       </Stack>
+      </NavigationEscapeProvider>
+      {canAccessLocalData ? <>
       <LiveActivityCommandReconciler />
       <ActiveLocationTrackingReconciler />
       <WatchWorkoutBridge />
+      <RunTelemetryBridge />
+      <RunCompletionRecovery />
       <CloudBackupBridge />
       <HealthActivityWriter />
       <AchievementAwardReconciler />
       <AchievementUnlockModal />
+      </> : null}
       <NavigationGate />
           </FeatureTourProvider>
         </ToastProvider>
@@ -208,11 +219,10 @@ export default function RootLayout() {
 // Handles auth → onboarding → tabs routing in one place.
 // Must be a child of the Stack so router and segments are available.
 function NavigationGate() {
-  const session           = useAuthStore(s => s.session);
+  const canAccessLocalData = useAuthStore(s => s.canAccessLocalData);
   const loading           = useAuthStore(s => s.loading);
   const onboardingComplete = useOnboardingStore(s => s.onboardingComplete);
   const segments           = useSegments();
-  const supabaseAvailable = getSupabaseAvailability().status === 'available';
 
   useEffect(() => {
     if (loading) return;
@@ -221,20 +231,14 @@ function NavigationGate() {
     const inAuth       = path.includes('auth');
     const inOnboarding = path.includes('onboarding');
 
-    if (!supabaseAvailable) {
-      if (!onboardingComplete) {
-        if (!inOnboarding) router.replace('/onboarding' as never);
-      } else if (inAuth || inOnboarding) {
-        router.replace('/(tabs)/dashboard');
-      }
-    } else if (!session) {
+    if (!canAccessLocalData) {
       if (!inAuth) router.replace('/auth/sign-in' as never);
     } else if (!onboardingComplete) {
       if (!inOnboarding) router.replace('/onboarding' as never);
     } else if (inAuth || inOnboarding) {
       router.replace('/(tabs)/dashboard');
     }
-  }, [session, loading, onboardingComplete, segments, supabaseAvailable]);
+  }, [canAccessLocalData, loading, onboardingComplete, segments]);
 
   return null;
 }

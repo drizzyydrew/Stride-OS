@@ -12,6 +12,8 @@ import React, {
 import {
   AccessibilityInfo,
   Modal,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -20,6 +22,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePathname } from 'expo-router';
+import BrandChevrons from '../ui/BrandChevrons';
 
 import { useFeatureTourStore } from '../../store/featureTourStore';
 import { useColors } from '../../theme/useColors';
@@ -54,6 +58,9 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
   const dimensions = useWindowDimensions();
   const targetsRef = useRef(new Map<string, TargetMeasurement>());
   const explanationRef = useRef<View>(null);
+  const measurementGeneration = useRef(0);
+  const pathname = usePathname();
+  const openedPath = useRef(pathname);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [activeTourId, setActiveTourId] = useState<FeatureTourId | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
@@ -66,6 +73,8 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
   const totalSteps = activeTour?.steps.length ?? 0;
 
   const measureStep = useCallback(async () => {
+    const generation = ++measurementGeneration.current;
+    setTargetRect(null);
     if (!activeStep) {
       setTargetRect(null);
       return;
@@ -75,8 +84,13 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
       setTargetRect(null);
       return;
     }
-    const rect = await target.measure();
-    setTargetRect(rect);
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const rect = await Promise.race([
+      target.measure().catch(() => null),
+      new Promise<null>(resolve => { timeout = setTimeout(() => resolve(null), 650); }),
+    ]);
+    if (timeout) clearTimeout(timeout);
+    if (generation === measurementGeneration.current) setTargetRect(rect);
   }, [activeStep]);
 
   useEffect(() => {
@@ -101,13 +115,15 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
       stepId: activeStep.id,
       stepNumber: stepIndex + 1,
     });
+    return () => { measurementGeneration.current += 1; };
   }, [activeStep, activeTour, measureStep, stepIndex, dimensions.width, dimensions.height]);
 
   useEffect(() => {
     if (!activeStep || !explanationRef.current) return;
     const handle = findNodeHandle(explanationRef.current);
     if (handle) {
-      setTimeout(() => AccessibilityInfo.setAccessibilityFocus(handle), reduceMotion ? 0 : 160);
+      const timer = setTimeout(() => AccessibilityInfo.setAccessibilityFocus(handle), reduceMotion ? 0 : 160);
+      return () => clearTimeout(timer);
     }
   }, [activeStep, reduceMotion]);
 
@@ -116,6 +132,8 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
     return () => {
       if (targetsRef.current.get(targetId) === target) {
         targetsRef.current.delete(targetId);
+        measurementGeneration.current += 1;
+        setTargetRect(null);
       }
     };
   }, []);
@@ -124,6 +142,7 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
     const tour = getFeatureTour(tourId);
     if (tour.steps.length === 0) return;
     setActiveTourId(tourId);
+    openedPath.current = pathname;
     setStepIndex(0);
     recordFeatureTourEvent({
       name: 'feature_tour_started',
@@ -133,11 +152,20 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
       stepNumber: 1,
       entrySource,
     });
-  }, []);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (openedPath.current === pathname) return;
+    measurementGeneration.current += 1;
+    setActiveTourId(null);
+    setTargetRect(null);
+    setStepIndex(0);
+  }, [pathname]);
 
   const value = useMemo(() => ({ registerTarget, startTour }), [registerTarget, startTour]);
 
   function closeAsSkipped() {
+    measurementGeneration.current += 1;
     if (activeTour) markSkipped(activeTour.id);
     setActiveTourId(null);
     setStepIndex(0);
@@ -145,6 +173,7 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
   }
 
   function completeTour() {
+    measurementGeneration.current += 1;
     if (activeTour) markCompleted(activeTour.id);
     setActiveTourId(null);
     setStepIndex(0);
@@ -164,14 +193,14 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
     setStepIndex(previousStepIndex(stepIndex));
   }
 
-  const highlightRect = highlightRectForTarget(targetRect, dimensions.width);
+  const highlightRect = highlightRectForTarget(targetRect, dimensions.width, dimensions.height);
   const dimColor = 'rgba(0,0,0,0.82)';
   const card = activeStep
     ? cardPlacementForTarget({
-      target: targetRect,
+      target: highlightRect,
       viewportWidth: dimensions.width,
       viewportHeight: dimensions.height,
-      insets,
+      insets: { ...insets, top: insets.top + 48 },
       preferredPlacement: activeStep.preferredPlacement,
     })
     : null;
@@ -186,12 +215,14 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
         onRequestClose={closeAsSkipped}
         statusBarTranslucent
       >
-        <View
+        <Pressable
           style={styles.overlayRoot}
+          onPress={closeAsSkipped}
+          onAccessibilityEscape={closeAsSkipped}
           pointerEvents="auto"
           accessibilityViewIsModal
           accessibilityLabel={activeStep && activeTour ? featureTourAccessibilityLabel(activeStep, stepIndex, totalSteps) : undefined}
-        >
+         accessible={false}>
           {highlightRect ? (
             <>
               <View style={[styles.dimBlock, { left: 0, top: 0, right: 0, height: highlightRect.y, backgroundColor: dimColor }]} />
@@ -231,19 +262,14 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
                   borderColor: C.border,
                 },
               ]}
-              accessible
-              accessibilityRole="summary"
-              accessibilityLabel={featureTourAccessibilityLabel(activeStep, stepIndex, totalSteps)}
-              accessibilityHint={activeStep.accessibilityHint}
             >
+            <Pressable onPress={event => event.stopPropagation()} accessible={false}>
+            <ScrollView style={{ maxHeight: Math.max(80, dimensions.height - insets.bottom - (card?.top ?? insets.top + 60) - 44) }} keyboardShouldPersistTaps="handled">
               <View style={styles.cardTopRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.eyebrow, { color: C.textDim }]}>{activeStep.eyebrow ?? activeTour.entryLabel.toUpperCase()}</Text>
                   <Text style={[styles.title, { color: C.text }]}>{activeStep.title}</Text>
                 </View>
-                <TouchableOpacity onPress={closeAsSkipped} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close walkthrough">
-                  <Ionicons name="close" size={20} color={C.textMuted} />
-                </TouchableOpacity>
               </View>
               <Text style={[styles.description, { color: C.textMuted }]}>{activeStep.description}</Text>
               <View style={styles.footer}>
@@ -262,9 +288,14 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
                   </TouchableOpacity>
                 </View>
               </View>
+            </ScrollView>
+            </Pressable>
             </View>
           ) : null}
-        </View>
+          <Pressable onPress={closeAsSkipped} style={[styles.escape, { top: insets.top + 4, backgroundColor: C.card }]} accessibilityRole="button" accessibilityLabel="Close walkthrough">
+            <BrandChevrons direction="down" />
+          </Pressable>
+        </Pressable>
       </Modal>
     </FeatureTourContext.Provider>
   );
@@ -314,6 +345,7 @@ const styles = StyleSheet.create({
   overlayRoot: {
     flex: 1,
   },
+  escape: { position: 'absolute', left: 12, width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   dim: {
     ...StyleSheet.absoluteFill,
   },

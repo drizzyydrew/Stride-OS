@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';

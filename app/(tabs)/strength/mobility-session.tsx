@@ -1,6 +1,7 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -124,9 +125,7 @@ export default function MobilitySessionScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: C.bg }}>
         <View style={[styles.screenHeader, { paddingTop: insets.top + 6 }]}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={20} color={C.primary} />
-          </TouchableOpacity>
+          <LegacyBackControl onBack={() => router.back()} />
         </View>
         <View style={{ paddingHorizontal: 18 }}>
           <Text style={{ color: C.textMuted }}>Workout not found.</Text>

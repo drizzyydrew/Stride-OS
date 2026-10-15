@@ -1,3 +1,4 @@
+import Modal from '../ui/RecoverableModal';
 // ─── Timed Capture Camera ────────────────────────────────────────────────────
 //
 // Expo SDK 56 CameraView workflow:
@@ -7,16 +8,7 @@
 // reversed.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  AppState,
-  Image,
-  Linking,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { AppState, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   CameraView,
   type CameraType,
@@ -25,7 +17,7 @@ import {
 } from 'expo-camera';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../layout/PageSafeAreaView';
 
 import { useColors } from '../../theme/useColors';
 import type { Palette } from '../../theme/colors';
