@@ -229,7 +229,8 @@ test('Award engine persists new Challenges achievements and recalculates them af
 
   const fiveK = [activity({ id: '5k-run', activityType: 'running', startTime: Date.UTC(2026, 6, 5, 8), metrics: { durationSeconds: 1800, distanceMeters: 5000 } })];
   const fiveKAwards = evaluateAchievementAwards(fiveK, [], now);
-  assert.ok(fiveKAwards.some(item => item.id === 'challenge_5k_month'), 'award engine should surface the new 5K Month Challenge without affecting the existing Monthly Distance ladder');
+  assert.ok(!fiveKAwards.some(item => item.id === 'challenge_5k_month'), 'retired 5K Month Challenge must not create new awards');
+  assert.equal(evaluateAchievementAwards(fiveK, ['challenge_5k_month'], now).filter(item => item.id === 'challenge_5k_month').length, 1, 'historical 5K award remains addressable without re-awarding it');
   assert.ok(!calculateMonthlyDistanceMilestones(fiveK).some(item => item.id === 'monthly_run_5k'), 'the 5K Month Challenge must not have been added to the existing Monthly Distance family ladder');
 });
 

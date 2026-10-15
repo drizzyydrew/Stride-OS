@@ -7,6 +7,7 @@ import {
   STREAK_ACHIEVEMENTS,
   calculateCumulativeElevationAchievements,
   calculateStreakAchievements,
+  isRetiredAchievement,
   type AchievementAwardReference,
   type AchievementCategory,
   type AchievementId,
@@ -834,6 +835,14 @@ function evaluateFirst(def: AchievementDefinitionV2, ctx: EvaluationContext): De
 }
 
 function evaluateDefinition(def: AchievementDefinitionV2, ctx: EvaluationContext): DefinitionEvaluationResult {
+  if (isRetiredAchievement(def.id)) {
+    const earned = ctx.existingAwards.has(def.id);
+    const reference = ctx.input.awarded.find(item => awardId(item) === def.id);
+    const ids = reference && typeof reference !== 'string' ? reference.supportingActivityIds ?? [] : [];
+    return { complete: earned, current: earned ? def.threshold : 0,
+      achievedAt: reference && typeof reference !== 'string' ? reference.awardedAt : undefined,
+      activityId: ids[0], ids: [...ids] };
+  }
   if (def.ruleKind === 'first') return evaluateFirst(def, ctx);
   if (def.ruleKind === 'run_level') {
     const result = cumulativeCrossing(ctx.completed, def.threshold, isRun, distanceMeters);

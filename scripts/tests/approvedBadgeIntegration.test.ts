@@ -66,7 +66,7 @@ test('Challenges and Strength galleries reuse earned IDs without registering pre
   const strength = badgeFamilyPresentationRows(canonical, 'strength');
   assert.equal(strength.length, 10);
   assert.equal(strength.find(item => item.id === 'first_structured_workout')?.category, 'strength');
-  assert.equal(badgeFamilyPresentationRows(canonical, 'all').length, canonical.length);
+  assert.equal(badgeFamilyPresentationRows(canonical, 'all').length, canonical.length - 1);
   const firstRun = canonical.find(item => item.id === 'first_run')!;
   assert.equal(achievementBadgePresentation(firstRun, 'challenges'), firstRun);
   assert.equal(achievementBadgePresentation(firstRun, 'invalid'), firstRun);
@@ -74,7 +74,7 @@ test('Challenges and Strength galleries reuse earned IDs without registering pre
   assert.equal(CHALLENGE_PRESENTATION_DEFINITIONS.filter(item => item.includeInGlobalRegistry).length, 6);
 });
 
-test('legacy 5K remains addressable and earnable while 150K/200K retain Monthly thresholds', () => {
+test('retired 5K remains addressable but cannot be newly earned; 150K/200K retain Monthly thresholds', () => {
   const now = new Date(2026, 9, 15, 12).getTime();
   const activity: Activity = {
     id: 'legacy-five-k', activityType: 'running', subtype: 'general', source: 'manual', status: 'completed',
@@ -83,7 +83,7 @@ test('legacy 5K remains addressable and earnable while 150K/200K retain Monthly 
     trainingLoad: { method: 'estimated', wholeBody: 0, running: 0, walking: 0, strength: 0, crossTraining: 0, impactBearing: 0, nonImpactAerobic: 0, confidence: 'low' },
   };
   const evaluated = evaluateAchievementSystem({ activities: [activity], units: 'imperial', now });
-  assert.equal(evaluated.find(item => item.id === 'challenge_5k_month')?.state, 'earned');
+  assert.equal(evaluated.find(item => item.id === 'challenge_5k_month')?.state, 'locked');
   assert.equal(evaluated.find(item => item.id === 'monthly_run_150k')?.state, 'locked');
   assert.equal(evaluated.find(item => item.id === 'monthly_run_200k')?.state, 'locked');
   assert(renderChallengeBadgeSvg('challenge_5k_month').includes('5K'));

@@ -13,6 +13,11 @@ import type { ScheduledSession } from './scheduledSessions';
 
 export type AchievementId = string;
 
+/** Retired awards remain addressable for history but cannot be newly earned. */
+export function isRetiredAchievement(id: AchievementId): boolean {
+  return id === 'challenge_5k_month';
+}
+
 export type AchievementDefinition = {
   id: AchievementId;
   title: string;
@@ -1343,6 +1348,7 @@ export function evaluateAchievementAwards(
   const support = new Map<AchievementId, AchievementAward>();
   const last7 = completed.filter(activity => options.now - activity.startTime <= 7 * DAY_MS);
   const award = (id: AchievementId, matches: readonly Activity[]) => {
+    if (isRetiredAchievement(id)) return;
     awards.add(id);
     if (existing.includes(id)) return;
     support.set(id, {
@@ -1594,24 +1600,5 @@ export function evaluateAchievementAwards(
   // docs, or reference image (confirmed by repeated search). Per explicit product direction this
   // stays PENDING — intentionally never awarded — rather than silently approved at a guessed
   // number. Do not add a threshold/award call here without explicit confirmation.
-  const CHALLENGE_5K_MONTH_THRESHOLD_METERS = 5000;
-  const runningByMonth = new Map<string, { meters: number; activities: Activity[] }>();
-  for (const activity of completed) {
-    if (!isLifetimeRunningActivity(activity)) continue;
-    const distance = distanceMeters(activity);
-    if (distance <= 0) continue;
-    const key = monthKey(activity.startTime);
-    const current = runningByMonth.get(key) ?? { meters: 0, activities: [] };
-    current.meters += distance;
-    current.activities.push(activity);
-    runningByMonth.set(key, current);
-  }
-  for (const value of runningByMonth.values()) {
-    if (value.meters >= CHALLENGE_5K_MONTH_THRESHOLD_METERS) {
-      award('challenge_5k_month', value.activities);
-      break;
-    }
-  }
-
   return [...awards].map(id => support.get(id) ?? { id, supportingActivityIds: [], supportingSessionIds: [] });
 }

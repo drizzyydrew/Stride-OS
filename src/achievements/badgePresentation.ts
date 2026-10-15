@@ -1,4 +1,5 @@
 import type { AchievementFamily, EvaluatedAchievement } from '../utils/achievementSystem';
+import { isRetiredAchievement } from '../utils/achievements';
 import { CHALLENGE_PRESENTATION_DEFINITIONS } from './challenges/challengesDefinitions';
 import { CHALLENGES_COLORS } from './challenges/challengesTokens';
 import { STRENGTH_ACHIEVEMENT_DEFINITIONS } from './strength/strengthDefinitions';
@@ -37,7 +38,7 @@ export function badgeFamilyPresentationRows(
 ): EvaluatedAchievement[] {
   const definitions = filter === 'challenges' ? CHALLENGE_PRESENTATION_DEFINITIONS
     : filter === 'strength' ? STRENGTH_ACHIEVEMENT_DEFINITIONS : undefined;
-  if (!definitions) return [...achievements];
+  if (!definitions) return achievements.filter(item => !isRetiredAchievement(item.id) || item.state !== 'locked');
   const byId = new Map(achievements.map(item => [item.id, item]));
   return definitions.flatMap(definition => {
     const achievement = byId.get(definition.id);
