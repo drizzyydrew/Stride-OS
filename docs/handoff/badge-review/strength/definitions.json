@@ -1,0 +1,149 @@
+{
+  "definitions": [
+    {
+      "id": "first_strength_session",
+      "slug": "first-strength-session",
+      "title": "First Strength Session",
+      "titleLines": [
+        "FIRST STRENGTH",
+        "SESSION"
+      ],
+      "glyph": "sessionDumbbell",
+      "threshold": 1,
+      "thresholdUnit": "sessions",
+      "includeInGlobalRegistry": true
+    },
+    {
+      "id": "strength_10_sessions",
+      "slug": "10-sessions",
+      "title": "10 Strength Sessions",
+      "titleLines": [
+        "SESSIONS"
+      ],
+      "glyph": "sessionDumbbell",
+      "threshold": 10,
+      "thresholdUnit": "sessions",
+      "includeInGlobalRegistry": true,
+      "badgeNumber": "10",
+      "badgeUnit": "SESSIONS"
+    },
+    {
+      "id": "strength_25_sessions",
+      "slug": "25-sessions",
+      "title": "25 Strength Sessions",
+      "titleLines": [
+        "SESSIONS"
+      ],
+      "glyph": "sessionDumbbell",
+      "threshold": 25,
+      "thresholdUnit": "sessions",
+      "includeInGlobalRegistry": true,
+      "badgeNumber": "25",
+      "badgeUnit": "SESSIONS"
+    },
+    {
+      "id": "strength_50_sessions",
+      "slug": "50-sessions",
+      "title": "50 Strength Sessions",
+      "titleLines": [
+        "SESSIONS"
+      ],
+      "glyph": "sessionDumbbell",
+      "threshold": 50,
+      "thresholdUnit": "sessions",
+      "includeInGlobalRegistry": true,
+      "badgeNumber": "50",
+      "badgeUnit": "SESSIONS"
+    },
+    {
+      "id": "strength_100_sessions",
+      "slug": "100-sessions",
+      "title": "100 Strength Sessions",
+      "titleLines": [
+        "SESSIONS"
+      ],
+      "glyph": "sessionDumbbell",
+      "threshold": 100,
+      "thresholdUnit": "sessions",
+      "includeInGlobalRegistry": true,
+      "badgeNumber": "100",
+      "badgeUnit": "SESSIONS"
+    },
+    {
+      "id": "strength_6_weeks_consistent",
+      "slug": "6-weeks-consistent",
+      "title": "6 Weeks Consistent Strength",
+      "titleLines": [
+        "6 WEEKS",
+        "STRONG"
+      ],
+      "glyph": "consistentWeeks",
+      "threshold": 6,
+      "thresholdUnit": "weeks",
+      "includeInGlobalRegistry": true,
+      "badgeNumber": "6",
+      "badgeUnit": "TOTAL"
+    },
+    {
+      "id": "strength_12_weeks_consistent",
+      "slug": "12-weeks-consistent",
+      "title": "12 Weeks Consistent Strength",
+      "titleLines": [
+        "12 WEEKS",
+        "STRONG"
+      ],
+      "glyph": "consistentWeeks",
+      "threshold": 12,
+      "thresholdUnit": "weeks",
+      "includeInGlobalRegistry": true,
+      "badgeNumber": "12",
+      "badgeUnit": "TOTAL"
+    },
+    {
+      "id": "strength_run_week_completed",
+      "slug": "strength-run-week",
+      "title": "Strength + Run Week",
+      "titleLines": [
+        "STRENGTH + RUN",
+        "WEEK"
+      ],
+      "glyph": "strengthRunWeek",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "includeInGlobalRegistry": true
+    },
+    {
+      "id": "first_structured_workout",
+      "slug": "first-structured-workout",
+      "title": "First Structured Workout",
+      "titleLines": [
+        "FIRST STRUCTURED",
+        "WORKOUT"
+      ],
+      "glyph": "structuredWorkout",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "includeInGlobalRegistry": false
+    },
+    {
+      "id": "prehab_resilience_block",
+      "slug": "prehab-resilience",
+      "title": "Prehab & Resilience",
+      "titleLines": [
+        "PREHAB &",
+        "RESILIENCE"
+      ],
+      "glyph": "prehabResilience",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "includeInGlobalRegistry": true
+    }
+  ],
+  "sources": {
+    "src/achievements/strength/strengthDefinitions.ts": "a8c52cad0b0112a11581be1637547d5357341f95e9c1457dd06fd265ea2fad79",
+    "src/achievements/strength/strengthArtwork.ts": "8c60d9e0fa235f48fe83dd50392d67bc8601b4ac4ab3ce2537c0113e31c3226f",
+    "src/achievements/strength/strengthTokens.ts": "3b356905e1bc67849de88125e276b6ed1775b16db9aaf1f84c0c1490ebe9b2b5",
+    "src/achievements/strength/strengthUtils.ts": "01a3316f2cb98b325a16acdc4660651c2c862b7b86a3d2b1e49d6735de66244d",
+    "src/achievements/firsts/firstsGlyphs.ts": "8141cc893a3681512ef5d68834a83dc435a0767bff7503988f9b79897c758cbd"
+  }
+}

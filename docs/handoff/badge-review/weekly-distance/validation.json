@@ -1,0 +1,579 @@
+{
+  "scope": "first Weekly Distance 5K preview only; user approval pending; no app integration",
+  "states": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "sizes": [
+    48,
+    64,
+    96,
+    128,
+    256
+  ],
+  "centeredBounds": {
+    "number": [
+      35.612375,
+      29.916999999999998,
+      64.387625,
+      51.406
+    ],
+    "period": [
+      34.6225,
+      59.6104,
+      65.3775,
+      64
+    ],
+    "wordmark": [
+      39.3578,
+      73.3138,
+      60.6422,
+      76.0666
+    ]
+  },
+  "checks": [
+    {
+      "state": "unlocked",
+      "size": 48,
+      "key": "number",
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 48,
+      "key": "period",
+      "margins": [
+        16,
+        16
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 48,
+      "key": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "key": "number",
+      "margins": [
+        22,
+        23
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "key": "period",
+      "margins": [
+        22,
+        22
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "key": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "key": "number",
+      "margins": [
+        34,
+        34
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "key": "period",
+      "margins": [
+        33,
+        33
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "key": "wordmark",
+      "margins": [
+        38,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "key": "number",
+      "margins": [
+        45,
+        45
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "key": "period",
+      "margins": [
+        44,
+        44
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "key": "wordmark",
+      "margins": [
+        50,
+        50
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "key": "number",
+      "margins": [
+        91,
+        91
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "key": "period",
+      "margins": [
+        88,
+        88
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "key": "wordmark",
+      "margins": [
+        101,
+        100
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "key": "number",
+      "margins": [
+        284,
+        284
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "key": "period",
+      "margins": [
+        277,
+        277
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "key": "wordmark",
+      "margins": [
+        315,
+        314
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "key": "number",
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "key": "period",
+      "margins": [
+        16,
+        16
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "key": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "key": "number",
+      "margins": [
+        22,
+        23
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "key": "period",
+      "margins": [
+        22,
+        22
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "key": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "key": "number",
+      "margins": [
+        34,
+        34
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "key": "period",
+      "margins": [
+        33,
+        33
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "key": "wordmark",
+      "margins": [
+        38,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "key": "number",
+      "margins": [
+        45,
+        45
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "key": "period",
+      "margins": [
+        44,
+        44
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "key": "wordmark",
+      "margins": [
+        50,
+        50
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "key": "number",
+      "margins": [
+        91,
+        91
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "key": "period",
+      "margins": [
+        88,
+        88
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "key": "wordmark",
+      "margins": [
+        101,
+        100
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "key": "number",
+      "margins": [
+        284,
+        284
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "key": "period",
+      "margins": [
+        277,
+        277
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "key": "wordmark",
+      "margins": [
+        315,
+        314
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "key": "number",
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "key": "period",
+      "margins": [
+        16,
+        16
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "key": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "key": "number",
+      "margins": [
+        22,
+        23
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "key": "period",
+      "margins": [
+        22,
+        22
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "key": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "key": "number",
+      "margins": [
+        34,
+        34
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "key": "period",
+      "margins": [
+        33,
+        33
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "key": "wordmark",
+      "margins": [
+        38,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "key": "number",
+      "margins": [
+        45,
+        45
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "key": "period",
+      "margins": [
+        44,
+        44
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "key": "wordmark",
+      "margins": [
+        50,
+        50
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "key": "number",
+      "margins": [
+        91,
+        91
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "key": "period",
+      "margins": [
+        88,
+        88
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "key": "wordmark",
+      "margins": [
+        101,
+        100
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "key": "number",
+      "margins": [
+        284,
+        284
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "key": "period",
+      "margins": [
+        277,
+        277
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "key": "wordmark",
+      "margins": [
+        315,
+        314
+      ],
+      "overlap": 0
+    }
+  ],
+  "changedProductionFiles": [],
+  "status": "pass"
+}

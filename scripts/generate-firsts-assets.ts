@@ -1,9 +1,9 @@
-import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { FIRST_ACHIEVEMENT_DEFINITIONS, type FirstAchievementBadgeState } from '../src/achievements/firsts/firstsDefinitions';
 import { renderFirstAchievementBadgeSvg } from '../src/achievements/firsts/firstsArtwork';
+import { writeFirstsPng } from './lib/firstsRasterizer';
 
 const PNG_SIZE = 1024;
 
@@ -25,22 +25,14 @@ function writeAsset(assetPath: string, contents: string): void {
   writeFileSync(target, `${contents.replace(/[ \t]+$/gm, '').trimEnd()}\n`, 'utf8');
 }
 
-function renderPng(sourceSvgPath: string, targetPngPath: string): void {
-  const source = path.resolve(process.cwd(), sourceSvgPath);
+async function renderPng(svg: string, targetPngPath: string): Promise<void> {
   const target = path.resolve(process.cwd(), targetPngPath);
   mkdirSync(path.dirname(target), { recursive: true });
 
-  const result = spawnSync('sips', ['-s', 'format', 'png', '-z', String(PNG_SIZE), String(PNG_SIZE), source, '--out', target], {
-    encoding: 'utf8',
-  });
-  if (result.error) {
-    throw new Error(`sips is required to render Firsts PNG assets: ${result.error.message}`);
-  }
-  if (result.status !== 0) {
-    throw new Error(`sips failed for ${sourceSvgPath}: ${result.stderr || result.stdout}`);
-  }
+  await writeFirstsPng(svg, target);
 }
 
+async function generate(): Promise<void> {
 let svgCount = 0;
 let pngCount = 0;
 
@@ -54,7 +46,7 @@ for (const definition of FIRST_ACHIEVEMENT_DEFINITIONS) {
   }
 
   for (const variant of VARIANTS) {
-    renderPng(definition[variant.svgPathKey], definition[variant.pngPathKey]);
+    await renderPng(renderFirstAchievementBadgeSvg(definition.id, variant.state, { size: PNG_SIZE, unitSystem: 'imperial' }), definition[variant.pngPathKey]);
     pngCount += 1;
   }
 }
@@ -72,3 +64,6 @@ const manifest = FIRST_ACHIEVEMENT_DEFINITIONS.map(definition => ({
 writeAsset('assets/achievements/firsts/manifest.json', `${JSON.stringify(manifest, null, 2)}\n`);
 
 console.log(`Generated ${svgCount} Firsts SVG assets and ${pngCount} PNG assets.`);
+}
+
+generate().catch(error => { console.error(error); process.exitCode = 1; });

@@ -1,0 +1,575 @@
+{
+  "scope": "User-approved Foundation baseline; no app integration. See FAMILY_REVIEW.md for full-family QA.",
+  "result": "PASS",
+  "ringCount": 5,
+  "checks": [
+    {
+      "state": "unlocked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        12,
+        12
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        16,
+        16
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        24,
+        24
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        32,
+        32
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        65,
+        65
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        204,
+        204
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        12,
+        12
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        16,
+        16
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        24,
+        24
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        32,
+        32
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        65,
+        65
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        204,
+        204
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        12,
+        12
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        16,
+        16
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        24,
+        24
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        32,
+        32
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        65,
+        65
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        204,
+        204
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "borderOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "borderOverlap": 0
+    }
+  ],
+  "states": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "sizes": [
+    48,
+    64,
+    96,
+    128,
+    256,
+    800
+  ],
+  "exports": {
+    "foundation-unlocked.svg": "659becdc40c0c071b1fc73c96a2c96ca732d117aef1266af18aa8226225bb413",
+    "foundation-unlocked.png": "02653295437ca8cb83be50275521b5700b216cdfb1d79b0797063ed9fb4610b6",
+    "foundation-locked.svg": "c52a724c889ac21b322c8290502b8a6d0cefdae4bbdb822f13228459d59a3bca",
+    "foundation-locked.png": "52ff7e5997c1516d7a400f7ec75dc410a9af8fe1600ff38e140109aec68bd36e",
+    "foundation-transparent.svg": "76ec5feb191af3918e20471bb461a9a44b492c23b3b7081896eaa842b84db4bc",
+    "foundation-transparent.png": "0c98cba3ed44bbcaba6ee37c363b911fbea9435b80855cb059b5a1a035dda526"
+  },
+  "sourceHashes": {
+    "src/achievements/runLevels/runLevelDefinitions.ts": "da29bf1a92d0a8e264476d5b42d5c4a74489c13c2ee173087ecc8c83ba9f3756",
+    "src/achievements/runLevels/runLevelThresholds.ts": "764da0c579f7f0d5c02bcae3a52da79e749145a110ed7d4c001f8bef8f9539af",
+    "src/achievements/runLevels/runLevelArtwork.ts": "d3853dcc6cffe98b2645af2c086cb93cbe33e6bfb7e192929bb2c5e7214bea16",
+    "src/achievements/runLevels/runLevelColors.ts": "b17b52985c1681d16291f2ee29eef87c154eaae3fbb8c4c11d4eb62d99eb8b3b"
+  },
+  "changedProductionFiles": []
+}

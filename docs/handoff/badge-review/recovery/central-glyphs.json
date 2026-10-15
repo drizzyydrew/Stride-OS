@@ -1,0 +1,60 @@
+{
+  "recovery_sleep_consistency": {
+    "subject": "restful-star-constellation",
+    "shapes": [
+      {"kind": "star", "cx": 44, "cy": 30, "r": 2.2},
+      {"kind": "star", "cx": 54, "cy": 27, "r": 2.5},
+      {"kind": "star", "cx": 59, "cy": 35, "r": 1.8},
+      {"kind": "star", "cx": 47, "cy": 39, "r": 1.8},
+      {"kind": "star", "cx": 55, "cy": 44, "r": 1.4},
+      {"kind": "path", "paint": "line", "d": "M39 48 C42 47 44 47.2 46 48.4 Q50 51 55 48.4 C57 47.3 59 47.2 61 48.4", "width": 1.05}
+    ]
+  },
+  "recovery_smart_rest_day": {
+    "subject": "resting-sun-and-hammock",
+    "reuseHammock": true,
+    "shapes": [
+      {"kind": "circle", "paint": "line", "cx": 50, "cy": 28.5, "r": 4.5, "width": 0.95},
+      {"kind": "path", "paint": "line", "d": "M50 21 V22.5 M42.5 28.5 H44 M56 28.5 H57.5 M44.6 23.1 L45.7 24.2 M55.4 23.1 L54.3 24.2", "width": 0.7}
+    ]
+  },
+  "recovery_readiness_respected": {
+    "subject": "readiness-summit-flag",
+    "shapes": [
+      {"kind": "path", "paint": "fabric", "d": "M38 52 L45 41 L48.5 46 L55 33 L62 52 Z", "width": 0.95},
+      {"kind": "path", "paint": "line", "d": "M42 51 L46.4 44 M52 51 L55.7 37.2 M55 33 V25.5 M55 25.5 H59 L57.4 27.3 L59 29.1 H55", "width": 0.8}
+    ]
+  },
+  "recovery_symptoms_reported_early": {
+    "subject": "early-signal-droplet-and-ripples",
+    "shapes": [
+      {"kind": "path", "paint": "fabric", "d": "M50 29.2 C47.2 33.4 45.3 35.8 45.3 39 C45.3 42.4 47.4 44 50 44 C52.6 44 54.7 42.4 54.7 39 C54.7 35.8 52.8 33.4 50 29.2 Z", "width": 0.95},
+      {"kind": "path", "paint": "line", "d": "M44.5 46 Q50 48 55.5 46 M39 49 Q50 53 61 49", "width": 0.85},
+      {"kind": "star", "cx": 50, "cy": 24.5, "r": 1.2}
+    ]
+  },
+  "recovery_check_in_streak": {
+    "subject": "seven-check-ins-and-check",
+    "shapes": [
+      {"kind": "circle", "paint": "fill", "cx": 42.5, "cy": 31, "r": 1.15},
+      {"kind": "circle", "paint": "fill", "cx": 47.5, "cy": 31, "r": 1.15},
+      {"kind": "circle", "paint": "fill", "cx": 52.5, "cy": 31, "r": 1.15},
+      {"kind": "circle", "paint": "fill", "cx": 57.5, "cy": 31, "r": 1.15},
+      {"kind": "circle", "paint": "fill", "cx": 45, "cy": 37, "r": 1.15},
+      {"kind": "circle", "paint": "fill", "cx": 50, "cy": 37, "r": 1.15},
+      {"kind": "circle", "paint": "fill", "cx": 55, "cy": 37, "r": 1.15},
+      {"kind": "path", "paint": "line", "d": "M44 45 L48 49 L57 41.5", "width": 1.2}
+    ]
+  },
+  "recovery_returned_gradually": {
+    "subject": "gradual-stepping-stones",
+    "shapes": [
+      {"kind": "path", "paint": "line", "d": "M40 51 C40 47.8 42.8 46.5 45 45 C48 43 49 41.8 50 39 C51.3 36 53.8 35 55 34 C57.4 32 58.5 31 59 28.8", "width": 0.65},
+      {"kind": "ellipse", "paint": "fill", "cx": 40, "cy": 52, "rx": 3.4, "ry": 1.4},
+      {"kind": "ellipse", "paint": "fill", "cx": 45, "cy": 46, "rx": 2.9, "ry": 1.2},
+      {"kind": "ellipse", "paint": "fill", "cx": 50, "cy": 40, "rx": 2.4, "ry": 1.1},
+      {"kind": "ellipse", "paint": "fill", "cx": 55, "cy": 35, "rx": 2, "ry": 0.9},
+      {"kind": "ellipse", "paint": "fill", "cx": 59, "cy": 30, "rx": 1.6, "ry": 0.7}
+    ]
+  }
+}

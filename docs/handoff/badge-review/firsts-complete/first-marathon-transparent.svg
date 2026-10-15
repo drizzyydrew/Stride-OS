@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 100 100" fill="none" aria-label="First Marathon transparent vector preview">
+  <defs>
+    <linearGradient id="edge" x1="20" y1="4" x2="80" y2="95" gradientUnits="userSpaceOnUse"><stop stop-color="#EED6A2"/><stop offset=".5" stop-color="#E7C486"/><stop offset="1" stop-color="#BD9560"/></linearGradient>
+    <radialGradient id="ambient"><stop stop-color="#E7C486" stop-opacity=".025"/><stop offset="1" stop-color="#E7C486" stop-opacity="0"/></radialGradient>
+  </defs>
+  <path d="M50 4 Q52.4 4 54.5 5.2 L84.8 22.6 Q87 23.9 87 26.5 L87 72 Q87 74.6 84.8 75.9 L54.5 93.8 Q52.4 95 50 95 Q47.6 95 45.5 93.8 L15.2 75.9 Q13 74.6 13 72 L13 26.5 Q13 23.9 15.2 22.6 L45.5 5.2 Q47.6 4 50 4 Z" fill="none" stroke="url(#edge)" stroke-width="1.02" stroke-linejoin="round"/>
+<g data-glyph="race-shield" transform="translate(0 -3)"><path d="M34 23.1 Q42 25 50 20.8 Q58 25 66 23.1 L66 39.3 Q66 47.2 50 54 Q34 47.2 34 39.3 Z" stroke="#E7C486" stroke-linecap="round" stroke-linejoin="round" stroke-width=".94"/><text x="50" y="42.8" text-anchor="middle" font-family="Arial Narrow,sans-serif" font-size="14.4" font-weight="400" fill="#E7C486">26.2</text></g>  <text x="50" y="66.7" text-anchor="middle" font-family="Arial Narrow, sans-serif" font-size="7.9" font-weight="400" fill="#EED6A2">FIRST MARATHON</text>
+  <text x="50" y="76.6" text-anchor="middle" font-family="Arial, sans-serif" font-size="4.35" letter-spacing=".65" font-weight="400" fill="#EED6A2">STRIDEOS</text>
+  <path d="M45.1 81.6 L50 84.5 L54.9 81.6 M45.4 85.2 L50 88 L54.6 85.2" stroke="#E7C486" stroke-width=".73" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

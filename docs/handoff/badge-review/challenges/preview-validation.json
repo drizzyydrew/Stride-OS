@@ -1,0 +1,194 @@
+{
+  "scope": "August Base Builder preview only; not app integration or native verification",
+  "result": "PASS",
+  "canonicalId": "challenge_august_base_builder",
+  "states": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "checks": [
+    {
+      "state": "unlocked",
+      "size": 48,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": false
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": false
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": false
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": false
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": false
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": false
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": true
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": true
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": true
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": true
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": true
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": true
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": false
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": false
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": false
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": false
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": false
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "equalMargins": true,
+      "noClipping": true,
+      "frameCollisions": 0,
+      "alpha": true,
+      "grayscale": false
+    }
+  ],
+  "exports": {
+    "august-base-builder-unlocked.svg": "4fd2424a16c608a87055ab14d73a3a461337900f5f972eecb465a3bf4427bd63",
+    "august-base-builder-unlocked.png": "38fe43b4168fdef8cada69dd3aaf7693ed424e5c2e6168ba1d7fb1d189d2e12f",
+    "august-base-builder-locked.svg": "746833b110cfa1029c89a2a0893a02d033cc4066679f6b6b5e3b386304e35037",
+    "august-base-builder-locked.png": "300c51b894b65a767c69c799bb8104962a8f9b2c4e54689b41c57e9bb80e7fb3",
+    "august-base-builder-transparent.svg": "8af86f8816d4166d4ab4a1e752b3a3ca2f1c37f5ef9018d7d673a72e1eb482bf",
+    "august-base-builder-transparent.png": "3aca3514a2718cf9bc15d5c291819cf21e3398f57d47b6864e1649ef0786c525"
+  },
+  "sourceHashes": {
+    "src/achievements/challenges/challengesDefinitions.ts": "412ed531f5f445abd6bbc78a975722aefa9225677055d4c175a91c2002ac3cb5",
+    "src/achievements/challenges/challengesUtils.ts": "a836953bbc55497ef129699d151b855331afdaec5decc734eded63fd5fd1c2cf",
+    "src/achievements/challenges/challengesArtwork.ts": "3be142c724bae838743e619d793a59d1c058e76127683c5ad6ac4d7f97385faa",
+    "src/achievements/challenges/challengesTokens.ts": "c9f809760f489d56ba2ffdfa5a9de1f5f3a7e77e8c894aa39a63b4068c51eb64",
+    "src/achievements/firsts/firstsGlyphs.ts": "8141cc893a3681512ef5d68834a83dc435a0767bff7503988f9b79897c758cbd",
+    "src/achievements/strength/strengthArtwork.ts": "8c60d9e0fa235f48fe83dd50392d67bc8601b4ac4ab3ce2537c0113e31c3226f",
+    "src/utils/achievementSystem.ts": "26665ff8987b5639a29fdb53de2981b7de30928010aa4d69bfd1f5f4ef7fd433",
+    "src/utils/achievements.ts": "143a085d4e39e8473c0d7e91c2be5738c05a7a273b33d449506f5d514d293d72"
+  },
+  "userApproval": "October 15, 2026: approved preview and requested family completion",
+  "independentCouncil": "See FAMILY_REVIEW.md for the current family review; initial preview agents were rate-limited."
+}

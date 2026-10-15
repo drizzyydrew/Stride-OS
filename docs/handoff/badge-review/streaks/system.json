@@ -1,0 +1,287 @@
+{
+  "background": "#070809",
+  "tiers": [
+    {
+      "minDays": 1,
+      "maxDays": 10,
+      "token": "streakHeatGreen",
+      "label": "Ember",
+      "rangeLabel": "1 - 10 days",
+      "colors": {
+        "primary": "#A5EC70",
+        "highlight": "#D8FFC0",
+        "shadow": "#4A8D43",
+        "glow": "#69C85D",
+        "center": "#F2FFE3"
+      }
+    },
+    {
+      "minDays": 11,
+      "maxDays": 50,
+      "token": "streakHeatYellow",
+      "label": "Kindle",
+      "rangeLabel": "11 - 50 days",
+      "colors": {
+        "primary": "#FFD84A",
+        "highlight": "#FFF4A2",
+        "shadow": "#A9751F",
+        "glow": "#FFC737",
+        "center": "#FFF9C7"
+      }
+    },
+    {
+      "minDays": 51,
+      "maxDays": 100,
+      "token": "streakHeatOrange",
+      "label": "Blaze",
+      "rangeLabel": "51 - 100 days",
+      "colors": {
+        "primary": "#FF962D",
+        "highlight": "#FFD08A",
+        "shadow": "#B84F14",
+        "glow": "#FF7C1E",
+        "center": "#FFE2B3"
+      }
+    },
+    {
+      "minDays": 101,
+      "maxDays": 150,
+      "token": "streakHeatRedOrange",
+      "label": "Inferno",
+      "rangeLabel": "101 - 150 days",
+      "colors": {
+        "primary": "#FF4F2D",
+        "highlight": "#FFAA79",
+        "shadow": "#9F2519",
+        "glow": "#EF3A20",
+        "center": "#FFD0B8"
+      }
+    },
+    {
+      "minDays": 151,
+      "maxDays": 200,
+      "token": "streakHeatHotPink",
+      "label": "Phoenix",
+      "rangeLabel": "151 - 200 days",
+      "colors": {
+        "primary": "#FF4F85",
+        "highlight": "#FFC2D7",
+        "shadow": "#9E244D",
+        "glow": "#F43773",
+        "center": "#FFE0EC"
+      }
+    },
+    {
+      "minDays": 201,
+      "maxDays": 250,
+      "token": "streakHeatViolet",
+      "label": "Violet Flame",
+      "rangeLabel": "201 - 250 days",
+      "colors": {
+        "primary": "#B96CFF",
+        "highlight": "#E2C4FF",
+        "shadow": "#6033B8",
+        "glow": "#9347EC",
+        "center": "#F0DFFF"
+      }
+    },
+    {
+      "minDays": 251,
+      "maxDays": 300,
+      "token": "streakHeatBlue",
+      "label": "Blue Flame",
+      "rangeLabel": "251 - 300 days",
+      "colors": {
+        "primary": "#4EA4FF",
+        "highlight": "#BCDFFF",
+        "shadow": "#265B9E",
+        "glow": "#3489F3",
+        "center": "#E0F1FF"
+      }
+    },
+    {
+      "minDays": 301,
+      "maxDays": 364,
+      "token": "streakHeatBlueWhite",
+      "label": "White Hot",
+      "rangeLabel": "301 - 364 days",
+      "colors": {
+        "primary": "#46E6F1",
+        "highlight": "#E7FFFF",
+        "shadow": "#27868E",
+        "glow": "#32CBD8",
+        "center": "#F0FFFF"
+      }
+    },
+    {
+      "minDays": 365,
+      "maxDays": null,
+      "token": "streakHeatWhiteHot",
+      "label": "Eternal Flame",
+      "rangeLabel": "365+ days",
+      "colors": {
+        "primary": "#F4F5F2",
+        "highlight": "#FFFFFF",
+        "shadow": "#8E9294",
+        "glow": "#D7E5EA",
+        "center": "#FFFFFF"
+      }
+    }
+  ],
+  "milestones": [
+    {
+      "id": "streak_1_week",
+      "slug": "7-day",
+      "day": 7,
+      "title": "7-Day Streak",
+      "subtitle": "Consistent Start"
+    },
+    {
+      "id": "streak_30_day",
+      "slug": "30-day",
+      "day": 30,
+      "title": "30-Day Streak",
+      "subtitle": "Dedicated"
+    },
+    {
+      "id": "streak_50_day",
+      "slug": "50-day",
+      "day": 50,
+      "title": "50-Day Streak",
+      "subtitle": "On Track"
+    },
+    {
+      "id": "streak_75_day",
+      "slug": "75-day",
+      "day": 75,
+      "title": "75-Day Streak",
+      "subtitle": "Unstoppable"
+    },
+    {
+      "id": "streak_100_day",
+      "slug": "100-day",
+      "day": 100,
+      "title": "100-Day Streak",
+      "subtitle": "On Fire"
+    },
+    {
+      "id": "streak_150_day",
+      "slug": "150-day",
+      "day": 150,
+      "title": "150-Day Streak",
+      "subtitle": "Relentless"
+    },
+    {
+      "id": "streak_200_day",
+      "slug": "200-day",
+      "day": 200,
+      "title": "200-Day Streak",
+      "subtitle": "Phoenix Rising"
+    },
+    {
+      "id": "streak_250_day",
+      "slug": "250-day",
+      "day": 250,
+      "title": "250-Day Streak",
+      "subtitle": "Legendary"
+    },
+    {
+      "id": "streak_300_day",
+      "slug": "300-day",
+      "day": 300,
+      "title": "300-Day Streak",
+      "subtitle": "Blue Flame"
+    },
+    {
+      "id": "streak_365_day",
+      "slug": "365-day",
+      "day": 365,
+      "title": "365-Day Streak",
+      "subtitle": "One Year"
+    }
+  ],
+  "boundarySamples": [
+    {
+      "days": 1,
+      "token": "streakHeatGreen"
+    },
+    {
+      "days": 10,
+      "token": "streakHeatGreen"
+    },
+    {
+      "days": 11,
+      "token": "streakHeatYellow"
+    },
+    {
+      "days": 50,
+      "token": "streakHeatYellow"
+    },
+    {
+      "days": 51,
+      "token": "streakHeatOrange"
+    },
+    {
+      "days": 100,
+      "token": "streakHeatOrange"
+    },
+    {
+      "days": 101,
+      "token": "streakHeatRedOrange"
+    },
+    {
+      "days": 150,
+      "token": "streakHeatRedOrange"
+    },
+    {
+      "days": 151,
+      "token": "streakHeatHotPink"
+    },
+    {
+      "days": 200,
+      "token": "streakHeatHotPink"
+    },
+    {
+      "days": 201,
+      "token": "streakHeatViolet"
+    },
+    {
+      "days": 250,
+      "token": "streakHeatViolet"
+    },
+    {
+      "days": 251,
+      "token": "streakHeatBlue"
+    },
+    {
+      "days": 300,
+      "token": "streakHeatBlue"
+    },
+    {
+      "days": 301,
+      "token": "streakHeatBlueWhite"
+    },
+    {
+      "days": 364,
+      "token": "streakHeatBlueWhite"
+    },
+    {
+      "days": 365,
+      "token": "streakHeatWhiteHot"
+    },
+    {
+      "days": 366,
+      "token": "streakHeatWhiteHot"
+    }
+  ],
+  "sources": [
+    {
+      "path": "src/achievements/streaks/streakDefinitions.ts",
+      "sha256": "e54fbea640f8d0ba34a5afd99e5c55767e18424ce159f760b83c459a76abed2c"
+    },
+    {
+      "path": "src/achievements/streaks/streakTokens.ts",
+      "sha256": "4b305ce8e037fb5495d9b4ca7dbb633a3f441ab41bdad2304b5e412b279d69b6"
+    }
+  ]
+}

@@ -1,0 +1,197 @@
+{
+  "locale": "en-US",
+  "running": [
+    {
+      "id": "lifetime_run_1_mi",
+      "slug": "1mi",
+      "thresholdMiles": 1,
+      "thresholdMeters": 1609.344,
+      "imperialNumber": "1",
+      "metricNumber": "1.6",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_run_5_mi",
+      "slug": "5mi",
+      "thresholdMiles": 5,
+      "thresholdMeters": 8046.72,
+      "imperialNumber": "5",
+      "metricNumber": "8",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_run_10_mi",
+      "slug": "10mi",
+      "thresholdMiles": 10,
+      "thresholdMeters": 16093.44,
+      "imperialNumber": "10",
+      "metricNumber": "16",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_run_26_2_mi",
+      "slug": "26-2mi",
+      "thresholdMiles": 26.2,
+      "thresholdMeters": 42164.8128,
+      "imperialNumber": "26.2",
+      "metricNumber": "42.2",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_run_50_mi",
+      "slug": "50mi",
+      "thresholdMiles": 50,
+      "thresholdMeters": 80467.2,
+      "imperialNumber": "50",
+      "metricNumber": "80",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_run_100_mi",
+      "slug": "100mi",
+      "thresholdMiles": 100,
+      "thresholdMeters": 160934.4,
+      "imperialNumber": "100",
+      "metricNumber": "161",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_run_250_mi",
+      "slug": "250mi",
+      "thresholdMiles": 250,
+      "thresholdMeters": 402336,
+      "imperialNumber": "250",
+      "metricNumber": "402",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_run_500_mi",
+      "slug": "500mi",
+      "thresholdMiles": 500,
+      "thresholdMeters": 804672,
+      "imperialNumber": "500",
+      "metricNumber": "805",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_run_1000_mi",
+      "slug": "1000mi",
+      "thresholdMiles": 1000,
+      "thresholdMeters": 1609344,
+      "imperialNumber": "1,000",
+      "metricNumber": "1,609",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_run_10000_mi",
+      "slug": "10000mi",
+      "thresholdMiles": 10000,
+      "thresholdMeters": 16093440,
+      "imperialNumber": "10,000",
+      "metricNumber": "16,093",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    }
+  ],
+  "cycling": [
+    {
+      "id": "lifetime_cycle_10_mi",
+      "slug": "10mi",
+      "thresholdMiles": 10,
+      "thresholdMeters": 16093.44,
+      "imperialNumber": "10",
+      "metricNumber": "16",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_cycle_50_mi",
+      "slug": "50mi",
+      "thresholdMiles": 50,
+      "thresholdMeters": 80467.2,
+      "imperialNumber": "50",
+      "metricNumber": "80",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_cycle_100_mi",
+      "slug": "100mi",
+      "thresholdMiles": 100,
+      "thresholdMeters": 160934.4,
+      "imperialNumber": "100",
+      "metricNumber": "161",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_cycle_250_mi",
+      "slug": "250mi",
+      "thresholdMiles": 250,
+      "thresholdMeters": 402336,
+      "imperialNumber": "250",
+      "metricNumber": "402",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_cycle_500_mi",
+      "slug": "500mi",
+      "thresholdMiles": 500,
+      "thresholdMeters": 804672,
+      "imperialNumber": "500",
+      "metricNumber": "805",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_cycle_1000_mi",
+      "slug": "1000mi",
+      "thresholdMiles": 1000,
+      "thresholdMeters": 1609344,
+      "imperialNumber": "1,000",
+      "metricNumber": "1,609",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_cycle_2500_mi",
+      "slug": "2500mi",
+      "thresholdMiles": 2500,
+      "thresholdMeters": 4023360,
+      "imperialNumber": "2,500",
+      "metricNumber": "4,023",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_cycle_5000_mi",
+      "slug": "5000mi",
+      "thresholdMiles": 5000,
+      "thresholdMeters": 8046720,
+      "imperialNumber": "5,000",
+      "metricNumber": "8,047",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    },
+    {
+      "id": "lifetime_cycle_10000_mi",
+      "slug": "10000mi",
+      "thresholdMiles": 10000,
+      "thresholdMeters": 16093440,
+      "imperialNumber": "10,000",
+      "metricNumber": "16,093",
+      "imperialUnit": "MI",
+      "metricUnit": "KM"
+    }
+  ]
+}

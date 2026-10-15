@@ -1,0 +1,338 @@
+{
+  "family": "monthly-distance",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
+  },
+  "definitions": [
+    {
+      "id": "monthly_run_25k",
+      "slug": "25k",
+      "thresholdKm": 25,
+      "thresholdMeters": 25000,
+      "tier": 1,
+      "tierToken": "monthlyDistance25K",
+      "colors": {
+        "primary": "#9DE67B",
+        "highlight": "#CDF6A3",
+        "shadow": "#4F7943",
+        "glow": "#7BCC5D"
+      },
+      "milestoneLabel": "25K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-25k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-25k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-25k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-25k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-25k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-25k-transparent.png",
+      "label": "25K"
+    },
+    {
+      "id": "monthly_run_50k",
+      "slug": "50k",
+      "thresholdKm": 50,
+      "thresholdMeters": 50000,
+      "tier": 2,
+      "tierToken": "monthlyDistance50K",
+      "colors": {
+        "primary": "#31D8D4",
+        "highlight": "#92F6F2",
+        "shadow": "#087A7D",
+        "glow": "#18B9B5"
+      },
+      "milestoneLabel": "50K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-50k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-50k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-50k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-50k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-50k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-50k-transparent.png",
+      "label": "50K"
+    },
+    {
+      "id": "monthly_run_100k",
+      "slug": "100k",
+      "thresholdKm": 100,
+      "thresholdMeters": 100000,
+      "tier": 3,
+      "tierToken": "monthlyDistance100K",
+      "colors": {
+        "primary": "#78B7F6",
+        "highlight": "#B8DFFF",
+        "shadow": "#265D9F",
+        "glow": "#4A96DD"
+      },
+      "milestoneLabel": "100K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-100k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-100k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-100k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-100k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-100k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-100k-transparent.png",
+      "label": "100K"
+    },
+    {
+      "id": "monthly_run_150k",
+      "slug": "150k",
+      "thresholdKm": 150,
+      "thresholdMeters": 150000,
+      "tier": 4,
+      "tierToken": "monthlyDistance150K",
+      "colors": {
+        "primary": "#8A70FF",
+        "highlight": "#C4B3FF",
+        "shadow": "#43328E",
+        "glow": "#775CDE"
+      },
+      "milestoneLabel": "150K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-150k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-150k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-150k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-150k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-150k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-150k-transparent.png",
+      "label": "150K"
+    },
+    {
+      "id": "monthly_run_200k",
+      "slug": "200k",
+      "thresholdKm": 200,
+      "thresholdMeters": 200000,
+      "tier": 5,
+      "tierToken": "monthlyDistance200K",
+      "colors": {
+        "primary": "#D861EA",
+        "highlight": "#F2BBFF",
+        "shadow": "#7A2D86",
+        "glow": "#BC40D2"
+      },
+      "milestoneLabel": "200K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-200k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-200k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-200k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-200k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-200k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-200k-transparent.png",
+      "label": "200K"
+    },
+    {
+      "id": "monthly_run_250k",
+      "slug": "250k",
+      "thresholdKm": 250,
+      "thresholdMeters": 250000,
+      "tier": 6,
+      "tierToken": "monthlyDistance250K",
+      "colors": {
+        "primary": "#FF674B",
+        "highlight": "#FFC0A8",
+        "shadow": "#A52C1B",
+        "glow": "#E64E34"
+      },
+      "milestoneLabel": "250K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-250k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-250k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-250k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-250k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-250k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-250k-transparent.png",
+      "label": "250K"
+    },
+    {
+      "id": "monthly_run_300k",
+      "slug": "300k",
+      "thresholdKm": 300,
+      "thresholdMeters": 300000,
+      "tier": 7,
+      "tierToken": "monthlyDistance300K",
+      "colors": {
+        "primary": "#F5A42D",
+        "highlight": "#FFD38A",
+        "shadow": "#9B5A10",
+        "glow": "#D98119"
+      },
+      "milestoneLabel": "300K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-300k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-300k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-300k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-300k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-300k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-300k-transparent.png",
+      "label": "300K"
+    }
+  ],
+  "files": [
+    {
+      "id": "monthly_run_25k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/monthly-distance-25k-unlocked.svg",
+      "png": "individual-exports/unlocked/monthly-distance-25k-unlocked.png",
+      "svgHash": "1fb2efdd63c716dfcb813241859c78b1cac9b6883aa012e9dc5c91330e8844d3",
+      "pngHash": "d9e564e9d06394188c3dd2c8ff6cfe245484197f71bf940c9387c2679714f13e"
+    },
+    {
+      "id": "monthly_run_25k",
+      "state": "locked",
+      "svg": "individual-exports/locked/monthly-distance-25k-locked.svg",
+      "png": "individual-exports/locked/monthly-distance-25k-locked.png",
+      "svgHash": "ddcbff51ae56379368f1ae6811fcd8c86c79b572521262000da94783c6724c81",
+      "pngHash": "46b1edf937cf145d5eca658d78984900cf2f53e67a856b026dcffa31ba04e49d"
+    },
+    {
+      "id": "monthly_run_25k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/monthly-distance-25k-transparent.svg",
+      "png": "individual-exports/transparent/monthly-distance-25k-transparent.png",
+      "svgHash": "b49a72d279305bc55bf7c3365ba241059aa578923d426984b074bd58d1535690",
+      "pngHash": "b50fd1a9e8b613275d7f0bd124c883761ea4473d1ac322081b8bccc3c986330f"
+    },
+    {
+      "id": "monthly_run_50k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/monthly-distance-50k-unlocked.svg",
+      "png": "individual-exports/unlocked/monthly-distance-50k-unlocked.png",
+      "svgHash": "b166ae5d8535d8ed844122b1c79a48356e09b7922a90f29549f3d7fcb9d1d437",
+      "pngHash": "add65a09f0899a923f09fed5bd7ad5ea4a78092b4e4b9d9079ea9eb9c40f5cf6"
+    },
+    {
+      "id": "monthly_run_50k",
+      "state": "locked",
+      "svg": "individual-exports/locked/monthly-distance-50k-locked.svg",
+      "png": "individual-exports/locked/monthly-distance-50k-locked.png",
+      "svgHash": "0300fe7b163b5c8080b80d309f7e52796d6c055a4ce3d4aa995fad56b87f399e",
+      "pngHash": "42d91b0554ed27cf1cf96e7e61fe4942b21562271967c928b28eb4529ce0e363"
+    },
+    {
+      "id": "monthly_run_50k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/monthly-distance-50k-transparent.svg",
+      "png": "individual-exports/transparent/monthly-distance-50k-transparent.png",
+      "svgHash": "f2b3ec35447def948379328d023e906e763ca88b800754c342f5913f5fb4d41b",
+      "pngHash": "32c0085982cb68d54d1f63445106f12c166d5cf68cbbe3a9f911b44b975beb0b"
+    },
+    {
+      "id": "monthly_run_100k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/monthly-distance-100k-unlocked.svg",
+      "png": "individual-exports/unlocked/monthly-distance-100k-unlocked.png",
+      "svgHash": "72c73a1f300713b922ef3493fae9643bb44bfb0e6cff9cb5f507ef20184dd5e7",
+      "pngHash": "2e0aa0010e6d940170a0d52541d879f56b1df840d430df2d5d48ac44147579e4"
+    },
+    {
+      "id": "monthly_run_100k",
+      "state": "locked",
+      "svg": "individual-exports/locked/monthly-distance-100k-locked.svg",
+      "png": "individual-exports/locked/monthly-distance-100k-locked.png",
+      "svgHash": "1de8580d8c02f53049fcee7d0ceace94c43c24ee8f5f0485404d04b1f9b47413",
+      "pngHash": "fee1693b8bf84f818a51e668f963f9a38abcdadb174cda6345c4eb58311a7da8"
+    },
+    {
+      "id": "monthly_run_100k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/monthly-distance-100k-transparent.svg",
+      "png": "individual-exports/transparent/monthly-distance-100k-transparent.png",
+      "svgHash": "d6099d6b8a773330bc36852b29b2b5c0b7b78a838bdd8654527d3531b5a8efd1",
+      "pngHash": "f1593740fbd8dd97948fede49407651c70d944514b5529e907ba5c3e1e36d65e"
+    },
+    {
+      "id": "monthly_run_150k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/monthly-distance-150k-unlocked.svg",
+      "png": "individual-exports/unlocked/monthly-distance-150k-unlocked.png",
+      "svgHash": "07fe593965ad593043d8034944d6d00b6d15e08677881e406c95b16d10a455a1",
+      "pngHash": "328f3dcbb016e732661f40a21eec338874cfd00bf1e592ffdab3c466e2a915a0"
+    },
+    {
+      "id": "monthly_run_150k",
+      "state": "locked",
+      "svg": "individual-exports/locked/monthly-distance-150k-locked.svg",
+      "png": "individual-exports/locked/monthly-distance-150k-locked.png",
+      "svgHash": "7037f05b5bbc869f1d0ef53f909da2c853ac1b857f4deba0fb68cd830a9cbdd6",
+      "pngHash": "5446319951d54ff1a77166bb29889b5d0ffa7163567a3bc71777071e1f2e8a13"
+    },
+    {
+      "id": "monthly_run_150k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/monthly-distance-150k-transparent.svg",
+      "png": "individual-exports/transparent/monthly-distance-150k-transparent.png",
+      "svgHash": "0ef7e247c336e1c42ae97ddadeae0852226e64e884e4631a30e9a8d01f9b7e86",
+      "pngHash": "70d2a0f116144697d3749670ca756fdc31861152d4adc7c697d45f5386099cfb"
+    },
+    {
+      "id": "monthly_run_200k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/monthly-distance-200k-unlocked.svg",
+      "png": "individual-exports/unlocked/monthly-distance-200k-unlocked.png",
+      "svgHash": "046124530c474f8237a1b92d4b3179f4019634bac1293e90e565927f374b417e",
+      "pngHash": "8d877ed2a9d60818510cd6cc462ac5eded36793166f1c20ba0a92c5461fed586"
+    },
+    {
+      "id": "monthly_run_200k",
+      "state": "locked",
+      "svg": "individual-exports/locked/monthly-distance-200k-locked.svg",
+      "png": "individual-exports/locked/monthly-distance-200k-locked.png",
+      "svgHash": "c5316a9ca969004b66573428ac04ce79d2cd493b082c41044496474c3d3db81b",
+      "pngHash": "8e5b94e8372cf270af69f0add927856d02f852f17472087c838bbfce0ce96b1e"
+    },
+    {
+      "id": "monthly_run_200k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/monthly-distance-200k-transparent.svg",
+      "png": "individual-exports/transparent/monthly-distance-200k-transparent.png",
+      "svgHash": "e2b8b0de51688c80cad5746e6531c9fe3438ee2d2fcac02b03c924ef690f1c2f",
+      "pngHash": "88defdd2a64c5d51fcdf9648b847bf8b4b4c231887a0df93d3b4f0a0250dee69"
+    },
+    {
+      "id": "monthly_run_250k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/monthly-distance-250k-unlocked.svg",
+      "png": "individual-exports/unlocked/monthly-distance-250k-unlocked.png",
+      "svgHash": "c2f71da7f609d4cc13d0fc19e14edb56eadf58e5e6270448c75aea31c9f908bf",
+      "pngHash": "cc0d8c761f35bcd77a7738ba8098e021791dd0619fab5edd9793bcd7cbd728b9"
+    },
+    {
+      "id": "monthly_run_250k",
+      "state": "locked",
+      "svg": "individual-exports/locked/monthly-distance-250k-locked.svg",
+      "png": "individual-exports/locked/monthly-distance-250k-locked.png",
+      "svgHash": "b4d36d9909f64af66d60ca5dd0591a5197e6cf7038460924741df1a3cb828318",
+      "pngHash": "e9d4b4b763ff1d4fdef3251038bf9fc01beaac9c5eb9edec80ad85a978abda84"
+    },
+    {
+      "id": "monthly_run_250k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/monthly-distance-250k-transparent.svg",
+      "png": "individual-exports/transparent/monthly-distance-250k-transparent.png",
+      "svgHash": "40f1266194142696807de129c3d23a0160cd82bc2782ec004a73350f728fffad",
+      "pngHash": "bbcef9a17b295e4128cef6a8082437298dc7684766b51c4f1d98daa7431fa3bd"
+    },
+    {
+      "id": "monthly_run_300k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/monthly-distance-300k-unlocked.svg",
+      "png": "individual-exports/unlocked/monthly-distance-300k-unlocked.png",
+      "svgHash": "8ad6ae4f51b712a714b6c599e037d48cb1f6714485ffa31d05bf6c6e0e3ecad2",
+      "pngHash": "e6dd4c1f2a65e89fa46bcf6b0efcf7f503c30be25e3889a1549d55b83eac301e"
+    },
+    {
+      "id": "monthly_run_300k",
+      "state": "locked",
+      "svg": "individual-exports/locked/monthly-distance-300k-locked.svg",
+      "png": "individual-exports/locked/monthly-distance-300k-locked.png",
+      "svgHash": "9e28ef6cd4e755bc563507b733e579a44cb5e5c88257b8b06d7a0142b9699d62",
+      "pngHash": "0066ba20409943e5672ae6880186b74fbbf49d012a219a1c3d3d84e86f092feb"
+    },
+    {
+      "id": "monthly_run_300k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/monthly-distance-300k-transparent.svg",
+      "png": "individual-exports/transparent/monthly-distance-300k-transparent.png",
+      "svgHash": "ae67ad59a909b8b412e1339546865c4529a798b5d062b722eb7358b5878f6057",
+      "pngHash": "7c22f4d7d8390fe2bf2c7ba32d4f50ff128162f707457a0f2a1adb12be4dd03d"
+    }
+  ]
+}

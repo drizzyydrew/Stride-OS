@@ -1,0 +1,7773 @@
+{
+  "scope": "seven Recovery family artworks under approved vine direction; no app replacement",
+  "definitions": [
+    {
+      "id": "recovery_week_completed",
+      "slug": "week-completed",
+      "title": "Recovery Week Completed",
+      "titleLines": [
+        "RECOVERY WEEK",
+        "COMPLETED"
+      ],
+      "glyph": "recoveryWeek",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "progressKind": "binary"
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "slug": "sleep-consistency",
+      "title": "Sleep Consistency Achieved",
+      "titleLines": [
+        "SLEEP CONSISTENCY",
+        "ACHIEVED"
+      ],
+      "glyph": "sleepCycle",
+      "threshold": 7,
+      "thresholdUnit": "days",
+      "progressKind": "nights"
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "slug": "smart-rest-day",
+      "title": "Smart Rest Day",
+      "titleLines": [
+        "SMART REST DAY"
+      ],
+      "glyph": "smartRest",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "progressKind": "binary"
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "slug": "readiness-respected",
+      "title": "Readiness Respected",
+      "titleLines": [
+        "READINESS",
+        "RESPECTED"
+      ],
+      "glyph": "readinessHammock",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "progressKind": "binary"
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "slug": "symptoms-reported-early",
+      "title": "Symptoms Reported Early",
+      "titleLines": [
+        "SYMPTOMS",
+        "REPORTED EARLY"
+      ],
+      "glyph": "symptomsSignal",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "progressKind": "binary"
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "slug": "check-in-streak",
+      "title": "Check-In Streak",
+      "titleLines": [
+        "CHECK-IN",
+        "STREAK"
+      ],
+      "glyph": "checkInRipples",
+      "threshold": 7,
+      "thresholdUnit": "days",
+      "progressKind": "checkIns"
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "slug": "returned-gradually",
+      "title": "Returned Gradually",
+      "titleLines": [
+        "RETURNED",
+        "GRADUALLY"
+      ],
+      "glyph": "returnedGradually",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "progressKind": "binary"
+    }
+  ],
+  "states": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "sizes": [
+    48,
+    64,
+    96,
+    128,
+    256
+  ],
+  "files": [
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/recovery-week-completed-unlocked.svg",
+      "png": "individual-exports/unlocked/recovery-week-completed-unlocked.png",
+      "svgHash": "bb3d48f3615a988325a87b10096ef29b8ce2d8978cebaf1deebf74c1e007db34",
+      "pngHash": "7597ebe354e6e6323b94ae36431f3b1b497fd2fc07e659792b32f1b7993f66b1"
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "svg": "individual-exports/locked/recovery-week-completed-locked.svg",
+      "png": "individual-exports/locked/recovery-week-completed-locked.png",
+      "svgHash": "8d27e524e345b6086456c249838762ecbe49d0ca024ded02836d8383726784f8",
+      "pngHash": "ee7a680a9f851980547293dd8e92a551c18a2b8cfac4dc53564e3668f8bc3f35"
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/recovery-week-completed-transparent.svg",
+      "png": "individual-exports/transparent/recovery-week-completed-transparent.png",
+      "svgHash": "fa41cf93f94859d9ce86291b1501c2a0feb32ae733948bb26e1aa55d52e5a6a6",
+      "pngHash": "29a01726fd6856cd246cc8f6bfee776bc2ad3c25b31a91598b9bf85ea6b00aaf"
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/recovery-sleep-consistency-unlocked.svg",
+      "png": "individual-exports/unlocked/recovery-sleep-consistency-unlocked.png",
+      "svgHash": "166b8090fe48db082b3299a98e0b7055546043e1bd2e9778a9f16e48877ca27b",
+      "pngHash": "c7790556fa6f7f296bc9c4d7e1265ff4b310d7f4464c955ba7f134f50ca3a1da"
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "svg": "individual-exports/locked/recovery-sleep-consistency-locked.svg",
+      "png": "individual-exports/locked/recovery-sleep-consistency-locked.png",
+      "svgHash": "870bb1fda254f247ab8ef0bf28bf7df0ca3dc5cac3737762aaa66958edece23a",
+      "pngHash": "5e4c33f1c00bea99a59f3ba25ca6c7a8051c880747092610efcead566c75d167"
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/recovery-sleep-consistency-transparent.svg",
+      "png": "individual-exports/transparent/recovery-sleep-consistency-transparent.png",
+      "svgHash": "5daad8b345d6eaa22cf7142cc1cd5fa4b5f37ec839d96f3444cee9d3c43ee774",
+      "pngHash": "e423d9463fde016138086fe71a1791daf8e3bab868905fd4c9ed325d1dc75fdb"
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/recovery-smart-rest-day-unlocked.svg",
+      "png": "individual-exports/unlocked/recovery-smart-rest-day-unlocked.png",
+      "svgHash": "f1470abc3305928d075d77d8ae485251ad70a825ef6f110c80fa2bf123ccf4c0",
+      "pngHash": "af01c294df0bfa6889fbd893cf8126802a8529153fe9de7e74dbca94953203ab"
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "svg": "individual-exports/locked/recovery-smart-rest-day-locked.svg",
+      "png": "individual-exports/locked/recovery-smart-rest-day-locked.png",
+      "svgHash": "7a6eb73e5473072f2b9c877ac312601d24bbd7b45f6c03bb6b93f72a8f7e3bb2",
+      "pngHash": "503e58a56245d9cd74a4c6bb4fe8d1f245f6ac719820132385c195693c907359"
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/recovery-smart-rest-day-transparent.svg",
+      "png": "individual-exports/transparent/recovery-smart-rest-day-transparent.png",
+      "svgHash": "82a5bfae45e07d49c79fddb8ac74fe5d80344fb1f6543fb60ca3103d37b42c5a",
+      "pngHash": "dcd239d8b72ee8702933243d9da0aeb36607dc114bd708e9ca8092b47ad4a6da"
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/recovery-readiness-respected-unlocked.svg",
+      "png": "individual-exports/unlocked/recovery-readiness-respected-unlocked.png",
+      "svgHash": "8bd194fdc30a26e6db2092bf12b6b362b49299b71d353e2fe00be84de7dc1cb7",
+      "pngHash": "3bd33fab5258dcaaabe750434ed5e592aabee9190fe284c88fcc53dc045440b6"
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "svg": "individual-exports/locked/recovery-readiness-respected-locked.svg",
+      "png": "individual-exports/locked/recovery-readiness-respected-locked.png",
+      "svgHash": "005995c8e224e4bf19d1f7f388639b82b118ce5f472a6a29f92ce2f6cba8aaa1",
+      "pngHash": "c6cb5f5a1bed0a3660d348a9f3d019b7a22f120bdac433cdf3f8a5b7b6e8fbac"
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/recovery-readiness-respected-transparent.svg",
+      "png": "individual-exports/transparent/recovery-readiness-respected-transparent.png",
+      "svgHash": "3e4980edf1466d47d355fb7b8eac1fcf0d7ee25385b9cb1671abbb173250506e",
+      "pngHash": "3126dcff93a468c9620f31ca127f5e99565b46bef28dce9e4513d7cf34df4d24"
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/recovery-symptoms-reported-early-unlocked.svg",
+      "png": "individual-exports/unlocked/recovery-symptoms-reported-early-unlocked.png",
+      "svgHash": "d3a283b2a30d6b2255a23e0e50936b3bd7230488f449b0319ef0f4469ab4c225",
+      "pngHash": "1dc241107d1e810ef5941a92cfeca7849620f3328a7b5b187cc8f3154f715951"
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "svg": "individual-exports/locked/recovery-symptoms-reported-early-locked.svg",
+      "png": "individual-exports/locked/recovery-symptoms-reported-early-locked.png",
+      "svgHash": "775c7975a16c7e60f268e0c1ffe7e96773d56279e84f175afec636970764358b",
+      "pngHash": "9415d906d7204982a635ae370b225953690298122eb2a57146088806332a8f65"
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/recovery-symptoms-reported-early-transparent.svg",
+      "png": "individual-exports/transparent/recovery-symptoms-reported-early-transparent.png",
+      "svgHash": "b36f98e4d6e54e839699fae0330baf3b7ce782e2465a535c0abaac13ba6e7fa6",
+      "pngHash": "fdae85a669008851cbee8f7c18eb5bfe454f5c521b603de29f59806a0c05f2fe"
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/recovery-check-in-streak-unlocked.svg",
+      "png": "individual-exports/unlocked/recovery-check-in-streak-unlocked.png",
+      "svgHash": "ca429bfff2848422ead442f126443d330268c26c271d3b7cd1c314c85b2f4a4b",
+      "pngHash": "22a593a1ebcc1c5792b9c55f86c8adead43ca5d1f14a09b6d381de5968d7a542"
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "svg": "individual-exports/locked/recovery-check-in-streak-locked.svg",
+      "png": "individual-exports/locked/recovery-check-in-streak-locked.png",
+      "svgHash": "5999b4d3792f1d2acf05ba8c9405e5e8ebe52173d282d8bd09a883f26539f150",
+      "pngHash": "c0d435d7f43b1392b0b6096963995a24429a58de615e4682a61d4b3b18e83ebe"
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/recovery-check-in-streak-transparent.svg",
+      "png": "individual-exports/transparent/recovery-check-in-streak-transparent.png",
+      "svgHash": "dd87d6b7f471149a8ee394e6a7520683974ef546987a0cdb56bdd1087da5260f",
+      "pngHash": "d7979e95fa71801ba93d9fdc8c40cdfb58f67195184c14e223e37f70c6efdbc5"
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/recovery-returned-gradually-unlocked.svg",
+      "png": "individual-exports/unlocked/recovery-returned-gradually-unlocked.png",
+      "svgHash": "a2b7c38dcef61dfcc1222b2feeaff1821145667c72c3a1d4fe8989566a4263de",
+      "pngHash": "accebdc9b67739c4e1f31145278a8eaf653c22aa8983a47dc2592cb4136cedd0"
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "svg": "individual-exports/locked/recovery-returned-gradually-locked.svg",
+      "png": "individual-exports/locked/recovery-returned-gradually-locked.png",
+      "svgHash": "7d087c21265a08d2f9a6c93a602c92150aa96137b72441d084abded4ec89cf5d",
+      "pngHash": "294c8b2386d3f4b3e029e934b24b5416ae80e5f4ae7a6892fff614be66b5d640"
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/recovery-returned-gradually-transparent.svg",
+      "png": "individual-exports/transparent/recovery-returned-gradually-transparent.png",
+      "svgHash": "8e4ae4e70ca079d36386c74ddd5b97648c037bdcc9c002545a72457d770a784a",
+      "pngHash": "2964fa7550dffe006f9490bbc5ea968a45bdef2762d3363d620a9f7727e0383a"
+    }
+  ],
+  "rasterChecks": [
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        23,
+        23
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        27,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        46,
+        46
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        26,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        93,
+        93
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        53,
+        54
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        74,
+        74
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        292,
+        292
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        168,
+        168
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        231,
+        231
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        23,
+        23
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        27,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        46,
+        46
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        26,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        93,
+        93
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        53,
+        54
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        74,
+        74
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        292,
+        292
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        168,
+        168
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        231,
+        231
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        23,
+        23
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        27,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        46,
+        46
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        26,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        93,
+        93
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        53,
+        54
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        74,
+        74
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        292,
+        292
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        168,
+        168
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        231,
+        231
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        15,
+        15
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        12,
+        12
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        21,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        31,
+        31
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        49,
+        49
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        25,
+        25
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        41,
+        41
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        98,
+        98
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        50,
+        50
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        83,
+        83
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        307,
+        307
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        157,
+        157
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        260,
+        260
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        15,
+        15
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        12,
+        12
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        21,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        31,
+        31
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        49,
+        49
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        25,
+        25
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        41,
+        41
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        98,
+        98
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        50,
+        50
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        83,
+        83
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        307,
+        307
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        157,
+        157
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        260,
+        260
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        15,
+        15
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        12,
+        12
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        21,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        31,
+        31
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        49,
+        49
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        25,
+        25
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        41,
+        41
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        98,
+        98
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        50,
+        50
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        83,
+        83
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        307,
+        307
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        157,
+        157
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        260,
+        260
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        23,
+        23
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        46,
+        46
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        27,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        93,
+        93
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        53,
+        53
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        292,
+        292
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        167,
+        167
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        23,
+        23
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        46,
+        46
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        27,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        93,
+        93
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        53,
+        53
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        292,
+        292
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        167,
+        167
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        23,
+        23
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        46,
+        46
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        27,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        93,
+        93
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        53,
+        53
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        292,
+        292
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        167,
+        167
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        15,
+        15
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        36,
+        36
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        30,
+        30
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        29,
+        29
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        48,
+        48
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        40,
+        40
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        39,
+        39
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        96,
+        96
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        80,
+        80
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        78,
+        78
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        300,
+        300
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        250,
+        250
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        246,
+        246
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        15,
+        15
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        36,
+        36
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        30,
+        30
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        29,
+        29
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        48,
+        48
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        40,
+        40
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        39,
+        39
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        96,
+        96
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        80,
+        80
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        78,
+        78
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        300,
+        300
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        250,
+        250
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        246,
+        246
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        15,
+        15
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        36,
+        36
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        30,
+        30
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        29,
+        29
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        48,
+        48
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        40,
+        40
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        39,
+        39
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        96,
+        96
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        80,
+        80
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        78,
+        78
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        300,
+        300
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        250,
+        250
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        246,
+        246
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        12,
+        12
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        16,
+        16
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        29,
+        29
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        49,
+        49
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        39,
+        39
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        32,
+        32
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        98,
+        98
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        79,
+        78
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        64,
+        64
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        308,
+        308
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        246,
+        246
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        201,
+        201
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        12,
+        12
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        16,
+        16
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        29,
+        29
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        49,
+        49
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        39,
+        39
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        32,
+        32
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        98,
+        98
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        79,
+        78
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        64,
+        64
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        308,
+        308
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        246,
+        246
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        201,
+        201
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        12,
+        12
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        16,
+        16
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        29,
+        29
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        49,
+        49
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        39,
+        39
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        32,
+        32
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        98,
+        98
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        79,
+        78
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        64,
+        64
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        308,
+        308
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        246,
+        246
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        201,
+        201
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        16,
+        16
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        21,
+        21
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        23,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        39,
+        39
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        32,
+        32
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        53,
+        53
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        43,
+        43
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        47,
+        47
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        105,
+        105
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        86,
+        86
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        95,
+        95
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        330,
+        330
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        269,
+        269
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        296,
+        296
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        16,
+        16
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        21,
+        21
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        23,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        39,
+        39
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        32,
+        32
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        53,
+        53
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        43,
+        43
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        47,
+        47
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        105,
+        105
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        86,
+        86
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        95,
+        95
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        330,
+        330
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        269,
+        269
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        296,
+        296
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        16,
+        16
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        21,
+        21
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        23,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        39,
+        39
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        32,
+        32
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        53,
+        53
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        43,
+        43
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        47,
+        47
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        105,
+        105
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        86,
+        86
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        95,
+        95
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        330,
+        330
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        269,
+        269
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        296,
+        296
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        15,
+        15
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        18,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        36,
+        36
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        30,
+        30
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        28,
+        28
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        48,
+        48
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        41,
+        41
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        97,
+        97
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        82,
+        82
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        75,
+        75
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        304,
+        304
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        256,
+        256
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        235,
+        235
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        15,
+        15
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        18,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        36,
+        36
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        30,
+        30
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        28,
+        28
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        48,
+        48
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        41,
+        41
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        97,
+        97
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        82,
+        82
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        75,
+        75
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        304,
+        304
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        256,
+        256
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        235,
+        235
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "center",
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "vines",
+      "size": 48,
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        15,
+        15
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "center",
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "vines",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        18,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "center",
+      "size": 96,
+      "margins": [
+        36,
+        36
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "vines",
+      "size": 96,
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        30,
+        30
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        28,
+        28
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "center",
+      "size": 128,
+      "margins": [
+        48,
+        48
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "vines",
+      "size": 128,
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        41,
+        41
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "center",
+      "size": 256,
+      "margins": [
+        97,
+        97
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "vines",
+      "size": 256,
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        82,
+        82
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        75,
+        75
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "center",
+      "size": 800,
+      "margins": [
+        304,
+        304
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "vines",
+      "size": 800,
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        256,
+        256
+      ],
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        235,
+        235
+      ],
+      "overlap": 0
+    }
+  ],
+  "centerVineChecks": [
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "unlocked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "locked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_week_completed",
+      "state": "transparent",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "unlocked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "locked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "state": "transparent",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "unlocked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "locked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "state": "transparent",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "unlocked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "locked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "state": "transparent",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "unlocked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "locked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "state": "transparent",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "unlocked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "locked",
+      "size": 800,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "size": 48,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "size": 64,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "size": 96,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "size": 128,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "size": 256,
+      "overlap": 0
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "state": "transparent",
+      "size": 800,
+      "overlap": 0
+    }
+  ],
+  "grayscaleChecks": 7,
+  "transparentChecks": 7,
+  "changedProductionFiles": [],
+  "status": "pass"
+}

@@ -1,0 +1,616 @@
+{
+  "family": "challenges",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
+  },
+  "definitions": [
+    {
+      "id": "challenge_august_base_builder",
+      "slug": "august-base-builder",
+      "title": "August Base Builder",
+      "compactTitle": "August Base",
+      "titleLines": [
+        "AUGUST",
+        "BASE BUILDER"
+      ],
+      "glyph": "augustBaseBuilder",
+      "colorToken": "challengeAugust",
+      "description": "Build an aerobic base across August.",
+      "criteria": "Complete at least three activities in August.",
+      "tier": 1,
+      "includeInGlobalRegistry": true,
+      "artworkPath": "assets/achievements/challenges/challenges-august-base-builder-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/challenges/challenges-august-base-builder-locked.svg",
+      "unlockedPngPath": "assets/achievements/challenges/challenges-august-base-builder-unlocked.png",
+      "lockedPngPath": "assets/achievements/challenges/challenges-august-base-builder-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/challenges/challenges-august-base-builder-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/challenges/challenges-august-base-builder-transparent.png"
+    },
+    {
+      "id": "challenge_september_consistency",
+      "slug": "september-consistency",
+      "title": "September Consistency Challenge",
+      "compactTitle": "September",
+      "titleLines": [
+        "SEPTEMBER",
+        "CONSISTENCY"
+      ],
+      "glyph": "septemberConsistency",
+      "colorToken": "challengeSeptember",
+      "description": "Stay consistent with training across September.",
+      "criteria": "Complete at least three activities in September.",
+      "tier": 2,
+      "includeInGlobalRegistry": true,
+      "artworkPath": "assets/achievements/challenges/challenges-september-consistency-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/challenges/challenges-september-consistency-locked.svg",
+      "unlockedPngPath": "assets/achievements/challenges/challenges-september-consistency-unlocked.png",
+      "lockedPngPath": "assets/achievements/challenges/challenges-september-consistency-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/challenges/challenges-september-consistency-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/challenges/challenges-september-consistency-transparent.png"
+    },
+    {
+      "id": "challenge_winter_strength_block",
+      "slug": "winter-strength-block",
+      "title": "Winter Strength Block",
+      "compactTitle": "Winter Strength",
+      "titleLines": [
+        "WINTER",
+        "STRENGTH BLOCK"
+      ],
+      "glyph": "winterStrengthBlock",
+      "colorToken": "challengeWinter",
+      "description": "Keep training through the winter months.",
+      "criteria": "Complete at least three activities across December, January, or February.",
+      "tier": 3,
+      "includeInGlobalRegistry": true,
+      "artworkPath": "assets/achievements/challenges/challenges-winter-strength-block-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/challenges/challenges-winter-strength-block-locked.svg",
+      "unlockedPngPath": "assets/achievements/challenges/challenges-winter-strength-block-unlocked.png",
+      "lockedPngPath": "assets/achievements/challenges/challenges-winter-strength-block-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/challenges/challenges-winter-strength-block-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/challenges/challenges-winter-strength-block-transparent.png"
+    },
+    {
+      "id": "challenge_spring_mileage_build",
+      "slug": "spring-mileage-build",
+      "title": "Spring Mileage Build",
+      "compactTitle": "Spring Build",
+      "titleLines": [
+        "SPRING",
+        "MILEAGE BUILD"
+      ],
+      "glyph": "springMileageBuild",
+      "colorToken": "challengeSpring",
+      "description": "Build mileage through the spring months.",
+      "criteria": "Complete at least three activities across March, April, or May.",
+      "tier": 4,
+      "includeInGlobalRegistry": true,
+      "artworkPath": "assets/achievements/challenges/challenges-spring-mileage-build-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/challenges/challenges-spring-mileage-build-locked.svg",
+      "unlockedPngPath": "assets/achievements/challenges/challenges-spring-mileage-build-unlocked.png",
+      "lockedPngPath": "assets/achievements/challenges/challenges-spring-mileage-build-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/challenges/challenges-spring-mileage-build-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/challenges/challenges-spring-mileage-build-transparent.png"
+    },
+    {
+      "id": "challenge_summer_long_run",
+      "slug": "summer-long-run",
+      "title": "Summer Long Run Challenge",
+      "compactTitle": "Summer Long Run",
+      "titleLines": [
+        "SUMMER",
+        "LONG RUN"
+      ],
+      "glyph": "summerLongRun",
+      "colorToken": "challengeSummer",
+      "description": "Build long-run endurance through the summer.",
+      "criteria": "Complete at least three activities across June, July, or August.",
+      "tier": 5,
+      "includeInGlobalRegistry": true,
+      "artworkPath": "assets/achievements/challenges/challenges-summer-long-run-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/challenges/challenges-summer-long-run-locked.svg",
+      "unlockedPngPath": "assets/achievements/challenges/challenges-summer-long-run-unlocked.png",
+      "lockedPngPath": "assets/achievements/challenges/challenges-summer-long-run-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/challenges/challenges-summer-long-run-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/challenges/challenges-summer-long-run-transparent.png"
+    },
+    {
+      "id": "challenge_elevation_month",
+      "slug": "elevation-month",
+      "title": "Elevation Month",
+      "compactTitle": "Elevation Month",
+      "titleLines": [
+        "ELEVATION",
+        "MONTH"
+      ],
+      "glyph": "elevationMonth",
+      "colorToken": "challengeElevation",
+      "description": "Climb more than any other calendar month.",
+      "criteria": "Threshold pending product confirmation — this Challenge is not yet earnable.",
+      "tier": 6,
+      "includeInGlobalRegistry": true,
+      "artworkPath": "assets/achievements/challenges/challenges-elevation-month-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/challenges/challenges-elevation-month-locked.svg",
+      "unlockedPngPath": "assets/achievements/challenges/challenges-elevation-month-unlocked.png",
+      "lockedPngPath": "assets/achievements/challenges/challenges-elevation-month-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/challenges/challenges-elevation-month-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/challenges/challenges-elevation-month-transparent.png"
+    },
+    {
+      "id": "weekly_25k",
+      "slug": "25k-week",
+      "title": "25K Week",
+      "compactTitle": "25K Week",
+      "titleLines": [
+        "25K",
+        "WEEK"
+      ],
+      "badgeNumber": "25K",
+      "badgeUnit": "WEEK",
+      "glyph": "numericBadge",
+      "colorToken": "challenge25kWeek",
+      "description": "Complete 25 kilometers of running within a reporting week.",
+      "criteria": "Same criteria as the canonical Weekly Distance 25K achievement — Challenges presentation only.",
+      "tier": 8,
+      "includeInGlobalRegistry": false,
+      "artworkPath": "assets/achievements/challenges/challenges-25k-week-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/challenges/challenges-25k-week-locked.svg",
+      "unlockedPngPath": "assets/achievements/challenges/challenges-25k-week-unlocked.png",
+      "lockedPngPath": "assets/achievements/challenges/challenges-25k-week-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/challenges/challenges-25k-week-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/challenges/challenges-25k-week-transparent.png"
+    },
+    {
+      "id": "monthly_run_50k",
+      "slug": "50k-month",
+      "title": "50K Month",
+      "compactTitle": "50K Month",
+      "titleLines": [
+        "50K",
+        "MONTH"
+      ],
+      "badgeNumber": "50K",
+      "badgeUnit": "MONTH",
+      "glyph": "numericBadge",
+      "colorToken": "challenge50kMonth",
+      "description": "Complete 50 kilometers of running within a calendar month.",
+      "criteria": "Same criteria as the canonical Monthly Distance 50K achievement — Challenges presentation only.",
+      "tier": 9,
+      "includeInGlobalRegistry": false,
+      "artworkPath": "assets/achievements/challenges/challenges-50k-month-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/challenges/challenges-50k-month-locked.svg",
+      "unlockedPngPath": "assets/achievements/challenges/challenges-50k-month-unlocked.png",
+      "lockedPngPath": "assets/achievements/challenges/challenges-50k-month-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/challenges/challenges-50k-month-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/challenges/challenges-50k-month-transparent.png"
+    },
+    {
+      "id": "monthly_run_100k",
+      "slug": "100k-month",
+      "title": "100K Month",
+      "compactTitle": "100K Month",
+      "titleLines": [
+        "100K",
+        "MONTH"
+      ],
+      "badgeNumber": "100K",
+      "badgeUnit": "MONTH",
+      "glyph": "numericBadge",
+      "colorToken": "challenge100kMonth",
+      "description": "Complete 100 kilometers of running within a calendar month.",
+      "criteria": "Same criteria as the canonical Monthly Distance 100K achievement — Challenges presentation only.",
+      "tier": 10,
+      "includeInGlobalRegistry": false,
+      "artworkPath": "assets/achievements/challenges/challenges-100k-month-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/challenges/challenges-100k-month-locked.svg",
+      "unlockedPngPath": "assets/achievements/challenges/challenges-100k-month-unlocked.png",
+      "lockedPngPath": "assets/achievements/challenges/challenges-100k-month-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/challenges/challenges-100k-month-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/challenges/challenges-100k-month-transparent.png"
+    },
+    {
+      "id": "monthly_run_150k",
+      "slug": "150k-month",
+      "title": "150K Month",
+      "compactTitle": "150K Month",
+      "titleLines": [
+        "150K",
+        "MONTH"
+      ],
+      "badgeNumber": "150K",
+      "badgeUnit": "MONTH",
+      "glyph": "numericBadge",
+      "colorToken": "challenge150kMonth",
+      "includeInGlobalRegistry": false,
+      "presentationOnly": true,
+      "canonicalFamily": "monthlyDistance",
+      "thresholdKm": 150,
+      "thresholdMeters": 150000,
+      "criteria": "Same criteria as the existing Monthly Distance 150K achievement; review presentation only."
+    },
+    {
+      "id": "monthly_run_200k",
+      "slug": "200k-month",
+      "title": "200K Month",
+      "compactTitle": "200K Month",
+      "titleLines": [
+        "200K",
+        "MONTH"
+      ],
+      "badgeNumber": "200K",
+      "badgeUnit": "MONTH",
+      "glyph": "numericBadge",
+      "colorToken": "challenge200kMonth",
+      "includeInGlobalRegistry": false,
+      "presentationOnly": true,
+      "canonicalFamily": "monthlyDistance",
+      "thresholdKm": 200,
+      "thresholdMeters": 200000,
+      "criteria": "Same criteria as the existing Monthly Distance 200K achievement; review presentation only."
+    },
+    {
+      "id": "strength_run_week_completed",
+      "slug": "strength-run",
+      "title": "Strength + Run Challenge",
+      "compactTitle": "Strength + Run",
+      "titleLines": [
+        "STRENGTH + RUN",
+        "CHALLENGE"
+      ],
+      "glyph": "strengthRun",
+      "colorToken": "challengeStrengthRun",
+      "description": "Pair running and strength training in the same week.",
+      "criteria": "Same criteria as the canonical Strength + Run Week achievement — Challenges presentation only.",
+      "tier": 11,
+      "includeInGlobalRegistry": false,
+      "artworkPath": "assets/achievements/challenges/challenges-strength-run-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/challenges/challenges-strength-run-locked.svg",
+      "unlockedPngPath": "assets/achievements/challenges/challenges-strength-run-unlocked.png",
+      "lockedPngPath": "assets/achievements/challenges/challenges-strength-run-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/challenges/challenges-strength-run-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/challenges/challenges-strength-run-transparent.png"
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "slug": "recovery-consistency",
+      "title": "Recovery Consistency Challenge",
+      "compactTitle": "Recovery Consistency",
+      "titleLines": [
+        "RECOVERY",
+        "CONSISTENCY"
+      ],
+      "glyph": "recoveryConsistency",
+      "colorToken": "challengeRecovery",
+      "description": "Stay consistent with recovery check-ins.",
+      "criteria": "Same criteria as the canonical Recovery Check-In Streak achievement — Challenges presentation only.",
+      "tier": 12,
+      "includeInGlobalRegistry": false,
+      "artworkPath": "assets/achievements/challenges/challenges-recovery-consistency-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/challenges/challenges-recovery-consistency-locked.svg",
+      "unlockedPngPath": "assets/achievements/challenges/challenges-recovery-consistency-unlocked.png",
+      "lockedPngPath": "assets/achievements/challenges/challenges-recovery-consistency-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/challenges/challenges-recovery-consistency-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/challenges/challenges-recovery-consistency-transparent.png"
+    }
+  ],
+  "files": [
+    {
+      "id": "challenge_august_base_builder",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-august-base-builder-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-august-base-builder-unlocked.png",
+      "svgHash": "4fd2424a16c608a87055ab14d73a3a461337900f5f972eecb465a3bf4427bd63",
+      "pngHash": "38fe43b4168fdef8cada69dd3aaf7693ed424e5c2e6168ba1d7fb1d189d2e12f"
+    },
+    {
+      "id": "challenge_august_base_builder",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-august-base-builder-locked.svg",
+      "png": "individual-exports/locked/challenges-august-base-builder-locked.png",
+      "svgHash": "746833b110cfa1029c89a2a0893a02d033cc4066679f6b6b5e3b386304e35037",
+      "pngHash": "300c51b894b65a767c69c799bb8104962a8f9b2c4e54689b41c57e9bb80e7fb3"
+    },
+    {
+      "id": "challenge_august_base_builder",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-august-base-builder-transparent.svg",
+      "png": "individual-exports/transparent/challenges-august-base-builder-transparent.png",
+      "svgHash": "8af86f8816d4166d4ab4a1e752b3a3ca2f1c37f5ef9018d7d673a72e1eb482bf",
+      "pngHash": "3aca3514a2718cf9bc15d5c291819cf21e3398f57d47b6864e1649ef0786c525"
+    },
+    {
+      "id": "challenge_september_consistency",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-september-consistency-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-september-consistency-unlocked.png",
+      "svgHash": "5edbccc52920e541c389797ef2e7972072785a1775e426467e5d058f1c5e84e5",
+      "pngHash": "6362bceb16afdfcda8fa49b8558a1580f1298596c1fdd609394b138e96f5a81f"
+    },
+    {
+      "id": "challenge_september_consistency",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-september-consistency-locked.svg",
+      "png": "individual-exports/locked/challenges-september-consistency-locked.png",
+      "svgHash": "249b76acac8cb375a1ddfe46e9832a8f27bd5fe9f1cdac0ec265ac519126063e",
+      "pngHash": "77cd39c42e3b842ddbfc6cc45ff7edb335c25c54ea4211a2cb9d23571c2f54e7"
+    },
+    {
+      "id": "challenge_september_consistency",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-september-consistency-transparent.svg",
+      "png": "individual-exports/transparent/challenges-september-consistency-transparent.png",
+      "svgHash": "471c7fee32e7cfbb8ca99db428d26b211fc3b316c2970b861775e241e4206218",
+      "pngHash": "9af362a56c1ce92edb3477619255470767b21f253e20082fcd13aa7e9db02775"
+    },
+    {
+      "id": "challenge_winter_strength_block",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-winter-strength-block-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-winter-strength-block-unlocked.png",
+      "svgHash": "78aa20c33f0ad30fe4d47e7ee9656876b5ad0ddd56795428e63dc39f6c141dda",
+      "pngHash": "ea21cdfa400ed0bac8dd233993b093c3bc0db945d67c30d53ee507630007a011"
+    },
+    {
+      "id": "challenge_winter_strength_block",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-winter-strength-block-locked.svg",
+      "png": "individual-exports/locked/challenges-winter-strength-block-locked.png",
+      "svgHash": "c11affca137cc903a4e243612e768e4e3d44fbb0dc30fd71b61ec694240c1771",
+      "pngHash": "cfa002550a25b6453778fc36cb8dae4d1b6d11c93464f7912d090049e3fe25cf"
+    },
+    {
+      "id": "challenge_winter_strength_block",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-winter-strength-block-transparent.svg",
+      "png": "individual-exports/transparent/challenges-winter-strength-block-transparent.png",
+      "svgHash": "2aaef0bbc02ce0b91d7e03376ce5b8a366765bb8041dd114a1623ff8f33f0348",
+      "pngHash": "df3e069bf3a5efa46ad6921480b1c2df8fdda75460bb7ab63db95632859224f2"
+    },
+    {
+      "id": "challenge_spring_mileage_build",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-spring-mileage-build-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-spring-mileage-build-unlocked.png",
+      "svgHash": "1c4ddb3575e47d9cda229e023fa99b78ab6924705a94a485d9c0222a53b931da",
+      "pngHash": "bb1bf976bfd1a6082e15c953913e44774facff2223ae4894db30f838a1bb2713"
+    },
+    {
+      "id": "challenge_spring_mileage_build",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-spring-mileage-build-locked.svg",
+      "png": "individual-exports/locked/challenges-spring-mileage-build-locked.png",
+      "svgHash": "9c6616a7cfb086386eab87dc80a58f13462bbd1063581e8e6f1666feaa6d460c",
+      "pngHash": "a25e8e38163dbc46dc1407ed80f45934498bbeadb6067883608ea6113f55b19b"
+    },
+    {
+      "id": "challenge_spring_mileage_build",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-spring-mileage-build-transparent.svg",
+      "png": "individual-exports/transparent/challenges-spring-mileage-build-transparent.png",
+      "svgHash": "a701c7ec8d7b0764ab27f9310d1c5da950b6dd1ff80eda6cc887c6b51244fe35",
+      "pngHash": "e1da717138e32d0673098567c8b7e7629843563aab266a878212ab210489bfe9"
+    },
+    {
+      "id": "challenge_summer_long_run",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-summer-long-run-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-summer-long-run-unlocked.png",
+      "svgHash": "e0ad90c6154870c8ee98f35ae590ffe9c66b5c9cac95f89ac689cc6c9d6039b1",
+      "pngHash": "fa1c90bc76488bf93498761bf22cc44c978110ac3c39349e9a5dd90f1eb15fc7"
+    },
+    {
+      "id": "challenge_summer_long_run",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-summer-long-run-locked.svg",
+      "png": "individual-exports/locked/challenges-summer-long-run-locked.png",
+      "svgHash": "c60fee03b65b2fed431b2554be91641763f59c595ec10e1275fa4bfa5bbdcded",
+      "pngHash": "ad85ecbac0cc0df3e4661a9428ef0ad8ec5a511385898af4517d3e87d4dd70b6"
+    },
+    {
+      "id": "challenge_summer_long_run",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-summer-long-run-transparent.svg",
+      "png": "individual-exports/transparent/challenges-summer-long-run-transparent.png",
+      "svgHash": "749852d481a16e397ce863a66447ba4aa5f6f8a0e6b678cdb32ed1f29f45d2e9",
+      "pngHash": "d97e8de3619c2d31cd60ff66914d6e182c18ff21e3c70a081eef2ed4779d0e9f"
+    },
+    {
+      "id": "challenge_elevation_month",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-elevation-month-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-elevation-month-unlocked.png",
+      "svgHash": "96887f387fd7eb10576435c7962bf2634e9261d008ca1f2f5072b4700feeef86",
+      "pngHash": "5af3c6954ac11b3f6b3fe96de33bca75fda5b8d440211d7e000af6879412aed6"
+    },
+    {
+      "id": "challenge_elevation_month",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-elevation-month-locked.svg",
+      "png": "individual-exports/locked/challenges-elevation-month-locked.png",
+      "svgHash": "664a7dcd94013d172de22dcfe3bb493f608342a83de02375fc355dc1ad077fba",
+      "pngHash": "4b2fd969b5b9a2f60ed14758736ab57295db73105cafe1fe42b7e1dd38f4b495"
+    },
+    {
+      "id": "challenge_elevation_month",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-elevation-month-transparent.svg",
+      "png": "individual-exports/transparent/challenges-elevation-month-transparent.png",
+      "svgHash": "7ee40dc74201aa4d1e484ebd35499532ca2c991f0e93a676187aae4bd5dd2e4d",
+      "pngHash": "95defacb353b11e084374bdfcdf9826e6906b15174082bd1242860354fbb77a6"
+    },
+    {
+      "id": "weekly_25k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-25k-week-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-25k-week-unlocked.png",
+      "svgHash": "722c98821ac1847e582001ff004b6174c000395e66e7277e270858e4b5341091",
+      "pngHash": "c8e64c6d5e5fe476197c8bca53356c42ad126a9da9e4ecfe7a6de0ad9f777fa7"
+    },
+    {
+      "id": "weekly_25k",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-25k-week-locked.svg",
+      "png": "individual-exports/locked/challenges-25k-week-locked.png",
+      "svgHash": "d9c9a94bbebc8d45a0bb24e1ab1fae9d53db232281ccd8354b9ba7d981630ff3",
+      "pngHash": "068f8d5f0d0e138dcb81ec5b031ca16067f6423b5535f478c12442b56571f0de"
+    },
+    {
+      "id": "weekly_25k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-25k-week-transparent.svg",
+      "png": "individual-exports/transparent/challenges-25k-week-transparent.png",
+      "svgHash": "13e601466904541bf2144bba2baf7e4fc5df0f068566811784a8e29496ad9d45",
+      "pngHash": "8133e444a9740b90ac2be2322c3a57f70b80afb9e97841fa7486ad1bdb881de7"
+    },
+    {
+      "id": "monthly_run_50k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-50k-month-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-50k-month-unlocked.png",
+      "svgHash": "bd9ed012750947eab6c9de768da6e59b4f34a0cba6e3922f15d00277728dfea1",
+      "pngHash": "44b479deb8e331c9ff81bb1db34fde2f10c637bc3708d1e7640ad822aa94a7d7"
+    },
+    {
+      "id": "monthly_run_50k",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-50k-month-locked.svg",
+      "png": "individual-exports/locked/challenges-50k-month-locked.png",
+      "svgHash": "c9d2772b84c3be2452536068e76e3c1f40b40df12766cb643e28d35a4df16bdf",
+      "pngHash": "aae30e65248112ad9376aa72ec70eadb329fbf0673ab32c0138d8828fd8d4c2a"
+    },
+    {
+      "id": "monthly_run_50k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-50k-month-transparent.svg",
+      "png": "individual-exports/transparent/challenges-50k-month-transparent.png",
+      "svgHash": "50bb04479fa4990f7123575eb833dd3f95686244df2cfff050696d8203d87af0",
+      "pngHash": "f21f27afd7aba05da11b81b2d0a99ffe77d362099c55e7ca0e58542090d64f48"
+    },
+    {
+      "id": "monthly_run_100k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-100k-month-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-100k-month-unlocked.png",
+      "svgHash": "f4a4a3463745147144a512ef0bed9f838a2c43aedd5473072955290c3cabb609",
+      "pngHash": "bef4774515c1588f5c79844236ecb672ec3541691f546259848d8a3c3b54b4df"
+    },
+    {
+      "id": "monthly_run_100k",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-100k-month-locked.svg",
+      "png": "individual-exports/locked/challenges-100k-month-locked.png",
+      "svgHash": "64f04eb9bec1c222feb5850975966f311f444ede9556d20a2947a19f6f8e614e",
+      "pngHash": "dfe38f2256b751ac4224fd4d19ccf905074788e66139a2f52731422210c2e3f5"
+    },
+    {
+      "id": "monthly_run_100k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-100k-month-transparent.svg",
+      "png": "individual-exports/transparent/challenges-100k-month-transparent.png",
+      "svgHash": "ba63d77ba2f9cfd0d102acf1d1050044adc4696aa56de5dc069cd420ddea5594",
+      "pngHash": "76974ec3e87c0972dcc4d6202e88e9cea656edd41fbcde3ef9ceb3ce28c6092c"
+    },
+    {
+      "id": "monthly_run_150k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-150k-month-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-150k-month-unlocked.png",
+      "svgHash": "2b791f2e12db494051c3ac9c5105ced73fcc9a209e2d9c7e3b954fbaf6557ad4",
+      "pngHash": "91e40ca6a2c34767d7dd87031de2c1d0510d67f3c6c352694bff2849185b9a0d"
+    },
+    {
+      "id": "monthly_run_150k",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-150k-month-locked.svg",
+      "png": "individual-exports/locked/challenges-150k-month-locked.png",
+      "svgHash": "dcad955f6bd57a4bd923bc3c9728c2f94b606bbd301b88b9aadb1ef4eeb713cf",
+      "pngHash": "ac392f691dba945fd32da19bb563993bde8936217702b4b6a83379bdecacf235"
+    },
+    {
+      "id": "monthly_run_150k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-150k-month-transparent.svg",
+      "png": "individual-exports/transparent/challenges-150k-month-transparent.png",
+      "svgHash": "762e4f4e43a20c340f900cd6d2c384f58ac526175282ab62daf5298f5eb3f00f",
+      "pngHash": "8ec33a6e51d251187a1de08953df758e2b771eeb5d3fa7ed58f8c4e01499fec3"
+    },
+    {
+      "id": "monthly_run_200k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-200k-month-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-200k-month-unlocked.png",
+      "svgHash": "47f431838c3926dc8d5209a8e135f2ca1cd41a4d2091f2a7fac47b0e6d6f9531",
+      "pngHash": "ddb2e35f0d4d9ccfb2ae92af2c07412bbd9d9eaaa8d66bf12ceb58e3d04f1c04"
+    },
+    {
+      "id": "monthly_run_200k",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-200k-month-locked.svg",
+      "png": "individual-exports/locked/challenges-200k-month-locked.png",
+      "svgHash": "a14eb45518d3cab1165b3e08aec1c78051a6e3f773c53fa5469b36a7c9182de4",
+      "pngHash": "db0691c8e69c858fe037e3f0519aa43ce0c8f2525858ed4de1ff9b2e9e90a20d"
+    },
+    {
+      "id": "monthly_run_200k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-200k-month-transparent.svg",
+      "png": "individual-exports/transparent/challenges-200k-month-transparent.png",
+      "svgHash": "ec9e48c745ba20fb232357d45c68b1b6141f3407a30f69ee83864ca7a0d0de7b",
+      "pngHash": "44e6bcd1023a7147f68458b3b5e3169305e3f3f467773f2cc250454c3bdc368f"
+    },
+    {
+      "id": "strength_run_week_completed",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-strength-run-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-strength-run-unlocked.png",
+      "svgHash": "56f089eb9fb22aca23a1f6278f517dc8f6adc45b84336c394aa35ad76157315b",
+      "pngHash": "61bcc2da06541218d3187c9ecb70279ea836f36b6c7aaf0cbcf1b18fffcc20d7"
+    },
+    {
+      "id": "strength_run_week_completed",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-strength-run-locked.svg",
+      "png": "individual-exports/locked/challenges-strength-run-locked.png",
+      "svgHash": "9607ac8799969c86b0d68254b88cbd074895a5a78d88ec9b509ab0bddc76a625",
+      "pngHash": "46990c4d212cccc5e1b60ccba3d791f4244f3fee4c793d37e7dd7c5d444eed8b"
+    },
+    {
+      "id": "strength_run_week_completed",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-strength-run-transparent.svg",
+      "png": "individual-exports/transparent/challenges-strength-run-transparent.png",
+      "svgHash": "3e43b0844b53c5564378e88ba238205eb3228d9ad70849eae0a6946f44d7c000",
+      "pngHash": "99b160d22efdc7fe17ad8ba1a83836ab4963839825b0fa4701bc441bb6e874a8"
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/challenges-recovery-consistency-unlocked.svg",
+      "png": "individual-exports/unlocked/challenges-recovery-consistency-unlocked.png",
+      "svgHash": "465f30d5a155f338cd06141d3271b404af8f8e51daa1228e6ae4fbef9802affb",
+      "pngHash": "3715745bcb875e25c2da896d1389b9ab4f85ec916ea66db7f8c635db823d7a3e"
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "locked",
+      "svg": "individual-exports/locked/challenges-recovery-consistency-locked.svg",
+      "png": "individual-exports/locked/challenges-recovery-consistency-locked.png",
+      "svgHash": "fc3046f922dae0cbc03003a6fd89e904a619c36ac00903f7ba43c8143cf7124c",
+      "pngHash": "69f5d75070fdf70dd2cf3553363fa28f0ffe1fb6d67659e11bf73a01555a8dc9"
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/challenges-recovery-consistency-transparent.svg",
+      "png": "individual-exports/transparent/challenges-recovery-consistency-transparent.png",
+      "svgHash": "ef728fc27e44c8e6a1e11dec2e1710272fab38138aff25937c54048f7c7cec14",
+      "pngHash": "114839ddeb1b7037f67e210fc7ce4c022a4f6f14a4b428207c1ece981c866b36"
+    }
+  ]
+}

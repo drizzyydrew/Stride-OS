@@ -1,0 +1,377 @@
+{
+  "badges": 15,
+  "canonicalStatePairs": 45,
+  "additionalMetricStatePairs": 6,
+  "approvedHashes": {
+    "first_activity": "d4ed184aa30eea120daa231d5a4e1df65a001a7f21f4f21fcc3ca798972f7a69",
+    "first_run": "02b0e8d9e3592ffdb85a4e42eb6a873fc0c1f6214d5d43de3b7a04a8d3716e8a",
+    "first_walk": "e88aecb7531976ea49fbc017e4fccf9600cb5d9dbaef975909fa8ac99af93c62"
+  },
+  "frozenNonMobilityExports": 96,
+  "mobilityArcChecks": [
+    {
+      "size": 48,
+      "overlappingPixels": 0,
+      "headBodyOverlappingPixels": 0
+    },
+    {
+      "size": 64,
+      "overlappingPixels": 0,
+      "headBodyOverlappingPixels": 0
+    },
+    {
+      "size": 96,
+      "overlappingPixels": 0,
+      "headBodyOverlappingPixels": 0
+    },
+    {
+      "size": 128,
+      "overlappingPixels": 0,
+      "headBodyOverlappingPixels": 0
+    },
+    {
+      "size": 256,
+      "overlappingPixels": 0,
+      "headBodyOverlappingPixels": 0
+    },
+    {
+      "size": 800,
+      "overlappingPixels": 0,
+      "headBodyOverlappingPixels": 0
+    }
+  ],
+  "checks": [
+    {
+      "id": "first_activity",
+      "titleBounds": {
+        "minX": 185,
+        "minY": 482,
+        "maxX": 618,
+        "maxY": 534
+      },
+      "glyphBounds": {
+        "minX": 256,
+        "minY": 122,
+        "maxX": 543,
+        "maxY": 428
+      },
+      "glyphTitleGapPixels": 54,
+      "approvedBaselineUnchanged": true,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_run",
+      "titleBounds": {
+        "minX": 251,
+        "minY": 482,
+        "maxX": 548,
+        "maxY": 534
+      },
+      "glyphBounds": {
+        "minX": 157,
+        "minY": 150,
+        "maxX": 538,
+        "maxY": 430
+      },
+      "glyphTitleGapPixels": 52,
+      "approvedBaselineUnchanged": true,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_walk",
+      "titleBounds": {
+        "minX": 233,
+        "minY": 482,
+        "maxX": 571,
+        "maxY": 534
+      },
+      "glyphBounds": {
+        "minX": 307,
+        "minY": 145,
+        "maxX": 492,
+        "maxY": 436
+      },
+      "glyphTitleGapPixels": 46,
+      "approvedBaselineUnchanged": true,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_run_walk",
+      "titleBounds": {
+        "minX": 184,
+        "minY": 487,
+        "maxX": 619,
+        "maxY": 534
+      },
+      "glyphBounds": {
+        "minX": 188,
+        "minY": 181,
+        "maxX": 592,
+        "maxY": 426
+      },
+      "glyphTitleGapPixels": 61,
+      "approvedBaselineUnchanged": false,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_ride",
+      "titleBounds": {
+        "minX": 245,
+        "minY": 482,
+        "maxX": 556,
+        "maxY": 534
+      },
+      "glyphBounds": {
+        "minX": 180,
+        "minY": 188,
+        "maxX": 619,
+        "maxY": 415
+      },
+      "glyphTitleGapPixels": 67,
+      "approvedBaselineUnchanged": false,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_mobility_workout",
+      "titleBounds": {
+        "minX": 201,
+        "minY": 444,
+        "maxX": 601,
+        "maxY": 553
+      },
+      "glyphBounds": {
+        "minX": 190,
+        "minY": 133,
+        "maxX": 538,
+        "maxY": 415
+      },
+      "glyphTitleGapPixels": 29,
+      "approvedBaselineUnchanged": false,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_5k",
+      "titleBounds": {
+        "minX": 278,
+        "minY": 482,
+        "maxX": 525,
+        "maxY": 534
+      },
+      "glyphBounds": {
+        "minX": 268,
+        "minY": 138,
+        "maxX": 531,
+        "maxY": 411
+      },
+      "glyphTitleGapPixels": 71,
+      "approvedBaselineUnchanged": false,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_10k",
+      "titleBounds": {
+        "minX": 262,
+        "minY": 482,
+        "maxX": 541,
+        "maxY": 534
+      },
+      "glyphBounds": {
+        "minX": 268,
+        "minY": 138,
+        "maxX": 531,
+        "maxY": 411
+      },
+      "glyphTitleGapPixels": 71,
+      "approvedBaselineUnchanged": false,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_half_marathon",
+      "titleBounds": {
+        "minX": 254,
+        "minY": 443,
+        "maxX": 547,
+        "maxY": 553
+      },
+      "glyphBounds": {
+        "minX": 268,
+        "minY": 138,
+        "maxX": 531,
+        "maxY": 411
+      },
+      "glyphTitleGapPixels": 32,
+      "approvedBaselineUnchanged": false,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_marathon",
+      "titleBounds": {
+        "minX": 176,
+        "minY": 487,
+        "maxX": 623,
+        "maxY": 534
+      },
+      "glyphBounds": {
+        "minX": 268,
+        "minY": 138,
+        "maxX": 531,
+        "maxY": 411
+      },
+      "glyphTitleGapPixels": 76,
+      "approvedBaselineUnchanged": false,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_route_completed",
+      "titleBounds": {
+        "minX": 230,
+        "minY": 443,
+        "maxX": 571,
+        "maxY": 553
+      },
+      "glyphBounds": {
+        "minX": 262,
+        "minY": 160,
+        "maxX": 530,
+        "maxY": 417
+      },
+      "glyphTitleGapPixels": 26,
+      "approvedBaselineUnchanged": false,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_structured_workout",
+      "titleBounds": {
+        "minX": 160,
+        "minY": 447,
+        "maxX": 640,
+        "maxY": 553
+      },
+      "glyphBounds": {
+        "minX": 276,
+        "minY": 155,
+        "maxX": 523,
+        "maxY": 403
+      },
+      "glyphTitleGapPixels": 44,
+      "approvedBaselineUnchanged": false,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_adapted_workout",
+      "titleBounds": {
+        "minX": 199,
+        "minY": 443,
+        "maxX": 602,
+        "maxY": 553
+      },
+      "glyphBounds": {
+        "minX": 272,
+        "minY": 163,
+        "maxX": 527,
+        "maxY": 415
+      },
+      "glyphTitleGapPixels": 28,
+      "approvedBaselineUnchanged": false,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_strength_workout",
+      "titleBounds": {
+        "minX": 185,
+        "minY": 445,
+        "maxX": 614,
+        "maxY": 553
+      },
+      "glyphBounds": {
+        "minX": 192,
+        "minY": 232,
+        "maxX": 607,
+        "maxY": 390
+      },
+      "glyphTitleGapPixels": 55,
+      "approvedBaselineUnchanged": false,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    },
+    {
+      "id": "first_movement_lab_analysis",
+      "titleBounds": {
+        "minX": 187,
+        "minY": 447,
+        "maxX": 615,
+        "maxY": 553
+      },
+      "glyphBounds": {
+        "minX": 227,
+        "minY": 120,
+        "maxX": 572,
+        "maxY": 421
+      },
+      "glyphTitleGapPixels": 26,
+      "approvedBaselineUnchanged": false,
+      "states": [
+        "unlocked",
+        "locked",
+        "transparent"
+      ]
+    }
+  ],
+  "productionFilesChanged": false,
+  "productionPathsDifferentFromHead": []
+}

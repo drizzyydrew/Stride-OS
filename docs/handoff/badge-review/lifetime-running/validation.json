@@ -1,0 +1,194 @@
+{
+  "achievement": "lifetime-running-one-mile",
+  "scope": "preview only; production unchanged",
+  "states": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "sizes": [
+    48,
+    64,
+    96,
+    128,
+    256
+  ],
+  "lettering": {
+    "number": {
+      "bounds": [
+        44.705,
+        29.19,
+        55.295,
+        51
+      ],
+      "leftMargin": 44.705,
+      "rightMargin": 44.705
+    },
+    "unit": {
+      "bounds": [
+        46.068000000000005,
+        55.336,
+        53.932,
+        61
+      ],
+      "leftMargin": 46.068000000000005,
+      "rightMargin": 46.068
+    },
+    "wordmark": {
+      "bounds": [
+        39.0146,
+        68.5316,
+        60.9854,
+        71.0612
+      ],
+      "leftMargin": 39.0146,
+      "rightMargin": 39.0146
+    }
+  },
+  "pixelChecks": [
+    {
+      "state": "unlocked",
+      "size": 48,
+      "numeralMargins": [
+        21,
+        21
+      ]
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "numeralMargins": [
+        28,
+        28
+      ]
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "numeralMargins": [
+        43,
+        43
+      ]
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "numeralMargins": [
+        57,
+        57
+      ]
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "numeralMargins": [
+        114,
+        114
+      ]
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "numeralMargins": [
+        357,
+        357
+      ]
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "numeralMargins": [
+        21,
+        21
+      ]
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "numeralMargins": [
+        28,
+        28
+      ]
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "numeralMargins": [
+        43,
+        43
+      ]
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "numeralMargins": [
+        57,
+        57
+      ]
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "numeralMargins": [
+        114,
+        114
+      ]
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "numeralMargins": [
+        357,
+        357
+      ]
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "numeralMargins": [
+        21,
+        21
+      ]
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "numeralMargins": [
+        28,
+        28
+      ]
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "numeralMargins": [
+        43,
+        43
+      ]
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "numeralMargins": [
+        57,
+        57
+      ]
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "numeralMargins": [
+        114,
+        114
+      ]
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "numeralMargins": [
+        357,
+        357
+      ]
+    }
+  ]
+}

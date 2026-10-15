@@ -1,0 +1,206 @@
+{
+  "scope": "single three-day reference artwork preview; no achievement/production changes",
+  "states": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "sizes": [
+    48,
+    64,
+    96,
+    128,
+    256
+  ],
+  "centeredBounds": {
+    "flame": [
+      37.68626812359907,
+      20.5,
+      62.31373187640094,
+      47.64
+    ],
+    "number": [
+      46.1018,
+      51.5594,
+      53.8982,
+      64.7492
+    ],
+    "title": [
+      33.3905,
+      67.8796,
+      66.6095,
+      71.8972
+    ],
+    "wordmark": [
+      40.657,
+      78.122,
+      59.342999999999996,
+      80.354
+    ]
+  },
+  "checks": [
+    {
+      "state": "unlocked",
+      "size": 48,
+      "flameMargins": [
+        18,
+        18
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "flameMargins": [
+        24,
+        24
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "flameMargins": [
+        36,
+        36
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "flameMargins": [
+        48,
+        48
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "flameMargins": [
+        96,
+        96
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "flameMargins": [
+        301,
+        301
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "flameMargins": [
+        18,
+        18
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "flameMargins": [
+        24,
+        24
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "flameMargins": [
+        36,
+        36
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "flameMargins": [
+        48,
+        48
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "flameMargins": [
+        96,
+        96
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "flameMargins": [
+        301,
+        301
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "flameMargins": [
+        18,
+        18
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "flameMargins": [
+        24,
+        24
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "flameMargins": [
+        36,
+        36
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "flameMargins": [
+        48,
+        48
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "flameMargins": [
+        96,
+        96
+      ],
+      "flameFrameOverlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "flameMargins": [
+        301,
+        301
+      ],
+      "flameFrameOverlap": 0
+    }
+  ],
+  "changedProductionFiles": []
+}

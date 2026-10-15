@@ -1,0 +1,2173 @@
+{
+  "scope": "ranked daily and milestone review artwork, not app integration",
+  "tiers": [
+    {
+      "minDays": 1,
+      "maxDays": 10,
+      "token": "streakHeatGreen",
+      "label": "Ember",
+      "rangeLabel": "1 - 10 days",
+      "colors": {
+        "primary": "#A5EC70",
+        "highlight": "#D8FFC0",
+        "shadow": "#4A8D43",
+        "glow": "#69C85D",
+        "center": "#F2FFE3"
+      }
+    },
+    {
+      "minDays": 11,
+      "maxDays": 50,
+      "token": "streakHeatYellow",
+      "label": "Kindle",
+      "rangeLabel": "11 - 50 days",
+      "colors": {
+        "primary": "#FFD84A",
+        "highlight": "#FFF4A2",
+        "shadow": "#A9751F",
+        "glow": "#FFC737",
+        "center": "#FFF9C7"
+      }
+    },
+    {
+      "minDays": 51,
+      "maxDays": 100,
+      "token": "streakHeatOrange",
+      "label": "Blaze",
+      "rangeLabel": "51 - 100 days",
+      "colors": {
+        "primary": "#FF962D",
+        "highlight": "#FFD08A",
+        "shadow": "#B84F14",
+        "glow": "#FF7C1E",
+        "center": "#FFE2B3"
+      }
+    },
+    {
+      "minDays": 101,
+      "maxDays": 150,
+      "token": "streakHeatRedOrange",
+      "label": "Inferno",
+      "rangeLabel": "101 - 150 days",
+      "colors": {
+        "primary": "#FF4F2D",
+        "highlight": "#FFAA79",
+        "shadow": "#9F2519",
+        "glow": "#EF3A20",
+        "center": "#FFD0B8"
+      }
+    },
+    {
+      "minDays": 151,
+      "maxDays": 200,
+      "token": "streakHeatHotPink",
+      "label": "Phoenix",
+      "rangeLabel": "151 - 200 days",
+      "colors": {
+        "primary": "#FF4F85",
+        "highlight": "#FFC2D7",
+        "shadow": "#9E244D",
+        "glow": "#F43773",
+        "center": "#FFE0EC"
+      }
+    },
+    {
+      "minDays": 201,
+      "maxDays": 250,
+      "token": "streakHeatViolet",
+      "label": "Violet Flame",
+      "rangeLabel": "201 - 250 days",
+      "colors": {
+        "primary": "#B96CFF",
+        "highlight": "#E2C4FF",
+        "shadow": "#6033B8",
+        "glow": "#9347EC",
+        "center": "#F0DFFF"
+      }
+    },
+    {
+      "minDays": 251,
+      "maxDays": 300,
+      "token": "streakHeatBlue",
+      "label": "Blue Flame",
+      "rangeLabel": "251 - 300 days",
+      "colors": {
+        "primary": "#4EA4FF",
+        "highlight": "#BCDFFF",
+        "shadow": "#265B9E",
+        "glow": "#3489F3",
+        "center": "#E0F1FF"
+      }
+    },
+    {
+      "minDays": 301,
+      "maxDays": 364,
+      "token": "streakHeatBlueWhite",
+      "label": "White Hot",
+      "rangeLabel": "301 - 364 days",
+      "colors": {
+        "primary": "#46E6F1",
+        "highlight": "#E7FFFF",
+        "shadow": "#27868E",
+        "glow": "#32CBD8",
+        "center": "#F0FFFF"
+      }
+    },
+    {
+      "minDays": 365,
+      "maxDays": null,
+      "token": "streakHeatWhiteHot",
+      "label": "Eternal Flame",
+      "rangeLabel": "365+ days",
+      "colors": {
+        "primary": "#F4F5F2",
+        "highlight": "#FFFFFF",
+        "shadow": "#8E9294",
+        "glow": "#D7E5EA",
+        "center": "#FFFFFF"
+      }
+    }
+  ],
+  "milestones": [
+    {
+      "id": "streak_1_week",
+      "slug": "7-day",
+      "day": 7,
+      "title": "7-Day Streak",
+      "subtitle": "Consistent Start"
+    },
+    {
+      "id": "streak_30_day",
+      "slug": "30-day",
+      "day": 30,
+      "title": "30-Day Streak",
+      "subtitle": "Dedicated"
+    },
+    {
+      "id": "streak_50_day",
+      "slug": "50-day",
+      "day": 50,
+      "title": "50-Day Streak",
+      "subtitle": "On Track"
+    },
+    {
+      "id": "streak_75_day",
+      "slug": "75-day",
+      "day": 75,
+      "title": "75-Day Streak",
+      "subtitle": "Unstoppable"
+    },
+    {
+      "id": "streak_100_day",
+      "slug": "100-day",
+      "day": 100,
+      "title": "100-Day Streak",
+      "subtitle": "On Fire"
+    },
+    {
+      "id": "streak_150_day",
+      "slug": "150-day",
+      "day": 150,
+      "title": "150-Day Streak",
+      "subtitle": "Relentless"
+    },
+    {
+      "id": "streak_200_day",
+      "slug": "200-day",
+      "day": 200,
+      "title": "200-Day Streak",
+      "subtitle": "Phoenix Rising"
+    },
+    {
+      "id": "streak_250_day",
+      "slug": "250-day",
+      "day": 250,
+      "title": "250-Day Streak",
+      "subtitle": "Legendary"
+    },
+    {
+      "id": "streak_300_day",
+      "slug": "300-day",
+      "day": 300,
+      "title": "300-Day Streak",
+      "subtitle": "Blue Flame"
+    },
+    {
+      "id": "streak_365_day",
+      "slug": "365-day",
+      "day": 365,
+      "title": "365-Day Streak",
+      "subtitle": "One Year"
+    }
+  ],
+  "samples": [
+    1,
+    3,
+    10,
+    11,
+    14,
+    30,
+    50,
+    51,
+    75,
+    100,
+    101,
+    150,
+    151,
+    200,
+    201,
+    250,
+    251,
+    300,
+    301,
+    364,
+    365,
+    366,
+    1000
+  ],
+  "pixelChecks": [
+    {
+      "day": 1,
+      "size": 48,
+      "margins": [
+        23,
+        23
+      ]
+    },
+    {
+      "day": 1,
+      "size": 64,
+      "margins": [
+        30,
+        30
+      ]
+    },
+    {
+      "day": 1,
+      "size": 96,
+      "margins": [
+        45,
+        45
+      ]
+    },
+    {
+      "day": 1,
+      "size": 128,
+      "margins": [
+        60,
+        60
+      ]
+    },
+    {
+      "day": 1,
+      "size": 256,
+      "margins": [
+        120,
+        120
+      ]
+    },
+    {
+      "day": 3,
+      "size": 48,
+      "margins": [
+        22,
+        22
+      ]
+    },
+    {
+      "day": 3,
+      "size": 64,
+      "margins": [
+        29,
+        29
+      ]
+    },
+    {
+      "day": 3,
+      "size": 96,
+      "margins": [
+        44,
+        44
+      ]
+    },
+    {
+      "day": 3,
+      "size": 128,
+      "margins": [
+        59,
+        59
+      ]
+    },
+    {
+      "day": 3,
+      "size": 256,
+      "margins": [
+        118,
+        118
+      ]
+    },
+    {
+      "day": 10,
+      "size": 48,
+      "margins": [
+        20,
+        20
+      ]
+    },
+    {
+      "day": 10,
+      "size": 64,
+      "margins": [
+        27,
+        26
+      ]
+    },
+    {
+      "day": 10,
+      "size": 96,
+      "margins": [
+        40,
+        40
+      ]
+    },
+    {
+      "day": 10,
+      "size": 128,
+      "margins": [
+        53,
+        53
+      ]
+    },
+    {
+      "day": 10,
+      "size": 256,
+      "margins": [
+        107,
+        106
+      ]
+    },
+    {
+      "day": 11,
+      "size": 48,
+      "margins": [
+        21,
+        21
+      ]
+    },
+    {
+      "day": 11,
+      "size": 64,
+      "margins": [
+        27,
+        27
+      ]
+    },
+    {
+      "day": 11,
+      "size": 96,
+      "margins": [
+        40,
+        41
+      ]
+    },
+    {
+      "day": 11,
+      "size": 128,
+      "margins": [
+        54,
+        54
+      ]
+    },
+    {
+      "day": 11,
+      "size": 256,
+      "margins": [
+        108,
+        108
+      ]
+    },
+    {
+      "day": 14,
+      "size": 48,
+      "margins": [
+        20,
+        20
+      ]
+    },
+    {
+      "day": 14,
+      "size": 64,
+      "margins": [
+        27,
+        27
+      ]
+    },
+    {
+      "day": 14,
+      "size": 96,
+      "margins": [
+        40,
+        40
+      ]
+    },
+    {
+      "day": 14,
+      "size": 128,
+      "margins": [
+        53,
+        53
+      ]
+    },
+    {
+      "day": 14,
+      "size": 256,
+      "margins": [
+        107,
+        106
+      ]
+    },
+    {
+      "day": 30,
+      "size": 48,
+      "margins": [
+        20,
+        19
+      ]
+    },
+    {
+      "day": 30,
+      "size": 64,
+      "margins": [
+        26,
+        26
+      ]
+    },
+    {
+      "day": 30,
+      "size": 96,
+      "margins": [
+        39,
+        39
+      ]
+    },
+    {
+      "day": 30,
+      "size": 128,
+      "margins": [
+        52,
+        52
+      ]
+    },
+    {
+      "day": 30,
+      "size": 256,
+      "margins": [
+        105,
+        105
+      ]
+    },
+    {
+      "day": 50,
+      "size": 48,
+      "margins": [
+        20,
+        19
+      ]
+    },
+    {
+      "day": 50,
+      "size": 64,
+      "margins": [
+        26,
+        26
+      ]
+    },
+    {
+      "day": 50,
+      "size": 96,
+      "margins": [
+        39,
+        39
+      ]
+    },
+    {
+      "day": 50,
+      "size": 128,
+      "margins": [
+        53,
+        53
+      ]
+    },
+    {
+      "day": 50,
+      "size": 256,
+      "margins": [
+        105,
+        105
+      ]
+    },
+    {
+      "day": 51,
+      "size": 48,
+      "margins": [
+        20,
+        21
+      ]
+    },
+    {
+      "day": 51,
+      "size": 64,
+      "margins": [
+        26,
+        27
+      ]
+    },
+    {
+      "day": 51,
+      "size": 96,
+      "margins": [
+        40,
+        40
+      ]
+    },
+    {
+      "day": 51,
+      "size": 128,
+      "margins": [
+        53,
+        53
+      ]
+    },
+    {
+      "day": 51,
+      "size": 256,
+      "margins": [
+        107,
+        107
+      ]
+    },
+    {
+      "day": 75,
+      "size": 48,
+      "margins": [
+        20,
+        20
+      ]
+    },
+    {
+      "day": 75,
+      "size": 64,
+      "margins": [
+        26,
+        26
+      ]
+    },
+    {
+      "day": 75,
+      "size": 96,
+      "margins": [
+        40,
+        40
+      ]
+    },
+    {
+      "day": 75,
+      "size": 128,
+      "margins": [
+        53,
+        53
+      ]
+    },
+    {
+      "day": 75,
+      "size": 256,
+      "margins": [
+        107,
+        107
+      ]
+    },
+    {
+      "day": 100,
+      "size": 48,
+      "margins": [
+        18,
+        17
+      ]
+    },
+    {
+      "day": 100,
+      "size": 64,
+      "margins": [
+        24,
+        23
+      ]
+    },
+    {
+      "day": 100,
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ]
+    },
+    {
+      "day": 100,
+      "size": 128,
+      "margins": [
+        47,
+        47
+      ]
+    },
+    {
+      "day": 100,
+      "size": 256,
+      "margins": [
+        95,
+        94
+      ]
+    },
+    {
+      "day": 101,
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ]
+    },
+    {
+      "day": 101,
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ]
+    },
+    {
+      "day": 101,
+      "size": 96,
+      "margins": [
+        36,
+        36
+      ]
+    },
+    {
+      "day": 101,
+      "size": 128,
+      "margins": [
+        48,
+        48
+      ]
+    },
+    {
+      "day": 101,
+      "size": 256,
+      "margins": [
+        96,
+        96
+      ]
+    },
+    {
+      "day": 150,
+      "size": 48,
+      "margins": [
+        18,
+        17
+      ]
+    },
+    {
+      "day": 150,
+      "size": 64,
+      "margins": [
+        24,
+        23
+      ]
+    },
+    {
+      "day": 150,
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ]
+    },
+    {
+      "day": 150,
+      "size": 128,
+      "margins": [
+        47,
+        47
+      ]
+    },
+    {
+      "day": 150,
+      "size": 256,
+      "margins": [
+        95,
+        94
+      ]
+    },
+    {
+      "day": 151,
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ]
+    },
+    {
+      "day": 151,
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ]
+    },
+    {
+      "day": 151,
+      "size": 96,
+      "margins": [
+        36,
+        36
+      ]
+    },
+    {
+      "day": 151,
+      "size": 128,
+      "margins": [
+        48,
+        48
+      ]
+    },
+    {
+      "day": 151,
+      "size": 256,
+      "margins": [
+        96,
+        96
+      ]
+    },
+    {
+      "day": 200,
+      "size": 48,
+      "margins": [
+        17,
+        17
+      ]
+    },
+    {
+      "day": 200,
+      "size": 64,
+      "margins": [
+        23,
+        23
+      ]
+    },
+    {
+      "day": 200,
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ]
+    },
+    {
+      "day": 200,
+      "size": 128,
+      "margins": [
+        46,
+        46
+      ]
+    },
+    {
+      "day": 200,
+      "size": 256,
+      "margins": [
+        93,
+        93
+      ]
+    },
+    {
+      "day": 201,
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ]
+    },
+    {
+      "day": 201,
+      "size": 64,
+      "margins": [
+        23,
+        24
+      ]
+    },
+    {
+      "day": 201,
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ]
+    },
+    {
+      "day": 201,
+      "size": 128,
+      "margins": [
+        47,
+        47
+      ]
+    },
+    {
+      "day": 201,
+      "size": 256,
+      "margins": [
+        94,
+        94
+      ]
+    },
+    {
+      "day": 250,
+      "size": 48,
+      "margins": [
+        17,
+        17
+      ]
+    },
+    {
+      "day": 250,
+      "size": 64,
+      "margins": [
+        23,
+        23
+      ]
+    },
+    {
+      "day": 250,
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ]
+    },
+    {
+      "day": 250,
+      "size": 128,
+      "margins": [
+        46,
+        46
+      ]
+    },
+    {
+      "day": 250,
+      "size": 256,
+      "margins": [
+        93,
+        93
+      ]
+    },
+    {
+      "day": 251,
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ]
+    },
+    {
+      "day": 251,
+      "size": 64,
+      "margins": [
+        23,
+        24
+      ]
+    },
+    {
+      "day": 251,
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ]
+    },
+    {
+      "day": 251,
+      "size": 128,
+      "margins": [
+        47,
+        47
+      ]
+    },
+    {
+      "day": 251,
+      "size": 256,
+      "margins": [
+        94,
+        94
+      ]
+    },
+    {
+      "day": 300,
+      "size": 48,
+      "margins": [
+        17,
+        17
+      ]
+    },
+    {
+      "day": 300,
+      "size": 64,
+      "margins": [
+        23,
+        23
+      ]
+    },
+    {
+      "day": 300,
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ]
+    },
+    {
+      "day": 300,
+      "size": 128,
+      "margins": [
+        47,
+        46
+      ]
+    },
+    {
+      "day": 300,
+      "size": 256,
+      "margins": [
+        93,
+        93
+      ]
+    },
+    {
+      "day": 301,
+      "size": 48,
+      "margins": [
+        18,
+        18
+      ]
+    },
+    {
+      "day": 301,
+      "size": 64,
+      "margins": [
+        24,
+        24
+      ]
+    },
+    {
+      "day": 301,
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ]
+    },
+    {
+      "day": 301,
+      "size": 128,
+      "margins": [
+        47,
+        47
+      ]
+    },
+    {
+      "day": 301,
+      "size": 256,
+      "margins": [
+        95,
+        95
+      ]
+    },
+    {
+      "day": 364,
+      "size": 48,
+      "margins": [
+        17,
+        18
+      ]
+    },
+    {
+      "day": 364,
+      "size": 64,
+      "margins": [
+        23,
+        23
+      ]
+    },
+    {
+      "day": 364,
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ]
+    },
+    {
+      "day": 364,
+      "size": 128,
+      "margins": [
+        47,
+        47
+      ]
+    },
+    {
+      "day": 364,
+      "size": 256,
+      "margins": [
+        93,
+        93
+      ]
+    },
+    {
+      "day": 365,
+      "size": 48,
+      "margins": [
+        18,
+        17
+      ]
+    },
+    {
+      "day": 365,
+      "size": 64,
+      "margins": [
+        23,
+        23
+      ]
+    },
+    {
+      "day": 365,
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ]
+    },
+    {
+      "day": 365,
+      "size": 128,
+      "margins": [
+        47,
+        47
+      ]
+    },
+    {
+      "day": 365,
+      "size": 256,
+      "margins": [
+        94,
+        94
+      ]
+    },
+    {
+      "day": 366,
+      "size": 48,
+      "margins": [
+        17,
+        17
+      ]
+    },
+    {
+      "day": 366,
+      "size": 64,
+      "margins": [
+        23,
+        23
+      ]
+    },
+    {
+      "day": 366,
+      "size": 96,
+      "margins": [
+        35,
+        35
+      ]
+    },
+    {
+      "day": 366,
+      "size": 128,
+      "margins": [
+        47,
+        47
+      ]
+    },
+    {
+      "day": 366,
+      "size": 256,
+      "margins": [
+        94,
+        93
+      ]
+    },
+    {
+      "day": 1000,
+      "size": 48,
+      "margins": [
+        16,
+        15
+      ]
+    },
+    {
+      "day": 1000,
+      "size": 64,
+      "margins": [
+        21,
+        21
+      ]
+    },
+    {
+      "day": 1000,
+      "size": 96,
+      "margins": [
+        31,
+        31
+      ]
+    },
+    {
+      "day": 1000,
+      "size": 128,
+      "margins": [
+        42,
+        42
+      ]
+    },
+    {
+      "day": 1000,
+      "size": 256,
+      "margins": [
+        84,
+        84
+      ]
+    }
+  ],
+  "files": [
+    {
+      "group": "daily",
+      "key": "day-1",
+      "days": 1,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-1-unlocked.svg",
+      "png": "ranked-exports/daily/day-1-unlocked.png",
+      "svgHash": "22ae9da4d88b304757b145bd9d58de481d15aaa80c43c33eb1fe5c9e53c32361",
+      "pngHash": "2386e9fbded734da14488390a04ec7870910a3763942bffb87d9aebab66bf9fe"
+    },
+    {
+      "group": "daily",
+      "key": "day-1",
+      "days": 1,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-1-locked.svg",
+      "png": "ranked-exports/daily/day-1-locked.png",
+      "svgHash": "0cadf9afc6257a432d3eb29b35a978d1107127f7846250e1023a1d6c0efa40ce",
+      "pngHash": "0e9e43f0c322eb968d1556cf21bcec40bc8476aa8fff8f3a41080a7223075177"
+    },
+    {
+      "group": "daily",
+      "key": "day-1",
+      "days": 1,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-1-transparent.svg",
+      "png": "ranked-exports/daily/day-1-transparent.png",
+      "svgHash": "14baa99cd0a37d8d092032d062687c098d0f99af171db250a9c36bf3e69b2b94",
+      "pngHash": "eb9822325e443f7de9c25ff6f15c1865b9f5f6dc2ea7b310f863b9caadffa94b"
+    },
+    {
+      "group": "daily",
+      "key": "day-3",
+      "days": 3,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-3-unlocked.svg",
+      "png": "ranked-exports/daily/day-3-unlocked.png",
+      "svgHash": "9851991e7e4a10e0757829298be63a74b781a29033f70000dc401460ed033a3b",
+      "pngHash": "356f875f3a270a444804da9e1c6e46da4e6eb143ceb79ce2c042132c89a4cc2c"
+    },
+    {
+      "group": "daily",
+      "key": "day-3",
+      "days": 3,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-3-locked.svg",
+      "png": "ranked-exports/daily/day-3-locked.png",
+      "svgHash": "bf6e35203a29c674bf4ae2d6b09f4345644d3dafe189fee5075be0b807108841",
+      "pngHash": "b0d859e94edbd689a49996462753436b6e4cc47e0663906ffa1335bc54ab6cba"
+    },
+    {
+      "group": "daily",
+      "key": "day-3",
+      "days": 3,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-3-transparent.svg",
+      "png": "ranked-exports/daily/day-3-transparent.png",
+      "svgHash": "8f1078201ecf54318695106340bb3d3d6bfdd24e3c2fd22a9f04b46f9a87204b",
+      "pngHash": "9b213abdb4a5384184394eede4978710524baf6a264bed1e8295f37ef8df1b5b"
+    },
+    {
+      "group": "daily",
+      "key": "day-10",
+      "days": 10,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-10-unlocked.svg",
+      "png": "ranked-exports/daily/day-10-unlocked.png",
+      "svgHash": "d5d708e9eaf4b7f6c8eafdf949b26a87f4237f5a301afa0d6f4dc1472c182805",
+      "pngHash": "a0135aeeeddb5ebbc705a5d2d3f0576178e311534cb972567e6fc4dfa513066b"
+    },
+    {
+      "group": "daily",
+      "key": "day-10",
+      "days": 10,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-10-locked.svg",
+      "png": "ranked-exports/daily/day-10-locked.png",
+      "svgHash": "eeeab6cfedce1780f4860228d9fc022d4698c9e148bfc574f20653634f132f9c",
+      "pngHash": "1206c9767c82a40d187e86134b7b9b990fa96fdd7b60d5e14948f8ae411d7752"
+    },
+    {
+      "group": "daily",
+      "key": "day-10",
+      "days": 10,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-10-transparent.svg",
+      "png": "ranked-exports/daily/day-10-transparent.png",
+      "svgHash": "c09c7daf993f6b373fb6ec3ea390bf9b000e0c2fffc7fbea0ffad99f786bcdca",
+      "pngHash": "193503db3adc5fc522fd9aed2d914c30c0970ffd8d3acbc8bd2e7e03d7e2f7ee"
+    },
+    {
+      "group": "daily",
+      "key": "day-11",
+      "days": 11,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-11-unlocked.svg",
+      "png": "ranked-exports/daily/day-11-unlocked.png",
+      "svgHash": "5d798c5e122a9554619ec291e6f5ce1c1b1628c2762389cbc2fa17bf7274596a",
+      "pngHash": "bd35a65a15f1a48502ac93cc692adcadfe23229f05bd60548da93220f8e2ce53"
+    },
+    {
+      "group": "daily",
+      "key": "day-11",
+      "days": 11,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-11-locked.svg",
+      "png": "ranked-exports/daily/day-11-locked.png",
+      "svgHash": "71c755e12a95002f2734a4dd6ca3ab55b84798cbe8b8aefb30b0268c3aa7d6eb",
+      "pngHash": "36bebd21088dc382201cbcdb608380912f5c7c7b5786bdd68085e9059496cc43"
+    },
+    {
+      "group": "daily",
+      "key": "day-11",
+      "days": 11,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-11-transparent.svg",
+      "png": "ranked-exports/daily/day-11-transparent.png",
+      "svgHash": "499a9417bc21b378f95f5ad71170d4bb01629135c1e7c36a328cbac868cf3a4a",
+      "pngHash": "b1639c484eea6ae435fb1a4533fd7b61594477a0fdfa00efc24d81e5a9a59fc5"
+    },
+    {
+      "group": "daily",
+      "key": "day-14",
+      "days": 14,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-14-unlocked.svg",
+      "png": "ranked-exports/daily/day-14-unlocked.png",
+      "svgHash": "951c09a7aa7ce2e74a22bc396597c7704108d299a6069c3bef43a5a2cdef0383",
+      "pngHash": "81addea058f1c185d60d2802b85771c0f368363b4cbdb7125a262d73fb8702c7"
+    },
+    {
+      "group": "daily",
+      "key": "day-14",
+      "days": 14,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-14-locked.svg",
+      "png": "ranked-exports/daily/day-14-locked.png",
+      "svgHash": "aaab643289baaf8cf6364c9632a98e7cefb4302b30b9f53df953926e5476e411",
+      "pngHash": "c133f93c2065b9659c6c01effaf96dfa9b1257d15ef4b6ef7e37b0aef7db70b3"
+    },
+    {
+      "group": "daily",
+      "key": "day-14",
+      "days": 14,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-14-transparent.svg",
+      "png": "ranked-exports/daily/day-14-transparent.png",
+      "svgHash": "4da6d364d55b1c031b98325dd48cff1cae73ed1845ddd90e5e060a37b70eb823",
+      "pngHash": "cdd3c80304534b4d5506973b83eeba62b6591ccf217b0f4d0d0504790ff5ff24"
+    },
+    {
+      "group": "daily",
+      "key": "day-30",
+      "days": 30,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-30-unlocked.svg",
+      "png": "ranked-exports/daily/day-30-unlocked.png",
+      "svgHash": "5a8dfa20066e03345eb33f27111f75b70f7f129368b18377e906213a2df039bb",
+      "pngHash": "f03516c4fd15239625f436cd7ff52440868cfe350e46d34fa974283f16bcb366"
+    },
+    {
+      "group": "daily",
+      "key": "day-30",
+      "days": 30,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-30-locked.svg",
+      "png": "ranked-exports/daily/day-30-locked.png",
+      "svgHash": "8354f69ce4dc062c4731a840d74a8662d3b012e6e65e7155de23f793a7b00c8b",
+      "pngHash": "952eea244634527f336ca2d1da68b416df5e3a50d5843aa35cb2ebbfde677834"
+    },
+    {
+      "group": "daily",
+      "key": "day-30",
+      "days": 30,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-30-transparent.svg",
+      "png": "ranked-exports/daily/day-30-transparent.png",
+      "svgHash": "ba142e61491718a53baade2adf30501273febfa3f5c5daff481f72c159530847",
+      "pngHash": "5d645530aef6fc816b4efd8f40e41e5d20108b7819863192c1f4ad9816614f10"
+    },
+    {
+      "group": "daily",
+      "key": "day-50",
+      "days": 50,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-50-unlocked.svg",
+      "png": "ranked-exports/daily/day-50-unlocked.png",
+      "svgHash": "254303a63a03191613ca8553d70e8e44d661d8a3269340adae1e1cbb27237a1e",
+      "pngHash": "3cfb92c414e4b4597c23dea00db9cf17a2ffec65f1f91a817876f89636365454"
+    },
+    {
+      "group": "daily",
+      "key": "day-50",
+      "days": 50,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-50-locked.svg",
+      "png": "ranked-exports/daily/day-50-locked.png",
+      "svgHash": "866deb3b438c6061b9e1b8198a6ad5e310a5841be4f59d61458b75fed2e99cdf",
+      "pngHash": "0465a7244e44bfe0e319a525bf54cc59f0867b95166149eca31d54bc50dbe8b5"
+    },
+    {
+      "group": "daily",
+      "key": "day-50",
+      "days": 50,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-50-transparent.svg",
+      "png": "ranked-exports/daily/day-50-transparent.png",
+      "svgHash": "04f239be5c43c2e9839b1ce68be8bb21962bf539e77277aa1c2f2d08e8577343",
+      "pngHash": "7f1fb9ea17552c2ba7b06147c86f2efde305387d673d5e27714b0a14795eed4c"
+    },
+    {
+      "group": "daily",
+      "key": "day-51",
+      "days": 51,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-51-unlocked.svg",
+      "png": "ranked-exports/daily/day-51-unlocked.png",
+      "svgHash": "c63faa9869271286ea51b363745cc92317e12d43f4c084c5bfb02bcde8eb0486",
+      "pngHash": "45dd1e0d80e2c4544d4df2dd36b7dbb7dce083e4ed141564f3d1b52365ec18a5"
+    },
+    {
+      "group": "daily",
+      "key": "day-51",
+      "days": 51,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-51-locked.svg",
+      "png": "ranked-exports/daily/day-51-locked.png",
+      "svgHash": "81c64e905f1bd9ba526aba3855549331c900f5c0bfc450dcfcb0aeaada8917c7",
+      "pngHash": "91ad0e7075363f25ba1f930071d49bf951e2249a2538fcd31fbcfbcd174941a4"
+    },
+    {
+      "group": "daily",
+      "key": "day-51",
+      "days": 51,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-51-transparent.svg",
+      "png": "ranked-exports/daily/day-51-transparent.png",
+      "svgHash": "35771242ba53f5c33409a6812cf9310f31e6daae7236c647972688ebb9e7d936",
+      "pngHash": "a09c9f2b00df643aaa8d4e504cf7b715087452ebd915e2607dc486229bd2197a"
+    },
+    {
+      "group": "daily",
+      "key": "day-75",
+      "days": 75,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-75-unlocked.svg",
+      "png": "ranked-exports/daily/day-75-unlocked.png",
+      "svgHash": "ee93be9691baba54ef92f360417d7ea3dbc870d6b116d3bb63a6a885c8c54422",
+      "pngHash": "e777325dbbfd9d764f2e5479274003d828d1a19d8d00c5fa60969c88edf5feb7"
+    },
+    {
+      "group": "daily",
+      "key": "day-75",
+      "days": 75,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-75-locked.svg",
+      "png": "ranked-exports/daily/day-75-locked.png",
+      "svgHash": "48030487c48f109ec80f948a688397d68ed387544f85d1f5aa7e5ef8ebc9212b",
+      "pngHash": "d5847cdb3922a20428456845c95a3c3409230fc1b42337c50c2bb170f8e0b47d"
+    },
+    {
+      "group": "daily",
+      "key": "day-75",
+      "days": 75,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-75-transparent.svg",
+      "png": "ranked-exports/daily/day-75-transparent.png",
+      "svgHash": "31272e3d533900c8193f6bccfa5c6b975a2fc9fe27dd071fd69111dd1c88297b",
+      "pngHash": "fac3131476d9c42880b6611426497f30461de5e0ee47f219793d25a3337b4c07"
+    },
+    {
+      "group": "daily",
+      "key": "day-100",
+      "days": 100,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-100-unlocked.svg",
+      "png": "ranked-exports/daily/day-100-unlocked.png",
+      "svgHash": "63b99288ee4e6e8dc29478e9879644002ef4057a345d2ada76095e3cc4f49008",
+      "pngHash": "fb0bf0c1b82100a50cc7888ff60eeb2922a766ddc8a5a8540b55d274bf05f860"
+    },
+    {
+      "group": "daily",
+      "key": "day-100",
+      "days": 100,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-100-locked.svg",
+      "png": "ranked-exports/daily/day-100-locked.png",
+      "svgHash": "8c875673b9abf09d094424f47cfad18fffa2e62bcc5d0d4f039486aef864a458",
+      "pngHash": "b7edae323e2eac233c9c7d76a70ba06d7b9da39ca5a5d7e026c1fb130b09c882"
+    },
+    {
+      "group": "daily",
+      "key": "day-100",
+      "days": 100,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-100-transparent.svg",
+      "png": "ranked-exports/daily/day-100-transparent.png",
+      "svgHash": "d0b184b6fa614cb0db1fcd3e448f09e6d6fc612240c05c8502d6507f067a5392",
+      "pngHash": "c5acf71412c42a666cf48ae8a8820dde77240c8ee2c5aae3d30d39bc2c2fc7f1"
+    },
+    {
+      "group": "daily",
+      "key": "day-101",
+      "days": 101,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-101-unlocked.svg",
+      "png": "ranked-exports/daily/day-101-unlocked.png",
+      "svgHash": "2110dbe10981f4ae63c9e33c6451bd7ebdd503f2fd65cc1cd32a5926d05bddcf",
+      "pngHash": "f4b18eed20f52119fd5b0cddfcca5735e4a84954bae40977fc8d586d9299f0a9"
+    },
+    {
+      "group": "daily",
+      "key": "day-101",
+      "days": 101,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-101-locked.svg",
+      "png": "ranked-exports/daily/day-101-locked.png",
+      "svgHash": "ee5dec576d1883e87f5e7c26d079dc0f3bc7f9e35cd467daee9ae48a453704f2",
+      "pngHash": "cd248342567fab39c375b0c9e9f28cff882a1377cf6a6768f60f9e8ca88e7958"
+    },
+    {
+      "group": "daily",
+      "key": "day-101",
+      "days": 101,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-101-transparent.svg",
+      "png": "ranked-exports/daily/day-101-transparent.png",
+      "svgHash": "40d9c9470536ab903182197d6d8b8b81f85e09ac52eea19e97f5e1cd3b36ed2c",
+      "pngHash": "14b1de5e7bcabcd6bf0a32ce731424e283bc73f5f0dee2e82cc4a4c0d7f930cd"
+    },
+    {
+      "group": "daily",
+      "key": "day-150",
+      "days": 150,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-150-unlocked.svg",
+      "png": "ranked-exports/daily/day-150-unlocked.png",
+      "svgHash": "47b204b0a73b990a7581cf076087f5af650dd4241a884358294c0d468f5dcf09",
+      "pngHash": "cdd8bc562d9a34334022a2ff951f52987fa1fe05380d35118177349cd31cd16b"
+    },
+    {
+      "group": "daily",
+      "key": "day-150",
+      "days": 150,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-150-locked.svg",
+      "png": "ranked-exports/daily/day-150-locked.png",
+      "svgHash": "5bb78c59e88888b4762cff6d091f72491c6b113192dcb6ba393e860429cb374c",
+      "pngHash": "912bd3ef1cd99890364739685b7248c53109bb5c276192a4ead5e0d80dd4a24c"
+    },
+    {
+      "group": "daily",
+      "key": "day-150",
+      "days": 150,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-150-transparent.svg",
+      "png": "ranked-exports/daily/day-150-transparent.png",
+      "svgHash": "e1c74ed64aa46949c3da208a06f7b5083f35bdb737772daebdb77b752c393817",
+      "pngHash": "7381f9630548a4d729cd54e7620b9cc516588aa8c03166fa3aaf5c661a28a40a"
+    },
+    {
+      "group": "daily",
+      "key": "day-151",
+      "days": 151,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-151-unlocked.svg",
+      "png": "ranked-exports/daily/day-151-unlocked.png",
+      "svgHash": "91eef4415c81de892d8a8e785e4d68b1194b4092ed1607a7c5b65779b99f5358",
+      "pngHash": "5860429f2836724e9d85b19df6c8d4fe9eccdccffe590b650487b11d5b0923b3"
+    },
+    {
+      "group": "daily",
+      "key": "day-151",
+      "days": 151,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-151-locked.svg",
+      "png": "ranked-exports/daily/day-151-locked.png",
+      "svgHash": "3705a6788a33731d37dfaf32357a9afca41a8252ddf36eb76de0745355adc9a7",
+      "pngHash": "c05048584565ac24b01fc5d94ca432c2a582f0c2a54cb45c5f87c680c07c4ec9"
+    },
+    {
+      "group": "daily",
+      "key": "day-151",
+      "days": 151,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-151-transparent.svg",
+      "png": "ranked-exports/daily/day-151-transparent.png",
+      "svgHash": "fe2d96a03ae85bef8280234be7803473aca9d4d44fb4d5edbc54d337e26fcbf4",
+      "pngHash": "f5808752ee018a618d343ad4669e464ced2d18e1411d5eabfb1fcd4ec1211d8c"
+    },
+    {
+      "group": "daily",
+      "key": "day-200",
+      "days": 200,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-200-unlocked.svg",
+      "png": "ranked-exports/daily/day-200-unlocked.png",
+      "svgHash": "f456794813ff1d685fb3c7199f2179d6a2c5f458b0874f0e41b4502f57806f20",
+      "pngHash": "8bc62b14e472412abefec260cd7f7fdb8356c24be3c8ad44c5febbb961a3eb5e"
+    },
+    {
+      "group": "daily",
+      "key": "day-200",
+      "days": 200,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-200-locked.svg",
+      "png": "ranked-exports/daily/day-200-locked.png",
+      "svgHash": "a9324c5dff84db235cbf874e829d15fa50d2843aa2a4afe6a016a836b8ebdc5a",
+      "pngHash": "9005dc4ddf0f767fc8b498d24c901ec8104ec4586a9f53d0d6d6c48554cea6e6"
+    },
+    {
+      "group": "daily",
+      "key": "day-200",
+      "days": 200,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-200-transparent.svg",
+      "png": "ranked-exports/daily/day-200-transparent.png",
+      "svgHash": "3428b3a54ed7be550728e7003a9b6392fd3ebf89fbb9fb7a48dc0a7c59e13c6c",
+      "pngHash": "984fa313d3c8fac6e467a7801af78c0215523e9623e0819e963bb35360218096"
+    },
+    {
+      "group": "daily",
+      "key": "day-201",
+      "days": 201,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-201-unlocked.svg",
+      "png": "ranked-exports/daily/day-201-unlocked.png",
+      "svgHash": "8567f0758c400cafccdc1233963f0af2db2bf4c99252f10f96ddf004876f3c15",
+      "pngHash": "f6484601c95bcba911069422ff03f5080386bcecff09c1e818619707b65424ad"
+    },
+    {
+      "group": "daily",
+      "key": "day-201",
+      "days": 201,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-201-locked.svg",
+      "png": "ranked-exports/daily/day-201-locked.png",
+      "svgHash": "ec2ad4405ce5a7430f9a7b614dab3b823de8d89e0918478d0b4b4ed06d6bee63",
+      "pngHash": "4d939ec2101e827b855e94c0a9b297cd61910f4fe30b10bdfdf62dc50400c491"
+    },
+    {
+      "group": "daily",
+      "key": "day-201",
+      "days": 201,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-201-transparent.svg",
+      "png": "ranked-exports/daily/day-201-transparent.png",
+      "svgHash": "176f86b1226c1da1a56ec8470ad061a1f04ec4a8fb211d98a3f99c8c5092b9ea",
+      "pngHash": "811dc5a396029cd25c07e00bd9486b1f468ee463abadf8128a70f219b3a10bf0"
+    },
+    {
+      "group": "daily",
+      "key": "day-250",
+      "days": 250,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-250-unlocked.svg",
+      "png": "ranked-exports/daily/day-250-unlocked.png",
+      "svgHash": "088ba462eab5019390e9e94bb9d4eb19eebda19bc13cb2bfd6377457ed6099ab",
+      "pngHash": "e2179730dbddd4c5e6af366069e5ff510121e1ecd5eb41f0e16a5a7d24b7024b"
+    },
+    {
+      "group": "daily",
+      "key": "day-250",
+      "days": 250,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-250-locked.svg",
+      "png": "ranked-exports/daily/day-250-locked.png",
+      "svgHash": "d39fdaee9c8001ed94c76eb259407d9da15eece3f1afeacaff51eb66ca8d07b3",
+      "pngHash": "f2143310447a4cbb2b39044892abd5838d02423ef5bf95e6714eb76abff25351"
+    },
+    {
+      "group": "daily",
+      "key": "day-250",
+      "days": 250,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-250-transparent.svg",
+      "png": "ranked-exports/daily/day-250-transparent.png",
+      "svgHash": "e9c9ee269f64064599017f8617d7fa470bd873982cda3893b0071d2684fc5497",
+      "pngHash": "cfb7e5df13810aa434e59c5d1aefc73aa2b1c2639a92e0abcc454b7ef4721e3c"
+    },
+    {
+      "group": "daily",
+      "key": "day-251",
+      "days": 251,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-251-unlocked.svg",
+      "png": "ranked-exports/daily/day-251-unlocked.png",
+      "svgHash": "51d15ad586b6acd8fdc75f6fc7a4442c6d2d78a56cf799bece8d49dd06bdfb8d",
+      "pngHash": "327cb404c000f30530f3d85137c7ea6925be11e6a5efd1e767e14a6983d6963d"
+    },
+    {
+      "group": "daily",
+      "key": "day-251",
+      "days": 251,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-251-locked.svg",
+      "png": "ranked-exports/daily/day-251-locked.png",
+      "svgHash": "f8471b75b556f005236969114d79e275bd3b72351e540846ce375e8f11416681",
+      "pngHash": "d4d336b20aab621be6b289f6f5ad9c4abf8629573c8381bf48064bf8607294d6"
+    },
+    {
+      "group": "daily",
+      "key": "day-251",
+      "days": 251,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-251-transparent.svg",
+      "png": "ranked-exports/daily/day-251-transparent.png",
+      "svgHash": "2532313e652934941692ca24f3c8fb019e066e43cba1da2b55cdbd510fc4b0e9",
+      "pngHash": "76e5498250d1cee215fc51c3e944c569c59a9fdb611d6ae34ccd9120b3ed2634"
+    },
+    {
+      "group": "daily",
+      "key": "day-300",
+      "days": 300,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-300-unlocked.svg",
+      "png": "ranked-exports/daily/day-300-unlocked.png",
+      "svgHash": "ea794c255b790fee89185d465a04e1598cfeb6d98502d677fa79298239891921",
+      "pngHash": "86358989569d8ad041545743607add20dc8afbc01fb0e77820e8e63414c8e4d1"
+    },
+    {
+      "group": "daily",
+      "key": "day-300",
+      "days": 300,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-300-locked.svg",
+      "png": "ranked-exports/daily/day-300-locked.png",
+      "svgHash": "a61c9980b6d1d1d5676a9bac3f0dd32ba6b0399c9e4ef6f33dfa2cc3398c47b8",
+      "pngHash": "1083689782c0fb1fcc193877223745b184d914c65146bc870d685fa470dd8392"
+    },
+    {
+      "group": "daily",
+      "key": "day-300",
+      "days": 300,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-300-transparent.svg",
+      "png": "ranked-exports/daily/day-300-transparent.png",
+      "svgHash": "aeb1add396ad4dca828f0bc8d42949a601887163e98c712b0ce391d029dcca05",
+      "pngHash": "44602f0bb5711f50c3ab0d206efe2240637f9067cb62f5539dccf4fac41ab6d8"
+    },
+    {
+      "group": "daily",
+      "key": "day-301",
+      "days": 301,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-301-unlocked.svg",
+      "png": "ranked-exports/daily/day-301-unlocked.png",
+      "svgHash": "241b2f8d7cc1a12e25bf4977d0922eee043a4b6d3bb24a218d7d68b7b4ed3276",
+      "pngHash": "f7652d05ca974e8930e817ef960805d7559f229ac8f04922fa98d39ae98d7b98"
+    },
+    {
+      "group": "daily",
+      "key": "day-301",
+      "days": 301,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-301-locked.svg",
+      "png": "ranked-exports/daily/day-301-locked.png",
+      "svgHash": "d7b5239a104281caa7a807d7ee0747ced15c2acfafefa4ade44ffb0ef52e74c5",
+      "pngHash": "9b0510b589bfcc09895d205b787636a10489b9a3c437c501fac2e55599d51613"
+    },
+    {
+      "group": "daily",
+      "key": "day-301",
+      "days": 301,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-301-transparent.svg",
+      "png": "ranked-exports/daily/day-301-transparent.png",
+      "svgHash": "cf694b225a55b30dca3e6871b53a592d235fe8eeabbc93ad3aff5cb43672edb2",
+      "pngHash": "f84fef80e3ebde4faf6ec90880c190b47f5b604224929cf88dc0adfb573c5ad5"
+    },
+    {
+      "group": "daily",
+      "key": "day-364",
+      "days": 364,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-364-unlocked.svg",
+      "png": "ranked-exports/daily/day-364-unlocked.png",
+      "svgHash": "5b2ce037db50b4d574aec979c5ffd253e21d99231b01f4c20bc4cfadd68cf6a4",
+      "pngHash": "fc6b3566cc8caee3247d2c7dfb5191fa77d68dd935d8b7ce50b3f9c3be165d79"
+    },
+    {
+      "group": "daily",
+      "key": "day-364",
+      "days": 364,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-364-locked.svg",
+      "png": "ranked-exports/daily/day-364-locked.png",
+      "svgHash": "65512c6c492870977e1b9adac736ef923a3af9367cd32d31758e1f03efcba496",
+      "pngHash": "3f4563a14ede760883e0d4ecb0f850240953bef99fb98b46285317f1ea450017"
+    },
+    {
+      "group": "daily",
+      "key": "day-364",
+      "days": 364,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-364-transparent.svg",
+      "png": "ranked-exports/daily/day-364-transparent.png",
+      "svgHash": "6dbd9095c906597efd63e20eb8fbb42b20db7a7ed68a83216703036a93b37e49",
+      "pngHash": "73d4f959c5b694e89227c50421f8ff7e42a76955fa92f40b7e427d5b050b672b"
+    },
+    {
+      "group": "daily",
+      "key": "day-365",
+      "days": 365,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-365-unlocked.svg",
+      "png": "ranked-exports/daily/day-365-unlocked.png",
+      "svgHash": "276b4c1db361ede13779aad204ede4f13d0eb968ddafc8c191001c607477ba6f",
+      "pngHash": "5becb0e273263c771217308758a0305e491a25eb6658e213b5e1e79b3ebdc297"
+    },
+    {
+      "group": "daily",
+      "key": "day-365",
+      "days": 365,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-365-locked.svg",
+      "png": "ranked-exports/daily/day-365-locked.png",
+      "svgHash": "4423aea9a49733b4958e1a9594bf40934c7fa5caa3e5a88e138e8788f0aa4ee7",
+      "pngHash": "5cacaa7773c04b958a39bfd2fca84fc867b661595342f7bcd01302c5deff3344"
+    },
+    {
+      "group": "daily",
+      "key": "day-365",
+      "days": 365,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-365-transparent.svg",
+      "png": "ranked-exports/daily/day-365-transparent.png",
+      "svgHash": "f7dcbfe480f9f347c24b0ed0b7b3e7141a82baa29a130c979780d7b8b5f1ce28",
+      "pngHash": "3edcd6ccef3e9a61f00e5cab60d4bccf3273d73e126e193ff9261864a2f182f8"
+    },
+    {
+      "group": "daily",
+      "key": "day-366",
+      "days": 366,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-366-unlocked.svg",
+      "png": "ranked-exports/daily/day-366-unlocked.png",
+      "svgHash": "aa134b15a349835b70b20080a1aac5de0e2a693e65bd7eb4d8dcbff079ee87c2",
+      "pngHash": "61ecf70c890afa7f52b307c3cabda8196e2ee3e20df1e81cf30d5b95216d706c"
+    },
+    {
+      "group": "daily",
+      "key": "day-366",
+      "days": 366,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-366-locked.svg",
+      "png": "ranked-exports/daily/day-366-locked.png",
+      "svgHash": "7d6f0bb686224a67946814e9ec75217b6cca5c26f0ee5460ff4b79d5a5a2f3c7",
+      "pngHash": "9ebb7b8c153b6f3d9d0c20e518818a57dd6c2ecc97eb3a22a2bf12d676a42a20"
+    },
+    {
+      "group": "daily",
+      "key": "day-366",
+      "days": 366,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-366-transparent.svg",
+      "png": "ranked-exports/daily/day-366-transparent.png",
+      "svgHash": "a23ec740e590a217f8ce590084ae6f571c2a623b0f1e89e0a9e1703ebb599e00",
+      "pngHash": "3707f2b6ab8065e4e51e1c0881e5e82dbe2f73c080964a8a8313c3dcfb173438"
+    },
+    {
+      "group": "daily",
+      "key": "day-1000",
+      "days": 1000,
+      "state": "unlocked",
+      "svg": "ranked-exports/daily/day-1000-unlocked.svg",
+      "png": "ranked-exports/daily/day-1000-unlocked.png",
+      "svgHash": "e6a4bf229747b643eebe58768cf154189b45317b3d731e1c4f6828ef438bbb7a",
+      "pngHash": "7aa28dab05dfff6093a125214da7867358230887d045e89116ad6f57e4776c56"
+    },
+    {
+      "group": "daily",
+      "key": "day-1000",
+      "days": 1000,
+      "state": "locked",
+      "svg": "ranked-exports/daily/day-1000-locked.svg",
+      "png": "ranked-exports/daily/day-1000-locked.png",
+      "svgHash": "1122ad8342607d8bafc3088581badfff874c701f98219e0b7896dad970f200cc",
+      "pngHash": "4a06688bcce176ff5c3aa20925d9696f5fd93f2e3b7be4974aa57e1ce784151e"
+    },
+    {
+      "group": "daily",
+      "key": "day-1000",
+      "days": 1000,
+      "state": "transparent",
+      "svg": "ranked-exports/daily/day-1000-transparent.svg",
+      "png": "ranked-exports/daily/day-1000-transparent.png",
+      "svgHash": "bd5ea7bb1f10cfe4024a730a9a815425e8ea44f39c9c7b17d2652ead8c7f77a1",
+      "pngHash": "973168ba82610d39a027773f292d08e9a51fb45ea3a0b06fb296980edb4be7e5"
+    },
+    {
+      "group": "milestones",
+      "key": "7-day",
+      "days": 7,
+      "id": "streak_1_week",
+      "state": "unlocked",
+      "svg": "ranked-exports/milestones/7-day-unlocked.svg",
+      "png": "ranked-exports/milestones/7-day-unlocked.png",
+      "svgHash": "ef436d78efaab3d582ba73c8e618dbc07cbeba1b043087f78e20dc75d5871864",
+      "pngHash": "7c5a28ea1d52406e97e1995f8dabf1e929da08b3ca200f5cf4e04a8eb869689a"
+    },
+    {
+      "group": "milestones",
+      "key": "7-day",
+      "days": 7,
+      "id": "streak_1_week",
+      "state": "locked",
+      "svg": "ranked-exports/milestones/7-day-locked.svg",
+      "png": "ranked-exports/milestones/7-day-locked.png",
+      "svgHash": "6ed8387b3e65aa0d9d81c352d668202e3f010d243ed8d6b7381271a26803ef78",
+      "pngHash": "2d63e468c784614eda407c9ad7438a6563f898b80175bb34d09b256e9c70a85a"
+    },
+    {
+      "group": "milestones",
+      "key": "7-day",
+      "days": 7,
+      "id": "streak_1_week",
+      "state": "transparent",
+      "svg": "ranked-exports/milestones/7-day-transparent.svg",
+      "png": "ranked-exports/milestones/7-day-transparent.png",
+      "svgHash": "940449be628d54714388efbfcc5f9a785b55bef2d9b54cb0eaae013dcb069265",
+      "pngHash": "9c4f31e0e300bb46ce38708065bd1fb6f2e3a8913d1e8fbe68f29496150785ee"
+    },
+    {
+      "group": "milestones",
+      "key": "30-day",
+      "days": 30,
+      "id": "streak_30_day",
+      "state": "unlocked",
+      "svg": "ranked-exports/milestones/30-day-unlocked.svg",
+      "png": "ranked-exports/milestones/30-day-unlocked.png",
+      "svgHash": "5a8dfa20066e03345eb33f27111f75b70f7f129368b18377e906213a2df039bb",
+      "pngHash": "f03516c4fd15239625f436cd7ff52440868cfe350e46d34fa974283f16bcb366"
+    },
+    {
+      "group": "milestones",
+      "key": "30-day",
+      "days": 30,
+      "id": "streak_30_day",
+      "state": "locked",
+      "svg": "ranked-exports/milestones/30-day-locked.svg",
+      "png": "ranked-exports/milestones/30-day-locked.png",
+      "svgHash": "8354f69ce4dc062c4731a840d74a8662d3b012e6e65e7155de23f793a7b00c8b",
+      "pngHash": "952eea244634527f336ca2d1da68b416df5e3a50d5843aa35cb2ebbfde677834"
+    },
+    {
+      "group": "milestones",
+      "key": "30-day",
+      "days": 30,
+      "id": "streak_30_day",
+      "state": "transparent",
+      "svg": "ranked-exports/milestones/30-day-transparent.svg",
+      "png": "ranked-exports/milestones/30-day-transparent.png",
+      "svgHash": "ba142e61491718a53baade2adf30501273febfa3f5c5daff481f72c159530847",
+      "pngHash": "5d645530aef6fc816b4efd8f40e41e5d20108b7819863192c1f4ad9816614f10"
+    },
+    {
+      "group": "milestones",
+      "key": "50-day",
+      "days": 50,
+      "id": "streak_50_day",
+      "state": "unlocked",
+      "svg": "ranked-exports/milestones/50-day-unlocked.svg",
+      "png": "ranked-exports/milestones/50-day-unlocked.png",
+      "svgHash": "254303a63a03191613ca8553d70e8e44d661d8a3269340adae1e1cbb27237a1e",
+      "pngHash": "3cfb92c414e4b4597c23dea00db9cf17a2ffec65f1f91a817876f89636365454"
+    },
+    {
+      "group": "milestones",
+      "key": "50-day",
+      "days": 50,
+      "id": "streak_50_day",
+      "state": "locked",
+      "svg": "ranked-exports/milestones/50-day-locked.svg",
+      "png": "ranked-exports/milestones/50-day-locked.png",
+      "svgHash": "866deb3b438c6061b9e1b8198a6ad5e310a5841be4f59d61458b75fed2e99cdf",
+      "pngHash": "0465a7244e44bfe0e319a525bf54cc59f0867b95166149eca31d54bc50dbe8b5"
+    },
+    {
+      "group": "milestones",
+      "key": "50-day",
+      "days": 50,
+      "id": "streak_50_day",
+      "state": "transparent",
+      "svg": "ranked-exports/milestones/50-day-transparent.svg",
+      "png": "ranked-exports/milestones/50-day-transparent.png",
+      "svgHash": "04f239be5c43c2e9839b1ce68be8bb21962bf539e77277aa1c2f2d08e8577343",
+      "pngHash": "7f1fb9ea17552c2ba7b06147c86f2efde305387d673d5e27714b0a14795eed4c"
+    },
+    {
+      "group": "milestones",
+      "key": "75-day",
+      "days": 75,
+      "id": "streak_75_day",
+      "state": "unlocked",
+      "svg": "ranked-exports/milestones/75-day-unlocked.svg",
+      "png": "ranked-exports/milestones/75-day-unlocked.png",
+      "svgHash": "ee93be9691baba54ef92f360417d7ea3dbc870d6b116d3bb63a6a885c8c54422",
+      "pngHash": "e777325dbbfd9d764f2e5479274003d828d1a19d8d00c5fa60969c88edf5feb7"
+    },
+    {
+      "group": "milestones",
+      "key": "75-day",
+      "days": 75,
+      "id": "streak_75_day",
+      "state": "locked",
+      "svg": "ranked-exports/milestones/75-day-locked.svg",
+      "png": "ranked-exports/milestones/75-day-locked.png",
+      "svgHash": "48030487c48f109ec80f948a688397d68ed387544f85d1f5aa7e5ef8ebc9212b",
+      "pngHash": "d5847cdb3922a20428456845c95a3c3409230fc1b42337c50c2bb170f8e0b47d"
+    },
+    {
+      "group": "milestones",
+      "key": "75-day",
+      "days": 75,
+      "id": "streak_75_day",
+      "state": "transparent",
+      "svg": "ranked-exports/milestones/75-day-transparent.svg",
+      "png": "ranked-exports/milestones/75-day-transparent.png",
+      "svgHash": "31272e3d533900c8193f6bccfa5c6b975a2fc9fe27dd071fd69111dd1c88297b",
+      "pngHash": "fac3131476d9c42880b6611426497f30461de5e0ee47f219793d25a3337b4c07"
+    },
+    {
+      "group": "milestones",
+      "key": "100-day",
+      "days": 100,
+      "id": "streak_100_day",
+      "state": "unlocked",
+      "svg": "ranked-exports/milestones/100-day-unlocked.svg",
+      "png": "ranked-exports/milestones/100-day-unlocked.png",
+      "svgHash": "63b99288ee4e6e8dc29478e9879644002ef4057a345d2ada76095e3cc4f49008",
+      "pngHash": "fb0bf0c1b82100a50cc7888ff60eeb2922a766ddc8a5a8540b55d274bf05f860"
+    },
+    {
+      "group": "milestones",
+      "key": "100-day",
+      "days": 100,
+      "id": "streak_100_day",
+      "state": "locked",
+      "svg": "ranked-exports/milestones/100-day-locked.svg",
+      "png": "ranked-exports/milestones/100-day-locked.png",
+      "svgHash": "8c875673b9abf09d094424f47cfad18fffa2e62bcc5d0d4f039486aef864a458",
+      "pngHash": "b7edae323e2eac233c9c7d76a70ba06d7b9da39ca5a5d7e026c1fb130b09c882"
+    },
+    {
+      "group": "milestones",
+      "key": "100-day",
+      "days": 100,
+      "id": "streak_100_day",
+      "state": "transparent",
+      "svg": "ranked-exports/milestones/100-day-transparent.svg",
+      "png": "ranked-exports/milestones/100-day-transparent.png",
+      "svgHash": "d0b184b6fa614cb0db1fcd3e448f09e6d6fc612240c05c8502d6507f067a5392",
+      "pngHash": "c5acf71412c42a666cf48ae8a8820dde77240c8ee2c5aae3d30d39bc2c2fc7f1"
+    },
+    {
+      "group": "milestones",
+      "key": "150-day",
+      "days": 150,
+      "id": "streak_150_day",
+      "state": "unlocked",
+      "svg": "ranked-exports/milestones/150-day-unlocked.svg",
+      "png": "ranked-exports/milestones/150-day-unlocked.png",
+      "svgHash": "47b204b0a73b990a7581cf076087f5af650dd4241a884358294c0d468f5dcf09",
+      "pngHash": "cdd8bc562d9a34334022a2ff951f52987fa1fe05380d35118177349cd31cd16b"
+    },
+    {
+      "group": "milestones",
+      "key": "150-day",
+      "days": 150,
+      "id": "streak_150_day",
+      "state": "locked",
+      "svg": "ranked-exports/milestones/150-day-locked.svg",
+      "png": "ranked-exports/milestones/150-day-locked.png",
+      "svgHash": "5bb78c59e88888b4762cff6d091f72491c6b113192dcb6ba393e860429cb374c",
+      "pngHash": "912bd3ef1cd99890364739685b7248c53109bb5c276192a4ead5e0d80dd4a24c"
+    },
+    {
+      "group": "milestones",
+      "key": "150-day",
+      "days": 150,
+      "id": "streak_150_day",
+      "state": "transparent",
+      "svg": "ranked-exports/milestones/150-day-transparent.svg",
+      "png": "ranked-exports/milestones/150-day-transparent.png",
+      "svgHash": "e1c74ed64aa46949c3da208a06f7b5083f35bdb737772daebdb77b752c393817",
+      "pngHash": "7381f9630548a4d729cd54e7620b9cc516588aa8c03166fa3aaf5c661a28a40a"
+    },
+    {
+      "group": "milestones",
+      "key": "200-day",
+      "days": 200,
+      "id": "streak_200_day",
+      "state": "unlocked",
+      "svg": "ranked-exports/milestones/200-day-unlocked.svg",
+      "png": "ranked-exports/milestones/200-day-unlocked.png",
+      "svgHash": "f456794813ff1d685fb3c7199f2179d6a2c5f458b0874f0e41b4502f57806f20",
+      "pngHash": "8bc62b14e472412abefec260cd7f7fdb8356c24be3c8ad44c5febbb961a3eb5e"
+    },
+    {
+      "group": "milestones",
+      "key": "200-day",
+      "days": 200,
+      "id": "streak_200_day",
+      "state": "locked",
+      "svg": "ranked-exports/milestones/200-day-locked.svg",
+      "png": "ranked-exports/milestones/200-day-locked.png",
+      "svgHash": "a9324c5dff84db235cbf874e829d15fa50d2843aa2a4afe6a016a836b8ebdc5a",
+      "pngHash": "9005dc4ddf0f767fc8b498d24c901ec8104ec4586a9f53d0d6d6c48554cea6e6"
+    },
+    {
+      "group": "milestones",
+      "key": "200-day",
+      "days": 200,
+      "id": "streak_200_day",
+      "state": "transparent",
+      "svg": "ranked-exports/milestones/200-day-transparent.svg",
+      "png": "ranked-exports/milestones/200-day-transparent.png",
+      "svgHash": "3428b3a54ed7be550728e7003a9b6392fd3ebf89fbb9fb7a48dc0a7c59e13c6c",
+      "pngHash": "984fa313d3c8fac6e467a7801af78c0215523e9623e0819e963bb35360218096"
+    },
+    {
+      "group": "milestones",
+      "key": "250-day",
+      "days": 250,
+      "id": "streak_250_day",
+      "state": "unlocked",
+      "svg": "ranked-exports/milestones/250-day-unlocked.svg",
+      "png": "ranked-exports/milestones/250-day-unlocked.png",
+      "svgHash": "088ba462eab5019390e9e94bb9d4eb19eebda19bc13cb2bfd6377457ed6099ab",
+      "pngHash": "e2179730dbddd4c5e6af366069e5ff510121e1ecd5eb41f0e16a5a7d24b7024b"
+    },
+    {
+      "group": "milestones",
+      "key": "250-day",
+      "days": 250,
+      "id": "streak_250_day",
+      "state": "locked",
+      "svg": "ranked-exports/milestones/250-day-locked.svg",
+      "png": "ranked-exports/milestones/250-day-locked.png",
+      "svgHash": "d39fdaee9c8001ed94c76eb259407d9da15eece3f1afeacaff51eb66ca8d07b3",
+      "pngHash": "f2143310447a4cbb2b39044892abd5838d02423ef5bf95e6714eb76abff25351"
+    },
+    {
+      "group": "milestones",
+      "key": "250-day",
+      "days": 250,
+      "id": "streak_250_day",
+      "state": "transparent",
+      "svg": "ranked-exports/milestones/250-day-transparent.svg",
+      "png": "ranked-exports/milestones/250-day-transparent.png",
+      "svgHash": "e9c9ee269f64064599017f8617d7fa470bd873982cda3893b0071d2684fc5497",
+      "pngHash": "cfb7e5df13810aa434e59c5d1aefc73aa2b1c2639a92e0abcc454b7ef4721e3c"
+    },
+    {
+      "group": "milestones",
+      "key": "300-day",
+      "days": 300,
+      "id": "streak_300_day",
+      "state": "unlocked",
+      "svg": "ranked-exports/milestones/300-day-unlocked.svg",
+      "png": "ranked-exports/milestones/300-day-unlocked.png",
+      "svgHash": "ea794c255b790fee89185d465a04e1598cfeb6d98502d677fa79298239891921",
+      "pngHash": "86358989569d8ad041545743607add20dc8afbc01fb0e77820e8e63414c8e4d1"
+    },
+    {
+      "group": "milestones",
+      "key": "300-day",
+      "days": 300,
+      "id": "streak_300_day",
+      "state": "locked",
+      "svg": "ranked-exports/milestones/300-day-locked.svg",
+      "png": "ranked-exports/milestones/300-day-locked.png",
+      "svgHash": "a61c9980b6d1d1d5676a9bac3f0dd32ba6b0399c9e4ef6f33dfa2cc3398c47b8",
+      "pngHash": "1083689782c0fb1fcc193877223745b184d914c65146bc870d685fa470dd8392"
+    },
+    {
+      "group": "milestones",
+      "key": "300-day",
+      "days": 300,
+      "id": "streak_300_day",
+      "state": "transparent",
+      "svg": "ranked-exports/milestones/300-day-transparent.svg",
+      "png": "ranked-exports/milestones/300-day-transparent.png",
+      "svgHash": "aeb1add396ad4dca828f0bc8d42949a601887163e98c712b0ce391d029dcca05",
+      "pngHash": "44602f0bb5711f50c3ab0d206efe2240637f9067cb62f5539dccf4fac41ab6d8"
+    },
+    {
+      "group": "milestones",
+      "key": "365-day",
+      "days": 365,
+      "id": "streak_365_day",
+      "state": "unlocked",
+      "svg": "ranked-exports/milestones/365-day-unlocked.svg",
+      "png": "ranked-exports/milestones/365-day-unlocked.png",
+      "svgHash": "276b4c1db361ede13779aad204ede4f13d0eb968ddafc8c191001c607477ba6f",
+      "pngHash": "5becb0e273263c771217308758a0305e491a25eb6658e213b5e1e79b3ebdc297"
+    },
+    {
+      "group": "milestones",
+      "key": "365-day",
+      "days": 365,
+      "id": "streak_365_day",
+      "state": "locked",
+      "svg": "ranked-exports/milestones/365-day-locked.svg",
+      "png": "ranked-exports/milestones/365-day-locked.png",
+      "svgHash": "4423aea9a49733b4958e1a9594bf40934c7fa5caa3e5a88e138e8788f0aa4ee7",
+      "pngHash": "5cacaa7773c04b958a39bfd2fca84fc867b661595342f7bcd01302c5deff3344"
+    },
+    {
+      "group": "milestones",
+      "key": "365-day",
+      "days": 365,
+      "id": "streak_365_day",
+      "state": "transparent",
+      "svg": "ranked-exports/milestones/365-day-transparent.svg",
+      "png": "ranked-exports/milestones/365-day-transparent.png",
+      "svgHash": "f7dcbfe480f9f347c24b0ed0b7b3e7141a82baa29a130c979780d7b8b5f1ce28",
+      "pngHash": "3edcd6ccef3e9a61f00e5cab60d4bccf3273d73e126e193ff9261864a2f182f8"
+    }
+  ],
+  "changedProductionFiles": []
+}

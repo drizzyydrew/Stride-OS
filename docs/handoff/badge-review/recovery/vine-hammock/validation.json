@@ -1,0 +1,927 @@
+{
+  "scope": "Recovery Week vine/hammock v2 preview, awaiting approval; no app changes",
+  "states": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "sizes": [
+    48,
+    64,
+    96,
+    128,
+    256
+  ],
+  "glyphBounds": [
+    20.422410559745558,
+    15.4,
+    79.57758944025444,
+    61.224999999999994
+  ],
+  "rasterChecks": [
+    {
+      "state": "unlocked",
+      "size": 48,
+      "key": "glyph",
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 48,
+      "key": "vines",
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 48,
+      "key": "hammock",
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 48,
+      "key": "title1",
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 48,
+      "key": "title2",
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "key": "glyph",
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "key": "vines",
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "key": "hammock",
+      "margins": [
+        23,
+        23
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "key": "title1",
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "key": "title2",
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "key": "glyph",
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "key": "vines",
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "key": "hammock",
+      "margins": [
+        35,
+        35
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "key": "title1",
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "key": "title2",
+      "margins": [
+        27,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "key": "glyph",
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "key": "vines",
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "key": "hammock",
+      "margins": [
+        46,
+        46
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "key": "title1",
+      "margins": [
+        26,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "key": "title2",
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "key": "glyph",
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "key": "vines",
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "key": "hammock",
+      "margins": [
+        93,
+        93
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "key": "title1",
+      "margins": [
+        53,
+        54
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "key": "title2",
+      "margins": [
+        74,
+        74
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "key": "glyph",
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "key": "vines",
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "key": "hammock",
+      "margins": [
+        292,
+        292
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "key": "title1",
+      "margins": [
+        168,
+        168
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "key": "title2",
+      "margins": [
+        231,
+        231
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "key": "glyph",
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "key": "vines",
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "key": "hammock",
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "key": "title1",
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "key": "title2",
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "key": "glyph",
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "key": "vines",
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "key": "hammock",
+      "margins": [
+        23,
+        23
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "key": "title1",
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "key": "title2",
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "key": "glyph",
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "key": "vines",
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "key": "hammock",
+      "margins": [
+        35,
+        35
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "key": "title1",
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "key": "title2",
+      "margins": [
+        27,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "key": "glyph",
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "key": "vines",
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "key": "hammock",
+      "margins": [
+        46,
+        46
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "key": "title1",
+      "margins": [
+        26,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "key": "title2",
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "key": "glyph",
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "key": "vines",
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "key": "hammock",
+      "margins": [
+        93,
+        93
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "key": "title1",
+      "margins": [
+        53,
+        54
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "key": "title2",
+      "margins": [
+        74,
+        74
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "key": "glyph",
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "key": "vines",
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "key": "hammock",
+      "margins": [
+        292,
+        292
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "key": "title1",
+      "margins": [
+        168,
+        168
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "key": "title2",
+      "margins": [
+        231,
+        231
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "key": "glyph",
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "key": "vines",
+      "margins": [
+        9,
+        9
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "key": "hammock",
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "key": "title1",
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "key": "title2",
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "key": "glyph",
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "key": "vines",
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "key": "hammock",
+      "margins": [
+        23,
+        23
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "key": "title1",
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "key": "title2",
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "key": "glyph",
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "key": "vines",
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "key": "hammock",
+      "margins": [
+        35,
+        35
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "key": "title1",
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "key": "title2",
+      "margins": [
+        27,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "key": "glyph",
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "key": "vines",
+      "margins": [
+        26,
+        26
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "key": "hammock",
+      "margins": [
+        46,
+        46
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "key": "title1",
+      "margins": [
+        26,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "key": "title2",
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "key": "glyph",
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "key": "vines",
+      "margins": [
+        52,
+        52
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "key": "hammock",
+      "margins": [
+        93,
+        93
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "key": "title1",
+      "margins": [
+        53,
+        54
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "key": "title2",
+      "margins": [
+        74,
+        74
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "key": "glyph",
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "key": "vines",
+      "margins": [
+        163,
+        163
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "key": "hammock",
+      "margins": [
+        292,
+        292
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "key": "title1",
+      "margins": [
+        168,
+        168
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "key": "title2",
+      "margins": [
+        231,
+        231
+      ],
+      "overlap": 0
+    }
+  ],
+  "preservedStrengthArtFiles": 60,
+  "preservedV1Files": 6,
+  "changedProductionFiles": [],
+  "status": "pass"
+}

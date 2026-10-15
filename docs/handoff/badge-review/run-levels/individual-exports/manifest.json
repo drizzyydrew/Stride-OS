@@ -1,0 +1,345 @@
+{
+  "family": "run-levels",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
+  },
+  "definitions": [
+    {
+      "id": "run_level_foundation",
+      "slug": "foundation",
+      "title": "Foundation",
+      "titleUpper": "FOUNDATION",
+      "tier": 1,
+      "thresholdMiles": 0,
+      "thresholdMeters": 0,
+      "ringCount": 5,
+      "colors": {
+        "outer": "#E8D9BE",
+        "mid": "#BDA882",
+        "highlight": "#FFF2D0",
+        "shadow": "#71634D",
+        "glow": "#D7C094"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-foundation-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-foundation-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-foundation-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-foundation-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-foundation-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-foundation-transparent.png"
+    },
+    {
+      "id": "run_level_rhythm",
+      "slug": "rhythm",
+      "title": "Rhythm",
+      "titleUpper": "RHYTHM",
+      "tier": 2,
+      "thresholdMiles": 50,
+      "thresholdMeters": 80467.2,
+      "ringCount": 5,
+      "colors": {
+        "outer": "#D07A3E",
+        "mid": "#9C4D22",
+        "highlight": "#F0B06B",
+        "shadow": "#5A2512",
+        "glow": "#BE642E"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-rhythm-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-rhythm-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-rhythm-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-rhythm-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-rhythm-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-rhythm-transparent.png"
+    },
+    {
+      "id": "run_level_momentum",
+      "slug": "momentum",
+      "title": "Momentum",
+      "titleUpper": "MOMENTUM",
+      "tier": 3,
+      "thresholdMiles": 150,
+      "thresholdMeters": 241401.6,
+      "ringCount": 5,
+      "colors": {
+        "outer": "#A8B585",
+        "mid": "#76875C",
+        "highlight": "#D7E2A8",
+        "shadow": "#3F4A31",
+        "glow": "#8FA16B"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-momentum-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-momentum-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-momentum-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-momentum-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-momentum-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-momentum-transparent.png"
+    },
+    {
+      "id": "run_level_durability",
+      "slug": "durability",
+      "title": "Durability",
+      "titleUpper": "DURABILITY",
+      "tier": 4,
+      "thresholdMiles": 400,
+      "thresholdMeters": 643737.6,
+      "ringCount": 5,
+      "colors": {
+        "outer": "#9FB3CA",
+        "mid": "#657E98",
+        "highlight": "#D2DFEC",
+        "shadow": "#344559",
+        "glow": "#7893AE"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-durability-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-durability-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-durability-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-durability-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-durability-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-durability-transparent.png"
+    },
+    {
+      "id": "run_level_engine",
+      "slug": "engine",
+      "title": "Engine",
+      "titleUpper": "ENGINE",
+      "tier": 5,
+      "thresholdMiles": 750,
+      "thresholdMeters": 1207008,
+      "ringCount": 6,
+      "colors": {
+        "outer": "#B5B4AE",
+        "mid": "#787973",
+        "highlight": "#D6D3C8",
+        "shadow": "#393A38",
+        "glow": "#9B9B94"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-engine-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-engine-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-engine-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-engine-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-engine-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-engine-transparent.png"
+    },
+    {
+      "id": "run_level_peak",
+      "slug": "peak",
+      "title": "Peak",
+      "titleUpper": "PEAK",
+      "tier": 6,
+      "thresholdMiles": 1500,
+      "thresholdMeters": 2414016,
+      "ringCount": 6,
+      "colors": {
+        "outer": "#8FA0B8",
+        "mid": "#61718A",
+        "highlight": "#C8D5E6",
+        "shadow": "#273140",
+        "glow": "#71849F"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-peak-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-peak-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-peak-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-peak-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-peak-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-peak-transparent.png"
+    },
+    {
+      "id": "run_level_summit",
+      "slug": "summit",
+      "title": "Summit",
+      "titleUpper": "SUMMIT",
+      "tier": 7,
+      "thresholdMiles": 3000,
+      "thresholdMeters": 4828032,
+      "ringCount": 6,
+      "colors": {
+        "outer": "#F1B64C",
+        "mid": "#C77F25",
+        "highlight": "#FFD982",
+        "shadow": "#6C3E13",
+        "glow": "#E69A2D"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-summit-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-summit-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-summit-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-summit-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-summit-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-summit-transparent.png"
+    }
+  ],
+  "files": [
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-foundation-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-foundation-unlocked.png",
+      "svgHash": "659becdc40c0c071b1fc73c96a2c96ca732d117aef1266af18aa8226225bb413",
+      "pngHash": "02653295437ca8cb83be50275521b5700b216cdfb1d79b0797063ed9fb4610b6"
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-foundation-locked.svg",
+      "png": "individual-exports/locked/run-level-foundation-locked.png",
+      "svgHash": "c52a724c889ac21b322c8290502b8a6d0cefdae4bbdb822f13228459d59a3bca",
+      "pngHash": "52ff7e5997c1516d7a400f7ec75dc410a9af8fe1600ff38e140109aec68bd36e"
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-foundation-transparent.svg",
+      "png": "individual-exports/transparent/run-level-foundation-transparent.png",
+      "svgHash": "76ec5feb191af3918e20471bb461a9a44b492c23b3b7081896eaa842b84db4bc",
+      "pngHash": "0c98cba3ed44bbcaba6ee37c363b911fbea9435b80855cb059b5a1a035dda526"
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-rhythm-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-rhythm-unlocked.png",
+      "svgHash": "011b4995802787508077964532fb0bb84d2359aef6bf96edf20d5f953b08e358",
+      "pngHash": "fc750b50feedef5f6cf12de2cf8cf9a031612cf6f4f9f9ce540bb79ca7df14f0"
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-rhythm-locked.svg",
+      "png": "individual-exports/locked/run-level-rhythm-locked.png",
+      "svgHash": "63c9738a6fe928ba50b3b14c3ca3241499809996fd3c8905154cb5cf0cda5064",
+      "pngHash": "6083fda2b5fa23805b37221f8c0aa0b6ff90acfbf8dd8a0f35dc9da35081ea04"
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-rhythm-transparent.svg",
+      "png": "individual-exports/transparent/run-level-rhythm-transparent.png",
+      "svgHash": "c3c32156e36cfdde73f2f69a72e0f8e13018d544560bb2882d01d2597dca15a0",
+      "pngHash": "bae83109c0e89920963a047e1040ca00288fb377fbca4d7b00b240819da49a09"
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-momentum-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-momentum-unlocked.png",
+      "svgHash": "4bba2725c2ccf0f6632f4ccb6264f5b8cd1add31a6c60f3c117d850eba6696fd",
+      "pngHash": "b6a6faad203316207e5442dae2b50e2ffabd17186e414c0c56c729804ea43fa6"
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-momentum-locked.svg",
+      "png": "individual-exports/locked/run-level-momentum-locked.png",
+      "svgHash": "91cc91b8f5bab7578c9b20e520d18c6abbef715b9153a49b4997b703627e1471",
+      "pngHash": "1dfee6dacf4e8b2e0dbeab4b8ae29b183d1444bfd360f452696aec9c23787060"
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-momentum-transparent.svg",
+      "png": "individual-exports/transparent/run-level-momentum-transparent.png",
+      "svgHash": "a8498ab2a05144621b3b7726110ca65fefc86f457915639e48ea68622e99e638",
+      "pngHash": "70382ceb8bfca604e79838496279f9fb692159c2e7b586658d0c4de96d7c09db"
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-durability-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-durability-unlocked.png",
+      "svgHash": "100ac5c5e6107b4b0ce2205547ccfa138485ad059680351c58f5d765db27a198",
+      "pngHash": "ed6205d11963618e4d7a2047d7a408b059dfc78c9ef5137501489124a930b8aa"
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-durability-locked.svg",
+      "png": "individual-exports/locked/run-level-durability-locked.png",
+      "svgHash": "eba2384874a3e287050f8def59cec115436663e84c66c2b692cb8a8b6c29730f",
+      "pngHash": "7a1b4c277147c9c47789b35ada00926b4fbbb770270ef8adf714cb4158a36001"
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-durability-transparent.svg",
+      "png": "individual-exports/transparent/run-level-durability-transparent.png",
+      "svgHash": "cb478a15ef671680b9b462623e3ce450b89555fac83eb8ec19ec24f46fc67c3e",
+      "pngHash": "24b26eebcda625894d1276a6afe0bbd26642bb8786c1c250bf3de3811b1e7b61"
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-engine-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-engine-unlocked.png",
+      "svgHash": "da78af6fe0eb85ba6355b9aa00da1cdec6810c8ff7bda32066e0d44e14b1c8b3",
+      "pngHash": "11545089f7cd3121ad81b001ccc49e3fbb8f2585b37a2ad9357b270f9bca3226"
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-engine-locked.svg",
+      "png": "individual-exports/locked/run-level-engine-locked.png",
+      "svgHash": "c03f48e891720427b02fa8d22ef73f68331e14b7a1a2915d69b5420a1a575b15",
+      "pngHash": "8843c5296713774e68efc2e0729d6ff41f332c869d4d4295519d87d38e01e002"
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-engine-transparent.svg",
+      "png": "individual-exports/transparent/run-level-engine-transparent.png",
+      "svgHash": "be4259352383e0f79a2c7af0d9e789546d69d04729dbb163380a970c6264cbf4",
+      "pngHash": "560e20fb0ed83561ba9a9fe00931a16b34573802ced722610ca5714b672e4925"
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-peak-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-peak-unlocked.png",
+      "svgHash": "a6211d68954cd4384b1a3a730470c12cdf76f2350b0c418d14bca17a5c531f8c",
+      "pngHash": "c31e8e27c4763f63aeb170820be7e34d71f988b6c5b39fa7ebbeb51ce3c0b4b7"
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-peak-locked.svg",
+      "png": "individual-exports/locked/run-level-peak-locked.png",
+      "svgHash": "73c70b99226b11f093a5e14302da0eb124b5be25814b1920c056dbedd36fadd5",
+      "pngHash": "1fd068e54d7f95ef9e75d65112b851015705fee20028cb125ceeb9b0d592fcba"
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-peak-transparent.svg",
+      "png": "individual-exports/transparent/run-level-peak-transparent.png",
+      "svgHash": "17135a2f8862a1da53bbc61ca8a809964439d6faea22586552568f0fdc0ccafe",
+      "pngHash": "52311147d8051ffe1853864fcc4c27fde19e8767945f46cb6500f34f91cc7a8b"
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-summit-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-summit-unlocked.png",
+      "svgHash": "c6a44753acefab2b0ed0ac94bd037d458dec848d03e37297b88960b5f156bc79",
+      "pngHash": "e631b33e6a310f7a257c0db0211de7e12ac14cf1706ca4a4b63a362c4ab51877"
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-summit-locked.svg",
+      "png": "individual-exports/locked/run-level-summit-locked.png",
+      "svgHash": "fa466bfaae996f76e9825d36c8a00b55e29320452aa06ea591bddd3d2d9b9e99",
+      "pngHash": "aaa113d66cd0a1d094002836ebae7f63e4b486116721a242d56e8f511d5a503a"
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-summit-transparent.svg",
+      "png": "individual-exports/transparent/run-level-summit-transparent.png",
+      "svgHash": "316c637c34259872334fbf40cca68d73bd1fb9dd84824681dd14f6bad74c9bc9",
+      "pngHash": "d2ccd286b5c781fcd271bef90ff2e846b8a61ffd0fb11b9c16086379bf18a36e"
+    }
+  ]
+}

@@ -1,0 +1,352 @@
+{
+  "definitions": [
+    {
+      "id": "run_level_foundation",
+      "slug": "foundation",
+      "title": "Foundation",
+      "titleUpper": "FOUNDATION",
+      "tier": 1,
+      "thresholdMiles": 0,
+      "thresholdMeters": 0,
+      "ringCount": 5,
+      "colors": {
+        "outer": "#E8D9BE",
+        "mid": "#BDA882",
+        "highlight": "#FFF2D0",
+        "shadow": "#71634D",
+        "glow": "#D7C094"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-foundation-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-foundation-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-foundation-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-foundation-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-foundation-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-foundation-transparent.png"
+    },
+    {
+      "id": "run_level_rhythm",
+      "slug": "rhythm",
+      "title": "Rhythm",
+      "titleUpper": "RHYTHM",
+      "tier": 2,
+      "thresholdMiles": 50,
+      "thresholdMeters": 80467.2,
+      "ringCount": 5,
+      "colors": {
+        "outer": "#D07A3E",
+        "mid": "#9C4D22",
+        "highlight": "#F0B06B",
+        "shadow": "#5A2512",
+        "glow": "#BE642E"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-rhythm-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-rhythm-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-rhythm-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-rhythm-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-rhythm-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-rhythm-transparent.png"
+    },
+    {
+      "id": "run_level_momentum",
+      "slug": "momentum",
+      "title": "Momentum",
+      "titleUpper": "MOMENTUM",
+      "tier": 3,
+      "thresholdMiles": 150,
+      "thresholdMeters": 241401.6,
+      "ringCount": 5,
+      "colors": {
+        "outer": "#A8B585",
+        "mid": "#76875C",
+        "highlight": "#D7E2A8",
+        "shadow": "#3F4A31",
+        "glow": "#8FA16B"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-momentum-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-momentum-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-momentum-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-momentum-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-momentum-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-momentum-transparent.png"
+    },
+    {
+      "id": "run_level_durability",
+      "slug": "durability",
+      "title": "Durability",
+      "titleUpper": "DURABILITY",
+      "tier": 4,
+      "thresholdMiles": 400,
+      "thresholdMeters": 643737.6,
+      "ringCount": 5,
+      "colors": {
+        "outer": "#9FB3CA",
+        "mid": "#657E98",
+        "highlight": "#D2DFEC",
+        "shadow": "#344559",
+        "glow": "#7893AE"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-durability-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-durability-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-durability-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-durability-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-durability-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-durability-transparent.png"
+    },
+    {
+      "id": "run_level_engine",
+      "slug": "engine",
+      "title": "Engine",
+      "titleUpper": "ENGINE",
+      "tier": 5,
+      "thresholdMiles": 750,
+      "thresholdMeters": 1207008,
+      "ringCount": 6,
+      "colors": {
+        "outer": "#B5B4AE",
+        "mid": "#787973",
+        "highlight": "#D6D3C8",
+        "shadow": "#393A38",
+        "glow": "#9B9B94"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-engine-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-engine-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-engine-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-engine-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-engine-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-engine-transparent.png"
+    },
+    {
+      "id": "run_level_peak",
+      "slug": "peak",
+      "title": "Peak",
+      "titleUpper": "PEAK",
+      "tier": 6,
+      "thresholdMiles": 1500,
+      "thresholdMeters": 2414016,
+      "ringCount": 6,
+      "colors": {
+        "outer": "#8FA0B8",
+        "mid": "#61718A",
+        "highlight": "#C8D5E6",
+        "shadow": "#273140",
+        "glow": "#71849F"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-peak-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-peak-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-peak-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-peak-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-peak-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-peak-transparent.png"
+    },
+    {
+      "id": "run_level_summit",
+      "slug": "summit",
+      "title": "Summit",
+      "titleUpper": "SUMMIT",
+      "tier": 7,
+      "thresholdMiles": 3000,
+      "thresholdMeters": 4828032,
+      "ringCount": 6,
+      "colors": {
+        "outer": "#F1B64C",
+        "mid": "#C77F25",
+        "highlight": "#FFD982",
+        "shadow": "#6C3E13",
+        "glow": "#E69A2D"
+      },
+      "artworkPath": "assets/achievements/system/run-levels/run-level-summit-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/system/run-levels/run-level-summit-locked.svg",
+      "unlockedPngPath": "assets/achievements/system/run-levels/run-level-summit-unlocked.png",
+      "lockedPngPath": "assets/achievements/system/run-levels/run-level-summit-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/system/run-levels/run-level-summit-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/system/run-levels/run-level-summit-transparent.png"
+    }
+  ],
+  "sources": {
+    "src/achievements/runLevels/runLevelDefinitions.ts": "da29bf1a92d0a8e264476d5b42d5c4a74489c13c2ee173087ecc8c83ba9f3756",
+    "src/achievements/runLevels/runLevelThresholds.ts": "764da0c579f7f0d5c02bcae3a52da79e749145a110ed7d4c001f8bef8f9539af",
+    "src/achievements/runLevels/runLevelArtwork.ts": "d3853dcc6cffe98b2645af2c086cb93cbe33e6bfb7e192929bb2c5e7214bea16",
+    "src/achievements/runLevels/runLevelColors.ts": "b17b52985c1681d16291f2ee29eef87c154eaae3fbb8c4c11d4eb62d99eb8b3b"
+  },
+  "outer": "M121.05 17.97 Q128.00 14.00 134.95 17.97 L219.05 66.03 Q226.00 70.00 226.00 78.00 L226.00 173.00 Q226.00 181.00 219.08 185.02 L134.92 233.98 Q128.00 238.00 121.08 233.98 L36.92 185.02 Q30.00 181.00 30.00 173.00 L30.00 78.00 Q30.00 70.00 36.95 66.03 Z",
+  "bevel": "M121.27 24.23 Q128.00 20.38 134.73 24.23 L213.78 69.40 Q220.51 73.25 220.51 81.00 L220.51 170.28 Q220.51 178.03 213.81 181.93 L134.70 227.94 Q128.00 231.84 121.30 227.94 L42.19 181.93 Q35.49 178.03 35.49 170.28 L35.49 81.00 Q35.49 73.25 42.22 69.40 Z",
+  "mountain": {
+    "rearMass": "M61 141 C79 136 92 127 106 120 L121 130 L137 101 L154 124 L166 117 C176 128 187 136 197 141 C180 139 169 133 160 127 L149 140 L130 134 L116 141 L101 132 L84 141 Z",
+    "leftRear": "M69 140 L103 120 L119 130 L107 137 L89 142 Z",
+    "leftFace": "M83 140 L111 126 L123 132 L116 141 Z",
+    "centerShadow": "M120 141 L137 101 L151 140 Z",
+    "centerFace": "M121 140 L137 101 L131 128 L116 141 Z",
+    "centerHighlight": "M137 101 L142 126 L151 140 L132 128 Z",
+    "rightRear": "M145 140 L154 124 L190 141 L168 139 L158 132 Z",
+    "rightFace": "M151 140 L160 130 L178 140 Z",
+    "ridge": "M66 141 C82 136 94 129 106 120 M117 140 L137 101 L158 128 M146 136 L160 121 L193 141"
+  },
+  "rings": {
+    "foundation": [
+      {
+        "inset": 14,
+        "path": "M40.98 137.61 L40.98 82.58 Q40.98 76.50 46.25 73.48 L122.72 29.78 Q128.00 26.77 133.28 29.78 L209.75 73.48 Q215.02 76.50 215.02 82.58 L215.02 137.61"
+      },
+      {
+        "inset": 23.6,
+        "path": "M48.50 136.78 L48.50 86.74 Q48.50 80.95 53.53 78.08 L122.97 38.40 Q128.00 35.52 133.03 38.40 L202.47 78.08 Q207.50 80.95 207.50 86.74 L207.50 136.78"
+      },
+      {
+        "inset": 33.2,
+        "path": "M56.03 135.95 L56.03 90.91 Q56.03 85.40 60.81 82.67 L123.22 47.01 Q128.00 44.28 132.78 47.01 L195.19 82.67 Q199.97 85.40 199.97 90.91 L199.97 135.95"
+      },
+      {
+        "inset": 42.8,
+        "path": "M63.56 135.12 L63.56 95.08 Q63.56 89.86 68.08 87.27 L123.47 55.62 Q128.00 53.03 132.53 55.62 L187.92 87.27 Q192.44 89.86 192.44 95.08 L192.44 135.12"
+      },
+      {
+        "inset": 52.4,
+        "path": "M71.08 134.28 L71.08 99.24 Q71.08 94.31 75.36 91.87 L123.72 64.23 Q128.00 61.79 132.28 64.23 L180.64 91.87 Q184.92 94.31 184.92 99.24 L184.92 134.28"
+      }
+    ],
+    "rhythm": [
+      {
+        "inset": 14,
+        "path": "M40.98 137.61 L40.98 82.58 Q40.98 76.50 46.25 73.48 L122.72 29.78 Q128.00 26.77 133.28 29.78 L209.75 73.48 Q215.02 76.50 215.02 82.58 L215.02 137.61"
+      },
+      {
+        "inset": 23.6,
+        "path": "M48.50 136.78 L48.50 86.74 Q48.50 80.95 53.53 78.08 L122.97 38.40 Q128.00 35.52 133.03 38.40 L202.47 78.08 Q207.50 80.95 207.50 86.74 L207.50 136.78"
+      },
+      {
+        "inset": 33.2,
+        "path": "M56.03 135.95 L56.03 90.91 Q56.03 85.40 60.81 82.67 L123.22 47.01 Q128.00 44.28 132.78 47.01 L195.19 82.67 Q199.97 85.40 199.97 90.91 L199.97 135.95"
+      },
+      {
+        "inset": 42.8,
+        "path": "M63.56 135.12 L63.56 95.08 Q63.56 89.86 68.08 87.27 L123.47 55.62 Q128.00 53.03 132.53 55.62 L187.92 87.27 Q192.44 89.86 192.44 95.08 L192.44 135.12"
+      },
+      {
+        "inset": 52.4,
+        "path": "M71.08 134.28 L71.08 99.24 Q71.08 94.31 75.36 91.87 L123.72 64.23 Q128.00 61.79 132.28 64.23 L180.64 91.87 Q184.92 94.31 184.92 99.24 L184.92 134.28"
+      }
+    ],
+    "momentum": [
+      {
+        "inset": 14,
+        "path": "M40.98 137.61 L40.98 82.58 Q40.98 76.50 46.25 73.48 L122.72 29.78 Q128.00 26.77 133.28 29.78 L209.75 73.48 Q215.02 76.50 215.02 82.58 L215.02 137.61"
+      },
+      {
+        "inset": 23.6,
+        "path": "M48.50 136.78 L48.50 86.74 Q48.50 80.95 53.53 78.08 L122.97 38.40 Q128.00 35.52 133.03 38.40 L202.47 78.08 Q207.50 80.95 207.50 86.74 L207.50 136.78"
+      },
+      {
+        "inset": 33.2,
+        "path": "M56.03 135.95 L56.03 90.91 Q56.03 85.40 60.81 82.67 L123.22 47.01 Q128.00 44.28 132.78 47.01 L195.19 82.67 Q199.97 85.40 199.97 90.91 L199.97 135.95"
+      },
+      {
+        "inset": 42.8,
+        "path": "M63.56 135.12 L63.56 95.08 Q63.56 89.86 68.08 87.27 L123.47 55.62 Q128.00 53.03 132.53 55.62 L187.92 87.27 Q192.44 89.86 192.44 95.08 L192.44 135.12"
+      },
+      {
+        "inset": 52.4,
+        "path": "M71.08 134.28 L71.08 99.24 Q71.08 94.31 75.36 91.87 L123.72 64.23 Q128.00 61.79 132.28 64.23 L180.64 91.87 Q184.92 94.31 184.92 99.24 L184.92 134.28"
+      }
+    ],
+    "durability": [
+      {
+        "inset": 14,
+        "path": "M40.98 137.61 L40.98 82.58 Q40.98 76.50 46.25 73.48 L122.72 29.78 Q128.00 26.77 133.28 29.78 L209.75 73.48 Q215.02 76.50 215.02 82.58 L215.02 137.61"
+      },
+      {
+        "inset": 23.6,
+        "path": "M48.50 136.78 L48.50 86.74 Q48.50 80.95 53.53 78.08 L122.97 38.40 Q128.00 35.52 133.03 38.40 L202.47 78.08 Q207.50 80.95 207.50 86.74 L207.50 136.78"
+      },
+      {
+        "inset": 33.2,
+        "path": "M56.03 135.95 L56.03 90.91 Q56.03 85.40 60.81 82.67 L123.22 47.01 Q128.00 44.28 132.78 47.01 L195.19 82.67 Q199.97 85.40 199.97 90.91 L199.97 135.95"
+      },
+      {
+        "inset": 42.8,
+        "path": "M63.56 135.12 L63.56 95.08 Q63.56 89.86 68.08 87.27 L123.47 55.62 Q128.00 53.03 132.53 55.62 L187.92 87.27 Q192.44 89.86 192.44 95.08 L192.44 135.12"
+      },
+      {
+        "inset": 52.4,
+        "path": "M71.08 134.28 L71.08 99.24 Q71.08 94.31 75.36 91.87 L123.72 64.23 Q128.00 61.79 132.28 64.23 L180.64 91.87 Q184.92 94.31 184.92 99.24 L184.92 134.28"
+      }
+    ],
+    "engine": [
+      {
+        "inset": 14,
+        "path": "M40.98 137.61 L40.98 82.58 Q40.98 76.50 46.25 73.48 L122.72 29.78 Q128.00 26.77 133.28 29.78 L209.75 73.48 Q215.02 76.50 215.02 82.58 L215.02 137.61"
+      },
+      {
+        "inset": 23.6,
+        "path": "M48.50 136.78 L48.50 86.74 Q48.50 80.95 53.53 78.08 L122.97 38.40 Q128.00 35.52 133.03 38.40 L202.47 78.08 Q207.50 80.95 207.50 86.74 L207.50 136.78"
+      },
+      {
+        "inset": 33.2,
+        "path": "M56.03 135.95 L56.03 90.91 Q56.03 85.40 60.81 82.67 L123.22 47.01 Q128.00 44.28 132.78 47.01 L195.19 82.67 Q199.97 85.40 199.97 90.91 L199.97 135.95"
+      },
+      {
+        "inset": 42.8,
+        "path": "M63.56 135.12 L63.56 95.08 Q63.56 89.86 68.08 87.27 L123.47 55.62 Q128.00 53.03 132.53 55.62 L187.92 87.27 Q192.44 89.86 192.44 95.08 L192.44 135.12"
+      },
+      {
+        "inset": 52.4,
+        "path": "M71.08 134.28 L71.08 99.24 Q71.08 94.31 75.36 91.87 L123.72 64.23 Q128.00 61.79 132.28 64.23 L180.64 91.87 Q184.92 94.31 184.92 99.24 L184.92 134.28"
+      },
+      {
+        "inset": 62,
+        "path": "M78.61 133.45 L78.61 103.41 Q78.61 98.77 82.64 96.47 L123.97 72.85 Q128.00 70.54 132.03 72.85 L173.36 96.47 Q177.39 98.77 177.39 103.41 L177.39 133.45"
+      }
+    ],
+    "peak": [
+      {
+        "inset": 14,
+        "path": "M40.98 137.61 L40.98 82.58 Q40.98 76.50 46.25 73.48 L122.72 29.78 Q128.00 26.77 133.28 29.78 L209.75 73.48 Q215.02 76.50 215.02 82.58 L215.02 137.61"
+      },
+      {
+        "inset": 23.6,
+        "path": "M48.50 136.78 L48.50 86.74 Q48.50 80.95 53.53 78.08 L122.97 38.40 Q128.00 35.52 133.03 38.40 L202.47 78.08 Q207.50 80.95 207.50 86.74 L207.50 136.78"
+      },
+      {
+        "inset": 33.2,
+        "path": "M56.03 135.95 L56.03 90.91 Q56.03 85.40 60.81 82.67 L123.22 47.01 Q128.00 44.28 132.78 47.01 L195.19 82.67 Q199.97 85.40 199.97 90.91 L199.97 135.95"
+      },
+      {
+        "inset": 42.8,
+        "path": "M63.56 135.12 L63.56 95.08 Q63.56 89.86 68.08 87.27 L123.47 55.62 Q128.00 53.03 132.53 55.62 L187.92 87.27 Q192.44 89.86 192.44 95.08 L192.44 135.12"
+      },
+      {
+        "inset": 52.4,
+        "path": "M71.08 134.28 L71.08 99.24 Q71.08 94.31 75.36 91.87 L123.72 64.23 Q128.00 61.79 132.28 64.23 L180.64 91.87 Q184.92 94.31 184.92 99.24 L184.92 134.28"
+      },
+      {
+        "inset": 62,
+        "path": "M78.61 133.45 L78.61 103.41 Q78.61 98.77 82.64 96.47 L123.97 72.85 Q128.00 70.54 132.03 72.85 L173.36 96.47 Q177.39 98.77 177.39 103.41 L177.39 133.45"
+      }
+    ],
+    "summit": [
+      {
+        "inset": 14,
+        "path": "M40.98 137.61 L40.98 82.58 Q40.98 76.50 46.25 73.48 L122.72 29.78 Q128.00 26.77 133.28 29.78 L209.75 73.48 Q215.02 76.50 215.02 82.58 L215.02 137.61"
+      },
+      {
+        "inset": 23.6,
+        "path": "M48.50 136.78 L48.50 86.74 Q48.50 80.95 53.53 78.08 L122.97 38.40 Q128.00 35.52 133.03 38.40 L202.47 78.08 Q207.50 80.95 207.50 86.74 L207.50 136.78"
+      },
+      {
+        "inset": 33.2,
+        "path": "M56.03 135.95 L56.03 90.91 Q56.03 85.40 60.81 82.67 L123.22 47.01 Q128.00 44.28 132.78 47.01 L195.19 82.67 Q199.97 85.40 199.97 90.91 L199.97 135.95"
+      },
+      {
+        "inset": 42.8,
+        "path": "M63.56 135.12 L63.56 95.08 Q63.56 89.86 68.08 87.27 L123.47 55.62 Q128.00 53.03 132.53 55.62 L187.92 87.27 Q192.44 89.86 192.44 95.08 L192.44 135.12"
+      },
+      {
+        "inset": 52.4,
+        "path": "M71.08 134.28 L71.08 99.24 Q71.08 94.31 75.36 91.87 L123.72 64.23 Q128.00 61.79 132.28 64.23 L180.64 91.87 Q184.92 94.31 184.92 99.24 L184.92 134.28"
+      },
+      {
+        "inset": 62,
+        "path": "M78.61 133.45 L78.61 103.41 Q78.61 98.77 82.64 96.47 L123.97 72.85 Q128.00 70.54 132.03 72.85 L173.36 96.47 Q177.39 98.77 177.39 103.41 L177.39 133.45"
+      }
+    ]
+  }
+}

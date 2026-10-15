@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 100 100" fill="none" aria-label="First Strength Workout unlocked vector preview">
+  <defs>
+    <linearGradient id="edge" x1="20" y1="4" x2="80" y2="95" gradientUnits="userSpaceOnUse"><stop stop-color="#EED6A2"/><stop offset=".5" stop-color="#E7C486"/><stop offset="1" stop-color="#BD9560"/></linearGradient>
+    <radialGradient id="ambient"><stop stop-color="#E7C486" stop-opacity=".025"/><stop offset="1" stop-color="#E7C486" stop-opacity="0"/></radialGradient>
+  </defs>
+  <path d="M50 4 Q52.4 4 54.5 5.2 L84.8 22.6 Q87 23.9 87 26.5 L87 72 Q87 74.6 84.8 75.9 L54.5 93.8 Q52.4 95 50 95 Q47.6 95 45.5 93.8 L15.2 75.9 Q13 74.6 13 72 L13 26.5 Q13 23.9 15.2 22.6 L45.5 5.2 Q47.6 4 50 4 Z" fill="#090A07" stroke="url(#edge)" stroke-width="1.02" stroke-linejoin="round"/>
+  <ellipse cx="50" cy="35" rx="30" ry="27" fill="url(#ambient)"/>
+<g data-glyph="canonical-strength-dumbbell-outline" data-source-sha256="6ba444667f049de576e1fbca6da9f2c93499d1133619167a7e8bb0ba0c8de0fb" stroke="#E7C486" stroke-linecap="round" stroke-linejoin="round"><path d="M24.6 38.9 H25.975 M28.225 38.9 H29.975 M32.225 38.9 H35.075 M37.325 38.9 H62.675 M64.925 38.9 H67.775 M70.025 38.9 H71.775 M74.025 38.9 H75.4" stroke-width="1.15"/><rect x="25.975" y="34.9" width="2.25" height="8" rx=".55" stroke-width=".75"/><rect x="29.975" y="31.8" width="2.25" height="14.2" rx=".55" stroke-width=".75"/><rect x="35.075" y="29.4" width="2.25" height="19" rx=".55" stroke-width=".75"/><rect x="62.675" y="29.4" width="2.25" height="19" rx=".55" stroke-width=".75"/><rect x="67.775" y="31.8" width="2.25" height="14.2" rx=".55" stroke-width=".75"/><rect x="71.775" y="34.9" width="2.25" height="8" rx=".55" stroke-width=".75"/></g>  <text x="50" y="61.3" text-anchor="middle" font-family="Arial Narrow, sans-serif" font-size="7.7" font-weight="400" fill="#EED6A2">FIRST STRENGTH</text>
+  <text x="50" y="69.1" text-anchor="middle" font-family="Arial Narrow, sans-serif" font-size="7.7" font-weight="400" fill="#EED6A2">WORKOUT</text>
+  <text x="50" y="76.6" text-anchor="middle" font-family="Arial, sans-serif" font-size="4.35" letter-spacing=".65" font-weight="400" fill="#EED6A2">STRIDEOS</text>
+  <path d="M45.1 81.6 L50 84.5 L54.9 81.6 M45.4 85.2 L50 88 L54.6 85.2" stroke="#E7C486" stroke-width=".73" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

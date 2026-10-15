@@ -1,0 +1,166 @@
+{
+  "definitions": [
+    {
+      "id": "monthly_run_25k",
+      "slug": "25k",
+      "thresholdKm": 25,
+      "thresholdMeters": 25000,
+      "tier": 1,
+      "tierToken": "monthlyDistance25K",
+      "colors": {
+        "primary": "#9DE67B",
+        "highlight": "#CDF6A3",
+        "shadow": "#4F7943",
+        "glow": "#7BCC5D"
+      },
+      "milestoneLabel": "25K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-25k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-25k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-25k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-25k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-25k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-25k-transparent.png",
+      "label": "25K"
+    },
+    {
+      "id": "monthly_run_50k",
+      "slug": "50k",
+      "thresholdKm": 50,
+      "thresholdMeters": 50000,
+      "tier": 2,
+      "tierToken": "monthlyDistance50K",
+      "colors": {
+        "primary": "#31D8D4",
+        "highlight": "#92F6F2",
+        "shadow": "#087A7D",
+        "glow": "#18B9B5"
+      },
+      "milestoneLabel": "50K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-50k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-50k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-50k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-50k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-50k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-50k-transparent.png",
+      "label": "50K"
+    },
+    {
+      "id": "monthly_run_100k",
+      "slug": "100k",
+      "thresholdKm": 100,
+      "thresholdMeters": 100000,
+      "tier": 3,
+      "tierToken": "monthlyDistance100K",
+      "colors": {
+        "primary": "#78B7F6",
+        "highlight": "#B8DFFF",
+        "shadow": "#265D9F",
+        "glow": "#4A96DD"
+      },
+      "milestoneLabel": "100K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-100k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-100k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-100k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-100k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-100k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-100k-transparent.png",
+      "label": "100K"
+    },
+    {
+      "id": "monthly_run_150k",
+      "slug": "150k",
+      "thresholdKm": 150,
+      "thresholdMeters": 150000,
+      "tier": 4,
+      "tierToken": "monthlyDistance150K",
+      "colors": {
+        "primary": "#8A70FF",
+        "highlight": "#C4B3FF",
+        "shadow": "#43328E",
+        "glow": "#775CDE"
+      },
+      "milestoneLabel": "150K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-150k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-150k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-150k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-150k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-150k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-150k-transparent.png",
+      "label": "150K"
+    },
+    {
+      "id": "monthly_run_200k",
+      "slug": "200k",
+      "thresholdKm": 200,
+      "thresholdMeters": 200000,
+      "tier": 5,
+      "tierToken": "monthlyDistance200K",
+      "colors": {
+        "primary": "#D861EA",
+        "highlight": "#F2BBFF",
+        "shadow": "#7A2D86",
+        "glow": "#BC40D2"
+      },
+      "milestoneLabel": "200K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-200k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-200k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-200k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-200k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-200k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-200k-transparent.png",
+      "label": "200K"
+    },
+    {
+      "id": "monthly_run_250k",
+      "slug": "250k",
+      "thresholdKm": 250,
+      "thresholdMeters": 250000,
+      "tier": 6,
+      "tierToken": "monthlyDistance250K",
+      "colors": {
+        "primary": "#FF674B",
+        "highlight": "#FFC0A8",
+        "shadow": "#A52C1B",
+        "glow": "#E64E34"
+      },
+      "milestoneLabel": "250K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-250k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-250k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-250k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-250k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-250k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-250k-transparent.png",
+      "label": "250K"
+    },
+    {
+      "id": "monthly_run_300k",
+      "slug": "300k",
+      "thresholdKm": 300,
+      "thresholdMeters": 300000,
+      "tier": 7,
+      "tierToken": "monthlyDistance300K",
+      "colors": {
+        "primary": "#F5A42D",
+        "highlight": "#FFD38A",
+        "shadow": "#9B5A10",
+        "glow": "#D98119"
+      },
+      "milestoneLabel": "300K",
+      "artworkPath": "assets/achievements/monthly-distance/monthly-distance-300k-unlocked.svg",
+      "lockedArtworkPath": "assets/achievements/monthly-distance/monthly-distance-300k-locked.svg",
+      "unlockedPngPath": "assets/achievements/monthly-distance/monthly-distance-300k-unlocked.png",
+      "lockedPngPath": "assets/achievements/monthly-distance/monthly-distance-300k-locked.png",
+      "shareTransparentSvgPath": "assets/achievements/monthly-distance/monthly-distance-300k-transparent.svg",
+      "shareTransparentPngPath": "assets/achievements/monthly-distance/monthly-distance-300k-transparent.png",
+      "label": "300K"
+    }
+  ],
+  "sources": {
+    "src/achievements/monthlyDistance/monthlyDistanceDefinitions.ts": "1aa7e2d39d0f0f5211c63fd59277563919db4d579e89c9aaf94ca3c2f1857e59",
+    "src/achievements/monthlyDistance/monthlyDistanceThresholds.ts": "16b470459ef90107ff0c4ba8aa3cacb7558042a6adf008d890aeb1b6ff2c5227",
+    "src/achievements/monthlyDistance/monthlyDistanceTokens.ts": "f530f14f140f0ef23861b0b8386192cf887c738e4f4ee50f933e37e44db26f9c",
+    "src/achievements/monthlyDistance/monthlyDistanceUtils.ts": "f37b4a39b22b750f5ed8da89068d4a8bd77d3e148df89f725f2a4b5fe8479330",
+    "src/achievements/monthlyDistance/monthlyDistanceArtwork.ts": "75505b670fbd965d3956c579f139a23a195f4191c3c543c61cd00e156ce5a8c2",
+    "src/utils/achievements.ts": "143a085d4e39e8473c0d7e91c2be5738c05a7a273b33d449506f5d514d293d72"
+  }
+}

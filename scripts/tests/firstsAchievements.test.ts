@@ -227,14 +227,33 @@ test('Firsts glyph contracts distinguish the approved concepts', () => {
   const firstWalk = renderFirstAchievementBadgeSvg('first_walk', 'unlocked');
   const runWalk = renderFirstAchievementBadgeSvg('first_run_walk', 'unlocked');
   const movementLab = renderFirstAchievementBadgeSvg('first_movement_lab_analysis', 'unlocked');
-  assert.match(firstActivity, /C34\.2 27\.8 39\.7 27\.8 42\.1 34\.1/);
-  assert.match(firstRun, /H30\.6/);
-  assert.doesNotMatch(firstWalk, /H30\.6/);
-  assert.match(runWalk, /stroke-dasharray="1\.1 2\.7"/);
+  assert.match(firstActivity, /M43\.1 32\.5 C43\.1 23\.3 56\.9 23\.3 56\.9 32\.5/);
+  assert.match(firstRun, /data-motion-lines="4"/);
+  assert.doesNotMatch(firstWalk, /data-motion-lines/);
+  assert.match(firstRun, /data-body="continuous-silhouette"/);
+  assert.match(firstWalk, /data-body="continuous-silhouette"/);
+  assert.match(runWalk, /stroke-dasharray="2 2\.3"/);
   assert.match(renderFirstAchievementBadgeSvg('first_strength_workout', 'unlocked'), /canonical-strength-dumbbell/);
-  assert.match(movementLab, /H36\.6/);
-  assert.match(movementLab, /L50 31 L57\.1 32\.6/);
+  assert.match(movementLab, /neutral-landmark-analysis/);
+  assert.match(movementLab, /data-landmark="15"/);
   assert.doesNotMatch(movementLab, /stroke-dasharray/);
+});
+
+test('Firsts production artwork preserves the approved frame and corrected Mobility', () => {
+  for (const definition of FIRST_ACHIEVEMENT_DEFINITIONS) {
+    const svg = renderFirstAchievementBadgeSvg(definition.id);
+    assert.match(svg, /stroke-width="1\.02"/);
+    assert.match(svg, /data-chevrons="2"/);
+    assert.doesNotMatch(svg, /<text\b|font-family=/);
+    assert.doesNotMatch(svg, /currentColor|\{\{[^}]+\}\}/);
+    assert.match(svg, /data-wordmark="STRIDEOS"/);
+  }
+  const mobility = renderFirstAchievementBadgeSvg('first_mobility_workout');
+  assert.match(mobility, /data-head="floating" cx="44\.4" cy="29"/);
+  assert.match(mobility, /data-range-arc="upper"/);
+  assert.match(mobility, /L36\.5 43\.8/);
+  assert.doesNotMatch(mobility, /<mask\b/);
+  assert.doesNotMatch(renderFirstAchievementBadgeSvg('first_run', 'unlocked', { compact: true }), /data-wordmark|data-chevrons/);
 });
 
 test('Firsts accessibility labels include status and race units where relevant', () => {

@@ -1,0 +1,15 @@
+{
+  "boundaryTransitions": 18,
+  "milestones": 10,
+  "states": 3,
+  "desktop": [
+    1280,
+    900
+  ],
+  "mobile": [
+    390,
+    844
+  ],
+  "pageErrors": [],
+  "horizontalOverflow": false
+}

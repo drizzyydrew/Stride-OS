@@ -1,0 +1,100 @@
+{
+  "definitions": [
+    {
+      "id": "recovery_week_completed",
+      "slug": "week-completed",
+      "title": "Recovery Week Completed",
+      "titleLines": [
+        "RECOVERY WEEK",
+        "COMPLETED"
+      ],
+      "glyph": "recoveryWeek",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "progressKind": "binary"
+    },
+    {
+      "id": "recovery_sleep_consistency",
+      "slug": "sleep-consistency",
+      "title": "Sleep Consistency Achieved",
+      "titleLines": [
+        "SLEEP CONSISTENCY",
+        "ACHIEVED"
+      ],
+      "glyph": "sleepCycle",
+      "threshold": 7,
+      "thresholdUnit": "days",
+      "progressKind": "nights"
+    },
+    {
+      "id": "recovery_smart_rest_day",
+      "slug": "smart-rest-day",
+      "title": "Smart Rest Day",
+      "titleLines": [
+        "SMART REST DAY"
+      ],
+      "glyph": "smartRest",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "progressKind": "binary"
+    },
+    {
+      "id": "recovery_readiness_respected",
+      "slug": "readiness-respected",
+      "title": "Readiness Respected",
+      "titleLines": [
+        "READINESS",
+        "RESPECTED"
+      ],
+      "glyph": "readinessHammock",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "progressKind": "binary"
+    },
+    {
+      "id": "recovery_symptoms_reported_early",
+      "slug": "symptoms-reported-early",
+      "title": "Symptoms Reported Early",
+      "titleLines": [
+        "SYMPTOMS",
+        "REPORTED EARLY"
+      ],
+      "glyph": "symptomsSignal",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "progressKind": "binary"
+    },
+    {
+      "id": "recovery_check_in_streak",
+      "slug": "check-in-streak",
+      "title": "Check-In Streak",
+      "titleLines": [
+        "CHECK-IN",
+        "STREAK"
+      ],
+      "glyph": "checkInRipples",
+      "threshold": 7,
+      "thresholdUnit": "days",
+      "progressKind": "checkIns"
+    },
+    {
+      "id": "recovery_returned_gradually",
+      "slug": "returned-gradually",
+      "title": "Returned Gradually",
+      "titleLines": [
+        "RETURNED",
+        "GRADUALLY"
+      ],
+      "glyph": "returnedGradually",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "progressKind": "binary"
+    }
+  ],
+  "sources": {
+    "src/achievements/recovery/recoveryDefinitions.ts": "71c0744f6c31b97e731596241d358ca360fce5c0f80d99a7e7e8f2992998c368",
+    "src/achievements/recovery/recoveryArtwork.ts": "be10967e967affea6cdda8103709f8d14b8971ee12b5e884defcc9720c48773c",
+    "src/achievements/recovery/recoveryTokens.ts": "f9dfa7aba8f922cff856bfcf1d5df5f1c57436481efb804d189090acfd6fdec5",
+    "src/achievements/recovery/recoveryUtils.ts": "4cb19e42e9e7e9a37213d4b1ad4cb5407c29699931060cc798ad18f5d0412047"
+  }
+}

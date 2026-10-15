@@ -4,6 +4,8 @@ import { PNG } from 'pngjs';
 
 import { FIRST_ACHIEVEMENT_DEFINITIONS } from '../src/achievements/firsts/firstsDefinitions';
 import { FIRSTS_COLORS } from '../src/achievements/firsts/firstsTokens';
+import { renderFirstAchievementBadgeSvg } from '../src/achievements/firsts/firstsArtwork';
+import { firstsRasterizer } from './lib/firstsRasterizer';
 
 const ASSET_DIR = path.resolve(process.cwd(), 'assets/achievements/firsts');
 const EXPECTED_VIEWBOX = '0 0 100 100';
@@ -77,70 +79,94 @@ function validateSvg(assetPath: string): string {
   return svg;
 }
 
-const warmHexes = Object.values(FIRSTS_COLORS).map(value => value.toLowerCase());
-let checked = 0;
+async function validate(): Promise<void> {
+  const warmHexes = Object.values(FIRSTS_COLORS).map(value => value.toLowerCase());
+  let checked = 0;
 
-for (const definition of FIRST_ACHIEVEMENT_DEFINITIONS) {
-  const allPaths = [
-    definition.artworkPath,
-    definition.lockedArtworkPath,
-    definition.unlockedPngPath,
-    definition.lockedPngPath,
-    definition.shareTransparentSvgPath,
-    definition.shareTransparentPngPath,
-  ];
+  for (const definition of FIRST_ACHIEVEMENT_DEFINITIONS) {
+    const allPaths = [
+      definition.artworkPath,
+      definition.lockedArtworkPath,
+      definition.unlockedPngPath,
+      definition.lockedPngPath,
+      definition.shareTransparentSvgPath,
+      definition.shareTransparentPngPath,
+    ];
 
-  for (const assetPath of allPaths) {
-    const absolute = path.resolve(process.cwd(), assetPath);
-    assert(existsSync(absolute), `${assetPath} is missing`);
-    assert(statSync(absolute).size > 0, `${assetPath} is empty`);
-    checked += 1;
+    for (const assetPath of allPaths) {
+      const absolute = path.resolve(process.cwd(), assetPath);
+      assert(existsSync(absolute), `${assetPath} is missing`);
+      assert(statSync(absolute).size > 0, `${assetPath} is empty`);
+      checked += 1;
+    }
+
+    const unlockedSvg = validateSvg(definition.artworkPath);
+    const lockedSvg = validateSvg(definition.lockedArtworkPath);
+    const transparentSvg = validateSvg(definition.shareTransparentSvgPath);
+    for (const [state, svg] of [['unlocked', unlockedSvg], ['locked', lockedSvg], ['transparent', transparentSvg]] as const) {
+      const normalize = (value: string) => value.replace(/[ \t]+$/gm, '').trim();
+      assert(normalize(svg) === normalize(renderFirstAchievementBadgeSvg(definition.id, state)), `${definition.id}/${state} does not match the app renderer`);
+      assert(!/<text\b/.test(svg), `${definition.id}/${state} depends on device font fallback`);
+    }
+    assert(transparentSvg.includes('fill="transparent" fill-opacity="0"'), `${definition.shareTransparentSvgPath} does not clear the hexagon interior`);
+    for (const hex of warmHexes) {
+      assert(!lockedSvg.toLowerCase().includes(hex), `${definition.lockedArtworkPath} contains warm Firsts hue ${hex}`);
+    }
+
+    if (definition.id === 'first_run') assert(/data-motion-lines="4"/.test(unlockedSvg), 'First Run glyph is missing horizontal speed lines');
+    if (definition.id === 'first_walk') assert(!/data-motion-lines/.test(unlockedSvg), 'First Walk glyph incorrectly contains run speed lines');
+    if (definition.id === 'first_movement_lab_analysis') {
+      assert(/neutral-landmark-analysis/.test(unlockedSvg) && /data-landmark="15"/.test(unlockedSvg), 'Movement Lab glyph is missing capture brackets or landmark segments');
+      assert(!/stroke-dasharray/.test(unlockedSvg), 'Movement Lab glyph must not use motion/speed lines');
+    }
+    assert(!/firsts-[^"]+-opaque/.test(unlockedSvg + lockedSvg + transparentSvg), `${definition.id} references obsolete opaque Firsts assets`);
+
+    for (const pngPath of [
+      definition.unlockedPngPath,
+      definition.lockedPngPath,
+      definition.shareTransparentPngPath,
+    ]) {
+      const png = readPng(pngPath);
+      const state = pngPath === definition.lockedPngPath ? 'locked'
+        : pngPath === definition.shareTransparentPngPath ? 'transparent' : 'unlocked';
+      const rendered = PNG.sync.read(await firstsRasterizer()(Buffer.from(
+        renderFirstAchievementBadgeSvg(definition.id, state, { size: EXPECTED_PNG_SIZE }),
+      )).png().toBuffer());
+      assert(png.width === rendered.width && png.height === rendered.height && png.data.equals(rendered.data), `${pngPath} pixels differ from the app renderer`);
+      assert(png.width === EXPECTED_PNG_SIZE && png.height === EXPECTED_PNG_SIZE, `${pngPath} has inconsistent dimensions`);
+      assertTransparentCorners(png, pngPath);
+      assertNoCheckerboard(png, pngPath);
+      if (pngPath === definition.lockedPngPath) {
+        for (let offset = 0; offset < png.data.length; offset += 4) {
+          if (png.data[offset + 3] === 0) continue;
+          assert(png.data[offset] === png.data[offset + 1] && png.data[offset + 1] === png.data[offset + 2], `${pngPath} contains a colored pixel`);
+        }
+      }
+    }
+    const transparentPng = readPng(definition.shareTransparentPngPath);
+    assertAlphaVariation(transparentPng, definition.shareTransparentPngPath);
+    assertTransparentInterior(transparentPng, definition.shareTransparentPngPath);
   }
 
-  const unlockedSvg = validateSvg(definition.artworkPath);
-  const lockedSvg = validateSvg(definition.lockedArtworkPath);
-  const transparentSvg = validateSvg(definition.shareTransparentSvgPath);
-  assert(transparentSvg.includes('fill="transparent" fill-opacity="0"'), `${definition.shareTransparentSvgPath} does not clear the hexagon interior`);
-  for (const hex of warmHexes) {
-    assert(!lockedSvg.toLowerCase().includes(hex), `${definition.lockedArtworkPath} contains warm Firsts hue ${hex}`);
-  }
+  const expectedNames = new Set([
+    'manifest.json',
+    ...FIRST_ACHIEVEMENT_DEFINITIONS.flatMap(definition => [
+      `firsts-${definition.slug}-unlocked.svg`,
+      `firsts-${definition.slug}-unlocked.png`,
+      `firsts-${definition.slug}-locked.svg`,
+      `firsts-${definition.slug}-locked.png`,
+      `firsts-${definition.slug}-transparent.svg`,
+      `firsts-${definition.slug}-transparent.png`,
+    ]),
+  ]);
+  const actualNames = new Set(readdirSync(ASSET_DIR));
+  for (const name of expectedNames) assert(actualNames.has(name), `${name} missing from firsts asset directory`);
+  for (const name of actualNames) assert(expectedNames.has(name), `${name} is not a deterministic Firsts asset filename`);
 
-  if (definition.id === 'first_run') assert(/H30\.6/.test(unlockedSvg), 'First Run glyph is missing horizontal speed lines');
-  if (definition.id === 'first_walk') assert(!/H30\.6/.test(unlockedSvg), 'First Walk glyph incorrectly contains run speed lines');
-  if (definition.id === 'first_movement_lab_analysis') {
-    assert(/H36\.6/.test(unlockedSvg) && /L50 31/.test(unlockedSvg), 'Movement Lab glyph is missing capture brackets or landmark segments');
-    assert(!/stroke-dasharray/.test(unlockedSvg), 'Movement Lab glyph must not use motion/speed lines');
-  }
-  assert(!/firsts-[^"]+-opaque/.test(unlockedSvg + lockedSvg + transparentSvg), `${definition.id} references obsolete opaque Firsts assets`);
-
-  for (const pngPath of [
-    definition.unlockedPngPath,
-    definition.lockedPngPath,
-    definition.shareTransparentPngPath,
-  ]) {
-    const png = readPng(pngPath);
-    assert(png.width === EXPECTED_PNG_SIZE && png.height === EXPECTED_PNG_SIZE, `${pngPath} has inconsistent dimensions`);
-    assertTransparentCorners(png, pngPath);
-    assertNoCheckerboard(png, pngPath);
-  }
-  const transparentPng = readPng(definition.shareTransparentPngPath);
-  assertAlphaVariation(transparentPng, definition.shareTransparentPngPath);
-  assertTransparentInterior(transparentPng, definition.shareTransparentPngPath);
+  console.log(`Validated ${checked} Firsts assets across ${FIRST_ACHIEVEMENT_DEFINITIONS.length} achievements.`);
 }
 
-const expectedNames = new Set([
-  'manifest.json',
-  ...FIRST_ACHIEVEMENT_DEFINITIONS.flatMap(definition => [
-    `firsts-${definition.slug}-unlocked.svg`,
-    `firsts-${definition.slug}-unlocked.png`,
-    `firsts-${definition.slug}-locked.svg`,
-    `firsts-${definition.slug}-locked.png`,
-    `firsts-${definition.slug}-transparent.svg`,
-    `firsts-${definition.slug}-transparent.png`,
-  ]),
-]);
-const actualNames = new Set(readdirSync(ASSET_DIR));
-for (const name of expectedNames) assert(actualNames.has(name), `${name} missing from firsts asset directory`);
-for (const name of actualNames) assert(expectedNames.has(name), `${name} is not a deterministic Firsts asset filename`);
-
-console.log(`Validated ${checked} Firsts assets across ${FIRST_ACHIEVEMENT_DEFINITIONS.length} achievements.`);
+validate().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

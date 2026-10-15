@@ -1,0 +1,565 @@
+{
+  "scope": "one Recovery Week Completed preview; awaiting user approval; no app integration",
+  "states": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "sizes": [
+    48,
+    64,
+    96,
+    128,
+    256
+  ],
+  "sources": {
+    "src/achievements/recovery/recoveryDefinitions.ts": "71c0744f6c31b97e731596241d358ca360fce5c0f80d99a7e7e8f2992998c368",
+    "src/achievements/recovery/recoveryArtwork.ts": "be10967e967affea6cdda8103709f8d14b8971ee12b5e884defcc9720c48773c",
+    "src/achievements/recovery/recoveryTokens.ts": "f9dfa7aba8f922cff856bfcf1d5df5f1c57436481efb804d189090acfd6fdec5",
+    "src/achievements/recovery/recoveryUtils.ts": "4cb19e42e9e7e9a37213d4b1ad4cb5407c29699931060cc798ad18f5d0412047"
+  },
+  "rasterChecks": [
+    {
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        15,
+        15
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        29,
+        30
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        27,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        39,
+        40
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        26,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        79,
+        80
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        53,
+        54
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        74,
+        74
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        249,
+        249
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        168,
+        168
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        231,
+        231
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        15,
+        15
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        29,
+        30
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        27,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        39,
+        40
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        26,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        79,
+        80
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        53,
+        54
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        74,
+        74
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        249,
+        249
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        168,
+        168
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        231,
+        231
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "glyph",
+      "size": 48,
+      "margins": [
+        15,
+        15
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "title1",
+      "size": 48,
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "title2",
+      "size": 48,
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "glyph",
+      "size": 64,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "title1",
+      "size": 64,
+      "margins": [
+        13,
+        13
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "title2",
+      "size": 64,
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "glyph",
+      "size": 96,
+      "margins": [
+        29,
+        30
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "title1",
+      "size": 96,
+      "margins": [
+        20,
+        20
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "title2",
+      "size": 96,
+      "margins": [
+        27,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "glyph",
+      "size": 128,
+      "margins": [
+        39,
+        40
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "title1",
+      "size": 128,
+      "margins": [
+        26,
+        27
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "title2",
+      "size": 128,
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "glyph",
+      "size": 256,
+      "margins": [
+        79,
+        80
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "title1",
+      "size": 256,
+      "margins": [
+        53,
+        54
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "title2",
+      "size": 256,
+      "margins": [
+        74,
+        74
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "glyph",
+      "size": 800,
+      "margins": [
+        249,
+        249
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "title1",
+      "size": 800,
+      "margins": [
+        168,
+        168
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "key": "title2",
+      "size": 800,
+      "margins": [
+        231,
+        231
+      ],
+      "overlap": 0
+    }
+  ],
+  "changedProductionFiles": [],
+  "status": "pass"
+}

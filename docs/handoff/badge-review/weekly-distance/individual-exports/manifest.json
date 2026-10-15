@@ -1,0 +1,264 @@
+{
+  "family": "weekly-distance",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
+  },
+  "definitions": [
+    {
+      "id": "weekly_5k",
+      "slug": "5k",
+      "kilometers": 5,
+      "thresholdMeters": 5000,
+      "label": "5K"
+    },
+    {
+      "id": "weekly_10k",
+      "slug": "10k",
+      "kilometers": 10,
+      "thresholdMeters": 10000,
+      "label": "10K"
+    },
+    {
+      "id": "weekly_15k",
+      "slug": "15k",
+      "kilometers": 15,
+      "thresholdMeters": 15000,
+      "label": "15K"
+    },
+    {
+      "id": "weekly_25k",
+      "slug": "25k",
+      "kilometers": 25,
+      "thresholdMeters": 25000,
+      "label": "25K"
+    },
+    {
+      "id": "weekly_30k",
+      "slug": "30k",
+      "kilometers": 30,
+      "thresholdMeters": 30000,
+      "label": "30K"
+    },
+    {
+      "id": "weekly_50k",
+      "slug": "50k",
+      "kilometers": 50,
+      "thresholdMeters": 50000,
+      "label": "50K"
+    },
+    {
+      "id": "weekly_75k",
+      "slug": "75k",
+      "kilometers": 75,
+      "thresholdMeters": 75000,
+      "label": "75K"
+    },
+    {
+      "id": "weekly_100k",
+      "slug": "100k",
+      "kilometers": 100,
+      "thresholdMeters": 100000,
+      "label": "100K"
+    }
+  ],
+  "files": [
+    {
+      "id": "weekly_5k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/weekly-distance-5k-unlocked.svg",
+      "png": "individual-exports/unlocked/weekly-distance-5k-unlocked.png",
+      "svgHash": "001f2ab1b170aecb7af94c9f6e50945c3000a5da2bd58323139a80dff4bb821d",
+      "pngHash": "4628437a87c4ae26f44d4e0ea5525ab412a9cb9bceca12b9fdbf082a0f89f7af"
+    },
+    {
+      "id": "weekly_5k",
+      "state": "locked",
+      "svg": "individual-exports/locked/weekly-distance-5k-locked.svg",
+      "png": "individual-exports/locked/weekly-distance-5k-locked.png",
+      "svgHash": "cb426eeda5c95399699cc8a90b32bede83f4d0c54b8fb24df7e1cdd784619c52",
+      "pngHash": "34f1d61df22d2ffe52779b0d58687a505970b69f9c97aaadb6775548bc0b4ffb"
+    },
+    {
+      "id": "weekly_5k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/weekly-distance-5k-transparent.svg",
+      "png": "individual-exports/transparent/weekly-distance-5k-transparent.png",
+      "svgHash": "1bd86d49f1f7bcea9a50f609c78e2abc92115d7b7b975bb2863dde80fcecfa77",
+      "pngHash": "03b4398651369d14be3ac3fc7cdd4639d2f933f495fcf19553b3429ccb7c6819"
+    },
+    {
+      "id": "weekly_10k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/weekly-distance-10k-unlocked.svg",
+      "png": "individual-exports/unlocked/weekly-distance-10k-unlocked.png",
+      "svgHash": "302bbfdf339e8f1a3148ec523c0b646ed2c21eafa4005cc39188d732ddfeb2cc",
+      "pngHash": "9ba884b14128a2921795cc71b21622a17698c42105b7d4b6bbaee643ffa1a2fe"
+    },
+    {
+      "id": "weekly_10k",
+      "state": "locked",
+      "svg": "individual-exports/locked/weekly-distance-10k-locked.svg",
+      "png": "individual-exports/locked/weekly-distance-10k-locked.png",
+      "svgHash": "f86d8c425c6c98376d318f4b0d6d91fda0858e8e9195580c8aab11e555a68430",
+      "pngHash": "359a7f6c0f60231cec9d2e21f79a533cae9a719bdd900b833264e8b3ae72e857"
+    },
+    {
+      "id": "weekly_10k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/weekly-distance-10k-transparent.svg",
+      "png": "individual-exports/transparent/weekly-distance-10k-transparent.png",
+      "svgHash": "a7d387a4ec3b91a086f74a4b1660a172ca730000496a91a90a249d4ba4f8371c",
+      "pngHash": "8ba7b091d50f9243f84c4ebfc80a826a11a33adc296c6d380b2347ecff943db7"
+    },
+    {
+      "id": "weekly_15k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/weekly-distance-15k-unlocked.svg",
+      "png": "individual-exports/unlocked/weekly-distance-15k-unlocked.png",
+      "svgHash": "c66a7af0725fa5e0c54461ef3318e0022301f6dc9b4d476789f4eb901132b90e",
+      "pngHash": "826ccff4aeaf7dd26ec04a8662f681141b46d4e07f0d6cfd6e30caf7b8394146"
+    },
+    {
+      "id": "weekly_15k",
+      "state": "locked",
+      "svg": "individual-exports/locked/weekly-distance-15k-locked.svg",
+      "png": "individual-exports/locked/weekly-distance-15k-locked.png",
+      "svgHash": "56bb1f2a7e8cc2f4291005684cb01a9b3f64d1ccbf8403b728448307022bac0a",
+      "pngHash": "972f3b6e12cf0015680610317bead2e55b9ecb76e678431605ad8b08555362ec"
+    },
+    {
+      "id": "weekly_15k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/weekly-distance-15k-transparent.svg",
+      "png": "individual-exports/transparent/weekly-distance-15k-transparent.png",
+      "svgHash": "8d5e59e958fddb21101aa6e367e6068e6dfd4fe569db1b1b712587b460ed4e7e",
+      "pngHash": "a9b0cfe967d34adbbd1bb29b3495d9c337b880cbb95d339779af642447c17991"
+    },
+    {
+      "id": "weekly_25k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/weekly-distance-25k-unlocked.svg",
+      "png": "individual-exports/unlocked/weekly-distance-25k-unlocked.png",
+      "svgHash": "57449458afdc25cc1a7c0eead736e0c647fa1029d1623d0cb0a0d51da1433efc",
+      "pngHash": "d3de5f051d0250b0f2db5c87e127949962a56c662e1793b3544de50b0b1d3085"
+    },
+    {
+      "id": "weekly_25k",
+      "state": "locked",
+      "svg": "individual-exports/locked/weekly-distance-25k-locked.svg",
+      "png": "individual-exports/locked/weekly-distance-25k-locked.png",
+      "svgHash": "e3a1e2c8c45faaaa3165d6523fb72e9b02173860acd476a5f4f2f57e4d32d7f1",
+      "pngHash": "c969b334e8547c5b0e4c32aba28b7062e81f6ca8f02a3b0d1a859417642ab2e6"
+    },
+    {
+      "id": "weekly_25k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/weekly-distance-25k-transparent.svg",
+      "png": "individual-exports/transparent/weekly-distance-25k-transparent.png",
+      "svgHash": "21a039dbc5afbf29fd8f19a47b75c3fc6541361570b7cef5af010a27873c4674",
+      "pngHash": "bc42e44f09e39cfbfbba0a21b8e26d787baccd850034928f2cee6508aad9bc1f"
+    },
+    {
+      "id": "weekly_30k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/weekly-distance-30k-unlocked.svg",
+      "png": "individual-exports/unlocked/weekly-distance-30k-unlocked.png",
+      "svgHash": "3ce2ce5f81487f7ba73b29cad8d82dcce9200f8bac70087323716d9a438cabdf",
+      "pngHash": "2b80e59e1f93a0dfbf065429f78932d57ac69c44862e97cb35bff7cd063f5819"
+    },
+    {
+      "id": "weekly_30k",
+      "state": "locked",
+      "svg": "individual-exports/locked/weekly-distance-30k-locked.svg",
+      "png": "individual-exports/locked/weekly-distance-30k-locked.png",
+      "svgHash": "ae95e88b871f89da2e49f5cbd79250ee77ac7902ca9666408f99deb95eee38ca",
+      "pngHash": "07b537ad14a719c4bc7ae71926bb1c581b269f9a6e88b7217d8356e3bcae30e8"
+    },
+    {
+      "id": "weekly_30k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/weekly-distance-30k-transparent.svg",
+      "png": "individual-exports/transparent/weekly-distance-30k-transparent.png",
+      "svgHash": "ee0a822984f755882e1610e2ad87f473aeef5736be9b9d0dec909814c7d600d8",
+      "pngHash": "3087a4f15d0e48dd28400a28f9a904c6127a1dcd7703fdd4289ce9f3e9579b0c"
+    },
+    {
+      "id": "weekly_50k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/weekly-distance-50k-unlocked.svg",
+      "png": "individual-exports/unlocked/weekly-distance-50k-unlocked.png",
+      "svgHash": "afc48ae79fdd19bd58d7472708468df43bc389828f442b4c9a45cf8be0c2fe41",
+      "pngHash": "16d174caccecf248278a751806f13213c2a410dd61babd66221cee720ff266f5"
+    },
+    {
+      "id": "weekly_50k",
+      "state": "locked",
+      "svg": "individual-exports/locked/weekly-distance-50k-locked.svg",
+      "png": "individual-exports/locked/weekly-distance-50k-locked.png",
+      "svgHash": "45dd89f5497dabea6d84164d8a8ac4c16571543be7e92131b59146c24f28acfc",
+      "pngHash": "809990666484ce017b1fb5e15626f8f6601271db0af75c4c004b5aa763b298d0"
+    },
+    {
+      "id": "weekly_50k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/weekly-distance-50k-transparent.svg",
+      "png": "individual-exports/transparent/weekly-distance-50k-transparent.png",
+      "svgHash": "df7d1bfe127e8ec8d0d0aa6d63dc6b0c14c177abda0f2535f6019e348e7f6dd3",
+      "pngHash": "0e2cffd6be655ca63b8a69491743d54e91690ddef32b3ec696b175f72e6ca2f5"
+    },
+    {
+      "id": "weekly_75k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/weekly-distance-75k-unlocked.svg",
+      "png": "individual-exports/unlocked/weekly-distance-75k-unlocked.png",
+      "svgHash": "7786a73e95db8fcf430adf3419e8b0c85c77366cf44b873318015b5e748fe4e1",
+      "pngHash": "efe6789f3d7763ffdb81deb4a862d17def130622e78fa4a3496e9731209d0c43"
+    },
+    {
+      "id": "weekly_75k",
+      "state": "locked",
+      "svg": "individual-exports/locked/weekly-distance-75k-locked.svg",
+      "png": "individual-exports/locked/weekly-distance-75k-locked.png",
+      "svgHash": "32558ac6ae4e324b95ac41ca0436d7de07b535836b99c26eb1f5ac18786d58c3",
+      "pngHash": "581d0a16311cebf5d2d222ba37ed8089f05cce4b10ef003a7d9af55c6fe1e4cb"
+    },
+    {
+      "id": "weekly_75k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/weekly-distance-75k-transparent.svg",
+      "png": "individual-exports/transparent/weekly-distance-75k-transparent.png",
+      "svgHash": "1dd6dde403772ae560511b1109254469502c115526ad06c39339dec17d1babcd",
+      "pngHash": "f1b170fa0447b93bbc9c618207be83feff60ade1938312749aeb1ad90d2cf63c"
+    },
+    {
+      "id": "weekly_100k",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/weekly-distance-100k-unlocked.svg",
+      "png": "individual-exports/unlocked/weekly-distance-100k-unlocked.png",
+      "svgHash": "f00e1cdb125dc38cb7e76e060522162e6eee623b021fb30206e1ac907d385adf",
+      "pngHash": "e1716effe7655682eaa25d58b84c5b683e85911eaff01a4710b069f410976b1c"
+    },
+    {
+      "id": "weekly_100k",
+      "state": "locked",
+      "svg": "individual-exports/locked/weekly-distance-100k-locked.svg",
+      "png": "individual-exports/locked/weekly-distance-100k-locked.png",
+      "svgHash": "3f0feda6028d0fac7b8815192a51bfcfeee88430322e59e20574b3adddd2fc7b",
+      "pngHash": "df50d815d9bc95f4ef1106cc811ac1b93dd6424ed37d227f6291db8432b39c29"
+    },
+    {
+      "id": "weekly_100k",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/weekly-distance-100k-transparent.svg",
+      "png": "individual-exports/transparent/weekly-distance-100k-transparent.png",
+      "svgHash": "471ad3d0aacaded84e006f7699e5c8a8b363afb0362d80966ac8bd774191c56a",
+      "pngHash": "b2bda84bd6135bcb44d2701109c0ea6cd7e2569cacf8498d245d75f458b6b535"
+    }
+  ]
+}

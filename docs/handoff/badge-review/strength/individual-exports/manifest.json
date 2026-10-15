@@ -1,0 +1,394 @@
+{
+  "family": "strength",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
+  },
+  "definitions": [
+    {
+      "id": "first_strength_session",
+      "slug": "first-strength-session",
+      "title": "First Strength Session",
+      "titleLines": [
+        "FIRST STRENGTH",
+        "SESSION"
+      ],
+      "glyph": "sessionDumbbell",
+      "threshold": 1,
+      "thresholdUnit": "sessions",
+      "includeInGlobalRegistry": true
+    },
+    {
+      "id": "strength_10_sessions",
+      "slug": "10-sessions",
+      "title": "10 Strength Sessions",
+      "titleLines": [
+        "SESSIONS"
+      ],
+      "glyph": "sessionDumbbell",
+      "threshold": 10,
+      "thresholdUnit": "sessions",
+      "includeInGlobalRegistry": true,
+      "badgeNumber": "10",
+      "badgeUnit": "SESSIONS"
+    },
+    {
+      "id": "strength_25_sessions",
+      "slug": "25-sessions",
+      "title": "25 Strength Sessions",
+      "titleLines": [
+        "SESSIONS"
+      ],
+      "glyph": "sessionDumbbell",
+      "threshold": 25,
+      "thresholdUnit": "sessions",
+      "includeInGlobalRegistry": true,
+      "badgeNumber": "25",
+      "badgeUnit": "SESSIONS"
+    },
+    {
+      "id": "strength_50_sessions",
+      "slug": "50-sessions",
+      "title": "50 Strength Sessions",
+      "titleLines": [
+        "SESSIONS"
+      ],
+      "glyph": "sessionDumbbell",
+      "threshold": 50,
+      "thresholdUnit": "sessions",
+      "includeInGlobalRegistry": true,
+      "badgeNumber": "50",
+      "badgeUnit": "SESSIONS"
+    },
+    {
+      "id": "strength_100_sessions",
+      "slug": "100-sessions",
+      "title": "100 Strength Sessions",
+      "titleLines": [
+        "SESSIONS"
+      ],
+      "glyph": "sessionDumbbell",
+      "threshold": 100,
+      "thresholdUnit": "sessions",
+      "includeInGlobalRegistry": true,
+      "badgeNumber": "100",
+      "badgeUnit": "SESSIONS"
+    },
+    {
+      "id": "strength_6_weeks_consistent",
+      "slug": "6-weeks-consistent",
+      "title": "6 Weeks Consistent Strength",
+      "titleLines": [
+        "6 WEEKS",
+        "STRONG"
+      ],
+      "glyph": "consistentWeeks",
+      "threshold": 6,
+      "thresholdUnit": "weeks",
+      "includeInGlobalRegistry": true,
+      "badgeNumber": "6",
+      "badgeUnit": "TOTAL"
+    },
+    {
+      "id": "strength_12_weeks_consistent",
+      "slug": "12-weeks-consistent",
+      "title": "12 Weeks Consistent Strength",
+      "titleLines": [
+        "12 WEEKS",
+        "STRONG"
+      ],
+      "glyph": "consistentWeeks",
+      "threshold": 12,
+      "thresholdUnit": "weeks",
+      "includeInGlobalRegistry": true,
+      "badgeNumber": "12",
+      "badgeUnit": "TOTAL"
+    },
+    {
+      "id": "strength_run_week_completed",
+      "slug": "strength-run-week",
+      "title": "Strength + Run Week",
+      "titleLines": [
+        "STRENGTH + RUN",
+        "WEEK"
+      ],
+      "glyph": "strengthRunWeek",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "includeInGlobalRegistry": true
+    },
+    {
+      "id": "first_structured_workout",
+      "slug": "first-structured-workout",
+      "title": "First Structured Workout",
+      "titleLines": [
+        "FIRST STRUCTURED",
+        "WORKOUT"
+      ],
+      "glyph": "structuredWorkout",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "includeInGlobalRegistry": false
+    },
+    {
+      "id": "prehab_resilience_block",
+      "slug": "prehab-resilience",
+      "title": "Prehab & Resilience",
+      "titleLines": [
+        "PREHAB &",
+        "RESILIENCE"
+      ],
+      "glyph": "prehabResilience",
+      "threshold": 1,
+      "thresholdUnit": "count",
+      "includeInGlobalRegistry": true
+    }
+  ],
+  "files": [
+    {
+      "id": "first_strength_session",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/strength-first-strength-session-unlocked.svg",
+      "png": "individual-exports/unlocked/strength-first-strength-session-unlocked.png",
+      "svgHash": "07680a30f92c9167e946ccbf9cc53052ad72b6f5835248498393198ddfb4e98a",
+      "pngHash": "7c1af915aba0b247cf9462493d3da13591ee3a3dad2f6b0d33b3334eb2e1abbb"
+    },
+    {
+      "id": "first_strength_session",
+      "state": "locked",
+      "svg": "individual-exports/locked/strength-first-strength-session-locked.svg",
+      "png": "individual-exports/locked/strength-first-strength-session-locked.png",
+      "svgHash": "7939bb4d9c10b54621481deb79bd6c418b1e3d05054fd4b267a16ecbc7eef7a3",
+      "pngHash": "f1d262ebb94240d3203083579852dba17570b520668b3e92a5e8201c7a68c730"
+    },
+    {
+      "id": "first_strength_session",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/strength-first-strength-session-transparent.svg",
+      "png": "individual-exports/transparent/strength-first-strength-session-transparent.png",
+      "svgHash": "5c3f8bfd9dfee95495020d64787e10a5ac58b95a279f03eee60446477535e1a0",
+      "pngHash": "7c187b859af5a39b90bed00ed323f86e0a0d14b8b513fdfbf3944b89d04008ac"
+    },
+    {
+      "id": "strength_10_sessions",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/strength-10-sessions-unlocked.svg",
+      "png": "individual-exports/unlocked/strength-10-sessions-unlocked.png",
+      "svgHash": "5594a63c87be86b64b13b269be0a826ad62996e84201214ef025a7b71ccd36b0",
+      "pngHash": "6d8618cf76a745121f8d4c6673a9bf108fd479db51b869502de073e464afef65"
+    },
+    {
+      "id": "strength_10_sessions",
+      "state": "locked",
+      "svg": "individual-exports/locked/strength-10-sessions-locked.svg",
+      "png": "individual-exports/locked/strength-10-sessions-locked.png",
+      "svgHash": "d03a12ff81ee55f14038b4be614be0d163a4228f62a130ecf57d5b17dcc41f03",
+      "pngHash": "cbc8be8374f68db0cc11b020f1c2391d84d1b3d2401b97f41cc774eb089e3cb5"
+    },
+    {
+      "id": "strength_10_sessions",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/strength-10-sessions-transparent.svg",
+      "png": "individual-exports/transparent/strength-10-sessions-transparent.png",
+      "svgHash": "d31a7cf049575b1c6da7cf57172a0214192dd8d9fe0ace6fb2388a4337135fa1",
+      "pngHash": "508bdc1a3fd485da159bd04aceb65a87c94143793eee5ad1a4f1325c28346fbd"
+    },
+    {
+      "id": "strength_25_sessions",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/strength-25-sessions-unlocked.svg",
+      "png": "individual-exports/unlocked/strength-25-sessions-unlocked.png",
+      "svgHash": "cf469bc733bb651df28603c978ba4255dd0d1b40f0aca9016f2697d82d1acda4",
+      "pngHash": "d8c9a91665787a2dfe9ffc999cbdca40808fc2a5d5130bc414053bf9fa29de69"
+    },
+    {
+      "id": "strength_25_sessions",
+      "state": "locked",
+      "svg": "individual-exports/locked/strength-25-sessions-locked.svg",
+      "png": "individual-exports/locked/strength-25-sessions-locked.png",
+      "svgHash": "eff83942bbb997de51c544c521ecb5d2412ae8c222103f52c886086932d0139c",
+      "pngHash": "c845e0af82e5f54cd79c573c62b4d1a366c0df7d96ae6e5eb7c8321b48be3a94"
+    },
+    {
+      "id": "strength_25_sessions",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/strength-25-sessions-transparent.svg",
+      "png": "individual-exports/transparent/strength-25-sessions-transparent.png",
+      "svgHash": "8bc684c4b9f58b0144864613e8103c32d80a6ebbdd4020b522abc2d41a18b9da",
+      "pngHash": "2855ed63493a7cb02305a446a3df259b55523f7bd8b8eac1f3608fb7f59567b9"
+    },
+    {
+      "id": "strength_50_sessions",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/strength-50-sessions-unlocked.svg",
+      "png": "individual-exports/unlocked/strength-50-sessions-unlocked.png",
+      "svgHash": "0792075ff3fafa8ee9c8ac5e89585e44cf2ff40ce3767076228b6ef912a42619",
+      "pngHash": "5aa96fa6633a19cc199961473e85404c4c61485a4f4b88050272b21195062580"
+    },
+    {
+      "id": "strength_50_sessions",
+      "state": "locked",
+      "svg": "individual-exports/locked/strength-50-sessions-locked.svg",
+      "png": "individual-exports/locked/strength-50-sessions-locked.png",
+      "svgHash": "3bc9d026c25dc0edf1981025c0e83800fb24a2fa248920c0368d2e3367e92a84",
+      "pngHash": "ca516a1a9ba139d127c753789044b856dd3cfcceccf0111410044d5a5fea6d07"
+    },
+    {
+      "id": "strength_50_sessions",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/strength-50-sessions-transparent.svg",
+      "png": "individual-exports/transparent/strength-50-sessions-transparent.png",
+      "svgHash": "61336e9a75f9867c3dde6ed5787e4553524f7fabedc8c48861cbe28a38a4c044",
+      "pngHash": "faecea46efb3aa4599f22f78c8ecb2262b9a0a94231f15c371bddc800e51916a"
+    },
+    {
+      "id": "strength_100_sessions",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/strength-100-sessions-unlocked.svg",
+      "png": "individual-exports/unlocked/strength-100-sessions-unlocked.png",
+      "svgHash": "8a15fc9f572996d9cba4ff12289debbeb2d2d1dbe1c2e385b0d41d469c51cb08",
+      "pngHash": "403b65e0761a18aff39195403b8684c5a9a5d7acb1fb78784c43e9af4935c63a"
+    },
+    {
+      "id": "strength_100_sessions",
+      "state": "locked",
+      "svg": "individual-exports/locked/strength-100-sessions-locked.svg",
+      "png": "individual-exports/locked/strength-100-sessions-locked.png",
+      "svgHash": "0a0197205e5568fd25d610f067574ffc8ac22ed4c52fd0a18884c7b4f0b7917e",
+      "pngHash": "410b5adcabedd5328ef5d151167239325f5803aabb10cda1a3ef70839cc11643"
+    },
+    {
+      "id": "strength_100_sessions",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/strength-100-sessions-transparent.svg",
+      "png": "individual-exports/transparent/strength-100-sessions-transparent.png",
+      "svgHash": "637788b303e0796c92a18247b109a9dd3f1ae586c2a2879d254c07981894b395",
+      "pngHash": "c9b79c57960e7b1e8925418a7e70e071a726a606bdfc30d1fa62a490d20b0fa9"
+    },
+    {
+      "id": "strength_6_weeks_consistent",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/strength-6-weeks-consistent-unlocked.svg",
+      "png": "individual-exports/unlocked/strength-6-weeks-consistent-unlocked.png",
+      "svgHash": "b67acae91a62425fd01247c535b84f20e12e3e600f42b8686024374d88034d49",
+      "pngHash": "9174ab90521df8bf8be12a5a852887399bdc1bae13d7a6da2db56b5f76d897bf"
+    },
+    {
+      "id": "strength_6_weeks_consistent",
+      "state": "locked",
+      "svg": "individual-exports/locked/strength-6-weeks-consistent-locked.svg",
+      "png": "individual-exports/locked/strength-6-weeks-consistent-locked.png",
+      "svgHash": "b696e91b5158fa6e0d322009ac7473615661da3d68fa7325069f875cf76ee877",
+      "pngHash": "178325b402d6c2e208de9e2ea7d1afd95ec97e7836d1fc381639b862a24418b5"
+    },
+    {
+      "id": "strength_6_weeks_consistent",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/strength-6-weeks-consistent-transparent.svg",
+      "png": "individual-exports/transparent/strength-6-weeks-consistent-transparent.png",
+      "svgHash": "ec28aab5fbf1f2611f901ece75249f1caa54b6247ea67d8b6a632d1b209d7525",
+      "pngHash": "b9b436de036b16f616da76818ca79065b244192a7e662fa6ef32f9085e8a1644"
+    },
+    {
+      "id": "strength_12_weeks_consistent",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/strength-12-weeks-consistent-unlocked.svg",
+      "png": "individual-exports/unlocked/strength-12-weeks-consistent-unlocked.png",
+      "svgHash": "17d255774d87c812077d8093b8194394fcc8ab9482d558b58ac75707c7e760b5",
+      "pngHash": "b130fef071e46125b6fb4ed2bd5e09bde55f79f77f4768d3b379026e70cf3eb3"
+    },
+    {
+      "id": "strength_12_weeks_consistent",
+      "state": "locked",
+      "svg": "individual-exports/locked/strength-12-weeks-consistent-locked.svg",
+      "png": "individual-exports/locked/strength-12-weeks-consistent-locked.png",
+      "svgHash": "af9cf4220b518dac0438994fd05cdb392291e579a1d65771d8408ea56d6dd105",
+      "pngHash": "619d59b7228c44b31bb766af44feef603cfeb7a4757e6f6d5981da3aacf9c6ab"
+    },
+    {
+      "id": "strength_12_weeks_consistent",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/strength-12-weeks-consistent-transparent.svg",
+      "png": "individual-exports/transparent/strength-12-weeks-consistent-transparent.png",
+      "svgHash": "12a4f8f75ae9507e197504a6bd0d79444af6f5ad54d9ce396066eed562f192ad",
+      "pngHash": "69ad77e323567c6ff328e7180a88c07f91a4d7daaaa78e7c35ddfe9ca69ac0b2"
+    },
+    {
+      "id": "strength_run_week_completed",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/strength-strength-run-week-unlocked.svg",
+      "png": "individual-exports/unlocked/strength-strength-run-week-unlocked.png",
+      "svgHash": "63a26e396edee73d50ac176725ace054d60e9b789b4493c91b8c7192697b1a4c",
+      "pngHash": "e3777fd36829bb8ee65b4e657311f4ffa53daa3289f9608acde94a4fbf2c32ad"
+    },
+    {
+      "id": "strength_run_week_completed",
+      "state": "locked",
+      "svg": "individual-exports/locked/strength-strength-run-week-locked.svg",
+      "png": "individual-exports/locked/strength-strength-run-week-locked.png",
+      "svgHash": "0809495dce73ccb5f78aa3508cc81366cb276946e180c180a28d2c99aae793f2",
+      "pngHash": "eae381ef01fce6057b3d966fcb49952592cca369faad4098879f2fbba4984a34"
+    },
+    {
+      "id": "strength_run_week_completed",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/strength-strength-run-week-transparent.svg",
+      "png": "individual-exports/transparent/strength-strength-run-week-transparent.png",
+      "svgHash": "2a7e67f398e79bec2e190a8ef9214ef6d347f4b5c7fdcae538107e1995610ee2",
+      "pngHash": "a5bd55e67d3ef8d5ac3401262529283ab1c99c75e1d5382c7759e090cfd26378"
+    },
+    {
+      "id": "first_structured_workout",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/strength-first-structured-workout-unlocked.svg",
+      "png": "individual-exports/unlocked/strength-first-structured-workout-unlocked.png",
+      "svgHash": "6dc0c22f038d6198c142064a3ca1beb9078f039d80760dc9c2a02e204ff2e131",
+      "pngHash": "1732d72d92b2e102a457a31769325af8ea6295cd51231daa499966552f882e61"
+    },
+    {
+      "id": "first_structured_workout",
+      "state": "locked",
+      "svg": "individual-exports/locked/strength-first-structured-workout-locked.svg",
+      "png": "individual-exports/locked/strength-first-structured-workout-locked.png",
+      "svgHash": "4a9454dc1d00187251f7f04d372971b9ff90a707dba8356d0421e8871992ac0c",
+      "pngHash": "00b4c5844d6ad9a19eb2bac67221c262758570f89a8968c4e96bf99f8eaad601"
+    },
+    {
+      "id": "first_structured_workout",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/strength-first-structured-workout-transparent.svg",
+      "png": "individual-exports/transparent/strength-first-structured-workout-transparent.png",
+      "svgHash": "18c258c4ba7e8127aa16e18c159449108b6a856afdca872a93799547d8b87871",
+      "pngHash": "88b8ff37cf8d5879b43611fada07b455baa8b4c8a21b8aff28f794221ff918f2"
+    },
+    {
+      "id": "prehab_resilience_block",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/strength-prehab-resilience-unlocked.svg",
+      "png": "individual-exports/unlocked/strength-prehab-resilience-unlocked.png",
+      "svgHash": "92b23f815983e9d2d549523d4407435bf3a99a667f0b98b7e309f9c586299af7",
+      "pngHash": "3302c44634eac793e8351bd9e953fdd36e5b0066ba4c3edf43f458dfaaadfeab"
+    },
+    {
+      "id": "prehab_resilience_block",
+      "state": "locked",
+      "svg": "individual-exports/locked/strength-prehab-resilience-locked.svg",
+      "png": "individual-exports/locked/strength-prehab-resilience-locked.png",
+      "svgHash": "455aac7b38110e192c79818ea5bab154e7068a55dbe4dd25e2c9a86628516853",
+      "pngHash": "41c4f48ce7e9b43c1a9e5477a0fa1436a9e65d4a652abc03475e20966cb9da64"
+    },
+    {
+      "id": "prehab_resilience_block",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/strength-prehab-resilience-transparent.svg",
+      "png": "individual-exports/transparent/strength-prehab-resilience-transparent.png",
+      "svgHash": "bbc0f21cb8b5def8d4efbf60493f941848ea83dabee2eab315d5fb2896c97d7b",
+      "pngHash": "a68f6ece0d6857933910bd2817bb049916e6e906589a27705f7e325b18a05daa"
+    }
+  ]
+}

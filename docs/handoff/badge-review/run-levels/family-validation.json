@@ -1,0 +1,8388 @@
+{
+  "family": "run-levels",
+  "scope": "Seven family artworks and review exports only; no app integration or release",
+  "result": "PASS",
+  "states": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "sizes": [
+    48,
+    64,
+    96,
+    128,
+    256,
+    800
+  ],
+  "files": [
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-foundation-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-foundation-unlocked.png",
+      "svgHash": "659becdc40c0c071b1fc73c96a2c96ca732d117aef1266af18aa8226225bb413",
+      "pngHash": "02653295437ca8cb83be50275521b5700b216cdfb1d79b0797063ed9fb4610b6"
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-foundation-locked.svg",
+      "png": "individual-exports/locked/run-level-foundation-locked.png",
+      "svgHash": "c52a724c889ac21b322c8290502b8a6d0cefdae4bbdb822f13228459d59a3bca",
+      "pngHash": "52ff7e5997c1516d7a400f7ec75dc410a9af8fe1600ff38e140109aec68bd36e"
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-foundation-transparent.svg",
+      "png": "individual-exports/transparent/run-level-foundation-transparent.png",
+      "svgHash": "76ec5feb191af3918e20471bb461a9a44b492c23b3b7081896eaa842b84db4bc",
+      "pngHash": "0c98cba3ed44bbcaba6ee37c363b911fbea9435b80855cb059b5a1a035dda526"
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-rhythm-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-rhythm-unlocked.png",
+      "svgHash": "011b4995802787508077964532fb0bb84d2359aef6bf96edf20d5f953b08e358",
+      "pngHash": "fc750b50feedef5f6cf12de2cf8cf9a031612cf6f4f9f9ce540bb79ca7df14f0"
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-rhythm-locked.svg",
+      "png": "individual-exports/locked/run-level-rhythm-locked.png",
+      "svgHash": "63c9738a6fe928ba50b3b14c3ca3241499809996fd3c8905154cb5cf0cda5064",
+      "pngHash": "6083fda2b5fa23805b37221f8c0aa0b6ff90acfbf8dd8a0f35dc9da35081ea04"
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-rhythm-transparent.svg",
+      "png": "individual-exports/transparent/run-level-rhythm-transparent.png",
+      "svgHash": "c3c32156e36cfdde73f2f69a72e0f8e13018d544560bb2882d01d2597dca15a0",
+      "pngHash": "bae83109c0e89920963a047e1040ca00288fb377fbca4d7b00b240819da49a09"
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-momentum-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-momentum-unlocked.png",
+      "svgHash": "4bba2725c2ccf0f6632f4ccb6264f5b8cd1add31a6c60f3c117d850eba6696fd",
+      "pngHash": "b6a6faad203316207e5442dae2b50e2ffabd17186e414c0c56c729804ea43fa6"
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-momentum-locked.svg",
+      "png": "individual-exports/locked/run-level-momentum-locked.png",
+      "svgHash": "91cc91b8f5bab7578c9b20e520d18c6abbef715b9153a49b4997b703627e1471",
+      "pngHash": "1dfee6dacf4e8b2e0dbeab4b8ae29b183d1444bfd360f452696aec9c23787060"
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-momentum-transparent.svg",
+      "png": "individual-exports/transparent/run-level-momentum-transparent.png",
+      "svgHash": "a8498ab2a05144621b3b7726110ca65fefc86f457915639e48ea68622e99e638",
+      "pngHash": "70382ceb8bfca604e79838496279f9fb692159c2e7b586658d0c4de96d7c09db"
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-durability-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-durability-unlocked.png",
+      "svgHash": "100ac5c5e6107b4b0ce2205547ccfa138485ad059680351c58f5d765db27a198",
+      "pngHash": "ed6205d11963618e4d7a2047d7a408b059dfc78c9ef5137501489124a930b8aa"
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-durability-locked.svg",
+      "png": "individual-exports/locked/run-level-durability-locked.png",
+      "svgHash": "eba2384874a3e287050f8def59cec115436663e84c66c2b692cb8a8b6c29730f",
+      "pngHash": "7a1b4c277147c9c47789b35ada00926b4fbbb770270ef8adf714cb4158a36001"
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-durability-transparent.svg",
+      "png": "individual-exports/transparent/run-level-durability-transparent.png",
+      "svgHash": "cb478a15ef671680b9b462623e3ce450b89555fac83eb8ec19ec24f46fc67c3e",
+      "pngHash": "24b26eebcda625894d1276a6afe0bbd26642bb8786c1c250bf3de3811b1e7b61"
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-engine-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-engine-unlocked.png",
+      "svgHash": "da78af6fe0eb85ba6355b9aa00da1cdec6810c8ff7bda32066e0d44e14b1c8b3",
+      "pngHash": "11545089f7cd3121ad81b001ccc49e3fbb8f2585b37a2ad9357b270f9bca3226"
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-engine-locked.svg",
+      "png": "individual-exports/locked/run-level-engine-locked.png",
+      "svgHash": "c03f48e891720427b02fa8d22ef73f68331e14b7a1a2915d69b5420a1a575b15",
+      "pngHash": "8843c5296713774e68efc2e0729d6ff41f332c869d4d4295519d87d38e01e002"
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-engine-transparent.svg",
+      "png": "individual-exports/transparent/run-level-engine-transparent.png",
+      "svgHash": "be4259352383e0f79a2c7af0d9e789546d69d04729dbb163380a970c6264cbf4",
+      "pngHash": "560e20fb0ed83561ba9a9fe00931a16b34573802ced722610ca5714b672e4925"
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-peak-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-peak-unlocked.png",
+      "svgHash": "a6211d68954cd4384b1a3a730470c12cdf76f2350b0c418d14bca17a5c531f8c",
+      "pngHash": "c31e8e27c4763f63aeb170820be7e34d71f988b6c5b39fa7ebbeb51ce3c0b4b7"
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-peak-locked.svg",
+      "png": "individual-exports/locked/run-level-peak-locked.png",
+      "svgHash": "73c70b99226b11f093a5e14302da0eb124b5be25814b1920c056dbedd36fadd5",
+      "pngHash": "1fd068e54d7f95ef9e75d65112b851015705fee20028cb125ceeb9b0d592fcba"
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-peak-transparent.svg",
+      "png": "individual-exports/transparent/run-level-peak-transparent.png",
+      "svgHash": "17135a2f8862a1da53bbc61ca8a809964439d6faea22586552568f0fdc0ccafe",
+      "pngHash": "52311147d8051ffe1853864fcc4c27fde19e8767945f46cb6500f34f91cc7a8b"
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "svg": "individual-exports/unlocked/run-level-summit-unlocked.svg",
+      "png": "individual-exports/unlocked/run-level-summit-unlocked.png",
+      "svgHash": "c6a44753acefab2b0ed0ac94bd037d458dec848d03e37297b88960b5f156bc79",
+      "pngHash": "e631b33e6a310f7a257c0db0211de7e12ac14cf1706ca4a4b63a362c4ab51877"
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "svg": "individual-exports/locked/run-level-summit-locked.svg",
+      "png": "individual-exports/locked/run-level-summit-locked.png",
+      "svgHash": "fa466bfaae996f76e9825d36c8a00b55e29320452aa06ea591bddd3d2d9b9e99",
+      "pngHash": "aaa113d66cd0a1d094002836ebae7f63e4b486116721a242d56e8f511d5a503a"
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "svg": "individual-exports/transparent/run-level-summit-transparent.svg",
+      "png": "individual-exports/transparent/run-level-summit-transparent.png",
+      "svgHash": "316c637c34259872334fbf40cca68d73bd1fb9dd84824681dd14f6bad74c9bc9",
+      "pngHash": "d2ccd286b5c781fcd271bef90ff2e846b8a61ffd0fb11b9c16086379bf18a36e"
+    }
+  ],
+  "rasterChecks": [
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        12,
+        12
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        16,
+        16
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        24,
+        24
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        32,
+        32
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        65,
+        65
+      ],
+      "top": 154,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        204,
+        204
+      ],
+      "top": 483,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "unlocked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        12,
+        12
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        16,
+        16
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        24,
+        24
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        32,
+        32
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        65,
+        65
+      ],
+      "top": 154,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        204,
+        204
+      ],
+      "top": 483,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "locked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        12,
+        12
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        16,
+        16
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        24,
+        24
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        32,
+        32
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        65,
+        65
+      ],
+      "top": 154,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        204,
+        204
+      ],
+      "top": 483,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_foundation",
+      "state": "transparent",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        16,
+        16
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        22,
+        22
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        33,
+        33
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        44,
+        44
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        88,
+        88
+      ],
+      "top": 155,
+      "bottom": 172,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        275,
+        275
+      ],
+      "top": 484,
+      "bottom": 539,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "unlocked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        16,
+        16
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        22,
+        22
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        33,
+        33
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        44,
+        44
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        88,
+        88
+      ],
+      "top": 155,
+      "bottom": 172,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        275,
+        275
+      ],
+      "top": 484,
+      "bottom": 539,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "locked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        16,
+        16
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        22,
+        22
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        33,
+        33
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        44,
+        44
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        88,
+        88
+      ],
+      "top": 155,
+      "bottom": 172,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        275,
+        275
+      ],
+      "top": 484,
+      "bottom": 539,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_rhythm",
+      "state": "transparent",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        12,
+        12
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        17,
+        17
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        34,
+        34
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        68,
+        68
+      ],
+      "top": 154,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        215,
+        215
+      ],
+      "top": 483,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "unlocked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        12,
+        12
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        17,
+        17
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        34,
+        34
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        68,
+        68
+      ],
+      "top": 154,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        215,
+        215
+      ],
+      "top": 483,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "locked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        12,
+        12
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        17,
+        17
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        34,
+        34
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        68,
+        68
+      ],
+      "top": 154,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        215,
+        215
+      ],
+      "top": 483,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_momentum",
+      "state": "transparent",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        27,
+        27
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        36,
+        36
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        72,
+        72
+      ],
+      "top": 155,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        225,
+        225
+      ],
+      "top": 484,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "unlocked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        27,
+        27
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        36,
+        36
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        72,
+        72
+      ],
+      "top": 155,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        225,
+        225
+      ],
+      "top": 484,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "locked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        27,
+        27
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        36,
+        36
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        72,
+        72
+      ],
+      "top": 155,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        225,
+        225
+      ],
+      "top": 484,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_durability",
+      "state": "transparent",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        17,
+        17
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        23,
+        23
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        34,
+        34
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        46,
+        46
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        93,
+        93
+      ],
+      "top": 154,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        290,
+        290
+      ],
+      "top": 483,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "unlocked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        17,
+        17
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        23,
+        23
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        34,
+        34
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        46,
+        46
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        93,
+        93
+      ],
+      "top": 154,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        290,
+        290
+      ],
+      "top": 483,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "locked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        17,
+        17
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        23,
+        23
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        34,
+        34
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        46,
+        46
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        93,
+        93
+      ],
+      "top": 154,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        290,
+        290
+      ],
+      "top": 483,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_engine",
+      "state": "transparent",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        39,
+        39
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        52,
+        52
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        104,
+        104
+      ],
+      "top": 155,
+      "bottom": 172,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        325,
+        325
+      ],
+      "top": 484,
+      "bottom": 539,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "unlocked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        39,
+        39
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        52,
+        52
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        104,
+        104
+      ],
+      "top": 155,
+      "bottom": 172,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        325,
+        325
+      ],
+      "top": 484,
+      "bottom": 539,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "locked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        39,
+        39
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        52,
+        52
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        104,
+        104
+      ],
+      "top": 155,
+      "bottom": 172,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        325,
+        325
+      ],
+      "top": 484,
+      "bottom": 539,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_peak",
+      "state": "transparent",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        16,
+        16
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        22,
+        22
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        33,
+        33
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        44,
+        44
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        88,
+        88
+      ],
+      "top": 154,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        275,
+        275
+      ],
+      "top": 483,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "unlocked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        16,
+        16
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        22,
+        22
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        33,
+        33
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        44,
+        44
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        88,
+        88
+      ],
+      "top": 154,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        275,
+        275
+      ],
+      "top": 483,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "locked",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 48,
+      "part": "rings",
+      "margins": [
+        7,
+        7
+      ],
+      "top": 5,
+      "bottom": 24,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 48,
+      "part": "mountain",
+      "margins": [
+        13,
+        13
+      ],
+      "top": 19,
+      "bottom": 26,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 48,
+      "part": "title",
+      "margins": [
+        16,
+        16
+      ],
+      "top": 29,
+      "bottom": 32,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 48,
+      "part": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "top": 35,
+      "bottom": 36,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 48,
+      "part": "chevrons",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 37,
+      "bottom": 41,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 64,
+      "part": "rings",
+      "margins": [
+        10,
+        10
+      ],
+      "top": 7,
+      "bottom": 33,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 64,
+      "part": "mountain",
+      "margins": [
+        18,
+        18
+      ],
+      "top": 25,
+      "bottom": 35,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 64,
+      "part": "title",
+      "margins": [
+        22,
+        22
+      ],
+      "top": 38,
+      "bottom": 43,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 64,
+      "part": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "top": 47,
+      "bottom": 48,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 64,
+      "part": "chevrons",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 50,
+      "bottom": 55,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 96,
+      "part": "rings",
+      "margins": [
+        15,
+        15
+      ],
+      "top": 10,
+      "bottom": 51,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 96,
+      "part": "mountain",
+      "margins": [
+        26,
+        26
+      ],
+      "top": 37,
+      "bottom": 53,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 96,
+      "part": "title",
+      "margins": [
+        33,
+        33
+      ],
+      "top": 58,
+      "bottom": 64,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 96,
+      "part": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "top": 70,
+      "bottom": 72,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 96,
+      "part": "chevrons",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 75,
+      "bottom": 83,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 128,
+      "part": "rings",
+      "margins": [
+        20,
+        20
+      ],
+      "top": 13,
+      "bottom": 68,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 128,
+      "part": "mountain",
+      "margins": [
+        35,
+        35
+      ],
+      "top": 50,
+      "bottom": 70,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 128,
+      "part": "title",
+      "margins": [
+        44,
+        44
+      ],
+      "top": 77,
+      "bottom": 86,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 128,
+      "part": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "top": 94,
+      "bottom": 97,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 128,
+      "part": "chevrons",
+      "margins": [
+        53,
+        53
+      ],
+      "top": 100,
+      "bottom": 111,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 256,
+      "part": "rings",
+      "margins": [
+        40,
+        40
+      ],
+      "top": 27,
+      "bottom": 137,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 256,
+      "part": "mountain",
+      "margins": [
+        70,
+        70
+      ],
+      "top": 100,
+      "bottom": 141,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 256,
+      "part": "title",
+      "margins": [
+        88,
+        88
+      ],
+      "top": 154,
+      "bottom": 173,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 256,
+      "part": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "top": 188,
+      "bottom": 194,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 256,
+      "part": "chevrons",
+      "margins": [
+        106,
+        106
+      ],
+      "top": 201,
+      "bottom": 223,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 800,
+      "part": "rings",
+      "margins": [
+        126,
+        126
+      ],
+      "top": 86,
+      "bottom": 431,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 800,
+      "part": "mountain",
+      "margins": [
+        220,
+        219
+      ],
+      "top": 314,
+      "bottom": 443,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 800,
+      "part": "title",
+      "margins": [
+        275,
+        275
+      ],
+      "top": 483,
+      "bottom": 541,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 800,
+      "part": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "top": 588,
+      "bottom": 608,
+      "borderOverlap": 0
+    },
+    {
+      "id": "run_level_summit",
+      "state": "transparent",
+      "size": 800,
+      "part": "chevrons",
+      "margins": [
+        333,
+        333
+      ],
+      "top": 629,
+      "bottom": 700,
+      "borderOverlap": 0
+    }
+  ],
+  "grayscaleChecks": 7,
+  "transparentChecks": 7,
+  "sourceHashes": {
+    "src/achievements/runLevels/runLevelDefinitions.ts": "da29bf1a92d0a8e264476d5b42d5c4a74489c13c2ee173087ecc8c83ba9f3756",
+    "src/achievements/runLevels/runLevelThresholds.ts": "764da0c579f7f0d5c02bcae3a52da79e749145a110ed7d4c001f8bef8f9539af",
+    "src/achievements/runLevels/runLevelArtwork.ts": "d3853dcc6cffe98b2645af2c086cb93cbe33e6bfb7e192929bb2c5e7214bea16",
+    "src/achievements/runLevels/runLevelColors.ts": "b17b52985c1681d16291f2ee29eef87c154eaae3fbb8c4c11d4eb62d99eb8b3b"
+  }
+}

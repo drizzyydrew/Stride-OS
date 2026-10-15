@@ -1,0 +1,747 @@
+{
+  "scope": "one First Strength Session preview only; awaiting approval; no app integration",
+  "states": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "sizes": [
+    48,
+    64,
+    96,
+    128,
+    256
+  ],
+  "canonicalEquipmentHash": "6ba444667f049de576e1fbca6da9f2c93499d1133619167a7e8bb0ba0c8de0fb",
+  "sources": {
+    "src/achievements/strength/strengthDefinitions.ts": "a8c52cad0b0112a11581be1637547d5357341f95e9c1457dd06fd265ea2fad79",
+    "src/achievements/strength/strengthArtwork.ts": "8c60d9e0fa235f48fe83dd50392d67bc8601b4ac4ab3ce2537c0113e31c3226f",
+    "src/achievements/strength/strengthTokens.ts": "3b356905e1bc67849de88125e276b6ed1775b16db9aaf1f84c0c1490ebe9b2b5",
+    "src/achievements/strength/strengthUtils.ts": "01a3316f2cb98b325a16acdc4660651c2c862b7b86a3d2b1e49d6735de66244d",
+    "src/achievements/firsts/firstsGlyphs.ts": "8141cc893a3681512ef5d68834a83dc435a0767bff7503988f9b79897c758cbd"
+  },
+  "rasterChecks": [
+    {
+      "state": "unlocked",
+      "size": 48,
+      "key": "glyph",
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 48,
+      "key": "title1",
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 48,
+      "key": "title2",
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 48,
+      "key": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "key": "glyph",
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "key": "title1",
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "key": "title2",
+      "margins": [
+        22,
+        22
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 64,
+      "key": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "key": "glyph",
+      "margins": [
+        28,
+        28
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "key": "title1",
+      "margins": [
+        21,
+        21
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "key": "title2",
+      "margins": [
+        34,
+        34
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 96,
+      "key": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "key": "glyph",
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "key": "title1",
+      "margins": [
+        28,
+        28
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "key": "title2",
+      "margins": [
+        45,
+        45
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 128,
+      "key": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "key": "glyph",
+      "margins": [
+        74,
+        74
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "key": "title1",
+      "margins": [
+        56,
+        56
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "key": "title2",
+      "margins": [
+        91,
+        90
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 256,
+      "key": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "key": "glyph",
+      "margins": [
+        233,
+        233
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "key": "title1",
+      "margins": [
+        175,
+        175
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "key": "title2",
+      "margins": [
+        284,
+        283
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "unlocked",
+      "size": 800,
+      "key": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "key": "glyph",
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "key": "title1",
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "key": "title2",
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 48,
+      "key": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "key": "glyph",
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "key": "title1",
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "key": "title2",
+      "margins": [
+        22,
+        22
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 64,
+      "key": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "key": "glyph",
+      "margins": [
+        28,
+        28
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "key": "title1",
+      "margins": [
+        21,
+        21
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "key": "title2",
+      "margins": [
+        34,
+        34
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 96,
+      "key": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "key": "glyph",
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "key": "title1",
+      "margins": [
+        28,
+        28
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "key": "title2",
+      "margins": [
+        45,
+        45
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 128,
+      "key": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "key": "glyph",
+      "margins": [
+        74,
+        74
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "key": "title1",
+      "margins": [
+        56,
+        56
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "key": "title2",
+      "margins": [
+        91,
+        90
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 256,
+      "key": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "key": "glyph",
+      "margins": [
+        233,
+        233
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "key": "title1",
+      "margins": [
+        175,
+        175
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "key": "title2",
+      "margins": [
+        284,
+        283
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "locked",
+      "size": 800,
+      "key": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "key": "glyph",
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "key": "title1",
+      "margins": [
+        10,
+        10
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "key": "title2",
+      "margins": [
+        17,
+        17
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 48,
+      "key": "wordmark",
+      "margins": [
+        19,
+        19
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "key": "glyph",
+      "margins": [
+        18,
+        18
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "key": "title1",
+      "margins": [
+        14,
+        14
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "key": "title2",
+      "margins": [
+        22,
+        22
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 64,
+      "key": "wordmark",
+      "margins": [
+        25,
+        25
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "key": "glyph",
+      "margins": [
+        28,
+        28
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "key": "title1",
+      "margins": [
+        21,
+        21
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "key": "title2",
+      "margins": [
+        34,
+        34
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 96,
+      "key": "wordmark",
+      "margins": [
+        38,
+        38
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "key": "glyph",
+      "margins": [
+        37,
+        37
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "key": "title1",
+      "margins": [
+        28,
+        28
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "key": "title2",
+      "margins": [
+        45,
+        45
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 128,
+      "key": "wordmark",
+      "margins": [
+        51,
+        51
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "key": "glyph",
+      "margins": [
+        74,
+        74
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "key": "title1",
+      "margins": [
+        56,
+        56
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "key": "title2",
+      "margins": [
+        91,
+        90
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 256,
+      "key": "wordmark",
+      "margins": [
+        102,
+        102
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "key": "glyph",
+      "margins": [
+        233,
+        233
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "key": "title1",
+      "margins": [
+        175,
+        175
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "key": "title2",
+      "margins": [
+        284,
+        283
+      ],
+      "overlap": 0
+    },
+    {
+      "state": "transparent",
+      "size": 800,
+      "key": "wordmark",
+      "margins": [
+        319,
+        319
+      ],
+      "overlap": 0
+    }
+  ],
+  "changedProductionFiles": [],
+  "status": "pass"
+}

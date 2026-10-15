@@ -1,0 +1,66 @@
+{
+  "definitions": [
+    {
+      "id": "weekly_5k",
+      "slug": "5k",
+      "kilometers": 5,
+      "thresholdMeters": 5000,
+      "label": "5K"
+    },
+    {
+      "id": "weekly_10k",
+      "slug": "10k",
+      "kilometers": 10,
+      "thresholdMeters": 10000,
+      "label": "10K"
+    },
+    {
+      "id": "weekly_15k",
+      "slug": "15k",
+      "kilometers": 15,
+      "thresholdMeters": 15000,
+      "label": "15K"
+    },
+    {
+      "id": "weekly_25k",
+      "slug": "25k",
+      "kilometers": 25,
+      "thresholdMeters": 25000,
+      "label": "25K"
+    },
+    {
+      "id": "weekly_30k",
+      "slug": "30k",
+      "kilometers": 30,
+      "thresholdMeters": 30000,
+      "label": "30K"
+    },
+    {
+      "id": "weekly_50k",
+      "slug": "50k",
+      "kilometers": 50,
+      "thresholdMeters": 50000,
+      "label": "50K"
+    },
+    {
+      "id": "weekly_75k",
+      "slug": "75k",
+      "kilometers": 75,
+      "thresholdMeters": 75000,
+      "label": "75K"
+    },
+    {
+      "id": "weekly_100k",
+      "slug": "100k",
+      "kilometers": 100,
+      "thresholdMeters": 100000,
+      "label": "100K"
+    }
+  ],
+  "sources": {
+    "src/achievements/weeklyDistance/weeklyDistanceDefinitions.ts": "099574cb26ab7aa3931624afa5cd646e44b711828b5ad420d7ffbe12a1b06f3c",
+    "src/achievements/weeklyDistance/weeklyDistanceThresholds.ts": "e5bb21f2ef3dc766efc88472c3d7a5a8e4d23245a3d4830c2bd22aada8c22ef1",
+    "src/achievements/weeklyDistance/weeklyDistanceTokens.ts": "8e0aff0975d6f5437437abc809c05e660cec05637a6618d736429d2c5f58011f",
+    "src/achievements/weeklyDistance/weeklyDistanceUtils.ts": "22dff18eb3a48021c79e10a6e2e341127aa6bf26bd04a51679a9c47dbab779d0"
+  }
+}
