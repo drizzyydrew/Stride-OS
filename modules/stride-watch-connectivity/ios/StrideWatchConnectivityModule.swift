@@ -1,5 +1,6 @@
 import ExpoModulesCore
 import Foundation
+import CoreMotion
 import HealthKit
 import WatchConnectivity
 
@@ -43,6 +44,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
   private var lastAckReason: String?
   private var lastWatchStateAt: TimeInterval = 0
   private var lastWatchState: String?
+  private var supportedWorkoutKinds: [String] = []
   // Auto-launch: a start sent while the watch app wasn't running. Resent over
   // the live channel once the launched app becomes reachable (the watch only
   // starts HealthKit from a live start), then cleared. An end clears it.
@@ -88,6 +90,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
         "lastAckReason": lastAckReason ?? NSNull(),
         "lastWatchStateAt": lastWatchStateAt,
         "lastWatchState": lastWatchState ?? NSNull(),
+        "supportedWorkoutKinds": supportedWorkoutKinds,
       ]
     }
 
@@ -111,6 +114,15 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
 
   @discardableResult
   func sendCommand(_ type: String, payload: [String: Any]) throws -> [String: Any] {
+    if type == StrideWatchMessageType.startWorkout, let kind = payload["workoutKind"] as? String {
+      let known = ["run", "strength", "mobility", "cycling", "walking", "hiking", "downhill_skiing", "cross_country_skiing", "snowboarding", "ski_touring", "snowboard_touring"]
+      guard known.contains(kind) else {
+        throw NSError(domain: "StrideWatchConnectivity", code: 3, userInfo: [NSLocalizedDescriptionKey: "Unsupported workout type."])
+      }
+      if !["run", "strength", "mobility", "cycling"].contains(kind), !locked({ supportedWorkoutKinds.contains(kind) }) {
+        throw NSError(domain: "StrideWatchConnectivity", code: 4, userInfo: [NSLocalizedDescriptionKey: "Open the updated StrideOS watch app to enable this sport. Phone recording is still available."])
+      }
+    }
     guard let session else {
       throw NSError(domain: "StrideWatchConnectivity", code: 1, userInfo: [
         NSLocalizedDescriptionKey: "Apple Watch connectivity is unavailable on this device.",
@@ -124,7 +136,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     message["sentAt"] = Date().timeIntervalSince1970 * 1000
 
     if type == StrideWatchMessageType.endWorkout || type == StrideWatchMessageType.endRun {
-      clearPendingLiveStart()
+      clearPendingLiveStart(matching: payload["workoutInstanceId"] as? String)
     } else if type == StrideWatchMessageType.pauseWorkout || type == StrideWatchMessageType.pauseRun
       || type == StrideWatchMessageType.resumeWorkout || type == StrideWatchMessageType.resumeRun {
       locked {
@@ -139,7 +151,12 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
       ])
     }
 
-    if shouldPublishAsLatestContext(type) && session.activationState == .activated {
+    let supersededEnd = (type == StrideWatchMessageType.endWorkout || type == StrideWatchMessageType.endRun) && locked {
+      guard let requested = payload["workoutInstanceId"] as? String,
+        let pending = pendingLiveStart?["workoutInstanceId"] as? String else { return false }
+      return requested != pending
+    }
+    if !supersededEnd && shouldPublishAsLatestContext(type) && session.activationState == .activated {
       try? session.updateApplicationContext(message)
     }
 
@@ -185,10 +202,16 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     let kind = message["workoutKind"] as? String
     let environment = message["environment"] as? String
     switch kind {
+    case nil, "run": configuration.activityType = .running
     case "cycling": configuration.activityType = .cycling
     case "strength": configuration.activityType = .traditionalStrengthTraining
     case "mobility": configuration.activityType = .flexibility
-    default: configuration.activityType = .running
+    case "walking": configuration.activityType = .walking
+    case "hiking", "ski_touring", "snowboard_touring": configuration.activityType = .hiking
+    case "downhill_skiing": configuration.activityType = .downhillSkiing
+    case "cross_country_skiing": configuration.activityType = .crossCountrySkiing
+    case "snowboarding": configuration.activityType = .snowboarding
+    default: return
     }
     configuration.locationType = (kind == "strength" || kind == "mobility" || environment == "indoor") ? .indoor : .outdoor
 
@@ -201,8 +224,9 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     }
   }
 
-  private func clearPendingLiveStart() {
+  private func clearPendingLiveStart(matching requestedId: String? = nil) {
     locked {
+      if let requestedId, let pendingId = pendingLiveStart?["workoutInstanceId"] as? String, requestedId != pendingId { return }
       pendingLiveStart = nil
       pendingLiveStartExpiresAt = 0
       pendingLiveFollowUpType = nil
@@ -249,6 +273,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
   }
 
   func sessionDidBecomeInactive(_ session: WCSession) {
+    locked { supportedWorkoutKinds = [] }
     emitStatus()
   }
 
@@ -258,12 +283,14 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
   }
 
   func sessionReachabilityDidChange(_ session: WCSession) {
+    if session.isReachable { _ = try? sendCommand("requestCapabilities", payload: [:]) }
     flushPendingCommandsIfPossible()
     resendPendingLiveStartIfReachable()
     emitStatus()
   }
 
   func sessionWatchStateDidChange(_ session: WCSession) {
+    locked { supportedWorkoutKinds = [] }
     emitStatus()
   }
 
@@ -285,6 +312,13 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     locked { lastMessageAt = now }
 
     switch type {
+    case "capabilities":
+      guard let timestamp = message["timestamp"] as? NSNumber,
+        abs(now - timestamp.doubleValue) <= 120_000 else { return }
+      locked { supportedWorkoutKinds = message["supportedWorkoutKinds"] as? [String] ?? [] }
+      emitStatus()
+    case "telemetry":
+      emit("onWatchTelemetry", sanitizePayload(message))
     case StrideWatchMessageType.heartRate:
       emit("onWatchHeartRate", sanitizePayload(message))
     case StrideWatchMessageType.workoutState:
@@ -445,10 +479,13 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
 }
 
 public final class StrideWatchConnectivityModule: Module {
+  private let pedometer = CMPedometer()
+  private var cadenceSessionId: String?
+
   public func definition() -> ModuleDefinition {
     Name("StrideWatchConnectivity")
 
-    Events("onWatchStatus", "onWatchHeartRate", "onWatchWorkoutState", "onWatchError", "onWatchAck")
+    Events("onWatchStatus", "onWatchHeartRate", "onWatchWorkoutState", "onWatchError", "onWatchAck", "onWatchTelemetry", "onPhoneCadence")
 
     OnCreate {
       StrideWatchConnectivityCoordinator.shared.activate()
@@ -475,7 +512,40 @@ public final class StrideWatchConnectivityModule: Module {
 
     AsyncFunction("activate") { (promise: Promise) in
       StrideWatchConnectivityCoordinator.shared.activate()
+      _ = try? StrideWatchConnectivityCoordinator.shared.sendCommand("requestCapabilities", payload: [:])
       promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
+    }
+
+    AsyncFunction("startPhoneCadence") { (id: String, promise: Promise) in
+      DispatchQueue.main.async {
+        // A missing usage description must never crash the production app.
+        guard Bundle.main.object(forInfoDictionaryKey: "NSMotionUsageDescription") != nil,
+          CMPedometer.isCadenceAvailable() else { promise.resolve(false); return }
+        self.pedometer.stopUpdates()
+        self.cadenceSessionId = id
+        self.pedometer.startUpdates(from: Date()) { [weak self] data, _ in
+          guard let self, let data, let cadence = data.currentCadence?.doubleValue,
+            cadence.isFinite, cadence >= 0 else { return }
+          DispatchQueue.main.async {
+            guard self.cadenceSessionId == id else { return }
+            self.sendEvent("onPhoneCadence", ["workoutInstanceId": id, "cadenceSpm": cadence * 60,
+              "timestamp": data.endDate.timeIntervalSince1970 * 1000, "source": "phone_motion"])
+          }
+        }
+        promise.resolve(true)
+      }
+    }
+
+    Function("stopPhoneCadence") { (id: String) in
+      DispatchQueue.main.async {
+        guard self.cadenceSessionId == id else { return }
+        self.cadenceSessionId = nil
+        self.pedometer.stopUpdates()
+      }
+    }
+
+    OnDestroy {
+      self.pedometer.stopUpdates()
     }
 
     AsyncFunction("startRun") {

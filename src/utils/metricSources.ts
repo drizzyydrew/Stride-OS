@@ -16,6 +16,8 @@ export const METRIC_SOURCE_LABELS: Record<TelemetrySource, MetricSourceLabel> = 
   smart_trainer: { source: 'smart_trainer', label: 'Smart trainer', trustedFor: ['power', 'speed', 'cadence', 'distance when reported'] },
   heart_rate_monitor: { source: 'heart_rate_monitor', label: 'Heart-rate monitor', trustedFor: ['heart rate'] },
   cycling_power_meter: { source: 'cycling_power_meter', label: 'Cycling power meter', trustedFor: ['power', 'cadence when reported'] },
+  cycling_cadence_sensor: { source: 'cycling_cadence_sensor', label: 'Cycling cadence sensor', trustedFor: ['cadence'] },
+  model_estimate: { source: 'model_estimate', label: 'Model estimate', trustedFor: [] },
   manual_equipment_entry: { source: 'manual_equipment_entry', label: 'Equipment display entry', trustedFor: ['distance', 'time', 'speed shown by equipment'] },
   manual_entry: { source: 'manual_entry', label: 'Manual entry', trustedFor: ['user-entered values'] },
   prescribed_estimate: { source: 'prescribed_estimate', label: 'Plan estimate', trustedFor: ['estimated training load only'] },
@@ -27,7 +29,8 @@ export function labelForMetricSource(source: TelemetrySource | null | undefined)
 }
 
 export function isSourceAuthoritativeForMetric(source: TelemetrySource | null | undefined, metric: string): boolean {
-  if (!source || source === 'unavailable' || source === 'prescribed_estimate') return false;
+  if (!source || source === 'unavailable' || source === 'prescribed_estimate' || source === 'model_estimate') return false;
+  if (source === 'cycling_cadence_sensor') return metric === 'cadence';
   if (source === 'phone_motion') return metric === 'steps' || metric === 'cadence';
   if (source === 'phone_gps') return ['distance', 'pace', 'speed', 'route', 'elevation'].includes(metric);
   if (source === 'heart_rate_monitor') return metric === 'heartRate';

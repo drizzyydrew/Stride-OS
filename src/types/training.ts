@@ -213,7 +213,7 @@ export type CompletedWorkoutRecord = {
   // Extended fields — optional for backward compatibility with existing stored records
   actualDurationMinutes?: number;           // what was actually done (may differ from planned)
   actualDistanceMiles?:   number;           // measured distance
-  routeCoordinates?:      { lat: number; lng: number; timestamp: number }[];
+  routeCoordinates?:      { lat: number; lng: number; timestamp: number; altitudeM?: number }[];
   rpe?:                   number;           // 1–10 actual perceived exertion
   notes?:                 string;           // free-text athlete notes
   source?:                WorkoutLogSource; // how the record was created

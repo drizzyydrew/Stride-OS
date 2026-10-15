@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import type { Activity } from '../../src/types/activity';
 import { buildActivitySummary } from '../../src/utils/activitySummary';
+
+test('power mass inputs remount for a different activity or unit system', () => {
+  const detail = readFileSync('app/(tabs)/activity/[activityId].tsx', 'utf8');
+  assert.match(detail, /<ActivityPowerPanel key=\{`\$\{activity\.id\}:\$\{units\}`\}/);
+});
 
 test('recorded running dynamics and cadence retain units and do not hide zero elevation', () => {
   const activity = { activityType: 'running', startTime: 1000, metrics: {

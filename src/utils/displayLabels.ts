@@ -9,6 +9,8 @@ const DISPLAY_LABELS: Record<string, string> = {
   resistance_band: 'Resistance band',
   run_walk: 'Run / Walk',
   snowboarding: 'Snowboarding',
+  ski_touring: 'Ski touring',
+  snowboard_touring: 'Snowboard touring',
   squat_rack: 'Squat rack',
 };
 

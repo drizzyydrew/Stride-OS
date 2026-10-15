@@ -23,6 +23,17 @@ export type StrideRunLiveActivityPayload = {
   navigationInstruction?: string;
   cueText?: string;
   controlState?: 'ready' | 'pause_pending' | 'resume_pending' | 'complete_pending';
+  distanceValue?: string;
+  distanceUnit?: 'mi' | 'km';
+  elevationDisplay?: string;
+  descentDisplay?: string;
+  cadenceValue?: number;
+  cadenceUnit?: 'spm' | 'rpm';
+  cadenceObservedAt?: number;
+  powerWatts?: number;
+  powerKind?: 'measured' | 'device_estimated' | 'model_estimated';
+  powerObservedAt?: number;
+  heartRateObservedAt?: number;
 };
 
 export type StrideStrengthLiveActivityPayload = {
@@ -93,6 +104,10 @@ const VALID_CONTROL_ACTIONS: readonly StrideControlAction[] = [
 ];
 
 type StrideLiveActivityModule = {
+  startOutdoor?: (payload: StrideRunLiveActivityPayload) => Promise<string | null>;
+  updateOutdoor?: (payload: StrideRunLiveActivityPayload) => Promise<void>;
+  endOutdoor?: (payload: StrideRunLiveActivityPayload) => Promise<void>;
+  endOutdoorIfMatching?: (workoutInstanceId: string) => Promise<boolean>;
   isAvailable: () => boolean;
   getPendingRunControlCommand?: () => StrideRunControlCommand | null;
   clearPendingRunControlCommand?: (id: string) => void;
@@ -213,6 +228,8 @@ export function clearPendingRunControlCommand(id: string): void {
 export async function startStrideRunLiveActivity(payload: StrideRunLiveActivityPayload): Promise<string | null> {
   const nativeModule = getNativeModule();
   if (!nativeModule || !isStrideRunLiveActivityAvailable()) return null;
+  if (nativeModule.startOutdoor) return nativeModule.startOutdoor(payload);
+  if (payload.activityType && payload.activityType !== 'running' && payload.activityType !== 'run_walk') return null;
   return nativeModule.start(
     payload.runName,
     Math.max(0, Math.round(payload.elapsedSeconds)),
@@ -229,6 +246,8 @@ export async function startStrideRunLiveActivity(payload: StrideRunLiveActivityP
 export async function updateStrideRunLiveActivity(payload: StrideRunLiveActivityPayload): Promise<void> {
   const nativeModule = getNativeModule();
   if (!nativeModule || !isStrideRunLiveActivityAvailable()) return;
+  if (nativeModule.updateOutdoor) return nativeModule.updateOutdoor(payload);
+  if (payload.activityType && payload.activityType !== 'running' && payload.activityType !== 'run_walk') return;
   await nativeModule.update(
     Math.max(0, Math.round(payload.elapsedSeconds)),
     Math.max(0, payload.distanceMiles),
@@ -244,6 +263,8 @@ export async function updateStrideRunLiveActivity(payload: StrideRunLiveActivity
 export async function endStrideRunLiveActivity(payload: StrideRunLiveActivityPayload): Promise<void> {
   const nativeModule = getNativeModule();
   if (!nativeModule) return;
+  if (nativeModule.endOutdoor) return nativeModule.endOutdoor(payload);
+  if (payload.workoutInstanceId || payload.sessionId) return;
   await nativeModule.end(
     Math.max(0, Math.round(payload.elapsedSeconds)),
     Math.max(0, payload.distanceMiles),
@@ -253,6 +274,14 @@ export async function endStrideRunLiveActivity(payload: StrideRunLiveActivityPay
     payload.zoneStatus,
     payload.status,
   );
+}
+
+/** Recovery must never use the legacy positional End (which has no identity). */
+export async function endStrideRunLiveActivityIfMatching(workoutInstanceId: string): Promise<boolean> {
+  const nativeModule = getNativeModule();
+  if (!nativeModule) return true;
+  if (!nativeModule.endOutdoorIfMatching) return true;
+  return nativeModule.endOutdoorIfMatching(workoutInstanceId);
 }
 
 // Phase 2: Run lock screen intent listeners

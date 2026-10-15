@@ -13,6 +13,9 @@ private enum StrideRunControlCommandStore {
   static let idKey = "StrideOS.pendingRunControlCommand.id"
   static let actionKey = "StrideOS.pendingRunControlCommand.action"
   static let createdAtKey = "StrideOS.pendingRunControlCommand.createdAt"
+  static let workoutIdKey = "StrideOS.pendingRunControlCommand.workoutInstanceId"
+  static let sessionIdKey = "StrideOS.pendingRunControlCommand.sessionId"
+  static let sourceKey = "StrideOS.pendingRunControlCommand.sessionSource"
 
   static func read() -> [String: Any]? {
     guard
@@ -27,6 +30,9 @@ private enum StrideRunControlCommandStore {
       "id": id,
       "action": action,
       "createdAt": defaults.double(forKey: createdAtKey),
+      "workoutInstanceId": defaults.string(forKey: workoutIdKey) ?? "",
+      "sessionId": defaults.string(forKey: sessionIdKey) ?? "",
+      "sessionSource": defaults.string(forKey: sourceKey) ?? "",
     ]
   }
 
@@ -36,6 +42,9 @@ private enum StrideRunControlCommandStore {
     defaults.removeObject(forKey: idKey)
     defaults.removeObject(forKey: actionKey)
     defaults.removeObject(forKey: createdAtKey)
+    defaults.removeObject(forKey: workoutIdKey)
+    defaults.removeObject(forKey: sessionIdKey)
+    defaults.removeObject(forKey: sourceKey)
     defaults.synchronize()
   }
 }
@@ -105,6 +114,70 @@ public final class StrideLiveActivityModule: Module {
       StrideRunControlCommandStore.clear(id: id)
     }
 
+    // Keep the original positional API for older JS/native combinations.
+    AsyncFunction("startOutdoor") { (payload: [String: Any], promise: Promise) in
+      guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
+      Task {
+        do {
+          await Self.endExistingActivityIfNeeded()
+          let state = Self.makeOutdoorState(payload)
+          let attributes = StrideRunActivityAttributes(runName: payload["runName"] as? String ?? "Activity")
+          let activity: Activity<StrideRunActivityAttributes>
+          if #available(iOS 16.2, *) {
+            activity = try Activity.request(attributes: attributes,
+              content: ActivityContent(state: state, staleDate: state.telemetryStaleDate()), pushType: nil)
+          } else {
+            activity = try Activity.request(attributes: attributes, contentState: state, pushType: nil)
+          }
+          Self.currentActivityId = activity.id
+          promise.resolve(activity.id)
+        } catch { promise.reject("ERR_STRIDE_OUTDOOR_START", error.localizedDescription) }
+      }
+    }
+
+    AsyncFunction("updateOutdoor") { (payload: [String: Any], promise: Promise) in
+      guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
+      Task {
+        guard let activity = Self.currentActivity(), Self.matchesSession(payload, state: activity.contentState) else { promise.resolve(nil); return }
+        let state = Self.makeOutdoorState(payload)
+        if #available(iOS 16.2, *) {
+          await activity.update(ActivityContent(state: state, staleDate: state.telemetryStaleDate()))
+        } else { await activity.update(using: state) }
+        promise.resolve(nil)
+      }
+    }
+
+    AsyncFunction("endOutdoor") { (payload: [String: Any], promise: Promise) in
+      guard #available(iOS 16.1, *) else { promise.resolve(nil); return }
+      Task {
+        guard let activity = Self.currentActivity(), Self.matchesSession(payload, state: activity.contentState) else { promise.resolve(nil); return }
+        var state = Self.makeOutdoorState(payload)
+        state.status = StrideLiveActivityStatus.finished
+        if #available(iOS 16.2, *) {
+          await activity.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: .immediate)
+        } else { await activity.end(using: state, dismissalPolicy: .immediate) }
+        if Self.currentActivityId == activity.id { Self.currentActivityId = nil }
+        promise.resolve(nil)
+      }
+    }
+
+    AsyncFunction("endOutdoorIfMatching") { (workoutInstanceId: String, promise: Promise) in
+      guard !workoutInstanceId.isEmpty else { promise.resolve(false); return }
+      guard #available(iOS 16.1, *) else { promise.resolve(true); return }
+      Task {
+        guard let activity = Activity<StrideRunActivityAttributes>.activities.first(where: {
+          $0.contentState.workoutInstanceId == workoutInstanceId || $0.contentState.sessionId == workoutInstanceId
+        }) else { promise.resolve(true); return }
+        var state = activity.contentState
+        state.status = StrideLiveActivityStatus.finished
+        if #available(iOS 16.2, *) {
+          await activity.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: .immediate)
+        } else { await activity.end(using: state, dismissalPolicy: .immediate) }
+        if Self.currentActivityId == activity.id { Self.currentActivityId = nil }
+        promise.resolve(true)
+      }
+    }
+
     AsyncFunction("start") {
       (
         runName: String,
@@ -142,7 +215,7 @@ public final class StrideLiveActivityModule: Module {
           if #available(iOS 16.2, *) {
             let content = ActivityContent(
               state: state,
-              staleDate: Date().addingTimeInterval(90),
+              staleDate: state.telemetryStaleDate(),
               relevanceScore: 0.95
             )
             activity = try Activity.request(attributes: attributes, content: content, pushType: nil)
@@ -195,7 +268,7 @@ public final class StrideLiveActivityModule: Module {
         if #available(iOS 16.2, *) {
           let content = ActivityContent(
             state: state,
-            staleDate: Date().addingTimeInterval(90),
+            staleDate: state.telemetryStaleDate(),
             relevanceScore: 0.95
           )
           await activity.update(content)
@@ -361,6 +434,53 @@ public final class StrideLiveActivityModule: Module {
       }
     }
     currentStrengthActivityId = nil
+  }
+
+  @available(iOS 16.1, *)
+  private static func matchesSession(_ payload: [String: Any], state: StrideRunActivityAttributes.ContentState) -> Bool {
+    guard let current = state.workoutInstanceId ?? state.sessionId, !current.isEmpty,
+      let requested = payload["workoutInstanceId"] as? String ?? payload["sessionId"] as? String, !requested.isEmpty else { return false }
+    return requested == current
+      && payload["sessionSource"] as? String == state.sessionSource
+  }
+
+  @available(iOS 16.1, *)
+  private static func makeOutdoorState(_ payload: [String: Any]) -> StrideRunActivityAttributes.ContentState {
+    func number(_ key: String) -> Double? {
+      guard let value = payload[key] as? NSNumber, value.doubleValue.isFinite else { return nil }
+      return value.doubleValue
+    }
+    func text(_ key: String) -> String? { payload[key] as? String }
+    var state = makeState(
+      elapsedSeconds: Int(min(Double(Int32.max), max(0, number("elapsedSeconds") ?? 0))),
+      distanceMiles: max(0, number("distanceMiles") ?? 0), averagePace: text("averagePace") ?? "--:--",
+      heartRate: Int(min(1000, max(0, number("heartRate") ?? 0))),
+      zoneLabel: text("zoneLabel") ?? "Zone --", zoneStatus: text("zoneStatus") ?? "unknown",
+      status: text("status") ?? "Active", isPaused: payload["isPaused"] as? Bool ?? false)
+    state.workoutInstanceId = text("workoutInstanceId")
+    state.sessionId = text("sessionId")
+    state.sessionSource = text("sessionSource")
+    state.activityType = text("activityType")
+    state.metricLabel = text("metricLabel")
+    state.metricValue = text("metricValue")
+    state.metricUnit = text("metricUnit")
+    state.distanceValue = text("distanceValue")
+    state.distanceUnit = text("distanceUnit")
+    state.elevationDisplay = text("elevationDisplay")
+    state.descentDisplay = text("descentDisplay")
+    state.cadenceValue = number("cadenceValue").flatMap { $0 >= 0 && $0 <= 10_000 ? $0 : nil }
+    state.cadenceUnit = text("cadenceUnit")
+    state.cadenceObservedAt = number("cadenceObservedAt")
+    state.powerWatts = number("powerWatts").flatMap { $0 >= 0 && $0 <= 100_000 ? $0 : nil }
+    state.powerKind = text("powerKind")
+    state.powerObservedAt = number("powerObservedAt")
+    state.heartRateObservedAt = number("heartRateObservedAt")
+    state.currentInterval = text("currentInterval")
+    state.nextTransition = text("nextTransition")
+    state.navigationInstruction = text("navigationInstruction")
+    state.cueText = text("cueText")
+    state.controlState = text("controlState")
+    return state
   }
 
   @available(iOS 16.1, *)

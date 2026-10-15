@@ -2,10 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { LocationObject } from 'expo-location';
 import { MAX_TRACKING_ACCURACY_METERS } from '../utils/activityTracking';
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { createAppJSONStorage } from './persistStorage';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { getAppStorage } from './persistStorage';
+import { ownerLeaseIsCurrent, type OwnerLease } from '../lib/localDataOwner';
 
-import type { ActivitySubtype, ActivityType, RunWalkInterval } from '../types/activity';
+import type { ActivitySubtype, ActivityType, CadenceSample, HeartRateSample, PowerSample, RunWalkInterval, WatchRecordingEvidence } from '../types/activity';
+import { OUTDOOR_SPORTS, type OutdoorSport } from '../utils/outdoorSports';
+import { appendTelemetrySamples, selectLiveTelemetry } from '../utils/outdoorTelemetry';
 import {
   appendTrackingPoint,
   evaluateRunWalkCue,
@@ -17,14 +20,7 @@ import { enqueueVoiceCue } from '../lib/voiceCue';
 import { initialAutoPauseState, reduceAutoPause, type AutoPauseState } from '../utils/autoPause';
 import { useSettingsStore } from './settingsStore';
 
-export type ActiveOutdoorType =
-  | 'running'
-  | 'walking'
-  | 'cycling'
-  | 'hiking'
-  | 'downhill_skiing'
-  | 'cross_country_skiing'
-  | 'snowboarding';
+export type ActiveOutdoorType = OutdoorSport;
 
 const EMPTY_AGGREGATE: TrackingAggregate = {
   points: [],
@@ -36,7 +32,30 @@ const EMPTY_AGGREGATE: TrackingAggregate = {
   maximumMetersPerSecond: 0,
 };
 
-type ActiveActivityStore = {
+let activeWrites: Promise<unknown> = Promise.resolve();
+function serializeActiveWrite<T>(operation: () => T | Promise<T>): Promise<T> {
+  const write = activeWrites.then(operation);
+  activeWrites = write.catch(() => undefined);
+  return write;
+}
+
+const activeRecordingStorage = createJSONStorage<ActiveActivityStore>(() => ({
+  getItem: (key: string) => getAppStorage().getItem(key),
+  setItem: (key: string, value: string) => serializeActiveWrite(() => getAppStorage().setItem(key, value)),
+  removeItem: (key: string) => serializeActiveWrite(() => getAppStorage().removeItem(key)),
+}));
+
+/** Shares ordering with every normal active-store write; reads state inside the queue. */
+export function awaitActiveActivityPersistence(lease: OwnerLease): Promise<void> {
+  return serializeActiveWrite(async () => {
+    if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed before recording cleanup persistence');
+    await getAppStorage().setItem('active-activity-store', JSON.stringify({ state: useActiveActivityStore.getState(), version: 1 }));
+    if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed during recording cleanup persistence');
+  });
+}
+
+export type ActiveActivityStore = {
+  watchRecording?: WatchRecordingEvidence;
   activityId: string | null;
   activityType: ActiveOutdoorType;
   subtype: ActivitySubtype;
@@ -50,6 +69,18 @@ type ActiveActivityStore = {
   pausedAt: number | null;
   pausedDurationMs: number;
   aggregate: TrackingAggregate;
+  rawHeartRateSamples: HeartRateSample[];
+  cadenceSamples: CadenceSample[];
+  powerSamples: PowerSample[];
+  lastHeartRateSample: HeartRateSample | null;
+  lastCadenceSample: CadenceSample | null;
+  lastPowerSample: PowerSample | null;
+  recordingPauses: { startTime: number; endTime: number }[];
+  appendTelemetry: (workoutInstanceId: string, samples: {
+    rawHeartRateSamples?: HeartRateSample[];
+    cadenceSamples?: CadenceSample[];
+    powerSamples?: PowerSample[];
+  }) => void;
   /** Timestamp of the last fix that passed the accuracy filter (drives the weak-GPS indicator). */
   lastGoodFixAt: number | null;
   runWalkIntervals: RunWalkInterval[];
@@ -91,6 +122,7 @@ type ActiveActivityStore = {
   setNavigationPromptsEnabled: (enabled: boolean) => void;
   requestCompletion: () => void;
   clearCompletionRequest: () => void;
+  prepareEnd: (workoutInstanceId: string, endedAt: number) => void;
   finish: () => void;
   discard: () => void;
 };
@@ -103,13 +135,7 @@ export function activeOutdoorElapsedSeconds(
 }
 
 function labelFor(type: ActiveOutdoorType): string {
-  if (type === 'walking') return 'Walk';
-  if (type === 'cycling') return 'Ride';
-  if (type === 'hiking') return 'Hike';
-  if (type === 'downhill_skiing') return 'Downhill Ski';
-  if (type === 'cross_country_skiing') return 'Cross-Country Ski';
-  if (type === 'snowboarding') return 'Snowboard';
-  return 'Run';
+  return OUTDOOR_SPORTS[type].label;
 }
 
 export const useActiveActivityStore = create<ActiveActivityStore>()(
@@ -128,6 +154,11 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
       pausedAt: null,
       pausedDurationMs: 0,
       aggregate: EMPTY_AGGREGATE,
+      rawHeartRateSamples: [],
+      cadenceSamples: [],
+      powerSamples: [],
+      lastHeartRateSample: null, lastCadenceSample: null, lastPowerSample: null,
+      recordingPauses: [],
       lastGoodFixAt: null,
       runWalkIntervals: [],
       paceCoachingEnabled: true,
@@ -163,6 +194,12 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
           pausedAt: null,
           pausedDurationMs: 0,
           aggregate: EMPTY_AGGREGATE,
+          watchRecording: undefined,
+          rawHeartRateSamples: [],
+          cadenceSamples: [],
+          powerSamples: [],
+          lastHeartRateSample: null, lastCadenceSample: null, lastPowerSample: null,
+          recordingPauses: [],
       lastGoodFixAt: null,
           runWalkIntervals: input.runWalkIntervals ?? [],
           routeId: input.routeId ?? null,
@@ -177,9 +214,18 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
         });
       },
 
+      appendTelemetry: (workoutInstanceId, samples) => {
+        const state = get();
+        if (!state.isActive || state.isPaused || state.completionRequestedAt != null || state.workoutInstanceId !== workoutInstanceId || !state.startedAt) return;
+        const next = appendTelemetrySamples(state, samples, state.startedAt, Date.now());
+        const live = selectLiveTelemetry(next, state.startedAt, Date.now());
+        set({ ...next, lastHeartRateSample: live.heartRateSample ?? null,
+          lastCadenceSample: live.cadenceSample ?? null, lastPowerSample: live.powerSample ?? null });
+      },
+
       pause: (source = 'manual') => {
         const state = get();
-        if (!state.isActive || state.isPaused) return;
+        if (!state.isActive || state.isPaused || state.completionRequestedAt != null) return;
         set({
           isPaused: true,
           pausedAt: Date.now(),
@@ -191,9 +237,10 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
 
       resume: (_source = 'manual') => {
         const state = get();
-        if (!state.isActive || !state.isPaused) return;
+        if (!state.isActive || !state.isPaused || state.completionRequestedAt != null) return;
         set({
           isPaused: false,
+          recordingPauses: state.pausedAt ? [...state.recordingPauses, { startTime: state.pausedAt, endTime: Date.now() }] : state.recordingPauses,
           pausedDurationMs: state.pausedDurationMs + (state.pausedAt ? Date.now() - state.pausedAt : 0),
           pausedAt: null,
           autoPauseState: state.autoPauseState
@@ -204,12 +251,14 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
 
       addLocation: (location, activeSeconds) => {
         const state = get();
-        if (!state.isActive) return;
+        if (!state.isActive || state.completionRequestedAt != null) return;
         const point = {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
           timestamp: location.timestamp,
-          altitudeMeters: location.coords.altitude ?? undefined,
+          altitudeMeters: typeof location.coords.altitude === 'number' && Number.isFinite(location.coords.altitude)
+            && typeof location.coords.altitudeAccuracy === 'number' && location.coords.altitudeAccuracy >= 0
+            ? location.coords.altitude : undefined,
           accuracyMeters: location.coords.accuracy ?? undefined,
         };
         if ((point.accuracyMeters ?? 0) <= MAX_TRACKING_ACCURACY_METERS) {
@@ -240,6 +289,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
                 const pausedFor = state.pausedAt ? point.timestamp - state.pausedAt : 0;
                 set({
                   isPaused: false,
+                  recordingPauses: state.pausedAt ? [...state.recordingPauses, { startTime: state.pausedAt, endTime: point.timestamp }] : state.recordingPauses,
                   pausedAt: null,
                   pausedDurationMs: state.pausedDurationMs + Math.max(0, pausedFor),
                   aggregate: { ...state.aggregate, points: [...state.aggregate.points, point] },
@@ -288,6 +338,12 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
       setNavigationPromptsEnabled: navigationPromptsEnabled => set({ navigationPromptsEnabled }),
       requestCompletion: () => set({ completionRequestedAt: Date.now() }),
       clearCompletionRequest: () => set({ completionRequestedAt: null }),
+      prepareEnd: (workoutInstanceId, endedAt) => {
+        const state = get();
+        if (!state.isActive || state.workoutInstanceId !== workoutInstanceId || state.startedAt == null
+          || !Number.isFinite(endedAt) || endedAt < state.startedAt || state.completionRequestedAt != null) return;
+        set({ completionRequestedAt: endedAt, isPaused: true, pausedAt: state.isPaused ? state.pausedAt : endedAt });
+      },
 
       finish: () => set({
         isActive: false,
@@ -300,6 +356,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
       }),
 
       discard: () => set({
+        watchRecording: undefined,
         activityId: null,
         scheduledSessionId: null,
         associatedTrainingBlockId: null,
@@ -310,6 +367,11 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
         pausedAt: null,
         pausedDurationMs: 0,
         aggregate: EMPTY_AGGREGATE,
+        rawHeartRateSamples: [],
+        cadenceSamples: [],
+        powerSamples: [],
+        lastHeartRateSample: null, lastCadenceSample: null, lastPowerSample: null,
+        recordingPauses: [],
       lastGoodFixAt: null,
         runWalkIntervals: [],
         routeId: null,
@@ -324,7 +386,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
     {
       name: 'active-activity-store',
       version: 1,
-      storage: createAppJSONStorage(),
+      storage: activeRecordingStorage,
       partialize: state => state,
       merge: (persisted, current) => {
         const p = persisted as Partial<ActiveActivityStore> | undefined;

@@ -7,7 +7,7 @@
 // Background tracking requires a signed EAS build — Expo Go gets foreground
 // location only.
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   Alert,
   Platform,
@@ -17,7 +17,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import {
@@ -26,8 +26,11 @@ import {
 } from '../../../src/store/activeRunStore';
 import { useAthleteStore }   from '../../../src/store/athleteStore';
 import { useWorkoutStore }   from '../../../src/store/workoutStore';
+import { useSettingsStore } from '../../../src/store/settingsStore';
+import { selectLiveTelemetry } from '../../../src/utils/outdoorTelemetry';
 import { useWeekPlan }       from '../../../src/hooks/useWeekPlan';
-import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
+import { startLocationTracking, stopLocationTrackingWhen } from '../../../src/lib/gpsTracking';
+import { capturedRunTelemetryMetrics } from '../../../src/utils/capturedRunTelemetryMetrics';
 import {
   endRunLiveActivity,
   startRunLiveActivity,
@@ -40,6 +43,8 @@ import {
   waitForActiveSessionStores,
 } from '../../../src/lib/activeSessionCoordinator';
 import { resolveLaunchDecision } from '../../../src/utils/workoutInstance';
+import { runCompletionKey } from '../../../src/utils/runCompletionIdentity';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
 import { runScheduledSessionId } from '../../../src/utils/scheduledSessionIds';
 import { toYMD } from '../../../src/utils/calendarEngine';
 import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
@@ -132,16 +137,23 @@ export default function RunTrackingScreen() {
     setFatigueScore, setRecentEasyLoad,
   } = useAthleteStore();
 
-  const { completeWorkout, editLog, completedWorkouts } = useWorkoutStore();
+  const saveLiveRun = useWorkoutStore(state => state.saveLiveRun);
 
   const {
     isActive, isPaused, startTime, distanceMiles,
     currentPaceSecPerMile, averagePaceSecPerMile,
+    lastHeartRateSample, lastCadenceSample, lastPowerSample,
     startRun, pauseRun, resumeRun, finishRun, cancelRun,
   } = useActiveRunStore();
 
   const [elapsedSec, setElapsedSec] = useState(0);
+  const units = useSettingsStore(state => state.units);
+  const liveTelemetry = useMemo(() => isActive && !isPaused && startTime != null
+    ? selectLiveTelemetry({ rawHeartRateSamples: lastHeartRateSample ? [lastHeartRateSample] : [],
+      cadenceSamples: lastCadenceSample ? [lastCadenceSample] : [], powerSamples: lastPowerSample ? [lastPowerSample] : [] }, startTime, Date.now()) : null,
+  [isActive, isPaused, startTime, lastHeartRateSample, lastCadenceSample, lastPowerSample, elapsedSec]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const finishInFlightRef = useRef(false);
 
   // ── Timer ─────────────────────────────────────────────────────────────────────
 
@@ -278,19 +290,67 @@ export default function RunTrackingScreen() {
       elapsedSeconds: activeRunElapsedSeconds(latestState),
       distanceMiles,
       averagePace: formatPace(averagePaceSecPerMile),
-      heartRateBpm: null,
+      unitSystem: units,
+      heartRateBpm: liveTelemetry?.heartRateBpm ?? null,
+      heartRateObservedAt: liveTelemetry?.heartRateSample?.timestamp,
+      cadenceValue: liveTelemetry?.cadenceSample?.kind === 'steps' ? liveTelemetry.cadenceSample.cadenceSpm : undefined,
+      cadenceUnit: 'spm',
+      cadenceObservedAt: liveTelemetry?.cadenceSample?.timestamp,
+      powerWatts: liveTelemetry?.powerSample?.watts,
+      powerKind: liveTelemetry?.powerSample?.kind,
+      powerObservedAt: liveTelemetry?.powerSample?.timestamp,
       zoneLabel: 'Zone --',
       zoneStatus: 'unknown',
       isPaused,
     }).catch(console.warn);
-  }, [averagePaceSecPerMile, distanceMiles, elapsedSec, isActive, isPaused, startTime]);
+  }, [averagePaceSecPerMile, distanceMiles, elapsedSec, isActive, isPaused, startTime, liveTelemetry, units]);
 
   // ── End run ───────────────────────────────────────────────────────────────────
 
   const handleEndRun = useCallback(() => {
     const confirmEnd = async () => {
+      if (finishInFlightRef.current) return;
+      finishInFlightRef.current = true;
+      try {
+      const endingState = useActiveRunStore.getState();
+      const endedAt = endingState.completionRequestedAt ?? Date.now();
+      endingState.requestCompletion(endedAt);
       const finalState = useActiveRunStore.getState();
-      const finalElapsed = activeRunElapsedSeconds(finalState);
+      const finalElapsed = activeRunElapsedSeconds(finalState, endedAt);
+      const completionOwner = captureOwnerLease();
+      if (!completionOwner) throw new Error('Recording owner is not available');
+      const completionStillOwned = () => ownerLeaseIsCurrent(completionOwner)
+        && useActiveRunStore.getState().workoutInstanceId === finalState.workoutInstanceId;
+      const savedWorkout = finalState.plannedWorkout;
+      if (finalElapsed >= 300) {
+      await saveLiveRun({
+        completionKey: runCompletionKey(finalState.workoutInstanceId, finalState.startTime),
+        workoutInstanceId: finalState.workoutInstanceId ?? undefined,
+        watchRecording: finalState.watchRecording,
+        actualStartTime: finalState.startTime ?? undefined,
+        actualEndTime: endedAt,
+        scheduledSessionId: finalState.scheduledSessionId ?? undefined,
+        source: savedWorkout ? 'generated' : 'manual',
+        workoutId: savedWorkout?.id,
+        type: savedWorkout?.type ?? 'easy_run',
+        intensity: savedWorkout?.intensity ?? 'easy',
+        durationMinutes: finalElapsed / 60,
+        distanceMiles: finalState.distanceMiles,
+        routeCoordinates: [...finalState.coordinates],
+        activityMetrics: capturedRunTelemetryMetrics(finalState, endedAt),
+        distanceSource: 'gps',
+        notes: 'Saved from live GPS tracking.',
+      }, currentWeek, fatigueScore, recoveryScore, setFatigueScore, setRecentEasyLoad);
+      } else {
+        await useWorkoutStore.getState().discardRunEnd({
+          completionKey: runCompletionKey(finalState.workoutInstanceId, finalState.startTime),
+          workoutInstanceId: finalState.workoutInstanceId ?? undefined,
+          actualStartTime: finalState.startTime ?? undefined, actualEndTime: endedAt,
+          durationMinutes: finalElapsed / 60, distanceMiles: Math.max(0, finalState.distanceMiles),
+          type: 'easy_run', intensity: 'easy', distanceSource: 'gps',
+        }, currentWeek, fatigueScore, recoveryScore, completionOwner);
+      }
+      if (!completionStillOwned()) return;
       await endRunLiveActivity({
         sessionId: finalState.workoutInstanceId ?? (finalState.startTime ? `run:${finalState.startTime}` : ''),
         workoutInstanceId: finalState.workoutInstanceId ?? undefined,
@@ -303,25 +363,18 @@ export default function RunTrackingScreen() {
         zoneStatus: 'unknown',
         isPaused: false,
       }).catch(console.warn);
-      await stopLocationTracking().catch(console.warn);
+      if (!completionStillOwned()) return;
+      await stopLocationTrackingWhen(completionStillOwned).catch(console.warn);
+      if (!completionStillOwned()) return;
       enqueueVoiceCue('Run complete. Great work.', 'motivation');
       finishRun();
 
-      if (plannedWorkout) {
-        const completionKey = `w${currentWeek}_${plannedWorkout.id}_${dayIndex}`;
-        if (!completedWorkouts.includes(completionKey)) {
-          completeWorkout(
-            completionKey, plannedWorkout, currentWeek,
-            fatigueScore, recoveryScore,
-            setFatigueScore, setRecentEasyLoad,
-          );
-          editLog(completionKey, {
-            actualDurationMinutes: Math.round(finalElapsed / 60),
-            actualDistanceMiles:   Math.round(distanceMiles * 100) / 100,
-          });
-        }
-      }
       router.back();
+      } catch {
+        Alert.alert('Run not yet saved', 'Your recording has not been cleared. Unlock the device, confirm the original account, and retry saving.');
+      } finally {
+        finishInFlightRef.current = false;
+      }
     };
 
     if (Platform.OS === 'web') {
@@ -333,8 +386,8 @@ export default function RunTrackingScreen() {
       ]);
     }
   }, [
-    completedWorkouts, completeWorkout, currentWeek, dayIndex,
-    distanceMiles, editLog, elapsedSec, fatigueScore, finishRun,
+    saveLiveRun, currentWeek, dayIndex,
+    distanceMiles, elapsedSec, fatigueScore, finishRun,
     plannedWorkout, recoveryScore, setFatigueScore, setRecentEasyLoad,
   ]);
 
@@ -345,7 +398,24 @@ export default function RunTrackingScreen() {
         text: 'Discard',
         style: 'destructive',
         onPress: async () => {
+          try {
           const finalState = useActiveRunStore.getState();
+          const completionOwner = captureOwnerLease();
+          if (!completionOwner) return;
+          const completionStillOwned = () => ownerLeaseIsCurrent(completionOwner)
+            && useActiveRunStore.getState().workoutInstanceId === finalState.workoutInstanceId;
+          if (!completionStillOwned()) return;
+          const endedAt = finalState.completionRequestedAt ?? Date.now();
+          await useWorkoutStore.getState().discardRunEnd({
+            completionKey: runCompletionKey(finalState.workoutInstanceId, finalState.startTime),
+            workoutInstanceId: finalState.workoutInstanceId ?? undefined,
+            actualStartTime: finalState.startTime ?? undefined,
+            actualEndTime: endedAt,
+            durationMinutes: activeRunElapsedSeconds(finalState, endedAt) / 60,
+            distanceMiles: Math.max(0, finalState.distanceMiles), type: 'easy_run', intensity: 'easy',
+            distanceSource: 'gps',
+          }, currentWeek, fatigueScore, recoveryScore, completionOwner);
+          if (!completionStillOwned()) return;
           await endRunLiveActivity({
             sessionId: finalState.workoutInstanceId ?? (finalState.startTime ? `run:${finalState.startTime}` : ''),
             workoutInstanceId: finalState.workoutInstanceId ?? undefined,
@@ -358,13 +428,18 @@ export default function RunTrackingScreen() {
             zoneStatus: 'unknown',
             isPaused: false,
           }).catch(console.warn);
-          await stopLocationTracking().catch(console.warn);
+          if (!completionStillOwned()) return;
+          await stopLocationTrackingWhen(completionStillOwned).catch(console.warn);
+          if (!completionStillOwned()) return;
           cancelRun();
           router.back();
+          } catch {
+            Alert.alert('Run not yet discarded', 'Your recording has not been cleared. Unlock the device, confirm the original account, and retry discarding.');
+          }
         },
       },
     ]);
-  }, [cancelRun]);
+  }, [cancelRun, currentWeek, fatigueScore, recoveryScore]);
 
   // ── Pace status ───────────────────────────────────────────────────────────────
 

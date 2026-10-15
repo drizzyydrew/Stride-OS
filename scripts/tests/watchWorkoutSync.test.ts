@@ -59,11 +59,13 @@ test('watch events reach JS through the Expo module emitter, not NativeEventEmit
   assert.doesNotMatch(moduleIndex, /NativeEventEmitter/);
   assert.doesNotMatch(moduleIndex, /NativeModules/);
   assert.match(moduleIndex, /nativeModule\.addListener\(eventName, listener\)/);
-  for (const eventName of ['onWatchStatus', 'onWatchHeartRate', 'onWatchWorkoutState', 'onWatchError', 'onWatchAck']) {
+  for (const eventName of ['onWatchStatus', 'onWatchHeartRate', 'onWatchWorkoutState', 'onWatchError', 'onWatchAck', 'onWatchTelemetry', 'onPhoneCadence']) {
     assert.match(moduleIndex, new RegExp(`subscribe\\('${eventName}'`));
   }
   const watchModule = read('modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift');
-  assert.match(watchModule, /Events\("onWatchStatus", "onWatchHeartRate", "onWatchWorkoutState", "onWatchError", "onWatchAck"\)/);
+  assert.match(watchModule, /Events\("onWatchStatus", "onWatchHeartRate", "onWatchWorkoutState", "onWatchError", "onWatchAck", "onWatchTelemetry", "onPhoneCadence"\)/);
+  assert.match(moduleIndex, /event\.workoutInstanceId/);
+  assert.match(moduleIndex, /Number\.isFinite\(event\?\.timestamp\)/);
 });
 
 test('exactly one place applies watch pause/resume/end to the run store', () => {
@@ -78,12 +80,13 @@ test('exactly one place applies watch pause/resume/end to the run store', () => 
   assert.doesNotMatch(listenerBlock, /resumeRun\(/);
   assert.doesNotMatch(listenerBlock, /requestCompletion\(/);
   assert.doesNotMatch(listenerBlock, /finishRun\(/);
-  // A watch-ended run must go through the normal completion path so the
-  // activity is saved; finishRun() would reset the run and log nothing.
-  const runEndedStart = bridge.indexOf("if (event.state === 'ended') {\n      const activeRun");
+  // A Watch End must save without a mounted Training screen.
+  const runEndedStart = bridge.indexOf("if (outdoorTypeFromWatch(event.workoutKind) && event.state === 'ended')");
   assert.ok(runEndedStart > 0);
-  const runEnded = bridge.slice(runEndedStart, bridge.indexOf('const outdoorType = outdoorTypeFromWatch(event.workoutKind);', runEndedStart));
-  assert.match(runEnded, /requestCompletion\(\)/);
+  const runEnded = bridge.slice(runEndedStart, bridge.indexOf("if (event.workoutKind === 'run' && useActiveRunStore", runEndedStart));
+  assert.match(runEnded, /completeWatchActivityEnd\(\{ workoutInstanceId: instance, endedAt: event.timestamp/);
+  assert.match(runEnded, /if \(!instance \|\| completedWatchWorkoutEvents.has\(instance\)\) return/);
+  assert.doesNotMatch(runEnded, /requestCompletion\(\)/);
   assert.doesNotMatch(runEnded, /finishRun\(\)/);
 });
 
@@ -317,14 +320,15 @@ test('phone session stores can reuse watch-provided workout instance ids', () =>
 test('watch and phone completion handling is idempotent for duplicate stop events', () => {
   assert.match(bridge, /completedWatchWorkoutEvents/);
   assert.match(bridge, /rememberCompletedWatchWorkout\(id, event\.timestamp\)/);
-  // Run completion goes through requestCompletion() -> training stop(), which saves once.
+  // Cache only after the global command has durably saved/discarded the recording.
   assert.doesNotMatch(bridge, /finishRun\(\)/);
-  assert.match(bridge, /if \(!activeRun\.completionRequestedAt\) \{/);
-  assert.match(bridge, /if \(!active\.completionRequestedAt\) \{/);
+  assert.match(bridge, /\.then\(saved => \{\s+if \(saved.status === 'saved' && rememberCompletedWatchWorkout\(instance, event.timestamp\)\)/);
+  assert.doesNotMatch(bridge, /useActiveRunStore.getState\(\).requestCompletion\(\)/);
+  assert.doesNotMatch(bridge, /useActiveActivityStore.getState\(\).requestCompletion\(\)/);
   assert.match(bridge, /if \(!useActiveStrengthSessionStore\.getState\(\)\.completionRequestedAt\) \{/);
-  assert.match(activityStore, /function nearDuplicateTrackedIndex/);
-  assert.match(activityStore, /Math\.abs\(item\.startTime - activity\.startTime\) <= 180_000/);
-  assert.match(activityStore, /Math\.max\(120, distance \* 0\.05\)/);
+  assert.match(activityStore, /sameRecording\(item, activity\)/);
+  assert.doesNotMatch(activityStore, /function nearDuplicateTrackedIndex/);
+  assert.doesNotMatch(activityStore, /Math\.abs\(item\.startTime - activity\.startTime\) <= 180_000/);
 });
 
 test('live run and outdoor activity saves do not create fresh ids for repeated finish events', () => {
@@ -384,7 +388,8 @@ test('run screen activates Apple Watch automatically without exposing the manual
 test('watch pause resume and stop are applied to the active run store by the bridge only', () => {
   assert.match(bridge, /useActiveRunStore\.getState\(\)\.pauseRun\('manual'\)/);
   assert.match(bridge, /useActiveRunStore\.getState\(\)\.resumeRun\('manual'\)/);
-  assert.match(bridge, /useActiveRunStore\.getState\(\)\.requestCompletion\(\)/);
+  assert.match(bridge, /completeWatchActivityEnd\(\{ workoutInstanceId: instance, endedAt: event.timestamp/);
+  assert.doesNotMatch(bridge, /useActiveRunStore\.getState\(\)\.requestCompletion\(\)/);
   assert.match(bridge, /activeRun\.workoutInstanceId !== event\.workoutInstanceId/);
   // The run screen keeps mirroring phone auto-pause out to the watch, but no
   // longer applies watch events to the store (that double-applied them).

@@ -1,0 +1,226 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
+import test from 'node:test';
+import vm from 'node:vm';
+import ts from 'typescript';
+import { buildRouteReviewObservations } from '../../src/utils/outdoorAnalysis';
+import { OUTDOOR_SPORTS } from '../../src/utils/outdoorSports';
+import type { ActiveOutdoorSessionProps } from '../../src/components/activity/ActiveOutdoorSession';
+
+function harness(platform = 'web') {
+  const filename = resolve('src/components/activity/ActiveOutdoorSession.tsx');
+  const require = createRequire(filename);
+  const centers: unknown[] = [];
+  let following = true;
+  const mocks: Record<string, unknown> = {
+    react: { useMemo: (action: () => unknown) => action(), useRef: () => ({ current: { animateToRegion: (...args: unknown[]) => centers.push(args) } }),
+      useState: () => [following, (next: boolean) => { following = next; }] },
+    'react-native': { Platform: { OS: platform }, ScrollView: 'ScrollView', Text: 'Text', TouchableOpacity: 'TouchableOpacity', View: 'View',
+      useWindowDimensions: () => ({ width: 320, height: 740 }), StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1, absoluteFill: {} } },
+    '@expo/vector-icons': { Ionicons: 'Icon' },
+    'react-native-svg': { __esModule: true, default: 'Svg', Circle: 'Circle', Polyline: 'SvgPolyline' },
+    '../maps/MapComponents': { __esModule: true, default: 'MapView', Marker: 'Marker', Polyline: 'Polyline' },
+    '../../theme/useColors': { useColors: () => ({ bg: '#11100F', text: '#fff', accent: '#abc', primary: '#789' }) },
+    '../../utils/outdoorAnalysis': { buildRouteReviewObservations },
+  };
+  const module = { exports: {} as any };
+  vm.runInNewContext(ts.transpileModule(readFileSync(filename, 'utf8'), { compilerOptions: {
+    module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
+  } }).outputText, { module, exports: module.exports, require: (id: string) => Object.hasOwn(mocks, id) ? mocks[id] : require(id) });
+  return { ...module.exports, centers };
+}
+
+function mapboxAdapterHarness() {
+  const filename = resolve('src/components/maps/MapComponents.native.tsx');
+  const require = createRequire(filename);
+  const React = require('react');
+  const cameraCommands: unknown[] = [];
+  const mocks: Record<string, unknown> = {
+    react: { __esModule: true, ...React, default: React,
+      forwardRef: (render: unknown) => render,
+      useEffect() {}, useMemo: (action: () => unknown) => action(),
+      useState: (value: unknown) => [value, () => {}],
+      useRef: () => ({ current: { setCamera: (command: unknown) => cameraCommands.push(command) } }),
+      useImperativeHandle: (ref: any, create: () => unknown) => { if (ref) ref.current = create(); },
+    },
+    'react-native': { View: 'View', StyleSheet: { create: (styles: unknown) => styles } },
+    '@rnmapbox/maps': { __esModule: true, default: { StyleURL: { SatelliteStreet: 'synthetic-satellite' } },
+      Camera: 'MapboxCamera', MapView: 'MapboxMapView', UserLocation: 'MapboxUserLocation',
+      PointAnnotation: 'MapboxPointAnnotation', ShapeSource: 'MapboxShapeSource', LineLayer: 'MapboxLineLayer' },
+    '../../lib/mapboxConfig': { isMapboxConfigured: () => false, MAPBOX_STYLE_URL: 'synthetic-style' },
+  };
+  const module = { exports: {} as any };
+  vm.runInNewContext(ts.transpileModule(readFileSync(filename, 'utf8'), { compilerOptions: {
+    module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
+  } }).outputText, { module, exports: module.exports, require: (id: string) => Object.hasOwn(mocks, id) ? mocks[id] : require(id) });
+  return { render: (props: unknown) => module.exports.default(props, null), cameraCommands };
+}
+
+function nodes(element: any): any[] {
+  if (!element || typeof element !== 'object') return [];
+  if (Array.isArray(element)) return element.flatMap(nodes);
+  return [element, ...nodes(element.props?.children)];
+}
+const startedAt = 1_760_000_000_000;
+const points = Array.from({ length: 10 }, (_, i) => ({ latitude: 45 + i * 0.00003, longitude: 7 + i * 0.00001,
+  timestamp: startedAt + i * 1000, accuracyMeters: 5 }));
+function fixture(overrides: Partial<ActiveOutdoorSessionProps> = {}): ActiveOutdoorSessionProps {
+  return { name: 'Walk', activityType: 'walking', paused: false, startedAt, points, recordingPauses: [],
+    timeLabel: '42:18', distanceLabel: '3.24', distanceUnit: 'km',
+    primaryMetrics: [{ label: 'Avg pace', value: '13:03 /km' }, { label: 'Heart rate', value: '--' }, { label: 'Elevation gain', value: '140 m' }],
+    additionalMetrics: [{ label: 'Elevation loss', value: '52 m' }], watchStatus: 'No paired Apple Watch',
+    coachingControls: null, onPauseResume() {}, onFinish() {}, ...overrides };
+}
+
+test('actual session puts an unframed map before paired primary metrics and fixed controls outside scrolling content', () => {
+  const tree = harness().default(fixture());
+  const scroll = tree.props.children[0];
+  assert.equal(scroll.type, 'ScrollView');
+  assert.equal(scroll.props.children[0].props.testID, 'active-outdoor-map');
+  assert.equal(scroll.props.children[1].props.children[0].props.testID, 'active-outdoor-primary');
+  assert.ok(nodes(tree.props.children[1]).some(node => node.props?.accessibilityLabel === 'Complete activity'));
+  const mapStyle = scroll.props.children[0].props.style;
+  assert.equal(mapStyle[0].borderRadius, undefined);
+  assert.equal(mapStyle[1].height, 229.4);
+});
+
+test('actual web renderer draws the supplied GPS trace with finite coordinates, not a blank map stub', () => {
+  const all = nodes(harness().default(fixture()));
+  assert.ok(all.some(node => node.type === 'Svg'));
+  const lines = all.filter(node => node.type === 'SvgPolyline');
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].props.points.split(' ').length, points.length);
+  assert.doesNotMatch(lines[0].props.points, /NaN|Infinity/);
+  assert.equal(all.filter(node => node.type === 'Circle').length, 2);
+});
+
+test('native map draws recording coordinates separately from its current-location recenter control', () => {
+  const native = harness('ios');
+  const all = nodes(native.default(fixture()));
+  const map = all.find(node => node.type === 'MapView');
+  assert.equal(map.props.showsUserLocation, true);
+  assert.equal(map.props.initialRegion.latitude, points.at(-1)!.latitude);
+  assert.equal(all.find(node => node.type === 'Polyline').props.coordinates.length, points.length);
+  const button = all.find(node => node.props?.accessibilityLabel === 'Recenter map on current location');
+  assert.equal(button.props.disabled, false);
+  button.props.onPress();
+  assert.equal(native.centers.length, 0, 'Recenter must not animate to a stale recorded coordinate');
+});
+
+test('native map follows initially, a pan releases following, and Recenter restores it without changing navigation', () => {
+  const native = harness('ios');
+  const props = fixture();
+  let all = nodes(native.default(props));
+  assert.equal(all.find(node => node.type === 'MapView').props.followsUserLocation, true);
+  all.find(node => node.type === 'MapView').props.onPanDrag();
+  all = nodes(native.default(props));
+  assert.equal(all.find(node => node.type === 'MapView').props.followsUserLocation, false);
+  all.find(node => node.props?.accessibilityLabel === 'Recenter map on current location').props.onPress();
+  all = nodes(native.default(props));
+  assert.equal(all.find(node => node.type === 'MapView').props.followsUserLocation, true);
+  assert.equal(native.centers.length, 0);
+  assert.equal(props.instruction, undefined);
+});
+
+test('actual Mapbox adapter forwards user gestures to release following and Recenter restores device follow without coordinate commands', () => {
+  const session = harness('ios');
+  const adapter = mapboxAdapterHarness();
+  const props = fixture({ instruction: 'Continue on trail' });
+  const render = () => {
+    const sessionNodes = nodes(session.default(props));
+    const wrapper = sessionNodes.find(node => node.type === 'MapView');
+    const nativeMap = adapter.render(wrapper.props);
+    const camera = nodes(nativeMap).find(node => node.type === 'MapboxCamera');
+    return { sessionNodes, nativeMap, camera };
+  };
+  let view = render();
+  assert.equal(view.camera.props.followUserLocation, true);
+  assert.ok(nodes(view.nativeMap).some(node => node.type === 'MapboxUserLocation'));
+  view.nativeMap.props.onCameraChanged({ gestures: { isGestureActive: false } });
+  assert.equal(render().camera.props.followUserLocation, true, 'programmatic camera updates do not release following');
+  view.nativeMap.props.onCameraChanged({ gestures: { isGestureActive: true } });
+  view = render();
+  assert.equal(view.camera.props.followUserLocation, false, 'real adapter gesture callback releases device following');
+  view.sessionNodes.find(node => node.props?.accessibilityLabel === 'Recenter map on current location').props.onPress();
+  view = render();
+  assert.equal(view.camera.props.followUserLocation, true);
+  assert.equal(adapter.cameraCommands.length, 0, 'current-device follow does not compete with an accepted-point camera animation');
+  assert.equal(props.instruction, 'Continue on trail', 'map gestures never change navigation instructions');
+});
+
+test('no GPS fix never invents a city, marker or usable recenter action', () => {
+  const all = nodes(harness('ios').default(fixture({ points: [] })));
+  assert.equal(all.some(node => node.type === 'MapView' || node.type === 'Marker'), false);
+  const recenter = all.find(node => node.props?.accessibilityLabel === 'Recenter map on current location');
+  assert.equal(recenter.props.disabled, true);
+  assert.ok(all.some(node => node.props?.children === 'Waiting for an accurate GPS location'));
+});
+
+test('map reuses vetted accuracy and gap rules without mutating the recording or reconnecting a pause', () => {
+  const { liveOutdoorMapSegments } = harness();
+  const raw = [...points.slice(0, 5), { ...points[5]!, latitude: 80, accuracyMeters: 500 }, ...points.slice(6)];
+  const before = JSON.stringify(raw);
+  const groups = liveOutdoorMapSegments(raw, 'walking', startedAt, [{ startTime: startedAt + 4000, endTime: startedAt + 6000 }]);
+  assert.equal(groups.length, 2);
+  assert.equal(groups.flat().length, 9);
+  assert.equal(JSON.stringify(raw), before);
+});
+
+test('all nine sports retain caller metrics and provenance without manufacturing swimming or sensor values', () => {
+  for (const activityType of Object.keys(OUTDOOR_SPORTS) as ActiveOutdoorSessionProps['activityType'][]) {
+    const metrics = [{ label: activityType === 'cycling' ? 'Measured power' : 'Heart rate', value: '--' }];
+    const all = nodes(harness().default(fixture({ activityType, additionalMetrics: metrics })));
+    assert.ok(all.some(node => node.props?.metric === metrics[0]));
+    assert.ok(all.some(node => node.props?.children === 'No paired Apple Watch'));
+    assert.equal(all.some(node => node.props?.children === 'Swimming'), false);
+  }
+});
+
+test('Pause/Resume and Finish call only the supplied actions; paused state remains visible', () => {
+  for (const paused of [false, true]) {
+    let pauses = 0, finishes = 0;
+    const all = nodes(harness().default(fixture({ paused, onPauseResume: () => { pauses++; }, onFinish: () => { finishes++; } })));
+    all.find(node => node.props?.accessibilityLabel === (paused ? 'Resume activity' : 'Pause activity')).props.onPress();
+    all.find(node => node.props?.accessibilityLabel === 'Complete activity').props.onPress();
+    assert.equal(pauses, 1); assert.equal(finishes, 1);
+    assert.ok(all.some(node => node.props?.children === (paused ? 'Paused' : 'Recording')));
+  }
+});
+
+test('retained End shows Finishing, disables Pause/Resume accessibly, and keeps Finish retry available', () => {
+  for (const paused of [false, true]) {
+    let pauses = 0, retries = 0;
+    const all = nodes(harness().default(fixture({ paused, ending: true,
+      onPauseResume: () => { pauses++; }, onFinish: () => { retries++; } })));
+    assert.ok(all.some(node => node.props?.children === 'Finishing'));
+    const pause = all.find(node => node.props?.accessibilityLabel === 'Activity ending');
+    assert.equal(pause.props.disabled, true);
+    assert.equal(pause.props.accessibilityState.disabled, true);
+    assert.equal(pause.props.onPress, undefined);
+    assert.equal(all.some(node => node.props?.accessibilityLabel === 'Resume activity'), false);
+    const retry = all.find(node => node.props?.accessibilityLabel === 'Retry finish activity');
+    assert.notEqual(retry.props.disabled, true);
+    retry.props.onPress();
+    assert.equal(pauses, 0); assert.equal(retries, 1);
+  }
+});
+
+test('container-measured numeric type fits narrow primary columns, suffixes and long durations without viewport scaling', () => {
+  const { fitMetricFontSize } = harness();
+  for (const width of [98, 112, 132, 155]) {
+    for (const [value, unit] of [['42:18', ''], ['4.20', 'km'], ['1666:39', ''], ['9999.99', 'mi']]) {
+      const font = fitMetricFontSize(value, width, 40, 18, unit);
+      const expectedWidth = value.length * 0.65 * font + (unit ? (unit.length + 1) * 14 * 0.65 : 0);
+      assert.ok(expectedWidth <= width, `${value} ${unit} fits ${width}px`);
+      assert.ok(font >= 11 && font <= 40);
+    }
+  }
+  for (const value of ['18.4 km/h', '138 bpm', '13:03 /km', '112 spm']) {
+    const font = fitMetricFontSize(value, 72, 16, 11);
+    assert.ok(value.length * 0.65 * font <= 72);
+  }
+  assert.equal(fitMetricFontSize('42:18', null, 40, 18), 18, 'pre-layout rendering starts conservatively');
+  assert.equal(fitMetricFontSize('42:18', 132, 40, 18), fitMetricFontSize('42:18', 132, 40, 18), 'only container width and content influence sizing');
+});

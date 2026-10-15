@@ -48,6 +48,7 @@ type MapViewProps = {
   showsMyLocationButton?: boolean;
   mapType?: 'standard' | 'satellite' | 'hybrid' | 'terrain' | string;
   onMapReady?: () => void;
+  onPanDrag?: () => void;
   onPress?: (event: { nativeEvent: { coordinate: LatLng } }) => void;
 };
 
@@ -137,6 +138,7 @@ const MapView = forwardRef<MapViewRef, MapViewProps>(({
   followsUserLocation = false,
   mapType,
   onMapReady,
+  onPanDrag,
   onPress,
 }, ref) => {
   const cameraRef = useRef<CameraRef>(null);
@@ -178,6 +180,7 @@ const MapView = forwardRef<MapViewRef, MapViewProps>(({
       compassEnabled={false}
       scaleBarEnabled={false}
       onDidFinishLoadingMap={onMapReady}
+      onCameraChanged={state => { if (state.gestures.isGestureActive) onPanDrag?.(); }}
       onPress={(event) => {
         const coordinate = eventCoordinate(event);
         if (coordinate) onPress?.({ nativeEvent: { coordinate } });

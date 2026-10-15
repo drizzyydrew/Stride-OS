@@ -175,7 +175,7 @@ export default function ActivityDetailScreen() {
             <Text style={[s.bodyValue, { color: C.text }]}>{formatDistance(segment.distanceMeters / 1609.344, units)} · {Math.round(segment.elevationMeters * (units === 'metric' ? 1 : 3.28084))} {units === 'metric' ? 'm' : 'ft'}</Text>
           </View>)}
         </View> : null}
-        <ActivityPowerPanel activity={activity} units={units} />
+        <ActivityPowerPanel key={`${activity.id}:${units}`} activity={activity} units={units} />
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>SHARE IMAGE</Text>
           <View style={s.variantGrid}>

@@ -30,6 +30,7 @@ type MapViewProps = {
   showsMyLocationButton?: boolean;
   mapType?: 'standard' | 'satellite' | 'hybrid' | 'terrain' | string;
   onMapReady?: () => void;
+  onPanDrag?: () => void;
   onPress?: (event: { nativeEvent: { coordinate: LatLng } }) => void;
 };
 

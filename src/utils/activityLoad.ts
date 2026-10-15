@@ -21,6 +21,8 @@ const IMPACT_BEARING = new Set<ActivityType>([
   'downhill_skiing',
   'cross_country_skiing',
   'snowboarding',
+  'ski_touring',
+  'snowboard_touring',
   'stair_climbing',
   'hiit',
   'mixed_modal',
@@ -35,6 +37,8 @@ const CROSS_TRAINING = new Set<ActivityType>([
   'downhill_skiing',
   'cross_country_skiing',
   'snowboarding',
+  'ski_touring',
+  'snowboard_touring',
   'elliptical',
   'rowing',
   'stair_climbing',
@@ -53,6 +57,8 @@ const ESTIMATED_INTENSITY_FACTOR: Record<ActivityType, number> = {
   downhill_skiing: 0.58,
   cross_country_skiing: 0.72,
   snowboarding: 0.58,
+  ski_touring: 0.58,
+  snowboard_touring: 0.58,
   elliptical: 0.58,
   rowing: 0.66,
   stair_climbing: 0.72,
@@ -114,20 +120,24 @@ export function calculateActivityLoad(input: ActivityLoadInput): ActivityLoadDim
 }
 
 const DISTANCE_TYPES = new Set<ActivityType>([
+  'ski_touring', 'snowboard_touring',
   'running', 'walking', 'cycling', 'indoor_cycling', 'swimming', 'hiking',
   'downhill_skiing', 'cross_country_skiing', 'snowboarding', 'elliptical', 'rowing',
 ]);
 const ELEVATION_TYPES = new Set<ActivityType>([
+  'ski_touring', 'snowboard_touring',
   'running', 'walking', 'cycling', 'hiking', 'downhill_skiing', 'cross_country_skiing', 'snowboarding',
 ]);
 const PACE_TYPES = new Set<ActivityType>(['running', 'walking', 'hiking']);
 const SPEED_TYPES = new Set<ActivityType>([
+  'ski_touring', 'snowboard_touring',
   'cycling', 'indoor_cycling', 'downhill_skiing', 'cross_country_skiing', 'snowboarding',
 ]);
 const CADENCE_TYPES = new Set<ActivityType>([
   'running', 'walking', 'cycling', 'indoor_cycling', 'rowing',
 ]);
 const ROUTE_TYPES = new Set<ActivityType>([
+  'ski_touring', 'snowboard_touring',
   'running', 'walking', 'cycling', 'hiking', 'downhill_skiing', 'cross_country_skiing', 'snowboarding',
 ]);
 
@@ -142,6 +152,11 @@ export function sanitizeActivityMetrics(
     averageHeartRateBpm: metrics.averageHeartRateBpm,
     maximumHeartRateBpm: metrics.maximumHeartRateBpm,
     heartRateZoneSeconds: metrics.heartRateZoneSeconds,
+    heartRateSummary: metrics.heartRateSummary,
+    rawHeartRateSamples: metrics.rawHeartRateSamples,
+    recordingPauses: metrics.recordingPauses,
+    stepCount: metrics.stepCount,
+    metricSources: metrics.metricSources,
     estimatedCalories: metrics.estimatedCalories,
   };
 
@@ -159,8 +174,23 @@ export function sanitizeActivityMetrics(
     clean.elevationLossMeters = metrics.elevationLossMeters;
   }
   if (PACE_TYPES.has(activityType)) clean.pace = metrics.pace;
+  if (activityType === 'running') clean.runningDynamics = metrics.runningDynamics;
+  if (activityType === 'running' && metrics.speed) clean.speed = metrics.speed;
   if (SPEED_TYPES.has(activityType)) clean.speed = metrics.speed;
   if (CADENCE_TYPES.has(activityType)) clean.cadenceRpm = metrics.cadenceRpm;
+  if (activityType === 'running' || activityType === 'walking' || activityType === 'hiking') clean.cadenceSpm = metrics.cadenceSpm;
+  if (activityType === 'running') clean.runningPowerWatts = metrics.runningPowerWatts;
+  if (CADENCE_TYPES.has(activityType) || activityType === 'hiking') {
+    clean.cadenceSamples = metrics.cadenceSamples?.filter(sample =>
+      activityType === 'cycling' || activityType === 'indoor_cycling'
+        ? sample.kind === 'cycling' : sample.kind === 'steps');
+  }
+  if (activityType === 'running' || activityType === 'cycling' || activityType === 'indoor_cycling') {
+    clean.powerSamples = metrics.powerSamples?.filter(sample => sample.sport === (activityType === 'running' ? 'running' : 'cycling'));
+    if (metrics.powerEstimate?.sport === (activityType === 'running' ? 'running' : 'cycling')) {
+      clean.powerEstimate = metrics.powerEstimate;
+    }
+  }
   if (activityType === 'cycling' || activityType === 'indoor_cycling') {
     clean.cyclingPowerWatts = metrics.cyclingPowerWatts;
   }
@@ -175,7 +205,7 @@ export function sanitizeActivityMetrics(
     clean.routeCoordinates = metrics.routeCoordinates;
   }
   if (activityType === 'swimming') clean.swimming = metrics.swimming;
-  if (activityType === 'downhill_skiing' || activityType === 'cross_country_skiing' || activityType === 'snowboarding') {
+  if (activityType === 'downhill_skiing' || activityType === 'cross_country_skiing' || activityType === 'snowboarding' || activityType === 'ski_touring' || activityType === 'snowboard_touring') {
     clean.skiing = metrics.skiing;
   }
   if (activityType === 'hiit' || activityType === 'mixed_modal') {
@@ -196,7 +226,9 @@ export function activityMatchesFilter(activity: Activity, filter: ActivityFilter
   if (filter === 'skiing') {
     return activity.activityType === 'downhill_skiing'
       || activity.activityType === 'cross_country_skiing'
-      || activity.activityType === 'snowboarding';
+      || activity.activityType === 'snowboarding'
+      || activity.activityType === 'ski_touring'
+      || activity.activityType === 'snowboard_touring';
   }
   if (filter === 'hiit_mixed') {
     return activity.activityType === 'hiit' || activity.activityType === 'mixed_modal';

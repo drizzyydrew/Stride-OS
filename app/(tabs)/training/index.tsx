@@ -1,11 +1,12 @@
+import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
+import Modal from '../../../src/components/ui/RecoverableModal';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Alert, Modal, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Alert, AppState, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import { requestLocationRecovery } from '../../../src/lib/locationPermissionRecovery';
 import MapView, { Marker, Polyline, type LatLng, type MapViewRef, type Region } from '../../../src/components/maps/MapComponents';
 import RoutePreviewMap from '../../../src/components/maps/RoutePreviewMap';
 import WatchStatusDiagnostics from '../../../src/components/watch/WatchStatusDiagnostics';
@@ -30,7 +31,6 @@ import type { VoiceCueCategory } from '../../../src/utils/voiceCoaching';
 import { useHydrationPlannerStore } from '../../../src/store/hydrationPlannerStore';
 import HydrationPlannerScreen from './hydration';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
-import { useIntegrationsStore } from '../../../src/store/integrationsStore';
 import {
   activeRunElapsedSeconds,
   useActiveRunStore,
@@ -40,6 +40,8 @@ import {
 } from '../../../src/store/activeRunStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
+import { runCompletionKey } from '../../../src/utils/runCompletionIdentity';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
 import { useCalibration } from '../../../src/store/profileStore';
@@ -65,7 +67,8 @@ import {
   routeOfflineStatusLabel,
 } from '../../../src/lib/mapboxOffline';
 import { isMapboxConfigured } from '../../../src/lib/mapboxConfig';
-import { startLocationTracking, stopLocationTracking } from '../../../src/lib/gpsTracking';
+import { startLocationTracking, stopLocationTrackingWhen } from '../../../src/lib/gpsTracking';
+import { capturedRunTelemetryMetrics } from '../../../src/utils/capturedRunTelemetryMetrics';
 import {
   buildRouteGuidance,
   formatTurnAnnouncement,
@@ -79,11 +82,10 @@ import {
   type RouteGuidancePlan,
   type RouteGuidanceProgress,
 } from '../../../src/lib/routing';
-import { getLatestHeartRateBpm } from '../../../src/lib/healthKit';
+import { selectLiveTelemetry } from '../../../src/utils/outdoorTelemetry';
 import {
   selectLatestLiveMetric,
   selectLiveDistance,
-  selectLiveHeartRate,
   useLiveSensorStore,
 } from '../../../src/store/liveSensorStore';
 import {
@@ -281,19 +283,12 @@ async function getTrackingPermissionState(): Promise<TrackingPermissionState> {
 }
 
 async function requestTrackingPermissionState(): Promise<TrackingPermissionState> {
-  const foreground = await Location.requestForegroundPermissionsAsync();
-  if (foreground.status !== 'granted') {
-    return {
-      foreground: foreground.status,
-      background: 'unknown',
-    };
+  try {
+    return await requestLocationRecovery();
+  } catch {
+    Alert.alert('Location unavailable', 'Check Settings > StrideOS > Location. Choose Always and enable Precise Location, then return to StrideOS.');
+    return getTrackingPermissionState().catch(() => ({ foreground: 'unknown', background: 'unknown' }));
   }
-
-  const background = await Location.requestBackgroundPermissionsAsync();
-  return {
-    foreground: foreground.status,
-    background: background.status,
-  };
 }
 
 function milesToMeters(miles: number): number {
@@ -395,7 +390,7 @@ function RunStat({
 }) {
   return (
     <View style={styles.runStatCell}>
-      <Text style={[styles.runSecondaryValue, { color }]}>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.runSecondaryValue, { color }]}>
         {value} <Text style={[styles.runSecondaryUnit, { color: muted }]}>{unit}</Text>
       </Text>
       <Text style={[styles.runMetricLabel, { color: muted }]}>{label}</Text>
@@ -813,12 +808,11 @@ function PlanTab() {
 
 // ─── Active Tab ────────────────────────────────────────────────────────────────
 function liveRunCompletionKey(
-  kind: 'gps_run' | 'treadmill_run',
+  _kind: 'gps_run' | 'treadmill_run',
   workoutInstanceId: string | null | undefined,
   startedAt: number | null | undefined,
 ): string {
-  const raw = workoutInstanceId || (startedAt ? `started_${startedAt}` : `fallback_${Date.now()}`);
-  return `${kind}_${raw.replace(/[^A-Za-z0-9_-]+/g, '_')}`;
+  return runCompletionKey(workoutInstanceId, startedAt);
 }
 
 function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void; fullScreen?: boolean }) {
@@ -839,7 +833,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     showWatchSyncDetails,
     voiceDistanceUpdateInterval,
   } = useSettingsStore();
-  const healthKitEnabled = useIntegrationsStore(s => s.healthKitEnabled);
   const calibration = useCalibration();
   const {
     fatigueScore,
@@ -848,8 +841,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     setFatigueScore,
     setRecentEasyLoad,
   } = useAthleteStore();
-  const manualLogRun = useWorkoutStore(s => s.manualLog);
-  const editRunLog = useWorkoutStore(s => s.editLog);
+  const saveLiveRun = useWorkoutStore(s => s.saveLiveRun);
   const imp = units === 'imperial';
   const plannerReminder = useHydrationPlannerStore();
   const plannerWeightKg = useOnboardingStore(s => s.data.weightKg || 70);
@@ -872,6 +864,9 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     plannedWorkout,
     workoutInstanceId,
     completionRequestedAt,
+    lastHeartRateSample,
+    lastCadenceSample,
+    lastPowerSample,
     startRun,
     pauseRun,
     resumeRun,
@@ -918,7 +913,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const liveSensorReadings = useLiveSensorStore(s => s.readings);
   const [showRouteActions, setShowRouteActions] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [healthKitHeartRateBpm, setHealthKitHeartRateBpm] = useState<number | null>(null);
   const [watchStatus, setWatchStatus] = useState<StrideWatchStatus>(() => getStrideWatchStatus());
   const [watchWorkoutState, setWatchWorkoutState] = useState<string | null>(null);
   const [permission, setPermission] = useState<TrackingPermissionState>({ foreground: 'unknown', background: 'unknown' });
@@ -941,6 +935,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     estimateSource: DistanceSource;
     workoutInstanceId: string | null;
     startedAt: number | null;
+    endedAt: number;
   } | null>(null);
   const [goalMinutesInput, setGoalMinutesInput] = useState(45);
   const [goalMilesInput, setGoalMilesInput] = useState(5);
@@ -1005,6 +1000,10 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     getTrackingPermissionState()
       .then(setPermission)
       .catch(() => setPermission({ foreground: 'unknown', background: 'unknown' }));
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') void getTrackingPermissionState().then(setPermission).catch(() => undefined);
+    });
+    return () => subscription.remove();
   }, []);
 
   useEffect(() => {
@@ -1037,27 +1036,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     isPaused,
     workoutInstanceId,
   ]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function refreshHeartRate() {
-      if (!healthKitEnabled || !isActive || isPaused || Platform.OS !== 'ios') {
-        if (!cancelled) setHealthKitHeartRateBpm(null);
-        return;
-      }
-
-      const latest = await getLatestHeartRateBpm().catch(() => null);
-      if (!cancelled) setHealthKitHeartRateBpm(latest);
-    }
-
-    refreshHeartRate();
-    const id = setInterval(refreshHeartRate, 10000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [healthKitEnabled, isActive, isPaused]);
 
   useEffect(() => {
     setRouteSegmentIndex(0);
@@ -1118,7 +1096,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
   useEffect(() => {
     if (!isActive || !completionRequestedAt) return;
-    clearCompletionRequest();
     void stop();
   }, [clearCompletionRequest, completionRequestedAt, isActive]);
 
@@ -1272,7 +1249,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       // store, then hand off to the completion-correction sheet — the actual
       // save happens in completeIndoorRun() once the athlete resolves it.
       const finalState = useActiveRunStore.getState();
-      const movingSeconds = activeRunElapsedSeconds(finalState);
+      const endedAt = finalState.completionRequestedAt ?? Date.now();
+      const movingSeconds = activeRunElapsedSeconds(finalState, endedAt);
       const confirmedEstimate = estimateDistanceMiles(finalState.treadmillSegments);
       // No speed was ever confirmed: fall back to a prescribed-pace estimate
       // (distinct DistanceSource) rather than reporting 0.00 miles.
@@ -1286,6 +1264,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         estimateSource: prescribedEstimate != null ? 'prescribed_estimate' : 'confirmed_speed_estimate',
         workoutInstanceId: finalState.workoutInstanceId,
         startedAt: finalState.startTime,
+        endedAt,
       };
       setShowTreadmillCompletion(true);
       return;
@@ -1293,32 +1272,24 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     if (stopInFlightRef.current) return;
     stopInFlightRef.current = true;
     try {
+    const endingState = useActiveRunStore.getState();
+    const endedAt = endingState.completionRequestedAt ?? Date.now();
+    endingState.requestCompletion(endedAt);
     const finalState = useActiveRunStore.getState();
-    const finalElapsed = activeRunElapsedSeconds(finalState);
-    const finalDurationMin = Math.max(1, Math.round(finalElapsed / 60));
-    const finalDistanceMiles = Math.round(distanceMiles * 100) / 100;
-    const routeCoordinates = [...coordinates];
+    let finalElapsed = activeRunElapsedSeconds(finalState, endedAt);
+    const completionOwner = captureOwnerLease();
+    if (!completionOwner) throw new Error('Recording owner is not available');
+    const completionStillOwned = () => ownerLeaseIsCurrent(completionOwner)
+      && useActiveRunStore.getState().workoutInstanceId === finalState.workoutInstanceId;
+    let finalDurationMin = Math.max(1, Math.round(finalElapsed / 60));
+    let finalDistanceMiles = Math.round(finalState.distanceMiles * 100) / 100;
+    const routeCoordinates = [...finalState.coordinates];
     const id = liveRunCompletionKey('gps_run', finalState.workoutInstanceId, finalState.startTime);
     // Captured before finishRun() resets the store — this is the link back to
     // the scheduled session the athlete started this run against, if any.
     const completedScheduledSessionId = finalState.scheduledSessionId ?? undefined;
     const completedTrainingBlockId = todayPlannedSession?.trainingBlockId;
     const completedGoalPlanId = todayPlannedSession?.goalPlanId;
-
-    await endRunLiveActivity({
-      ...liveActivitySnapshot,
-      elapsedSeconds: finalElapsed,
-      isPaused: false,
-    }).catch(console.warn);
-    endStrideWatchRun(finalState.workoutInstanceId).then(setWatchStatus).catch(() => undefined);
-    speakCue(`Run complete. ${finalDurationMin} minutes, ${finalDistanceMiles.toFixed(2)} miles saved.`, 'motivation');
-    finishRun();
-    setElapsed(0);
-    setRouteSegmentIndex(0);
-    maxRouteProgressRef.current = 0;
-    segmentStartRef.current = null;
-    await stopLocationTracking().catch(console.warn);
-    onFinished?.();
 
     if (finalElapsed >= 300) {
       const modeNote =
@@ -1327,12 +1298,22 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         runMode === 'race' && goalMiles ? ` · Race ${goalMiles.toFixed(1)} mi${targetPaceSecPerMile ? ` @ target ${paceLabel(targetPaceSecPerMile)}/mi` : ''}` :
         runMode === 'workout' && plannedWorkout ? ` · Workout: ${plannedWorkout.title}` :
         '';
-      manualLogRun(
+      await saveLiveRun(
         {
           completionKey: id,
+          workoutInstanceId: finalState.workoutInstanceId ?? undefined,
+          watchRecording: finalState.watchRecording,
+          actualStartTime: finalState.startTime ?? undefined,
+          actualEndTime: endedAt,
+          scheduledSessionId: completedScheduledSessionId,
+          associatedTrainingBlockId: completedTrainingBlockId,
+          associatedGoalId: completedGoalPlanId,
+          routeCoordinates,
+          activityMetrics: capturedRunTelemetryMetrics(finalState, endedAt),
+          distanceSource: 'gps',
           type: runMode === 'race' ? 'tempo' : runMode === 'workout' && plannedWorkout ? plannedWorkout.type : 'easy_run',
           intensity: runMode === 'race' ? 'hard' : 'easy',
-          durationMinutes: finalDurationMin,
+          durationMinutes: finalElapsed / 60,
           distanceMiles: Math.max(0, finalDistanceMiles),
           notes: `Saved from live GPS tracking${modeNote}${selectedRoute ? ` · Route: ${selectedRoute.name}` : ''}.`,
         },
@@ -1342,29 +1323,37 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         setFatigueScore,
         setRecentEasyLoad,
       );
-      editRunLog(id, {
-        actualDurationMinutes: finalDurationMin,
-        actualDistanceMiles: finalDistanceMiles,
-        routeCoordinates,
-      });
-      if (completedScheduledSessionId) {
-        // manualLogRun/editRunLog above wrote through activityFromWorkoutRecord,
-        // whose id is deterministic from this same completionKey — stamp the
-        // canonical scheduledSessionId directly rather than relying on id-shape
-        // inference (this id doesn't match the `w{week}_{workoutId}_{dayIndex}`
-        // pattern, since a live GPS run can start against a scheduled workout
-        // that itself has no fixed dayIndex-based workoutId to key off of).
-        useActivityStore.getState().updateActivity(`activity_workout_${id}`, {
-          scheduledSessionId: completedScheduledSessionId,
-          scheduled: true,
-          associatedTrainingBlockId: completedTrainingBlockId,
-          associatedGoalId: completedGoalPlanId,
-        });
+      const saved = useWorkoutStore.getState().history.find(record => record.workoutInstanceId === finalState.workoutInstanceId);
+      if (saved) {
+        finalElapsed = (saved.actualDurationMinutes ?? saved.durationMinutes) * 60;
+        finalDurationMin = Math.max(1, Math.round(finalElapsed / 60));
+        finalDistanceMiles = saved.actualDistanceMiles ?? saved.estimatedDistanceMiles;
       }
-      Alert.alert('Run saved', `${finalDurationMin} min · ${finalDistanceMiles.toFixed(2)} mi saved to Activity Log.`);
     } else {
-      Alert.alert('Run discarded', 'Runs under 5 minutes are not saved.');
+      await useWorkoutStore.getState().discardRunEnd({
+        completionKey: id, workoutInstanceId: finalState.workoutInstanceId ?? undefined,
+        actualStartTime: finalState.startTime ?? undefined, actualEndTime: endedAt,
+        durationMinutes: finalElapsed / 60, distanceMiles: Math.max(0, finalDistanceMiles),
+        type: 'easy_run', intensity: 'easy', distanceSource: 'gps',
+      }, currentWeek, fatigueScore, recoveryScore, completionOwner);
     }
+    if (!completionStillOwned()) return;
+    await endRunLiveActivity({ ...liveActivitySnapshot, elapsedSeconds: finalElapsed, distanceMiles: finalDistanceMiles, isPaused: false }).catch(console.warn);
+    if (!completionStillOwned()) return;
+    endStrideWatchRun(finalState.workoutInstanceId).then(setWatchStatus).catch(() => undefined);
+    await stopLocationTrackingWhen(completionStillOwned).catch(console.warn);
+    if (!completionStillOwned()) return;
+    if (finalElapsed >= 300) speakCue(`Run complete. ${finalDurationMin} minutes, ${finalDistanceMiles.toFixed(2)} miles saved.`, 'motivation');
+    finishRun();
+    setElapsed(0);
+    setRouteSegmentIndex(0);
+    maxRouteProgressRef.current = 0;
+    segmentStartRef.current = null;
+    onFinished?.();
+    if (finalElapsed >= 300) Alert.alert('Run saved', `${finalDurationMin} min · ${finalDistanceMiles.toFixed(2)} mi saved to Activity Log.`);
+    else Alert.alert('Run discarded', 'Runs under 5 minutes are not saved.');
+    } catch {
+      Alert.alert('Run not yet saved', 'Your recording has not been cleared. Unlock the device, confirm the original account, and retry saving.');
     } finally {
       stopInFlightRef.current = false;
     }
@@ -1381,11 +1370,19 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     try {
     setShowTreadmillCompletion(false);
     const captured = treadmillCompletionRef.current;
-    treadmillCompletionRef.current = null;
     const latestState = useActiveRunStore.getState();
-    const movingSeconds = captured?.movingSeconds ?? activeRunElapsedSeconds(useActiveRunStore.getState());
-    const finalDurationMin = Math.max(1, Math.round(movingSeconds / 60));
-    const finalDistanceMiles = Math.round(result.distanceMiles * 100) / 100;
+    const completionOwner = captureOwnerLease();
+    if (!completionOwner) throw new Error('Recording owner is not available');
+    const completionStillOwned = () => ownerLeaseIsCurrent(completionOwner)
+      && useActiveRunStore.getState().workoutInstanceId === latestState.workoutInstanceId;
+    if (!captured || captured.workoutInstanceId !== latestState.workoutInstanceId) {
+      treadmillCompletionRef.current = null;
+      Alert.alert('Recording changed', 'This completion belongs to an earlier recording. Your current recording has not been changed.');
+      return;
+    }
+    let movingSeconds = captured?.movingSeconds ?? activeRunElapsedSeconds(useActiveRunStore.getState());
+    let finalDurationMin = Math.max(1, Math.round(movingSeconds / 60));
+    let finalDistanceMiles = Math.round(result.distanceMiles * 100) / 100;
     const id = liveRunCompletionKey(
       'treadmill_run',
       captured?.workoutInstanceId ?? latestState.workoutInstanceId,
@@ -1395,29 +1392,35 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     const completedTrainingBlockId = todayPlannedSession?.trainingBlockId;
     const completedGoalPlanId = todayPlannedSession?.goalPlanId;
 
-    await endRunLiveActivity({
-      ...liveActivitySnapshot,
-      elapsedSeconds: movingSeconds,
-      distanceMiles: result.distanceMiles,
-      isPaused: false,
-    }).catch(console.warn);
-    endStrideWatchRun(captured?.workoutInstanceId ?? latestState.workoutInstanceId).then(setWatchStatus).catch(() => undefined);
-    speakCue(`Run complete. ${finalDurationMin} minutes, ${finalDistanceMiles.toFixed(2)} miles saved.`, 'motivation');
-    finishRun();
-    setElapsed(0);
-    onFinished?.();
-
     if (movingSeconds >= 300) {
       const modeNote =
         runMode === 'time' && goalMinutes ? ` · Time goal ${goalMinutes} min` :
         runMode === 'workout' && plannedWorkout ? ` · Workout: ${plannedWorkout.title}` :
         '';
-      manualLogRun(
+      const recalculatedPaceSecPerMile = safePaceSecPerMile(finalDistanceMiles, movingSeconds);
+      await saveLiveRun(
         {
           completionKey: id,
+          workoutInstanceId: captured?.workoutInstanceId ?? latestState.workoutInstanceId ?? undefined,
+          watchRecording: latestState.watchRecording,
+          actualStartTime: captured?.startedAt ?? latestState.startTime ?? undefined,
+          actualEndTime: captured.endedAt,
+          scheduledSessionId: completedScheduledSessionId,
+          associatedTrainingBlockId: completedTrainingBlockId,
+          associatedGoalId: completedGoalPlanId,
+          distanceSource: result.distanceSource,
+          indoor: true,
+          activitySubtype: 'treadmill',
+          activityMetrics: {
+            ...capturedRunTelemetryMetrics(latestState, captured.endedAt),
+            originalEstimatedDistanceMiles: result.originalEstimatedDistanceMiles,
+            pace: recalculatedPaceSecPerMile != null ? {
+              averageSecondsPerKilometer: paceSecPerMileToSecPerKm(recalculatedPaceSecPerMile) ?? undefined,
+            } : undefined,
+          },
           type: runMode === 'workout' && plannedWorkout ? plannedWorkout.type : 'easy_run',
           intensity: 'easy',
-          durationMinutes: finalDurationMin,
+          durationMinutes: movingSeconds / 60,
           distanceMiles: Math.max(0, finalDistanceMiles),
           notes: `Saved from indoor treadmill run${modeNote}.`,
         },
@@ -1427,38 +1430,35 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         setFatigueScore,
         setRecentEasyLoad,
       );
-      editRunLog(id, {
-        actualDurationMinutes: finalDurationMin,
-        actualDistanceMiles: finalDistanceMiles,
-        // No routeCoordinates: indoor sessions never fabricate a GPS route.
-      });
-
-      const activityId = `activity_workout_${id}`;
-      const existing = useActivityStore.getState().getById(activityId);
-      const recalculatedPaceSecPerMile = safePaceSecPerMile(finalDistanceMiles, movingSeconds);
-      useActivityStore.getState().updateActivity(activityId, {
-        indoor: true,
-        subtype: 'treadmill',
-        scheduledSessionId: completedScheduledSessionId,
-        scheduled: Boolean(completedScheduledSessionId),
-        associatedTrainingBlockId: completedTrainingBlockId,
-        associatedGoalId: completedGoalPlanId,
-        metrics: {
-          ...existing?.metrics,
-          distanceMeters: finalDistanceMiles * 1609.344,
-          distanceSource: result.distanceSource,
-          originalEstimatedDistanceMiles: result.originalEstimatedDistanceMiles,
-          routeCoordinates: undefined,
-          pace: recalculatedPaceSecPerMile != null ? {
-            ...existing?.metrics?.pace,
-            averageSecondsPerKilometer: paceSecPerMileToSecPerKm(recalculatedPaceSecPerMile) ?? undefined,
-          } : existing?.metrics?.pace,
-        },
-      });
-      Alert.alert('Run saved', `${finalDurationMin} min · ${finalDistanceMiles.toFixed(2)} mi saved to Activity Log.`);
+      const saved = useWorkoutStore.getState().history.find(record => record.workoutInstanceId === captured.workoutInstanceId);
+      if (saved) {
+        movingSeconds = (saved.actualDurationMinutes ?? saved.durationMinutes) * 60;
+        finalDurationMin = Math.max(1, Math.round(movingSeconds / 60));
+        finalDistanceMiles = saved.actualDistanceMiles ?? saved.estimatedDistanceMiles;
+      }
     } else {
-      Alert.alert('Run discarded', 'Runs under 5 minutes are not saved.');
+      await useWorkoutStore.getState().discardRunEnd({
+        completionKey: id, workoutInstanceId: captured.workoutInstanceId ?? undefined,
+        actualStartTime: captured.startedAt ?? undefined, actualEndTime: captured.endedAt,
+        durationMinutes: movingSeconds / 60, distanceMiles: Math.max(0, finalDistanceMiles),
+        type: 'easy_run', intensity: 'easy', indoor: true, activitySubtype: 'treadmill',
+        distanceSource: result.distanceSource,
+      }, currentWeek, fatigueScore, recoveryScore, completionOwner);
     }
+    if (!completionStillOwned()) return;
+    treadmillCompletionRef.current = null;
+    await endRunLiveActivity({ ...liveActivitySnapshot, elapsedSeconds: movingSeconds, distanceMiles: finalDistanceMiles, isPaused: false }).catch(console.warn);
+    if (!completionStillOwned()) return;
+    endStrideWatchRun(captured?.workoutInstanceId ?? latestState.workoutInstanceId).then(setWatchStatus).catch(() => undefined);
+    if (movingSeconds >= 300) speakCue(`Run complete. ${finalDurationMin} minutes, ${finalDistanceMiles.toFixed(2)} miles saved.`, 'motivation');
+    finishRun();
+    setElapsed(0);
+    onFinished?.();
+    if (movingSeconds >= 300) Alert.alert('Run saved', `${finalDurationMin} min · ${finalDistanceMiles.toFixed(2)} mi saved to Activity Log.`);
+    else Alert.alert('Run discarded', 'Runs under 5 minutes are not saved.');
+    } catch {
+      setShowTreadmillCompletion(true);
+      Alert.alert('Run not yet saved', 'Your recording has not been cleared. Unlock the device, confirm the original account, and retry saving.');
     } finally {
       stopInFlightRef.current = false;
     }
@@ -1474,26 +1474,24 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const currentWorkoutSegment = runMode === 'workout' && activeWorkoutSegments.length
     ? activeWorkoutSegments[Math.min(currentIntervalIndex, activeWorkoutSegments.length - 1)]
     : null;
-  const liveBleHeartRate = useMemo(
-    () => selectLiveHeartRate(liveSensorReadings, Date.now()),
-    [liveSensorReadings],
-  );
+  const liveTelemetry = useMemo(() => isActive && !isPaused && startTime != null
+    ? selectLiveTelemetry({ rawHeartRateSamples: lastHeartRateSample ? [lastHeartRateSample] : [],
+      cadenceSamples: lastCadenceSample ? [lastCadenceSample] : [],
+      powerSamples: lastPowerSample ? [lastPowerSample] : [] }, startTime, Date.now()) : null,
+  [isActive, isPaused, startTime, lastHeartRateSample, lastCadenceSample, lastPowerSample, elapsed]);
   const liveBleDistance = useMemo(
     () => selectLiveDistance(liveSensorReadings, Date.now()),
-    [liveSensorReadings],
+    [liveSensorReadings, elapsed],
   );
   const liveBleSpeed = useMemo(
     () => selectLatestLiveMetric(liveSensorReadings, 'speed', Date.now()),
-    [liveSensorReadings],
+    [liveSensorReadings, elapsed],
   );
-  const heartRateBpm = typeof liveBleHeartRate.value === 'number'
-    ? Math.round(liveBleHeartRate.value)
-    : healthKitHeartRateBpm;
-  const heartRateSourceLabel = typeof liveBleHeartRate.value === 'number'
-    ? liveBleHeartRate.source === 'apple_watch' ? 'Apple Watch live' : 'Bluetooth live'
-    : healthKitHeartRateBpm
-      ? 'Apple Health'
-      : 'No live source';
+  const heartRateBpm = liveTelemetry?.heartRateBpm == null ? null : Math.round(liveTelemetry.heartRateBpm);
+  const cadenceSpm = liveTelemetry?.cadenceSample?.kind === 'steps' ? Math.round(liveTelemetry.cadenceSample.cadenceSpm) : null;
+  const heartRateSourceLabel = liveTelemetry?.heartRateSample?.source === 'apple_watch' ? 'Apple Watch live'
+    : liveTelemetry?.heartRateSample?.source === 'heart_rate_monitor' ? 'Bluetooth live'
+      : liveTelemetry?.heartRateSample?.source === 'healthkit' ? 'Apple Health observation' : 'No live source';
   const watchStatusText = watchStatus.isWatchAppInstalled
     ? watchStatus.isReachable
       ? 'Apple Watch ready'
@@ -1526,8 +1524,16 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     sessionSource: 'running' as const,
     elapsedSeconds: elapsed,
     distanceMiles,
-    averagePace: avgPace,
+    averagePace: paceLabel(avgPaceSecPerMile),
+    unitSystem: units,
     heartRateBpm,
+    heartRateObservedAt: liveTelemetry?.heartRateSample?.timestamp,
+    cadenceValue: cadenceSpm ?? undefined,
+    cadenceUnit: 'spm' as const,
+    cadenceObservedAt: liveTelemetry?.cadenceSample?.timestamp,
+    powerWatts: liveTelemetry?.powerSample?.watts,
+    powerKind: liveTelemetry?.powerSample?.kind,
+    powerObservedAt: liveTelemetry?.powerSample?.timestamp,
     zoneLabel: zoneStatus.label,
     zoneStatus: zoneStatus.tone,
     isPaused,
@@ -1580,6 +1586,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const secondaryMetrics = [
     { label: 'Avg Pace', value: avgPace, unit: imp ? '/mi' : '/km' },
     { label: 'Heart Rate', value: heartRateBpm ? String(heartRateBpm) : '--', unit: 'bpm' },
+    { label: 'Cadence', value: cadenceSpm == null ? '--' : String(cadenceSpm), unit: 'spm' },
     { label: 'Elev Gain', value: elevationDisplay, unit: elevationUnit },
   ];
   const mapLineColor = C.positive;
@@ -1919,6 +1926,13 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     distanceMiles,
     avgPace,
     heartRateBpm,
+    cadenceSpm,
+    liveTelemetry?.heartRateSample?.timestamp,
+    liveTelemetry?.cadenceSample?.timestamp,
+    liveTelemetry?.powerSample?.timestamp,
+    liveTelemetry?.powerSample?.watts,
+    liveTelemetry?.powerSample?.kind,
+    units,
     zoneStatus.label,
     zoneStatus.tone,
   ]);
@@ -2151,7 +2165,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
               Enable background location
             </Text>
             <Text style={[styles.mapOverlayCopy, { color: C.textMuted }]}>
-              This lets StrideOS keep recording your route and distance when the phone locks.
+              This keeps recording when the phone locks. In Settings &gt; StrideOS &gt; Location, choose Always and enable Precise Location. GPS recording works without cellular service.
             </Text>
             <TouchableOpacity
               style={[styles.mapOverlayBtn, { backgroundColor: C.primary }]}
@@ -3260,6 +3274,7 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
       const startedAt = useActiveRunStore.getState().startTime;
       const startedWorkoutInstanceId = useActiveRunStore.getState().workoutInstanceId;
       await startRunLiveActivity({
+        workoutInstanceId: startedWorkoutInstanceId ?? undefined,
         sessionId: startedAt ? `run:${startedAt}` : '',
         sessionSource: 'running',
         elapsedSeconds: 0,
@@ -3472,6 +3487,10 @@ function GPSTab() {
     getTrackingPermissionState()
       .then(setPermission)
       .catch(() => setPermission({ foreground: 'unknown', background: 'unknown' }));
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') void getTrackingPermissionState().then(setPermission).catch(() => undefined);
+    });
+    return () => subscription.remove();
   }, []);
 
   useEffect(() => {
@@ -3641,9 +3660,7 @@ export default function RunningScreen() {
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       {/* Header */}
       <View style={[styles.screenHeader, { paddingTop: insets.top + 6, backgroundColor: C.bg }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={20} color={C.primary} />
-        </TouchableOpacity>
+        <LegacyBackControl onBack={() => router.back()} />
         <View style={{ marginLeft: 10 }}>
           <Text style={[styles.headerLabel, { color: C.textDim }]}>RUNNING</Text>
           <Text style={[styles.headerTitle, { color: C.text }]}>Training Run</Text>

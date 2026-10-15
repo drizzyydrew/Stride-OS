@@ -334,8 +334,15 @@ test('auto-launch (phone): launches only when unreachable; end clears; resend on
   const module = read('modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift');
   assert.match(module, /guard !session\.isReachable, HKHealthStore\.isHealthDataAvailable\(\) else \{ return \}/);
   assert.match(module, /healthStore\.startWatchApp\(with: configuration\)/);
-  assert.match(module, /if type == StrideWatchMessageType\.endWorkout \|\| type == StrideWatchMessageType\.endRun \{\s+clearPendingLiveStart\(\)/);
-  assert.match(module, /func sessionReachabilityDidChange\(_ session: WCSession\) \{\s+flushPendingCommandsIfPossible\(\)\s+resendPendingLiveStartIfReachable\(\)/);
+  assert.match(module, /if type == StrideWatchMessageType\.endWorkout \|\| type == StrideWatchMessageType\.endRun \{\s+clearPendingLiveStart\(matching: payload\["workoutInstanceId"\] as\? String\)/);
+  assert.match(module, /if let requestedId, let pendingId = pendingLiveStart\?\["workoutInstanceId"\] as\? String, requestedId != pendingId \{ return \}/);
+  assert.match(module, /if !supersededEnd && shouldPublishAsLatestContext/);
+  const reachability = module.slice(module.indexOf('func sessionReachabilityDidChange'), module.indexOf('func sessionWatchStateDidChange'));
+  assert.match(reachability, /if session\.isReachable.*requestCapabilities/);
+  assert.ok(reachability.indexOf('flushPendingCommandsIfPossible()') >= 0);
+  assert.ok(reachability.indexOf('resendPendingLiveStartIfReachable()') > reachability.indexOf('flushPendingCommandsIfPossible()'));
+  assert.match(module, /!locked\(\{ supportedWorkoutKinds\.contains\(kind\) \}\)/);
+  assert.match(module, /default: return/);
   // Follow-up pause/resume is re-sent with a fresh sentAt (dedupe-safe).
   assert.match(module, /"sentAt": Date\(\)\.timeIntervalSince1970 \* 1000,/);
   assert.match(read('modules/stride-watch-connectivity/ios/StrideWatchConnectivity.podspec'), /'WatchConnectivity', 'HealthKit'/);

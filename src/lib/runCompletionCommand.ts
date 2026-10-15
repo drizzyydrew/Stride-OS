@@ -1,10 +1,11 @@
-import { activeRunElapsedSeconds, useActiveRunStore } from '../store/activeRunStore';
+import { useActiveRunStore } from '../store/activeRunStore';
 import { useAthleteStore } from '../store/athleteStore';
 import { useWorkoutStore, type RunCompletionResult } from '../store/workoutStore';
 import { useActivityStore } from '../store/activityStore';
 import { captureOwnerLease, ownerLeaseIsCurrent } from './localDataOwner';
 import { matchingWatchRecording, runCompletionKey } from '../utils/runCompletionIdentity';
-import { capturedRunTelemetryMetrics } from '../utils/capturedRunTelemetryMetrics';
+import { captureTrainingRunEnd, validRunEndSnapshot } from '../utils/trainingRunEndSnapshot';
+import type { LiveRunEntry } from './runCompletionJournal';
 import type { Activity, DistanceSource } from '../types/activity';
 
 export type RunEndCommand = {
@@ -14,12 +15,19 @@ export type RunEndCommand = {
   elapsedSeconds?: number;
   distanceMiles?: number;
   distanceSource?: DistanceSource;
+  snapshot?: LiveRunEntry;
 };
 
 /** Shared by background/watch callers; no mounted screen or native End side effects. */
 export async function completeRunCommand(command: RunEndCommand): Promise<RunCompletionResult> {
   const lease = captureOwnerLease();
   if (!lease) throw new Error('Confirm the original recording owner before completion');
+  command = JSON.parse(JSON.stringify(command)) as RunEndCommand;
+  const initial = useActiveRunStore.getState();
+  const captured = command.snapshot ?? (useActiveRunStore.persist.hasHydrated() && initial.isActive
+    && initial.workoutInstanceId === command.workoutInstanceId && initial.startTime != null && initial.environment !== 'indoor'
+    ? { ...captureTrainingRunEnd(initial, command), ownerUserId: lease.ownerUserId } : undefined);
+  if (captured && initial.workoutInstanceId === command.workoutInstanceId) initial.requestCompletion?.(command.endedAt);
   await Promise.all([useActiveRunStore, useAthleteStore, useWorkoutStore, useActivityStore].map(store => {
     if (store.persist.hasHydrated()) return Promise.resolve();
     return new Promise<void>(resolve => {
@@ -47,33 +55,15 @@ export async function completeRunCommand(command: RunEndCommand): Promise<RunCom
   if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed before run completion');
   if (discarded) return discarded;
   const current = useActiveRunStore.getState();
-  if (!current.isActive || current.workoutInstanceId !== command.workoutInstanceId || current.startTime == null) {
+  if (!captured && (!current.isActive || current.workoutInstanceId !== command.workoutInstanceId || current.startTime == null)) {
     throw new Error('End does not match the active recording');
   }
-  if (current.environment === 'indoor') throw new Error('Indoor completion requires TreadmillCompletionSheet confirmation');
-  const startedAt = current.startTime;
-  const state = current;
-  if (command.endedAt < startedAt || command.endedAt > Date.now() + 5_000) throw new Error('End timestamp is outside this recording');
-  const elapsed = command.elapsedSeconds ?? activeRunElapsedSeconds(state, command.endedAt);
-  const distance = command.distanceMiles ?? state.distanceMiles;
-  if (!Number.isFinite(elapsed) || elapsed < 0 || elapsed > (command.endedAt - startedAt) / 1000 + 1
-    || !Number.isFinite(distance) || distance < 0) throw new Error('End contains invalid measured totals');
-  const entry = {
-    completionKey: runCompletionKey(command.workoutInstanceId), workoutInstanceId: command.workoutInstanceId,
-    watchRecording: matchingWatchRecording(command.watchRecording, command.workoutInstanceId, startedAt)
-      ?? matchingWatchRecording(state.watchRecording, command.workoutInstanceId, startedAt),
-    ownerUserId: lease.ownerUserId, actualStartTime: startedAt, actualEndTime: command.endedAt,
-    scheduledSessionId: state.scheduledSessionId ?? undefined,
-    source: state.plannedWorkout ? 'generated' as const : 'manual' as const,
-    workoutId: state.plannedWorkout?.id, type: state.plannedWorkout?.type ?? 'easy_run' as const,
-    intensity: state.plannedWorkout?.intensity ?? 'easy' as const,
-    durationMinutes: elapsed / 60, distanceMiles: distance,
-    routeCoordinates: state.coordinates.filter(point => point.timestamp <= command.endedAt).map(point => ({ ...point })),
-    activityMetrics: capturedRunTelemetryMetrics(state, command.endedAt),
-    indoor: false,
-    distanceSource: command.distanceSource ?? state.distanceSource ?? 'gps',
-    notes: 'Saved from the recording End command.',
-  };
+  if (current.workoutInstanceId === command.workoutInstanceId && current.environment === 'indoor') throw new Error('Indoor completion requires TreadmillCompletionSheet confirmation');
+  const entry = captured ?? captureTrainingRunEnd(current, command);
+  if (!validRunEndSnapshot(entry, command)
+    || captured && captured.ownerUserId !== lease.ownerUserId
+    || !captured && entry.actualStartTime !== current.startTime) throw new Error('End snapshot does not match this recording owner');
+  if (current.workoutInstanceId === command.workoutInstanceId) current.requestCompletion?.(command.endedAt);
   return useWorkoutStore.getState().commitRunEnd(entry, athlete.currentWeek, athlete.fatigueScore, athlete.recoveryScore,
     athlete.setFatigueScore, athlete.setRecentEasyLoad, true);
 }

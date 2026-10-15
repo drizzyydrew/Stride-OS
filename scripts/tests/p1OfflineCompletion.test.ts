@@ -8,11 +8,36 @@ import ts from 'typescript';
 import { createJSONStorage } from 'zustand/middleware';
 import { LocalDataOwner, LOCAL_DATA_OWNER_KEY } from '../../src/lib/localDataOwner';
 import { RunCompletionJournal, RUN_COMPLETION_JOURNAL_KEY, type PendingRunCompletion } from '../../src/lib/runCompletionJournal';
-import { matchingWatchRecording, mergeRecording, runCompletionKey, sameRecording } from '../../src/utils/runCompletionIdentity';
+import { matchingWatchRecording, mergeRecording, runCompletionKey, sameRecording, type RunWorkoutRecord } from '../../src/utils/runCompletionIdentity';
 import { activityFromWorkoutRecord, migrateLegacyWorkoutHistory } from '../../src/utils/activityMigration';
 import { buildHealthKitActivityDraft, isDuplicateHealthKitWorkout, type HealthKitWorkoutCandidate } from '../../src/utils/healthKitImport';
-import type { Activity } from '../../src/types/activity';
+import type { Activity, ActivityMetrics } from '../../src/types/activity';
 import { elapsedSecondsExcludingPause } from '../../src/utils/activeTime';
+import { captureTrainingRunEnd } from '../../src/utils/trainingRunEndSnapshot';
+import { RunEndRetryQueue } from '../../src/lib/runEndRetryQueue';
+import type { ActiveRunStore } from '../../src/store/activeRunStore';
+import { capturedRunTelemetryMetrics } from '../../src/utils/capturedRunTelemetryMetrics';
+import { safePaceSecPerMile } from '../../src/utils/treadmill';
+import { paceSecPerMileToSecPerKm } from '../../src/utils/units';
+
+function phoneTelemetryFixture(startedAt: number, endedAt: number) {
+  const timestamps = [startedAt, Math.floor((startedAt + endedAt) / 2), endedAt, endedAt + 1_000];
+  return {
+    rawHeartRateSamples: timestamps.map(timestamp => ({ timestamp, bpm: 145, source: 'apple_watch' as const })),
+    cadenceSamples: timestamps.map(timestamp => ({ timestamp, cadenceSpm: 172, kind: 'steps' as const, source: 'apple_watch' as const })),
+    powerSamples: timestamps.map(timestamp => ({ timestamp, watts: 230, kind: 'measured' as const, sport: 'running' as const, source: 'apple_watch' as const })),
+    recordingPauses: [], telemetryStartedAt: startedAt, telemetryEndedAt: null,
+  };
+}
+
+function assertPhoneEndTelemetry(metrics: Partial<ActivityMetrics> | undefined, startedAt: number, endedAt: number) {
+  assert.ok(metrics, 'the actual Save entry must carry captured activityMetrics');
+  const expected = phoneTelemetryFixture(startedAt, endedAt);
+  for (const key of ['rawHeartRateSamples', 'cadenceSamples', 'powerSamples'] as const) {
+    assert.deepEqual(metrics[key], expected[key].filter(sample => sample.timestamp <= endedAt),
+      `${key} must retain the original observations through End, excluding later samples`);
+  }
+}
 
 function memoryStorage() {
   const values = new Map<string, string>();
@@ -60,21 +85,33 @@ test('actual cold-navigation Stop uses persisted time and reports the durable fi
   visit(parsed);
   assert.ok(stop, 'the real screen completion handler must exist');
   const now = 1_000_000;
+  const events: string[] = [];
   const state = { workoutInstanceId: 'cold-run', startTime: now - 620_000,
-    completionRequestedAt: now, isPaused: false, pausedAt: null, pausedDurationMs: 20_000, distanceMiles: 1.25, coordinates: [] };
+    ...phoneTelemetryFixture(now - 620_000, now),
+    recordingPauses: [{ startTime: now - 100_000, endTime: now - 80_000 }],
+    completionRequestedAt: now, isPaused: true, pausedAt: now, pausedDurationMs: 20_000, distanceMiles: 1.25, coordinates: [],
+    requestCompletion: (endedAt: number) => {
+      events.push('freeze');
+      assert.equal(endedAt, now, 'a prior requested End is retained');
+    } };
   let submitted: any;
   let nativeEnd: any;
   let finished = false;
   const context: Record<string, any> = {
     environment: 'outdoor', stopInFlightRef: { current: false },
     useActiveRunStore: { getState: () => state },
+    capturedRunTelemetryMetrics,
     activeRunElapsedSeconds: (saved: typeof state, endedAt: number) => elapsedSecondsExcludingPause({
       startedAt: saved.startTime, isPaused: saved.isPaused, pausedAt: saved.pausedAt,
       pausedDurationMs: saved.pausedDurationMs,
     }, endedAt),
     captureOwnerLease: () => ({ ownerUserId: 'A', generation: 1 }), ownerLeaseIsCurrent: () => true,
     liveRunCompletionKey: () => 'run_cold-run', todayPlannedSession: null, runMode: 'quick',
-    saveLiveRun: async (entry: any) => { submitted = entry; },
+    saveLiveRun: async (entry: any) => {
+      assert.deepEqual(events, ['freeze'], 'the actual phone handler freezes before awaiting history');
+      events.push('save');
+      submitted = entry;
+    },
     // A preceding failed write already journaled a shorter first-End snapshot.
     useWorkoutStore: { getState: () => ({ history: [{ workoutInstanceId: 'cold-run',
       actualDurationMinutes: 9.5, durationMinutes: 9.5, actualDistanceMiles: 1.2 }] }) },
@@ -94,9 +131,11 @@ test('actual cold-navigation Stop uses persisted time and reports the durable fi
   assert.equal(submitted.durationMinutes, 10, 'persisted start/pause, not a reset screen timer');
   assert.equal(submitted.workoutInstanceId, 'cold-run');
   assert.equal(submitted.actualEndTime, now, 'persisted End is not replaced by time of screen navigation');
+  assertPhoneEndTelemetry(submitted.activityMetrics, state.startTime, now);
   assert.equal(nativeEnd.elapsedSeconds, 570, 'retry reports the durable first-End duration');
   assert.equal(nativeEnd.distanceMiles, 1.2);
   assert.equal(finished, true);
+  assert.deepEqual(events, ['freeze', 'save']);
   assert.equal(context.stopInFlightRef.current, false);
 });
 
@@ -120,16 +159,42 @@ for (const handler of ['training-save', 'training-short-discard', 'tracking-save
       assert.ok(body, 'execute the real handler, not a replica');
       const now = 1_000_000;
       const duration = handler.endsWith('short-discard') ? 180 : 600;
+      const requiresFreeze = handler !== 'tracking-discard';
+      const events: string[] = [];
       let state = { workoutInstanceId: 'old-recording', startTime: now - duration * 1000,
-        completionRequestedAt: now, distanceMiles: 1.25, coordinates: [], averagePaceSecPerMile: 480 };
+        ...phoneTelemetryFixture(now - duration * 1000, now),
+        completionRequestedAt: null as number | null, isPaused: false, pausedAt: null as number | null,
+        distanceMiles: 1.25, coordinates: [], averagePaceSecPerMile: 480,
+        requestCompletion: (endedAt: number) => {
+          events.push('freeze');
+          assert.equal(endedAt, now);
+          state = { ...state, completionRequestedAt: state.completionRequestedAt ?? endedAt, isPaused: true, pausedAt: endedAt };
+        } };
       let ownerCurrent = true;
       let nativeStops = 0;
       let clears = 0;
       let navigations = 0;
       let saves = 0;
       let discards = 0;
+      let savedEntry: any;
       const queried = deferred<void>();
       const nativeRead = deferred<boolean>();
+      const persistenceEntered = deferred<void>();
+      const persisted = deferred<void>();
+      const persistRecording = async (kind: 'save' | 'discard', entry: any) => {
+        assert.deepEqual(events, requiresFreeze ? ['freeze'] : [], 'freeze must precede the actual save/discard await');
+        assert.equal(entry.actualEndTime, now);
+        if (requiresFreeze) {
+          assert.equal(state.isPaused, true);
+          assert.equal(state.pausedAt, now);
+          assert.equal(state.completionRequestedAt, now);
+        }
+        events.push(kind);
+        if (kind === 'save') { saves += 1; savedEntry = entry; }
+        else discards += 1;
+        persistenceEntered.resolve();
+        await persisted.promise;
+      };
       // Run the real shared operation queue and conditional stop around delayed native I/O.
       const gps = loadSource('src/lib/gpsTracking.ts', {
         'expo-task-manager': { defineTask() {} },
@@ -145,12 +210,16 @@ for (const handler of ['training-save', 'training-short-discard', 'tracking-save
       let discard: (() => Promise<void>) | undefined;
       const context: Record<string, any> = {
         environment: 'outdoor', stopInFlightRef: { current: false }, finishInFlightRef: { current: false },
-        useActiveRunStore: { getState: () => state }, activeRunElapsedSeconds: () => duration,
+        capturedRunTelemetryMetrics,
+        useActiveRunStore: { getState: () => state }, activeRunElapsedSeconds: (snapshot: typeof state) => {
+          if (requiresFreeze) assert.equal(snapshot.isPaused, true, 'elapsed time is read from the post-freeze snapshot');
+          return duration;
+        }, Date: { now: () => now },
         captureOwnerLease: () => ({ ownerUserId: 'A', generation: 1 }), ownerLeaseIsCurrent: () => ownerCurrent,
         liveRunCompletionKey: () => 'run_old-recording', runCompletionKey: () => 'run_old-recording',
         todayPlannedSession: null, runMode: 'quick', selectedRoute: null,
-        saveLiveRun: async () => { saves += 1; }, useWorkoutStore: { getState: () => ({ history: [],
-          discardRunEnd: async () => { discards += 1; } }) },
+        saveLiveRun: (entry: any) => persistRecording('save', entry), useWorkoutStore: { getState: () => ({ history: [],
+          discardRunEnd: (entry: any) => persistRecording('discard', entry) }) },
         currentWeek: 1, fatigueScore: 0, recoveryScore: 0, setFatigueScore() {}, setRecentEasyLoad() {},
         liveActivitySnapshot: {}, endRunLiveActivity: async () => {}, formatPace: () => '8:00',
         endStrideWatchRun: async () => {}, setWatchStatus() {}, stopLocationTrackingWhen: gps.stopLocationTrackingWhen,
@@ -173,6 +242,11 @@ for (const handler of ['training-save', 'training-short-discard', 'tracking-save
         assert.ok(discard);
         operation = discard();
       } else operation = context.invoke();
+      await persistenceEntered.promise;
+      assert.equal(clears, 0, 'a pending durable write cannot clear the recording');
+      assert.equal(nativeStops, 0);
+      assert.deepEqual(events, requiresFreeze ? ['freeze', handler.endsWith('save') ? 'save' : 'discard'] : ['discard']);
+      persisted.resolve();
       await queried.promise;
       if (change === 'new-recording') state = { ...state, workoutInstanceId: 'new-recording', startTime: now };
       if (change === 'owner-revoked') ownerCurrent = false;
@@ -185,6 +259,7 @@ for (const handler of ['training-save', 'training-short-discard', 'tracking-save
       assert.equal(navigations, current && !training ? 1 : 0);
       assert.equal(saves, handler.endsWith('save') ? 1 : 0);
       assert.equal(discards, handler.endsWith('discard') ? 1 : 0, 'discard is journaled before native cleanup');
+      if (handler.endsWith('save')) assertPhoneEndTelemetry(savedEntry.activityMetrics, now - duration * 1000, now);
       assert.equal(context.stopInFlightRef.current, false);
       assert.equal(context.finishInFlightRef.current, false);
     });
@@ -208,6 +283,7 @@ for (const fail of [false, true]) {
       stopInFlightRef: { current: false }, setShowTreadmillCompletion() {},
       treadmillCompletionRef: { current: { ...state, startedAt: state.startTime, endedAt: 160_000, movingSeconds: 60 } },
       useActiveRunStore: { getState: () => state }, captureOwnerLease: () => ({ ownerUserId: 'A', generation: 1 }),
+      capturedRunTelemetryMetrics,
       ownerLeaseIsCurrent: () => true, liveRunCompletionKey: () => 'run_indoor-sheet', todayPlannedSession: null,
       useWorkoutStore: { getState: () => ({ discardRunEnd: async (entry: any) => {
         events.push('discard');
@@ -230,6 +306,244 @@ for (const fail of [false, true]) {
     if (fail) assert.ok(context.treadmillCompletionRef.current, 'the sheet retains its original first-End snapshot');
   });
 }
+
+test('actual confirmed indoor Save retains End-bounded telemetry without changing sheet distance authority', async () => {
+  const file = 'app/(tabs)/training/index.tsx';
+  const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  let handler: ts.FunctionDeclaration | undefined;
+  function visit(node: ts.Node) {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === 'completeIndoorRun') handler = node;
+    ts.forEachChild(node, visit);
+  }
+  visit(source);
+  assert.ok(handler);
+  for (const distanceSource of ['treadmill_reported', 'manual_entry', 'confirmed_speed_estimate'] as const) {
+    const startedAt = 100_000;
+    const endedAt = 700_000;
+    const state = { workoutInstanceId: 'confirmed-indoor', startTime: startedAt, environment: 'indoor',
+      isPaused: true, pausedAt: endedAt, ...phoneTelemetryFixture(startedAt, endedAt) };
+    let saved: any;
+    const events: string[] = [];
+    const context: Record<string, any> = {
+      stopInFlightRef: { current: false }, setShowTreadmillCompletion() {},
+      treadmillCompletionRef: { current: { workoutInstanceId: state.workoutInstanceId, startedAt, endedAt, movingSeconds: 600 } },
+      useActiveRunStore: { getState: () => state }, capturedRunTelemetryMetrics,
+      captureOwnerLease: () => ({ ownerUserId: 'A', generation: 1 }), ownerLeaseIsCurrent: () => true,
+      liveRunCompletionKey: () => 'run_confirmed-indoor', todayPlannedSession: null, runMode: 'quick',
+      safePaceSecPerMile, paceSecPerMileToSecPerKm,
+      saveLiveRun: async (entry: any) => { saved = entry; events.push('save'); },
+      useWorkoutStore: { getState: () => ({ history: [] }) },
+      currentWeek: 1, fatigueScore: 0, recoveryScore: 70, setFatigueScore() {}, setRecentEasyLoad() {},
+      liveActivitySnapshot: {}, endRunLiveActivity: async () => { events.push('native'); },
+      endStrideWatchRun: async () => { events.push('watch'); }, setWatchStatus() {}, speakCue() {},
+      finishRun: () => { events.push('finish'); }, setElapsed() {}, onFinished: undefined,
+      Alert: { alert: (title: string) => { assert.equal(title, 'Run saved'); } }, console,
+    };
+    vm.runInNewContext(ts.transpileModule(`${handler.getText(source)}\nglobalThis.invoke = completeIndoorRun;`, {
+      compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
+    }).outputText, context);
+    await context.invoke({ distanceMiles: 2, distanceSource, originalEstimatedDistanceMiles: 1.25 });
+    assert.deepEqual(events, ['save', 'native', 'watch', 'finish']);
+    assertPhoneEndTelemetry(saved.activityMetrics, startedAt, endedAt);
+    assert.equal(saved.distanceMiles, 2, 'the sheet result, not telemetry, remains authoritative');
+    assert.equal(saved.distanceSource, distanceSource);
+    assert.equal(saved.indoor, true);
+    assert.equal(saved.activitySubtype, 'treadmill');
+    assert.equal(saved.durationMinutes, 10);
+    assert.equal(saved.actualEndTime, endedAt);
+    assert.equal(saved.activityMetrics.originalEstimatedDistanceMiles, 1.25);
+    assert.equal(saved.activityMetrics.pace.averageSecondsPerKilometer, paceSecPerMileToSecPerKm(300));
+  }
+});
+
+function trainingEndFixture(): ActiveRunStore {
+  return { isActive: true, workoutInstanceId: 'snapshot-run', environment: 'outdoor', startTime: 100_000,
+    isPaused: false, pausedAt: null, pausedDurationMs: 0, distanceMiles: 99,
+    recordingPauses: [], rawHeartRateSamples: [], cadenceSamples: [], powerSamples: [], plannedWorkout: null,
+    coordinates: [{ lat: 0, lng: 0, timestamp: 100_000 },
+      { lat: 180 / Math.PI / 3958.8, lng: 0, timestamp: 700_000 }],
+  } as unknown as ActiveRunStore;
+}
+
+test('captured Training telemetry keeps bounded elevation gain/loss and clipped wall/active time', () => {
+  const startedAt = 100_000;
+  const endedAt = 130_000;
+  const state = { ...trainingEndFixture(), ...phoneTelemetryFixture(startedAt, endedAt), startTime: startedAt,
+    coordinates: [{ lat: 0, lng: 0, timestamp: startedAt, altitudeM: 100 },
+      { lat: 0.0001, lng: 0, timestamp: startedAt + 10_000, altitudeM: 103 },
+      { lat: 0.0002, lng: 0, timestamp: startedAt + 20_000, altitudeM: 101 },
+      { lat: 0.0003, lng: 0, timestamp: endedAt, altitudeM: 105 },
+      { lat: 0.0004, lng: 0, timestamp: endedAt + 10_000, altitudeM: 999 }] };
+  const original = structuredClone({ rawHeartRateSamples: state.rawHeartRateSamples, coordinates: state.coordinates });
+  const metrics = capturedRunTelemetryMetrics(state, endedAt);
+  assertPhoneEndTelemetry(metrics, startedAt, endedAt);
+  assert.equal(metrics.elevationGainMeters, 7);
+  assert.equal(metrics.elevationLossMeters, 2);
+  assert.equal(metrics.metricSources?.elevation, 'phone_gps');
+  assert.equal(metrics.elapsedTimeSeconds, 30);
+  assert.equal(metrics.activeTimeSeconds, 30);
+  const projected = activityFromWorkoutRecord({ ...record, actualStartTime: startedAt, actualEndTime: endedAt,
+    durationMinutes: 0.5, actualDurationMinutes: 0.5, routeCoordinates: state.coordinates.filter(point => point.timestamp <= endedAt),
+    activityMetrics: metrics }, false);
+  assert.equal(projected.metrics.elevationGainMeters, 7);
+  assert.equal(projected.metrics.elevationLossMeters, 2);
+  assertPhoneEndTelemetry(projected.metrics, startedAt, endedAt);
+  assert.deepEqual({ rawHeartRateSamples: state.rawHeartRateSamples, coordinates: state.coordinates }, original);
+  metrics.rawHeartRateSamples![0].bpm = 200;
+  assert.equal(state.rawHeartRateSamples[0].bpm, 145, 'captured raw samples are independent of live store objects');
+});
+
+test('captured Training elevation does not bridge pauses or GPS gaps and leaves missing altitude unavailable', () => {
+  const startedAt = 100_000;
+  const endedAt = 230_000;
+  const state = { ...trainingEndFixture(), ...phoneTelemetryFixture(startedAt, endedAt), startTime: startedAt,
+    recordingPauses: [{ startTime: 112_000, endTime: 118_000 }, { startTime: 114_000, endTime: 116_000 },
+      { startTime: 250_000, endTime: 280_000 }],
+    coordinates: [{ lat: 0, lng: 0, timestamp: 100_000, altitudeM: 100 },
+      { lat: 0.0001, lng: 0, timestamp: 110_000, altitudeM: 103 },
+      { lat: 0.0002, lng: 0, timestamp: 120_000, altitudeM: 500 },
+      { lat: 0.0003, lng: 0, timestamp: 130_000, altitudeM: 502 },
+      { lat: 0.0004, lng: 0, timestamp: 220_000, altitudeM: 900 },
+      { lat: 0.0005, lng: 0, timestamp: 230_000, altitudeM: 904 }] };
+  const metrics = capturedRunTelemetryMetrics(state, endedAt);
+  assert.equal(metrics.elevationGainMeters, 9, 'only continuous measured pairs contribute 3 + 2 + 4');
+  assert.equal(metrics.elevationLossMeters, 0, 'zero loss has genuine measured altitude-pair coverage');
+  assert.equal(metrics.elapsedTimeSeconds, 130);
+  assert.equal(metrics.activeTimeSeconds, 124, 'overlapping pause intervals are counted once; future pause excluded');
+  const absent = capturedRunTelemetryMetrics({ ...state,
+    coordinates: state.coordinates.map(({ altitudeM: _altitude, ...point }) => point) }, endedAt);
+  assert.equal(absent.elevationGainMeters, undefined);
+  assert.equal(absent.elevationLossMeters, undefined);
+  assert.equal(absent.metricSources?.elevation, undefined);
+  const gapOnly = capturedRunTelemetryMetrics({ ...state, coordinates: [state.coordinates[0], state.coordinates[4]] }, endedAt);
+  assert.equal(gapOnly.elevationGainMeters, undefined, 'isolated altitude readings across a gap are not a measured pair');
+  assert.equal(gapOnly.elevationLossMeters, undefined);
+  const futureOnly = capturedRunTelemetryMetrics({ ...state, coordinates: [
+    { lat: 0, lng: 0, timestamp: endedAt, altitudeM: 100 },
+    { lat: 0.0001, lng: 0, timestamp: endedAt + 10_000, altitudeM: 105 }] }, endedAt);
+  assert.equal(futureOnly.elevationGainMeters, undefined);
+});
+
+test('Training Run snapshot clips and unions pauses, omits future observations, and keeps explicit Watch totals', () => {
+  const state = trainingEndFixture();
+  const end = { workoutInstanceId: state.workoutInstanceId!, endedAt: 700_000 };
+  const gps = captureTrainingRunEnd(state, end);
+  assert.ok(Math.abs(gps.distanceMiles - 1) < 1e-12, 'phone distance comes from End-bounded fixes, not the scalar 99');
+  state.recordingPauses = [{ startTime: 90_000, endTime: 160_000 }, { startTime: 130_000, endTime: 220_000 },
+    { startTime: 710_000, endTime: 900_000 }];
+  state.isPaused = true;
+  state.pausedAt = 800_000;
+  state.pausedDurationMs = 999_000;
+  state.rawHeartRateSamples = [{ timestamp: 800_000, bpm: 150, source: 'apple_watch' }];
+  const watch = captureTrainingRunEnd(state, { ...end, distanceMiles: 1.4 });
+  assert.equal(watch.durationMinutes, 8, 'overlap counted once, future pause excluded');
+  assert.equal(watch.distanceMiles, 1.4);
+  assert.deepEqual(watch.activityMetrics?.recordingPauses, [{ startTime: 100_000, endTime: 220_000 }]);
+  assert.equal(watch.activityMetrics?.rawHeartRateSamples, undefined);
+  assert.equal(watch.activityMetrics?.metricSources?.distance, 'apple_watch');
+  assert.equal(captureTrainingRunEnd(state, { ...end, distanceMiles: 1.4, elapsedSeconds: 570 }).durationMinutes, 9.5);
+  assert.equal(captureTrainingRunEnd(state, end).distanceMiles, 0, 'do not bridge GPS distance across a recorded pause');
+});
+
+test('actual Training Run command captures before hydration awaits and cannot adopt a newer recording', async () => {
+  let state = trainingEndFixture();
+  let ready = false;
+  let finishHydration: (() => void) | undefined;
+  const lease = { ownerUserId: 'A', generation: 1 };
+  const athlete = { currentWeek: 1, fatigueScore: 0, recoveryScore: 70, setFatigueScore() {}, setRecentEasyLoad() {} };
+  const store = { history: [], getRunDiscardResult: async () => null,
+    commitRunEnd: async (entry: any) => ({ status: 'saved', entry, activityId: 'activity', ownerLease: lease }) };
+  const hydrated = (value: unknown) => ({ persist: { hasHydrated: () => true }, getState: () => value });
+  const command = loadSource('src/lib/runCompletionCommand.ts', {
+    '../store/activeRunStore': { useActiveRunStore: { ...hydrated(state), getState: () => state } },
+    '../store/workoutStore': { useWorkoutStore: { getState: () => store,
+      persist: { hasHydrated: () => ready, onFinishHydration: (callback: () => void) => { finishHydration = callback; return () => {}; } } } },
+    '../store/activityStore': { useActivityStore: hydrated({}) }, '../store/athleteStore': { useAthleteStore: hydrated(athlete) },
+    './localDataOwner': { captureOwnerLease: () => lease, ownerLeaseIsCurrent: (value: unknown) => value === lease },
+  });
+  const original = { workoutInstanceId: 'snapshot-run', endedAt: 700_000 };
+  const operation = command.completeRunCommand(original);
+  state.coordinates.push({ lat: 2 * 180 / Math.PI / 3958.8, lng: 0, timestamp: 900_000 });
+  state.recordingPauses.push({ startTime: 750_000, endTime: 850_000 });
+  original.endedAt = 900_000;
+  state = { ...state, workoutInstanceId: 'new-indoor', environment: 'indoor' };
+  ready = true;
+  assert.ok(finishHydration);
+  finishHydration();
+  const result = await operation;
+  assert.equal(result.entry.actualEndTime, 700_000);
+  assert.equal(result.entry.durationMinutes, 10);
+  assert.ok(Math.abs(result.entry.distanceMiles - 1) < 1e-12);
+  assert.equal(result.entry.routeCoordinates.length, 2);
+  assert.equal(state.workoutInstanceId, 'new-indoor');
+});
+
+test('Training Run retry transport deep-copies full first snapshot and restores it after failed persistence', async () => {
+  const storage = memoryStorage();
+  let fail = true;
+  const disk = { ...storage, setItem: async (key: string, value: string) => {
+    if (fail) throw new Error('transport disk unavailable');
+    await storage.setItem(key, value);
+  } };
+  const queue = new RunEndRetryQueue(disk);
+  const command = { workoutInstanceId: 'snapshot-run', endedAt: 700_000,
+    snapshot: { ...captureTrainingRunEnd(trainingEndFixture(), { workoutInstanceId: 'snapshot-run', endedAt: 700_000 }), ownerUserId: 'A' } };
+  queue.retain({ ownerUserId: 'A', command });
+  await assert.rejects(queue.pending('A', () => true), /transport disk unavailable/);
+  command.snapshot.distanceMiles = 99;
+  command.snapshot.routeCoordinates![0].lat = 20;
+  command.snapshot.actualEndTime = 900_000;
+  fail = false;
+  await queue.pending('A', () => true);
+  const restored = (await new RunEndRetryQueue(disk).pending('A', () => true))[0].command;
+  assert.equal(restored.snapshot?.actualEndTime, 700_000);
+  assert.ok(Math.abs(restored.snapshot!.distanceMiles - 1) < 1e-12);
+  assert.equal(restored.snapshot?.routeCoordinates?.[0].lat, 0);
+  assert.throws(() => queue.retain({ ownerUserId: 'B', command: restored }), /owner/);
+});
+
+test('actual Training Run freeze rejects post-failure backdated sensor arrivals before a direct retry', async () => {
+  const storage = memoryStorage();
+  const run = loadSource('src/store/activeRunStore.ts', {
+    '@react-native-async-storage/async-storage': {},
+    './persistStorage': { createAppJSONStorage: () => createJSONStorage(() => storage) },
+    './settingsStore': { useSettingsStore: { getState: () => ({ autoPauseMode: 'off' }) } },
+    '../lib/voiceCue': { enqueueVoiceCue() {} },
+  }).useActiveRunStore;
+  await new Promise(resolve => setImmediate(resolve));
+  const state = trainingEndFixture();
+  run.setState({ ...state, rawHeartRateSamples: [{ timestamp: 600_000, bpm: 140, source: 'apple_watch' }] });
+  let fail = true;
+  const entries: any[] = [];
+  const lease = { ownerUserId: 'A', generation: 1 };
+  const hydrated = (value: unknown) => ({ persist: { hasHydrated: () => true }, getState: () => value });
+  const command = loadSource('src/lib/runCompletionCommand.ts', {
+    '../store/activeRunStore': { useActiveRunStore: run },
+    '../store/workoutStore': { useWorkoutStore: hydrated({ history: [], getRunDiscardResult: async () => null,
+      commitRunEnd: async (entry: any) => {
+        entries.push(JSON.parse(JSON.stringify(entry)));
+        if (fail) throw new Error('journal disk unavailable');
+        return { status: 'saved', entry, activityId: 'activity', ownerLease: lease };
+      } }) },
+    '../store/activityStore': { useActivityStore: hydrated({}) },
+    '../store/athleteStore': { useAthleteStore: hydrated({ currentWeek: 1, fatigueScore: 0, recoveryScore: 70,
+      setFatigueScore() {}, setRecentEasyLoad() {} }) },
+    './localDataOwner': { captureOwnerLease: () => lease, ownerLeaseIsCurrent: (value: unknown) => value === lease },
+  });
+  const end = { workoutInstanceId: 'snapshot-run', endedAt: 700_000 };
+  await assert.rejects(command.completeRunCommand(end), /journal disk unavailable/);
+  assert.equal(run.getState().isActive, true);
+  assert.equal(run.getState().completionRequestedAt, 700_000);
+  run.getState().appendTelemetry('snapshot-run', { rawHeartRateSamples: [{ timestamp: 650_000, bpm: 190, source: 'apple_watch' }] });
+  run.getState().addLocationUpdate({ timestamp: 650_000, coords: { latitude: 1, longitude: 1, accuracy: 5 } });
+  run.getState().pauseRun();
+  run.getState().resumeRun();
+  assert.equal(run.getState().rawHeartRateSamples.length, 1);
+  assert.equal(run.getState().coordinates.length, 2);
+  fail = false;
+  await command.completeRunCommand(end);
+  assert.deepEqual(entries[1], entries[0], 'even pre-End observations arriving after failure cannot change the first payload');
+});
 
 function authHarness(options: { cachedId?: string | null; sessionError?: unknown; storage?: ReturnType<typeof memoryStorage>;
   hasExistingData?: boolean; cachedReadFails?: boolean; recover?: () => Promise<void>;
@@ -580,6 +894,57 @@ test('completion projects actual start/end, exact instance and GPS route, not fi
   assert.throws(() => runCompletionKey(null, null));
 });
 
+test('actual workout projection preserves route altitude, twelve-minute wall time, ten-minute active time and Watch provenance', () => {
+  const input: RunWorkoutRecord = {
+    ...record, durationMinutes: 10, actualDurationMinutes: 10, actualDistanceMiles: 1,
+    actualStartTime: 100_000, actualEndTime: 820_000,
+    routeCoordinates: [{ lat: 40, lng: -120, timestamp: 100_000, altitudeM: 112 },
+      { lat: 40.01, lng: -120, timestamp: 820_000, altitudeM: 121 }],
+    activityMetrics: { elapsedTimeSeconds: 720, activeTimeSeconds: 600,
+      metricSources: { distance: 'apple_watch', cadence: 'apple_watch', power: 'apple_watch' } },
+  };
+  const unchanged = structuredClone(input);
+  const activity = activityFromWorkoutRecord(input, false);
+  assert.deepEqual(activity.metrics.routeCoordinates, [
+    { latitude: 40, longitude: -120, timestamp: 100_000, altitudeMeters: 112 },
+    { latitude: 40.01, longitude: -120, timestamp: 820_000, altitudeMeters: 121 },
+  ]);
+  assert.equal(activity.metrics.durationSeconds, 600);
+  assert.equal(activity.metrics.elapsedTimeSeconds, 720);
+  assert.equal(activity.metrics.activeTimeSeconds, 600);
+  assert.equal(activity.metrics.distanceSource, 'gps');
+  assert.deepEqual(activity.metrics.metricSources, input.activityMetrics!.metricSources);
+  assert.equal(activity.metrics.distanceMeters, 1609.344);
+  assert.deepEqual(input, unchanged, 'projection does not mutate the durable first-End record');
+});
+
+test('actual workout projection falls back to valid wall timestamps and phone GPS only when provenance is absent', () => {
+  const input: RunWorkoutRecord = { ...record, durationMinutes: 10, actualDurationMinutes: 10,
+    actualStartTime: 100_000, actualEndTime: 820_000,
+    activityMetrics: { metricSources: { cadence: 'apple_watch' } } };
+  const activity = activityFromWorkoutRecord(input, false);
+  assert.equal(activity.metrics.elapsedTimeSeconds, 720);
+  assert.equal(activity.metrics.activeTimeSeconds, 600);
+  assert.equal(activity.metrics.metricSources?.distance, 'phone_gps');
+  assert.equal(activity.metrics.metricSources?.cadence, 'apple_watch');
+  const legacy = activityFromWorkoutRecord({ ...input, actualStartTime: undefined, actualEndTime: undefined }, true);
+  assert.equal(legacy.metrics.elapsedTimeSeconds, 600);
+  assert.equal(legacy.metrics.activeTimeSeconds, 600);
+  const invalidTimes = activityFromWorkoutRecord({ ...input, actualEndTime: 90_000 }, true);
+  assert.equal(invalidTimes.metrics.elapsedTimeSeconds, 600, 'invalid legacy wall bounds do not produce negative elapsed time');
+});
+
+test('actual workout projection does not replace captured timing or explicit unavailable distance provenance', () => {
+  const input: RunWorkoutRecord = { ...record, durationMinutes: 10, actualDurationMinutes: 10,
+    actualStartTime: 100_000, actualEndTime: 820_000,
+    activityMetrics: { elapsedTimeSeconds: 725, activeTimeSeconds: 595, metricSources: { distance: 'unavailable' } } };
+  const activity = activityFromWorkoutRecord(input, false);
+  assert.equal(activity.metrics.elapsedTimeSeconds, 725);
+  assert.equal(activity.metrics.activeTimeSeconds, 595);
+  assert.equal(activity.metrics.durationSeconds, 600);
+  assert.equal(activity.metrics.metricSources?.distance, 'unavailable');
+});
+
 test('Watch recording evidence survives projection and enrichment only for the exact native-confirmed instance', async () => {
   const evidence = { workoutInstanceId: 'instance-A', confirmedAt: 1_000_000, state: 'running' as const };
   const activity = activityFromWorkoutRecord({ ...record, watchRecording: evidence }, false);
@@ -913,7 +1278,8 @@ test('real workout/activity stores persist one live completion, preserve nearby 
     './localDataOwner': ownership, '../utils/capturedRunTelemetryMetrics': { capturedRunTelemetryMetrics: () => ({}) },
   });
   failActivityWrite = true;
-  await assert.rejects(command.completeRunCommand({ workoutInstanceId: 'background-end', endedAt: now }), /disk unavailable/);
+  // This fixture has no GPS fixes: its two miles are an explicit measured Watch End total.
+  await assert.rejects(command.completeRunCommand({ workoutInstanceId: 'background-end', endedAt: now, distanceMiles: 2 }), /disk unavailable/);
   const durableEnd = (await journal.read()).find(entry => entry.entry.workoutInstanceId === 'background-end')!;
   assert.equal(durableEnd.entry.actualEndTime, now);
   active.distanceMiles = 5;

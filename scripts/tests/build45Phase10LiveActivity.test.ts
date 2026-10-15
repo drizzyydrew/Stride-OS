@@ -69,7 +69,7 @@ test('Live Activity metric configs avoid irrelevant metrics by activity type', (
   assert.equal(liveActivityMetricConfig({ activityType: 'strength' }).primaryMetric, 'sets');
 });
 
-test('Build 56 accepts current app payloads but sends only the Build 53 native ActivityKit schema', () => {
+test('outdoor native payload expands optionally while retaining legacy run and strength safety', () => {
   const moduleIndex = read('modules/stride-live-activity/src/index.ts');
   const swiftModule = read('modules/stride-live-activity/ios/Module/StrideLiveActivityModule.swift');
   const runAttributes = read('modules/stride-live-activity/ios/Core/StrideRunActivityAttributes.swift');
@@ -79,14 +79,18 @@ test('Build 56 accepts current app payloads but sends only the Build 53 native A
   assert.match(moduleIndex, /workoutInstanceId/);
   assert.match(moduleIndex, /activityType\?: string/);
   assert.match(moduleIndex, /metricValue\?: string/);
-  assert.match(moduleIndex, /build56_native_payload_reverted/);
-  assert.doesNotMatch(moduleIndex, /payload\.activityType \?\? 'running'/);
-  assert.doesNotMatch(moduleIndex, /payload\.metricValue \?\? payload\.averagePace/);
-  assert.doesNotMatch(swiftModule, /activityType: String/);
-  assert.doesNotMatch(swiftModule, /metricValue: String/);
-  assert.doesNotMatch(swiftModule, /controlState: String/);
-  assert.doesNotMatch(runAttributes, /activityType/);
-  assert.doesNotMatch(runAttributes, /metricValue/);
+  assert.match(moduleIndex, /if \(nativeModule\.startOutdoor\) return nativeModule\.startOutdoor\(payload\)/);
+  assert.match(moduleIndex, /if \(nativeModule\.updateOutdoor\) return nativeModule\.updateOutdoor\(payload\)/);
+  assert.match(moduleIndex, /payload\.activityType !== 'running' && payload\.activityType !== 'run_walk'/);
+  assert.match(swiftModule, /AsyncFunction\("startOutdoor"\)/);
+  assert.match(swiftModule, /AsyncFunction\("start"\)/);
+  for (const field of ['workoutInstanceId', 'sessionSource', 'activityType', 'metricValue', 'metricUnit', 'controlState']) {
+    assert.match(runAttributes, new RegExp(`public var ${field}: String\\?`));
+    assert.match(swiftModule, new RegExp(`state\\.${field} = text\\("${field}"\\)`));
+  }
+  assert.match(swiftModule, /Self\.matchesSession\(payload, state: activity\.contentState\)/);
+  assert.match(runAttributes, /isPaused: Bool = false/);
+  assert.match(runAttributes, /updatedAt: Double\? = nil/);
   assert.doesNotMatch(strengthAttributes, /prescription/);
   assert.doesNotMatch(strengthAttributes, /loadDisplay/);
   assert.match(swiftModule, /endExistingActivityIfNeeded/);
@@ -99,5 +103,8 @@ test('Build 56 accepts current app payloads but sends only the Build 53 native A
   assert.doesNotMatch(widget, /CompactRunControls/);
   assert.doesNotMatch(widget, /priorityGuidance/);
   assert.doesNotMatch(widget, /activityIcon/);
-  assert.doesNotMatch(widget, /context\.state\.metricValue/);
+  assert.match(widget, /context\.state\.metricValue \?\? context\.state\.averagePace/);
+  assert.match(widget, /context\.state\.metricUnit \?\? "\/mi"/);
+  assert.match(widget, /context\.state\.distanceUnit \?\? "mi"/);
+  assert.match(widget, /heartRateIsFresh\(context\.state\)/);
 });

@@ -55,7 +55,8 @@ test('outdoor activities consume shared controls and include snowboarding', () =
 
 test('cold-navigation run completion derives final time from persisted run state', () => {
   assert.match(runningSource, /const finalState = useActiveRunStore\.getState\(\)/);
-  assert.match(runningSource, /const finalElapsed = activeRunElapsedSeconds\(finalState\)/);
+  assert.match(runningSource, /const endedAt = finalState\.completionRequestedAt \?\? Date\.now\(\)/);
+  assert.match(runningSource, /(?:const|let) finalElapsed = activeRunElapsedSeconds\(finalState, endedAt\)/);
   assert.match(runningSource, /elapsedSeconds: finalElapsed/);
   assert.doesNotMatch(runningSource, /const finalElapsed = elapsed;/);
 });

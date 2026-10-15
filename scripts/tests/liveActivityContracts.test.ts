@@ -41,7 +41,7 @@ test('running and walking payloads use pace without speed leakage', () => {
 });
 
 test('cycling and skiing payloads use speed without pace leakage', () => {
-  for (const activityType of ['cycling', 'downhill_skiing', 'cross_country_skiing', 'snowboarding'] as const) {
+  for (const activityType of ['cycling', 'downhill_skiing', 'cross_country_skiing', 'snowboarding', 'ski_touring', 'snowboard_touring'] as const) {
     const payload = normalizeOutdoorLiveActivitySnapshot({
       activityName: 'Outdoor Session',
       activityType,
@@ -71,12 +71,15 @@ test('outdoor payload carries session ownership and applicable elevation context
     isPaused: false,
     elevationGainMeters: 35,
     elevationLossMeters: 640,
+    unitSystem: 'metric',
   });
   assert.equal(payload.sessionId, 'outdoor:session-1');
   assert.equal(payload.sessionSource, 'outdoor');
   assert.equal(payload.metricLabel, 'SPEED');
   assert.equal(payload.elevationDisplay, '35 m');
   assert.equal(payload.descentDisplay, '640 m');
+  assert.equal(payload.metricUnit, 'km/h');
+  assert.equal(payload.distanceUnit, 'km');
 });
 
 test('run-walk interval and navigation content survive payload normalization', () => {

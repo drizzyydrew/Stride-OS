@@ -19,6 +19,7 @@ export type StrideWatchStatus = {
   lastAckReason?: string | null;
   lastWatchStateAt?: number;
   lastWatchState?: string | null;
+  supportedWorkoutKinds?: string[];
 };
 
 export type StrideWatchAckEvent = {
@@ -31,7 +32,20 @@ export type StrideWatchAckEvent = {
   timestamp: number;
 };
 
-export type StrideWatchWorkoutKind = 'run' | 'strength' | 'mobility' | 'cycling';
+export type StrideWatchWorkoutKind = 'run' | 'strength' | 'mobility' | 'cycling'
+  | 'walking' | 'hiking' | 'downhill_skiing' | 'cross_country_skiing'
+  | 'snowboarding' | 'ski_touring' | 'snowboard_touring';
+
+export type StrideWatchTelemetryEvent = {
+  workoutInstanceId: string;
+  workoutKind?: string;
+  timestamp: number;
+  cadenceSpm?: number;
+  cadenceRpm?: number;
+  powerWatts?: number;
+  powerKind?: 'device_estimated' | 'measured';
+  powerSport?: 'running' | 'cycling';
+};
 
 export type StrideWatchHeartRateEvent = {
   type: 'heartRate';
@@ -57,6 +71,7 @@ export type StrideWatchWorkoutStateEvent = {
   distanceMeters?: number;
   activeEnergyKilocalories?: number;
   heartRate?: number;
+  heartRateTimestamp?: number;
   heartRateZone?: string;
   pendingSyncCount?: number;
   queued?: boolean;
@@ -72,7 +87,7 @@ export type StrideWatchErrorEvent = {
 
 type Subscription = { remove: () => void };
 
-type StrideWatchEventName = 'onWatchStatus' | 'onWatchHeartRate' | 'onWatchWorkoutState' | 'onWatchError' | 'onWatchAck';
+type StrideWatchEventName = 'onWatchStatus' | 'onWatchHeartRate' | 'onWatchWorkoutState' | 'onWatchError' | 'onWatchAck' | 'onWatchTelemetry' | 'onPhoneCadence';
 
 type StrideWatchConnectivityNativeModule = {
   // Expo modules are their own event emitters. They are NOT registered in
@@ -80,6 +95,8 @@ type StrideWatchConnectivityNativeModule = {
   // registry is null and never receives events.
   addListener: (eventName: StrideWatchEventName, listener: (event: any) => void) => Subscription;
   isSupported: () => boolean;
+  startPhoneCadence?: (workoutInstanceId: string) => Promise<boolean>;
+  stopPhoneCadence?: (workoutInstanceId: string) => void;
   snapshot: () => StrideWatchStatus;
   activate: () => Promise<StrideWatchStatus>;
   startRun: (
@@ -244,6 +261,16 @@ export async function endStrideWatchWorkout(workoutInstanceId?: string | null): 
   }
 }
 
+/** Exact-ID recovery path deliberately propagates delivery failures for retry. */
+export async function endStrideWatchWorkoutIfMatching(workoutInstanceId: string): Promise<void> {
+  if (!workoutInstanceId) throw new Error('Watch cleanup requires a recording ID');
+  const nativeModule = getNativeModule();
+  if (!nativeModule) return;
+  const status = getStrideWatchStatus();
+  if (!status.isPaired || !status.isWatchAppInstalled) return;
+  await nativeModule.endWorkout(workoutInstanceId);
+}
+
 export async function setStrideWatchWorkoutContext(options: {
   unitSystem?: 'imperial' | 'metric' | string | null;
   maxHeartRateBpm?: number | null;
@@ -267,7 +294,7 @@ export function addStrideWatchHeartRateListener(
 ): Subscription | null {
   return subscribe('onWatchHeartRate', event => {
     const heartRate = Number(event?.heartRate);
-    if (!Number.isFinite(heartRate) || heartRate <= 0) return;
+    if (!Number.isFinite(heartRate) || heartRate <= 0 || !Number.isFinite(event?.timestamp)) return;
     listener({
       type: 'heartRate',
       heartRate,
@@ -306,6 +333,7 @@ export function addStrideWatchWorkoutStateListener(
       distanceMeters: Number.isFinite(Number(event?.distanceMeters)) ? Number(event.distanceMeters) : undefined,
       activeEnergyKilocalories: Number.isFinite(Number(event?.activeEnergyKilocalories)) ? Number(event.activeEnergyKilocalories) : undefined,
       heartRate: Number.isFinite(Number(event?.heartRate)) ? Number(event.heartRate) : undefined,
+      heartRateTimestamp: typeof event?.heartRateTimestamp === 'number' && Number.isFinite(event.heartRateTimestamp) ? event.heartRateTimestamp : undefined,
       heartRateZone: typeof event?.heartRateZone === 'string' ? event.heartRateZone : undefined,
       pendingSyncCount: Number.isFinite(Number(event?.pendingSyncCount)) ? Number(event.pendingSyncCount) : undefined,
       queued: Boolean(event?.queued),
@@ -313,6 +341,38 @@ export function addStrideWatchWorkoutStateListener(
       source: 'apple_watch',
     });
   });
+}
+
+export function addStrideWatchTelemetryListener(listener: (event: StrideWatchTelemetryEvent) => void): Subscription | null {
+  return subscribe('onWatchTelemetry', event => {
+    if (typeof event?.workoutInstanceId !== 'string' || !Number.isFinite(event?.timestamp)) return;
+    listener({
+      workoutInstanceId: event.workoutInstanceId,
+      workoutKind: typeof event.workoutKind === 'string' ? event.workoutKind : undefined,
+      timestamp: event.timestamp,
+      cadenceSpm: typeof event.cadenceSpm === 'number' && Number.isFinite(event.cadenceSpm) ? event.cadenceSpm : undefined,
+      cadenceRpm: typeof event.cadenceRpm === 'number' && Number.isFinite(event.cadenceRpm) ? event.cadenceRpm : undefined,
+      powerWatts: typeof event.powerWatts === 'number' && Number.isFinite(event.powerWatts) ? event.powerWatts : undefined,
+      powerKind: event.powerKind === 'device_estimated' || event.powerKind === 'measured' ? event.powerKind : undefined,
+      powerSport: event.powerSport === 'running' || event.powerSport === 'cycling' ? event.powerSport : undefined,
+    });
+  });
+}
+
+export function addPhoneCadenceListener(listener: (event: { workoutInstanceId: string; timestamp: number; cadenceSpm: number }) => void): Subscription | null {
+  return subscribe('onPhoneCadence', event => {
+    if (typeof event?.workoutInstanceId !== 'string' || !Number.isFinite(event?.timestamp)
+      || typeof event?.cadenceSpm !== 'number' || !Number.isFinite(event.cadenceSpm) || event.cadenceSpm < 0) return;
+    listener(event);
+  });
+}
+
+export async function startPhoneCadence(workoutInstanceId: string): Promise<boolean> {
+  try { return await getNativeModule()?.startPhoneCadence?.(workoutInstanceId) ?? false; } catch { return false; }
+}
+
+export function stopPhoneCadence(workoutInstanceId: string): void {
+  try { getNativeModule()?.stopPhoneCadence?.(workoutInstanceId); } catch { /* Optional sensor. */ }
 }
 
 export function addStrideWatchErrorListener(
@@ -361,6 +421,7 @@ function normalizeStatus(input: Partial<StrideWatchStatus> | null | undefined): 
     lastAckReason: typeof input?.lastAckReason === 'string' ? input.lastAckReason : null,
     lastWatchStateAt: finiteOrZero(input?.lastWatchStateAt),
     lastWatchState: typeof input?.lastWatchState === 'string' ? input.lastWatchState : null,
+    supportedWorkoutKinds: Array.isArray(input?.supportedWorkoutKinds) ? input.supportedWorkoutKinds.filter(kind => typeof kind === 'string') : [],
   };
 }
 

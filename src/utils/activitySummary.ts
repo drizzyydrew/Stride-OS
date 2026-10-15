@@ -8,6 +8,7 @@ import {
   formatSpeedMps,
 } from '../lib/units';
 import { displayLabel } from './displayLabels';
+import { buildRouteReviewObservations } from './outdoorAnalysis';
 
 export type ActivitySummaryMetric = {
   label: string;
@@ -44,7 +45,7 @@ export function formatDuration(seconds: number | null | undefined): string {
 }
 
 export function formatElevationMeters(meters: number | null | undefined, units: UnitSystem): string {
-  if (!finitePositive(meters)) return '';
+  if (typeof meters !== 'number' || !Number.isFinite(meters) || meters < 0) return '';
   if (units === 'metric') return `${Math.round(meters).toLocaleString()} m`;
   return `${Math.round(meters * 3.28084).toLocaleString()} ft`;
 }
@@ -127,8 +128,8 @@ export function buildActivitySummary(
 ): ActivitySummary {
   const dataRich = options.dataRich ?? true;
   const metrics = activity.metrics;
-  const endurance = ['running', 'walking', 'hiking', 'cycling', 'indoor_cycling', 'downhill_skiing', 'cross_country_skiing', 'snowboarding', 'elliptical', 'rowing', 'stair_climbing'].includes(activity.activityType);
-  const speedBased = ['cycling', 'indoor_cycling', 'downhill_skiing', 'cross_country_skiing', 'snowboarding', 'rowing'].includes(activity.activityType);
+  const endurance = ['running', 'walking', 'hiking', 'cycling', 'indoor_cycling', 'downhill_skiing', 'cross_country_skiing', 'snowboarding', 'ski_touring', 'snowboard_touring', 'elliptical', 'rowing', 'stair_climbing'].includes(activity.activityType);
+  const speedBased = ['cycling', 'indoor_cycling', 'downhill_skiing', 'cross_country_skiing', 'snowboarding', 'ski_touring', 'snowboard_touring', 'rowing'].includes(activity.activityType);
   const primary: ActivitySummaryMetric[] = [];
 
   pushMetric(primary, metric('Duration', formatDuration(metrics.durationSeconds), 'primary'));
@@ -156,8 +157,20 @@ export function buildActivitySummary(
   pushMetric(performance, metric('Elapsed time', metrics.elapsedTimeSeconds && metrics.elapsedTimeSeconds !== metrics.durationSeconds ? formatDuration(metrics.elapsedTimeSeconds) : null));
   pushMetric(performance, metric('Maximum speed', finitePositive(metrics.speed?.maximumMetersPerSecond) ? formatSpeedMps(metrics.speed.maximumMetersPerSecond, units) : null));
   pushMetric(performance, metric('Maximum HR', dataRich && metrics.maximumHeartRateBpm ? `${Math.round(metrics.maximumHeartRateBpm)} bpm` : null, 'detail', 'health'));
-  pushMetric(performance, metric('Cadence', dataRich && metrics.cadenceRpm ? `${Math.round(metrics.cadenceRpm)} rpm` : null));
-  pushMetric(performance, metric('Average power', dataRich && metrics.cyclingPowerWatts ? `${Math.round(metrics.cyclingPowerWatts)} W` : null));
+  pushMetric(performance, metric('Cadence', dataRich && metrics.cadenceSpm ? `${Math.round(metrics.cadenceSpm)} spm` : dataRich && metrics.cadenceRpm ? `${Math.round(metrics.cadenceRpm)} rpm` : null));
+  pushMetric(performance, metric('Cycling power (recorded)', dataRich && metrics.cyclingPowerWatts ? `${Math.round(metrics.cyclingPowerWatts)} W` : null));
+  pushMetric(performance, metric('Running power (device estimate)', dataRich && metrics.runningPowerWatts ? `${Math.round(metrics.runningPowerWatts)} W` : null));
+  pushMetric(performance, metric('Steps', dataRich && metrics.stepCount ? Math.round(metrics.stepCount).toLocaleString() : null));
+  const dynamics = dataRich ? metrics.runningDynamics : undefined;
+  pushMetric(performance, metric('Ground contact time', finitePositive(dynamics?.averageGroundContactTimeMs) ? `${Math.round(dynamics.averageGroundContactTimeMs)} ms` : null));
+  pushMetric(performance, metric('Stride length', finitePositive(dynamics?.averageStrideLengthMeters) ? units === 'metric' ? `${dynamics.averageStrideLengthMeters.toFixed(2)} m` : `${(dynamics.averageStrideLengthMeters * 3.28084).toFixed(2)} ft` : null));
+  pushMetric(performance, metric('Vertical oscillation', finitePositive(dynamics?.averageVerticalOscillationMeters) ? units === 'metric' ? `${(dynamics.averageVerticalOscillationMeters * 100).toFixed(1)} cm` : `${(dynamics.averageVerticalOscillationMeters * 39.3701).toFixed(1)} in` : null));
+  const routeAltitudes = buildRouteReviewObservations(activity).map(observation => observation.point.altitudeMeters)
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+  if (routeAltitudes.length) {
+    const peak = routeAltitudes.reduce((highest, value) => Math.max(highest, value), -Infinity);
+    pushMetric(performance, metric('Peak recorded altitude', `${Math.round(peak * (units === 'metric' ? 1 : 3.28084))} ${units === 'metric' ? 'm' : 'ft'}`));
+  }
   pushMetric(performance, metric('Elevation loss', formatElevationMeters(metrics.elevationLossMeters, units)));
   pushMetric(performance, metric('Calories', dataRich && metrics.estimatedCalories ? `${Math.round(metrics.estimatedCalories)} kcal` : null, 'detail', 'health'));
   pushMetric(performance, metric('HR zones', dataRich ? hrZoneSummary(metrics) : null, 'detail', 'health'));

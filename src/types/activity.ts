@@ -8,6 +8,8 @@ export const ACTIVITY_TYPES = [
   'downhill_skiing',
   'cross_country_skiing',
   'snowboarding',
+  'ski_touring',
+  'snowboard_touring',
   'elliptical',
   'rowing',
   'stair_climbing',
@@ -53,6 +55,8 @@ export type TelemetrySource =
   | 'smart_trainer'
   | 'heart_rate_monitor'
   | 'cycling_power_meter'
+  | 'cycling_cadence_sensor'
+  | 'model_estimate'
   | 'manual_equipment_entry'
   | 'manual_entry'
   | 'prescribed_estimate'
@@ -119,10 +123,39 @@ export type HeartRateSample = {
   source: Extract<TelemetrySource, 'healthkit' | 'apple_watch' | 'heart_rate_monitor'>;
 };
 
+// Observation timestamps are Unix milliseconds, not receipt times.
+export type CadenceSample = { timestamp: number; source: TelemetrySource } & (
+  | { kind: 'steps'; cadenceSpm: number; cadenceRpm?: never }
+  | { kind: 'cycling'; cadenceRpm: number; cadenceSpm?: never }
+);
+
+export type PowerSample = {
+  timestamp: number;
+  watts: number;
+  sport: 'running' | 'cycling';
+  source: TelemetrySource;
+} & (
+  | { kind: 'measured' | 'device_estimated'; modelVersion?: string }
+  | { kind: 'model_estimated'; modelVersion: string }
+);
+
+export type PowerEstimate = {
+  quantity: 'cycling_mechanical_estimate' | 'running_metabolic_estimate';
+  modelId: string;
+  version: string;
+  computedAt: number;
+  sport: 'running' | 'cycling';
+  assumptions: string[];
+  inputs: { name: string; source: TelemetrySource; value?: number; unit?: string }[];
+  coverageSeconds: number;
+  coverageRatio: number;
+  averageWatts?: number;
+};
+
 // A completion-time summary, not a promise of continuous sensor coverage.
 // `averageReliable: false` intentionally means averageHeartRateBpm is absent.
 export type HeartRateSummary = {
-  source: 'healthkit';
+  source: HeartRateSample['source'] | 'mixed';
   sampleCount: number;
   coverageSeconds: number;
   sessionSeconds: number;
@@ -140,6 +173,12 @@ export type RunWalkInterval = {
   completedSeconds?: number;
 };
 
+export type RunningDynamicsSummary = {
+  averageGroundContactTimeMs?: number;
+  averageStrideLengthMeters?: number;
+  averageVerticalOscillationMeters?: number;
+};
+
 export type ActivityMetrics = {
   durationSeconds?: number;
   elapsedTimeSeconds?: number;
@@ -151,7 +190,14 @@ export type ActivityMetrics = {
   maximumHeartRateBpm?: number;
   heartRateZoneSeconds?: HeartRateZoneSeconds;
   heartRateSummary?: HeartRateSummary;
+  rawHeartRateSamples?: HeartRateSample[];
+  recordingPauses?: { startTime: number; endTime: number }[];
+  cadenceSamples?: CadenceSample[];
+  powerSamples?: PowerSample[];
+  powerEstimate?: PowerEstimate;
   estimatedCalories?: number;
+  stepCount?: number;
+  runningDynamics?: RunningDynamicsSummary;
 
   pace?: {
     currentSecondsPerKilometer?: number;
@@ -164,6 +210,8 @@ export type ActivityMetrics = {
     maximumMetersPerSecond?: number;
   };
   cadenceRpm?: number;
+  cadenceSpm?: number;
+  runningPowerWatts?: number;
   cyclingPowerWatts?: number;
   // Indoor cycling only: whatever the trainer/bike's resistance control showed
   // (a level number or a free-text setting) — never used to derive distance.
@@ -235,6 +283,9 @@ export type HealthKitImportMetadata = {
   importedAt: number;
   routeStatus: 'available' | 'not_available' | 'not_authorized' | 'unsupported';
   importedByStrideOS: boolean;
+  workoutInstanceId?: string;
+  strideOSActivityId?: string;
+  strideOSWorkoutId?: string;
 };
 
 export type WorkoutKitExportMetadata = {
@@ -262,7 +313,16 @@ export type ActivityLiveState = {
   updatedAt: number;
 };
 
+export type WatchRecordingEvidence = {
+  workoutInstanceId: string;
+  confirmedAt: number;
+  state: 'running' | 'paused' | 'ended';
+};
+
 export type Activity = {
+  workoutInstanceId?: string;
+  /** Native Watch recording confirmation, not connectivity or a Health save receipt. */
+  watchRecording?: WatchRecordingEvidence;
   id: string;
   activityType: ActivityType;
   subtype?: ActivitySubtype;

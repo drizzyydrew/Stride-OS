@@ -8,6 +8,8 @@ export type OutdoorLiveActivityType =
   | 'downhill_skiing'
   | 'cross_country_skiing'
   | 'snowboarding'
+  | 'ski_touring'
+  | 'snowboard_touring'
   | 'mobility'
   | 'active_recovery';
 
@@ -54,6 +56,14 @@ export type OutdoorLiveActivitySnapshot = {
   controlState?: LiveActivityControlState;
   elevationGainMeters?: number;
   elevationLossMeters?: number;
+  unitSystem?: 'imperial' | 'metric';
+  cadenceValue?: number;
+  cadenceUnit?: 'spm' | 'rpm';
+  cadenceObservedAt?: number;
+  powerWatts?: number;
+  powerKind?: 'measured' | 'device_estimated' | 'model_estimated';
+  powerObservedAt?: number;
+  heartRateObservedAt?: number;
 };
 
 export type NormalizedOutdoorLiveActivityPayload = {
@@ -72,7 +82,16 @@ export type NormalizedOutdoorLiveActivityPayload = {
   isPaused: boolean;
   metricLabel: 'PACE' | 'SPEED';
   metricValue: string;
-  metricUnit: '/mi' | 'mph';
+  metricUnit: '/mi' | '/km' | 'mph' | 'km/h';
+  distanceValue: string;
+  distanceUnit: 'mi' | 'km';
+  cadenceValue?: number;
+  cadenceUnit?: 'spm' | 'rpm';
+  cadenceObservedAt?: number;
+  powerWatts?: number;
+  powerKind?: 'measured' | 'device_estimated' | 'model_estimated';
+  powerObservedAt?: number;
+  heartRateObservedAt?: number;
   currentInterval: string;
   nextTransition: string;
   navigationInstruction: string;
@@ -90,10 +109,14 @@ export function normalizeOutdoorLiveActivitySnapshot(
     || snapshot.activityType === 'indoor_cycling'
     || snapshot.activityType === 'downhill_skiing'
     || snapshot.activityType === 'cross_country_skiing'
-    || snapshot.activityType === 'snowboarding';
+    || snapshot.activityType === 'snowboarding'
+    || snapshot.activityType === 'ski_touring'
+    || snapshot.activityType === 'snowboard_touring';
+  const metric = snapshot.unitSystem === 'metric';
+  const pace = snapshot.averagePace?.trim() || '--:--';
   const metricValue = speedBased
-    ? formatSpeed(snapshot.averageSpeedMph)
-    : snapshot.averagePace?.trim() || '--:--';
+    ? formatSpeed(snapshot.averageSpeedMph == null ? undefined : snapshot.averageSpeedMph * (metric ? 1.609344 : 1))
+    : metric ? metricPace(pace) : pace;
 
   return {
     runName: snapshot.activityName.trim() || defaultActivityName(snapshot.activityType),
@@ -103,7 +126,8 @@ export function normalizeOutdoorLiveActivitySnapshot(
     activityType: snapshot.activityType,
     elapsedSeconds: Math.max(0, Math.round(snapshot.elapsedSeconds)),
     distanceMiles: Math.max(0, snapshot.distanceMiles),
-    averagePace: metricValue,
+    // Legacy native binaries always interpret this field as minutes per mile.
+    averagePace: snapshot.averagePace?.trim() || '--:--',
     heartRate: Math.max(0, Math.round(snapshot.heartRateBpm ?? 0)),
     zoneLabel: snapshot.zoneLabel?.trim() || 'Zone --',
     zoneStatus: snapshot.zoneStatus?.trim() || 'unknown',
@@ -111,14 +135,23 @@ export function normalizeOutdoorLiveActivitySnapshot(
     isPaused: snapshot.isPaused,
     metricLabel: speedBased ? 'SPEED' : 'PACE',
     metricValue,
-    metricUnit: speedBased ? 'mph' : '/mi',
+    metricUnit: speedBased ? metric ? 'km/h' : 'mph' : metric ? '/km' : '/mi',
+    distanceValue: (Math.max(0, snapshot.distanceMiles) * (metric ? 1.609344 : 1)).toFixed(2),
+    distanceUnit: metric ? 'km' : 'mi',
+    cadenceValue: finiteNonnegative(snapshot.cadenceValue),
+    cadenceUnit: snapshot.cadenceUnit,
+    cadenceObservedAt: snapshot.cadenceObservedAt,
+    powerWatts: finiteNonnegative(snapshot.powerWatts),
+    powerKind: snapshot.powerKind,
+    powerObservedAt: snapshot.powerObservedAt,
+    heartRateObservedAt: snapshot.heartRateObservedAt,
     currentInterval: snapshot.currentInterval?.trim() || '',
     nextTransition: snapshot.nextTransition?.trim() || '',
     navigationInstruction: snapshot.navigationInstruction?.trim() || '',
     cueText: snapshot.cueText?.trim() || '',
     controlState: snapshot.controlState ?? 'ready',
-    elevationDisplay: formatElevation(snapshot.elevationGainMeters),
-    descentDisplay: formatElevation(snapshot.elevationLossMeters),
+    elevationDisplay: formatElevation(snapshot.elevationGainMeters, metric),
+    descentDisplay: formatElevation(snapshot.elevationLossMeters, metric),
   };
 }
 
@@ -152,11 +185,24 @@ function defaultActivityName(type: OutdoorLiveActivityType): string {
   case 'downhill_skiing': return 'Downhill Ski';
   case 'cross_country_skiing': return 'Cross-Country Ski';
   case 'snowboarding': return 'Snowboard';
+  case 'ski_touring': return 'Ski Touring';
+  case 'snowboard_touring': return 'Snowboard Touring';
   default: return 'Training Run';
   }
 }
 
-function formatElevation(value: number | undefined): string {
+function formatElevation(value: number | undefined, metric = false): string {
   if (!Number.isFinite(value) || (value ?? 0) <= 0) return '';
-  return `${Math.round(value as number)} m`;
+  return `${Math.round((value as number) * (metric ? 1 : 3.28084))} ${metric ? 'm' : 'ft'}`;
+}
+
+function metricPace(pace: string): string {
+  const match = /^(\d+):(\d{2})$/.exec(pace);
+  if (!match) return '--:--';
+  const seconds = Math.round((Number(match[1]) * 60 + Number(match[2])) / 1.609344);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+function finiteNonnegative(value: number | undefined): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
 }

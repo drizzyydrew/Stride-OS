@@ -14,12 +14,22 @@ test('Build 53 uses the Build 37 Live Activity backbone without the MapKit bridg
   assert.match(moduleIndexSource, /getAppleRouteDirections\(\): Promise<AppleRouteDirectionsResult \| null>[\s\S]*return null/);
 });
 
-test('Build 53 keeps Build 37 in-process ActivityKit IDs without persisted source matching', () => {
+test('ActivityKit retains in-process IDs and rejects mismatched outdoor session updates', () => {
   assert.match(moduleSource, /private static var currentActivityId: String\?/);
   assert.match(moduleSource, /private static var currentStrengthActivityId: String\?/);
   assert.doesNotMatch(moduleSource, /StrideOS\.currentRunLiveActivityId/);
-  assert.doesNotMatch(moduleSource, /sessionSource/);
-  assert.doesNotMatch(moduleSource, /workoutInstanceId/);
+  assert.match(moduleSource, /private static func matchesSession/);
+  assert.match(moduleSource, /let current = state.workoutInstanceId \?\? state.sessionId/);
+  assert.match(moduleSource, /let requested = payload\["workoutInstanceId"\] as\? String \?\? payload\["sessionId"\] as\? String/);
+  assert.match(moduleSource, /return requested == current/);
+  const matcher = moduleSource.slice(moduleSource.indexOf('private static func matchesSession'), moduleSource.indexOf('private static func makeOutdoorState'));
+  assert.doesNotMatch(matcher, /return true/);
+  assert.match(moduleSource, /payload\["sessionSource"\] as\? String == state\.sessionSource/);
+  for (const action of ['updateOutdoor', 'endOutdoor']) {
+    const start = moduleSource.indexOf(`AsyncFunction("${action}")`);
+    const body = moduleSource.slice(start, moduleSource.indexOf('AsyncFunction(', start + 1));
+    assert.match(body, /guard let activity = Self\.currentActivity\(\), Self\.matchesSession\(payload, state: activity\.contentState\) else/);
+  }
 });
 
 test('Build 53 restores Build 37 first-active fallback semantics', () => {
@@ -40,7 +50,7 @@ test('native start paths restore Build 37 single-active Live Activity replacemen
   assert.doesNotMatch(moduleSource, /endMatchingStrengthActivityIfNeeded/);
 });
 
-test('Build 53 restores Build 37 simple App Intent command contract', () => {
+test('App Intent commands preserve legacy actions and carry the exact outdoor ownership', () => {
   assert.match(intentSource, /static let idKey = "StrideOS\.pendingRunControlCommand\.id"/);
   assert.match(intentSource, /static let actionKey = "StrideOS\.pendingRunControlCommand\.action"/);
   assert.match(intentSource, /StrideRunControlCommand\.write\("pause"\)/);
@@ -49,6 +59,11 @@ test('Build 53 restores Build 37 simple App Intent command contract', () => {
   assert.doesNotMatch(intentSource, /pendingTimeout/);
   assert.doesNotMatch(intentSource, /sessionSourceKey/);
   assert.doesNotMatch(moduleSource, /controlStatePreservingPending/);
+  for (const field of ['workoutInstanceId', 'sessionId', 'sessionSource']) {
+    assert.ok(intentSource.includes(`StrideOS.pendingRunControlCommand.${field}`));
+    assert.ok(moduleSource.includes(`StrideOS.pendingRunControlCommand.${field}`));
+  }
+  assert.match(intentSource, /var state = activity\.contentState/);
 });
 
 test('Build 53 restores Build 37 extension target and iOS availability gates', () => {
@@ -59,16 +74,25 @@ test('Build 53 restores Build 37 extension target and iOS availability gates', (
   assert.match(intentSource, /@available\(iOS 18\.0, \*\)[\s\S]*struct PauseRunIntent/);
 });
 
-test('Build 56 restores the Build 53 native content-state schema and simple widget', () => {
-  assert.doesNotMatch(moduleSource, /metricValue: String/);
-  assert.doesNotMatch(moduleSource, /activityType: String/);
-  assert.doesNotMatch(moduleSource, /controlState: String/);
+test('expanded content-state fields are optional, encoded natively, and preserve legacy widget fallbacks', () => {
+  const attributes = readFileSync('modules/stride-live-activity/ios/Core/StrideRunActivityAttributes.swift', 'utf8');
+  for (const field of ['workoutInstanceId', 'sessionId', 'sessionSource', 'activityType', 'metricLabel', 'metricValue',
+    'metricUnit', 'distanceValue', 'distanceUnit', 'elevationDisplay', 'descentDisplay', 'cadenceUnit', 'powerKind',
+    'currentInterval', 'nextTransition', 'navigationInstruction', 'cueText', 'controlState']) {
+    assert.match(attributes, new RegExp(`public var ${field}: String\\?`));
+    assert.match(moduleSource, new RegExp(`state\\.${field} = text\\("${field}"\\)`));
+  }
+  for (const field of ['cadenceValue', 'powerWatts', 'heartRateObservedAt', 'cadenceObservedAt', 'powerObservedAt']) {
+    assert.match(attributes, new RegExp(`public var ${field}: Double\\?`));
+    assert.match(moduleSource, new RegExp(`state\\.${field} = number\\("${field}"\\)`));
+  }
   assert.match(widgetSource, /context\.state\.averagePace/);
-  assert.doesNotMatch(widgetSource, /context\.state\.metricValue/);
-  assert.doesNotMatch(widgetSource, /context\.state\.metricUnit/);
-  assert.doesNotMatch(widgetSource, /context\.state\.metricLabel/);
-  assert.doesNotMatch(widgetSource, /context\.state\.activityType/);
-  assert.doesNotMatch(widgetSource, /context\.state\.navigationInstruction/);
+  assert.match(widgetSource, /context\.state\.metricValue \?\? context\.state\.averagePace/);
+  assert.match(widgetSource, /context\.state\.metricUnit \?\? "\/mi"/);
+  assert.match(widgetSource, /context\.state\.metricLabel \?\? "PACE"/);
+  assert.match(widgetSource, /outdoorSymbol\(context\.state\.activityType\)/);
+  assert.match(widgetSource, /observedAt: context\.state\.powerObservedAt/);
+  assert.match(widgetSource, /context\.isStale/);
   assert.match(widgetSource, /context\.state\.zoneLabel/);
   assert.match(widgetSource, /context\.state\.currentExercise/);
   assert.match(widgetSource, /context\.state\.setsCompleted/);

@@ -6,10 +6,14 @@ import { waitForActiveSessionStores } from '../../lib/activeSessionCoordinator';
 import { resumeRunLocationTrackingIfPermitted } from '../../lib/gpsTracking';
 import { useActiveActivityStore } from '../../store/activeActivityStore';
 import { useActiveRunStore } from '../../store/activeRunStore';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../lib/localDataOwner';
 
 async function reconcileActiveLocationTracking() {
   if (Platform.OS === 'web') return;
+  const lease = captureOwnerLease();
+  if (!ownerLeaseIsCurrent(lease)) return;
   await waitForActiveSessionStores();
+  if (!ownerLeaseIsCurrent(lease)) return;
 
   const run = useActiveRunStore.getState();
   if (run.isActive && run.environment === 'outdoor') {
@@ -19,7 +23,7 @@ async function reconcileActiveLocationTracking() {
   }
 
   const activity = useActiveActivityStore.getState();
-  if (activity.isActive && activity.subtype === 'outdoor') {
+  if (ownerLeaseIsCurrent(lease) && activity.isActive && activity.subtype === 'outdoor') {
     await resumeActivityLocationTrackingIfPermitted().catch(error => {
       console.warn('[Activity GPS resume]', error);
     });

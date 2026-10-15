@@ -197,8 +197,9 @@ test('Build 48 HealthKit import dedupes by uuid/source and reconciles high-confi
   assert.equal(draft.healthKit?.routeStatus, 'available');
 
   assert.equal(isDuplicateHealthKitWorkout(candidate, [draft as Activity]), true);
-  // Same kind of workout over the same time is the same session (e.g. watch + phone).
-  assert.equal(isDuplicateHealthKitWorkout({ ...candidate, uuid: 'hk-2' }, [draft as Activity]), true);
+  // Temporal overlap alone does not prove the recordings are the same session.
+  assert.equal(isDuplicateHealthKitWorkout({ ...candidate, uuid: 'hk-2' }, [draft as Activity]), false);
+  assert.equal(isDuplicateHealthKitWorkout({ ...candidate, uuid: 'hk-2', strideOSActivityId: draft.id }, [draft as Activity]), true);
   const nextDay = 24 * 60 * 60 * 1000;
   assert.equal(isDuplicateHealthKitWorkout({
     ...candidate, uuid: 'hk-3', startTime: candidate.startTime + nextDay, endTime: candidate.endTime + nextDay,

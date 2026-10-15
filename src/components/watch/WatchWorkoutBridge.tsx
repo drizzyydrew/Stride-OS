@@ -9,14 +9,18 @@ import {
   addStrideWatchWorkoutStateListener,
   type StrideWatchWorkoutStateEvent,
 } from '../../../modules/stride-watch-connectivity/src';
-import { stopActivityLocationTracking } from '../../lib/activityGpsTracking';
-import { endOutdoorLiveActivity, updateOutdoorLiveActivity } from '../../lib/runLiveActivity';
+import { updateOutdoorLiveActivity } from '../../lib/runLiveActivity';
 import { endStrengthLiveActivity, strengthLiveActivitySessionId, updateStrengthLiveActivity } from '../../lib/strengthLiveActivity';
 import { enqueueVoiceCue } from '../../lib/voiceCue';
 import { activeOutdoorElapsedSeconds, useActiveActivityStore, type ActiveOutdoorType } from '../../store/activeActivityStore';
 import { activeRunElapsedSeconds, useActiveRunStore } from '../../store/activeRunStore';
 import { activeStrengthElapsedSeconds, useActiveStrengthSessionStore } from '../../store/activeStrengthSessionStore';
 import { useLiveSensorStore } from '../../store/liveSensorStore';
+import { OUTDOOR_SPORTS, outdoorSportFromWatch } from '../../utils/outdoorSports';
+import { isFreshObservation } from '../../utils/outdoorTelemetry';
+import { useSettingsStore } from '../../store/settingsStore';
+import { watchRecordingForEvent } from '../../utils/watchRecordingEvidence';
+import { completeWatchActivityEnd } from '../../lib/outdoorCompletion';
 
 const APPLE_WATCH_DEVICE = {
   id: 'apple_watch',
@@ -52,9 +56,7 @@ function rememberCompletedWatchWorkout(id: string, timestamp: number): boolean {
 }
 
 function outdoorTypeFromWatch(kind: string | undefined): ActiveOutdoorType | null {
-  if (kind === 'run') return 'running';
-  if (kind === 'cycling') return 'cycling';
-  return null;
+  return outdoorSportFromWatch(kind);
 }
 
 function strengthKindFromWatch(kind: string | undefined): 'strength' | 'mobility' | null {
@@ -66,7 +68,8 @@ function labelForWatchKind(kind: string | undefined): string {
   if (kind === 'cycling') return 'Ride';
   if (kind === 'strength') return 'Strength';
   if (kind === 'mobility') return 'Mobility';
-  return 'Run';
+  const outdoor = outdoorSportFromWatch(kind);
+  return outdoor ? OUTDOOR_SPORTS[outdoor].label : 'Workout';
 }
 
 function eventWorkoutId(event: StrideWatchWorkoutStateEvent): string {
@@ -126,6 +129,8 @@ function syncOutdoorLiveActivity(event: StrideWatchWorkoutStateEvent, isPaused: 
     averagePace: paceLabel(event),
     averageSpeedMph: state.aggregate.averageMetersPerSecond * 2.23694,
     heartRateBpm: event.heartRate ?? null,
+    heartRateObservedAt: event.heartRateTimestamp,
+    unitSystem: useSettingsStore.getState().units,
     zoneLabel: event.heartRateZone,
     isPaused,
     elevationGainMeters: state.aggregate.elevationGainMeters,
@@ -153,10 +158,37 @@ function syncStrengthLiveActivity(event: StrideWatchWorkoutStateEvent, isPaused:
 }
 
 function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
-  // "ended" is never dropped for staleness; it is de-duplicated by id instead.
+  // End is never dropped for staleness; queued pause/resume cannot mutate state.
   if (isStaleWatchControlEvent(event)) return;
-
-  if (event.workoutKind === 'run') {
+  // Connectivity/HR packets are not proof that the Watch started this recording.
+  const run = useActiveRunStore.getState();
+  const runEvidence = run.isActive && event.workoutKind === 'run' ? watchRecordingForEvent(run.workoutInstanceId, event) : undefined;
+  if (runEvidence && (!run.watchRecording || run.watchRecording.confirmedAt <= runEvidence.confirmedAt)) {
+    useActiveRunStore.setState({ watchRecording: runEvidence });
+  }
+  const outdoor = useActiveActivityStore.getState();
+  const outdoorEvidence = outdoor.isActive && outdoor.activityType === outdoorTypeFromWatch(event.workoutKind)
+    ? watchRecordingForEvent(outdoor.workoutInstanceId, event) : undefined;
+  if (outdoorEvidence && (!outdoor.watchRecording || outdoor.watchRecording.confirmedAt <= outdoorEvidence.confirmedAt)) {
+    useActiveActivityStore.setState({ watchRecording: outdoorEvidence });
+  }
+  if (outdoorTypeFromWatch(event.workoutKind) && event.state === 'ended') {
+    // No ID fallback: delayed events may belong to an older recording.
+    const instance = event.workoutInstanceId;
+    if (!instance || completedWatchWorkoutEvents.has(instance)) return;
+    void completeWatchActivityEnd({ workoutInstanceId: instance, endedAt: event.timestamp,
+      watchRecording: watchRecordingForEvent(instance, event),
+      elapsedSeconds: event.elapsedSeconds,
+      distanceMeters: event.distanceMeters,
+    }).then(saved => {
+      if (saved.status === 'saved' && rememberCompletedWatchWorkout(instance, event.timestamp)) enqueueVoiceCue('Workout ended.', 'motivation');
+    }).catch(error => {
+      useLiveSensorStore.getState().markDeviceError(APPLE_WATCH_DEVICE.id,
+        error instanceof Error ? error.message : 'Run End retained for retry', Date.now());
+    });
+    return;
+  }
+  if (event.workoutKind === 'run' && useActiveRunStore.getState().isActive) {
     const id = eventWorkoutId(event);
     if (completedWatchWorkoutEvents.has(id)) return;
 
@@ -205,22 +237,6 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
       return;
     }
 
-    if (event.state === 'ended') {
-      const activeRun = useActiveRunStore.getState();
-      if (!activeRun.isActive) return;
-      if (activeRun.workoutInstanceId && event.workoutInstanceId && activeRun.workoutInstanceId !== event.workoutInstanceId) return;
-      const completionId = activeRun.workoutInstanceId ?? id;
-      if (!rememberCompletedWatchWorkout(completionId, event.timestamp)) return;
-      // Route through the same completion path as the phone's Stop button
-      // (training screen stop()), which saves the activity, ends the live
-      // activity, and stops GPS. Resetting the run store directly here would
-      // drop the run without ever logging an activity.
-      if (!activeRun.completionRequestedAt) {
-        useActiveRunStore.getState().requestCompletion();
-      }
-      enqueueVoiceCue('Workout ended.', 'motivation');
-      return;
-    }
   }
 
   const outdoorType = outdoorTypeFromWatch(event.workoutKind);
@@ -233,7 +249,8 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
       const id = eventWorkoutId(event);
       if (completedWatchWorkoutEvents.has(id)) return;
       if (!active.isActive || active.activityType !== outdoorType) return;
-      if (active.isPaused && (active.workoutInstanceId === id || active.activityType === outdoorType)) {
+      if (active.workoutInstanceId && active.workoutInstanceId !== id) return;
+      if (active.isPaused) {
         useActiveActivityStore.getState().resume('manual');
         syncOutdoorLiveActivity(event, false);
         enqueueVoiceCue('Resuming workout.', 'interval');
@@ -278,35 +295,6 @@ function handleWatchWorkoutState(event: StrideWatchWorkoutStateEvent): void {
   }
 
   if (event.state === 'ended') {
-    if (outdoorType) {
-      const active = useActiveActivityStore.getState();
-      const id = active.workoutInstanceId ?? eventWorkoutId(event);
-      if (!active.isActive) return;
-      if (active.workoutInstanceId && event.workoutInstanceId && active.workoutInstanceId !== event.workoutInstanceId) return;
-      if (!rememberCompletedWatchWorkout(id, event.timestamp)) return;
-      void stopActivityLocationTracking().catch(() => undefined);
-      void endOutdoorLiveActivity({
-        sessionId: active.workoutInstanceId ?? active.activityId ?? id,
-        workoutInstanceId: active.workoutInstanceId ?? id,
-        sessionSource: 'outdoor',
-        activityName: active.name,
-        activityType: active.activityType,
-        elapsedSeconds: active.startedAt ? activeOutdoorElapsedSeconds(active) : event.elapsedSeconds ?? 0,
-        distanceMiles: Math.max(active.aggregate.distanceMeters / 1609.344, distanceMiles(event)),
-        averagePace: paceLabel(event),
-        averageSpeedMph: active.aggregate.averageMetersPerSecond * 2.23694,
-        heartRateBpm: event.heartRate ?? null,
-        zoneLabel: event.heartRateZone,
-        isPaused: false,
-        elevationGainMeters: active.aggregate.elevationGainMeters,
-        elevationLossMeters: active.aggregate.elevationLossMeters,
-      }).catch(() => undefined);
-      if (!active.completionRequestedAt) {
-        useActiveActivityStore.getState().requestCompletion();
-      }
-      enqueueVoiceCue('Workout ended.', 'motivation');
-      return;
-    }
     if (strengthKind) {
       const session = useActiveStrengthSessionStore.getState().session;
       const id = session?.workoutInstanceId ?? eventWorkoutId(event);
@@ -334,6 +322,39 @@ export default function WatchWorkoutBridge() {
   useEffect(() => {
     if (Platform.OS !== 'ios') return undefined;
 
+    // The native buffer flushes on the first observer: End must already have its listener.
+    const workoutStateSub = addStrideWatchWorkoutStateListener(event => {
+      if (event.state === 'ended' || event.state === 'idle') {
+        markDeviceDisconnected(APPLE_WATCH_DEVICE.id, event.timestamp);
+      } else {
+        markDeviceConnected(APPLE_WATCH_DEVICE, event.timestamp);
+      }
+      if (event.state === 'running' && event.heartRate != null && event.heartRate > 0
+        && event.heartRateTimestamp != null && isFreshObservation(event.heartRateTimestamp, 0, Date.now())) {
+        recordBleReading({
+          deviceId: APPLE_WATCH_DEVICE.id,
+          deviceName: APPLE_WATCH_DEVICE.name,
+          capability: 'heart_rate',
+          metric: 'heartRate',
+          value: event.heartRate,
+          source: 'apple_watch',
+          observedAt: event.heartRateTimestamp,
+        });
+      }
+      if (event.distanceMeters != null && event.distanceMeters >= 0) {
+        recordBleReading({
+          deviceId: APPLE_WATCH_DEVICE.id,
+          deviceName: APPLE_WATCH_DEVICE.name,
+          capability: 'heart_rate',
+          metric: 'distance',
+          value: event.distanceMeters,
+          source: 'apple_watch',
+          observedAt: event.timestamp,
+        });
+      }
+      handleWatchWorkoutState(event);
+    });
+
     const statusSub = addStrideWatchStatusListener(status => {
       if (!status.isPaired || !status.isWatchAppInstalled) {
         markDeviceDisconnected(APPLE_WATCH_DEVICE.id);
@@ -341,6 +362,13 @@ export default function WatchWorkoutBridge() {
     });
 
     const heartRateSub = addStrideWatchHeartRateListener(event => {
+      const run = useActiveRunStore.getState();
+      const outdoor = useActiveActivityStore.getState();
+      const strength = useActiveStrengthSessionStore.getState().session;
+      const start = run.isActive && run.workoutInstanceId === event.workoutInstanceId ? run.startTime
+        : outdoor.isActive && outdoor.workoutInstanceId === event.workoutInstanceId ? outdoor.startedAt
+          : strength?.workoutInstanceId === event.workoutInstanceId ? event.timestamp : null;
+      if (!start || !isFreshObservation(event.timestamp, start, Date.now())) return;
       markDeviceConnected(APPLE_WATCH_DEVICE, event.timestamp);
       recordBleReading({
         deviceId: APPLE_WATCH_DEVICE.id,
@@ -362,37 +390,6 @@ export default function WatchWorkoutBridge() {
           observedAt: event.timestamp,
         });
       }
-    });
-
-    const workoutStateSub = addStrideWatchWorkoutStateListener(event => {
-      if (event.state === 'ended' || event.state === 'idle') {
-        markDeviceDisconnected(APPLE_WATCH_DEVICE.id, event.timestamp);
-      } else {
-        markDeviceConnected(APPLE_WATCH_DEVICE, event.timestamp);
-      }
-      if (event.heartRate != null && event.heartRate > 0) {
-        recordBleReading({
-          deviceId: APPLE_WATCH_DEVICE.id,
-          deviceName: APPLE_WATCH_DEVICE.name,
-          capability: 'heart_rate',
-          metric: 'heartRate',
-          value: event.heartRate,
-          source: 'apple_watch',
-          observedAt: event.timestamp,
-        });
-      }
-      if (event.distanceMeters != null && event.distanceMeters >= 0) {
-        recordBleReading({
-          deviceId: APPLE_WATCH_DEVICE.id,
-          deviceName: APPLE_WATCH_DEVICE.name,
-          capability: 'heart_rate',
-          metric: 'distance',
-          value: event.distanceMeters,
-          source: 'apple_watch',
-          observedAt: event.timestamp,
-        });
-      }
-      handleWatchWorkoutState(event);
     });
 
     const errorSub = addStrideWatchErrorListener(event => {

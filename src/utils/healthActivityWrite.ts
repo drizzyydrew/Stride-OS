@@ -8,11 +8,12 @@ export function shouldWriteActivityToHealth(activity: Activity): boolean {
 }
 
 /**
- * True when the Apple Watch reported during this activity. The watch then
- * saved its own workout (heart rate, and route when permitted) to Apple
- * Health, so the phone must not write a second copy of the same session.
+ * Connectivity is not evidence of recording. Only an exact recording-state
+ * event may suppress the phone's Health copy.
  */
-export function watchRecordedActivity(activity: Activity, watchLastSeenAt: number | null | undefined): boolean {
-  if (watchLastSeenAt == null) return false;
-  return watchLastSeenAt >= activity.startTime;
+export function watchRecordedActivity(activity: Activity, _legacyLastSeenAt?: number | null): boolean {
+  const evidence = activity.watchRecording;
+  return !!activity.workoutInstanceId && evidence?.workoutInstanceId === activity.workoutInstanceId
+    && Number.isFinite(evidence.confirmedAt) && evidence.confirmedAt > 0
+    && ['running', 'paused', 'ended'].includes(evidence.state);
 }

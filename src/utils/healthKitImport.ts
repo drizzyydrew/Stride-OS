@@ -1,8 +1,16 @@
-import type { Activity, ActivityCoordinate, ActivityDraft, ActivityType, TelemetrySource } from '../types/activity';
+import type { Activity, ActivityCoordinate, ActivityDraft, ActivityMetrics, ActivityType, TelemetrySource } from '../types/activity';
 import type { ScheduledSession } from './scheduledSessions';
 import { toYMD } from './calendarEngine';
+import { sameRecording } from './runCompletionIdentity';
 
 const METERS_PER_MILE = 1609.344;
+
+/** The installed HealthKit bridge wraps statistic quantities with their unit. */
+export function healthKitQuantity(value: unknown): number | undefined {
+  const raw = value != null && typeof value === 'object'
+    ? (value as { quantity?: unknown; value?: unknown }).quantity ?? (value as { value?: unknown }).value : value;
+  return typeof raw === 'number' && Number.isFinite(raw) ? raw : undefined;
+}
 
 export type HealthKitWorkoutCandidate = {
   uuid: string;
@@ -18,11 +26,43 @@ export type HealthKitWorkoutCandidate = {
   energyKcal?: number;
   averageHeartRateBpm?: number;
   maximumHeartRateBpm?: number;
+  metricsSummary?: Pick<ActivityMetrics, 'stepCount' | 'runningDynamics' | 'speed' | 'cadenceRpm'>;
   routeAvailable?: boolean;
   /** GPS route from Apple Health (downsampled), when requested and available. */
   routeCoordinates?: ActivityCoordinate[];
   importedByStrideOS?: boolean;
+  workoutInstanceId?: string;
+  strideOSActivityId?: string;
+  strideOSWorkoutId?: string;
 };
+
+export type HealthKitRecordingIdentity = Pick<HealthKitWorkoutCandidate,
+  'workoutInstanceId' | 'strideOSActivityId' | 'strideOSWorkoutId'>;
+
+function metadataId(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+}
+
+/** Preserve exact recording lineage; dates and schedule IDs are not identity. */
+export function healthKitRecordingIdentity(metadata?: Record<string, unknown>): HealthKitRecordingIdentity {
+  return {
+    workoutInstanceId: metadataId(metadata?.StrideOSWorkoutInstanceId),
+    strideOSActivityId: metadataId(metadata?.StrideOSActivityId),
+    strideOSWorkoutId: metadataId(metadata?.StrideOSWorkoutId),
+  };
+}
+
+export function healthKitRecordingMetadata(identity: HealthKitRecordingIdentity): Record<string, string> {
+  const metadata: Record<string, string> = {};
+  for (const [key, value] of [
+    ['StrideOSWorkoutInstanceId', identity.workoutInstanceId],
+    ['StrideOSActivityId', identity.strideOSActivityId],
+    ['StrideOSWorkoutId', identity.strideOSWorkoutId],
+  ] as const) {
+    if (metadataId(value) !== undefined) metadata[key] = value!;
+  }
+  return metadata;
+}
 
 /** Keeps at most `max` points, always including the first and last. */
 export function downsampleCoordinates(points: readonly ActivityCoordinate[], max = 2000): ActivityCoordinate[] {
@@ -38,36 +78,15 @@ export type ScheduleReconciliation =
   | { status: 'ambiguous'; candidates: string[]; reason: string }
   | { status: 'none'; reason: string };
 
-const SAME_FAMILY: Partial<Record<ActivityType, string>> = {
-  running: 'foot', walking: 'foot', hiking: 'foot',
-  cycling: 'bike', indoor_cycling: 'bike',
-};
-
-function activityFamily(type: ActivityType): string {
-  return SAME_FAMILY[type] ?? type;
-}
-
-/** The same session recorded twice (e.g. phone GPS + watch HealthKit). */
+/** Only exact recording lineage can suppress a Health read/write, not temporal overlap. */
 export function overlapsExistingActivity(candidate: HealthKitWorkoutCandidate, activities: readonly Activity[]): boolean {
-  return activities.some(activity => {
-    if (activityFamily(activity.activityType) !== activityFamily(candidate.activityType)) return false;
-    const start = activity.startTime;
-    const end = activity.endTime ?? activity.startTime + (activity.metrics.durationSeconds ?? 0) * 1000;
-    const overlap = Math.min(end, candidate.endTime) - Math.max(start, candidate.startTime);
-    const shorter = Math.min(end - start, candidate.endTime - candidate.startTime);
-    return shorter > 0 && overlap / shorter >= 0.5;
-  });
+  const draft = buildHealthKitActivityDraft({ candidate });
+  return activities.some(activity => sameRecording(activity, { ...draft, id: draft.id!, createdAt: candidate.startTime,
+    updatedAt: candidate.endTime, trainingLoad: activity.trainingLoad }));
 }
 
 export function isDuplicateHealthKitWorkout(candidate: HealthKitWorkoutCandidate, activities: readonly Activity[]): boolean {
-  if (overlapsExistingActivity(candidate, activities)) return true;
-  return activities.some(activity => {
-    if (activity.healthKit?.workoutUuid === candidate.uuid
-      && activity.healthKit.sourceBundleIdentifier === candidate.sourceBundleIdentifier) return true;
-    return Boolean(candidate.importedByStrideOS && activity.source === 'tracked'
-      && Math.abs(activity.startTime - candidate.startTime) < 30_000
-      && Math.abs((activity.endTime ?? activity.startTime) - candidate.endTime) < 30_000);
-  });
+  return overlapsExistingActivity(candidate, activities);
 }
 
 export function reconcileHealthKitWorkout(
@@ -99,12 +118,16 @@ export function buildHealthKitActivityDraft(input: {
     ? input.reconciliation.scheduledSessionId
     : undefined;
   const metricSources: ActivityDraft['metrics']['metricSources'] = {
+    ...(candidate.metricsSummary?.stepCount != null ? { steps: 'healthkit' } : {}),
+    ...(candidate.metricsSummary?.speed ? { speed: 'healthkit' } : {}),
+    ...(candidate.metricsSummary?.cadenceRpm != null ? { cadence: 'healthkit' } : {}),
     distance: candidate.distanceMeters != null ? sourceFromCandidate(candidate) : 'unavailable',
     heartRate: candidate.averageHeartRateBpm != null || candidate.maximumHeartRateBpm != null ? sourceFromCandidate(candidate) : 'unavailable',
     energy: candidate.energyKcal != null ? 'healthkit' : 'unavailable',
   };
   return {
     id: `healthkit_${candidate.sourceBundleIdentifier}_${candidate.uuid}`,
+    workoutInstanceId: candidate.workoutInstanceId,
     activityType: candidate.activityType,
     subtype: candidate.activityType === 'indoor_cycling' ? 'stationary' : candidate.activityType === 'running' ? 'outdoor' : undefined,
     source: 'healthkit',
@@ -116,6 +139,7 @@ export function buildHealthKitActivityDraft(input: {
     endTime: candidate.endTime,
     indoor: candidate.activityType === 'indoor_cycling',
     metrics: {
+      ...candidate.metricsSummary,
       routeCoordinates: candidate.routeCoordinates?.length ? candidate.routeCoordinates : undefined,
       durationSeconds: candidate.durationSeconds,
       activeTimeSeconds: candidate.durationSeconds,
@@ -138,8 +162,11 @@ export function buildHealthKitActivityDraft(input: {
       importedAt,
       routeStatus: candidate.routeAvailable ? 'available' : 'not_available',
       importedByStrideOS: Boolean(candidate.importedByStrideOS),
+      workoutInstanceId: candidate.workoutInstanceId,
+      strideOSActivityId: candidate.strideOSActivityId,
+      strideOSWorkoutId: candidate.strideOSWorkoutId,
     },
-  };
+  } as ActivityDraft;
 }
 
 function compatibleTypes(candidate: ActivityType, sessionType: ScheduledSession['activityType']): boolean {

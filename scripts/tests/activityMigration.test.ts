@@ -45,6 +45,7 @@ test('legacy running history migrates to stable Activity IDs and preserves route
     latitude: 47.6,
     longitude: -122.3,
     timestamp: 100,
+    altitudeMeters: undefined,
   });
 });
 

@@ -88,7 +88,9 @@ export function isSpeedBasedActivity(type: ActivityType): boolean {
     || type === 'indoor_cycling'
     || type === 'downhill_skiing'
     || type === 'cross_country_skiing'
-    || type === 'snowboarding';
+    || type === 'snowboarding'
+    || type === 'ski_touring'
+    || type === 'snowboard_touring';
 }
 
 export function distanceToMeters(distance: number | undefined, unit: 'mi' | 'km' = 'mi'): number | undefined {

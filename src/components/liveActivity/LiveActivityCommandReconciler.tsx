@@ -26,6 +26,8 @@ import {
   strengthLiveActivitySessionId,
   updateStrengthLiveActivity,
 } from '../../lib/strengthLiveActivity';
+import { completeWatchActivityEnd } from '../../lib/outdoorCompletion';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../lib/localDataOwner';
 
 type PersistedStore = {
   persist: {
@@ -181,14 +183,29 @@ export default function LiveActivityCommandReconciler() {
             void publishOutdoorState();
           }
         },
-        stop: command => {
-          if (runCommandMatches(command)) {
-            useActiveRunStore.getState().requestCompletion();
-            router.replace('/(tabs)/training' as never);
-          } else if (outdoorCommandMatches(command)) {
-            useActiveActivityStore.getState().requestCompletion();
-            router.replace('/(tabs)/activity/start' as never);
+        stop: async command => {
+          const instance = command.workoutInstanceId ?? command.sessionId;
+          const source = command.sessionSource;
+          if (!instance || (source !== 'running' && source !== 'outdoor')
+            || (command.workoutInstanceId && command.sessionId && command.workoutInstanceId !== command.sessionId)
+            || !Number.isFinite(command.createdAt) || command.createdAt <= 0) return false;
+          const lease = captureOwnerLease();
+          if (!ownerLeaseIsCurrent(lease)) return false;
+          const run = useActiveRunStore.getState();
+          const outdoor = useActiveActivityStore.getState();
+          if ((run.isActive && run.workoutInstanceId === instance && source !== 'running')
+            || (outdoor.isActive && outdoor.workoutInstanceId === instance && source !== 'outdoor')) return false;
+          // Phone intents supply no evidence that an Apple Watch recorded this session.
+          const result = await completeWatchActivityEnd({ workoutInstanceId: instance, endedAt: command.createdAt * 1000 });
+          if (!ownerLeaseIsCurrent(lease) || !ownerLeaseIsCurrent(result.ownerLease)) return false;
+          const currentRun = useActiveRunStore.getState();
+          const currentOutdoor = useActiveActivityStore.getState();
+          const replaced = (currentRun.isActive && currentRun.workoutInstanceId !== instance)
+            || (currentOutdoor.isActive && currentOutdoor.workoutInstanceId !== instance);
+          if (!cancelled && !replaced) {
+            router.replace((source === 'running' ? '/(tabs)/training' : '/(tabs)/activity/start') as never);
           }
+          return true;
         },
         strength_pause: command => {
           if (!strengthCommandMatches(command)) return;

@@ -130,6 +130,16 @@ Final parent integration readback confirmed `NavigationGate` uses `canAccessLoca
 
 ## Documentation Checked
 
+### Follow-Up Freeze: Training Run Delayed End
+
+- R3 reproduced End drift from live `distanceMiles` and aggregate `pausedDurationMs`: later fixes inflated distance and later pauses shortened a past End. `trainingRunEndSnapshot.ts` now captures the full Training Run entry at a fixed End. It uses the existing telemetry pause clipping/union and excludes future observations; phone distance is recomputed from accepted fixes within start/End, skipping pause-spanning segments. Explicit measured Watch End distance/time remain authoritative. A scalar without GPS fixes is not used as phone distance evidence.
+- `completeRunCommand()` deep-copies command input and captures before its first await. It freezes the matching outdoor recording, blocking later GPS, pause/resume, and telemetry mutation, including backdated sensor delivery after a failed first journal write. Hydration recovery without an initial snapshot reconstructs only End-bounded data. Owner/instance checks remain; a validated owner-bound snapshot may finish the old recording without adopting or clearing a newer active one.
+- `completeWatchRunEnd()` captures the full snapshot before retry storage awaits. `RunEndRetryQueue` validates owner/instance/End binding and deep-clones the full command before retention; its first command wins through failed storage, retry, and restart. The existing authoritative completion journal still controls first committed End and durable history. No native or generic outdoor snapshot files were changed by this follow-up.
+- Outdoor `requestCompletion()` now freezes End-bounded distance, route, and pause duration in the persisted active store. The existing screen Stop path therefore observes the same frozen timing and distance. Indoor requests retain their existing sheet-only confirmation behavior; new indoor auto-save remains forbidden and saved/discard replay remains allowed.
+- Copernicus's **unchanged** `scripts/tests/delayedRunEndReview.test.ts`: **3/3 pass**, covering immediate versus delayed GPS, wholly post-End pauses, and failed-write retry equivalence. Final focused selection: **87/87 pass, 0 failed, 0 skipped** (4.02 seconds), including `p1OfflineCompletion`, `delayedRunEndReview`, `runEndRecovery`, `outdoorCompletion`, and `build39LiveActivityStabilization`.
+- Added P1 behavioral checks for clipped/unioned pauses, explicit Watch totals, pre-await snapshot capture while the live recording changes, deep-copied retry/restart, and pre-End sensor samples delivered after a failed write. The existing point-free fixture now supplies its two-mile total explicitly as a Watch End measurement; its durability assertions were not relaxed.
+- Scoped `git diff --check` passed. Source is frozen for independent R3. No full typecheck, full suite, export, build, commit, or device verification was run by this worker. The parent retains those gates; this is implementation/self-verification, not a self-issued independent pass.
+
 - Supabase getSession: https://supabase.com/docs/reference/javascript/auth-getsession
 - Supabase sessions: https://supabase.com/docs/guides/auth/sessions
 - Supabase auth errors: https://supabase.com/docs/guides/auth/debugging/error-codes

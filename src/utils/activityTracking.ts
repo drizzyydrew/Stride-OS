@@ -31,7 +31,7 @@ export type EffortCueState = {
   lastCueElapsedSeconds: number;
 };
 
-const MAX_SPEED_MPS: Partial<Record<ActivityType, number>> = {
+export const MAX_SPEED_MPS: Partial<Record<ActivityType, number>> = {
   running: 9,
   walking: 4,
   hiking: 4.5,
@@ -39,6 +39,8 @@ const MAX_SPEED_MPS: Partial<Record<ActivityType, number>> = {
   downhill_skiing: 45,
   cross_country_skiing: 16,
   snowboarding: 45,
+  ski_touring: 45,
+  snowboard_touring: 45,
 };
 
 const MIN_DISTANCE_METERS = 2.5;

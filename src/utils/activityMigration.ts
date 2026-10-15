@@ -57,24 +57,30 @@ export function activityFromWorkoutRecord(
   const activityType = legacyWorkoutActivityType(record.type);
   const durationMinutes = record.actualDurationMinutes ?? record.durationMinutes;
   const distanceMiles = record.actualDistanceMiles ?? record.estimatedDistanceMiles;
+  const recordedElapsed = typeof record.actualStartTime === 'number' && typeof record.actualEndTime === 'number'
+    && Number.isFinite(record.actualStartTime) && Number.isFinite(record.actualEndTime)
+    && record.actualEndTime >= record.actualStartTime
+    ? (record.actualEndTime - record.actualStartTime) / 1000 : undefined;
   const metrics = sanitizeActivityMetrics(activityType, {
     ...record.activityMetrics,
     durationSeconds: durationMinutes * 60,
-    elapsedTimeSeconds: durationMinutes * 60,
-    activeTimeSeconds: durationMinutes * 60,
+    elapsedTimeSeconds: record.activityMetrics?.elapsedTimeSeconds ?? recordedElapsed ?? durationMinutes * 60,
+    activeTimeSeconds: record.activityMetrics?.activeTimeSeconds ?? durationMinutes * 60,
     distanceMeters: activityType === 'running' ? distanceMiles * 1609.344 : undefined,
     routeCoordinates: activityType === 'running'
       ? record.routeCoordinates?.map(point => ({
           latitude: point.lat,
           longitude: point.lng,
           timestamp: point.timestamp,
+          altitudeMeters: point.altitudeM,
         }))
       : undefined,
     runWalkIntervals: record.type === 'run_walk' ? [] : undefined,
     distanceSource: record.distanceSource ?? record.activityMetrics?.distanceSource,
     metricSources: {
       ...record.activityMetrics?.metricSources,
-      ...(record.distanceSource === 'gps' ? { distance: 'phone_gps' as const } : {}),
+      ...(record.distanceSource === 'gps' && !record.activityMetrics?.metricSources?.distance
+        ? { distance: 'phone_gps' as const } : {}),
     },
   });
   const load = record.skipped

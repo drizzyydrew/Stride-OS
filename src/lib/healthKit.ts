@@ -8,13 +8,14 @@
 import { Platform } from 'react-native';
 import type { CompletedWorkoutRecord } from '../types/training';
 import type { StrengthLogRecord } from '../types/strength';
-import type { Activity, ActivityCoordinate, ActivityType } from '../types/activity';
-import { downsampleCoordinates, type HealthKitWorkoutCandidate } from '../utils/healthKitImport';
+import type { Activity, ActivityCoordinate, ActivityMetrics, ActivityType, CadenceSample, HeartRateSample, PowerSample } from '../types/activity';
+import { downsampleCoordinates, healthKitQuantity, healthKitRecordingIdentity, healthKitRecordingMetadata, type HealthKitWorkoutCandidate } from '../utils/healthKitImport';
 
 type HealthKitModule = {
   default?: HealthKitModule;
   isHealthDataAvailable?: () => boolean;
   isHealthDataAvailableAsync?: () => Promise<boolean>;
+  isObjectTypeAvailable?: (identifier: string) => boolean;
   requestAuthorization?: (request: {
     toRead?: readonly string[];
     toShare?: readonly string[];
@@ -27,6 +28,7 @@ type HealthKitModule = {
       limit?: number;
       unit?: string;
       filter?: {
+        workout?: HealthWorkoutProxy;
         date?: {
           startDate: Date;
           endDate: Date;
@@ -38,6 +40,8 @@ type HealthKitModule = {
     value?: number;
     startDate?: Date | string;
     endDate?: Date | string;
+    sourceRevision?: { source?: { bundleIdentifier?: string } };
+    metadata?: Record<string, unknown>;
   }[]>;
   saveWorkoutSample?: (
     workoutActivityType: number,
@@ -49,6 +53,7 @@ type HealthKitModule = {
   ) => Promise<unknown>;
   queryWorkoutSamples?: (options: {
     filter?: {
+      uuid?: string;
       date?: {
         startDate: Date;
         endDate: Date;
@@ -79,6 +84,7 @@ type HealthKitModule = {
   };
 };
 
+type HealthQuantity = { quantity?: number; value?: number; unit?: string } | number;
 type HealthWorkoutProxy = {
   uuid?: string;
   id?: string;
@@ -97,7 +103,7 @@ type HealthWorkoutProxy = {
   metadata?: Record<string, unknown>;
   toJSON?: () => HealthWorkoutProxy;
   getWorkoutRoutes?: () => Promise<readonly unknown[]>;
-  getStatistic?: (identifier: string, unit?: string) => Promise<{ averageQuantity?: number; maximumQuantity?: number; sumQuantity?: number } | undefined>;
+  getStatistic?: (identifier: string, unit?: string) => Promise<{ averageQuantity?: HealthQuantity; maximumQuantity?: HealthQuantity; sumQuantity?: HealthQuantity } | undefined>;
 };
 
 let Health: HealthKitModule | null = null;
@@ -113,6 +119,14 @@ const READ_TYPES = [
   'HKQuantityTypeIdentifierStepCount',
   'HKQuantityTypeIdentifierDistanceWalkingRunning',
   'HKQuantityTypeIdentifierDistanceCycling',
+  'HKQuantityTypeIdentifierDistanceDownhillSnowSports',
+  'HKQuantityTypeIdentifierCyclingCadence',
+  'HKQuantityTypeIdentifierRunningPower',
+  'HKQuantityTypeIdentifierRunningGroundContactTime',
+  'HKQuantityTypeIdentifierRunningStrideLength',
+  'HKQuantityTypeIdentifierRunningVerticalOscillation',
+  'HKQuantityTypeIdentifierRunningSpeed',
+  'HKQuantityTypeIdentifierCyclingPower',
   'HKWorkoutRouteTypeIdentifier',
   WORKOUT_TYPE,
 ] as const;
@@ -153,9 +167,21 @@ export async function requestPermissions(): Promise<boolean> {
   if (!available) return false;
 
   return Boolean(await Health.requestAuthorization?.({
-    toRead:  READ_TYPES,
-    toShare: SHARE_TYPES,
+    toRead:  READ_TYPES.filter(healthTypeAvailable),
+    toShare: SHARE_TYPES.filter(healthTypeAvailable),
   }));
+}
+
+function healthTypeAvailable(identifier: string): boolean {
+  try {
+    if (Health?.isObjectTypeAvailable) return Health.isObjectTypeAvailable(identifier);
+    // Older native bridges lack the capability probe; preserve iOS 16 reads
+    // without requesting cycling types that first appeared in iOS 17.
+    if (identifier === 'HKQuantityTypeIdentifierCyclingPower' || identifier === 'HKQuantityTypeIdentifierCyclingCadence') {
+      return Number.parseInt(String(Platform.Version), 10) >= 17;
+    }
+    return true;
+  } catch { return false; }
 }
 
 export async function getAppleHealthWriteStatus(): Promise<boolean> {
@@ -210,6 +236,84 @@ export async function getLatestHeartRateSample(maxAgeMinutes = 10): Promise<Heal
 
 export async function getLatestHeartRateBpm(maxAgeMinutes = 10): Promise<number | null> {
   return (await getLatestHeartRateSample(maxAgeMinutes))?.bpm ?? null;
+}
+
+/** Reads only samples associated with this exact HealthKit workout, not overlapping sessions. */
+export async function getHealthKitWorkoutTelemetry(workoutUuid: string): Promise<{
+  rawHeartRateSamples: HeartRateSample[];
+  cadenceSamples: CadenceSample[];
+  powerSamples: PowerSample[];
+  metrics?: HealthKitWorkoutCandidate['metricsSummary'];
+}> {
+  const empty = { rawHeartRateSamples: [], cadenceSamples: [], powerSamples: [] };
+  if (!workoutUuid || !Health?.queryWorkoutSamples || !Health.queryQuantitySamples || !await isAppleHealthAvailable()) return empty;
+  const workouts = await Health.queryWorkoutSamples({ filter: { uuid: workoutUuid }, limit: 1, ascending: false }).catch(() => []);
+  const workout = workouts[0];
+  if (!workout) return empty;
+  const startedAt = dateMs(workout.startDate);
+  const endedAt = dateMs(workout.endDate);
+  if (!Number.isFinite(startedAt) || !Number.isFinite(endedAt) || endedAt <= startedAt) return empty;
+  const result: { rawHeartRateSamples: HeartRateSample[]; cadenceSamples: CadenceSample[]; powerSamples: PowerSample[] } = { ...empty };
+  const type = mapWorkoutActivityType(workout.workoutActivityType);
+  const requests = [
+    { id: 'HKQuantityTypeIdentifierHeartRate', unit: 'count/min' },
+    ...(type === 'cycling' ? [{ id: 'HKQuantityTypeIdentifierCyclingCadence', unit: 'count/min' }, { id: 'HKQuantityTypeIdentifierCyclingPower', unit: 'W' }] : []),
+    ...(type === 'running' ? [{ id: 'HKQuantityTypeIdentifierRunningPower', unit: 'W' }] : []),
+  ];
+  for (const request of requests) {
+    if (!healthTypeAvailable(request.id)) continue;
+    const samples = await Health.queryQuantitySamples(request.id, { unit: request.unit, ascending: true, limit: 86_400, filter: { workout } }).catch(() => []);
+    for (const sample of samples) {
+      const timestamp = dateMs(sample.endDate ?? sample.startDate);
+      const value = sample.quantity ?? sample.value;
+      if (!Number.isFinite(timestamp) || timestamp < startedAt || timestamp > endedAt || typeof value !== 'number' || !Number.isFinite(value) || value < 0) continue;
+      if (request.id === 'HKQuantityTypeIdentifierHeartRate' && value > 0) result.rawHeartRateSamples.push({ timestamp, bpm: value, source: 'healthkit' });
+      if (request.id === 'HKQuantityTypeIdentifierCyclingCadence') result.cadenceSamples.push({ timestamp, kind: 'cycling', cadenceRpm: value, source: 'healthkit' });
+      // Transport alone cannot establish derivation for arbitrary third-party
+      // power records. Only Apple's known workout stream is classified here.
+      const apple = sample.sourceRevision?.source?.bundleIdentifier?.startsWith('com.apple.')
+        && sample.metadata?.HKWasUserEntered !== true;
+      if (request.unit === 'W' && apple) result.powerSamples.push({ timestamp, watts: value,
+        sport: type === 'running' ? 'running' : 'cycling', source: 'healthkit',
+        kind: type === 'running' ? 'device_estimated' : 'measured' });
+    }
+  }
+  return { ...result, metrics: await workoutMetricSummaries(workout, type) };
+}
+
+async function workoutMetricSummaries(proxy: HealthWorkoutProxy, type: ActivityType | null): Promise<NonNullable<HealthKitWorkoutCandidate['metricsSummary']>> {
+  const metrics: NonNullable<HealthKitWorkoutCandidate['metricsSummary']> = {};
+  if (!proxy.getStatistic || !type) return metrics;
+  async function statistic(identifier: string, unit: string) {
+    if (!healthTypeAvailable(identifier)) return undefined;
+    return proxy.getStatistic?.(identifier, unit).catch(() => undefined);
+  }
+  if (['running', 'walking', 'hiking', 'ski_touring', 'snowboard_touring'].includes(type)) {
+    const steps = quantity((await statistic('HKQuantityTypeIdentifierStepCount', 'count'))?.sumQuantity);
+    if (steps != null && steps >= 0) metrics.stepCount = steps;
+  }
+  if (type === 'cycling' || type === 'indoor_cycling') {
+    const cadence = quantity((await statistic('HKQuantityTypeIdentifierCyclingCadence', 'count/min'))?.averageQuantity);
+    if (cadence != null && cadence >= 0) metrics.cadenceRpm = cadence;
+  }
+  if (type === 'running') {
+    const ground = quantity((await statistic('HKQuantityTypeIdentifierRunningGroundContactTime', 'ms'))?.averageQuantity);
+    const stride = quantity((await statistic('HKQuantityTypeIdentifierRunningStrideLength', 'm'))?.averageQuantity);
+    const vertical = quantity((await statistic('HKQuantityTypeIdentifierRunningVerticalOscillation', 'm'))?.averageQuantity);
+    const speed = await statistic('HKQuantityTypeIdentifierRunningSpeed', 'm/s');
+    const dynamics: NonNullable<ActivityMetrics['runningDynamics']> = {};
+    if (ground != null && ground >= 0) dynamics.averageGroundContactTimeMs = ground;
+    if (stride != null && stride >= 0) dynamics.averageStrideLengthMeters = stride;
+    if (vertical != null && vertical >= 0) dynamics.averageVerticalOscillationMeters = vertical;
+    if (Object.keys(dynamics).length) metrics.runningDynamics = dynamics;
+    const average = quantity(speed?.averageQuantity);
+    const maximum = quantity(speed?.maximumQuantity);
+    if (average != null || maximum != null) metrics.speed = {
+      averageMetersPerSecond: average != null && average >= 0 ? average : undefined,
+      maximumMetersPerSecond: maximum != null && maximum >= 0 ? maximum : undefined,
+    };
+  }
+  return metrics;
 }
 
 export async function getRecentHealthKitWorkoutCandidates(days = 30): Promise<HealthKitWorkoutCandidate[]> {
@@ -273,7 +377,7 @@ function routeCoordinatesFrom(routes: readonly unknown[]): ActivityCoordinate[] 
   return downsampleCoordinates(points.sort((a, b) => a.timestamp - b.timestamp));
 }
 
-export async function writeWorkout(workout: CompletedWorkoutRecord): Promise<void> {
+export async function writeWorkout(workout: CompletedWorkoutRecord & { workoutInstanceId?: string }): Promise<void> {
   if (!Health) return;
 
   const durationMin = workout.actualDurationMinutes ?? workout.durationMinutes;
@@ -295,7 +399,7 @@ export async function writeWorkout(workout: CompletedWorkoutRecord): Promise<voi
 
   await Health.saveWorkoutSample?.(activityType, [], startDate, endDate, totals, {
     HKMetadataKeyWorkoutBrandName: 'StrideOS',
-    StrideOSWorkoutId: workout.id,
+    ...healthKitRecordingMetadata({ strideOSWorkoutId: workout.id, workoutInstanceId: workout.workoutInstanceId }),
   });
 }
 
@@ -323,6 +427,9 @@ export async function writeActivityToHealth(activity: Activity): Promise<boolean
     downhill_skiing: types?.downhillSkiing,
     cross_country_skiing: types?.crossCountrySkiing,
     snowboarding: types?.snowboarding,
+    // Touring is stored as hiking with explicit sport metadata; never downhill distance.
+    ski_touring: types?.hiking,
+    snowboard_touring: types?.hiking,
     mixed_modal: types?.mixedCardio,
   };
   const activityType = map[activity.activityType] ?? types?.other;
@@ -341,7 +448,9 @@ export async function writeActivityToHealth(activity: Activity): Promise<boolean
 
   const saved = await Health.saveWorkoutSample(activityType, [], startDate, endDate, totals, {
     HKMetadataKeyWorkoutBrandName: 'StrideOS',
-    StrideOSActivityId: activity.id,
+    ...healthKitRecordingMetadata({ strideOSActivityId: activity.id, strideOSWorkoutId: activity.legacyWorkoutId,
+      workoutInstanceId: activity.workoutInstanceId ?? activity.healthKit?.workoutInstanceId }),
+    StrideOSSport: activity.activityType,
   }) as { saveWorkoutRoute?: (locations: readonly unknown[]) => Promise<boolean> } | undefined;
 
   const route = activity.metrics.routeCoordinates ?? [];
@@ -378,10 +487,13 @@ export async function writeStrengthSession(session: StrengthLogRecord): Promise<
 }
 
 async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthWorkoutProxy, includeRoutes = false): Promise<HealthKitWorkoutCandidate | null> {
+  const workoutUuid = raw.uuid ?? raw.id;
+  if (typeof workoutUuid !== 'string' || !workoutUuid.trim()) return null;
   const startTime = dateMs(raw.startDate);
   const endTime = dateMs(raw.endDate);
   if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime <= startTime) return null;
-  const type = mapWorkoutActivityType(raw.workoutActivityType);
+  const touring = raw.metadata?.StrideOSSport;
+  const type = touring === 'ski_touring' || touring === 'snowboard_touring' ? touring : mapWorkoutActivityType(raw.workoutActivityType);
   if (!type) return null;
   const durationSeconds = durationToSeconds(raw.duration, endTime - startTime);
   const source = raw.sourceRevision?.source;
@@ -391,8 +503,12 @@ async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthW
   const heartRateStats = typeof proxy.getStatistic === 'function'
     ? await proxy.getStatistic('HKQuantityTypeIdentifierHeartRate', 'count/min').catch(() => undefined)
     : undefined;
+  const metricsSummary = await workoutMetricSummaries(proxy, type);
+  const snowDistance = (type === 'downhill_skiing' || type === 'snowboarding') && proxy.getStatistic
+    && healthTypeAvailable('HKQuantityTypeIdentifierDistanceDownhillSnowSports')
+    ? await proxy.getStatistic('HKQuantityTypeIdentifierDistanceDownhillSnowSports', 'm').catch(() => undefined) : undefined;
   return {
-    uuid: raw.uuid ?? raw.id ?? `${source?.bundleIdentifier ?? 'unknown'}:${startTime}:${endTime}`,
+    uuid: workoutUuid,
     sourceBundleIdentifier: source?.bundleIdentifier ?? 'unknown',
     sourceName: source?.name,
     deviceName: raw.device?.name ?? raw.sourceRevision?.productType,
@@ -401,13 +517,16 @@ async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthW
     endTime,
     activityType: type,
     durationSeconds,
-    distanceMeters: quantity(raw.totalDistance),
+    distanceMeters: quantity(snowDistance?.sumQuantity) ?? quantity(raw.totalDistance),
     energyKcal: quantity(raw.totalEnergyBurned),
-    averageHeartRateBpm: numberOrUndefined(heartRateStats?.averageQuantity),
-    maximumHeartRateBpm: numberOrUndefined(heartRateStats?.maximumQuantity),
+    averageHeartRateBpm: quantity(heartRateStats?.averageQuantity),
+    maximumHeartRateBpm: quantity(heartRateStats?.maximumQuantity),
+    metricsSummary,
     routeAvailable: routes.length > 0,
     routeCoordinates: includeRoutes && routes.length > 0 ? routeCoordinatesFrom(routes) : undefined,
+    ...healthKitRecordingIdentity(raw.metadata),
     importedByStrideOS: raw.metadata?.HKMetadataKeyWorkoutBrandName === 'StrideOS'
+      || typeof raw.metadata?.StrideOSWorkoutInstanceId === 'string'
       || typeof raw.metadata?.StrideOSWorkoutId === 'string'
       || typeof raw.metadata?.StrideOSStrengthSessionId === 'string'
       || typeof raw.metadata?.StrideOSActivityId === 'string',
@@ -427,13 +546,7 @@ function durationToSeconds(value: HealthWorkoutProxy['duration'], fallbackMs: nu
 }
 
 function quantity(value: { quantity?: number; value?: number; unit?: string } | number | undefined): number | undefined {
-  if (typeof value === 'number') return numberOrUndefined(value);
-  const raw = value?.quantity ?? value?.value;
-  return numberOrUndefined(raw);
-}
-
-function numberOrUndefined(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  return healthKitQuantity(value);
 }
 
 function mapWorkoutActivityType(value: number | undefined): ActivityType | null {
@@ -443,6 +556,9 @@ function mapWorkoutActivityType(value: number | undefined): ActivityType | null 
   if (value === types.walking) return 'walking';
   if (value === types.cycling) return 'cycling';
   if (value === types.hiking) return 'hiking';
+  if (value === types.downhillSkiing) return 'downhill_skiing';
+  if (value === types.crossCountrySkiing) return 'cross_country_skiing';
+  if (value === types.snowboarding) return 'snowboarding';
   if (value === types.swimming) return 'swimming';
   if (value === types.functionalStrengthTraining || value === types.traditionalStrengthTraining) return 'strength';
   if (value === types.mindAndBody) return 'mobility';

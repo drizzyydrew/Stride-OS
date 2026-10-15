@@ -5,7 +5,7 @@
 // spans with a made-up BPM. Poor coverage leaves the average explicitly
 // unavailable while retaining source/gap metadata for honest display.
 
-import type { HeartRateSummary, HeartRateZoneSeconds } from '../types/activity';
+import type { HeartRateSample, HeartRateSummary, HeartRateZoneSeconds } from '../types/activity';
 
 export type IndoorHeartRateSample = {
   timestamp: number;
@@ -23,7 +23,7 @@ export type HeartRateZoneRange = {
   maxBPM?: number | null;
 };
 
-function validSample(sample: IndoorHeartRateSample): boolean {
+function validSample(sample: HeartRateSample): boolean {
   return Number.isFinite(sample.timestamp)
     && Number.isFinite(sample.bpm)
     && sample.bpm > 0;
@@ -49,18 +49,31 @@ function zoneForBpm(bpm: number, zones: HeartRateZoneRange[]): 1 | 2 | 3 | 4 | 5
   )?.zone ?? null;
 }
 
-export function summarizeIndoorHeartRate(input: {
-  samples: IndoorHeartRateSample[];
+export function summarizeHeartRate(input: {
+  samples: HeartRateSample[];
   startedAtMs: number;
   endedAtMs: number;
   zones?: HeartRateZoneRange[];
   maxGapSeconds?: number;
   minimumCoverageRatio?: number;
+  pausedIntervals?: { startTime: number; endTime: number }[];
 }): HeartRateSummary | undefined {
-  const sessionSeconds = Math.max(0, Math.round((input.endedAtMs - input.startedAtMs) / 1000));
+  const pauses = (input.pausedIntervals ?? []).filter(pause =>
+    Number.isFinite(pause.startTime) && Number.isFinite(pause.endTime) && pause.endTime > pause.startTime)
+    .map(pause => ({ startTime: Math.max(input.startedAtMs, pause.startTime), endTime: Math.min(input.endedAtMs, pause.endTime) }))
+    .filter(pause => pause.endTime > pause.startTime).sort((a, b) => a.startTime - b.startTime);
+  const mergedPauses: typeof pauses = [];
+  for (const pause of pauses) {
+    const previous = mergedPauses.at(-1);
+    if (previous && pause.startTime <= previous.endTime) previous.endTime = Math.max(previous.endTime, pause.endTime);
+    else mergedPauses.push({ ...pause });
+  }
+  const pausedMs = mergedPauses.reduce((sum, pause) => sum + pause.endTime - pause.startTime, 0);
+  const sessionSeconds = Math.max(0, Math.round((input.endedAtMs - input.startedAtMs - pausedMs) / 1000));
   const samples = input.samples
     .filter(validSample)
     .filter(sample => sample.timestamp >= input.startedAtMs && sample.timestamp <= input.endedAtMs)
+    .filter(sample => !mergedPauses.some(pause => sample.timestamp >= pause.startTime && sample.timestamp < pause.endTime))
     .sort((a, b) => a.timestamp - b.timestamp);
   if (samples.length === 0) return undefined;
 
@@ -76,7 +89,9 @@ export function summarizeIndoorHeartRate(input: {
     const nextBoundary = Math.min(input.endedAtMs, samples[index + 1]?.timestamp ?? input.endedAtMs);
     const rawGapMs = Math.max(0, nextBoundary - sample.timestamp);
     largestGapSeconds = Math.max(largestGapSeconds, Math.round(rawGapMs / 1000));
-    const observedMs = Math.min(rawGapMs, intervalCapMs);
+    // An observation before a pause cannot resume itself afterwards.
+    const pauseStart = mergedPauses.find(pause => pause.startTime >= sample.timestamp)?.startTime ?? Infinity;
+    const observedMs = Math.min(rawGapMs, intervalCapMs, pauseStart - sample.timestamp);
     const observedSeconds = observedMs / 1000;
     if (observedSeconds <= 0) continue;
     coverageSeconds += observedSeconds;
@@ -90,7 +105,7 @@ export function summarizeIndoorHeartRate(input: {
   const averageReliable = coverageSeconds > 0 && coverageRatio >= (input.minimumCoverageRatio ?? MIN_HR_COVERAGE_RATIO);
   const max = Math.max(...samples.map(sample => sample.bpm));
   return {
-    source: 'healthkit',
+    source: samples.every(sample => sample.source === samples[0]!.source) ? samples[0]!.source : 'mixed',
     sampleCount: samples.length,
     coverageSeconds: roundedCoverage,
     sessionSeconds,
@@ -104,3 +119,5 @@ export function summarizeIndoorHeartRate(input: {
       : undefined,
   };
 }
+
+export const summarizeIndoorHeartRate = summarizeHeartRate;

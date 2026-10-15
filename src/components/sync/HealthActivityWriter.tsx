@@ -4,9 +4,9 @@ import { getHealthKitWorkoutHistory, writeActivityToHealth } from '../../lib/hea
 import { buildHealthKitActivityDraft, isDuplicateHealthKitWorkout, overlapsExistingActivity } from '../../utils/healthKitImport';
 import { useActivityStore } from '../../store/activityStore';
 import { useIntegrationsStore } from '../../store/integrationsStore';
-import { useLiveSensorStore } from '../../store/liveSensorStore';
 import { shouldWriteActivityToHealth, watchRecordedActivity } from '../../utils/healthActivityWrite';
 import type { Activity } from '../../types/activity';
+import { captureOwnerLease, ownerLeaseIsCurrent, type OwnerLease } from '../../lib/localDataOwner';
 
 /**
  * Saves each newly completed activity to Apple Health once, with its GPS
@@ -22,12 +22,13 @@ const WATCH_IMPORT_DAYS = 7;
  * logged (e.g. the phone died mid-run while the watch kept recording) are
  * added to the Activity log automatically, with the watch's GPS route.
  */
-async function importRecentWatchWorkouts(known: Set<string>): Promise<void> {
-  if (!useIntegrationsStore.getState().healthKitEnabled) return;
+async function importRecentWatchWorkouts(known: Set<string>, lease: OwnerLease | null): Promise<void> {
+  if (!ownerLeaseIsCurrent(lease) || !useIntegrationsStore.getState().healthKitEnabled) return;
   const candidates = await getHealthKitWorkoutHistory({ days: WATCH_IMPORT_DAYS, limit: 50, includeRoutes: true }).catch(() => []);
+  if (!ownerLeaseIsCurrent(lease)) return;
   for (const candidate of candidates) {
-    if (!candidate.sourceBundleIdentifier.startsWith(WATCH_BUNDLE_PREFIX)) continue;
-    if (candidate.importedByStrideOS) continue;
+    if (candidate.sourceBundleIdentifier !== `${WATCH_BUNDLE_PREFIX}.watch`
+      && !candidate.sourceBundleIdentifier.startsWith(`${WATCH_BUNDLE_PREFIX}.watch.`)) continue;
     if (candidate.durationSeconds < 60) continue;
     if (isDuplicateHealthKitWorkout(candidate, useActivityStore.getState().activities)) continue;
     const draft = buildHealthKitActivityDraft({ candidate });
@@ -38,9 +39,11 @@ async function importRecentWatchWorkouts(known: Set<string>): Promise<void> {
 
 /** Writes one activity unless Health already holds this session (watch or Apple Workout). */
 async function writeUnlessAlreadyInHealth(activity: Activity): Promise<void> {
-  const watchLastSeenAt = useLiveSensorStore.getState().devices.apple_watch?.lastSeenAt;
-  if (watchRecordedActivity(activity, watchLastSeenAt)) return;
+  const lease = captureOwnerLease();
+  if (!ownerLeaseIsCurrent(lease)) return;
+  if (watchRecordedActivity(activity)) return;
   const recent = await getHealthKitWorkoutHistory({ days: 2, limit: 30 }).catch(() => []);
+  if (!ownerLeaseIsCurrent(lease)) return;
   if (recent.some(candidate => overlapsExistingActivity(candidate, [activity]))) return;
   await writeActivityToHealth(activity);
 }
@@ -52,7 +55,7 @@ export default function HealthActivityWriter() {
 
     const start = () => {
       useActivityStore.getState().activities.forEach(activity => known.add(activity.id));
-      void importRecentWatchWorkouts(known);
+      void importRecentWatchWorkouts(known, captureOwnerLease());
       unsubscribe = useActivityStore.subscribe(state => {
         for (const activity of state.activities) {
           if (known.has(activity.id)) continue;

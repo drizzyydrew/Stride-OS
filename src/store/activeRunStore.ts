@@ -11,7 +11,8 @@ import { persist } from 'zustand/middleware';
 import { createAppJSONStorage } from './persistStorage';
 import type { LocationObject } from 'expo-location';
 import type { RichWorkout } from '../types/workout';
-import type { DistanceSource } from '../types/activity';
+import type { DistanceSource, CadenceSample, HeartRateSample, PowerSample, WatchRecordingEvidence } from '../types/activity';
+import { appendTelemetrySamples, selectLiveTelemetry, type OutdoorTelemetry } from '../utils/outdoorTelemetry';
 import { elapsedSecondsExcludingPause } from '../utils/activeTime';
 import { buildWorkoutInstanceId, synthesizeWorkoutInstanceId } from '../utils/workoutInstance';
 import { closeOpenSegment, confirmSpeedChange, openSegment, sanitizeSpeedMph, type TreadmillSegment } from '../utils/treadmill';
@@ -24,6 +25,7 @@ import {
 import { useSettingsStore } from './settingsStore';
 import { enqueueVoiceCue } from '../lib/voiceCue';
 import { initialAutoPauseState, reduceAutoPause, type AutoPauseState } from '../utils/autoPause';
+import { captureTrainingRunEnd } from '../utils/trainingRunEndSnapshot';
 
 export type Coordinate = {
   lat:       number;
@@ -74,6 +76,17 @@ function haversineMiles(a: Coordinate, b: Coordinate): number {
 }
 
 export type ActiveRunStore = {
+  watchRecording?: WatchRecordingEvidence;
+  rawHeartRateSamples: HeartRateSample[];
+  cadenceSamples: CadenceSample[];
+  powerSamples: PowerSample[];
+  recordingPauses: { startTime: number; endTime: number }[];
+  telemetryStartedAt: number | null;
+  telemetryEndedAt: number | null;
+  lastHeartRateSample: HeartRateSample | null;
+  lastCadenceSample: CadenceSample | null;
+  lastPowerSample: PowerSample | null;
+  appendTelemetry: (workoutInstanceId: string, samples: Partial<OutdoorTelemetry>) => void;
   isActive:               boolean;
   isPaused:               boolean;
   startTime:              number | null;
@@ -124,7 +137,7 @@ export type ActiveRunStore = {
   advanceInterval:   () => void;
   finishRun:         () => void;
   cancelRun:         () => void;
-  requestCompletion: () => void;
+  requestCompletion: (endedAt?: number) => void;
   clearCompletionRequest: () => void;
   confirmTreadmillSpeed:  (speedMph: number) => void;
   setManualLiveDistance:  (miles: number) => void;
@@ -146,6 +159,9 @@ export function activeRunElapsedSeconds(
 }
 
 export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => ({
+  rawHeartRateSamples: [], cadenceSamples: [], powerSamples: [], recordingPauses: [],
+  telemetryStartedAt: null, telemetryEndedAt: null,
+  lastHeartRateSample: null, lastCadenceSample: null, lastPowerSample: null,
   isActive:               false,
   isPaused:               false,
   startTime:              null,
@@ -187,6 +203,10 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     const settings = useSettingsStore.getState();
     set({
       isActive:               true,
+      watchRecording: undefined,
+      rawHeartRateSamples: [], cadenceSamples: [], powerSamples: [], recordingPauses: [],
+      telemetryStartedAt: startedAt, telemetryEndedAt: null,
+      lastHeartRateSample: null, lastCadenceSample: null, lastPowerSample: null,
       isPaused:               false,
       startTime:              startedAt,
       pausedAt:               null,
@@ -223,9 +243,21 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
 
   setLastEnvironmentPreference: (environment) => set({ lastEnvironmentPreference: environment }),
 
+  appendTelemetry: (workoutInstanceId, samples) => {
+    const state = get();
+    if (!state.isActive || state.isPaused || state.completionRequestedAt != null || !state.startTime || state.workoutInstanceId !== workoutInstanceId) return;
+    const next = appendTelemetrySamples(state, samples, state.startTime, Date.now());
+    const live = selectLiveTelemetry(next, state.startTime, Date.now());
+    set({ ...next,
+      lastHeartRateSample: live.heartRateSample ?? null,
+      lastCadenceSample: live.cadenceSample ?? null,
+      lastPowerSample: live.powerSample ?? null,
+    });
+  },
+
   pauseRun: (source = 'manual') => {
     const state = get();
-    if (!state.isActive || state.isPaused) return;
+    if (!state.isActive || state.isPaused || state.completionRequestedAt != null) return;
     const now = Date.now();
     // Treadmill segments never span a pause: close the open one now, reopen
     // at the same confirmed speed on resume.
@@ -244,7 +276,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
 
   resumeRun: (_source = 'manual') => {
     const state = get();
-    if (!state.isActive || !state.isPaused) return;
+    if (!state.isActive || !state.isPaused || state.completionRequestedAt != null) return;
     const now = Date.now();
     const pausedFor = state.pausedAt ? now - state.pausedAt : 0;
     const treadmillSegments = state.environment === 'indoor' && state.currentSpeedMph != null
@@ -252,6 +284,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       : state.treadmillSegments;
     set({
       isPaused: false,
+      recordingPauses: state.pausedAt ? [...state.recordingPauses, { startTime: state.pausedAt, endTime: now }] : state.recordingPauses,
       pausedAt: null,
       pausedDurationMs: state.pausedDurationMs + pausedFor,
       treadmillSegments,
@@ -292,7 +325,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
 
   addLocationUpdate: (loc) => {
     const state = get();
-    if (!state.isActive) return;
+    if (!state.isActive || state.completionRequestedAt != null) return;
     if (typeof loc.coords.accuracy === 'number' && loc.coords.accuracy > MAX_ALLOWED_ACCURACY_METERS) return;
 
     const coord: Coordinate = {
@@ -329,6 +362,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
           const pausedFor = state.pausedAt ? coord.timestamp - state.pausedAt : 0;
           set({
             isPaused: false,
+            recordingPauses: state.pausedAt ? [...state.recordingPauses, { startTime: state.pausedAt, endTime: coord.timestamp }] : state.recordingPauses,
             pausedAt: null,
             pausedDurationMs: state.pausedDurationMs + Math.max(0, pausedFor),
             coordinates: [...state.coordinates, coord],
@@ -435,6 +469,8 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     const state = get();
     set({
       isActive:               false,
+      telemetryEndedAt: Date.now(),
+      recordingPauses: state.pausedAt ? [...state.recordingPauses, { startTime: state.pausedAt, endTime: Date.now() }] : state.recordingPauses,
       isPaused:               false,
       startTime:              null,
       pausedAt:               null,
@@ -471,6 +507,8 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     const state = get();
     set({
       isActive:               false,
+      telemetryEndedAt: Date.now(),
+      recordingPauses: state.pausedAt ? [...state.recordingPauses, { startTime: state.pausedAt, endTime: Date.now() }] : state.recordingPauses,
       isPaused:               false,
       startTime:              null,
       pausedAt:               null,
@@ -502,7 +540,39 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     });
   },
 
-  requestCompletion: () => set({ completionRequestedAt: Date.now() }),
+  requestCompletion: (endedAt = Date.now()) => {
+    const state = get();
+    if (!state.isActive || state.completionRequestedAt != null || state.startTime == null
+      || !Number.isFinite(endedAt) || endedAt < state.startTime || endedAt > Date.now() + 5_000) return;
+    if (state.environment !== 'indoor') {
+      if (!state.workoutInstanceId) return;
+      const snapshot = captureTrainingRunEnd(state, { workoutInstanceId: state.workoutInstanceId, endedAt });
+      set({ completionRequestedAt: endedAt, isPaused: true, pausedAt: endedAt,
+        pausedDurationMs: Math.max(0, endedAt - state.startTime - snapshot.durationMinutes * 60_000),
+        distanceMiles: snapshot.distanceMiles, coordinates: snapshot.routeCoordinates ?? [],
+        recordingPauses: snapshot.activityMetrics?.recordingPauses ?? [],
+      });
+      return;
+    }
+    // Watch End freezes the estimate, but only the existing sheet may confirm distance.
+    const pauses = state.recordingPauses
+      .map(pause => ({ start: Math.max(state.startTime!, pause.startTime), end: Math.min(endedAt, pause.endTime) }))
+      .filter(pause => pause.end > pause.start).sort((a, b) => a.start - b.start);
+    if (state.isPaused && state.pausedAt != null && state.pausedAt < endedAt) {
+      pauses.push({ start: Math.max(state.startTime, state.pausedAt), end: endedAt });
+      pauses.sort((a, b) => a.start - b.start);
+    }
+    let pausedDurationMs = 0;
+    let lastEnd = state.startTime;
+    for (const pause of pauses) {
+      pausedDurationMs += Math.max(0, pause.end - Math.max(lastEnd, pause.start));
+      lastEnd = Math.max(lastEnd, pause.end);
+    }
+    set({ completionRequestedAt: endedAt, isPaused: true, pausedAt: endedAt, pausedDurationMs,
+      treadmillSegments: state.treadmillSegments.filter(segment => segment.startedAtMs < endedAt)
+        .map(segment => ({ ...segment, endedAtMs: Math.min(segment.endedAtMs ?? endedAt, endedAt) })),
+    });
+  },
   clearCompletionRequest: () => set({ completionRequestedAt: null }),
 }), {
   name: 'active-run-store-v1',
