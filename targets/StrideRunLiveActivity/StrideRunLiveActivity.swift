@@ -6,13 +6,7 @@ import WidgetKit
 
 // ─── Widget bundle ────────────────────────────────────────────────────────────
 //
-// Apple Watch: audited for Build 28 — no watch target or watch-compatible
-// infrastructure exists in this project. These Live Activities already mirror
-// to a paired Apple Watch automatically via the system's built-in Live
-// Activity support (no extra code required for that baseline). A dedicated
-// WatchKit app (independent UI/controls on-wrist) is a separate, larger
-// effort — new target, own signing/provisioning, own build — deferred rather
-// than started here to avoid signing/build risk on an unreviewed addition.
+// Outdoor activities share the same native presentation and control path.
 
 @main
 struct StrideRunLiveActivityBundle: WidgetBundle {
@@ -34,13 +28,14 @@ struct StrideRunLiveActivity: Widget {
           IslandMetric(label: "TIME", value: formatElapsed(context.state.elapsedSeconds), unit: "", timerStart: liveTimerStart(context.state))
         }
         DynamicIslandExpandedRegion(.trailing) {
-          IslandMetric(label: "DISTANCE", value: String(format: "%.2f", context.state.distanceMiles), unit: "mi")
+          IslandMetric(label: "DISTANCE", value: distanceValue(context.state), unit: context.state.distanceUnit ?? "mi")
         }
         DynamicIslandExpandedRegion(.bottom) {
           HStack(spacing: 10) {
-            IslandMetric(label: "AVG PACE", value: context.state.averagePace, unit: "/mi")
+            IslandMetric(label: context.state.metricLabel ?? "AVG PACE", value: context.state.metricValue ?? context.state.averagePace, unit: context.state.metricUnit ?? "/mi")
             Spacer()
-            ZoneBadge(label: context.state.zoneLabel, status: context.state.zoneStatus)
+            ZoneBadge(label: !context.isStale && heartRateIsFresh(context.state) ? context.state.zoneLabel : "Z--",
+              status: !context.isStale && heartRateIsFresh(context.state) ? context.state.zoneStatus : "unknown")
             if context.state.isPaused {
               Button(intent: ResumeRunIntent()) {
                 Image(systemName: "play.fill")
@@ -72,7 +67,7 @@ struct StrideRunLiveActivity: Widget {
         }
       } compactLeading: {
         HStack(spacing: 4) {
-          Image(systemName: context.state.isPaused ? "pause.circle.fill" : "figure.run")
+          Image(systemName: context.state.isPaused ? "pause.circle.fill" : outdoorSymbol(context.state.activityType))
             .font(.caption.weight(.bold))
             .foregroundStyle(context.state.isPaused ? StrideDesign.clay : StrideDesign.sage)
           ElapsedText(state: context.state)
@@ -80,11 +75,11 @@ struct StrideRunLiveActivity: Widget {
             .foregroundStyle(.white)
         }
       } compactTrailing: {
-        Text(String(format: "%.1f mi", context.state.distanceMiles))
+        Text("\(distanceValue(context.state)) \(context.state.distanceUnit ?? "mi")")
           .font(.caption.weight(.bold))
           .foregroundStyle(StrideDesign.clay)
       } minimal: {
-        Image(systemName: context.state.isPaused ? "pause.circle.fill" : "figure.run")
+        Image(systemName: context.state.isPaused ? "pause.circle.fill" : outdoorSymbol(context.state.activityType))
           .foregroundStyle(context.state.isPaused ? StrideDesign.clay : StrideDesign.sage)
       }
     }
@@ -114,19 +109,32 @@ private struct LockScreenRunView: View {
         Text("MM")
           .font(.system(size: 11, weight: .bold, design: .serif))
           .foregroundStyle(StrideDesign.clay)
-        Text(context.state.isPaused ? "StrideOS · Paused" : "StrideOS Run")
+        Text(context.state.isPaused ? "Paused · \(context.attributes.runName)" : context.attributes.runName)
           .font(.system(size: 12, weight: .semibold))
           .foregroundStyle(context.state.isPaused ? StrideDesign.clay : primaryText)
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
         Spacer(minLength: 4)
-        ZoneBadge(label: context.state.zoneLabel, status: context.state.zoneStatus)
+        if !context.isStale, liveMetricIsFresh(context.state, observedAt: context.state.powerObservedAt), let power = context.state.powerWatts {
+          Text("\(Int(power.rounded())) W\(context.state.powerKind == "measured" ? "" : " est.")")
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(secondaryText)
+        } else if !context.isStale, liveMetricIsFresh(context.state, observedAt: context.state.cadenceObservedAt), let cadence = context.state.cadenceValue {
+          Text("\(Int(cadence.rounded())) \(context.state.cadenceUnit ?? "spm")")
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(secondaryText)
+        } else {
+          ZoneBadge(label: !context.isStale && heartRateIsFresh(context.state) ? context.state.zoneLabel : "Z--",
+            status: !context.isStale && heartRateIsFresh(context.state) ? context.state.zoneStatus : "unknown")
+        }
       }
 
       // Single metrics row — four cells, equal width, no vertical stacking
       HStack(alignment: .top, spacing: 8) {
         LockMetricCell(value: formatElapsed(context.state.elapsedSeconds), unit: nil, label: "TIME", primary: primaryText, secondary: secondaryText, timerStart: liveTimerStart(context.state))
-        LockMetricCell(value: String(format: "%.2f", context.state.distanceMiles), unit: "mi", label: "DISTANCE", primary: primaryText, secondary: secondaryText)
-        LockMetricCell(value: context.state.averagePace, unit: "/mi", label: "PACE", primary: primaryText, secondary: secondaryText)
-        LockMetricCell(value: context.state.heartRate > 0 ? "\(context.state.heartRate)" : "--", unit: "bpm", label: "HEART RATE", primary: primaryText, secondary: secondaryText)
+        LockMetricCell(value: distanceValue(context.state), unit: context.state.distanceUnit ?? "mi", label: "DISTANCE", primary: primaryText, secondary: secondaryText)
+        LockMetricCell(value: context.state.metricValue ?? context.state.averagePace, unit: context.state.metricUnit ?? "/mi", label: context.state.metricLabel ?? "PACE", primary: primaryText, secondary: secondaryText)
+        LockMetricCell(value: !context.isStale && heartRateIsFresh(context.state) && context.state.heartRate > 0 ? "\(context.state.heartRate)" : "--", unit: "bpm", label: "HEART RATE", primary: primaryText, secondary: secondaryText)
       }
 
       // Single primary action + compact stop
@@ -272,7 +280,7 @@ private func zoneColor(_ status: String) -> Color {
 
 private func shortZoneLabel(_ label: String) -> String {
   let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
-  if trimmed.isEmpty || trimmed == "Zone --" { return "Z2" }
+  if trimmed.isEmpty || trimmed == "Zone --" { return "Z--" }
   if trimmed.hasPrefix("Zone ") {
     return "Z" + trimmed.replacingOccurrences(of: "Zone ", with: "")
   }
@@ -307,6 +315,34 @@ private func formatElapsed(_ seconds: Int) -> String {
   return h > 0
     ? String(format: "%d:%02d:%02d", h, m, sec)
     : String(format: "%02d:%02d", m, sec)
+}
+
+private func distanceValue(_ state: StrideRunActivityAttributes.ContentState) -> String {
+  state.distanceValue ?? String(format: "%.2f", state.distanceMiles)
+}
+
+private func outdoorSymbol(_ type: String?) -> String {
+  switch type {
+  case "walking": return "figure.walk"
+  case "hiking", "ski_touring", "snowboard_touring": return "figure.hiking"
+  case "cycling", "indoor_cycling": return "bicycle"
+  case "downhill_skiing": return "figure.skiing.downhill"
+  case "cross_country_skiing": return "figure.skiing.crosscountry"
+  case "snowboarding": return "figure.snowboarding"
+  default: return "figure.run"
+  }
+}
+
+private func liveMetricIsFresh(_ state: StrideRunActivityAttributes.ContentState, observedAt: Double?) -> Bool {
+  guard !state.isPaused, let observedAt else { return false }
+  let age = Date().timeIntervalSince1970 * 1000 - observedAt
+  return age >= 0 && age <= 10_000
+}
+
+private func heartRateIsFresh(_ state: StrideRunActivityAttributes.ContentState) -> Bool {
+  guard let observed = state.heartRateObservedAt ?? (state.activityType == nil ? state.updatedAt.map({ $0 * 1000 }) : nil) else { return false }
+  let age = Date().timeIntervalSince1970 * 1000 - observed
+  return !state.isPaused && age >= 0 && age <= 10_000
 }
 
 // ─── Phase 3: Strength Live Activity ─────────────────────────────────────────

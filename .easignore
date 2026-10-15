@@ -25,3 +25,8 @@ StrideOS_Fable5_Build_Authority_Pack/
 docs/build-next-prototypes/
 docs/build37-prototypes/
 docs/build38-prototypes/
+
+# Source references and generated browser QA are not production dependencies.
+/docs/handoff/badge-review/
+/docs/handoff/update-2026-10-15/visual-qa.js
+/docs/handoff/update-2026-10-15/active-outdoor-qa.js

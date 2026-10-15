@@ -6,11 +6,12 @@ module.exports = (config) => ({
   bundleIdentifier: '.watch',
   deploymentTarget: '10.0',
   icon: '../../assets/images/icon.png',
-  frameworks: ['HealthKit', 'SwiftUI', 'WatchConnectivity', 'CoreLocation'],
+  frameworks: ['HealthKit', 'SwiftUI', 'WatchConnectivity', 'CoreLocation', 'CoreMotion'],
   entitlements: {
     'com.apple.developer.healthkit': true,
   },
   plist: {
+    NSMotionUsageDescription: 'StrideOS reads your current step cadence during workouts.',
     WKBackgroundModes: ['workout-processing'],
     UIBackgroundModes: ['location'],
     NSLocationWhenInUseUsageDescription:

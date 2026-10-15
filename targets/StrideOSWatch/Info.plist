@@ -22,6 +22,8 @@
         <string>AppIcon</string>
       </dict>
     </dict>
+    <key>NSMotionUsageDescription</key>
+    <string>StrideOS reads your current step cadence during workouts.</string>
     <key>NSHealthShareUsageDescription</key>
     <string>StrideOS reads Apple Watch heart rate during workouts you start from StrideOS.</string>
     <key>NSHealthUpdateUsageDescription</key>

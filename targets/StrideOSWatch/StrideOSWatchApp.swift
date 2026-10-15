@@ -91,6 +91,10 @@ private struct WorkoutPickerFace: View {
           .minimumScaleFactor(0.82)
 
         StrideWatchDiagnostics()
+        Button("Enable Workout Metrics", systemImage: "heart.text.square") { workout.enableWorkoutMetrics() }
+        if workout.canEnableCadence {
+          Button("Enable Cadence", systemImage: "figure.run") { workout.enableCadence() }
+        }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -128,7 +132,7 @@ private struct ActiveWorkoutFace: View {
         workout.cycleMetricPage()
       } label: {
         VStack(alignment: .leading, spacing: 2) {
-          Text(workout.metricPage.title)
+          Text(workout.metricPageTitle)
             .font(.system(size: 10, weight: .bold))
             .foregroundStyle(StrideWatchPalette.steel)
             .textCase(.uppercase)

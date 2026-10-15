@@ -8,12 +8,21 @@ private enum StrideRunControlCommand {
   static let idKey = "StrideOS.pendingRunControlCommand.id"
   static let actionKey = "StrideOS.pendingRunControlCommand.action"
   static let createdAtKey = "StrideOS.pendingRunControlCommand.createdAt"
+  static let workoutIdKey = "StrideOS.pendingRunControlCommand.workoutInstanceId"
+  static let sessionIdKey = "StrideOS.pendingRunControlCommand.sessionId"
+  static let sourceKey = "StrideOS.pendingRunControlCommand.sessionSource"
 
   static func write(_ action: String) {
     guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else { return }
     defaults.set(UUID().uuidString, forKey: idKey)
     defaults.set(action, forKey: actionKey)
     defaults.set(Date().timeIntervalSince1970, forKey: createdAtKey)
+    // Strength keeps its existing command contract; outdoor commands carry
+    // the exact ActivityKit session rather than matching a later workout.
+    let state = action.hasPrefix("strength_") ? nil : Activity<StrideRunActivityAttributes>.activities.first?.contentState
+    defaults.set(state?.workoutInstanceId, forKey: workoutIdKey)
+    defaults.set(state?.sessionId, forKey: sessionIdKey)
+    defaults.set(state?.sessionSource, forKey: sourceKey)
     defaults.synchronize()
   }
 }
@@ -105,34 +114,25 @@ struct MarkSetCompleteIntent: LiveActivityIntent {
 @available(iOS 18.0, *)
 private func updateRun(isPaused: Bool, status: String) async {
   guard let activity = Activity<StrideRunActivityAttributes>.activities.first else { return }
-  let current = activity.contentState
-  let state = StrideRunActivityAttributes.ContentState(
-    elapsedSeconds: current.elapsedSeconds,
-    distanceMiles: current.distanceMiles,
-    averagePace: current.averagePace,
-    heartRate: current.heartRate,
-    zoneLabel: current.zoneLabel,
-    zoneStatus: current.zoneStatus,
-    status: status,
-    isPaused: isPaused
-  )
-  await activity.update(ActivityContent(state: state, staleDate: Date().addingTimeInterval(90), relevanceScore: 0.95))
+  var state = activity.contentState
+  if !state.isPaused, let updated = state.updatedAt {
+    state.elapsedSeconds += max(0, Int(Date().timeIntervalSince1970 - updated))
+  }
+  state.status = status
+  state.isPaused = isPaused
+  if state.heartRateObservedAt == nil, state.activityType == nil {
+    state.heartRateObservedAt = state.updatedAt.map { $0 * 1000 }
+  }
+  state.updatedAt = Date().timeIntervalSince1970
+  await activity.update(ActivityContent(state: state, staleDate: state.telemetryStaleDate(), relevanceScore: 0.95))
 }
 
 @available(iOS 18.0, *)
 private func endRun() async {
   guard let activity = Activity<StrideRunActivityAttributes>.activities.first else { return }
-  let current = activity.contentState
-  let state = StrideRunActivityAttributes.ContentState(
-    elapsedSeconds: current.elapsedSeconds,
-    distanceMiles: current.distanceMiles,
-    averagePace: current.averagePace,
-    heartRate: current.heartRate,
-    zoneLabel: current.zoneLabel,
-    zoneStatus: current.zoneStatus,
-    status: "Finished",
-    isPaused: false
-  )
+  var state = activity.contentState
+  state.status = "Finished"
+  state.isPaused = false
   // .immediate: a stopped run must leave the Lock Screen right away — a
   // deferred dismissal leaves finished workouts pinned there for minutes.
   await activity.end(ActivityContent(state: state, staleDate: nil, relevanceScore: 0.1), dismissalPolicy: .immediate)

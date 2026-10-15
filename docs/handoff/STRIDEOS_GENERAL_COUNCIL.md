@@ -85,3 +85,34 @@ A second independent static walkthrough passed all five authority/privacy/style/
 scope scenarios. Its provenance suggestion was incorporated as short user-message
 anchors with explicit disclosure that individual historical dates/IDs were not
 available. The first reviewer rechecked and closed the handoff-label finding.
+
+## October 15 Product Decisions
+
+Direct user update supersedes the earlier documentation-only authorization for
+this project: commit/push approved badges first, implement the requested outdoor
+recording update through three >=95 council gates per project, then commit/push
+and build/submit a TestFlight candidate. It does not authorize a public release.
+
+- Already-authenticated athletes retain owner-bound local recording offline;
+  network refresh is not permission to erase history or force a new login.
+- One recording identity must produce one canonical completion across phone,
+  watch, migration, restore and Health round-trips. No fuzzy merging of separate
+  legitimate sessions and no guessed deletion of ambiguous historical records.
+- Running is the visual language for outdoor live screens, with sport-appropriate
+  metrics. Ski and snowboard touring are distinct activities. No swim expansion.
+- Explicit fixed Back controls replace horizontal navigation gestures. Two
+  chevrons: brown/blue light, clay/clay dark; downward pair closes sheets. Floating
+  overlays/tours must have reliable escape paths without discarding unsaved edits.
+- Competitor screenshots inform capability, never copied branding/layouts or
+  invented proprietary algorithms. Outdoor map/profile inspection includes actual
+  recorded HR and available cadence/power; missing evidence remains unavailable.
+- Power source and quantity remain explicit. Experimental cycling road-load and
+  running metabolic estimates are not interchangeable with measured/device power;
+  unsupported whole-body watts are not fabricated. Future power badges require
+  actual approved criteria rather than an arbitrary threshold.
+- Route sharing remains Story-only. Square cards use a compact centered group,
+  even spacing/margins and optional correctly named power.
+
+Execution, failures, revisions and verification boundaries live in
+`UPDATE_2026_10_15_PLAN.md` and its linked research/review records. Scores denote
+bounded reviewer judgments, not measured probabilities or physical-device proof.
