@@ -1,3 +1,6 @@
+import { APPROVED_ARTWORK } from './approvedArtwork';
+import { LEGACY_CHALLENGE_LETTERING } from './legacyTypography';
+import { renderApprovedVector } from '../shared/approvedVector';
 import {
   CHALLENGE_ACHIEVEMENT_BY_ID,
   normalizeChallengeBadgeState,
@@ -18,7 +21,6 @@ export type { ChallengeBadgeInputState, ChallengeBadgeState } from './challenges
 export const CHALLENGES_VIEWBOX = 100;
 export const CHALLENGES_HEXAGON_PATH =
   'M50 5.5 Q52.3 5.5 54.5 6.8 L85.7 24.8 Q88 26.1 88 28.8 L88 71.2 Q88 73.9 85.7 75.2 L54.5 93.2 Q52.3 94.5 50 94.5 Q47.7 94.5 45.5 93.2 L14.3 75.2 Q12 73.9 12 71.2 L12 28.8 Q12 26.1 14.3 24.8 L45.5 6.8 Q47.7 5.5 50 5.5 Z';
-export const CHALLENGES_LABEL_FONT = "'Avenir Next', Inter, Arial, sans-serif";
 
 export type ChallengesRenderTokens = {
   primary: string;
@@ -66,19 +68,17 @@ function strokeAttrs(tokens: ChallengesRenderTokens, width = 1.6, opacity = toke
   return `stroke="${tokens.primary}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${opacity}"`;
 }
 
-function keylineText(
-  text: string,
-  x: number,
-  y: number,
-  fontSize: number,
-  weight: number,
-  tracking: number,
+function legacyLettering(
+  key: keyof typeof LEGACY_CHALLENGE_LETTERING,
   tokens: ChallengesRenderTokens,
-  anchor: 'start' | 'middle' | 'end' = 'middle',
+  opacity: number,
 ): string {
-  return tokens.keylineOpacity > 0
-    ? `<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="${CHALLENGES_LABEL_FONT}" font-size="${fontSize}" font-weight="${weight}" letter-spacing="${tracking}" stroke="#030405" stroke-width="0.36" stroke-opacity="${tokens.keylineOpacity}" fill="none">${escapeXml(text)}</text>`
+  const { text, d, transform } = LEGACY_CHALLENGE_LETTERING[key];
+  const attrs = `data-legacy-lettering="${key}" data-text="${text}" d="${d}" transform="${transform}"`;
+  const keyline = tokens.keylineOpacity > 0
+    ? `<path ${attrs} stroke="#030405" stroke-width="${key === 'wordmark' ? '0.32' : '0.36'}" stroke-opacity="${tokens.keylineOpacity}" fill="none"/>`
     : '';
+  return `${keyline}<path ${attrs} fill="${tokens.text}" fill-opacity="${opacity}"/>`;
 }
 
 function renderAugustBaseBuilder(tokens: ChallengesRenderTokens): string {
@@ -127,14 +127,8 @@ function renderElevationMonth(tokens: ChallengesRenderTokens): string {
     <path d="M30.5 41.2 H39.5" fill="none" ${strokeAttrs(tokens, 1.1, tokens.glyphOpacity * 0.55)}/>`;
 }
 
-function renderNumericBadge(definition: ChallengeAchievementDefinition, tokens: ChallengesRenderTokens): string {
-  const number = definition.badgeNumber ?? '';
-  const unit = definition.badgeUnit ?? '';
-  const numberSize = number.length > 2 ? 17 : 20;
-  return `${keylineText(number, 50, 46, numberSize, 800, 0, tokens)}
-  <text x="50" y="46" text-anchor="middle" font-family="${CHALLENGES_LABEL_FONT}" font-size="${numberSize}" font-weight="800" fill="${tokens.text}" fill-opacity="${tokens.titleOpacity}">${escapeXml(number)}</text>
-  ${keylineText(unit, 50, 55.5, 6.4, 900, 0.9, tokens)}
-  <text x="50" y="55.5" text-anchor="middle" font-family="${CHALLENGES_LABEL_FONT}" font-size="6.4" font-weight="900" letter-spacing="0.9" fill="${tokens.text}" fill-opacity="${tokens.titleOpacity}">${escapeXml(unit)}</text>`;
+function renderNumericBadge(tokens: ChallengesRenderTokens): string {
+  return legacyLettering('number', tokens, tokens.titleOpacity) + legacyLettering('unit', tokens, tokens.titleOpacity);
 }
 
 function renderStrengthRun(tokens: ChallengesRenderTokens): string {
@@ -158,25 +152,34 @@ function renderGlyph(definition: ChallengeAchievementDefinition, tokens: Challen
   if (definition.glyph === 'springMileageBuild') return renderSpringMileageBuild(tokens);
   if (definition.glyph === 'summerLongRun') return renderSummerLongRun(tokens);
   if (definition.glyph === 'elevationMonth') return renderElevationMonth(tokens);
-  if (definition.glyph === 'numericBadge') return renderNumericBadge(definition, tokens);
+  if (definition.glyph === 'numericBadge') return renderNumericBadge(tokens);
   if (definition.glyph === 'strengthRun') return renderStrengthRun(tokens);
   return renderRecoveryConsistency(tokens);
 }
 
-function renderTitleLines(lines: readonly string[], tokens: ChallengesRenderTokens, compact: boolean, hasNumericGlyph: boolean): string {
+function renderLegacyTitles(tokens: ChallengesRenderTokens, compact: boolean): string {
   if (compact) return '';
-  const startY = hasNumericGlyph ? (lines.length > 1 ? 68.5 : 71) : (lines.length > 1 ? 64 : 67);
-  const lineHeight = lines.length > 1 ? 6.6 : 0;
-  return lines.map((line, index) => {
-    const y = startY + index * lineHeight;
-    const size = line.length > 17 ? 4.4 : line.length > 13 ? 4.9 : 5.5;
-    const tracking = line.length > 13 ? 0.12 : 0.28;
-    return `${keylineText(line, 50, y, size, 900, tracking, tokens)}
-  <text x="50" y="${y}" text-anchor="middle" font-family="${CHALLENGES_LABEL_FONT}" font-size="${size}" font-weight="900" letter-spacing="${tracking}" fill="${tokens.text}" fill-opacity="${tokens.titleOpacity}">${escapeXml(line)}</text>`;
-  }).join('\n  ');
+  return legacyLettering('title0', tokens, tokens.titleOpacity) + legacyLettering('title1', tokens, tokens.titleOpacity);
 }
 
 export function renderChallengeBadgeSvg(
+  achievement: ChallengeAchievementId,
+  state: ChallengeBadgeInputState = 'unlocked',
+  options: { compact?: boolean; size?: number } = {},
+): string {
+  if (achievement === 'challenge_5k_month') return renderLegacyChallengeBadgeSvg(achievement, state, options);
+  const definition = CHALLENGE_ACHIEVEMENT_BY_ID[achievement];
+  const visualState = normalizeChallengeBadgeState(state);
+  return renderApprovedVector(APPROVED_ARTWORK[achievement], visualState, {
+    ...options,
+    label: challengeAchievementAccessibilityLabel(definition, visualState === 'locked' ? 'locked' : 'earned'),
+    namespace: `challenges-${definition.slug}-${visualState}`,
+  });
+}
+
+// Retired 5K presentation only. Keep its existing appearance and earned ID;
+// every active Challenges presentation uses the approved vector data above.
+function renderLegacyChallengeBadgeSvg(
   achievement: ChallengeAchievementId,
   state: ChallengeBadgeInputState = 'unlocked',
   options: { compact?: boolean; size?: number } = {},
@@ -189,8 +192,6 @@ export function renderChallengeBadgeSvg(
   const edgeId = `challenges-${definition.slug}-${visualState}-edge`;
   const glowId = `challenges-${definition.slug}-${visualState}-glow`;
   const label = challengeAchievementAccessibilityLabel(definition, visualState === 'locked' ? 'locked' : 'earned');
-  const hasNumericGlyph = definition.glyph === 'numericBadge';
-  const wordmarkY = definition.titleLines.length > 1 ? 77.2 : 74.5;
   const chevOneY = definition.titleLines.length > 1 ? 82.8 : 81.8;
   const chevTwoY = definition.titleLines.length > 1 ? 87.9 : 86.9;
 
@@ -213,12 +214,11 @@ export function renderChallengeBadgeSvg(
   <g>
     ${renderGlyph(definition, tokens)}
   </g>
-  ${renderTitleLines(definition.titleLines, tokens, compact, hasNumericGlyph)}
+  ${renderLegacyTitles(tokens, compact)}
   ${compact ? '' : `
-  ${tokens.keylineOpacity > 0 ? `<text x="50" y="${wordmarkY}" text-anchor="middle" font-family="${CHALLENGES_LABEL_FONT}" font-size="3.6" font-weight="900" letter-spacing="1.45" stroke="#030405" stroke-width="0.32" stroke-opacity="${tokens.keylineOpacity}" fill="none">STRIDEOS</text>` : ''}
-  <text x="50" y="${wordmarkY}" text-anchor="middle" font-family="${CHALLENGES_LABEL_FONT}" font-size="3.6" font-weight="900" letter-spacing="1.45" fill="${tokens.text}" fill-opacity="${tokens.wordmarkOpacity}">STRIDEOS</text>
+  ${legacyLettering('wordmark', tokens, tokens.wordmarkOpacity)}
   <path d="M43.6 ${chevOneY} L50 ${chevOneY + 3.8} L56.4 ${chevOneY}" fill="none" stroke="${tokens.primary}" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${tokens.chevronOpacity}"/>
   <path d="M44.3 ${chevTwoY} L50 ${chevTwoY + 3.3} L55.7 ${chevTwoY}" fill="none" stroke="${tokens.highlight}" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${tokens.chevronOpacity}"/>`}
 </svg>
-`;
+`.replace(/[ \t]+$/gm, '');
 }

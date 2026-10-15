@@ -1,0 +1,176 @@
+{
+  "version": 2,
+  "family": "run-level",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
+  },
+  "entries": [
+    {
+      "achievementId": "run_level_foundation",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/system/run-levels/run-level-foundation-unlocked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-foundation-unlocked.png",
+          "svgHash": "54ee3a18ca9faa7f80d70d82fbf193649d5c700b9cde709bd9680756d0624a95",
+          "pngHash": "a51f9fde627d64669473dc8bab54f3368e4495036faaa963d9606f661736fc3a"
+        },
+        "locked": {
+          "svg": "assets/achievements/system/run-levels/run-level-foundation-locked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-foundation-locked.png",
+          "svgHash": "06735bf794454fd4c62536788e4505afd161c40e1d7fa644062171501cc8859f",
+          "pngHash": "b32782986397cdb66e6ca7dae63f26486ed58c61f964593ee9bf5301638f9254"
+        },
+        "transparent": {
+          "svg": "assets/achievements/system/run-levels/run-level-foundation-transparent.svg",
+          "png": "assets/achievements/system/run-levels/run-level-foundation-transparent.png",
+          "svgHash": "9a18efc86c8e0582e5003ff2fde4c5c40a2904b761d404016ce1176fa695a2af",
+          "pngHash": "1b724928559e8511e12d80b133d306084d0947481a318bc6c1fabaa942d4613f"
+        }
+      }
+    },
+    {
+      "achievementId": "run_level_rhythm",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/system/run-levels/run-level-rhythm-unlocked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-rhythm-unlocked.png",
+          "svgHash": "1306b84c52831a4080e82cf87e441135c83661d1c9762309847163936ae38e51",
+          "pngHash": "0d3aa40044c9362e28818eee987ef907d543f34f9a2f3a52a441828de170ffde"
+        },
+        "locked": {
+          "svg": "assets/achievements/system/run-levels/run-level-rhythm-locked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-rhythm-locked.png",
+          "svgHash": "ea0d9af64d1ca6df567dbd2c73ab5f0d73b6ff4bc304a97293da1e7cdb7cb52a",
+          "pngHash": "beb22a69dbee59916e83b51b810b08f82a2cf069b23678f08c715e4a00d34822"
+        },
+        "transparent": {
+          "svg": "assets/achievements/system/run-levels/run-level-rhythm-transparent.svg",
+          "png": "assets/achievements/system/run-levels/run-level-rhythm-transparent.png",
+          "svgHash": "b7edb68ce6416aa275a5bacd573fa0f31610ebd874c1aab902a42aeeaf234115",
+          "pngHash": "5a9cd4a5df6a53a2726a57f2065144c6abec2bd95fd80cd8f13a06b68a59c163"
+        }
+      }
+    },
+    {
+      "achievementId": "run_level_momentum",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/system/run-levels/run-level-momentum-unlocked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-momentum-unlocked.png",
+          "svgHash": "b8f167c888fb2457cf5b04ce3f0d01003042d7a0d8df271925b3af7f8484abba",
+          "pngHash": "4f36aadfdcb6c7bef09af124363a2e765a7429503c982a6bc898faf9df0a0044"
+        },
+        "locked": {
+          "svg": "assets/achievements/system/run-levels/run-level-momentum-locked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-momentum-locked.png",
+          "svgHash": "85e1206e611dc81284f29a5b3d8bd7d593a301293edfdad928bcc70ef47c2257",
+          "pngHash": "8530c2630b2c74cf3c187ca95048548f91d591f2ebdb53a66fd2e134483ea951"
+        },
+        "transparent": {
+          "svg": "assets/achievements/system/run-levels/run-level-momentum-transparent.svg",
+          "png": "assets/achievements/system/run-levels/run-level-momentum-transparent.png",
+          "svgHash": "f232772914de51ed820e6d3b9bc9eb182707df81f335532ba78b21d654e10e21",
+          "pngHash": "fe5a88310b26f050fc94bd4bc8ccca821d9fcbdb54b33eac4230ff9fe20015cd"
+        }
+      }
+    },
+    {
+      "achievementId": "run_level_durability",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/system/run-levels/run-level-durability-unlocked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-durability-unlocked.png",
+          "svgHash": "df8fec21c118c6988d6eb7590bb9b775afc1363ae38ceac7aa403cef263af7e6",
+          "pngHash": "8157bf712fded6f2e3a9f8b0fc84bdd87994e2a1e70450a373d987a503dd91bb"
+        },
+        "locked": {
+          "svg": "assets/achievements/system/run-levels/run-level-durability-locked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-durability-locked.png",
+          "svgHash": "a5d8b3563dea9dd4e8f403d697025f904617ac35b3e14304719926d462b47106",
+          "pngHash": "932698e0dd825f4ce53d83657bf90c642e98fb402e9d868150b1626953835cb8"
+        },
+        "transparent": {
+          "svg": "assets/achievements/system/run-levels/run-level-durability-transparent.svg",
+          "png": "assets/achievements/system/run-levels/run-level-durability-transparent.png",
+          "svgHash": "6df7c8926a2764a8ba2c592d34a18775497dfbc6aa7eb970e5e171fafa8a3935",
+          "pngHash": "d48dfb6c2e06ad9892d0c701b94f6bc0b397b85c394925841a5fb53b68592557"
+        }
+      }
+    },
+    {
+      "achievementId": "run_level_engine",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/system/run-levels/run-level-engine-unlocked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-engine-unlocked.png",
+          "svgHash": "ee41203d47d7ef60f74bcd722a47a25d52aef974e52ac256c3ae855e2dc27721",
+          "pngHash": "28738b77ebbb1ffa48594ea58e502d30651079e5f58e3b80082cf2669716fb3f"
+        },
+        "locked": {
+          "svg": "assets/achievements/system/run-levels/run-level-engine-locked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-engine-locked.png",
+          "svgHash": "c4153b51d09c9b78fe0cfaab8cc8f2e5f48e82c3588085385ce4c477abf0ff6f",
+          "pngHash": "ebe64806ae531e18b400448a8357aeecf54ae87da25987d78adc9055ec75183a"
+        },
+        "transparent": {
+          "svg": "assets/achievements/system/run-levels/run-level-engine-transparent.svg",
+          "png": "assets/achievements/system/run-levels/run-level-engine-transparent.png",
+          "svgHash": "81f7e32c394f3e73133cdd01d9e14799984de0e85d68fa56546882c12bb63c39",
+          "pngHash": "ffe12071b9f3488c5d2efa2055860eced134bb1600555e3a0136f46e70e1c724"
+        }
+      }
+    },
+    {
+      "achievementId": "run_level_peak",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/system/run-levels/run-level-peak-unlocked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-peak-unlocked.png",
+          "svgHash": "c570458a10b83a748f87f16b729d13c538556eddce396661a7940518b8df480f",
+          "pngHash": "ce3b6bff6447f1e1cf5d2a1e568bcd9c9dddc0abe08ec65ad0cf3cbbffd9d765"
+        },
+        "locked": {
+          "svg": "assets/achievements/system/run-levels/run-level-peak-locked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-peak-locked.png",
+          "svgHash": "a5c564b38f835e4433a30d85958f1a51d2f19876df171cf8160692323ef83db0",
+          "pngHash": "03c933af0aefe7fded245f9e56231383cb95170bd39668f70748463f9b6d7e3f"
+        },
+        "transparent": {
+          "svg": "assets/achievements/system/run-levels/run-level-peak-transparent.svg",
+          "png": "assets/achievements/system/run-levels/run-level-peak-transparent.png",
+          "svgHash": "d4a546715bc32ecf6644da3c9a7c3ecd7f4c65f4c4085dead08c9d39e6f070de",
+          "pngHash": "68c22285f16b56e6631188c2e0df3cc351bdb84ba10bfa86d159eec0e98c6d38"
+        }
+      }
+    },
+    {
+      "achievementId": "run_level_summit",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/system/run-levels/run-level-summit-unlocked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-summit-unlocked.png",
+          "svgHash": "51c066058dd8dbf5724b3451601f2fc5d3a4685dfcfea619d756caec2d0c4438",
+          "pngHash": "115f0360977a53fb3dcb975fb98fd9746793a9a1e1b8d0c7906043c9f9f81860"
+        },
+        "locked": {
+          "svg": "assets/achievements/system/run-levels/run-level-summit-locked.svg",
+          "png": "assets/achievements/system/run-levels/run-level-summit-locked.png",
+          "svgHash": "ce048b4d4dec3ad17a6a14a2bd229f6df5ef8cabf68625985bc441cab7744c77",
+          "pngHash": "d7d95621317e44e50e2637a3446bb764acac9b071378649f946803768cfac4c0"
+        },
+        "transparent": {
+          "svg": "assets/achievements/system/run-levels/run-level-summit-transparent.svg",
+          "png": "assets/achievements/system/run-levels/run-level-summit-transparent.png",
+          "svgHash": "259465ee00db3a2ee2005af76ca3dfe78b8b4e0a6f77d910f40a532a826f2138",
+          "pngHash": "05718f5240d8a9ac24d5c3e97c0d6399616292104368ec43f1896113b1b3b07e"
+        }
+      }
+    }
+  ]
+}

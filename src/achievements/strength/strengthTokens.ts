@@ -1,3 +1,5 @@
+import { APPROVED_PALETTE } from "./approvedPalette";
+
 export type StrengthColorTokens = {
   primary: string;
   secondary: string;
@@ -12,12 +14,12 @@ export const STRENGTH_PANEL_BLACK = '#050606';
 export const STRENGTH_LOCKED_GRAY = '#8E8E88';
 
 export const STRENGTH_COLORS: StrengthColorTokens = {
-  primary: '#D6C2AE',
-  secondary: '#A88C72',
-  highlight: '#F0E3D1',
-  shadow: '#66564A',
-  glow: '#A78768',
-  text: '#E7D6C4',
+  primary: APPROVED_PALETTE["first_strength_session"].primary,
+  secondary: APPROVED_PALETTE["first_strength_session"].primary,
+  highlight: APPROVED_PALETTE["first_strength_session"].highlight,
+  shadow: APPROVED_PALETTE["first_strength_session"].shadow,
+  glow: APPROVED_PALETTE["first_strength_session"].primary,
+  text: APPROVED_PALETTE["first_strength_session"].text,
 };
 
 export const STRENGTH_LOCKED_COLORS: StrengthColorTokens = {

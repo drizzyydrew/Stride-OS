@@ -1,82 +1,246 @@
-[
-  {
-    "achievementId": "streak_1_week",
-    "days": 7,
-    "heatToken": "streakHeatGreen",
-    "artworkPath": "assets/achievements/streaks/streak-7-day-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/streaks/streak-7-day-locked.svg",
-    "shareTransparentPath": "assets/achievements/streaks/streak-7-day-transparent.svg"
+{
+  "version": 2,
+  "family": "streak",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
   },
-  {
-    "achievementId": "streak_30_day",
-    "days": 30,
-    "heatToken": "streakHeatYellow",
-    "artworkPath": "assets/achievements/streaks/streak-30-day-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/streaks/streak-30-day-locked.svg",
-    "shareTransparentPath": "assets/achievements/streaks/streak-30-day-transparent.svg"
-  },
-  {
-    "achievementId": "streak_50_day",
-    "days": 50,
-    "heatToken": "streakHeatYellow",
-    "artworkPath": "assets/achievements/streaks/streak-50-day-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/streaks/streak-50-day-locked.svg",
-    "shareTransparentPath": "assets/achievements/streaks/streak-50-day-transparent.svg"
-  },
-  {
-    "achievementId": "streak_75_day",
-    "days": 75,
-    "heatToken": "streakHeatOrange",
-    "artworkPath": "assets/achievements/streaks/streak-75-day-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/streaks/streak-75-day-locked.svg",
-    "shareTransparentPath": "assets/achievements/streaks/streak-75-day-transparent.svg"
-  },
-  {
-    "achievementId": "streak_100_day",
-    "days": 100,
-    "heatToken": "streakHeatOrange",
-    "artworkPath": "assets/achievements/streaks/streak-100-day-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/streaks/streak-100-day-locked.svg",
-    "shareTransparentPath": "assets/achievements/streaks/streak-100-day-transparent.svg"
-  },
-  {
-    "achievementId": "streak_150_day",
-    "days": 150,
-    "heatToken": "streakHeatRedOrange",
-    "artworkPath": "assets/achievements/streaks/streak-150-day-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/streaks/streak-150-day-locked.svg",
-    "shareTransparentPath": "assets/achievements/streaks/streak-150-day-transparent.svg"
-  },
-  {
-    "achievementId": "streak_200_day",
-    "days": 200,
-    "heatToken": "streakHeatHotPink",
-    "artworkPath": "assets/achievements/streaks/streak-200-day-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/streaks/streak-200-day-locked.svg",
-    "shareTransparentPath": "assets/achievements/streaks/streak-200-day-transparent.svg"
-  },
-  {
-    "achievementId": "streak_250_day",
-    "days": 250,
-    "heatToken": "streakHeatViolet",
-    "artworkPath": "assets/achievements/streaks/streak-250-day-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/streaks/streak-250-day-locked.svg",
-    "shareTransparentPath": "assets/achievements/streaks/streak-250-day-transparent.svg"
-  },
-  {
-    "achievementId": "streak_300_day",
-    "days": 300,
-    "heatToken": "streakHeatBlue",
-    "artworkPath": "assets/achievements/streaks/streak-300-day-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/streaks/streak-300-day-locked.svg",
-    "shareTransparentPath": "assets/achievements/streaks/streak-300-day-transparent.svg"
-  },
-  {
-    "achievementId": "streak_365_day",
-    "days": 365,
-    "heatToken": "streakHeatWhiteHot",
-    "artworkPath": "assets/achievements/streaks/streak-365-day-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/streaks/streak-365-day-locked.svg",
-    "shareTransparentPath": "assets/achievements/streaks/streak-365-day-transparent.svg"
-  }
-]
+  "entries": [
+    {
+      "achievementId": "streak_1_week",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/streaks/streak-7-day-unlocked.svg",
+          "png": "assets/achievements/streaks/streak-7-day-unlocked.png",
+          "svgHash": "5666750b7c0493a8f5f0fecdd8291b962ac756b01e2bf4229d47ad707dc00824",
+          "pngHash": "51df275bc5a21a1a41f235d56de3b88dfa9695e53ce6c7f90b6d0f4fce09566b"
+        },
+        "locked": {
+          "svg": "assets/achievements/streaks/streak-7-day-locked.svg",
+          "png": "assets/achievements/streaks/streak-7-day-locked.png",
+          "svgHash": "6a8815adb1cfc4118bebc2421c3bcdf2d8c36a9c019088be2b5c5e93f541b251",
+          "pngHash": "e4c12f80808d460b96a57c671648fd96ed8c9f15b7839c3fdd3af0e930e64d8f"
+        },
+        "transparent": {
+          "svg": "assets/achievements/streaks/streak-7-day-transparent.svg",
+          "png": "assets/achievements/streaks/streak-7-day-transparent.png",
+          "svgHash": "906686ae9aa653e646fae53c4a2acff33ea6934d5d2a61dd2cab7e1d948ab8f0",
+          "pngHash": "9b47726dc2f861f4036b3370573910ab900e291deba229b28f5f5708b5cce76f"
+        }
+      }
+    },
+    {
+      "achievementId": "streak_30_day",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/streaks/streak-30-day-unlocked.svg",
+          "png": "assets/achievements/streaks/streak-30-day-unlocked.png",
+          "svgHash": "44c9266fccd74921e0f9b6358909466d4c0cb9d4182eab161652f3679ff78168",
+          "pngHash": "f5496ceeea2a646ae11b781d0a86c2df968cf700c975c0afe5ac220bc0cf43ab"
+        },
+        "locked": {
+          "svg": "assets/achievements/streaks/streak-30-day-locked.svg",
+          "png": "assets/achievements/streaks/streak-30-day-locked.png",
+          "svgHash": "5e65dd7f0550a9a6d8f78bb51d059b08a93c4ffbb52f320a7878d049ea67fa3d",
+          "pngHash": "43419623419b21dad9ceaa48e8d1569ffd13a35b7fbee08305174e86a9fac612"
+        },
+        "transparent": {
+          "svg": "assets/achievements/streaks/streak-30-day-transparent.svg",
+          "png": "assets/achievements/streaks/streak-30-day-transparent.png",
+          "svgHash": "97a0603bbb08c641a4a304727a0f458e595b0d4d62e56d92c097fe7c14b40632",
+          "pngHash": "bfd3950b9b53867cf36885ea00afb67bcc5cc7c91863491c73dd690b3a67cf97"
+        }
+      }
+    },
+    {
+      "achievementId": "streak_50_day",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/streaks/streak-50-day-unlocked.svg",
+          "png": "assets/achievements/streaks/streak-50-day-unlocked.png",
+          "svgHash": "74949212b8ec09fb3a195782525ba0e9b512566f9060ee62d09cf36e749d5b78",
+          "pngHash": "f9d1767d87e7a7a81b02d33e3e2da13821b35ee9449d38c25d9694bc89d9c217"
+        },
+        "locked": {
+          "svg": "assets/achievements/streaks/streak-50-day-locked.svg",
+          "png": "assets/achievements/streaks/streak-50-day-locked.png",
+          "svgHash": "f142746cb1684f9f0a446d5f4534e6e3f8bc77ae1b6c7bd952acc07464359db2",
+          "pngHash": "8ada15a10582bcb93ce37caffec9077b05876c01c78bb27ff781d38e94bea435"
+        },
+        "transparent": {
+          "svg": "assets/achievements/streaks/streak-50-day-transparent.svg",
+          "png": "assets/achievements/streaks/streak-50-day-transparent.png",
+          "svgHash": "1d3dc86fc88ddfab6cd236c3c6ba546ccbe467664b03593fbba7c3ec36e88196",
+          "pngHash": "ee89b7657b96886ff70e583915425ceceba1746b173032e54829d6313eb3521d"
+        }
+      }
+    },
+    {
+      "achievementId": "streak_75_day",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/streaks/streak-75-day-unlocked.svg",
+          "png": "assets/achievements/streaks/streak-75-day-unlocked.png",
+          "svgHash": "e0037aac993eb23f739e7e808555514ea7107004c2dfecf5507f8f78c7e19fcb",
+          "pngHash": "cb0ba79c61156940e40ee0575e4a25815d40f6539fa540fda776bb75dd741c70"
+        },
+        "locked": {
+          "svg": "assets/achievements/streaks/streak-75-day-locked.svg",
+          "png": "assets/achievements/streaks/streak-75-day-locked.png",
+          "svgHash": "39ce36867c7e3b668df86ef0c2bc3fcfca7e286ebe65d7705cb202cce5c70198",
+          "pngHash": "dd47deba281dcce201996ffb349a7b379e4662f6d6fd6b27140831f38a2a1e3d"
+        },
+        "transparent": {
+          "svg": "assets/achievements/streaks/streak-75-day-transparent.svg",
+          "png": "assets/achievements/streaks/streak-75-day-transparent.png",
+          "svgHash": "9399f1b381e5b59159f24833ed8bb3555e8d5c32ae75e9988cc118bf85e092cb",
+          "pngHash": "4dfd784d659fe9cbd70c91327c7536813d319c8599525661bd7160bbfbfce63a"
+        }
+      }
+    },
+    {
+      "achievementId": "streak_100_day",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/streaks/streak-100-day-unlocked.svg",
+          "png": "assets/achievements/streaks/streak-100-day-unlocked.png",
+          "svgHash": "a4b30f5a4afb93072e0f6209d3ee5c34f0736024e218e67263062128545ac6cc",
+          "pngHash": "4cfed6dde0c00e1948dca0f908f6fd08b85f5188fa82c8606572d11fdfafd2b3"
+        },
+        "locked": {
+          "svg": "assets/achievements/streaks/streak-100-day-locked.svg",
+          "png": "assets/achievements/streaks/streak-100-day-locked.png",
+          "svgHash": "f302af38feffc77b950692cb8303a4ec26463986437bbc6d795f7bc658f81753",
+          "pngHash": "fd42537b8ad6f876d277a2a5fe6191a9ae74c66357aec9a8e552438d521d29c3"
+        },
+        "transparent": {
+          "svg": "assets/achievements/streaks/streak-100-day-transparent.svg",
+          "png": "assets/achievements/streaks/streak-100-day-transparent.png",
+          "svgHash": "d19039da0ad7eed6a7e0af99d86dda3dd00894172726e09220387fdd86d7f1b5",
+          "pngHash": "387124c5222a29c96aec1fb2d9ed7370fb1549184fdfcb01fc4a1dffec882a22"
+        }
+      }
+    },
+    {
+      "achievementId": "streak_150_day",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/streaks/streak-150-day-unlocked.svg",
+          "png": "assets/achievements/streaks/streak-150-day-unlocked.png",
+          "svgHash": "f1d4173293b299add802f50a54c5257d102bfb0a0fc09ca2f9bcc21e1d6fd99f",
+          "pngHash": "a65937c4efb4639cab231d403c7ad22fe66283681e4d712d97d95e10907516b9"
+        },
+        "locked": {
+          "svg": "assets/achievements/streaks/streak-150-day-locked.svg",
+          "png": "assets/achievements/streaks/streak-150-day-locked.png",
+          "svgHash": "cbb8a1ab9687dadbb2582af58f73ca8218f23159880e6c22f29fd23f44c954a2",
+          "pngHash": "e44d8f9915b9b103d1ba88dfd1927b5bbd1f69e2f13e7d2ba96b44d8f9657bfb"
+        },
+        "transparent": {
+          "svg": "assets/achievements/streaks/streak-150-day-transparent.svg",
+          "png": "assets/achievements/streaks/streak-150-day-transparent.png",
+          "svgHash": "cb869b3345869183c0c6dcd05186f32c57c73ee30a2ce405c0b7d0b765e1bb0d",
+          "pngHash": "1c5424a809deefa1b6b1e3b2d7ae43d66cfa903fb75f5f254dfa800d0c146eaa"
+        }
+      }
+    },
+    {
+      "achievementId": "streak_200_day",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/streaks/streak-200-day-unlocked.svg",
+          "png": "assets/achievements/streaks/streak-200-day-unlocked.png",
+          "svgHash": "627e70595615499fdb148fef49d06eb0591f260b2ff8e21da2787a880d951528",
+          "pngHash": "3b6d40403a61154f88d5a9fde87f672928e0996464c8b8f7c55cc9f797a7d1b7"
+        },
+        "locked": {
+          "svg": "assets/achievements/streaks/streak-200-day-locked.svg",
+          "png": "assets/achievements/streaks/streak-200-day-locked.png",
+          "svgHash": "07bd02e953e11a0e199e413e2f4c3c3e7051baa12aacb0cf388c48d244df2091",
+          "pngHash": "7c88f152ee6304d0178f40c7fa4ea568e0f6cb855f83f614edef755a55009148"
+        },
+        "transparent": {
+          "svg": "assets/achievements/streaks/streak-200-day-transparent.svg",
+          "png": "assets/achievements/streaks/streak-200-day-transparent.png",
+          "svgHash": "4535093b19951239d3783be7fe2d64532b9b9ba4ad2efc44575594319bb02c0c",
+          "pngHash": "28ebd4f77b7c5a9ce24d975fdc645acde7e760cf1b08dc235a573993ee843fa9"
+        }
+      }
+    },
+    {
+      "achievementId": "streak_250_day",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/streaks/streak-250-day-unlocked.svg",
+          "png": "assets/achievements/streaks/streak-250-day-unlocked.png",
+          "svgHash": "745652a7ab3d9206e0c53e9c0070e9bacdbe5a97681eb312c8e5102bd38ad9a4",
+          "pngHash": "d0c87b98f38872bb5294d87c5c9a9db4ec75d968f198a79f819970a56ac0715b"
+        },
+        "locked": {
+          "svg": "assets/achievements/streaks/streak-250-day-locked.svg",
+          "png": "assets/achievements/streaks/streak-250-day-locked.png",
+          "svgHash": "12b633d8e5c2385888fb4611f2be16ec93caf9e98fb2d8fe575b288d429404cc",
+          "pngHash": "a940a7d0666f15d159187e1e4ba403ddc2862f77028f9a87d255ab84e18707cd"
+        },
+        "transparent": {
+          "svg": "assets/achievements/streaks/streak-250-day-transparent.svg",
+          "png": "assets/achievements/streaks/streak-250-day-transparent.png",
+          "svgHash": "dab5c54df0b570395383ecec2dde32fb738d769c3bd10108f768fec19f3f0e85",
+          "pngHash": "b988ea573e46d1b18ee685409723886cff8749a5df6969a27a3afcb76536bcd4"
+        }
+      }
+    },
+    {
+      "achievementId": "streak_300_day",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/streaks/streak-300-day-unlocked.svg",
+          "png": "assets/achievements/streaks/streak-300-day-unlocked.png",
+          "svgHash": "1b708c7b5cdaaf3ced34d28d8db416809b73dade623b6e8660ea29d1f3b6b018",
+          "pngHash": "70b76878f60d282584eb5828f42da5bbc20f2748a3ec5efd358a06cbaf17524d"
+        },
+        "locked": {
+          "svg": "assets/achievements/streaks/streak-300-day-locked.svg",
+          "png": "assets/achievements/streaks/streak-300-day-locked.png",
+          "svgHash": "4711b1a8d43bf971d6942d6100e4c9ad89392af8a855fc64a5854f2acb31fb98",
+          "pngHash": "f46caf67ee723cbc2c829dd57cbaef0781c46e80a989029575b8dddf8e37420a"
+        },
+        "transparent": {
+          "svg": "assets/achievements/streaks/streak-300-day-transparent.svg",
+          "png": "assets/achievements/streaks/streak-300-day-transparent.png",
+          "svgHash": "f328b5cc841ac486a449331bf6c8b3b1a780936751b43e89c83e7af1bfc27ccf",
+          "pngHash": "eabbf8a87586bb85b278fde87072cb4c2e657a701a88f15a2419a4a806504382"
+        }
+      }
+    },
+    {
+      "achievementId": "streak_365_day",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/streaks/streak-365-day-unlocked.svg",
+          "png": "assets/achievements/streaks/streak-365-day-unlocked.png",
+          "svgHash": "46a83c7db4abbb22173b86e10d713dd9ca6950e211c19e99d525ef0af4f06ade",
+          "pngHash": "6e3cff246fc43e73a288a662df0205d19a24e69085d0aa900447a7dc71bfc0f8"
+        },
+        "locked": {
+          "svg": "assets/achievements/streaks/streak-365-day-locked.svg",
+          "png": "assets/achievements/streaks/streak-365-day-locked.png",
+          "svgHash": "11fa521ec7ef746164407d518f805a96f8f6cab87b960cfa6ff21a6bb1fd23a3",
+          "pngHash": "53f5e2ef0fcb386ae8c813cb516b353544b43232582879386b3da26ea657fe63"
+        },
+        "transparent": {
+          "svg": "assets/achievements/streaks/streak-365-day-transparent.svg",
+          "png": "assets/achievements/streaks/streak-365-day-transparent.png",
+          "svgHash": "835a193f847202c4ab9f74b2156b426f064169992cd7f068278f509b5468ab54",
+          "pngHash": "86b8d771dc7b5188325fd95971c6bf2c18385f0ffc229f2d74cbaab16f607665"
+        }
+      }
+    }
+  ],
+  "dailyCounts": "positive integers rendered at runtime; no additional achievement IDs"
+}

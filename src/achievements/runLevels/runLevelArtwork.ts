@@ -1,3 +1,5 @@
+import { APPROVED_ARTWORK } from './approvedArtwork';
+import { renderApprovedVector } from '../shared/approvedVector';
 import {
   RUN_LEVEL_LOCKED_GRAY,
   RUN_LEVEL_NEAR_BLACK,
@@ -23,7 +25,7 @@ export function normalizeRunLevelBadgeState(state?: RunLevelBadgeInputState): Ru
 
 export type Point = readonly [number, number];
 
-export const RUN_LEVEL_VIEWBOX = 256;
+export const RUN_LEVEL_VIEWBOX = 100;
 export const RUN_LEVEL_CENTER: Point = [128, 128];
 export const RUN_LEVEL_OUTER_HEX: Point[] = [
   [128, 14],
@@ -200,133 +202,16 @@ export function runLevelBadgeAccessibilityLabel(
   return `${definition.title} run level. Locked.`;
 }
 
-function escapeXml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function ringMarkup(level: RunLevelDefinition, state: RunLevelBadgeState): string {
-  const tokens = runLevelBadgeTokens(level, state);
-  return runLevelRingInsets(level).map((inset, index) => {
-    const opacity = Math.max(0.16, tokens.ringOpacityBase - index * tokens.ringOpacityStep);
-    const strokeId = `run-level-${level.slug}-${state}-ring-${index}`;
-    const width = index === 0 ? 1.32 : 0.92;
-    return `<path d="${runLevelRingPath(inset)}" fill="none" stroke="url(#${strokeId})" stroke-width="${(width + 1.8).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${tokens.ringBloomOpacity.toFixed(2)}"/>
-  <path d="${runLevelRingPath(inset)}" fill="none" stroke="url(#${strokeId})" stroke-width="${width.toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${opacity.toFixed(2)}"/>`;
-  }).join('\n  ');
-}
-
 export function renderRunLevelBadgeSvg(
   levelSlug: RunLevelSlug,
   state: RunLevelBadgeInputState = 'unlocked',
-  options: { compact?: boolean; size?: number } = {},
+  options: { compact?: boolean; size?: number; remainingMeters?: number; units?: UnitSystem } = {},
 ): string {
-  const resolvedState = normalizeRunLevelBadgeState(state);
-  const level = RUN_LEVEL_BY_SLUG[levelSlug];
-  const tokens = runLevelBadgeTokens(level, resolvedState);
-  const compact = options.compact ?? false;
-  const size = options.size ?? RUN_LEVEL_VIEWBOX;
-  const gradientId = `run-level-${level.slug}-${resolvedState}-mountain`;
-  const mountainSideId = `run-level-${level.slug}-${resolvedState}-mountain-side`;
-  const mountainShadowId = `run-level-${level.slug}-${resolvedState}-mountain-shadow`;
-  const interiorId = `run-level-${level.slug}-${resolvedState}-interior`;
-  const upperGlowId = `run-level-${level.slug}-${resolvedState}-upper-glow`;
-  const mountainGlowId = `run-level-${level.slug}-${resolvedState}-mountain-glow`;
-  const lowerFadeId = `run-level-${level.slug}-${resolvedState}-lower-fade`;
-  const leftVignetteId = `run-level-${level.slug}-${resolvedState}-left-vignette`;
-  const rightVignetteId = `run-level-${level.slug}-${resolvedState}-right-vignette`;
-  const edgeId = `run-level-${level.slug}-${resolvedState}-edge`;
-  const clipId = `run-level-${level.slug}-${resolvedState}-clip`;
-  const label = runLevelBadgeAccessibilityLabel(level.slug, resolvedState);
-  const outer = runLevelHexPath(0);
-  const inner = runLevelHexPath(7);
-  const titleY = compact ? 178 : 174;
-  const titleSize = level.titleUpper.length > 8 ? 15.2 : 18.2;
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${RUN_LEVEL_VIEWBOX} ${RUN_LEVEL_VIEWBOX}" fill="none" role="img" aria-label="${escapeXml(label)}">
-  <defs>
-    <clipPath id="${clipId}">
-      <path d="${outer}"/>
-    </clipPath>
-    <linearGradient id="${edgeId}" x1="70" y1="20" x2="188" y2="233" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="${tokens.color.highlight}" stop-opacity="0.96"/>
-      <stop offset="0.42" stop-color="${tokens.color.outer}" stop-opacity="0.9"/>
-      <stop offset="1" stop-color="${tokens.color.shadow}" stop-opacity="0.68"/>
-    </linearGradient>
-    <linearGradient id="${interiorId}" x1="128" y1="24" x2="128" y2="231" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#111211" stop-opacity="${tokens.baseOpacity}"/>
-      <stop offset="0.42" stop-color="${RUN_LEVEL_PANEL_BLACK}" stop-opacity="${tokens.baseOpacity}"/>
-      <stop offset="1" stop-color="#050606" stop-opacity="${tokens.baseOpacity}"/>
-    </linearGradient>
-    <radialGradient id="${upperGlowId}" cx="50%" cy="29%" r="62%">
-      <stop offset="0" stop-color="${tokens.color.mid}" stop-opacity="${tokens.upperGlowOpacity}"/>
-      <stop offset="0.48" stop-color="${tokens.color.outer}" stop-opacity="${(tokens.upperGlowOpacity * 0.38).toFixed(2)}"/>
-      <stop offset="1" stop-color="${tokens.color.shadow}" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="${mountainGlowId}" cx="50%" cy="45%" r="33%">
-      <stop offset="0" stop-color="${tokens.color.highlight}" stop-opacity="${tokens.mountainGlowOpacity}"/>
-      <stop offset="0.52" stop-color="${tokens.color.outer}" stop-opacity="${(tokens.mountainGlowOpacity * 0.28).toFixed(2)}"/>
-      <stop offset="1" stop-color="${tokens.color.outer}" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="${lowerFadeId}" x1="128" y1="118" x2="128" y2="238" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#050606" stop-opacity="0"/>
-      <stop offset="0.62" stop-color="#050606" stop-opacity="${(tokens.lowerFadeOpacity * 0.64).toFixed(2)}"/>
-      <stop offset="1" stop-color="#050606" stop-opacity="${tokens.lowerFadeOpacity}"/>
-    </linearGradient>
-    <linearGradient id="${leftVignetteId}" x1="28" y1="128" x2="122" y2="128" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#050606" stop-opacity="${tokens.vignetteOpacity}"/>
-      <stop offset="1" stop-color="#050606" stop-opacity="0"/>
-    </linearGradient>
-    <linearGradient id="${rightVignetteId}" x1="228" y1="128" x2="134" y2="128" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#050606" stop-opacity="${tokens.vignetteOpacity}"/>
-      <stop offset="1" stop-color="#050606" stop-opacity="0"/>
-    </linearGradient>
-    <linearGradient id="${gradientId}" x1="82" y1="86" x2="176" y2="146" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="${tokens.color.highlight}" stop-opacity="0.98"/>
-      <stop offset="0.48" stop-color="${tokens.color.outer}" stop-opacity="0.92"/>
-      <stop offset="1" stop-color="${tokens.color.shadow}" stop-opacity="0.82"/>
-    </linearGradient>
-    <linearGradient id="${mountainSideId}" x1="104" y1="105" x2="178" y2="143" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="${tokens.color.highlight}" stop-opacity="0.62"/>
-      <stop offset="0.5" stop-color="${tokens.color.mid}" stop-opacity="0.76"/>
-      <stop offset="1" stop-color="${tokens.color.shadow}" stop-opacity="0.9"/>
-    </linearGradient>
-    <linearGradient id="${mountainShadowId}" x1="82" y1="118" x2="190" y2="145" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="${tokens.color.shadow}" stop-opacity="0.44"/>
-      <stop offset="0.62" stop-color="#090A0A" stop-opacity="0.62"/>
-      <stop offset="1" stop-color="${tokens.color.shadow}" stop-opacity="0.36"/>
-    </linearGradient>
-    ${runLevelRingInsets(level).map((_, index) => `<linearGradient id="run-level-${level.slug}-${resolvedState}-ring-${index}" x1="128" y1="28" x2="128" y2="178" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="${tokens.color.highlight}" stop-opacity="0.95"/>
-      <stop offset="0.48" stop-color="${tokens.color.outer}" stop-opacity="0.78"/>
-      <stop offset="1" stop-color="${tokens.color.shadow}" stop-opacity="0.28"/>
-    </linearGradient>`).join('\n    ')}
-  </defs>
-  <path d="${outer}" fill="${tokens.fill}" fill-opacity="${tokens.fillOpacity}" stroke="url(#${edgeId})" stroke-width="3.1" stroke-linejoin="round" stroke-opacity="${tokens.outerOpacity}"/>
-  <g clip-path="url(#${clipId})">
-    <rect x="0" y="0" width="256" height="256" fill="${resolvedState === 'transparent' ? 'transparent' : `url(#${interiorId})`}" fill-opacity="${tokens.innerFillOpacity}"/>
-    <rect x="0" y="0" width="256" height="256" fill="#050606" fill-opacity="${tokens.transparentWashOpacity}"/>
-    <rect x="0" y="0" width="256" height="256" fill="url(#${upperGlowId})"/>
-    <rect x="0" y="0" width="256" height="256" fill="url(#${mountainGlowId})"/>
-    <rect x="0" y="0" width="256" height="256" fill="url(#${leftVignetteId})"/>
-    <rect x="0" y="0" width="256" height="256" fill="url(#${rightVignetteId})"/>
-    <rect x="0" y="0" width="256" height="256" fill="url(#${lowerFadeId})"/>
-  </g>
-  <path d="${inner}" fill="none" stroke="${tokens.color.highlight}" stroke-width="0.82" stroke-opacity="${tokens.innerEdgeOpacity}"/>
-  ${ringMarkup(level, resolvedState)}
-  <path d="${RUN_LEVEL_MOUNTAIN.rearMass}" fill="url(#${mountainShadowId})" opacity="${(tokens.mountainOpacity * 0.58).toFixed(2)}"/>
-  <path d="${RUN_LEVEL_MOUNTAIN.leftRear}" fill="url(#${mountainShadowId})" opacity="${(tokens.mountainOpacity * 0.7).toFixed(2)}"/>
-  <path d="${RUN_LEVEL_MOUNTAIN.leftFace}" fill="url(#${mountainSideId})" opacity="${(tokens.mountainOpacity * 0.88).toFixed(2)}"/>
-  <path d="${RUN_LEVEL_MOUNTAIN.centerShadow}" fill="url(#${mountainShadowId})" opacity="${(tokens.mountainOpacity * 0.78).toFixed(2)}"/>
-  <path d="${RUN_LEVEL_MOUNTAIN.centerFace}" fill="url(#${gradientId})" opacity="${tokens.mountainOpacity}"/>
-  <path d="${RUN_LEVEL_MOUNTAIN.centerHighlight}" fill="url(#${mountainSideId})" opacity="${(tokens.mountainOpacity * 0.9).toFixed(2)}"/>
-  <path d="${RUN_LEVEL_MOUNTAIN.rightRear}" fill="url(#${mountainShadowId})" opacity="${(tokens.mountainOpacity * 0.74).toFixed(2)}"/>
-  <path d="${RUN_LEVEL_MOUNTAIN.rightFace}" fill="url(#${mountainSideId})" opacity="${(tokens.mountainOpacity * 0.72).toFixed(2)}"/>
-  <path d="${RUN_LEVEL_MOUNTAIN.ridge}" fill="none" stroke="${tokens.color.highlight}" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${(tokens.mountainOpacity * 0.5).toFixed(2)}"/>
-  ${tokens.keylineOpacity > 0 ? `<text x="128" y="${titleY}" text-anchor="middle" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="${titleSize}" font-weight="500" letter-spacing="1.45" stroke="#050505" stroke-width="2" stroke-opacity="${tokens.keylineOpacity}" fill="none">${level.titleUpper}</text>` : ''}
-  <text x="128" y="${titleY}" text-anchor="middle" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="${titleSize}" font-weight="500" letter-spacing="1.45" fill="${resolvedState === 'locked' ? RUN_LEVEL_LOCKED_GRAY : tokens.color.highlight}" fill-opacity="${tokens.titleOpacity}">${level.titleUpper}</text>
-  ${compact ? '' : `<text x="128" y="195" text-anchor="middle" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="8.8" font-weight="700" letter-spacing="3.4" fill="${resolvedState === 'locked' ? RUN_LEVEL_LOCKED_GRAY : '#F3F1EB'}" fill-opacity="${tokens.wordmarkOpacity}">STRIDEOS</text>
-  <path d="M105 211 L128 223 L151 211" fill="none" stroke="${resolvedState === 'locked' ? RUN_LEVEL_LOCKED_GRAY : tokens.color.outer}" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${tokens.chevronOpacity}"/>
-  <path d="M109 221 L128 231 L147 221" fill="none" stroke="${resolvedState === 'locked' ? RUN_LEVEL_LOCKED_GRAY : tokens.color.highlight}" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${tokens.chevronOpacity}"/>`}
-</svg>
-`;
+  const definition = RUN_LEVEL_BY_SLUG[levelSlug];
+  const visualState = normalizeRunLevelBadgeState(state);
+  return renderApprovedVector(APPROVED_ARTWORK[definition.id], visualState, {
+    ...options,
+    label: runLevelBadgeAccessibilityLabel(levelSlug, visualState, options.remainingMeters, options.units),
+    namespace: `run-level-${levelSlug}-${visualState}`,
+  });
 }

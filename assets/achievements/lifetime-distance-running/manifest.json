@@ -1,0 +1,495 @@
+{
+  "version": 2,
+  "family": "lifetime-running",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
+  },
+  "entries": [
+    {
+      "achievementId": "lifetime_run_1_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-1mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-1mi-unlocked.png",
+          "svgHash": "839ad11e36c6fc2853b83ea4d6f10457420830d89361421cbc247eb298274d56",
+          "pngHash": "d91b87891e9f025e7aec71e6ff6d71c57552cdbced9993f975b09ef186cd7950"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-1mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-1mi-locked.png",
+          "svgHash": "2355616c77cc4c29096cb1e78038da0026cb4e2047d813c42acc1111ea1229d7",
+          "pngHash": "67b5e309c42d7c5a1538f4bfd14567f8a189b4e6d2912292406162a166d298c5"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-1mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-1mi-transparent.png",
+          "svgHash": "6660dd4ceed77da10616b63bb438c6ab867ab769d9b3198c495e083fbcc27aa0",
+          "pngHash": "56f42445f23881d9718047cf880956849d94b82667f18ad7a3648213021bf9d6"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_1_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-1mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-1mi-unlocked.png",
+          "svgHash": "cc7dd07d1e8ad835c08353aefbbf4042443e4efdb46a037886e1740a24ffcfe3",
+          "pngHash": "54c62fd6476af2ea8522bc6f4bf5d7f06dce3cecc05332ca4ee328451eddc794"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-1mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-1mi-locked.png",
+          "svgHash": "719320642502bf0ec68254a30bb408e8df8ab393fc36a836a8e0a68d9d9dd207",
+          "pngHash": "8a2f04769f00966985f9886c3717f46f6ed9a9e7a1a568ee55caecc75752837d"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-1mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-1mi-transparent.png",
+          "svgHash": "f37f508ccb1f56faaf7e6d991366835eaed812f58819aca1eecf2105f7b8c910",
+          "pngHash": "61e749166f98a644a503810be87d3ceef73e2171fa55f9c854ced18842e0a1f1"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_5_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-5mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-5mi-unlocked.png",
+          "svgHash": "644c9a752dd1e375c368f4c842b030d9f16af1281feb9ab84aec4b1917c82bdc",
+          "pngHash": "475619ffddc4380c21e63bef4612772fa77ae1e8dad9982373cb0b2f92506a22"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-5mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-5mi-locked.png",
+          "svgHash": "807ae4f017afd181b3a6a0fd964aa9573343ee859f8f62c4808f81621c8095cf",
+          "pngHash": "808fa0c933ff3b248ebeaf9ad3025e9e07f0032aff2381dc0ebfe9024505b393"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-5mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-5mi-transparent.png",
+          "svgHash": "dda17fd223d8a3328336c3325aaa130c8615f245a77ddcac99e1eed0d687c28b",
+          "pngHash": "1b5109a71e15dd56263133887f84761dfe2672b0add83296a4f3bdb4b680096d"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_5_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-5mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-5mi-unlocked.png",
+          "svgHash": "a107243577df9503f9d27a307ce5df7fd54f30e608d0ac0afae51fb1dc36967e",
+          "pngHash": "672ee32f73dfb57eac95bdc5e4f5f88ae0073ca2dae711981725c345175b93fe"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-5mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-5mi-locked.png",
+          "svgHash": "4dedf65ca04f24a5d5ceffb78bc18c549a7c688fea37577c17896d4c22dc909e",
+          "pngHash": "88099c0a827ec2df0bb492f43b3f04e156aa71e864c76da17a5abdf40b72ce9c"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-5mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-5mi-transparent.png",
+          "svgHash": "24eab04252f49b051bceac94742ce4d8df7c06def1c286e9e7c1c7f644494924",
+          "pngHash": "eb73c9eea26b70ab5d4ac912475e610bbae6e2167a3de267c368b776d69a6b63"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_10_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-10mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-10mi-unlocked.png",
+          "svgHash": "11bc6e9dd4c107c141553ef407fcd5cd5d64e117ef8694e3a2a3bc1af16fd0d5",
+          "pngHash": "c386a03d24f83c061611278b87cad9e0b48127d85d4039d49d8b2a4cfcf0282b"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-10mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-10mi-locked.png",
+          "svgHash": "fcbd23d58648a9f469084ae6cded6c674e03c0b019261db8e28b086feeab9ca4",
+          "pngHash": "2ea9614b3a197c887c3dba79d8cdb60e8f7225079f4e761363bc24c60a46ae3a"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-10mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-10mi-transparent.png",
+          "svgHash": "a94aecce84447388b7fc354f9020ba49105f9ace1b95c97551dc5c7a594f1bd3",
+          "pngHash": "9b6a96f13669237fc8e0f443d38fb4e40046568ab1011608402d3df9f2a93903"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_10_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-10mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-10mi-unlocked.png",
+          "svgHash": "cd250bd6fab7ebdc23ee87ac2b068558e9a1a140e87872701785bdd33fb51b4b",
+          "pngHash": "44fec5a908771552c05d14ea45559d26d8aa377f0c30c7eb50a998ac94d9cb0a"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-10mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-10mi-locked.png",
+          "svgHash": "5813663a30eab3cc0d1f26f853ee0b2dfe2c3a9aad2000c2bbc951f7affcb2e0",
+          "pngHash": "1ef671ff432ce997200c3e3139b939a9d96367f747409aeb5bd06295e23bcc61"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-10mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-10mi-transparent.png",
+          "svgHash": "e36e556075318cbb2789158f4527290557f0afe31270214758d5697e00f13e80",
+          "pngHash": "0c984620ef8d44b7ec26b24300ced510b43551e11fd135ec8f69cd96356f9945"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_26_2_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-26-2mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-26-2mi-unlocked.png",
+          "svgHash": "7432374638ffb4bae3ceaea5595c5f868361a7fd0d70456b50839bfccc84c87b",
+          "pngHash": "4f8d3a63ba5f91c40df2e412dcba5d72705c4c9e3cc0c5cea903c0b28219d27a"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-26-2mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-26-2mi-locked.png",
+          "svgHash": "cbb1c38fe839fafa172ba7ae6be2058fb6b704ffd68eaac7a6ba9931bc473ee3",
+          "pngHash": "4a17a8d683620e8db6483fb3814ff400f82fe11932c5e69b3b66dfdbc3820cd1"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-26-2mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-26-2mi-transparent.png",
+          "svgHash": "ed4c687c52908498000102ed0f8d388d060610077e6f95e25f6a122ebcd53afc",
+          "pngHash": "107fe8a651df514ec43148da739d5c2dcf3913c985d3eec3d0db8eff25fd674c"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_26_2_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-26-2mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-26-2mi-unlocked.png",
+          "svgHash": "2b8a2fe3540d7ec04c1fbb78438b424a112a21880b2a185e3134fd4696dcba89",
+          "pngHash": "77c41ccd55ef3a38cd1fb68c12d3536d6e66e7af6461610133f6783850b5ad39"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-26-2mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-26-2mi-locked.png",
+          "svgHash": "d58e1aaeab3d3e6ad2b5737730e19d1a4ed44784a08d810cab440a26dfff937a",
+          "pngHash": "02ce4477119dfc2aa9cf68f8d84e2f5b8378b5212cb0c11c40183c71234717e6"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-26-2mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-26-2mi-transparent.png",
+          "svgHash": "85b9141680df2df074fc1ffcc06290757b589c1c26e9e64d49767ab3f2740442",
+          "pngHash": "d39bf9410c88d84ef3ba294d751cf0c393bbaebfe21ca71ba5e8a2a847cbcac3"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_50_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-50mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-50mi-unlocked.png",
+          "svgHash": "b240425bc53b6bd4dd15f6702208a4a9abf55561037310b38b374ee65ae99aef",
+          "pngHash": "4483bdf7a2ed4cf470f4446594c71f40a0249320feed9157d68822c1d732730c"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-50mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-50mi-locked.png",
+          "svgHash": "7619ab3c1033b29b77308fde5391cf47c7b8ad16d3c59c1aeadb54e3a952bb4c",
+          "pngHash": "ec5b65548f05aef032c919d9a1ab0ba48f833646ada71fb1a4a90f81629d443f"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-50mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-50mi-transparent.png",
+          "svgHash": "12698fd69a1cf79f7af1158c0665799432f6d1d541f535ec7ade8d5ba9f70c67",
+          "pngHash": "87b23de93f16797da100b122f95d040d8d2e0f72b4076c5ff4c6755f8a955991"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_50_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-50mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-50mi-unlocked.png",
+          "svgHash": "d5668a916f041fb75bd54fb0b917900fc7e1237bd13f730b20c239f08ee098a4",
+          "pngHash": "1df93fb13989d78c75d8143c31d2da806eccb83fbae410c1e927daffebb21e39"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-50mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-50mi-locked.png",
+          "svgHash": "a8db00160f9593d7d642b712029175c942fb80583262ecc9901ca70047bb44ad",
+          "pngHash": "6c64ae26d7334503a4ae8073dd5168af9417a34615d8e710fdb13dc5600bd1e3"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-50mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-50mi-transparent.png",
+          "svgHash": "84a732d8d4d63e39cb2c6d927ff3c1cabe452901d272eded9ce027fb88b00d57",
+          "pngHash": "2047d0450bc96233f0fdf94eb598454198b5871595c0ee2424890332cb175735"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_100_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-100mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-100mi-unlocked.png",
+          "svgHash": "2b4725e8080cb65bee16c86f4078d139c941708b6b7c4b010b6b6d5c1b041785",
+          "pngHash": "08535df5a0a169cfdfc5b7ff2b3db05eb5bb97c5aa663fca190a9eb562173d2c"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-100mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-100mi-locked.png",
+          "svgHash": "14142ac56d7fd78afb7ed4681ca2cba58fb765a32f18c26b01027840779e2e70",
+          "pngHash": "80d344202685fae7cb5383e0d739c82800999cc492b2a4094a3e5d755657a1a3"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-100mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-100mi-transparent.png",
+          "svgHash": "81b9a349213e63c8d63a3f76adb301387d6be2ddc6b924d72d4da849b47a51c7",
+          "pngHash": "e6f3c4a09762af21edfb8021c9d1d6d0d1270936a2c6311d0b013a3fcec866cb"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_100_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-100mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-100mi-unlocked.png",
+          "svgHash": "b787b1d27d9c553dba15c05322ff7ed45e0be2a9a0d9f11cc1970df33a25b04b",
+          "pngHash": "a7799994694639343151916cac95d127dbb4a55c6d74fb35857d66c8c056b03a"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-100mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-100mi-locked.png",
+          "svgHash": "d7ffe6239a0b07b9ec6dcd2fa7638464a092b241052cb0916b244b7389e17b00",
+          "pngHash": "ba0f3d903d09c33bb61f19cd5a8d046cb47a865ecf0c1b4726027ce08862c201"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-100mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-100mi-transparent.png",
+          "svgHash": "cc98b170d5398e933e75c447011cec2f09676c4cf4e5865bd84650eb02b43260",
+          "pngHash": "e37a2382505e7063fc45a231ef2fa6e7d3f70786c2bc5d945fc1d829793d8074"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_250_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-250mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-250mi-unlocked.png",
+          "svgHash": "335fa33ca9ced2ba81138a88f45ed02b51a7da93396098b865e5b14ad85bd71c",
+          "pngHash": "41ad4ddaf419651bd2847a200dd776f864d17d00e96b1a4db28fbb32ab1d4e3a"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-250mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-250mi-locked.png",
+          "svgHash": "718b906eaf922873e9fed142d2a137c924ae7b0b1a472167fec494e891803854",
+          "pngHash": "5035e9a3a6f366a9f4607a3fd4e976f69f2aa5a1605217dbb071bdcec406415d"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-250mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-250mi-transparent.png",
+          "svgHash": "028b03845adf54649aff924aa36e90af7833bddbeb1c507681f8da19fdd234cc",
+          "pngHash": "3b746c63697b21ffd679eac451f121fa5f12b4e620d8bb628bb54ebee000f331"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_250_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-250mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-250mi-unlocked.png",
+          "svgHash": "d78661f3fa104d7bd7ec501ffa8da439f2d26f6ed44babdc37ff798ec9f5735f",
+          "pngHash": "f707070fa4ca87ab7cb299809f38c4a7be9968c1b0a42fba077f715dba0bed18"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-250mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-250mi-locked.png",
+          "svgHash": "f2c458aeed417add84caee24b4d0db12c92cfe973510be96312f8e7738d0047d",
+          "pngHash": "881147f9c8cc60f95d02e6d06741126b989a4bc87f7f07f161eebe28b65f9214"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-250mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-250mi-transparent.png",
+          "svgHash": "09f6589085ea35172aeb0744768f275500a6e3178a453962ffdc7c25e95c276f",
+          "pngHash": "caf31ad5da691f6fa57bd5fe4a2c0032194d2a47c36129c7ae2b4a714dcd6459"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_500_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-500mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-500mi-unlocked.png",
+          "svgHash": "484840abd2d7dca33c68a969451124104235f67fc4e619fcfa8e2e9254b26f9b",
+          "pngHash": "7b47fa882539cd71afc41adfb6a8990feb68f5344d36ffd3afc882d7bde10de2"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-500mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-500mi-locked.png",
+          "svgHash": "dc77e2d39a1e6092f400b50641fbc0a113657259cdc593342db7b36c362c8c5d",
+          "pngHash": "a06ad2367d3b4e428f0538a20ca1c3a117cd95cb7e28a604adf79cfcfeb155dc"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-500mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-500mi-transparent.png",
+          "svgHash": "ba70286e75767141d6fd862a0b8d4e7fab3b13563c195544195296dd50fc4799",
+          "pngHash": "fe3c657116243ab4dbc6d54eebc0b38b55b606be82dd714d32b7aced3d7442d3"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_500_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-500mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-500mi-unlocked.png",
+          "svgHash": "698801c9dc99b43d35f5a35ec889a599273a0951f7b2e5a10a84987ba0fca089",
+          "pngHash": "0818163c79e5f8aebe42a14e4f84d8cfccdf54e780bd881ea0f6dce553304bf9"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-500mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-500mi-locked.png",
+          "svgHash": "51f6ab354d821a34d181b73712d2c2165cd1461abda8616d57b9e6b0e28ed7a1",
+          "pngHash": "3a09fee7a622cbd663b27ff22f2b82ae166fb3967630a5336ee0c78ee1569106"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-500mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-500mi-transparent.png",
+          "svgHash": "76eb44b6604a9d063e47b08092e91de590d3a736983836b335a8d163699fff11",
+          "pngHash": "b141ed008f1dd7401f996a0674e584113ee94e4ecb77a61c902b24cc007cf51f"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_1000_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-1000mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-1000mi-unlocked.png",
+          "svgHash": "042d2befdf317d607c7bca8954b29cd3ec9535384c70f6010d867884c91999ba",
+          "pngHash": "7a1377769ac2ea1f4f054e8f2e4aa617207a99f85ea667cf386fd352e39468d1"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-1000mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-1000mi-locked.png",
+          "svgHash": "a951796c7836bd92e272851391d29ecaa526ffef14206613b3b73c7e99dd2be4",
+          "pngHash": "8f1cb59eca6546f922f720ec96bb58030c2dd748de78d8645ba415bdc643c0ce"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-1000mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-1000mi-transparent.png",
+          "svgHash": "a77dd5be06f4a538b6dd3ffed964eda4f5c99140cb256e2090a1d0bac38fe9f4",
+          "pngHash": "fb238c0ef76e2b7908a026f0e94be6cec5e78c5dda96a93a124f07fd6e0673b3"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_1000_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-1000mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-1000mi-unlocked.png",
+          "svgHash": "01b5d544757edd95d9e81b6de40d61d2544e8873ab2559d71012c8a50e98086b",
+          "pngHash": "304ff53c198f447046ad1a9b9d0d7a9442e9a5e5fd141389a3f5795ec79868fb"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-1000mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-1000mi-locked.png",
+          "svgHash": "31365965bcfe24d2d79ee8b9740f88056321a325fec4d202b3bfe31f7562afcf",
+          "pngHash": "1fb57032e704086d1b7bc3cf11c1fe61f7ac12d970648877820c71528c772275"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-1000mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-1000mi-transparent.png",
+          "svgHash": "0d85fe44b805823f6e1963205a134b7864194dcaea0d0fe65f37f65d49c492d3",
+          "pngHash": "ea379052f50043d426fef9ab8b6131b05056e5a4e80115a976ab74d0c5061c2f"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_10000_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-10000mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-10000mi-unlocked.png",
+          "svgHash": "04ebf365007041f312380ce9762985af58352b912cab68a292ef32599adf0e14",
+          "pngHash": "29333f8acc17bee9940bc38d278de2864724d2e2b80a61434102d78c5cc88406"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-10000mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-10000mi-locked.png",
+          "svgHash": "1e64cd505a227e59cbc563bf042c51fee230c76e036a1b75cfc56057720d5774",
+          "pngHash": "c2730122167612d45842a7f4352173df021257c45763cbdc72fa78b2e18756e6"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/lifetime-run-10000mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/lifetime-run-10000mi-transparent.png",
+          "svgHash": "d337275a6508c34fcc5b281ab80d8ea8f524de15289aa26e3cbd1a91ca2e3a58",
+          "pngHash": "637a27865d9787f22c64a3b6d36a06cb46fec83a6a409e28f8fae3d372e5f0ce"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_run_10000_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-10000mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-10000mi-unlocked.png",
+          "svgHash": "d75d017b5ec9a4b3867b6616db93f9f7d6340fce9ac28f49eaa4bfe40546a1ff",
+          "pngHash": "d80e3e8038b98b567d732040bf80ddb38bafee1eafd2e4c9951cb1c39dcbf475"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-10000mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-10000mi-locked.png",
+          "svgHash": "a54fa7ee140a10df2a3747c88575d9c80e5e3401c4c8244bca43fc77ff50132d",
+          "pngHash": "8121708c10334c01d9a2572b615d90b8c69cd21f93109f17b7b3f3681bfcce26"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-running/metric/lifetime-run-10000mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-running/metric/lifetime-run-10000mi-transparent.png",
+          "svgHash": "9bc51873ca7a552e1631325d2e4a831429ff4a25d29437ee911f84bc0d17ebd8",
+          "pngHash": "3b2e11ef046f19f55bbd2fd94a0422cde79cb87c187ee7c6398f3be8d6e4d7a1"
+        }
+      }
+    }
+  ]
+}

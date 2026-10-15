@@ -1,0 +1,199 @@
+{
+  "version": 2,
+  "family": "weekly-distance",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
+  },
+  "entries": [
+    {
+      "achievementId": "weekly_5k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-5k-unlocked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-5k-unlocked.png",
+          "svgHash": "3873217f047dcbc9629f0e1900303ac97d66c95558aa65ef0e8ef027e5a61e8a",
+          "pngHash": "4662138c70714fed5a00c1d2466b1a0aba4b81b51520d89920aac455abe26207"
+        },
+        "locked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-5k-locked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-5k-locked.png",
+          "svgHash": "827b84360343a3ec4b2f573b94f83576dd78aac3c1c1e4ff2cf7b7126b309e1e",
+          "pngHash": "1f963c4e794ee38a0613f3945b4ef0dfb6c10b29995c26322134cc405b54b7b1"
+        },
+        "transparent": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-5k-transparent.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-5k-transparent.png",
+          "svgHash": "6a41df6c2778343ff0339db0ceb86a670f69c741018c1bbf599388e18eca549d",
+          "pngHash": "da204f7957dd33861afe3402acc76790905df553941f5c3116b8691f0f93fef9"
+        }
+      }
+    },
+    {
+      "achievementId": "weekly_10k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-10k-unlocked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-10k-unlocked.png",
+          "svgHash": "47339a0e5a06fae3b48d5b904a5ab6621d198ec69467d74a29438daa1ab7e9d7",
+          "pngHash": "7c632a97e22f9ba222a853272c6b027d10747196ad6a47c4f8850f66c5cbc203"
+        },
+        "locked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-10k-locked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-10k-locked.png",
+          "svgHash": "597762c0f7f792c24147dabb9e60a659bfee6d86fd88c8e281cd20b4fdb96ae8",
+          "pngHash": "863a50269780b05d9aa2a8ff16ce078e4d4d113bd381013cbc95f52a6fb71209"
+        },
+        "transparent": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-10k-transparent.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-10k-transparent.png",
+          "svgHash": "2280a2bf70707fce457d616d3549e19027d13c034270017102f1e3958107bf5b",
+          "pngHash": "61fbfc9e53bef0bd06bdfc75899510b4054a76bc492ee6656435a2c5f01c153d"
+        }
+      }
+    },
+    {
+      "achievementId": "weekly_15k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-15k-unlocked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-15k-unlocked.png",
+          "svgHash": "b6a43a2d814fc483347d0342ac689d34903b6cdc656d0bf8aad45aa95bfd8380",
+          "pngHash": "6dece25796577eb8da1c452665f448b5294d1062a418220f05e7a25ae76c51ae"
+        },
+        "locked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-15k-locked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-15k-locked.png",
+          "svgHash": "299e8a1ea3f3bf91b0881def325ef428266fbc75fe02f3bf66a04b9e06c95c89",
+          "pngHash": "f0dee0b81a3266f36c8032874fd895c76da1991d8228a6cd410fb7a90509c2f2"
+        },
+        "transparent": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-15k-transparent.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-15k-transparent.png",
+          "svgHash": "d17c62941a744a7b387a1d0cedca04b3f66cbebee227243890b48ae79506463f",
+          "pngHash": "bf75a27d1b776b6b7373b424f604f78467c2c5cd359a2ebbd7e67605ffb1bb34"
+        }
+      }
+    },
+    {
+      "achievementId": "weekly_25k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-25k-unlocked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-25k-unlocked.png",
+          "svgHash": "46b6f788f5c0535d3a0d1dba04b9d7b62750bab88f080eafba39902cdaeeb154",
+          "pngHash": "b81b139aeeaa9a8c1a4642ec5fbb5cc684d4d671e3353c0cadd069cadce5b941"
+        },
+        "locked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-25k-locked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-25k-locked.png",
+          "svgHash": "b7f0217f61d4fbe89a821fc96783d9dd038280aa804987dd92bb120640500d86",
+          "pngHash": "b343e5091a59b4d173cc56b0bbca7b04a2836fa56384fb97d8da453a9ff83eb9"
+        },
+        "transparent": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-25k-transparent.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-25k-transparent.png",
+          "svgHash": "8c2d85dbcb2771c3716d8c040f66caeeeb3d6f05440d5a171b2f0f6a02c85de4",
+          "pngHash": "9b8541aa1f04926c1f6f87a5479c3ead7e8b904c39393592b22b7fc7dea2030a"
+        }
+      }
+    },
+    {
+      "achievementId": "weekly_30k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-30k-unlocked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-30k-unlocked.png",
+          "svgHash": "86118ea9a3b6a5fa77877872464c7c5faff8fadf189ff25e2d6ae3967c0285d1",
+          "pngHash": "48beefec2f4570bd66f7836a91973e13cbddaa0e1f018be325561bb222d7e572"
+        },
+        "locked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-30k-locked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-30k-locked.png",
+          "svgHash": "b31a4c6b390fd28c73f5f8eac591b5bd23c2c50410e07d617b3c4a433e5a38f7",
+          "pngHash": "aed815f80df02876e730c486b1ca29045332ed09a75eedea1d64d45262a9528a"
+        },
+        "transparent": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-30k-transparent.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-30k-transparent.png",
+          "svgHash": "3f40b4829f36579dedf49518f4bdd6d2176b66fb4809ad54c0963d2d7dff41e7",
+          "pngHash": "1a3bb622ada9516cdc1751e92146cf4d0d91bd2df736416630d1c3cf3013142e"
+        }
+      }
+    },
+    {
+      "achievementId": "weekly_50k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-50k-unlocked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-50k-unlocked.png",
+          "svgHash": "831dead1a6661d8e9605ffd432b6356ebe40e1fb3016a1ee19fd6931b3dcbe21",
+          "pngHash": "ae9e0bb16922b02699d11a156a6536a3526ed6bd497907959ebf047e3e3abf91"
+        },
+        "locked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-50k-locked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-50k-locked.png",
+          "svgHash": "4ecfc0f3542d0ce081e9d8dd5666f7849ca19727f0ffd03391e9133873c230e1",
+          "pngHash": "c1d8660b24b342d9f0811c28ea0a4f3b7d7d02087b917b2dc613ad631c2a78c0"
+        },
+        "transparent": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-50k-transparent.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-50k-transparent.png",
+          "svgHash": "2e617296b4f4cbdc928aef3dde6a8db2cfc4f991ad0c613a8f6814bade7bf5a9",
+          "pngHash": "f3ea4a14b01d317636f3526f698d51ce64ebca97e0bc6998daf0bba90fac276b"
+        }
+      }
+    },
+    {
+      "achievementId": "weekly_75k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-75k-unlocked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-75k-unlocked.png",
+          "svgHash": "c6984c4411d5a767bd18a814fe202695e8531201f498df406f672b52e7299e65",
+          "pngHash": "c3164cff5479358703adf83a339ff9a962710edfc0c49f86adab3e1f5aa7198a"
+        },
+        "locked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-75k-locked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-75k-locked.png",
+          "svgHash": "ff7f01330b3bd2178f40e3feff1ca1aaa97e4e2f39e03903d6c34c0c9b93a9df",
+          "pngHash": "649e29a4981418692a3974d29c6aa1e62858cd73c5c06063e893237d42931374"
+        },
+        "transparent": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-75k-transparent.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-75k-transparent.png",
+          "svgHash": "23b18059e5a099d4bf0b9f7533b552515ecf2f62f151d417d7f44278d32ca225",
+          "pngHash": "b74840c8b3362623a70e1733512cc68018a01d566def93a2ec25225039acdfc5"
+        }
+      }
+    },
+    {
+      "achievementId": "weekly_100k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-100k-unlocked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-100k-unlocked.png",
+          "svgHash": "04c48fd22d8a612fe5f5eb06aef8d2dc6ac4cd5c2c7e63da43d58e83f652483f",
+          "pngHash": "d08201a967c09752713e5db9afa44a7f8b3fbaed178a91f24635ce5c5c63d8a5"
+        },
+        "locked": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-100k-locked.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-100k-locked.png",
+          "svgHash": "4a62886e09ec8d5ce563a2657f71f3e7ffc558d385da3b188bc54cbdd63e9d51",
+          "pngHash": "e1411031439552b72a084b684d9a1c11d12851b08c4250a24a713dc66668261d"
+        },
+        "transparent": {
+          "svg": "assets/achievements/weekly-distance/weekly-distance-100k-transparent.svg",
+          "png": "assets/achievements/weekly-distance/weekly-distance-100k-transparent.png",
+          "svgHash": "d87f7f1dfcd4c5d897507433609130a119dd264c789c798a1d7e03ed5fd65412",
+          "pngHash": "c1c2670e9b2acfe012301041bba32ec5b0d9d0df48ef8a42fc7cb2b9a0b9a982"
+        }
+      }
+    }
+  ]
+}

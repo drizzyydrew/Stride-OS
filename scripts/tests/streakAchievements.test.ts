@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { PNG } from 'pngjs';
@@ -353,7 +353,8 @@ test('streak renderer states preserve alpha, locked hue removal, and opaque pari
   assert.equal(transparent.data[(transparent.width * 512 + 256) * 4 + 3], 0);
 
   const transparentSvg = renderStreakBadgeSvg(150, 'share-transparent');
-  assert.equal(transparentSvg.includes('fill="transparent" fill-opacity="0"'), true);
+  assert.match(transparentSvg, /data-frame="narrow-vertical-hexagon"[^>]*fill="none"/);
+  assert.doesNotMatch(transparentSvg, /<text\b|font-family=/);
   assert.equal(renderStreakBadgeSvg(150, 'share-opaque'), renderStreakBadgeSvg(150, 'unlocked'));
 
   const lockedSvg = renderStreakBadgeSvg(150, 'locked').toLowerCase();
@@ -378,10 +379,20 @@ test('hub exposes streak progress, share eligibility, and correct artwork mappin
   assert.ok(!hub.shareable.some(item => item.id === 'streak_30_day'));
   assert.ok(BUILD57_ACHIEVEMENT_DEFINITIONS.some(item => item.id === 'streak_365_day' && item.category === 'streak'));
 
-  const manifest = JSON.parse(readFileSync('assets/achievements/streaks/manifest.json', 'utf8')) as Array<Record<string, unknown>>;
-  assert.equal(manifest.length, 10);
-  assert.deepEqual(manifest.map(item => item.achievementId), STREAK_ACHIEVEMENTS.map(item => item.id));
-  assert.ok(manifest.every(item => typeof item.artworkPath === 'string' && typeof item.lockedArtworkPath === 'string'));
+  const manifest = JSON.parse(readFileSync('assets/achievements/streaks/manifest.json', 'utf8'));
+  assert.equal(manifest.version, 2);
+  assert.equal(manifest.entries.length, 10);
+  assert.deepEqual(manifest.entries.map((item: { achievementId: string }) => item.achievementId), STREAK_ACHIEVEMENTS.map(item => item.id));
+  assert.deepEqual(manifest.canonicalStates, ['unlocked', 'locked', 'transparent']);
+  assert.deepEqual(manifest.aliases, { 'share-opaque': 'unlocked', 'share-transparent': 'transparent' });
+  for (const item of manifest.entries) for (const state of manifest.canonicalStates) {
+    assert.equal(typeof item.states[state].svg, 'string');
+    assert.equal(typeof item.states[state].png, 'string');
+    assert.equal(existsSync(item.states[state].svg), true);
+    assert.equal(existsSync(item.states[state].png), true);
+    assert.match(item.states[state].svgHash, /^[a-f0-9]{64}$/);
+    assert.match(item.states[state].pngHash, /^[a-f0-9]{64}$/);
+  }
   assert.ok(readFileSync('src/components/achievements/AchievementShareCard.tsx', 'utf8').includes('StreakAchievementShareCard'));
   assert.ok(readFileSync('src/components/achievements/AchievementShareCard.tsx', 'utf8').includes('photo_overlay'));
   assert.ok(readFileSync('src/store/achievementStore.ts', 'utf8').includes('filter(item => !existing.has'));

@@ -1,0 +1,447 @@
+{
+  "version": 2,
+  "family": "lifetime-cycling",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
+  },
+  "entries": [
+    {
+      "achievementId": "lifetime_cycle_10_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-10mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-10mi-unlocked.png",
+          "svgHash": "89bd44c8e0541610b160051e1529ff513bbb3a65835b4766432a561f55a56fca",
+          "pngHash": "09dedeaa97dcb7eebfe1bfaccdde1e739ac5f2b58b23e6b1dd5ff8cedff5edeb"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-10mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-10mi-locked.png",
+          "svgHash": "cabf720662816b3b31c6a527c2cc4c41529da7ecd6e034a55f0b46dd30e34260",
+          "pngHash": "2ea9614b3a197c887c3dba79d8cdb60e8f7225079f4e761363bc24c60a46ae3a"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-10mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-10mi-transparent.png",
+          "svgHash": "c5a120c5fa4b175ad6a3658ea484ced677298562533de01a0566054bcae8073b",
+          "pngHash": "19b91ec4b67f57e6275575baabc3ce2f8716e40e9577073d1416ecaa82befa06"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_10_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-10mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-10mi-unlocked.png",
+          "svgHash": "f87867403b03d79c3bf5faf03130ee296de9c7a06725bf8f45cfb8497c99b01b",
+          "pngHash": "595af51ef67e9b97e78b87c887c6472afe9f5af2b33f50171406ef7ce2a2655a"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-10mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-10mi-locked.png",
+          "svgHash": "0a2b1b40a932389f0e46426ac933aca2a32fa3b69788a2c5fb252a4dfa8f13c8",
+          "pngHash": "1ef671ff432ce997200c3e3139b939a9d96367f747409aeb5bd06295e23bcc61"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-10mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-10mi-transparent.png",
+          "svgHash": "eb2b5dde11ae891544a5b1f9eb9560e3e0cd196c9f4c597b25b223a26824227d",
+          "pngHash": "fa53d85409df3321598d4757cf0f0752167a607b1941201ffecabbdcc8d72dcf"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_50_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-50mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-50mi-unlocked.png",
+          "svgHash": "93e76ae9757f8f094d80ed85cdd56e7ed4edd2a555a9b29a983bd3eac96c62a1",
+          "pngHash": "2725be9d39b22076642bc5f3563462f8a76a2b3cf188e6e21edd5bfa09ea9c91"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-50mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-50mi-locked.png",
+          "svgHash": "327762465e207d33fb2e5a88d9c05387b41506fbfcb9e07daa78f6d2c29b9cec",
+          "pngHash": "ec5b65548f05aef032c919d9a1ab0ba48f833646ada71fb1a4a90f81629d443f"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-50mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-50mi-transparent.png",
+          "svgHash": "d448f65b4d87f2d2e943705ce8c89a5aa3e402502e500f5ae2f8f2fa4e168d40",
+          "pngHash": "c55ac057c7d6ace2941d839986ce52845dd5387ffc03cf28cf9ef98f3b359807"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_50_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-50mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-50mi-unlocked.png",
+          "svgHash": "e391c84c4c28d6a7c449fc01f82b258a7508873d3ccc08b518c46a4b71abf162",
+          "pngHash": "60170bd3c9b0645dc26275f75b157437e71e8c9b3e636640ed529ccf8242936b"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-50mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-50mi-locked.png",
+          "svgHash": "2505895f6a5b1fcdad91c3048b66e1aea694c0585f948e0218352677fe452960",
+          "pngHash": "6c64ae26d7334503a4ae8073dd5168af9417a34615d8e710fdb13dc5600bd1e3"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-50mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-50mi-transparent.png",
+          "svgHash": "8e03cb2301dabf52555326d4a136f7da164319773b71063c450ac402833136ef",
+          "pngHash": "8b55a36a7955a77bb5f8d3df80de513d78ff489b944279ff072bc799d6aafe27"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_100_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-100mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-100mi-unlocked.png",
+          "svgHash": "4c7038387fbd01e5350377ecbeea0833dbc95892919cefb28afa4c31c4316596",
+          "pngHash": "6553c4c2518b93d860041731bc7652c00b90f1c638bbd05bc583a13de1b4576f"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-100mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-100mi-locked.png",
+          "svgHash": "9d62680ee010d5534f8a5f3d5c667bd39bc20a5e4dae510cd54caa465d964416",
+          "pngHash": "80d344202685fae7cb5383e0d739c82800999cc492b2a4094a3e5d755657a1a3"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-100mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-100mi-transparent.png",
+          "svgHash": "37457dce9d697141098c1fa4f6f902f67fae5f055070c35d9ee8286b65160084",
+          "pngHash": "ae7d133ae2456ff1cc47f5b54dd189448826a28a047f5fa0fe1c12c2a36b5eb9"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_100_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-100mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-100mi-unlocked.png",
+          "svgHash": "24494d3e21af5d74f723a21cbc8d29e3f4299f502ed162d25298f13670da07ad",
+          "pngHash": "2812bac12506b831a94c8600729bd4d486117ab72ffbf1d03f14e4ef9a8d4d40"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-100mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-100mi-locked.png",
+          "svgHash": "f74075cecbcf16c75180a3f4fbe04c0502831c005009a6a58a3936a2cfe9a82e",
+          "pngHash": "ba0f3d903d09c33bb61f19cd5a8d046cb47a865ecf0c1b4726027ce08862c201"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-100mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-100mi-transparent.png",
+          "svgHash": "acb098cae13b4286c4f4700995e4261f29cd74ec7d2efbbbe5b975d73b77876b",
+          "pngHash": "6bda385b5adc4a6815e36f670fdfa9e1698c62f21c1a044d2473a0c55bad9804"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_250_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-250mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-250mi-unlocked.png",
+          "svgHash": "ad18bb248536969551867de1dd8750c2d25b00a2ba6f8c5b48f52d5f4e1c6041",
+          "pngHash": "6c62ae377b088a00cf926c03bef08a79543ae0fd21859925735a531d7f199473"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-250mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-250mi-locked.png",
+          "svgHash": "15c50dce76ea0ae6d64ab83d4bef35ebf45426b01e6f1964dc23c00b595843ff",
+          "pngHash": "5035e9a3a6f366a9f4607a3fd4e976f69f2aa5a1605217dbb071bdcec406415d"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-250mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-250mi-transparent.png",
+          "svgHash": "b730e740b45ecb60ef1fbedf83c7facab1aeb63cea7688d4bf6d0b6083a654ba",
+          "pngHash": "31908b4928e9d0d0d651e0e9bfacd523b2e54ff940fcedcbf97d799336e72b65"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_250_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-250mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-250mi-unlocked.png",
+          "svgHash": "f83d9002dd3f01b2bd27eb426393b8d17d2c7ba1a76305c8442aa28f4f694372",
+          "pngHash": "9a0fccd9d868713437a741c708978c1fa2168ed9ed41a176a4c775c91c58fe2e"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-250mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-250mi-locked.png",
+          "svgHash": "756dd127542375523fb5c25f56f480449a2b45fcdd99d42b329652e046395113",
+          "pngHash": "881147f9c8cc60f95d02e6d06741126b989a4bc87f7f07f161eebe28b65f9214"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-250mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-250mi-transparent.png",
+          "svgHash": "c0ac7200d9c1122ead1e20c712b828c72d3199545fefab3e3d852fda34109e4e",
+          "pngHash": "37d821055aafad4cab5bdb64796aa63249a94eeeb70d3b6eaee587f16ed488a9"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_500_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-500mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-500mi-unlocked.png",
+          "svgHash": "0d65ee15c961b88f21c61c27b177a13461f061b72b194328bfe1765f68caee4a",
+          "pngHash": "5b40501e09c0de0e509777bf2de873224dd921fa20094965b2e31471b67e3641"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-500mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-500mi-locked.png",
+          "svgHash": "d6d07db2504ce976456062949865efcb39924ccea4005a3a33cb79a76a3c6005",
+          "pngHash": "a06ad2367d3b4e428f0538a20ca1c3a117cd95cb7e28a604adf79cfcfeb155dc"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-500mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-500mi-transparent.png",
+          "svgHash": "0d9203f761c5a8693760940f5bf1b0c0686ee26681c189a50872ae6e9d2b907e",
+          "pngHash": "b880f9652558c617e80026260f31b297cd99e9e9e7b3c3ec71227ddd71ca9b3d"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_500_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-500mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-500mi-unlocked.png",
+          "svgHash": "6922c6f8d1759e6068a30112afe9b7907b6542786d1c7fdbd8d4f82c0000ee38",
+          "pngHash": "b21f5da84ee7bbc96d40c426dedc3a07ece0abb609112aa1f895ae4bc269a2bb"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-500mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-500mi-locked.png",
+          "svgHash": "5f97cfcf20be5e4aa30b2fa5230aed5978f1f09a09a241956b5acd12f8940e49",
+          "pngHash": "3a09fee7a622cbd663b27ff22f2b82ae166fb3967630a5336ee0c78ee1569106"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-500mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-500mi-transparent.png",
+          "svgHash": "7d206324bae9eee6da88c15cce021fb599a04396ff5d14764d1356e2b2a430de",
+          "pngHash": "7d54e4a149f0f129f061dcb4c29c0f5d4246dc808c347794e9559a0759fd2b29"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_1000_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-1000mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-1000mi-unlocked.png",
+          "svgHash": "1601a2ab65cdcbd01a03b236bff28e1d4158eeee27c07aabf3de86728d45387c",
+          "pngHash": "fa16a013e4726d7c80818c49da67a7ed5cb10ec965eb2c82327db06b53bb2e27"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-1000mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-1000mi-locked.png",
+          "svgHash": "e041b7300ceef713c8fa5429870306cda5038a21dc8a234ea6892ab0e3a9d484",
+          "pngHash": "8f1cb59eca6546f922f720ec96bb58030c2dd748de78d8645ba415bdc643c0ce"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-1000mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-1000mi-transparent.png",
+          "svgHash": "d39c7335ee4e24109dac351b93a0675907930d3245ddaffcbd8081859af7b583",
+          "pngHash": "96c91ae7827b46714ead091dc13c77d3d766dbe9d6ad213e64e4902d2362bbe3"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_1000_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-1000mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-1000mi-unlocked.png",
+          "svgHash": "7463803a6e7352516782d78e057b8ca773131375085c3f28fd2d070befd74977",
+          "pngHash": "c0c2b1fb9d65eb3e6b4fd9152dff6ebf753678c0c46e6d350d69cbceab2367ea"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-1000mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-1000mi-locked.png",
+          "svgHash": "766debaafac77a3fda5467b7afde45f2b9eb3349401707a26145d40c95793ce1",
+          "pngHash": "1fb57032e704086d1b7bc3cf11c1fe61f7ac12d970648877820c71528c772275"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-1000mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-1000mi-transparent.png",
+          "svgHash": "c0776636799bc8981efa8c0f76abc2950fda044d3d4eba33d54b9dc416d000d0",
+          "pngHash": "73105b267610bf7fe5de25aa69fc9b1b32d3e87d1788d2df39e4b033a5009448"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_2500_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-2500mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-2500mi-unlocked.png",
+          "svgHash": "0d069e1463de0216794f47fc4b1efb8433c727a914c64b6f50f2c532e874eedb",
+          "pngHash": "7cef4b7b12b98c514120e85ba771a12debab3403c553efb361db2542d9eccedb"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-2500mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-2500mi-locked.png",
+          "svgHash": "d2a13b0fcf7b6b0949bf9c7ca49324ff737bec734d8d23f987695011c96d1acf",
+          "pngHash": "501a21ac631a4b35e271bf56eb0c43b5d952e3b2b4aabdcbb929ac312f1da6ff"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-2500mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-2500mi-transparent.png",
+          "svgHash": "bb14148d955960c93532c5ff79aa5526935b7d445ad285866c241bc5d5a4b817",
+          "pngHash": "ee3a679099075a3378b4ebb45171035716f63e0a7e9eb6344d61d2eb347ac92c"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_2500_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-2500mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-2500mi-unlocked.png",
+          "svgHash": "250846b7d31e933f6d6b8cdc6e6d71db890b2aae62ee7664376b0f9df1c24766",
+          "pngHash": "4bff490699fae1104241852ac46c5e131c131954f4517f5f8e89e15f581cc4ea"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-2500mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-2500mi-locked.png",
+          "svgHash": "6a970e3e2850b6d5885e5a42fe7ea1feb9aeb19f77e6a79ff1c6c217c9dacdad",
+          "pngHash": "6579e4798b780ac3eaf2989c89fe863488a501836b96b97cee9beb0aa7c11771"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-2500mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-2500mi-transparent.png",
+          "svgHash": "4df3bbed1650a42aabeb4c7d6535dded0323eea93f451c08d739614a9f386db3",
+          "pngHash": "0cc663198e5a5d56064eca584c9689db0c6438a01b41cfd09cc8ec4c3ae88c51"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_5000_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-5000mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-5000mi-unlocked.png",
+          "svgHash": "fa5ff04bd33510ddf10d3c7151a92b05108021b1d9f451593a7a889044a5c25a",
+          "pngHash": "383d47226dd6bc9444b202080478a6cc5776282ad28fba6bea120fe72fd08280"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-5000mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-5000mi-locked.png",
+          "svgHash": "c80972fa56fbbd4f1ffc7ac5035aba67e90c6ea12ee3b0bb5c694e27cb098b2a",
+          "pngHash": "0ab9fad08b30128d8e76573d98368af4eee490becc6b0677dfd7723952238089"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-5000mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-5000mi-transparent.png",
+          "svgHash": "d6729f48a875951037a6aa344285c3ac81c74b64ffea9cad17b2d559af977126",
+          "pngHash": "c2b940fc51f820baa7d743b262119dd6a012eb8cafb637503753a0e5ce6ae57c"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_5000_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-5000mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-5000mi-unlocked.png",
+          "svgHash": "a18492ed0925b6f2d0b2f11a4421db11e5553dcab0daa790a2eb924c516f1f06",
+          "pngHash": "6f3d67fbf586ef118e98d3cf45c87b83ad108640eb07487f45210da2b841ea44"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-5000mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-5000mi-locked.png",
+          "svgHash": "d5cb5a2d59b837a6fd30e0ce7823c3263a438ceda5864e94d01f636330168263",
+          "pngHash": "16b33922ca6d1f9e8adc39b836fe337967f312e363f5070252984544fd2508f0"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-5000mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-5000mi-transparent.png",
+          "svgHash": "37ee4f19c2bb8f129e5753c7e4d4f238a9209eff8f419d9861f921d2d61f0025",
+          "pngHash": "4804437d5a0de4c5ebe91937fc7ab2b555b158aad356df52598a50facc720d17"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_10000_mi",
+      "units": "imperial",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-10000mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-10000mi-unlocked.png",
+          "svgHash": "e391edfb63485187f53d4df8c1f6eb23865b913773dc0d1dda7a316526545329",
+          "pngHash": "57330c8b8e3a1af268dac985baf538da705130a58351d062632e8ec7194746cb"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-10000mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-10000mi-locked.png",
+          "svgHash": "1c5679941516fd55e2744cf522cdafc32cef6cbe04aae627bec62334f79ecc0d",
+          "pngHash": "c2730122167612d45842a7f4352173df021257c45763cbdc72fa78b2e18756e6"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-10000mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/lifetime-cycle-10000mi-transparent.png",
+          "svgHash": "a270eb504677ce36fe932dc87a3a616d3d2276c65b7014a029b6f9916b92c708",
+          "pngHash": "205652b7a2d207230021be80a82615d6775f55464585f4c2daf7db27c1ce2c7f"
+        }
+      }
+    },
+    {
+      "achievementId": "lifetime_cycle_10000_mi",
+      "units": "metric",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-10000mi-unlocked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-10000mi-unlocked.png",
+          "svgHash": "4049ee181cc35396beaf98b73636e1f7c58bb03594080eddb473822f357428b7",
+          "pngHash": "94a88dc44823edd79c297f095d457ca119cb3974911e3a7dadc7d47750156bfb"
+        },
+        "locked": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-10000mi-locked.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-10000mi-locked.png",
+          "svgHash": "5188dd1694eb60acbb1ec118455da72ddddc5011ed463b9979b4ca4f051a05c6",
+          "pngHash": "8121708c10334c01d9a2572b615d90b8c69cd21f93109f17b7b3f3681bfcce26"
+        },
+        "transparent": {
+          "svg": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-10000mi-transparent.svg",
+          "png": "assets/achievements/lifetime-distance-cycling/metric/lifetime-cycle-10000mi-transparent.png",
+          "svgHash": "229250251509c6aa8a7b37a7fb9edfc54b6c06cc32f3876e04c4c7d6043e323a",
+          "pngHash": "e02a06f843aaa4d6422827ddcb34ab8df5f8b6676b83b173b9886d086dfa4dda"
+        }
+      }
+    }
+  ]
+}

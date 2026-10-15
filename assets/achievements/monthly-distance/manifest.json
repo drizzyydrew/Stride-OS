@@ -1,0 +1,176 @@
+{
+  "version": 2,
+  "family": "monthly-distance",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
+  },
+  "entries": [
+    {
+      "achievementId": "monthly_run_25k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-25k-unlocked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-25k-unlocked.png",
+          "svgHash": "a3f10804819f46e90c1b4bf33f2adf3ee47cd766e865a304e2a1a41a5919bc8a",
+          "pngHash": "100761806a9a37c5c5f212b4ac5fe6836a0ab1ab1382896e1c6d44ad3be69e60"
+        },
+        "locked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-25k-locked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-25k-locked.png",
+          "svgHash": "98067eeba845298f09e40eaa7f150ea16619df6a3c69b5aaa4fb40f8db983d57",
+          "pngHash": "573eecde5227c56df79560c7f5c9454924fb1de022e2095c34c8a2ba2375be80"
+        },
+        "transparent": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-25k-transparent.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-25k-transparent.png",
+          "svgHash": "1ebd485ee82e69130006b17b7241e82690bad104d6bdd4d40b84c7c0c5f350fa",
+          "pngHash": "a22efe87a7f77f279392877a8708e7efbcbcbc5f3f4d6b4a4fb531de614fec80"
+        }
+      }
+    },
+    {
+      "achievementId": "monthly_run_50k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-50k-unlocked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-50k-unlocked.png",
+          "svgHash": "db5410e66bd8ae4319aefd055b65770d9a4aecbabe7531fa5b212d31225c5a28",
+          "pngHash": "e667023980b107e786a468cbff295ed925856469d622b100100dda75899587f9"
+        },
+        "locked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-50k-locked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-50k-locked.png",
+          "svgHash": "d75f828057b87e978ca07f6af121cfa21fb542306f62fc11dacaf65c1b6ce505",
+          "pngHash": "72f74d416152069027d5a9214be606b521ab84ad2a5ec59979a92c7f5eb71168"
+        },
+        "transparent": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-50k-transparent.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-50k-transparent.png",
+          "svgHash": "23701a37ecd82bf60806c1b562766e7e5365386613a723fa3856839c029c5fd1",
+          "pngHash": "1d3db7530bdfcb1ea7787a789d6830c30d2e79a6c0bce681b003c519c7d97d6b"
+        }
+      }
+    },
+    {
+      "achievementId": "monthly_run_100k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-100k-unlocked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-100k-unlocked.png",
+          "svgHash": "d7c48b9905c65b84417fe71377a2e08ee958600cb2ab9d1c536cb6b1bb252b2e",
+          "pngHash": "7392286edd7a3ba41cef35962563c43d19233480958d47a61c28f0d4293aa2a8"
+        },
+        "locked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-100k-locked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-100k-locked.png",
+          "svgHash": "a0ce0a06ead04e8aa98486d03db7182aa9f864e5be4b91dc3bcc10e27a5e7d0a",
+          "pngHash": "3a568da6dfe816c8120c71346900a6975e8bc6421836ca3e9d2ed30e0cd726bd"
+        },
+        "transparent": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-100k-transparent.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-100k-transparent.png",
+          "svgHash": "4887658c80232c7d91ef6e6f99930802eac9354cacb4d55beccf3594f16c0ce7",
+          "pngHash": "0c74dcbdf34de84a4a2f7742ebd3235d9b7a737fe670813d6aac7a92698811bb"
+        }
+      }
+    },
+    {
+      "achievementId": "monthly_run_150k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-150k-unlocked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-150k-unlocked.png",
+          "svgHash": "bf5b54f8f3d24401bb95be7692fc5f5c7dae7f3246f3a3b3ba04a2bef414ba4d",
+          "pngHash": "aa43bc054c58dfddbd63a5498a17c505f4152bf4348b03f84717dae9c2ed6030"
+        },
+        "locked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-150k-locked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-150k-locked.png",
+          "svgHash": "0084f745d4d99b567f6882e11cb70992d728de9ba8b81f219012afc1b75803bc",
+          "pngHash": "7a1c7362b4185ec8a9e132744cb250d7527e8310570ea37d614041f0a5cba3e3"
+        },
+        "transparent": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-150k-transparent.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-150k-transparent.png",
+          "svgHash": "47d1ccc8f7bb150a33ca9ea252769e2434e2f3a2abe62fb8404746e41850bd1d",
+          "pngHash": "8289b1433efa9b05689e493647e8ed46f092b6e7535174892705b9ae8a4b8d60"
+        }
+      }
+    },
+    {
+      "achievementId": "monthly_run_200k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-200k-unlocked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-200k-unlocked.png",
+          "svgHash": "6dcad7cbc5e1968d0a81ca07fea41241d4d43b323b57dcee34facd2378caa9ff",
+          "pngHash": "d4db823546ab539dc32167908bd597a3bbaed5c4f81a95144b9b2f5b8f23d43c"
+        },
+        "locked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-200k-locked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-200k-locked.png",
+          "svgHash": "78b06357e6c706e72b6f6974460871e4df47f87184c68a6fd48a798a654b64cb",
+          "pngHash": "3c0845b67d0e38740f9b591075644103a2c4ddf10905371b73e5d340096149c7"
+        },
+        "transparent": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-200k-transparent.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-200k-transparent.png",
+          "svgHash": "cefaaccdfce4ceeb3308bed2e70c9f69e970cc3da82d8501899a99b0ada6cd19",
+          "pngHash": "1e4af2da3f01d2345df38691e27a6ff022f639b78ed863449adeb5a3858b9882"
+        }
+      }
+    },
+    {
+      "achievementId": "monthly_run_250k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-250k-unlocked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-250k-unlocked.png",
+          "svgHash": "20928b9088d04f7c908635dbba09e3928e64e454183619a3a8e911ac7422c83a",
+          "pngHash": "4bdc250db4f04ebfdf038fa4872465b14f11e762acb3ec38f6dd662217f76583"
+        },
+        "locked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-250k-locked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-250k-locked.png",
+          "svgHash": "c1dc650adaf2c7651fe8b95df5a4fae59cb020d03f67ce779fe4378bca72e9e5",
+          "pngHash": "a118aab063673465ea26529d5b3d1274b8d026c5890199ce9448390d9bc944ae"
+        },
+        "transparent": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-250k-transparent.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-250k-transparent.png",
+          "svgHash": "aac21c1407bd0677e1d4501809caa28b588c9901a21e9027c5c30f61ae04e712",
+          "pngHash": "246cbc2762954fb6498b1cd11e650049d36c572852a241116b616f8db9e82d7f"
+        }
+      }
+    },
+    {
+      "achievementId": "monthly_run_300k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-300k-unlocked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-300k-unlocked.png",
+          "svgHash": "a10b0760fd35d5773ae268b422828628e850110e0bcc012b8bbe1ab90a24f5bd",
+          "pngHash": "83a0f8ce704bfcc8b3e42ac6ad7935c1a82e054a12a85ad2ee7d372444dceefe"
+        },
+        "locked": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-300k-locked.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-300k-locked.png",
+          "svgHash": "0d43cb59646e18df2498535592af8bd51cd26ac68ca8f6291f0eacce647879d6",
+          "pngHash": "7ea2baf4f6e401ccdd198b6521db9ae3ec77f33de2f60fbee8ea0c4b63f6decf"
+        },
+        "transparent": {
+          "svg": "assets/achievements/monthly-distance/monthly-distance-300k-transparent.svg",
+          "png": "assets/achievements/monthly-distance/monthly-distance-300k-transparent.png",
+          "svgHash": "e367a404ad7493b3bc4ea35d1551789b4ac99aedb594d9c645fba08655dc883f",
+          "pngHash": "758afdc261ace2fd0fb3aec0a6f6dda2475569a8fa20c664d43ee89b5daa76f5"
+        }
+      }
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import { APPROVED_ARTWORK } from './approvedArtwork';
+import { renderApprovedVector } from '../shared/approvedVector';
 import {
   WEEKLY_DISTANCE_BY_KM,
   normalizeWeeklyDistanceBadgeState,
@@ -78,51 +80,16 @@ export function weeklyDistanceNumberX(text: string): number {
   return 50;
 }
 
-function escapeXml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 export function renderWeeklyDistanceBadgeSvg(
   milestoneKm: WeeklyDistanceMilestoneKm,
   state: WeeklyDistanceBadgeInputState = 'unlocked',
-  options: { compact?: boolean; size?: number; remainingMeters?: number } = {},
+  options: { compact?: boolean; size?: number; remainingMeters?: number; unitSystem?: 'metric' | 'imperial' } = {},
 ): string {
   const definition = WEEKLY_DISTANCE_BY_KM[milestoneKm];
   const visualState = normalizeWeeklyDistanceBadgeState(state);
-  const compact = options.compact ?? false;
-  const size = options.size ?? WEEKLY_DISTANCE_VIEWBOX;
-  const tokens = weeklyDistanceBadgeTokens(definition, visualState);
-  const number = formatWeeklyDistanceBadgeText(definition.thresholdKm);
-  const numberSize = weeklyDistanceNumberFontSize(number, compact);
-  const numberX = weeklyDistanceNumberX(number);
-  const stateForLabel = visualState === 'locked' ? 'locked' : 'earned';
-  const label = weeklyDistanceAchievementAccessibilityLabel(definition, stateForLabel, 'metric', options.remainingMeters ?? 0);
-  const edgeId = `weekly-distance-${definition.slug}-${visualState}-edge`;
-  const glowId = `weekly-distance-${definition.slug}-${visualState}-glow`;
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${WEEKLY_DISTANCE_VIEWBOX} ${WEEKLY_DISTANCE_VIEWBOX}" fill="none" role="img" aria-label="${escapeXml(label)}">
-  <defs>
-    <linearGradient id="${edgeId}" x1="16" y1="10" x2="84" y2="90" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="${tokens.highlight}"/>
-      <stop offset="0.55" stop-color="${tokens.primary}"/>
-      <stop offset="1" stop-color="${tokens.shadow}"/>
-    </linearGradient>
-    <radialGradient id="${glowId}" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 39) rotate(90) scale(34 38)">
-      <stop offset="0" stop-color="${tokens.glow}" stop-opacity="${visualState === 'locked' ? '0.14' : '0.34'}"/>
-      <stop offset="0.62" stop-color="${tokens.glow}" stop-opacity="${visualState === 'transparent' ? '0.04' : '0.12'}"/>
-      <stop offset="1" stop-color="${tokens.glow}" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <path d="${WEEKLY_DISTANCE_HEXAGON_PATH}" fill="${tokens.fill}" fill-opacity="${tokens.fillOpacity}" stroke="url(#${edgeId})" stroke-width="2.35" stroke-linejoin="round" stroke-opacity="${tokens.borderOpacity}"/>
-  <ellipse cx="50" cy="41" rx="30" ry="26" fill="url(#${glowId})" opacity="${tokens.ambientOpacity}"/>
-  ${tokens.keylineOpacity > 0 ? `<text x="${numberX}" y="39.5" text-anchor="middle" dominant-baseline="middle" font-family="${WEEKLY_DISTANCE_NUMBER_FONT}" font-size="${numberSize}" font-weight="400" stroke="#030405" stroke-width="1.1" stroke-opacity="${tokens.keylineOpacity}" fill="none">${escapeXml(number)}</text>` : ''}
-  <text x="${numberX}" y="39.5" text-anchor="middle" dominant-baseline="middle" font-family="${WEEKLY_DISTANCE_NUMBER_FONT}" font-size="${numberSize}" font-weight="400" fill="${tokens.primary}" fill-opacity="${tokens.numberOpacity}">${escapeXml(number)}</text>
-  ${tokens.keylineOpacity > 0 ? `<text x="50" y="56.5" text-anchor="middle" font-family="${WEEKLY_DISTANCE_LABEL_FONT}" font-size="7" font-weight="800" letter-spacing="1.3" stroke="#030405" stroke-width="0.5" stroke-opacity="${tokens.keylineOpacity}" fill="none">WEEK</text>` : ''}
-  <text x="50" y="56.5" text-anchor="middle" font-family="${WEEKLY_DISTANCE_LABEL_FONT}" font-size="7" font-weight="800" letter-spacing="1.3" fill="${tokens.primary}" fill-opacity="${tokens.labelOpacity}">WEEK</text>
-  ${tokens.keylineOpacity > 0 ? `<text x="50" y="67" text-anchor="middle" font-family="${WEEKLY_DISTANCE_LABEL_FONT}" font-size="4.4" font-weight="800" letter-spacing="1.7" stroke="#030405" stroke-width="0.4" stroke-opacity="${tokens.keylineOpacity}" fill="none">STRIDEOS</text>` : ''}
-  <text x="50" y="67" text-anchor="middle" font-family="${WEEKLY_DISTANCE_LABEL_FONT}" font-size="4.4" font-weight="800" letter-spacing="1.7" fill="${tokens.primary}" fill-opacity="${tokens.wordmarkOpacity}">STRIDEOS</text>
-  <path d="M42.6 75.5 L50 80.3 L57.4 75.5" fill="none" stroke="${tokens.primary}" stroke-width="1.22" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${tokens.chevronOpacity}"/>
-  <path d="M43.1 81 L50 85.4 L56.9 81" fill="none" stroke="${tokens.highlight}" stroke-width="1.22" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${tokens.chevronOpacity}"/>
-</svg>
-`;
+  return renderApprovedVector(APPROVED_ARTWORK[definition.id], visualState, {
+    ...options,
+    label: weeklyDistanceAchievementAccessibilityLabel(definition, visualState === 'locked' ? 'locked' : 'earned', options.unitSystem ?? 'metric', options.remainingMeters),
+    namespace: `weekly-${definition.slug}-${visualState}`,
+  });
 }

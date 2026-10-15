@@ -462,7 +462,8 @@ test('Weekly Distance badge identity stays fixed-K while supporting progress fol
   const svg = renderWeeklyDistanceBadgeSvg(25, 'unlocked');
   assert.equal(svg.includes('25K'), true);
   assert.equal(svg.includes('WEEK'), true);
-  assert.equal(svg.includes('PER WEEK'), false);
+  assert.match(svg, /data-lettering="period" data-text="PER WEEK"/);
+  assert.doesNotMatch(svg, /<text\b|font-family=/);
   assert.equal(/\bMI\b|\bKM\b/.test(svg), false);
 });
 
@@ -547,7 +548,8 @@ test('Weekly Distance exports preserve transparent alpha, locked hue removal, no
   const unlockedSvg = readFileSync(path.resolve(process.cwd(), definition.artworkPath), 'utf8');
   const lockedSvg = readFileSync(path.resolve(process.cwd(), definition.lockedArtworkPath), 'utf8').toLowerCase();
   assert.equal(unlockedSvg.includes('WEEK'), true);
-  assert.equal(unlockedSvg.includes('PER WEEK'), false);
+  assert.match(unlockedSvg, /data-lettering="period" data-text="PER WEEK"/);
+  assert.doesNotMatch(unlockedSvg, /<text\b|font-family=/);
   assert.equal(unlockedSvg.includes('M39 65 H73'), false);
   const tierHexes = Object.values(WEEKLY_DISTANCE_TIER_COLORS).flatMap(colors => Object.values(colors).map(value => value.toLowerCase()));
   for (const hex of tierHexes) assert.equal(lockedSvg.includes(hex), false, `${definition.lockedArtworkPath} contains tier hue ${hex}`);
@@ -600,7 +602,8 @@ test('Monthly Distance exports preserve transparent alpha, locked hue removal, a
   const definition = MONTHLY_DISTANCE_DEFINITIONS.find(item => item.thresholdKm === 150)!;
   const transparent = PNG.sync.read(readFileSync(path.resolve(process.cwd(), definition.shareTransparentPngPath)));
   assert.equal(transparent.data[3], 0);
-  assert.equal(transparent.data[(transparent.width * 512 + 512) * 4 + 3], 0);
+  // The approved numeral now ends at baseline 51, so the old center sample is ink.
+  for (const y of [160, 560]) assert.equal(transparent.data[(transparent.width * y + 512) * 4 + 3], 0);
 
   const lockedSvg = readFileSync(path.resolve(process.cwd(), definition.lockedArtworkPath), 'utf8').toLowerCase();
   const tierHexes = Object.values(MONTHLY_DISTANCE_TIER_COLORS).flatMap(colors => Object.values(colors).map(value => value.toLowerCase()));

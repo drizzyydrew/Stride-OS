@@ -1,134 +1,338 @@
-[
-  {
-    "id": "challenge_august_base_builder",
-    "slug": "august-base-builder",
-    "title": "August Base Builder",
-    "glyph": "augustBaseBuilder",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/challenges/challenges-august-base-builder-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/challenges/challenges-august-base-builder-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-august-base-builder-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/challenges/challenges-august-base-builder-transparent.png"
+{
+  "version": 2,
+  "family": "challenges",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
   },
-  {
-    "id": "challenge_september_consistency",
-    "slug": "september-consistency",
-    "title": "September Consistency Challenge",
-    "glyph": "septemberConsistency",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/challenges/challenges-september-consistency-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/challenges/challenges-september-consistency-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-september-consistency-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/challenges/challenges-september-consistency-transparent.png"
-  },
-  {
-    "id": "challenge_winter_strength_block",
-    "slug": "winter-strength-block",
-    "title": "Winter Strength Block",
-    "glyph": "winterStrengthBlock",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/challenges/challenges-winter-strength-block-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/challenges/challenges-winter-strength-block-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-winter-strength-block-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/challenges/challenges-winter-strength-block-transparent.png"
-  },
-  {
-    "id": "challenge_spring_mileage_build",
-    "slug": "spring-mileage-build",
-    "title": "Spring Mileage Build",
-    "glyph": "springMileageBuild",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/challenges/challenges-spring-mileage-build-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/challenges/challenges-spring-mileage-build-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-spring-mileage-build-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/challenges/challenges-spring-mileage-build-transparent.png"
-  },
-  {
-    "id": "challenge_summer_long_run",
-    "slug": "summer-long-run",
-    "title": "Summer Long Run Challenge",
-    "glyph": "summerLongRun",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/challenges/challenges-summer-long-run-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/challenges/challenges-summer-long-run-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-summer-long-run-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/challenges/challenges-summer-long-run-transparent.png"
-  },
-  {
-    "id": "challenge_elevation_month",
-    "slug": "elevation-month",
-    "title": "Elevation Month",
-    "glyph": "elevationMonth",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/challenges/challenges-elevation-month-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/challenges/challenges-elevation-month-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-elevation-month-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/challenges/challenges-elevation-month-transparent.png"
-  },
-  {
-    "id": "challenge_5k_month",
-    "slug": "5k-month",
-    "title": "5K Month",
-    "glyph": "numericBadge",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/challenges/challenges-5k-month-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/challenges/challenges-5k-month-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-5k-month-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/challenges/challenges-5k-month-transparent.png"
-  },
-  {
-    "id": "weekly_25k",
-    "slug": "25k-week",
-    "title": "25K Week",
-    "glyph": "numericBadge",
-    "includeInGlobalRegistry": false,
-    "artworkPath": "assets/achievements/challenges/challenges-25k-week-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/challenges/challenges-25k-week-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-25k-week-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/challenges/challenges-25k-week-transparent.png"
-  },
-  {
-    "id": "monthly_run_50k",
-    "slug": "50k-month",
-    "title": "50K Month",
-    "glyph": "numericBadge",
-    "includeInGlobalRegistry": false,
-    "artworkPath": "assets/achievements/challenges/challenges-50k-month-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/challenges/challenges-50k-month-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-50k-month-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/challenges/challenges-50k-month-transparent.png"
-  },
-  {
-    "id": "monthly_run_100k",
-    "slug": "100k-month",
-    "title": "100K Month",
-    "glyph": "numericBadge",
-    "includeInGlobalRegistry": false,
-    "artworkPath": "assets/achievements/challenges/challenges-100k-month-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/challenges/challenges-100k-month-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-100k-month-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/challenges/challenges-100k-month-transparent.png"
-  },
-  {
-    "id": "strength_run_week_completed",
-    "slug": "strength-run",
-    "title": "Strength + Run Challenge",
-    "glyph": "strengthRun",
-    "includeInGlobalRegistry": false,
-    "artworkPath": "assets/achievements/challenges/challenges-strength-run-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/challenges/challenges-strength-run-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-strength-run-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/challenges/challenges-strength-run-transparent.png"
-  },
-  {
-    "id": "recovery_check_in_streak",
-    "slug": "recovery-consistency",
-    "title": "Recovery Consistency Challenge",
-    "glyph": "recoveryConsistency",
-    "includeInGlobalRegistry": false,
-    "artworkPath": "assets/achievements/challenges/challenges-recovery-consistency-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/challenges/challenges-recovery-consistency-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/challenges/challenges-recovery-consistency-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/challenges/challenges-recovery-consistency-transparent.png"
+  "entries": [
+    {
+      "achievementId": "challenge_august_base_builder",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-august-base-builder-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-august-base-builder-unlocked.png",
+          "svgHash": "b607310fce34ccb691e309786e94b6d83a3521958e35675989f8301bc45cb9d0",
+          "pngHash": "1a97b625d2faf168ab78a383f1fad90ed3d88f58977575937dd1c98230a354c1"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-august-base-builder-locked.svg",
+          "png": "assets/achievements/challenges/challenges-august-base-builder-locked.png",
+          "svgHash": "6b348070ff5230871611bdfc2cf343436062d0e5ecf87070c24d068d8b6ca11e",
+          "pngHash": "c5a081f4c6acd1977d3174dcc6a1120347083baf1f0b491775a9a1e55bc1279d"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-august-base-builder-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-august-base-builder-transparent.png",
+          "svgHash": "a2843bc0597e9d858af0b13c09f944779b34b66e77f1ad4ee76e8e30df0d2e40",
+          "pngHash": "8fc5c0e4c2c754c1ec45859e5683e4e31f4bad8d5fdf82906f0e501fd12c4b71"
+        }
+      }
+    },
+    {
+      "achievementId": "challenge_september_consistency",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-september-consistency-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-september-consistency-unlocked.png",
+          "svgHash": "7e71e830614297a89caa75e8f468d396e3b1643411ae1bbead56b14279339cf5",
+          "pngHash": "832ad76bf9b63853a5bf85ef6f44198f3833067d009cf909f2025e9660bf1ddc"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-september-consistency-locked.svg",
+          "png": "assets/achievements/challenges/challenges-september-consistency-locked.png",
+          "svgHash": "7b633e48e6a8c728ad6ec0cd1bee3004a06dd121a9430cc49a5d9a74aff2e89a",
+          "pngHash": "fc98def44c61283595c2580ea54b50f32c73a82e5bc55e016be670efc4c73cff"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-september-consistency-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-september-consistency-transparent.png",
+          "svgHash": "a9ee6a43c59be33d327d0af3e8b05804aa2faab428d389a58742e4d2ce8eb247",
+          "pngHash": "02a9d61eb2df422f13018212de7221128eb7625519fefe460b6b7a9c1144c376"
+        }
+      }
+    },
+    {
+      "achievementId": "challenge_winter_strength_block",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-winter-strength-block-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-winter-strength-block-unlocked.png",
+          "svgHash": "910cec2dcb13471ed0069d2cb14e401641a322420b12645ce3b20fcae0c511a5",
+          "pngHash": "07ee455790f6aa2f402da09500b7d4a86a9479c362ee874bfca811b6e3e13b0b"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-winter-strength-block-locked.svg",
+          "png": "assets/achievements/challenges/challenges-winter-strength-block-locked.png",
+          "svgHash": "6f4d03b80c086a9972fdbcd3f161e8a96feb00942cc71054dcf386904e7c31df",
+          "pngHash": "eda63a1c1ba4dbc8b89e20376b5046e6ebe53ae355fec3f0194e025416adb8db"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-winter-strength-block-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-winter-strength-block-transparent.png",
+          "svgHash": "56c3a54eb4f59831cf18447dab0d91bb834558c175fd54d473c61801e582d91d",
+          "pngHash": "3cccd0623dec711ce1bc0848e1681cbd33aef1eb2e57e7d5fe9ada9cde544f4c"
+        }
+      }
+    },
+    {
+      "achievementId": "challenge_spring_mileage_build",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-spring-mileage-build-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-spring-mileage-build-unlocked.png",
+          "svgHash": "2db7f77298b05aa9289a7c3ffe4b3134bc7f89b43a9ece4a553c931662474cb8",
+          "pngHash": "36a49c6f979975ca5cad01364d8025a10a10b80a77233401b3c665a432e39ce7"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-spring-mileage-build-locked.svg",
+          "png": "assets/achievements/challenges/challenges-spring-mileage-build-locked.png",
+          "svgHash": "71b8aa539213110cf5a86fac8691b28490ecc64dd261f496199fb89950bfe798",
+          "pngHash": "01fa5cb8737b2506697d329a1e602d0aa71d42d090f9ce1652901df7b51894bd"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-spring-mileage-build-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-spring-mileage-build-transparent.png",
+          "svgHash": "089307df448f77402c71cb7e38089899b2a5bc69de567a1b6d41f3b6083081f9",
+          "pngHash": "ced55c7eda557de992f1a8568faf64b2807bb605a21c36abcd87c52c9a269364"
+        }
+      }
+    },
+    {
+      "achievementId": "challenge_summer_long_run",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-summer-long-run-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-summer-long-run-unlocked.png",
+          "svgHash": "a854f94e0315f2529503212794111728fbf1ab6e63aa5e079c25fa2ca2c51b3a",
+          "pngHash": "d21c7193172722a0e7a5079800e2d5f0e566419f43d63d93416adf615c6bbc14"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-summer-long-run-locked.svg",
+          "png": "assets/achievements/challenges/challenges-summer-long-run-locked.png",
+          "svgHash": "490497736ba931319eb2ede433916126c298c91d746d81ef08793df001aebc2a",
+          "pngHash": "1c70ffb0fde51a06f3bb1897aab7d318c651a265685b5422306196d229553d94"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-summer-long-run-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-summer-long-run-transparent.png",
+          "svgHash": "fb9bf8f0542d6c4866f02e37dce43e4033bc1a2baf992334d7bf5c7aa56bfbbc",
+          "pngHash": "2bbb42708738dc42027b21501c9fde05e32b4d86a400fefb22e7d3c0209ab47f"
+        }
+      }
+    },
+    {
+      "achievementId": "challenge_elevation_month",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-elevation-month-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-elevation-month-unlocked.png",
+          "svgHash": "3c8a771239a6cf536005e7f62f49d5465f987d94041106a41370b908218715d2",
+          "pngHash": "cfae24ad46c9f1a4dff62893d202e6f0ad97fe017e2f2af9e861c53935dc5338"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-elevation-month-locked.svg",
+          "png": "assets/achievements/challenges/challenges-elevation-month-locked.png",
+          "svgHash": "77af4faca998ceff6c8e96d0d634529fcec91f12343c6f110619649f1ec5dcca",
+          "pngHash": "3662cc4e79477164a3b263db01574089250726fb8bf3d92b451a748f994b4fa9"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-elevation-month-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-elevation-month-transparent.png",
+          "svgHash": "52a669bfb7e76f2e6e13401213787e0832c802345b715ceb84abfbaceee127d0",
+          "pngHash": "c22bca771a285c58c9a106954cd1744fa7ff7d06bbd3b247cd94879ae6076184"
+        }
+      }
+    },
+    {
+      "achievementId": "weekly_25k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-25k-week-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-25k-week-unlocked.png",
+          "svgHash": "5c9c53ac041e9a945ee45dc04c09273f2a69a1f169e55caada9248dd2a3748ab",
+          "pngHash": "047e20046c80c5070123a4027ea432b319cbf241dc1f2172708c2c13615d3327"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-25k-week-locked.svg",
+          "png": "assets/achievements/challenges/challenges-25k-week-locked.png",
+          "svgHash": "83de4898aed63dc5406905a7392cfb59088745092a3590666b953dbb9f5d7195",
+          "pngHash": "d00a207d0901bb9df83ff646c4c096d9a3f224ba42f3b35a59aaec83fa070581"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-25k-week-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-25k-week-transparent.png",
+          "svgHash": "5bcf622c89e0564d8444e2e151d2e72a7a4b41caca72a258e4b75bd0b04dccd4",
+          "pngHash": "ea37fdf63de76fc64b0f3f360d0d13e5a7096aef67de8116f750b78775f494a3"
+        }
+      }
+    },
+    {
+      "achievementId": "monthly_run_50k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-50k-month-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-50k-month-unlocked.png",
+          "svgHash": "bb270944df6043e8c6790b93224df8a5ebd8c45c9240296b21bbc797bb81229e",
+          "pngHash": "0746204eda84626ab3f7d9931bb2c03dc2ce7724d31b8124f5ec23fc14f7e8ee"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-50k-month-locked.svg",
+          "png": "assets/achievements/challenges/challenges-50k-month-locked.png",
+          "svgHash": "31d7945f056c8c7a82a5aab95dffb83a7bb89fac6bd8ab5e4945cf7c46a0f8cf",
+          "pngHash": "16c08ae594f4f32e37d37f6495f99eaa9f4fe5ef195149cb61b0360919eb6287"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-50k-month-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-50k-month-transparent.png",
+          "svgHash": "31190101b031f5f39cdb876dcccfa1de829b7d744f8f3163a6dad6ed02b56e01",
+          "pngHash": "c600a5e0841576b506a18802da53f70ed0cc0bc74109d7bcad590b7613bed856"
+        }
+      }
+    },
+    {
+      "achievementId": "monthly_run_100k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-100k-month-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-100k-month-unlocked.png",
+          "svgHash": "15a270748dc98039763dd863885d26905a8686756aa98d708c94e69950a31d36",
+          "pngHash": "c9a8e0bca8a7c95657e704997f57d5de28c29433f7219b6271e3f901063473f4"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-100k-month-locked.svg",
+          "png": "assets/achievements/challenges/challenges-100k-month-locked.png",
+          "svgHash": "1963e801338fef3b29e9e9003c9980af0d6c9e5042d35767ce3cfc6488d42ae5",
+          "pngHash": "08065a1e6d01791031986475155b5d6d821e20986c5730f2a2371b9b9ace6ec2"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-100k-month-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-100k-month-transparent.png",
+          "svgHash": "3f94fcc99a5b4919aa16724b7c4e36200e6cb5c781086640ebcd7faeb0881199",
+          "pngHash": "40127f3cdab8771d5243d68695b601634c235cc3af830df3e42c205a82ae7dde"
+        }
+      }
+    },
+    {
+      "achievementId": "monthly_run_150k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-150k-month-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-150k-month-unlocked.png",
+          "svgHash": "824c3b09436abb775bb23a5c851450e4c5e65b1fb883dbd659123d763f9cd830",
+          "pngHash": "084bc887aafcdc09561a1261f84c2dbc3e84dce89010e4b6fcdfd29819614c5b"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-150k-month-locked.svg",
+          "png": "assets/achievements/challenges/challenges-150k-month-locked.png",
+          "svgHash": "fa65e8bb78648d9238679ef33ac1f1005ec36f6caddc930e69fada487d334314",
+          "pngHash": "40529d47446ff220fa56abe6f97a3cdd496af5db6b376aee184f3c4994c920e7"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-150k-month-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-150k-month-transparent.png",
+          "svgHash": "89cbf63ee0c8d72bc8ae4ad149ac617144093c96b911e7cceb3337dd547a968e",
+          "pngHash": "8f105794a4f607564720cb3d413329fb2cd2887d3f1b6efb4b8d50bc861d7ecd"
+        }
+      }
+    },
+    {
+      "achievementId": "monthly_run_200k",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-200k-month-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-200k-month-unlocked.png",
+          "svgHash": "05b7ffef7b6005b8b16a3b72ed147cf0abaa6314057474f149ed3f0a80a0b639",
+          "pngHash": "102cde165b854354dd265ee95d5cd1d714867531bcda3ae2a70e6d4952ab49c0"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-200k-month-locked.svg",
+          "png": "assets/achievements/challenges/challenges-200k-month-locked.png",
+          "svgHash": "fd61793d418d19762bd34a69869f18c89073e936bdd1f171de4aa186b3406d9d",
+          "pngHash": "ef60a1a8b7778fdbd0f4ccb9f6318d0cdd4e5bb2ae3b7cff09fc7a7fc35257a4"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-200k-month-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-200k-month-transparent.png",
+          "svgHash": "f1d3ee7ca05096fb754bcbed1f9141bab08f69a2b328db650a0d24e206fa87a2",
+          "pngHash": "01b53073f6d2a7e90fee48967db537c30d9554aa160d08fc84d92de15b550a79"
+        }
+      }
+    },
+    {
+      "achievementId": "strength_run_week_completed",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-strength-run-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-strength-run-unlocked.png",
+          "svgHash": "cc59d62d499d3a163e20ae3e149cea85b34c6dba39da2a6ce17459bdc63a11ec",
+          "pngHash": "f557fbef39b4857a11ef5185407f165416f15e1fb4b3060a2e99963a0050d3ce"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-strength-run-locked.svg",
+          "png": "assets/achievements/challenges/challenges-strength-run-locked.png",
+          "svgHash": "d04d95972e630eedc0108edd9e5c8e6b72555635d44d5bf2d63020cb374f29ae",
+          "pngHash": "553ecee1539843bab15b0b7a9dfbb4d9330b87ed3914185fadc4df7605ca8e41"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-strength-run-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-strength-run-transparent.png",
+          "svgHash": "4f1e9c1035903ba562276960f61c5a15f49db3242385885cfa0bb700c6387532",
+          "pngHash": "d7e6f915e87e52e47a3ee4e1f539115f9ac9be11af546f325128f2a130dc1af2"
+        }
+      }
+    },
+    {
+      "achievementId": "recovery_check_in_streak",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/challenges/challenges-recovery-consistency-unlocked.svg",
+          "png": "assets/achievements/challenges/challenges-recovery-consistency-unlocked.png",
+          "svgHash": "ab14f69615944bad852923c90aa930a1dbd5317176fafb07c2c04ea68c816a33",
+          "pngHash": "c39f8991b11a9a0ebb9bf9dad86fb4bae0a5a9b9e495cabadc72ae3ae8a8d1b1"
+        },
+        "locked": {
+          "svg": "assets/achievements/challenges/challenges-recovery-consistency-locked.svg",
+          "png": "assets/achievements/challenges/challenges-recovery-consistency-locked.png",
+          "svgHash": "d6cb4d8f42cc12f650a29ee306a4a07fa4468963461b0c6865458a0a9dd2d242",
+          "pngHash": "5846d608af631b6ec9c03fc6ea2af2a1ceda154aaa1538d9a7a8cd7dd2f7ced0"
+        },
+        "transparent": {
+          "svg": "assets/achievements/challenges/challenges-recovery-consistency-transparent.svg",
+          "png": "assets/achievements/challenges/challenges-recovery-consistency-transparent.png",
+          "svgHash": "154fcb14bd114a134368802dbf2d5f6978257085c18f26c510370456ffd57aef",
+          "pngHash": "42826aa7dbec5911f590fe8e1216197d549d183c4662f7bdd0d2523d0978cdf6"
+        }
+      }
+    }
+  ],
+  "legacy": {
+    "achievementId": "challenge_5k_month",
+    "presentation": "legacy; existing award and history preserved",
+    "states": {
+      "unlocked": {
+        "svg": "assets/achievements/challenges/challenges-5k-month-unlocked.svg",
+        "png": "assets/achievements/challenges/challenges-5k-month-unlocked.png",
+        "svgHash": "f5cd2576d9974ffdf186c23f1374a3a9a66cab95466f5d02c7738c22bc71720c",
+        "pngHash": "11acadf78f8a9e4c73dbc0d55d4093df62024ba37919725bad1a281765967a90"
+      },
+      "locked": {
+        "svg": "assets/achievements/challenges/challenges-5k-month-locked.svg",
+        "png": "assets/achievements/challenges/challenges-5k-month-locked.png",
+        "svgHash": "158fdf814a7fc3d3b01a40882efd9e47e0e97032fc8204f121592aee9d0db0f6",
+        "pngHash": "273c887192afbb8ef18823d312e79a3a74878d90888fb10b8d38872d3495316a"
+      },
+      "transparent": {
+        "svg": "assets/achievements/challenges/challenges-5k-month-transparent.svg",
+        "png": "assets/achievements/challenges/challenges-5k-month-transparent.png",
+        "svgHash": "2bbc532669cf9569f965fe4d1f790738605f766d9cd4fda4f80e685fe82c8b78",
+        "pngHash": "a4d0f73170529cdd5e8382ba9ef8326d03be5ac6afbcd051102ee170a7f7e4c2"
+      }
+    }
   }
-]
+}

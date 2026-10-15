@@ -1,3 +1,5 @@
+import { APPROVED_ARTWORK } from './approvedArtwork';
+import { renderApprovedVector } from '../shared/approvedVector';
 import type { UnitSystem } from '../../store/settingsStore';
 import {
   LIFETIME_DISTANCE_RUNNING_BY_MILESTONE,
@@ -91,53 +93,17 @@ export function lifetimeDistanceRunningNumberX(text: string): number {
 
 export const LIFETIME_DISTANCE_RUNNING_NUMBER_Y = 44;
 
-function escapeXml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 export function renderLifetimeDistanceRunningBadgeSvg(
   milestone: LifetimeDistanceRunningMilestone,
   state: LifetimeDistanceRunningBadgeInputState = 'unlocked',
   options: { unitSystem?: UnitSystem; compact?: boolean; size?: number; remainingMeters?: number } = {},
 ): string {
   const definition = LIFETIME_DISTANCE_RUNNING_BY_MILESTONE[milestone];
+  const units = options.unitSystem ?? 'imperial';
   const visualState = normalizeLifetimeDistanceRunningBadgeState(state);
-  const unitSystem = options.unitSystem ?? 'imperial';
-  const compact = options.compact ?? false;
-  const size = options.size ?? LIFETIME_DISTANCE_RUNNING_VIEWBOX;
-  const tokens = lifetimeDistanceRunningBadgeTokens(definition, visualState);
-  const number = formatLifetimeRunningMilestoneNumber(definition.thresholdMiles, unitSystem);
-  const unit = lifetimeRunningUnitLabel(unitSystem);
-  const numberSize = lifetimeDistanceRunningNumberFontSize(number, compact);
-  const numberX = lifetimeDistanceRunningNumberX(number);
-  const stateForLabel = visualState === 'locked' ? 'locked' : 'earned';
-  const label = lifetimeRunningAchievementAccessibilityLabel(definition, stateForLabel, unitSystem, options.remainingMeters ?? 0);
-  const edgeId = `lifetime-run-${definition.slug}-${visualState}-${unit}-edge`;
-  const glowId = `lifetime-run-${definition.slug}-${visualState}-${unit}-glow`;
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${LIFETIME_DISTANCE_RUNNING_VIEWBOX} ${LIFETIME_DISTANCE_RUNNING_VIEWBOX}" fill="none" role="img" aria-label="${escapeXml(label)}">
-  <defs>
-    <linearGradient id="${edgeId}" x1="17" y1="14" x2="84" y2="88" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="${tokens.highlight}"/>
-      <stop offset="0.52" stop-color="${tokens.primary}"/>
-      <stop offset="1" stop-color="${tokens.shadow}"/>
-    </linearGradient>
-    <radialGradient id="${glowId}" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 42) rotate(90) scale(32 35)">
-      <stop offset="0" stop-color="${tokens.glow}" stop-opacity="${visualState === 'locked' ? '0.18' : '0.38'}"/>
-      <stop offset="0.55" stop-color="${tokens.glow}" stop-opacity="${visualState === 'transparent' ? '0.05' : '0.13'}"/>
-      <stop offset="1" stop-color="${tokens.glow}" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <path d="${LIFETIME_DISTANCE_RUNNING_DIAMOND_PATH}" fill="${tokens.fill}" fill-opacity="${tokens.fillOpacity}" stroke="url(#${edgeId})" stroke-width="2.2" stroke-linejoin="round" stroke-opacity="${tokens.borderOpacity}"/>
-  <ellipse cx="50" cy="43" rx="30" ry="25" fill="url(#${glowId})" opacity="${tokens.ambientOpacity}"/>
-  ${tokens.keylineOpacity > 0 ? `<text x="${numberX}" y="${LIFETIME_DISTANCE_RUNNING_NUMBER_Y}" text-anchor="middle" dominant-baseline="middle" font-family="${LIFETIME_DISTANCE_RUNNING_NUMBER_FONT}" font-size="${numberSize}" font-weight="400" stroke="#030405" stroke-width="1.1" stroke-opacity="${tokens.keylineOpacity}" fill="none">${escapeXml(number)}</text>` : ''}
-  <text x="${numberX}" y="${LIFETIME_DISTANCE_RUNNING_NUMBER_Y}" text-anchor="middle" dominant-baseline="middle" font-family="${LIFETIME_DISTANCE_RUNNING_NUMBER_FONT}" font-size="${numberSize}" font-weight="400" fill="${tokens.primary}" fill-opacity="${tokens.numberOpacity}">${escapeXml(number)}</text>
-  ${tokens.keylineOpacity > 0 ? `<text x="50" y="58.5" text-anchor="middle" font-family="${LIFETIME_DISTANCE_RUNNING_LABEL_FONT}" font-size="7.4" font-weight="800" letter-spacing="1.4" stroke="#030405" stroke-width="0.5" stroke-opacity="${tokens.keylineOpacity}" fill="none">${unit}</text>` : ''}
-  <text x="50" y="58.5" text-anchor="middle" font-family="${LIFETIME_DISTANCE_RUNNING_LABEL_FONT}" font-size="7.4" font-weight="800" letter-spacing="1.4" fill="${tokens.primary}" fill-opacity="${tokens.unitOpacity}">${unit}</text>
-  ${tokens.keylineOpacity > 0 ? `<text x="50" y="68.5" text-anchor="middle" font-family="${LIFETIME_DISTANCE_RUNNING_LABEL_FONT}" font-size="4.4" font-weight="800" letter-spacing="1.7" stroke="#030405" stroke-width="0.4" stroke-opacity="${tokens.keylineOpacity}" fill="none">STRIDEOS</text>` : ''}
-  <text x="50" y="68.5" text-anchor="middle" font-family="${LIFETIME_DISTANCE_RUNNING_LABEL_FONT}" font-size="4.4" font-weight="800" letter-spacing="1.7" fill="${tokens.primary}" fill-opacity="${tokens.wordmarkOpacity}">STRIDEOS</text>
-  <path d="M42.5 76.8 L50 81.9 L57.5 76.8" fill="none" stroke="${tokens.primary}" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${tokens.chevronOpacity}"/>
-  <path d="M43 82.7 L50 87.2 L57 82.7" fill="none" stroke="${tokens.highlight}" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${tokens.chevronOpacity}"/>
-</svg>
-`;
+  return renderApprovedVector(APPROVED_ARTWORK[`${definition.id}:${units}`], visualState, {
+    ...options,
+    label: lifetimeRunningAchievementAccessibilityLabel(definition, visualState === 'locked' ? 'locked' : 'earned', units, options.remainingMeters),
+    namespace: `lifetime-running-${definition.slug}-${units}-${visualState}`,
+  });
 }

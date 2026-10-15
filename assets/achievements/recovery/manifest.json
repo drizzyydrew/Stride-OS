@@ -1,72 +1,176 @@
-[
-  {
-    "id": "recovery_week_completed",
-    "slug": "week-completed",
-    "title": "Recovery Week Completed",
-    "glyph": "recoveryWeek",
-    "artworkPath": "assets/achievements/recovery/recovery-week-completed-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/recovery/recovery-week-completed-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-week-completed-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/recovery/recovery-week-completed-transparent.png"
+{
+  "version": 2,
+  "family": "recovery",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
   },
-  {
-    "id": "recovery_sleep_consistency",
-    "slug": "sleep-consistency",
-    "title": "Sleep Consistency Achieved",
-    "glyph": "sleepCycle",
-    "artworkPath": "assets/achievements/recovery/recovery-sleep-consistency-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/recovery/recovery-sleep-consistency-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-sleep-consistency-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/recovery/recovery-sleep-consistency-transparent.png"
-  },
-  {
-    "id": "recovery_smart_rest_day",
-    "slug": "smart-rest-day",
-    "title": "Smart Rest Day",
-    "glyph": "smartRest",
-    "artworkPath": "assets/achievements/recovery/recovery-smart-rest-day-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/recovery/recovery-smart-rest-day-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-smart-rest-day-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/recovery/recovery-smart-rest-day-transparent.png"
-  },
-  {
-    "id": "recovery_readiness_respected",
-    "slug": "readiness-respected",
-    "title": "Readiness Respected",
-    "glyph": "readinessHammock",
-    "artworkPath": "assets/achievements/recovery/recovery-readiness-respected-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/recovery/recovery-readiness-respected-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-readiness-respected-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/recovery/recovery-readiness-respected-transparent.png"
-  },
-  {
-    "id": "recovery_symptoms_reported_early",
-    "slug": "symptoms-reported-early",
-    "title": "Symptoms Reported Early",
-    "glyph": "symptomsSignal",
-    "artworkPath": "assets/achievements/recovery/recovery-symptoms-reported-early-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/recovery/recovery-symptoms-reported-early-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-symptoms-reported-early-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/recovery/recovery-symptoms-reported-early-transparent.png"
-  },
-  {
-    "id": "recovery_check_in_streak",
-    "slug": "check-in-streak",
-    "title": "Check-In Streak",
-    "glyph": "checkInRipples",
-    "artworkPath": "assets/achievements/recovery/recovery-check-in-streak-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/recovery/recovery-check-in-streak-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-check-in-streak-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/recovery/recovery-check-in-streak-transparent.png"
-  },
-  {
-    "id": "recovery_returned_gradually",
-    "slug": "returned-gradually",
-    "title": "Returned Gradually",
-    "glyph": "returnedGradually",
-    "artworkPath": "assets/achievements/recovery/recovery-returned-gradually-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/recovery/recovery-returned-gradually-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/recovery/recovery-returned-gradually-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/recovery/recovery-returned-gradually-transparent.png"
-  }
-]
+  "entries": [
+    {
+      "achievementId": "recovery_week_completed",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/recovery/recovery-week-completed-unlocked.svg",
+          "png": "assets/achievements/recovery/recovery-week-completed-unlocked.png",
+          "svgHash": "0348d80ed52b13d5899fea28e81eaeb8ff6ecf1c8fc98cf7098e477c1a80ac4d",
+          "pngHash": "0d8a30f517c14566cdfb39f009e31743ad0e4516fa14c07dd6b094b2ebe47200"
+        },
+        "locked": {
+          "svg": "assets/achievements/recovery/recovery-week-completed-locked.svg",
+          "png": "assets/achievements/recovery/recovery-week-completed-locked.png",
+          "svgHash": "797e090a0c016671c6d285cb281b715c18ed11d53de18246029b69739d9c08b4",
+          "pngHash": "ded08d0610ed458c6a6242ac19697eba2655173b3225b8418542f0d2ff13791b"
+        },
+        "transparent": {
+          "svg": "assets/achievements/recovery/recovery-week-completed-transparent.svg",
+          "png": "assets/achievements/recovery/recovery-week-completed-transparent.png",
+          "svgHash": "caca8fb50757d7f567d00e2348ba2b9a5673c072642e1a4c9b7de58e10e7e31d",
+          "pngHash": "ef43b9b0d28fa698e2e4b8dc40a51db7208a95244c09111cfa0e61d8107c4fbb"
+        }
+      }
+    },
+    {
+      "achievementId": "recovery_sleep_consistency",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/recovery/recovery-sleep-consistency-unlocked.svg",
+          "png": "assets/achievements/recovery/recovery-sleep-consistency-unlocked.png",
+          "svgHash": "f3f06e0c9ee0705860f70685a4ae6e5ae81cc4255d731a4e66076ad58b5c59c3",
+          "pngHash": "09d723f76641883c8531eb381dcd00f2fc07a960b1682ce1c48129cfcf818dee"
+        },
+        "locked": {
+          "svg": "assets/achievements/recovery/recovery-sleep-consistency-locked.svg",
+          "png": "assets/achievements/recovery/recovery-sleep-consistency-locked.png",
+          "svgHash": "18fc8234d23e3f1d4969edf03b622bfd6d8b4834afd711d32a0dda16ef6bfcc2",
+          "pngHash": "0b3f048db215f53cd87160c310626492e18f7dcef2a544d5553b93a14faf4fb8"
+        },
+        "transparent": {
+          "svg": "assets/achievements/recovery/recovery-sleep-consistency-transparent.svg",
+          "png": "assets/achievements/recovery/recovery-sleep-consistency-transparent.png",
+          "svgHash": "ffcf8105cf09c68380019cde6a5e39b2cd5fdd9790fc2d31fa328c2addd42c3d",
+          "pngHash": "6865c1ace58fb472a02ea18b8fadd4b4432de9bef11f652fb9b4ff3cfdfc7da9"
+        }
+      }
+    },
+    {
+      "achievementId": "recovery_smart_rest_day",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/recovery/recovery-smart-rest-day-unlocked.svg",
+          "png": "assets/achievements/recovery/recovery-smart-rest-day-unlocked.png",
+          "svgHash": "9a23cf746c74eef6c2c50706d2e61629389ad6ef8ea7c819c7cd7179adeffa24",
+          "pngHash": "27968a5fc5acd3d6a37b570d2f28e9680172f25d543872777b9ae4bbc8e0626d"
+        },
+        "locked": {
+          "svg": "assets/achievements/recovery/recovery-smart-rest-day-locked.svg",
+          "png": "assets/achievements/recovery/recovery-smart-rest-day-locked.png",
+          "svgHash": "829870f89477a9022d30d6af1eb07daefff697af53b15b7d32b45e7c79cc097c",
+          "pngHash": "c51b43aa035aaff42326d81e5cf32de63e473eb96daf5f086009e6a106246ed1"
+        },
+        "transparent": {
+          "svg": "assets/achievements/recovery/recovery-smart-rest-day-transparent.svg",
+          "png": "assets/achievements/recovery/recovery-smart-rest-day-transparent.png",
+          "svgHash": "7571f7ed62bd6e060ad73f48ed0e275ccb78501fb901a09cf07ee5cc6ffd0d5c",
+          "pngHash": "b0a0f464ad8bdb66273f19f80bb819e603ca07d896e9e7842235be4a6400afc7"
+        }
+      }
+    },
+    {
+      "achievementId": "recovery_readiness_respected",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/recovery/recovery-readiness-respected-unlocked.svg",
+          "png": "assets/achievements/recovery/recovery-readiness-respected-unlocked.png",
+          "svgHash": "d17a97fe4b87a01aea04dfe7ae5481c41414b6a925b748b1ad16ecde5e007753",
+          "pngHash": "7ea9890103f1b8becba58b243991e8ef9efdf18bc3772c2e2d26989f57a2b0ac"
+        },
+        "locked": {
+          "svg": "assets/achievements/recovery/recovery-readiness-respected-locked.svg",
+          "png": "assets/achievements/recovery/recovery-readiness-respected-locked.png",
+          "svgHash": "6d0ae79e134853f67d8e8990e541a4a248e0eb80b72718a7c671d705561e9dae",
+          "pngHash": "4c017e475db8964d02c0dc9b81da11335d7b2b5a2482432eef92c101c8d5d5ca"
+        },
+        "transparent": {
+          "svg": "assets/achievements/recovery/recovery-readiness-respected-transparent.svg",
+          "png": "assets/achievements/recovery/recovery-readiness-respected-transparent.png",
+          "svgHash": "dd04e62449263a907bbd8c6e42ff74f23ca453aed3dcfcf27bb20f64d5c7cec8",
+          "pngHash": "7107136171ddd001aff0fe0dd4b6e632b55a1bbd01990d82de5476dd8d8efeb1"
+        }
+      }
+    },
+    {
+      "achievementId": "recovery_symptoms_reported_early",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/recovery/recovery-symptoms-reported-early-unlocked.svg",
+          "png": "assets/achievements/recovery/recovery-symptoms-reported-early-unlocked.png",
+          "svgHash": "9c6f81184f4e65d410a810d0a1baa1ed90805297d3c27e62a452fb70813bdcec",
+          "pngHash": "d59da23b24d089124216516199a70e933dc93c6c36ae30329b17698065ee3e31"
+        },
+        "locked": {
+          "svg": "assets/achievements/recovery/recovery-symptoms-reported-early-locked.svg",
+          "png": "assets/achievements/recovery/recovery-symptoms-reported-early-locked.png",
+          "svgHash": "ff7c7d336d658f4572a06f35fa3f0d5d65d3c617ba9502af68da00c351dc556d",
+          "pngHash": "b9498d29d2a1f54091147616e16b0a8ab14fdd3267d13f560450b8b8b826e025"
+        },
+        "transparent": {
+          "svg": "assets/achievements/recovery/recovery-symptoms-reported-early-transparent.svg",
+          "png": "assets/achievements/recovery/recovery-symptoms-reported-early-transparent.png",
+          "svgHash": "b21e601f3e936fcce3b3f5c0e6fc53d35a045427ffcfe246253d1eeaf018742b",
+          "pngHash": "33234e8c88d7fcad29be38372c38f0fb8dda70ff128173a3702376d0675e5ab2"
+        }
+      }
+    },
+    {
+      "achievementId": "recovery_check_in_streak",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/recovery/recovery-check-in-streak-unlocked.svg",
+          "png": "assets/achievements/recovery/recovery-check-in-streak-unlocked.png",
+          "svgHash": "93e1b22ad4d3b5c727ed09ff3f36912b4b5845a7085fc11bf9414f204376ba01",
+          "pngHash": "d09901bab9102c27a022ca651f61c16de7cae4512a457b0824dc102bee3be53e"
+        },
+        "locked": {
+          "svg": "assets/achievements/recovery/recovery-check-in-streak-locked.svg",
+          "png": "assets/achievements/recovery/recovery-check-in-streak-locked.png",
+          "svgHash": "f0f01af5c077045619d95ca0acfd6383bcb9fe41b2fa6cfb17f847e92144a3eb",
+          "pngHash": "1bcae00ca58726b8c805a1fba608cba9db83c3e954c93a068435ff13de598986"
+        },
+        "transparent": {
+          "svg": "assets/achievements/recovery/recovery-check-in-streak-transparent.svg",
+          "png": "assets/achievements/recovery/recovery-check-in-streak-transparent.png",
+          "svgHash": "06a2e13658c56b1868790de5206f691f91a7d988e00704a86bd45d0390b001d1",
+          "pngHash": "e77282eb36c1db737457f02e695d5818052dea1c5ec67619a6fec020ce9a25e9"
+        }
+      }
+    },
+    {
+      "achievementId": "recovery_returned_gradually",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/recovery/recovery-returned-gradually-unlocked.svg",
+          "png": "assets/achievements/recovery/recovery-returned-gradually-unlocked.png",
+          "svgHash": "5533763a0a7407012379f5850e97704290ab2e34755672db35ebebde52d37f66",
+          "pngHash": "e0307946ebbc4184097bda96904c0bbe3c9ef27c110338a62b99417a3bdbf98a"
+        },
+        "locked": {
+          "svg": "assets/achievements/recovery/recovery-returned-gradually-locked.svg",
+          "png": "assets/achievements/recovery/recovery-returned-gradually-locked.png",
+          "svgHash": "e394868551a2f92e782c65dd9b1eb631e98e096f3166d2368bcc821ffe44a2b4",
+          "pngHash": "9869bf55888d514b7d2a684a83e3b4326846544a348cbfb71519200cf234fef8"
+        },
+        "transparent": {
+          "svg": "assets/achievements/recovery/recovery-returned-gradually-transparent.svg",
+          "png": "assets/achievements/recovery/recovery-returned-gradually-transparent.png",
+          "svgHash": "0d57b3de653229a9ee258d0db3b04dda4228a00344f8ed2cb24e968a95fdf3c5",
+          "pngHash": "b6de133262ff2358377b2e81fc515cbaae18b4b8f4f5a1dec742c546a994c3d2"
+        }
+      }
+    }
+  ]
+}

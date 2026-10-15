@@ -1,112 +1,245 @@
-[
-  {
-    "id": "first_strength_session",
-    "slug": "first-strength-session",
-    "title": "First Strength Session",
-    "glyph": "sessionDumbbell",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/strength/strength-first-strength-session-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/strength/strength-first-strength-session-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/strength/strength-first-strength-session-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/strength/strength-first-strength-session-transparent.png"
+{
+  "version": 2,
+  "family": "strength",
+  "canonicalStates": [
+    "unlocked",
+    "locked",
+    "transparent"
+  ],
+  "aliases": {
+    "share-opaque": "unlocked",
+    "share-transparent": "transparent"
   },
-  {
-    "id": "strength_10_sessions",
-    "slug": "10-sessions",
-    "title": "10 Strength Sessions",
-    "glyph": "sessionDumbbell",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/strength/strength-10-sessions-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/strength/strength-10-sessions-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/strength/strength-10-sessions-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/strength/strength-10-sessions-transparent.png"
-  },
-  {
-    "id": "strength_25_sessions",
-    "slug": "25-sessions",
-    "title": "25 Strength Sessions",
-    "glyph": "sessionDumbbell",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/strength/strength-25-sessions-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/strength/strength-25-sessions-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/strength/strength-25-sessions-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/strength/strength-25-sessions-transparent.png"
-  },
-  {
-    "id": "strength_50_sessions",
-    "slug": "50-sessions",
-    "title": "50 Strength Sessions",
-    "glyph": "sessionDumbbell",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/strength/strength-50-sessions-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/strength/strength-50-sessions-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/strength/strength-50-sessions-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/strength/strength-50-sessions-transparent.png"
-  },
-  {
-    "id": "strength_100_sessions",
-    "slug": "100-sessions",
-    "title": "100 Strength Sessions",
-    "glyph": "sessionDumbbell",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/strength/strength-100-sessions-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/strength/strength-100-sessions-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/strength/strength-100-sessions-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/strength/strength-100-sessions-transparent.png"
-  },
-  {
-    "id": "strength_6_weeks_consistent",
-    "slug": "6-weeks-consistent",
-    "title": "6 Weeks Consistent Strength",
-    "glyph": "consistentWeeks",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/strength/strength-6-weeks-consistent-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/strength/strength-6-weeks-consistent-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/strength/strength-6-weeks-consistent-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/strength/strength-6-weeks-consistent-transparent.png"
-  },
-  {
-    "id": "strength_12_weeks_consistent",
-    "slug": "12-weeks-consistent",
-    "title": "12 Weeks Consistent Strength",
-    "glyph": "consistentWeeks",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/strength/strength-12-weeks-consistent-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/strength/strength-12-weeks-consistent-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/strength/strength-12-weeks-consistent-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/strength/strength-12-weeks-consistent-transparent.png"
-  },
-  {
-    "id": "strength_run_week_completed",
-    "slug": "strength-run-week",
-    "title": "Strength + Run Week",
-    "glyph": "strengthRunWeek",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/strength/strength-strength-run-week-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/strength/strength-strength-run-week-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/strength/strength-strength-run-week-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/strength/strength-strength-run-week-transparent.png"
-  },
-  {
-    "id": "first_structured_workout",
-    "slug": "first-structured-workout",
-    "title": "First Structured Workout",
-    "glyph": "structuredWorkout",
-    "includeInGlobalRegistry": false,
-    "artworkPath": "assets/achievements/strength/strength-first-structured-workout-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/strength/strength-first-structured-workout-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/strength/strength-first-structured-workout-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/strength/strength-first-structured-workout-transparent.png"
-  },
-  {
-    "id": "prehab_resilience_block",
-    "slug": "prehab-resilience",
-    "title": "Prehab & Resilience",
-    "glyph": "prehabResilience",
-    "includeInGlobalRegistry": true,
-    "artworkPath": "assets/achievements/strength/strength-prehab-resilience-unlocked.svg",
-    "lockedArtworkPath": "assets/achievements/strength/strength-prehab-resilience-locked.svg",
-    "shareTransparentSvgPath": "assets/achievements/strength/strength-prehab-resilience-transparent.svg",
-    "shareTransparentPngPath": "assets/achievements/strength/strength-prehab-resilience-transparent.png"
-  }
-]
+  "entries": [
+    {
+      "achievementId": "first_strength_session",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/strength/strength-first-strength-session-unlocked.svg",
+          "png": "assets/achievements/strength/strength-first-strength-session-unlocked.png",
+          "svgHash": "802ca1984952d06b3bfe619e0bffa9c602d75703a77f173dd30179247646c56b",
+          "pngHash": "49efee068df5cda25d92bd1a452b7667f89fc26d6b9eb84bfead3d1711003e45"
+        },
+        "locked": {
+          "svg": "assets/achievements/strength/strength-first-strength-session-locked.svg",
+          "png": "assets/achievements/strength/strength-first-strength-session-locked.png",
+          "svgHash": "bf6dc307df4a3543b801879dc34ad0be71848e57149bc6abeadeba19ce678716",
+          "pngHash": "8132bd94d3c0cd5b736e335519433463a824a0ac8c36f7758791d8b5d2a7d85a"
+        },
+        "transparent": {
+          "svg": "assets/achievements/strength/strength-first-strength-session-transparent.svg",
+          "png": "assets/achievements/strength/strength-first-strength-session-transparent.png",
+          "svgHash": "76d8385e059a0b4032127fcc7c1b6734264c480a24a7544d5198a01535e28b4e",
+          "pngHash": "6cadc7382308800851b8bcdb3fe16c3d375756693eccd8408532b8dffe4489c4"
+        }
+      }
+    },
+    {
+      "achievementId": "strength_10_sessions",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/strength/strength-10-sessions-unlocked.svg",
+          "png": "assets/achievements/strength/strength-10-sessions-unlocked.png",
+          "svgHash": "0c29e3295b8171a689576d0158e7b0e383eb1600b52b12728100fb5f26a29916",
+          "pngHash": "5fa3fbc2e1ffa1a54c38306db67f24d3cf516fb1150278032d8b5c31fc9f86fe"
+        },
+        "locked": {
+          "svg": "assets/achievements/strength/strength-10-sessions-locked.svg",
+          "png": "assets/achievements/strength/strength-10-sessions-locked.png",
+          "svgHash": "1c77569064eb2e7644325c7035d63add9c950331f8f6ceacff832d14067a4b68",
+          "pngHash": "fd11e0a6aee3dea2ae39541ea65d1c92de9613e4a6abd6b8383cbf46b0057c86"
+        },
+        "transparent": {
+          "svg": "assets/achievements/strength/strength-10-sessions-transparent.svg",
+          "png": "assets/achievements/strength/strength-10-sessions-transparent.png",
+          "svgHash": "83a33a2b16344ea95cd4d4a50801c242bc5e01d0bd67f7ae9d13a85179de60d9",
+          "pngHash": "310b94475060d58084379ea694ec8a2db94656f3838ca225c66ebcfdeb11ecb6"
+        }
+      }
+    },
+    {
+      "achievementId": "strength_25_sessions",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/strength/strength-25-sessions-unlocked.svg",
+          "png": "assets/achievements/strength/strength-25-sessions-unlocked.png",
+          "svgHash": "350494d2a429da38ddaa18366349a2efe09c68cb41d39e95f83a0bff383534cd",
+          "pngHash": "0ffb648ae2e7b4093c46e53d95eabc2292898a7241c710bff210227bb5c84848"
+        },
+        "locked": {
+          "svg": "assets/achievements/strength/strength-25-sessions-locked.svg",
+          "png": "assets/achievements/strength/strength-25-sessions-locked.png",
+          "svgHash": "aa4d2893731e0073ed19cd7f55a8f91223a577a08a257c2f3083e99255fbf5a1",
+          "pngHash": "53c0ae5f0e63b8dd678e1292204bbf01f8f7226a855021bf9804d2b9d0234576"
+        },
+        "transparent": {
+          "svg": "assets/achievements/strength/strength-25-sessions-transparent.svg",
+          "png": "assets/achievements/strength/strength-25-sessions-transparent.png",
+          "svgHash": "cb3e3c90c3d04a4e68f0ca16b2181f77bbc24a0f09311a357819c2c3008a8a6f",
+          "pngHash": "7ee5ebac64f8dcd8337c558dde9eae27fa5aeea77fd229e24bc9e79702966c13"
+        }
+      }
+    },
+    {
+      "achievementId": "strength_50_sessions",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/strength/strength-50-sessions-unlocked.svg",
+          "png": "assets/achievements/strength/strength-50-sessions-unlocked.png",
+          "svgHash": "ceb9778911977cf8ba8152279cb7428a315f2fb9841b00178c9daa886aac1486",
+          "pngHash": "5963bdb632c22e15782280fac81f43a88f6f2c371de58d785bcd8f54f395a668"
+        },
+        "locked": {
+          "svg": "assets/achievements/strength/strength-50-sessions-locked.svg",
+          "png": "assets/achievements/strength/strength-50-sessions-locked.png",
+          "svgHash": "4c3c93718d5819eabcea02efaf639ef421c77e2e232d6fae0f0bed261b9f2820",
+          "pngHash": "4103e626348e96a36d33e572deec2b8b50b01f68340c91a8cf7a652af751ab02"
+        },
+        "transparent": {
+          "svg": "assets/achievements/strength/strength-50-sessions-transparent.svg",
+          "png": "assets/achievements/strength/strength-50-sessions-transparent.png",
+          "svgHash": "4a4e2aa2900244383a3888ca0a1eb5a81c08a5a6b3705d899bbb54ce19f75727",
+          "pngHash": "3954cdd6c5530fb65deb2eb069f613032ede14cdcd0018b4ff01b192fd6cdf87"
+        }
+      }
+    },
+    {
+      "achievementId": "strength_100_sessions",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/strength/strength-100-sessions-unlocked.svg",
+          "png": "assets/achievements/strength/strength-100-sessions-unlocked.png",
+          "svgHash": "081ce38f10cf252ca1fec558cd587beb542efe2efee5880d53c3cdf5edf06a2d",
+          "pngHash": "2b8a8ccaf5d32b560e9d7d948722790116208288fd439fa80e31128aed2a5db8"
+        },
+        "locked": {
+          "svg": "assets/achievements/strength/strength-100-sessions-locked.svg",
+          "png": "assets/achievements/strength/strength-100-sessions-locked.png",
+          "svgHash": "d2b9bf053fb20f8ec3972478b8382fa7fae58f159f589ac3f5d1c3a0cd4100ea",
+          "pngHash": "6de409ce3d361ce99b1bb6b5d279c401e5ca3d656c707128cb10ffd6e9bae052"
+        },
+        "transparent": {
+          "svg": "assets/achievements/strength/strength-100-sessions-transparent.svg",
+          "png": "assets/achievements/strength/strength-100-sessions-transparent.png",
+          "svgHash": "133bc5b02b6c5698c85f3b432f1c8af5d1658d30b290825666cffe40a6fc9237",
+          "pngHash": "c48e1514e912fcc27c4b6f1f01b7e5dae169cf58d3194fcdb693f05c3583ffc4"
+        }
+      }
+    },
+    {
+      "achievementId": "strength_6_weeks_consistent",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/strength/strength-6-weeks-consistent-unlocked.svg",
+          "png": "assets/achievements/strength/strength-6-weeks-consistent-unlocked.png",
+          "svgHash": "02c0bceff733bdd9141bf9a376fd3b68e8924a4549b0a5eaf8f02a69d0d3028e",
+          "pngHash": "ef09504ee062e2c1a8675231137f8a8e49999eda546e6049e5457142c004d89f"
+        },
+        "locked": {
+          "svg": "assets/achievements/strength/strength-6-weeks-consistent-locked.svg",
+          "png": "assets/achievements/strength/strength-6-weeks-consistent-locked.png",
+          "svgHash": "80799d92fa51b7f1d423693c88717d7df7deaad469e78410b06a4270bccaa825",
+          "pngHash": "894b83df166b9e131e55cb3ce1994bf55bb075fe221989e7098b43f6a6e08610"
+        },
+        "transparent": {
+          "svg": "assets/achievements/strength/strength-6-weeks-consistent-transparent.svg",
+          "png": "assets/achievements/strength/strength-6-weeks-consistent-transparent.png",
+          "svgHash": "92da946ee7f240546a1b7adb29af4752c0eaea8ae827bed433a573c253de48ae",
+          "pngHash": "7c35b2ff454f9f2d77ef449498911fa4de56f384560a63531ff64b655b504d36"
+        }
+      }
+    },
+    {
+      "achievementId": "strength_12_weeks_consistent",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/strength/strength-12-weeks-consistent-unlocked.svg",
+          "png": "assets/achievements/strength/strength-12-weeks-consistent-unlocked.png",
+          "svgHash": "428fd72db573c6472d531de65fff82d23bfe979ae66db2d5dca70d718cfaf148",
+          "pngHash": "01816b561cda5e7d4b1c1fc94b319ba05865f29578aaae19976626667997b786"
+        },
+        "locked": {
+          "svg": "assets/achievements/strength/strength-12-weeks-consistent-locked.svg",
+          "png": "assets/achievements/strength/strength-12-weeks-consistent-locked.png",
+          "svgHash": "8dafd032f001a5c8f40a0e5f9d2b4483ef001d5dc48d965e1c29f66c409e1c4e",
+          "pngHash": "2aed5d89ac992c4fe37886931f5002694f959f32b3dea415bc825563df77cee7"
+        },
+        "transparent": {
+          "svg": "assets/achievements/strength/strength-12-weeks-consistent-transparent.svg",
+          "png": "assets/achievements/strength/strength-12-weeks-consistent-transparent.png",
+          "svgHash": "cecf1d4c01f819c0c9904be11aa065a9825a64c81ad56e69236fa0166ede0b5c",
+          "pngHash": "274a99ba85723b6ede4b5d24e66bcf4856952636af897ea578af009adf31a531"
+        }
+      }
+    },
+    {
+      "achievementId": "strength_run_week_completed",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/strength/strength-strength-run-week-unlocked.svg",
+          "png": "assets/achievements/strength/strength-strength-run-week-unlocked.png",
+          "svgHash": "6979e5ef854b83092a4e82fcc478dc1dd843ace662197b80907260d149ead1bf",
+          "pngHash": "fa8d5ec88ca23e198584f8c8e4234ee0fc2b259c2aa8876b82ebe2e688065006"
+        },
+        "locked": {
+          "svg": "assets/achievements/strength/strength-strength-run-week-locked.svg",
+          "png": "assets/achievements/strength/strength-strength-run-week-locked.png",
+          "svgHash": "a09205e1c833d2d774cab9ea9e4919b84a1715adf194007ceaa79f82b8abd591",
+          "pngHash": "2781ace7a05c2fea0728f373b19b0656d54b7357bf1911d4a02a6957f64d7342"
+        },
+        "transparent": {
+          "svg": "assets/achievements/strength/strength-strength-run-week-transparent.svg",
+          "png": "assets/achievements/strength/strength-strength-run-week-transparent.png",
+          "svgHash": "5a8ef6b37acfefc3c7443601f4fb140edba6293a4dc2b0d4c9377cacb42d20dc",
+          "pngHash": "6baa93ce21d44183abdb38731ec45b1391181d316f52035fd45431b99cde9f59"
+        }
+      }
+    },
+    {
+      "achievementId": "first_structured_workout",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/strength/strength-first-structured-workout-unlocked.svg",
+          "png": "assets/achievements/strength/strength-first-structured-workout-unlocked.png",
+          "svgHash": "4c913b4d30402ba5c1e4b7599b9a8085442a5792dd620701fd414a88eb80c94c",
+          "pngHash": "0a537e137ae41b644a42ac7c2ba4bd5206e27f7096b2f7d4d894ec85a97236f2"
+        },
+        "locked": {
+          "svg": "assets/achievements/strength/strength-first-structured-workout-locked.svg",
+          "png": "assets/achievements/strength/strength-first-structured-workout-locked.png",
+          "svgHash": "72a883b6d561d032a9e7f7c28c052376473cb1ca6da4a1fbc14c04f6f1373968",
+          "pngHash": "a135ffc61019663b4a6f46098b1f686e9b507502a660272acf8937b93e2be1d9"
+        },
+        "transparent": {
+          "svg": "assets/achievements/strength/strength-first-structured-workout-transparent.svg",
+          "png": "assets/achievements/strength/strength-first-structured-workout-transparent.png",
+          "svgHash": "5ac180d01b269d07b2105b193bd254d1753ca9f5f8c5da99d7e3db0d65260eec",
+          "pngHash": "7d66a7b6c0462792d48979b42608c122a7050b1df3499ca3c22997c4956f31cd"
+        }
+      }
+    },
+    {
+      "achievementId": "prehab_resilience_block",
+      "states": {
+        "unlocked": {
+          "svg": "assets/achievements/strength/strength-prehab-resilience-unlocked.svg",
+          "png": "assets/achievements/strength/strength-prehab-resilience-unlocked.png",
+          "svgHash": "f42e4acb6bdec9c731c760033c2673563f110435eee0e53600dc2632d6473c86",
+          "pngHash": "d2d0f47647df9ddb132a003141a6b396e2122160452ce365109be5a771377c90"
+        },
+        "locked": {
+          "svg": "assets/achievements/strength/strength-prehab-resilience-locked.svg",
+          "png": "assets/achievements/strength/strength-prehab-resilience-locked.png",
+          "svgHash": "a9a8e592bd53ab337b618c9b7d78e1ce9df87215d7b6076ab52f67dfb604572e",
+          "pngHash": "c4cf83438ec0eaa584d6f2460e640ac6f42f365d47ea9f425c6fc8b9470a46b1"
+        },
+        "transparent": {
+          "svg": "assets/achievements/strength/strength-prehab-resilience-transparent.svg",
+          "png": "assets/achievements/strength/strength-prehab-resilience-transparent.png",
+          "svgHash": "ac431fa586342377890484ff7392a61e07ed3114993c32f8b0e47606311cab17",
+          "pngHash": "a75041f7a3c99994d11bc478083b9b8435490756384f0635a5784f276c4354f3"
+        }
+      }
+    }
+  ]
+}

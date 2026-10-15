@@ -11,6 +11,8 @@ export type ChallengeAchievementId =
   | 'weekly_25k'
   | 'monthly_run_50k'
   | 'monthly_run_100k'
+  | 'monthly_run_150k'
+  | 'monthly_run_200k'
   | 'strength_run_week_completed'
   | 'recovery_check_in_streak';
 
@@ -249,8 +251,30 @@ export const CHALLENGE_ACHIEVEMENT_DEFINITIONS: ChallengeAchievementDefinition[]
   }),
 ];
 
+// Additional presentations reuse Monthly awards. The legacy 5K ID remains
+// addressable and earnable under its existing rule, but is not in this gallery.
+export const CHALLENGE_PRESENTATION_DEFINITIONS: ChallengeAchievementDefinition[] = [
+  ...CHALLENGE_ACHIEVEMENT_DEFINITIONS.filter(definition => !['challenge_5k_month', 'strength_run_week_completed', 'recovery_check_in_streak'].includes(definition.id)),
+  ...([150, 200] as const).map(kilometers => makeDefinition({
+    id: `monthly_run_${kilometers}k`,
+    slug: `${kilometers}k-month`,
+    title: `${kilometers}K Month`,
+    compactTitle: `${kilometers}K Month`,
+    titleLines: [`${kilometers}K`, 'MONTH'],
+    badgeNumber: `${kilometers}K`,
+    badgeUnit: 'MONTH',
+    glyph: 'numericBadge',
+    colorToken: kilometers === 150 ? 'challenge150kMonth' : 'challenge200kMonth',
+    description: `Complete ${kilometers} kilometers of running within a calendar month.`,
+    criteria: `Same criteria as the canonical Monthly Distance ${kilometers}K achievement — Challenges presentation only.`,
+    tier: kilometers === 150 ? 11 : 12,
+    includeInGlobalRegistry: false,
+  })),
+  ...CHALLENGE_ACHIEVEMENT_DEFINITIONS.filter(definition => definition.id === 'strength_run_week_completed' || definition.id === 'recovery_check_in_streak'),
+];
+
 export const CHALLENGE_ACHIEVEMENT_BY_ID = Object.fromEntries(
-  CHALLENGE_ACHIEVEMENT_DEFINITIONS.map(definition => [definition.id, definition]),
+  [...CHALLENGE_ACHIEVEMENT_DEFINITIONS, ...CHALLENGE_PRESENTATION_DEFINITIONS].map(definition => [definition.id, definition]),
 ) as Record<ChallengeAchievementId, ChallengeAchievementDefinition>;
 
 export const CHALLENGE_REGISTRY_DEFINITIONS = CHALLENGE_ACHIEVEMENT_DEFINITIONS.filter(

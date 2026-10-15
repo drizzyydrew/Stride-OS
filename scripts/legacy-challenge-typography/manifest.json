@@ -1,0 +1,156 @@
+{
+  "revision": "c8e90c6",
+  "sources": {
+    "assets/achievements/challenges/challenges-5k-month-unlocked.svg": "43bc3a59b75550287abf875dfed333574434d99ecc6b915590fdf98ae25126fe",
+    "assets/achievements/challenges/challenges-5k-month-unlocked.png": "6519d8f9b83643d05238ba1d361204348cee272c2b4ff192956bf2df240a2cfa",
+    "assets/achievements/challenges/challenges-5k-month-locked.svg": "076130590c014439cd6d8fd10e4b4255f578fb87c5b3a6799e3cc4d40339a6e6",
+    "assets/achievements/challenges/challenges-5k-month-locked.png": "51a6d1ff439a74c00a3b6fc25739db78f19903304a90fc476f601a805719153c",
+    "assets/achievements/challenges/challenges-5k-month-transparent.svg": "1a47aa7e3ebb22cea62ca21569f0958d76680bd7caea060de01538a471861e33",
+    "assets/achievements/challenges/challenges-5k-month-transparent.png": "27afef5bea20c7a00638f68fade1d0094b77f99632f6a310ff92070f7b75ed32"
+  },
+  "entries": [
+    {
+      "key": "number",
+      "text": "5K",
+      "attributes": {
+        "x": "50",
+        "y": "46",
+        "text-anchor": "middle",
+        "font-family": "'Avenir Next', Inter, Arial, sans-serif",
+        "font-size": "20",
+        "font-weight": "800",
+        "fill": "#F0C1DF",
+        "fill-opacity": "0.96"
+      },
+      "checkpointInkBounds4096": [
+        1507,
+        1304,
+        2688,
+        1902
+      ],
+      "anchorTranslation": [
+        0.62255859375,
+        0.01220703125
+      ]
+    },
+    {
+      "key": "unit",
+      "text": "MONTH",
+      "attributes": {
+        "x": "50",
+        "y": "55.5",
+        "text-anchor": "middle",
+        "font-family": "'Avenir Next', Inter, Arial, sans-serif",
+        "font-size": "6.4",
+        "font-weight": "900",
+        "letter-spacing": "0.9",
+        "fill": "#F0C1DF",
+        "fill-opacity": "0.96"
+      },
+      "checkpointInkBounds4096": [
+        1491,
+        2082,
+        2669,
+        2280
+      ],
+      "anchorTranslation": [
+        0.78125,
+        0.01220703125
+      ]
+    },
+    {
+      "key": "title0",
+      "text": "5K",
+      "attributes": {
+        "x": "50",
+        "y": "68.5",
+        "text-anchor": "middle",
+        "font-family": "'Avenir Next', Inter, Arial, sans-serif",
+        "font-size": "5.5",
+        "font-weight": "900",
+        "letter-spacing": "0.28",
+        "fill": "#F0C1DF",
+        "fill-opacity": "0.96"
+      },
+      "checkpointInkBounds4096": [
+        1893,
+        2645,
+        2230,
+        2811
+      ],
+      "anchorTranslation": [
+        0.1708984375,
+        -0.01220703125
+      ]
+    },
+    {
+      "key": "title1",
+      "text": "MONTH",
+      "attributes": {
+        "x": "50",
+        "y": "75.1",
+        "text-anchor": "middle",
+        "font-family": "'Avenir Next', Inter, Arial, sans-serif",
+        "font-size": "5.5",
+        "font-weight": "900",
+        "letter-spacing": "0.28",
+        "fill": "#F0C1DF",
+        "fill-opacity": "0.96"
+      },
+      "checkpointInkBounds4096": [
+        1611,
+        2912,
+        2543,
+        3082
+      ],
+      "anchorTranslation": [
+        0.7080078125,
+        0.01220703125
+      ]
+    },
+    {
+      "key": "wordmark",
+      "text": "STRIDEOS",
+      "attributes": {
+        "x": "50",
+        "y": "77.2",
+        "text-anchor": "middle",
+        "font-family": "'Avenir Next', Inter, Arial, sans-serif",
+        "font-size": "3.6",
+        "font-weight": "900",
+        "letter-spacing": "1.45",
+        "fill": "#F0C1DF",
+        "fill-opacity": "0.76"
+      },
+      "checkpointInkBounds4096": [
+        1473,
+        3055,
+        2649,
+        3166
+      ],
+      "anchorTranslation": [
+        0.32958984375,
+        0.0244140625
+      ]
+    }
+  ],
+  "font": {
+    "path": "/System/Library/Fonts/Avenir Next.ttc",
+    "sha256": "98dec241f3ee712a37fad61aafdb83e225ed54c3e5b6e9f0abeb24eba13743ba"
+  },
+  "resolvedFonts": {
+    "number": "AvenirNext-Heavy",
+    "unit": "AvenirNext-Heavy",
+    "title0": "AvenirNext-Heavy",
+    "title1": "AvenirNext-Heavy",
+    "wordmark": "AvenirNext-Heavy"
+  },
+  "advances": {
+    "number": 29.259999999999998,
+    "unit": 29.558400000000002,
+    "title0": 8.326499999999998,
+    "title1": 23.428,
+    "wordmark": 28.7044
+  },
+  "engine": "system CoreText CTLine/CTFont glyph paths; tooling only"
+}

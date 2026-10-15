@@ -202,7 +202,8 @@ test('Recovery renderer states preserve one geometry and remove hue when locked'
     for (const word of definition.titleLines.join(' ').split(' ')) {
       assert.equal(unlocked.includes(word), true);
     }
-    assert.equal(transparent.includes('fill="transparent" fill-opacity="0"'), true);
+    assert.match(transparent, /data-frame="recovery-hexagon"[^>]*fill="none"/);
+    assert.doesNotMatch(transparent, /<text\b|font-family=|data-chevrons|data-lettering="wordmark"/);
     assert.equal(renderRecoveryAchievementBadgeSvg(definition.id, 'share-opaque'), unlocked);
     assert.equal(renderRecoveryAchievementBadgeSvg(definition.id, 'share-transparent'), transparent);
     for (const hex of Object.values(RECOVERY_COLORS).map(value => value.toLowerCase())) {
