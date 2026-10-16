@@ -251,4 +251,8 @@ not a claim of implementation, test success, integration, or device verification
   pinned dependencies are retained to avoid an unrelated release-time upgrade;
   this warning is not reported as a passing dependency check.
 - EAS history confirms latest finished iOS store build92, commit4ae752b. Candidate
-  config is build93. No candidate EAS build or TestFlight upload started yet.
+  config is build93. EAS build `69a14acd-52b2-4bd0-aba2-b4fba59f4d4a`
+  subsequently queued from pushed source `4701c41`, with matching automatic
+  submission scheduled. Final states are tracked in `UPDATE_2026_10_15_RELEASE.md`.
+  October 16 readback: EAS build and submission FINISHED; Apple build93 VALID
+  and IN_BETA_TESTING internally. Physical-device acceptance remains outstanding.
