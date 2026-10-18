@@ -9,16 +9,19 @@ import { buildRouteReviewObservations } from '../../src/utils/outdoorAnalysis';
 import { OUTDOOR_SPORTS } from '../../src/utils/outdoorSports';
 import type { ActiveOutdoorSessionProps } from '../../src/components/activity/ActiveOutdoorSession';
 
-function harness(platform = 'web') {
+function harness(platform = 'web', width = 320, fontScale = 1) {
   const filename = resolve('src/components/activity/ActiveOutdoorSession.tsx');
   const require = createRequire(filename);
   const centers: unknown[] = [];
   let following = true;
+  let metricWidth: number | null = null;
   const mocks: Record<string, unknown> = {
     react: { useMemo: (action: () => unknown) => action(), useRef: () => ({ current: { animateToRegion: (...args: unknown[]) => centers.push(args) } }),
-      useState: () => [following, (next: boolean) => { following = next; }] },
+      useState: (initial: unknown) => typeof initial === 'boolean'
+        ? [following, (next: boolean) => { following = next; }]
+        : [metricWidth, (next: number) => { metricWidth = next; }] },
     'react-native': { Platform: { OS: platform }, ScrollView: 'ScrollView', Text: 'Text', TouchableOpacity: 'TouchableOpacity', View: 'View',
-      useWindowDimensions: () => ({ width: 320, height: 740 }), StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1, absoluteFill: {} } },
+      useWindowDimensions: () => ({ width, height: 740, fontScale }), StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1, absoluteFill: {} } },
     '@expo/vector-icons': { Ionicons: 'Icon' },
     'react-native-svg': { __esModule: true, default: 'Svg', Circle: 'Circle', Polyline: 'SvgPolyline' },
     '../maps/MapComponents': { __esModule: true, default: 'MapView', Marker: 'Marker', Polyline: 'Polyline' },
@@ -207,20 +210,60 @@ test('retained End shows Finishing, disables Pause/Resume accessibly, and keeps 
   }
 });
 
-test('container-measured numeric type fits narrow primary columns, suffixes and long durations without viewport scaling', () => {
+test('numeric type keeps a readable floor and starts at full size before measurement; long values reflow instead of collapsing', () => {
   const { fitMetricFontSize } = harness();
   for (const width of [98, 112, 132, 155]) {
     for (const [value, unit] of [['42:18', ''], ['4.20', 'km'], ['1666:39', ''], ['9999.99', 'mi']]) {
-      const font = fitMetricFontSize(value, width, 40, 18, unit);
-      const expectedWidth = value.length * 0.65 * font + (unit ? (unit.length + 1) * 14 * 0.65 : 0);
-      assert.ok(expectedWidth <= width, `${value} ${unit} fits ${width}px`);
-      assert.ok(font >= 11 && font <= 40);
+      const font = fitMetricFontSize(value, width, 53, 40, unit);
+      assert.ok(font >= 40 && font <= 53);
     }
   }
   for (const value of ['18.4 km/h', '138 bpm', '13:03 /km', '112 spm']) {
-    const font = fitMetricFontSize(value, 72, 16, 11);
-    assert.ok(value.length * 0.65 * font <= 72);
+    const font = fitMetricFontSize(value, 72, 20, 18);
+    assert.equal(font, 18);
   }
-  assert.equal(fitMetricFontSize('42:18', null, 40, 18), 18, 'pre-layout rendering starts conservatively');
+  assert.equal(fitMetricFontSize('42:18', null, 53, 40), 53, 'pre-layout rendering must not flash microscopic text');
   assert.equal(fitMetricFontSize('42:18', 132, 40, 18), fitMetricFontSize('42:18', 132, 40, 18), 'only container width and content influence sizing');
+  for (const fontScale of [1, 1.3, 2]) {
+    const font = fitMetricFontSize('123:59:59', 350, 53, 40, '', fontScale);
+    assert.ok(font * fontScale >= 40);
+    assert.ok(font * fontScale * 9 * 0.65 <= 350);
+    const distanceFont = fitMetricFontSize('12345.67', 350, 53, 40, 'km', fontScale);
+    assert.ok(distanceFont * fontScale >= 40);
+    assert.ok((distanceFont * 8 * 0.65 + 3 * 16 * 0.65) * fontScale <= 350);
+  }
+});
+
+test('native long-duration and accessibility layouts wrap bounded cells rather than constraining a tiny one-line value', () => {
+  for (const width of [320, 390, 430]) for (const fontScale of [1, 1.3, 2]) {
+    const tree = harness('ios', width, fontScale).default(fixture({ timeLabel: '123:59:59', distanceLabel: '12345.67' }));
+    const primary = nodes(tree).find(node => node.props?.testID === 'active-outdoor-primary');
+    assert.equal(primary.props.style.flexWrap, 'wrap');
+    for (const cell of primary.props.children) {
+      assert.equal(cell.props.style[0].maxWidth, '100%');
+      const typography = cell.props.children[0];
+      const rendered = typography.type(typography.props);
+      const value = nodes(rendered).find(node => node.type === 'Text');
+      assert.equal(value.props.adjustsFontSizeToFit, undefined);
+      assert.equal(value.props.numberOfLines, undefined);
+      assert.ok(value.props.style[1].fontSize >= 40);
+    }
+  }
+});
+
+test('actual native metric onLayout uses font scale and retains its full value without the iOS text fitter', () => {
+  for (const fontScale of [1, 1.3, 2]) {
+    const { FittedMetricText } = harness('ios', 390, fontScale);
+    const props = { value: '123:59:59', primary: true, color: '#fff' };
+    const initial = FittedMetricText(props);
+    initial.props.onLayout({ nativeEvent: { layout: { width: 350 } } });
+    const measured = FittedMetricText(props);
+    const text = nodes(measured).find(node => node.type === 'Text');
+    const effectiveSize = text.props.style[1].fontSize * fontScale;
+    assert.ok(effectiveSize >= 40);
+    assert.ok(effectiveSize * props.value.length * 0.65 <= 350);
+    assert.equal(text.props.children, props.value);
+    assert.equal(text.props.adjustsFontSizeToFit, undefined);
+    assert.equal(text.props.numberOfLines, undefined);
+  }
 });

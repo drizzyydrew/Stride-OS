@@ -1,0 +1,614 @@
+[
+  {
+    "viewport": 320,
+    "variant": "Minimal",
+    "blocks": [
+      {
+        "bottom": 479.9945699757543,
+        "left": 187.1953345989359,
+        "right": 338.4062773605873,
+        "text": "",
+        "top": 313.5883515456627
+      },
+      {
+        "bottom": 597.9945531384699,
+        "left": 0,
+        "right": 360,
+        "text": "StrideOS>>>>>",
+        "top": 523.9946246969289
+      },
+      {
+        "bottom": 465.99457839439657,
+        "left": 17.99999763225687,
+        "right": 173.99999684300917,
+        "text": "",
+        "top": 309.99459102235994
+      },
+      {
+        "bottom": 141.49462469692887,
+        "left": 28.000000920788995,
+        "right": 332.00001091792666,
+        "text": "ACHIEVEMENT UNLOCKEDFIRST HALF MARATHON21.1 k",
+        "top": 41.99457628973599
+      },
+      {
+        "bottom": 286.58840837149785,
+        "left": 35.99999526451374,
+        "right": 324.00000473548624,
+        "text": "12345.7 kmDISTANCE123:59:59TIME99.6 km/hSPEED",
+        "top": 153.58839363887392
+      }
+    ],
+    "clearance": {
+      "badgeToRoute": 13.195337755926715,
+      "lowerToBrand": 44.00005472117459,
+      "metricsToBadge": 23.406182650862092,
+      "metricsToRoute": 26.999943174164855,
+      "titleToMetrics": 12.093768941945058
+    },
+    "height": 412.4375,
+    "horizontalOverflow": false,
+    "width": 232
+  },
+  {
+    "viewport": 320,
+    "variant": "Transparent Overlay",
+    "blocks": [
+      {
+        "bottom": 479.9945699757543,
+        "left": 187.1953345989359,
+        "right": 338.4062773605873,
+        "text": "",
+        "top": 313.5883515456627
+      },
+      {
+        "bottom": 597.9945531384699,
+        "left": 0,
+        "right": 360,
+        "text": "StrideOS>>>>>",
+        "top": 523.9946246969289
+      },
+      {
+        "bottom": 465.99457839439657,
+        "left": 17.99999763225687,
+        "right": 173.99999684300917,
+        "text": "",
+        "top": 309.99459102235994
+      },
+      {
+        "bottom": 141.49462469692887,
+        "left": 28.000000920788995,
+        "right": 332.00001091792666,
+        "text": "ACHIEVEMENT UNLOCKEDFIRST HALF MARATHON21.1 k",
+        "top": 41.99457628973599
+      },
+      {
+        "bottom": 286.58840837149785,
+        "left": 35.99999526451374,
+        "right": 324.00000473548624,
+        "text": "12345.7 kmDISTANCE123:59:59TIME99.6 km/hSPEED",
+        "top": 153.58839363887392
+      }
+    ],
+    "clearance": {
+      "badgeToRoute": 13.195337755926715,
+      "lowerToBrand": 44.00005472117459,
+      "metricsToBadge": 23.406182650862092,
+      "metricsToRoute": 26.999943174164855,
+      "titleToMetrics": 12.093768941945058
+    },
+    "height": 412.4375,
+    "horizontalOverflow": false,
+    "width": 232
+  },
+  {
+    "viewport": 320,
+    "variant": "Editorial",
+    "blocks": [
+      {
+        "bottom": 479.9945699757543,
+        "left": 187.1953345989359,
+        "right": 338.4062773605873,
+        "text": "",
+        "top": 313.5883515456627
+      },
+      {
+        "bottom": 597.9945531384699,
+        "left": 0,
+        "right": 360,
+        "text": "StrideOS>>>>>",
+        "top": 523.9946246969289
+      },
+      {
+        "bottom": 465.99457839439657,
+        "left": 17.99999763225687,
+        "right": 173.99999684300917,
+        "text": "",
+        "top": 309.99459102235994
+      },
+      {
+        "bottom": 145.49459523168105,
+        "left": 28.000000920788995,
+        "right": 332.00001091792666,
+        "text": "ACHIEVEMENT UNLOCKEDFIRST HALF MARATHON21.1 k",
+        "top": 53.994582603717674
+      },
+      {
+        "bottom": 286.58840837149785,
+        "left": 35.99999526451374,
+        "right": 324.00000473548624,
+        "text": "12345.7 kmDISTANCE123:59:59TIME99.6 km/hSPEED",
+        "top": 153.58839363887392
+      }
+    ],
+    "clearance": {
+      "badgeToRoute": 13.195337755926715,
+      "lowerToBrand": 44.00005472117459,
+      "metricsToBadge": 23.406182650862092,
+      "metricsToRoute": 26.999943174164855,
+      "titleToMetrics": 8.093798407192878
+    },
+    "height": 412.4375,
+    "horizontalOverflow": false,
+    "width": 232
+  },
+  {
+    "viewport": 320,
+    "variant": "Activity + Achievement",
+    "blocks": [
+      {
+        "bottom": 479.9945699757543,
+        "left": 187.1953345989359,
+        "right": 338.4062773605873,
+        "text": "",
+        "top": 313.5883515456627
+      },
+      {
+        "bottom": 597.9945531384699,
+        "left": 0,
+        "right": 360,
+        "text": "StrideOS>>>>>",
+        "top": 523.9946246969289
+      },
+      {
+        "bottom": 465.99457839439657,
+        "left": 17.99999763225687,
+        "right": 173.99999684300917,
+        "text": "",
+        "top": 309.99459102235994
+      },
+      {
+        "bottom": 149.4945657664332,
+        "left": 28.000000920788995,
+        "right": 332.00001091792666,
+        "text": "ACHIEVEMENT UNLOCKEDRIDE + FIRST HALF MARATHO",
+        "top": 41.99457628973599
+      },
+      {
+        "bottom": 292.9945741850754,
+        "left": 35.99999526451374,
+        "right": 324.00000473548624,
+        "text": "12345.7 kmDISTANCE123:59:59TIME99.6 km/hSPEED",
+        "top": 159.99465416217672
+      }
+    ],
+    "clearance": {
+      "badgeToRoute": 13.195337755926715,
+      "lowerToBrand": 44.00005472117459,
+      "metricsToBadge": 17.000016837284534,
+      "metricsToRoute": 20.593777360587296,
+      "titleToMetrics": 10.500088395743518
+    },
+    "height": 412.4375,
+    "horizontalOverflow": false,
+    "width": 232
+  },
+  {
+    "viewport": 390,
+    "variant": "Minimal",
+    "blocks": [
+      {
+        "bottom": 479.9916571812914,
+        "left": 187.195317350476,
+        "right": 338.40626293460264,
+        "text": "",
+        "top": 313.5854556860513
+      },
+      {
+        "bottom": 597.9916604149421,
+        "left": 0,
+        "right": 360,
+        "text": "StrideOS>>>>>",
+        "top": 523.9916830504967
+      },
+      {
+        "bottom": 465.99172832160593,
+        "left": 17.999998181071504,
+        "right": 174.0000006063095,
+        "text": "",
+        "top": 309.991689517798
+      },
+      {
+        "bottom": 141.49168305049668,
+        "left": 28.000003233650663,
+        "right": 331.99999676634934,
+        "text": "ACHIEVEMENT UNLOCKEDFIRST HALF MARATHON21.1 k",
+        "top": 41.991710536527314
+      },
+      {
+        "bottom": 286.5854265831954,
+        "left": 35.99999636214301,
+        "right": 323.99998544857203,
+        "text": "12345.7 kmDISTANCE123:59:59TIME99.6 km/hSPEED",
+        "top": 153.58544760192467
+      }
+    ],
+    "clearance": {
+      "badgeToRoute": 13.19531674416649,
+      "lowerToBrand": 44.00002586920533,
+      "metricsToBadge": 23.406262934602637,
+      "metricsToRoute": 27.000029102855933,
+      "titleToMetrics": 12.093764551427997
+    },
+    "height": 536.8828125,
+    "horizontalOverflow": false,
+    "width": 302
+  },
+  {
+    "viewport": 390,
+    "variant": "Transparent Overlay",
+    "blocks": [
+      {
+        "bottom": 479.9916571812914,
+        "left": 187.195317350476,
+        "right": 338.40626293460264,
+        "text": "",
+        "top": 313.5854556860513
+      },
+      {
+        "bottom": 597.9916604149421,
+        "left": 0,
+        "right": 360,
+        "text": "StrideOS>>>>>",
+        "top": 523.9916830504967
+      },
+      {
+        "bottom": 465.99172832160593,
+        "left": 17.999998181071504,
+        "right": 174.0000006063095,
+        "text": "",
+        "top": 309.991689517798
+      },
+      {
+        "bottom": 141.49168305049668,
+        "left": 28.000003233650663,
+        "right": 331.99999676634934,
+        "text": "ACHIEVEMENT UNLOCKEDFIRST HALF MARATHON21.1 k",
+        "top": 41.991710536527314
+      },
+      {
+        "bottom": 286.5854265831954,
+        "left": 35.99999636214301,
+        "right": 323.99998544857203,
+        "text": "12345.7 kmDISTANCE123:59:59TIME99.6 km/hSPEED",
+        "top": 153.58544760192467
+      }
+    ],
+    "clearance": {
+      "badgeToRoute": 13.19531674416649,
+      "lowerToBrand": 44.00002586920533,
+      "metricsToBadge": 23.406262934602637,
+      "metricsToRoute": 27.000029102855933,
+      "titleToMetrics": 12.093764551427997
+    },
+    "height": 536.8828125,
+    "horizontalOverflow": false,
+    "width": 302
+  },
+  {
+    "viewport": 390,
+    "variant": "Editorial",
+    "blocks": [
+      {
+        "bottom": 479.9916571812914,
+        "left": 187.195317350476,
+        "right": 338.40626293460264,
+        "text": "",
+        "top": 313.5854556860513
+      },
+      {
+        "bottom": 597.9916604149421,
+        "left": 0,
+        "right": 360,
+        "text": "StrideOS>>>>>",
+        "top": 523.9916830504967
+      },
+      {
+        "bottom": 465.99172832160593,
+        "left": 17.999998181071504,
+        "right": 174.0000006063095,
+        "text": "",
+        "top": 309.991689517798
+      },
+      {
+        "bottom": 115.49170083557532,
+        "left": 28.000003233650663,
+        "right": 331.99999676634934,
+        "text": "ACHIEVEMENT UNLOCKEDFIRST HALF MARATHON21.1 k",
+        "top": 53.991691134623345
+      },
+      {
+        "bottom": 286.5854265831954,
+        "left": 35.99999636214301,
+        "right": 323.99998544857203,
+        "text": "12345.7 kmDISTANCE123:59:59TIME99.6 km/hSPEED",
+        "top": 153.58544760192467
+      }
+    ],
+    "clearance": {
+      "badgeToRoute": 13.19531674416649,
+      "lowerToBrand": 44.00002586920533,
+      "metricsToBadge": 23.406262934602637,
+      "metricsToRoute": 27.000029102855933,
+      "titleToMetrics": 38.09374676634934
+    },
+    "height": 536.8828125,
+    "horizontalOverflow": false,
+    "width": 302
+  },
+  {
+    "viewport": 390,
+    "variant": "Activity + Achievement",
+    "blocks": [
+      {
+        "bottom": 479.9916571812914,
+        "left": 187.195317350476,
+        "right": 338.40626293460264,
+        "text": "",
+        "top": 313.5854556860513
+      },
+      {
+        "bottom": 597.9916604149421,
+        "left": 0,
+        "right": 360,
+        "text": "StrideOS>>>>>",
+        "top": 523.9916830504967
+      },
+      {
+        "bottom": 465.99172832160593,
+        "left": 17.999998181071504,
+        "right": 174.0000006063095,
+        "text": "",
+        "top": 309.991689517798
+      },
+      {
+        "bottom": 149.491694368274,
+        "left": 28.000003233650663,
+        "right": 331.99999676634934,
+        "text": "ACHIEVEMENT UNLOCKEDRIDE + FIRST HALF MARATHO",
+        "top": 41.991710536527314
+      },
+      {
+        "bottom": 292.9916927514487,
+        "left": 35.99999636214301,
+        "right": 323.99998544857203,
+        "text": "12345.7 kmDISTANCE123:59:59TIME99.6 km/hSPEED",
+        "top": 159.99171377017797
+      }
+    ],
+    "clearance": {
+      "badgeToRoute": 13.19531674416649,
+      "lowerToBrand": 44.00002586920533,
+      "metricsToBadge": 16.99999676634934,
+      "metricsToRoute": 20.593762934602637,
+      "titleToMetrics": 10.500019401903955
+    },
+    "height": 536.8828125,
+    "horizontalOverflow": false,
+    "width": 302
+  },
+  {
+    "viewport": 430,
+    "variant": "Minimal",
+    "blocks": [
+      {
+        "bottom": 480,
+        "left": 187.19530607524672,
+        "right": 338.4062435752467,
+        "text": "",
+        "top": 313.59375
+      },
+      {
+        "bottom": 597.9999743009869,
+        "left": 0,
+        "right": 360,
+        "text": "StrideOS>>>>>",
+        "top": 523.9999871504934
+      },
+      {
+        "bottom": 465.9999486019737,
+        "left": 17.999998393811676,
+        "right": 174.00001124331826,
+        "text": "",
+        "top": 310
+      },
+      {
+        "bottom": 141.4999871504934,
+        "left": 27.999998393811676,
+        "right": 331.9999855443051,
+        "text": "ACHIEVEMENT UNLOCKEDFIRST HALF MARATHON21.1 k",
+        "top": 41.99999357524671
+      },
+      {
+        "bottom": 286.5937243009868,
+        "left": 35.99999678762335,
+        "right": 323.9999710886102,
+        "text": "12345.7 kmDISTANCE123:59:59TIME99.6 km/hSPEED",
+        "top": 153.59375
+      }
+    ],
+    "clearance": {
+      "badgeToRoute": 13.195294831928464,
+      "lowerToBrand": 43.99998715049344,
+      "metricsToBadge": 23.40627569901318,
+      "metricsToRoute": 27.00002569901318,
+      "titleToMetrics": 12.09376284950659
+    },
+    "height": 608,
+    "horizontalOverflow": false,
+    "width": 342
+  },
+  {
+    "viewport": 430,
+    "variant": "Transparent Overlay",
+    "blocks": [
+      {
+        "bottom": 480,
+        "left": 187.19530607524672,
+        "right": 338.4062435752467,
+        "text": "",
+        "top": 313.59375
+      },
+      {
+        "bottom": 597.9999743009869,
+        "left": 0,
+        "right": 360,
+        "text": "StrideOS>>>>>",
+        "top": 523.9999871504934
+      },
+      {
+        "bottom": 465.9999486019737,
+        "left": 17.999998393811676,
+        "right": 174.00001124331826,
+        "text": "",
+        "top": 310
+      },
+      {
+        "bottom": 141.4999871504934,
+        "left": 27.999998393811676,
+        "right": 331.9999855443051,
+        "text": "ACHIEVEMENT UNLOCKEDFIRST HALF MARATHON21.1 k",
+        "top": 41.99999357524671
+      },
+      {
+        "bottom": 286.5937243009868,
+        "left": 35.99999678762335,
+        "right": 323.9999710886102,
+        "text": "12345.7 kmDISTANCE123:59:59TIME99.6 km/hSPEED",
+        "top": 153.59375
+      }
+    ],
+    "clearance": {
+      "badgeToRoute": 13.195294831928464,
+      "lowerToBrand": 43.99998715049344,
+      "metricsToBadge": 23.40627569901318,
+      "metricsToRoute": 27.00002569901318,
+      "titleToMetrics": 12.09376284950659
+    },
+    "height": 608,
+    "horizontalOverflow": false,
+    "width": 342
+  },
+  {
+    "viewport": 430,
+    "variant": "Editorial",
+    "blocks": [
+      {
+        "bottom": 480,
+        "left": 187.19530607524672,
+        "right": 338.4062435752467,
+        "text": "",
+        "top": 313.59375
+      },
+      {
+        "bottom": 597.9999743009869,
+        "left": 0,
+        "right": 360,
+        "text": "StrideOS>>>>>",
+        "top": 523.9999871504934
+      },
+      {
+        "bottom": 465.9999486019737,
+        "left": 17.999998393811676,
+        "right": 174.00001124331826,
+        "text": "",
+        "top": 310
+      },
+      {
+        "bottom": 115.5000064247533,
+        "left": 27.999998393811676,
+        "right": 331.9999855443051,
+        "text": "ACHIEVEMENT UNLOCKEDFIRST HALF MARATHON21.1 k",
+        "top": 53.99998715049342
+      },
+      {
+        "bottom": 286.5937243009868,
+        "left": 35.99999678762335,
+        "right": 323.9999710886102,
+        "text": "12345.7 kmDISTANCE123:59:59TIME99.6 km/hSPEED",
+        "top": 153.59375
+      }
+    ],
+    "clearance": {
+      "badgeToRoute": 13.195294831928464,
+      "lowerToBrand": 43.99998715049344,
+      "metricsToBadge": 23.40627569901318,
+      "metricsToRoute": 27.00002569901318,
+      "titleToMetrics": 38.093743575246705
+    },
+    "height": 608,
+    "horizontalOverflow": false,
+    "width": 342
+  },
+  {
+    "viewport": 430,
+    "variant": "Activity + Achievement",
+    "blocks": [
+      {
+        "bottom": 480,
+        "left": 187.19530607524672,
+        "right": 338.4062435752467,
+        "text": "",
+        "top": 313.59375
+      },
+      {
+        "bottom": 597.9999743009869,
+        "left": 0,
+        "right": 360,
+        "text": "StrideOS>>>>>",
+        "top": 523.9999871504934
+      },
+      {
+        "bottom": 465.9999486019737,
+        "left": 17.999998393811676,
+        "right": 174.00001124331826,
+        "text": "",
+        "top": 310
+      },
+      {
+        "bottom": 149.49999357524672,
+        "left": 27.999998393811676,
+        "right": 331.9999855443051,
+        "text": "ACHIEVEMENT UNLOCKEDRIDE + FIRST HALF MARATHO",
+        "top": 41.99999357524671
+      },
+      {
+        "bottom": 292.9999743009868,
+        "left": 35.99999678762335,
+        "right": 323.9999710886102,
+        "text": "12345.7 kmDISTANCE123:59:59TIME99.6 km/hSPEED",
+        "top": 160
+      }
+    ],
+    "clearance": {
+      "badgeToRoute": 13.195294831928464,
+      "lowerToBrand": 43.99998715049344,
+      "metricsToBadge": 17.00002569901318,
+      "metricsToRoute": 20.59377569901318,
+      "titleToMetrics": 10.50000642475328
+    },
+    "height": 608,
+    "horizontalOverflow": false,
+    "width": 342
+  }
+]

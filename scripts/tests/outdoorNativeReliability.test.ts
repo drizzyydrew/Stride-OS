@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import vm from 'node:vm';
+import ts from 'typescript';
+import { createWatchStartCoordinator } from '../../src/utils/watchAvailability';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 const watch = read('targets/StrideOSWatch/StrideWatchWorkoutManager.swift');
@@ -26,10 +29,71 @@ test('Watch cadence callback belongs to the session, not the replaceable provisi
   assert.match(watch, /metadata\["StrideOSWorkoutInstanceId"\] = workoutInstanceId/);
   assert.match(watch, /builder.addMetadata\(recordingMetadata\(for: kind\)\)/);
   const activityStart = read('app/(tabs)/activity/start.tsx');
-  const nativeStart = activityStart.slice(activityStart.indexOf('const started = useActiveActivityStore.getState();'),
+  const nativeStart = activityStart.slice(activityStart.indexOf('async function beginActivity()'),
     activityStart.indexOf('async function saveAndFinish()'));
   assert.match(nativeStart, /startOutdoorLiveActivity\(\{[\s\S]*?workoutInstanceId: started.workoutInstanceId \?\? undefined/);
-  assert.match(nativeStart, /startStrideWatchWorkout\(\{[\s\S]*?workoutInstanceId: started.workoutInstanceId \?\? null/);
+  assert.match(nativeStart, /const startedId = useActiveActivityStore.getState\(\).workoutInstanceId;/);
+  assert.match(nativeStart, /connectOutdoorWatch\(startedId\);/);
+  assert.ok(nativeStart.indexOf('connectOutdoorWatch(startedId)') > nativeStart.indexOf('await startActivityLocationTracking()'));
+  assert.ok(nativeStart.indexOf('connectOutdoorWatch(startedId)') < nativeStart.indexOf('await buildRouteGuidance('));
+  assert.doesNotMatch(nativeStart, /startStrideWatchWorkout\(/);
+});
+
+test('outdoor Watch helper delegates the original exact ID through the coordinator and cancels stale ownership', async () => {
+  const source = ts.createSourceFile('start.tsx', read('app/(tabs)/activity/start.tsx'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  let helper: ts.FunctionDeclaration | undefined;
+  function visit(node: ts.Node) {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === 'connectOutdoorWatch') helper = node;
+    ts.forEachChild(node, visit);
+  }
+  visit(source);
+  assert.ok(helper, 'the production outdoor Watch helper exists');
+  const compiled = ts.transpileModule(`${helper.getText(source)}\nglobalThis.connect = connectOutdoorWatch;`, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
+  }).outputText;
+  for (const cancellation of ['none', 'paused', 'ended', 'ending', 'replaced', 'owner', 'context', 'missing-id']) {
+    const session = { isActive: true, isPaused: false, completionRequestedAt: null as number | null,
+      workoutInstanceId: cancellation === 'missing-id' ? null : 'original-recording',
+      activityType: 'walking', runWalkIntervals: [], name: 'Walk' };
+    const calls: { workoutInstanceId?: string | null; workoutKind?: string | null }[] = [];
+    let ownerCurrent = true;
+    let status = { isSupported: true, isPaired: true, isWatchAppInstalled: true, isReachable: false,
+      activationState: 'notActivated', lastMessageAt: 0, supportedWorkoutKinds: ['walking'] };
+    let pending: Promise<unknown> | undefined;
+    let delegatedId: string | undefined;
+    const coordinator = createWatchStartCoordinator();
+    const context: Record<string, any> = {
+      useActiveActivityStore: { getState: () => session },
+      captureOwnerLease: () => ({ ownerUserId: 'A', generation: 1 }),
+      ownerLeaseIsCurrent: () => ownerCurrent,
+      OUTDOOR_SPORTS: { walking: { watchKind: 'walking' } }, units: 'metric',
+      outdoorWatchStart: { request: (request: any) => {
+        delegatedId = request.workoutInstanceId;
+        pending = coordinator.request({ ...request, wait: async () => {
+          status = { ...status, activationState: 'activated', isReachable: true };
+          if (cancellation === 'paused') session.isPaused = true;
+          if (cancellation === 'ended') session.isActive = false;
+          if (cancellation === 'ending') session.completionRequestedAt = 123;
+          if (cancellation === 'replaced') session.workoutInstanceId = 'new-recording';
+          if (cancellation === 'owner') ownerCurrent = false;
+        } });
+        return pending;
+      } },
+      getStrideWatchStatus: () => status,
+      activateStrideWatchConnectivity: async () => status,
+      setStrideWatchWorkoutContext: async () => { if (cancellation === 'context') ownerCurrent = false; },
+      startStrideWatchWorkout: async (options: any) => { calls.push(options); return status; },
+    };
+    vm.runInNewContext(compiled, context);
+    context.connect(session.workoutInstanceId);
+    await pending;
+    if (cancellation === 'none') {
+      assert.equal(delegatedId, 'original-recording');
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0]!.workoutInstanceId, 'original-recording');
+      assert.equal(calls[0]!.workoutKind, 'walking');
+    } else assert.equal(calls.length, 0, `no native start after ${cancellation}`);
+  }
 });
 
 test('all run ActivityKit updates schedule sensor expiry, and both widget zone badges honor stale state', () => {

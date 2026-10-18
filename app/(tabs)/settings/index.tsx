@@ -1,5 +1,5 @@
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import HealthRestoreCard from '../../../src/components/activity/HealthRestoreCard';
 import {
   Alert,
@@ -28,7 +28,8 @@ import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useAuthStore } from '../../../src/store/authStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
-import { useProfileStore } from '../../../src/store/profileStore';
+import { useActiveProfile, useProfileStore } from '../../../src/store/profileStore';
+import { profilePowerMass } from '../../../src/utils/profilePower';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
@@ -213,7 +214,9 @@ export default function SettingsScreen() {
   const integrations = useIntegrationsStore();
   const legacyMorningReminderEnabled = useReadinessStore(state => state.reminderEnabled);
   const signOut = useAuthStore(state => state.signOut);
-  const { data, updateData } = useOnboardingStore();
+  const { data, updateData, setUserWeight } = useOnboardingStore();
+  const profile = useActiveProfile();
+  const savedWeightKg = profilePowerMass(profile)?.bodyMassKg;
   const workoutHistory = useWorkoutStore(state => state.history);
   const strengthHistory = useStrengthStore(state => state.history);
 
@@ -236,6 +239,7 @@ export default function SettingsScreen() {
   const [ageInput, setAgeInput] = useState('');
   const [heightInput, setHeightInput] = useState('');
   const [weightInput, setWeightInput] = useState('');
+  const weightEditedRef = useRef(false);
   const [showNotificationTimePicker, setShowNotificationTimePicker] = useState(false);
 
   function saveRaceForm() {
@@ -356,8 +360,12 @@ export default function SettingsScreen() {
   useEffect(() => {
     setAgeInput(data.age ? String(data.age) : '');
     setHeightInput(formatHeight(data.heightCm, imp));
-    setWeightInput(formatWeight(data.weightKg, imp));
-  }, [data.age, data.heightCm, data.weightKg, imp]);
+  }, [data.age, data.heightCm, imp]);
+
+  useEffect(() => {
+    setWeightInput(savedWeightKg == null ? '' : formatWeight(savedWeightKg, imp));
+    weightEditedRef.current = false;
+  }, [profile?.athleteId, savedWeightKg, imp]);
 
   useEffect(() => {
     if (!integrations.morningReminderMigratedV37) {
@@ -473,18 +481,20 @@ export default function SettingsScreen() {
   }
 
   function commitWeight() {
+    if (!weightEditedRef.current) return;
+    weightEditedRef.current = false;
     const value = Number(weightInput);
     if (!Number.isFinite(value) || value <= 0) {
-      setWeightInput(formatWeight(data.weightKg, imp));
+      setWeightInput(savedWeightKg == null ? '' : formatWeight(savedWeightKg, imp));
       return;
     }
 
     const weightKg = imp ? Math.round(value / 2.20462) : Math.round(value);
     if (weightKg > 25 && weightKg < 275) {
-      updateData({ weightKg });
+      setUserWeight(weightKg);
       setWeightInput(formatWeight(weightKg, imp));
     } else {
-      setWeightInput(formatWeight(data.weightKg, imp));
+      setWeightInput(savedWeightKg == null ? '' : formatWeight(savedWeightKg, imp));
     }
   }
 
@@ -762,7 +772,7 @@ export default function SettingsScreen() {
             {
               label: 'Weight',
               value: weightInput,
-              onChangeText: setWeightInput,
+              onChangeText: (value: string) => { weightEditedRef.current = true; setWeightInput(value); },
               onBlur: commitWeight,
               placeholder: '—',
               keyboardType: 'number-pad' as const,

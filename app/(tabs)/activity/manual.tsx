@@ -22,8 +22,10 @@ import { useActivityStore } from '../../../src/store/activityStore';
 import { useRecalculationStore } from '../../../src/store/recalculationStore';
 import { useRouteStore } from '../../../src/store/routeStore';
 import { useGearStore } from '../../../src/store/gearStore';
+import { useSettingsStore } from '../../../src/store/settingsStore';
+import { useActiveProfile } from '../../../src/store/profileStore';
 import { useColors } from '../../../src/theme/useColors';
-import type { ActivitySubtype, ActivityType } from '../../../src/types/activity';
+import type { ActivityDraft, ActivitySubtype, ActivityType } from '../../../src/types/activity';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import {
@@ -40,6 +42,9 @@ import { categoryFromActivityType, categoryFromScheduledType, classifySubstituti
 import { formatPrescriptionWithSets } from '../../../src/utils/prescriptionFormat';
 import { runRecalculation } from '../../../src/lib/recalculation';
 import { dateOnlyToLocalTimestamp, timestampToDateOnly, todayDateOnly } from '../../../src/utils/dateOnly';
+import { elevationInputText, hasRecordedEvidence, mergeManualActivityEdit, parseElevationInput } from '../../../src/utils/manualActivityEdit';
+import { withAutomaticActivityPower } from '../../../src/utils/automaticActivityPower';
+import { withAutomaticClimbingWork } from '../../../src/utils/climbingWork';
 
 const TYPES: { key: string; type: ActivityType; subtype?: ActivitySubtype; label: string }[] = [
   { key: 'running', type: 'running', subtype: 'outdoor', label: 'Running' },
@@ -54,6 +59,8 @@ const TYPES: { key: string; type: ActivityType; subtype?: ActivitySubtype; label
   { key: 'downhill_skiing', type: 'downhill_skiing', subtype: 'general', label: 'Downhill Skiing' },
   { key: 'cross_country_skiing', type: 'cross_country_skiing', subtype: 'general', label: 'Cross-Country Skiing' },
   { key: 'snowboarding', type: 'snowboarding', subtype: 'general', label: 'Snowboarding' },
+  { key: 'ski_touring', type: 'ski_touring', subtype: 'outdoor', label: 'Ski Touring' },
+  { key: 'snowboard_touring', type: 'snowboard_touring', subtype: 'outdoor', label: 'Snowboard Touring' },
   { key: 'mobility', type: 'mobility', subtype: 'general', label: 'Mobility' },
   { key: 'elliptical', type: 'elliptical', subtype: 'indoor', label: 'Elliptical' },
   { key: 'rowing', type: 'rowing', subtype: 'indoor', label: 'Rowing' },
@@ -71,6 +78,11 @@ const TYPES: { key: string; type: ActivityType; subtype?: ActivitySubtype; label
 function numeric(value: string): number | undefined {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function optionalWatts(value: string): number | undefined {
+  const parsed = value.trim() ? Number(value) : NaN;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
 }
 
 // 'other' now covers two picker entries (Active Recovery + generic Other) —
@@ -108,6 +120,9 @@ export default function ManualActivityScreen() {
   const scheduled = useScheduledSessions(weekPlan);
   const activities = useActivityStore(state => state.activities);
   const addActivity = useActivityStore(state => state.addActivity);
+  const updateActivity = useActivityStore(state => state.updateActivity);
+  const units = useSettingsStore(state => state.units);
+  const profile = useActiveProfile();
   const recalculationStatus = useRecalculationStore(state => state.status);
   const recalculationError = useRecalculationStore(state => state.error);
   const routes = useRouteStore(state => state.routes);
@@ -121,6 +136,7 @@ export default function ManualActivityScreen() {
     ? activities.find(activity => activity.id === params.activityId)
     : null;
   const prefillActivity = editedActivity ?? linkedActivity;
+  const recordedEdit = Boolean(prefillActivity && hasRecordedEvidence(prefillActivity));
   // An explicit ?activityType= param (e.g. the indoor-ride screen's "Log
   // Completed Ride" link) only wins when there's nothing to prefill from —
   // an existing linked/edited activity's own type always takes priority.
@@ -136,7 +152,7 @@ export default function ManualActivityScreen() {
   const initialDurationSeconds = prefillActivity?.metrics.durationSeconds ?? (scheduledSession ? scheduledSession.durationMinutes * 60 : 45 * 60);
   const initialStartTime = prefillActivity?.startTime ?? Date.now();
   const initialDistance = prefillActivity?.metrics.distanceMeters
-    ? (prefillActivity.metrics.distanceMeters / 1609.344).toFixed(2)
+    ? (prefillActivity.metrics.distanceMeters / (units === 'metric' ? 1000 : 1609.344)).toFixed(2)
     : '';
   const initialAverageHr = prefillActivity?.metrics.averageHeartRateBpm ? String(prefillActivity.metrics.averageHeartRateBpm) : '';
   const initialMaximumHr = prefillActivity?.metrics.maximumHeartRateBpm ? String(prefillActivity.metrics.maximumHeartRateBpm) : '';
@@ -152,31 +168,47 @@ export default function ManualActivityScreen() {
   const [activityDate, setActivityDate] = useState(timestampToDateOnly(initialStartTime));
   const [refreshResult, setRefreshResult] = useState<'idle' | 'success' | 'error'>('idle');
   const [distance, setDistance] = useState(initialDistance);
-  const [distanceUnit, setDistanceUnit] = useState<'mi' | 'km'>('mi');
+  const [distanceUnit, setDistanceUnit] = useState<'mi' | 'km'>(units === 'metric' ? 'km' : 'mi');
+  const [elevationUnits, setElevationUnits] = useState(units);
+  const [elevationGain, setElevationGain] = useState(elevationInputText(prefillActivity?.metrics.elevationGainMeters, units));
   const [averageHr, setAverageHr] = useState(initialAverageHr);
   const [maximumHr, setMaximumHr] = useState(initialMaximumHr);
   const [rpe, setRpe] = useState(initialRpe);
-  const [laps, setLaps] = useState('');
-  const [cadence, setCadence] = useState('');
-  const [power, setPower] = useState('');
-  const [rounds, setRounds] = useState('');
+  const [laps, setLaps] = useState(prefillActivity?.metrics.swimming?.laps?.toString() ?? '');
+  const [cadence, setCadence] = useState(prefillActivity?.metrics.cadenceRpm?.toString() ?? '');
+  const [power, setPower] = useState(prefillActivity?.metrics.cyclingPowerWatts?.toString() ?? '');
+  const [rounds, setRounds] = useState(prefillActivity?.metrics.mixedModal?.rounds?.toString() ?? '');
   const [notes, setNotes] = useState(initialNotes);
   const [routeId, setRouteId] = useState<string | null>(prefillActivity?.metrics.routeId ?? null);
   const [shoeId, setShoeId] = useState<string | null>(prefillActivity?.shoeId ?? defaultShoeId ?? null);
   const [pool, setPool] = useState(initialPool);
-  const hydratedRef = useRef(false);
+  const hydratedRef = useRef(Boolean(prefillActivity));
+  const [hydratedActivityId, setHydratedActivityId] = useState(prefillActivity?.id);
   const baselineSnapshotRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (hydratedRef.current || !prefillActivity) return;
     hydratedRef.current = true;
+    baselineSnapshotRef.current = null;
+    setHydratedActivityId(prefillActivity.id);
+    setActivityKey(prefillActivity.subtype === 'run_walk' ? 'run_walk' : findTypeEntry(prefillActivity.activityType, prefillActivity.subtype)?.key ?? 'running');
     setDurationMinutes(String(Math.round((prefillActivity.metrics.durationSeconds ?? 0) / 60)));
-    if (prefillActivity.metrics.distanceMeters) setDistance((prefillActivity.metrics.distanceMeters / 1609.344).toFixed(2));
+    setDistance(prefillActivity.metrics.distanceMeters == null ? '' : (prefillActivity.metrics.distanceMeters / (units === 'metric' ? 1000 : 1609.344)).toFixed(2));
+    setDistanceUnit(units === 'metric' ? 'km' : 'mi');
     if (prefillActivity.metrics.averageHeartRateBpm) setAverageHr(String(prefillActivity.metrics.averageHeartRateBpm));
     if (prefillActivity.metrics.maximumHeartRateBpm) setMaximumHr(String(prefillActivity.metrics.maximumHeartRateBpm));
     if (prefillActivity.rpe) setRpe(String(prefillActivity.rpe));
     if (prefillActivity.notes) setNotes(prefillActivity.notes);
     setActivityDate(timestampToDateOnly(prefillActivity.startTime));
+    setElevationGain(elevationInputText(prefillActivity.metrics.elevationGainMeters, units));
+    setElevationUnits(units);
+    setCadence(prefillActivity.metrics.cadenceRpm?.toString() ?? '');
+    setPower(prefillActivity.metrics.cyclingPowerWatts?.toString() ?? '');
+    setLaps(prefillActivity.metrics.swimming?.laps?.toString() ?? '');
+    setRounds(prefillActivity.metrics.mixedModal?.rounds?.toString() ?? '');
+    setRouteId(prefillActivity.metrics.routeId ?? null);
+    setShoeId(prefillActivity.shoeId ?? null);
+    setPool(prefillActivity.subtype !== 'open_water');
   }, [prefillActivity]);
 
   const isSwim = activityType === 'swimming';
@@ -203,6 +235,7 @@ export default function ManualActivityScreen() {
     activityDate,
     distance,
     distanceUnit,
+    elevationGain,
     averageHr,
     maximumHr,
     rpe,
@@ -215,13 +248,14 @@ export default function ManualActivityScreen() {
     shoeId,
     pool,
   }), [
-    activityKey, completionState, durationMinutes, activityDate, distance, distanceUnit,
+    activityKey, completionState, durationMinutes, activityDate, distance, distanceUnit, elevationGain,
     averageHr, maximumHr, rpe, laps, cadence, power, rounds, notes, routeId, shoeId, pool,
   ]);
 
   useEffect(() => {
+    if (prefillActivity && hydratedActivityId !== prefillActivity.id) return;
     if (baselineSnapshotRef.current === null) baselineSnapshotRef.current = formSnapshot;
-  }, [formSnapshot]);
+  }, [formSnapshot, hydratedActivityId, prefillActivity?.id]);
 
   const hasUnsavedChanges = baselineSnapshotRef.current !== null && baselineSnapshotRef.current !== formSnapshot;
 
@@ -246,6 +280,8 @@ export default function ManualActivityScreen() {
   }
 
   function commitSave(options: { unlinkSchedule?: boolean; classification?: ReturnType<typeof classifySubstitution>['classification'] } = {}) {
+    const elevation = parseElevationInput(elevationGain, elevationUnits);
+    if (elevation.error) { Alert.alert('Check elevation gain', elevation.error); return; }
     const minutes = numeric(durationMinutes) ?? 1;
     const effectiveScheduledSession = options.unlinkSchedule ? null : scheduledSession;
     const startTime = dateOnlyToLocalTimestamp(activityDate);
@@ -260,6 +296,7 @@ export default function ManualActivityScreen() {
       maximumHeartRateBpm: numeric(maximumHr),
       rpe: Math.max(1, Math.min(10, numeric(rpe) ?? 5)),
       cadenceRpm: isBike ? numeric(cadence) : undefined,
+      elevationGainMeters: elevation.meters,
       routeId: draftIsIndoor(selectedType.key, activityType, pool) ? undefined : routeId ?? undefined,
       notes,
       indoor: activityType === 'indoor_cycling'
@@ -271,7 +308,7 @@ export default function ManualActivityScreen() {
         || activityType === 'mobility'
         || (isSwim && pool),
     });
-    const activityId = addActivity({
+    const completedDraft: ActivityDraft = {
       ...draft,
       id: prefillActivity?.id,
       subtype: isSwim ? (pool ? 'pool' : 'open_water') : selectedType.subtype ?? draft.subtype,
@@ -280,11 +317,10 @@ export default function ManualActivityScreen() {
       shoeId: showShoePicker ? shoeId ?? undefined : undefined,
       metrics: {
         ...draft.metrics,
-        routeCoordinates: routeId && !draftIsIndoor(selectedType.key, activityType, pool)
-          ? routes.find(route => route.id === routeId)?.points.map(point => ({ ...point, timestamp: Date.now() }))
-          : undefined,
+        metricSources: { elevation: elevation.meters == null ? undefined : 'manual_entry' as const,
+          ...(optionalWatts(power) != null ? { power: 'manual_entry' as const } : {}) },
         cadenceRpm: isBike ? numeric(cadence) : draft.metrics.cadenceRpm,
-        cyclingPowerWatts: isBike ? numeric(power) : undefined,
+        cyclingPowerWatts: isBike ? optionalWatts(power) : undefined,
         swimming: isSwim ? {
           environment: pool ? 'pool' : 'open_water',
           distanceUnit: 'yd',
@@ -292,7 +328,29 @@ export default function ManualActivityScreen() {
         } : undefined,
         mixedModal: isMixed ? { rounds: numeric(rounds) } : undefined,
       },
-    });
+    };
+    let activityId: string;
+    try {
+      if (prefillActivity) {
+        const latest = useActivityStore.getState().activities.find(activity => activity.id === prefillActivity.id);
+        if (!latest) throw new Error('This activity is no longer in history.');
+        const baseline = JSON.parse(baselineSnapshotRef.current ?? formSnapshot);
+        const current = JSON.parse(formSnapshot);
+        const changed = new Set(Object.keys(current).filter(key => current[key] !== baseline[key]));
+        const edited = mergeManualActivityEdit(latest, completedDraft, changed);
+        if (options.classification) { edited.completionClassification = options.classification; edited.status = activityStatusForClassification(options.classification); }
+        if (options.unlinkSchedule) { edited.scheduled = false; edited.scheduledSessionId = undefined; edited.associatedTrainingBlockId = undefined; edited.associatedGoalId = undefined; }
+        edited.metrics = withAutomaticActivityPower({ ...latest, ...edited, id: latest.id, trainingLoad: latest.trainingLoad }, profile);
+        updateActivity(latest.id, edited);
+        activityId = latest.id;
+      } else {
+        completedDraft.metrics = withAutomaticClimbingWork(completedDraft, profile);
+        activityId = addActivity(completedDraft);
+      }
+    } catch (error) {
+      Alert.alert('Activity not saved', error instanceof Error ? error.message : 'Please try again.');
+      return;
+    }
     router.replace({ pathname: '/(tabs)/activity/[activityId]', params: { activityId } } as never);
   }
 
@@ -380,7 +438,7 @@ export default function ManualActivityScreen() {
           <Text style={[s.label, { color: C.textDim }]}>WHEN</Text>
           <View style={s.grid}>
             <View style={s.fullWidthField}>
-              <StrideDateField
+              {recordedEdit ? <Text selectable style={[s.helper, { color: C.textMuted }]}>Recorded: {activityDate}</Text> : <StrideDateField
                 label="Activity Date"
                 value={activityDate}
                 onChange={setActivityDate}
@@ -388,7 +446,7 @@ export default function ManualActivityScreen() {
                 maxDate={todayDateOnly()}
                 helper="Backdated activities stay on the selected calendar day and can refresh future plan decisions."
                 accessibilityHint="Opens a calendar. Future activity dates are disabled."
-              />
+              />}
             </View>
           </View>
 
@@ -418,6 +476,8 @@ export default function ManualActivityScreen() {
             {TYPES.map(item => (
               <TouchableOpacity
                 key={item.key}
+                disabled={recordedEdit}
+                accessibilityState={{ selected: item.key === activityKey, disabled: recordedEdit }}
                 onPress={() => setActivityKey(item.key)}
                 style={[s.pill, {
                   backgroundColor: item.key === activityKey ? C.primaryDim : C.card,
@@ -429,7 +489,7 @@ export default function ManualActivityScreen() {
             ))}
           </View>
 
-          {isSwim ? (
+          {isSwim && !recordedEdit ? (
             <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
               <View style={s.row}>
                 <View>
@@ -443,6 +503,7 @@ export default function ManualActivityScreen() {
 
           <View style={s.grid}>
             <Field label="Duration" value={durationMinutes} onChange={setDurationMinutes} suffix="min" />
+            <Field label="Elevation gain" value={elevationGain} onChange={setElevationGain} suffix={elevationUnits === 'metric' ? 'm' : 'ft'} optional />
             {showDistancePace ? <Field label="Distance" value={distance} onChange={setDistance} suffix={distanceUnit} optional /> : null}
             <Field label="Average HR" value={averageHr} onChange={setAverageHr} suffix="bpm" optional />
             <Field label="Maximum HR" value={maximumHr} onChange={setMaximumHr} suffix="bpm" optional />
@@ -482,7 +543,7 @@ export default function ManualActivityScreen() {
               ))}
             </View>
           ) : null}
-          {showDistancePace && !draftIsIndoor(selectedType.key, activityType, pool) ? (
+          {showDistancePace && !recordedEdit && !draftIsIndoor(selectedType.key, activityType, pool) ? (
             <>
               <Text style={[s.label, { color: C.textDim }]}>OPTIONAL ROUTE</Text>
               <View style={s.pills}>
@@ -619,7 +680,7 @@ function Field({ label, value, onChange, suffix, optional }: {
     <View style={[s.field, { backgroundColor: C.card, borderColor: C.border }]}>
       <Text style={[s.fieldLabel, { color: C.textDim }]}>{label.toUpperCase()}{optional ? ' · OPTIONAL' : ''}</Text>
       <View style={s.fieldRow}>
-        <TextInput value={value} onChangeText={onChange} keyboardType="decimal-pad" placeholder="--" placeholderTextColor={C.textMuted} style={[s.input, { color: C.text }]} />
+        <TextInput value={value} onChangeText={onChange} accessibilityLabel={label} keyboardType="decimal-pad" placeholder="--" placeholderTextColor={C.textMuted} style={[s.input, { color: C.text }]} />
         {suffix ? <Text style={[s.suffix, { color: C.textMuted }]}>{suffix}</Text> : null}
       </View>
     </View>

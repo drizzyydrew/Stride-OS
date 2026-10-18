@@ -12,11 +12,15 @@ import type { Activity } from '../../types/activity';
 
 export type OutdoorSessionMetric = { label: string; value: string; detail?: string };
 
-export function fitMetricFontSize(value: string, width: number | null, maximum: number, minimum: number, unit = '') {
-  if (width == null || !Number.isFinite(width) || width <= 0) return minimum;
-  const unitWidth = unit ? (unit.length + 1) * 14 * 0.65 : 0;
-  // Long recordings can exceed the nominal minimum; preserve their full value.
-  return Math.max(Math.min(minimum, 11), Math.min(maximum, Math.floor((width - unitWidth) / Math.max(1, value.length * 0.65))));
+export function fitMetricFontSize(value: string, width: number | null, maximum: number, minimum: number, unit = '', fontScale = 1) {
+  if (width == null || !Number.isFinite(width) || width <= 0) return maximum;
+  const scale = Number.isFinite(fontScale) && fontScale > 0 ? fontScale : 1;
+  const unitWidth = unit ? (unit.length + 1) * 16 * 0.65 : 0;
+  // Reflow the surrounding cells rather than shrinking a value below its readable floor.
+  return Math.max(minimum / scale, Math.min(maximum, Math.floor((width / scale - unitWidth) / Math.max(1, value.length * 0.65))));
+}
+export function livePrimaryMetricBasis(time: string, distance: string, width: number, fontScale = 1) {
+  return Math.min(Math.max(1, width), Math.max(140, Math.max(time.length, distance.length) * 53 * 0.6) * fontScale);
 }
 export type ActiveOutdoorSessionProps = {
   name: string;
@@ -32,8 +36,9 @@ export type ActiveOutdoorSessionProps = {
   primaryMetrics: OutdoorSessionMetric[];
   additionalMetrics: OutdoorSessionMetric[];
   gpsStatus?: ReactNode;
-  watchStatus: string;
+  watchStatus?: string;
   watchDetail?: string;
+  watchConnection?: ReactNode;
   interval?: { name: string; remaining: number };
   instruction?: string | null;
   coachingControls: ReactNode;
@@ -60,7 +65,9 @@ export function liveOutdoorMapSegments(points: TrackPoint[], activityType: Outdo
 /** Presentation only. Session ownership, telemetry and completion stay with the caller. */
 export default function ActiveOutdoorSession(props: ActiveOutdoorSessionProps) {
   const C = useColors();
-  const { height } = useWindowDimensions();
+  const { height, width, fontScale = 1 } = useWindowDimensions();
+  const availableWidth = Math.max(1, width - 40);
+  const primaryBasis = livePrimaryMetricBasis(props.timeLabel, props.distanceLabel, availableWidth, fontScale);
   const [followingLocation, setFollowingLocation] = useState(true);
   const groups = useMemo(() => liveOutdoorMapSegments(props.points, props.activityType, props.startedAt, props.recordingPauses),
     [props.points, props.activityType, props.startedAt, props.recordingPauses]);
@@ -115,11 +122,11 @@ export default function ActiveOutdoorSession(props: ActiveOutdoorSessionProps) {
       </View>
       <View style={s.body}>
         <View testID="active-outdoor-primary" style={s.primaryRow}>
-          <View style={s.primaryMetric}>
+          <View style={[s.primaryMetric, { flexBasis: primaryBasis }]}>
             <FittedMetricText value={props.timeLabel} primary color={C.text} />
             <Text style={[s.label, { color: C.textMuted }]}>Time</Text>
           </View>
-          <View style={[s.primaryMetric, s.distance]}>
+          <View style={[s.primaryMetric, s.distance, { flexBasis: primaryBasis }]}>
             <FittedMetricText value={props.distanceLabel} unit={props.distanceUnit} primary align="right" color={C.accent} />
             <Text style={[s.label, { color: C.textMuted }]}>Distance</Text>
           </View>
@@ -139,14 +146,14 @@ export default function ActiveOutdoorSession(props: ActiveOutdoorSessionProps) {
           <Ionicons name="navigate-outline" size={20} color={C.primary} />
           <Text style={[s.instructionText, { color: C.text }]}>{props.instruction}</Text>
         </View> : null}
-        <View style={[s.watch, { borderColor: C.border }]}>
+        {props.watchConnection ?? <View style={[s.watch, { borderColor: C.border }]}>
           <Ionicons name="watch-outline" size={18} color={C.primary} />
           <View style={s.statusBody}>
             <Text style={[s.statusTitle, { color: C.text }]}>Apple Watch</Text>
             <Text style={[s.statusText, { color: C.textMuted }]}>{props.watchStatus}</Text>
             {props.watchDetail ? <Text style={[s.statusText, { color: C.textMuted }]}>{props.watchDetail}</Text> : null}
           </View>
-        </View>
+        </View>}
         <View style={[s.coaching, { borderColor: C.border }]}>
           <Text style={[s.statusTitle, { color: C.text }]}>Voice coaching</Text>
           {props.coachingControls}
@@ -170,22 +177,24 @@ export default function ActiveOutdoorSession(props: ActiveOutdoorSessionProps) {
 
 function Metric({ metric }: { metric: OutdoorSessionMetric }) {
   const C = useColors();
-  return <View style={s.metric}>
+  const { width, fontScale = 1 } = useWindowDimensions();
+  return <View style={[s.metric, { flexBasis: Math.min(Math.max(1, width - 40), Math.max(120, metric.value.length * 20 * 0.55) * fontScale) }]}>
     <FittedMetricText value={metric.value} color={C.text} />
     <Text style={[s.label, { color: C.textMuted }]}>{metric.label}</Text>
     {metric.detail ? <Text style={[s.detail, { color: C.textMuted }]}>{metric.detail}</Text> : null}
   </View>;
 }
 
-function FittedMetricText({ value, unit = '', primary = false, align = 'left', color }: {
+export function FittedMetricText({ value, unit = '', primary = false, align = 'left', color }: {
   value: string; unit?: string; primary?: boolean; align?: 'left' | 'right'; color: string;
 }) {
   const [width, setWidth] = useState<number | null>(null);
-  const fontSize = fitMetricFontSize(value, width, primary ? 40 : 16, primary ? 18 : 11, unit);
+  const { fontScale = 1 } = useWindowDimensions();
+  const fontSize = fitMetricFontSize(value, width, primary ? 53 : 20, primary ? 40 : 18, unit, fontScale);
   return <View style={s.fittedValue} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
-    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}
+    <Text
       style={[primary ? s.primaryValue : s.metricValue, { color, fontSize, textAlign: align }]}>
-      {value}{unit ? <Text style={s.unit}> {unit}</Text> : null}
+      {unit ? <>{value}<Text style={s.unit}> {unit}</Text></> : value}
     </Text>
   </View>;
 }
@@ -194,27 +203,27 @@ const s = StyleSheet.create({
   root: { flex: 1 }, scroll: { flex: 1 }, scrollContent: { paddingBottom: 16 },
   map: { width: '100%', overflow: 'hidden' },
   mapHeading: { position: 'absolute', top: 12, left: 16, right: 76, paddingHorizontal: 10, paddingVertical: 7, alignSelf: 'flex-start', borderRadius: 6 },
-  sessionName: { fontSize: 15, fontWeight: '700' }, state: { fontSize: 11, marginTop: 2 },
+  sessionName: { fontSize: 18, fontWeight: '700' }, state: { fontSize: 13, marginTop: 2 },
   mapButton: { position: 'absolute', top: 12, right: 16, width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   traceLabel: { position: 'absolute', bottom: 8, left: 16, fontSize: 10 },
   waiting: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingTop: 36, gap: 8 },
   body: { paddingHorizontal: 20, paddingTop: 16 },
-  primaryRow: { flexDirection: 'row', gap: 16, alignItems: 'flex-end', paddingBottom: 14 },
-  primaryMetric: { flex: 1, minWidth: 0 }, distance: { alignItems: 'flex-end' },
+  primaryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end', paddingBottom: 14 },
+  primaryMetric: { flexGrow: 1, flexShrink: 1, minWidth: 0, maxWidth: '100%' }, distance: { alignItems: 'flex-end' },
   fittedValue: { width: '100%', minWidth: 0 },
-  primaryValue: { lineHeight: 48, fontWeight: '800', fontVariant: ['tabular-nums'] }, unit: { fontSize: 14, fontWeight: '700' },
-  label: { fontSize: 11, lineHeight: 15, marginTop: 3 },
+  primaryValue: { fontWeight: '800', fontVariant: ['tabular-nums'] }, unit: { fontSize: 16, fontWeight: '700' },
+  label: { fontSize: 13, marginTop: 3 },
   metricRow: { borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 12, gap: 12 },
-  metric: { flexGrow: 1, flexBasis: '27%', minWidth: 0 },
-  metricValue: { lineHeight: 22, fontWeight: '700', fontVariant: ['tabular-nums'] }, detail: { fontSize: 10, lineHeight: 14, marginTop: 2 },
+  metric: { flexGrow: 1, flexShrink: 1, minWidth: 0, maxWidth: '100%' },
+  metricValue: { fontWeight: '700', fontVariant: ['tabular-nums'] }, detail: { fontSize: 12, marginTop: 2 },
   instruction: { borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
   instructionText: { flex: 1, fontSize: 14, fontWeight: '600', lineHeight: 20 },
   watch: { borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', gap: 10, paddingVertical: 12 },
-  statusBody: { flex: 1 }, statusTitle: { fontSize: 12, fontWeight: '700' }, statusText: { fontSize: 12, lineHeight: 17, marginTop: 3 },
+  statusBody: { flex: 1 }, statusTitle: { fontSize: 14, fontWeight: '700' }, statusText: { fontSize: 13, marginTop: 3 },
   coaching: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 12 },
   powerSettings: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 12, paddingTop: 12 },
   controls: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
   pause: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  finish: { flex: 1, minHeight: 52, maxWidth: 230, borderRadius: 26, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
-  finishText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  finish: { flex: 1, minHeight: 52, maxWidth: 230, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 26, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
+  finishText: { color: '#FFFFFF', flexShrink: 1, textAlign: 'center', fontSize: 14, fontWeight: '800' },
 });

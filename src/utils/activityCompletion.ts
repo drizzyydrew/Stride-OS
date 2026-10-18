@@ -48,6 +48,7 @@ export type ManualCompletionFields = {
   maximumHeartRateBpm?: number;
   rpe?: number;
   elevationGainFeet?: number;
+  elevationGainMeters?: number;
   cadenceRpm?: number;
   calories?: number;
   routeId?: string;
@@ -194,7 +195,8 @@ export function buildManualActivityDraft(
       distanceMeters,
       averageHeartRateBpm: fields.averageHeartRateBpm,
       maximumHeartRateBpm: fields.maximumHeartRateBpm,
-      elevationGainMeters: fields.elevationGainFeet ? fields.elevationGainFeet / 3.28084 : undefined,
+      elevationGainMeters: validElevation(fields.elevationGainMeters)
+        ?? (validElevation(fields.elevationGainFeet) != null ? fields.elevationGainFeet! * 0.3048 : undefined),
       cadenceRpm: fields.cadenceRpm,
       estimatedCalories: fields.calories,
       routeId: fields.routeId,
@@ -218,6 +220,10 @@ export function buildManualActivityDraft(
         : undefined,
     },
   };
+}
+
+function validElevation(value: number | undefined): number | undefined {
+  return value != null && Number.isFinite(value) && value >= 0 ? value : undefined;
 }
 
 // Skipping a scheduled session is a first-class completion outcome: it

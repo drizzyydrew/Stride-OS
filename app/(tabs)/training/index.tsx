@@ -1,7 +1,7 @@
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import Modal from '../../../src/components/ui/RecoverableModal';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppState, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, AppState, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,7 +10,10 @@ import { requestLocationRecovery } from '../../../src/lib/locationPermissionReco
 import MapView, { Marker, Polyline, type LatLng, type MapViewRef, type Region } from '../../../src/components/maps/MapComponents';
 import RoutePreviewMap from '../../../src/components/maps/RoutePreviewMap';
 import WatchStatusDiagnostics from '../../../src/components/watch/WatchStatusDiagnostics';
+import WatchConnectionStatus, { useWatchStartRequest } from '../../../src/components/watch/WatchConnectionStatus';
+import { createWatchStartCoordinator } from '../../../src/utils/watchAvailability';
 import GpsSignalChip from '../../../src/components/activity/GpsSignalChip';
+import { FittedMetricText, livePrimaryMetricBasis } from '../../../src/components/activity/ActiveOutdoorSession';
 import {
   INITIAL_PACE_CUE_STATE,
   nextPaceCue,
@@ -92,7 +95,6 @@ import {
   activateStrideWatchConnectivity,
   addStrideWatchErrorListener,
   addStrideWatchStatusListener,
-  addStrideWatchWorkoutStateListener,
   endStrideWatchRun,
   getStrideWatchStatus,
   pauseStrideWatchRun,
@@ -388,14 +390,31 @@ function RunStat({
   color: string;
   muted: string;
 }) {
+  const { fontScale = 1 } = useWindowDimensions();
   return (
-    <View style={styles.runStatCell}>
-      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.runSecondaryValue, { color }]}>
+    <View style={[styles.runStatCell, { flexBasis: 110 * fontScale }]}>
+      <Text style={[styles.runSecondaryValue, { color }]}>
         {value} <Text style={[styles.runSecondaryUnit, { color: muted }]}>{unit}</Text>
       </Text>
       <Text style={[styles.runMetricLabel, { color: muted }]}>{label}</Text>
     </View>
   );
+}
+
+function RunPrimaryMetrics({ time, distance, unit }: { time: string; distance: string; unit: string }) {
+  const C = useColors();
+  const { width, fontScale = 1 } = useWindowDimensions();
+  const flexBasis = livePrimaryMetricBasis(time, distance, width - 48, fontScale);
+  return <View style={styles.runPrimaryRow}>
+    <View style={[styles.runPrimaryCell, { flexBasis }]}>
+      <FittedMetricText value={time} primary color={C.text} />
+      <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Time</Text>
+    </View>
+    <View style={[styles.runPrimaryCell, { flexBasis, alignItems: 'flex-end' }]}>
+      <FittedMetricText value={distance} unit={unit} primary align="right" color={C.accent} />
+      <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Distance</Text>
+    </View>
+  </View>;
 }
 
 function speakCue(text: string, category: VoiceCueCategory = 'motivation'): void {
@@ -863,6 +882,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     targetPaceSecPerMile,
     plannedWorkout,
     workoutInstanceId,
+    watchRecording,
     completionRequestedAt,
     lastHeartRateSample,
     lastCadenceSample,
@@ -914,7 +934,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [showRouteActions, setShowRouteActions] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [watchStatus, setWatchStatus] = useState<StrideWatchStatus>(() => getStrideWatchStatus());
-  const [watchWorkoutState, setWatchWorkoutState] = useState<string | null>(null);
+  const runWatchStart = useWatchStartRequest(setWatchStatus, workoutInstanceId);
   const [permission, setPermission] = useState<TrackingPermissionState>({ foreground: 'unknown', background: 'unknown' });
   const [routeSegmentIndex, setRouteSegmentIndex] = useState(0);
   const [turnGuidance, setTurnGuidance] = useState<RouteGuidancePlan | null>(null);
@@ -967,9 +987,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   // would double-apply events and could save a run twice.
   useEffect(() => {
     const statusSub = addStrideWatchStatusListener(setWatchStatus);
-    const stateSub = addStrideWatchWorkoutStateListener(event => {
-      setWatchWorkoutState(event.state);
-    });
     const errorSub = addStrideWatchErrorListener(event => {
       setWatchStatus(current => ({ ...current, lastError: event.message }));
     });
@@ -978,10 +995,32 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
     return () => {
       statusSub?.remove();
-      stateSub?.remove();
       errorSub?.remove();
     };
   }, []);
+
+  function connectRunWatch(expectedId = useActiveRunStore.getState().workoutInstanceId) {
+    const started = useActiveRunStore.getState();
+    const lease = captureOwnerLease();
+    const isCurrent = () => {
+      const current = useActiveRunStore.getState();
+      return !!lease && ownerLeaseIsCurrent(lease) && current.isActive && !current.isPaused
+        && current.completionRequestedAt == null && current.workoutInstanceId === expectedId;
+    };
+    if (!expectedId || !isCurrent()) return;
+    void runWatchStart.request({
+      workoutInstanceId: expectedId,
+      workoutKind: 'run',
+      isCurrent,
+      getStatus: getStrideWatchStatus,
+      activate: activateStrideWatchConnectivity,
+      setContext: async () => undefined,
+      start: () => startStrideWatchRun({ workoutInstanceId: expectedId,
+        title: started.plannedWorkout?.title ?? (started.runMode === 'race' ? 'StrideOS Race' : 'StrideOS Run'),
+        environment: started.environment,
+        targetZone: started.runMode === 'race' ? 3 : started.plannedWorkout?.hrZoneTarget ?? null }),
+    });
+  }
 
   async function centerOnMyLocation() {
     const lastCoord = coordinates.at(-1);
@@ -1193,12 +1232,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       zoneStatus: 'unknown',
       isPaused: false,
     }).catch(console.warn);
-    startStrideWatchRun({
-      workoutInstanceId: activeWorkoutInstanceId,
-      title: startWorkout?.title ?? (pendingMode === 'race' ? 'StrideOS Race' : 'StrideOS Run'),
-      environment: pendingEnvironment,
-      targetZone: pendingMode === 'race' ? 3 : startWorkout?.hrZoneTarget ?? null,
-    }).then(setWatchStatus).catch(() => undefined);
+    connectRunWatch(activeWorkoutInstanceId);
 
     if (pendingEnvironment === 'indoor') {
       const workoutName = startWorkout?.title ?? 'treadmill run';
@@ -1492,13 +1526,9 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const heartRateSourceLabel = liveTelemetry?.heartRateSample?.source === 'apple_watch' ? 'Apple Watch live'
     : liveTelemetry?.heartRateSample?.source === 'heart_rate_monitor' ? 'Bluetooth live'
       : liveTelemetry?.heartRateSample?.source === 'healthkit' ? 'Apple Health observation' : 'No live source';
-  const watchStatusText = watchStatus.isWatchAppInstalled
-    ? watchStatus.isReachable
-      ? 'Apple Watch ready'
-      : 'Open watch app for live HR'
-    : watchStatus.isPaired
-      ? 'Install StrideOS on Apple Watch'
-      : 'No paired Apple Watch';
+  const watchConnection = <WatchConnectionStatus status={watchStatus} workoutInstanceId={workoutInstanceId}
+    active={isActive} paused={isPaused} ending={completionRequestedAt != null} recording={watchRecording}
+    requesting={runWatchStart.busy} requestError={runWatchStart.requestError} onRetry={() => connectRunWatch()} />;
   const targetZone = currentWorkoutSegment?.hrZone ?? (runMode === 'workout' ? plannedWorkout?.hrZoneTarget ?? null : runMode === 'race' ? 3 : null);
   const zoneStatus = targetZone
     ? zoneStatusForHeartRate(heartRateBpm, targetZone, calibration?.hrZones)
@@ -1994,20 +2024,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             isPaused={isPaused}
           />
           <View style={[styles.watchStatusPanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
-            <View style={styles.watchStatusLead}>
-              <Ionicons
-                name="watch-outline"
-                size={17}
-                color={watchStatus.isReachable ? C.positive : watchStatus.isWatchAppInstalled ? C.warning : C.textMuted}
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.watchStatusTitle, { color: C.text }]}>Apple Watch</Text>
-                <Text style={[styles.watchStatusText, { color: C.textMuted }]}>
-                  {watchStatusText}{watchWorkoutState ? ` · ${watchWorkoutState}` : ''}
-                </Text>
-              </View>
-            </View>
-            <WatchStatusDiagnostics status={watchStatus} mutedColor={C.textMuted} warningColor={C.warning} detailed={showWatchSyncDetails} />
+            {watchConnection}
+            {showWatchSyncDetails ? <WatchStatusDiagnostics status={{ ...watchStatus, lastError: null }} mutedColor={C.textMuted} warningColor={C.warning} detailed /> : null}
           </View>
         </ScrollView>
         <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: (fullScreen ? insets.bottom : 0) + spacing.md }]}>
@@ -2059,21 +2077,13 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   if (runState === 'paused') {
     return (
       <View style={[styles.activeRunRoot, { paddingTop: insets.top, backgroundColor: panelBg }]}>
-        <View style={styles.activeMapShellFill}>
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.activeMapShellIdle}>
           {mapNode(false)}
         </View>
         <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: insets.bottom + spacing.md }]}>
           <Text style={[styles.pausedStateLabel, { color: C.accent }]}>PAUSED</Text>
-          <View style={styles.runPrimaryRow}>
-            <View>
-              <Text style={[styles.runPrimaryValue, { color: C.text }]}>{fmt(elapsed)}</Text>
-              <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Time</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={[styles.runPrimaryValue, { color: C.accent }]}>{distStr}<Text style={styles.runPrimaryUnit}> {distUnit}</Text></Text>
-              <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Distance</Text>
-            </View>
-          </View>
+          <RunPrimaryMetrics time={fmt(elapsed)} distance={distStr} unit={distUnit} />
           <View style={[styles.runDivider, { backgroundColor: C.border }]} />
           <View style={styles.runSecondaryRow}>
             {secondaryMetrics.map(metric => (
@@ -2091,6 +2101,9 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
               </Text>
             </View>
           </View>
+        </View>
+        </ScrollView>
+        <View style={[styles.runControlPanel, styles.runControlPanelFlow, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: insets.bottom + spacing.md }]}>
           <TouchableOpacity
             style={[styles.resumePill, { backgroundColor: C.positive }]}
             onPress={resume}
@@ -2122,6 +2135,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
   return (
     <ScrollView
+      key={`setup:${pendingEnvironment}:${runState === 'idle' ? 'idle' : 'session'}`}
       style={{ flex: 1, backgroundColor: panelBg }}
       contentContainerStyle={[styles.activeIdleContent, { paddingTop: fullScreen ? insets.top : 0, paddingBottom: (fullScreen ? insets.bottom : 0) + LAYOUT.screenPadBottom }]}
       showsVerticalScrollIndicator={false}
@@ -2179,16 +2193,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       </FeatureTourTarget>
 
       <FeatureTourTarget targetId="running.voice" style={[styles.runControlPanel, styles.runControlPanelFlow, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: spacing.md }]}>
-        <View style={styles.runPrimaryRow}>
-          <View>
-            <Text style={[styles.runPrimaryValue, { color: C.text }]}>{fmt(elapsed)}</Text>
-            <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Time</Text>
-          </View>
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={[styles.runPrimaryValue, { color: C.accent }]}>{distStr}<Text style={styles.runPrimaryUnit}> {distUnit}</Text></Text>
-            <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Distance</Text>
-          </View>
-        </View>
+        <RunPrimaryMetrics time={fmt(elapsed)} distance={distStr} unit={distUnit} />
         <View style={[styles.runDivider, { backgroundColor: C.border }]} />
         <View style={styles.runSecondaryRow}>
           {secondaryMetrics.map(metric => (
@@ -2263,20 +2268,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
           </View>
         ) : null}
         <View style={[styles.watchStatusPanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
-          <View style={styles.watchStatusLead}>
-            <Ionicons
-              name="watch-outline"
-              size={17}
-              color={watchStatus.isReachable ? C.positive : watchStatus.isWatchAppInstalled ? C.warning : C.textMuted}
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.watchStatusTitle, { color: C.text }]}>Apple Watch</Text>
-              <Text style={[styles.watchStatusText, { color: C.textMuted }]}>
-                {watchStatusText}{watchWorkoutState ? ` · ${watchWorkoutState}` : ''}
-              </Text>
-            </View>
-          </View>
-          <WatchStatusDiagnostics status={watchStatus} mutedColor={C.textMuted} warningColor={C.warning} detailed={showWatchSyncDetails} />
+          {watchConnection}
+          {showWatchSyncDetails ? <WatchStatusDiagnostics status={{ ...watchStatus, lastError: null }} mutedColor={C.textMuted} warningColor={C.warning} detailed /> : null}
         </View>
         {environment === 'outdoor' ? (
           <GpsSignalChip active={isActive} paused={isPaused} lastGoodFixAt={lastGoodFixAt} startedAt={startTime} />
@@ -3115,6 +3108,7 @@ function HydrationTab() {
 
 // ─── Routes Tab ───────────────────────────────────────────────────────────────
 function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
+  const [routeWatchStart] = useState(createWatchStartCoordinator);
   const C = useColors();
   const router = useRouter();
   const { units } = useSettingsStore();
@@ -3285,13 +3279,22 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
         zoneStatus: 'unknown',
         isPaused: false,
       }).catch(console.warn);
-      startStrideWatchRun({
-        workoutInstanceId: startedWorkoutInstanceId,
-        title: route.name,
-        environment: 'outdoor',
-        targetZone: null,
-      }).catch(() => undefined);
       await startLocationTracking();
+      const lease = captureOwnerLease();
+      if (startedWorkoutInstanceId) void routeWatchStart.request({
+        workoutInstanceId: startedWorkoutInstanceId,
+        workoutKind: 'run',
+        isCurrent: () => {
+          const current = useActiveRunStore.getState();
+          return !!lease && ownerLeaseIsCurrent(lease) && current.isActive && !current.isPaused
+            && current.completionRequestedAt == null && current.workoutInstanceId === startedWorkoutInstanceId;
+        },
+        getStatus: getStrideWatchStatus,
+        activate: activateStrideWatchConnectivity,
+        setContext: async () => undefined,
+        start: () => startStrideWatchRun({ workoutInstanceId: startedWorkoutInstanceId,
+          title: route.name, environment: 'outdoor', targetZone: null }),
+      });
       speakCue(route.segments.length > 0
         ? `Starting route: ${route.name}. ${route.segments.length} interval markers set.`
         : `Starting route: ${route.name}.`, 'navigation');
@@ -3786,22 +3789,14 @@ const styles = StyleSheet.create({
   },
   runPrimaryRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     gap: spacing.xl,
   },
-  runPrimaryValue: {
-    fontSize: typographyTokens.sizes.metricPrimary,
-    lineHeight: Math.round(typographyTokens.sizes.metricPrimary * 1.12),
-    fontWeight: typographyTokens.weights.black,
-    fontVariant: typographyTokens.variants.tabular,
-  },
-  runPrimaryUnit: {
-    fontSize: typographyTokens.sizes.rowLabel,
-    fontWeight: typographyTokens.weights.bold,
-  },
+  runPrimaryCell: { flexGrow: 1, flexShrink: 1, minWidth: 0, maxWidth: '100%' },
   runMetricLabel: {
-    fontSize: typographyTokens.sizes.metricLabel,
+    fontSize: 13,
     fontWeight: typographyTokens.weights.bold,
     marginTop: spacing.xs / 2,
   },
@@ -3812,6 +3807,7 @@ const styles = StyleSheet.create({
   },
   runSecondaryRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   voiceDisclosure: {
@@ -3897,17 +3893,18 @@ const styles = StyleSheet.create({
     fontWeight: typographyTokens.weights.black,
   },
   runStatCell: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
     minWidth: 0,
+    maxWidth: '100%',
   },
   runSecondaryValue: {
-    fontSize: typographyTokens.sizes.rowLabel,
-    lineHeight: Math.round(typographyTokens.sizes.rowLabel * typographyTokens.lineHeights.normal),
+    fontSize: 20,
     fontWeight: typographyTokens.weights.black,
     fontVariant: typographyTokens.variants.tabular,
   },
   runSecondaryUnit: {
-    fontSize: typographyTokens.sizes.metricLabel,
+    fontSize: 13,
     fontWeight: typographyTokens.weights.bold,
   },
   runStatusChipRow: {
@@ -4083,7 +4080,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   resumePill: {
-    height: 48,
+    minHeight: 48,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     borderRadius: radiusTokens.md,
     flexDirection: 'row',
     alignItems: 'center',
@@ -4092,11 +4091,15 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   resumePillText: {
+    flexShrink: 1,
+    textAlign: 'center',
     fontSize: typographyTokens.sizes.rowLabel,
     fontWeight: typographyTokens.weights.black,
   },
   stopRunPill: {
-    height: 48,
+    minHeight: 48,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     borderRadius: radiusTokens.md,
     flexDirection: 'row',
     alignItems: 'center',
@@ -4105,6 +4108,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   stopRunPillText: {
+    flexShrink: 1,
+    textAlign: 'center',
     fontSize: typographyTokens.sizes.rowLabel,
     fontWeight: typographyTokens.weights.black,
     color: '#FFFFFF',

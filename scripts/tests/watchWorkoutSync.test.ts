@@ -130,7 +130,8 @@ test('phone and watch expose runtime sync diagnostics and command acks', () => {
   assert.match(watchModule, /emit\("onWatchAck"/);
   assert.match(moduleIndex, /lastCommandMethod/);
   assert.match(moduleIndex, /addStrideWatchAckListener/);
-  assert.match(runScreen, /<WatchStatusDiagnostics status=\{watchStatus\}/);
+  assert.match(runScreen, /<WatchConnectionStatus status=\{watchStatus\}/);
+  assert.match(runScreen, /showWatchSyncDetails \? <WatchStatusDiagnostics/);
   // Watch: acks every phone control command and shows diagnostics on screen.
   assert.match(watchManager, /"type": "commandAck"/);
   assert.match(watchManager, /sendCommandAck\(command: type, message: message, reason: reason\)/);

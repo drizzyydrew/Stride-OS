@@ -210,6 +210,10 @@ export type ReadinessThresholds = {
 
 // ─── Full athlete profile ─────────────────────────────────────────────────────
 
+export type WeightProvenance =
+  | { source: 'user_entered'; weightKg: number; savedAt: number }
+  | { source: 'legacy_nondefault'; weightKg: number; migratedAt: number };
+
 export type AthleteProfile = {
   // Identity
   athleteId:   string;
@@ -222,6 +226,7 @@ export type AthleteProfile = {
   sex:         Sex;
   heightCm:    number;
   weightKg:    number;
+  weightProvenance?: WeightProvenance | null;
 
   // Training background
   trainingAgeYears:      number;

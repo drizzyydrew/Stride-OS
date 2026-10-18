@@ -1,6 +1,6 @@
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ import { useColors } from '../../../src/theme/useColors';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useActiveProfile } from '../../../src/store/profileStore';
+import { profilePowerMass } from '../../../src/utils/profilePower';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useAchievementStore } from '../../../src/store/achievementStore';
@@ -57,8 +58,9 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { units } = useSettingsStore();
   const imp = units === 'imperial';
-  const { data, updateData } = useOnboardingStore();
+  const { data, updateData, setUserWeight } = useOnboardingStore();
   const profile = useActiveProfile();
+  const savedWeightKg = profilePowerMass(profile)?.bodyMassKg;
   const weeklyMileage = useAthleteStore(s => s.weeklyMileage);
   const goalRace = useAthleteStore(s => s.goalRace);
   const activities = useActivityStore(s => s.activities);
@@ -70,12 +72,17 @@ export default function ProfileScreen() {
   const [ageInput, setAgeInput] = useState('');
   const [heightInput, setHeightInput] = useState('');
   const [weightInput, setWeightInput] = useState('');
+  const weightEditedRef = useRef(false);
 
   useEffect(() => {
     setAgeInput(data.age ? String(data.age) : '');
     setHeightInput(formatHeight(data.heightCm, imp));
-    setWeightInput(formatWeight(data.weightKg, imp));
-  }, [data.age, data.heightCm, data.weightKg, imp]);
+  }, [data.age, data.heightCm, imp]);
+
+  useEffect(() => {
+    setWeightInput(savedWeightKg == null ? '' : formatWeight(savedWeightKg, imp));
+    weightEditedRef.current = false;
+  }, [profile?.athleteId, savedWeightKg, imp]);
 
   const calibration = profile?.calibration ?? null;
   const racePredictions = calibration?.racePredictions?.slice(1, 5) ?? [];
@@ -112,10 +119,12 @@ export default function ProfileScreen() {
   }
 
   function commitWeight() {
+    if (!weightEditedRef.current) return;
     const value = Number(weightInput);
     const weightKg = imp ? Math.round(value / 2.20462) : Math.round(value);
-    if (Number.isFinite(weightKg) && weightKg > 25 && weightKg < 275) updateData({ weightKg });
-    else setWeightInput(formatWeight(data.weightKg, imp));
+    if (Number.isFinite(weightKg) && weightKg > 25 && weightKg < 275) setUserWeight(weightKg);
+    else setWeightInput(savedWeightKg == null ? '' : formatWeight(savedWeightKg, imp));
+    weightEditedRef.current = false;
   }
 
   return (
@@ -161,7 +170,7 @@ export default function ProfileScreen() {
           {[
             { label: 'Age', value: ageInput, onChangeText: setAgeInput, onBlur: commitAge, unit: 'yrs', keyboardType: 'number-pad' as const },
             { label: 'Height', value: heightInput, onChangeText: setHeightInput, onBlur: commitHeight, unit: imp ? 'ft/in' : 'cm', keyboardType: 'default' as const },
-            { label: 'Weight', value: weightInput, onChangeText: setWeightInput, onBlur: commitWeight, unit: imp ? 'lbs' : 'kg', keyboardType: 'number-pad' as const },
+            { label: 'Weight', value: weightInput, onChangeText: (value: string) => { weightEditedRef.current = true; setWeightInput(value); }, onBlur: commitWeight, unit: imp ? 'lbs' : 'kg', keyboardType: 'number-pad' as const },
           ].map(f => (
             <View key={f.label} style={styles.inputRow}>
               <Text style={[styles.inputLabel, { color: C.textMuted }]}>{f.label}</Text>

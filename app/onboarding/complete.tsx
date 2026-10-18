@@ -153,6 +153,7 @@ export default function CompleteScreen() {
       sex:                   data.sex,
       heightCm:              data.heightCm,
       weightKg:              data.weightKg,
+      weightProvenance:      data.weightProvenance ?? null,
       hrResting:             data.hrResting,
       hrMax:                 hrMaxEst,
       hrMaxManual:           false,

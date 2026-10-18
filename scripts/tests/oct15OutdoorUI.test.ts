@@ -4,6 +4,7 @@ import test from 'node:test';
 import { createContext, runInContext, type Context } from 'node:vm';
 import ts from 'typescript';
 import { OUTDOOR_SPORTS, type OutdoorSport } from '../../src/utils/outdoorSports';
+import { profilePowerMass } from '../../src/utils/profilePower';
 
 const source = readFileSync('app/(tabs)/activity/start.tsx', 'utf8');
 const ast = ts.createSourceFile('start.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
@@ -41,8 +42,8 @@ function launchContext(selectedType: OutdoorSport, runWalk: boolean): Context {
   return context;
 }
 
-function callArgument(callee: string, context: Context): any {
-  const launch = findNode((node): node is ts.FunctionDeclaration => ts.isFunctionDeclaration(node) && node.name?.text === 'beginActivity');
+function callArgument(callee: string, context: Context, functionName = 'beginActivity'): any {
+  const launch = findNode((node): node is ts.FunctionDeclaration => ts.isFunctionDeclaration(node) && node.name?.text === functionName);
   const call = findNode((node): node is ts.CallExpression => ts.isCallExpression(node) && node.expression.getText(ast) === callee, launch);
   return evaluate(`(${call.arguments[0]!.getText(ast)})`, context);
 }
@@ -77,7 +78,10 @@ test('all nine sports launch with compatible names, subtypes, intervals and plat
       const selected = evaluate('TYPES.find(item => item.type === selectedType)', context);
       const activity = callArgument('active.start', context);
       const live = callArgument('startOutdoorLiveActivity', context);
-      const watch = callArgument('startStrideWatchWorkout', context);
+      context.started = { ...activity, workoutInstanceId: 'instance' };
+      context.expectedId = 'instance';
+      evaluate(declaration('workoutKind'), context);
+      const watch = callArgument('startStrideWatchWorkout', context, 'connectOutdoorWatch');
       const expectedName = compatible ? 'Run / Walk' : selected.label;
       assert.equal(activity.activityType, sport);
       assert.equal(activity.name, expectedName);
@@ -160,18 +164,25 @@ test('directions expose their selected and disabled state without requiring a ro
   assert.equal(attributeValue(selector, 'accessibilityLabel', context), 'Directions off');
 });
 
-test('power consent and Start, Pause, Resume and Complete controls have explicit accessible identities', () => {
+test('saved profile mass automatically drives cycling estimation and workout controls retain accessible identities', () => {
   const context = launchContext('cycling', true);
-  context.active = { workoutInstanceId: 'instance', isPaused: false };
-  context.profile = { weightKg: 70 };
-  context.confirmedCyclingMass = { id: 'instance', massKg: 70 };
+  context.active = { workoutInstanceId: 'instance', isPaused: false, activityType: 'cycling', aggregate: { points: [] }, recordingPauses: [] };
+  context.profile = { athleteId: 'athlete', weightKg: 70, weightProvenance: { source: 'user_entered', weightKg: 70, savedAt: 1 } };
+  context.profilePowerMass = profilePowerMass;
+  context.powerSample = null;
+  const masses: number[] = [];
+  context.liveCyclingPower = (input: { bodyMassKg: number }) => { masses.push(input.bodyMassKg); return { watts: 210 }; };
+  evaluate(`${declaration('cyclingMass')}\n${declaration('modeledPower')}`, context);
+  assert.equal(evaluate('modeledPower.watts', context), 210);
+  assert.deepEqual(masses, [70]);
+  const unavailable = launchContext('cycling', false);
+  Object.assign(unavailable, { active: context.active, profile: { athleteId: 'athlete', weightKg: 70 }, profilePowerMass,
+    powerSample: null, liveCyclingPower: context.liveCyclingPower });
+  evaluate(`${declaration('cyclingMass')}\n${declaration('modeledPower')}`, unavailable);
+  assert.equal(evaluate('modeledPower', unavailable), null);
+  assert.deepEqual(masses, [70], 'unverified defaults never drive an automatic estimate');
+  assert.doesNotMatch(source, /confirmedCyclingMass|accessibilityRole="checkbox"/);
   const controls = openings('TouchableOpacity');
-  const checkbox = controls.find(node => attribute(node, 'accessibilityRole')?.initializer?.getText(ast) === '"checkbox"')!;
-  assert.match(attributeValue(checkbox, 'accessibilityLabel', context), /profile mass 70 kilograms/);
-  assert.equal(attributeValue(checkbox, 'accessibilityState', context).checked, true);
-  assert.equal(attributeValue(checkbox, 'accessibilityState', context).disabled, false);
-  context.profile = { weightKg: NaN };
-  assert.equal(attributeValue(checkbox, 'accessibilityState', context).disabled, true);
   const start = controls.find(node => attribute(node, 'style')?.initializer?.getText(ast).includes('s.startButton'))!;
   const sessionControls = openings('TouchableOpacity', sessionAst);
   const pause = sessionControls.find(node => attribute(node, 'accessibilityLabel')?.initializer?.getText().includes("'Resume activity'"))!;

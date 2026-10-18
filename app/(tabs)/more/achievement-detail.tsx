@@ -8,6 +8,7 @@ import RunLevelProgress from '../../../src/achievements/runLevels/RunLevelProgre
 import AchievementBadge from '../../../src/components/achievements/AchievementBadge';
 import { achievementBadgePresentation } from '../../../src/achievements/badgePresentation';
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
+import ShareOptionGrid from '../../../src/components/share/ShareOptionGrid';
 import ShareStudio, {
   SHARE_STUDIO_ACHIEVEMENT_VARIANT,
   SHARE_STUDIO_FORMATS,
@@ -137,40 +138,9 @@ export default function AchievementDetailScreen() {
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>SHARE STUDIO</Text>
           {!shareEnabled ? <Text style={[s.body, { color: C.textMuted }]}>Sharing unlocks after this achievement is earned.</Text> : null}
-          <View style={s.variantGrid}>
-            {(relatedActivity ? [...SHARE_STUDIO_VARIANTS, SHARE_STUDIO_ACHIEVEMENT_VARIANT] : SHARE_STUDIO_VARIANTS).map(item => {
-              const active = item.id === variant;
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[s.variant, { backgroundColor: active ? C.primaryDim : C.cardAlt, borderColor: active ? C.primary : C.border, opacity: shareEnabled ? 1 : 0.5 }]}
-                  disabled={!shareEnabled}
-                  onPress={() => setVariant(item.id)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active, disabled: !shareEnabled }}
-                >
-                  <Text style={[s.variantLabel, { color: C.text }]}>{item.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          <View style={s.variantGrid}>
-            {SHARE_STUDIO_FORMATS.map(item => {
-              const active = item.id === format;
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[s.variant, { backgroundColor: active ? C.primaryDim : C.cardAlt, borderColor: active ? C.primary : C.border, opacity: shareEnabled ? 1 : 0.5 }]}
-                  disabled={!shareEnabled}
-                  onPress={() => setFormat(item.id)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active, disabled: !shareEnabled }}
-                >
-                  <Text style={[s.variantLabel, { color: C.text }]}>{item.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <ShareOptionGrid options={relatedActivity ? [...SHARE_STUDIO_VARIANTS, SHARE_STUDIO_ACHIEVEMENT_VARIANT] : SHARE_STUDIO_VARIANTS}
+            value={variant} onChange={setVariant} disabled={!shareEnabled} />
+          <ShareOptionGrid options={SHARE_STUDIO_FORMATS} value={format} onChange={setFormat} disabled={!shareEnabled} />
           <ShareStudio
             achievement={achievement}
             activity={relatedActivity}
@@ -210,9 +180,6 @@ const s = StyleSheet.create({
   runLevelProgress: { width: '100%', marginTop: 4 },
   card: { borderWidth: 1, borderRadius: 16, padding: 16, gap: 10 },
   eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
-  variantGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  variant: { minWidth: 86, minHeight: 42, borderRadius: 12, borderWidth: 1, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center' },
-  variantLabel: { fontSize: 12, fontWeight: '900' },
   sharePrimary: { minHeight: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
   sharePrimaryText: { fontSize: 14, fontWeight: '900' },
   shareMessage: { fontSize: 12, lineHeight: 17 },

@@ -1,5 +1,6 @@
 import GpsSignalChip from '../../../src/components/activity/GpsSignalChip';
 import ActiveOutdoorSession, { type OutdoorSessionMetric } from '../../../src/components/activity/ActiveOutdoorSession';
+import WatchConnectionStatus, { useWatchStartRequest } from '../../../src/components/watch/WatchConnectionStatus';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -29,6 +30,7 @@ import { completeOutdoorCommand } from '../../../src/lib/outdoorCompletion';
 import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
 import { requestLocationRecovery } from '../../../src/lib/locationPermissionRecovery';
 import { useActiveProfile } from '../../../src/store/profileStore';
+import { profilePowerMass } from '../../../src/utils/profilePower';
 import { liveCyclingPower } from '../../../src/utils/liveCyclingPower';
 import { CYCLING_POWER_ASSUMPTIONS } from '../../../src/utils/outdoorPower';
 import { useSettingsStore } from '../../../src/store/settingsStore';
@@ -39,6 +41,7 @@ import {
   isActiveSessionStale,
 } from '../../../src/lib/activeSessionCoordinator';
 import {
+  activateStrideWatchConnectivity,
   addStrideWatchStatusListener,
   getStrideWatchStatus,
   pauseStrideWatchWorkout,
@@ -79,7 +82,7 @@ export default function StartOutdoorActivityScreen() {
   const units = useSettingsStore(state => state.units);
   const active = useActiveActivityStore();
   const profile = useActiveProfile();
-  const [confirmedCyclingMass, setConfirmedCyclingMass] = useState<{ id: string; massKg: number } | null>(null);
+  const cyclingMass = profilePowerMass(profile);
   const routes = useRouteStore(state => state.routes);
   const attachment = useRouteStore(state => state.routeAttachment);
   const attached = effectiveAttachedRoute(routes.find(route => route.id === attachment.routeId) ?? null, attachment);
@@ -91,16 +94,17 @@ export default function StartOutdoorActivityScreen() {
   const [navigationMode, setNavigationMode] = useState<'off' | 'walking' | 'cycling'>('off');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [outdoorWatchStatus, setOutdoorWatchStatus] = useState(getStrideWatchStatus);
+  const outdoorWatchStart = useWatchStartRequest(setOutdoorWatchStatus, active.workoutInstanceId);
   const telemetry = selectLiveTelemetry({
     rawHeartRateSamples: active.lastHeartRateSample && !active.isPaused ? [active.lastHeartRateSample] : [],
     cadenceSamples: active.lastCadenceSample && !active.isPaused ? [active.lastCadenceSample] : [],
     powerSamples: active.lastPowerSample && !active.isPaused ? [active.lastPowerSample] : [],
   }, active.startedAt ?? Date.now(), Date.now());
   const { heartRateBpm, heartRateSample, cadenceSample, powerSample } = telemetry;
-  const modeledPower = !powerSample && confirmedCyclingMass?.id === active.workoutInstanceId
+  const modeledPower = !powerSample && cyclingMass && active.workoutInstanceId
     ? liveCyclingPower({ activityType: active.activityType, isPaused: active.isPaused,
       points: active.aggregate.points, recordingPauses: active.recordingPauses,
-      bodyMassKg: confirmedCyclingMass.massKg, bikeMassKg: 10, now: Date.now() }) : null;
+      bodyMassKg: cyclingMass.bodyMassKg, bikeMassKg: 10, now: Date.now() }) : null;
   const shownPower = powerSample ?? modeledPower;
   const [guidance, setGuidance] = useState<RouteGuidancePlan | null>(null);
   const previousElapsed = useRef(0);
@@ -130,6 +134,28 @@ export default function StartOutdoorActivityScreen() {
     const subscription = addStrideWatchStatusListener(setOutdoorWatchStatus);
     return () => subscription?.remove();
   }, [active.isActive]);
+
+  function connectOutdoorWatch(expectedId = useActiveActivityStore.getState().workoutInstanceId) {
+    const started = useActiveActivityStore.getState();
+    const lease = captureOwnerLease();
+    const isCurrent = () => {
+      const current = useActiveActivityStore.getState();
+      return !!lease && ownerLeaseIsCurrent(lease) && current.isActive && !current.isPaused
+        && current.completionRequestedAt == null && current.workoutInstanceId === expectedId;
+    };
+    if (!expectedId || !isCurrent()) return;
+    const workoutKind = started.runWalkIntervals.length ? 'run' : OUTDOOR_SPORTS[started.activityType].watchKind;
+    void outdoorWatchStart.request({
+      workoutInstanceId: expectedId,
+      workoutKind,
+      isCurrent,
+      getStatus: getStrideWatchStatus,
+      activate: activateStrideWatchConnectivity,
+      setContext: () => setStrideWatchWorkoutContext({ unitSystem: units }),
+      start: () => startStrideWatchWorkout({ workoutKind, workoutInstanceId: expectedId,
+        title: started.name, environment: 'outdoor', targetZone: null }),
+    });
+  }
 
   useEffect(() => {
     if (!active.isActive || active.isPaused || !active.startedAt) return;
@@ -280,6 +306,8 @@ export default function StartOutdoorActivityScreen() {
       Alert.alert('GPS recording unavailable', error instanceof Error ? error.message : 'Tracking could not start. Check location permissions and try again.');
       return;
     }
+    // Watch start must not wait on route lookup or Live Activity delivery.
+    connectOutdoorWatch(startedId);
     if (attached && mode !== 'off') {
       const plan = await buildRouteGuidance(attached.points, mode, attached.maneuvers).catch(() => null);
       setGuidance(plan);
@@ -301,18 +329,6 @@ export default function StartOutdoorActivityScreen() {
       elevationGainMeters: 0,
       elevationLossMeters: 0,
     }).catch(() => undefined);
-    {
-      await setStrideWatchWorkoutContext({ unitSystem: units }).catch(() => undefined);
-      await startStrideWatchWorkout({
-        workoutKind: compatibleRunWalk ? 'run' : OUTDOOR_SPORTS[selectedType].watchKind,
-        workoutInstanceId: started.workoutInstanceId ?? null,
-        title: launchName,
-        environment: 'outdoor',
-        targetZone: null,
-      }).then(status => {
-        if (status.lastError) Alert.alert('Watch unavailable', `${status.lastError} Phone recording continues.`);
-      }).catch(() => undefined);
-    }
     enqueueVoiceCue(
       compatibleRunWalk ? 'Begin running.' : `${launchName} started.`,
       compatibleRunWalk ? 'runWalk' : 'motivation',
@@ -454,9 +470,6 @@ export default function StartOutdoorActivityScreen() {
   });
   const currentInterval = active.runWalkIntervals.length ? intervalAtElapsed(active.runWalkIntervals, displaySeconds) : null;
   const watchRecording = active.watchRecording?.workoutInstanceId === active.workoutInstanceId ? active.watchRecording : undefined;
-  const watchStatusText = !outdoorWatchStatus.isSupported ? 'Watch connection unavailable' : !outdoorWatchStatus.isPaired ? 'No paired Apple Watch'
-    : !outdoorWatchStatus.isWatchAppInstalled ? 'Install StrideOS on Apple Watch'
-    : outdoorWatchStatus.isReachable ? 'Connected' : 'Watch app not reachable';
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top', 'bottom']}>
@@ -466,26 +479,19 @@ export default function StartOutdoorActivityScreen() {
         timeLabel={time(displaySeconds)} distanceLabel={(miles * (units === 'metric' ? 1.609344 : 1)).toFixed(2)} distanceUnit={units === 'metric' ? 'km' : 'mi'}
         primaryMetrics={primaryMetrics} additionalMetrics={additionalMetrics}
         gpsStatus={<GpsSignalChip active={active.isActive} paused={active.isPaused} lastGoodFixAt={active.lastGoodFixAt} startedAt={active.startedAt} />}
-        watchStatus={watchStatusText} watchDetail={outdoorWatchStatus.lastError || (watchRecording ? `Recording confirmed: ${watchRecording.state}` : 'Recording not yet confirmed')}
+        watchConnection={<WatchConnectionStatus status={outdoorWatchStatus} workoutInstanceId={active.workoutInstanceId}
+          active={active.isActive} paused={active.isPaused} ending={active.completionRequestedAt != null}
+          recording={watchRecording} requesting={outdoorWatchStart.busy} requestError={outdoorWatchStart.requestError}
+          onRetry={() => connectOutdoorWatch()} />}
         interval={currentInterval ? { name: active.runWalkIntervals[currentInterval.index]?.kind === 'run' ? 'Run' : 'Walk', remaining: currentInterval.intervalRemaining } : undefined}
         instruction={active.nextInstruction}
         powerSettings={active.activityType === 'cycling' ? (
           <View style={{ marginBottom: 16 }}>
-            <TouchableOpacity accessibilityRole="checkbox"
-              accessibilityLabel={`Estimate cycling power using profile mass ${profile?.weightKg ?? 'unavailable'} kilograms`}
-              accessibilityState={{ checked: confirmedCyclingMass?.id === active.workoutInstanceId, disabled: !active.workoutInstanceId || !Number.isFinite(profile?.weightKg) || profile!.weightKg < 20 || profile!.weightKg > 300 }}
-              disabled={!active.workoutInstanceId || !Number.isFinite(profile?.weightKg) || profile!.weightKg < 20 || profile!.weightKg > 300}
-              onPress={() => setConfirmedCyclingMass(confirmedCyclingMass?.id === active.workoutInstanceId ? null
-                : { id: active.workoutInstanceId!, massKg: profile!.weightKg })}
-              style={[s.row, { minHeight: 44, justifyContent: 'flex-start' }]}>
-              <Ionicons name={confirmedCyclingMass?.id === active.workoutInstanceId ? 'checkbox' : 'square-outline'} size={24} color={C.primary} />
-              <Text style={{ color: C.text, flex: 1 }}>Estimate using profile mass: {profile?.weightKg ?? '--'} kg</Text>
-            </TouchableOpacity>
-            {confirmedCyclingMass?.id === active.workoutInstanceId ? <>
-              <Text style={[s.helper, { color: C.textMuted }]}>Confirmed profile mass {confirmedCyclingMass.massKg} kg; assumed bike mass 10 kg. Steady-speed approximation.</Text>
+            {cyclingMass ? <>
+              <Text style={[s.helper, { color: C.textMuted }]}>Using saved profile weight {cyclingMass.bodyMassKg} kg; assumed bike mass 10 kg. Steady-speed approximation.</Text>
               {CYCLING_POWER_ASSUMPTIONS.map(assumption => <Text key={assumption} style={[s.helper, { color: C.textMuted }]}>{assumption}</Text>)}
               {!shownPower ? <Text style={[s.helper, { color: C.textMuted }]}>Unavailable: fresh continuous GPS, usable altitude and good horizontal accuracy are required.</Text> : null}
-            </> : null}
+            </> : <Text style={[s.helper, { color: C.textMuted }]}>Save your current weight in Profile to enable automatic cycling-power estimates.</Text>}
           </View>
         ) : null}
         coachingControls={<>

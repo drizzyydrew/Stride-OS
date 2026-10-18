@@ -21,6 +21,7 @@ import { buildActivitySummary } from '../../../src/utils/activitySummary';
 import { buildRunSplits } from '../../../src/utils/activitySplits';
 import ActivityRouteReview from '../../../src/components/activity/ActivityRouteReview';
 import ActivityPowerPanel from '../../../src/components/activity/ActivityPowerPanel';
+import ShareOptionGrid from '../../../src/components/share/ShareOptionGrid';
 import { analyzeSnowSegments, buildOutdoorSplits } from '../../../src/utils/outdoorAnalysis';
 import { formatDistance } from '../../../src/lib/units';
 
@@ -178,38 +179,8 @@ export default function ActivityDetailScreen() {
         <ActivityPowerPanel key={`${activity.id}:${units}`} activity={activity} units={units} />
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>SHARE IMAGE</Text>
-          <View style={s.variantGrid}>
-            {SHARE_STUDIO_VARIANTS.map(item => {
-              const active = shareVariant === item.id;
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[s.variant, { backgroundColor: active ? C.primaryDim : C.cardAlt, borderColor: active ? C.primary : C.border }]}
-                  onPress={() => setShareVariant(item.id)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                >
-                  <Text style={[s.variantLabel, { color: C.text }]}>{item.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          <View style={s.variantGrid}>
-            {SHARE_STUDIO_FORMATS.map(item => {
-              const active = shareFormat === item.id;
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[s.variant, { backgroundColor: active ? C.primaryDim : C.cardAlt, borderColor: active ? C.primary : C.border }]}
-                  onPress={() => setShareFormat(item.id)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                >
-                  <Text style={[s.variantLabel, { color: C.text }]}>{item.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <ShareOptionGrid options={SHARE_STUDIO_VARIANTS} value={shareVariant} onChange={setShareVariant} />
+          <ShareOptionGrid options={SHARE_STUDIO_FORMATS} value={shareFormat} onChange={setShareFormat} />
           <View style={s.sharePreview}>
             <ShareStudio
               activity={activity}
@@ -269,9 +240,6 @@ const s = StyleSheet.create({
   zoneRow: { flexDirection: 'row', justifyContent: 'space-between' },
   body: { fontSize: 13, lineHeight: 20, flexShrink: 1 },
   bodyValue: { flexShrink: 1, marginLeft: 14, fontSize: 13, lineHeight: 20, textAlign: 'right' },
-  variantGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  variant: { width: '31%', minHeight: 74, borderRadius: 12, borderWidth: 1, padding: 10 },
-  variantLabel: { fontSize: 12, fontWeight: '900' },
   variantDescription: { fontSize: 10, lineHeight: 14, marginTop: 4 },
   sharePreview: { width: '100%', borderRadius: 18, overflow: 'hidden', marginTop: 4 },
   sharePrimary: { minHeight: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },

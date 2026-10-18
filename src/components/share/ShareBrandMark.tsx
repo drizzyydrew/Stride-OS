@@ -7,13 +7,13 @@ export const SHARE_CHEVRON_COLORS = ['#B8C4A9', '#A6C0B4', '#E3CDB8', '#78A3BE',
 export default function ShareBrandMark({ darkInk = false }: { darkInk?: boolean }) {
   return (
     <View style={styles.logoMark} accessible accessibilityLabel="StrideOS logo">
-      <Text style={styles.logoWord}>
+      <Text allowFontScaling={false} style={styles.logoWord}>
         <Text style={[styles.logoStride, darkInk && { color: '#24201C' }]}>Stride</Text>
         <Text style={styles.logoOS}>OS</Text>
       </Text>
       <View style={styles.logoChevronRow}>
         {SHARE_CHEVRON_COLORS.map((color, index) => (
-          <Text key={`${color}-${index}`} style={[styles.logoChevron, { color }]}>{'>'}</Text>
+          <Text allowFontScaling={false} key={`${color}-${index}`} style={[styles.logoChevron, { color }]}>{'>'}</Text>
         ))}
       </View>
     </View>

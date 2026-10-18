@@ -60,3 +60,4 @@ supabase/.temp/
 # Generated browser QA bundle; the fixture source is versioned.
 docs/handoff/update-2026-10-15/visual-qa.js
 docs/handoff/update-2026-10-15/active-outdoor-qa.js
+docs/handoff/update-2026-10-17/regression-qa.js

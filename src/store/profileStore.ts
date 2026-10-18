@@ -27,6 +27,7 @@ import type {
 } from '../types/athlete';
 import type { RaceDistance, TrainingPhase } from '../types/training';
 import { runCalibration, createDefaultProfile } from '../utils/calibrationEngine';
+import { migrateStoredWeight, preserveWeightProvenance } from '../utils/profilePower';
 
 // ─── Store shape ───────────────────────────────────────────────────────────────
 
@@ -120,7 +121,7 @@ export const useProfileStore = create<ProfileStore>()(
           return {
             profiles: {
               ...state.profiles,
-              [id]: { ...prev, ...patch, updatedAt: Date.now() },
+              [id]: { ...prev, ...preserveWeightProvenance(prev, patch), updatedAt: Date.now() },
             },
           };
         }),
@@ -293,6 +294,11 @@ export const useProfileStore = create<ProfileStore>()(
     {
       name:    'profile-store',
       storage: createAppJSONStorage(),
+      version: 1,
+      migrate: (persisted) => {
+        const state = persisted as Pick<ProfileStore, 'profiles' | 'activeAthleteId'>;
+        return { ...state, profiles: Object.fromEntries(Object.entries(state.profiles ?? {}).map(([id, profile]) => [id, migrateStoredWeight(profile)])) };
+      },
       partialize: (state) => ({
         profiles:        state.profiles,
         activeAthleteId: state.activeAthleteId,

@@ -41,6 +41,10 @@ export function estimateRunningMetabolicWatts(bodyMassKg: number, speedMps: numb
 }
 
 export function powerModelExclusionReason(activity: Activity, route: RouteObservation[] = buildRouteObservations(activity)): string | null {
+  if (activity.indoor || ['indoor', 'treadmill', 'stationary'].includes(activity.subtype ?? '')) return 'Outdoor power estimates require a recorded outdoor route.';
+  if (['manual', 'training_plan'].includes(activity.source) && !activity.workoutInstanceId && !activity.healthKit) {
+    return 'Manual distance, elevation and duration do not identify total power. A timed recorded route is required.';
+  }
   if (activity.activityType !== 'running') return null;
   if (activity.subtype === 'run_walk' || activity.metrics.runWalkIntervals?.length) return 'Mixed run/walk activities are not modeled.';
   if (route.some(point => point.continuous && (point.gradeRejected || (point.grade != null && Math.abs(point.grade) > 0.45)))) {
@@ -55,13 +59,30 @@ function routeInputSource(activity: Activity): TelemetrySource {
   return source === 'phone_gps' || source === 'apple_watch' || source === 'healthkit' ? source : 'unavailable';
 }
 
-export function estimateClimbingWork(activity: Activity, bodyMassKg: number): { kilojoules: number; note: string } | null {
+export type ClimbingWorkCalculation = { kilojoules: number; averageClimbingWatts?: number; seconds?: number; timeBasis?: 'active' | 'duration' | 'elapsed'; note: string };
+
+export function climbingWorkTime(activity: Pick<Activity, 'metrics'>): { seconds: number; timeBasis: 'active' | 'duration' | 'elapsed' } | null {
+  const m = activity.metrics;
+  // An explicitly invalid/zero active duration must not become a positive elapsed estimate.
+  if (m.activeTimeSeconds != null) return Number.isFinite(m.activeTimeSeconds) && m.activeTimeSeconds > 0 ? { seconds: m.activeTimeSeconds, timeBasis: 'active' } : null;
+  if (m.durationSeconds != null) return Number.isFinite(m.durationSeconds) && m.durationSeconds > 0 ? { seconds: m.durationSeconds, timeBasis: 'duration' } : null;
+  return Number.isFinite(m.elapsedTimeSeconds) && m.elapsedTimeSeconds! > 0 ? { seconds: m.elapsedTimeSeconds!, timeBasis: 'elapsed' } : null;
+}
+
+export function estimateClimbingWork(activity: Pick<Activity, 'activityType' | 'indoor' | 'metrics'>, bodyMassKg: number): ClimbingWorkCalculation | null {
   const gain = activity.metrics.elevationGainMeters;
+  const source = activity.metrics.metricSources?.elevation;
+  if (source === 'prescribed_estimate' || source === 'unavailable') return null;
   if (!['walking', 'hiking'].includes(activity.activityType) || activity.indoor
     || !Number.isFinite(bodyMassKg) || bodyMassKg < 20 || bodyMassKg > 300 || !Number.isFinite(gain) || gain! <= 0) return null;
+  const joules = bodyMassKg * 9.80665 * gain!;
+  if (!Number.isFinite(joules)) return null;
+  const time = climbingWorkTime(activity);
+  const watts = time ? joules / time.seconds : undefined;
   return {
-    kilojoules: bodyMassKg * 9.80665 * gain! / 1000,
-    note: 'Estimated body-mass potential-energy gain from recorded ascent. Assisted ascent cannot be distinguished and may be included. Excludes backpack, horizontal movement and muscle inefficiency; not total human power or calories.',
+    kilojoules: joules / 1000,
+    ...(time ? { ...time, ...(Number.isFinite(watts) ? { averageClimbingWatts: watts } : {}) } : {}),
+    note: 'Positive-ascent climbing component only (m g h). Assisted ascent cannot be distinguished and may be included. Excludes backpack, horizontal movement and muscle inefficiency; not total human power or calories.',
   };
 }
 
@@ -158,10 +179,21 @@ export function sharePowerMetric(activity: Activity): { value: string; label: st
   const device = devicePowerSummary(activity);
   if (device) return { value: `${Math.round(device.watts)} W`, label: device.label };
   const estimate = activity.metrics.powerEstimate;
-  const matchesSport = estimate && (activity.activityType === 'running' && estimate.sport === 'running' && estimate.quantity === 'running_metabolic_estimate'
-    || activity.activityType === 'cycling' && estimate.sport === 'cycling' && estimate.quantity === 'cycling_mechanical_estimate');
-  if (matchesSport && estimate?.averageWatts != null && Number.isFinite(estimate.averageWatts) && estimate.averageWatts >= 0 && estimate.coverageRatio >= 0.7 && estimate.coverageRatio <= 1) {
-    return { value: `${Math.round(estimate.averageWatts)} W`, label: powerEstimateLabel(estimate) };
+  if (validActivityPowerEstimate(activity, estimate)) {
+    return { value: `${Math.round(estimate!.averageWatts!)} W`, label: powerEstimateLabel(estimate!) };
   }
   return null;
+}
+
+export function validActivityPowerEstimate(activity: Activity, estimate: PowerEstimate | undefined): boolean {
+  if (!estimate || activity.indoor || ['indoor', 'treadmill', 'stationary', 'run_walk'].includes(activity.subtype ?? '')
+    || activity.metrics.runWalkIntervals?.length) return false;
+  if (['manual', 'training_plan'].includes(activity.source) && !activity.workoutInstanceId && !activity.healthKit) return false;
+  const matches = activity.activityType === 'running' && estimate.sport === 'running' && estimate.quantity === 'running_metabolic_estimate'
+    || activity.activityType === 'cycling' && estimate.sport === 'cycling' && estimate.quantity === 'cycling_mechanical_estimate';
+  return Boolean(matches && estimate.modelId && estimate.version && Number.isFinite(estimate.computedAt)
+    && Number.isFinite(estimate.averageWatts) && estimate.averageWatts! >= 0
+    && Number.isFinite(estimate.coverageSeconds) && estimate.coverageSeconds >= 20
+    && Number.isFinite(estimate.coverageRatio) && estimate.coverageRatio >= 0.7 && estimate.coverageRatio <= 1
+    && Array.isArray(estimate.assumptions) && Array.isArray(estimate.inputs));
 }

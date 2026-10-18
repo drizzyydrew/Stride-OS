@@ -11,7 +11,9 @@ import { persist } from 'zustand/middleware';
 import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { Sex, TrainingDay, StandardDistance } from '../types/athlete';
+import type { Sex, TrainingDay, StandardDistance, WeightProvenance } from '../types/athlete';
+import { useProfileStore } from './profileStore';
+import { matchingWeightProvenance, migrateStoredWeight, preserveWeightProvenance, userEnteredWeightPatch } from '../utils/profilePower';
 import type { ProgressionLevel, GoalType, StrengthLevel, TrainingStyle, RaceDistance } from '../types/training';
 import type { TrainingGoalType, RacePriority } from '../types/plan';
 
@@ -43,6 +45,7 @@ export type OnboardingData = {
   sex:             Sex;
   heightCm:        number;
   weightKg:        number;
+  weightProvenance?: WeightProvenance | null;
   hrResting:       number | null;
   hrMax:           number | null;
   hrMaxManual:     boolean;
@@ -89,6 +92,7 @@ const DEFAULT_DATA: OnboardingData = {
   sex:              'prefer_not_to_say',
   heightCm:         175,
   weightKg:         70,
+  weightProvenance: null,
   hrResting:        null,
   hrMax:            null,
   hrMaxManual:      false,
@@ -121,6 +125,7 @@ type OnboardingStore = {
 
   setStep:       (step: number) => void;
   updateData:    (patch: Partial<OnboardingData>) => void;
+  setUserWeight: (weightKg: number) => boolean;
   completeOnboarding: () => void;
   resetOnboarding:    () => void;
 };
@@ -129,7 +134,7 @@ type OnboardingStore = {
 
 export const useOnboardingStore = create<OnboardingStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       onboardingComplete: false,
       currentStep:        0,
       data:               DEFAULT_DATA,
@@ -137,7 +142,30 @@ export const useOnboardingStore = create<OnboardingStore>()(
       setStep: (step) => set({ currentStep: step }),
 
       updateData: (patch) =>
-        set(state => ({ data: { ...state.data, ...patch } })),
+        set(state => {
+          const scoped = { ...patch };
+          // This legacy global weight belongs only to the original athlete.
+          if (useProfileStore.getState().activeAthleteId !== 'athlete_default') {
+            delete scoped.weightKg;
+            delete scoped.weightProvenance;
+          }
+          return { data: { ...state.data, ...preserveWeightProvenance(state.data, scoped) } };
+        }),
+
+      setUserWeight: (weightKg) => {
+        const patch = userEnteredWeightPatch(weightKg);
+        if (!patch) return false;
+        const profiles = useProfileStore.getState();
+        const athleteId = profiles.activeAthleteId;
+        if (athleteId !== 'athlete_default') {
+          if (!profiles.profiles[athleteId]) return false;
+          profiles.updateProfile(athleteId, patch);
+          return true;
+        }
+        get().updateData(patch);
+        if (get().onboardingComplete) profiles.updateProfile(athleteId, patch);
+        return true;
+      },
 
       completeOnboarding: () =>
         set({ onboardingComplete: true, currentStep: ONBOARDING_TOTAL_STEPS }),
@@ -148,6 +176,21 @@ export const useOnboardingStore = create<OnboardingStore>()(
     {
       name:    'onboarding-store',
       storage: createAppJSONStorage(),
+      version: 1,
+      migrate: (persisted) => {
+        const state = persisted as Partial<OnboardingStore>;
+        return { ...state, data: migrateStoredWeight(state.data ?? DEFAULT_DATA) };
+      },
+      onRehydrateStorage: () => (state, error) => {
+        if (!state || error) return;
+        if (useProfileStore.persist.hasHydrated()) syncLegacyOnboardingWeight(state);
+        else {
+          const unsubscribe = useProfileStore.persist.onFinishHydration(() => {
+            unsubscribe();
+            syncLegacyOnboardingWeight(useOnboardingStore.getState());
+          });
+        }
+      },
       // Older persisted stores predate the Build 33 plan-spine fields on
       // `data` (goalType/raceName/raceDistance/raceDate/racePriority/
       // programStartDate) — merge onto DEFAULT_DATA so existing users get
@@ -163,3 +206,22 @@ export const useOnboardingStore = create<OnboardingStore>()(
     },
   ),
 );
+
+function syncLegacyOnboardingWeight(state: OnboardingStore) {
+  if (!state.onboardingComplete) return;
+  // The legacy global onboarding record belongs only to the original default athlete.
+  const profiles = useProfileStore.getState();
+  const original = profiles.profiles.athlete_default;
+  const evidence = matchingWeightProvenance(state.data.weightKg, state.data.weightProvenance);
+  if (!original) return;
+  const existing = matchingWeightProvenance(original.weightKg, original.weightProvenance);
+  if (!evidence) {
+    if (existing?.source === 'legacy_nondefault' && original.weightKg !== state.data.weightKg) {
+      profiles.updateProfile('athlete_default', { weightProvenance: null });
+    }
+    return;
+  }
+  if (existing?.source === 'user_entered' && (evidence.source !== 'user_entered' || existing.savedAt >= evidence.savedAt)) return;
+  if (original.weightKg === state.data.weightKg && existing?.source === 'legacy_nondefault' && evidence.source === 'legacy_nondefault') return;
+  profiles.updateProfile('athlete_default', { weightKg: state.data.weightKg, weightProvenance: evidence });
+}

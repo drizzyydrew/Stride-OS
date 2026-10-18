@@ -5,6 +5,7 @@ import type {
   ActivityMetrics,
   ActivityType,
 } from '../types/activity';
+import type { ClimbingWorkMetrics } from './climbingWork';
 
 const NON_IMPACT_AEROBIC = new Set<ActivityType>([
   'cycling',
@@ -124,10 +125,6 @@ const DISTANCE_TYPES = new Set<ActivityType>([
   'running', 'walking', 'cycling', 'indoor_cycling', 'swimming', 'hiking',
   'downhill_skiing', 'cross_country_skiing', 'snowboarding', 'elliptical', 'rowing',
 ]);
-const ELEVATION_TYPES = new Set<ActivityType>([
-  'ski_touring', 'snowboard_touring',
-  'running', 'walking', 'cycling', 'hiking', 'downhill_skiing', 'cross_country_skiing', 'snowboarding',
-]);
 const PACE_TYPES = new Set<ActivityType>(['running', 'walking', 'hiking']);
 const SPEED_TYPES = new Set<ActivityType>([
   'ski_touring', 'snowboard_touring',
@@ -145,7 +142,7 @@ export function sanitizeActivityMetrics(
   activityType: ActivityType,
   metrics: ActivityMetrics,
 ): ActivityMetrics {
-  const clean: ActivityMetrics = {
+  const clean: ClimbingWorkMetrics = {
     durationSeconds: metrics.durationSeconds,
     elapsedTimeSeconds: metrics.elapsedTimeSeconds,
     activeTimeSeconds: metrics.activeTimeSeconds,
@@ -158,6 +155,9 @@ export function sanitizeActivityMetrics(
     stepCount: metrics.stepCount,
     metricSources: metrics.metricSources,
     estimatedCalories: metrics.estimatedCalories,
+    elevationGainMeters: Number.isFinite(metrics.elevationGainMeters) && metrics.elevationGainMeters! >= 0 ? metrics.elevationGainMeters : undefined,
+    elevationLossMeters: Number.isFinite(metrics.elevationLossMeters) && metrics.elevationLossMeters! >= 0 ? metrics.elevationLossMeters : undefined,
+    climbingWorkEstimate: activityType === 'hiking' || activityType === 'walking' ? (metrics as ClimbingWorkMetrics).climbingWorkEstimate : undefined,
   };
 
   if (DISTANCE_TYPES.has(activityType)) {
@@ -168,10 +168,6 @@ export function sanitizeActivityMetrics(
     // confirmed-speed/prescribed-estimate/equipment-display/manual sources).
     clean.distanceSource = metrics.distanceSource;
     clean.originalEstimatedDistanceMiles = metrics.originalEstimatedDistanceMiles;
-  }
-  if (ELEVATION_TYPES.has(activityType)) {
-    clean.elevationGainMeters = metrics.elevationGainMeters;
-    clean.elevationLossMeters = metrics.elevationLossMeters;
   }
   if (PACE_TYPES.has(activityType)) clean.pace = metrics.pace;
   if (activityType === 'running') clean.runningDynamics = metrics.runningDynamics;

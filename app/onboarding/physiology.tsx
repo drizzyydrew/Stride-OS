@@ -33,11 +33,12 @@ function Row({
 }
 
 export default function PhysiologyScreen() {
-  const { data, updateData } = useOnboardingStore();
+  const { data, updateData, setUserWeight } = useOnboardingStore();
   const [age,      setAge]      = useState(data.age);
   const [sex,      setSex]      = useState<Sex>(data.sex);
   const [heightCm, setHeightCm] = useState(data.heightCm);
   const [weightKg, setWeightKg] = useState(data.weightKg);
+  const [weightEdited, setWeightEdited] = useState(false);
   const [hrResting, setHrResting] = useState(data.hrResting ?? 55);
   const [hasResting, setHasResting] = useState(data.hrResting !== null);
 
@@ -51,10 +52,10 @@ export default function PhysiologyScreen() {
       age,
       sex,
       heightCm,
-      weightKg,
       hrResting: hasResting ? hrResting : null,
       hrMaxManual: false,
     });
+    if (weightEdited) setUserWeight(weightKg);
     router.push('/onboarding/availability');
   }
 
@@ -107,8 +108,8 @@ export default function PhysiologyScreen() {
       <Row
         label="Weight"
         display={`${weightLb} lb`}
-        onInc={() => setWeightKg(v => +(v + 0.5).toFixed(1))}
-        onDec={() => setWeightKg(v => +(Math.max(30, v - 0.5)).toFixed(1))}
+        onInc={() => { setWeightEdited(true); setWeightKg(v => +(Math.min(300, v + 0.5)).toFixed(1)); }}
+        onDec={() => { setWeightEdited(true); setWeightKg(v => +(Math.max(30, v - 0.5)).toFixed(1)); }}
       />
 
       {/* Resting HR */}

@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { requireNativeModule } from 'expo-modules-core';
+import { watchErrorText } from '../../../src/utils/watchAvailability';
 
 export type StrideWatchStatus = {
   isSupported: boolean;
@@ -430,5 +431,5 @@ function finiteOrZero(value: unknown): number {
 }
 
 function messageFromError(error: unknown): string {
-  return error instanceof Error ? error.message : 'Apple Watch command failed.';
+  return watchErrorText(error);
 }

@@ -30,6 +30,7 @@ import { achievementShareAllowed } from '../../utils/achievementSystem';
 import { buildActivitySummary } from '../../utils/activitySummary';
 import { displayLabel } from '../../utils/displayLabels';
 import { sharePowerMetric } from '../../utils/outdoorPower';
+import { isOutdoorSport, OUTDOOR_SPORTS } from '../../utils/outdoorSports';
 import { useColors } from '../../theme/useColors';
 import {
   ROUTE_PRIVACY_NOTE,
@@ -75,6 +76,12 @@ export const SHARE_STUDIO_FORMATS: Array<{ id: ShareStudioFormat; label: string 
   { id: 'story', label: 'Story' },
 ];
 
+export function storyHeaderBudget(variant: ShareStudioVariant): number {
+  const metricsTop = 640 * (variant === 'activity_achievement' ? 0.25 : 0.24);
+  const titleTop = variant === 'editorial_card' ? 54 : 42;
+  return metricsTop - titleTop - 10;
+}
+
 function metricValue(activity: Activity | undefined, units: UnitSystem, key: ToggleKey): string | null {
   if (!activity) return null;
   if (key === 'power') return sharePowerMetric(activity)?.value ?? null;
@@ -105,7 +112,8 @@ function toggleLabel(key: ToggleKey, activity?: Activity): string {
   if (key === 'power') return activity ? sharePowerMetric(activity)?.label ?? 'Power' : 'Power';
   if (key === 'route') return 'Route';
   if (key === 'time') return 'Time';
-  if (key === 'pace') return activity && ['cycling', 'indoor_cycling'].includes(activity.activityType) ? 'Speed' : 'Pace';
+  if (key === 'pace') return activity && (activity.activityType === 'indoor_cycling'
+    || (isOutdoorSport(activity.activityType) && OUTDOOR_SPORTS[activity.activityType].speedBased)) ? 'Speed' : 'Pace';
   if (key === 'achievement') return 'Badge';
   if (key === 'brand') return 'StrideOS';
   return displayLabel(key);
@@ -117,6 +125,10 @@ function shareActivityLabel(activity: Activity | undefined): string | null {
   if (activity.activityType === 'running') return 'RUN';
   if (activity.activityType === 'walking') return 'WALK';
   if (activity.activityType === 'cycling' || activity.activityType === 'indoor_cycling') return 'RIDE';
+  if (activity.activityType === 'cross_country_skiing') return 'XC SKI';
+  if (activity.activityType === 'downhill_skiing') return 'DOWNHILL SKI';
+  if (activity.activityType === 'ski_touring') return 'SKI TOURING';
+  if (activity.activityType === 'snowboard_touring') return 'BOARD TOURING';
   return displayLabel(activity.activityType).toUpperCase();
 }
 
@@ -205,8 +217,8 @@ function RouteOverlay({ activity, light = false }: { activity?: Activity; light?
 function StatPill({ label, value, transparent = false }: { label: string; value: string; transparent?: boolean }) {
   return (
     <View style={[styles.statPill, transparent && styles.statPillTransparent]}>
-      <Text style={[styles.statValue, transparent && styles.overlayTextShadow]}>{value}</Text>
-      <Text style={[styles.statLabel, transparent && styles.overlayTextShadow]}>{label}</Text>
+      <Text allowFontScaling={false} style={[styles.statValue, transparent && styles.overlayTextShadow]}>{value}</Text>
+      <Text allowFontScaling={false} style={[styles.statLabel, transparent && styles.overlayTextShadow]}>{label}</Text>
     </View>
   );
 }
@@ -251,6 +263,12 @@ export default function ShareStudio({
   const [showStoryActivityTitle, setShowStoryActivityTitle] = useState(true);
   const [selectedLayer, setSelectedLayer] = useState<EditableLayerKey>('achievement');
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [separateActivityTitle, setSeparateActivityTitle] = useState(false);
+  const [fixedTitleSize, setFixedTitleSize] = useState(34);
+  const titleLayoutKey = `${variant}:${separateActivityTitle}:${fixedTitleSize}`;
+  const titleLayoutGeneration = useRef(titleLayoutKey);
+  titleLayoutGeneration.current = titleLayoutKey;
+  useEffect(() => { setSeparateActivityTitle(false); setFixedTitleSize(34); }, [achievement?.id, achievement?.title, achievement?.displayTarget, activity?.activityType, variant, units]);
   const [layerScale, setLayerScale] = useState<Record<EditableLayerKey, number>>({
     achievement: 1,
     brand: 1,
@@ -292,7 +310,7 @@ export default function ShareStudio({
   const selectedCount = keys.filter(key => enabled[key]).length;
   const fixedActivityLayout = Boolean(activity);
   const squareComposition = !isStory;
-  const squareBadgeSize = Math.max(72, Math.min(120, (canvasSize.width || 320) * 0.34));
+  const squareBadgeSize = 120;
   const editableLayers = fixedActivityLayout ? [] : ([
     enabled.brand ? 'brand' : null,
     achievement && enabled.achievement ? 'achievement' : null,
@@ -319,6 +337,7 @@ export default function ShareStudio({
     y: isStory ? Math.max(24, layerBounds.height - 284) : Math.max(24, layerBounds.height - 100),
   };
   const showTitleLayer = !(isStory && activityTitle && !showStoryActivityTitle);
+  const combinedStory = isStory && fixedActivityLayout && Boolean(achievement);
   const fixedRouteStyle = [
     styles.fixedRoute,
     variant === 'editorial_card'
@@ -326,6 +345,8 @@ export default function ShareStudio({
       : variant === 'activity_achievement'
         ? (isStory ? styles.fixedRouteStoryActivity : styles.fixedRouteSquareActivity)
         : (isStory ? styles.fixedRouteStory : styles.fixedRouteSquare),
+    combinedStory && enabled.achievement && styles.combinedStoryRoute,
+    isStory && selectedMetrics.length >= 5 && styles.denseStoryRoute,
   ];
   const fixedBrandStyle = [
     styles.fixedBrand,
@@ -349,12 +370,16 @@ export default function ShareStudio({
   const fixedAchievementStyle = [
     styles.fixedAchievement,
     isStory ? styles.fixedAchievementStory : styles.fixedAchievementSquare,
+    combinedStory && (routeEnabled ? styles.combinedStoryBadgeWithRoute : styles.combinedStoryBadge),
+    combinedStory && selectedMetrics.length >= 5 && styles.denseStoryBadge,
   ];
 
   const canvas = (
     <View
       ref={canvasRef}
       collapsable={false}
+      accessible={isStory && fixedActivityLayout}
+      accessibilityLabel={isStory && fixedActivityLayout ? `${activity ? displayLabel(activity.activityType) : 'Training'}. ${achievement?.title ?? ''}. ${selectedMetrics.map(item => `${toggleLabel(item.key, activity)} ${item.value}`).join('. ')}` : undefined}
       onLayout={(event: LayoutChangeEvent) => {
         const next = event.nativeEvent.layout;
         setCanvasSize(current => (
@@ -371,11 +396,13 @@ export default function ShareStudio({
     >
       {photoUri ? <ImageBackground source={{ uri: photoUri }} resizeMode="cover" style={StyleSheet.absoluteFill} /> : null}
       {photoUri && !isOverlay ? <View style={styles.photoScrim} /> : null}
-      {squareComposition ? <View style={styles.squareComposition}>
+      <View style={isStory && fixedActivityLayout ? [styles.storyComposition, { transform: [{ scale: (canvasSize.width || 360) / 360 }] }] : StyleSheet.absoluteFill}>
+      {squareComposition ? <View style={[styles.squareComposition, { transform: [{ scale: (canvasSize.width || 360) / 360 }] }]}
+        accessible accessibilityLabel={`${achievement?.title ?? (activity ? displayLabel(activity.activityType) : 'Training')}. ${selectedMetrics.map(item => `${toggleLabel(item.key, activity)} ${item.value}`).join('. ')}`}>
         {showTitleLayer ? <View style={styles.squareTitleGroup}>
-          <Text style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent]}>{achievement ? 'ACHIEVEMENT UNLOCKED' : 'ACTIVITY COMPLETE'}</Text>
-          <Text style={[styles.squareTitle, foregroundDark ? styles.darkInk : styles.lightInk]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>{achievementShareTitle ?? activityTitle ?? 'TRAINING'}</Text>
-          {activity ? <Text style={[styles.squareContext, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]} numberOfLines={1}>{enabled.distance && metricValue(activity, units, 'distance') ? `${metricValue(activity, units, 'distance')} · ` : ''}{new Date(activity.startTime).toLocaleDateString()}</Text> : achievementSupport ? <Text style={[styles.squareContext, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{achievementSupport}</Text> : null}
+          <Text allowFontScaling={false} style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent]}>{achievement ? 'ACHIEVEMENT UNLOCKED' : 'ACTIVITY COMPLETE'}</Text>
+          <Text allowFontScaling={false} style={[styles.squareTitle, foregroundDark ? styles.darkInk : styles.lightInk]}>{achievementShareTitle ?? activityTitle ?? 'TRAINING'}</Text>
+          {activity ? <Text allowFontScaling={false} style={[styles.squareContext, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{enabled.distance && metricValue(activity, units, 'distance') ? `${metricValue(activity, units, 'distance')} · ` : ''}{new Date(activity.startTime).toLocaleDateString()}</Text> : achievementSupport ? <Text allowFontScaling={false} style={[styles.squareContext, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{achievementSupport}</Text> : null}
         </View> : null}
         {achievement && enabled.achievement ? <View style={{ width: squareBadgeSize, height: squareBadgeSize, alignItems: 'center', justifyContent: 'center' }}>
           {runLevelSlug ? <RunLevelBadge level={runLevelSlug} state={isOverlay ? 'transparent' : achievement.state === 'locked' ? 'locked' : 'unlocked'} size={squareBadgeSize} units={units} />
@@ -383,8 +410,8 @@ export default function ShareStudio({
         </View> : null}
         {!achievement && selectedMetrics.length ? <View style={styles.squareMetrics}>
           {selectedMetrics.map(item => <View key={item.key} style={[styles.squareMetric, { flexBasis: selectedMetrics.length > 4 ? '28%' : '43%' }]}>
-            <Text style={[styles.squareStatValue, foregroundDark ? styles.darkInk : styles.lightInk]} numberOfLines={1} adjustsFontSizeToFit>{item.value}</Text>
-            <Text style={[styles.squareStatLabel, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]} numberOfLines={2}>{toggleLabel(item.key, activity)}</Text>
+            <Text allowFontScaling={false} style={[styles.squareStatValue, foregroundDark ? styles.darkInk : styles.lightInk]}>{item.value}</Text>
+            <Text allowFontScaling={false} style={[styles.squareStatLabel, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{toggleLabel(item.key, activity)}</Text>
           </View>)}
         </View> : null}
         {!achievement && enabled.brand ? <View style={styles.squareBrand}><ShareBrandMark darkInk={foregroundDark} /></View> : null}
@@ -461,16 +488,24 @@ export default function ShareStudio({
         </MovableLayer>
       ) : null}
       {showTitleLayer && fixedActivityLayout && !squareComposition ? (
-        <View style={fixedTitleStyle}>
-          <Text style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent, styles.overlayTextShadow]}>
-            {achievement ? 'ACHIEVEMENT UNLOCKED' : activityTitle ? 'ACTIVITY COMPLETE' : 'STRIDEOS'}
+        <View key={titleLayoutKey} style={fixedTitleStyle} onLayout={event => {
+          if (titleLayoutGeneration.current !== titleLayoutKey) return;
+          const layout = event.nativeEvent.layout;
+          if (layout.width <= 0) return;
+          const artworkHeight = layout.height * 304 / Math.max(1, layout.width);
+          if (!isStory || artworkHeight <= storyHeaderBudget(variant)) return;
+          if (!separateActivityTitle && variant === 'activity_achievement' && achievement && activityTitle) setSeparateActivityTitle(true);
+          else if (fixedTitleSize > 24) setFixedTitleSize(Math.max(24, fixedTitleSize - 2));
+        }}>
+          <Text allowFontScaling={false} style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent, styles.overlayTextShadow]}>
+            {achievement ? `ACHIEVEMENT UNLOCKED${separateActivityTitle && activityTitle ? ` · ${activityTitle}` : ''}` : activityTitle ? 'ACTIVITY COMPLETE' : 'STRIDEOS'}
           </Text>
-          <Text style={[styles.title, styles.fixedActivityTitle, foregroundDark ? styles.darkInk : styles.lightInk, !foregroundDark && styles.overlayTextShadow]} numberOfLines={3} adjustsFontSizeToFit>
-            {variant === 'activity_achievement' && activityTitle && achievementShareTitle && !runLevelSlug
+          <Text allowFontScaling={false} style={[styles.title, styles.fixedActivityTitle, { fontSize: fixedTitleSize, lineHeight: fixedTitleSize + 2 }, foregroundDark ? styles.darkInk : styles.lightInk, !foregroundDark && styles.overlayTextShadow]}>
+            {variant === 'activity_achievement' && !separateActivityTitle && activityTitle && achievementShareTitle && !runLevelSlug
               ? `${activityTitle} + ${achievementShareTitle}`
               : achievementShareTitle ?? activityTitle ?? 'TRAINING'}
           </Text>
-          {achievementSupport ? <Text style={[styles.support, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted, !foregroundDark && styles.overlayTextShadow]}>{achievementSupport}</Text> : null}
+          {achievementSupport ? <Text allowFontScaling={false} style={[styles.support, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted, !foregroundDark && styles.overlayTextShadow]}>{achievementSupport}</Text> : null}
         </View>
       ) : showTitleLayer && !squareComposition ? (
         <MovableLayer
@@ -481,15 +516,15 @@ export default function ShareStudio({
           onInteractionActiveChange={onInteractionActiveChange}
           style={styles.titleLayer}
         >
-          <Text style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent]}>
+          <Text allowFontScaling={false} style={[styles.kicker, foregroundDark ? styles.darkAccent : styles.lightAccent]}>
             {achievement ? 'ACHIEVEMENT UNLOCKED' : activityTitle ? 'ACTIVITY COMPLETE' : 'STRIDEOS'}
           </Text>
-          <Text style={[styles.title, foregroundDark ? styles.darkInk : styles.lightInk]} numberOfLines={3} adjustsFontSizeToFit>
+          <Text allowFontScaling={false} style={[styles.title, foregroundDark ? styles.darkInk : styles.lightInk]}>
             {variant === 'activity_achievement' && activityTitle && achievementShareTitle && !runLevelSlug
               ? `${activityTitle} + ${achievementShareTitle}`
               : achievementShareTitle ?? activityTitle ?? 'TRAINING'}
           </Text>
-          {achievementSupport ? <Text style={[styles.support, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{achievementSupport}</Text> : null}
+          {achievementSupport ? <Text allowFontScaling={false} style={[styles.support, foregroundDark ? styles.darkInkMuted : styles.lightInkMuted]}>{achievementSupport}</Text> : null}
         </MovableLayer>
       ) : null}
       {selectedMetrics.length && fixedActivityLayout && !squareComposition ? (
@@ -512,6 +547,7 @@ export default function ShareStudio({
           ))}
         </MovableLayer>
       ) : null}
+      </View>
     </View>
   );
 
@@ -679,16 +715,18 @@ const styles = StyleSheet.create({
   canvasPreviewFrame: { borderRadius: 18, overflow: 'hidden' },
   canvas: { width: '100%', overflow: 'hidden', borderRadius: 0 },
   square: { aspectRatio: 1 },
-  squareComposition: { flex: 1, padding: 20, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  // Fixed-format artwork scales as a whole; native text fitting must never shrink individual titles.
+  squareComposition: { position: 'absolute', width: 360, height: 360, left: '50%', top: '50%', marginLeft: -180, marginTop: -180, padding: 20, alignItems: 'center', justifyContent: 'center', gap: 12 },
   squareTitleGroup: { width: '100%', alignItems: 'center', gap: 4 },
-  squareTitle: { fontSize: 22, lineHeight: 25, fontWeight: '700', textAlign: 'center' },
-  squareContext: { fontSize: 11, lineHeight: 15, textAlign: 'center' },
+  squareTitle: { width: '100%', fontSize: 34, lineHeight: 36, fontWeight: '700', textAlign: 'center', flexShrink: 0 },
+  squareContext: { fontSize: 13, lineHeight: 16, textAlign: 'center' },
   squareMetrics: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 },
   squareMetric: { flexGrow: 1, alignItems: 'center', minWidth: 0 },
-  squareStatValue: { fontSize: 18, lineHeight: 22, fontWeight: '700' },
-  squareStatLabel: { fontSize: 9, lineHeight: 12, textAlign: 'center', marginTop: 2 },
+  squareStatValue: { fontSize: 24, lineHeight: 28, fontWeight: '700', textAlign: 'center' },
+  squareStatLabel: { fontSize: 14, lineHeight: 18, textAlign: 'center', marginTop: 2 },
   squareBrand: { height: 52, width: 112, alignItems: 'center', justifyContent: 'center', transform: [{ scale: 0.7 }] },
   story: { aspectRatio: 9 / 16 },
+  storyComposition: { position: 'absolute', width: 360, height: 640, left: '50%', top: '50%', marginLeft: -180, marginTop: -320 },
   photoScrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.26)' },
   routeLayer: { ...StyleSheet.absoluteFill },
   movable: { position: 'absolute' },
@@ -709,7 +747,12 @@ const styles = StyleSheet.create({
   fixedTitleStoryEditorial: { left: 28, right: 28, top: 54, alignItems: 'center' },
   kicker: { fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
   title: { fontSize: 39, lineHeight: 42, fontWeight: '900', letterSpacing: 0 },
-  fixedActivityTitle: { fontSize: 34, lineHeight: 36, maxWidth: 260 },
+  fixedActivityTitle: { fontSize: 34, lineHeight: 36, width: '100%', textAlign: 'center' },
+  combinedStoryBadge: { top: 300 },
+  combinedStoryBadgeWithRoute: { left: 18, right: undefined, top: 300, width: 156, height: 156 },
+  combinedStoryRoute: { left: '52%', right: '6%', top: '45%', bottom: '25%' },
+  denseStoryRoute: { top: '49%' },
+  denseStoryBadge: { top: 310 },
   support: { fontSize: 15, lineHeight: 20, fontWeight: '800' },
   metricsLayer: { right: 38, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   fixedMetrics: { position: 'absolute', flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
@@ -727,7 +770,7 @@ const styles = StyleSheet.create({
   fixedRouteSquareActivity: { left: '20%', right: '20%', top: '48%', bottom: '21%' },
   fixedRouteStoryActivity: { left: '16%', right: '16%', top: '44%', bottom: '26%' },
   statPill: { minWidth: 116, borderRadius: 8, padding: 10, backgroundColor: 'rgba(14,14,15,0.68)', borderWidth: 1, borderColor: 'rgba(157,178,160,0.34)' },
-  statPillTransparent: { minWidth: 84, padding: 2, backgroundColor: 'transparent', borderWidth: 0, borderColor: 'transparent', alignItems: 'center' },
+  statPillTransparent: { width: '30%', minWidth: 0, padding: 2, backgroundColor: 'transparent', borderWidth: 0, borderColor: 'transparent', alignItems: 'center' },
   statValue: { color: '#F3F1EB', fontSize: 18, fontWeight: '900' },
   statLabel: { color: '#DCC9B1', fontSize: 9, fontWeight: '900', letterSpacing: 0.8, marginTop: 4 },
   overlayTextShadow: { textShadowColor: 'rgba(0,0,0,0.62)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
