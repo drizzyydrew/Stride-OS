@@ -26,4 +26,10 @@ Logs: `/tmp/strideos-build94-prebuild.log`, `/tmp/strideos-build94-tests-isolate
 
 Source commit, push, native archive, submission and Apple processing results will be recorded here after execution.
 
+## Upload Recovery
+
+The first source commit `96229452c679932dbed41be03737e835ca6730b1` was pushed successfully. Its 165 MB upload failed with a network `EPIPE` at 137 MB before a build was created. The retry keeps build number 94. EAS-only exclusions remove duplicate elevation thumbnail/share copies and documentation previews; runtime elevation images are loaded by static `require` from the retained `artwork/` directory. Source artwork remains unchanged and in Git.
+
+The supported `build:inspect --stage archive` verified the reduced archive. A TypeScript AST check found all 60 static relative asset imports intact and byte-identical. An iOS Hermes export from that archive succeeded using the existing dependency directory via symlink: all 119 exported asset manifest entries and asset bytes match the original verified export. No runtime source or artwork changed for upload recovery. Archive export log: `/tmp/strideos-build94-export-archive.log`.
+
 This authorization does not include a public App Store release or expanded tester invitations. Physical iPhone/Watch behavior and native image-export fidelity remain device-test boundaries, not claims established by source or browser tests.

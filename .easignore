@@ -31,3 +31,8 @@ docs/build38-prototypes/
 /docs/handoff/update-2026-10-15/visual-qa.js
 /docs/handoff/update-2026-10-15/active-outdoor-qa.js
 /docs/handoff/update-2026-10-17/regression-qa.js
+
+# Elevation runtime images are required from artwork/; these copies are reference exports.
+/assets/achievements/elevation/thumbnails/
+/assets/achievements/elevation/share/
+/docs/achievements/elevation/previews/
