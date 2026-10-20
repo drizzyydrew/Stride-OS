@@ -4,6 +4,7 @@ import { createAppJSONStorage, getAppStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { CompletedWorkoutRecord, Workout, WorkoutIntensity, WorkoutType } from '../types/training';
+import type { Activity } from '../types/activity';
 import { calculateTrainingLoad } from '../utils/training';
 import { calculateUpdatedFatigue } from '../utils/calculateFatigue';
 import { estimateDistanceMiles } from '../utils/historyUtils';
@@ -187,14 +188,28 @@ async function waitForHistoryHydration() {
   }));
 }
 
-async function flushCompletionHistory(lease: OwnerLease) {
+async function flushCompletionHistory(lease: OwnerLease, record: RunWorkoutRecord): Promise<string> {
   if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed before local commit');
+  if (record.ownerUserId && record.ownerUserId !== lease.ownerUserId) throw new Error('Saved run belongs to a different local account');
+  const projection = activityFromWorkoutRecord(record, false);
+  const activity = useActivityStore.getState().activities.find(activity => sameRecording(activity, projection));
+  if (!activity) throw new Error('Saved run Activity projection is unavailable; retry recovery');
   const storage = getAppStorage();
   const workout = useWorkoutStore.getState();
   await storage.setItem('workout-store', JSON.stringify({ state: { history: workout.history, completedWorkouts: workout.completedWorkouts }, version: 0 }));
   if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed during local commit');
   await useActivityStore.getState().awaitPersistence(lease);
   if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed during local commit');
+  // A completed history row alone is not proof that its detail Activity survived.
+  const raw = await storage.getItem('activity-store');
+  if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed during local commit');
+  const persisted = raw ? JSON.parse(raw) as { state?: { activities?: Activity[] } } : null;
+  const savedActivity = persisted?.state?.activities?.find(item => item.id === activity.id
+    && sameRecording(item, projection)
+    && (!record.workoutInstanceId
+      || (item.workoutInstanceId ?? item.healthKit?.workoutInstanceId) === record.workoutInstanceId));
+  if (!savedActivity) throw new Error('Saved run Activity persistence could not be confirmed; retry recovery');
+  return savedActivity.id;
 }
 
 export const useWorkoutStore = create<WorkoutStore>()(
@@ -215,8 +230,18 @@ export const useWorkoutStore = create<WorkoutStore>()(
         return serializedCompletion(async () => {
           await waitForHistoryHydration();
           if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed before the run could be saved');
+          if (entry.ownerUserId && entry.ownerUserId !== lease.ownerUserId) throw new Error('Run belongs to a different local account');
           if (!entry.workoutInstanceId || entry.actualStartTime == null || entry.actualEndTime == null) throw new Error('Run identity and actual times are required');
           const completionKey = runCompletionKey(entry.workoutInstanceId, entry.actualStartTime);
+          const existing = get().history.find(record => record.id === completionKey || record.workoutInstanceId === entry.workoutInstanceId);
+          if (existing) {
+            if (existing.ownerUserId && existing.ownerUserId !== lease.ownerUserId) throw new Error('Saved run belongs to a different local account');
+            const projection = activityFromWorkoutRecord(existing, false);
+            // Missing may mean deliberately deleted, not an interrupted commit.
+            if (!useActivityStore.getState().activities.some(activity => sameRecording(activity, projection))) {
+              throw new Error('Saved run Activity is missing. Use Restore saved recording to explicitly restore it.');
+            }
+          }
           const pending: PendingRunCompletion = { ownerUserId: lease.ownerUserId, entry: { ...entry, ownerUserId: lease.ownerUserId, completionKey },
             discarded: discardShort && entry.durationMinutes < 5, week, fatigue, recovery };
           await completionJournal.save(pending);
@@ -227,14 +252,12 @@ export const useWorkoutStore = create<WorkoutStore>()(
           get().manualLog({ ...saved.entry, watchRecording: saved.entry.watchRecording
             ?? matchingWatchRecording(entry.watchRecording, saved.entry.workoutInstanceId, saved.entry.actualStartTime) },
           saved.week, saved.fatigue, saved.recovery, setFatigueScore, setRecentEasyLoad);
-          await flushCompletionHistory(lease);
+          const record = get().history.find(record => record.id === completionKey || record.workoutInstanceId === saved.entry.workoutInstanceId);
+          if (!record) throw new Error('Saved recording history is unavailable; retry recovery');
+          const activityId = await flushCompletionHistory(lease, record);
           if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed; run recovery remains available to its original owner');
           await completionJournal.acknowledge(lease.ownerUserId, completionKey);
           if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed after the run was saved for its original owner');
-          const record = get().history.find(record => record.id === completionKey || record.workoutInstanceId === saved.entry.workoutInstanceId);
-          if (!record) throw new Error('Saved recording history is unavailable; retry recovery');
-          const projection = activityFromWorkoutRecord(record, false);
-          const activityId = useActivityStore.getState().activities.find(activity => sameRecording(activity, projection))?.id ?? projection.id;
           return { status: 'saved', activityId, ownerLease: lease, entry: { ...saved.entry,
             watchRecording: record.watchRecording,
             actualEndTime: record.actualEndTime, durationMinutes: record.actualDurationMinutes ?? record.durationMinutes,
@@ -291,8 +314,18 @@ export const useWorkoutStore = create<WorkoutStore>()(
             if (item.ownerUserId !== lease.ownerUserId) continue;
             // Keep a durable discard marker until matching-instance native cleanup.
             if (item.discarded) continue;
+            const existing = get().history.find(record => record.id === item.entry.completionKey
+              || record.workoutInstanceId === item.entry.workoutInstanceId);
+            if (existing && (!existing.ownerUserId || existing.ownerUserId === lease.ownerUserId)
+              && !useActivityStore.getState().activities.some(activity => sameRecording(activity, activityFromWorkoutRecord(existing, false)))) {
+              // Preserve ambiguous missing/deleted history for explicit restoration.
+              continue;
+            }
             get().manualLog(item.entry, item.week, item.fatigue, item.recovery, () => {}, () => {});
-            await flushCompletionHistory(lease);
+            const record = get().history.find(record => record.id === item.entry.completionKey
+              || record.workoutInstanceId === item.entry.workoutInstanceId);
+            if (!record) throw new Error('Saved recording history is unavailable; retry recovery');
+            await flushCompletionHistory(lease, record);
             if (!ownerLeaseIsCurrent(lease)) return;
             await completionJournal.acknowledge(lease.ownerUserId, item.entry.completionKey);
           }
@@ -446,16 +479,19 @@ export const useWorkoutStore = create<WorkoutStore>()(
       ) => {
         const lease = captureOwnerLease();
         if (!lease) throw new Error('Local training data is locked until its owner is confirmed');
+        if (entry.ownerUserId && entry.ownerUserId !== lease.ownerUserId) throw new Error('Run belongs to a different local account');
         const existing = get().history.find(record => record.id === entry.completionKey
           || (entry.workoutInstanceId && record.workoutInstanceId === entry.workoutInstanceId));
         if (existing) {
+          if (existing.ownerUserId && existing.ownerUserId !== lease.ownerUserId) throw new Error('Saved run belongs to a different local account');
+          const projection = activityFromWorkoutRecord(existing, false);
+          const activity = useActivityStore.getState().activities.find(activity => sameRecording(activity, projection));
+          if (!activity) throw new Error('Saved run Activity is missing. Use Restore saved recording to explicitly restore it.');
           const evidence = matchingWatchRecording(entry.watchRecording, existing.workoutInstanceId, existing.actualStartTime);
           if (evidence && (!existing.watchRecording || existing.watchRecording.confirmedAt < evidence.confirmedAt)) {
             const enriched = { ...existing, watchRecording: evidence };
             set(state => ({ history: state.history.map(record => record.id === existing.id ? enriched : record) }));
-            const projection = activityFromWorkoutRecord(enriched, false);
-            const activity = useActivityStore.getState().activities.find(activity => sameRecording(activity, projection));
-            if (activity) useActivityStore.getState().updateActivity(activity.id, { watchRecording: evidence });
+            useActivityStore.getState().updateActivity(activity.id, { watchRecording: evidence });
           }
           return;
         }

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
@@ -24,6 +24,7 @@ import ActivityPowerPanel from '../../../src/components/activity/ActivityPowerPa
 import ShareOptionGrid from '../../../src/components/share/ShareOptionGrid';
 import { analyzeSnowSegments, buildOutdoorSplits } from '../../../src/utils/outdoorAnalysis';
 import { formatDistance } from '../../../src/lib/units';
+import { recoverSavedActivity } from '../../../src/lib/savedActivityRecovery';
 
 export default function ActivityDetailScreen() {
   const C = useColors();
@@ -37,29 +38,67 @@ export default function ActivityDetailScreen() {
   const [shareMessage, setShareMessage] = useState<string | null>(shareCardUnavailableReason());
   const [shareInteractionActive, setShareInteractionActive] = useState(false);
   const shareCardRef = useRef<View>(null);
+  const [recovering, setRecovering] = useState(false);
+  const [recoveryMessage, setRecoveryMessage] = useState<string | null>(null);
+  const recoveryRequest = useRef(0);
+  const recoveryInFlight = useRef(false);
+  const requestedId = (Array.isArray(activityId) ? activityId[0] : activityId)?.trim();
+  useEffect(() => {
+    recoveryRequest.current += 1;
+    recoveryInFlight.current = false;
+    setRecovering(false);
+    setRecoveryMessage(null);
+    return () => { recoveryRequest.current += 1; };
+  }, [requestedId]);
+  async function retrySavedActivity() {
+    if (recoveryInFlight.current) return;
+    recoveryInFlight.current = true;
+    const request = ++recoveryRequest.current;
+    setRecovering(true);
+    setRecoveryMessage(null);
+    try {
+      const recoveredId = await recoverSavedActivity(requestedId);
+      if (request !== recoveryRequest.current) return;
+      if (recoveredId) router.replace({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: recoveredId } } as never);
+      else setRecoveryMessage('No exact saved run was found for this link. Your other activities have not been changed. If the race is in Apple Health, use Restore from Apple Health in Settings > Data & backup.');
+    } catch (error) {
+      if (request === recoveryRequest.current) setRecoveryMessage(error instanceof Error ? error.message : 'Recovery could not finish. Your saved history has not been cleared.');
+    } finally {
+      if (request === recoveryRequest.current) { recoveryInFlight.current = false; setRecovering(false); }
+    }
+  }
+  function confirmRestore() {
+    const request = recoveryRequest.current;
+    Alert.alert('Restore saved recording?', 'This restores the exact run saved on this phone, including an entry previously removed from Activity. It does not start a new recording or change other activities.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Restore', onPress: () => { if (request === recoveryRequest.current) void retrySavedActivity(); } },
+    ]);
+  }
   const resolution = resolveActivityDetail(activities, activityId, hydrationStatus);
-  if (resolution.status === 'loading') return (
-    <SafeAreaView style={[s.safe, s.centered, { backgroundColor: C.bg }]}>
-      <ActivityIndicator color={C.primary} />
-      <Text style={[s.recoveryTitle, { color: C.text }]}>Loading activity</Text>
-      <Text style={[s.recoveryBody, { color: C.textMuted }]}>Your activity history is still loading.</Text>
-    </SafeAreaView>
-  );
-  if (resolution.status === 'unavailable') return (
+  if (resolution.status !== 'resolved') return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
       <ScreenHeader title="Activity" eyebrow="ALL TRAINING" onBack={() => router.back()} />
-      <View style={s.centered}>
+      <ScrollView contentContainerStyle={s.recoveryContent}>
         <View style={[s.recoveryCard, { backgroundColor: C.card, borderColor: C.border }]}>
-          <Ionicons name="alert-circle-outline" size={30} color={C.primary} />
-          <Text style={[s.recoveryTitle, { color: C.text }]}>Activity unavailable</Text>
+          {resolution.status === 'loading' ? <ActivityIndicator color={C.primary} /> : <Ionicons name="alert-circle-outline" size={30} color={C.primary} />}
+          <Text style={[s.recoveryTitle, { color: C.text }]}>{resolution.status === 'loading' ? 'Loading activity' : hydrationStatus === 'error' ? 'Activity history not loaded' : 'Activity unavailable'}</Text>
           <Text style={[s.recoveryBody, { color: C.textMuted }]}>
-            We couldn’t find this activity. It may have been removed or its data may not have finished loading.
+            {resolution.status === 'loading' ? 'Your saved activity history is still loading.'
+              : hydrationStatus === 'error' ? 'Your saved history could not be read. This does not mean the recording was deleted.'
+                : 'This activity link could not be resolved. The original run may still be saved on your phone.'}
           </Text>
+          {resolution.status !== 'loading' ? (
+            <TouchableOpacity style={[s.recoveryPrimary, { backgroundColor: C.primary }]} onPress={confirmRestore}
+              disabled={recovering} accessibilityRole="button" accessibilityLabel="Restore saved recording" accessibilityState={{ busy: recovering, disabled: recovering }}>
+              {recovering ? <ActivityIndicator color={C.onPrimary} /> : <Text style={[s.recoveryPrimaryText, { color: C.onPrimary }]}>Restore saved recording</Text>}
+            </TouchableOpacity>
+          ) : null}
+          {recoveryMessage ? <Text accessibilityLiveRegion="polite" style={[s.recoveryBody, { color: C.textMuted }]}>{recoveryMessage}</Text> : null}
           <TouchableOpacity
-            style={[s.recoveryPrimary, { backgroundColor: C.primary }]}
+            style={[s.recoverySecondary, { borderColor: C.border }]}
             onPress={() => router.replace('/(tabs)/activity' as never)}
           >
-            <Text style={[s.recoveryPrimaryText, { color: C.onPrimary }]}>Back to Activity</Text>
+            <Text style={[s.recoveryPrimaryText, { color: C.text }]}>Back to Activity</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[s.recoverySecondary, { borderColor: C.border }]}
@@ -68,7 +107,7 @@ export default function ActivityDetailScreen() {
             <Text style={[s.recoveryPrimaryText, { color: C.text }]}>Return to Today</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
   const activity = resolution.activity;
@@ -122,6 +161,20 @@ export default function ActivityDetailScreen() {
         )}
       />
       <ScrollView contentContainerStyle={s.content} scrollEnabled={!shareInteractionActive}>
+        {recovering || recoveryMessage ? (
+          <View style={s.recoveryStatus} accessibilityLiveRegion="polite">
+            {recovering ? <>
+              <ActivityIndicator color={C.primary} />
+              <Text style={[s.body, { color: C.textMuted }]}>Restoring saved recording. Waiting for save confirmation.</Text>
+            </> : <>
+              <Text style={[s.body, { color: C.textMuted }]}>{recoveryMessage}</Text>
+              <TouchableOpacity style={[s.recoverySecondary, { borderColor: C.border }]} onPress={confirmRestore}
+                accessibilityRole="button" accessibilityLabel="Restore saved recording">
+                <Text style={[s.recoveryPrimaryText, { color: C.text }]}>Retry saving recovered recording</Text>
+              </TouchableOpacity>
+            </>}
+          </View>
+        ) : null}
         <ActivityRouteReview activity={activity} units={units} onInteractionActiveChange={setShareInteractionActive} />
         <View style={s.grid}>
           {summary.primary.map(({ label, value }) => (
@@ -218,6 +271,8 @@ const s = StyleSheet.create({
   safe: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 10 },
   recoveryCard: { width: '100%', maxWidth: 420, borderWidth: 1, borderRadius: 20, padding: 22, alignItems: 'center' },
+  recoveryContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24, paddingBottom: 40 },
+  recoveryStatus: { gap: 10, paddingVertical: 16 },
   recoveryTitle: { fontSize: 24, fontWeight: '900', marginTop: 8, textAlign: 'center' },
   recoveryBody: { fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 6, marginBottom: 18 },
   recoveryPrimary: { width: '100%', minHeight: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },

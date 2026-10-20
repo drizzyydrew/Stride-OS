@@ -60,3 +60,29 @@ test('missing and invalid IDs return the designed unavailable state only when ap
   assert.deepEqual(resolveActivityDetail(activities, 'missing', 'ready'), { status: 'unavailable' });
   assert.deepEqual(resolveActivityDetail(activities, 'missing', 'error'), { status: 'unavailable' });
 });
+
+test('a run link survives exact-record deduplication retaining a different activity ID', () => {
+  const merged = { ...activity('health_import_kept_id', 'running', 'run_rome%3Ahalf'), workoutInstanceId: 'rome:half' };
+  for (const id of ['activity_workout_run_rome%3Ahalf', 'run--run_rome%3Ahalf', 'run_rome%3Ahalf', 'rome:half']) {
+    assert.equal(findActivityBySupportedId([merged], id), merged, id);
+  }
+  const viaHealth = { ...activity('health_kept_id', 'running'), healthKit: {
+    workoutUuid: 'health-race', sourceBundleIdentifier: 'com.mooremovement.strideos.watch',
+    originalStartTime: 1, originalEndTime: 2, localCalendarDate: '2026-10-18', importedAt: 3,
+    routeStatus: 'available' as const, importedByStrideOS: true,
+    workoutInstanceId: 'rome:half', strideOSActivityId: 'old_activity_id', strideOSWorkoutId: 'run_rome%3Ahalf',
+  } };
+  for (const id of ['old_activity_id', 'activity_workout_run_rome%3Ahalf', 'run--run_rome%3Ahalf', 'rome:half']) {
+    assert.equal(findActivityBySupportedId([viaHealth], id), viaHealth, id);
+  }
+});
+
+test('ambiguous lineage never chooses a race by ordering, date or scheduled session', () => {
+  const first = { ...activity('first', 'running', 'same'), scheduledSessionId: 'race-day' };
+  const second = { ...activity('second', 'running', 'same'), scheduledSessionId: 'race-day' };
+  assert.equal(findActivityBySupportedId([first, second], 'activity_workout_same'), undefined);
+  assert.equal(findActivityBySupportedId([second, first], 'activity_workout_same'), undefined);
+  assert.equal(findActivityBySupportedId([first, second], 'first'), first);
+  assert.equal(findActivityBySupportedId([first, second], 'race-day'), undefined);
+  assert.equal(findActivityBySupportedId([first], 'activity_workout_%broken'), undefined);
+});

@@ -27,7 +27,7 @@ type ActivityStore = {
   hydrationStatus: 'loading' | 'ready' | 'error';
   addActivity: (input: Activity | ActivityDraft) => string;
   /** Caller journals the first End before invoking this; resolves only after durable history readback. */
-  addActivityAndPersist: (input: Activity | ActivityDraft, lease: OwnerLease) => Promise<string>;
+  addActivityAndPersist: (input: Activity | ActivityDraft, lease: OwnerLease, options?: { isCurrent?: () => boolean; onlyIfMissing?: boolean }) => Promise<string>;
   awaitPersistence: (lease: OwnerLease) => Promise<void>;
   updateActivity: (id: string, patch: Partial<Activity>) => void;
   removeActivity: (id: string) => void;
@@ -41,6 +41,8 @@ type ActivityStore = {
 };
 
 let activityWriteQueue: Promise<unknown> = Promise.resolve();
+let activityRemovalRevision = 0;
+export function getActivityRemovalRevision() { return activityRemovalRevision; }
 function serializeActivityWrite<T>(action: () => T | Promise<T>): Promise<T> {
   const write = activityWriteQueue.then(action);
   activityWriteQueue = write.catch(() => undefined);
@@ -156,15 +158,21 @@ export const useActivityStore = create<ActivityStore>()(
       activities: [],
       hydrationStatus: 'loading',
 
-      addActivityAndPersist: (input, lease) => {
+      addActivityAndPersist: (input, lease, options) => {
         const snapshot = JSON.parse(JSON.stringify(input)) as Activity | ActivityDraft;
         const owner = { ...lease };
+        const isCurrent = options?.isCurrent ?? (() => true);
         return serializeActivityCommit(async () => {
           await waitForActivityHistory(owner);
+          if (!isCurrent()) throw new Error('Activity history changed before recovery completed; retry if you still want to restore it');
           if (!snapshot.id && !snapshot.workoutInstanceId) throw new Error('A durable activity requires a stable ID or recording instance');
-          const id = get().addActivity(snapshot);
+          const existing = options?.onlyIfMissing
+            ? get().activities.filter(activity => sameRecording(activity, snapshot as Activity)) : [];
+          if (existing.length > 1) throw new Error('More than one saved activity matches this recording. No activity was replaced.');
+          const id = existing[0]?.id ?? get().addActivity(snapshot);
           await flushActivityHistory(owner);
           requireActivityOwner(owner);
+          if (!isCurrent()) throw new Error('Activity history changed during recovery; saved history has not been cleared');
           return id;
         });
       },
@@ -237,6 +245,7 @@ export const useActivityStore = create<ActivityStore>()(
 
       removeActivity: (id) => {
         if (!captureOwnerLease()) throw new Error('Local history is locked until its owner is confirmed');
+        activityRemovalRevision += 1;
         set(state => ({ activities: state.activities.filter(activity => activity.id !== id) }));
         runRecalculation('activity_removed', get().activities);
       },
