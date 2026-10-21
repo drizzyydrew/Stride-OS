@@ -385,8 +385,8 @@ test('Achievement and activity sharing use StrideOS PNG card components with mul
   assert.match(achievementHub, /shareReportCard/);
   assert.match(activityDetail, /shareReportCard/);
   assert.match(activityDetail, /Create Share PNG/);
-  assert.match(achievementShare, /cumulative_elevation/);
-  assert.match(achievementShare, /ImageBackground/);
+  assert.match(achievementShare, /BadgeShareCanvas/);
+  assert.doesNotMatch(achievementShare, /ImageBackground|posterTitle|overlayCopy/);
   assert.doesNotMatch(achievementShare, /routeCoordinates|symptoms|readiness|notes/);
 });
 

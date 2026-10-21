@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
@@ -25,6 +25,7 @@ import ShareOptionGrid from '../../../src/components/share/ShareOptionGrid';
 import { analyzeSnowSegments, buildOutdoorSplits } from '../../../src/utils/outdoorAnalysis';
 import { formatDistance } from '../../../src/lib/units';
 import { recoverSavedActivity } from '../../../src/lib/savedActivityRecovery';
+import HealthWorkoutRecovery from '../../../src/components/activity/HealthWorkoutRecovery';
 
 export default function ActivityDetailScreen() {
   const C = useColors();
@@ -40,14 +41,21 @@ export default function ActivityDetailScreen() {
   const shareCardRef = useRef<View>(null);
   const [recovering, setRecovering] = useState(false);
   const [recoveryMessage, setRecoveryMessage] = useState<string | null>(null);
+  const [healthRecoveryOpen, setHealthRecoveryOpen] = useState(false);
+  const [healthRecoveryUnconfirmed, setHealthRecoveryUnconfirmed] = useState(false);
   const recoveryRequest = useRef(0);
   const recoveryInFlight = useRef(false);
   const requestedId = (Array.isArray(activityId) ? activityId[0] : activityId)?.trim();
+  const latestRequestedId = useRef(requestedId);
+  useLayoutEffect(() => { latestRequestedId.current = requestedId; }, [requestedId]);
+  const healthRequestIsCurrent = () => latestRequestedId.current === requestedId;
   useEffect(() => {
     recoveryRequest.current += 1;
     recoveryInFlight.current = false;
     setRecovering(false);
     setRecoveryMessage(null);
+    setHealthRecoveryOpen(false);
+    setHealthRecoveryUnconfirmed(false);
     return () => { recoveryRequest.current += 1; };
   }, [requestedId]);
   async function retrySavedActivity() {
@@ -59,8 +67,12 @@ export default function ActivityDetailScreen() {
     try {
       const recoveredId = await recoverSavedActivity(requestedId);
       if (request !== recoveryRequest.current) return;
-      if (recoveredId) router.replace({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: recoveredId } } as never);
-      else setRecoveryMessage('No exact saved run was found for this link. Your other activities have not been changed. If the race is in Apple Health, use Restore from Apple Health in Settings > Data & backup.');
+      if (recoveredId) {
+        setHealthRecoveryOpen(false);
+        setHealthRecoveryUnconfirmed(false);
+        router.replace({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: recoveredId } } as never);
+      }
+      else setRecoveryMessage('No exact saved run was found for this link. Your other activities have not been changed. Use Find workout in Apple Health below to select the original workout.');
     } catch (error) {
       if (request === recoveryRequest.current) setRecoveryMessage(error instanceof Error ? error.message : 'Recovery could not finish. Your saved history has not been cleared.');
     } finally {
@@ -75,25 +87,42 @@ export default function ActivityDetailScreen() {
     ]);
   }
   const resolution = resolveActivityDetail(activities, activityId, hydrationStatus);
-  if (resolution.status !== 'resolved') return (
+  if (resolution.status !== 'resolved' || healthRecoveryOpen || healthRecoveryUnconfirmed) return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
       <ScreenHeader title="Activity" eyebrow="ALL TRAINING" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={s.recoveryContent}>
         <View style={[s.recoveryCard, { backgroundColor: C.card, borderColor: C.border }]}>
           {resolution.status === 'loading' ? <ActivityIndicator color={C.primary} /> : <Ionicons name="alert-circle-outline" size={30} color={C.primary} />}
-          <Text style={[s.recoveryTitle, { color: C.text }]}>{resolution.status === 'loading' ? 'Loading activity' : hydrationStatus === 'error' ? 'Activity history not loaded' : 'Activity unavailable'}</Text>
+          <Text style={[s.recoveryTitle, { color: C.text }]}>{resolution.status === 'loading' ? 'Loading activity' : hydrationStatus === 'error' ? 'Activity history not loaded' : resolution.status === 'resolved' ? 'Confirming recovery' : 'Activity unavailable'}</Text>
           <Text style={[s.recoveryBody, { color: C.textMuted }]}>
             {resolution.status === 'loading' ? 'Your saved activity history is still loading.'
               : hydrationStatus === 'error' ? 'Your saved history could not be read. This does not mean the recording was deleted.'
-                : 'This activity link could not be resolved. The original run may still be saved on your phone.'}
+                : resolution.status === 'resolved' ? 'The selected workout must finish saving before it can be opened.'
+                  : 'This activity link could not be resolved. Look for a local recording or select the original workout in Apple Health.'}
           </Text>
           {resolution.status !== 'loading' ? (
             <TouchableOpacity style={[s.recoveryPrimary, { backgroundColor: C.primary }]} onPress={confirmRestore}
               disabled={recovering} accessibilityRole="button" accessibilityLabel="Restore saved recording" accessibilityState={{ busy: recovering, disabled: recovering }}>
-              {recovering ? <ActivityIndicator color={C.onPrimary} /> : <Text style={[s.recoveryPrimaryText, { color: C.onPrimary }]}>Restore saved recording</Text>}
+              {recovering ? <ActivityIndicator color={C.onPrimary} /> : <Text style={[s.recoveryPrimaryText, { color: C.onPrimary }]}>Restore from this phone</Text>}
             </TouchableOpacity>
           ) : null}
           {recoveryMessage ? <Text accessibilityLiveRegion="polite" style={[s.recoveryBody, { color: C.textMuted }]}>{recoveryMessage}</Text> : null}
+          {resolution.status !== 'loading' ? <HealthWorkoutRecovery key={requestedId} disabled={recovering}
+            isCurrent={healthRequestIsCurrent}
+            onOpenChange={open => { if (healthRequestIsCurrent()) setHealthRecoveryOpen(open); }}
+            onSavePending={() => {
+              if (!healthRequestIsCurrent()) return;
+              setHealthRecoveryUnconfirmed(true);
+              setRecoveryMessage('The selected Health workout is not yet confirmed saved. If recovery is closed, reopen it and retry the same workout.');
+            }}
+            onFailure={message => { if (healthRequestIsCurrent()) setRecoveryMessage(message); }}
+            onRecovered={id => {
+              if (!healthRequestIsCurrent()) return;
+              setHealthRecoveryUnconfirmed(false);
+              setHealthRecoveryOpen(false);
+              setRecoveryMessage(null);
+              router.replace({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: id } } as never);
+            }} /> : null}
           <TouchableOpacity
             style={[s.recoverySecondary, { borderColor: C.border }]}
             onPress={() => router.replace('/(tabs)/activity' as never)}

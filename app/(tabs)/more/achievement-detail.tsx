@@ -10,7 +10,6 @@ import { achievementBadgePresentation } from '../../../src/achievements/badgePre
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import ShareOptionGrid from '../../../src/components/share/ShareOptionGrid';
 import ShareStudio, {
-  SHARE_STUDIO_ACHIEVEMENT_VARIANT,
   SHARE_STUDIO_FORMATS,
   SHARE_STUDIO_VARIANTS,
   type ShareStudioFormat,
@@ -51,7 +50,6 @@ export default function AchievementDetailScreen() {
   const [variant, setVariant] = useState<ShareStudioVariant>('minimal_card');
   const [format, setFormat] = useState<ShareStudioFormat>('square');
   const [shareMessage, setShareMessage] = useState<string | null>(shareCardUnavailableReason());
-  const [shareInteractionActive, setShareInteractionActive] = useState(false);
   const shareRef = useRef<View>(null);
   const achievements = useMemo(() => evaluateAchievementSystem({
     activities,
@@ -98,7 +96,7 @@ export default function AchievementDetailScreen() {
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
       <ScreenHeader eyebrow={achievementFamilyLabel(achievement.family).toUpperCase()} title={achievement.title} onBack={() => router.replace('/(tabs)/more/achievements' as never)} />
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.content} scrollEnabled={!shareInteractionActive}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.content}>
         <View style={[s.hero, { backgroundColor: C.card, borderColor: achievement.state === 'locked' ? C.border : C.primary }]}>
           <AchievementBadge
             id={achievement.id}
@@ -138,17 +136,15 @@ export default function AchievementDetailScreen() {
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>SHARE STUDIO</Text>
           {!shareEnabled ? <Text style={[s.body, { color: C.textMuted }]}>Sharing unlocks after this achievement is earned.</Text> : null}
-          <ShareOptionGrid options={relatedActivity ? [...SHARE_STUDIO_VARIANTS, SHARE_STUDIO_ACHIEVEMENT_VARIANT] : SHARE_STUDIO_VARIANTS}
+          <ShareOptionGrid options={SHARE_STUDIO_VARIANTS}
             value={variant} onChange={setVariant} disabled={!shareEnabled} />
           <ShareOptionGrid options={SHARE_STUDIO_FORMATS} value={format} onChange={setFormat} disabled={!shareEnabled} />
           <ShareStudio
             achievement={achievement}
-            activity={relatedActivity}
             units={units}
             variant={variant}
             format={format}
             canvasRef={shareRef}
-            onInteractionActiveChange={setShareInteractionActive}
           />
           <TouchableOpacity
             style={[s.sharePrimary, { backgroundColor: shareEnabled ? C.primary : C.cardAlt }]}

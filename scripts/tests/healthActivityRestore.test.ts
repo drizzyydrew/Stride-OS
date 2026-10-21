@@ -21,6 +21,7 @@ function harness(initial: Activity[] = []) {
   let authorized = true;
   let diskFailure = false;
   let queryFailure = false;
+  let saveGate: Promise<void> | null = null;
   let queryAction = () => {};
   let queuedAction = () => {};
   let candidates = [structuredClone(candidate)];
@@ -39,6 +40,7 @@ function harness(initial: Activity[] = []) {
       if (matches.length > 1) throw new Error('Ambiguous recording');
       const existing = matches[0];
       if (!existing) activities = [...activities, input as Activity];
+      if (saveGate) await saveGate;
       if (diskFailure) throw new Error('Disk write failed');
       const id = existing?.id ?? input.id!;
       durable.push(id);
@@ -48,10 +50,11 @@ function harness(initial: Activity[] = []) {
   const mocks: Record<string, unknown> = {
     './healthKit': {
       requestPermissions: async () => { permissions += 1; return authorized; },
-      readHealthKitWorkoutHistory: async (options: { includeRoutes: boolean }) => {
+      readHealthKitWorkoutHistory: async (options: { includeRoutes: boolean; onProgress?: (done: number, total: number) => void }) => {
         assert.equal(options.includeRoutes, true);
         queryAction();
         if (queryFailure) throw new Error('Health read failed');
+        options.onProgress?.(candidates.length, candidates.length);
         return { candidates, sampleCount: candidates.length, skippedCount: 0 };
       },
     },
@@ -67,6 +70,7 @@ function harness(initial: Activity[] = []) {
   let restore: typeof import('../../src/lib/healthActivityRestore').restoreHealthActivityHistory;
   try { restore = require(file).restoreHealthActivityHistory; } finally { loader._load = original; }
   return { restore, durable, get activities() { return activities; }, get commits() { return commits; }, get permissions() { return permissions; },
+    holdSave: () => { let release!: () => void; saveGate = new Promise(resolve => { release = resolve; }); return release; },
     lock: () => { current = false; }, unhydrated: () => { hydrated = false; }, corrupt: () => { hydrationStatus = 'error'; },
     deny: () => { authorized = false; }, failRead: () => { queryFailure = true; }, failDisk: () => { diskFailure = true; },
     allowDisk: () => { diskFailure = false; }, empty: () => { candidates = []; },
@@ -122,4 +126,18 @@ test('genuinely empty Health results stay distinct from failed reads', async () 
   const h = harness(); h.empty();
   assert.equal((await h.restore()).sampleCount, 0);
   assert.equal(h.commits, 0);
+});
+
+test('finishing reads enters a distinct saving phase and never reports completion before durable commit', async () => {
+  const h = harness(); const release = h.holdSave();
+  const phases: { done: number; total: number; phase?: string }[] = [];
+  let complete = false;
+  const pending = h.restore((done, total, phase) => phases.push({ done, total, phase })).then(() => { complete = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(phases.some(p => p.phase === 'reading' && p.done === p.total));
+  assert.deepEqual(phases.at(-1), { done: 0, total: 1, phase: 'saving' });
+  assert.equal(complete, false);
+  release(); await pending;
+  assert.deepEqual(phases.at(-1), { done: 1, total: 1, phase: 'saving' });
+  assert.equal(h.durable.length, 1);
 });

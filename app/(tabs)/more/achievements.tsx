@@ -326,11 +326,12 @@ export default function AchievementHubScreen() {
                 );
               })}
             </View>
-            <View ref={shareRef} collapsable={false} style={s.sharePreview}>
+            <View style={s.sharePreview}>
               <AchievementShareCard
                 achievement={selectedShareDefinition}
                 variant={shareVariant}
                 units={units}
+                canvasRef={shareRef}
                 detail={selectedStreakShare ? selectedStreakShare.milestoneLabel.toUpperCase() : undefined}
               />
             </View>

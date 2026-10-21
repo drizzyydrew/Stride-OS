@@ -333,6 +333,8 @@ type HealthWorkoutHistoryOptions = {
   days: number;
   limit: number;
   includeRoutes?: boolean;
+  metadataOnly?: boolean;
+  uuid?: string;
   onProgress?: (processed: number, total: number) => void;
 };
 
@@ -358,7 +360,7 @@ export async function readHealthKitWorkoutHistory(options: HealthWorkoutHistoryO
   const samples = await Health.queryWorkoutSamples({
     limit: options.limit,
     ascending: false,
-    filter: { date: { startDate, endDate } },
+    filter: options.uuid ? { uuid: options.uuid } : { date: { startDate, endDate } },
   }).catch(() => {
     throw new Error('Apple Health workouts could not be read. Unlock your iPhone and retry. Your saved history has not been changed.');
   });
@@ -368,7 +370,7 @@ export async function readHealthKitWorkoutHistory(options: HealthWorkoutHistoryO
     const proxy = samples[index]!;
     try {
       const raw = typeof proxy.toJSON === 'function' ? proxy.toJSON() : proxy;
-      const candidate = await candidateFromWorkoutProxy(raw, proxy, Boolean(options.includeRoutes));
+      const candidate = await candidateFromWorkoutProxy(raw, proxy, Boolean(options.includeRoutes), options.metadataOnly);
       if (candidate) candidates.push(candidate);
     } catch {
       throw new Error('An Apple Health workout could not be read safely. No workouts from this restore attempt have been added. Please retry.');
@@ -376,6 +378,18 @@ export async function readHealthKitWorkoutHistory(options: HealthWorkoutHistoryO
     options.onProgress?.(index + 1, samples.length);
   }
   return { candidates, sampleCount: samples.length, skippedCount: samples.length - candidates.length };
+}
+
+export async function getHealthKitWorkoutByUuid(uuid: string): Promise<HealthKitWorkoutCandidate> {
+  // The native bridge drops an invalid UUID predicate, which would broaden the query.
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid)) {
+    throw new Error('Select a workout with a valid Apple Health identifier.');
+  }
+  const result = await readHealthKitWorkoutHistory({ days: 1, limit: 2, uuid, includeRoutes: true });
+  if (result.sampleCount !== 1 || result.candidates.length !== 1 || result.candidates[0]!.uuid !== uuid) {
+    throw new Error('Apple Health did not return the exact selected workout. Check read access and retry. No activity has been replaced.');
+  }
+  return result.candidates[0]!;
 }
 
 function routeCoordinatesFrom(routes: readonly unknown[]): ActivityCoordinate[] {
@@ -510,7 +524,7 @@ export async function writeStrengthSession(session: StrengthLogRecord): Promise<
   });
 }
 
-async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthWorkoutProxy, includeRoutes = false): Promise<HealthKitWorkoutCandidate | null> {
+async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthWorkoutProxy, includeRoutes = false, metadataOnly = false): Promise<HealthKitWorkoutCandidate | null> {
   const workoutUuid = raw.uuid ?? raw.id;
   if (typeof workoutUuid !== 'string' || !workoutUuid.trim()) return null;
   const startTime = dateMs(raw.startDate);
@@ -521,6 +535,27 @@ async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthW
   if (!type) return null;
   const durationSeconds = durationToSeconds(raw.duration, endTime - startTime);
   const source = raw.sourceRevision?.source;
+  const candidate: HealthKitWorkoutCandidate = {
+    uuid: workoutUuid,
+    sourceBundleIdentifier: source?.bundleIdentifier ?? 'unknown',
+    sourceName: source?.name,
+    deviceName: raw.device?.name ?? raw.sourceRevision?.productType,
+    deviceManufacturer: raw.device?.manufacturer,
+    startTime,
+    endTime,
+    activityType: type,
+    durationSeconds,
+    distanceMeters: quantity(raw.totalDistance),
+    energyKcal: quantity(raw.totalEnergyBurned),
+    ...healthKitRecordingIdentity(raw.metadata),
+    importedByStrideOS: raw.metadata?.HKMetadataKeyWorkoutBrandName === 'StrideOS'
+      || typeof raw.metadata?.StrideOSWorkoutInstanceId === 'string'
+      || typeof raw.metadata?.StrideOSWorkoutId === 'string'
+      || typeof raw.metadata?.StrideOSStrengthSessionId === 'string'
+      || typeof raw.metadata?.StrideOSActivityId === 'string',
+  };
+  // A selection list must not fetch every historical route and sensor summary.
+  if (metadataOnly) return candidate;
   const routes = includeRoutes && typeof proxy.getWorkoutRoutes === 'function'
     ? await proxy.getWorkoutRoutes()
     : [];
@@ -532,28 +567,13 @@ async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthW
     && healthTypeAvailable('HKQuantityTypeIdentifierDistanceDownhillSnowSports')
     ? await proxy.getStatistic('HKQuantityTypeIdentifierDistanceDownhillSnowSports', 'm').catch(() => undefined) : undefined;
   return {
-    uuid: workoutUuid,
-    sourceBundleIdentifier: source?.bundleIdentifier ?? 'unknown',
-    sourceName: source?.name,
-    deviceName: raw.device?.name ?? raw.sourceRevision?.productType,
-    deviceManufacturer: raw.device?.manufacturer,
-    startTime,
-    endTime,
-    activityType: type,
-    durationSeconds,
-    distanceMeters: quantity(snowDistance?.sumQuantity) ?? quantity(raw.totalDistance),
-    energyKcal: quantity(raw.totalEnergyBurned),
+    ...candidate,
+    distanceMeters: quantity(snowDistance?.sumQuantity) ?? candidate.distanceMeters,
     averageHeartRateBpm: quantity(heartRateStats?.averageQuantity),
     maximumHeartRateBpm: quantity(heartRateStats?.maximumQuantity),
     metricsSummary,
     routeAvailable: routes.length > 0,
     routeCoordinates: includeRoutes && routes.length > 0 ? routeCoordinatesFrom(routes) : undefined,
-    ...healthKitRecordingIdentity(raw.metadata),
-    importedByStrideOS: raw.metadata?.HKMetadataKeyWorkoutBrandName === 'StrideOS'
-      || typeof raw.metadata?.StrideOSWorkoutInstanceId === 'string'
-      || typeof raw.metadata?.StrideOSWorkoutId === 'string'
-      || typeof raw.metadata?.StrideOSStrengthSessionId === 'string'
-      || typeof raw.metadata?.StrideOSActivityId === 'string',
   };
 }
 

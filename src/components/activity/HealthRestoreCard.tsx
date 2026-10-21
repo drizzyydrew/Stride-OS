@@ -20,7 +20,7 @@ export default function HealthRestoreCard({ compact = false }: { compact?: boole
     setBusy(true);
     setProgress('Asking Apple Health…');
     try {
-      const result = await restoreHealthActivityHistory((done, total) => setProgress(`Reading workouts ${done} / ${total}…`));
+      const result = await restoreHealthActivityHistory((done, total, phase) => setProgress(`${phase === 'saving' ? 'Saving' : 'Reading'} workouts ${done} / ${total}…`));
       const { restored, withRoutes } = result;
       setProgress(null);
       Alert.alert(

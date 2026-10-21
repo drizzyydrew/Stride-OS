@@ -19,7 +19,7 @@ function harness(status = 'ready') {
     useEffect: (fn: () => void, dependencies: any[]) => { const i = cursor++; if (!state[i] || dependencies.some((v, j) => v !== state[i][j])) effects.push(fn); state[i] = dependencies; },
   };
   const mocks: Record<string, any> = {
-    react: hooks,
+    react: { ...hooks, useLayoutEffect: hooks.useEffect },
     'react-native': { StyleSheet: { create: (s: any) => s }, Alert: { alert: (...args: any[]) => alerts.push(args) },
       ...Object.fromEntries(['ActivityIndicator', 'ScrollView', 'Text', 'TouchableOpacity', 'View'].map(n => [n, n])) },
     'expo-router': { useLocalSearchParams: () => ({ activityId: id }), useRouter: () => ({ replace: (value: any) => navigation.push(value), back: () => navigation.push('back') }) },
@@ -48,6 +48,7 @@ function harness(status = 'ready') {
   function nodes() { const all: any[] = []; const visit = (n: any) => { if (n && typeof n === 'object') { all.push(n); n.children?.forEach(visit); } }; visit(tree); return all; }
   return { render, nodes, alerts, navigation, calls,
     button: () => nodes().find(n => n.props.accessibilityLabel === 'Restore saved recording'),
+    health: () => nodes().find(n => n.type === 'HealthWorkoutRecovery'),
     setRestore: (fn: typeof restore) => { restore = fn; },
     publish: () => { activities = [{ id, activityType: 'running', metrics: {} }]; },
     setId: (value: string) => { id = value; render(); },
@@ -112,4 +113,31 @@ test('restoration status and retry remain visible when the row appears before pe
   assert.match(ui.text(), /recording not yet saved/);
   assert.match(ui.text(), /Retry saving recovered recording/);
   assert.ok(ui.button()); assert.equal(ui.navigation.length, 0);
+});
+
+test('Health selection remains mounted and errors stay visible after an early in-memory publication', () => {
+  const ui = harness(); ui.render();
+  ui.health().props.onOpenChange(true);
+  ui.health().props.onSavePending();
+  ui.publish(); ui.render();
+  assert.ok(ui.health(), 'A published alias must not dismiss the selected-workout save');
+  ui.health().props.onFailure('Health workout is not durably saved');
+  ui.health().props.onOpenChange(false); ui.render();
+  assert.match(ui.text(), /not durably saved/);
+  assert.ok(ui.health(), 'Retry must remain reachable after closing a failed save');
+  assert.equal(ui.navigation.length, 0);
+  ui.health().props.onRecovered('confirmed-health-canonical');
+  assert.equal(ui.navigation.at(-1).params.activityId, 'confirmed-health-canonical');
+});
+
+test('changing the unresolved route keys a new Health recovery session', () => {
+  const ui = harness(); ui.render();
+  assert.equal(ui.health().props.key, 'missing-race');
+  const stale = ui.health().props;
+  ui.health().props.onOpenChange(true);
+  ui.setId('another-missing-recording');
+  assert.equal(stale.isCurrent(), false);
+  stale.onRecovered('stale-canonical');
+  assert.equal(ui.health().props.key, 'another-missing-recording');
+  assert.equal(ui.navigation.length, 0);
 });

@@ -23,6 +23,7 @@ import { weeklyDistanceDefinitionFromAchievementId } from '../../achievements/we
 import { monthlyDistanceDefinitionFromAchievementId } from '../../achievements/monthlyDistance';
 import AchievementBadge from '../achievements/AchievementBadge';
 import ShareBrandMark from './ShareBrandMark';
+import BadgeShareCanvas from './BadgeShareCanvas';
 import type { UnitSystem } from '../../store/settingsStore';
 import type { Activity } from '../../types/activity';
 import type { EvaluatedAchievement } from '../../utils/achievementSystem';
@@ -223,7 +224,15 @@ function StatPill({ label, value, transparent = false }: { label: string; value:
   );
 }
 
-export default function ShareStudio({
+export default function ShareStudio(props: Props) {
+  if (props.achievement && props.variant !== 'activity_achievement') {
+    return <BadgeShareCanvas achievement={props.achievement} units={props.units} variant={props.variant}
+      format={props.format} canvasRef={props.canvasRef} />;
+  }
+  return <ActivityShareStudio {...props} />;
+}
+
+function ActivityShareStudio({
   activity,
   achievement,
   units,

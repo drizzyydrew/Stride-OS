@@ -393,7 +393,7 @@ test('hub exposes streak progress, share eligibility, and correct artwork mappin
     assert.match(item.states[state].svgHash, /^[a-f0-9]{64}$/);
     assert.match(item.states[state].pngHash, /^[a-f0-9]{64}$/);
   }
-  assert.ok(readFileSync('src/components/achievements/AchievementShareCard.tsx', 'utf8').includes('StreakAchievementShareCard'));
+  assert.ok(readFileSync('src/components/achievements/AchievementShareCard.tsx', 'utf8').includes('BadgeShareCanvas'));
   assert.ok(readFileSync('src/components/achievements/AchievementShareCard.tsx', 'utf8').includes('photo_overlay'));
   assert.ok(readFileSync('src/store/achievementStore.ts', 'utf8').includes('filter(item => !existing.has'));
 });

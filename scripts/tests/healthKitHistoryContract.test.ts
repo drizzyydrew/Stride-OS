@@ -10,12 +10,13 @@ const { WorkoutActivityType } = require(join(dirname(require.resolve('@kingstinc
 // Synthetic measurements and identifiers; never publish an athlete's Health record.
 const startDate = new Date('2026-10-01T07:00:00Z');
 const endDate = new Date('2026-10-01T08:30:00Z');
+const workoutUuid = '11111111-1111-4111-8111-111111111111';
 const route = [{ locations: [
   { latitude: 45, longitude: -120, date: startDate, altitude: 20, horizontalAccuracy: 5 },
   { latitude: 45.01, longitude: -120.01, date: endDate, altitude: 30, horizontalAccuracy: 5 },
 ] }];
 function race() {
-  const sample = { uuid: 'health-rome', workoutActivityType: WorkoutActivityType.running,
+  const sample = { uuid: workoutUuid, workoutActivityType: WorkoutActivityType.running,
     startDate, endDate, duration: { quantity: 5400.25, unit: 's' },
     totalDistance: { quantity: 15000, unit: 'meters' }, totalEnergyBurned: { quantity: 900, unit: 'kcal' },
     metadata: { StrideOSWorkoutInstanceId: 'adhoc:synthetic-health-recording', StrideOSSport: 'run' },
@@ -26,7 +27,7 @@ function race() {
       ? { averageQuantity: { quantity: 150, unit: 'count/min' }, maximumQuantity: { quantity: 180, unit: 'count/min' } }
       : type.endsWith('StepCount') ? { sumQuantity: { quantity: 16000, unit: 'count' } } : undefined };
 }
-function adapter(options: { query?: () => Promise<unknown[]>; available?: boolean; enums?: boolean; module?: boolean } = {}) {
+function adapter(options: { query?: (options?: any) => Promise<unknown[]>; available?: boolean; enums?: boolean; module?: boolean } = {}) {
   const loader = Module as unknown as { _load: (id: string, ...args: unknown[]) => unknown };
   const original = loader._load;
   const file = '../../src/lib/healthKit';
@@ -92,4 +93,32 @@ test('read summary distinguishes genuinely empty responses from unsupported or i
   assert.equal(mixed.sampleCount, 3);
   assert.equal(mixed.skippedCount, 2);
   assert.equal(mixed.candidates.length, 1);
+});
+
+test('selection lists read metadata only, without any route or statistic calls', async () => {
+  let routes = 0, statistics = 0;
+  const health = adapter({ query: async () => [{ ...race(),
+    getWorkoutRoutes: async () => { routes += 1; return []; },
+    getStatistic: async () => { statistics += 1; return undefined; },
+  }] });
+  const result = await health.readHealthKitWorkoutHistory({ days: 30, limit: 250, metadataOnly: true, includeRoutes: true });
+  assert.equal(result.candidates.length, 1);
+  assert.equal(result.candidates[0]?.distanceMeters, 15000);
+  assert.equal(result.candidates[0]?.routeCoordinates, undefined);
+  assert.equal(routes, 0); assert.equal(statistics, 0);
+});
+
+test('selected UUID lookup is exact and independent of history range or result ordering', async () => {
+  let query: any;
+  const health = adapter({ query: async options => { query = options; return [race()]; } });
+  const selected = await health.getHealthKitWorkoutByUuid(workoutUuid);
+  assert.deepEqual(query.filter, { uuid: workoutUuid });
+  assert.equal(query.limit, 2);
+  assert.equal(selected.routeCoordinates?.length, 2);
+  for (const samples of [[], [race(), race()], [{ ...race(), toJSON: () => ({ ...race().toJSON(), uuid: 'other' }) }]]) {
+    await assert.rejects(adapter({ query: async () => samples }).getHealthKitWorkoutByUuid(workoutUuid), /exact selected workout/);
+  }
+  let calls = 0;
+  await assert.rejects(adapter({ query: async () => { calls += 1; return [race()]; } }).getHealthKitWorkoutByUuid('not-a-uuid'), /valid Apple Health identifier/);
+  assert.equal(calls, 0, 'Invalid predicates must never broaden a selected-workout lookup');
 });
