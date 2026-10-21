@@ -3,8 +3,11 @@ import { Platform } from 'react-native';
 import { createJSONStorage, type StateStorage } from 'zustand/middleware';
 import { createHydrationSafeStorage, type HydrationSafeStorage } from './hydrationSafeStorage';
 
-const serverStorage: StateStorage = {
+type AppStorage = StateStorage & Pick<HydrationSafeStorage, 'getItemOnce'>;
+
+const serverStorage: AppStorage = {
   getItem: async () => null,
+  getItemOnce: async () => null,
   setItem: async () => {},
   removeItem: async () => {},
 };
@@ -13,7 +16,7 @@ export { createHydrationSafeStorage, type HydrationSafeStorage } from './hydrati
 
 let appStorage: HydrationSafeStorage | null = null;
 
-export function getAppStorage(): StateStorage {
+export function getAppStorage(): AppStorage {
   if (Platform.OS === 'web' && typeof window === 'undefined') {
     return serverStorage;
   }

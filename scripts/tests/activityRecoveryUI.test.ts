@@ -7,22 +7,24 @@ import { resolveActivityDetail } from '../../src/utils/activityResolution';
 
 function harness(status = 'ready') {
   let id = 'missing-race';
+  let focused = true;
   let cursor = 0;
   let tree: any;
   let activities: any[] = [];
-  const state: any[] = [], effects: (() => void)[] = [], alerts: any[] = [], navigation: any[] = [], calls: string[] = [];
+  const state: any[] = [], effects: (() => void)[] = [], cleanups: any[] = [], alerts: any[] = [], navigation: any[] = [], calls: string[] = [];
   let restore: (id: string) => Promise<string | null> = async () => null;
   const hooks = {
     useRef: (value: any) => { const i = cursor++; return state[i] ??= { current: value }; },
     useState: (value: any) => { const i = cursor++; if (!(i in state)) state[i] = typeof value === 'function' ? value() : value;
       return [state[i], (next: any) => { state[i] = next; }]; },
-    useEffect: (fn: () => void, dependencies: any[]) => { const i = cursor++; if (!state[i] || dependencies.some((v, j) => v !== state[i][j])) effects.push(fn); state[i] = dependencies; },
+    useEffect: (fn: () => void, dependencies: any[]) => { const i = cursor++; if (!state[i] || dependencies.some((v, j) => v !== state[i][j])) effects.push(() => { cleanups[i]?.(); cleanups[i] = fn(); }); state[i] = dependencies; },
+    useMemo: (fn: () => any, dependencies: any[]) => { const i = cursor++; if (!state[i] || dependencies.some((v, j) => v !== state[i].dependencies[j])) state[i] = { dependencies, value: fn() }; return state[i].value; },
   };
   const mocks: Record<string, any> = {
     react: { ...hooks, useLayoutEffect: hooks.useEffect },
     'react-native': { StyleSheet: { create: (s: any) => s }, Alert: { alert: (...args: any[]) => alerts.push(args) },
       ...Object.fromEntries(['ActivityIndicator', 'ScrollView', 'Text', 'TouchableOpacity', 'View'].map(n => [n, n])) },
-    'expo-router': { useLocalSearchParams: () => ({ activityId: id }), useRouter: () => ({ replace: (value: any) => navigation.push(value), back: () => navigation.push('back') }) },
+    'expo-router': { useIsFocused: () => focused, useLocalSearchParams: () => ({ activityId: id }), useRouter: () => ({ replace: (value: any) => navigation.push(value), back: () => navigation.push('back') }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     activityStore: { useActivityStore: (selector: any) => selector({ activities, hydrationStatus: status }) },
     settingsStore: { useSettingsStore: (selector: any) => selector({ units: 'metric' }) },
@@ -52,10 +54,27 @@ function harness(status = 'ready') {
     setRestore: (fn: typeof restore) => { restore = fn; },
     publish: () => { activities = [{ id, activityType: 'running', metrics: {} }]; },
     setId: (value: string) => { id = value; render(); },
+    setFocused: (value: boolean) => { focused = value; render(); },
     confirm: () => alerts.at(-1)[2].find((a: any) => a.text === 'Restore').onPress(),
     text: () => nodes().flatMap(n => n.children.filter((c: any) => typeof c === 'string')).join(' '),
   };
 }
+
+test('Health recovery callbacks from a covered screen stay invalid after focus returns', () => {
+  const ui = harness(); ui.render();
+  const old = ui.health().props;
+  assert.equal(old.isCurrent(), true);
+  ui.setFocused(false);
+  assert.equal(ui.health().props.key, 'missing-race:false');
+  assert.equal(old.isCurrent(), false);
+  old.onRecovered('stale');
+  ui.setFocused(true);
+  assert.equal(ui.health().props.key, 'missing-race:true');
+  assert.equal(old.isCurrent(), false);
+  old.onRecovered('still-stale');
+  assert.equal(ui.navigation.length, 0);
+  assert.equal(ui.health().props.isCurrent(), true);
+});
 
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
@@ -132,12 +151,12 @@ test('Health selection remains mounted and errors stay visible after an early in
 
 test('changing the unresolved route keys a new Health recovery session', () => {
   const ui = harness(); ui.render();
-  assert.equal(ui.health().props.key, 'missing-race');
+  assert.equal(ui.health().props.key, 'missing-race:true');
   const stale = ui.health().props;
   ui.health().props.onOpenChange(true);
   ui.setId('another-missing-recording');
   assert.equal(stale.isCurrent(), false);
   stale.onRecovered('stale-canonical');
-  assert.equal(ui.health().props.key, 'another-missing-recording');
+  assert.equal(ui.health().props.key, 'another-missing-recording:true');
   assert.equal(ui.navigation.length, 0);
 });

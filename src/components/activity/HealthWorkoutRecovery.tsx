@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import RecoverableModal from '../ui/RecoverableModal';
-import { createHealthWorkoutRecovery } from '../../lib/healthWorkoutRecovery';
+import { createHealthWorkoutRecovery, type HealthRecoveryPhase } from '../../lib/healthWorkoutRecovery';
 import type { HealthKitWorkoutCandidate } from '../../utils/healthKitImport';
 import { displayLabel } from '../../utils/displayLabels';
 import { formatDuration } from '../../utils/activitySummary';
@@ -19,6 +19,12 @@ type Props = {
   onRecovered: (id: string) => void;
 };
 
+const PHASE_LABEL: Record<HealthRecoveryPhase, string> = {
+  details: 'Reading selected workout…', route: 'Reading workout route…', metrics: 'Reading workout metrics…',
+  saving: 'Saving and verifying activity…', opening: 'Opening saved activity…',
+};
+const LONG_PENDING_MS = 15_000;
+
 export default function HealthWorkoutRecovery({ disabled, isCurrent = () => true, onOpenChange, onSavePending, onFailure, onRecovered }: Props) {
   const C = useColors();
   const units = useSettingsStore(state => state.units);
@@ -27,45 +33,127 @@ export default function HealthWorkoutRecovery({ disabled, isCurrent = () => true
   const [rows, setRows] = useState<HealthKitWorkoutCandidate[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'saving' | 'error'>('ready');
   const [error, setError] = useState<string | null>(null);
+  const [selection, setSelection] = useState<HealthKitWorkoutCandidate | null>(null);
+  const [phase, setPhase] = useState<HealthRecoveryPhase>('details');
+  const [longPending, setLongPending] = useState(false);
   const request = useRef(0);
+  const attempt = useRef(0);
   const busy = useRef(false);
+  const restoring = useRef(false);
+  const pendingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const session = useRef<ReturnType<typeof createHealthWorkoutRecovery> | null>(null);
-  useEffect(() => () => { request.current += 1; }, []);
+  function clearPendingTimer() {
+    if (pendingTimer.current !== null) clearTimeout(pendingTimer.current);
+    pendingTimer.current = null;
+  }
+  useEffect(() => () => {
+    request.current += 1;
+    attempt.current += 1;
+    restoring.current = false;
+    clearPendingTimer();
+  }, []);
 
   function close() {
+    const wasRestoring = restoring.current;
     request.current += 1;
+    attempt.current += 1;
     session.current = null;
     busy.current = false;
+    restoring.current = false;
+    clearPendingTimer();
+    setLongPending(false);
+    setStatus('ready');
+    if (wasRestoring && isCurrent()) {
+      const message = 'Recovery cancelled. The selected workout is not confirmed saved; a save already in progress may still finish. Reopen recovery to retry the same selection.';
+      setError(message);
+      onFailure(message);
+    }
     setVisible(false);
     onOpenChange(false);
   }
-  async function load(period = days) {
+  async function restore(candidate: HealthKitWorkoutCandidate, recovery: ReturnType<typeof createHealthWorkoutRecovery>, generation: number) {
+    const token = ++attempt.current;
+    const current = () => request.current === generation && attempt.current === token && isCurrent();
+    busy.current = true;
+    restoring.current = true;
+    setSelection(candidate);
+    setError(null);
+    setStatus('saving');
+    setPhase('details');
+    setLongPending(false);
+    clearPendingTimer();
+    pendingTimer.current = setTimeout(() => {
+      if (current() && restoring.current) setLongPending(true);
+    }, LONG_PENDING_MS);
+    onSavePending();
+    try {
+      const id = await recovery.restoreSelected(candidate.uuid, next => {
+        if (current() && restoring.current) setPhase(next);
+      });
+      if (!current()) return;
+      setVisible(false);
+      onRecovered(id);
+    } catch (reason) {
+      if (!current()) return;
+      const message = reason instanceof Error ? reason.message : 'The workout could not be saved. Retry the same selection.';
+      setError(message);
+      setStatus('ready');
+      onFailure(message);
+    } finally {
+      if (current()) {
+        clearPendingTimer();
+        setLongPending(false);
+        restoring.current = false;
+        busy.current = false;
+      }
+    }
+  }
+  async function load(period = days, retrySelection?: HealthKitWorkoutCandidate) {
+    if (restoring.current || !isCurrent()) return;
     const generation = ++request.current;
     const current = () => request.current === generation && isCurrent();
-    const recovery = createHealthWorkoutRecovery(current);
-    session.current = recovery;
+    attempt.current += 1;
+    session.current = null;
     busy.current = true;
+    clearPendingTimer();
+    setLongPending(false);
     setDays(period);
     setRows([]);
-    setError(null);
+    if (!selection || retrySelection) setError(null);
     setStatus('loading');
     setVisible(true);
     onOpenChange(true);
     try {
+      const recovery = createHealthWorkoutRecovery(current);
+      session.current = recovery;
       const workouts = await recovery.listRecent(period);
       if (!current()) return;
       setRows(workouts);
       setStatus('ready');
+      if (retrySelection) {
+        const selected = workouts.find(workout => workout.uuid === retrySelection.uuid
+          && workout.sourceBundleIdentifier === retrySelection.sourceBundleIdentifier);
+        if (!selected) {
+          setSelection(null);
+          const message = 'The selected workout is not in the refreshed Health list. Select it again before restoring.';
+          setError(message);
+          onFailure(message);
+          return;
+        }
+        await restore(selected, recovery, generation);
+      }
     } catch (reason) {
       if (!current()) return;
-      setError(reason instanceof Error ? reason.message : 'Apple Health could not be read.');
+      const message = reason instanceof Error ? reason.message : 'Apple Health could not be read.';
+      setError(message);
       setStatus('error');
+      if (retrySelection) onFailure(message);
     } finally {
       if (current()) busy.current = false;
     }
   }
   function choose(candidate: HealthKitWorkoutCandidate) {
-    if (busy.current) return;
+    if (busy.current || !isCurrent()) return;
     const generation = request.current;
     const current = () => request.current === generation && isCurrent();
     const recovery = session.current;
@@ -74,24 +162,8 @@ export default function HealthWorkoutRecovery({ disabled, isCurrent = () => true
       `${displayLabel(candidate.activityType)} · ${new Date(candidate.startTime).toLocaleString()} · ${formatDuration(candidate.durationSeconds)}\n\nRestores only this selected workout, including a previously removed entry. Existing activity edits are kept. The unresolved old link is not reassigned.`, [
         { text: 'Cancel', style: 'cancel', onPress: () => { if (current()) busy.current = false; } },
         { text: 'Restore', onPress: async () => {
-          if (!current() || !recovery) return;
-          setError(null);
-          setStatus('saving');
-          onSavePending();
-          try {
-            const id = await recovery.restoreSelected(candidate.uuid);
-            if (!current()) return;
-            setVisible(false);
-            onRecovered(id);
-          } catch (reason) {
-            if (!current()) return;
-            const message = reason instanceof Error ? reason.message : 'The workout could not be saved. Retry the same selection.';
-            setError(message);
-            setStatus('ready');
-            onFailure(message);
-          } finally {
-            if (current()) busy.current = false;
-          }
+          if (!current() || !recovery || restoring.current) return;
+          await restore(candidate, recovery, generation);
         } },
       ], { cancelable: false });
   }
@@ -114,11 +186,19 @@ export default function HealthWorkoutRecovery({ disabled, isCurrent = () => true
         </View>
         {status === 'loading' || status === 'saving' ? <View style={s.progress}>
           <ActivityIndicator color={C.primary} />
-          <Text accessibilityLiveRegion="polite" style={[s.body, { color: C.textMuted }]}>{status === 'loading' ? 'Reading recent workouts…' : 'Reading selected workout and confirming save…'}</Text>
+          <Text accessibilityLiveRegion="polite" style={[s.body, { color: C.textMuted }]}>{status === 'loading' ? 'Reading recent workouts…' : PHASE_LABEL[phase]}</Text>
+          {longPending ? <Text accessibilityLiveRegion="polite" style={[s.body, { color: C.textMuted }]}>This is taking longer than usual. Recovery is still in progress; saving has not been confirmed.</Text> : null}
         </View> : null}
         {error ? <View style={s.progress}>
+          <Text accessibilityRole="header" style={[s.failureTitle, { color: C.text }]}>{selection ? 'Recovery not completed' : 'Health recovery needs attention'}</Text>
+          {selection ? <Text style={[s.body, { color: C.textMuted }]}>{displayLabel(selection.activityType)} · {new Date(selection.startTime).toLocaleString()} · {formatDuration(selection.durationSeconds)}</Text> : null}
           <Text accessibilityLiveRegion="polite" style={[s.body, { color: C.textMuted }]}>{error}</Text>
-          {status === 'error' ? <TouchableOpacity accessibilityRole="button" accessibilityLabel="Retry Apple Health search" onPress={() => { void load(); }} style={s.retry}>
+          {selection ? <TouchableOpacity accessibilityRole="button" accessibilityLabel="Retry same selection"
+            disabled={status === 'loading' || status === 'saving'}
+            onPress={() => { if (!busy.current) void load(days, selection); }} style={s.retry}>
+            <Ionicons name="refresh" size={22} color={C.primary} />
+            <Text style={[s.openText, { color: C.primary }]}>Retry same selection</Text>
+          </TouchableOpacity> : status === 'error' ? <TouchableOpacity accessibilityRole="button" accessibilityLabel="Retry Apple Health search" onPress={() => { void load(); }} style={s.retry}>
             <Ionicons name="refresh" size={22} color={C.primary} />
             <Text style={[s.openText, { color: C.primary }]}>Retry</Text>
           </TouchableOpacity> : null}
@@ -142,6 +222,7 @@ const s = StyleSheet.create({
   openText: { fontSize: 15, fontWeight: '700', flexShrink: 1 }, body: { fontSize: 14, lineHeight: 21, flexShrink: 1 },
   periods: { flexDirection: 'row', gap: 8, marginBottom: 12 }, period: { flex: 1, minHeight: 44, padding: 10, borderWidth: 1, borderRadius: 8, justifyContent: 'center' },
   periodText: { fontSize: 14, fontWeight: '700', textAlign: 'center' }, progress: { gap: 12, paddingVertical: 12 },
+  failureTitle: { fontSize: 17, fontWeight: '700' },
   retry: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8 }, list: { flex: 1 },
   row: { minHeight: 88, paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth, gap: 4 }, rowTitle: { fontSize: 17, fontWeight: '700' },
 });

@@ -25,6 +25,7 @@ type Storage = {
 const RETRY_DELAYS_MS = [250, 500, 1000, 2000];
 
 export type HydrationSafeStorage = StateStorage & {
+  getItemOnce: (key: string) => Promise<string | null>;
   isKeyReadable: (key: string) => boolean;
   droppedWriteCount: (key: string) => number;
 };
@@ -52,6 +53,10 @@ export function createHydrationSafeStorage(
 
   return {
     getItem: key => readWithRetry(key),
+    getItemOnce: async key => {
+      if (!readable.has(key)) throw new Error('Saved data has not been read safely; unlock the device and retry');
+      return base.getItem(key);
+    },
     setItem: async (key, value) => {
       if (!readable.has(key)) {
         dropped.set(key, (dropped.get(key) ?? 0) + 1);

@@ -70,7 +70,9 @@ test('only an explicitly listed UUID is fetched, saved and returned as a durable
   assert.equal((await h.session.listRecent()).length, 1);
   assert.equal(h.queried.length, 0); assert.equal(h.activities.length, 0);
   await assert.rejects(h.session.restoreSelected('not-listed'));
-  const id = await h.session.restoreSelected(workout.uuid);
+  const phases: string[] = [];
+  const id = await h.session.restoreSelected(workout.uuid, phase => phases.push(phase));
+  assert.deepEqual(phases, ['details', 'saving', 'opening']);
   assert.deepEqual(h.queried, [workout.uuid]);
   assert.deepEqual(h.durable, [id]);
   assert.deepEqual(h.activities[0]?.metrics.routeCoordinates, workout.routeCoordinates);
@@ -85,6 +87,40 @@ test('an existing Health UUID without old-link aliases opens its kept edited can
   assert.equal(await h.session.restoreSelected(workout.uuid), edited.id);
   assert.equal(h.activities[0], edited);
   assert.equal(h.activities[0].workoutInstanceId, undefined, 'Do not invent lineage for the old link');
+});
+
+test('competing UUID and recording-instance evidence rejects before a duplicate or wrong canonical save', async () => {
+  const exactUuid = { id: 'uuid-row', activityType: 'running', workoutInstanceId: 'conflicting-instance', metrics: {},
+    healthKit: { workoutUuid: workout.uuid, sourceBundleIdentifier: workout.sourceBundleIdentifier } } as Activity;
+  const byInstance = { id: 'instance-row', activityType: 'running', workoutInstanceId: workout.workoutInstanceId, metrics: {} } as Activity;
+  for (const records of [[exactUuid], [{ ...exactUuid, workoutInstanceId: undefined }, byInstance]]) {
+    const h = harness(records); await h.session.listRecent();
+    await assert.rejects(h.session.restoreSelected(workout.uuid), /conflicting recording identities|More than one saved activity claims/);
+    assert.equal(h.activities.length, records.length);
+    assert.equal(h.durable.length, 0);
+  }
+});
+
+test('all retained recording-ID claims must agree, including otherwise hidden nested claims', async () => {
+  for (const top of [workout.workoutInstanceId, 'conflicting-instance']) {
+    const row = { id: 'conflicting-row', workoutInstanceId: top, activityType: 'running', metrics: {}, healthKit: {
+      workoutUuid: workout.uuid, sourceBundleIdentifier: workout.sourceBundleIdentifier,
+      workoutInstanceId: top === workout.workoutInstanceId ? 'conflicting-instance' : workout.workoutInstanceId,
+    } } as Activity;
+    const h = harness([row]); await h.session.listRecent();
+    await assert.rejects(h.session.restoreSelected(workout.uuid), /conflicting recording identities/);
+    assert.equal(h.durable.length, 0); assert.equal(h.activities[0], row);
+  }
+});
+
+test('one canonical row with consistent exact instance lineage is preserved across multiple Health exports', async () => {
+  const row = { id: 'canonical-recording', workoutInstanceId: workout.workoutInstanceId, activityType: 'running',
+    notes: 'Keep edits', metrics: { durationSeconds: 5300 }, healthKit: { workoutUuid: 'earlier-export-uuid',
+      sourceBundleIdentifier: workout.sourceBundleIdentifier, workoutInstanceId: workout.workoutInstanceId } } as Activity;
+  const h = harness([row]); await h.session.listRecent();
+  assert.equal(await h.session.restoreSelected(workout.uuid), row.id);
+  assert.equal(h.activities.length, 1); assert.equal(h.activities[0], row);
+  assert.equal(h.activities[0].healthKit?.workoutUuid, 'earlier-export-uuid');
 });
 
 test('stale request, owner change, deletion or mismatched selected record prevents a new save', async () => {

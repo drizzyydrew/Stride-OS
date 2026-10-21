@@ -122,3 +122,30 @@ test('selected UUID lookup is exact and independent of history range or result o
   await assert.rejects(adapter({ query: async () => { calls += 1; return [race()]; } }).getHealthKitWorkoutByUuid('not-a-uuid'), /valid Apple Health identifier/);
   assert.equal(calls, 0, 'Invalid predicates must never broaden a selected-workout lookup');
 });
+
+test('nested Nitro source proxies use their serializer instead of the HybridObject name', async () => {
+  let serializations = 0;
+  const sample = race().toJSON();
+  const proxySource = {
+    name: 'SourceProxy', bundleIdentifier: 'com.mooremovement.strideos.watch',
+    toJSON() { serializations += 1; return { name: 'StrideOS', bundleIdentifier: this.bundleIdentifier }; },
+  };
+  const health = adapter({ query: async () => [{ ...race(), toJSON: () => ({ ...sample,
+    sourceRevision: { source: proxySource } }) }] });
+  const [candidate] = await health.getHealthKitWorkoutHistory({ days: 30, limit: 250, metadataOnly: true });
+  assert.equal(serializations, 1);
+  assert.equal(candidate?.sourceName, 'StrideOS');
+  assert.equal(candidate?.sourceBundleIdentifier, proxySource.bundleIdentifier);
+});
+
+test('selected read reports route and metrics phases and does not expose native error payloads', async () => {
+  const phases: string[] = [];
+  await adapter().getHealthKitWorkoutByUuid(workoutUuid, phase => phases.push(phase));
+  assert.deepEqual(phases, ['details', 'route', 'metrics']);
+  const health = adapter({ query: async () => [{ ...race(), getWorkoutRoutes: async () => { throw new Error('sensitive native payload'); } }] });
+  await assert.rejects(health.getHealthKitWorkoutByUuid(workoutUuid), error => {
+    assert.match((error as Error).message, /\(route\).*Workout Routes/);
+    assert.doesNotMatch((error as Error).message, /sensitive native payload/);
+    return true;
+  });
+});

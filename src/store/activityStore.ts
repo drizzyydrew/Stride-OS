@@ -93,17 +93,26 @@ async function waitForActivityHistory(lease: OwnerLease) {
 }
 
 async function flushActivityHistory(lease: OwnerLease) {
-  await serializeActivityWrite(async () => {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const committed = await serializeActivityWrite(async () => {
+      requireActivityOwner(lease);
+      const state = useActivityStore.getState();
+      const encoded = JSON.stringify({ state: { schemaVersion: state.schemaVersion, activities: state.activities }, version: ACTIVITY_STORE_SCHEMA_VERSION });
+      const storage = getAppStorage();
+      await storage.setItem('activity-store', encoded);
+      requireActivityOwner(lease);
+      // Hydration retries locked reads; a commit must surface a failed confirmation.
+      const saved = await (storage.getItemOnce ? storage.getItemOnce('activity-store') : storage.getItem('activity-store'));
+      requireActivityOwner(lease);
+      if (saved !== encoded) throw new Error('Activity history persistence could not be confirmed');
+      return state;
+    });
     requireActivityOwner(lease);
-    const state = useActivityStore.getState();
-    const encoded = JSON.stringify({ state: { schemaVersion: state.schemaVersion, activities: state.activities }, version: ACTIVITY_STORE_SCHEMA_VERSION });
-    const storage = getAppStorage();
-    await storage.setItem('activity-store', encoded);
-    requireActivityOwner(lease);
-    const saved = await storage.getItem('activity-store');
-    requireActivityOwner(lease);
-    if (saved !== encoded) throw new Error('Activity history persistence could not be confirmed');
-  });
+    const current = useActivityStore.getState();
+    // Immutable history references act as revisions; retry behind queued edits.
+    if (current.activities === committed.activities && current.schemaVersion === committed.schemaVersion) return;
+  }
+  throw new Error('Activity history kept changing during persistence; retry saving it');
 }
 
 function uid(now = Date.now()): string {

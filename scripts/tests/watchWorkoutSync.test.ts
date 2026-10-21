@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import test from 'node:test';
 
@@ -13,7 +13,9 @@ const activityStore = readFileSync('src/store/activityStore.ts', 'utf8');
 const runScreen = readFileSync('app/(tabs)/training/index.tsx', 'utf8');
 const outdoorStartScreen = readFileSync('app/(tabs)/activity/start.tsx', 'utf8');
 const appConfig = JSON.parse(readFileSync('app.json', 'utf8')) as { expo?: { ios?: { buildNumber?: string } } };
-const xcodeProject = readFileSync('ios/StrideOSRunLiftRecover.xcodeproj/project.pbxproj', 'utf8');
+const projects = readdirSync('ios').filter(name => name.endsWith('.xcodeproj'));
+assert.equal(projects.length, 1, 'Verify the generated app project, not an obsolete display-name path');
+const xcodeProject = readFileSync(`ios/${projects[0]}/project.pbxproj`, 'utf8');
 const iosConfigPlugin = readFileSync('plugins/withIosWorkoutBackgroundModes.js', 'utf8');
 const requirePlugin = createRequire(import.meta.url);
 const { syncNativeTargetBuildNumbers } = requirePlugin('../../plugins/withIosWorkoutBackgroundModes.js') as {

@@ -95,7 +95,7 @@ type HealthWorkoutProxy = {
   totalDistance?: { quantity?: number; value?: number; unit?: string };
   totalEnergyBurned?: { quantity?: number; value?: number; unit?: string };
   sourceRevision?: {
-    source?: { bundleIdentifier?: string; name?: string };
+    source?: { bundleIdentifier?: string; name?: string; toJSON?: () => { bundleIdentifier?: string; name?: string } };
     productType?: string;
     version?: string;
   };
@@ -335,6 +335,7 @@ type HealthWorkoutHistoryOptions = {
   includeRoutes?: boolean;
   metadataOnly?: boolean;
   uuid?: string;
+  onReadPhase?: (phase: 'details' | 'route' | 'metrics') => void;
   onProgress?: (processed: number, total: number) => void;
 };
 
@@ -368,24 +369,26 @@ export async function readHealthKitWorkoutHistory(options: HealthWorkoutHistoryO
   const candidates: HealthKitWorkoutCandidate[] = [];
   for (let index = 0; index < samples.length; index += 1) {
     const proxy = samples[index]!;
+    const read: { phase: 'details' | 'route' | 'metrics' } = { phase: 'details' };
     try {
       const raw = typeof proxy.toJSON === 'function' ? proxy.toJSON() : proxy;
-      const candidate = await candidateFromWorkoutProxy(raw, proxy, Boolean(options.includeRoutes), options.metadataOnly);
+      const candidate = await candidateFromWorkoutProxy(raw, proxy, Boolean(options.includeRoutes), options.metadataOnly,
+        next => { read.phase = next; options.onReadPhase?.(next); });
       if (candidate) candidates.push(candidate);
     } catch {
-      throw new Error('An Apple Health workout could not be read safely. No workouts from this restore attempt have been added. Please retry.');
+      throw new Error(`An Apple Health workout could not be read safely (${read.phase}). No workouts from this restore attempt have been added. ${read.phase === 'route' ? 'Check Workout Routes read access in Apple Health, unlock your phone and retry.' : 'Unlock your phone and retry.'}`);
     }
     options.onProgress?.(index + 1, samples.length);
   }
   return { candidates, sampleCount: samples.length, skippedCount: samples.length - candidates.length };
 }
 
-export async function getHealthKitWorkoutByUuid(uuid: string): Promise<HealthKitWorkoutCandidate> {
+export async function getHealthKitWorkoutByUuid(uuid: string, onReadPhase?: HealthWorkoutHistoryOptions['onReadPhase']): Promise<HealthKitWorkoutCandidate> {
   // The native bridge drops an invalid UUID predicate, which would broaden the query.
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid)) {
     throw new Error('Select a workout with a valid Apple Health identifier.');
   }
-  const result = await readHealthKitWorkoutHistory({ days: 1, limit: 2, uuid, includeRoutes: true });
+  const result = await readHealthKitWorkoutHistory({ days: 1, limit: 2, uuid, includeRoutes: true, onReadPhase });
   if (result.sampleCount !== 1 || result.candidates.length !== 1 || result.candidates[0]!.uuid !== uuid) {
     throw new Error('Apple Health did not return the exact selected workout. Check read access and retry. No activity has been replaced.');
   }
@@ -524,7 +527,9 @@ export async function writeStrengthSession(session: StrengthLogRecord): Promise<
   });
 }
 
-async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthWorkoutProxy, includeRoutes = false, metadataOnly = false): Promise<HealthKitWorkoutCandidate | null> {
+async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthWorkoutProxy, includeRoutes = false, metadataOnly = false,
+  onReadPhase?: HealthWorkoutHistoryOptions['onReadPhase']): Promise<HealthKitWorkoutCandidate | null> {
+  onReadPhase?.('details');
   const workoutUuid = raw.uuid ?? raw.id;
   if (typeof workoutUuid !== 'string' || !workoutUuid.trim()) return null;
   const startTime = dateMs(raw.startDate);
@@ -534,7 +539,9 @@ async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthW
   const type = touring === 'ski_touring' || touring === 'snowboard_touring' ? touring : mapWorkoutActivityType(raw.workoutActivityType);
   if (!type) return null;
   const durationSeconds = durationToSeconds(raw.duration, endTime - startTime);
-  const source = raw.sourceRevision?.source;
+  const sourceProxy = raw.sourceRevision?.source;
+  // Nitro's inherited `name` is "SourceProxy", not HKSource.name; use its serializer.
+  const source = typeof sourceProxy?.toJSON === 'function' ? sourceProxy.toJSON() : sourceProxy;
   const candidate: HealthKitWorkoutCandidate = {
     uuid: workoutUuid,
     sourceBundleIdentifier: source?.bundleIdentifier ?? 'unknown',
@@ -556,9 +563,11 @@ async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthW
   };
   // A selection list must not fetch every historical route and sensor summary.
   if (metadataOnly) return candidate;
+  onReadPhase?.('route');
   const routes = includeRoutes && typeof proxy.getWorkoutRoutes === 'function'
     ? await proxy.getWorkoutRoutes()
     : [];
+  onReadPhase?.('metrics');
   const heartRateStats = typeof proxy.getStatistic === 'function'
     ? await proxy.getStatistic('HKQuantityTypeIdentifierHeartRate', 'count/min').catch(() => undefined)
     : undefined;

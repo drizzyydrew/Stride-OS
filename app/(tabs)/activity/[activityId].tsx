@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -30,6 +30,9 @@ import HealthWorkoutRecovery from '../../../src/components/activity/HealthWorkou
 export default function ActivityDetailScreen() {
   const C = useColors();
   const router = useRouter();
+  const focused = useIsFocused();
+  const focusSession = useMemo(() => ({ active: focused }), [focused]);
+  useLayoutEffect(() => () => { focusSession.active = false; }, [focusSession]);
   const { activityId } = useLocalSearchParams<{ activityId?: string | string[] }>();
   const activities = useActivityStore(state => state.activities);
   const hydrationStatus = useActivityStore(state => state.hydrationStatus);
@@ -48,7 +51,7 @@ export default function ActivityDetailScreen() {
   const requestedId = (Array.isArray(activityId) ? activityId[0] : activityId)?.trim();
   const latestRequestedId = useRef(requestedId);
   useLayoutEffect(() => { latestRequestedId.current = requestedId; }, [requestedId]);
-  const healthRequestIsCurrent = () => latestRequestedId.current === requestedId;
+  const healthRequestIsCurrent = () => focusSession.active && latestRequestedId.current === requestedId;
   useEffect(() => {
     recoveryRequest.current += 1;
     recoveryInFlight.current = false;
@@ -107,7 +110,7 @@ export default function ActivityDetailScreen() {
             </TouchableOpacity>
           ) : null}
           {recoveryMessage ? <Text accessibilityLiveRegion="polite" style={[s.recoveryBody, { color: C.textMuted }]}>{recoveryMessage}</Text> : null}
-          {resolution.status !== 'loading' ? <HealthWorkoutRecovery key={requestedId} disabled={recovering}
+          {resolution.status !== 'loading' ? <HealthWorkoutRecovery key={`${requestedId}:${focused}`} disabled={recovering}
             isCurrent={healthRequestIsCurrent}
             onOpenChange={open => { if (healthRequestIsCurrent()) setHealthRecoveryOpen(open); }}
             onSavePending={() => {
