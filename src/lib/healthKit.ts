@@ -143,7 +143,11 @@ const SHARE_TYPES = [
 try {
   // Dynamic require so the app doesn't crash on Expo Go / Android
   const healthModule = require('@kingstinct/react-native-healthkit') as HealthKitModule;
-  Health = healthModule.default ?? healthModule;
+  Health = {
+    ...(healthModule.default ?? healthModule),
+    // v14's default export contains methods, but its sport enum is named-only.
+    WorkoutActivityType: healthModule.WorkoutActivityType ?? healthModule.default?.WorkoutActivityType,
+  };
 } catch {
   // Native HealthKit module is not available in this build
 }
@@ -325,15 +329,29 @@ export async function getRecentHealthKitWorkoutCandidates(days = 30): Promise<He
  * in range (from StrideOS, the StrideOS watch app, Apple Workout, …), with
  * GPS routes when requested.
  */
-export async function getHealthKitWorkoutHistory(options: {
+type HealthWorkoutHistoryOptions = {
   days: number;
   limit: number;
   includeRoutes?: boolean;
   onProgress?: (processed: number, total: number) => void;
-}): Promise<HealthKitWorkoutCandidate[]> {
-  if (!Health?.queryWorkoutSamples) return [];
+};
+
+export type HealthWorkoutHistoryResult = {
+  candidates: HealthKitWorkoutCandidate[];
+  sampleCount: number;
+  skippedCount: number;
+};
+
+export async function getHealthKitWorkoutHistory(options: HealthWorkoutHistoryOptions): Promise<HealthKitWorkoutCandidate[]> {
+  return (await readHealthKitWorkoutHistory(options)).candidates;
+}
+
+export async function readHealthKitWorkoutHistory(options: HealthWorkoutHistoryOptions): Promise<HealthWorkoutHistoryResult> {
+  if (!Health?.queryWorkoutSamples || typeof Health.WorkoutActivityType?.running !== 'number') {
+    throw new Error('Apple Health workout reading is unavailable in this build. Update StrideOS and retry.');
+  }
   const available = await isAppleHealthAvailable();
-  if (!available) return [];
+  if (!available) throw new Error('Apple Health is unavailable right now. Unlock your iPhone and retry.');
 
   const endDate = new Date();
   const startDate = new Date(endDate.getTime() - Math.max(1, options.days) * 24 * 60 * 60 * 1000);
@@ -341,17 +359,23 @@ export async function getHealthKitWorkoutHistory(options: {
     limit: options.limit,
     ascending: false,
     filter: { date: { startDate, endDate } },
-  }).catch(() => []);
+  }).catch(() => {
+    throw new Error('Apple Health workouts could not be read. Unlock your iPhone and retry. Your saved history has not been changed.');
+  });
 
   const candidates: HealthKitWorkoutCandidate[] = [];
   for (let index = 0; index < samples.length; index += 1) {
     const proxy = samples[index]!;
-    const raw = typeof proxy.toJSON === 'function' ? proxy.toJSON() : proxy;
-    const candidate = await candidateFromWorkoutProxy(raw, proxy, Boolean(options.includeRoutes)).catch(() => null);
-    if (candidate) candidates.push(candidate);
+    try {
+      const raw = typeof proxy.toJSON === 'function' ? proxy.toJSON() : proxy;
+      const candidate = await candidateFromWorkoutProxy(raw, proxy, Boolean(options.includeRoutes));
+      if (candidate) candidates.push(candidate);
+    } catch {
+      throw new Error('An Apple Health workout could not be read safely. No workouts from this restore attempt have been added. Please retry.');
+    }
     options.onProgress?.(index + 1, samples.length);
   }
-  return candidates;
+  return { candidates, sampleCount: samples.length, skippedCount: samples.length - candidates.length };
 }
 
 function routeCoordinatesFrom(routes: readonly unknown[]): ActivityCoordinate[] {
@@ -497,8 +521,8 @@ async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthW
   if (!type) return null;
   const durationSeconds = durationToSeconds(raw.duration, endTime - startTime);
   const source = raw.sourceRevision?.source;
-  const routes = typeof proxy.getWorkoutRoutes === 'function'
-    ? await proxy.getWorkoutRoutes().catch(() => [])
+  const routes = includeRoutes && typeof proxy.getWorkoutRoutes === 'function'
+    ? await proxy.getWorkoutRoutes()
     : [];
   const heartRateStats = typeof proxy.getStatistic === 'function'
     ? await proxy.getStatistic('HKQuantityTypeIdentifierHeartRate', 'count/min').catch(() => undefined)

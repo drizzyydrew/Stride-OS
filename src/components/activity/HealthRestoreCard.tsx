@@ -1,16 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { getHealthKitWorkoutHistory, requestPermissions } from '../../lib/healthKit';
-import { useActivityStore } from '../../store/activityStore';
-import { useIntegrationsStore } from '../../store/integrationsStore';
+import { restoreHealthActivityHistory } from '../../lib/healthActivityRestore';
 import { useColors } from '../../theme/useColors';
-import { buildHealthKitActivityDraft, isDuplicateHealthKitWorkout } from '../../utils/healthKitImport';
-
-const RESTORE_DAYS = 3650;
-const RESTORE_LIMIT = 2000;
-const MIN_WORKOUT_SECONDS = 60;
 
 /**
  * Rebuilds the Activity log from Apple Health: every workout saved there by
@@ -21,47 +14,40 @@ export default function HealthRestoreCard({ compact = false }: { compact?: boole
   const C = useColors();
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
+  const inFlight = useRef(false);
 
   async function restore() {
-    if (busy) return;
     setBusy(true);
     setProgress('Asking Apple Health…');
     try {
-      const granted = await requestPermissions().catch(() => false);
-      // The wipe also reset the "Apple Health connected" setting; restoring
-      // reconnects it so live Health data and Health writes resume.
-      if (granted) useIntegrationsStore.getState().setHealthKit(true);
-      const candidates = await getHealthKitWorkoutHistory({
-        days: RESTORE_DAYS,
-        limit: RESTORE_LIMIT,
-        includeRoutes: true,
-        onProgress: (done, total) => setProgress(`Reading workouts ${done} / ${total}…`),
-      });
-      const store = useActivityStore.getState();
-      let restored = 0;
-      let withRoutes = 0;
-      for (const candidate of candidates) {
-        if (candidate.durationSeconds < MIN_WORKOUT_SECONDS) continue;
-        if (isDuplicateHealthKitWorkout(candidate, useActivityStore.getState().activities)) continue;
-        store.addActivity(buildHealthKitActivityDraft({ candidate }));
-        restored += 1;
-        if (candidate.routeCoordinates?.length) withRoutes += 1;
-      }
+      const result = await restoreHealthActivityHistory((done, total) => setProgress(`Reading workouts ${done} / ${total}…`));
+      const { restored, withRoutes } = result;
       setProgress(null);
       Alert.alert(
-        restored ? 'Activity log restored' : 'Nothing new to restore',
+        restored ? 'Activity log restored' : result.sampleCount ? 'Restore complete' : 'No readable workouts returned',
         restored
           ? `Restored ${restored} workout${restored === 1 ? '' : 's'} from Apple Health${withRoutes ? `, ${withRoutes} with GPS routes` : ''}.`
-          : candidates.length
-            ? 'Every Apple Health workout is already in your Activity log.'
-            : 'No workouts were found in Apple Health. Check that StrideOS can read Workouts and Workout Routes in Settings → Health → Data Access & Devices.',
+          : result.sampleCount
+            ? `${result.alreadyPresent} workout${result.alreadyPresent === 1 ? ' is' : 's are'} already saved. ${result.skippedCount + result.tooShort} unsupported, invalid, or under-one-minute workout${result.skippedCount + result.tooShort === 1 ? ' was' : 's were'} skipped.`
+            : 'Apple Health returned no readable workouts. This does not mean your race is missing from Health. Enable StrideOS read access to Workouts and Workout Routes in Health > profile > Apps > StrideOS, then retry with your iPhone unlocked. Connected alone does not confirm read access.',
       );
     } catch (error) {
       setProgress(null);
       Alert.alert('Restore failed', error instanceof Error ? error.message : 'Apple Health could not be read.');
     } finally {
       setBusy(false);
+      inFlight.current = false;
     }
+  }
+
+  function confirmRestore() {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    Alert.alert('Restore from Apple Health?',
+      'Adds missing supported workouts saved in Apple Health, including workouts previously removed from Activity. Existing activity edits are kept. Nothing in Apple Health is changed.', [
+        { text: 'Cancel', style: 'cancel', onPress: () => { inFlight.current = false; } },
+        { text: 'Restore', onPress: () => { void restore(); } },
+      ], { cancelable: false });
   }
 
   return (
@@ -73,7 +59,7 @@ export default function HealthRestoreCard({ compact = false }: { compact?: boole
       ) : null}
       <TouchableOpacity
         style={[styles.button, { backgroundColor: C.primaryDim, opacity: busy ? 0.7 : 1 }]}
-        onPress={restore}
+        onPress={confirmRestore}
         disabled={busy}
         accessibilityRole="button"
         accessibilityLabel="Restore activity history from Apple Health"

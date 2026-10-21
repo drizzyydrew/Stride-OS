@@ -124,7 +124,7 @@ test('restore keeps GPS routes (downsampled, first and last kept)', () => {
   assert.equal(down[down.length - 1], points[points.length - 1]);
   const health = read('src/lib/healthKit.ts');
   assert.match(health, /includeRoutes && routes\.length > 0 \? routeCoordinatesFrom\(routes\)/);
-  assert.match(read('src/components/activity/HealthRestoreCard.tsx'), /days: RESTORE_DAYS,\s+limit: RESTORE_LIMIT,\s+includeRoutes: true/);
+  assert.match(read('src/lib/healthActivityRestore.ts'), /days: RESTORE_DAYS,\s+limit: RESTORE_LIMIT,\s+includeRoutes: true/);
 });
 
 test('every completed activity is saved to Apple Health once, with its route; imports are never written back', () => {
