@@ -26,6 +26,8 @@ import { analyzeSnowSegments, buildOutdoorSplits } from '../../../src/utils/outd
 import { formatDistance } from '../../../src/lib/units';
 import { recoverSavedActivity } from '../../../src/lib/savedActivityRecovery';
 import HealthWorkoutRecovery from '../../../src/components/activity/HealthWorkoutRecovery';
+import HealthDistanceRefresh from '../../../src/components/activity/HealthDistanceRefresh';
+import { buildHealthDistanceSplits } from '../../../src/utils/healthDistanceSplits';
 
 export default function ActivityDetailScreen() {
   const C = useColors();
@@ -146,12 +148,13 @@ export default function ActivityDetailScreen() {
   const activity = resolution.activity;
 
   const summary = buildActivitySummary(activity, units, { dataRich: true });
-  const outdoorSplits = buildOutdoorSplits(activity, units);
+  const healthSplits = buildHealthDistanceSplits(activity, units);
+  const outdoorSplits = healthSplits ? healthSplits.splits : buildOutdoorSplits(activity, units);
   const runSplits = outdoorSplits.length ? outdoorSplits.map(split => ({
     index: split.index, label: `${units === 'metric' ? 'Km' : 'Mile'} ${split.index}${split.complete ? '' : ' (partial)'}`,
     distanceLabel: formatDistance(split.distanceMeters / 1609.344, units), paceLabel: split.paceLabel,
     trend: 'even' as const, deltaLabel: split.averageHeartRateBpm == null ? 'HR unavailable' : `${split.averageHeartRateBpm} bpm`,
-  })) : buildRunSplits(activity, units);
+  })) : healthSplits ? [] : buildRunSplits(activity, units);
   const snowSegments = analyzeSnowSegments(activity);
   const descents = snowSegments.filter(segment => segment.kind === 'descent');
 
@@ -217,9 +220,14 @@ export default function ActivityDetailScreen() {
             </View>
           ))}
         </View>
-        {runSplits.length ? (
+        {activity.healthKit && ['running', 'walking', 'hiking', 'cycling'].includes(activity.activityType)
+          ? <HealthDistanceRefresh key={`${activity.id}:${focused}`} activityId={activity.id} isCurrent={healthRequestIsCurrent} /> : null}
+        {runSplits.length || healthSplits ? (
           <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[s.eyebrow, { color: C.textDim }]}>DISTANCE SPLITS</Text>
+            {healthSplits ? <Text style={[s.body, { color: C.textMuted }]}>{healthSplits.status === 'complete'
+              ? 'Health distance-derived · approximate split boundaries'
+              : healthSplits.reason ?? 'Health distance coverage is incomplete. Split paces are unavailable.'}</Text> : null}
             <View style={s.splitList}>
               {runSplits.map(split => {
                 const trendColor = split.trend === 'faster'

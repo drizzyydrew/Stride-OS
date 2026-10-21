@@ -27,7 +27,7 @@ function race() {
       ? { averageQuantity: { quantity: 150, unit: 'count/min' }, maximumQuantity: { quantity: 180, unit: 'count/min' } }
       : type.endsWith('StepCount') ? { sumQuantity: { quantity: 16000, unit: 'count' } } : undefined };
 }
-function adapter(options: { query?: (options?: any) => Promise<unknown[]>; available?: boolean; enums?: boolean; module?: boolean } = {}) {
+function adapter(options: { query?: (options?: any) => Promise<unknown[]>; quantities?: (identifier: string, options: any) => Promise<unknown[]>; available?: boolean; enums?: boolean; module?: boolean } = {}) {
   const loader = Module as unknown as { _load: (id: string, ...args: unknown[]) => unknown };
   const original = loader._load;
   const file = '../../src/lib/healthKit';
@@ -38,7 +38,7 @@ function adapter(options: { query?: (options?: any) => Promise<unknown[]>; avail
       if (options.module === false) throw new Error('Native bridge missing');
       // v14 exports bound functions on default, but enums only on the namespace.
       return { default: { isHealthDataAvailableAsync: async () => options.available !== false,
-        queryWorkoutSamples: options.query ?? (async () => [race()]) },
+        queryWorkoutSamples: options.query ?? (async () => [race()]), queryQuantitySamples: options.quantities },
       ...(options.enums === false ? {} : { WorkoutActivityType }) };
     }
     return original.call(this, id, ...args);
@@ -148,4 +148,48 @@ test('selected read reports route and metrics phases and does not expose native 
     assert.doesNotMatch((error as Error).message, /sensitive native payload/);
     return true;
   });
+});
+
+test('selected Health distance reads all samples associated with the exact native workout and retains route observations', async () => {
+  const proxy = { ...race(), getWorkoutRoutes: async () => [{ locations: Array.from({ length: 6000 }, (_, index) => ({
+    latitude: 45 + index / 1_000_000, longitude: -120, date: new Date(startDate.getTime() + index * 800), horizontalAccuracy: 5,
+  })) }] };
+  const reads: { identifier: string; options: any }[] = [];
+  const health = adapter({ query: async () => [proxy], quantities: async (identifier, options) => {
+    reads.push({ identifier, options });
+    return [{ uuid: 'synthetic-distance', quantity: 75, startDate, endDate: new Date(startDate.getTime() + 30_000),
+      sourceRevision: { source: { bundleIdentifier: 'com.mooremovement.strideos.watch' } } }];
+  } });
+  const selected = await health.getHealthKitWorkoutByUuid(workoutUuid);
+  assert.equal(reads.length, 1);
+  assert.equal(reads[0].identifier, 'HKQuantityTypeIdentifierDistanceWalkingRunning');
+  assert.equal(reads[0].options.limit, 0);
+  assert.equal(reads[0].options.unit, 'm');
+  assert.equal(reads[0].options.filter.workout, proxy);
+  assert.equal(reads[0].options.filter.date, undefined);
+  assert.equal(selected.healthKitDistance?.samples[0].distanceMeters, 75);
+  assert.equal(selected.healthKitDistance?.totalDistanceMeters, 15000);
+  assert.equal(selected.routeCoordinates?.length, 6000, 'analytical evidence must not use a display-thinned route');
+  assert.equal(buildHealthKitActivityDraft({ candidate: selected }).metrics.healthKitDistance?.samples.length, 1);
+  await health.readHealthKitWorkoutHistory({ days: 30, limit: 250, metadataOnly: true });
+  assert.equal(reads.length, 1, 'listing workouts does not read every distance stream');
+});
+
+test('distance read errors surface at the metrics phase without leaking native payload or becoming an empty timeline', async () => {
+  const health = adapter({ quantities: async () => { throw new Error('sensitive native distance payload'); } });
+  await assert.rejects(health.getHealthKitWorkoutByUuid(workoutUuid), error => {
+    assert.match((error as Error).message, /\(metrics\)/);
+    assert.doesNotMatch((error as Error).message, /sensitive native/);
+    return true;
+  });
+});
+
+test('distance-only refresh does not require or replace the existing route', async () => {
+  let routes = 0;
+  const health = adapter({ query: async () => [{ ...race(), getWorkoutRoutes: async () => { routes++; throw new Error('Do not read route'); } }],
+    quantities: async () => [] });
+  const candidate = await health.getHealthKitWorkoutByUuid(workoutUuid, undefined, { includeRoutes: false });
+  assert.equal(routes, 0);
+  assert.equal(candidate.routeCoordinates, undefined);
+  assert.equal(candidate.healthKitDistance?.samples.length, 0);
 });

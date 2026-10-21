@@ -27,8 +27,9 @@ export type HealthKitWorkoutCandidate = {
   averageHeartRateBpm?: number;
   maximumHeartRateBpm?: number;
   metricsSummary?: Pick<ActivityMetrics, 'stepCount' | 'runningDynamics' | 'speed' | 'cadenceRpm'>;
+  healthKitDistance?: ActivityMetrics['healthKitDistance'];
   routeAvailable?: boolean;
-  /** GPS route from Apple Health (downsampled), when requested and available. */
+  /** Original GPS observations from Apple Health; downsample only for rendering. */
   routeCoordinates?: ActivityCoordinate[];
   importedByStrideOS?: boolean;
   workoutInstanceId?: string;
@@ -140,6 +141,7 @@ export function buildHealthKitActivityDraft(input: {
     indoor: candidate.activityType === 'indoor_cycling',
     metrics: {
       ...candidate.metricsSummary,
+      healthKitDistance: candidate.healthKitDistance,
       routeCoordinates: candidate.routeCoordinates?.length ? candidate.routeCoordinates : undefined,
       durationSeconds: candidate.durationSeconds,
       activeTimeSeconds: candidate.durationSeconds,

@@ -115,6 +115,20 @@ export type ActivityCoordinate = {
   horizontalAccuracyMeters?: number;
 };
 
+/** Original workout-associated distance intervals, never inferred from a map. */
+export type HealthKitDistanceEvidence = {
+  version: 1;
+  retrievedAt: number;
+  workoutUuid: string;
+  sourceBundleIdentifier: string;
+  startTime: number;
+  endTime: number;
+  durationSeconds: number;
+  totalDistanceMeters?: number;
+  samples: { id: string; sourceBundleIdentifier: string; startTime: number; endTime: number; distanceMeters: number }[];
+  recordingPauses: { startTime: number; endTime: number }[];
+};
+
 export type HeartRateZoneSeconds = Partial<Record<1 | 2 | 3 | 4 | 5, number>>;
 
 export type HeartRateSample = {
@@ -191,6 +205,7 @@ export type ActivityMetrics = {
   heartRateZoneSeconds?: HeartRateZoneSeconds;
   heartRateSummary?: HeartRateSummary;
   rawHeartRateSamples?: HeartRateSample[];
+  healthKitDistance?: HealthKitDistanceEvidence;
   recordingPauses?: { startTime: number; endTime: number }[];
   cadenceSamples?: CadenceSample[];
   powerSamples?: PowerSample[];

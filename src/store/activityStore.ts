@@ -3,7 +3,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createAppJSONStorage, getAppStorage } from './persistStorage';
 
-import type { Activity, ActivityDraft } from '../types/activity';
+import type { Activity, ActivityDraft, HealthKitDistanceEvidence } from '../types/activity';
+import { mergeHealthDistanceEvidence } from '../utils/healthDistanceRefresh';
 import type { CompletedWorkoutRecord } from '../types/training';
 import type { StrengthLogRecord } from '../types/strength';
 import type { MobilityCompletion } from '../types/mobility';
@@ -29,6 +30,8 @@ type ActivityStore = {
   /** Caller journals the first End before invoking this; resolves only after durable history readback. */
   addActivityAndPersist: (input: Activity | ActivityDraft, lease: OwnerLease, options?: { isCurrent?: () => boolean; onlyIfMissing?: boolean }) => Promise<string>;
   awaitPersistence: (lease: OwnerLease) => Promise<void>;
+  refreshHealthDistanceAndPersist: (id: string, evidence: HealthKitDistanceEvidence, lease: OwnerLease,
+    options: { isCurrent: () => boolean; workoutInstanceId?: string }) => Promise<void>;
   updateActivity: (id: string, patch: Partial<Activity>) => void;
   removeActivity: (id: string) => void;
   getById: (id: string) => Activity | undefined;
@@ -191,6 +194,35 @@ export const useActivityStore = create<ActivityStore>()(
         await flushActivityHistory(lease);
         requireActivityOwner(lease);
       }),
+
+      refreshHealthDistanceAndPersist: (id, evidence, lease, options) => {
+        const snapshot = JSON.parse(JSON.stringify(evidence)) as HealthKitDistanceEvidence;
+        const removalRevision = activityRemovalRevision;
+        const requireCurrent = () => {
+          requireActivityOwner(lease);
+          if (!options.isCurrent() || removalRevision !== activityRemovalRevision) throw new Error('Health refresh is not confirmed. Reopen this activity to retry.');
+          const rows = get().activities.filter(row => row.id === id);
+          if (rows.length !== 1) throw new Error('This activity is missing or ambiguous. No new activity was created.');
+          const row = rows[0]!;
+          mergeHealthDistanceEvidence(row, snapshot, options.workoutInstanceId);
+          const rowClaims = [row.workoutInstanceId, row.healthKit?.workoutInstanceId, options.workoutInstanceId]
+            .filter((claim): claim is string => typeof claim === 'string' && claim.trim().length > 0);
+          const claims = get().activities.filter(other => other.id !== id && (
+            other.healthKit?.workoutUuid === snapshot.workoutUuid && other.healthKit?.sourceBundleIdentifier === snapshot.sourceBundleIdentifier
+            || [other.workoutInstanceId, other.healthKit?.workoutInstanceId].some(claim => claim != null && rowClaims.includes(claim))));
+          if (claims.length) throw new Error('More than one activity claims this Health workout. Nothing was replaced.');
+          return row;
+        };
+        return serializeActivityCommit(async () => {
+          await waitForActivityHistory(lease);
+          const row = requireCurrent();
+          const next = mergeHealthDistanceEvidence(row, snapshot, options.workoutInstanceId);
+          set(state => ({ activities: state.activities.map(activity => activity === row ? next : activity) }));
+          await flushActivityHistory(lease);
+          const saved = requireCurrent();
+          if (JSON.stringify(saved.metrics.healthKitDistance) !== JSON.stringify(snapshot)) throw new Error('Health distance saving could not be confirmed. Retry refresh.');
+        });
+      },
 
       mergeRestoredActivities: (records) => {
         if (!captureOwnerLease()) throw new Error('Local history is locked until its owner is confirmed');

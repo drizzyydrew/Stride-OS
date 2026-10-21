@@ -151,6 +151,7 @@ export function sanitizeActivityMetrics(
     heartRateZoneSeconds: metrics.heartRateZoneSeconds,
     heartRateSummary: metrics.heartRateSummary,
     rawHeartRateSamples: metrics.rawHeartRateSamples,
+    healthKitDistance: metrics.healthKitDistance,
     recordingPauses: metrics.recordingPauses,
     stepCount: metrics.stepCount,
     metricSources: metrics.metricSources,

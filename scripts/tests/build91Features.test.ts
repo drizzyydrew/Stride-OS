@@ -116,14 +116,15 @@ test('restore: exact watch/phone lineage is not imported twice; overlap alone is
   assert.equal(isDuplicateHealthKitWorkout(laterRide, [phoneRun]), false);
 });
 
-test('restore keeps GPS routes (downsampled, first and last kept)', () => {
+test('bulk restore keeps route endpoints and selected-workout reads retain analytical observations', () => {
   const points = Array.from({ length: 5000 }, (_, i) => ({ latitude: 44 + i * 1e-5, longitude: -121, timestamp: i }));
   const down = downsampleCoordinates(points, 2000);
   assert.equal(down.length, 2000);
   assert.equal(down[0], points[0]);
   assert.equal(down[down.length - 1], points[points.length - 1]);
   const health = read('src/lib/healthKit.ts');
-  assert.match(health, /includeRoutes && routes\.length > 0 \? routeCoordinatesFrom\(routes\)/);
+  assert.match(health, /includeRoutes && routes\.length > 0 \? routeCoordinatesFrom\(routes, selectedWorkout\)/);
+  assert.match(health, /return retainAll \? points : downsampleCoordinates\(points\)/);
   assert.match(read('src/lib/healthActivityRestore.ts'), /days: RESTORE_DAYS,\s+limit: RESTORE_LIMIT,\s+includeRoutes: true/);
 });
 

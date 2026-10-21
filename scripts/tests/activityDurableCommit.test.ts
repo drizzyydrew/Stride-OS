@@ -9,6 +9,7 @@ import { LocalDataOwner } from '../../src/lib/localDataOwner';
 import { createHydrationSafeStorage } from '../../src/store/hydrationSafeStorage';
 import type { Activity } from '../../src/types/activity';
 import { buildHealthKitActivityDraft } from '../../src/utils/healthKitImport';
+import { decodeHealthDistanceEvidence } from '../../src/utils/healthDistanceImport';
 
 function loadSource<T>(file: string, mocks: Record<string, unknown>): T {
   const filename = resolve(file);
@@ -100,6 +101,8 @@ async function harness() {
     'react-native': platform,
     '@kingstinct/react-native-healthkit': { WorkoutActivityType, default: {
       isHealthDataAvailableAsync: async () => true, requestAuthorization: async () => true,
+      queryQuantitySamples: async () => [{ uuid: 'synthetic-distance', quantity: 100, startDate,
+        endDate: new Date(startDate.getTime() + 30_000), sourceRevision: { source: { bundleIdentifier: bundle } } }],
       queryWorkoutSamples: async (options: typeof queries[number]) => {
         queries.push(options);
         return [{ ...sample, toJSON: () => sample, getWorkoutRoutes: async () => [{ locations: [
@@ -112,7 +115,10 @@ async function harness() {
   const recovery = loadSource<typeof import('../../src/lib/healthWorkoutRecovery')>('src/lib/healthWorkoutRecovery.ts', {
     './healthKit': health, './localDataOwner': ownership, '../store/activityStore': activity,
   }).createHealthWorkoutRecovery();
-  return { values, hooks, owner, store, recovery, queries,
+  const refresh = loadSource<typeof import('../../src/lib/healthDistanceRefresh')>('src/lib/healthDistanceRefresh.ts', {
+    './healthKit': health, './localDataOwner': ownership, '../store/activityStore': activity,
+  }).refreshActivityHealthDistance;
+  return { values, hooks, owner, store, recovery, refresh, queries,
     diskActivities: () => JSON.parse(values.get('activity-store')!).state.activities as Activity[],
     get activityReads() { return activityReads; }, get recalculations() { return recalculations; } };
 }
@@ -334,4 +340,98 @@ test('deletion during confirmation cannot be resurrected or acknowledged as reco
   assert.equal(h.store.getState().activities.length, 0);
   await h.store.getState().awaitPersistence(h.owner.capture()!);
   assert.equal(h.diskActivities().length, 0);
+});
+
+function distanceEvidence() {
+  return decodeHealthDistanceEvidence([{ uuid: 'synthetic-distance', quantity: 100,
+    startDate, endDate: new Date(startDate.getTime() + 30_000), sourceRevision: { source: { bundleIdentifier: bundle } } }],
+  { uuid, sourceBundleIdentifier: bundle, startTime: startDate.getTime(), endTime: endDate.getTime(), durationSeconds: 5400, distanceMeters: 15000 }, []);
+}
+
+test('actual evidence refresh preserves latest edits, recording data, summaries, links and load without recalculation or duplicate completion', async () => {
+  const h = await harness();
+  const id = h.store.getState().addActivity({ ...draft, id: 'canonical', notes: 'Athlete edit', scheduledSessionId: 'keep-schedule',
+    metrics: { ...draft.metrics, distanceMeters: 14900, distanceSource: 'manual_entry', metricSources: { distance: 'manual_entry' },
+      rawHeartRateSamples: [{ timestamp: startDate.getTime(), bpm: 150, source: 'apple_watch' }] } });
+  await h.store.getState().awaitPersistence(h.owner.capture()!);
+  const before = h.store.getState().getById(id)!;
+  const recalcs = h.recalculations;
+  const evidence = distanceEvidence();
+  await h.store.getState().refreshHealthDistanceAndPersist(id, evidence, h.owner.capture()!, { isCurrent: () => true });
+  const after = h.store.getState().getById(id)!;
+  const { healthKitDistance: _evidence, ...retainedMetrics } = after.metrics;
+  assert.equal(JSON.stringify({ ...after, metrics: retainedMetrics, updatedAt: before.updatedAt }), JSON.stringify(before));
+  assert.equal(after.trainingLoad, before.trainingLoad);
+  assert.equal(after.metrics.rawHeartRateSamples, before.metrics.rawHeartRateSamples);
+  assert.deepEqual(h.diskActivities()[0].metrics.healthKitDistance, evidence);
+  assert.equal(h.recalculations, recalcs);
+  assert.equal(h.store.getState().activities.length, 1);
+  await h.store.getState().refreshHealthDistanceAndPersist(id, { ...evidence, retrievedAt: evidence.retrievedAt + 1 }, h.owner.capture()!, { isCurrent: () => true });
+  assert.equal(h.store.getState().activities.length, 1);
+  assert.equal(h.recalculations, recalcs);
+});
+
+test('actual evidence refresh rejects missing, duplicated and contradictory identities before a mutation', async () => {
+  for (const mode of ['missing', 'duplicate', 'contradiction', 'instance-claim']) {
+    const h = await harness();
+    const id = h.store.getState().addActivity({ ...draft, id: 'canonical' });
+    if (mode === 'missing') h.store.getState().removeActivity(id);
+    if (mode === 'duplicate') h.store.setState({ activities: [...h.store.getState().activities, { ...h.store.getState().getById(id)!, id: 'duplicate' }] });
+    if (mode === 'contradiction') h.store.getState().updateActivity(id, { workoutInstanceId: 'contradiction' });
+    if (mode === 'instance-claim') h.store.setState({ activities: [...h.store.getState().activities, { ...h.store.getState().getById(id)!, id: 'other', healthKit: undefined }] });
+    await h.store.getState().awaitPersistence(h.owner.capture()!);
+    const before = h.values.get('activity-store');
+    await assert.rejects(h.store.getState().refreshHealthDistanceAndPersist(id, distanceEvidence(), h.owner.capture()!, { isCurrent: () => true }));
+    assert.equal(h.values.get('activity-store'), before, mode);
+  }
+});
+
+test('actual evidence readback failure is not success and retry confirms the existing row', async () => {
+  const h = await harness();
+  const id = h.store.getState().addActivity({ ...draft, id: 'canonical' });
+  await h.store.getState().awaitPersistence(h.owner.capture()!);
+  const evidence = distanceEvidence();
+  h.hooks.readError = new Error('refresh confirmation failed');
+  await assert.rejects(h.store.getState().refreshHealthDistanceAndPersist(id, evidence, h.owner.capture()!, { isCurrent: () => true }), /confirmation failed/);
+  assert.equal(h.store.getState().activities.length, 1);
+  await h.store.getState().refreshHealthDistanceAndPersist(id, evidence, h.owner.capture()!, { isCurrent: () => true });
+  assert.deepEqual(h.diskActivities()[0].metrics.healthKitDistance, evidence);
+});
+
+test('actual evidence refresh handles concurrent edit and rejects deletion, cancellation and owner revocation during confirmation', async () => {
+  for (const mode of ['edit', 'delete', 'cancel', 'owner']) {
+    const h = await harness();
+    const id = h.store.getState().addActivity({ ...draft, id: 'canonical' });
+    await h.store.getState().awaitPersistence(h.owner.capture()!);
+    let current = true;
+    h.hooks.afterRead = () => {
+      delete h.hooks.afterRead;
+      if (mode === 'edit') h.store.getState().updateActivity(id, { notes: 'Concurrent edit' });
+      if (mode === 'delete') h.store.getState().removeActivity(id);
+      if (mode === 'cancel') current = false;
+      if (mode === 'owner') h.owner.block('signed-out');
+    };
+    const pending = h.store.getState().refreshHealthDistanceAndPersist(id, distanceEvidence(), h.owner.capture()!, { isCurrent: () => current });
+    if (mode === 'edit') {
+      await pending;
+      assert.equal(h.diskActivities()[0].notes, 'Concurrent edit');
+    } else await assert.rejects(pending);
+    assert.ok(h.store.getState().activities.length <= 1);
+    if (mode === 'delete') assert.equal(h.store.getState().getById(id), undefined);
+  }
+});
+
+test('refresh service through actual adapter and store targets the linked UUID and durably enriches the existing edited row', async () => {
+  const h = await harness();
+  const id = h.store.getState().addActivity({ ...draft, id: 'already-recovered', notes: 'Retain this note' });
+  await h.store.getState().awaitPersistence(h.owner.capture()!);
+  const recalcs = h.recalculations;
+  await h.refresh(id, () => true);
+  assert.equal(h.queries.at(-1)?.filter?.uuid, uuid);
+  assert.equal(h.store.getState().activities.length, 1);
+  assert.equal(h.diskActivities()[0].id, id);
+  assert.equal(h.diskActivities()[0].notes, 'Retain this note');
+  assert.equal(h.diskActivities()[0].metrics.healthKitDistance?.workoutUuid, uuid);
+  assert.equal(h.recalculations, recalcs);
+  await assert.rejects(h.refresh(id, () => false), /not confirmed/);
 });
