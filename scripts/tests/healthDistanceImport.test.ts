@@ -75,3 +75,28 @@ test('less evidence, conflicting identities, changed sample content and stale re
     healthKit: { ...row.healthKit!, workoutInstanceId: 'conflicting' } }, next()), /conflicting/);
   assert.equal(row.metrics.healthKitDistance, first);
 });
+
+test('first-link allows only exact consistent instance, activity or legacy-workout proof and never rewrites summaries', () => {
+  const original = activity();
+  const metadata = original.healthKit!;
+  const base = { ...original, healthKit: undefined, source: 'tracked' as const };
+  for (const [row, link] of [
+    [{ ...base, workoutInstanceId: 'exact' }, { ...metadata, workoutInstanceId: 'exact' }],
+    [base, { ...metadata, strideOSActivityId: base.id }],
+    [{ ...base, legacyWorkoutId: 'legacy' }, { ...metadata, strideOSWorkoutId: 'legacy' }],
+  ] as const) {
+    const linked = mergeHealthDistanceEvidence(row, evidence(), link.workoutInstanceId, { activityType: 'running', metadata: link });
+    assert.equal(linked.healthKit, link);
+    assert.equal(linked.id, base.id);
+    assert.equal(linked.metrics.distanceMeters, base.metrics.distanceMeters);
+    assert.equal(linked.trainingLoad, base.trainingLoad);
+  }
+  const matching = { ...metadata, workoutInstanceId: 'exact' };
+  for (const [row, link] of [
+    [base, metadata],
+    [{ ...base, workoutInstanceId: 'exact' }, { ...matching, strideOSActivityId: 'different-row' }],
+    [{ ...base, workoutInstanceId: 'exact', legacyWorkoutId: 'known-workout' }, { ...matching, strideOSWorkoutId: 'different-workout' }],
+    [{ ...base, workoutInstanceId: 'exact' }, { ...matching, workoutInstanceId: 'conflicting' }],
+    [{ ...base, healthKit: {} }, matching],
+  ] as const) assert.throws(() => mergeHealthDistanceEvidence(row as Activity, evidence(), link.workoutInstanceId, { activityType: 'running', metadata: link }));
+});

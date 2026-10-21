@@ -3,11 +3,14 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { refreshActivityHealthDistance } from '../../lib/healthDistanceRefresh';
 import { useColors } from '../../theme/useColors';
+import HealthWorkoutRecovery from './HealthWorkoutRecovery';
 
-export default function HealthDistanceRefresh({ activityId, isCurrent }: { activityId: string; isCurrent: () => boolean }) {
+export default function HealthDistanceRefresh({ activityId, linked = true, isCurrent }: { activityId: string; linked?: boolean; isCurrent: () => boolean }) {
   const C = useColors();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  // Keep a first-link picker mounted through early publication until durable acknowledgement.
+  const [usingLinkedWorkout, setUsingLinkedWorkout] = useState(linked);
   const inFlight = useRef(false);
   const generation = useRef(0);
   useEffect(() => () => { generation.current += 1; }, []);
@@ -27,6 +30,14 @@ export default function HealthDistanceRefresh({ activityId, isCurrent }: { activ
       if (current()) { inFlight.current = false; setBusy(false); }
     }
   }
+  if (!usingLinkedWorkout) return <View style={s.root}>
+    <HealthWorkoutRecovery targetActivityId={activityId} isCurrent={isCurrent}
+      onOpenChange={() => {}} onSavePending={() => setMessage('Saving the Health link and split evidence…')}
+      onFailure={setMessage} onRecovered={id => {
+        if (isCurrent() && id === activityId) { setUsingLinkedWorkout(true); setMessage('Health distance evidence saved. Your activity totals and edits were kept.'); }
+      }} />
+    {message ? <Text accessibilityLiveRegion="polite" style={[s.message, { color: C.textMuted }]}>{message}</Text> : null}
+  </View>;
   return <View style={s.root}>
     <TouchableOpacity onPress={() => { void refresh(); }} disabled={busy} accessibilityRole="button"
       accessibilityLabel="Refresh splits from Apple Health" accessibilityState={{ busy, disabled: busy }}

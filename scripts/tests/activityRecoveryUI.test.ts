@@ -5,6 +5,7 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import { resolveActivityDetail } from '../../src/utils/activityResolution';
 import { buildHealthDistanceSplits } from '../../src/utils/healthDistanceSplits';
+import { supportsHealthSplitRefresh } from '../../src/utils/healthDistanceRefresh';
 
 function harness(status = 'ready') {
   let id = 'missing-race';
@@ -37,6 +38,7 @@ function harness(status = 'ready') {
     activitySplits: { buildRunSplits: () => [] },
     outdoorAnalysis: { buildOutdoorSplits: () => [], analyzeSnowSegments: () => [] },
     healthDistanceSplits: { buildHealthDistanceSplits },
+    healthDistanceRefresh: { supportsHealthSplitRefresh },
     savedActivityRecovery: { recoverSavedActivity: async (value: string) => { calls.push(value); return restore(value); } },
   };
   const module = { exports: {} as any };

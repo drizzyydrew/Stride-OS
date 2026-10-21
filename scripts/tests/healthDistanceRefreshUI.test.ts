@@ -4,9 +4,10 @@ import { runInNewContext } from 'node:vm';
 import test from 'node:test';
 import ts from 'typescript';
 
-function harness() {
+function harness(initialLinked = true) {
   let cursor = 0, tree: any, current = true, updates = 0, calls = 0;
   const state: any[] = [], effects: (() => void)[] = [], cleanups: (() => void)[] = [];
+  let linked = initialLinked;
   let outcome: (isCurrent: () => boolean) => Promise<void> = async () => {};
   const mocks: Record<string, any> = {
     react: {
@@ -18,6 +19,7 @@ function harness() {
     'react-native': { StyleSheet: { create: (s: any) => s }, ActivityIndicator: 'ActivityIndicator', Text: 'Text', TouchableOpacity: 'TouchableOpacity', View: 'View' },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     '../../theme/useColors': { useColors: () => ({}) },
+    './HealthWorkoutRecovery': { __esModule: true, default: 'HealthWorkoutRecovery' },
     '../../lib/healthDistanceRefresh': { refreshActivityHealthDistance: async (id: string, isCurrent: () => boolean) => {
       assert.equal(id, 'canonical'); calls++; return outcome(isCurrent);
     } },
@@ -29,12 +31,13 @@ function harness() {
   runInNewContext(source, { module, exports: module.exports, Error,
     require: (id: string) => mocks[id], h: (type: any, props: any, ...children: any[]) => ({ type, props: props ?? {}, children: children.flat(Infinity) }) });
   function render() {
-    cursor = 0; tree = module.exports.default({ activityId: 'canonical', isCurrent: () => current });
+    cursor = 0; tree = module.exports.default({ activityId: 'canonical', linked, isCurrent: () => current });
     for (const fn of effects.splice(0)) { const cleanup = fn(); if (typeof cleanup === 'function') cleanups.push(cleanup); }
   }
   function nodes() { const all: any[] = []; const visit = (node: any) => { if (node && typeof node === 'object') { all.push(node); node.children.forEach(visit); } }; visit(tree); return all; }
   render();
-  return { render, button: () => nodes().find(n => n.type === 'TouchableOpacity'),
+  return { render, button: () => nodes().find(n => n.type === 'TouchableOpacity'), picker: () => nodes().find(n => n.type === 'HealthWorkoutRecovery'),
+    publishLink: () => { linked = true; render(); },
     text: () => nodes().flatMap(n => n.children.filter((c: any) => typeof c === 'string')).join(' '),
     setOutcome: (fn: typeof outcome) => { outcome = fn; }, unmount: () => cleanups.forEach(fn => fn()),
     leave: () => { current = false; }, get calls() { return calls; }, get updates() { return updates; } };
@@ -80,4 +83,18 @@ test('Health evidence never falls through to GPS splits and refresh remounts aft
   assert.match(source, /healthSplits \? \[\] : buildRunSplits/);
   assert.match(source, /HealthDistanceRefresh key=\{`\$\{activity.id\}:\$\{focused\}`\}/);
   assert.match(source, /Health distance-derived/);
+});
+
+test('first-link picker remains mounted through early publication and failed durable confirmation', () => {
+  const ui = harness(false);
+  const picker = ui.picker();
+  assert.equal(picker.props.targetActivityId, 'canonical');
+  picker.props.onSavePending(); ui.publishLink();
+  assert.ok(ui.picker(), 'published Health metadata must not switch away from the pending picker');
+  assert.equal(ui.button(), undefined);
+  ui.picker().props.onFailure('Save not confirmed'); ui.render();
+  assert.ok(ui.picker()); assert.match(ui.text(), /Save not confirmed/);
+  ui.picker().props.onRecovered('canonical'); ui.render();
+  assert.equal(ui.picker(), undefined); assert.ok(ui.button());
+  assert.match(ui.text(), /evidence saved/);
 });

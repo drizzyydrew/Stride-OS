@@ -28,6 +28,7 @@ import { recoverSavedActivity } from '../../../src/lib/savedActivityRecovery';
 import HealthWorkoutRecovery from '../../../src/components/activity/HealthWorkoutRecovery';
 import HealthDistanceRefresh from '../../../src/components/activity/HealthDistanceRefresh';
 import { buildHealthDistanceSplits } from '../../../src/utils/healthDistanceSplits';
+import { supportsHealthSplitRefresh } from '../../../src/utils/healthDistanceRefresh';
 
 export default function ActivityDetailScreen() {
   const C = useColors();
@@ -220,14 +221,17 @@ export default function ActivityDetailScreen() {
             </View>
           ))}
         </View>
-        {activity.healthKit && ['running', 'walking', 'hiking', 'cycling'].includes(activity.activityType)
-          ? <HealthDistanceRefresh key={`${activity.id}:${focused}`} activityId={activity.id} isCurrent={healthRequestIsCurrent} /> : null}
+        {supportsHealthSplitRefresh(activity)
+          ? <HealthDistanceRefresh key={`${activity.id}:${focused}`} activityId={activity.id} linked={Boolean(activity.healthKit)} isCurrent={healthRequestIsCurrent} /> : null}
         {runSplits.length || healthSplits ? (
           <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[s.eyebrow, { color: C.textDim }]}>DISTANCE SPLITS</Text>
             {healthSplits ? <Text style={[s.body, { color: C.textMuted }]}>{healthSplits.status === 'complete'
               ? 'Health distance-derived · approximate split boundaries'
               : healthSplits.reason ?? 'Health distance coverage is incomplete. Split paces are unavailable.'}</Text> : null}
+            {healthSplits && activity.metrics.healthKitDistance?.totalDistanceMeters != null ? <Text style={[s.body, { color: C.textMuted }]}>
+              Original Health distance: {formatDistance(activity.metrics.healthKitDistance.totalDistanceMeters / 1609.344, units)}
+            </Text> : null}
             <View style={s.splitList}>
               {runSplits.map(split => {
                 const trendColor = split.trend === 'faster'

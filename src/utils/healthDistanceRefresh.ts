@@ -1,11 +1,41 @@
-import type { Activity, HealthKitDistanceEvidence } from '../types/activity';
+import type { Activity, ActivityType, HealthKitDistanceEvidence, HealthKitImportMetadata } from '../types/activity';
+import { hasRecordedEvidence } from './manualActivityEdit';
+
+export type HealthDistanceLink = { activityType: ActivityType; metadata: HealthKitImportMetadata };
+
+export function supportsHealthSplitRefresh(activity: Activity): boolean {
+  return !activity.indoor && ['running', 'walking', 'hiking', 'cycling'].includes(activity.activityType) && hasRecordedEvidence(activity);
+}
 
 /** Refresh analysis evidence only; athlete-entered summaries and recording data remain untouched. */
 export function mergeHealthDistanceEvidence(activity: Activity, incoming: HealthKitDistanceEvidence,
-  workoutInstanceId?: string): Activity {
-  const health = activity.healthKit;
+  workoutInstanceId?: string, link?: HealthDistanceLink): Activity {
+  let health = activity.healthKit;
   if (incoming.version !== 1 || !Number.isFinite(incoming.retrievedAt) || incoming.samples.length > 100_000
     || JSON.stringify(incoming).length > 16_000_000) throw new Error('Health distance evidence cannot be saved safely. Existing data was kept.');
+  if (link) {
+    const activityClaims = [link.metadata.strideOSActivityId, health?.strideOSActivityId].filter(value => value?.trim());
+    const workoutClaims = [activity.legacyWorkoutId, link.metadata.strideOSWorkoutId, health?.strideOSWorkoutId].filter(value => value?.trim());
+    if (activityClaims.some(claim => claim !== activity.id) || new Set(workoutClaims).size > 1) {
+      throw new Error('This Health workout contains contradictory activity or workout identities. Nothing was replaced.');
+    }
+    if (link.metadata.workoutUuid !== incoming.workoutUuid || link.metadata.sourceBundleIdentifier !== incoming.sourceBundleIdentifier
+      || link.metadata.originalStartTime !== incoming.startTime || link.metadata.originalEndTime !== incoming.endTime) {
+      throw new Error('The selected Health link does not match its distance evidence. Nothing was replaced.');
+    }
+    if (!supportsHealthSplitRefresh(activity) || link.activityType !== activity.activityType) {
+      throw new Error('This Health workout is not compatible with the recorded activity. Nothing was replaced.');
+    }
+    const claims = [activity.workoutInstanceId, health?.workoutInstanceId, link.metadata.workoutInstanceId, workoutInstanceId].filter(value => value?.trim());
+    if (new Set(claims).size > 1) throw new Error('This workout has conflicting recording identities. Nothing was replaced.');
+    const exactInstance = Boolean(activity.workoutInstanceId && activity.workoutInstanceId === link.metadata.workoutInstanceId);
+    const exactActivity = link.metadata.strideOSActivityId === activity.id;
+    const exactWorkout = Boolean(activity.legacyWorkoutId && link.metadata.strideOSWorkoutId === activity.legacyWorkoutId);
+    if (!exactInstance && !exactActivity && !exactWorkout) {
+      throw new Error('This Health workout does not contain an exact StrideOS recording identity for this activity. No link was made; dates and distance are not used to guess.');
+    }
+    health ??= link.metadata;
+  }
   if (!health || health.workoutUuid !== incoming.workoutUuid || health.sourceBundleIdentifier !== incoming.sourceBundleIdentifier
     || health.originalStartTime !== incoming.startTime || health.originalEndTime !== incoming.endTime) {
     throw new Error('The Health workout no longer matches this activity. Nothing was replaced.');
@@ -35,5 +65,5 @@ export function mergeHealthDistanceEvidence(activity: Activity, incoming: Health
       throw new Error('Apple Health pause evidence changed. Existing data was kept.');
     }
   }
-  return { ...activity, metrics: { ...activity.metrics, healthKitDistance: incoming }, updatedAt: Date.now() };
+  return { ...activity, ...(activity.healthKit ? {} : { healthKit: health }), metrics: { ...activity.metrics, healthKitDistance: incoming }, updatedAt: Date.now() };
 }

@@ -51,6 +51,7 @@ async function harness() {
   } = {};
   let activityReads = 0;
   let recalculations = 0;
+  let routeReads = 0;
   const nativeStorage = {
     getItem: async (key: string) => {
       if (key === 'activity-store') {
@@ -105,22 +106,23 @@ async function harness() {
         endDate: new Date(startDate.getTime() + 30_000), sourceRevision: { source: { bundleIdentifier: bundle } } }],
       queryWorkoutSamples: async (options: typeof queries[number]) => {
         queries.push(options);
-        return [{ ...sample, toJSON: () => sample, getWorkoutRoutes: async () => [{ locations: [
+        return [{ ...sample, toJSON: () => sample, getWorkoutRoutes: async () => { routeReads++; return [{ locations: [
           { latitude: 45, longitude: -120, date: startDate },
           { latitude: 45.01, longitude: -120.01, date: endDate },
-        ] }], getStatistic: async () => undefined }];
+        ] }]; }, getStatistic: async () => undefined }];
       },
     } },
   });
-  const recovery = loadSource<typeof import('../../src/lib/healthWorkoutRecovery')>('src/lib/healthWorkoutRecovery.ts', {
+  const createRecovery = loadSource<typeof import('../../src/lib/healthWorkoutRecovery')>('src/lib/healthWorkoutRecovery.ts', {
     './healthKit': health, './localDataOwner': ownership, '../store/activityStore': activity,
-  }).createHealthWorkoutRecovery();
+  }).createHealthWorkoutRecovery;
+  const recovery = createRecovery();
   const refresh = loadSource<typeof import('../../src/lib/healthDistanceRefresh')>('src/lib/healthDistanceRefresh.ts', {
     './healthKit': health, './localDataOwner': ownership, '../store/activityStore': activity,
   }).refreshActivityHealthDistance;
-  return { values, hooks, owner, store, recovery, refresh, queries,
+  return { values, hooks, owner, store, recovery, refresh, queries, linkRecovery: (id: string) => createRecovery(() => true, id),
     diskActivities: () => JSON.parse(values.get('activity-store')!).state.activities as Activity[],
-    get activityReads() { return activityReads; }, get recalculations() { return recalculations; } };
+    get activityReads() { return activityReads; }, get recalculations() { return recalculations; }, get routeReads() { return routeReads; } };
 }
 
 test('one-shot reads require prior safe hydration and propagate one base error without retries', async () => {
@@ -434,4 +436,79 @@ test('refresh service through actual adapter and store targets the linked UUID a
   assert.equal(h.diskActivities()[0].metrics.healthKitDistance?.workoutUuid, uuid);
   assert.equal(h.recalculations, recalcs);
   await assert.rejects(h.refresh(id, () => false), /not confirmed/);
+});
+
+test('selected Health distance attaches to an unlinked GPS row through actual adapter, picker service and durable store without another completion', async () => {
+  const h = await harness();
+  const id = h.store.getState().addActivity({ ...draft, id: 'gps-row', source: 'tracked', healthKit: undefined,
+    notes: 'Original race note', scheduledSessionId: 'keep-link', legacyWorkoutId: 'keep-workout',
+    metrics: { ...draft.metrics, distanceMeters: 15200, distanceSource: 'gps' } });
+  await h.store.getState().awaitPersistence(h.owner.capture()!);
+  const before = h.store.getState().getById(id)!;
+  const recalcs = h.recalculations;
+  const recovery = h.linkRecovery(id);
+  await recovery.listRecent();
+  assert.equal(await recovery.restoreSelected(uuid), id);
+  const after = h.store.getState().getById(id)!;
+  assert.equal(h.routeReads, 0);
+  assert.equal(h.store.getState().activities.length, 1);
+  assert.equal(h.recalculations, recalcs);
+  assert.equal(after.trainingLoad, before.trainingLoad);
+  assert.equal(after.metrics.distanceMeters, before.metrics.distanceMeters);
+  assert.equal(after.notes, before.notes);
+  assert.equal(after.scheduledSessionId, before.scheduledSessionId);
+  assert.equal(h.diskActivities()[0].healthKit?.workoutUuid, uuid);
+  assert.equal(h.diskActivities()[0].healthKit?.routeStatus, 'not_read');
+  assert.equal(h.diskActivities()[0].metrics.healthKitDistance?.workoutUuid, uuid);
+  await recovery.restoreSelected(uuid);
+  assert.equal(h.store.getState().activities.length, 1);
+  assert.equal(h.recalculations, recalcs);
+});
+
+test('first-link requires exact lineage and preserves unlinked data on failed confirmation and retry', async () => {
+  for (const identity of ['synthetic-recording', undefined, 'different-instance']) {
+    const h = await harness();
+    const id = h.store.getState().addActivity({ ...draft, id: 'gps-row', source: 'tracked', healthKit: undefined, workoutInstanceId: identity });
+    await h.store.getState().awaitPersistence(h.owner.capture()!);
+    const recovery = h.linkRecovery(id);
+    await recovery.listRecent();
+    const before = h.values.get('activity-store');
+    if (identity !== 'synthetic-recording') {
+      await assert.rejects(recovery.restoreSelected(uuid), /exact StrideOS recording identity|conflicting/);
+      assert.equal(h.values.get('activity-store'), before);
+      assert.equal(h.store.getState().getById(id)?.healthKit, undefined);
+    } else {
+      h.hooks.readError = new Error('link confirmation failed');
+      await assert.rejects(recovery.restoreSelected(uuid), /confirmation failed/);
+      assert.equal(h.store.getState().activities.length, 1);
+      assert.equal(await recovery.restoreSelected(uuid), id);
+      assert.equal(h.diskActivities().length, 1);
+    }
+  }
+});
+
+test('first-link final readback revalidates lineage and sport after early Health publication', async () => {
+  for (const change of ['activity-claim', 'legacy-proof', 'sport']) {
+    const h = await harness();
+    const id = h.store.getState().addActivity({ ...draft, id: 'gps-row', source: 'tracked', healthKit: undefined,
+      workoutInstanceId: change === 'legacy-proof' ? undefined : draft.workoutInstanceId,
+      legacyWorkoutId: change === 'legacy-proof' ? 'retained-legacy' : undefined });
+    await h.store.getState().awaitPersistence(h.owner.capture()!);
+    const metadata = { ...draft.healthKit!, ...(change === 'legacy-proof'
+      ? { workoutInstanceId: undefined, strideOSWorkoutId: 'retained-legacy' } : {}) };
+    h.hooks.afterRead = () => {
+      delete h.hooks.afterRead;
+      const published = h.store.getState().getById(id)!;
+      if (change === 'activity-claim') h.store.getState().updateActivity(id, { healthKit: { ...published.healthKit!, strideOSActivityId: 'another-activity' } });
+      if (change === 'legacy-proof') h.store.getState().updateActivity(id, { legacyWorkoutId: undefined });
+      if (change === 'sport') h.store.getState().updateActivity(id, { activityType: 'walking' });
+    };
+    await assert.rejects(h.store.getState().refreshHealthDistanceAndPersist(id, distanceEvidence(), h.owner.capture()!, {
+      isCurrent: () => true, link: { activityType: 'running', metadata },
+    }), /contradictory|exact StrideOS recording identity|not compatible/);
+    assert.equal(h.store.getState().activities.length, 1);
+    if (change === 'activity-claim') assert.equal(h.store.getState().getById(id)?.healthKit?.strideOSActivityId, 'another-activity');
+    if (change === 'legacy-proof') assert.equal(h.store.getState().getById(id)?.legacyWorkoutId, undefined);
+    if (change === 'sport') assert.equal(h.store.getState().getById(id)?.activityType, 'walking');
+  }
 });

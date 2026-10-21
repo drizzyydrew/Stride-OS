@@ -11,6 +11,7 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { useColors } from '../../theme/useColors';
 
 type Props = {
+  targetActivityId?: string;
   disabled?: boolean;
   isCurrent?: () => boolean;
   onOpenChange: (open: boolean) => void;
@@ -25,7 +26,7 @@ const PHASE_LABEL: Record<HealthRecoveryPhase, string> = {
 };
 const LONG_PENDING_MS = 15_000;
 
-export default function HealthWorkoutRecovery({ disabled, isCurrent = () => true, onOpenChange, onSavePending, onFailure, onRecovered }: Props) {
+export default function HealthWorkoutRecovery({ targetActivityId, disabled, isCurrent = () => true, onOpenChange, onSavePending, onFailure, onRecovered }: Props) {
   const C = useColors();
   const units = useSettingsStore(state => state.units);
   const [visible, setVisible] = useState(false);
@@ -124,7 +125,7 @@ export default function HealthWorkoutRecovery({ disabled, isCurrent = () => true
     setVisible(true);
     onOpenChange(true);
     try {
-      const recovery = createHealthWorkoutRecovery(current);
+      const recovery = createHealthWorkoutRecovery(current, targetActivityId);
       session.current = recovery;
       const workouts = await recovery.listRecent(period);
       if (!current()) return;
@@ -158,10 +159,12 @@ export default function HealthWorkoutRecovery({ disabled, isCurrent = () => true
     const current = () => request.current === generation && isCurrent();
     const recovery = session.current;
     busy.current = true;
-    Alert.alert('Restore this Health workout?',
-      `${displayLabel(candidate.activityType)} · ${new Date(candidate.startTime).toLocaleString()} · ${formatDuration(candidate.durationSeconds)}\n\nRestores only this selected workout, including a previously removed entry. Existing activity edits are kept. The unresolved old link is not reassigned.`, [
+    Alert.alert(targetActivityId ? 'Use Health distance for this activity?' : 'Restore this Health workout?',
+      `${displayLabel(candidate.activityType)} · ${new Date(candidate.startTime).toLocaleString()} · ${formatDuration(candidate.durationSeconds)}\n\n${targetActivityId
+        ? 'Links this selected workout only if its StrideOS recording identity matches this activity. Adds distance evidence for splits; your existing totals, notes, route and training links stay unchanged. No new activity is created.'
+        : 'Restores only this selected workout, including a previously removed entry. Existing activity edits are kept. The unresolved old link is not reassigned.'}`, [
         { text: 'Cancel', style: 'cancel', onPress: () => { if (current()) busy.current = false; } },
-        { text: 'Restore', onPress: async () => {
+        { text: targetActivityId ? 'Use Health Distance' : 'Restore', onPress: async () => {
           if (!current() || !recovery || restoring.current) return;
           await restore(candidate, recovery, generation);
         } },
@@ -169,10 +172,10 @@ export default function HealthWorkoutRecovery({ disabled, isCurrent = () => true
   }
   return <>
     <TouchableOpacity onPress={() => { if (!busy.current) void load(); }} disabled={disabled}
-      accessibilityRole="button" accessibilityLabel="Find workout in Apple Health"
+      accessibilityRole="button" accessibilityLabel={targetActivityId ? 'Refresh splits from Apple Health' : 'Find workout in Apple Health'}
       style={[s.open, { borderColor: C.border, opacity: disabled ? 0.5 : 1 }]}>
       <Ionicons name="heart-circle-outline" size={22} color={C.primary} />
-      <Text style={[s.openText, { color: C.primary }]}>Find workout in Apple Health</Text>
+      <Text style={[s.openText, { color: C.primary }]}>{targetActivityId ? 'Refresh splits from Apple Health' : 'Find workout in Apple Health'}</Text>
     </TouchableOpacity>
     <RecoverableModal visible={visible} onRequestClose={close}>
       <View style={[s.content, { backgroundColor: C.bg }]}>

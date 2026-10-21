@@ -296,7 +296,7 @@ export type HealthKitImportMetadata = {
   originalEndTime: number;
   localCalendarDate: string;
   importedAt: number;
-  routeStatus: 'available' | 'not_available' | 'not_authorized' | 'unsupported';
+  routeStatus: 'available' | 'not_available' | 'not_authorized' | 'unsupported' | 'not_read';
   importedByStrideOS: boolean;
   workoutInstanceId?: string;
   strideOSActivityId?: string;

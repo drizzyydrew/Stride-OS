@@ -162,7 +162,7 @@ export function buildHealthKitActivityDraft(input: {
       originalEndTime: candidate.endTime,
       localCalendarDate: toYMD(new Date(candidate.startTime)),
       importedAt,
-      routeStatus: candidate.routeAvailable ? 'available' : 'not_available',
+      routeStatus: candidate.routeAvailable == null ? 'not_read' : candidate.routeAvailable ? 'available' : 'not_available',
       importedByStrideOS: Boolean(candidate.importedByStrideOS),
       workoutInstanceId: candidate.workoutInstanceId,
       strideOSActivityId: candidate.strideOSActivityId,

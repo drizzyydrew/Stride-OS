@@ -599,7 +599,7 @@ async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthW
     maximumHeartRateBpm: quantity(heartRateStats?.maximumQuantity),
     metricsSummary,
     healthKitDistance,
-    routeAvailable: routes.length > 0,
+    routeAvailable: includeRoutes ? routes.length > 0 : undefined,
     routeCoordinates: includeRoutes && routes.length > 0 ? routeCoordinatesFrom(routes, selectedWorkout) : undefined,
   };
 }

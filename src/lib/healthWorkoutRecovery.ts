@@ -27,7 +27,7 @@ function requireUnambiguousSelection(draft: ActivityDraft) {
 }
 
 /** User selection identifies the Health record, never the date or the unresolved old link. */
-export function createHealthWorkoutRecovery(isCurrent: () => boolean = () => true) {
+export function createHealthWorkoutRecovery(isCurrent: () => boolean = () => true, targetActivityId?: string) {
   const lease = captureOwnerLease();
   const revision = getActivityRemovalRevision();
   const listed = new Map<string, HealthKitWorkoutCandidate>();
@@ -61,7 +61,7 @@ export function createHealthWorkoutRecovery(isCurrent: () => boolean = () => tru
       if (!selection) throw new Error('Choose a workout from the current Apple Health list.');
       const progress = (phase: HealthRecoveryPhase) => { requireCurrent(); onPhase?.(phase); };
       progress('details');
-      const candidate = await getHealthKitWorkoutByUuid(uuid, progress);
+      const candidate = await getHealthKitWorkoutByUuid(uuid, progress, { includeRoutes: !targetActivityId });
       requireCurrent();
       if (candidate.uuid !== uuid || candidate.sourceBundleIdentifier !== selection.sourceBundleIdentifier) {
         throw new Error('Apple Health returned a different workout. Nothing has been replaced.');
@@ -70,6 +70,16 @@ export function createHealthWorkoutRecovery(isCurrent: () => boolean = () => tru
       const requireSelectionCurrent = () => { requireCurrent(); requireUnambiguousSelection(draft); return true; };
       requireSelectionCurrent();
       progress('saving');
+      if (targetActivityId) {
+        if (!candidate.healthKitDistance || !draft.healthKit) throw new Error('Apple Health did not return distance evidence for this workout. Your activity was kept.');
+        await useActivityStore.getState().refreshHealthDistanceAndPersist(targetActivityId, candidate.healthKitDistance, lease!, {
+          isCurrent: requireSelectionCurrent, workoutInstanceId: candidate.workoutInstanceId,
+          link: { activityType: candidate.activityType, metadata: draft.healthKit },
+        });
+        requireCurrent();
+        progress('opening');
+        return targetActivityId;
+      }
       const id = await useActivityStore.getState().addActivityAndPersist(draft, lease!, {
         onlyIfMissing: true,
         isCurrent: requireSelectionCurrent,

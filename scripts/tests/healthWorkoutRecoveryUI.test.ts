@@ -13,12 +13,12 @@ function deferred<T>() {
   const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
   return { promise, resolve, reject };
 }
-function harness() {
+function harness(targetActivityId?: string) {
   let cursor = 0, tree: any, now = 0, timerId = 0, updates = 0;
   const state: any[] = [], effects: (() => void)[] = [], cleanup: (() => void)[] = [], alerts: any[] = [];
   const timers = new Map<number, { at: number; run: () => void }>();
   const saves: string[] = [], recovered: string[] = [], failures: string[] = [], pending: boolean[] = [], opened: boolean[] = [];
-  const sessions: { current: () => boolean }[] = [];
+  const sessions: { current: () => boolean; targetActivityId?: string }[] = [];
   let restore: (uuid: string, progress?: Progress, session?: number) => Promise<string> = async () => 'canonical';
   let list: (session: number) => Promise<(typeof row)[]> = async () => [row];
   let routeCurrent = true;
@@ -31,8 +31,8 @@ function harness() {
     'react-native': { StyleSheet: { create: (s: any) => s, hairlineWidth: 1 }, Alert: { alert: (...args: any[]) => alerts.push(args) },
       ...Object.fromEntries(['ActivityIndicator', 'FlatList', 'Text', 'TouchableOpacity', 'View'].map(n => [n, n])) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
-    healthWorkoutRecovery: { createHealthWorkoutRecovery: (current: () => boolean) => {
-      const index = sessions.push({ current }) - 1;
+    healthWorkoutRecovery: { createHealthWorkoutRecovery: (current: () => boolean, targetActivityId?: string) => {
+      const index = sessions.push({ current, targetActivityId }) - 1;
       return { listRecent: () => list(index), restoreSelected: (uuid: string, progress?: Progress) => {
         saves.push(uuid); return restore(uuid, progress, index);
       } };
@@ -51,15 +51,15 @@ function harness() {
     require: (name: string) => mocks[name] ?? mocks[name.split('/').at(-1)!] ?? { __esModule: true, default: name.split('/').at(-1) },
     h: (type: any, props: any, ...children: any[]) => ({ type, props: props ?? {}, children: children.flat(Infinity) }),
   });
-  const props = { isCurrent: () => routeCurrent, onOpenChange: (open: boolean) => opened.push(open), onSavePending: () => pending.push(true), onFailure: (e: string) => failures.push(e), onRecovered: (id: string) => recovered.push(id) };
+  const props = { targetActivityId, isCurrent: () => routeCurrent, onOpenChange: (open: boolean) => opened.push(open), onSavePending: () => pending.push(true), onFailure: (e: string) => failures.push(e), onRecovered: (id: string) => recovered.push(id) };
   function render() { cursor = 0; tree = module.exports.default(props); effects.splice(0).forEach(fn => { const result = fn(); if (typeof result === 'function') cleanup.push(result); }); return tree; }
   function nodes() { const all: any[] = []; const visit = (n: any) => { if (n && typeof n === 'object') { all.push(n); n.children?.forEach(visit); } }; visit(tree); return all; }
   const button = (label: string) => nodes().find(n => n.props.accessibilityLabel === label);
   return { render, nodes, button, saves, recovered, failures, pending, opened, alerts, sessions,
-    open: async () => { render(); nodes().find(n => n.props.accessibilityLabel === 'Find workout in Apple Health').props.onPress(); await settle(); render(); },
+    open: async () => { render(); nodes().find(n => n.props.accessibilityLabel === (targetActivityId ? 'Refresh splits from Apple Health' : 'Find workout in Apple Health')).props.onPress(); await settle(); render(); },
     choose: () => nodes().find(n => n.type === 'FlatList').props.renderItem({ item: row }).props.onPress(),
     close: () => nodes().find(n => n.type === 'RecoverableModal').props.onRequestClose(),
-    confirm: () => alerts.at(-1)[2].find((b: any) => b.text === 'Restore').onPress(),
+    confirm: () => alerts.at(-1)[2].find((b: any) => b.text === (targetActivityId ? 'Use Health Distance' : 'Restore')).onPress(),
     cancel: () => alerts.at(-1)[2].find((b: any) => b.text === 'Cancel').onPress(),
     unmount: () => cleanup.forEach(fn => fn()),
     switchRoute: () => { routeCurrent = false; },
@@ -80,6 +80,20 @@ test('Health picker requires explicit confirmation and permits cancelling withou
   assert.equal(ui.alerts.length, 1); assert.match(ui.alerts[0][1], /previously removed/);
   assert.equal(ui.saves.length, 0); ui.cancel();
   assert.equal(ui.pending.length, 0); assert.equal(ui.recovered.length, 0);
+});
+
+test('first-link picker clearly confirms evidence-only attachment to the existing activity', async () => {
+  const ui = harness('existing-gps-row'); await ui.open(); ui.choose();
+  assert.equal(ui.sessions[0].targetActivityId, 'existing-gps-row');
+  assert.equal(ui.alerts[0][0], 'Use Health distance for this activity?');
+  assert.match(ui.alerts[0][1], /No new activity is created/);
+  assert.match(ui.alerts[0][1], /totals, notes, route and training links stay unchanged/);
+  assert.doesNotMatch(ui.alerts[0][1], /previously removed|unresolved old link/);
+  assert.equal(ui.saves.length, 0); ui.cancel();
+  assert.equal(ui.saves.length, 0);
+  ui.choose(); await ui.confirm();
+  assert.equal(ui.saves.length, 1);
+  assert.deepEqual(ui.recovered, ['canonical']);
 });
 
 test('Health picker waits for durable result and pins failure with same-selection retry without a second alert', async () => {
