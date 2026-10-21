@@ -24,7 +24,7 @@ function harness(status = 'ready') {
     react: { ...hooks, useLayoutEffect: hooks.useEffect },
     'react-native': { StyleSheet: { create: (s: any) => s }, Alert: { alert: (...args: any[]) => alerts.push(args) },
       ...Object.fromEntries(['ActivityIndicator', 'ScrollView', 'Text', 'TouchableOpacity', 'View'].map(n => [n, n])) },
-    'expo-router': { useIsFocused: () => focused, useLocalSearchParams: () => ({ activityId: id }), useRouter: () => ({ replace: (value: any) => navigation.push(value), back: () => navigation.push('back') }) },
+    'expo-router': { useIsFocused: () => focused, useRoute: () => ({ params: { activityId: id } }), useRouter: () => ({ replace: (value: any) => navigation.push(value), back: () => navigation.push('back') }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     activityStore: { useActivityStore: (selector: any) => selector({ activities, hydrationStatus: status }) },
     settingsStore: { useSettingsStore: (selector: any) => selector({ units: 'metric' }) },

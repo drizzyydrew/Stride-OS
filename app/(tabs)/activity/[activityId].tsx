@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
+import { useIsFocused, useRoute, useRouter } from 'expo-router';
 import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -33,7 +33,8 @@ export default function ActivityDetailScreen() {
   const focused = useIsFocused();
   const focusSession = useMemo(() => ({ active: focused }), [focused]);
   useLayoutEffect(() => () => { focusSession.active = false; }, [focusSession]);
-  const { activityId } = useLocalSearchParams<{ activityId?: string | string[] }>();
+  // IDs already contain encoded recording lineage; do not URI-decode them again.
+  const { activityId } = (useRoute().params ?? {}) as { activityId?: string | string[] };
   const activities = useActivityStore(state => state.activities);
   const hydrationStatus = useActivityStore(state => state.hydrationStatus);
   const units = useSettingsStore(state => state.units);

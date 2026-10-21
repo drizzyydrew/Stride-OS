@@ -184,7 +184,7 @@ function harness(path: string, initial?: Activity, options: { units?: 'metric' |
     react: hooks,
     'react-native': { Alert: { alert: (...args: any[]) => alerts.push(args) }, StyleSheet: { create: (value: any) => value, hairlineWidth: 1 },
       Platform: { OS: 'ios' }, ...Object.fromEntries(['Image', 'KeyboardAvoidingView', 'ScrollView', 'Switch', 'Text', 'TextInput', 'TouchableOpacity', 'View'].map(name => [name, name])) },
-    'expo-router': { useLocalSearchParams: () => options.activityId === true || initial && options.activityId !== false ? { activityId: initial?.id ?? 'recorded' } : {},
+    'expo-router': { useRoute: () => ({ params: options.activityId === true || initial && options.activityId !== false ? { activityId: initial?.id ?? 'recorded' } : {} }),
       useRouter: () => ({ replace: (value: any) => navigation.push(value), back: () => navigation.push('back') }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     activityStore: { useActivityStore: useStore },
@@ -276,6 +276,16 @@ test('real recorded edit saves elevation alone without changing identity, time, 
   assert.equal(saved.metrics.metricSources?.elevation, 'manual_entry');
   assert.ok(saved.metrics.powerEstimate);
   assert.equal(original.metrics.elevationGainMeters, 30.123);
+});
+
+test('editing an encoded recording ID updates that exact row instead of creating another activity', () => {
+  const original = { ...activity(), id: 'activity_workout_run_adhoc%3Asynthetic' };
+  const ui = harness(manualPath, original); ui.render();
+  assert.ok(ui.nodes().some(node => node.props.accessibilityLabel === 'Save activity changes'));
+  ui.field('Elevation gain').props.onChangeText('0'); ui.render(); ui.save();
+  assert.equal(ui.record.id, original.id);
+  assert.equal(ui.writes.length, 1);
+  assert.equal(ui.navigation.at(-1).params.activityId, original.id);
 });
 
 test('delayed activity hydration establishes the baseline before the first actual elevation edit', () => {

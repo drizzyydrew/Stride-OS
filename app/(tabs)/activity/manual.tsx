@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRoute, useRouter } from 'expo-router';
 import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -110,12 +110,12 @@ function draftIsIndoor(activityKey: string, activityType: ActivityType, pool: bo
 export default function ManualActivityScreen() {
   const C = useColors();
   const router = useRouter();
-  const params = useLocalSearchParams<{
+  const params = (useRoute().params ?? {}) as {
     scheduledSessionId?: string;
     activityId?: string;
     activityType?: string;
     mode?: string;
-  }>();
+  };
   const weekPlan = useWeekPlan();
   const scheduled = useScheduledSessions(weekPlan);
   const activities = useActivityStore(state => state.activities);
