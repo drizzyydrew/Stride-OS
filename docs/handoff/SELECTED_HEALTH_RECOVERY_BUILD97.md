@@ -1,6 +1,6 @@
 # Selected Apple Health Workout Recovery - Build 97
 
-Status: candidate under verification, October 21, 2026. Continues the outstanding request to correct the unavailable race and deliver the correction through TestFlight. Actual recovery on the phone remains unverified.
+Status: released to internal TestFlight, October 21, 2026. Continues the outstanding request to correct the unavailable race and deliver the correction through TestFlight. Actual recovery on the phone remains unverified.
 
 ## Evidence And Limits
 
@@ -27,7 +27,7 @@ Status: candidate under verification, October 21, 2026. Continues the outstandin
 - Targeted service, native-adapter and UI harness tests cover explicit selection, zero route/statistic list reads, exact UUID filtering, canonical edited records, stale owner/request/deletion fences, route changes, failed-save retry, early publication and saving-phase progress.
 - Final full suite: 1,029/1,029 passed, zero failures/skips (`/tmp/strideos-build97-tests-final.log`). Semantic typecheck, clean iOS prebuild and final iOS Hermes export passed. Existing prebuild advisories about the pinned React Native version and optional expo-system-ui remain unchanged; no dependency upgrade is included.
 - Both independent reviewers report scoped badge-share source GO after the second exporter and rounded capture wrapper corrections. Browser visual/geometry evidence and native-export limits are recorded separately in `badge-share-build97/REVIEW.md`.
-- Signed artifact and Apple processing checks are pending.
+- Signed native archive and exact-build submission finished successfully. Apple readback confirms `VALID` / `IN_BETA_TESTING` for 1.0.0 (97), with matching EAS build and submission IDs.
 - Canonical checkout: `/Users/drew/Developer/StrideOS_App_clean_build19_v3_foundation_local`; branch `build-19-v3-foundation`. Latest EAS build was 96 before selecting 97.
 - App version 1.0.0 (97), bundle `com.mooremovement.strideos`; EAS project `f32ed63a-a22a-4360-8b1d-3ed4d2c329d9`; ASC app `6782788130`. Existing production signing/profiles retained.
 
@@ -40,3 +40,13 @@ Status: candidate under verification, October 21, 2026. Continues the outstandin
 5. Restart StrideOS and reopen the activity from Activity. Repeat selected recovery and confirm one canonical entry, not a duplicate. An unknown old link may remain unresolved; no guessed mapping is created.
 
 Physical-device Health recovery and visual layout remain unverified until tested on the phone. A signed build or TestFlight acceptance must not be reported as proof that the race has been recovered.
+
+## Release Receipt
+
+- Binary source commit: `0abe63ab4486b92c043049a8dc42cf84a0d3c5ee`, pushed to `origin/build-19-v3-foundation`.
+- EAS build: `fb289a27-5657-4383-889f-9521de9fface`, `FINISHED`, Store/iOS, 1.0.0 (97). Created October 21 at 19:24:03 UTC; completed 19:32:48 UTC.
+- Downloaded `/tmp/strideos-build97.ipa`: 119,854,834 bytes; SHA-256 `465be073b620f42e4aeeb85e9232a6d16b90eaa4a0939e56783d91a494a2590d`. ZIP integrity passed.
+- Read back all three archived plists: phone `com.mooremovement.strideos`, Watch `.watch`, Live Activity `.liveactivity`; every target reports version 1.0.0 and build 97.
+- Exact EAS build submitted through the existing production profile with automatic TestFlight group setup disabled. Submission `4210df5c-d106-45d7-afba-e9626d40e16e` is `FINISHED`, completed October 21 at 19:38:52 UTC. CLI confirmed successful App Store Connect upload.
+- Supported EAS `submit:status` readback: Apple app `6782788130`, 1.0.0 (97), `processingState: VALID`, `internalState: IN_BETA_TESTING`, `externalState: READY_FOR_BETA_SUBMISSION`, not expired. Apple associates it with the exact build/submission IDs above. Internal TestFlight availability is verified; no external beta submission or public App Store release was performed.
+- Physical-device race recovery and native badge PNG acceptance remain unverified. Update without uninstalling, select the original Health workout explicitly, and test both badge sharing entry points as described above.
