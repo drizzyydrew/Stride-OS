@@ -1,6 +1,6 @@
 # Health Distance Splits Follow-Up
 
-Status: source implemented and verified locally, October 21, 2026. The user explicitly authorized submission with "Submit" after the local verification report. Preparing version 1.0.0 (99) for commit, push and TestFlight submission. Installed build 98 remains the latest confirmed released binary until the release receipt below is completed.
+Status: version 1.0.0 (99) committed, pushed, archived, uploaded and confirmed `VALID` / `IN_BETA_TESTING` by Apple, October 22, 2026 (Europe/Rome). The user explicitly authorized submission with "Submit" after the local verification report. Actual Rome-race split parity remains device-unverified.
 
 ## Athlete Evidence
 
@@ -31,8 +31,21 @@ An in-flight write may already be durable when cancellation/readback fails. Repo
 - Independent platform and custody reviewers issued source GO after cross-examining interval uncertainty, stale/conflicting prior context, route-independent refresh and exact-ID preservation. Focused coverage includes actual adapter/service/store/readback, concurrent edits, deletion, owner changes, cancellation, failed save and retry, duplicate claims, no route reads, and source-quality rejection.
 - `git diff --check` passed. No native Watch/startup/transport, badge artwork, dependencies, signing or app-name changes in this follow-up.
 - Release preparation for build 99: clean iOS prebuild passed; generated phone plist is `StrideOS`, version `1.0.0`, build `99`; Watch and Live Activity generated build settings are `99`; all 22 native-target contract tests passed (`/tmp/strideos-build99-prebuild.log`, `/tmp/strideos-build99-native-contracts.log`). Expo project, bundle identifiers and signing configuration are unchanged.
-- No physical-device Health read, native archive or Rome split parity verification performed. No athlete data was invented, modified in Apple Health or committed as a fixture.
+- Native archive completed and verified as recorded below. No physical-device Health read or Rome split parity verification performed. No athlete data was invented, modified in Apple Health or committed as a fixture.
 
-## Acceptance On A Future Build
+## Build 99 Release Receipt
+
+- Binary source: `2fde0d0b4f066e9a391695bb59604d46f08e601e`, pushed to `build-19-v3-foundation`.
+- EAS iOS STORE build: `22a54413-229f-4066-9441-d0b4cb562196`, `FINISHED` at `2026-10-21T22:07:27.174Z`.
+- Submission: `9d22dab8-d9bc-4370-a055-e722f54604d8`, `FINISHED` at `2026-10-21T22:19:53.268Z`. No public App Store release, invitations or expanded tester distribution requested.
+- Supported `submit:status` live Apple readback confirms version `1.0.0`, build `99`, `processingState: VALID`, `internalState: IN_BETA_TESTING`, `externalState: READY_FOR_BETA_SUBMISSION`, not expired, with the exact EAS build/submission IDs above. Reported upload date: `2026-10-21T15:10:51-07:00`. This establishes internal beta state, not a particular tester's installation or Rome-race data recovery.
+- Downloaded IPA passes ZIP integrity verification: 119,856,545 bytes; SHA-256 `b2b459a94437b965ac86397532894ce922bdb13ad07251230ccc67da3ddc800f`.
+- Actual host: `Payload/StrideOS.app/Info.plist`, display name `StrideOS`, bundle `com.mooremovement.strideos`, version `1.0.0` / build `99`.
+- Actual Watch: `Payload/StrideOS.app/Watch/StrideOSWatch.app/Info.plist`, display name `StrideOS`, bundle `com.mooremovement.strideos.watch`, version `1.0.0` / build `99`.
+- Actual Live Activity: `Payload/StrideOS.app/PlugIns/StrideRunLiveActivity.appex/Info.plist`, bundle `com.mooremovement.strideos.liveactivity`, version `1.0.0` / build `99`.
+- Embedded Hermes bundle `Payload/StrideOS.app/main.jsbundle` is 10,525,710 bytes. Verified the refresh-control label, Health-distance source label and evidence-save message in its UTF-8/UTF-16 string storage. This confirms embedded code presence, not execution against the athlete's Health data.
+- Local receipts: `/tmp/strideos-build99-status-final.json`, `/tmp/strideos-build99-ipa-receipt.json`, `/tmp/strideos-build99-submit.log`, `/tmp/strideos-build99-submission3.json`, `/tmp/strideos-build99-apple-final.json`.
+
+## Device Acceptance
 
 Update without uninstalling. Open the already recovered race, tap `Refresh splits from Apple Health`, wait for durable confirmation and inspect the split source/quality message. Verify Health-derived distance, complete mile count and final partial distance against Apple. Check notes/totals/links remain unchanged and retry creates no duplicate. Restart and reopen the same race to verify persistence. If evidence is withheld, record the exact quality reason instead of repeating bulk history restore or manually guessing split times.
