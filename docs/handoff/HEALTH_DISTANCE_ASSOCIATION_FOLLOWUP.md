@@ -1,6 +1,6 @@
 # Health Distance Association Follow-Up
 
-Status: local correction verified and build 102 preparation underway, October 22, 2026. Build 101 remains the last confirmed TestFlight release until new archive and Apple readback receipts are recorded. The user reports that all Health permissions are enabled. The screenshot shows an empty-evidence failure after selecting the original race, not whether the Health bridge delivered zero samples or the old decoder excluded them.
+Status: correction committed, pushed and submitted as version 1.0.0 (102), October 22, 2026. Apple readback confirms `VALID` and `IN_BETA_TESTING`. Original Rome race recovery remains device-unverified. The user reports that all Health permissions are enabled. The screenshot shows an empty-evidence failure after selecting the original race, not whether the Health bridge delivered zero samples or the old decoder excluded them.
 
 ## Evidence And Scope
 
@@ -32,11 +32,16 @@ Status: local correction verified and build 102 preparation underway, October 22
 
 ## Release And Acceptance
 
-The user's continuing authorization for this same issue is "You can submit to TestFlight if need be." Source review, full-suite and typecheck gates passed; preparing version 1.0.0 (102). Existing account and production profile verified; recent EAS build list showed 101 latest and no 102. No native Watch/startup/transport, power, badge, signing or dependency changes. No public App Store release, invitation or tester expansion authorized.
+The user's continuing authorization for this same issue is "You can submit to TestFlight if need be." Source review, full-suite and typecheck gates passed for version 1.0.0 (102). Existing account and production profile verified; the pre-release EAS build list showed 101 latest and no 102. No native Watch/startup/transport, power, badge, signing or dependency changes. No public App Store release, invitation or tester expansion authorized or performed.
 
 - Local app version remains 1.0.0 and display name StrideOS; build number set to 102.
 - Clean iOS prebuild passed without dependency changes (`/tmp/strideos-build102-prebuild.log`). Host Info.plist explicitly reports 1.0.0 / 102, and Watch/Live Activity project configurations report 102.
 - Watch native contract suite passed 22/22 (`/tmp/strideos-build102-native-contracts.log`). Protected Watch/transport/achievement paths and dependency manifests unchanged. `git diff --check` passed.
-- Signed archive, exact source commit, upload and Apple readback pending.
+- Binary source commit `d5a0aa09fa0a1b8b4fb9d7f7964ba6eb20ab38c3` was pushed and verified against remote branch `build-19-v3-foundation` before the build request. This handoff receipt update is a later documentation-only commit, not a different binary source.
+- Exact EAS production/store build `fbaf44e2-384c-4285-851e-038fb673eb64` finished successfully. Created `2026-10-22T07:02:59.425Z`; completed `2026-10-22T07:12:45.222Z`. Receipt: `/tmp/strideos-build102-view5.json`.
+- Downloaded and tested the actual finished IPA: 119,861,441 bytes; SHA-256 `ff74c69bd1c327b7b9eef96831aab24e15887d1a8a009055cd5e08f1820e2ac3`. `unzip -tq` passed. Host, Watch and Live Activity plists all report 1.0.0 / 102 with their expected bundle identifiers and signature-resource entries. Host display name is StrideOS.
+- Actual archived Hermes bundle contains the refresh/confirmation controls, exact-workout scope, empty/manual/unknown-source diagnostic codes, no-settings empty wording and saved-analysis quality guard. Curated artifact receipt: `/tmp/strideos-build102-ipa-receipt.json`.
+- Submitted this exact build ID, not an implicit latest build. EAS submission `cf4723e9-9d5f-4b04-b0ab-989bf56e7898`, created `2026-10-22T07:18:02.762Z`, finished successfully and reports the same build ID/source commit. Receipts: `/tmp/strideos-build102-submit.log` and `/tmp/strideos-build102-submission-final.json`.
+- App Store Connect app `6782788130` reports version 1.0.0 / 102, `processingState: VALID`, `internalState: IN_BETA_TESTING`, not expired, with matching EAS build/submission IDs. Apple uploaded date `2026-10-22T00:30:23-07:00`. Readback: `/tmp/strideos-build102-apple-final.json`. External state is `READY_FOR_BETA_SUBMISSION`, distinct from internal testing and public App Store release. This does not establish installation or access for a particular tester.
 
-On an approved released correction, update without uninstalling and refresh the exact original race. Verify the retained canonical activity, durable reopening, original summaries/edits and displayed Health split quality. If the reader still returns no usable intervals, record the specific diagnostic code; all permissions being enabled does not prove associated interval data was exposed. Do not substitute another workout, rescale summaries or invent missing times.
+For device acceptance, update to build 102 without uninstalling. Open the original Rome activity and choose "Refresh splits from Apple Health"; select the matching original Health workout if prompted. Verify the retained canonical activity, durable reopening, original summaries/edits and displayed Health split quality. If the reader still returns no usable intervals, record the specific diagnostic code; all permissions being enabled does not prove associated interval data was exposed. Do not substitute another workout, rescale summaries or invent missing times. No private Health records or physical-device split parity were verified during this release.
