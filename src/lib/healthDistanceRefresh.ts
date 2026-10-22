@@ -22,7 +22,7 @@ export async function refreshActivityHealthDistance(id: string, isCurrent: () =>
   if (!health) throw new Error('This activity is not linked to an Apple Health workout.');
   if (!await requestPermissions()) throw new Error('Apple Health authorization did not complete. Unlock your phone and retry.');
   requireCurrent();
-  const candidate = await getHealthKitWorkoutByUuid(health.workoutUuid, undefined, { includeRoutes: false });
+  const candidate = await getHealthKitWorkoutByUuid(health.workoutUuid, undefined, { includeRoutes: false, distanceOnly: true });
   requireCurrent();
   if (candidate.sourceBundleIdentifier !== health.sourceBundleIdentifier || !candidate.healthKitDistance) {
     throw new Error('Apple Health did not return distance evidence for this exact workout. Existing data was kept.');

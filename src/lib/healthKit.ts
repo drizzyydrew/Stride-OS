@@ -9,7 +9,7 @@ import { Platform } from 'react-native';
 import type { CompletedWorkoutRecord } from '../types/training';
 import type { StrengthLogRecord } from '../types/strength';
 import type { Activity, ActivityCoordinate, ActivityMetrics, ActivityType, CadenceSample, HeartRateSample, PowerSample } from '../types/activity';
-import { decodeHealthDistanceEvidence } from '../utils/healthDistanceImport';
+import { decodeHealthDistanceEvidence, HealthDistanceReadError } from '../utils/healthDistanceImport';
 import { downsampleCoordinates, healthKitQuantity, healthKitRecordingIdentity, healthKitRecordingMetadata, type HealthKitWorkoutCandidate } from '../utils/healthKitImport';
 
 type HealthKitModule = {
@@ -339,6 +339,7 @@ type HealthWorkoutHistoryOptions = {
   limit: number;
   includeRoutes?: boolean;
   metadataOnly?: boolean;
+  distanceOnly?: boolean;
   uuid?: string;
   onReadPhase?: (phase: 'details' | 'route' | 'metrics') => void;
   onProgress?: (processed: number, total: number) => void;
@@ -374,14 +375,20 @@ export async function readHealthKitWorkoutHistory(options: HealthWorkoutHistoryO
   const candidates: HealthKitWorkoutCandidate[] = [];
   for (let index = 0; index < samples.length; index += 1) {
     const proxy = samples[index]!;
-    const read: { phase: 'details' | 'route' | 'metrics' } = { phase: 'details' };
+    const read: { phase: 'details' | 'route' | 'metrics'; callbackFailure?: { error: unknown } } = { phase: 'details' };
     try {
       const raw = typeof proxy.toJSON === 'function' ? proxy.toJSON() : proxy;
       const candidate = await candidateFromWorkoutProxy(raw, proxy, Boolean(options.includeRoutes), options.metadataOnly,
-        next => { read.phase = next; options.onReadPhase?.(next); }, Boolean(options.uuid));
+        next => {
+          read.phase = next;
+          try { options.onReadPhase?.(next); }
+          catch (error) { read.callbackFailure = { error }; throw error; }
+        }, Boolean(options.uuid), Boolean(options.uuid && options.distanceOnly));
       if (candidate) candidates.push(candidate);
-    } catch {
-      throw new Error(`An Apple Health workout could not be read safely (${read.phase}). No workouts from this restore attempt have been added. ${read.phase === 'route' ? 'Check Workout Routes read access in Apple Health, unlock your phone and retry.' : 'Unlock your phone and retry.'}`);
+    } catch (error) {
+      if (read.callbackFailure) throw read.callbackFailure.error;
+      if (error instanceof HealthDistanceReadError) throw new HealthDistanceReadError(error.code);
+      throw new Error(`An Apple Health workout could not be read safely (${read.phase}). Your saved activities have not been changed. ${read.phase === 'route' ? 'Check Workout Routes read access in Apple Health and retry the same selection.' : 'Retry the same selection.'}`);
     }
     options.onProgress?.(index + 1, samples.length);
   }
@@ -389,12 +396,13 @@ export async function readHealthKitWorkoutHistory(options: HealthWorkoutHistoryO
 }
 
 export async function getHealthKitWorkoutByUuid(uuid: string, onReadPhase?: HealthWorkoutHistoryOptions['onReadPhase'],
-  options: { includeRoutes?: boolean } = {}): Promise<HealthKitWorkoutCandidate> {
+  options: { includeRoutes?: boolean; distanceOnly?: boolean } = {}): Promise<HealthKitWorkoutCandidate> {
   // The native bridge drops an invalid UUID predicate, which would broaden the query.
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid)) {
     throw new Error('Select a workout with a valid Apple Health identifier.');
   }
-  const result = await readHealthKitWorkoutHistory({ days: 1, limit: 2, uuid, includeRoutes: options.includeRoutes !== false, onReadPhase });
+  const result = await readHealthKitWorkoutHistory({ days: 1, limit: 2, uuid,
+    includeRoutes: !options.distanceOnly && options.includeRoutes !== false, distanceOnly: options.distanceOnly, onReadPhase });
   if (result.sampleCount !== 1 || result.candidates.length !== 1 || result.candidates[0]!.uuid !== uuid) {
     throw new Error('Apple Health did not return the exact selected workout. Check read access and retry. No activity has been replaced.');
   }
@@ -537,7 +545,7 @@ export async function writeStrengthSession(session: StrengthLogRecord): Promise<
 }
 
 async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthWorkoutProxy, includeRoutes = false, metadataOnly = false,
-  onReadPhase?: HealthWorkoutHistoryOptions['onReadPhase'], selectedWorkout = false): Promise<HealthKitWorkoutCandidate | null> {
+  onReadPhase?: HealthWorkoutHistoryOptions['onReadPhase'], selectedWorkout = false, distanceOnly = false): Promise<HealthKitWorkoutCandidate | null> {
   onReadPhase?.('details');
   const workoutUuid = raw.uuid ?? raw.id;
   if (typeof workoutUuid !== 'string' || !workoutUuid.trim()) return null;
@@ -573,23 +581,29 @@ async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthW
   // A selection list must not fetch every historical route and sensor summary.
   if (metadataOnly) return candidate;
   onReadPhase?.('route');
-  const routes = includeRoutes && typeof proxy.getWorkoutRoutes === 'function'
+  const readRoutes = includeRoutes && !distanceOnly;
+  const routes = readRoutes && typeof proxy.getWorkoutRoutes === 'function'
     ? await proxy.getWorkoutRoutes()
     : [];
   onReadPhase?.('metrics');
-  const heartRateStats = typeof proxy.getStatistic === 'function'
+  const heartRateStats = !distanceOnly && typeof proxy.getStatistic === 'function'
     ? await proxy.getStatistic('HKQuantityTypeIdentifierHeartRate', 'count/min').catch(() => undefined)
     : undefined;
-  const metricsSummary = await workoutMetricSummaries(proxy, type);
+  const metricsSummary = distanceOnly ? undefined : await workoutMetricSummaries(proxy, type);
   const distanceIdentifier = ['running', 'walking', 'hiking'].includes(type) ? 'HKQuantityTypeIdentifierDistanceWalkingRunning'
     : type === 'cycling' ? 'HKQuantityTypeIdentifierDistanceCycling' : undefined;
   let healthKitDistance: ActivityMetrics['healthKitDistance'];
   if (selectedWorkout && distanceIdentifier && Health?.queryQuantitySamples && healthTypeAvailable(distanceIdentifier)) {
     // limit: 0 means all samples in this installed bridge. Never query by date alone.
-    const samples = await Health.queryQuantitySamples(distanceIdentifier, { unit: 'm', ascending: true, limit: 0, filter: { workout: proxy } });
+    let samples;
+    try {
+      samples = await Health.queryQuantitySamples(distanceIdentifier, { unit: 'm', ascending: true, limit: 0, filter: { workout: proxy } });
+    } catch {
+      throw new HealthDistanceReadError('DISTANCE_QUERY_FAILED');
+    }
     healthKitDistance = decodeHealthDistanceEvidence(samples, candidate, raw.events ?? [], Health.WorkoutEventType);
   }
-  const snowDistance = (type === 'downhill_skiing' || type === 'snowboarding') && proxy.getStatistic
+  const snowDistance = !distanceOnly && (type === 'downhill_skiing' || type === 'snowboarding') && proxy.getStatistic
     && healthTypeAvailable('HKQuantityTypeIdentifierDistanceDownhillSnowSports')
     ? await proxy.getStatistic('HKQuantityTypeIdentifierDistanceDownhillSnowSports', 'm').catch(() => undefined) : undefined;
   return {
@@ -599,7 +613,7 @@ async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthW
     maximumHeartRateBpm: quantity(heartRateStats?.maximumQuantity),
     metricsSummary,
     healthKitDistance,
-    routeAvailable: includeRoutes ? routes.length > 0 : undefined,
+    routeAvailable: readRoutes ? routes.length > 0 : undefined,
     routeCoordinates: includeRoutes && routes.length > 0 ? routeCoordinatesFrom(routes, selectedWorkout) : undefined,
   };
 }

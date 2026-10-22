@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { decodeHealthDistanceEvidence } from '../../src/utils/healthDistanceImport';
+import { decodeHealthDistanceEvidence, HealthDistanceReadError } from '../../src/utils/healthDistanceImport';
 import { mergeHealthDistanceEvidence } from '../../src/utils/healthDistanceRefresh';
 import { buildHealthKitActivityDraft } from '../../src/utils/healthKitImport';
 import { sanitizeActivityMetrics } from '../../src/utils/activityLoad';
@@ -46,8 +46,39 @@ test('native pause/resume events remain separate from the existing phone recordi
   const e = decodeHealthDistanceEvidence([sample()], context, [event(1, 10_000), event(2, 20_000), event(5, 50_000)], eventTypes);
   assert.deepEqual(e.recordingPauses, [{ startTime: startTime + 10_000, endTime: startTime + 20_000 },
     { startTime: startTime + 50_000, endTime: context.endTime }]);
-  assert.throws(() => decodeHealthDistanceEvidence([], context, [event(2, 20_000)], eventTypes), /incomplete/);
+  assert.deepEqual(decodeHealthDistanceEvidence([], context, [event(2, 20_000)], eventTypes).recordingPauses, []);
   assert.throws(() => decodeHealthDistanceEvidence([], context, [event(1, 20_000)]), /not supported/);
+});
+
+test('HealthKit starts active and ignores redundant pause/resume events without inventing pauses', () => {
+  const event = (type: number, offset: number) => ({ type, startDate: new Date(startTime + offset), endDate: new Date(startTime + offset) });
+  const events = [event(2, 0), event(6, 1_000), event(1, 10_000), event(5, 12_000), event(1, 15_000),
+    event(2, 20_000), event(6, 21_000), event(2, 30_000), event(5, 50_000), event(1, 55_000), event(6, 60_000)];
+  const before = JSON.stringify(events);
+  const decoded = decodeHealthDistanceEvidence([sample()], context, events, eventTypes);
+  assert.deepEqual(decoded.recordingPauses, [{ startTime: startTime + 10_000, endTime: startTime + 20_000 },
+    { startTime: startTime + 50_000, endTime: startTime + 60_000 }]);
+  assert.equal(JSON.stringify(events), before);
+  assert.deepEqual(decoded.samples, decodeHealthDistanceEvidence([sample()], context, [], eventTypes).samples);
+  for (const invalid of [event(2, -1), event(6, 60_001), { ...event(2, 0), startDate: new Date(NaN) }]) {
+    assert.throws(() => decodeHealthDistanceEvidence([], context, [invalid], eventTypes),
+      error => error instanceof HealthDistanceReadError && error.code === 'PAUSE_TIME_INVALID');
+  }
+});
+
+test('distance validation failures have fixed non-identifying codes, not blanket unlock advice', () => {
+  const throwsCode = (read: () => unknown, code: HealthDistanceReadError['code']) => assert.throws(read, error => {
+    assert(error instanceof HealthDistanceReadError);
+    assert.equal(error.code, code);
+    assert.match(error.message, /saved activity has not been changed/);
+    assert.doesNotMatch(error.message, /unlock|11111111|synthetic.watch|2026-10-01/i);
+    return true;
+  });
+  throwsCode(() => decodeHealthDistanceEvidence([{ ...sample(), startDate: new Date(startTime - 1) }], context, [], eventTypes), 'DISTANCE_INTERVAL_RANGE');
+  throwsCode(() => decodeHealthDistanceEvidence([{ ...sample(), endDate: new Date(startTime) }], context, [], eventTypes), 'DISTANCE_INTERVAL_INVALID');
+  throwsCode(() => decodeHealthDistanceEvidence([sample(), { ...sample(), quantity: 91 }], context, [], eventTypes), 'DISTANCE_SAMPLE_CONFLICT');
+  throwsCode(() => decodeHealthDistanceEvidence(Array.from({ length: 100_001 }, () => sample()), context, [], eventTypes), 'DISTANCE_SAMPLE_LIMIT');
+  throwsCode(() => decodeHealthDistanceEvidence([], context, [{ type: 1, startDate: new Date(startTime), endDate: new Date(startTime) }]), 'PAUSE_TYPES_UNAVAILABLE');
 });
 
 test('evidence-only merge preserves exact identity, summaries, load, phone routes/pauses and edits', () => {

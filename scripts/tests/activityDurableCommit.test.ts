@@ -25,7 +25,7 @@ function loadSource<T>(file: string, mocks: Record<string, unknown>): T {
   return module.exports as T;
 }
 
-const { WorkoutActivityType } = require(join(dirname(require.resolve('@kingstinct/react-native-healthkit/package.json')),
+const { WorkoutActivityType, WorkoutEventType } = require(join(dirname(require.resolve('@kingstinct/react-native-healthkit/package.json')),
   'lib/commonjs/generated/healthkit.generated.js'));
 const uuid = '11111111-1111-4111-8111-111111111111';
 const bundle = 'synthetic.watch';
@@ -41,7 +41,7 @@ function gate() {
   return { promise, resolve };
 }
 
-async function harness() {
+async function harness(options: { throwStatistics?: boolean; distanceFailure?: 'sync' | 'async'; redundantResume?: boolean } = {}) {
   const values = new Map<string, string>();
   const hooks: {
     readError?: Error;
@@ -52,6 +52,7 @@ async function harness() {
   let activityReads = 0;
   let recalculations = 0;
   let routeReads = 0;
+  let statisticReads = 0;
   const nativeStorage = {
     getItem: async (key: string) => {
       if (key === 'activity-store') {
@@ -95,21 +96,30 @@ async function harness() {
   const queries: { filter?: { uuid?: string } }[] = [];
   const sample = { uuid, workoutActivityType: WorkoutActivityType.running, startDate, endDate,
     duration: { quantity: 5400, unit: 's' }, totalDistance: { quantity: 15000, unit: 'meters' },
+    events: options.redundantResume ? [{ type: WorkoutEventType.resume, startDate, endDate: startDate }] : [],
     metadata: { StrideOSWorkoutInstanceId: 'synthetic-recording' },
     sourceRevision: { source: { bundleIdentifier: bundle, name: 'SourceProxy',
       toJSON: () => ({ bundleIdentifier: bundle, name: 'StrideOS' }) } } };
   const health = loadSource<typeof import('../../src/lib/healthKit')>('src/lib/healthKit.ts', {
     'react-native': platform,
-    '@kingstinct/react-native-healthkit': { WorkoutActivityType, default: {
+    '@kingstinct/react-native-healthkit': { WorkoutActivityType, WorkoutEventType, default: {
       isHealthDataAvailableAsync: async () => true, requestAuthorization: async () => true,
-      queryQuantitySamples: async () => [{ uuid: 'synthetic-distance', quantity: 100, startDate,
-        endDate: new Date(startDate.getTime() + 30_000), sourceRevision: { source: { bundleIdentifier: bundle } } }],
-      queryWorkoutSamples: async (options: typeof queries[number]) => {
-        queries.push(options);
+      queryQuantitySamples: () => {
+        if (options.distanceFailure === 'sync') throw new Error('private native error');
+        if (options.distanceFailure === 'async') return Promise.reject(new Error('private native error'));
+        return Promise.resolve([{ uuid: 'synthetic-distance', quantity: 100, startDate,
+          endDate: new Date(startDate.getTime() + 30_000), sourceRevision: { source: { bundleIdentifier: bundle } } }]);
+      },
+      queryWorkoutSamples: async (request: typeof queries[number]) => {
+        queries.push(request);
         return [{ ...sample, toJSON: () => sample, getWorkoutRoutes: async () => { routeReads++; return [{ locations: [
           { latitude: 45, longitude: -120, date: startDate },
           { latitude: 45.01, longitude: -120.01, date: endDate },
-        ] }]; }, getStatistic: async () => undefined }];
+        ] }]; }, getStatistic: () => {
+          statisticReads++;
+          if (options.throwStatistics) throw new Error('unneeded native statistic');
+          return Promise.resolve(undefined);
+        } }];
       },
     } },
   });
@@ -122,7 +132,8 @@ async function harness() {
   }).refreshActivityHealthDistance;
   return { values, hooks, owner, store, recovery, refresh, queries, linkRecovery: (id: string) => createRecovery(() => true, id),
     diskActivities: () => JSON.parse(values.get('activity-store')!).state.activities as Activity[],
-    get activityReads() { return activityReads; }, get recalculations() { return recalculations; }, get routeReads() { return routeReads; } };
+    get activityReads() { return activityReads; }, get recalculations() { return recalculations; },
+    get routeReads() { return routeReads; }, get statisticReads() { return statisticReads; } };
 }
 
 test('one-shot reads require prior safe hydration and propagate one base error without retries', async () => {
@@ -424,7 +435,7 @@ test('actual evidence refresh handles concurrent edit and rejects deletion, canc
 });
 
 test('refresh service through actual adapter and store targets the linked UUID and durably enriches the existing edited row', async () => {
-  const h = await harness();
+  const h = await harness({ throwStatistics: true, redundantResume: true });
   const id = h.store.getState().addActivity({ ...draft, id: 'already-recovered', notes: 'Retain this note' });
   await h.store.getState().awaitPersistence(h.owner.capture()!);
   const recalcs = h.recalculations;
@@ -435,11 +446,12 @@ test('refresh service through actual adapter and store targets the linked UUID a
   assert.equal(h.diskActivities()[0].notes, 'Retain this note');
   assert.equal(h.diskActivities()[0].metrics.healthKitDistance?.workoutUuid, uuid);
   assert.equal(h.recalculations, recalcs);
+  assert.equal(h.routeReads, 0); assert.equal(h.statisticReads, 0);
   await assert.rejects(h.refresh(id, () => false), /not confirmed/);
 });
 
 test('selected Health distance attaches to an unlinked GPS row through actual adapter, picker service and durable store without another completion', async () => {
-  const h = await harness();
+  const h = await harness({ throwStatistics: true, redundantResume: true });
   const id = h.store.getState().addActivity({ ...draft, id: 'gps-row', source: 'tracked', healthKit: undefined,
     notes: 'Original race note', scheduledSessionId: 'keep-link', legacyWorkoutId: 'keep-workout',
     metrics: { ...draft.metrics, distanceMeters: 15200, distanceSource: 'gps' } });
@@ -451,6 +463,7 @@ test('selected Health distance attaches to an unlinked GPS row through actual ad
   assert.equal(await recovery.restoreSelected(uuid), id);
   const after = h.store.getState().getById(id)!;
   assert.equal(h.routeReads, 0);
+  assert.equal(h.statisticReads, 0);
   assert.equal(h.store.getState().activities.length, 1);
   assert.equal(h.recalculations, recalcs);
   assert.equal(after.trainingLoad, before.trainingLoad);
@@ -463,6 +476,29 @@ test('selected Health distance attaches to an unlinked GPS row through actual ad
   await recovery.restoreSelected(uuid);
   assert.equal(h.store.getState().activities.length, 1);
   assert.equal(h.recalculations, recalcs);
+});
+
+test('distance query failures leave linked and first-link activities byte-for-byte unchanged before persistence', async () => {
+  for (const linked of [true, false]) for (const distanceFailure of ['sync', 'async'] as const) {
+    const h = await harness({ throwStatistics: true, distanceFailure });
+    const id = h.store.getState().addActivity({ ...draft, id: 'retained-race', notes: 'Keep edits',
+      healthKit: linked ? draft.healthKit : undefined });
+    await h.store.getState().awaitPersistence(h.owner.capture()!);
+    const before = h.values.get('activity-store');
+    const beforeReads = h.activityReads;
+    const recalcs = h.recalculations;
+    const recovery = h.linkRecovery(id);
+    if (!linked) await recovery.listRecent();
+    await assert.rejects(linked ? h.refresh(id, () => true) : recovery.restoreSelected(uuid), error => {
+      assert.match((error as Error).message, /DISTANCE_QUERY_FAILED/);
+      assert.doesNotMatch((error as Error).message, /private native|unlock/i);
+      return true;
+    });
+    assert.equal(h.values.get('activity-store'), before);
+    assert.equal(h.activityReads, beforeReads, 'A read failure never enters the durable mutation');
+    assert.equal(h.recalculations, recalcs);
+    assert.equal(h.routeReads, 0); assert.equal(h.statisticReads, 0);
+  }
 });
 
 test('first-link requires exact lineage and preserves unlinked data on failed confirmation and retry', async () => {

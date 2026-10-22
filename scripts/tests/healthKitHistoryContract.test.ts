@@ -5,7 +5,7 @@ import test from 'node:test';
 import { buildHealthKitActivityDraft } from '../../src/utils/healthKitImport';
 
 // Use the installed bridge's generated enum, not a parallel list of sport codes.
-const { WorkoutActivityType } = require(join(dirname(require.resolve('@kingstinct/react-native-healthkit/package.json')),
+const { WorkoutActivityType, WorkoutEventType } = require(join(dirname(require.resolve('@kingstinct/react-native-healthkit/package.json')),
   'lib/commonjs/generated/healthkit.generated.js'));
 // Synthetic measurements and identifiers; never publish an athlete's Health record.
 const startDate = new Date('2026-10-01T07:00:00Z');
@@ -39,7 +39,7 @@ function adapter(options: { query?: (options?: any) => Promise<unknown[]>; quant
       // v14 exports bound functions on default, but enums only on the namespace.
       return { default: { isHealthDataAvailableAsync: async () => options.available !== false,
         queryWorkoutSamples: options.query ?? (async () => [race()]), queryQuantitySamples: options.quantities },
-      ...(options.enums === false ? {} : { WorkoutActivityType }) };
+      ...(options.enums === false ? {} : { WorkoutActivityType, WorkoutEventType }) };
     }
     return original.call(this, id, ...args);
   };
@@ -150,6 +150,22 @@ test('selected read reports route and metrics phases and does not expose native 
   });
 });
 
+test('application phase-callback cancellation retains its identity without forwarding native errors', async () => {
+  for (const distanceOnly of [true, false]) for (const phase of ['details', 'route', 'metrics']) {
+    const closed = new Error('Recovery was closed or the account changed.');
+    await assert.rejects(adapter().getHealthKitWorkoutByUuid(workoutUuid, current => {
+      if (current === phase) throw closed;
+    }, { distanceOnly }), error => error === closed);
+  }
+  const native = new Error('private native error, not a callback cancellation');
+  const health = adapter({ query: async () => [{ ...race(), getWorkoutRoutes: () => { throw native; } }] });
+  await assert.rejects(health.getHealthKitWorkoutByUuid(workoutUuid, () => {}), error => {
+    assert.notEqual(error, native);
+    assert.doesNotMatch((error as Error).message, /private native/);
+    return true;
+  });
+});
+
 test('selected Health distance reads all samples associated with the exact native workout and retains route observations', async () => {
   const proxy = { ...race(), getWorkoutRoutes: async () => [{ locations: Array.from({ length: 6000 }, (_, index) => ({
     latitude: 45 + index / 1_000_000, longitude: -120, date: new Date(startDate.getTime() + index * 800), horizontalAccuracy: 5,
@@ -179,9 +195,62 @@ test('distance read errors surface at the metrics phase without leaking native p
   const health = adapter({ quantities: async () => { throw new Error('sensitive native distance payload'); } });
   await assert.rejects(health.getHealthKitWorkoutByUuid(workoutUuid), error => {
     assert.match((error as Error).message, /\(metrics\)/);
+    assert.match((error as Error).message, /DISTANCE_QUERY_FAILED/);
     assert.doesNotMatch((error as Error).message, /sensitive native/);
     return true;
   });
+});
+
+test('selected distance query synchronous throws and rejected Promises share one sanitized failure code', async () => {
+  for (const synchronous of [true, false]) {
+    const health = adapter({ quantities: () => {
+      const error = new Error('private-native-payload-identifier');
+      if (synchronous) throw error;
+      return Promise.reject(error);
+    } });
+    await assert.rejects(health.getHealthKitWorkoutByUuid(workoutUuid, undefined, { distanceOnly: true }), error => {
+      assert.match((error as Error).message, /DISTANCE_QUERY_FAILED/);
+      assert.doesNotMatch((error as Error).message, /private-native|unlock/i);
+      return true;
+    });
+  }
+});
+
+test('interval and pause validation errors survive the adapter without exposing selected workout data', async () => {
+  const sourceRevision = race().toJSON().sourceRevision;
+  const cases = [
+    { code: 'DISTANCE_INTERVAL_RANGE', quantity: { uuid: 'private-sample', quantity: 90,
+      startDate: new Date(startDate.getTime() - 1), endDate, sourceRevision } },
+    { code: 'DISTANCE_INTERVAL_INVALID', quantity: { uuid: 'private-sample', quantity: 90,
+      startDate, endDate: startDate, sourceRevision } },
+    { code: 'PAUSE_TIME_INVALID', events: [{ type: WorkoutEventType.resume,
+      startDate: new Date(endDate.getTime() + 1), endDate: new Date(endDate.getTime() + 1) }] },
+  ];
+  for (const entry of cases) {
+    const raw = { ...race().toJSON(), events: entry.events ?? [] };
+    const health = adapter({ query: async () => [{ ...race(), toJSON: () => raw }],
+      quantities: async () => entry.quantity ? [entry.quantity] : [] });
+    await assert.rejects(health.getHealthKitWorkoutByUuid(workoutUuid, undefined, { distanceOnly: true }), error => {
+      assert.match((error as Error).message, new RegExp(entry.code));
+      assert.doesNotMatch((error as Error).message, /private-sample|11111111|2026-10-01|unlock/i);
+      return true;
+    });
+  }
+});
+
+test('real exported event enum permits redundant resumes while preserving explicit pauses on exact distance reads', async () => {
+  const raw = { ...race().toJSON(), events: [
+    { type: WorkoutEventType.resume, startDate, endDate: startDate },
+    { type: WorkoutEventType.pause, startDate: new Date(startDate.getTime() + 10_000), endDate: new Date(startDate.getTime() + 10_000) },
+    { type: WorkoutEventType.resume, startDate: new Date(startDate.getTime() + 20_000), endDate: new Date(startDate.getTime() + 20_000) },
+    { type: WorkoutEventType.resume, startDate: endDate, endDate },
+  ] };
+  const health = adapter({ query: async () => [{ ...race(), toJSON: () => raw }], quantities: async () => [] });
+  const selected = await health.getHealthKitWorkoutByUuid(workoutUuid, undefined, { distanceOnly: true });
+  assert.deepEqual(selected.healthKitDistance?.recordingPauses,
+    [{ startTime: startDate.getTime() + 10_000, endTime: startDate.getTime() + 20_000 }]);
+  assert.equal(selected.healthKitDistance?.durationSeconds, 5400);
+  assert.equal(selected.healthKitDistance?.totalDistanceMeters, 15000);
 });
 
 test('distance-only refresh does not require or replace the existing route', async () => {
@@ -192,4 +261,31 @@ test('distance-only refresh does not require or replace the existing route', asy
   assert.equal(routes, 0);
   assert.equal(candidate.routeCoordinates, undefined);
   assert.equal(candidate.healthKitDistance?.samples.length, 0);
+});
+
+test('split refresh reads exact distance evidence without invoking unrelated native statistics or routes', async () => {
+  const sample = race().toJSON();
+  let routes = 0, statistics = 0, distanceReads = 0;
+  const proxy = { ...race(), toJSON: () => sample,
+    getWorkoutRoutes: async () => { routes++; throw new Error('unneeded route'); },
+    // Native method argument conversion can throw before it returns a Promise.
+    getStatistic: () => { statistics++; throw new Error('unneeded native statistic'); },
+  };
+  const health = adapter({ query: async () => [proxy], quantities: async (identifier, options) => {
+    distanceReads++;
+    assert.equal(identifier, 'HKQuantityTypeIdentifierDistanceWalkingRunning');
+    assert.equal(options.filter.workout, proxy);
+    assert.equal(options.filter.date, undefined);
+    return [{ uuid: 'distance-exact', quantity: 90, startDate, endDate: new Date(startDate.getTime() + 30_000),
+      sourceRevision: sample.sourceRevision }];
+  } });
+  const candidate = await health.getHealthKitWorkoutByUuid(workoutUuid, undefined, { includeRoutes: false, distanceOnly: true });
+  assert.equal(candidate.uuid, workoutUuid);
+  assert.equal(candidate.workoutInstanceId, sample.metadata.StrideOSWorkoutInstanceId);
+  assert.equal(candidate.healthKitDistance?.samples.length, 1);
+  assert.equal(candidate.healthKitDistance?.samples[0].distanceMeters, 90);
+  assert.equal(candidate.metricsSummary, undefined);
+  assert.equal(candidate.routeCoordinates, undefined);
+  assert.equal(candidate.routeAvailable, undefined);
+  assert.equal(routes, 0); assert.equal(statistics, 0); assert.equal(distanceReads, 1);
 });

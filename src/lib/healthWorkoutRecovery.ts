@@ -61,7 +61,7 @@ export function createHealthWorkoutRecovery(isCurrent: () => boolean = () => tru
       if (!selection) throw new Error('Choose a workout from the current Apple Health list.');
       const progress = (phase: HealthRecoveryPhase) => { requireCurrent(); onPhase?.(phase); };
       progress('details');
-      const candidate = await getHealthKitWorkoutByUuid(uuid, progress, { includeRoutes: !targetActivityId });
+      const candidate = await getHealthKitWorkoutByUuid(uuid, progress, { includeRoutes: !targetActivityId, distanceOnly: Boolean(targetActivityId) });
       requireCurrent();
       if (candidate.uuid !== uuid || candidate.sourceBundleIdentifier !== selection.sourceBundleIdentifier) {
         throw new Error('Apple Health returned a different workout. Nothing has been replaced.');
