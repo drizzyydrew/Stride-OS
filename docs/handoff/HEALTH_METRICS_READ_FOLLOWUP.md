@@ -1,6 +1,6 @@
 # Health Metrics Read Follow-Up
 
-Status: local source correction verified, October 22, 2026. The user authorized TestFlight submission of this correction; version 1.0.0 (101) is being prepared. Build 100 remains the last confirmed TestFlight release until the new signed archive and Apple status are verified. The latest screenshots show a selected-workout failure at the generic metrics stage, not the specific native query or decoder check. No device-root-cause or race-recovery claim is justified.
+Status: version 1.0.0 (101) committed, pushed and submitted on October 22, 2026. Actual IPA verification and Apple VALID / IN_BETA_TESTING readback are complete for the exact build and submission below. The latest device screenshots preceded this release and show only a generic metrics-stage failure. Which defect occurred on the user's phone and actual Rome split recovery remain unverified.
 
 ## Confirmed Source Defects
 
@@ -30,11 +30,23 @@ Status: local source correction verified, October 22, 2026. The user authorized 
 
 ## Release And Device Acceptance
 
-The user explicitly authorized this release with "You can submit to TestFlight if need be." Preparing commit, push and TestFlight version 1.0.0 (101) under that authorization. Existing EAS project, bundle IDs, production signing and App Store Connect app are retained. Archive/upload/Apple receipts pending; no public App Store release or tester expansion authorized.
+The user explicitly authorized this release with "You can submit to TestFlight if need be." Completed commit, push and TestFlight version 1.0.0 (101) under that authorization. Existing EAS project, bundle IDs, production signing and App Store Connect app retained. No public App Store release, invitation or tester expansion performed.
 
 - EAS account and existing production profile verified; prior build list showed build 100 latest and no 101 before this request.
 - Set local build number 101; name StrideOS and app version 1.0.0 retained.
 - Clean iOS prebuild passed with no dependency changes (`/tmp/strideos-build101-prebuild.log`). Host Info.plist explicitly reports version 1.0.0 / build 101; Watch and Live Activity project configurations also report 101.
 - Watch native contract tests passed 22/22 (`/tmp/strideos-build101-native-contracts.log`).
+
+### Build 101 Archive Receipts
+
+- Source commit `62679e22a94476176dea149e19b0e29894d63041` committed and pushed to `build-19-v3-foundation`; remote ref readback matched.
+- EAS production iOS/store build `7d6ded59-281b-48a9-93b6-6be758196a61` FINISHED at `2026-10-22T00:45:33.051Z`, version 1.0.0 (101), exact source commit above.
+- Downloaded actual IPA `/tmp/strideos-build101.ipa`, 119,859,910 bytes; ZIP integrity passed.
+- SHA-256: `7b716a6c3a8c6074d0f1c6c7dbeea2feb16f2ceaee66345cfb789c329c77c497`.
+- Archived host, Watch and Live Activity Info.plists all report version 1.0.0 / build 101, expected bundle identifiers and signature resources. Host/Watch display names remain StrideOS.
+- Actual Hermes bundle includes refresh/first-link consent and fixed distance-query, interval-range and pause-time diagnostics. Receipt `/tmp/strideos-build101-ipa-receipt.json`.
+- Exact-build submission `b2bf8fb8-509a-48d0-896a-dba157aee9c5` FINISHED at `2026-10-22T00:50:27.757Z`. Upload success and exact source/build identity verified through CLI and supported submission readback (`/tmp/strideos-build101-submission-final.json`).
+- App Store Connect app `6782788130` reports version 1.0.0 (101) VALID, internal IN_BETA_TESTING, not expired, with matching EAS build/submission IDs. Apple uploaded date `2026-10-21T17:48:03-07:00`; receipt `/tmp/strideos-build101-apple-final.json`.
+- External state READY_FOR_BETA_SUBMISSION is distinct from internal testing. Apple beta availability is not proof of a particular tester's installation, original-race refresh success or Apple split parity. Update without uninstalling and complete the device acceptance above.
 
 On a released correction, update without uninstalling and refresh the original race using the exact corresponding Health workout. Confirm durable reopening, preserved original edits/totals and no duplicate completion. If a read still fails, capture the fixed diagnostic code; do not infer the private failure from an older generic screenshot. If evidence saves but quality remains partial, inspect the displayed quality reason rather than guessing missing splits.
