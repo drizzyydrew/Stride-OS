@@ -1,6 +1,6 @@
 # Health Refresh Visibility Follow-Up
 
-Status: local source correction verified, October 22, 2026. The user explicitly approved commit, push, build and TestFlight submission of version 1.0.0 (100). Release preparation is underway; build 99 remains the last confirmed TestFlight release until the new signed archive and Apple status are verified.
+Status: version 1.0.0 (100) committed, pushed and submitted on October 22, 2026. The signed archive is verified and Apple reports VALID / IN_BETA_TESTING for the exact EAS build and submission below. The user's installed-device Health refresh and Rome split parity remain unverified.
 
 ## Report And Confirmed Defect
 
@@ -40,4 +40,15 @@ Update without uninstalling. Open the original GPS race and confirm refresh is v
 - Set local iOS build number to 100; app display name remains StrideOS, version 1.0.0.
 - Clean iOS prebuild passed without package/dependency changes (`/tmp/strideos-build100-prebuild.log`). Generated host Info.plist has explicit CFBundleVersion 100 and version 1.0.0; Watch and Live Activity project versions are also 100.
 - Watch native contract suite passed 22/22 (`/tmp/strideos-build100-native-contracts.log`). Protected Watch and achievement source paths remain unchanged. Whitespace validation passed.
-- Signed archive, exact source revision, upload and Apple processing receipts pending.
+- Binary source commit: `ed2fb557f9bfefa24eacbecef5e85b7022096782`, pushed to `build-19-v3-foundation` and verified by remote ref readback.
+
+## Signed Archive And TestFlight Receipts
+
+- EAS production iOS/store build: `7258082c-d524-4b1b-834f-4f27535bce3c`, FINISHED at `2026-10-21T23:52:04.699Z`; version 1.0.0 (100), exact source commit above.
+- Downloaded actual IPA: `/tmp/strideos-build100.ipa`, 119,858,786 bytes; ZIP integrity passed.
+- SHA-256: `ea17800dc464878957bbfece49210dfa2650196ae5ea180138cf910f00917f4a`.
+- Inspected archived host, Watch and Live Activity Info.plists: all version 1.0.0 / build 100, expected bundle IDs and signature resources present. Host and Watch display names remain StrideOS.
+- Actual Hermes bundle contains Refresh splits from Apple Health, Use Health distance for this activity?, No new activity is created., and Original Health distance:. Receipt: `/tmp/strideos-build100-ipa-receipt.json`.
+- Submitted only that identified build using existing production credentials. EAS submission `97883c48-14e5-48a9-a962-5c35eadf9fb4` FINISHED at `2026-10-22T00:01:29.612Z`; successful upload confirmed by CLI and submission readback (`/tmp/strideos-build100-submission-final.json`).
+- App Store Connect app `6782788130` reports build 100 VALID, internal IN_BETA_TESTING, not expired, and matching EAS build/submission IDs. Uploaded date `2026-10-21T16:59:23-07:00`; readback `/tmp/strideos-build100-apple-final.json`.
+- External state READY_FOR_BETA_SUBMISSION is distinct from internal testing. No public App Store release, tester invitation or distribution expansion performed. Apple beta state does not establish a particular tester's installation or actual race-data acceptance.
