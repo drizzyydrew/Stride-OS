@@ -4,6 +4,7 @@ import { decodeHealthDistanceEvidence, HealthDistanceReadError } from '../../src
 import { mergeHealthDistanceEvidence } from '../../src/utils/healthDistanceRefresh';
 import { buildHealthKitActivityDraft } from '../../src/utils/healthKitImport';
 import { sanitizeActivityMetrics } from '../../src/utils/activityLoad';
+import { buildHealthDistanceSplits } from '../../src/utils/healthDistanceSplits';
 import type { Activity } from '../../src/types/activity';
 
 const startTime = Date.parse('2026-10-01T07:00:00Z');
@@ -31,6 +32,54 @@ test('Health distance decoder scopes provenance, collapses identical IDs, and ne
   assert.equal(e.totalDistanceMeters, 180);
   assert.equal(e.version, 1);
   assert.throws(() => decodeHealthDistanceEvidence([a, { ...a, quantity: 91 }], context, [], eventTypes), /conflicting/);
+});
+
+test('exact-workout v2 retains actual associated sample writers while unscoped v1 retains its original policy', () => {
+  const raw = [sample(), { ...sample('distance-2', 30_000), sourceRevision: { source: { bundleIdentifier: 'synthetic.sensor' } } }];
+  const legacy = decodeHealthDistanceEvidence(raw, context, [], eventTypes);
+  assert.equal(legacy.version, 1);
+  assert.equal(legacy.samples.length, 1);
+  const scoped = decodeHealthDistanceEvidence([...raw, { ...raw[0], uuid: 'manual', metadata: { HKWasUserEntered: true } }],
+    context, [], eventTypes, { workoutUuid: context.uuid });
+  assert.equal(scoped.version, 2);
+  assert.deepEqual(scoped.sampleScope, { kind: 'exact_workout', workoutUuid: context.uuid });
+  assert.equal(scoped.sourceBundleIdentifier, context.sourceBundleIdentifier);
+  assert.deepEqual(scoped.samples.map(s => s.sourceBundleIdentifier), [context.sourceBundleIdentifier, 'synthetic.sensor']);
+  const linked = mergeHealthDistanceEvidence(activity(), scoped);
+  assert.equal(buildHealthDistanceSplits(linked, 'metric')?.status, 'complete');
+  assert.throws(() => decodeHealthDistanceEvidence(raw, context, [], eventTypes, { workoutUuid: 'different' }), /DISTANCE_SCOPE_INVALID/);
+  for (const writer of ['', 'unknown', undefined, ' unknown ']) {
+    assert.throws(() => decodeHealthDistanceEvidence([{ ...sample(), sourceRevision: { source: { bundleIdentifier: writer } } }],
+      context, [], eventTypes, { workoutUuid: context.uuid }), /DISTANCE_SAMPLE_SOURCE_UNKNOWN/);
+  }
+  assert.throws(() => decodeHealthDistanceEvidence([sample(), { ...sample(), sourceRevision: { source: { bundleIdentifier: 'synthetic.sensor' } } }],
+    context, [], eventTypes, { workoutUuid: context.uuid }), /DISTANCE_SAMPLE_CONFLICT/);
+});
+
+test('v1 upgrades losslessly to valid v2 but rejects malformed scope, downgrade, writer changes and degraded saved analysis', () => {
+  const row = mergeHealthDistanceEvidence(activity(), evidence());
+  const before = JSON.stringify(row);
+  const scoped = () => ({ ...decodeHealthDistanceEvidence([sample(), sample('distance-2', 30_000)], context, [], eventTypes,
+    { workoutUuid: context.uuid }), retrievedAt: row.metrics.healthKitDistance!.retrievedAt + 1 });
+  const upgraded = mergeHealthDistanceEvidence(row, scoped());
+  assert.equal(upgraded.metrics.healthKitDistance?.version, 2);
+  assert.deepEqual(upgraded.metrics.healthKitDistance?.samples, row.metrics.healthKitDistance?.samples);
+  assert.equal(buildHealthDistanceSplits(upgraded, 'metric')?.status, 'complete');
+  assert.throws(() => mergeHealthDistanceEvidence(upgraded, { ...evidence(), retrievedAt: scoped().retrievedAt + 1 }), /context changed/);
+  for (const sampleScope of [undefined, { kind: 'date', workoutUuid: context.uuid }, { kind: 'exact_workout', workoutUuid: 'different' }]) {
+    assert.throws(() => mergeHealthDistanceEvidence(row, { ...scoped(), sampleScope } as any), /safely/);
+  }
+  assert.throws(() => mergeHealthDistanceEvidence(row, { ...scoped(), samples: scoped().samples.map((s, i) => i ? s
+    : { ...s, sourceBundleIdentifier: 'different-writer' }) }), /conflicting distance/);
+  const overlap = { ...sample('additional'), quantity: 0, sourceRevision: { source: { bundleIdentifier: 'synthetic.sensor' } } };
+  const conflicting = decodeHealthDistanceEvidence([sample(), sample('distance-2', 30_000), overlap], context, [], eventTypes,
+    { workoutUuid: context.uuid });
+  conflicting.retrievedAt = scoped().retrievedAt + 1;
+  assert.throws(() => mergeHealthDistanceEvidence(row, conflicting), /make saved splits unavailable/);
+  assert.throws(() => mergeHealthDistanceEvidence(upgraded, conflicting), /make saved splits unavailable/);
+  const duplicate = { ...scoped(), samples: [...scoped().samples, { ...scoped().samples[0]!, sourceBundleIdentifier: 'different-writer' }] };
+  assert.throws(() => mergeHealthDistanceEvidence(activity(), duplicate), /conflicting.*identifiers/);
+  assert.equal(JSON.stringify(row), before);
 });
 
 test('malformed, outside-workout, missing-ID and oversized distance evidence fail explicitly', () => {

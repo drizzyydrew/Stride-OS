@@ -10,6 +10,7 @@ import { createHydrationSafeStorage } from '../../src/store/hydrationSafeStorage
 import type { Activity } from '../../src/types/activity';
 import { buildHealthKitActivityDraft } from '../../src/utils/healthKitImport';
 import { decodeHealthDistanceEvidence } from '../../src/utils/healthDistanceImport';
+import { buildHealthDistanceSplits } from '../../src/utils/healthDistanceSplits';
 
 function loadSource<T>(file: string, mocks: Record<string, unknown>): T {
   const filename = resolve(file);
@@ -41,7 +42,8 @@ function gate() {
   return { promise, resolve };
 }
 
-async function harness(options: { throwStatistics?: boolean; distanceFailure?: 'sync' | 'async'; redundantResume?: boolean } = {}) {
+async function harness(options: { throwStatistics?: boolean; distanceFailure?: 'sync' | 'async'; redundantResume?: boolean;
+  associatedWriters?: boolean; emptyDistance?: boolean } = {}) {
   const values = new Map<string, string>();
   const hooks: {
     readError?: Error;
@@ -107,6 +109,12 @@ async function harness(options: { throwStatistics?: boolean; distanceFailure?: '
       queryQuantitySamples: () => {
         if (options.distanceFailure === 'sync') throw new Error('private native error');
         if (options.distanceFailure === 'async') return Promise.reject(new Error('private native error'));
+        if (options.emptyDistance) return Promise.resolve([]);
+        if (options.associatedWriters) return Promise.resolve(Array.from({ length: 180 }, (_, index) => ({
+          uuid: `associated-${index}`, quantity: 15000 / 180, startDate: new Date(startDate.getTime() + index * 30_000),
+          endDate: new Date(startDate.getTime() + (index + 1) * 30_000),
+          sourceRevision: { source: { bundleIdentifier: 'com.apple.synthetic-sensor' } },
+        })));
         return Promise.resolve([{ uuid: 'synthetic-distance', quantity: 100, startDate,
           endDate: new Date(startDate.getTime() + 30_000), sourceRevision: { source: { bundleIdentifier: bundle } } }]);
       },
@@ -498,6 +506,49 @@ test('distance query failures leave linked and first-link activities byte-for-by
     assert.equal(h.activityReads, beforeReads, 'A read failure never enters the durable mutation');
     assert.equal(h.recalculations, recalcs);
     assert.equal(h.routeReads, 0); assert.equal(h.statisticReads, 0);
+  }
+});
+
+test('associated-writer distance reaches both refresh paths and durable readback without changing race summaries or claiming early success', async () => {
+  for (const linked of [true, false]) {
+    const h = await harness({ throwStatistics: true, associatedWriters: true });
+    const id = h.store.getState().addActivity({ ...draft, id: 'kept-race', notes: 'Keep my race note',
+      healthKit: linked ? draft.healthKit : undefined, metrics: { ...draft.metrics, distanceMeters: 15200, distanceSource: 'gps' } });
+    await h.store.getState().awaitPersistence(h.owner.capture()!);
+    const before = h.store.getState().getById(id)!;
+    const recalcs = h.recalculations;
+    const recovery = h.linkRecovery(id);
+    if (!linked) await recovery.listRecent();
+    const refresh = () => linked ? h.refresh(id, () => true) : recovery.restoreSelected(uuid);
+    h.hooks.readError = new Error('Unconfirmed scope save');
+    await assert.rejects(refresh(), /Unconfirmed scope save/);
+    await refresh();
+    const saved = h.diskActivities()[0];
+    assert.equal(h.diskActivities().length, 1);
+    assert.equal(saved.id, id);
+    assert.equal(saved.notes, before.notes);
+    assert.equal(saved.metrics.distanceMeters, before.metrics.distanceMeters);
+    assert.deepEqual(saved.trainingLoad, before.trainingLoad);
+    assert.equal(saved.metrics.healthKitDistance?.version, 2);
+    assert.deepEqual(saved.metrics.healthKitDistance?.sampleScope, { kind: 'exact_workout', workoutUuid: uuid });
+    assert.equal(saved.metrics.healthKitDistance?.sourceBundleIdentifier, bundle);
+    assert.ok(saved.metrics.healthKitDistance?.samples.every(s => s.sourceBundleIdentifier === 'com.apple.synthetic-sensor'));
+    assert.equal(buildHealthDistanceSplits(saved, 'metric')?.status, 'complete');
+    assert.equal(h.routeReads, 0); assert.equal(h.statisticReads, 0); assert.equal(h.recalculations, recalcs);
+  }
+});
+
+test('empty reader responses preserve existing linked and unlinked recordings without entering the mutation', async () => {
+  for (const linked of [true, false]) {
+    const h = await harness({ throwStatistics: true, emptyDistance: true });
+    const id = h.store.getState().addActivity({ ...draft, id: 'kept-race', healthKit: linked ? draft.healthKit : undefined });
+    await h.store.getState().awaitPersistence(h.owner.capture()!);
+    const before = h.values.get('activity-store');
+    const recovery = h.linkRecovery(id);
+    if (!linked) await recovery.listRecent();
+    await assert.rejects(linked ? h.refresh(id, () => true) : recovery.restoreSelected(uuid), /DISTANCE_SAMPLES_EMPTY/);
+    assert.equal(h.values.get('activity-store'), before);
+    assert.equal(h.store.getState().activities.length, 1);
   }
 });
 

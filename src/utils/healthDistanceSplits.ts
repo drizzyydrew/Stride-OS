@@ -3,6 +3,7 @@ import type { UnitSystem } from '../store/settingsStore';
 import { formatPaceSecPerMile, formatSpeedMps } from '../lib/units';
 import { weightedSensorMean, type OutdoorSplit } from './outdoorAnalysis';
 import { isOutdoorSport, OUTDOOR_SPORTS } from './outdoorSports';
+import { hasSupportedHealthDistanceScope, hasValidHealthDistanceSampleSource } from './healthDistanceImport';
 
 export type HealthDistanceSplit = OutdoorSplit & {
   /** Maximum endpoint-time error from unknown allocation within its interval, not a confidence interval. */
@@ -36,7 +37,7 @@ export function buildHealthDistanceSplits(activity: Activity, units: UnitSystem)
   const evidence = activity.metrics.healthKitDistance;
   if (evidence === undefined) return undefined;
   const link = activity.healthKit;
-  if (evidence && (evidence.version !== 1 || !Number.isFinite(evidence.retrievedAt) || evidence.retrievedAt <= 0)) {
+  if (evidence && (!hasSupportedHealthDistanceScope(evidence) || !Number.isFinite(evidence.retrievedAt) || evidence.retrievedAt <= 0)) {
     return withheld('unavailable', 'Health distance evidence has an unsupported version or invalid retrieval provenance.');
   }
   if (!evidence || !link || !UUID.test(evidence.workoutUuid)
@@ -62,7 +63,7 @@ export function buildHealthDistanceSplits(activity: Activity, units: UnitSystem)
 
   const byId = new Map<string, HealthKitDistanceEvidence['samples'][number]>();
   for (const sample of evidence.samples) {
-    if (sample && sample.sourceBundleIdentifier !== evidence.sourceBundleIdentifier) {
+    if (sample && !hasValidHealthDistanceSampleSource(evidence, sample.sourceBundleIdentifier)) {
       return withheld('partial', 'Health distance contains a sample from a different or unknown source.');
     }
     if (!sample || typeof sample.id !== 'string' || !sample.id.trim()
@@ -76,7 +77,7 @@ export function buildHealthDistanceSplits(activity: Activity, units: UnitSystem)
       return withheld('partial', 'Apple Health exposed distance intervals coarser than this build\'s 30-second resolution limit. Finer-grained distance data is unavailable to this build; split paces were not calculated.');
     }
     const previous = byId.get(sample.id);
-    if (previous && (previous.startTime !== sample.startTime || previous.endTime !== sample.endTime
+    if (previous && (previous.sourceBundleIdentifier !== sample.sourceBundleIdentifier || previous.startTime !== sample.startTime || previous.endTime !== sample.endTime
       || previous.distanceMeters !== sample.distanceMeters)) {
       return withheld('partial', 'Health distance contains conflicting duplicate sample identifiers.');
     }

@@ -117,7 +117,6 @@ export type ActivityCoordinate = {
 
 /** Original workout-associated distance intervals, never inferred from a map. */
 export type HealthKitDistanceEvidence = {
-  version: 1;
   retrievedAt: number;
   workoutUuid: string;
   sourceBundleIdentifier: string;
@@ -127,7 +126,10 @@ export type HealthKitDistanceEvidence = {
   totalDistanceMeters?: number;
   samples: { id: string; sourceBundleIdentifier: string; startTime: number; endTime: number; distanceMeters: number }[];
   recordingPauses: { startTime: number; endTime: number }[];
-};
+} & ({ version: 1; sampleScope?: never } | {
+  version: 2;
+  sampleScope: { kind: 'exact_workout'; workoutUuid: string };
+});
 
 export type HeartRateZoneSeconds = Partial<Record<1 | 2 | 3 | 4 | 5, number>>;
 

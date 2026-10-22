@@ -299,6 +299,27 @@ test('wrong or absent per-sample provenance rejects the whole timeline', () => {
   }
 });
 
+test('v2 exact-workout scope accepts known actual writers but not missing proof, unknown writers or duplicate-writer conflicts', () => {
+  const scoped = (): HealthKitDistanceEvidence => ({ ...evidence(), version: 2,
+    sampleScope: { kind: 'exact_workout', workoutUuid: UUID },
+    samples: evidence().samples.map((s, index) => ({ ...s, sourceBundleIdentifier: index % 2 ? 'synthetic.sensor' : BUNDLE })) });
+  const run = activity(scoped());
+  assert.equal(buildHealthDistanceSplits(run, 'metric')?.status, 'complete');
+  for (const scope of [undefined, { kind: 'date', workoutUuid: UUID }, { kind: 'exact_workout', workoutUuid: 'other' }]) {
+    withheld(activity({ ...scoped(), sampleScope: scope } as any), /unsupported version|provenance/, 'unavailable');
+  }
+  for (const writer of ['', 'unknown']) {
+    const invalid = scoped(); invalid.samples[0].sourceBundleIdentifier = writer;
+    withheld(activity(invalid), /different or unknown source/);
+  }
+  const conflict = scoped();
+  conflict.samples.push({ ...conflict.samples[0], sourceBundleIdentifier: 'different.writer' });
+  withheld(activity(conflict), /conflicting duplicate/);
+  const overlap = scoped();
+  overlap.samples.push({ ...overlap.samples[0], id: 'additional', sourceBundleIdentifier: 'another.writer' });
+  withheld(activity(overlap), /overlap/);
+});
+
 test('interpolated boundaries expose worst-case allocation timing bounds, not exact Apple timing', () => {
   const result = buildHealthDistanceSplits(activity(evidence(Array<number>(100).fill(40))), 'imperial')!;
   const fraction = (MILE % 40) / 40;

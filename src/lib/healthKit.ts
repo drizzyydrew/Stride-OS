@@ -601,7 +601,10 @@ async function candidateFromWorkoutProxy(raw: HealthWorkoutProxy, proxy: HealthW
     } catch {
       throw new HealthDistanceReadError('DISTANCE_QUERY_FAILED');
     }
-    healthKitDistance = decodeHealthDistanceEvidence(samples, candidate, raw.events ?? [], Health.WorkoutEventType);
+    if (distanceOnly && !samples.length) throw new HealthDistanceReadError('DISTANCE_SAMPLES_EMPTY');
+    healthKitDistance = decodeHealthDistanceEvidence(samples, candidate, raw.events ?? [], Health.WorkoutEventType,
+      { workoutUuid: candidate.uuid });
+    if (distanceOnly && !healthKitDistance.samples.length) throw new HealthDistanceReadError('DISTANCE_SAMPLES_MANUAL_ONLY');
   }
   const snowDistance = !distanceOnly && (type === 'downhill_skiing' || type === 'snowboarding') && proxy.getStatistic
     && healthTypeAvailable('HKQuantityTypeIdentifierDistanceDownhillSnowSports')

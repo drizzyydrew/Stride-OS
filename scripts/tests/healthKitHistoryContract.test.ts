@@ -229,7 +229,8 @@ test('interval and pause validation errors survive the adapter without exposing 
   for (const entry of cases) {
     const raw = { ...race().toJSON(), events: entry.events ?? [] };
     const health = adapter({ query: async () => [{ ...race(), toJSON: () => raw }],
-      quantities: async () => entry.quantity ? [entry.quantity] : [] });
+      quantities: async () => [entry.quantity ?? { uuid: 'distance-valid', quantity: 90, startDate,
+        endDate: new Date(startDate.getTime() + 30_000), sourceRevision }] });
     await assert.rejects(health.getHealthKitWorkoutByUuid(workoutUuid, undefined, { distanceOnly: true }), error => {
       assert.match((error as Error).message, new RegExp(entry.code));
       assert.doesNotMatch((error as Error).message, /private-sample|11111111|2026-10-01|unlock/i);
@@ -245,7 +246,9 @@ test('real exported event enum permits redundant resumes while preserving explic
     { type: WorkoutEventType.resume, startDate: new Date(startDate.getTime() + 20_000), endDate: new Date(startDate.getTime() + 20_000) },
     { type: WorkoutEventType.resume, startDate: endDate, endDate },
   ] };
-  const health = adapter({ query: async () => [{ ...race(), toJSON: () => raw }], quantities: async () => [] });
+  const health = adapter({ query: async () => [{ ...race(), toJSON: () => raw }], quantities: async () => [{
+    uuid: 'distance-valid', quantity: 90, startDate, endDate: new Date(startDate.getTime() + 30_000), sourceRevision: raw.sourceRevision,
+  }] });
   const selected = await health.getHealthKitWorkoutByUuid(workoutUuid, undefined, { distanceOnly: true });
   assert.deepEqual(selected.healthKitDistance?.recordingPauses,
     [{ startTime: startDate.getTime() + 10_000, endTime: startDate.getTime() + 20_000 }]);
@@ -288,4 +291,41 @@ test('split refresh reads exact distance evidence without invoking unrelated nat
   assert.equal(candidate.routeCoordinates, undefined);
   assert.equal(candidate.routeAvailable, undefined);
   assert.equal(routes, 0); assert.equal(statistics, 0); assert.equal(distanceReads, 1);
+});
+
+test('exact native workout query retains differently authored samples with explicit v2 association, not rewritten provenance', async () => {
+  const proxy = race();
+  const writer = 'com.apple.synthetic-sensor';
+  const health = adapter({ query: async () => [proxy], quantities: async (_id, options) => {
+    assert.equal(options.filter.workout, proxy);
+    assert.equal(options.filter.date, undefined);
+    return [{ uuid: 'different-writer', quantity: 90, startDate, endDate: new Date(startDate.getTime() + 30_000),
+      sourceRevision: { source: { bundleIdentifier: writer } } }];
+  } });
+  const selected = await health.getHealthKitWorkoutByUuid(workoutUuid, undefined, { distanceOnly: true });
+  assert.equal(selected.healthKitDistance?.version, 2);
+  assert.deepEqual(selected.healthKitDistance?.sampleScope, { kind: 'exact_workout', workoutUuid });
+  assert.equal(selected.healthKitDistance?.sourceBundleIdentifier, proxy.sourceRevision.source.bundleIdentifier);
+  assert.equal(selected.healthKitDistance?.samples[0].sourceBundleIdentifier, writer);
+  assert.equal(selected.healthKitDistance?.samples[0].distanceMeters, 90);
+});
+
+test('empty bridge-visible results, manual-only samples and unreadable provenance have distinct fixed diagnostics', async () => {
+  const valid = { uuid: 'private-quantity-id', quantity: 90, startDate, endDate: new Date(startDate.getTime() + 30_000),
+    sourceRevision: race().sourceRevision };
+  for (const [samples, code] of [
+    [[], 'DISTANCE_SAMPLES_EMPTY'],
+    [[{ ...valid, metadata: { HKWasUserEntered: true } }], 'DISTANCE_SAMPLES_MANUAL_ONLY'],
+    [[{ ...valid, sourceRevision: undefined }], 'DISTANCE_SAMPLE_SOURCE_UNKNOWN'],
+  ] as const) {
+    const health = adapter({ quantities: async () => [...samples] });
+    await assert.rejects(health.getHealthKitWorkoutByUuid(workoutUuid, undefined, { distanceOnly: true }), error => {
+      assert.match((error as Error).message, new RegExp(code));
+      assert.doesNotMatch((error as Error).message, /private-quantity|permission denied|samples do not exist|unlock|check.*access|settings/i);
+      return true;
+    });
+  }
+  const completeRestore = await adapter({ quantities: async () => [] }).getHealthKitWorkoutByUuid(workoutUuid);
+  assert.equal(completeRestore.routeCoordinates?.length, 2, 'Empty distance evidence must not block full workout/route recovery');
+  assert.equal(completeRestore.healthKitDistance?.samples.length, 0);
 });

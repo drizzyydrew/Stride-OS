@@ -1,7 +1,12 @@
 import type { Activity, ActivityType, HealthKitDistanceEvidence, HealthKitImportMetadata } from '../types/activity';
 import { hasRecordedEvidence } from './manualActivityEdit';
+import { hasSupportedHealthDistanceScope, hasValidHealthDistanceSampleSource } from './healthDistanceImport';
+import { buildHealthDistanceSplits } from './healthDistanceSplits';
 
 export type HealthDistanceLink = { activityType: ActivityType; metadata: HealthKitImportMetadata };
+type DistanceSample = HealthKitDistanceEvidence['samples'][number];
+const sameSample = (a: DistanceSample, b: DistanceSample) => a.id === b.id && a.sourceBundleIdentifier === b.sourceBundleIdentifier
+  && a.startTime === b.startTime && a.endTime === b.endTime && a.distanceMeters === b.distanceMeters;
 
 export function supportsHealthSplitRefresh(activity: Activity): boolean {
   return !activity.indoor && ['running', 'walking', 'hiking', 'cycling'].includes(activity.activityType) && hasRecordedEvidence(activity);
@@ -11,8 +16,19 @@ export function supportsHealthSplitRefresh(activity: Activity): boolean {
 export function mergeHealthDistanceEvidence(activity: Activity, incoming: HealthKitDistanceEvidence,
   workoutInstanceId?: string, link?: HealthDistanceLink): Activity {
   let health = activity.healthKit;
-  if (incoming.version !== 1 || !Number.isFinite(incoming.retrievedAt) || incoming.samples.length > 100_000
+  if (!hasSupportedHealthDistanceScope(incoming) || !Number.isFinite(incoming.retrievedAt) || incoming.samples.length > 100_000
     || JSON.stringify(incoming).length > 16_000_000) throw new Error('Health distance evidence cannot be saved safely. Existing data was kept.');
+  if (incoming.samples.some(sample => !hasValidHealthDistanceSampleSource(incoming, sample.sourceBundleIdentifier))) {
+    throw new Error('Health distance sample provenance cannot be confirmed. Existing data was kept.');
+  }
+  const nextSamples = new Map<string, DistanceSample>();
+  for (const sample of incoming.samples) {
+    const prior = nextSamples.get(sample.id);
+    if (typeof sample.id !== 'string' || !sample.id.trim() || prior && !sameSample(prior, sample)) {
+      throw new Error('Health distance has conflicting or missing sample identifiers. Existing data was kept.');
+    }
+    nextSamples.set(sample.id, sample);
+  }
   if (link) {
     const activityClaims = [link.metadata.strideOSActivityId, health?.strideOSActivityId].filter(value => value?.trim());
     const workoutClaims = [activity.legacyWorkoutId, link.metadata.strideOSWorkoutId, health?.strideOSWorkoutId].filter(value => value?.trim());
@@ -48,21 +64,28 @@ export function mergeHealthDistanceEvidence(activity: Activity, incoming: Health
     if (previous.workoutUuid !== incoming.workoutUuid || previous.sourceBundleIdentifier !== incoming.sourceBundleIdentifier) {
       throw new Error('Saved distance evidence belongs to a different Health workout. Nothing was replaced.');
     }
-    if (previous.version !== incoming.version || previous.startTime !== incoming.startTime || previous.endTime !== incoming.endTime
+    const upgradesScope = previous.version === 1 && incoming.version === 2;
+    if (!hasSupportedHealthDistanceScope(previous) || (previous.version !== incoming.version && !upgradesScope)
+      || previous.startTime !== incoming.startTime || previous.endTime !== incoming.endTime
       || previous.durationSeconds !== incoming.durationSeconds
       || previous.totalDistanceMeters != null && previous.totalDistanceMeters !== incoming.totalDistanceMeters) {
       throw new Error('Apple Health workout totals or time context changed. Existing distance evidence was kept.');
     }
     if (incoming.retrievedAt < previous.retrievedAt) throw new Error('A newer Health refresh is already saved. Existing data was kept.');
-    const next = new Map(incoming.samples.map(sample => [sample.id, sample]));
     for (const prior of previous.samples) {
-      const sample = next.get(prior.id);
-      if (!sample || JSON.stringify(sample) !== JSON.stringify(prior)) {
+      const sample = nextSamples.get(prior.id);
+      if (!sample || !sameSample(sample, prior)) {
         throw new Error('Apple Health returned less or conflicting distance evidence. Existing data was kept.');
       }
     }
     if (previous.recordingPauses.length && JSON.stringify(previous.recordingPauses) !== JSON.stringify(incoming.recordingPauses)) {
       throw new Error('Apple Health pause evidence changed. Existing data was kept.');
+    }
+    for (const units of ['metric', 'imperial'] as const) {
+      if (buildHealthDistanceSplits(activity, units)?.status === 'complete'
+        && buildHealthDistanceSplits({ ...activity, healthKit: health, metrics: { ...activity.metrics, healthKitDistance: incoming } }, units)?.status !== 'complete') {
+        throw new Error('New Health distance data would make saved splits unavailable. Existing evidence was kept.');
+      }
     }
   }
   return { ...activity, ...(activity.healthKit ? {} : { healthKit: health }), metrics: { ...activity.metrics, healthKitDistance: incoming }, updatedAt: Date.now() };
