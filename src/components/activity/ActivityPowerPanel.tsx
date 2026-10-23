@@ -1,14 +1,31 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Collapsible, Host, RNHostView } from '@expo/ui';
+import { useFocusEffect } from 'expo-router';
 import type { Activity } from '../../types/activity';
 import type { UnitSystem } from '../../store/settingsStore';
 import { useActivityStore } from '../../store/activityStore';
 import { useActiveProfile } from '../../store/profileStore';
 import { useColors } from '../../theme/useColors';
-import { devicePowerSummary, powerEstimateLabel, powerModelExclusionReason, validActivityPowerEstimate } from '../../utils/outdoorPower';
+import { validActivityPowerEstimate } from '../../utils/outdoorPower';
 import { automaticPowerInputKey, withAutomaticActivityPower } from '../../utils/automaticActivityPower';
 import { profilePowerMass } from '../../utils/profilePower';
-import { storedClimbingWork } from '../../utils/climbingWork';
+import { activityPowerPresentation, formatActivityPowerValue } from '../../utils/activityPowerPresentation';
+import { energyReferencePool, equivalentRuntimeSeconds, formatEquivalentTime, formatPowerRatio, pickPowerReference, powerReferencePool, referenceDetails } from '../../utils/powerEquivalents';
+import { useThemeMode } from '../../store/themeStore';
+
+function PowerDisclosure({ label, open, onChange, children }: { label: string; open: boolean; onChange: (open: boolean) => void; children: ReactNode }) {
+  const C = useColors();
+  const mode = useThemeMode();
+  return <View style={[s.disclosure, { borderColor: C.border }]}>
+    <Host matchContents={{ vertical: true }} colorScheme={mode} seedColor={C.primary} style={{ width: '100%' }} ignoreSafeArea="all">
+      <Collapsible label={label} labelStyle={{ fontSize: 15, fontWeight: '600', color: C.text }} isOpen={open} onOpenChange={onChange}>
+        {open ? <RNHostView matchContents><View style={s.disclosureBody}>{children}</View></RNHostView> : null}
+      </Collapsible>
+    </Host>
+  </View>;
+}
 
 export default function ActivityPowerPanel({ activity, units }: { activity: Activity; units: UnitSystem }) {
   const C = useColors();
@@ -18,6 +35,15 @@ export default function ActivityPowerPanel({ activity, units }: { activity: Acti
   const mass = profilePowerMass(profile);
   const profileKey = mass ? `${mass.athleteId}:${mass.bodyMassKg}` : 'unavailable';
   const [saveError, setSaveError] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [comparisonOpen, setComparisonOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [random, setRandom] = useState(() => Math.random());
+  const [linkError, setLinkError] = useState(false);
+  useFocusEffect(useCallback(() => {
+    setRandom(Math.random());
+    setInfoOpen(false); setComparisonOpen(false); setDetailsOpen(false); setLinkError(false);
+  }, [activity.id]));
   const attempted = useRef<string | null>(null);
   const inputKey = useMemo(() => automaticPowerInputKey(activity), [activity]);
   useEffect(() => {
@@ -34,64 +60,91 @@ export default function ActivityPowerPanel({ activity, units }: { activity: Acti
     } catch { setSaveError(true); }
   }, [activity, inputKey, profileKey, updateActivity]);
 
-  const device = devicePowerSummary(activity);
-  const entered = !device && ['cycling', 'indoor_cycling'].includes(activity.activityType)
-    && Number.isFinite(activity.metrics.cyclingPowerWatts) && activity.metrics.cyclingPowerWatts! >= 0
-    && activity.metrics.metricSources?.power !== 'model_estimate' ? activity.metrics.cyclingPowerWatts : undefined;
-  const estimate = !device && entered == null && validActivityPowerEstimate(activity, activity.metrics.powerEstimate) ? activity.metrics.powerEstimate : undefined;
-  const cycling = activity.activityType === 'cycling';
-  const running = activity.activityType === 'running';
-  const climbingOnly = activity.activityType === 'hiking' || activity.activityType === 'walking';
-  const climbingWork = storedClimbingWork(activity);
-  if (!cycling && !running && !climbingOnly && !device && entered == null) return null;
+  const presentation = useMemo(() => activityPowerPresentation(activity, units, profile), [activity, units, profile]);
+  const comparison = useMemo(() => presentation?.value != null && presentation.value > 0
+    ? pickPowerReference(presentation.quantity === 'climbing' ? energyReferencePool() : powerReferencePool(presentation.value), random) : undefined,
+  [activity.id, presentation?.value, presentation?.quantity, random]);
+  if (!presentation) return null;
+  const reference = comparison ? referenceDetails(comparison) : null;
+  const seconds = presentation.quantity === 'climbing' && comparison ? equivalentRuntimeSeconds(presentation.value!, comparison.watts) : null;
+  const estimate = presentation.estimate;
   const comparable = estimate ? history.filter(item => item.id !== activity.id
     && validActivityPowerEstimate(item, item.metrics.powerEstimate)
     && item.metrics.powerEstimate?.modelId === estimate.modelId && item.metrics.powerEstimate.version === estimate.version
     && item.metrics.powerEstimate.quantity === estimate.quantity)
     .sort((a, b) => b.startTime - a.startTime).slice(0, 5) : [];
   return <View style={[s.root, { borderColor: C.border }]}>
-    <Text style={[s.heading, { color: C.text }]}>{climbingOnly ? 'Climbing work' : 'Power'}</Text>
-    {device ? <>
-      <Text selectable style={[s.value, { color: C.text }]}>{Math.round(device.watts)} W</Text>
-      <Text style={[s.copy, { color: C.textDim }]}>{device.label} · {device.coverageRatio == null ? 'Coverage not recorded' : `${Math.round(device.coverageRatio * 100)}% sensor coverage`}</Text>
-    </> : entered != null ? <>
-      <Text selectable style={[s.value, { color: C.text }]}>{Math.round(entered)} W</Text>
-      <Text style={[s.copy, { color: C.textDim }]}>Entered average power · sensor provenance unavailable</Text>
-    </> : null}
-    {estimate?.averageWatts != null ? <>
-      <Text style={[s.copy, { color: C.primary }]}>{powerEstimateLabel(estimate)}</Text>
-      <Text selectable style={[s.value, { color: C.text }]}>{Math.round(estimate.averageWatts)} W</Text>
-      <Text style={[s.copy, { color: C.textDim }]}>Model {estimate.modelId} v{estimate.version} · {Math.round(estimate.coverageRatio * 100)}% GPS coverage</Text>
-      {estimate.inputs.filter(input => input.unit === 'kg').map(input => <Text key={input.name} style={[s.copy, { color: C.textDim }]}>{input.name}: {input.value} kg</Text>)}
-      {estimate.assumptions.map(note => <Text key={note} style={[s.copy, { color: C.textMuted }]}>{note}</Text>)}
-    </> : null}
-    {climbingWork != null ? <>
-      <Text selectable style={[s.value, { color: C.text }]}>{Math.round(climbingWork.kilojoules)} kJ</Text>
-      {climbingWork.averageClimbingWatts != null ? <>
-        <Text selectable style={[s.value, { color: C.text }]}>{Math.round(climbingWork.averageClimbingWatts)} W</Text>
-        <Text style={[s.copy, { color: C.textDim }]}>Average climbing-component power · {climbingWork.seconds} {climbingWork.timeBasis === 'active' ? 'active seconds' : climbingWork.timeBasis === 'elapsed' ? 'elapsed seconds, including pauses; active time unavailable' : 'seconds of activity duration; active time unavailable'}</Text>
-      </> : <Text style={[s.copy, { color: C.textDim }]}>Climbing power unavailable without a valid positive time.</Text>}
-      <Text style={[s.copy, { color: C.textMuted }]}>{climbingWork.note}</Text>
-      <Text style={[s.copy, { color: C.textDim }]}>Mass snapshot: {(climbingWork.bodyMassKg * (units === 'metric' ? 1 : 2.20462)).toFixed(1)} {units === 'metric' ? 'kg' : 'lb'} · {climbingWork.weightProvenance.source === 'user_entered' ? 'user-entered profile weight' : 'inferred legacy non-default weight; entry date unknown'} · ascent source: {climbingWork.elevationSource}</Text>
-    </> : null}
-    {!device && entered == null && !estimate && !climbingWork ? <Text style={[s.copy, { color: C.textMuted }]}>
-      {!mass ? 'A user-saved profile weight between 20 and 300 kg is required for an estimate.'
-        : climbingOnly ? activity.metrics.elevationGainMeters === 0 ? 'Entered ascent is zero; no positive climbing work.' : 'Elevation gain is required for a climbing-work estimate.'
-          : powerModelExclusionReason(activity) ?? 'An estimate requires at least 20 seconds and 70% usable recorded GPS speed and grade coverage. Unsupported speeds and grades remain unavailable.'}
+    <View style={s.headingRow}>
+      <Text style={[s.heading, { color: C.text }]}>{presentation.title}</Text>
+      <TouchableOpacity style={s.infoButton} onPress={() => setInfoOpen(open => !open)} accessibilityRole="button"
+        accessibilityLabel={`About ${presentation.title.toLowerCase()}`} accessibilityHint="What it means, why it matters, and how to read it"
+        accessibilityState={{ expanded: infoOpen }}>
+        <Ionicons name="information-circle-outline" size={22} color={C.primary} />
+      </TouchableOpacity>
+    </View>
+    {presentation.value != null ? <Text selectable style={[s.value, { color: C.text }]}>
+      {formatActivityPowerValue(presentation.value)}{presentation.unit === 'kJ' ? ' kJ' : ' W'}
     </Text> : null}
+    <Text style={[s.label, { color: C.text }]}>{presentation.label}</Text>
+    <Text style={[s.copy, { color: C.textMuted }]}>{presentation.context}</Text>
+    {infoOpen ? <View style={[s.help, { borderColor: C.primary }]}>
+      {([['What is it?', presentation.help.what], ['Why care?', presentation.help.why], ['How to read it', presentation.help.read]] as const).map(([label, body]) =>
+        <View key={label} style={s.helpSection}>
+          <Text style={[s.label, { color: C.text }]}>{label}</Text>
+          <Text style={[s.copy, { color: C.textMuted }]}>{body}</Text>
+        </View>)}
+    </View> : null}
+    {presentation.value != null && presentation.value > 0 ? <PowerDisclosure label="Everyday equivalent" open={comparisonOpen} onChange={setComparisonOpen}>
+      {comparison && reference ? <>
+        <Text selectable style={[s.comparison, { color: C.text }]}>
+          {presentation.quantity === 'climbing' ? seconds != null
+            ? `Energy equivalent of running ${comparison.label} for about ${formatEquivalentTime(seconds)}.`
+            : 'An energy comparison is unavailable for this result.'
+            : `About ${formatPowerRatio(presentation.value, comparison.watts)} times the reference power draw of ${comparison.label}.`}
+        </Text>
+        <Text style={[s.copy, { color: C.textMuted }]}>{presentation.quantity === 'climbing'
+          ? 'Uphill energy comparison only. No electricity was generated.' : presentation.quantity === 'metabolic'
+            ? 'Metabolic power comparison only, not electrical output.' : 'Power comparison only, not electrical output.'}</Text>
+      </> : <Text style={[s.copy, { color: C.textMuted }]}>No matching reference is available above 2,000 W.</Text>}
+    </PowerDisclosure> : null}
+    <PowerDisclosure label="Calculation details" open={detailsOpen} onChange={setDetailsOpen}>
+      {presentation.details.map(note => <Text key={note} selectable style={[s.copy, { color: C.textMuted }]}>{note}</Text>)}
+      {reference ? <>
+        <Text style={[s.label, { color: C.text }]}>Everyday reference</Text>
+        <Text style={[s.copy, { color: C.textMuted }]}>{reference.draw}. Approximate operating draw; models and settings vary. Startup and conversion losses are not modeled. No electricity was generated or assumed recoverable.</Text>
+        {reference.assumptions.map(note => <Text key={note} style={[s.copy, { color: C.textDim }]}>{note}</Text>)}
+        {reference.sources.map(source => <TouchableOpacity key={source.url} style={s.sourceLink} accessibilityRole="link"
+          accessibilityLabel={`Open reference: ${source.title}`} onPress={() => { setLinkError(false); void Linking.openURL(source.url).catch(() => setLinkError(true)); }}>
+          <Text style={[s.copy, { color: C.primary, flexShrink: 1 }]}>{source.title}</Text>
+          <Ionicons name="open-outline" size={16} color={C.primary} />
+        </TouchableOpacity>)}
+        {linkError ? <Text accessibilityRole="alert" style={[s.copy, { color: C.textMuted }]}>Could not open the reference. Check your connection and try the link again.</Text> : null}
+      </> : null}
+      {comparable.length ? <>
+        <Text style={[s.label, { color: C.text }]}>Same-model history</Text>
+        {comparable.map(item => <View key={item.id} style={s.historyRow}>
+          <Text style={[s.copy, { color: C.textMuted }]}>{new Date(item.startTime).toLocaleDateString()}</Text>
+          <Text style={[s.copy, { color: C.text }]}>{Math.round(item.metrics.powerEstimate!.averageWatts!)} W</Text>
+        </View>)}
+      </> : null}
+    </PowerDisclosure>
     {saveError ? <Text selectable style={[s.copy, { color: C.textMuted }]}>The automatic estimate could not be saved. Reopen this activity after history is available.</Text> : null}
-    {comparable.length ? <>
-      <Text style={[s.copy, { color: C.textDim }]}>SAME-MODEL HISTORY</Text>
-      {comparable.map(item => <View key={item.id} style={s.historyRow}>
-        <Text style={[s.copy, { color: C.textMuted }]}>{new Date(item.startTime).toLocaleDateString()}</Text>
-        <Text style={[s.copy, { color: C.text }]}>{Math.round(item.metrics.powerEstimate!.averageWatts!)} W</Text>
-      </View>)}
-    </> : null}
   </View>;
 }
 
 const s = StyleSheet.create({
-  root: { paddingVertical: 18, borderTopWidth: StyleSheet.hairlineWidth, gap: 10 },
-  heading: { fontSize: 20, fontWeight: '700' }, value: { fontSize: 28, fontWeight: '700' },
-  copy: { fontSize: 12, lineHeight: 18 }, historyRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  root: { paddingVertical: 20, borderTopWidth: StyleSheet.hairlineWidth, gap: 10 },
+  headingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  heading: { fontSize: 20, fontWeight: '700', flexShrink: 1 },
+  infoButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  value: { fontSize: 28, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  label: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  copy: { fontSize: 13, lineHeight: 20 },
+  help: { borderLeftWidth: 2, paddingLeft: 14, gap: 16, paddingVertical: 8 },
+  helpSection: { gap: 4 },
+  disclosure: { borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: 12 },
+  disclosureBody: { gap: 12, paddingTop: 16, paddingBottom: 4 },
+  comparison: { fontSize: 16, lineHeight: 24, fontWeight: '600' },
+  sourceLink: { flexDirection: 'row', alignItems: 'center', minHeight: 44, gap: 8 },
+  historyRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8 },
 });

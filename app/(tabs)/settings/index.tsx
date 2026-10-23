@@ -1,6 +1,7 @@
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import HealthRestoreCard from '../../../src/components/activity/HealthRestoreCard';
+import ObservabilityPreferences from '../../../src/components/settings/ObservabilityPreferences';
 import {
   Alert,
   Image,
@@ -1091,6 +1092,8 @@ export default function SettingsScreen() {
         </Text>
         <HealthRestoreCard compact />
       </View>
+
+      <ObservabilityPreferences />
 
       {/* Apple Watch */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>

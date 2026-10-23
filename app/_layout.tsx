@@ -29,6 +29,7 @@ import RunTelemetryBridge from '../src/components/watch/RunTelemetryBridge';
 import RunCompletionRecovery from '../src/components/watch/RunCompletionRecovery';
 import CloudBackupBridge from '../src/components/sync/CloudBackupBridge';
 import HealthActivityWriter from '../src/components/sync/HealthActivityWriter';
+import ObservabilityBridge from '../src/components/sync/ObservabilityBridge';
 import ActiveLocationTrackingReconciler from '../src/components/activity/ActiveLocationTrackingReconciler';
 import {
   clearTrainingNotifications,
@@ -183,6 +184,7 @@ export default function RootLayout() {
 
   return (
     <StrideThemeProvider>
+      <ObservabilityBridge />
       <NavigationThemeProvider value={getNavigationTheme(mode)}>
         <ToastProvider>
           <FeatureTourProvider>

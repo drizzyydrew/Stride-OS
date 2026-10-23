@@ -12,6 +12,8 @@ import * as profilePower from '../../src/utils/profilePower';
 import * as climbing from '../../src/utils/climbingWork';
 import * as dates from '../../src/utils/dateOnly';
 import * as substitution from '../../src/utils/substitution';
+import * as powerPresentation from '../../src/utils/activityPowerPresentation';
+import * as powerEquivalents from '../../src/utils/powerEquivalents';
 import { sanitizeActivityMetrics } from '../../src/utils/activityLoad';
 
 const startTime = new Date(2026, 9, 16, 8, 17, 23).getTime();
@@ -128,7 +130,7 @@ test('mass alone, aggregate manual totals, indoor sessions, run/walk and snow do
 });
 
 type Node = { type: string; props: Record<string, any>; children: any[] };
-function harness(path: string, initial?: Activity, options: { units?: 'metric' | 'imperial'; profile?: typeof profile | null; activityId?: boolean } = {}) {
+function harness(path: string, initial?: Activity, options: { units?: 'metric' | 'imperial'; profile?: typeof profile | null; activityId?: boolean; random?: () => number; failLink?: boolean } = {}) {
   let records = initial ? [initial] : [];
   let activeProfile = options.profile === null ? undefined : options.profile ?? profile;
   let states: any[] = [];
@@ -141,7 +143,9 @@ function harness(path: string, initial?: Activity, options: { units?: 'metric' |
   const writes: any[] = [];
   let failWrite = false;
   let rendering = false;
+  let focusCallback: (() => void) | undefined;
   const hooks = {
+    useCallback: (fn: () => void, dependencies: any[]) => hooks.useMemo(() => fn, dependencies),
     useState: (initialValue: any) => {
       const index = cursor++;
       if (!(index in states)) states[index] = typeof initialValue === 'function' ? initialValue() : initialValue;
@@ -182,9 +186,10 @@ function harness(path: string, initial?: Activity, options: { units?: 'metric' |
   const useStore = Object.assign((selector: any) => selector(store), { getState: () => store });
   const mocks: Record<string, any> = {
     react: hooks,
-    'react-native': { Alert: { alert: (...args: any[]) => alerts.push(args) }, StyleSheet: { create: (value: any) => value, hairlineWidth: 1 },
+    'react-native': { Alert: { alert: (...args: any[]) => alerts.push(args) }, Linking: { openURL: async () => { if (options.failLink) throw new Error('Offline'); } }, StyleSheet: { create: (value: any) => value, hairlineWidth: 1 },
       Platform: { OS: 'ios' }, ...Object.fromEntries(['Image', 'KeyboardAvoidingView', 'ScrollView', 'Switch', 'Text', 'TextInput', 'TouchableOpacity', 'View'].map(name => [name, name])) },
-    'expo-router': { useRoute: () => ({ params: options.activityId === true || initial && options.activityId !== false ? { activityId: initial?.id ?? 'recorded' } : {} }),
+    '@expo/ui': { Host: 'Host', RNHostView: 'RNHostView', Collapsible: 'Collapsible' },
+    'expo-router': { useFocusEffect: (fn: () => void) => { focusCallback = fn; hooks.useEffect(fn, [fn]); }, useRoute: () => ({ params: options.activityId === true || initial && options.activityId !== false ? { activityId: initial?.id ?? 'recorded' } : {} }),
       useRouter: () => ({ replace: (value: any) => navigation.push(value), back: () => navigation.push('back') }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     activityStore: { useActivityStore: useStore },
@@ -194,10 +199,11 @@ function harness(path: string, initial?: Activity, options: { units?: 'metric' |
     routeStore: { useRouteStore: (selector: any) => selector({ routes: [{ id: 'planned-route', name: 'Planned Route', points: [{ latitude: 1, longitude: 1 }] }] }) },
     gearStore: { useGearStore: (selector: any) => selector({ shoes: [], defaultShoeId: null }) },
     useColors: { useColors: () => ({}) },
+    themeStore: { useThemeMode: () => 'dark' },
     useWeekPlan: { useWeekPlan: () => ({}) },
     useScheduledSessions: { useScheduledSessions: () => ({}) },
     activityCompletion: completion, manualActivityEdit: edit, automaticActivityPower: automatic, outdoorPower: power,
-    profilePower, climbingWork: climbing, dateOnly: dates, substitution, displayLabels: { displayLabel: (value: any) => value },
+    profilePower, climbingWork: climbing, activityPowerPresentation: powerPresentation, powerEquivalents, dateOnly: dates, substitution, displayLabels: { displayLabel: (value: any) => value },
     prescriptionFormat: {}, recalculation: { runRecalculation: async () => {} },
   };
   const module = { exports: {} as any };
@@ -206,6 +212,7 @@ function harness(path: string, initial?: Activity, options: { units?: 'metric' |
     jsxFactory: 'h', jsxFragmentFactory: 'Fragment', esModuleInterop: true,
   } }).outputText;
   runInNewContext(code, { module, exports: module.exports,
+    Math: Object.assign(Object.create(Math), { random: options.random ?? Math.random }),
     require: (name: string) => mocks[name] ?? mocks[name.split('/').at(-1)!] ?? { __esModule: true, default: name.split('/').at(-1) },
     Fragment: 'Fragment', h: (type: any, props: any, ...children: any[]) => typeof type === 'function'
       ? type({ ...props, children }) : { type, props: props ?? {}, children: children.flat(Infinity) },
@@ -232,6 +239,7 @@ function harness(path: string, initial?: Activity, options: { units?: 'metric' |
     save: () => { nodes().find(node => ['Save activity changes', 'Save activity'].includes(node.props.accessibilityLabel))!.props.onPress(); render(); },
     changeProfile: (next: typeof profile | undefined) => { activeProfile = next; render(); },
     changeRecord: (next: Activity) => { records = [next]; render(); },
+    refocus: () => { focusCallback?.(); render(); },
     lock: () => { failWrite = true; }, unlock: () => { failWrite = false; },
   };
 }
@@ -364,20 +372,82 @@ test('real power panel automatically persists once, retains historical mass thro
   assert.equal(ui.nodes().some(node => node.type === 'TextInput'), false);
 });
 
-test('real power panel has no default mass; aggregate hikes persist separate climbing energy and component watts', () => {
+test('real power panel has no default mass; hikes show one primary unit and keep component watts in details', () => {
   const missing = harness(panelPath, activity(), { profile: null }); missing.render();
   assert.equal(missing.writes.length, 0);
   const hike = activity('hiking'); hike.source = 'manual'; delete hike.workoutInstanceId; delete hike.metrics.routeCoordinates;
   const ui = harness(panelPath, hike); ui.render();
   assert.equal(ui.writes.length, 1);
   assert.ok(ui.nodes().some(node => node.children.includes(' kJ')));
-  assert.ok(ui.nodes().some(node => node.children.includes(' W')));
+  assert.ok(!ui.nodes().some(node => node.children.includes(' W')));
+  assert.ok(!ui.nodes().some(node => node.children.some(child => typeof child === 'string' && child.includes('Average climbing-component power'))));
+  ui.nodes().find(node => node.type === 'Collapsible' && node.props.label === 'Calculation details')!.props.onOpenChange(true); ui.render();
+  assert.ok(ui.nodes().some(node => node.children.some(child => typeof child === 'string' && child.includes('Average climbing-component power'))));
   assert.equal(ui.record.metrics.powerEstimate, undefined);
   const saved = climbing.storedClimbingWork(ui.record)!;
   assert.ok(saved.averageClimbingWatts! > 0);
   ui.changeProfile(changedProfile(90));
   assert.equal(ui.writes.length, 1);
   assert.equal(climbing.storedClimbingWork(ui.record), saved);
+});
+
+test('real info icon explains meaning and value; dropdowns start collapsed and do not write on interaction', () => {
+  const ui = harness(panelPath, activity()); ui.render();
+  const before = ui.writes.length;
+  assert.ok(ui.nodes().filter(node => node.type === 'Collapsible').every(node => node.props.isOpen === false));
+  assert.ok(!ui.nodes().some(node => node.children.includes('Why care?')));
+  const info = ui.nodes().find(node => node.props.accessibilityLabel === 'About cycling work')!;
+  info.props.onPress(); ui.render();
+  assert.ok(ui.nodes().some(node => node.children.includes('Why care?')));
+  assert.equal(ui.nodes().find(node => node.props.accessibilityLabel === 'About cycling work')!.props.accessibilityState.expanded, true);
+  ui.nodes().find(node => node.type === 'Collapsible' && node.props.label === 'Everyday equivalent')!.props.onOpenChange(true); ui.render();
+  assert.ok(ui.nodes().some(node => node.children.some(child => typeof child === 'string' && child.includes('Power comparison only, not electrical output.'))));
+  assert.ok(!ui.nodes().some(node => node.props.accessibilityRole === 'link'), 'references stay in calculation details');
+  assert.equal(ui.writes.length, before);
+});
+
+test('comparison is stable through toggles and units; refocusing and a different activity choose a fresh reference', () => {
+  const hike = activity('hiking'); hike.source = 'manual'; delete hike.workoutInstanceId;
+  let sample = 0;
+  const options = { units: 'metric' as 'metric' | 'imperial', random: () => (sample++ * 0.19) % 1 };
+  const ui = harness(panelPath, hike, options); ui.render();
+  const open = () => { ui.nodes().find(node => node.type === 'Collapsible' && node.props.label === 'Everyday equivalent')!.props.onOpenChange(true); ui.render(); };
+  const text = () => ui.nodes().flatMap(node => node.children).find(child => typeof child === 'string' && child.includes('Energy equivalent of running'));
+  open(); const first = text(); assert.ok(first);
+  ui.nodes().find(node => node.props.accessibilityLabel === 'About hiking work')!.props.onPress(); ui.render();
+  options.units = 'imperial'; ui.render();
+  assert.equal(text(), first);
+  assert.equal(sample, 2, 'only mount and first focus choose randomness');
+  ui.refocus(); assert.ok(ui.nodes().filter(node => node.type === 'Collapsible').every(node => !node.props.isOpen));
+  open(); assert.notEqual(text(), first);
+  const previous = text();
+  ui.changeRecord({ ...ui.record, id: 'another-hike' });
+  assert.ok(ui.nodes().filter(node => node.type === 'Collapsible').every(node => !node.props.isOpen));
+  open(); assert.notEqual(text(), previous);
+});
+
+test('unavailable result and valid zero never gain a made-up comparison or secondary energy', () => {
+  const run = activity('running'); run.source = 'manual'; delete run.workoutInstanceId;
+  const missing = harness(panelPath, run); missing.render();
+  assert.ok(missing.nodes().some(node => node.children.includes('Power estimate unavailable')));
+  assert.ok(!missing.nodes().some(node => node.type === 'Collapsible' && node.props.label === 'Everyday equivalent'));
+  const zero = activity('indoor_cycling'); zero.metrics.cyclingPowerWatts = 0; zero.metrics.metricSources!.power = 'manual_entry';
+  const ui = harness(panelPath, zero); ui.render();
+  assert.ok(ui.nodes().some(node => node.children.includes('0') && node.children.includes(' W')));
+  assert.ok(!ui.nodes().some(node => node.type === 'Collapsible' && node.props.label === 'Everyday equivalent'));
+});
+
+test('failed source links show a retryable error without changing saved activity data', async () => {
+  const options = { failLink: true };
+  const ui = harness(panelPath, activity(), options); ui.render();
+  const before = ui.writes.length;
+  ui.nodes().find(node => node.type === 'Collapsible' && node.props.label === 'Calculation details')!.props.onOpenChange(true); ui.render();
+  const link = () => ui.nodes().find(node => node.props.accessibilityRole === 'link')!;
+  link().props.onPress(); await Promise.resolve(); await Promise.resolve(); ui.render();
+  assert.ok(ui.nodes().some(node => node.props.accessibilityRole === 'alert'));
+  options.failLink = false; link().props.onPress(); await Promise.resolve(); ui.render();
+  assert.ok(!ui.nodes().some(node => node.props.accessibilityRole === 'alert'));
+  assert.equal(ui.writes.length, before);
 });
 
 test('settings units control new, prefilled and delayed-hydration distance and the saved meters', () => {

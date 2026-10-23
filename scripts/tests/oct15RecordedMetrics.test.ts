@@ -4,9 +4,9 @@ import { readFileSync } from 'node:fs';
 import type { Activity } from '../../src/types/activity';
 import { buildActivitySummary } from '../../src/utils/activitySummary';
 
-test('power mass inputs remount for a different activity or unit system', () => {
+test('power panel preserves the activity identity across unit changes', () => {
   const detail = readFileSync('app/(tabs)/activity/[activityId].tsx', 'utf8');
-  assert.match(detail, /<ActivityPowerPanel key=\{`\$\{activity\.id\}:\$\{units\}`\}/);
+  assert.match(detail, /<ActivityPowerPanel key=\{activity\.id\}/);
 });
 
 test('recorded running dynamics and cadence retain units and do not hide zero elevation', () => {

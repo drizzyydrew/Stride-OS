@@ -4,6 +4,13 @@
 .git/
 .git/**
 node_modules
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+.sentryclirc
 
 # Claude Design handoff artifacts - keep local, never upload to EAS Build
 StrideOs-handoff*.zip
