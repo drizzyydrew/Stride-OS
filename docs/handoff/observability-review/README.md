@@ -17,7 +17,7 @@ October 23, 2026. Canonical checkout: `/Users/drew/Developer/StrideOS_App_clean_
 
 ## Configuration Required Before Release
 
-The production EAS environment has no PostHog or Sentry configuration. US/EU region and account setup are awaiting user input. Chrome computer-use attempts failed with CDP focus/connection timeouts; no accounts, terms, paid plans or security credentials were created or accepted.
+The initial source-only checkpoint had no service configuration. The user subsequently created both US-region projects and saved the private Sentry uploader credential directly in Expo. Current configuration, live policy publication and release checks are recorded in [Build 103 Release](../BUILD103_RELEASE.md). No agent accepted terms or purchased a plan.
 
 Required production variables:
 

@@ -6,6 +6,7 @@ module.exports = ({ config }) => {
     ...config,
     plugins: [
       ...(config.plugins ?? app.expo.plugins ?? []),
+      'expo-asset',
       'expo-localization',
       ['@sentry/react-native/expo', {
         organization: process.env.SENTRY_ORG,
