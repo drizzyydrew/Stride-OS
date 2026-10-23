@@ -105,7 +105,7 @@
     <div class="tagline">Your plan. Your pace.</div>
 
     <h1>Privacy Policy</h1>
-    <p class="updated">Effective date: June 21, 2025</p>
+    <p class="updated">Effective date: October 23, 2026</p>
 
     <p>
       StrideOS is a personal training application for runners.
@@ -118,6 +118,7 @@
     <p><strong>Movement videos.</strong> Videos you upload to Movement Lab are uploaded to Supabase Storage and stored in a private bucket accessible only to your account. Videos are not stored on your device after upload.</p>
     <p><strong>Location data.</strong> If you use GPS Run Tracking, the app requests access to your device's location. Location data is used only to calculate distance and pace during your run and is stored locally on your device. We do not transmit raw GPS coordinates to our servers.</p>
     <p><strong>AI Coach messages.</strong> Messages you send to the AI Coach are transmitted to Anthropic's Claude API via a secure Edge Function proxy to generate responses. We do not store the content of your AI Coach conversations on our servers.</p>
+    <p><strong>Optional usage and diagnostics.</strong> Both are off by default and can be controlled independently in Settings under Privacy &amp; Diagnostics. If you opt in, PostHog receives a small allowlist of basic app and tutorial events with a randomly generated, session-only identifier. It receives no account identifier, health or workout measurements, routes, messages, photos, or videos. Sentry receives sanitized JavaScript exception types and code locations, not original error messages, account identifiers, screenshots, attachments, or native crash dumps. Neither service records your screen or automatically captures its contents.</p>
 
     <h2>2. How We Use Your Data</h2>
     <ul>
@@ -125,6 +126,7 @@
       <li>To back up your training history so you don't lose data if you reinstall the app.</li>
       <li>To provide Movement Lab storage and professional analysis services when requested.</li>
       <li>To authenticate your account and keep your data secure.</li>
+      <li>With your separate opt-in choices, to understand basic feature use and diagnose software errors. Service connections necessarily expose a network IP address to the receiving infrastructure; disabling location enrichment does not make these connections anonymous.</li>
     </ul>
     <p>We do not use your data for advertising. We do not sell your data to third parties.</p>
 
@@ -133,12 +135,15 @@
     <ul>
       <li><strong>Supabase</strong> — Authentication, database, and file storage. <a href="https://supabase.com/privacy" target="_blank">Supabase Privacy Policy</a></li>
       <li><strong>Anthropic (Claude)</strong> — AI responses in the Coach tab. Messages are processed by Claude. <a href="https://www.anthropic.com/privacy" target="_blank">Anthropic Privacy Policy</a></li>
-      <li><strong>Apple HealthKit</strong> (optional) — If you enable Apple Health integration, workout data is written to the Health app on your device. We do not read health data from HealthKit.</li>
+      <li><strong>Apple HealthKit</strong> (optional) — With the permissions you grant, StrideOS reads health and workout data for training features and restoration, and writes completed workouts to Apple Health. HealthKit content is not sent to PostHog or Sentry.</li>
       <li><strong>Strava</strong> (optional) — If you connect Strava, completed workouts are uploaded to your Strava account. <a href="https://www.strava.com/legal/privacy" target="_blank">Strava Privacy Policy</a></li>
+      <li><strong>PostHog</strong> (optional) — Basic product usage events after you enable usage sharing. <a href="https://posthog.com/privacy" target="_blank">PostHog Privacy Policy</a></li>
+      <li><strong>Sentry</strong> (optional) — Sanitized JavaScript diagnostics after you enable error reporting. <a href="https://sentry.io/privacy/" target="_blank">Sentry Privacy Policy</a></li>
     </ul>
 
     <h2>4. Data Retention</h2>
     <p>Your training data remains in our database as long as your account is active. You can delete all data at any time from <strong>Profile → Data &amp; Privacy → Reset All Data</strong>. This permanently removes your account data from our servers.</p>
+    <p>Turning optional sharing off stops new reports and discards the app's unsent session data. It does not recall requests already transmitted or delete previously received vendor reports. No analytics or diagnostic offline queue is persisted by StrideOS. Contact us for requests about previously submitted reports; the reporting identifiers do not contain your account identity.</p>
 
     <h2>5. Children's Privacy</h2>
     <p>StrideOS is not directed at children under 13. We do not knowingly collect personal information from children under 13.</p>
