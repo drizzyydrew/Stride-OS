@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -17,6 +18,7 @@ import { useAuthStore } from '../../src/store/authStore';
 import { colors }  from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
+import { LEGAL_URLS } from '../../src/utils/legal';
 
 export default function SignUpScreen() {
   const signUp          = useAuthStore(s => s.signUp);
@@ -118,6 +120,12 @@ export default function SignUpScreen() {
           </Pressable>
 
           <SocialAuthButtons mode="sign-up" onError={setError} />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 }}>
+            {(['privacy', 'terms'] as const).map(key => <Pressable key={key} accessibilityRole="link"
+              style={{ minHeight: 44, justifyContent: 'center' }} onPress={() => { void Linking.openURL(LEGAL_URLS[key]).catch(() => setError('This link could not be opened. Please try again.')); }}>
+              <Text style={{ color: colors.textMuted, fontSize: 13 }}>{key === 'privacy' ? 'Privacy policy' : 'Terms of use'}</Text>
+            </Pressable>)}
+          </View>
         </View>
 
         <Pressable style={s.toggle} onPress={() => router.replace('/auth/sign-in' as never)}>

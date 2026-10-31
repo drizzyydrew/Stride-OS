@@ -1,4 +1,8 @@
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
+import AiSharingPreferences from '../../../src/components/settings/AiSharingPreferences';
+import { useAiConsent } from '../../../src/store/aiConsentStore';
+import { billingIsConfigured } from '../../../src/lib/revenueCat';
+import { useSubscriptionStore } from '../../../src/store/subscriptionStore';
 // ─── AI Coach ─────────────────────────────────────────────────────────────────
 //
 // Chat interface powered by Claude. Builds a system prompt from the user's
@@ -597,6 +601,11 @@ function buildContextSummary(data: ReturnType<typeof useOnboardingStore.getState
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function CoachScreen() {
+  const aiSharing = useAiConsent();
+  const membership = useSubscriptionStore();
+  useEffect(() => {
+    if (aiSharing.allowed && billingIsConfigured()) void useSubscriptionStore.getState().refresh();
+  }, [aiSharing.allowed, aiSharing.owner]);
   const C = useColors();
   useFeatureTour('ai-coach');
   const insets = useSafeAreaInsets();
@@ -855,15 +864,25 @@ export default function CoachScreen() {
         </Pressable>
       </FeatureTourTarget>
 
-      {tab === 'chat' && (!isConfigured || (coachHealth && !coachHealth.ok)) ? (
+      {tab === 'chat' && !aiSharing.allowed ? (
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 32 }}>
+          <AiSharingPreferences />
+        </ScrollView>
+      ) : tab === 'chat' && billingIsConfigured() && (!membership.isPro || membership.owner !== aiSharing.owner) ? (
+        <View style={s.noKey}>
+          <Text style={s.noKeyTitle}>{membership.isLoading ? 'Checking membership' : 'AI Coach chat is part of Pro'}</Text>
+          <Text style={s.noKeyDesc}>{membership.error ?? 'Tracking, saved history, and on-device Insights remain available without Pro. Membership verification uses RevenueCat purchase records, not health data.'}</Text>
+          {membership.isLoading ? <ActivityIndicator color={C.primary} /> : <>
+            <Pressable style={s.retryBtn} onPress={() => router.push('/(tabs)/settings/membership' as never)} accessibilityRole="button"><Text style={s.retryTxt}>View membership</Text></Pressable>
+            <Pressable style={s.retryBtn} onPress={() => { void useSubscriptionStore.getState().refresh(); }} accessibilityRole="button"><Text style={s.retryTxt}>Retry membership check</Text></Pressable>
+          </>}
+        </View>
+      ) : tab === 'chat' && (!isConfigured || (coachHealth && !coachHealth.ok)) ? (
         <View style={s.noKey}>
           <Ionicons name="key-outline" size={38} color={C.primary} />
-          <Text style={s.noKeyTitle}>Coach setup required</Text>
+          <Text style={s.noKeyTitle}>AI Coach is temporarily unavailable</Text>
           <Text style={s.noKeyDesc}>
-            {!isConfigured
-              ? 'Add your Supabase URL and anon key to the app .env file.'
-              : coachHealth?.error ?? 'Set ANTHROPIC_API_KEY as a Supabase Edge Function secret.'}
-            {' '}This keeps the Anthropic key out of the iOS app.
+            Your saved training is unchanged. Try again later or use Insights for on-device guidance.
           </Text>
           {isConfigured && (
             <Pressable
@@ -882,7 +901,7 @@ export default function CoachScreen() {
         <View style={s.noKey}>
           <ActivityIndicator size="small" color={C.primary} />
           <Text style={s.noKeyTitle}>Checking coach connection</Text>
-          <Text style={s.noKeyDesc}>Verifying the Supabase Edge Function and model setup.</Text>
+          <Text style={s.noKeyDesc}>Connecting securely to AI Coach.</Text>
         </View>
       ) : tab === 'chat' ? (
         <>

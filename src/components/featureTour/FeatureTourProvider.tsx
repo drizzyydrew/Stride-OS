@@ -12,6 +12,7 @@ import React, {
 import {
   AccessibilityInfo,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,7 +24,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
-import BrandChevrons from '../ui/BrandChevrons';
+import { useIsFocused } from 'expo-router/react-navigation';
 
 import { useFeatureTourStore } from '../../store/featureTourStore';
 import { useColors } from '../../theme/useColors';
@@ -65,6 +66,7 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
   const [activeTourId, setActiveTourId] = useState<FeatureTourId | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<FeatureTourRect | null>(null);
+  const [measuredCardHeight, setMeasuredCardHeight] = useState(260);
   const markCompleted = useFeatureTourStore(s => s.markCompleted);
   const markSkipped = useFeatureTourStore(s => s.markSkipped);
 
@@ -120,6 +122,10 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!activeStep || !explanationRef.current) return;
+    if (Platform.OS === 'web') {
+      (explanationRef.current as unknown as { focus?: () => void }).focus?.();
+      return;
+    }
     const handle = findNodeHandle(explanationRef.current);
     if (handle) {
       const timer = setTimeout(() => AccessibilityInfo.setAccessibilityFocus(handle), reduceMotion ? 0 : 160);
@@ -194,7 +200,7 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
   }
 
   const highlightRect = highlightRectForTarget(targetRect, dimensions.width, dimensions.height);
-  const dimColor = 'rgba(0,0,0,0.82)';
+  const dimColor = 'rgba(0,0,0,0.40)';
   const card = activeStep
     ? cardPlacementForTarget({
       target: highlightRect,
@@ -202,6 +208,7 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
       viewportHeight: dimensions.height,
       insets: { ...insets, top: insets.top + 48 },
       preferredPlacement: activeStep.preferredPlacement,
+      cardHeight: measuredCardHeight,
     })
     : null;
 
@@ -252,6 +259,9 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
           {activeStep && activeTour && card ? (
             <View
               ref={explanationRef}
+              focusable
+              testID="feature-tour-bubble"
+              onLayout={event => setMeasuredCardHeight(Math.ceil(event.nativeEvent.layout.height))}
               style={[
                 styles.card,
                 {
@@ -263,6 +273,13 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
                 },
               ]}
             >
+            {highlightRect && card.placement !== 'center' ? <View pointerEvents="none" style={[
+              styles.pointer,
+              { left: Math.max(22, Math.min(card.width - 38, highlightRect.x + highlightRect.width / 2 - card.left - 8)) },
+              card.placement === 'bottom'
+                ? { top: -8, borderBottomWidth: 8, borderBottomColor: C.cardElevated }
+                : { bottom: -8, borderTopWidth: 8, borderTopColor: C.cardElevated },
+            ]} /> : null}
             <Pressable onPress={event => event.stopPropagation()} accessible={false}>
             <ScrollView style={{ maxHeight: Math.max(80, dimensions.height - insets.bottom - (card?.top ?? insets.top + 60) - 44) }} keyboardShouldPersistTaps="handled">
               <View style={styles.cardTopRow}>
@@ -270,6 +287,9 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
                   <Text style={[styles.eyebrow, { color: C.textDim }]}>{activeStep.eyebrow ?? activeTour.entryLabel.toUpperCase()}</Text>
                   <Text style={[styles.title, { color: C.text }]}>{activeStep.title}</Text>
                 </View>
+                <TouchableOpacity onPress={closeAsSkipped} style={styles.close} accessibilityRole="button" accessibilityLabel="Close walkthrough">
+                  <Ionicons name="close" size={22} color={C.text} />
+                </TouchableOpacity>
               </View>
               <Text style={[styles.description, { color: C.textMuted }]}>{activeStep.description}</Text>
               <View style={styles.footer}>
@@ -292,9 +312,6 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
             </Pressable>
             </View>
           ) : null}
-          <Pressable onPress={closeAsSkipped} style={[styles.escape, { top: insets.top + 4, backgroundColor: C.card }]} accessibilityRole="button" accessibilityLabel="Close walkthrough">
-            <BrandChevrons direction="down" />
-          </Pressable>
         </Pressable>
       </Modal>
     </FeatureTourContext.Provider>
@@ -302,31 +319,42 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
 }
 
 export function useFeatureTour(tourId: FeatureTourId) {
+  const focused = useIsFocused();
   const context = useContext(FeatureTourContext);
   const status = useFeatureTourStore(s => s.tourStatus[tourId]);
   const replayRequest = useFeatureTourStore(s => s.replayRequests[tourId]);
   const consumeReplay = useFeatureTourStore(s => s.consumeReplay);
   const hasStartedRef = useRef(false);
+  const [hydrated, setHydrated] = useState(() => useFeatureTourStore.persist.hasHydrated());
+  useEffect(() => {
+    const unsubscribe = useFeatureTourStore.persist.onFinishHydration(() => setHydrated(true));
+    setHydrated(useFeatureTourStore.persist.hasHydrated());
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
-    if (!context) return;
-    const hasHydrated = useFeatureTourStore.persist.hasHydrated();
-    if (!hasHydrated) return;
+    if (!context || !focused || !hydrated || replayRequest) return;
     const definition = getFeatureTour(tourId);
     if (!hasStartedRef.current && shouldAutoStartTour(definition, status)) {
-      hasStartedRef.current = true;
-      const timer = setTimeout(() => context.startTour(tourId, 'first_use'), 450);
+      const timer = setTimeout(() => {
+        hasStartedRef.current = true;
+        context.startTour(tourId, 'first_use');
+      }, 450);
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [context, status, tourId]);
+  }, [context, status, tourId, focused, hydrated, replayRequest]);
 
   useEffect(() => {
-    if (!context || !replayRequest) return;
-    consumeReplay(tourId);
-    const timer = setTimeout(() => context.startTour(tourId, 'replay'), 300);
+    if (!context || !replayRequest || !focused || !hydrated) return;
+    // Consuming first triggered a render that cancelled this timer before it ran.
+    const timer = setTimeout(() => {
+      hasStartedRef.current = true;
+      context.startTour(tourId, 'replay');
+      consumeReplay(tourId);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [consumeReplay, context, replayRequest, tourId]);
+  }, [consumeReplay, context, replayRequest, tourId, focused, hydrated]);
 
   return {
     replay: () => context?.startTour(tourId, 'manual'),
@@ -342,10 +370,11 @@ export function useFeatureTourRegistry() {
 }
 
 const styles = StyleSheet.create({
+  pointer: { position: 'absolute', width: 0, height: 0, borderLeftWidth: 8, borderRightWidth: 8, borderLeftColor: 'transparent', borderRightColor: 'transparent' },
+  close: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   overlayRoot: {
     flex: 1,
   },
-  escape: { position: 'absolute', left: 12, width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   dim: {
     ...StyleSheet.absoluteFill,
   },

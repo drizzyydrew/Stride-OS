@@ -1,90 +1,57 @@
-# StrideOS — App Store Copy
+# StrideOS App Store Preparation
 
-Responsibility: public App Store metadata and review-copy guidance.
+Responsibility: truthful public metadata and the outstanding App Review submission fields. This document is not proof that App Store Connect has been updated or that Apple has approved the app.
 
-## App Name (30 chars max)
-StrideOS: Run, Lift, Recover
+## Listing Draft
 
-## Subtitle (30 chars max)
-Your plan. Your pace
+Name: StrideOS
 
-## Promotional Text (170 chars max — updatable without a new build)
-Built for runners just starting out or leveling up. Grow your mileage the safe way, get stronger, and get video feedback on your form for your runs and your lifts.
+Subtitle: Run, Lift, Recover
 
-## Keywords (100 chars max, comma-separated)
-running,marathon,training plan,AI coach,GPS,pace zones,intervals,strength,5K,injury,zones
+Promotional text: Bring running, strength, and recovery into one training routine. Record workouts, review your progress, and find your next session.
 
-## Full Description (4,000 chars max)
+Keywords: running,training,strength,workout,GPS,walking,hiking,calendar,recovery,pace,fitness
 
-StrideOS is a complete training system for runners who care about performance, longevity, and doing it right.
+### Description
 
-**SMART TRAINING PLANS**
-Your plan adjusts to your current fitness, not someone else's marathon time. Build mileage at a pace your body can handle. No guessing how much is too much.
+StrideOS brings running, strength, and recovery into one connected training routine.
 
-**AI COACH**
-Ask your AI coach about pacing, recovery, or tapering for race day. It knows your training history, your zones, your race goal, and how you're feeling today, and gives you a clear answer in seconds.
+YOUR NEXT SESSION
+Plan your week, review your scheduled sessions, and adjust your training around your goals and availability.
 
-**SCIENCE-BASED TRAINING ZONES**
-StrideOS calculates your real training zones from proven methods.
-• VDOT pace zones, based on the Jack Daniels running formula
-• Heart rate zones calibrated to your resting and max HR
-• Threshold zones from your own 30-minute threshold test
-• Aerobic base tracking to monitor your fitness over time
+RECORD YOUR WORKOUTS
+Record supported outdoor activities with GPS, log strength sessions, and review saved workouts in your calendar and activity history. GPS and connected-device coverage can affect recorded measurements.
 
-Enter your age, resting heart rate, and recent race times, and StrideOS builds your zones for you.
+UNDERSTAND YOUR PROGRESS
+Review pace, heart rate when available, distance splits, training history, and activity-specific Work metrics. Estimates are labeled and are not clinical measurements. Missing source data is shown as unavailable rather than invented.
 
-**GET STRONGER, NOT JUST TIRED**
-Running alone won't fix weak hips or a sore IT band. StrideOS pairs your runs with strength training made for runners. Log your weights, mark sets complete, and track your strength over time.
+MOVEMENT LAB
+Use saved clips and images to review supported movement-analysis results. Camera-derived angles are approximate two-dimensional estimates and are not a medical assessment. Local media is not automatically a cloud backup.
 
-**VIDEO FORM CHECK**
-Record your run or your lift and upload the video. Get feedback on your gait, your posture, and your mechanics, stored privately in your account.
+OPTIONAL AI COACH
+With your explicit permission, send messages and selected training context to Anthropic's Claude through StrideOS for fitness guidance. AI responses can be wrong and are subject to usage limits and service availability. On-device Insights do not require AI sharing.
 
-**GPS RUN TRACKING**
-Track your run in real time. StrideOS tells you when you're on pace, too fast, or fading, and calls out each interval automatically.
+YOUR DATA, YOUR CHOICES
+Apple Health, location access, AI sharing, basic usage sharing, and diagnostic reporting have separate controls. Optional usage and diagnostics are off by default. StrideOS does not use HealthKit data for advertising.
 
-**RUN BUILDER AND FUELING CALCULATOR**
-Build your own workout (fartlek, tempo, intervals, or a long run with strides) and see the estimated time before you start. Calculate your fluid, carb, and sodium needs based on your weight, distance, and the weather.
+StrideOS provides fitness information, not diagnosis, treatment, emergency care, or a guarantee of injury prevention. Seek a qualified clinician's advice for medical concerns.
 
-**TRACK YOUR PROGRESS**
-See your training load, pace trends, and zone distribution over time. View your history and your upcoming sessions by day, week, or month.
+Privacy: https://drizzyydrew.github.io/Stride-OS/privacy.html
+Terms: https://drizzyydrew.github.io/Stride-OS/terms.html
+Support: https://drizzyydrew.github.io/Stride-OS/support.html
 
-**LOWER YOUR INJURY RISK**
-Most running injuries come from doing too much, too soon. StrideOS tracks your training load and flags when you're ramping up too fast, so you can adjust before it becomes a problem.
+## App Store Connect Checklist
 
-**BUILT FOR THE LONG RUN**
-You don't need to be fast to use StrideOS. Whether you're training for your first 5K or you've been running for twenty years, StrideOS is built to keep you running for decades, not just this season.
+- Primary category: Health & Fitness. Secondary category: Sports, if appropriate.
+- Complete the current age-rating questionnaire accurately, including relevant health/fitness, AI, and user-content questions. Do not blindly answer No or assume the old 4+ rating. The minimum-age policy and distribution territories require owner/legal review.
+- Enter the published privacy, support, and terms URLs. Check every link over HTTPS after publication.
+- Update privacy labels from observed behavior: account/contact information, backed-up fitness data, routes, uploaded media, AI sharing, optional analytics/diagnostics, and any enabled purchases. Consent does not automatically exempt a data type from disclosure. Use Apple's definitions rather than guessing labels here.
+- Verify privacy manifests, required-reason APIs, usage strings, entitlements, and iOS/watchOS SDK eligibility in the exact archived build.
+- Provide screenshots from the actual release candidate using the size slots currently required by App Store Connect. Do not advertise unconfigured integrations, paid features that are not enabled, or clinical accuracy.
+- Provide a dedicated reviewer account and instructions for sign-in, optional permissions, core recording, AI consent, and deletion initiation. Never include private API keys. Keep production backends available for review.
+- Complete export-compliance answers, availability, rights, contact information, and release settings. Use manual public release for the first submission.
+- If paid: complete Apple's agreements, banking/tax setup, products, subscription group, pricing, renewal disclosures, review screenshots, and sandbox purchase/restore/refund/expiration tests. No subscription claim belongs in the live listing until the paid feature gates and entitlement verification are tested.
 
-Your plan. Your pace.
+## Release Boundary
 
----
-
-## App Store Connect Fields Reference
-
-| Field | Value |
-|---|---|
-| Name | StrideOS: Run, Lift, Recover |
-| Subtitle | Your plan. Your pace |
-| Promo Text | Built for runners just starting out or leveling up... (168 chars) |
-| Primary Category | Health & Fitness |
-| Secondary Category | Sports |
-| Privacy Policy URL | https://drizzyydrew.github.io/Stride-OS/privacy.html |
-| Support URL | mailto:mooredrew5@gmail.com (or a support page) |
-| Age Rating | 4+ |
-
-## Notes for Review Submission
-- Age rating questionnaire: select "No" for all content categories → results in 4+
-- HealthKit usage: if enabling Apple Health, add usage description string in app.json:
-  `"NSHealthShareUsageDescription"` and `"NSHealthUpdateUsageDescription"`
-- Location usage: already in app.json for GPS tracking
-- Screenshots required: 6.7" iPhone (iPhone 15 Pro Max size) — at least 3 screens
-
-## When To Update
-
-- Update when App Store copy, metadata, screenshots, or review notes change.
-- Keep implementation status in `CHANGELOG.md` or `CURRENT_SPRINT.md`.
-
-## Do NOT Put Here
-
-- Active bugs.
-- Internal architecture.
-- Release build logs.
+TestFlight upload and processing do not constitute public App Review approval. No public launch is authorized by this file. The launch-readiness record tracks unresolved operational, device, legal, and billing gates.

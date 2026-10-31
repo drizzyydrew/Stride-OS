@@ -105,7 +105,7 @@
     <div class="tagline">Your plan. Your pace.</div>
 
     <h1>Privacy Policy</h1>
-    <p class="updated">Effective date: October 23, 2026</p>
+    <p class="updated">Effective date: October 31, 2026</p>
 
     <p>
       StrideOS is a personal training application for runners.
@@ -115,9 +115,11 @@
     <h2>1. Data We Collect</h2>
     <p><strong>Account information.</strong> When you create an account, we collect your email address via Supabase Auth, a third-party authentication service.</p>
     <p><strong>Training and health data.</strong> Workout logs, strength sessions, check-ins, heart rate data, pace zones, race PRs, and other fitness information you enter in the app. This data is stored on your device (AsyncStorage) and, when you are signed in, backed up to our Supabase database.</p>
-    <p><strong>Movement videos.</strong> Videos you upload to Movement Lab are uploaded to Supabase Storage and stored in a private bucket accessible only to your account. Videos are not stored on your device after upload.</p>
-    <p><strong>Location data.</strong> If you use GPS Run Tracking, the app requests access to your device's location. Location data is used only to calculate distance and pace during your run and is stored locally on your device. We do not transmit raw GPS coordinates to our servers.</p>
-    <p><strong>AI Coach messages.</strong> Messages you send to the AI Coach are transmitted to Anthropic's Claude API via a secure Edge Function proxy to generate responses. We do not store the content of your AI Coach conversations on our servers.</p>
+    <p><strong>Movement media.</strong> Saved clips, images, and pose-analysis files can remain in the app's local document storage. A video you explicitly upload can also be stored in the private movement-videos bucket in Supabase. Local still-frame analyses are not automatically uploaded as videos. Do not assume a local analysis or clip is backed up merely because you are signed in.</p>
+    <p><strong>Location data.</strong> With your location permission, GPS tracking records coordinates to calculate distance, pace, and routes. Saved activity records, including available route information, may be included in your account backup in Supabase. Routes can also be shared when you explicitly use a sharing or connected-service feature. We do not send routes to PostHog or Sentry.</p>
+    <p><strong>AI Coach.</strong> After you explicitly allow AI sharing, your messages and selected profile, training, recovery, hydration, and movement-analysis context are transmitted to Anthropic's Claude API through a Supabase Edge Function to answer your questions. This context can contain health information. Raw videos and route-coordinate arrays are not part of the chat request. StrideOS does not intentionally persist chat content in its database. Anthropic processes requests under its applicable API terms and retention practices. Declining AI sharing does not disable unrelated tracking or on-device guidance.</p>
+    <p><strong>Purchases.</strong> In builds where subscriptions are enabled, viewing purchase options connects to RevenueCat with your StrideOS account identifier. Apple processes payment; RevenueCat manages purchase records and entitlements. We do not receive your full payment-card details. Health measurements, routes, videos, and chat messages are not sent to RevenueCat.</p>
+    <p><strong>Service operations.</strong> To enforce AI request limits, StrideOS stores account-scoped daily request counts, not chat text, in Supabase. Old counters are cleaned up during subsequent service use. Account-deletion requests store your account identifier, a request reference, request time, and processing status so we can verify and handle the request. These operational records are separate from optional third-party product analytics.</p>
     <p><strong>Optional usage and diagnostics.</strong> Both are off by default and can be controlled independently in Settings under Privacy &amp; Diagnostics. If you opt in, PostHog receives a small allowlist of basic app and tutorial events with a randomly generated, session-only identifier. It receives no account identifier, health or workout measurements, routes, messages, photos, or videos. Sentry receives sanitized JavaScript exception types and code locations, not original error messages, account identifiers, screenshots, attachments, or native crash dumps. Neither service records your screen or automatically captures its contents.</p>
 
     <h2>2. How We Use Your Data</h2>
@@ -139,17 +141,20 @@
       <li><strong>Strava</strong> (optional) — If you connect Strava, completed workouts are uploaded to your Strava account. <a href="https://www.strava.com/legal/privacy" target="_blank">Strava Privacy Policy</a></li>
       <li><strong>PostHog</strong> (optional) — Basic product usage events after you enable usage sharing. <a href="https://posthog.com/privacy" target="_blank">PostHog Privacy Policy</a></li>
       <li><strong>Sentry</strong> (optional) — Sanitized JavaScript diagnostics after you enable error reporting. <a href="https://sentry.io/privacy/" target="_blank">Sentry Privacy Policy</a></li>
+      <li><strong>RevenueCat</strong> (when you use enabled subscription features) — Purchase records and subscription access. <a href="https://www.revenuecat.com/privacy/" target="_blank">RevenueCat Privacy Policy</a></li>
     </ul>
 
     <h2>4. Data Retention</h2>
-    <p>Your training data remains in our database as long as your account is active. You can delete all data at any time from <strong>Profile → Data &amp; Privacy → Reset All Data</strong>. This permanently removes your account data from our servers.</p>
+    <p>Your account records remain in Supabase while your account is active. In versions with Account &amp; Legal, go to <strong>Settings → Account &amp; Legal → Request account deletion</strong> to submit an authenticated deletion request and receive a reference. In older versions, contact support below. A request reference means the request was recorded, not that deletion is complete. Requests require processing and confirmation; contact support for progress. <strong>Reset Plan is not account deletion and does not promise to erase server records.</strong></p>
+    <p>Deletion processing must cover StrideOS database records and uploaded media. Where authentication is shared with another service, its records must not be silently erased as part of StrideOS deletion. Any necessary separation of that identity is handled before confirming completion. Copies retained for applicable legal obligations or restricted provider backups are handled under the relevant retention requirements; deleting an active record does not instantly erase every historical backup.</p>
+    <p>Local app records and media are separate from server records. Removing the app removes its app-container data, subject to your device's backup and restore behavior. Account deletion does not erase your Apple Health records or original photo-library media. <strong>Deleting an account or uninstalling the app does not cancel an Apple subscription.</strong> Manage renewal in your Apple Account subscription settings.</p>
     <p>Turning optional sharing off stops new reports and discards the app's unsent session data. It does not recall requests already transmitted or delete previously received vendor reports. No analytics or diagnostic offline queue is persisted by StrideOS. Contact us for requests about previously submitted reports; the reporting identifiers do not contain your account identity.</p>
 
     <h2>5. Children's Privacy</h2>
     <p>StrideOS is not directed at children under 13. We do not knowingly collect personal information from children under 13.</p>
 
     <h2>6. Your Rights</h2>
-    <p>You may request a copy of your data, correction of inaccurate data, or deletion of your account and all associated data at any time by contacting us at the address below.</p>
+    <p>You may request access to, a copy of, correction of, or deletion of your StrideOS data by contacting us below. You can revoke Health and location permissions in iOS settings, revoke AI sharing in AI Coach Privacy, and turn optional analytics and diagnostics off in Privacy &amp; Diagnostics. Revocation stops future collection under that permission; it does not automatically remove data already submitted.</p>
 
     <h2>7. Security</h2>
     <p>All data in transit is encrypted via HTTPS/TLS. Data at rest is stored in Supabase with row-level security policies that ensure you can only access your own data. Movement videos are stored in a private bucket accessible only by authenticated requests from your account.</p>

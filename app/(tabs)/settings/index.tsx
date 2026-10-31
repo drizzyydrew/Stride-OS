@@ -2,6 +2,8 @@ import { LegacyBackControl } from '../../../src/components/layout/NavigationEsca
 import { useEffect, useMemo, useRef, useState } from 'react';
 import HealthRestoreCard from '../../../src/components/activity/HealthRestoreCard';
 import ObservabilityPreferences from '../../../src/components/settings/ObservabilityPreferences';
+import AiSharingPreferences from '../../../src/components/settings/AiSharingPreferences';
+import AccountPrivacy from '../../../src/components/settings/AccountPrivacy';
 import {
   Alert,
   Image,
@@ -1094,6 +1096,8 @@ export default function SettingsScreen() {
       </View>
 
       <ObservabilityPreferences />
+      <AiSharingPreferences />
+      <AccountPrivacy />
 
       {/* Apple Watch */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>

@@ -1,73 +1,78 @@
-// ─── RevenueCat Integration ───────────────────────────────────────────────────
-//
-// Requires: react-native-purchases (native module — needs EAS custom dev client).
-// Product IDs are configured in App Store Connect after Apple Developer account
-// is active. Guarded with try/catch so the app runs on Expo Go without crashing.
+import { Platform } from 'react-native';
+import type Purchases from 'react-native-purchases';
+import type { PurchasesPackage, CustomerInfo } from 'react-native-purchases';
+import { captureOwnerLease, ownerLeaseIsCurrent } from './localDataOwner';
 
-type OptionalPurchasesModule = {
-  default: {
-    configure: (options: { apiKey: string }) => Promise<void> | void;
-    logIn: (userId: string) => Promise<unknown> | unknown;
-    getCustomerInfo: () => Promise<{ entitlements: { active: Record<string, unknown> } }>;
-    getOfferings: () => Promise<{ current?: { availablePackages: unknown[] } | null }>;
-    purchasePackage: (pkg: unknown) => Promise<unknown>;
-  };
-};
+const PRODUCT_IDS = new Set(['strideos_pro_monthly', 'strideos_pro_annual']);
+let sdk: typeof Purchases | undefined;
+let queue: Promise<unknown> = Promise.resolve();
 
-let Purchases: OptionalPurchasesModule | null = null;
+export type Entitlements = { hasAnalysisCredits: boolean; isPro: boolean };
+export type SubscriptionOption = { id: string; period: 'month' | 'year'; price: string; package: PurchasesPackage };
 
-try {
-  Purchases = require('react-native-purchases');
-} catch {
-  // react-native-purchases not available in this build
+export function billingIsConfigured() {
+  return Platform.OS === 'ios' && process.env.EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED === 'true'
+    && /^appl_[A-Za-z0-9]+$/.test(process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '');
 }
-
-const REVENUECAT_API_KEY_IOS     = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY;
-const REVENUECAT_API_KEY_ANDROID = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
-
-export async function initRevenueCat(userId?: string): Promise<void> {
-  if (!Purchases) return;
-
-  const { Platform } = require('react-native');
-  const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
-  if (!apiKey) return;
-
-  await Purchases.default.configure({ apiKey });
-  if (userId) {
-    await Purchases.default.logIn(userId);
-  }
+function entitlements(info: CustomerInfo): Entitlements {
+  return { isPro: Boolean(info.entitlements.active.pro?.isActive), hasAnalysisCredits: false };
 }
-
-export type Entitlements = {
-  hasAnalysisCredits: boolean;
-  isPro:              boolean;
-};
-
+async function withPurchases<T>(action: (client: typeof Purchases, assertCurrent: () => void) => Promise<T>): Promise<T> {
+  const lease = captureOwnerLease(true);
+  if (!lease || !billingIsConfigured()) throw new Error('Subscriptions are unavailable. No payment was started.');
+  const task = queue.then(async () => {
+    const assertCurrent = () => { if (!ownerLeaseIsCurrent(lease, true)) throw new Error('Your account changed. Please try again.'); };
+    assertCurrent();
+    sdk ??= (await import('react-native-purchases')).default;
+    assertCurrent();
+    const configured = await sdk.isConfigured();
+    assertCurrent();
+    if (!configured) {
+      sdk.configure({ apiKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY!, appUserID: lease.ownerUserId,
+        automaticDeviceIdentifierCollectionEnabled: false, shouldShowInAppMessagesAutomatically: false });
+    } else {
+      const priorUser = await sdk.getAppUserID();
+      assertCurrent();
+      if (priorUser !== lease.ownerUserId) { await sdk.logIn(lease.ownerUserId); assertCurrent(); }
+    }
+    const sdkOwner = await sdk.getAppUserID();
+    assertCurrent();
+    if (sdkOwner !== lease.ownerUserId) throw new Error('Membership identity could not be verified.');
+    const result = await action(sdk, assertCurrent);
+    const completedOwner = await sdk.getAppUserID();
+    assertCurrent();
+    if (completedOwner !== lease.ownerUserId) throw new Error('Your account changed. Check your Apple purchase history before retrying.');
+    return result;
+  });
+  queue = task.catch(() => undefined);
+  return task;
+}
+export async function initRevenueCat(_userId?: string): Promise<void> {
+  await withPurchases(async () => undefined);
+}
 export async function checkEntitlements(): Promise<Entitlements> {
-  if (!Purchases) return { hasAnalysisCredits: false, isPro: false };
-
-  try {
-    const info = await Purchases.default.getCustomerInfo();
-    return {
-      hasAnalysisCredits: 'analysis_credits' in info.entitlements.active,
-      isPro:              'pro' in info.entitlements.active,
-    };
-  } catch {
-    return { hasAnalysisCredits: false, isPro: false };
-  }
+  if (!billingIsConfigured()) return { isPro: false, hasAnalysisCredits: false };
+  return withPurchases(async client => entitlements(await client.getCustomerInfo()));
 }
-
-export async function purchaseAnalysisCredit(): Promise<boolean> {
-  if (!Purchases) return false;
-
-  try {
-    const offerings = await Purchases.default.getOfferings();
-    const pkg = offerings.current?.availablePackages[0];
-    if (!pkg) return false;
-
-    await Purchases.default.purchasePackage(pkg);
-    return true;
-  } catch {
-    return false;
-  }
+export async function getSubscriptionOptions(): Promise<SubscriptionOption[]> {
+  return withPurchases(async client => {
+    const current = (await client.getOfferings()).current;
+    return (current?.availablePackages ?? []).flatMap(pkg => {
+      if (!PRODUCT_IDS.has(pkg.product.identifier) || pkg.product.price <= 0) return [];
+      const period = pkg.product.identifier === 'strideos_pro_annual' ? 'year' as const : 'month' as const;
+      return [{ id: pkg.identifier, period, price: pkg.product.priceString, package: pkg }];
+    });
+  });
+}
+export async function purchaseSubscription(option: SubscriptionOption): Promise<Entitlements> {
+  return withPurchases(async (client, assertCurrent) => {
+    const current = (await client.getOfferings()).current?.availablePackages.find(pkg => pkg.identifier === option.id
+      && pkg.product.identifier === option.package.product.identifier && PRODUCT_IDS.has(pkg.product.identifier));
+    if (!current) throw new Error('This plan is no longer available. Reload the available plans.');
+    assertCurrent();
+    return entitlements((await client.purchasePackage(current)).customerInfo);
+  });
+}
+export async function restoreSubscriptions(): Promise<Entitlements> {
+  return withPurchases(async client => entitlements(await client.restorePurchases()));
 }

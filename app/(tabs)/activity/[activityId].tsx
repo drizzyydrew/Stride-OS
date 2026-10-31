@@ -221,8 +221,6 @@ export default function ActivityDetailScreen() {
             </View>
           ))}
         </View>
-        {supportsHealthSplitRefresh(activity)
-          ? <HealthDistanceRefresh key={`${activity.id}:${focused}`} activityId={activity.id} linked={Boolean(activity.healthKit)} isCurrent={healthRequestIsCurrent} /> : null}
         {runSplits.length || healthSplits ? (
           <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[s.eyebrow, { color: C.textDim }]}>DISTANCE SPLITS</Text>
@@ -307,6 +305,8 @@ export default function ActivityDetailScreen() {
             {activity.symptoms?.length ? <Text style={[s.body, { color: C.textMuted }]}>Athlete-reported: {activity.symptoms.join(', ')}</Text> : null}
           </View>
         ) : null}
+        {supportsHealthSplitRefresh(activity)
+          ? <View style={{ marginTop: 24, marginBottom: 16 }}><HealthDistanceRefresh key={`${activity.id}:${focused}`} activityId={activity.id} linked={Boolean(activity.healthKit)} isCurrent={healthRequestIsCurrent} /></View> : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -332,7 +332,7 @@ const s = StyleSheet.create({
   content: { paddingHorizontal: 18, paddingBottom: 100 },
   mapCard: { height: 220, borderWidth: 1, borderRadius: 18, overflow: 'hidden', marginBottom: 14 },
   map: { flex: 1 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, rowGap: 14, marginTop: 24, marginBottom: 24 },
   metric: { width: '48%', minHeight: 86, borderWidth: 1, borderRadius: 15, padding: 14, justifyContent: 'center' },
   metricValue: { fontSize: 21, fontWeight: '900' },
   metricLabel: { fontSize: 11, marginTop: 5 },

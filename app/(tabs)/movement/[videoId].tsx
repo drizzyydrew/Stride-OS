@@ -308,6 +308,7 @@ function SubmitForAnalysisCard({
   submitted: boolean;
   status:    string | null | undefined;
 }) {
+  if (!submitted) return null;
   if (submitted) {
     const statusLabel =
       status === 'in_review' ? 'In Review' :
@@ -327,22 +328,13 @@ function SubmitForAnalysisCard({
           <Text style={[sub.statusTxt, { color: statusColor }]}>{statusLabel}</Text>
         </View>
         <Text style={sub.desc}>
-          Your video has been submitted. You'll receive coach feedback here once the analysis is complete.
+          This saved record is marked submitted. No new professional review is booked here. Contact support to confirm its status.
         </Text>
       </View>
     );
   }
 
-  return (
-    <View style={sub.card}>
-      <Text style={sub.cardLabel}>PROFESSIONAL ANALYSIS</Text>
-      <Text style={sub.heading}>Coach Review — Coming Soon</Text>
-      <Text style={sub.desc}>
-        Submit your video to receive a detailed analysis from a running coach — personalized findings,
-        corrective drills, and training recommendations.
-      </Text>
-    </View>
-  );
+  return null;
 }
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
@@ -640,13 +632,6 @@ export default function VideoDetailScreen() {
               Pause your video at a key frame, measure the angle manually, and log it here.
               Reference ranges are based on published biomechanics literature.
             </Text>
-            <View style={s.comingSoonCard}>
-              <Text style={s.comingSoonTitle}>AI Auto-Detection — Coming Soon</Text>
-              <Text style={s.comingSoonDesc}>
-                Future: MediaPipe Pose / MoveNet will estimate joint angles frame-by-frame
-                on-device without sending video to the cloud.
-              </Text>
-            </View>
             {(session?.jointAngles ?? []).length === 0 ? (
               <Text style={s.emptyNote}>No angles logged yet.</Text>
             ) : null}

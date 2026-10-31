@@ -1,4 +1,6 @@
 import { getSupabaseFunctionHeaders, getSupabaseFunctionUrl } from './supabase';
+import { aiConsent } from '../store/aiConsentStore';
+import { captureOwnerLease, ownerLeaseIsCurrent } from './localDataOwner';
 import {
   budgetCoachMessages,
   enforceCoachSystemPrompt,
@@ -79,6 +81,11 @@ export async function checkAiCoachHealth(): Promise<AiCoachHealth> {
 }
 
 export async function sendCoachMessage(messages: CoachMessage[], system: string): Promise<string> {
+  const consent = aiConsent.getState();
+  const lease = captureOwnerLease(true);
+  if (!lease || !consent.ready || !consent.allowed || consent.owner !== lease.ownerUserId) {
+    throw new Error('Enable sharing with Anthropic in AI Coach Privacy before sending a message.');
+  }
   const endpoint = coachEndpoint();
   const headers = await getSupabaseFunctionHeaders();
   if (!endpoint || !headers) {
@@ -87,25 +94,34 @@ export async function sendCoachMessage(messages: CoachMessage[], system: string)
 
   const budgetedMessages = budgetCoachMessages(messages);
   const budgetedSystem = enforceCoachSystemPrompt(system);
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
-    body: JSON.stringify({ messages: budgetedMessages, system: budgetedSystem }),
-  });
+  const current = () => ownerLeaseIsCurrent(lease, true) && aiConsent.getState().revision === consent.revision && aiConsent.getState().allowed;
+  if (!current()) throw new Error('AI sharing or your account changed. Please try again.');
+  const controller = new AbortController();
+  const unsubscribe = aiConsent.subscribe(() => { if (!current()) controller.abort(); });
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+      body: JSON.stringify({ messages: budgetedMessages, system: budgetedSystem, consentVersion: 1 }),
+      signal: controller.signal,
+    });
 
-  const body = await response.json().catch(() => ({})) as CoachResponse;
+    const body = await response.json().catch(() => ({})) as CoachResponse;
+    if (!current()) throw new Error('AI sharing or your account changed. The response was discarded.');
 
-  if (!response.ok) {
-    throw new Error(errorMessage(body, response.status));
-  }
+    if (!response.ok) {
+      throw new Error(errorMessage(body, response.status));
+    }
 
-  const text = body.content?.find(part => typeof part.text === 'string')?.text;
-  if (!text) {
-    throw new Error('AI coach returned an empty response.');
-  }
+    const text = body.content?.find(part => typeof part.text === 'string')?.text;
+    if (!text) {
+      throw new Error('AI coach returned an empty response.');
+    }
 
-  return text;
+    return text;
+  } finally { clearTimeout(timeout); unsubscribe(); }
 }
