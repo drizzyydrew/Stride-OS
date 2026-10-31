@@ -51,7 +51,7 @@ export default function AccountPrivacy() {
     ] as const).map(([key, label, icon]) => <TouchableOpacity key={key} style={s.link} accessibilityRole="link" onPress={() => {
       void Linking.openURL(LEGAL_URLS[key]).catch(() => setError('This link could not be opened. Please try again.'));
     }}><Ionicons name={icon} size={20} color={C.primary} /><Text style={[s.copy, { color: C.text }]}>{label}</Text><Ionicons name="open-outline" size={16} color={C.textMuted} /></TouchableOpacity>)}
-    <Text style={[s.copy, { color: C.textMuted }]}>Account deletion is separate from Reset Plan. A confirmed request starts deletion of your StrideOS account and server data; processing is not instantaneous. Apple Health and your photo library are not erased. Cancel any Apple subscription separately to stop renewal.</Text>
+    <Text style={[s.copy, { color: C.textMuted }]}>Account deletion is separate from Reset Plan. Processing is not instantaneous. Cloud sync stops after your request is recorded. Data on this device, Apple Health, and your photo library is not erased by a request. Cancel any Apple subscription separately to stop renewal.</Text>
     {request ? <View accessibilityLiveRegion="polite" style={{ gap: 8 }}>
       <Text style={[s.copy, { color: C.text }]}>{request.status === 'completed' ? 'Deletion marked complete' : 'Deletion requested; not yet complete'}</Text>
       <Text selectable style={[s.copy, { color: C.textMuted }]}>Reference: {request.id}</Text>

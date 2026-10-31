@@ -1,0 +1,11 @@
+{
+  "name": "@strideos/decode-uri-component-cjs",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.cjs",
+  "license": "UNLICENSED",
+  "engines": { "node": ">=20.19.0" },
+  "dependencies": {
+    "strideos-uri-decoder": "npm:decode-uri-component@0.5.1"
+  }
+}

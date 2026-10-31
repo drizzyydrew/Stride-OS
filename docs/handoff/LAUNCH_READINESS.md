@@ -1,6 +1,45 @@
 # StrideOS Launch Readiness
 
-Checkpoint: October 31, 2026. Source baseline: cb45668, canonical Developer checkout. This is a targeted single-assistant multi-lens review, not an independent security audit, clinical validation, legal opinion, or physical-device acceptance.
+Checkpoint: October 31, 2026. Current continuation follows committed baseline 399bcac in the canonical Developer checkout. This is a targeted single-assistant multi-lens review, not an independent security audit, clinical validation, legal opinion, or physical-device acceptance.
+
+## Latest Continuation
+
+- The owner explicitly authorized separating Bet Desk and StrideOS without unnecessary deletion. Both apps already had dedicated projects; the mistaken shared-auth conclusion came from empty legacy Bet Desk tables in StrideOS. Bet Desk's web and mobile production URLs were freshly verified against its dedicated project. Nine empty legacy tables were preserved in a private archive schema, with the same relation identities and counts, and their obsolete Auth foreign keys detached. No accounts, files, training history, bets, or projects were deleted. No paid upgrade was needed. See `BACKEND_ISOLATION.md` for evidence and the failed, non-billed new-project attempt.
+- All seven high dependency findings were removed through narrowly scoped patched upstream dependencies, not an SDK jump. The CommonJS adapter delegates URI parsing to exact upstream decode-uri-component 0.5.1. Real Router parsing, bounded malicious inputs, Metro assets, Expo CLI schemas, and both plist consumers have dedicated tests. Current scan: 18 findings (16 moderate, two low), zero high/critical. These remaining findings are not represented as zero vulnerabilities or independent clearance.
+- Guarded deletion fulfillment is implemented as an operator command with a read-only default, an exact-receipt execution confirmation, database leases, Storage API removal before Auth removal, and verified completion. Cloud access freezes at the recorded request even for older clients. The real existing Apple-linked account remains blocked until provider revocation is configured; no deletion command was run against it. This is not a completed automatic end-user deletion service.
+- RevenueCat project `1a3600d5` exists and email confirmation is complete. Entitlement `pro` / StrideOS Pro (`entl0c642305f9`) was created with no attached products. An offering cannot be saved until products exist. Apple purchase-key upload, store products, approved paid scope/prices/trial, server key, and sandbox tests remain. Client/server billing stays off.
+- Initial full regression rerun passed 1,227/1,227 tests. A fresh `npm ci --ignore-scripts` succeeded from the lockfile; clean-install validation is tracked in the continuation's final receipts. Full iOS Metro/Hermes export passed (3,713 modules, 109 assets). This proves JavaScript bundling, not native compilation or device behavior.
+
+### Final Engineering Checkpoint
+
+- Final regression after the additional false-completion test: **1,228/1,228
+  passed**, no failures/skips, `/tmp/strideos-launch-release-tests.log`, 120.5s.
+  Semantic TypeScript, Expo SDK compatibility and diff checks passed.
+- Actual-component browser fixture rerun: **28/28**, no page errors or external
+  requests, dark/light and 320/393/768 widths. Still synthetic, not native QA.
+- A separate directory with no pre-existing `node_modules` installed the lockfile
+  successfully. Its decoder resolves to its own copied vendor adapter, not the
+  canonical checkout. Phone, Watch and Live Activity prebuild passed there. The
+  existing missing optional `expo-system-ui` background-color warning remains;
+  neither SDK 57 nor React Native 0.86 was adopted despite CLI recommendations.
+- All deletion SQL changes were transaction-probed before applying and probed
+  again afterward. Null leases, mismatched storage ownership, client RPC access,
+  false completion and cross-app Auth references are checked. Synthetic users,
+  requests and Storage metadata fixtures were rolled back and absence verified.
+  No physical test object was uploaded/deleted and no customer was removed.
+- Latest security advisor: only leaked-password protection (paid-plan setting).
+  Latest dependency scan: zero high/critical, 18 moderate/low.
+- GPS, HealthKit, Watch/Live Activity code, route builder, strength engine and
+  root startup show no diff from this continuation's baseline.
+
+Single-assistant multi-lens release review: the platform view supports a limited
+TestFlight candidate after these checks; the contrarian view rejects any public-
+launch claim while provider revocation, billing and physical/independent reviews
+remain open. The resolution is beta testing only, payments unchanged/off, not
+App Review or public release. Engineering confidence for that bounded candidate
+is 95/100 as a judgment under the repository gate, not a measured reliability
+probability. Native compilation, upload and Apple processing must each be checked
+separately and appended after they happen. No score waives the public-launch gates.
 
 ## Scope And Decision
 
@@ -17,15 +56,26 @@ The user authorized working through the launch checklist autonomously and using 
 
 ## Hard Launch Gates Still Open
 
-1. **Deletion fulfillment, not just initiation.** The live Supabase project also contains another application's tables and shared auth identities. Blind `auth.admin.deleteUser()` cascades into those tables. The request endpoint deliberately does not do that. Before public launch, establish and test a StrideOS-only fulfillment process, provider-token revocation (including Apple), removal of uploaded objects and application records, session invalidation, local-data handling, backups/retention, and completion confirmation. Where the same identity serves another app, separate or preserve that service lawfully. Do not mark a request completed merely because it was recorded or a plan was reset. Confirm processing time and operational responsibility before promising an SLA publicly.
+1. **End-to-end deletion, not just initiation or an operator engine.** Backend separation is now verified. The operator's database and workflow checks are implemented and tested, but the existing Apple-linked account deliberately fails closed until provider-token revocation is implemented/configured. Local-device cleanup, completion notification/status handling, retention operations, operator responsibility and dedicated end-to-end acceptance remain. The request endpoint still only initiates deletion. Do not mark a request completed merely because it was recorded or a plan was reset. Confirm processing time and operational responsibility before promising an SLA publicly.
 2. **Paid configuration and lifecycle.** Do not enable `EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` merely because purchase UI compiles. AI Coach chat has source-level Pro gates and server-authoritative RevenueCat entitlement verification, including expiration/grace checks; core recording/history/Insights remain free. Create RevenueCat/App Store products (`strideos_pro_monthly`, `strideos_pro_annual`), entitlement `pro`, and the matching offering; approve the initial paid scope/prices/trial; configure the public iOS key and the separate server-only `REVENUECAT_SECRET_API_KEY`; keep client/server billing switches aligned (`EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` and Supabase `STRIDEOS_BILLING_ENABLED`). Test real sandbox purchase/restore/refund/expiration and revocation before enabling either switch. No paid feature or charge is activated in this run.
 3. **Owner account settings.** Apple agreements, banking/tax, App Store labels/age rating/export compliance/reviewer account/availability, provider spend limits and billing setup are unverified. Leaked-password protection remains disabled; do not purchase a plan or alter shared auth settings blindly. Existing trigger-function search paths/direct-execution privileges were hardened and the new security advisor scan cleared those warnings.
 4. **Physical-device acceptance.** Independent testers must exercise fresh installation, Apple/Google/email login, denied permissions, screen-locked GPS, pause/resume/interruption, Watch reconnect, offline save, account ownership, restore/reinstall, failed Health recovery, and purchase lifecycle when enabled. Source/browser checks cannot prove these paths.
 5. **External human review.** No lawyer, QA contractor, security engineer, or sports-domain reviewer has been hired or represented as having approved the app. Gather fixed-scope quotes and obtain owner approval before spending.
 6. **Release.** Final tests, exact native archive, SDK/privacy manifests, source-map upload, TestFlight processing, external beta feedback, and App Review/public-release decisions are separate gates. Build 103 was absent in the last live EAS read at the start of this request; no public release is claimed.
-7. **Dependency security review.** Compatible transitive patches reduced npm's reported advisories from 29 (10 high) to 25 (7 high), with zero critical. High findings remain in the Expo Router/query-string/decode-uri-component chain and build-tool dependency paths (`@xmldom/xmldom`, `image-size`, `zod`/Expo CLI). The scanner's proposed Router fix jumps to SDK 58, outside the pinned SDK 56 baseline. The newer decoder is ESM while the installed Router expects CommonJS named query-string APIs, so a blind override is not an acceptable fix. Resolve through a vetted SDK-compatible backport or a separately verified SDK migration before claiming public-launch security readiness. This is engineering work, not a completed check or merely an owner sign-in step.
+7. **Residual dependency review.** High/critical findings are now zero without changing Expo SDK 56. Eighteen moderate/low upstream findings remain. The release review must assess their actual exposure and compatible fixes; neither a clean high-severity threshold nor successful bundling establishes whole-app security.
 
-## Deletion Operator Runbook (Not Yet A Verified Service)
+## Deletion Operator Runbook (Not Yet An Accepted End-User Service)
+
+The implementation is `scripts/process-account-deletion.ts` and the pure engine
+`src/utils/deletionFulfillment.ts`. It requires secure, server-only operator
+configuration. Running it without `--execute` only inventories the exact request
+and reports blockers. Execution additionally requires
+`STRIDEOS_DELETION_CONFIRM_REQUEST` to match that receipt. Never provide credentials
+through command-line arguments, public variables, source, screenshots or chat.
+Social-provider accounts and any unexpected shared Auth/storage dependencies fail
+closed before a lease or destructive action. Dedicated database functions are
+service-role-only; completion refuses residual records/files or a live Auth user.
+No real user has been removed to test this engine.
 
 - Monitor pending `stride_account_deletion_requests` through restricted operator access; do not expose the queue to other users. Each request has an authenticated owner and stable receipt. A duplicate submission does not reset its original date or falsely mark completion.
 - Verify request ownership and identify StrideOS-only database/media records and any shared identity dependencies. Do not inspect or delete unrelated app records as a substitute for identity separation.
@@ -52,8 +102,8 @@ Hire a senior React Native/iOS reviewer with shipped HealthKit, Watch, Supabase 
 
 ## Owner Handoff Prepared Last
 
-- Chrome Supabase setup tab reached the existing GitHub sign-in step; no passwords, OTPs, or new credentials were entered. RevenueCat reached its login screen; no account or contract was created/accepted and no payment was made. Both tabs were marked for handoff.
-- Needed decisions/access: shared-account deletion architecture/fulfillment and provider revocation, RevenueCat/App Store setup and approved paid scope, any paid security setting, independent-review budget, and eventual Apple submission/release approval. Credentials belong in the relevant vendor UI/secret store, never in chat.
+- Supabase and RevenueCat are signed in. The owner confirmed RevenueCat email verification. RevenueCat's Apple connection form is waiting for the owner's private purchase key; the empty Pro entitlement is configured. No private key, password, OTP, or new binding agreement was entered by the assistant.
+- Backend isolation is complete with the existing projects, not blocked on another paid project. Needed decisions/access: provider revocation and end-to-end deletion acceptance, RevenueCat/App Store keys and approved paid scope, optional paid security settings, independent-review budget, and eventual public-release approval. Credentials belong in the relevant vendor UI/secret store, never in chat.
 - No public App Store release or new TestFlight submission was performed in this request. The unresolved public-launch gates above remain deliberately open.
 
 ## Pricing Proposal, Not Configured Products
