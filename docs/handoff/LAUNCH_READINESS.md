@@ -7,7 +7,7 @@ Checkpoint: October 31, 2026. Current continuation follows committed baseline 39
 - The owner explicitly authorized separating Bet Desk and StrideOS without unnecessary deletion. Both apps already had dedicated projects; the mistaken shared-auth conclusion came from empty legacy Bet Desk tables in StrideOS. Bet Desk's web and mobile production URLs were freshly verified against its dedicated project. Nine empty legacy tables were preserved in a private archive schema, with the same relation identities and counts, and their obsolete Auth foreign keys detached. No accounts, files, training history, bets, or projects were deleted. No paid upgrade was needed. See `BACKEND_ISOLATION.md` for evidence and the failed, non-billed new-project attempt.
 - All seven high dependency findings were removed through narrowly scoped patched upstream dependencies, not an SDK jump. The CommonJS adapter delegates URI parsing to exact upstream decode-uri-component 0.5.1. Real Router parsing, bounded malicious inputs, Metro assets, Expo CLI schemas, and both plist consumers have dedicated tests. Current scan: 18 findings (16 moderate, two low), zero high/critical. These remaining findings are not represented as zero vulnerabilities or independent clearance.
 - Guarded deletion fulfillment is implemented as an operator command with a read-only default, an exact-receipt execution confirmation, database leases, Storage API removal before Auth removal, and verified completion. Cloud access freezes at the recorded request even for older clients. The real existing Apple-linked account remains blocked until provider revocation is configured; no deletion command was run against it. This is not a completed automatic end-user deletion service.
-- RevenueCat project `1a3600d5` exists and email confirmation is complete. Entitlement `pro` / StrideOS Pro (`entl0c642305f9`) was created with no attached products. An offering cannot be saved until products exist. Apple purchase-key upload, store products, approved paid scope/prices/trial, server key, and sandbox tests remain. Client/server billing stays off.
+- RevenueCat project `1a3600d5` now has a saved App Store connection with Valid credentials, both Apple product mappings attached to `pro`, and the verified default offering. The owner approved USD 9.99/month, USD 79.99/year and seven-day trial drafts. The public iOS SDK key is configured in EAS production and the client billing flag is explicitly false, read back after saving. Server credentials, subscription lifecycle acceptance and the remaining public-launch gates are still open.
 - Initial full regression rerun passed 1,227/1,227 tests. A fresh `npm ci --ignore-scripts` succeeded from the lockfile; clean-install validation is tracked in the continuation's final receipts. Full iOS Metro/Hermes export passed (3,713 modules, 109 assets). This proves JavaScript bundling, not native compilation or device behavior.
 
 ### Final Engineering Checkpoint
@@ -61,6 +61,120 @@ separately and appended after they happen. No score waives the public-launch gat
   diff checks passed. The dependency scan remains 18 moderate/low, zero
   high/critical. Native compilation and Apple processing are still separate.
 
+### Build 103 Archive And Upload Receipts
+
+- Corrected EAS build `897870a6-e736-43fb-a0d5-a9618bac60e9` finished successfully
+  at 18:49 UTC on October 31, source `4e06c841cff504375503a9efced213af7bfa20e4`.
+- The actual IPA was downloaded and inspected, not just its dashboard metadata.
+  Phone, Watch and Live Activity plists all resolve to version 1.0.0, build 103
+  and the intended bundle identifiers. Phone/extension use iPhoneOS 26.4 SDK;
+  Watch uses watchOS 26.4. Strict deep code-signature verification passed; the
+  phone has the expected team, HealthKit, Apple sign-in, production APNs and
+  app-group entitlements, with debugging disabled. All 20 included privacy
+  manifests parsed successfully. These are archive checks, not device tests.
+- The archive's compiled asset catalog contains an opaque 1024x1024 AppIcon,
+  verified with `assetutil`. Expo prebuild also generated an RGB/no-alpha icon;
+  the source PNG's alpha channel was not mistaken for the final compiled icon.
+- IPA SHA-256: `04d709da1979dd165e221f4e042c203b07450ed2207c52630ca8dc3424a7d24f`.
+  Local artifact `/tmp/strideos-build103.ipa`; extracted archive
+  `/tmp/strideos-build103-archive`.
+- Xcode logs confirm Hermes source-map artifact upload to Sentry release
+  `com.mooremovement.strideos@1.0.0+103`, dist 103, and 29 missing debug files
+  uploaded. This is not proof of a consented device event or symbolication.
+- Exact-build submission `48eade6b-98b4-4067-81e3-e4478e54aff1` successfully
+  uploaded the binary to Apple App Store Connect (`FINISHED`, 18:53 UTC).
+  Subsequent `eas submit:status` readback lists 103 as `VALID`,
+  `IN_BETA_TESTING` internally and `READY_FOR_BETA_SUBMISSION` externally.
+  This proves Apple processing/internal beta state, not a particular tester's
+  installation, external-beta approval or device acceptance.
+  No public App Review submission, public release or paid switch was performed.
+
+### Private Purchase-Key Handoff
+
+- The owner generated and downloaded a dedicated Apple In-App Purchase key.
+  Apple keys are account-level, not app-limited; the intended RevenueCat
+  connection is StrideOS only. Do not reuse an EAS upload key or Sign in with
+  Apple key in this field.
+- At the owner's explicit request, the downloaded folder was moved outside both
+  source checkouts into the owner's private home credentials directory. Inode
+  and byte count matched after the move; directory permissions are 700 and the
+  key is 600. The key contents were not opened, printed, committed or uploaded
+  by the assistant. The owner must maintain a secure backup; none is asserted.
+- The older iCloud checkout already ignored `.p8` files in Git but lacked that
+  explicit EAS rule. A one-line `*.p8` safety exclusion was added there only,
+  without building from or committing that older checkout. The canonical
+  Developer checkout already had both exclusions. No private key is tracked.
+- The owner uploaded and saved the P8 key directly in RevenueCat. App Store app
+  `app173317761f`, bundle `com.mooremovement.strideos`, shows **Valid credentials**.
+  The optional general App Store Connect API key was not added; the products
+  were mapped manually, avoiding another broad credential handoff.
+
+### Billing And Store Draft Receipts
+
+- Apple subscription group `22532701` / StrideOS Pro. Monthly product
+  `strideos_pro_monthly` has Apple ID `6829288874`, duration one month; annual
+  `strideos_pro_annual` has Apple ID `6829293174`, duration one year. Both are
+  prepared, not submitted for public review. USD base prices 9.99 and 79.99 were
+  selected, reviewed and saved with Apple's generated currency schedules.
+- Both products now have service level 1, read back after saving, because monthly
+  and annual grant the same Pro service. English (U.S.) group display name
+  StrideOS Pro is saved, with the app's normal name used in subscription settings.
+- Both products have English (U.S.) display names and the bounded description
+  "AI Coach chat with training context and daily limits." No unlimited-analysis,
+  medical, video-analysis or additional paid-planning promise was added.
+- Initial product availability drafts use United States, United Kingdom, Canada,
+  Australia and New Zealand, with automatic future territories off. The annual
+  upfront plan has an explicit five-country saved readback. Its separate
+  monthly-with-a-12-month-commitment variant remains unconfigured. Monthly
+  availability has the saved readback of five of 175 selected countries.
+- Annual introductory offer readback: October 31, 2026 to No End Date, five
+  regions, free for the first week. The monthly saved offer table now matches;
+  its five-country popover explicitly lists Australia, Canada, New Zealand,
+  United Kingdom and United States.
+  These do not establish actual sandbox eligibility, renewal or public sale.
+- Saved current-price readback, filtered to the five available markets:
+
+  | Storefront | Monthly | Annual |
+  | --- | ---: | ---: |
+  | United States (USD) | 9.99 | 79.99 |
+  | United Kingdom (GBP) | 9.99 | 79.99 |
+  | Canada (CAD) | 12.99 | 99.99 |
+  | Australia (AUD) | 14.99 | 129.99 |
+  | New Zealand (NZD) | 19.99 | 149.99 |
+
+  These are Apple's saved generated price schedule, not a hand-calculated foreign
+  exchange quote or a promise that prices never change. All ten rows also showed
+  free for the first week. The annual purchase option was saved/read back as
+  App Store only, multiseat Not Allowed. Monthly still needs the matching option
+  after browser control disconnected; no seat-management implementation exists.
+- RevenueCat product IDs: monthly `prod5877abc7c7`, annual `proda125e21ccd`.
+  Both saved product pages were reloaded and read back as attached to entitlement
+  `pro` (`entl0c642305f9`). Default offering `ofrng36b3a38697` / `default` /
+  StrideOS Pro was saved and read back with `$rc_monthly` and `$rc_annual` mapped
+  to those exact products. Its default status is confirmed by the dashboard.
+  No Test Store placeholder products or paid paywall tool were used.
+- Production EAS project now contains `EXPO_PUBLIC_REVENUECAT_IOS_KEY` and
+  `EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED=false`, verified by narrow readback.
+  These settings were saved after Build 103 was compiled; they do not alter that
+  already-uploaded binary or activate billing. The server flag remains off by
+  configuration/default. No RevenueCat server secret has been configured here.
+- Apple's saved listing draft still had stale injury-prevention/video-upload
+  claims. Promotional text, description and keywords were replaced with the
+  truthful draft in `docs/app-store.md` and saved without Add for Review.
+  The public version draft still references old build 1; it must not be mistaken
+  for the accepted 103 beta. Candidate selection remains an acceptance gate.
+- App-level availability now matches the five candidates, automatic future
+  territories off. A stale July 5, 2026 pre-order schedule was removed from this
+  not-yet-submitted app. Saved readback shows all five Available on App Release,
+  not Pre-Order Pending Developer Release. Clearing the pre-order exposed Apple's
+  automatic-release default; this was changed to Manually release this version
+  and saved (Save disabled afterward). No Add for Review or release was clicked.
+- The owner's delegated geography/Android council decision is documented in
+  `GLOBAL_ANDROID_PLAN.md`: international-first architecture, phased activation,
+  initial five-market candidates, shared StrideOS identity/entitlement, no new
+  paid infrastructure or Android account purchase. It is not independent or
+  regional legal clearance, and Android is not represented as implemented.
+
 The user authorized working through the launch checklist autonomously and using Chrome/computer use, with owner-dependent steps last. No paid service purchase, freelancer hire, acceptance of third-party contracts, or public App Store release is being performed without the owner's specific decision. No independent review agents are available in this run.
 
 ## Implemented In Source
@@ -75,11 +189,11 @@ The user authorized working through the launch checklist autonomously and using 
 ## Hard Launch Gates Still Open
 
 1. **End-to-end deletion, not just initiation or an operator engine.** Backend separation is now verified. The operator's database and workflow checks are implemented and tested, but the existing Apple-linked account deliberately fails closed until provider-token revocation is implemented/configured. Local-device cleanup, completion notification/status handling, retention operations, operator responsibility and dedicated end-to-end acceptance remain. The request endpoint still only initiates deletion. Do not mark a request completed merely because it was recorded or a plan was reset. Confirm processing time and operational responsibility before promising an SLA publicly.
-2. **Paid configuration and lifecycle.** Do not enable `EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` merely because purchase UI compiles. AI Coach chat has source-level Pro gates and server-authoritative RevenueCat entitlement verification, including expiration/grace checks; core recording/history/Insights remain free. Create RevenueCat/App Store products (`strideos_pro_monthly`, `strideos_pro_annual`), entitlement `pro`, and the matching offering; approve the initial paid scope/prices/trial; configure the public iOS key and the separate server-only `REVENUECAT_SECRET_API_KEY`; keep client/server billing switches aligned (`EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` and Supabase `STRIDEOS_BILLING_ENABLED`). Test real sandbox purchase/restore/refund/expiration and revocation before enabling either switch. No paid feature or charge is activated in this run.
+2. **Paid configuration and lifecycle.** Do not enable `EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` merely because purchase UI compiles. AI Coach chat has source-level Pro gates and server-authoritative RevenueCat entitlement verification, including expiration/grace checks; core recording/history/Insights remain free. Products, `pro`, default offering, group levels, five territories, exact local prices/trials and public iOS key are prepared as recorded above. Finish monthly individual purchase options, server notifications and the separate server-only `REVENUECAT_SECRET_API_KEY`; keep client/server billing switches aligned (`EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` and Supabase `STRIDEOS_BILLING_ENABLED`). Test real sandbox purchase/restore/refund/expiration and revocation before enabling either switch. No paid feature or charge is activated in this run.
 3. **Owner account settings.** Apple agreements, banking/tax, App Store labels/age rating/export compliance/reviewer account/availability, provider spend limits and billing setup are unverified. Leaked-password protection remains disabled; do not purchase a plan or alter shared auth settings blindly. Existing trigger-function search paths/direct-execution privileges were hardened and the new security advisor scan cleared those warnings.
 4. **Physical-device acceptance.** Independent testers must exercise fresh installation, Apple/Google/email login, denied permissions, screen-locked GPS, pause/resume/interruption, Watch reconnect, offline save, account ownership, restore/reinstall, failed Health recovery, and purchase lifecycle when enabled. Source/browser checks cannot prove these paths.
 5. **External human review.** No lawyer, QA contractor, security engineer, or sports-domain reviewer has been hired or represented as having approved the app. Gather fixed-scope quotes and obtain owner approval before spending.
-6. **Release.** Final tests, exact native archive, SDK/privacy manifests, source-map upload, TestFlight processing, external beta feedback, and App Review/public-release decisions are separate gates. Build 103 was absent in the last live EAS read at the start of this request; no public release is claimed.
+6. **Release.** Final tests, exact native archive, SDK/privacy manifests, source-map upload, TestFlight processing, external beta feedback, and App Review/public-release decisions are separate gates. Build 103 compiled, passed archive checks, uploaded to Apple and is VALID / IN_BETA_TESTING internally. Physical installation, independent beta acceptance and public-review readiness remain. No public release is claimed.
 7. **Residual dependency review.** High/critical findings are now zero without changing Expo SDK 56. Eighteen moderate/low upstream findings remain. The release review must assess their actual exposure and compatible fixes; neither a clean high-severity threshold nor successful bundling establishes whole-app security.
 
 ## Deletion Operator Runbook (Not Yet An Accepted End-User Service)
@@ -120,10 +234,10 @@ Hire a senior React Native/iOS reviewer with shipped HealthKit, Watch, Supabase 
 
 ## Owner Handoff Prepared Last
 
-- Supabase and RevenueCat are signed in. The owner confirmed RevenueCat email verification. RevenueCat's Apple connection form is waiting for the owner's private purchase key; the empty Pro entitlement is configured. No private key, password, OTP, or new binding agreement was entered by the assistant.
+- Supabase and RevenueCat are signed in. The owner completed the private Apple key upload/save; RevenueCat shows Valid credentials. Products, Pro mapping and the default offering are saved. No private key contents, password, OTP, or new binding agreement was entered by the assistant.
 - Backend isolation is complete with the existing projects, not blocked on another paid project. Needed decisions/access: provider revocation and end-to-end deletion acceptance, RevenueCat/App Store keys and approved paid scope, optional paid security settings, independent-review budget, and eventual public-release approval. Credentials belong in the relevant vendor UI/secret store, never in chat.
-- No public App Store release or new TestFlight submission was performed in this request. The unresolved public-launch gates above remain deliberately open.
+- Build 103 was successfully uploaded for TestFlight processing, not public App Review or release. The unresolved public-launch gates above remain deliberately open.
 
-## Pricing Proposal, Not Configured Products
+## Owner-Approved Pricing Drafts, Not Active Billing
 
-Free recording/calendar/history; proposed Pro $9.99/month or $79.99/year, with a seven-day trial only after eligibility and renewal disclosure are correctly configured and tested. Validate included features, real AI/storage/support costs and willingness to pay before activating billing. Do not promise unlimited expensive analysis or a lifetime service. An annual plan is a recurring service obligation, not immediate profit.
+The owner explicitly approved Pro USD 9.99/month or USD 79.99/year and a seven-day trial for product drafts. Recording/calendar/history remain free. Store-local prices are generated by Apple, not assumed equal to the USD amounts. Validate eligibility, renewal disclosure, included features, actual AI/storage/support costs and willingness to pay before activating billing. Do not promise unlimited expensive analysis or a lifetime service. An annual plan is a recurring service obligation, not immediate profit.

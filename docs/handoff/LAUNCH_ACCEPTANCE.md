@@ -25,18 +25,40 @@ RevenueCat project `1a3600d5`; entitlement `pro`; approved source identifiers
 analysis promise. The initial source paid gate is AI Coach chat only, capped at
 20 requests/account/UTC day and service availability, not all future coaching.
 
-1. Owner connects the Apple in-app purchase P8 key in RevenueCat's App Store app
-   form, including Key ID, Issuer ID and `com.mooremovement.strideos`. Creating
-   or granting credentials requires the owner's explicit action. No keys in chat.
-2. Owner approves included paid features, prices, territories and any trial. The
-   $9.99/month, $79.99/year, seven-day trial remain a proposal, not live products.
-3. Create the Apple subscription group/products, attach them to `pro`, add the
-   monthly/annual packages to the current offering, and verify localized prices.
-4. Store only the public iOS key in EAS. Store the RevenueCat read secret only in
-   Supabase's server secret store. Never put server keys in `EXPO_PUBLIC_*`.
-5. Test sandbox new purchase, cancellation, restore after reinstall, owner switch,
+Completed draft configuration on October 31, 2026:
+
+- Owner uploaded/saved the Apple in-app purchase P8 key. RevenueCat's App Store
+  connection reports Valid credentials for `com.mooremovement.strideos`.
+- Owner approved USD 9.99/month, USD 79.99/year and a seven-day trial. Apple
+  products `6829288874` and `6829293174` are saved in group `22532701`, both at
+  service level 1. The group display name is StrideOS Pro in English (U.S.).
+- Both subscriptions and their free-first-week offers cover the five candidate
+  markets in `GLOBAL_ANDROID_PLAN.md`. Monthly and annual saved offer tables
+  show October 31, 2026 to No End Date. These are drafts, not live purchases.
+- RevenueCat products `prod5877abc7c7` and `proda125e21ccd` are attached to `pro`.
+  The default/current offering `ofrng36b3a38697` maps `$rc_monthly` and
+  `$rc_annual` to the corresponding Apple products.
+- Public iOS SDK key is saved in production EAS, with the client billing flag
+  explicitly false. These settings postdate compilation of Build 103 and do not
+  change that uploaded binary. Server billing remains off/default.
+
+Still required:
+
+1. Finish monthly individual purchase options and truthful review screenshots.
+   The five app storefronts now show Available on App Release, with automatic
+   future territories off and manual public release saved. Exact local prices
+   for both durations are read back in `LAUNCH_READINESS.md`. The old Build 1
+   is still attached to the public version draft; candidate selection awaits
+   acceptance. No public review yet.
+2. Owner authorizes the minimum compatible RevenueCat server credential and
+   enters it only in Supabase's server secret store. The deployed verifier calls
+   REST v1 `/subscribers/{userId}`; do not assume a scoped v2-only key works with
+   that endpoint or describe a broad v1 key as read-only. Check actual permissions
+   before granting access. Configure and verify Apple server notifications as
+   appropriate. No server keys in `EXPO_PUBLIC_*` or chat.
+3. Test sandbox new purchase, cancellation, restore after reinstall, owner switch,
    grace/expiration, refund/revocation, failed verification and duplicate taps.
-6. Only after acceptance, align both client/server billing flags in one release.
+4. Only after acceptance, align both client/server billing flags in one release.
 
 ## Physical-Device Acceptance
 
