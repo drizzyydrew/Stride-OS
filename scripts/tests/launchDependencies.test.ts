@@ -83,3 +83,12 @@ test('the dependency lock contains the patched upstream versions and local adapt
   assert.equal(lock.packages['node_modules/@bacons/xcode/node_modules/@xmldom/xmldom'], undefined);
   assert.ok(readFileSync(join(process.cwd(), 'vendor/decode-uri-component-cjs/index.cjs'), 'utf8').includes("require('strideos-uri-decoder')"));
 });
+
+test('RevenueCat stays on the Expo-compatible release with a published CocoaPods dependency', () => {
+  const lock = JSON.parse(readFileSync(join(process.cwd(), 'package-lock.json'), 'utf8'));
+  assert.equal(lock.packages[''].dependencies['react-native-purchases'], '10.16.0');
+  assert.equal(lock.packages['node_modules/react-native-purchases'].version, '10.16.0');
+  const podspec = readFileSync(join(dirname(require.resolve('react-native-purchases/package.json')), 'RNPurchases.podspec'), 'utf8');
+  // Verified in the CocoaPods registry; RevenueCat 11's 20.1.0 pod is unpublished.
+  assert.match(podspec, /spec\.dependency\s+"PurchasesHybridCommon", '19\.17\.0'/);
+});

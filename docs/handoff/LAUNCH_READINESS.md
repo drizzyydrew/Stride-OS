@@ -43,6 +43,24 @@ separately and appended after they happen. No score waives the public-launch gat
 
 ## Scope And Decision
 
+### Build 103 Native Dependency Correction
+
+- EAS attempt `0305390e-f719-4834-8273-0c7c93488835`, source `5cd58a0`,
+  stopped at CocoaPods resolution. No archive or submission was produced.
+  RevenueCat 11.0.0 requires unpublished PurchasesHybridCommon 20.1.0.
+- RevenueCat's official 11.0.0 release notes explicitly tell Expo apps to remain
+  on 10.x: https://github.com/RevenueCat/react-native-purchases/releases/tag/11.0.0 .
+  Pinned 10.16.0 uses PurchasesHybridCommon 19.17.0, verified present in the
+  CocoaPods registry (published October 27). A regression test checks the actual
+  installed podspec and exact lockfile pin. No Sentry, tracking or Watch change.
+- Build number 103 is retained for a corrected retry because Apple never received
+  the failed attempt. This correction does not enable payments or settle the
+  outstanding purchase/device/public-launch acceptance gates.
+- Corrected-source checks: **1,229/1,229 tests passed**, zero failures/skips,
+  `/tmp/strideos-build103-fixed-tests.log`; TypeScript, Expo compatibility and
+  diff checks passed. The dependency scan remains 18 moderate/low, zero
+  high/critical. Native compilation and Apple processing are still separate.
+
 The user authorized working through the launch checklist autonomously and using Chrome/computer use, with owner-dependent steps last. No paid service purchase, freelancer hire, acceptance of third-party contracts, or public App Store release is being performed without the owner's specific decision. No independent review agents are available in this run.
 
 ## Implemented In Source
