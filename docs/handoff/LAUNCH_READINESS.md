@@ -144,9 +144,9 @@ separately and appended after they happen. No score waives the public-launch gat
 
   These are Apple's saved generated price schedule, not a hand-calculated foreign
   exchange quote or a promise that prices never change. All ten rows also showed
-  free for the first week. The annual purchase option was saved/read back as
-  App Store only, multiseat Not Allowed. Monthly still needs the matching option
-  after browser control disconnected; no seat-management implementation exists.
+  free for the first week. Both purchase options are now saved/read back as
+  App Store only, multiseat Not Allowed. This matches the individual-account
+  implementation; no group seat-management feature is represented as available.
 - RevenueCat product IDs: monthly `prod5877abc7c7`, annual `proda125e21ccd`.
   Both saved product pages were reloaded and read back as attached to entitlement
   `pro` (`entl0c642305f9`). Default offering `ofrng36b3a38697` / `default` /
@@ -175,6 +175,52 @@ separately and appended after they happen. No score waives the public-launch gat
   paid infrastructure or Android account purchase. It is not independent or
   regional legal clearance, and Android is not represented as implemented.
 
+### Scoped Server Verification Continuation
+
+- AI Coach v10 is deployed with JWT verification still on. Deployed source for
+  the entrypoint, shared handler and new RevenueCat verifier exactly matches the
+  reviewed local files. A live unauthenticated request returned 401. These checks
+  do not establish a successful authenticated RevenueCat request or purchase.
+- The verifier now uses RevenueCat REST v2 active entitlements, requiring only
+  `customer_information:customers:read`, instead of a broad v1 secret. The exact
+  API project ID `proj1a3600d5` was read from Project Settings, and the Pro ID is
+  `entl0c642305f9`. The dashboard Pro mapping has only the two intended products.
+  Reference: https://www.revenuecat.com/docs/api-v2/customer/resources .
+- Only a verified Supabase UUID is queried. The server uses an HTTPS GET to the
+  fixed project/customer route, a 10-second deadline, a 64 KiB response limit,
+  exact Pro identity and finite future access expiry. It never follows a supplied
+  pagination URL or a redirect with the bearer credential. Missing credentials,
+  malformed/incomplete answers and provider failures fail closed before spending
+  any AI allowance. RevenueCat computes the active access/grace-period state;
+  actual StoreKit lifecycle behavior still requires sandbox acceptance.
+- Single-assistant council check, not independent reviewers: Architecture favors
+  least privilege and no customer writes. The Contrarian notes a new API contract
+  can regress access and the credential is project-wide, not scoped to one athlete.
+  Chair's call: keep payments off, bind the exact StrideOS project/Pro IDs, test
+  real handler failures and verify deployed source before granting a key. No new
+  SDK, client build, paid service or Watch/startup change is needed for this server
+  adjustment. Revocation and sandbox acceptance remain separate gates.
+- Eighteen focused runtime tests passed, including the real handler's allowance
+  ordering, unknown/expired access, malformed/oversized answers, credential/owner
+  validation and provider failures. TypeScript and Expo compatibility checks also
+  passed. The earlier 1,229 full-suite receipt belongs to Build 103; it is not a
+  fresh full-suite result for this continuation.
+- Supabase's live secret-name table lists only ANTHROPIC_API_KEY and
+  ANTHROPIC_MODEL as custom secrets. No STRIDEOS_BILLING_ENABLED override or
+  REVENUECAT_SECRET_API_KEY exists, so server billing remains off by default.
+  The public client flag was not changed. The CLI metadata read hung and was
+  terminated; the dashboard readback, not that CLI attempt, is the receipt.
+- Prepared owner handoff: RevenueCat key form named StrideOS server entitlement
+  verification, API V2, Customers Configuration Read only; every other category
+  remains No access. Generate was not clicked. The StrideOS Supabase secret form
+  has only the name REVENUECAT_SECRET_API_KEY filled; its private value is empty.
+  Owner must generate/copy/save the private key directly between the vendor UIs.
+- Apple purchase notifications remain unconfigured. RevenueCat displays No
+  notifications received. Connecting production and sandbox purchase events to
+  the existing StrideOS RevenueCat app needs the owner's action-time approval.
+  Leave Track new purchases from server-to-server notifications off for the
+  SDK-driven identity flow unless a later review establishes otherwise.
+
 The user authorized working through the launch checklist autonomously and using Chrome/computer use, with owner-dependent steps last. No paid service purchase, freelancer hire, acceptance of third-party contracts, or public App Store release is being performed without the owner's specific decision. No independent review agents are available in this run.
 
 ## Implemented In Source
@@ -189,7 +235,7 @@ The user authorized working through the launch checklist autonomously and using 
 ## Hard Launch Gates Still Open
 
 1. **End-to-end deletion, not just initiation or an operator engine.** Backend separation is now verified. The operator's database and workflow checks are implemented and tested, but the existing Apple-linked account deliberately fails closed until provider-token revocation is implemented/configured. Local-device cleanup, completion notification/status handling, retention operations, operator responsibility and dedicated end-to-end acceptance remain. The request endpoint still only initiates deletion. Do not mark a request completed merely because it was recorded or a plan was reset. Confirm processing time and operational responsibility before promising an SLA publicly.
-2. **Paid configuration and lifecycle.** Do not enable `EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` merely because purchase UI compiles. AI Coach chat has source-level Pro gates and server-authoritative RevenueCat entitlement verification, including expiration/grace checks; core recording/history/Insights remain free. Products, `pro`, default offering, group levels, five territories, exact local prices/trials and public iOS key are prepared as recorded above. Finish monthly individual purchase options, server notifications and the separate server-only `REVENUECAT_SECRET_API_KEY`; keep client/server billing switches aligned (`EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` and Supabase `STRIDEOS_BILLING_ENABLED`). Test real sandbox purchase/restore/refund/expiration and revocation before enabling either switch. No paid feature or charge is activated in this run.
+2. **Paid configuration and lifecycle.** Do not enable `EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` merely because purchase UI compiles. AI Coach chat has source-level Pro gates and server-authoritative RevenueCat entitlement verification; core recording/history/Insights remain free. Products, `pro`, default offering, group levels, five territories, individual purchase options, exact local prices/trials and public iOS key are prepared as recorded above. Finish server notifications and the separate server-only V2 customer-read `REVENUECAT_SECRET_API_KEY`; keep client/server billing switches aligned (`EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` and Supabase `STRIDEOS_BILLING_ENABLED`). Test real sandbox purchase/restore/refund/expiration, grace and revocation before enabling either switch. No paid feature or charge is activated in this run.
 3. **Owner account settings.** Apple agreements, banking/tax, App Store labels/age rating/export compliance/reviewer account/availability, provider spend limits and billing setup are unverified. Leaked-password protection remains disabled; do not purchase a plan or alter shared auth settings blindly. Existing trigger-function search paths/direct-execution privileges were hardened and the new security advisor scan cleared those warnings.
 4. **Physical-device acceptance.** Independent testers must exercise fresh installation, Apple/Google/email login, denied permissions, screen-locked GPS, pause/resume/interruption, Watch reconnect, offline save, account ownership, restore/reinstall, failed Health recovery, and purchase lifecycle when enabled. Source/browser checks cannot prove these paths.
 5. **External human review.** No lawyer, QA contractor, security engineer, or sports-domain reviewer has been hired or represented as having approved the app. Gather fixed-scope quotes and obtain owner approval before spending.

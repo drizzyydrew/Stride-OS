@@ -121,8 +121,9 @@ and saved after clearing that schedule. The saved RevenueCat default offering
 maps both standard packages to
 the correct Apple products, with both products attached to `pro`. Prices and
 seven-day trial drafts are owner-approved. Exact saved local prices are recorded
-in `LAUNCH_READINESS.md`. Annual multiseat purchasing is disabled; the matching
-monthly setting still needs completion after browser disconnection. Billing
-remains explicitly disabled.
+in `LAUNCH_READINESS.md`. Both durations now disallow multiseat purchasing and
+use individual App Store purchases only. Server v10 supports a V2 customer-read
+key; owner key entry, notification delivery and sandbox lifecycle acceptance are
+still pending. Billing remains disabled.
 No Android account purchase, Android build, public App Review submission or public
 release has been performed by this decision.

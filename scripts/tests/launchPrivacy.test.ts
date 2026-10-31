@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createAiConsent, AI_CONSENT_KEY } from '../../src/utils/aiConsent';
-import { activeProFromSubscriber, createCoachHandler, createDeletionRequestHandler, readJson, validCoachPayload } from '../../supabase/functions/_shared/launchHandlers';
+import { createCoachHandler, createDeletionRequestHandler, readJson, validCoachPayload } from '../../supabase/functions/_shared/launchHandlers';
 
 const tick = () => new Promise<void>(resolve => setImmediate(resolve));
 function disk(raw: string | null = null) {
@@ -104,14 +104,4 @@ test('server-paid access is verified before quota reservation and fails closed o
   assert.equal(reserved, 0); assert.equal(replied, 0);
   assert.equal((await createCoachHandler({ ...deps, canUsePlan: async () => true })(request(payload()))).status, 200);
   assert.equal(reserved, 1); assert.equal(replied, 1);
-});
-test('server entitlement validation rejects expired, unknown and malformed plans and honors verified grace periods', () => {
-  const now = Date.parse('2026-10-31T12:00:00Z');
-  const response = (pro: unknown) => ({ subscriber: { entitlements: { pro } } });
-  for (const value of [null, {}, response({}), response({ product_identifier: 'unapproved', expires_date: '2027-01-01' }),
-    response({ product_identifier: 'strideos_pro_monthly', expires_date: 'not-a-date' }),
-    response({ product_identifier: 'strideos_pro_monthly', expires_date: '2026-10-30' }),
-    response({ product_identifier: 'strideos_pro_monthly', expires_date: null })]) assert.equal(activeProFromSubscriber(value, now), false);
-  assert.equal(activeProFromSubscriber(response({ product_identifier: 'strideos_pro_annual', expires_date: '2027-01-01' }), now), true);
-  assert.equal(activeProFromSubscriber(response({ product_identifier: 'strideos_pro_monthly', expires_date: '2026-10-30', grace_period_expires_date: '2026-11-02' }), now), true);
 });

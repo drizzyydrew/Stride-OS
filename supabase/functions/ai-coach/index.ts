@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.48.0';
-import { activeProFromSubscriber, createCoachHandler } from '../_shared/launchHandlers.ts';
+import { createCoachHandler } from '../_shared/launchHandlers.ts';
+import { createRevenueCatProVerifier } from '../_shared/revenueCatAccess.ts';
 
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false, autoRefreshToken: false } });
 const key = Deno.env.get('ANTHROPIC_API_KEY');
@@ -7,16 +8,10 @@ const SAFETY = 'You are a fitness training assistant, not a clinician. Never dia
 
 Deno.serve(createCoachHandler({
   configured: () => Boolean(key),
-  canUsePlan: async userId => {
-    if (Deno.env.get('STRIDEOS_BILLING_ENABLED') !== 'true') return true;
-    const secret = Deno.env.get('REVENUECAT_SECRET_API_KEY');
-    if (!secret) throw new Error('Subscription verification unavailable');
-    const response = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`, {
-      headers: { Authorization: `Bearer ${secret}`, Accept: 'application/json' }, signal: AbortSignal.timeout(10_000),
-    });
-    if (!response.ok) { await response.body?.cancel(); throw new Error('Subscription verification unavailable'); }
-    return activeProFromSubscriber(await response.json());
-  },
+  canUsePlan: createRevenueCatProVerifier({
+    enabled: () => Deno.env.get('STRIDEOS_BILLING_ENABLED') === 'true',
+    apiKey: () => Deno.env.get('REVENUECAT_SECRET_API_KEY'),
+  }),
   authenticate: async req => {
     const token = req.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
     if (!token) return null;

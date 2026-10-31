@@ -44,18 +44,22 @@ Completed draft configuration on October 31, 2026:
 
 Still required:
 
-1. Finish monthly individual purchase options and truthful review screenshots.
+1. Finish truthful review screenshots. Both plans now allow individual App Store
+   purchases only, with multiseat Not Allowed in saved readback.
    The five app storefronts now show Available on App Release, with automatic
    future territories off and manual public release saved. Exact local prices
    for both durations are read back in `LAUNCH_READINESS.md`. The old Build 1
    is still attached to the public version draft; candidate selection awaits
    acceptance. No public review yet.
-2. Owner authorizes the minimum compatible RevenueCat server credential and
-   enters it only in Supabase's server secret store. The deployed verifier calls
-   REST v1 `/subscribers/{userId}`; do not assume a scoped v2-only key works with
-   that endpoint or describe a broad v1 key as read-only. Check actual permissions
-   before granting access. Configure and verify Apple server notifications as
-   appropriate. No server keys in `EXPO_PUBLIC_*` or chat.
+2. Owner generates the prepared RevenueCat V2 key with Customers Configuration
+   Read only; leave all other permissions No access. Copy it directly into the
+   StrideOS Supabase secret REVENUECAT_SECRET_API_KEY and save there, never in
+   chat or `EXPO_PUBLIC_*`. The deployed AI Coach v10 now uses the matching V2
+   active-entitlements contract and exact StrideOS API project/Pro IDs. This key
+   can read customers across this RevenueCat project; the handler restricts each
+   request to the authenticated athlete. Grant no write/delete/config permission.
+   Configure Apple production and sandbox notifications to the existing RevenueCat
+   StrideOS app only after the owner's action-time approval, then verify delivery.
 3. Test sandbox new purchase, cancellation, restore after reinstall, owner switch,
    grace/expiration, refund/revocation, failed verification and duplicate taps.
 4. Only after acceptance, align both client/server billing flags in one release.

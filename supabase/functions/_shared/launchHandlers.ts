@@ -6,7 +6,7 @@ export const CORS = {
 export function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 }
-export async function readJson(req: Request, maximumBytes = 65_536): Promise<unknown> {
+export async function readJson(req: Pick<Request, 'body'>, maximumBytes = 65_536): Promise<unknown> {
   const reader = req.body?.getReader();
   if (!reader) throw new Error('Invalid request');
   const chunks: Uint8Array[] = [];
@@ -26,12 +26,6 @@ export async function readJson(req: Request, maximumBytes = 65_536): Promise<unk
   return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(combined));
 }
 export type CoachMessage = { role: 'user' | 'assistant'; content: string };
-export function activeProFromSubscriber(body: unknown, now = Date.now()): boolean {
-  const value = body as { subscriber?: { entitlements?: { pro?: { product_identifier?: string; expires_date?: unknown; grace_period_expires_date?: unknown } } } } | null;
-  const entitlement = value?.subscriber?.entitlements?.pro;
-  return Boolean(entitlement && ['strideos_pro_monthly', 'strideos_pro_annual'].includes(entitlement.product_identifier ?? '')
-    && [entitlement.expires_date, entitlement.grace_period_expires_date].some(date => typeof date === 'string' && Date.parse(date) > now));
-}
 export function validCoachPayload(value: unknown): value is { messages: CoachMessage[]; system: string; consentVersion: number } {
   if (!value || typeof value !== 'object') return false;
   const body = value as Record<string, unknown>;
