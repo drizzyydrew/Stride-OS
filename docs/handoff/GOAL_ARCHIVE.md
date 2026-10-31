@@ -1,6 +1,6 @@
 # Goal archive and open training
 
-October 31, 2026; canonical Developer checkout, build 104 candidate.
+October 31, 2026; canonical Developer checkout, build 104 internal TestFlight candidate.
 
 ## Athlete flow
 
@@ -88,3 +88,7 @@ accessible independently of the current plan's start date.
 
 See `LAUNCH_READINESS.md` for the final source/build receipts and remaining
 public-launch gates. This feature does not enable payments or public release.
+The committed source is `2765920`; Apple processed build 104 as VALID and
+IN_BETA_TESTING internally. Full final regression passed 1,318/1,318, semantic
+TypeScript/Expo checks and iOS Hermes export passed, and the actual signed
+phone/Watch/Live Activity archive was inspected before submission.

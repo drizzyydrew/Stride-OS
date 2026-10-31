@@ -17,6 +17,11 @@ and public release remain disabled until the relevant gates are actually passed.
 - Deletion: request receipts, immediate cloud freeze, private operator manifest,
   lease/ownership guards, Storage API removal and verified completion checks.
   Social-provider revocation and device cleanup are not accepted yet.
+- Goal/race archives, optional results, next-goal setup and durable open training
+  shipped in source `2765920` / build 104. Final regression: 1,318/1,318; semantic
+  TypeScript, Expo compatibility, iOS Hermes export and signed archive checks
+  passed. Apple readback: VALID / IN_BETA_TESTING internally. This is not device
+  acceptance, external-beta approval or public launch. See `GOAL_ARCHIVE.md`.
 
 ## Billing Handoff
 
@@ -63,7 +68,11 @@ Still required:
    including one compatibility-host retry; the cause remains unconfirmed.
    Sandbox notification delivery does not prove a successful customer entitlement
    lookup or a real purchase/renewal/refund lifecycle. Production delivery remains
-   an open acceptance item.
+   an open post-eligibility check. An Apple Commerce Engineer states production
+   API access is locked before a first production release; this is a plausible
+   explanation, not a confirmed diagnosis of this exact notification endpoint:
+   https://developer.apple.com/forums/thread/806452 . Do not release early merely
+   to make the TEST API pass or rotate a sandbox-working key without evidence.
 3. Test sandbox new purchase, cancellation, restore after reinstall, owner switch,
    grace/expiration, refund/revocation, failed verification and duplicate taps.
 4. Only after acceptance, align both client/server billing flags in one release.
@@ -83,6 +92,7 @@ video/log evidence. A source assertion or browser screenshot is not a pass here.
 | Watch disconnect/reconnect | Correct phone/watch state without duplicate completion |
 | Offline save and later sync | Same stable IDs, retained local records, truthful backup state |
 | Account switching and reinstall | No ownership reassignment, restored backup matches the original owner |
+| Goal expiry and next focus | Archive once after the local event day, retain actual history, optional result, next goal or durable open training; failed saves and relaunch preserve a usable current plan |
 | Health recovery failure | Existing activity preserved, useful limitation/error; no fabricated splits |
 | Tours and activity detail | Replay starts on the selected screen; safe bubbles and readable narrow layout |
 | Optional analytics and diagnostics | No events before consent; no Health/GPS/media/chat in vendor payloads |

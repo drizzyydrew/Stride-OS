@@ -247,6 +247,11 @@ separately and appended after they happen. No score waives the public-launch gat
   2026-10-31T21:23:01.834Z. Production returned 401; one compatibility-host retry
   also returned 401. Its cause remains unconfirmed. No real purchase, renewal,
   refund, charge or entitlement grant was performed.
+- Apple's Commerce Engineer explains that production API access is locked before
+  a first production release: https://developer.apple.com/forums/thread/806452 .
+  This makes release eligibility a plausible explanation for the production 401,
+  but the cited answer concerns transaction APIs, not an explicit notification
+  TEST guarantee. Retest when eligible; do not release prematurely to clear it.
 - For that test only, the private purchase key was read into memory to sign a
   five-minute JWT. Neither key contents nor JWT were printed, committed or
   persisted. The earlier private-key handoff receipt describes the initial move,
@@ -255,9 +260,9 @@ separately and appended after they happen. No score waives the public-launch gat
   themes at 320/393/768 pixels (24 layout combinations), invalid inputs, failed
   save draft retention and retry. Existing web SVG/accessibility and deprecated
   pointerEvents warnings remain; console-clean or native acceptance is not claimed.
-- Build number is 104. Final source, regression, native archive and upload receipts
-  will be appended only after each completes. Build 103 remains the accepted beta
-  until the newer build is processed by Apple.
+- Build number is 104. Final source, regression, native archive, upload and Apple
+  processing receipts are recorded below. Build 104 is now the accepted internal
+  TestFlight candidate; physical installation and device acceptance remain open.
 - Frozen-source regression: **1,318/1,318 passed**, no failures/skips, 165.8s,
   `/tmp/strideos-build104-frozen-tests.log`. Final semantic TypeScript and Expo
   dependency compatibility passed (`/tmp/strideos-build104-frozen-check.log`).
@@ -269,6 +274,36 @@ separately and appended after they happen. No score waives the public-launch gat
   targets use build 104. Watch, GPS, HealthKit and root startup source are
   unchanged. The bounded local ownership-discovery guard now also recognizes
   retained archives/journals; its regression is included in the full suite.
+
+### Build 104 Archive And Upload Receipts
+
+- Source `2765920e6eaaca9ef8ea0d65acfd6841dfe537cc` was committed, pushed and
+  remotely read back before the build request. EAS production/store build
+  `fa67ddd8-4081-4f6b-8a1b-246fcc3a3624` finished successfully at
+  2026-10-31T22:01:01.187Z. Existing plan resources and credentials were used;
+  no plan upgrade, new paid service or optional add-on was purchased.
+- Actual downloaded IPA inspected at `/tmp/strideos-build104.ipa`, extracted at
+  `/tmp/strideos-build104-archive`. Phone, Watch and Live Activity all resolve to
+  version 1.0.0/build 104 and their intended bundle identifiers. Phone/extension
+  use iPhoneOS 26.4 SDK; Watch uses watchOS 26.4. Strict deep signature validation
+  passed. The app has the intended team, HealthKit, Apple sign-in, production
+  APNs and app-group entitlements, with debugging disabled.
+- All 20 included privacy manifests parsed. The compiled asset catalog has an
+  opaque 1024x1024 AppIcon. IPA SHA-256:
+  `1ce41b2a97c2d4b8f158da27c11b0517c2a2f31b4e766699d81f29ad295d6d4a`.
+  Receipt `/tmp/strideos-build104-archive-receipt.json` records these checks.
+- Xcode log confirms source-map upload to Sentry release
+  `com.mooremovement.strideos@1.0.0+104`, dist 104, and one missing debug file
+  uploaded. This does not prove a consented device event or symbolication.
+- Exact-build submission `11fd163d-5cb3-47b0-80bf-857359f43f5a` uploaded the
+  binary successfully to Apple at 2026-10-31T22:03:30.847Z (`FINISHED`). Apple's
+  Build Uploads table first listed it as Processing. Subsequent supported CLI
+  readback confirms version 1.0.0/build 104 is `VALID`, `IN_BETA_TESTING` internally
+  and `READY_FOR_BETA_SUBMISSION` externally, not expired, with the matching EAS
+  build/submission IDs. Apple uploadedDate is 2026-10-31T15:04:53-07:00. This
+  proves processing/internal-beta state, not a particular tester's installation,
+  external-beta approval or physical-device acceptance. No public App Review,
+  public release, tester invitation or payment activation was performed.
 
 The user authorized working through the launch checklist autonomously and using Chrome/computer use, with owner-dependent steps last. No paid service purchase, freelancer hire, acceptance of third-party contracts, or public App Store release is being performed without the owner's specific decision. Engineering review agents do not replace independent device QA or professional legal/security review.
 
@@ -288,7 +323,7 @@ The user authorized working through the launch checklist autonomously and using 
 3. **Owner account settings.** Apple agreements, banking/tax, App Store labels/age rating/export compliance/reviewer account/availability, provider spend limits and billing setup are unverified. Leaked-password protection remains disabled; do not purchase a plan or alter shared auth settings blindly. Existing trigger-function search paths/direct-execution privileges were hardened and the new security advisor scan cleared those warnings.
 4. **Physical-device acceptance.** Independent testers must exercise fresh installation, Apple/Google/email login, denied permissions, screen-locked GPS, pause/resume/interruption, Watch reconnect, offline save, account ownership, restore/reinstall, failed Health recovery, and purchase lifecycle when enabled. Source/browser checks cannot prove these paths.
 5. **External human review.** No lawyer, QA contractor, security engineer, or sports-domain reviewer has been hired or represented as having approved the app. Gather fixed-scope quotes and obtain owner approval before spending.
-6. **Release.** Final tests, exact native archive, SDK/privacy manifests, source-map upload, TestFlight processing, external beta feedback, and App Review/public-release decisions are separate gates. Build 103 compiled, passed archive checks, uploaded to Apple and is VALID / IN_BETA_TESTING internally. Physical installation, independent beta acceptance and public-review readiness remain. No public release is claimed.
+6. **Release.** Final tests, exact native archive, SDK/privacy manifests, source-map upload, TestFlight processing, external beta feedback, and App Review/public-release decisions are separate gates. Build 104 compiled, passed archive checks, uploaded to Apple and is VALID / IN_BETA_TESTING internally. Physical installation, independent beta acceptance and public-review readiness remain. No public release is claimed.
 7. **Residual dependency review.** High/critical findings are now zero without changing Expo SDK 56. Eighteen moderate/low upstream findings remain. The release review must assess their actual exposure and compatible fixes; neither a clean high-severity threshold nor successful bundling establishes whole-app security.
 
 ## Deletion Operator Runbook (Not Yet An Accepted End-User Service)
@@ -331,7 +366,7 @@ Hire a senior React Native/iOS reviewer with shipped HealthKit, Watch, Supabase 
 
 - Supabase and RevenueCat are signed in. The owner completed the private Apple key upload/save; RevenueCat shows Valid credentials. Products, Pro mapping and the default offering are saved. No private key contents, password, OTP, or new binding agreement was entered by the assistant.
 - Backend isolation is complete with the existing projects, not blocked on another paid project. Needed decisions/access: provider revocation and end-to-end deletion acceptance, RevenueCat/App Store keys and approved paid scope, optional paid security settings, independent-review budget, and eventual public-release approval. Credentials belong in the relevant vendor UI/secret store, never in chat.
-- Build 103 was successfully uploaded for TestFlight processing, not public App Review or release. The unresolved public-launch gates above remain deliberately open.
+- Build 104 is processed and in internal TestFlight testing, not public App Review or release. The unresolved public-launch gates above remain deliberately open.
 
 ## Owner-Approved Pricing Drafts, Not Active Billing
 
