@@ -388,6 +388,7 @@ export function scheduledSessionsForDate(
   dateYMD: string,
   now = new Date(),
 ): ScheduledSession[] {
+  if (weekPlan.metadata.trainingMode === 'open') return [];
   const beginner = activeBeginnerPlan ? sessionsFromBeginnerPlanForDate(activeBeginnerPlan, dateYMD, now) : [];
   if (beginner.length > 0) {
     const projectedEntries = weekPlan.calendarMap.get(dateYMD) ?? [];

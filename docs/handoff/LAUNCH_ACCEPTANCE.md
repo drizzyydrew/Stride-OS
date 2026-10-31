@@ -51,15 +51,19 @@ Still required:
    for both durations are read back in `LAUNCH_READINESS.md`. The old Build 1
    is still attached to the public version draft; candidate selection awaits
    acceptance. No public review yet.
-2. Owner generates the prepared RevenueCat V2 key with Customers Configuration
-   Read only; leave all other permissions No access. Copy it directly into the
-   StrideOS Supabase secret REVENUECAT_SECRET_API_KEY and save there, never in
-   chat or `EXPO_PUBLIC_*`. The deployed AI Coach v10 now uses the matching V2
-   active-entitlements contract and exact StrideOS API project/Pro IDs. This key
-   can read customers across this RevenueCat project; the handler restricts each
-   request to the authenticated athlete. Grant no write/delete/config permission.
-   Configure Apple production and sandbox notifications to the existing RevenueCat
-   StrideOS app only after the owner's action-time approval, then verify delivery.
+2. Owner generated and saved the prepared RevenueCat V2 customer-read key directly
+   into StrideOS Supabase. The custom-secret name REVENUECAT_SECRET_API_KEY and
+   update time (October 31, 2026 20:50:06 UTC) were read back without revealing the
+   value. AI Coach v10 uses the matching V2 active-entitlements contract. The owner
+   separately approved the Apple notification connection; production and sandbox
+   URLs now persist after reloading App Store Connect and point to the existing
+   StrideOS RevenueCat app. The current Apple editor exposes no version selector.
+   Apple's official sandbox TEST API returned HTTP 200 and delivery status
+   SUCCESS for a version 2.0 TEST event at 21:23 UTC. Production returned 401,
+   including one compatibility-host retry; the cause remains unconfirmed.
+   Sandbox notification delivery does not prove a successful customer entitlement
+   lookup or a real purchase/renewal/refund lifecycle. Production delivery remains
+   an open acceptance item.
 3. Test sandbox new purchase, cancellation, restore after reinstall, owner switch,
    grace/expiration, refund/revocation, failed verification and duplicate taps.
 4. Only after acceptance, align both client/server billing flags in one release.

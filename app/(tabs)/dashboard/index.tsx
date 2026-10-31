@@ -16,6 +16,7 @@ import { useAchievementStore } from '../../../src/store/achievementStore';
 import { useRecalculationStore } from '../../../src/store/recalculationStore';
 import { todayDateKey } from '../../../src/types/checkin';
 import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckInCard';
+import GoalLifecycleCard from '../../../src/components/goals/GoalLifecycleCard';
 import { StreakBadge, StreakProgress, buildCurrentStreakSummary } from '../../../src/achievements/streaks';
 import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
 import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
@@ -542,6 +543,7 @@ export default function TodayScreen() {
       >
 
       <WeatherCard />
+      <GoalLifecycleCard />
 
       <TouchableOpacity
         style={[styles.currentStreakCard, { backgroundColor: C.card, borderColor: C.border }]}
@@ -572,6 +574,13 @@ export default function TodayScreen() {
           )}
         </View>
         {beforeStart ? (
+          weekPlan.metadata.trainingMode === 'open' ? <View style={{ gap: 12 }}>
+            <Text style={[styles.primaryWorkoutTitle, { color: C.text }]}>Open training</Text>
+            <Text style={[styles.workoutMeta, { color: C.textMuted }]}>Record a workout, explore your history, or choose a goal whenever you are ready.</Text>
+            <TouchableOpacity accessibilityRole="button" style={[styles.startButton, { backgroundColor: C.primary }]} onPress={() => router.push('/(tabs)/activity/start')}>
+              <Text style={[styles.workoutBtnText, { color: C.onPrimary }]}>Start a workout</Text>
+            </TouchableOpacity>
+          </View> :
           <Text style={[styles.workoutMeta, { color: C.textMuted }]}>
             {weekPlan.metadata.startsOn
               ? `Your plan starts ${weekPlan.metadata.startsOn}.`

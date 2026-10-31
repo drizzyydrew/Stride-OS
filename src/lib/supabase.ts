@@ -125,11 +125,14 @@ export async function hasRetainedLocalData(): Promise<boolean> {
     'readiness-store': ['history', 'todayReadiness'],
   };
   const keys = (await AsyncStorage.getAllKeys()).filter(key => !benign.has(key) && key !== LOCAL_DATA_OWNER_KEY
-    && (key.includes('-store') || key.startsWith('active-') || key === 'hydration-planner-inputs' || key === 'strideos-run-completion-journal-v1'));
+    && (key.includes('-store') || key.startsWith('active-') || key.startsWith('goal-archives:') || key.startsWith('goal-transition:')
+      || key === 'hydration-planner-inputs' || key === 'strideos-run-completion-journal-v1'));
   for (const key of keys) {
     const raw = await AsyncStorage.getItem(key);
     if (raw === null) continue;
-    const state = (JSON.parse(raw) as { state?: Record<string, unknown> }).state;
+    const parsed = JSON.parse(raw);
+    if (key.startsWith('goal-archives:') && Array.isArray(parsed) && parsed.length === 0) continue;
+    const state = (parsed as { state?: Record<string, unknown> }).state;
     if (!state) return true;
     // Startup migrates reminder preferences before sign-in. Preferences alone
     // are not evidence of another athlete; connected accounts still are.

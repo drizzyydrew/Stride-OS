@@ -786,6 +786,8 @@ test('actual ownership discovery allows startup preferences but quarantines read
     './localDataOwner': { configureLocalDataOwner: (storage: any) => new LocalDataOwner(storage), LOCAL_DATA_OWNER_KEY },
   });
   assert.equal(await exported.hasRetainedLocalData(), false);
+  local.values.set('goal-archives:retained-owner', '[]');
+  assert.equal(await exported.hasRetainedLocalData(), false, 'an empty archive cache does not claim a fresh device');
   const oldBoundary = new LocalDataOwner({ getItem: secure.getItem, setItem: secure.setItem });
   await oldBoundary.initialize(null, async () => true);
   assert.equal(oldBoundary.ownerUserId, null);
@@ -799,6 +801,14 @@ test('actual ownership discovery allows startup preferences but quarantines read
     ['integrations-store', { stravaConnected: true }],
   ] as const) {
     local.values.set(key, JSON.stringify({ state }));
+    assert.equal(await exported.hasRetainedLocalData(), true, key);
+    local.values.delete(key);
+  }
+  for (const [key, record] of [
+    ['goal-archives:retained-owner', [{ id: 'saved-block', ownerUserId: 'retained-owner' }]],
+    ['goal-transition:retained-owner', { schemaVersion: 1, ownerUserId: 'retained-owner', id: 'recovery', status: 'prepared', snapshots: [] }],
+  ] as const) {
+    local.values.set(key, JSON.stringify(record));
     assert.equal(await exported.hasRetainedLocalData(), true, key);
     local.values.delete(key);
   }

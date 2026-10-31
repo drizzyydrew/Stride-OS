@@ -5,6 +5,7 @@ import { useActivityStore } from '../store/activityStore';
 import { useScheduledSessionSelectionStore } from '../store/scheduledSessionSelectionStore';
 import { useAdaptationStore } from '../store/adaptationStore';
 import { useOnboardingStore } from '../store/onboardingStore';
+import { useTrainingPlanStore } from '../store/trainingPlanStore';
 import { addDays, toYMD } from '../utils/calendarEngine';
 import { adaptationWeekKey, applyAdaptationOverlays, validateAdaptationSchedule } from '../utils/adaptationWorkflow';
 import { legacyOverridesToMoveLedger, projectMoveLedgerForWeek } from '../utils/scheduleMoveLedger';
@@ -29,7 +30,16 @@ import type { ScheduledSession } from '../utils/scheduledSessions';
 import type { WeekPlan } from '../utils/trainingEngine';
 
 export function useScheduledSessions(weekPlan: WeekPlan, now = new Date()) {
-  const activeBeginnerPlan = useBeginnerPlanStore(state => state.activePlan);
+  const legacyBeginnerPlan = useBeginnerPlanStore(state => state.activePlan);
+  const presetPlan = useTrainingPlanStore(state => state.activePresetPlan);
+  const savedBeginnerPlan = presetPlan ?? legacyBeginnerPlan;
+  const activePreset = useTrainingPlanStore(state => state.activePresetGoal);
+  const goalBlockId = useTrainingPlanStore(state => state.goalBlockId);
+  const programmingStartedAt = useTrainingPlanStore(state => state.programmingStartedAt);
+  const programStartDate = useTrainingPlanStore(state => state.programStartDate);
+  const programmingKey = goalBlockId ?? activePreset?.planId ?? `legacy:${programStartDate}`;
+  const open = weekPlan.metadata.trainingMode === 'open';
+  const activeBeginnerPlan = !open && activePreset?.planId === savedBeginnerPlan?.id ? savedBeginnerPlan : null;
   const activities = useActivityStore(state => state.activities);
   const selectedByDate = useScheduledSessionSelectionStore(state => state.selectedByDate);
   const removedFromToday = useScheduledSessionSelectionStore(state => state.removedFromToday);
@@ -44,19 +54,23 @@ export function useScheduledSessions(weekPlan: WeekPlan, now = new Date()) {
     overlayCompletionOnScheduledSessions(
       scheduledSessionsForWeek(weekPlan, activeBeginnerPlan, weekPlan.weekStartDate, now),
       activities,
-    ), [activeBeginnerPlan, activities, now, weekPlan]);
-  const weekSessionsRaw = useMemo(() => applyAdaptationOverlays(
+    ).map(session => ({ ...session, trainingBlockId: programmingKey })), [activeBeginnerPlan, activities, now, weekPlan, programmingKey]);
+  const weekSessionsRaw = useMemo(() => open ? [] : applyAdaptationOverlays(
     canonicalWeekSessions,
-    confirmedAdaptation?.overlays,
-  ), [canonicalWeekSessions, confirmedAdaptation?.overlays]);
+    confirmedAdaptation?.overlays.filter(overlay => !programmingStartedAt
+      || (overlay.createdAt >= programmingStartedAt && overlay.original.trainingBlockId === programmingKey)),
+  ), [open, canonicalWeekSessions, confirmedAdaptation?.overlays, programmingStartedAt, programmingKey]);
   // Reschedule ("move date") is applied per-day against the whole known week
   // so a session moved off one day and onto another shows up exactly once,
   // on its new day, everywhere this hook is consumed.
   const weekSessions = useMemo(() => {
-    const effectiveLedger = {
+    if (open) return [];
+    const retainedLedger = {
       ...legacyOverridesToMoveLedger(dateOverrides),
       ...moveLedger,
     };
+    const effectiveLedger = Object.fromEntries(Object.entries(retainedLedger).filter(([, entry]) => !programmingStartedAt
+      || (!!entry && entry.movedAt >= programmingStartedAt && entry.snapshot?.trainingBlockId === programmingKey)));
     if (Object.keys(effectiveLedger).length === 0) return weekSessionsRaw;
     const planStartDate = toYMD(weekPlan.weekStartDate);
     const planEndDate = toYMD(addDays(weekPlan.weekStartDate, 6));
@@ -68,7 +82,7 @@ export function useScheduledSessions(weekPlan: WeekPlan, now = new Date()) {
     return validateAdaptationSchedule(candidate, { planStartDate, planEndDate, lockedDates }).length > 0
       ? weekSessionsRaw
       : candidate;
-  }, [availableDays, dateOverrides, moveLedger, weekPlan.weekStartDate, weekSessionsRaw]);
+  }, [open, availableDays, dateOverrides, moveLedger, weekPlan.weekStartDate, weekSessionsRaw, programmingStartedAt, programmingKey]);
   const todaySessions = useMemo(
     () => weekSessions.filter(session => session.date === todayYMD),
     [todayYMD, weekSessions],

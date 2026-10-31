@@ -575,7 +575,7 @@ function PlanTab() {
           <Text style={[{ fontSize: 12, color: C.textMuted, marginTop: 8, lineHeight: 17 }]}>
             {weekPlan.metadata.startsOn
               ? `Your plan starts ${weekPlan.metadata.startsOn}.`
-              : 'Set a program start date in Settings to see your week here.'}
+              : weekPlan.metadata.trainingMode === 'open' ? 'Open training — record workouts at your own pace. Choose a goal whenever you are ready.' : 'Set a program start date in Settings to see your week here.'}
           </Text>
         ) : (
           <>
@@ -627,11 +627,14 @@ function PlanTab() {
         <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[styles.cardLabel, { color: C.textDim }]}>TODAY'S RUN</Text>
           <Text style={[styles.subTitle, { color: C.text, marginTop: 8 }]}>
-            {weekPlan.metadata.startsOn ? `Your plan starts ${weekPlan.metadata.startsOn}` : 'Your plan hasn\'t started yet'}
+            {weekPlan.metadata.trainingMode === 'open' ? 'Open training' : weekPlan.metadata.startsOn ? `Your plan starts ${weekPlan.metadata.startsOn}` : 'Your plan hasn\'t started yet'}
           </Text>
           <Text style={[{ fontSize: 13, color: C.textMuted, marginTop: 6, lineHeight: 18 }]}>
-            Set a goal and program start date in onboarding or Settings to see a personalized week here.
+            {weekPlan.metadata.trainingMode === 'open' ? 'Use the Active tab to record a run, or choose your next goal when it suits you.' : 'Set a goal and program start date in onboarding or Settings to see a personalized week here.'}
           </Text>
+          {weekPlan.metadata.trainingMode === 'open' ? <TouchableOpacity accessibilityRole="button" onPress={() => router.push('/(tabs)/settings/next-goal' as never)} style={{ minHeight: 44, justifyContent: 'center', marginTop: 8 }}>
+            <Text style={{ color: C.primary, fontWeight: '700' }}>Choose a goal</Text>
+          </TouchableOpacity> : null}
         </View>
       ) : customRunToday ? (
         <View style={[styles.card, { backgroundColor: C.card, borderColor: C.primary, borderWidth: 1.5 }]}>

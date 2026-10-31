@@ -30,6 +30,8 @@ import { useProfileStore }      from '../store/profileStore';
 import { useTrainingPlanStore } from '../store/trainingPlanStore';
 import { useBeginnerPlanStore } from '../store/beginnerPlanStore';
 import { useActivityStore }     from '../store/activityStore';
+import { useGoalArchiveStore } from '../store/goalArchiveStore';
+import { calendarRacesForPlan } from '../utils/goalLifecycle';
 
 import { calculateACWR, activitiesToACWRRecords } from '../utils/training';
 import { getWeeklyMileage }                  from '../utils/historyUtils';
@@ -56,8 +58,17 @@ export function useWeekPlan(): WeekPlan {
   // ── Plan spine ────────────────────────────────────────────────────────────
   const goalType         = useTrainingPlanStore(s => s.goalType);
   const programStartDate = useTrainingPlanStore(s => s.programStartDate);
-  const races            = useTrainingPlanStore(s => s.races);
-  const activeBeginnerPlan = useBeginnerPlanStore(s => s.activePlan);
+  const savedRaces       = useTrainingPlanStore(s => s.races);
+  const trainingMode     = useTrainingPlanStore(s => s.trainingMode);
+  const goalRaceId       = useTrainingPlanStore(s => s.goalRaceId);
+  const activePreset     = useTrainingPlanStore(s => s.activePresetGoal);
+  const legacyBeginnerPlan = useBeginnerPlanStore(s => s.activePlan);
+  const presetPlan = useTrainingPlanStore(s => s.activePresetPlan);
+  const savedBeginnerPlan = presetPlan ?? legacyBeginnerPlan;
+  const archives         = useGoalArchiveStore(s => s.archives);
+  const races = useMemo(() => calendarRacesForPlan({ trainingMode, goalType, goalRaceId, programStartDate }, savedRaces, archives)
+    .filter(race => !goalRaceId || race.id === goalRaceId), [savedRaces, archives, goalRaceId, trainingMode, goalType, programStartDate]);
+  const activeBeginnerPlan = trainingMode === 'structured' && activePreset?.planId === savedBeginnerPlan?.id ? savedBeginnerPlan : null;
 
   // CRITICAL: separate selectors, never `s => ({ a: s.a, b: s.b })`.
   // That pattern creates a new object on every evaluation and causes
@@ -163,6 +174,7 @@ export function useWeekPlan(): WeekPlan {
 
     // Plan spine
     goalType,
+    trainingMode,
     macroWeek,
     beforeStart,
     programStartDate,
@@ -205,7 +217,7 @@ export function useWeekPlan(): WeekPlan {
   }), [
     goalRace, weeklyMileage, fatigueScore, recoveryScore,
     currentWeek, trainingPhase, progressionLevel,
-    goalType, macroWeek, beforeStart, programStartDate, races, activeBeginnerPlan,
+    goalType, trainingMode, macroWeek, beforeStart, programStartDate, races, activeBeginnerPlan,
     calibration, profile,
     onboardingData,
     checkedIn, todayCheckIn,

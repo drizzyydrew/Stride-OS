@@ -65,6 +65,13 @@ test('every persisted store uses the guarded storage', () => {
       assert.match(source, /getItem: \(key: string\) => getAppStorage\(\).getItem\(key\)/);
       assert.match(source, /setItem: \(key: string, value: string\) => serializeActiveWrite\(\(\) => getAppStorage\(\).setItem\(key, value\)\)/);
       assert.match(source, /storage: activeRecordingStorage/);
+    } else if (store === 'trainingPlanStore') {
+      // Its serialized commit adapter still delegates every read/write to the
+      // same hydration guard; it additionally confirms explicit goal saves.
+      assert.match(source, /getItem: \(key: string\) => getAppStorage\(\).getItem\(key\)/);
+      assert.match(source, /setItem: \(key: string, value: string\) => serializeWrite/);
+      assert.match(source, /await getAppStorage\(\).setItem\(key, value\)/);
+      assert.doesNotMatch(source, /AsyncStorage/);
     } else assert.match(source, /createAppJSONStorage\(\)/, store);
   }
   assert.match(read('src/store/persistStorage.ts'), /createHydrationSafeStorage\(AsyncStorage\)/);

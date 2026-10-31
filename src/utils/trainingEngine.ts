@@ -59,6 +59,7 @@ export type EngineInput = {
 
   // ── Plan spine (from trainingPlanStore + macroPlanner) ──────────────────────
   goalType:            TrainingGoalType;
+  trainingMode?:       'structured' | 'open';
   macroWeek:            MacroWeek | null;
   beforeStart:          boolean;
   programStartDate:     string | null;
@@ -114,6 +115,7 @@ export type WeekPlan = {
   weeksToRace:   number;
   adaptations:   string[]; // human-readable notes: readiness downgrades + missed-workout swaps
   metadata: {
+    trainingMode?:   'structured' | 'open';
     trainingPhase:    TrainingPhase;
     progressionLevel: ProgressionLevel;
     weeklyMileage:    number;
@@ -208,7 +210,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   const todayYMD = toYMD(today);
 
   // ── Before the program has started: empty plan, no generation ─────────────
-  if (input.beforeStart || !input.macroWeek) {
+  if (input.trainingMode === 'open' || input.beforeStart || !input.macroWeek) {
     return {
       richWeek:      emptyRichWeek(),
       strengthWeek:  emptyStrengthWeek(),
@@ -217,14 +219,15 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
       weeksToRace:   0,
       adaptations:   [],
       metadata: {
+        trainingMode: input.trainingMode,
         trainingPhase:    'foundation',
         progressionLevel: input.progressionLevel,
         weeklyMileage:    input.weeklyMileage,
         currentWeek:      0,
         weeksToRace:      0,
         generatedAt:      Date.now(),
-        startsOn:         input.programStartDate ?? undefined,
-        focus:            '',
+        startsOn:         input.trainingMode === 'open' ? undefined : input.programStartDate ?? undefined,
+        focus:            input.trainingMode === 'open' ? 'Train at your own pace. Choose a goal whenever you are ready.' : '',
       },
     };
   }

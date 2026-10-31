@@ -36,6 +36,8 @@ import { useReadinessStore } from '../../../src/store/readinessStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
 import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
+import { useGoalArchiveStore } from '../../../src/store/goalArchiveStore';
+import { calendarRacesForPlan } from '../../../src/utils/goalLifecycle';
 import { useHydrationPlannerStore } from '../../../src/store/hydrationPlannerStore';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useTrainingPreferencesStore } from '../../../src/store/trainingPreferencesStore';
@@ -175,7 +177,9 @@ function buildTrainingPlanBlock(ctx: CoachTrainingContext): string {
     ? ctx.adaptations.map(a => `  - ${a}`).join('\n')
     : '  - None this week.';
 
-  const todayLine = ctx.todayWorkout
+  const todayLine = ctx.goalType === 'open_training'
+    ? 'Open training: no active race plan. Support the athlete’s chosen workout; choosing a new goal is optional.'
+    : ctx.todayWorkout
     ? `Today's session: ${ctx.todayWorkout.title}${ctx.todayWorkout.target ? ` — ${ctx.todayWorkout.target}` : ''}${ctx.todayWorkout.mainSet ? ` — ${ctx.todayWorkout.mainSet}` : ''}. Why: ${ctx.todayWorkout.rationale}`
     : "Today's session and why: Rest day — no structured session today.";
 
@@ -610,7 +614,11 @@ export default function CoachScreen() {
   useFeatureTour('ai-coach');
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ ask?: string; analysisId?: string }>();
-  const data      = useOnboardingStore(s => s.data);
+  const storedData = useOnboardingStore(s => s.data);
+  const planTrainingMode = useTrainingPlanStore(s => s.trainingMode);
+  const data = useMemo(() => planTrainingMode === 'open'
+    ? { ...storedData, primaryGoal: 'general_fitness' as const, goalRaceLabel: '', raceName: '', raceDate: '' }
+    : storedData, [storedData, planTrainingMode]);
   const riskFlags = useMovementStore(s => s.getActiveRiskFlags);
   const videos = useMovementStore(s => s.videos);
   const movementAnalyses = useMovementStore(s => s.analyses);
@@ -639,16 +647,20 @@ export default function CoachScreen() {
   const planGoalType      = useTrainingPlanStore(s => s.goalType);
   const planStartDate     = useTrainingPlanStore(s => s.programStartDate);
   const planRaces         = useTrainingPlanStore(s => s.races);
+  const planRaceId = useTrainingPlanStore(s => s.goalRaceId);
+  const goalArchives = useGoalArchiveStore(s => s.archives);
 
   const targetRaceCtx: CoachRaceContext | 'none' = useMemo(() => {
-    if (planGoalType !== 'race_prep' || !planStartDate) return 'none';
-    const race = pickTargetRace(planRaces, planStartDate);
+    if (planTrainingMode === 'open' || planGoalType !== 'race_prep' || !planStartDate) return 'none';
+    const race = pickTargetRace(calendarRacesForPlan({ trainingMode: planTrainingMode, goalType: planGoalType,
+      goalRaceId: planRaceId, programStartDate: planStartDate }, planRaces, goalArchives)
+      .filter(race => !planRaceId || race.id === planRaceId), planStartDate);
     if (!race) return 'none';
     return {
       name: race.name, date: race.date, distance: race.distance,
       priority: race.priority, weeksOut: weekPlan.weeksToRace,
     };
-  }, [planGoalType, planStartDate, planRaces, weekPlan.weeksToRace]);
+  }, [planTrainingMode, planGoalType, planStartDate, planRaces, planRaceId, goalArchives, weekPlan.weeksToRace]);
 
   const todayWorkoutCtx = useMemo(() => {
     const session = scheduled.todayPrimary;
@@ -677,14 +689,14 @@ export default function CoachScreen() {
       : 'No readiness check-in yet today.',
     fatigueScore,
     recoveryScore,
-    currentWeek,
-    trainingPhase,
-    goalType:         planGoalType,
-    programStartDate: planStartDate,
+    currentWeek: planTrainingMode === 'open' ? 0 : currentWeek,
+    trainingPhase: planTrainingMode === 'open' ? 'open_training' : trainingPhase,
+    goalType:         planTrainingMode === 'open' ? 'open_training' : planGoalType,
+    programStartDate: planTrainingMode === 'open' ? null : planStartDate,
     focus:            weekPlan.metadata.focus,
     race:             targetRaceCtx,
     adaptations:      weekPlan.adaptations,
-    adaptationStatus: buildAdaptationStatus(
+    adaptationStatus: planTrainingMode === 'open' ? 'Open training; no active plan adaptations.' : buildAdaptationStatus(
       weekAdaptation,
       confirmedAdaptation,
       scheduled.todayPrimary,
@@ -696,12 +708,13 @@ export default function CoachScreen() {
     todayWorkout:     todayWorkoutCtx,
   }), [
     runHistory, strengthHistory, todayReadiness, fatigueScore, recoveryScore, currentWeek, trainingPhase,
-    planGoalType, planStartDate, weekPlan.metadata.focus, targetRaceCtx, weekPlan.adaptations,
+    planGoalType, planTrainingMode, planStartDate, weekPlan.metadata.focus, targetRaceCtx, weekPlan.adaptations,
     weekAdaptation, confirmedAdaptation, scheduled.todayPrimary, todayAdaptationCompleted, todayWorkoutCtx,
   ]);
 
   // ── Insights (deterministic coach engine over real history) ────────────────
-  const goalRace = useAthleteStore(s => s.goalRace);
+  const storedGoalRace = useAthleteStore(s => s.goalRace);
+  const goalRace = planTrainingMode === 'open' ? 'Open training' : storedGoalRace;
   const progressionLevel = useAthleteStore(s => s.progressionLevel);
   const weeklyMileage = useAthleteStore(s => s.weeklyMileage);
   const todayCheckIn = useCheckInStore(s => s.todayCheckIn);

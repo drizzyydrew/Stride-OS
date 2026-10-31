@@ -7,7 +7,7 @@ Checkpoint: October 31, 2026. Current continuation follows committed baseline 39
 - The owner explicitly authorized separating Bet Desk and StrideOS without unnecessary deletion. Both apps already had dedicated projects; the mistaken shared-auth conclusion came from empty legacy Bet Desk tables in StrideOS. Bet Desk's web and mobile production URLs were freshly verified against its dedicated project. Nine empty legacy tables were preserved in a private archive schema, with the same relation identities and counts, and their obsolete Auth foreign keys detached. No accounts, files, training history, bets, or projects were deleted. No paid upgrade was needed. See `BACKEND_ISOLATION.md` for evidence and the failed, non-billed new-project attempt.
 - All seven high dependency findings were removed through narrowly scoped patched upstream dependencies, not an SDK jump. The CommonJS adapter delegates URI parsing to exact upstream decode-uri-component 0.5.1. Real Router parsing, bounded malicious inputs, Metro assets, Expo CLI schemas, and both plist consumers have dedicated tests. Current scan: 18 findings (16 moderate, two low), zero high/critical. These remaining findings are not represented as zero vulnerabilities or independent clearance.
 - Guarded deletion fulfillment is implemented as an operator command with a read-only default, an exact-receipt execution confirmation, database leases, Storage API removal before Auth removal, and verified completion. Cloud access freezes at the recorded request even for older clients. The real existing Apple-linked account remains blocked until provider revocation is configured; no deletion command was run against it. This is not a completed automatic end-user deletion service.
-- RevenueCat project `1a3600d5` now has a saved App Store connection with Valid credentials, both Apple product mappings attached to `pro`, and the verified default offering. The owner approved USD 9.99/month, USD 79.99/year and seven-day trial drafts. The public iOS SDK key is configured in EAS production and the client billing flag is explicitly false, read back after saving. Server credentials, subscription lifecycle acceptance and the remaining public-launch gates are still open.
+- RevenueCat project `1a3600d5` now has a saved App Store connection with Valid credentials, both Apple product mappings attached to `pro`, and the verified default offering. The owner approved USD 9.99/month, USD 79.99/year and seven-day trial drafts. Public iOS SDK and owner-saved read-only server credentials are configured; billing remains off. Apple notification URLs persist in both environments. Official sandbox TEST delivery succeeded; production TEST returned 401. Real subscription lifecycle acceptance and the remaining public-launch gates are still open.
 - Initial full regression rerun passed 1,227/1,227 tests. A fresh `npm ci --ignore-scripts` succeeded from the lockfile; clean-install validation is tracked in the continuation's final receipts. Full iOS Metro/Hermes export passed (3,713 modules, 109 assets). This proves JavaScript bundling, not native compilation or device behavior.
 
 ### Final Engineering Checkpoint
@@ -157,7 +157,8 @@ separately and appended after they happen. No score waives the public-launch gat
   `EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED=false`, verified by narrow readback.
   These settings were saved after Build 103 was compiled; they do not alter that
   already-uploaded binary or activate billing. The server flag remains off by
-  configuration/default. No RevenueCat server secret has been configured here.
+  configuration/default. The later owner handoff configured the server secret,
+  as recorded in the build 104 continuation below.
 - Apple's saved listing draft still had stale injury-prevention/video-upload
   claims. Promotional text, description and keywords were replaced with the
   truthful draft in `docs/app-store.md` and saved without Add for Review.
@@ -221,7 +222,55 @@ separately and appended after they happen. No score waives the public-launch gat
   Leave Track new purchases from server-to-server notifications off for the
   SDK-driven identity flow unless a later review establishes otherwise.
 
-The user authorized working through the launch checklist autonomously and using Chrome/computer use, with owner-dependent steps last. No paid service purchase, freelancer hire, acceptance of third-party contracts, or public App Store release is being performed without the owner's specific decision. No independent review agents are available in this run.
+### Build 104 Goal Lifecycle And Billing Continuation
+
+- Added fixed goal/race archives, optional race results, next-goal setup and
+  durable open training without deleting actual history. Expiry uses the local
+  event day; a past tune-up race does not retire a future primary event. Explicit
+  replacements use an owner-fenced recovery journal and atomic primary choice;
+  failed saves preserve the active plan. See `GOAL_ARCHIVE.md` for semantics.
+- Migration `20261031210327_owner_scoped_goal_archives` applied only to StrideOS.
+  A rolled-back synthetic probe verified owner isolation, immutable summaries,
+  newer explicit result merges and foreign-owner rejection; fixture absence was
+  checked afterward. The RPC is security invoker; anonymous execution is denied.
+  Bet Desk and customer records were not changed or deleted.
+- Three independent engineering agents reviewed the scoped implementation and
+  failure recovery. Final verdicts had no remaining must-fix findings. Startup
+  ownership review confidence was 95/100 as a scoped judgment, not a measured
+  device reliability probability or a whole-app professional audit.
+- The owner saved the RevenueCat V2 read-only customer key in Supabase; only its
+  name and update timestamp were read. Both billing switches remain off/default.
+  After explicit approval, Apple's production and sandbox notification URLs were
+  saved and verified after reload. The current editor had no version selector.
+- Apple's official sandbox TEST endpoint and status lookup returned 200 with
+  notificationType TEST, version 2.0 and sendAttemptResult SUCCESS at
+  2026-10-31T21:23:01.834Z. Production returned 401; one compatibility-host retry
+  also returned 401. Its cause remains unconfirmed. No real purchase, renewal,
+  refund, charge or entitlement grant was performed.
+- For that test only, the private purchase key was read into memory to sign a
+  five-minute JWT. Neither key contents nor JWT were printed, committed or
+  persisted. The earlier private-key handoff receipt describes the initial move,
+  not this later authorized signing use.
+- Actual-component synthetic browser checks covered four new screens in both
+  themes at 320/393/768 pixels (24 layout combinations), invalid inputs, failed
+  save draft retention and retry. Existing web SVG/accessibility and deprecated
+  pointerEvents warnings remain; console-clean or native acceptance is not claimed.
+- Build number is 104. Final source, regression, native archive and upload receipts
+  will be appended only after each completes. Build 103 remains the accepted beta
+  until the newer build is processed by Apple.
+- Frozen-source regression: **1,318/1,318 passed**, no failures/skips, 165.8s,
+  `/tmp/strideos-build104-frozen-tests.log`. Final semantic TypeScript and Expo
+  dependency compatibility passed (`/tmp/strideos-build104-frozen-check.log`).
+  Final iOS Hermes export passed with bundle
+  `entry-04dd5d53c860cb97a9c296187e0d5872.hbc` (15 MB),
+  `/tmp/strideos-build104-final-export`. Diff checks passed; no private key tracked.
+- Clean phone/Watch/Live Activity prebuild succeeded without installing or
+  upgrading packages. All 22 Watch/version tests passed; generated embedded
+  targets use build 104. Watch, GPS, HealthKit and root startup source are
+  unchanged. The bounded local ownership-discovery guard now also recognizes
+  retained archives/journals; its regression is included in the full suite.
+
+The user authorized working through the launch checklist autonomously and using Chrome/computer use, with owner-dependent steps last. No paid service purchase, freelancer hire, acceptance of third-party contracts, or public App Store release is being performed without the owner's specific decision. Engineering review agents do not replace independent device QA or professional legal/security review.
 
 ## Implemented In Source
 
@@ -235,7 +284,7 @@ The user authorized working through the launch checklist autonomously and using 
 ## Hard Launch Gates Still Open
 
 1. **End-to-end deletion, not just initiation or an operator engine.** Backend separation is now verified. The operator's database and workflow checks are implemented and tested, but the existing Apple-linked account deliberately fails closed until provider-token revocation is implemented/configured. Local-device cleanup, completion notification/status handling, retention operations, operator responsibility and dedicated end-to-end acceptance remain. The request endpoint still only initiates deletion. Do not mark a request completed merely because it was recorded or a plan was reset. Confirm processing time and operational responsibility before promising an SLA publicly.
-2. **Paid configuration and lifecycle.** Do not enable `EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` merely because purchase UI compiles. AI Coach chat has source-level Pro gates and server-authoritative RevenueCat entitlement verification; core recording/history/Insights remain free. Products, `pro`, default offering, group levels, five territories, individual purchase options, exact local prices/trials and public iOS key are prepared as recorded above. Finish server notifications and the separate server-only V2 customer-read `REVENUECAT_SECRET_API_KEY`; keep client/server billing switches aligned (`EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` and Supabase `STRIDEOS_BILLING_ENABLED`). Test real sandbox purchase/restore/refund/expiration, grace and revocation before enabling either switch. No paid feature or charge is activated in this run.
+2. **Paid configuration and lifecycle.** Do not enable `EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` merely because purchase UI compiles. AI Coach chat has source-level Pro gates and server-authoritative RevenueCat entitlement verification; core recording/history/Insights remain free. Products, `pro`, default offering, group levels, five territories, individual purchase options, exact local prices/trials, public iOS key, read-only server key and notification URLs are configured. Sandbox TEST delivery passed; production TEST returned 401 and needs resolution. Keep client/server billing switches aligned (`EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` and Supabase `STRIDEOS_BILLING_ENABLED`). Test real sandbox purchase/restore/refund/expiration, grace and revocation before enabling either switch. No paid feature or charge is activated in this run.
 3. **Owner account settings.** Apple agreements, banking/tax, App Store labels/age rating/export compliance/reviewer account/availability, provider spend limits and billing setup are unverified. Leaked-password protection remains disabled; do not purchase a plan or alter shared auth settings blindly. Existing trigger-function search paths/direct-execution privileges were hardened and the new security advisor scan cleared those warnings.
 4. **Physical-device acceptance.** Independent testers must exercise fresh installation, Apple/Google/email login, denied permissions, screen-locked GPS, pause/resume/interruption, Watch reconnect, offline save, account ownership, restore/reinstall, failed Health recovery, and purchase lifecycle when enabled. Source/browser checks cannot prove these paths.
 5. **External human review.** No lawyer, QA contractor, security engineer, or sports-domain reviewer has been hired or represented as having approved the app. Gather fixed-scope quotes and obtain owner approval before spending.

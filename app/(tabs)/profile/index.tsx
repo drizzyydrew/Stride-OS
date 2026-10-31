@@ -14,6 +14,7 @@ import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useActiveProfile } from '../../../src/store/profileStore';
 import { profilePowerMass } from '../../../src/utils/profilePower';
 import { useAthleteStore } from '../../../src/store/athleteStore';
+import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useAchievementStore } from '../../../src/store/achievementStore';
 import AchievementBadge from '../../../src/components/achievements/AchievementBadge';
@@ -62,7 +63,9 @@ export default function ProfileScreen() {
   const profile = useActiveProfile();
   const savedWeightKg = profilePowerMass(profile)?.bodyMassKg;
   const weeklyMileage = useAthleteStore(s => s.weeklyMileage);
-  const goalRace = useAthleteStore(s => s.goalRace);
+  const savedGoalRace = useAthleteStore(s => s.goalRace);
+  const trainingMode = useTrainingPlanStore(s => s.trainingMode);
+  const goalRace = trainingMode === 'open' ? 'Open training' : savedGoalRace;
   const activities = useActivityStore(s => s.activities);
   const awarded = useAchievementStore(s => s.awarded);
   const hubModel = useMemo(() => buildAchievementHubModel(activities, awarded), [activities, awarded]);

@@ -226,7 +226,6 @@ export default function SettingsScreen() {
   const planGoalType     = useTrainingPlanStore(s => s.goalType);
   const planStartDate    = useTrainingPlanStore(s => s.programStartDate);
   const planRaces        = useTrainingPlanStore(s => s.races);
-  const setPlanGoalType  = useTrainingPlanStore(s => s.setGoalType);
   const setPlanStartDate = useTrainingPlanStore(s => s.setProgramStartDate);
   const addPlanRace      = useTrainingPlanStore(s => s.addRace);
   const updatePlanRace   = useTrainingPlanStore(s => s.updateRace);
@@ -921,6 +920,16 @@ export default function SettingsScreen() {
       {/* Training Plan */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>TRAINING PLAN</Text>
+        <TouchableOpacity accessibilityRole="button" style={[styles.settingRow, { borderBottomColor: C.border, minHeight: 52 }]} onPress={() => router.push('/(tabs)/settings/goal-archive' as never)}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Goal archive</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Past races, training blocks, and saved results</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+        </TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" style={[styles.settingRow, { borderBottomColor: C.border, minHeight: 48 }]} onPress={() => router.push('/(tabs)/settings/next-goal' as never)}>
+          <Text style={[styles.settingTitle, { color: C.primary }]}>Choose your next goal or train freely</Text>
+        </TouchableOpacity>
 
         <View style={[styles.settingRow, { borderBottomColor: C.border, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>
           <Text style={[styles.settingTitle, { color: C.text }]}>Goal</Text>
@@ -929,14 +938,14 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 key={g.key}
                 style={[styles.pill, { backgroundColor: planGoalType === g.key ? C.primaryDim : C.cardAlt, borderColor: planGoalType === g.key ? C.primary : C.border }]}
-                onPress={() => setPlanGoalType(g.key)}
+                onPress={() => router.push({ pathname: '/(tabs)/settings/next-goal', params: { focus: g.key } } as never)}
                 activeOpacity={0.75}
               >
                 <Text style={{ fontSize: 12, fontWeight: '700', color: planGoalType === g.key ? C.primary : C.textDim }}>{g.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
-          <Text style={[styles.settingCaption, { color: C.textMuted }]}>Changing your goal reshapes the plan immediately — no regeneration needed.</Text>
+          <Text style={[styles.settingCaption, { color: C.textMuted }]}>Choose a focus, duration or race date. Your previous block is preserved before the new goal starts.</Text>
         </View>
 
         <View style={[styles.settingRow, { borderBottomColor: C.border, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>

@@ -17,7 +17,9 @@ import { useAthleteStore }  from '../../../src/store/athleteStore';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useScheduledSessionSelectionStore } from '../../../src/store/scheduledSessionSelectionStore';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
-import { calendarEntriesFromScheduledSessions } from '../../../src/utils/scheduledSessions';
+import { calendarEntriesFromScheduledSessions, sessionsFromBeginnerPlanForDate } from '../../../src/utils/scheduledSessions';
+import { useGoalArchiveStore } from '../../../src/store/goalArchiveStore';
+import { mergeCalendarHistory } from '../../../src/utils/calendarHistoryProjection';
 import { buildSkippedActivityDraft } from '../../../src/utils/activityCompletion';
 import { useActiveStrengthSessionStore } from '../../../src/store/activeStrengthSessionStore';
 import {
@@ -171,6 +173,7 @@ export default function CalendarScreen() {
 
   const weekPlan  = useWeekPlan();
   const timeline  = usePlanTimeline();
+  const goalArchives = useGoalArchiveStore(state => state.archives);
   const progressionLevel = useAthleteStore(s => s.progressionLevel);
   const activities = useActivityStore(s => s.activities);
   const addActivity = useActivityStore(s => s.addActivity);
@@ -234,15 +237,29 @@ export default function CalendarScreen() {
   function entriesForDate(date: Date): { entries: CalendarEntry[]; macroWeek: MacroWeek | null; beforeStart: boolean } {
     const dateYMD = toYMD(date);
 
+    // Recorded history is independent of the current plan's start date/mode.
+    const logged = completedEntriesForDate(dateYMD);
+    const archived = goalArchives.find(archive => archive.startDate <= dateYMD && archive.endDate >= dateYMD);
+    const race = timeline.races.find(r => r.date === dateYMD)
+      ?? (dateYMD <= todayYMD ? goalArchives.find(archive => archive.race?.date === dateYMD)?.race : undefined);
+    const macroWeek = timeline.weekForDate(date);
+    const withHistory = (entries: CalendarEntry[]) => mergeCalendarHistory(
+      race && !entries.some(entry => entry.type === 'race') ? [...entries, raceEntry(race)] : entries, logged);
+    if (archived && (timeline.trainingMode === 'open' || !timeline.programStartDate || dateYMD < timeline.programStartDate)) return {
+      // Beginner prescriptions were saved, whereas a macro outline cannot
+      // prove the exact workouts prescribed on an old day. Do not invent them.
+      entries: withHistory(archived.beginnerPlan ? calendarEntriesFromScheduledSessions(sessionsFromBeginnerPlanForDate(archived.beginnerPlan, dateYMD)) : []),
+      macroWeek, beforeStart: false,
+    };
+    if (timeline.trainingMode === 'open') return { entries: withHistory([]), macroWeek: null, beforeStart: false };
+
     if (!timeline.programStartDate || dateYMD < timeline.programStartDate) {
-      return { entries: [], macroWeek: null, beforeStart: true };
+      const entries = withHistory([]);
+      return { entries, macroWeek: null, beforeStart: entries.length === 0 };
     }
 
-    const macroWeek = timeline.weekForDate(date);
-    const race = timeline.races.find(r => r.date === dateYMD);
-
     if (!macroWeek) {
-      return { entries: race ? [raceEntry(race)] : [], macroWeek: null, beforeStart: false };
+      return { entries: withHistory([]), macroWeek: null, beforeStart: false };
     }
 
     const isCurrentWeek = weekPlan.metadata.currentWeek > 0 && macroWeek.weekNumber === weekPlan.metadata.currentWeek;
@@ -252,21 +269,18 @@ export default function CalendarScreen() {
     // to a template guess here, or a rest day could show a fabricated workout.
     if (isCurrentWeek) {
       return {
-        entries: calendarEntriesFromScheduledSessions(scheduled.sessionsForDate(dateYMD)),
+        entries: withHistory(calendarEntriesFromScheduledSessions(scheduled.sessionsForDate(dateYMD))),
         macroWeek,
         beforeStart: false,
       };
     }
 
-    if (race) return { entries: [raceEntry(race)], macroWeek, beforeStart: false };
+    if (race) return { entries: withHistory([raceEntry(race)]), macroWeek, beforeStart: false };
 
     const scheduledForDate = scheduled.sessionsForDate(dateYMD);
     if (scheduledForDate.length > 0) {
-      return { entries: calendarEntriesFromScheduledSessions(scheduledForDate), macroWeek, beforeStart: false };
+      return { entries: withHistory(calendarEntriesFromScheduledSessions(scheduledForDate)), macroWeek, beforeStart: false };
     }
-
-    const logged = completedEntriesForDate(dateYMD);
-    if (logged.length > 0) return { entries: logged, macroWeek, beforeStart: false };
 
     // Template preview — titles only, no rich generation.
     const isPast = dateYMD < todayYMD;
@@ -292,7 +306,7 @@ export default function CalendarScreen() {
       });
     }
 
-    return { entries, macroWeek, beforeStart: false };
+    return { entries: withHistory(entries), macroWeek, beforeStart: false };
   }
 
   function rowState(date: Date, entries: CalendarEntry[], beforeStart: boolean): 'empty' | 'race' | 'completed' | 'missed' | 'today' | 'rest' | 'upcoming' {

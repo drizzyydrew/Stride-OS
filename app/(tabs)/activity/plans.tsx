@@ -8,6 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { useBeginnerPlanStore } from '../../../src/store/beginnerPlanStore';
 import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
+import { useGoalLifecycle } from '../../../src/hooks/useGoalLifecycle';
+import { activateBeginnerGoal, continueOpenTraining, repeatCurrentBeginnerWeek } from '../../../src/lib/goalLifecycle';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
 import { useTrainingPreferencesStore } from '../../../src/store/trainingPreferencesStore';
 import { useColors } from '../../../src/theme/useColors';
 import type { BeginnerCompletionGoal, BeginnerPlanGoal, BeginnerPlanReadinessInput } from '../../../src/types/beginnerPlan';
@@ -40,11 +43,13 @@ export default function TrainingPathsScreen() {
   const C = useColors();
   const router = useRouter();
   const enduranceMode = useTrainingPreferencesStore(state => state.primaryEnduranceMode);
-  const activePlan = useBeginnerPlanStore(state => state.activePlan);
-  const setActivePlan = useBeginnerPlanStore(state => state.setActivePlan);
+  const lifecycle = useGoalLifecycle();
+  const legacyPlan = useBeginnerPlanStore(state => state.activePlan);
+  const presetPlan = useTrainingPlanStore(state => state.activePresetPlan);
+  const savedPlan = presetPlan ?? legacyPlan;
+  const activePreset = useTrainingPlanStore(state => state.activePresetGoal);
+  const activePlan = lifecycle.mode === 'structured' && savedPlan?.id === activePreset?.planId ? savedPlan : null;
   const clearFuturePlan = useBeginnerPlanStore(state => state.clearFuturePlan);
-  const repeatWeek = useBeginnerPlanStore(state => state.repeatWeek);
-  const setActivePresetGoal = useTrainingPlanStore(state => state.setActivePresetGoal);
   const clearActivePresetGoal = useTrainingPlanStore(state => state.clearActivePresetGoal);
   const [selectedGoal, setSelectedGoal] = useState<BeginnerPlanGoal>('couch_to_5k');
   const [targetDate, setTargetDate] = useState('');
@@ -53,6 +58,7 @@ export default function TrainingPathsScreen() {
   const [continuousRunDistanceMeters, setContinuousRunDistanceMeters] = useState(0);
   const [acknowledgeVisible, setAcknowledgeVisible] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const input = useMemo<BeginnerPlanReadinessInput>(() => ({
     goal: selectedGoal,
@@ -70,18 +76,19 @@ export default function TrainingPathsScreen() {
   }), [completionGoal, continuousRunDistanceMeters, selectedGoal, startingLevel, targetDate]);
   const recommendation = useMemo(() => recommendBeginnerPlanDuration(input), [input]);
 
-  function activate(acknowledgedAt?: number) {
+  async function activate(acknowledgedAt?: number) {
+    if (saving) return;
+    const lease = captureOwnerLease();
+    if (!lease) { Alert.alert('Account not ready', 'Sign in to the account that owns this training history.'); return; }
+    setSaving(true);
+    try {
+    if (!ownerLeaseIsCurrent(lease) || !lifecycle.isDefaultAthlete) throw new Error('Training history is not ready for this athlete.');
     const plan = generateBeginnerPlan(input, enduranceMode, acknowledgedAt);
-    setActivePlan(plan);
-    setActivePresetGoal({
-      goal: selectedGoal,
-      planId: plan.id,
-      selectedAt: Date.now(),
-      targetDate: plan.targetDate,
-      acceleratedAcknowledgedAt: acknowledgedAt,
-    });
+    await activateBeginnerGoal(plan);
     setAcknowledgeVisible(false);
     setAcknowledged(false);
+    } catch (error) { Alert.alert('Goal not saved', error instanceof Error ? error.message : 'Please retry. Your training history was retained.'); }
+    finally { setSaving(false); }
   }
 
   function choosePlan() {
@@ -92,9 +99,15 @@ export default function TrainingPathsScreen() {
     activate();
   }
 
-  function removeGoal() {
+  async function removeGoal() {
+    if (saving) return;
+    setSaving(true);
+    try {
+    await continueOpenTraining();
     clearFuturePlan();
     clearActivePresetGoal();
+    } catch (error) { Alert.alert('Training choice not saved', error instanceof Error ? error.message : 'Please retry.'); }
+    finally { setSaving(false); }
   }
 
   function currentPlanWeekNumber(): number | null {
@@ -116,7 +129,7 @@ export default function TrainingPathsScreen() {
       `Preview: week ${week + 1} will use week ${week}’s duration, run/walk ratio, strength, and recovery pattern. The original week ${week + 1} prescription will remain in the adaptation audit.`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Confirm repeat', onPress: () => repeatWeek(week) },
+        { text: 'Confirm repeat', onPress: () => { void repeatCurrentBeginnerWeek(week).catch(error => Alert.alert('Repeat not saved', error instanceof Error ? error.message : 'Please retry.')); } },
       ],
     );
   }
