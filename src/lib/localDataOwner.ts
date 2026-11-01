@@ -9,6 +9,14 @@ export type OwnerStorage = {
 };
 
 const EMPTY: OwnerRecord = { version: 1, ownerUserId: null, logoutFence: false, unclaimed: false };
+let localAccessGuard: (owner: string | null) => boolean = () => true;
+/** Deletion bootstrap installs a guard without coupling this pure owner boundary
+ * to native storage, React, auth or the cleanup controller. */
+export function setLocalOwnerAccessGuard(guard: typeof localAccessGuard) { localAccessGuard = guard; }
+let ownerBootstrap: () => Promise<void> = async () => undefined;
+export function configureLocalOwnerBootstrap(bootstrap: typeof ownerBootstrap) { ownerBootstrap = bootstrap; }
+export function initializeLocalOwnerBoundary() { return ownerBootstrap(); }
+export function localOwnerAccessAllowed(owner: string | null) { return localAccessGuard(owner); }
 
 /** One device's retained data has one owner. Switching identities never reassigns it. */
 export class LocalDataOwner {
@@ -17,16 +25,23 @@ export class LocalDataOwner {
   private generation = 0;
   private authenticatedUserId: string | null = null;
   private writes: Promise<void> = Promise.resolve();
+  private invalidationListeners = new Set<() => void>();
   status: LocalAccessStatus = 'loading';
 
   constructor(private readonly storage: OwnerStorage) {}
 
   get ownerUserId() { return this.record.ownerUserId; }
   get logoutFenced() { return this.record.logoutFence; }
+  get accessGeneration() { return this.generation; }
+  get permitsCredentialWrites() { return localAccessGuard(this.record.ownerUserId); }
+  onInvalidated(listener: () => void) {
+    this.invalidationListeners.add(listener);
+    return () => { this.invalidationListeners.delete(listener); };
+  }
   get canAccess() {
     return (this.status === 'ready' || this.status === 'offline')
       && !this.record.logoutFence && !!this.record.ownerUserId
-      && this.authenticatedUserId === this.record.ownerUserId;
+      && this.authenticatedUserId === this.record.ownerUserId && localAccessGuard(this.record.ownerUserId);
   }
 
   private async persist(record: OwnerRecord) {
@@ -58,6 +73,7 @@ export class LocalDataOwner {
   }
 
   async accept(userId: string, options: { explicitSignIn?: boolean; offline?: boolean } = {}) {
+    if (!localAccessGuard(userId)) { this.block('signed-out'); return; }
     if (this.canAccess && this.authenticatedUserId === userId && this.status === (options.offline ? 'offline' : 'ready')) return;
     this.generation += 1;
     this.authenticatedUserId = userId;
@@ -81,6 +97,7 @@ export class LocalDataOwner {
     this.generation += 1;
     this.authenticatedUserId = null;
     this.status = status;
+    this.invalidationListeners.forEach(listener => listener());
     await this.persist({ ...this.record, logoutFence: true });
   }
 
@@ -88,6 +105,7 @@ export class LocalDataOwner {
     this.generation += 1;
     this.authenticatedUserId = null;
     this.status = status;
+    this.invalidationListeners.forEach(listener => listener());
   }
 
   capture(cloud = false): OwnerLease | null {

@@ -93,3 +93,27 @@ test('a stored completed status is not accepted while records, files or an Auth 
   assert.equal((await fulfillDeletion(id, completed.deps, true)).complete, true);
   assert.deepEqual(completed.calls, []);
 });
+
+test('new social requests secure a lease and resolve providers before any owned data removal', async () => {
+  const w = workflow(plan({ fulfillment_version: 1, identity_providers: ['apple'], provider_actions: [] }));
+  const deps = { ...w.deps, prepareProviders: async () => {
+    w.calls.push('providers');
+    w.get().provider_actions = [{ provider: 'apple', status: 'manual_required', reason: 'legacy_token_unavailable' }];
+  } };
+  assert.equal((await fulfillDeletion(id, deps, true)).complete, true);
+  assert.ok(w.calls.indexOf('providers') > w.calls.indexOf('claim'));
+  assert.ok(w.calls.indexOf('providers') < w.calls.indexOf('storage'));
+});
+
+test('provider failures, unsupported identities and unconfirmed disposition cannot reach file or Auth deletion', async () => {
+  for (const kind of ['failure', 'pending', 'unknown', 'false-reason'] as const) {
+    const w = workflow(plan({ fulfillment_version: 1, identity_providers: [kind === 'unknown' ? 'unsupported' : 'apple'], provider_actions: [] }));
+    const deps = { ...w.deps, prepareProviders: async () => {
+      if (kind === 'failure') throw new Error('Provider unavailable');
+      if (kind === 'false-reason') w.get().provider_actions = [{ provider: 'apple', status: 'manual_required', reason: 'configuration_missing' }];
+    } };
+    await assert.rejects(fulfillDeletion(id, deps, true));
+    assert.equal(w.calls.includes('storage'), false); assert.equal(w.calls.includes('auth'), false);
+    if (kind === 'unknown') assert.equal(w.calls.length, 0);
+  }
+});

@@ -8,7 +8,7 @@ import {
   initializeLocalOwnership, readCachedSupabaseSession, clearCachedSupabaseSession,
   withExplicitAuthAttempt, isExplicitAuthAttempt,
 } from '../lib/supabase';
-import { isTerminalSessionError, localAccessReason, type LocalAccessStatus } from '../lib/localDataOwner';
+import { isTerminalSessionError, localAccessReason, initializeLocalOwnerBoundary, localOwnerAccessAllowed, type LocalAccessStatus } from '../lib/localDataOwner';
 import {
   authRedirectUrl,
   completeSupabaseAuthFromUrl,
@@ -31,6 +31,7 @@ type AuthStore = {
   signIn:          (email: string, password: string) => Promise<string | null>;
   signUp:          (email: string, password: string) => Promise<string | null>;
   signOut:         () => Promise<void>;
+  lockForAccountDeletion: () => Promise<void>;
   resetPassword:   (email: string) => Promise<string | null>;
   resendConfirmation: (email: string) => Promise<string | null>;
   updatePassword:  (newPassword: string) => Promise<string | null>;
@@ -42,6 +43,7 @@ let initialization: Promise<void> | null = null;
 let authGeneration = 0;
 let authAttemptGeneration = 0;
 let authListenerInstalled = false;
+let appleRevokeListenerInstalled = false;
 const STALE_AUTH_ATTEMPT = 'This sign-in was cancelled by logout or a newer sign-in. Please retry.';
 function beginAuthAttempt() {
   authGeneration += 1;
@@ -102,11 +104,18 @@ export const useAuthStore = create<AuthStore>((set) => ({
   offlineOwnerId: null,
 
   initialize: async () => {
-    if (initialization) return initialization;
+    if (initialization) {
+      if (!localDataOwner.canAccess) publishAccess();
+      return initialization;
+    }
     initialization = (async () => {
       const generation = ++authGeneration;
       let cached: Session | null = null;
       try {
+        await initializeLocalOwnerBoundary?.();
+        if (localOwnerAccessAllowed && !localOwnerAccessAllowed(null)) {
+          localDataOwner.block('signed-out'); publishAccess(); return;
+        }
         await initializeLocalOwnership();
         cached = await readCachedSupabaseSession();
         const supabaseState = getSupabaseAvailability();
@@ -116,6 +125,20 @@ export const useAuthStore = create<AuthStore>((set) => ({
           return;
         }
         const { client: supabase } = supabaseState;
+        if (!appleRevokeListenerInstalled) {
+          // Ordinary provider revocation only signs out. A pending deletion
+          // polls its receipt; a notification alone never authorizes a purge.
+          try {
+            AppleAuthentication.addRevokeListener(() => {
+              if (localOwnerAccessAllowed && !localOwnerAccessAllowed(null)) {
+                void import('../lib/accountDeletion').then(api => api.pollAccountDeletion()).catch(() => undefined);
+              } else if (useAuthStore.getState().user?.identities?.some(identity => identity.provider === 'apple')) {
+                void useAuthStore.getState().signOut().catch(() => undefined);
+              }
+            });
+            appleRevokeListenerInstalled = true;
+          } catch { /* Non-Apple platforms have no native revocation listener. */ }
+        }
         if (!authListenerInstalled) {
         authListenerInstalled = true;
         supabase.auth.onAuthStateChange((event, session) => {
@@ -309,6 +332,24 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
+  lockForAccountDeletion: async () => {
+    authAttemptGeneration += 1;
+    authGeneration += 1;
+    await initializeLocalOwnership();
+    const fence = localDataOwner.signOut();
+    publishAccess();
+    await fence;
+    const available = getSupabaseAvailability();
+    if (available.status === 'available') {
+      available.client.auth.stopAutoRefresh();
+      // Drain the SDK auth lock and our explicit exchange queue before removing
+      // credentials; stale exchanges observe the cancelled attempt generation.
+      await available.client.auth.getSession().catch(() => undefined);
+    }
+    await withExplicitAuthAttempt(async () => undefined);
+    publishAccess();
+  },
+
   signOut: async () => {
     authAttemptGeneration += 1;
     authGeneration += 1;
@@ -327,3 +368,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
     // here (then "restoring" from an empty cloud on sign-in) destroyed data.
   },
 }));
+
+// The outer deletion gate can cancel ownership without calling an auth action.
+// Revoke navigation/bridge access synchronously, including a failed intent save
+// whose retry later remounts the existing auth store in this JS runtime.
+localDataOwner.onInvalidated?.(() => { publishAccess(); });

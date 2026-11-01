@@ -28,13 +28,15 @@ let explicitAuthAttempts = 0;
 let credentialExchangeQueue: Promise<unknown> = Promise.resolve();
 let activeAuthAttempt: (() => boolean) | null = null;
 export function withExplicitAuthAttempt<T>(action: () => Promise<T>, isCurrent: () => boolean = () => true): Promise<T> {
+  const generation = localDataOwner.accessGeneration;
+  const current = () => isCurrent() && generation === localDataOwner.accessGeneration;
   explicitAuthAttempts += 1;
   const task = credentialExchangeQueue.then(async () => {
-    if (!isCurrent()) throw new Error('Authentication attempt was superseded or cancelled.');
-    activeAuthAttempt = isCurrent;
+    if (!current()) throw new Error('Authentication attempt was superseded or cancelled.');
+    activeAuthAttempt = current;
     try {
       const result = await action();
-      if (!isCurrent()) throw new Error('Authentication attempt was superseded or cancelled.');
+      if (!current()) throw new Error('Authentication attempt was superseded or cancelled.');
       return result;
     } finally { activeAuthAttempt = null; }
   }).finally(() => { explicitAuthAttempts -= 1; });
@@ -42,34 +44,49 @@ export function withExplicitAuthAttempt<T>(action: () => Promise<T>, isCurrent: 
   return task;
 }
 export function isExplicitAuthAttempt() { return explicitAuthAttempts > 0; }
+let credentialWrites: Promise<unknown> = Promise.resolve();
+function serializeCredentialWrite<T>(work: () => Promise<T>): Promise<T> {
+  const next = credentialWrites.then(work);
+  credentialWrites = next.catch(() => undefined);
+  return next;
+}
+export async function drainSupabaseCredentialWrites(): Promise<void> { await credentialWrites; }
 
 const SecureStoreAdapter = {
   getItem: async (key: string) => Platform.OS === 'web' ? globalThis.localStorage?.getItem(key) ?? null : SecureStore.getItemAsync(key),
   setItem: async (key: string, value: string) => {
     const writeAttempt = activeAuthAttempt;
-    if (key === supabaseSessionStorageKey()) {
+    const generation = localDataOwner.accessGeneration;
+    const current = () => writeAttempt
+      ? writeAttempt === activeAuthAttempt && writeAttempt()
+      : generation === localDataOwner.accessGeneration && localDataOwner.permitsCredentialWrites
+        && !localDataOwner.logoutFenced && !isExplicitAuthAttempt();
+    return serializeCredentialWrite(async () => {
       await initializeLocalOwnership();
-      if (writeAttempt && (writeAttempt !== activeAuthAttempt || !writeAttempt())) return;
-      if (!writeAttempt && (localDataOwner.logoutFenced || isExplicitAuthAttempt())) return;
-      const candidate = JSON.parse(value) as Partial<Session>;
-      if (localDataOwner.ownerUserId && candidate.user?.id !== localDataOwner.ownerUserId) return;
-    }
-    if (Platform.OS === 'web') globalThis.localStorage?.setItem(key, value);
-    else await SecureStore.setItemAsync(key, value);
-    if (key === supabaseSessionStorageKey() && writeAttempt && !writeAttempt()) {
-      // Logout may occur inside native storage I/O. A newer exchange cannot
-      // start until this attempt has removed its own late credential write.
-      const stored = Platform.OS === 'web' ? globalThis.localStorage?.getItem(key) : await SecureStore.getItemAsync(key);
-      if (stored === value) {
-        if (Platform.OS === 'web') globalThis.localStorage?.removeItem(key);
-        else await SecureStore.deleteItemAsync(key);
+      if (!current()) return;
+      const sessionKey = supabaseSessionStorageKey();
+      if (key === sessionKey || key === `${sessionKey}-user`) {
+        const candidate = JSON.parse(value) as Partial<Session>;
+        if (localDataOwner.ownerUserId && candidate.user?.id !== localDataOwner.ownerUserId) return;
       }
-    }
+      try {
+        if (Platform.OS === 'web') globalThis.localStorage?.setItem(key, value);
+        else await SecureStore.setItemAsync(key, value);
+      } finally {
+        // All SDK keys, including PKCE and auxiliary user cache, participate in
+        // the queue. Cancellation during native I/O removes its own late write
+        // before a newer exchange or account cleanup can proceed.
+        if (!current()) {
+          if (Platform.OS === 'web') globalThis.localStorage?.removeItem(key);
+          else await SecureStore.deleteItemAsync(key);
+        }
+      }
+    });
   },
-  removeItem: async (key: string) => {
+  removeItem: async (key: string) => serializeCredentialWrite(async () => {
     if (Platform.OS === 'web') globalThis.localStorage?.removeItem(key);
     else await SecureStore.deleteItemAsync(key);
-  },
+  }),
 };
 
 let cachedConfig: SupabaseConfigAvailability | null = null;
@@ -108,10 +125,12 @@ export async function readCachedSupabaseSession(): Promise<Session | null> {
 export async function clearCachedSupabaseSession(): Promise<void> {
   const key = supabaseSessionStorageKey();
   if (!key) return;
-  for (const item of [key, `${key}-user`, `${key}-code-verifier`]) {
-    if (Platform.OS === 'web') globalThis.localStorage?.removeItem(item);
-    else await SecureStore.deleteItemAsync(item);
-  }
+  await serializeCredentialWrite(async () => {
+    for (const item of [key, `${key}-user`, `${key}-code-verifier`]) {
+      if (Platform.OS === 'web') globalThis.localStorage?.removeItem(item);
+      else await SecureStore.deleteItemAsync(item);
+    }
+  });
 }
 
 /** Empty history snapshots written by hydration do not make a fresh install owned. */

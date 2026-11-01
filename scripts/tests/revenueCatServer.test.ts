@@ -75,3 +75,67 @@ test('real handler rejects bad verification before consuming AI allowance or con
   assert.equal((await createCoachHandler({ ...deps, canUsePlan: verifier(async () => json(list())) })(request())).status, 200);
   assert.equal(reserved, 1); assert.equal(replied, 1);
 });
+
+test('synthetic trial/grace access is governed by provider-active future expiry; cancellation is not inferred from products', async () => {
+  // These payloads exercise parser policy, not real StoreKit lifecycle events.
+  const fixtures = [
+    { label: 'provider still lists access during trial', expiresAt: now + 7 * 86_400_000, expected: true },
+    { label: 'provider still lists access after auto-renew cancellation', expiresAt: now + 60_000, expected: true },
+    { label: 'provider still lists grace access', expiresAt: now + 300_000, expected: true },
+    { label: 'provider no longer lists access after refund/revocation', expiresAt: null, expected: false },
+  ];
+  for (const fixture of fixtures) {
+    const body = fixture.expiresAt === null ? list([]) : list([pro(fixture.expiresAt)]);
+    assert.equal(await verifier(async () => json(body))(owner), fixture.expected, fixture.label);
+  }
+});
+
+test('positive pagination stays on the fixed first page, but malformed trailing data still fails closed', async () => {
+  let calls = 0;
+  assert.equal(await verifier(async () => { calls++; return json(list([pro()], 'https://attacker.invalid/private')); })(owner), true);
+  assert.equal(calls, 1);
+  await assert.rejects(verifier(async () => json(list([pro(), {}])))(owner), /Subscription verification unavailable/);
+  await assert.rejects(verifier(async () => json(list([pro()], {})))(owner), /Subscription verification unavailable/);
+});
+
+test('provider timeout, abort and invalid UTF-8 are unavailable without exposing provider details', async () => {
+  for (const error of [new DOMException('synthetic_private_timeout', 'TimeoutError'),
+    new DOMException('synthetic_private_abort', 'AbortError')]) {
+    let calls = 0;
+    await assert.rejects(verifier(async () => { calls++; throw error; })(owner), { message: 'Subscription verification unavailable' });
+    assert.equal(calls, 1);
+  }
+  await assert.rejects(verifier(async () => new Response(new Uint8Array([0xff, 0xfe])))(owner), { message: 'Subscription verification unavailable' });
+});
+
+test('missing/invalid authentication, OPTIONS, GET and invalid POST never exercise entitlement, quota, or AI', async () => {
+  let checks = 0, reservations = 0, replies = 0;
+  const make = (authenticated: boolean) => createCoachHandler({ authenticate: async () => authenticated ? owner : null,
+    configured: () => true, canUsePlan: async () => { checks++; throw new Error('unexpected verification'); },
+    consumeAllowance: async () => { reservations++; return true; }, reply: async () => { replies++; return { content: [] }; } });
+  const requests = [
+    { auth: false, method: 'GET', status: 401 }, { auth: false, method: 'POST', status: 401 },
+    { auth: true, method: 'GET', status: 200 }, { auth: false, method: 'OPTIONS', status: 200 },
+    { auth: true, method: 'POST', status: 400 },
+  ];
+  for (const row of requests) {
+    assert.equal((await make(row.auth)(new Request('https://example.invalid/coach', {
+      method: row.method, ...(row.method === 'POST' ? { body: '{}' } : {}),
+    }))).status, row.status);
+  }
+  assert.equal(checks, 0); assert.equal(reservations, 0); assert.equal(replies, 0);
+});
+
+test('server verifies the authenticated owner, ignores body identity/Pro claims, and reserves only after success', async () => {
+  const order: string[] = [];
+  const handler = createCoachHandler({ authenticate: async () => owner, configured: () => true,
+    canUsePlan: async id => { assert.equal(id, owner); order.push('verified-owner-lookup'); return true; },
+    consumeAllowance: async id => { assert.equal(id, owner); order.push('allowance'); return false; },
+    reply: async () => { order.push('ai'); return { content: [] }; } });
+  const response = await handler(new Request('https://example.invalid/coach', { method: 'POST', body: JSON.stringify({
+    consentVersion: 1, system: 'Synthetic context', messages: [{ role: 'user', content: 'Easy run?' }],
+    userId: 'other-owner', ownerUserId: 'other-owner', isPro: true, entitlement: 'pro',
+  }) }));
+  assert.equal(response.status, 429);
+  assert.deepEqual(order, ['verified-owner-lookup', 'allowance']);
+});

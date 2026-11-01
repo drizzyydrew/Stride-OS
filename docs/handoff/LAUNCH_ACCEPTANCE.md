@@ -4,6 +4,14 @@ This is an execution checklist, not a legal opinion, independent audit, physical
 device report, or assertion that the app is ready for the market. Public payments
 and public release remain disabled until the relevant gates are actually passed.
 
+Latest deletion continuation (November 1, 2026 UTC): see
+[`DELETION_ACCEPTANCE.md`](DELETION_ACCEPTANCE.md). The parent verified three
+synthetic API/server completions, including scheduler-only recovery, with the
+original account unchanged. Automation was then disabled and its allowlist and
+cron job cleared. This is not real Apple/Google grant-revocation or native-device
+cleanup acceptance. The updated privacy/terms/support pages remain local and
+require separate publication. Billing remains off.
+
 ## Owner-Independent Engineering Receipts
 
 - Privacy/AI consent, server quotas, guarded purchases, tour replay, activity
@@ -14,9 +22,10 @@ and public release remain disabled until the relevant gates are actually passed.
 - Backend separation: existing Bet Desk and StrideOS projects retained, empty
   legacy tables archived non-destructively, production URLs checked. See
   `BACKEND_ISOLATION.md`.
-- Deletion: request receipts, immediate cloud freeze, private operator manifest,
-  lease/ownership guards, Storage API removal and verified completion checks.
-  Social-provider revocation and device cleanup are not accepted yet.
+- Deletion: secure recovery receipts, cloud freeze, private provider/ticket state,
+  lease/ownership guards, scoped server fulfillment and local-cleanup source.
+  Three synthetic API/server paths completed; real provider-grant revocation and
+  native cleanup remain unaccepted. Automation is off after the fixture test.
 - Goal/race archives, optional results, next-goal setup and durable open training
   shipped in source `2765920` / build 104. Final regression: 1,318/1,318; semantic
   TypeScript, Expo compatibility, iOS Hermes export and signed archive checks

@@ -38,6 +38,7 @@ import {
 } from '../src/lib/notifications';
 import LiveActivityCommandReconciler from '../src/components/liveActivity/LiveActivityCommandReconciler';
 import { FixedNavigationBanner, NavigationEscapeProvider } from '../src/components/layout/NavigationEscape';
+import AccountCleanupGate from '../src/components/settings/AccountCleanupGate';
 
 // Register GPS background task at module level (required by expo-task-manager)
 import '../src/lib/gpsTracking';
@@ -66,6 +67,10 @@ const SPLASH_BACKGROUND  = '#11100F';
 const SPLASH_IMAGE_WIDTH = 220;
 
 export default function RootLayout() {
+  return <AccountCleanupGate><AppRootContent /></AccountCleanupGate>;
+}
+
+function AppRootContent() {
   const initialize = useAuthStore(s => s.initialize);
   const canAccessLocalData = useAuthStore(s => s.canAccessLocalData);
   const mode = useThemeStore(s => s.mode);

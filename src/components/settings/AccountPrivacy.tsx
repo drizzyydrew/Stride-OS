@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useActiveRunStore } from '../../store/activeRunStore';
 import { useActiveActivityStore } from '../../store/activeActivityStore';
 import { useActiveIndoorRideStore } from '../../store/activeIndoorRideStore';
+import { useActiveStrengthSessionStore } from '../../store/activeStrengthSessionStore';
 import { billingIsConfigured } from '../../lib/revenueCat';
 import { router } from 'expo-router';
 
@@ -27,7 +28,8 @@ export default function AccountPrivacy() {
   }, [userId]);
   async function submit() {
     if (busy) return;
-    if (useActiveRunStore.getState().isActive || useActiveActivityStore.getState().isActive || useActiveIndoorRideStore.getState().isActive) {
+    if (useActiveRunStore.getState().isActive || useActiveActivityStore.getState().isActive || useActiveIndoorRideStore.getState().isActive
+      || useActiveStrengthSessionStore.getState().session) {
       Alert.alert('Finish your recording first', 'Save or discard your active workout before requesting account deletion.'); return;
     }
     const owner = useAuthStore.getState().user?.id;
@@ -51,13 +53,13 @@ export default function AccountPrivacy() {
     ] as const).map(([key, label, icon]) => <TouchableOpacity key={key} style={s.link} accessibilityRole="link" onPress={() => {
       void Linking.openURL(LEGAL_URLS[key]).catch(() => setError('This link could not be opened. Please try again.'));
     }}><Ionicons name={icon} size={20} color={C.primary} /><Text style={[s.copy, { color: C.text }]}>{label}</Text><Ionicons name="open-outline" size={16} color={C.textMuted} /></TouchableOpacity>)}
-    <Text style={[s.copy, { color: C.textMuted }]}>Account deletion is separate from Reset Plan. Processing is not instantaneous. Cloud sync stops after your request is recorded. Data on this device, Apple Health, and your photo library is not erased by a request. Cancel any Apple subscription separately to stop renewal.</Text>
+    <Text style={[s.copy, { color: C.textMuted }]}>Account deletion is separate from Reset Plan. The app locks training and cloud sync while your request is processed. Data on this device is removed only after a completed server receipt is verified. Apple Health and photo-library originals are not removed. Cancel any Apple subscription separately to stop renewal.</Text>
     {request ? <View accessibilityLiveRegion="polite" style={{ gap: 8 }}>
-      <Text style={[s.copy, { color: C.text }]}>{request.status === 'completed' ? 'Deletion marked complete' : 'Deletion requested; not yet complete'}</Text>
+      <Text style={[s.copy, { color: C.text }]}>{request.status === 'completed' ? 'Server deletion marked complete' : 'Deletion requested; server completion pending'}</Text>
       <Text selectable style={[s.copy, { color: C.textMuted }]}>Reference: {request.id}</Text>
       <Text style={[s.copy, { color: C.textMuted }]}>Requested {new Date(request.requested_at).toLocaleDateString()}. Contact support with this reference for progress.</Text>
     </View> : <TouchableOpacity disabled={busy} accessibilityRole="button" accessibilityLabel="Request deletion of your StrideOS account" style={s.link}
-      onPress={() => Alert.alert('Delete your StrideOS account?', 'This requests permanent deletion of your StrideOS account and server records. Deletion cannot be undone once processed. It does not cancel an Apple subscription. You will receive a request reference; this is not an instant reset.', [
+      onPress={() => Alert.alert('Delete your StrideOS account?', 'This permanently deletes your StrideOS account and server records, then removes this device’s StrideOS history and app-owned media after server completion is verified. The app stays locked during processing. Apple Health and photo-library originals remain. Cancelling an optional Apple identity prompt still submits this confirmed deletion, with manual revocation instructions when credentials are unavailable. Cancel any Apple subscription separately.', [
         { text: 'Keep account', style: 'cancel' }, { text: 'Request deletion', style: 'destructive', onPress: () => { void submit(); } },
       ])}>
       <Ionicons name="trash-outline" size={20} color={C.critical} /><Text style={[s.copy, { color: C.critical }]}>Request account deletion</Text>

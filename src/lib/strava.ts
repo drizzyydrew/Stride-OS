@@ -8,6 +8,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from 'expo-secure-store';
 import type { CompletedWorkoutRecord } from '../types/training';
 import { getSupabaseFunctionHeaders, getSupabaseFunctionUrl } from './supabase';
+import { captureOwnerLease, ownerLeaseIsCurrent, type OwnerLease } from './localDataOwner';
 
 const CLIENT_ID     = process.env.EXPO_PUBLIC_STRAVA_CLIENT_ID;
 const REDIRECT_URI  = 'strideos://strava-callback';
@@ -15,6 +16,16 @@ const REDIRECT_URI  = 'strideos://strava-callback';
 const STORE_ACCESS_TOKEN  = 'strava_access_token';
 const STORE_REFRESH_TOKEN = 'strava_refresh_token';
 const STORE_EXPIRY        = 'strava_token_expiry';
+let credentialWrites: Promise<unknown> = Promise.resolve();
+function serializeCredentialWrite<T>(work: () => Promise<T>): Promise<T> {
+  const next = credentialWrites.then(work);
+  credentialWrites = next.catch(() => undefined);
+  return next;
+}
+export async function drainStravaCredentialWrites(): Promise<void> { await credentialWrites; }
+function requireCurrent(lease: OwnerLease | null): asserts lease is OwnerLease {
+  if (!ownerLeaseIsCurrent(lease, true)) throw new Error('Strava connection was cancelled because account access changed.');
+}
 
 function createOAuthState(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
@@ -23,6 +34,8 @@ function createOAuthState(): string {
 // ── OAuth ─────────────────────────────────────────────────────────────────────
 
 export async function startStravaOAuth(): Promise<StravaTokens> {
+  const lease = captureOwnerLease(true);
+  requireCurrent(lease);
   if (!CLIENT_ID) {
     throw new Error('Missing Strava client ID. Add EXPO_PUBLIC_STRAVA_CLIENT_ID to .env.');
   }
@@ -39,6 +52,7 @@ export async function startStravaOAuth(): Promise<StravaTokens> {
     `&state=${encodeURIComponent(state)}`;
 
   const result = await WebBrowser.openAuthSessionAsync(url, REDIRECT_URI);
+  requireCurrent(lease);
   if (result.type !== 'success') throw new Error('Strava sign-in was cancelled.');
 
   const callbackUrl = new URL(result.url);
@@ -53,8 +67,9 @@ export async function startStravaOAuth(): Promise<StravaTokens> {
   const tokens = await requestStravaTokens({
     grant_type: 'authorization_code',
     code,
-  });
-  await storeTokens(tokens);
+  }, lease);
+  await storeTokens(tokens, lease);
+  requireCurrent(lease);
   return tokens;
 }
 
@@ -142,10 +157,11 @@ export async function checkStravaSetup(): Promise<StravaSetupStatus> {
   }
 }
 
-async function requestStravaTokens(body: StravaTokenRequest): Promise<StravaTokens> {
+async function requestStravaTokens(body: StravaTokenRequest, lease: OwnerLease): Promise<StravaTokens> {
   assertStravaTokenProxyConfigured();
   const proxyEndpoint = getSupabaseFunctionUrl('strava-token');
   const headers = await getSupabaseFunctionHeaders();
+  requireCurrent(lease);
   if (!proxyEndpoint || !headers) {
     throw new Error('Missing Supabase configuration for Strava token exchange.');
   }
@@ -162,7 +178,9 @@ async function requestStravaTokens(body: StravaTokenRequest): Promise<StravaToke
     const body = await res.json().catch(() => ({}));
     throw new Error((body as { error?: string; message?: string }).error ?? (body as { message?: string }).message ?? `Strava OAuth failed with HTTP ${res.status}.`);
   }
-  return res.json();
+  const tokens = await res.json();
+  requireCurrent(lease);
+  return tokens;
 }
 
 // ── Token management ──────────────────────────────────────────────────────────
@@ -173,36 +191,57 @@ export type StravaTokens = {
   expires_at:    number;
 };
 
-async function storeTokens(tokens: StravaTokens): Promise<void> {
-  await Promise.all([
-    SecureStore.setItemAsync(STORE_ACCESS_TOKEN,  tokens.access_token),
-    SecureStore.setItemAsync(STORE_REFRESH_TOKEN, tokens.refresh_token),
-    SecureStore.setItemAsync(STORE_EXPIRY,        String(tokens.expires_at)),
-  ]);
+async function storeTokens(tokens: StravaTokens, lease: OwnerLease): Promise<void> {
+  return serializeCredentialWrite(async () => {
+    requireCurrent(lease);
+    try {
+      // Wait for every native write, including siblings of a rejected write,
+      // before cleanup can drain this transaction and verify absence.
+      const results = await Promise.allSettled([
+        SecureStore.setItemAsync(STORE_ACCESS_TOKEN, tokens.access_token),
+        SecureStore.setItemAsync(STORE_REFRESH_TOKEN, tokens.refresh_token),
+        SecureStore.setItemAsync(STORE_EXPIRY, String(tokens.expires_at)),
+      ]);
+      const failed = results.find(result => result.status === 'rejected');
+      if (failed?.status === 'rejected') throw failed.reason;
+      requireCurrent(lease);
+    } catch (error) {
+      // This transaction still owns the serial queue: no newer credentials can
+      // be removed by cancellation of its in-flight native writes.
+      await removeTokens();
+      throw error;
+    }
+  });
 }
 
-export async function clearStravaTokens(): Promise<void> {
-  await Promise.all([
+async function removeTokens(): Promise<void> {
+  const results = await Promise.allSettled([
     SecureStore.deleteItemAsync(STORE_ACCESS_TOKEN),
     SecureStore.deleteItemAsync(STORE_REFRESH_TOKEN),
     SecureStore.deleteItemAsync(STORE_EXPIRY),
   ]);
+  const failed = results.find(result => result.status === 'rejected');
+  if (failed?.status === 'rejected') throw failed.reason;
 }
+export async function clearStravaTokens(): Promise<void> { await serializeCredentialWrite(removeTokens); }
 
 export async function hasStoredStravaTokens(): Promise<boolean> {
+  const lease = captureOwnerLease();
+  if (!lease) return false;
   const [token, refresh] = await Promise.all([
     SecureStore.getItemAsync(STORE_ACCESS_TOKEN),
     SecureStore.getItemAsync(STORE_REFRESH_TOKEN),
   ]);
-  return Boolean(token && refresh);
+  return ownerLeaseIsCurrent(lease) && Boolean(token && refresh);
 }
 
-async function getValidAccessToken(): Promise<string | null> {
+async function getValidAccessToken(lease: OwnerLease): Promise<string | null> {
   const [token, refresh, expiryStr] = await Promise.all([
     SecureStore.getItemAsync(STORE_ACCESS_TOKEN),
     SecureStore.getItemAsync(STORE_REFRESH_TOKEN),
     SecureStore.getItemAsync(STORE_EXPIRY),
   ]);
+  requireCurrent(lease);
 
   if (!token || !refresh) return null;
 
@@ -212,8 +251,8 @@ async function getValidAccessToken(): Promise<string | null> {
   const tokens = await requestStravaTokens({
     grant_type: 'refresh_token',
     refresh_token: refresh,
-  });
-  await storeTokens(tokens);
+  }, lease);
+  await storeTokens(tokens, lease);
   return tokens.access_token;
 }
 
@@ -229,7 +268,10 @@ const WORKOUT_TYPE_TO_STRAVA: Record<string, string> = {
 };
 
 export async function uploadActivityToStrava(workout: CompletedWorkoutRecord): Promise<void> {
-  const token = await getValidAccessToken();
+  const lease = captureOwnerLease(true);
+  if (!lease) return;
+  const token = await getValidAccessToken(lease);
+  requireCurrent(lease);
   if (!token) return;
 
   const durationMin  = workout.actualDurationMinutes ?? workout.durationMinutes;
@@ -256,6 +298,7 @@ export async function uploadActivityToStrava(workout: CompletedWorkoutRecord): P
     },
     body: body.toString(),
   });
+  requireCurrent(lease);
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));

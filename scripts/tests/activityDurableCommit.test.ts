@@ -15,13 +15,15 @@ import { buildHealthDistanceSplits } from '../../src/utils/healthDistanceSplits'
 function loadSource<T>(file: string, mocks: Record<string, unknown>): T {
   const filename = resolve(file);
   const compiled = ts.transpileModule(readFileSync(filename, 'utf8'), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
+    // Zustand tests Promise identity. Downlevel async to the injected host
+    // Promise so VM modules share the app's single-realm storage semantics.
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2016, esModuleInterop: true },
   }).outputText;
   const module = { exports: {} };
   const nativeRequire = createRequire(filename);
   vm.runInNewContext(compiled, { module, exports: module.exports,
     require: (id: string) => Object.hasOwn(mocks, id) ? mocks[id] : nativeRequire(id),
-    console, setTimeout, clearTimeout, Date, process: { env: {} },
+    console, setTimeout, clearTimeout, Date, Promise, process: { env: {} },
   }, { filename });
   return module.exports as T;
 }
@@ -82,9 +84,14 @@ async function harness(options: { throwStatistics?: boolean; distanceFailure?: '
   const ownership = { captureOwnerLease: () => owner.capture(),
     ownerLeaseIsCurrent: (lease: Parameters<LocalDataOwner['isCurrent']>[0]) => owner.isCurrent(lease) };
   const platform = { Platform: { OS: 'ios', Version: '26.5' } };
+  const cleanup = loadSource<typeof import('../../src/lib/localAccountCleanup')>('src/lib/localAccountCleanup.ts', {});
   // Exercise the actual app storage factory and its hydration-safe wrapper.
+  // Native receipt bootstrap is outside this synthetic Health/storage harness;
+  // admit the fresh real barrier without loading SecureStore or React Native.
   const persistence = loadSource<typeof import('../../src/store/persistStorage')>('src/store/persistStorage.ts', {
     '@react-native-async-storage/async-storage': nativeStorage, 'react-native': platform,
+    '../lib/localAccountCleanup': cleanup,
+    '../lib/accountDeletionControl': { initializeAccountDeletionControl: async () => { cleanup.accountStorageBarrier.setMode('open'); } },
   });
   const activity = loadSource<typeof import('../../src/store/activityStore')>('src/store/activityStore.ts', {
     './persistStorage': persistence, '@react-native-async-storage/async-storage': nativeStorage,

@@ -13,7 +13,7 @@
 // Pure logic (types, conversion, staleness, outcome merge) lives in
 // src/utils/weatherLogic.ts so it stays unit-testable without RN.
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAppStorage } from '../store/persistStorage';
 import * as Location from 'expo-location';
 
 import {
@@ -55,7 +55,7 @@ async function loadPersistedCache(): Promise<void> {
   if (storageLoaded) return;
   storageLoaded = true;
   try {
-    const raw = await AsyncStorage.getItem(CACHE_KEY);
+    const raw = await getAppStorage().getItem(CACHE_KEY);
     if (!raw) return;
     const parsed = JSON.parse(raw) as CacheEntry;
     if (parsed?.data && typeof parsed.fetchedAt === 'number' && parsed.coords) {
@@ -69,7 +69,7 @@ async function loadPersistedCache(): Promise<void> {
 
 async function persistCache(entry: CacheEntry): Promise<void> {
   try {
-    await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(entry));
+    await getAppStorage().setItem(CACHE_KEY, JSON.stringify(entry));
   } catch {
     // Persistence is best-effort; in-memory cache still works this session.
   }
