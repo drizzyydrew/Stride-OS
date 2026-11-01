@@ -9,8 +9,20 @@ Latest deletion continuation (November 1, 2026 UTC): see
 synthetic API/server completions, including scheduler-only recovery, with the
 original account unchanged. Automation was then disabled and its allowlist and
 cron job cleared. This is not real Apple/Google grant-revocation or native-device
-cleanup acceptance. The updated privacy/terms/support pages remain local and
-require separate publication. Billing remains off.
+cleanup acceptance. The updated privacy/terms/support pages are now published
+separately to the existing Pages branch in
+`d9e8749ddd55158a0145f31761d00887a44d6ecc` (only those three files). Pages built
+at **06:06:56Z**; parent uncached readback verified all three **HTTP 200** and
+byte-for-byte matches. Exact hashes are in `DELETION_ACCEPTANCE.md`. Billing
+remains off; publication is not legal clearance or app release.
+
+Current app source `04158fc924692611e6f4bbef4b4ff9128f96ed2b` is pushed.
+Parent receipt: **1,412/1,412 tests passed**, zero skips, **154.8s**; 49 backend
+Deno tests and backend checks, native prebuild and Hermes export passed.
+Build **105** is **queued**, ID `d639ada9-80c2-413c-adb8-2f59da229b5a`, from
+that exact source commit. No cloud-build completion, archive, upload or Apple
+processing result is claimed for Build 105. Earlier Build 104 receipts below
+retain their historical scope.
 
 ## Owner-Independent Engineering Receipts
 

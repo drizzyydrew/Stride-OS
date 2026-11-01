@@ -10,6 +10,16 @@ native-device cleanup report. This documentation pass made no account, database,
 configuration, deployment, purchase, or release changes. Billing remains off as
 reported by the parent; billing flags were not freshly read in this pass.
 
+## Current source and queued build receipt
+
+Parent-reported final source: `04158fc924692611e6f4bbef4b4ff9128f96ed2b`, pushed.
+Final regression: **1,412/1,412 passed**, zero skips, **154.8s**. The parent also
+reported 49 backend Deno tests and backend checks, native prebuild and Hermes
+export passed. Build **105** is **queued** as
+`d639ada9-80c2-413c-adb8-2f59da229b5a` from that exact app commit. No cloud-build
+completion, archive, upload or Apple processing is claimed for this queued build.
+These are supplied parent receipts, not newly executed checks by this sidecar.
+
 ## Latest verified operating state
 
 Parent-reported exact deployed-source verification:
@@ -119,7 +129,7 @@ records as required by law without a supported decision.
 
 ## Policy text and publication status
 
-Updated local documentation-only pages:
+Reviewed documentation-only pages, now published separately by the parent:
 
 | File | Intended published URL | Changes |
 | --- | --- | --- |
@@ -127,13 +137,25 @@ Updated local documentation-only pages:
 | `docs/terms.html` | https://drizzyydrew.github.io/Stride-OS/terms.html | Same deletion stages and limits; separate provider/subscription actions; no instant-completion or fixed-deadline promise |
 | `docs/support.html` | https://drizzyydrew.github.io/Stride-OS/support.html | Current availability, safe progress/retry guidance, explicit credential repair, no private recovery secrets in email, and retained/external data boundaries |
 
-**All three pages require a separate authorized GitHub Pages publication and live
-readback.** No commit, push, deployment or publication occurred in this review.
+**Publication complete, per parent verification:** only `privacy.html`,
+`terms.html` and `support.html` were pushed to the existing Pages branch in
+commit `d9e8749ddd55158a0145f31761d00887a44d6ecc`. GitHub Pages built at
+**2026-11-01T06:06:56Z**. Uncached readback verified all three **HTTP 200** and
+byte-for-byte exact matches, with these SHA-256 values:
+
+| Published page | Verified SHA-256 |
+| --- | --- |
+| `privacy.html` | `d022565f86d5d243aaa28c194f5f6373d9f0bc6378380c940914fd1bd423e05a` |
+| `terms.html` | `e2925582fc5ff64deced5292f89079c80ce0ad53d08ad6f826b4b876e96c0dc7` |
+| `support.html` | `8ba97d37923197c7f37721c9e3d5b8fcdbe3e75d1a2cd6f15b00d0aa335ca495` |
+
+The initial documentation review observed older published copies before this
+separate publication. This receipt update records the parent's later push and
+readback; the sidecar did not perform a new push, deployment or public check.
 `src/utils/legal.ts` already links to the URLs above and was not changed.
-Read-only curl retrieval succeeded for all three published pages. Each differs
-from its updated local draft and lacks the new secure-recovery/current-off
-notices. No publication or published-copy match is claimed. Appended handoff
-receipts do not change the installed Build 104 binary. The new native cleanup
+Policy publication does not change the installed Build 104 binary, finish the
+queued Build 105, activate billing, release the app, or provide legal clearance.
+The new native cleanup
 flow needs an appropriately built and accepted client; backend deployment alone
 does not deliver it to an installed app.
 
@@ -159,8 +181,9 @@ No application code or tests were changed for this review.
   fallback is not represented as satisfying Apple's in-app deletion requirement
   for a public launch. Accept the intended user flow and communicate processing
   expectations before representing that requirement as met.
-- Public policies: publish the reviewed pages separately and verify the exact
-  live copy. No paid billing or public release is activated by this handoff.
+- Public policies: the three-page publication/readback gate is complete with the
+  receipt above. Any future policy edits need their own publication/readback;
+  no paid billing, app release or legal clearance follows from this publication.
 
 Official guidance consulted: [Apple account-deletion guidance](https://developer.apple.com/help/app-review/guideline-reference/5-1-1-account-deletion),
 [Sign in with Apple TN3194](https://developer.apple.com/documentation/technotes/tn3194-handling-account-deletions-and-revoking-tokens-for-sign-in-with-apple),

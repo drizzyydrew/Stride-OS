@@ -4,12 +4,24 @@ Checkpoint: October 31, 2026. Current continuation follows committed baseline 39
 
 ## Latest Continuation
 
+- Parent-verified current source/publication receipt (November 1, 2026 UTC): app
+  source `04158fc924692611e6f4bbef4b4ff9128f96ed2b` is pushed. Final regression
+  **1,412/1,412 passed**, zero skips, **154.8s**; 49 backend Deno tests and
+  backend checks, native prebuild and Hermes export passed. Build **105** is
+  **queued** as `d639ada9-80c2-413c-adb8-2f59da229b5a` from that exact commit;
+  completion, archive, upload and Apple processing are not claimed.
+  Privacy/terms/support were published separately as only three files to the
+  existing Pages branch in `d9e8749ddd55158a0145f31761d00887a44d6ecc`.
+  Pages built at **06:06:56Z**; parent uncached readback verified all three
+  **HTTP 200** and byte-for-byte matches. Exact hashes are recorded in
+  [`DELETION_ACCEPTANCE.md`](DELETION_ACCEPTANCE.md). Billing remains off;
+  policy publication is not app release or legal clearance.
 - Post-Build-104 deletion checkpoint: [`DELETION_ACCEPTANCE.md`](DELETION_ACCEPTANCE.md)
   records parent-verified `account-deletion` v3, status/worker v1, three live
   synthetic server completions including scheduler-only recovery, unchanged
   original-account counts, and the final automation-off/empty-allowlist/no-cron
   state. Real Apple/Google grant revocation and native cleanup/device QA remain
-  open. Policy-page changes are local drafts requiring separate publication;
+  open. The corrected policy pages are published with the receipt above;
   billing remains off. Earlier operator-only/deployment receipts below retain
   their historical scope and do not describe this latest checkpoint.
 - The owner explicitly authorized separating Bet Desk and StrideOS without unnecessary deletion. Both apps already had dedicated projects; the mistaken shared-auth conclusion came from empty legacy Bet Desk tables in StrideOS. Bet Desk's web and mobile production URLs were freshly verified against its dedicated project. Nine empty legacy tables were preserved in a private archive schema, with the same relation identities and counts, and their obsolete Auth foreign keys detached. No accounts, files, training history, bets, or projects were deleted. No paid upgrade was needed. See `BACKEND_ISOLATION.md` for evidence and the failed, non-billed new-project attempt.

@@ -85,6 +85,28 @@ Final full-suite result, source commit, EAS build, actual IPA inspection,
 source-map upload, exact submission and Apple processing are recorded below
 only after verification. Preparation does not establish an uploaded build.
 
+## Completed baseline build; submission held
+
+- Source `04158fc924692611e6f4bbef4b4ff9128f96ed2b` is committed and pushed.
+  EAS build `d639ada9-80c2-413c-adb8-2f59da229b5a` finished at
+  `2026-11-01T06:17:19.342Z` on Xcode 26.4.
+- Actual IPA downloaded and inspected at `/tmp/strideos-build105.ipa`.
+  SHA-256: `a9b296096ab6b9c9cce7578ba5c6c208351519a36e6b3900362f2aaca4634eb6`.
+  Phone, Watch and Live Activity all use 1.0.0/105, intended identifiers and
+  device SDKs. Deep/strict signatures and production entitlements passed;
+  20 privacy manifests parsed and the compiled 1024px AppIcon is opaque.
+- Decoded Xcode logs confirm Sentry source-map upload for
+  `com.mooremovement.strideos@1.0.0+105`, dist 105. This is upload evidence,
+  not consented-device symbolication proof.
+- Fresh cloud Doctor found the SDK 56 Hermes memory regression and the dynamic
+  config marker warning. These are distinct from npm's high-severity audit.
+  The source/test pass does not clear this runtime warning. See
+  `SDK57_RUNTIME_REVIEW.md`: an isolated supported SDK 57 candidate is being
+  qualified, preserving this exact build as a baseline.
+- **Build 105 has not been submitted to Apple.** The intended next beta candidate
+  is Build 106 with the supported runtime fix, subject to its own checks. No
+  Apple processing, TestFlight availability or public launch is claimed for 105.
+
 Paid billing and general automatic deletion remain disabled pending intended-user
 acceptance. Real provider revocation, native cleanup/restart, iPhone/Watch and
 StoreKit purchase lifecycle, operational retention/support decisions and owner
