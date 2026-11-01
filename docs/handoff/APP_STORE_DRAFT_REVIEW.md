@@ -12,11 +12,12 @@ account **Active**, and **U.S. Form W-9 Active**. The earlier banking Processing
 24-hour banner and missing-information statuses below are superseded by these
 observed statuses; their earlier timestamps remain historical evidence.
 
-One additional legal action remains: **Paid Apps Agreement Active (New Agreement
-Available)**, with a banner saying a new version is available. Its View and Agree
-to Terms action was opened for the owner. The terms checkbox remains unchecked
-and the final Agree action was not performed by the assistant. This is not the
-same agreement as the Developer Program agreement already accepted. No public
+The separate updated Paid Apps Agreement was then opened with its checkbox
+unchecked for the owner. The owner personally accepted it and reported completion.
+Fresh Business-page readback now shows **Paid Apps Agreement Active**, **Free Apps
+Agreement Active**, **bank account Active**, and **U.S. Form W-9 Active**; the
+new-agreement banner is absent. This supersedes the earlier New Agreement
+Available receipt. Neither agreement was accepted by the assistant. No public
 review, release or production billing activation was performed.
 
 Only status readback was needed; private taxpayer IDs and bank account values

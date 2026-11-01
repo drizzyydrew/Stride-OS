@@ -5,11 +5,11 @@ Checkpoint: November 1, 2026 UTC. Current continuation follows committed baselin
 ## Latest Continuation
 
 - Owner completion, November 1 Pacific: live Apple reload confirms the updated
-  Developer Program agreement was accepted November 1; Free Apps Agreement,
-  bank account and U.S. Form W-9 show Active. A separate **Paid Apps Agreement
-  Active (New Agreement Available)** still needs the owner's review/acceptance;
-  its terms dialog is open with checkbox unchecked. Earlier missing/processing
-  business states below are historical. See `APP_STORE_DRAFT_REVIEW.md`.
+  Developer Program agreement was accepted November 1. After the owner accepted
+  the separate updated paid terms, **Paid Apps Agreement, Free Apps Agreement,
+  bank account and U.S. Form W-9 all show Active**, with no new-agreement banner.
+  Earlier missing/processing/new-agreement business states below are historical.
+  No public release or production billing activation. See `APP_STORE_DRAFT_REVIEW.md`.
 - November 1 Pacific store continuation: saved Health & Fitness / Sports
   categories and corrected/completed the current age questionnaire; main rating
   remains 13+. Apple Business now explicitly requires the Account Holder's

@@ -4,6 +4,13 @@ This is an execution checklist, not a legal opinion, independent audit, physical
 device report, or assertion that the app is ready for the market. Public payments
 and public release remain disabled until the relevant gates are actually passed.
 
+Owner account setup, November 1 Pacific: fresh Apple readback confirms the owner
+accepted the updated Developer Program and Paid Apps agreements. Paid Apps,
+Free Apps, bank account and U.S. Form W-9 all show **Active**. Earlier missing
+business-information states are superseded; see `APP_STORE_DRAFT_REVIEW.md`.
+Device and StoreKit acceptance, privacy/regulatory declarations, current review
+assets and reviewer access remain open. Account setup does not activate app billing.
+
 Latest deletion continuation (November 1, 2026 UTC): see
 [`DELETION_ACCEPTANCE.md`](DELETION_ACCEPTANCE.md). The parent verified three
 synthetic API/server completions, including scheduler-only recovery, with the
@@ -33,8 +40,9 @@ Later pushed source `98c9729` prepares a private billing-QA profile and strictly
 owner-scoped server verifier; its 49 focused checks passed independently. It is
 unbuilt, undeployed and unactivated. Production payments and general deletion
 automation remain off. The next necessary owner actions are installing 106 on
-the physical iPhone/Watch, completing Apple sign-in/2FA for remaining store fields,
-and participating in the later scoped sandbox purchase session. Never use the
+the physical iPhone/Watch and participating in the later scoped sandbox purchase
+session. Apple account agreements/banking/tax are now verified as above; remaining
+store declarations still need completion. Never use the
 owner's retained-history account as a disposable deletion fixture.
 
 ## Owner-Independent Engineering Receipts

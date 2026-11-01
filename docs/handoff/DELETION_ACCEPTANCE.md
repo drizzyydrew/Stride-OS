@@ -10,7 +10,15 @@ native-device cleanup report. This documentation pass made no account, database,
 configuration, deployment, purchase, or release changes. Billing remains off as
 reported by the parent; billing flags were not freshly read in this pass.
 
-## Current source and queued build receipt
+## Current native candidate
+
+Build **106** supersedes the earlier queued-105 checkpoint below. Its exact source
+is `13feb937c5c94d223635ab9509ab1090ba7f0d2b`; the actual signed archive and Apple
+VALID / IN_BETA_TESTING receipt are in `BUILD106_RELEASE.md`. It contains this
+cleanup source, but physical-device deletion/restart and real provider-grant
+acceptance remain open. Automation remains off per the last deployed receipt.
+
+## Historical source and queued Build 105 receipt
 
 Parent-reported final source: `04158fc924692611e6f4bbef4b4ff9128f96ed2b`, pushed.
 Final regression: **1,412/1,412 passed**, zero skips, **154.8s**. The parent also
