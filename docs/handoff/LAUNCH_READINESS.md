@@ -4,6 +4,17 @@ Checkpoint: October 31, 2026. Current continuation follows committed baseline 39
 
 ## Latest Continuation
 
+- Supported runtime candidate: Expo 57.0.31 / RN 0.86.3 replaces SDK 56's known
+  Hermes memory regression. Build 106 is queued from exact source
+  `13feb937c5c94d223635ab9509ab1090ba7f0d2b`, EAS
+  `6464cf85-f61a-4d9c-9eaa-92aec14056ba`. Canonical tests passed 1,412/1,412;
+  TypeScript/Expo checks and Hermes export passed. Cloud Doctor passed 21/21 and
+  installed Hermes 250829098.0.17 on pinned Xcode 26.6. Native completion,
+  artifact inspection and Apple processing are still separate pending gates;
+  see `BUILD106_RELEASE.md`. Build 105 remains a compiled/inspected baseline,
+  deliberately not submitted. The post-snapshot private billing-QA preparation
+  is source-only, unbuilt and undeployed; production payment settings were not
+  enabled. Its 49 focused checks passed independently, with no live side effects.
 - Parent-verified current source/publication receipt (November 1, 2026 UTC): app
   source `04158fc924692611e6f4bbef4b4ff9128f96ed2b` is pushed. Final regression
   **1,412/1,412 passed**, zero skips, **154.8s**; 49 backend Deno tests and
@@ -25,7 +36,7 @@ Checkpoint: October 31, 2026. Current continuation follows committed baseline 39
   billing remains off. Earlier operator-only/deployment receipts below retain
   their historical scope and do not describe this latest checkpoint.
 - The owner explicitly authorized separating Bet Desk and StrideOS without unnecessary deletion. Both apps already had dedicated projects; the mistaken shared-auth conclusion came from empty legacy Bet Desk tables in StrideOS. Bet Desk's web and mobile production URLs were freshly verified against its dedicated project. Nine empty legacy tables were preserved in a private archive schema, with the same relation identities and counts, and their obsolete Auth foreign keys detached. No accounts, files, training history, bets, or projects were deleted. No paid upgrade was needed. See `BACKEND_ISOLATION.md` for evidence and the failed, non-billed new-project attempt.
-- All seven high dependency findings were removed through narrowly scoped patched upstream dependencies, not an SDK jump. The CommonJS adapter delegates URI parsing to exact upstream decode-uri-component 0.5.1. Real Router parsing, bounded malicious inputs, Metro assets, Expo CLI schemas, and both plist consumers have dedicated tests. Latest verified audit after the Babel core 7.29.6 fix: 17 findings (16 moderate, one low), zero high/critical; see [`DEPENDENCY_EXPOSURE_REVIEW.md`](DEPENDENCY_EXPOSURE_REVIEW.md). These remaining findings are not represented as zero vulnerabilities or independent clearance.
+- All seven high dependency findings were removed through narrowly scoped patched upstream dependencies. The later runtime upgrade addresses the separate Hermes regression. The CommonJS adapter delegates URI parsing to exact upstream decode-uri-component 0.5.1. Real Router parsing, bounded malicious inputs, Metro assets, Expo CLI schemas, and both plist consumers have dedicated tests. SDK 56's post-Babel audit had 17 findings; the latest SDK 57 audit has **16 (15 moderate, one low), zero high/critical**. See [`DEPENDENCY_EXPOSURE_REVIEW.md`](DEPENDENCY_EXPOSURE_REVIEW.md) for the earlier root exposure review and `BUILD106_RELEASE.md` for runtime receipts. Residual findings are not zero vulnerabilities or independent clearance.
 - Guarded deletion fulfillment is implemented as an operator command with a read-only default, an exact-receipt execution confirmation, database leases, Storage API removal before Auth removal, and verified completion. Cloud access freezes at the recorded request even for older clients. The real existing Apple-linked account remains blocked until provider revocation is configured; no deletion command was run against it. This is not a completed automatic end-user deletion service.
 - RevenueCat project `1a3600d5` now has a saved App Store connection with Valid credentials, both Apple product mappings attached to `pro`, and the verified default offering. The owner approved USD 9.99/month, USD 79.99/year and seven-day trial drafts. Public iOS SDK and owner-saved read-only server credentials are configured; billing remains off. Apple notification URLs persist in both environments. Official sandbox TEST delivery succeeded; production TEST returned 401. Real subscription lifecycle acceptance and the remaining public-launch gates are still open.
 - Initial full regression rerun passed 1,227/1,227 tests. A fresh `npm ci --ignore-scripts` succeeded from the lockfile; clean-install validation is tracked in the continuation's final receipts. Full iOS Metro/Hermes export passed (3,713 modules, 109 assets). This proves JavaScript bundling, not native compilation or device behavior.

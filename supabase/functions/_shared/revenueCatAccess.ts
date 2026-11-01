@@ -6,14 +6,32 @@ export const REVENUECAT_PRO_ID = 'entl0c642305f9';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const unavailable = () => new Error('Subscription verification unavailable');
 
+// A single server-configured owner, never a list, wildcard or client claim.
+// Snapshot this policy once so verification and the no-quota guard agree.
+export function createRevenueCatBillingPolicy(config: {
+  globalEnabled: string | undefined;
+  qaOwnerId: string | undefined;
+}) {
+  const globalEnabled = config.globalEnabled === 'true';
+  const value = config.qaOwnerId;
+  const qaOwnerId = typeof value === 'string' && value.length === 36 && UUID.test(value)
+    && value !== '00000000-0000-0000-0000-000000000000' ? value.toLowerCase() : null;
+  const isQaOwner = (verifiedUserId: string): boolean => qaOwnerId !== null
+    && verifiedUserId.length === 36 && verifiedUserId.toLowerCase() === qaOwnerId;
+  return {
+    isQaOwner,
+    enabled: (verifiedUserId: string): boolean => globalEnabled || isQaOwner(verifiedUserId),
+  };
+}
+
 export function createRevenueCatProVerifier(deps: {
-  enabled(): boolean;
+  enabled(verifiedUserId: string): boolean;
   apiKey(): string | undefined;
   fetch?: typeof fetch;
   now?: () => number;
 }) {
   return async (verifiedUserId: string): Promise<boolean> => {
-    if (!deps.enabled()) return true;
+    if (!deps.enabled(verifiedUserId)) return true;
     const key = deps.apiKey();
     if (!key?.startsWith('sk_') || !UUID.test(verifiedUserId)) throw unavailable();
     try {

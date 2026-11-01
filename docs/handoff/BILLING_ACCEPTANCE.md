@@ -1,11 +1,138 @@
-# Billing acceptance after Build 104
+# Billing acceptance and inert private QA preparation
+
+## Current preparation after the Build 106 cloud snapshot
+
+Parent reported Build 106 snapshot queued from source
+`13feb937c5c94d223635ab9509ab1090ba7f0d2b`, EAS build
+`6464cf85-f61a-4d9c-9eaa-92aec14056ba`, with upload CLI complete. This is a
+queue receipt, not a successful native build, TestFlight availability or device
+acceptance. These local QA changes were prepared only after that snapshot.
+The parent's source regression receipt was **1412/1412 passed in 172 seconds**;
+it is not a run of the QA changes below.
+
+The new, unbuilt `billing-qa` profile extends `production`, explicitly uses
+`distribution: store`, and overrides only its build-time client billing flag to
+`"true"`. It inherits the existing production environment, signing defaults and
+pinned `macos-tahoe-26.5-xcode-26.6` image. Stored production environment values
+and the production profile are unchanged. EAS profile `env` overrides the same
+named plain-text/sensitive environment variable during build configuration
+resolution; see the [EAS CLI resolution source](https://github.com/expo/eas-cli/blob/main/packages/eas-cli/src/build/evaluateConfigWithEnvVarsAsync.ts).
+Both profiles now run identical production observability preinstall validation
+with the same required variables; upload-bypass flags remain rejected.
+
+There is no OTA channel added. Current source has no `expo-updates` dependency
+or update URL/channel configuration, and generated iOS `Expo.plist` records
+`EXUpdatesEnabled=false`. Reconfirm these properties before any future build;
+adding updates later requires separately isolating QA from production updates.
+
+### Server boundary and deliberate no-quota stop
+
+`createRevenueCatBillingPolicy({ globalEnabled, qaOwnerId })` snapshots its
+configuration and provides `enabled(verifiedUserId)` and `isQaOwner(verifiedUserId)`.
+The verifier now receives the verified user ID in `enabled(verifiedUserId)`.
+Global billing requires exactly `STRIDEOS_BILLING_ENABLED="true"`. The optional
+server-only `STRIDEOS_BILLING_QA_OWNER_ID` accepts exactly one nonzero UUID;
+missing, malformed, whitespace-padded, list and wildcard values enable no QA
+owner. UUID comparison is case-insensitive. There is no request-body override.
+
+The actual AI Coach factory still obtains identity from authenticated
+`auth.getUser(token)`. It invokes the existing RevenueCat V2 GET for the exact
+QA owner even while global billing is off. Its `consumeAllowance` callback
+returns false for that owner **before the quota RPC**, also when global billing
+is on. No quota fixture, database write or AI provider call is needed for QA.
+Other owners retain existing global-off/default behavior; this preparation does
+not change their coach access or perform a RevenueCat lookup for them.
+
+| Authorized QA owner's valid POST | Existing response | Side effects |
+| --- | --- | --- |
+| Registered customer without active Pro | 402 | No quota RPC or AI call |
+| Exact Pro entitlement with future expiry | 429 | Intentional QA stop; no quota RPC or AI call |
+| Provider failure, malformed response or unregistered customer/404 | 503 | No quota RPC or AI call |
+
+The 429 message still describes the existing daily limit; QA deliberately takes
+that branch without reading or consuming quota. It proves the configured verifier
+accepted access only when the exact QA owner binding is independently confirmed.
+GET remains configuration-only and cannot establish entitlement verification.
+The existing handler must also be configured and receive valid consent/payload;
+an earlier 503 does not establish that RevenueCat was called. Responses expose
+no entitlement/customer objects, private values or new diagnostic fields.
+
+### Toggles and owner handoff — not activated
+
+| Setting/action | State in this preparation | Separate future acceptance action |
+| --- | --- | --- |
+| Stored production client billing flag | False/off receipt retained; not changed or freshly read | Keep false |
+| Global server billing flag | False/off/default receipt retained; not changed or freshly read | Keep false |
+| `STRIDEOS_BILLING_QA_OWNER_ID` | **Must remain UNSET; no environment write performed** | Set one dedicated authenticated QA owner's UUID only for the authorized session |
+| RevenueCat server key | Existing server-held credential untouched; no value retrieved | Reuse in server environment; do not copy to client or diagnostics |
+| QA server deployment and private build | Neither performed | Review/deploy these server bindings, then build the QA profile only after explicit activation authorization |
+| Build number | Current 106 retained; no version files changed | Before a future QA build, allocate next available number, expected **107**, and verify it is still unused across generated targets/archive |
+| Public payments and store promotion | Off; no release action | Separate decision only after actual sandbox acceptance passes |
+
+The owner must install the eventual QA build through a private owner-only
+TestFlight group, log into the dedicated app account and Sandbox Apple Account,
+and approve Apple's purchase dialogs. No public TestFlight link or App Store
+promotion is part of this handoff. TestFlight uses Apple's sandbox; controlled
+renewal/billing-failure scenarios use the Sandbox Apple Account controls.
+See [Apple's TestFlight purchase guidance](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testing-subscriptions-and-in-app-purchases-in-testflight/).
+
+Before any live POST, independently verify the deployed source and exact QA
+configuration-to-authenticated-owner match. An unset/malformed or mismatched QA
+owner leaves normal global-off behavior intact, which can reach quota/AI; do not
+probe other owners or use an unconfirmed binding. Device SDK login must first
+register the legitimate RevenueCat customer; a fresh Supabase account alone
+does not establish that customer. Then capture timestamped client/RevenueCat
+state and the expected 402 -> 429 -> 402 sequence as purchase/expiry occurs.
+Cancellation alone preserves access until its entitlement expires.
+
+Actual device acceptance must cover both approved products, canceled purchase,
+purchase, relaunch/restore, renewal, cancellation/expiry, billing retry/grace,
+refund/revocation where available, and owner switching. Record the exact build,
+sandbox environment and observed outcomes. Local fixture tests and QA's 429 do
+not prove purchase lifecycle acceptance, successful AI delivery or public-payment
+readiness. No StoreKit/device result is claimed here.
+
+### Bounded preparation checks
+
+```sh
+./node_modules/.bin/tsx --test scripts/tests/revenueCatServer*.test.ts \
+  scripts/tests/subscriptionLifecycle.test.ts scripts/tests/launchPrivacy.test.ts \
+  scripts/tests/observabilityRelease.test.ts
+deno check --no-config --no-lock supabase/functions/ai-coach/index.ts
+git diff --check
+```
+
+Focused tests: **49/49 passed**, zero failures/skips. Twelve new QA policy/factory
+tests execute the actual entrypoint, verifier and handler with external Deno,
+Supabase and network boundaries mocked. They prove strict single-owner policy,
+authenticated identity binding, 402/429/503 behavior, no QA quota RPC/AI call,
+sanitized output and unchanged non-QA behavior. Four observability/config tests
+cover production and QA validation plus inherited store-profile configuration.
+The remaining 33 are existing server/probe/client/privacy tests. All identities,
+credentials, purchases and provider replies are synthetic fixtures.
+
+AI function Deno typecheck **passed** (exit 0, typecheck only; no function
+execution). Diff whitespace review **passed**. The actual entrypoint's external
+imports were checked without changing the dependency lockfile.
+Focused TypeScript compilation of `revenueCatServerQa.test.ts` and
+`observabilityRelease.test.ts` also **passed**, using `--allowJs` for the existing
+CommonJS observability validator, `--noEmit` and `--ignoreConfig`; this was not a
+full-app typecheck.
+No full-app typecheck, Expo export, full suite, build, deployment, account action,
+live API request, quota mutation or AI call is performed by this preparation.
+
+## Historical Build 104 acceptance record
+
+The following source/configuration statements and checks are the dated Build 104
+record, preserved for history. They do not describe a deployment of the inert QA
+changes above or freshly re-read flags/secrets.
 
 Source baseline: `2d77acf`, canonical checkout
 `/Users/drew/Developer/StrideOS_App_clean_build19_v3_foundation_local`.
 This continuation adds acceptance tooling and tests only. It does not accept
 payments, activate billing, or establish device/purchase lifecycle acceptance.
 
-## Current implementation reviewed
+### Historical implementation reviewed
 
 - Client `src/lib/revenueCat.ts` enables billing only on iOS with the explicit
   client flag and an `appl_` SDK key. It serializes SDK operations, uses the
@@ -35,7 +162,7 @@ and [SDK CustomerInfo guidance](https://www.revenuecat.com/docs/customers/custom
 Supabase's [Edge Function auth guidance](https://supabase.com/docs/guides/functions/auth)
 describes the JWT boundary separately from application authorization.
 
-## Fresh read-only live receipt
+### Historical read-only live receipt
 
 Captured `2026-11-01T05:15:33.279Z` (October 31 in America/Los_Angeles):
 
@@ -63,7 +190,7 @@ Current flag values and secret presence were **not re-read** in this pass; the
 off/default settings and owner-saved key receipt remain historical evidence in
 `LAUNCH_READINESS.md` and `LAUNCH_ACCEPTANCE.md`, not a fresh configuration check.
 
-## Reusable bounded probe
+### Reusable bounded probe
 
 ```sh
 npx tsx scripts/verify-revenuecat-server.ts --help
@@ -95,7 +222,7 @@ retrieving a private server key; no such retrieval is authorized or implemented.
 Do not activate flags or deploy a diagnostic endpoint merely to make this probe
 report more coverage.
 
-## Focused local checks
+### Historical focused local checks
 
 ```sh
 npx tsx --test scripts/tests/revenueCatServer*.test.ts \
@@ -125,7 +252,7 @@ sidecar TypeScript files and their imported shared server code:
 Probe `--help` and diff whitespace checks passed. No new full-app typecheck,
 full regression suite, native compilation, or device run is claimed here.
 
-## Acceptance still open
+### Acceptance still open
 
 | Gate | Status and required evidence |
 | --- | --- |

@@ -12,6 +12,11 @@
     "production": {
       "environment": "production",
       "ios": { "image": "macos-tahoe-26.5-xcode-26.6" }
+    },
+    "billing-qa": {
+      "extends": "production",
+      "distribution": "store",
+      "env": { "EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED": "true" }
     }
   },
   "submit": {
