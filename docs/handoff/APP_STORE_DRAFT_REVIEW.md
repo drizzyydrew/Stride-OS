@@ -1,5 +1,27 @@
 # App Store draft readback
 
+## Owner completion readback — November 1, 2026 Pacific
+
+The owner personally submitted banking and U.S. Form W-9 information, then
+accepted the updated Developer Program agreement. A fresh Apple Developer
+account reload records that agreement as **Issued October 29, 2026 / Accepted
+November 1, 2026**. No agreement was accepted by the assistant.
+
+Subsequent Business-page readback shows **Free Apps Agreement Active**, the bank
+account **Active**, and **U.S. Form W-9 Active**. The earlier banking Processing /
+24-hour banner and missing-information statuses below are superseded by these
+observed statuses; their earlier timestamps remain historical evidence.
+
+One additional legal action remains: **Paid Apps Agreement Active (New Agreement
+Available)**, with a banner saying a new version is available. Its View and Agree
+to Terms action was opened for the owner. The terms checkbox remains unchecked
+and the final Agree action was not performed by the assistant. This is not the
+same agreement as the Developer Program agreement already accepted. No public
+review, release or production billing activation was performed.
+
+Only status readback was needed; private taxpayer IDs and bank account values
+were not requested, entered or recorded in this handoff.
+
 ## November 1, 2026 Pacific continuation
 
 - Live Apple session is authenticated. The app remains **1.0 Prepare for
