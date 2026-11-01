@@ -16,13 +16,26 @@ at **06:06:56Z**; parent uncached readback verified all three **HTTP 200** and
 byte-for-byte matches. Exact hashes are in `DELETION_ACCEPTANCE.md`. Billing
 remains off; publication is not legal clearance or app release.
 
-Current app source `04158fc924692611e6f4bbef4b4ff9128f96ed2b` is pushed.
-Parent receipt: **1,412/1,412 tests passed**, zero skips, **154.8s**; 49 backend
-Deno tests and backend checks, native prebuild and Hermes export passed.
-Build **105** is **queued**, ID `d639ada9-80c2-413c-adb8-2f59da229b5a`, from
-that exact source commit. No cloud-build completion, archive, upload or Apple
-processing result is claimed for Build 105. Earlier Build 104 receipts below
-retain their historical scope.
+Current native candidate **106** is from pushed source
+`13feb937c5c94d223635ab9509ab1090ba7f0d2b`, EAS
+`6464cf85-f61a-4d9c-9eaa-92aec14056ba`. Canonical SDK 57 regression passed
+**1,412/1,412**, zero failures/skips, **172.3s**; semantic TypeScript, Expo
+compatibility and clean-cache Hermes export passed. Cloud Doctor passed 21/21;
+the actual signed phone/Watch/widget archive passed the recorded checks and
+contains the fixed Hermes runtime. Exact-build submission
+`e089be5d-989e-4229-ac53-705afc49a660` finished; Apple confirms
+**VALID / IN_BETA_TESTING** in the existing internal group. Device acceptance
+is still open. See [`BUILD106_RELEASE.md`](BUILD106_RELEASE.md) for hashes and
+receipts. Build 105 was compiled/inspected but deliberately not submitted.
+Earlier 104 receipts below retain their historical scope.
+
+Later pushed source `98c9729` prepares a private billing-QA profile and strictly
+owner-scoped server verifier; its 49 focused checks passed independently. It is
+unbuilt, undeployed and unactivated. Production payments and general deletion
+automation remain off. The next necessary owner actions are installing 106 on
+the physical iPhone/Watch, completing Apple sign-in/2FA for remaining store fields,
+and participating in the later scoped sandbox purchase session. Never use the
+owner's retained-history account as a disposable deletion fixture.
 
 ## Owner-Independent Engineering Receipts
 

@@ -1,26 +1,31 @@
 # StrideOS Launch Readiness
 
-Checkpoint: October 31, 2026. Current continuation follows committed baseline 399bcac in the canonical Developer checkout. This is a targeted single-assistant multi-lens review, not an independent security audit, clinical validation, legal opinion, or physical-device acceptance.
+Checkpoint: November 1, 2026 UTC. Current continuation follows committed baseline 399bcac in the canonical Developer checkout. Engineering and scoped independent agent reviews are not an independent human security audit, clinical validation, legal opinion, or physical-device acceptance. Earlier checkpoints below retain their historical scope.
 
 ## Latest Continuation
 
 - Supported runtime candidate: Expo 57.0.31 / RN 0.86.3 replaces SDK 56's known
-  Hermes memory regression. Build 106 is queued from exact source
+  Hermes memory regression. Build 106 finished from exact source
   `13feb937c5c94d223635ab9509ab1090ba7f0d2b`, EAS
   `6464cf85-f61a-4d9c-9eaa-92aec14056ba`. Canonical tests passed 1,412/1,412;
   TypeScript/Expo checks and Hermes export passed. Cloud Doctor passed 21/21 and
-  installed Hermes 250829098.0.17 on pinned Xcode 26.6. Native completion,
-  artifact inspection and Apple processing are still separate pending gates;
-  see `BUILD106_RELEASE.md`. Build 105 remains a compiled/inspected baseline,
+  installed Hermes 250829098.0.17 on pinned Xcode 26.6. The actual IPA passed
+  signature, entitlement, icon, privacy-manifest and embedded-runtime checks;
+  Sentry source-map upload was confirmed. Submission
+  `e089be5d-989e-4229-ac53-705afc49a660` finished, and Apple confirms
+  **VALID / IN_BETA_TESTING** for the existing internal group. Physical device
+  installation and acceptance remain open; see `BUILD106_RELEASE.md`.
+  Build 105 remains a compiled/inspected baseline,
   deliberately not submitted. The post-snapshot private billing-QA preparation
   is source-only, unbuilt and undeployed; production payment settings were not
   enabled. Its 49 focused checks passed independently, with no live side effects.
-- Parent-verified current source/publication receipt (November 1, 2026 UTC): app
+- Earlier Build 105 source/publication receipt (superseded by 106 above): app
   source `04158fc924692611e6f4bbef4b4ff9128f96ed2b` is pushed. Final regression
   **1,412/1,412 passed**, zero skips, **154.8s**; 49 backend Deno tests and
   backend checks, native prebuild and Hermes export passed. Build **105** is
-  **queued** as `d639ada9-80c2-413c-adb8-2f59da229b5a` from that exact commit;
-  completion, archive, upload and Apple processing are not claimed.
+  finished as `d639ada9-80c2-413c-adb8-2f59da229b5a` from that exact commit.
+  Its actual archive was inspected, then held from submission because of the
+  documented SDK 56 runtime regression; 106 replaces it for internal testing.
   Privacy/terms/support were published separately as only three files to the
   existing Pages branch in `d9e8749ddd55158a0145f31761d00887a44d6ecc`.
   Pages built at **06:06:56Z**; parent uncached readback verified all three
@@ -354,7 +359,7 @@ The user authorized working through the launch checklist autonomously and using 
 3. **Owner account settings.** Apple agreements, banking/tax, App Store labels/age rating/export compliance/reviewer account/availability, provider spend limits and billing setup are unverified. Leaked-password protection remains disabled; do not purchase a plan or alter shared auth settings blindly. Existing trigger-function search paths/direct-execution privileges were hardened and the new security advisor scan cleared those warnings.
 4. **Physical-device acceptance.** Independent testers must exercise fresh installation, Apple/Google/email login, denied permissions, screen-locked GPS, pause/resume/interruption, Watch reconnect, offline save, account ownership, restore/reinstall, failed Health recovery, and purchase lifecycle when enabled. Source/browser checks cannot prove these paths.
 5. **External human review.** No lawyer, QA contractor, security engineer, or sports-domain reviewer has been hired or represented as having approved the app. Gather fixed-scope quotes and obtain owner approval before spending.
-6. **Release.** Final tests, exact native archive, SDK/privacy manifests, source-map upload, TestFlight processing, external beta feedback, and App Review/public-release decisions are separate gates. Build 104 compiled, passed archive checks, uploaded to Apple and is VALID / IN_BETA_TESTING internally. Physical installation, independent beta acceptance and public-review readiness remain. No public release is claimed.
+6. **Release.** Final tests, exact native archive, SDK/privacy manifests, source-map upload, TestFlight processing, external beta feedback, and App Review/public-release decisions are separate gates. Current Build 106 compiled, passed actual archive checks, uploaded to Apple and is VALID / IN_BETA_TESTING internally. Physical installation, independent beta acceptance and public-review readiness remain. No public release is claimed.
 7. **Residual dependency review.** High/critical findings are now zero without changing Expo SDK 56. Eighteen moderate/low upstream findings remain. The release review must assess their actual exposure and compatible fixes; neither a clean high-severity threshold nor successful bundling establishes whole-app security.
 
 ## Deletion Operator Runbook (Not Yet An Accepted End-User Service)

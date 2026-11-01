@@ -92,6 +92,14 @@ sandbox environment and observed outcomes. Local fixture tests and QA's 429 do
 not prove purchase lifecycle acceptance, successful AI delivery or public-payment
 readiness. No StoreKit/device result is claimed here.
 
+After an authorized private session, remove `STRIDEOS_BILLING_QA_OWNER_ID` and
+verify it is absent before normal AI use or public billing decisions. Otherwise
+that owner intentionally remains stopped at 429, even if global billing later
+turns on. Keep production client/server billing off until lifecycle acceptance
+and the separate activation decision. Never select the private QA binary for
+public promotion as a shortcut; retain the exact tested production candidate
+and build identities. Do not delete a real account or its history for testing.
+
 ### Bounded preparation checks
 
 ```sh

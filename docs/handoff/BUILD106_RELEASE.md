@@ -80,3 +80,49 @@ assertion was weakened. Final iOS bundle is about 15 MB.
 Fresh account-portal readback before queuing: existing Starter plan, **$4 used
 of $45 included build credit**. No plan/add-on change was selected; the candidate
 uses the existing allowance. The production client billing flag remains false.
+
+## Cloud build, actual artifact and upload
+
+- Exact native source: `13feb937c5c94d223635ab9509ab1090ba7f0d2b`.
+  EAS `6464cf85-f61a-4d9c-9eaa-92aec14056ba` finished at
+  `2026-11-01T06:54:38.612Z`, using pinned Xcode 26.6. Cloud Doctor passed
+  **21/21** with no checks disabled; CocoaPods installed Hermes
+  **250829098.0.17**.
+- Actual signed IPA: `/tmp/strideos-build106.ipa`, 129,561,043 bytes.
+  SHA-256 `c0fe27d3bd918f62fc2d538a986f4c33188acfdeb9314ae3e336c60ba2848fb5`.
+  Phone, Watch and widget all contain version 1.0.0/build 106 and the intended
+  identifiers. Archived SDK names are `iphoneos26.5` / `watchos26.5`; the Xcode
+  image version is a separate fact.
+- Strict/deep signatures and expected release entitlements passed on all three
+  targets. The host's generated development APNs value correctly becomes
+  `production` in the store archive. Debug signing is disabled. HealthKit and
+  the applicable app groups match the preserved source contracts.
+- All **21 privacy manifests** parsed; compiled 1024px AppIcon is opaque.
+  The embedded `hermesvm` binary contains `.0.17` and not `.0.10`; the preserved
+  105 binary contains `.0.10` and not `.0.17`. This identifies the changed signed
+  runtime; it is not a release-device memory measurement.
+- Sentry Xcode log confirms source-map upload for
+  `com.mooremovement.strideos@1.0.0+106`, dist 106. No consented-device event or
+  symbolication result is claimed.
+- Exact-build submission `e089be5d-989e-4229-ac53-705afc49a660` finished upload at
+  `2026-11-01T07:03:48.641Z`. It targets only the existing internal `Team (Expo)`
+  group. Apple processing/internal availability remains a separate check below.
+- Later source commit `98c9729` prepares an unbuilt/undeployed private billing-QA
+  profile and owner-scoped no-quota verification. Its 49 focused checks passed
+  independently. It does not change this immutable native snapshot or activate
+  payment settings; see `BILLING_ACCEPTANCE.md` before any future QA session.
+
+## Apple processing receipt
+
+Supported App Store Connect readback confirms **1.0.0 / 106** is `VALID`,
+`IN_BETA_TESTING` internally and `READY_FOR_BETA_SUBMISSION` externally,
+not expired, with exact EAS build/submission IDs above. Apple uploadedDate is
+`2026-11-01T00:01:31-07:00`. This establishes processing and existing internal
+beta availability, not installation on a particular phone, external-beta review,
+public App Review or release. No public link, new tester invitation, payment
+activation or general deletion activation was performed.
+
+Owner handoff is now physical phone/Watch acceptance, a scoped private billing
+sandbox session, and Apple-owner login/actions for remaining store/account
+fields. Existing training data is preserved; deletion acceptance must use a
+confirmed disposable account rather than the owner's retained history.
