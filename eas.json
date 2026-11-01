@@ -12,6 +12,17 @@
     "production": {
       "environment": "production",
       "ios": { "image": "macos-tahoe-26.5-xcode-26.6" }
+    },
+    "capture-sim": {
+      "extends": "production",
+      "developmentClient": false,
+      "env": { "EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED": "false" },
+      "ios": {
+        "simulator": true,
+        "buildConfiguration": "Release",
+        "resourceClass": "medium",
+        "autoIncrement": false
+      }
     }
   },
   "submit": {
