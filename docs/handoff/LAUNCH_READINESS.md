@@ -4,6 +4,15 @@ Checkpoint: November 1, 2026 UTC. Current continuation follows committed baselin
 
 ## Latest Continuation
 
+- November 1 Pacific store continuation: saved Health & Fitness / Sports
+  categories and corrected/completed the current age questionnaire; main rating
+  remains 13+. Apple Business now explicitly requires the Account Holder's
+  updated Developer Program agreement and missing bank/W-9 information for paid
+  apps. No agreement was accepted, financial data entered or medical-device
+  declaration submitted. Privacy-label reconciliation is prepared locally;
+  Apple's immediate Publish action was not used. See `APP_STORE_DRAFT_REVIEW.md`
+  and `PRIVACY_LABEL_RECONCILIATION.md`. The owner deferred device testing; this
+  continuation does not claim it occurred.
 - Supported runtime candidate: Expo 57.0.31 / RN 0.86.3 replaces SDK 56's known
   Hermes memory regression. Build 106 finished from exact source
   `13feb937c5c94d223635ab9509ab1090ba7f0d2b`, EAS

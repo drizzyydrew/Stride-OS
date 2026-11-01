@@ -2,11 +2,13 @@
 
 ## Current preparation after the Build 106 cloud snapshot
 
-Parent reported Build 106 snapshot queued from source
+Preparation began after the Build 106 snapshot was queued from source
 `13feb937c5c94d223635ab9509ab1090ba7f0d2b`, EAS build
-`6464cf85-f61a-4d9c-9eaa-92aec14056ba`, with upload CLI complete. This is a
-queue receipt, not a successful native build, TestFlight availability or device
-acceptance. These local QA changes were prepared only after that snapshot.
+`6464cf85-f61a-4d9c-9eaa-92aec14056ba`, with source upload complete. The later
+`BUILD106_RELEASE.md` receipt confirms its native build, signed archive, upload
+to Apple and VALID / IN_BETA_TESTING state. These local QA changes were prepared
+only after that immutable snapshot and remain unbuilt/undeployed/unactivated.
+Neither receipt establishes device or purchase-lifecycle acceptance.
 The parent's source regression receipt was **1412/1412 passed in 172 seconds**;
 it is not a run of the QA changes below.
 
