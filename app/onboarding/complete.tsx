@@ -327,8 +327,8 @@ export default function CompleteScreen() {
       </Pressable>
 
       <Text style={s.disclaimer}>
-        All calibration is local to your device. No account or internet connection required.
-        You can refine every setting in Profile.
+        A StrideOS account is required to use the app.
+        You can refine your training settings in Profile.
       </Text>
     </ScrollView>
   );

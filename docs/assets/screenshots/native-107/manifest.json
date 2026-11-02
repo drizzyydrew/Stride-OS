@@ -1,0 +1,112 @@
+{
+  "build": "1.0.0 (107)",
+  "source_revision": "3e1513c8cd6dfbe8e75139d1a83ab9bd1154b72a",
+  "eas_build_id": "4e4061e5-6bf2-4eaf-9ae0-f6fe203a8a2e",
+  "device": "iPhone 16 Pro Simulator",
+  "os": "iOS 18.6",
+  "export": "Simulator Save Screen, original unedited PNG bytes",
+  "data": "Dedicated synthetic account; fictional onboarding and manually logged run/hike; no imported Health, GPS route, heart-rate or sensor data",
+  "fixtures": {
+    "run": {
+      "minutes": 45,
+      "miles": 4.5,
+      "rpe": 5
+    },
+    "hike": {
+      "minutes": 90,
+      "miles": 3.2,
+      "ascent_feet": 800,
+      "rpe": 5,
+      "notes": "Explicit fictional demo/manual-entry provenance saved through app UI"
+    }
+  },
+  "files": [
+    {
+      "file": "iphone/02-calendar-week.png",
+      "bytes": 229235,
+      "sha256": "3400999e6c14369d654c235920d9dd8f4160eb8c464b67e33f36c1399c1cffdc",
+      "width": 1206,
+      "height": 2622,
+      "mode": "RGBA",
+      "alpha_extrema": [
+        255,
+        255
+      ],
+      "captured_at": "2026-11-01T16:50:33.047329-08:00",
+      "review": "Reviewed for draft placement",
+      "apple_asset_id": "95000019-4492-8222-8007-630a3403887f",
+      "apple_status": "Processed in Asset Library; Add for Review available; not submitted",
+      "version_placement": {
+        "app_id": "6782788130",
+        "version": "1.0",
+        "localization": "English (U.S.)",
+        "device_slot": "iPhone with Dynamic Island (medium display)",
+        "order": 1,
+        "verified": "Persisted after reload; Face ID large inherits the same three images"
+      }
+    },
+    {
+      "file": "iphone/03-running-detail.png",
+      "bytes": 231280,
+      "sha256": "106d05fbd61d479bc056fd6f34a70ef2ac6177482782726f6f686867af1b885e",
+      "width": 1206,
+      "height": 2622,
+      "mode": "RGBA",
+      "alpha_extrema": [
+        255,
+        255
+      ],
+      "captured_at": "2026-11-01T16:54:03.008162-08:00",
+      "review": "Hold: unlinked manual entry says Completed as prescribed; fix source and recapture",
+      "apple_status": "Not uploaded; held for source correction and recapture"
+    },
+    {
+      "file": "iphone/04-activity-history.png",
+      "bytes": 294010,
+      "sha256": "51e8cefca5017c179e747ad353c446f2a8f371fe3282edce8acd6bfb35b00ced",
+      "width": 1206,
+      "height": 2622,
+      "mode": "RGBA",
+      "alpha_extrema": [
+        255,
+        255
+      ],
+      "captured_at": "2026-11-01T17:00:16.481354-08:00",
+      "review": "Reviewed for draft placement",
+      "apple_asset_id": "aa800019-4492-8222-803c-5c49b717fcea",
+      "apple_status": "Processed in Asset Library; Add for Review available; not submitted",
+      "version_placement": {
+        "app_id": "6782788130",
+        "version": "1.0",
+        "localization": "English (U.S.)",
+        "device_slot": "iPhone with Dynamic Island (medium display)",
+        "order": 2,
+        "verified": "Persisted after reload; Face ID large inherits the same three images"
+      }
+    },
+    {
+      "file": "iphone/06-strength-presets.png",
+      "bytes": 311856,
+      "sha256": "079408e93dd7281b3f10b3eaf1482e748ac23d819443ea688ce013a070f4dc14",
+      "width": 1206,
+      "height": 2622,
+      "mode": "RGBA",
+      "alpha_extrema": [
+        255,
+        255
+      ],
+      "captured_at": "2026-11-01T17:18:01.044581-08:00",
+      "review": "Reviewed for draft placement",
+      "apple_asset_id": "59000019-4492-8222-803a-bb53c4f6209a",
+      "apple_status": "Processed in Asset Library; Add for Review available; not submitted",
+      "version_placement": {
+        "app_id": "6782788130",
+        "version": "1.0",
+        "localization": "English (U.S.)",
+        "device_slot": "iPhone with Dynamic Island (medium display)",
+        "order": 3,
+        "verified": "Persisted after reload; Face ID large inherits the same three images"
+      }
+    }
+  ]
+}

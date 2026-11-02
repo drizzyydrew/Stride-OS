@@ -10,6 +10,7 @@ import { useColors } from '../../../src/theme/useColors';
 import { useWeather } from '../../../src/hooks/useWeather';
 import { formatTemp } from '../../../src/lib/weather';
 import { useSettingsStore } from '../../../src/store/settingsStore';
+import { useActiveProfile } from '../../../src/store/profileStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useAchievementStore } from '../../../src/store/achievementStore';
@@ -353,6 +354,7 @@ function getDayLabel(): string {
 
 export default function TodayScreen() {
   const C = useColors();
+  const athleteName = useActiveProfile()?.name?.trim();
   useFeatureTour('today');
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -525,7 +527,7 @@ export default function TodayScreen() {
       <View style={[styles.headerRow, styles.fixedHeader, { paddingTop: insets.top + 20, backgroundColor: C.bg, borderBottomColor: C.border }]}>
         <View>
           <Text style={[styles.headerDate, { color: C.textDim }]}>{getDayLabel()}</Text>
-          <Text style={[styles.headerGreeting, { color: C.text }]}>Good morning, Drew.</Text>
+          <Text style={[styles.headerGreeting, { color: C.text }]}>Good morning{athleteName ? `, ${athleteName}` : ''}.</Text>
         </View>
         <TouchableOpacity
           style={[styles.avatarBtn, { backgroundColor: C.card, borderColor: C.border }]}

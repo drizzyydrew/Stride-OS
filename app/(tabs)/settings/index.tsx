@@ -744,10 +744,7 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
           <View>
-            <Text style={[{ fontSize: 16, fontWeight: '700', color: C.text }]}>{data.name || 'Athlete'}</Text>
-            <Text style={[{ fontSize: 12, color: C.textMuted, marginTop: 2 }]}>
-              Running since {new Date().getFullYear() - 5} · {imp ? '2,814 mi' : '4,529 km'}
-            </Text>
+            <Text style={[{ fontSize: 16, fontWeight: '700', color: C.text }]}>{profile?.name?.trim() || 'Athlete'}</Text>
             <Text style={[{ fontSize: 11, color: C.textDim, marginTop: 2 }]}>Tap photo to change</Text>
           </View>
         </View>

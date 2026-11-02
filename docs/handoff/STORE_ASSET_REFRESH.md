@@ -3,7 +3,11 @@
 Current parent continuation: actual native Build 106 capture found a first-login
 blocker before training screens could be reached. The producer correction has
 passed 1,447 broad tests plus semantic and Expo dependency checks. Build 107 is
-prepared, with native retest and genuine replacement captures still pending.
+compiled, and fresh native login/onboarding plus two manual save/readback flows
+passed on the capture simulator. Four genuine originals exist; three passed
+visual review, processed in Apple Asset Library, and persisted in the draft
+iPhone sequence after reload. The old iPhone overrides were removed while
+preserving library files. Remaining phone/Watch captures are not complete.
 See `NATIVE_CAPTURE_BOOTSTRAP_FIX.md`; no storyboard entry below is a claim that
 an image exists or has been uploaded. The owner chose the existing free URLs.
 

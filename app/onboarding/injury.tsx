@@ -37,7 +37,7 @@ export default function InjuryScreen() {
     <OnboardingShell
       step={7}
       title="Current injuries"
-      subtitle="We'll reduce load on affected areas and flag high-risk movement patterns."
+      subtitle="Tell us about any areas you want to consider when adjusting your training."
       onNext={handleNext}
       onBack={() => router.back()}
     >
@@ -96,14 +96,14 @@ export default function InjuryScreen() {
       {!hasInjury && (
         <View style={s.clearCard}>
           <Text style={s.clearText}>
-            Great — no current injuries. We'll still monitor load to prevent overuse.
+            No current injuries noted. Adjust your training as your needs change.
           </Text>
         </View>
       )}
 
       <Text style={s.note}>
-        You can add or edit injury records anytime in Profile. Movement Lab can help identify
-        biomechanical risk factors once you're set up.
+        You can review your training preferences in Profile. Movement Lab offers
+        approximate movement measurements, not an injury diagnosis.
       </Text>
     </OnboardingShell>
   );

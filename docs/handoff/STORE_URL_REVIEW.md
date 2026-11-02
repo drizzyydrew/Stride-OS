@@ -149,3 +149,45 @@ separate, concrete app finding. The producer fix, full 1,447-test pass, prepared
 build 107 and pending native retest are recorded in
 `NATIVE_CAPTURE_BOOTSTRAP_FIX.md`. Replacement assets must follow the corrected
 candidate; this continuation does not accept the old draft images.
+
+## Build 107 native capture and upload receipt
+
+Fresh native sign-in, complete onboarding, Calendar, and manual run/hike
+save/readback succeeded on iPhone 16 Pro / iOS 18.6 Simulator. This scoped
+acceptance is recorded in `NATIVE_CAPTURE_BOOTSTRAP_FIX.md` and is not physical
+phone/Watch or billing acceptance. Four original 1206×2622 PNGs and a provenance
+manifest are preserved in `docs/assets/screenshots/native-107/`.
+
+Independent agent visual review cleared three actual-app images. Native Chrome
+file-chooser uploads were read back in Apple Asset Library, increasing its
+inventory from 12 to **15**, with these processed identities:
+
+| Original | Apple asset ID |
+| --- | --- |
+| `02-calendar-week.png` | `95000019-4492-8222-8007-630a3403887f` |
+| `04-activity-history.png` | `aa800019-4492-8222-803c-5c49b717fcea` |
+| `06-strength-presets.png` | `59000019-4492-8222-803a-bb53c4f6209a` |
+
+All are recognized as iPhone with Dynamic Island (medium display). The fourth
+capture, `03-running-detail.png`, was **not uploaded**: it implies prescription
+adherence for an unlinked manual entry. The underlying summary presentation is
+being corrected; it must be recaptured from a later native build. Today is also
+excluded until its hardcoded greeting is corrected in an installed candidate.
+
+These uploads have now also been placed in draft iOS 1.0 / English (U.S.) /
+iPhone with Dynamic Island (medium display), ordered Calendar, Activity history,
+Strength presets. A full reload confirmed **3 of 10 screenshots** and the same
+three filenames. The four old Face ID (large display) placements were removed
+through Apple's explicit placement-only confirmation, which states files remain
+in Asset Library. Reopening that size after reload shows the three new images
+under **Using Existing Assets**, with zero overriding placements.
+
+This is not Apple review submission, approval or public availability. No Add for
+Review was clicked and no library asset was deleted. Existing URLs and free
+hosting remain unchanged.
+Computer control was intermittent (CDP timeout, native window errors and one
+service-startup error); native Chrome fallback completed the three uploads.
+Placement and inherited-size readback are now complete for these three iPhone
+images. Remaining native captures, Watch/hardware checks and release gates are
+open. The old Watch/iPad placements have not been accepted as current or removed
+by this iPhone-only update.

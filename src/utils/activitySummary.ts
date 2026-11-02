@@ -196,8 +196,11 @@ export function buildActivitySummary(
   activitySpecific.push(...strengthExerciseSummary(metrics, units));
 
   const link: ActivitySummaryMetric[] = [];
-  pushMetric(link, metric('Completed vs planned', activity.completionClassification ? displayLabel(activity.completionClassification) : null));
-  pushMetric(link, metric('Linked plan', activity.scheduledSessionId ? 'Scheduled workout' : null, 'detail', 'private'));
+  const linkedSession = Boolean(activity.scheduledSessionId?.trim());
+  // Manual entry defaults describe completion, not evidence of a prescription.
+  pushMetric(link, metric('Completed vs planned', linkedSession && activity.completionClassification ? displayLabel(activity.completionClassification) : null));
+  pushMetric(link, metric('Entry', !linkedSession && activity.source === 'manual' ? 'Manually logged' : null));
+  pushMetric(link, metric('Linked plan', linkedSession ? 'Scheduled workout' : null, 'detail', 'private'));
   pushMetric(link, metric('Route', metrics.routeId || metrics.routeCoordinates?.length ? 'Saved route available' : null, 'detail', 'private'));
   pushMetric(link, metric('Shoe', activity.shoeId ? 'Assigned' : null, 'detail', 'private'));
   pushMetric(link, metric('Whole-body load', dataRich ? `${Math.round(activity.trainingLoad.wholeBody)}` : null, 'detail', 'health'));

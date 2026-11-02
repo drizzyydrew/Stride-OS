@@ -81,7 +81,19 @@ off. Generated local host/extension build identities were also synchronized to
 and a 30-second standalone Swift compiler timeout. The build settings were
 corrected, and the unchanged Swift deadline assertion passed in isolation and
 in the final serial broad run. No assertion or timeout was weakened.
-A corrected build has not yet been queued or verified.
+Corrected simulator build `4e4061e5-6bf2-4eaf-9ae0-f6fe203a8a2e` was then
+queued from pushed source `3e1513c8cd6dfbe8e75139d1a83ab9bd1154b72a`.
+Resolved configuration verifies simulator=true, Release, medium, pinned Xcode
+26.6, build 107, autoIncrement=false and client billing=false. No automatic
+submission was requested. The build subsequently finished; the scoped native
+retest receipt follows below.
+
+The fresh 107 phone's first migration reported a system migration failure before
+app installation. One normal shutdown/boot was used to retest that blank device;
+no app data was erased. Its new paired Watch Series 10 46mm / watchOS 11.5 is
+`B1B4402E-15FF-4464-B079-44728A650634`, pair
+`D3444B4C-44E0-4CC0-A2B4-D7536BD281FD`. The original 106 phone/Watch pair is
+preserved. These environment steps do not establish corrected app behavior.
 
 The existing EAS Starter allowance had $41 remaining before the first capture
 build; no plan, add-on or domain was purchased. Post-build billing readback still
@@ -94,3 +106,59 @@ entries through ordinary UI. A source fix, passing local test, successful
 installation, splash screen or sign-in form is not the completed marketing set.
 Phone/Watch hardware, billing lifecycle, privacy declarations, App Review and
 public release remain separate gates.
+
+## Corrected native retest and capture receipt
+
+Simulator build `4e4061e5-6bf2-4eaf-9ae0-f6fe203a8a2e` finished from
+`3e1513c8cd6dfbe8e75139d1a83ab9bd1154b72a`. Downloaded archive SHA-256:
+`794deb831b29efb3d74e1143b282b0235a69f74253fa3b0e10b2457f401d8db3`.
+Host, Live Activity and Watch plists identify 1.0.0/build 107 and the correct
+Simulator platforms. Host and Watch installation succeeded.
+
+Before native login, a read-only inspection of the fresh phone's manifest found
+only `integrations-store` and `activity-store`; **no athlete-store snapshot**.
+The synthetic account then signed in successfully, reached onboarding, and
+completed all steps through normal UI. General Running, default fictional
+physiology, no recent PR, beginner strength and no injury were selected. The
+nickname field was populated with Demo Athlete. Location access was declined;
+no Health history, personal backup, routes or media were imported. Today and
+Calendar rendered. The first-login ownership failure was not reproduced.
+
+Normal Log Activity saved a fictional 45-minute/4.5-mile/RPE-5 run and a
+90-minute/3.2-mile/800-foot/RPE-5 hike. Both appeared in history with loads
+225 and 450 (total 675). No HR/GPS readings were entered. Hike notes explicitly
+identify the fictional, manually entered data. Work correctly withheld its
+estimate because an explicit profile weight was absent.
+
+Four unmodified native 1206×2622 PNGs were exported with Simulator Save Screen;
+the originals and hashes are in `docs/assets/screenshots/native-107/manifest.json`.
+Calendar and Activity history passed independent agent visual review for draft
+placement. Running detail is held: an unlinked manual entry misleadingly says
+Completed as prescribed. Strength presets also passed agent visual review for
+draft placement, supporting preset browsing rather than completed lifting. Today is
+excluded due to the hardcoded Drew greeting discovered during capture. Source
+corrections are separate from the installed 107 binary and require a later build
+and recapture before claiming those screens corrected natively.
+
+This establishes fresh-install login, onboarding and two manual save/readback
+journeys on the stated Simulator. It does not establish physical-device,
+Watch-transport, Health/GPS, account-switch, backup/deletion, billing or release
+acceptance. No native state was injected and no personal data was cleared.
+
+## Follow-up source corrections, not installed-build acceptance
+
+The actual capture journey also exposed hardcoded personal/demo copy. A scoped
+patch now uses the active profile name for Today and Settings, removes the
+fabricated five-year/2,814-mile Settings history, corrects the account-required
+onboarding disclaimer, and softens unsupported injury-prevention/diagnosis
+promises. Activity summary shows Manually logged for an unlinked manual entry;
+prescription comparison requires a real scheduled-session link. Saved records
+are not rewritten and linked completion classifications remain visible.
+
+All **67 related tests** and the full semantic TypeScript check passed, including
+four new behavioral cases built from actual manual-entry defaults, unlinked
+metadata, every linked classification, and a linked legacy record without a
+classification. Whitespace checks passed. A condensed React review found no
+new network requests, effects, conditional hooks or accessibility-control changes
+in the patch. Installed 107 predates these follow-up source edits. A subsequent
+native build and affected-screen recapture remain necessary.
