@@ -1,6 +1,6 @@
 const required = ['EXPO_PUBLIC_POSTHOG_API_KEY', 'EXPO_PUBLIC_POSTHOG_HOST', 'EXPO_PUBLIC_SENTRY_DSN', 'SENTRY_ORG', 'SENTRY_PROJECT', 'SENTRY_AUTH_TOKEN'];
 const { isSentryDsn, isPostHogHost, isPostHogKey } = require('../src/utils/observabilityConfig.cjs');
-if (['production', 'billing-qa'].includes(process.env.EAS_BUILD_PROFILE)) {
+if (['production', 'billing-qa', 'capture-sim'].includes(process.env.EAS_BUILD_PROFILE)) {
   const missing = required.filter(name => !process.env[name]?.trim());
   if (missing.length) {
     console.error(`Release blocked: configure ${missing.join(', ')} in the production EAS environment. Values were not printed.`);

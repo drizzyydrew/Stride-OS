@@ -1,5 +1,36 @@
 # App Store draft readback
 
+## Store URL and asset continuation — November 1, 2026 Pacific
+
+All four existing public pages returned HTTP 200. The homepage's fake download
+buttons, old screenshot display and overbroad media wording were corrected and
+published at the same marketing URL, separately from the app branch. Uncached
+readback matches the new source exactly. Support, privacy and terms are preserved;
+no new domain or paid service was purchased. See `STORE_URL_REVIEW.md`.
+
+The brand-only `01-hero.png` placement was removed from version 1.0/en-US through
+Media Manager, with the file retained in Asset Library. Fresh reload shows four
+remaining original-size iPhone placements and no hero in the scaled sequence;
+the exact library asset still opens. Other images remain historical/unaccepted
+as current. A six-iPhone / three-to-four-Watch replacement storyboard and
+conditional iPad plan are in `STORE_ASSET_REFRESH.md`. No asset/app review,
+public release, billing activation or library deletion occurred. At the owner's
+request for actual-app replacements, one isolated simulator capture build
+`05c212a2-9c70-4da6-886e-e79b6470ac81` was subsequently queued from Build 106
+source using existing EAS allowance. It is not a new TestFlight submission or
+physical-device acceptance. Native installation, clean test-account access and
+replacement capture/upload remain unproven; see both linked continuation records.
+
+Actual native sign-in on that fresh capture installation subsequently exposed a
+first-login blocker: athlete-store hydration persisted seeded defaults, which
+the unchanged ownership guard correctly quarantined as unclaimed data. The
+producer correction and 21 focused regression cases are implemented and have
+passed independent scoped re-review. All 1,447 broad tests, semantic TypeScript
+and Expo dependency checks passed on the final source. Build 107 is prepared;
+its native acceptance remains pending. Do not submit Build 106 publicly
+or classify the replacement set as ready on the strength of a storyboard.
+See `NATIVE_CAPTURE_BOOTSTRAP_FIX.md` for exact observations and boundaries.
+
 ## Owner completion readback — November 1, 2026 Pacific
 
 The owner personally submitted banking and U.S. Form W-9 information, then

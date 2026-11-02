@@ -17,6 +17,17 @@
       "extends": "production",
       "distribution": "store",
       "env": { "EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED": "true" }
+    },
+    "capture-sim": {
+      "extends": "production",
+      "developmentClient": false,
+      "env": { "EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED": "false" },
+      "ios": {
+        "simulator": true,
+        "buildConfiguration": "Release",
+        "resourceClass": "medium",
+        "autoIncrement": false
+      }
     }
   },
   "submit": {

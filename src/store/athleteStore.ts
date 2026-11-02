@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { createAppJSONStorage } from './persistStorage';
+import { createAppJSONStorage, getAppStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { TrainingPhase, ProgressionLevel } from '../types/training';
@@ -51,8 +51,23 @@ type AthleteState = {
   recalculateRecovery: () => void;
 };
 
+const athleteStorage = createAppJSONStorage();
+const restoredAthleteSnapshots = new WeakSet<object>();
+let athleteWritesReady = false;
+let pendingAthleteWrite: (() => Promise<void>) | null = null;
+
+function validAthleteSnapshot(value: unknown, current: AthleteState): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const fields = current as unknown as Record<string, unknown>;
+  // Legacy snapshots may omit fields and still merge with defaults. Reject
+  // actions/unknown fields rather than overwriting or dropping them on decay.
+  return Object.entries(value).every(([key, item]) => Object.prototype.hasOwnProperty.call(fields, key)
+    && typeof fields[key] !== 'function' && typeof item === typeof fields[key]
+    && (typeof item !== 'number' || Number.isFinite(item)));
+}
+
 export const useAthleteStore = create<AthleteState>()(
-  persist(
+  persist<AthleteState, [], [], Partial<AthleteState>>(
     (set, get) => ({
       athleteName: 'Drew Moore',
       goalRace:    'Sub 5 Marathon',
@@ -154,7 +169,37 @@ export const useAthleteStore = create<AthleteState>()(
     }),
     {
       name:    'athlete-store',
-      storage: createAppJSONStorage(),
+      storage: athleteStorage && {
+        ...athleteStorage,
+        setItem: async (name, value) => {
+          // The raw adapter's successful read is not yet semantic validation.
+          // Keep only the latest explicit edit until this hydration succeeds.
+          if (!athleteWritesReady) {
+            pendingAthleteWrite = () => athleteStorage.setItem(name, value);
+            return;
+          }
+          await athleteStorage.setItem(name, value);
+        },
+        getItem: async name => {
+          const raw = await getAppStorage().getItem(name);
+          if (raw === null) return null;
+          const saved = JSON.parse(raw);
+          if (!saved || typeof saved !== 'object' || Array.isArray(saved)
+            || (saved.version !== undefined && saved.version !== 0)
+            || !saved.state || typeof saved.state !== 'object' || Array.isArray(saved.state)) {
+            throw new Error('Saved athlete data is unsupported or unreadable; it has not been changed.');
+          }
+          return saved;
+        },
+      },
+      merge: (persisted, current) => {
+        if (persisted !== undefined && !validAthleteSnapshot(persisted, current)) {
+          throw new Error('Saved athlete fields are unsupported or unreadable; they have not been changed.');
+        }
+        const merged = { ...current, ...persisted as Partial<AthleteState> };
+        if (persisted && Object.keys(persisted).length) restoredAthleteSnapshots.add(merged);
+        return merged;
+      },
       partialize: (state) => ({
         athleteName:       state.athleteName,
         goalRace:          state.goalRace,
@@ -170,10 +215,20 @@ export const useAthleteStore = create<AthleteState>()(
         trainingPhase:     state.trainingPhase,
         progressionLevel:  state.progressionLevel,
       }),
-      // Apply passive fatigue decay immediately after the store is rehydrated
-      // from AsyncStorage (i.e. on every app launch).
-      onRehydrateStorage: () => (state) => {
-        state?.recalculateRecovery();
+      // A first empty read must not persist seeded defaults as legacy athlete
+      // data before sign-in. Preserve actual edits made while that read waits.
+      onRehydrateStorage: () => {
+        athleteWritesReady = false;
+        // A superseding hydration must retain edits waiting on the old read.
+        // Zustand fences stale callbacks; only the active result consumes them.
+        return (state, error) => {
+          if (error || !state) { pendingAthleteWrite = null; return; }
+          const pending = pendingAthleteWrite;
+          pendingAthleteWrite = null;
+          athleteWritesReady = true;
+          if (restoredAthleteSnapshots.delete(state)) state.recalculateRecovery();
+          else if (pending) void pending().catch(() => console.warn('[athlete-store] Pending edit could not be saved.'));
+        };
       },
     },
   ),
