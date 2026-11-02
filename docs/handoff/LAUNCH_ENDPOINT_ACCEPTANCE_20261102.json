@@ -74,7 +74,11 @@
     "syntheticMessages": 1,
     "personalTrainingOrHealthDataSent": false,
     "quotaReservationsConsumed": 1,
-    "vendorDollarCapVerified": false
+    "vendorDollarCapVerified": false,
+    "deployedFunctionVersion": 12,
+    "upstreamReplyBindingMatchesCurrentSource": true,
+    "requestValidationMatchesCurrentSource": true,
+    "privateBillingQACodeStillUndeployed": true
   },
   "emailReadback": {
     "customSMTPEnabled": false,

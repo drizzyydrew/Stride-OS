@@ -1,6 +1,10 @@
 # November 2 launch continuation
 
 This checkpoint is for the canonical Developer checkout on `build-19-v3-foundation`.
+Implementation source is committed and pushed as
+`7b5877e000dcef5d491ef0b29e47f24796d934ba`. The final source/test/export receipt is
+`LAUNCH_SOURCE_VERIFICATION_20261102.json`; subsequent receipt-only edits do not
+change that implementation.
 Build 108 remains the previously inspected internal TestFlight binary. Source edits
 in this continuation have not become a new binary or public release. Payments and
 general deletion automation remain off; the owner's physical testing deferral is
@@ -157,6 +161,12 @@ used. No response text or credentials were saved in the receipt. The vendor
 console requires sign-in, so its dollar spending cap remains unverified. The
 20/account/day, 500/global/day and 1,024-output-token limits remain distinct from
 a financial hard cap. See `LAUNCH_ENDPOINT_ACCEPTANCE_20261102.json`.
+AI Coach v12 source was separately downloaded. Its upstream-reply binding and
+request validation match current source. The repository's additional private
+billing-QA policy remains deliberately undeployed, as recorded in the earlier
+owner deferral; it is not falsely reported as an exact three-file source match.
+Global billing remains off and no QA owner is configured. No additional AI
+deployment or provider call was needed to establish this bounded receipt.
 
 After the final maintenance/audit extension, the complete source suite passed
 **1,581/1,581, zero failures/skips**, in **145.8 seconds**. No test assertion or

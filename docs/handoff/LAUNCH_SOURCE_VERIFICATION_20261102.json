@@ -1,0 +1,28 @@
+{
+  "sourceCommit": "7b5877e000dcef5d491ef0b29e47f24796d934ba",
+  "testCommand": "tsx --test --test-concurrency=1 src/utils/__tests__/*.test.ts scripts/tests/*.test.ts",
+  "tests": 1581,
+  "passed": 1581,
+  "failed": 0,
+  "skipped": 0,
+  "durationMilliseconds": 145839.246767,
+  "typeScriptSemanticCheck": "PASS",
+  "expoCompatibility": "PASS",
+  "denoEntrypointsChecked": [
+    "apple-grant",
+    "account-deletion",
+    "account-deletion-status",
+    "account-deletion-worker"
+  ],
+  "iosExport": {
+    "billingEnabled": false,
+    "bundleFile": "entry-5a57a8cea83427a3ff74dfe62b0a8dcf.hbc",
+    "bundleSHA256": "b4a27ab0d0efc91a0db3adce1f4a933c2b58c333f4bac4089d3e4e1236d75a72",
+    "bundleBytes": 14644240
+  },
+  "newNativeBuildStarted": false,
+  "realProviderDeletionAccepted": false,
+  "physicalDeviceAcceptance": false,
+  "publicPaymentsEnabled": false,
+  "publicReleaseSubmitted": false
+}
