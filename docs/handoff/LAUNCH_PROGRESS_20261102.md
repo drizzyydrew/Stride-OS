@@ -5,8 +5,10 @@ Implementation source is committed and pushed as
 `7b5877e000dcef5d491ef0b29e47f24796d934ba`. The final source/test/export receipt is
 `LAUNCH_SOURCE_VERIFICATION_20261102.json`; subsequent receipt-only edits do not
 change that implementation.
-Build 108 remains the previously inspected internal TestFlight binary. Source edits
-in this continuation have not become a new binary or public release. Payments and
+Build 109 now packages these source edits: its signed archive is verified,
+Apple reports VALID / IN_BETA_TESTING internally, and the saved App Store draft
+selects 109 with manual release. See `BUILD109_RELEASE.md`. Build 108 remains the earlier accepted
+internal artifact checkpoint; neither artifact has public release acceptance. Payments and
 general deletion automation remain off; the owner's physical testing deferral is
 preserved. Existing financial, medical-declaration, review-login and current
 billing-off App Privacy receipts do not need repeating without changed evidence.

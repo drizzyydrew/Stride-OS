@@ -8,12 +8,14 @@ November 2 source/backend continuation is recorded in
 [`LAUNCH_PROGRESS_20261102.md`](LAUNCH_PROGRESS_20261102.md): final regression
 1,581/1,581, scoped live database audit 1,262/1,262, reviewed function deployment
 and byte readback, plus rollback-only custody/Storage acceptance. New registrations
-are temporarily closed for email-verification safety. Apple private-key setup,
-production email and exact-artifact native/provider acceptance remain open;
-the prepared key is not registered. The 108 receipts below retain their original
-artifact scope and do not accept these newer source changes.
+are temporarily closed for email-verification safety. Apple private-key setup
+is complete and verified. Native 109 is signed-archive verified, VALID /
+IN_BETA_TESTING internally, and selected in the saved manual-release draft. See
+[`BUILD109_RELEASE.md`](BUILD109_RELEASE.md). Production email and exact-artifact
+native/provider acceptance remain open. The 108 receipts below retain their
+original artifact scope and do not accept these newer source changes.
 
-## Current Acceptance Target — 108 Available In Internal TestFlight; Device Acceptance Pending
+## Prior Acceptance Target — 108 Internal TestFlight; Device Acceptance Pending
 
 November 1, 2026 Pacific: canonical source
 `cf41d1a38b3353f8de2fb84363fcdfdb1b16a428` is committed and pushed. Parent reports

@@ -1,7 +1,9 @@
 # Owner launch steps — November 2, 2026
 
-**New native candidate: TBD; 108 remains the existing internal beta.** Source,
-backend deployment and scoped checks are complete. The final installed binary and device acceptance
+**New native candidate: 109; signed archive verified, VALID and available in
+internal TestFlight.** The saved App Store draft also selects 109 with manual
+release; it has not been submitted for public review. Source, backend deployment and
+scoped checks are complete. The final installed binary and device acceptance
 must be matched before submission. Prior builds do not establish these results.
 Financial, reviewer-account and medical setup are already complete; leave them
 alone. SDK 57 and the accepted bounded build-tool dependency scope stay in place.
@@ -84,6 +86,10 @@ still pass. Secret presence/capability reporting is not a successful Apple excha
   **no configured hook**. The SMTP setup page is left open. No sender service,
   domain or paid plan was added. An approved production sender setup is needed;
   live delivery/recovery remains **unverified**.
+  The owner was asked whether an existing sender can be reused. A new provider
+  has not been selected or connected. See `EMAIL_DELIVERY_OPTIONS_20261102.md`
+  for the researched free-tier candidate and its limitations; it is not setup
+  or delivery acceptance.
   Public Auth settings reported **auto-confirm true**; signup can succeed without
   sending a confirmation message. Do not toggle confirmation, CAPTCHA, rate
   limits or other safeguards to manufacture a passing check.

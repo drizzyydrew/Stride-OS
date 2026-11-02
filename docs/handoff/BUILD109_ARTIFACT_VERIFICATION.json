@@ -1,0 +1,42 @@
+{
+  "buildId": "eefedb6a-dee7-433a-a1fd-1bf8eb9ab5c3",
+  "sourceCommit": "38e6d60dc7c536a564dc47269005d3d5f2776453",
+  "sha256": "aaf30393d7e234f819d34d5287641b730d00945f24426ad9135fa15f298b9e0e",
+  "bytes": 129566670,
+  "targets": [
+    {
+      "bundle": "com.mooremovement.strideos",
+      "version": "1.0.0",
+      "build": "109",
+      "sdk": "iphoneos26.5",
+      "signatureValid": true,
+      "debugSigning": false
+    },
+    {
+      "bundle": "com.mooremovement.strideos.watch",
+      "version": "1.0.0",
+      "build": "109",
+      "sdk": "watchos26.5",
+      "signatureValid": true,
+      "debugSigning": false
+    },
+    {
+      "bundle": "com.mooremovement.strideos.liveactivity",
+      "version": "1.0.0",
+      "build": "109",
+      "sdk": "iphoneos26.5",
+      "signatureValid": true,
+      "debugSigning": false
+    }
+  ],
+  "privacyManifestsParsed": 21,
+  "compiled1024IconOpaque": true,
+  "embeddedBundleBytes": 12308812,
+  "embeddedBundleSHA256": "3226bbc7a346f980cd822cbf6cd8480d7bd242a4578a710632a9b85111be10cb",
+  "noCredentialFilenamesInArchive": true,
+  "physicalDeviceAccepted": false,
+  "realAppleExchangeAccepted": false,
+  "embeddedBundleIsHermesBytecode": true,
+  "hermesFrameworkBundleVersion": "1.0.0",
+  "hermesFrameworkBundleVersionIsEngineVersion": false
+}

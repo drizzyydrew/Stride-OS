@@ -5,9 +5,12 @@ Latest continuation: **November 2, 2026** — see
 passed 1,581/1,581; scoped live database acceptance passed 1,262 checks. Reviewed
 Apple custody/deletion functions are deployed and privacy is updated. New public
 registrations are temporarily closed pending secure email setup; existing
-reviewer login is verified. The separate Apple key is prepared for the owner,
-not registered. Real provider/device/billing acceptance and current native
-assets remain open. These source changes have no new native build yet.
+reviewer login is verified. The owner registered/downloaded the separate Apple
+key and main installed/verified its server settings. New native **109** is
+signed-archive verified, **VALID / IN_BETA_TESTING internally**, and selected in
+the saved manual-release draft. See [`BUILD109_RELEASE.md`](BUILD109_RELEASE.md). Real
+provider/device/billing acceptance, production email and current native assets
+remain open. No public review submission or release has occurred.
 
 Prior artifact checkpoint: November 1, 2026 Pacific. Canonical Developer source
 `cf41d1a38b3353f8de2fb84363fcdfdb1b16a428` is committed and pushed. Engineering
@@ -15,7 +18,7 @@ and scoped council reviews are not a human security audit, clinical validation,
 legal opinion or physical-device acceptance. Dated evidence below is preserved;
 conflicting old readiness/next-build instructions are superseded by this status.
 
-## Current Status — 108 Available In Internal TestFlight; Device Acceptance Pending
+## Prior Checkpoint — 108 Internal TestFlight; Device Acceptance Pending
 
 - **Source checks complete, per parent:** final full suite **1,451/1,451 passed**
   and `npm run check` passed. Ignore exclusions were verified. These are supplied

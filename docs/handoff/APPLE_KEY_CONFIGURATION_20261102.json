@@ -22,5 +22,16 @@
   "registrationGuardVerified": true,
   "liveAppleExchangeTested": false,
   "liveAppleRevocationTested": false,
-  "liveAccountDeletionTested": false
+  "liveAccountDeletionTested": false,
+  "postConfigurationEdgeVersions": {
+    "account-deletion": 6,
+    "account-deletion-status": 4,
+    "account-deletion-worker": 4,
+    "apple-grant": 2
+  },
+  "postConfigurationBundleHashesMatchPreviouslyAcceptedDeployment": true,
+  "actualSharedDenoSignerExecuted": true,
+  "actualSharedSignerSignatureAndExpectedClaimsVerified": true,
+  "shortClientSecretLifetimeVerified": true,
+  "appleNetworkRequestMadeByLocalSignerCheck": false
 }
