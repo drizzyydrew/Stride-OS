@@ -4,6 +4,93 @@ This is an execution checklist, not a legal opinion, independent audit, physical
 device report, or assertion that the app is ready for the market. Public payments
 and public release remain disabled until the relevant gates are actually passed.
 
+## Current Acceptance Target — 108 Available In Internal TestFlight; Device Acceptance Pending
+
+November 1, 2026 Pacific: canonical source
+`cf41d1a38b3353f8de2fb84363fcdfdb1b16a428` is committed and pushed. Parent reports
+the final full suite **1,451/1,451 passed**, `npm run check` passed, and ignore
+exclusions verified. This documentation update did not rerun those checks.
+
+Production-configured **1.0.0 / 108** has finished, with client billing
+explicitly false in the production EAS profile, for **internal TestFlight
+acceptance**. Private billing QA remains deferred. Parent reports finished EAS
+build `f647a146-5f2c-4ff9-b32d-ad15989c92c7`, source `cf41d1a`. Actual IPA
+checks passed: deep/strict signature verification, all three targets at 108,
+21 parsed privacy manifests, Hermes `.0.17`, and an opaque 1024 icon. Sentry
+source-map report 108 and cloud Doctor **21/21** passed. These supplied artifact
+receipts are not physical-device acceptance.
+
+**Exact-build internal TestFlight upload succeeded, per parent:** submission
+`d4180bb6-437f-426f-9aa2-365ef33f6ac3`. Fresh supported CLI readback confirms
+**108 VALID / IN_BETA_TESTING, not expired**, exact EAS/submission IDs matched.
+Internal availability is accepted; installation/device acceptance remains pending.
+Detailed upload evidence is maintained by main in `BUILD108_RELEASE.md` and
+`APP_STORE_DRAFT_REVIEW.md`. The fresh Apple state, rather than upload success alone, establishes internal availability.
+
+**Medical-device declaration is complete:** owner confirmed general fitness only
+and no medical-device status. Parent saved **No**; Apple read back “declared not
+a regulated medical device in any country or region”. This supersedes older
+pending wording; it is not independent regulatory certification.
+
+**Reviewer credential mismatch is resolved, per owner/parent receipt:** owner
+created a dedicated user and updated Apple's restricted review fields. A fresh
+supported metadata pull followed by the same private authentication check
+returned `correctProject: true`, `reviewerLoginSucceeded: true`, HTTP 200.
+This supersedes the earlier HTTP 400 failure. Verification through normal native
+sign-in and reviewer navigation remains pending; no credentials are included here.
+
+**App Privacy publication gate is closed for current billing-off 108, per parent
+final full-reload receipt:** exactly 11 types, all linked to user identity, with
+the agreed purposes. Health, Fitness, Name and Other User Content use
+Functionality + Personalization; Product Interaction uses Functionality + Analytics; Email
+Address, User ID, Precise Location, Photos or Videos, Crash Data and Other
+Diagnostic Data use Functionality. No incomplete/Set Up banner, Data Not Linked
+section or Data Used to Track section remains. Explicitly reselecting Yes for
+Health, Fitness and Other User Content removed the duplicate unlinked preview
+entries on final reload. Temporary evidence:
+`/tmp/strideos-publish108-privacy-readback.json` and
+`/tmp/strideos-publish108-privacy-final.png`; this seat checked the JSON.
+Parent's complete secrets-name inventory found server global billing and QA-owner
+settings absent; the reviewed source defaults disable RevenueCat verification.
+Reassess the declaration before future purchase enablement or support-workflow
+changes. Publication does not close device, deletion or other public gates.
+
+The source contains the fresh-install ownership repair and the later truthful
+profile, training-history, onboarding and manual-completion presentation fixes.
+The final Account & Legal body/alert now disclose retained minimal status and
+recovery records; only those two text nodes changed, with no handler/state
+change. This closes that source-copy finding, not deletion activation.
+
+Simulator 107 (`3e1513c`) established isolated native first-login/onboarding and
+fictional manual run/hike save/readback only. It is not a device-installable
+108 acceptance receipt and predates the final copy. Preserve original capture
+provenance; held/outdated views require a genuine corrected-candidate capture.
+See `NATIVE_CAPTURE_BOOTSTRAP_FIX.md` and the current capture manifest.
+
+Still open before any public submission/release claim:
+
+- Exact-artifact physical phone/Watch and advertised recording/Health/GPS,
+  permission, interruption/offline, history and account-isolation acceptance.
+- Ordinary-user in-app deletion availability, real Apple/Google grant handling,
+  native secure-receipt/cleanup/restart acceptance and defined support/retention
+  handling. Latest parent readback remains enabled=false, allowed-owner count=0,
+  cron=0, despite active deletion v3/status-worker v1 endpoints.
+- Remaining applicable store declarations, native reviewer navigation and current
+  truthful review assets. Current billing-off privacy publication is complete on
+  the receipt above; the separate server-applicability check is also recorded.
+- Public billing stays off; real StoreKit/server lifecycle acceptance remains
+  required if paid access is later offered. This beta-first choice does not accept
+  purchases.
+
+No activation, public release or additional owner permission is inferred from
+this checklist. Main owns build/Apple receipts and applicable authorizations.
+Independent first passes are in `PUBLISH_REVIEW_20261101_CONTRARIAN.md` and
+`PUBLISH_REVIEW_20261101_DATA.md`; final checks above are the parent's later
+receipt. Earlier evidence and next-step wording below are historical where
+superseded by this current target.
+
+## Historical Account And Source Receipts
+
 Owner account setup, November 1 Pacific: fresh Apple readback confirms the owner
 accepted the updated Developer Program and Paid Apps agreements. Paid Apps,
 Free Apps, bank account and U.S. Form W-9 all show **Active**. Earlier missing
@@ -23,7 +110,7 @@ at **06:06:56Z**; parent uncached readback verified all three **HTTP 200** and
 byte-for-byte matches. Exact hashes are in `DELETION_ACCEPTANCE.md`. Billing
 remains off; publication is not legal clearance or app release.
 
-Current native candidate **106** is from pushed source
+Historical native candidate **106** is from pushed source
 `13feb937c5c94d223635ab9509ab1090ba7f0d2b`, EAS
 `6464cf85-f61a-4d9c-9eaa-92aec14056ba`. Canonical SDK 57 regression passed
 **1,412/1,412**, zero failures/skips, **172.3s**; semantic TypeScript, Expo
@@ -39,9 +126,11 @@ Earlier 104 receipts below retain their historical scope.
 Later pushed source `98c9729` prepares a private billing-QA profile and strictly
 owner-scoped server verifier; its 49 focused checks passed independently. It is
 unbuilt, undeployed and unactivated. Production payments and general deletion
-automation remain off. The next necessary owner actions are installing 106 on
-the physical iPhone/Watch and participating in the later scoped sandbox purchase
-session. Apple account agreements/banking/tax are now verified as above; remaining
+automation remain off. At that checkpoint, the proposed owner actions were
+installing 106 on the physical iPhone/Watch and participating in a later scoped
+sandbox purchase session. The installation recommendation is superseded by the
+108 target above, once its actual artifact is available and inspected. Apple account
+agreements/banking/tax were verified as above; remaining
 store declarations still need completion. Never use the
 owner's retained-history account as a disposable deletion fixture.
 

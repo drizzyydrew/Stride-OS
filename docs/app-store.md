@@ -4,9 +4,9 @@ Responsibility: truthful public metadata and the outstanding App Review submissi
 
 ## Listing Draft
 
-Name: StrideOS
+Name: StrideOS: Run, Lift, Recover
 
-Subtitle: Run, Lift, Recover
+Subtitle: Your plan. Your pace.
 
 Promotional text: Bring running, strength, and recovery into one training routine. Record workouts, review your progress, and find your next session.
 
@@ -18,6 +18,9 @@ StrideOS brings running, strength, and recovery into one connected training rout
 
 YOUR NEXT SESSION
 Plan your week, review your scheduled sessions, and adjust your training around your goals and availability.
+
+YOUR NEXT GOAL
+When a training block ends, keep its summary and add your race result in Goal archive. Choose a new goal or continue with open training at your own pace. Your workout history stays available.
 
 RECORD YOUR WORKOUTS
 Record supported outdoor activities with GPS, log strength sessions, and review saved workouts in your calendar and activity history. GPS and connected-device coverage can affect recorded measurements.

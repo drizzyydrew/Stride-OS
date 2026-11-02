@@ -1,5 +1,17 @@
 # Billing acceptance and inert private QA preparation
 
+## Current status — November 1, 2026 late Pacific
+
+Production **108** is VALID / IN_BETA_TESTING internally. Its explicit client
+billing flag is false. The complete live Supabase secret-name inventory shows
+both global server billing and private QA-owner controls absent (off/no QA owner
+in the deployed policy). No secret values were opened or changed. No private
+billing-QA build or real purchase-lifecycle acceptance occurred. The older 106
+preparation and expected-next-number 107 passages below are historical; allocate
+any future number from fresh EAS/Apple history rather than reuse 107 or 108.
+See `BUILD108_RELEASE.md` and `BUILD108_ACCEPTANCE.md` for current receipts.
+
+
 ## Current preparation after the Build 106 cloud snapshot
 
 Preparation began after the Build 106 snapshot was queued from source

@@ -1,5 +1,51 @@
 # App Store draft readback
 
+## Current publish preparation — November 1, 2026 late Pacific
+
+This section supersedes older statuses below while retaining their chronology.
+
+- Apple session is authenticated. Version 1.0 remains Prepare for Submission;
+  manual release remains selected. The draft still selects historical build 1;
+  it must be replaced with an accepted candidate before public review.
+- The public description now includes Goal archive and optional open training.
+  Save completed and a fresh reload confirmed the exact paragraph. The current
+  description is 2,027 characters. Marketing/support/privacy URLs are unchanged.
+- Three genuine native iPhone placements are saved: Calendar week, Activity
+  history, Strength presets, source Simulator 107 / `3e1513c`. Previous phone
+  placements were removed without deleting their library assets. Watch/iPad
+  legacy assets are preserved but not accepted as current. See the native-107
+  manifest and `NATIVE_CAPTURE_BOOTSTRAP_FIX.md`.
+- Existing restricted Apple reviewer credentials were checked against the
+  isolated StrideOS backend using the public auth client, with no stored session.
+  Result: **invalid_credentials (400)**. No password, email, token or customer
+  record was printed or added to source. This initial failed credential pair is superseded by the owner correction below;
+  presence of credentials alone was insufficient.
+- Owner created a new dedicated user and updated Apple's restricted review
+  fields. A fresh supported metadata pull and private no-session auth check now
+  succeed against the isolated StrideOS backend (HTTP200). Credential mismatch
+  is closed; ordinary native sign-in and reviewer navigation on 108 still need
+  acceptance. No credentials or tokens are reproduced here.
+- Medical-device declaration is complete: the owner confirmed general fitness
+  only and no medical-device status. No was saved; Apple readback confirms the
+  app is declared not a regulated medical device in any country or region.
+  Current category/rating and notification configuration were not changed.
+- Privacy-label reconciliation is now published and verified after a full reload:
+  11 supported types, all linked, reviewed purposes, no tracking/unlinked preview
+  or incomplete setup. See `PRIVACY_LABEL_RECONCILIATION.md`; future billing and
+  support workflow changes still require reassessment.
+- Production billing-off build 108 finished from `cf41d1a` as EAS
+  `f647a146-5f2c-4ff9-b32d-ad15989c92c7`. Actual signed phone/Watch/widget
+  checks passed; exact upload `d4180bb6-437f-426f-9aa2-365ef33f6ac3` succeeded.
+  Apple now confirms 108 VALID / IN_BETA_TESTING internally, not expired.
+  Actual device acceptance remains separate. See `BUILD108_RELEASE.md`.
+- Reviewer navigation/permission/optional AI and billing-off instructions were
+  saved in Apple; a fresh supported metadata pull verified the exact 1,293-character
+  text. See `APP_REVIEW_NOTES_108.md`. No credential values are in that file.
+  Add the accepted deletion steps before public submission.
+- No Add for Review, Submit for Review, public release, asset-library deletion,
+  purchase activation, or new service charge was performed.
+
+
 ## Store URL and asset continuation — November 1, 2026 Pacific
 
 All four existing public pages returned HTTP 200. The homepage's fake download

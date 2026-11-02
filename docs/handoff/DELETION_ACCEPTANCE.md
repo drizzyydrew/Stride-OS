@@ -1,5 +1,19 @@
 # Deletion acceptance and policy handoff
 
+## Current status — November 1, 2026 late Pacific
+
+Production **108** is VALID / IN_BETA_TESTING internally; it supersedes the native
+candidate 106 section preserved below. All three actual archive targets contain
+108 and release signatures pass. Source retention wording now explicitly covers
+minimal deletion-status/recovery records. Control readback remains **disabled /
+zero allowed owners / zero cron jobs**. Real provider revocation, native cleanup
+and an accepted operating policy remain open; no customer account was deleted.
+The old synthetic receipts remain bounded to their three fixtures. See
+`BUILD108_RELEASE.md` and `BUILD108_ACCEPTANCE.md` for current evidence and the
+owner/device session. Email help does not make disabled in-app deletion a ready
+public service.
+
+
 Documentation review: November 1, 2026 UTC / October 31, 2026 Pacific.
 Canonical checkout: `/Users/drew/Developer/StrideOS_App_clean_build19_v3_foundation_local`.
 

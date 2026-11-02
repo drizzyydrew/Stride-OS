@@ -1,5 +1,54 @@
 # Privacy label reconciliation — November 1, 2026 Pacific
 
+## Published reconciliation — supersedes the draft-only status below
+
+November 1, 2026 late Pacific. Applied through the authenticated App Store
+Connect editor after independent architecture/privacy and platform review.
+These are engineering declarations for the current billing-off scope, not legal
+clearance or evidence of device acceptance.
+
+**Publication and fresh full-reload readback are complete.** Apple shows 11 types,
+all linked, no advertising-tracking preview section, no unlinked preview section,
+and no unfinished Set Up task or warning. Each type's displayed purposes and
+linkage match this matrix:
+
+| Collected and linked type | Purposes |
+| --- | --- |
+| Health; Fitness; Name; Other User Content | App Functionality + Product Personalization |
+| Email Address; User ID; Precise Location; Photos or Videos | App Functionality |
+| Product Interaction | App Functionality + Analytics |
+| Crash Data; Other Diagnostic Data | App Functionality |
+
+Tracking answers are No. Unsupported Hands, Head and Other User Contact Info
+were removed. Customer Support is not inferred merely from the external mailto
+path; reassess an established retained in-app support workflow before adding it.
+Purchases are omitted for this billing-off scope: production client false was
+verified and the complete Supabase secret-name inventory shows both global
+billing and QA-owner controls absent, which the deployed policy treats as
+Off/no QA owner. No secret values were opened or changed. Reconcile Purchases
+and any new purposes before billing/QA-entitlement activation.
+
+The reviewed PostHog source disables geo-IP enrichment, advertising identity,
+person profiles, session replay and automatic capture. Sentry/analytics are
+not claimed anonymous; inclusive linked disclosure avoids unsupported exemption
+or unlinkability claims. Exact retention/operating commitments remain separate
+privacy-policy and deletion obligations. New SDK behavior, partner purposes,
+retained support data or billing activity require reassessment.
+
+The editor publishes intermediate category removals before new-type setup.
+Those intermediate states were not treated as complete. After adding purposes,
+the preview temporarily included unlinked Health/Fitness/User Content despite
+the aggregate display; reopening each and explicitly selecting Yes for linkage
+resolved this. Final fresh reload confirms all 11 linked with no duplicate
+unlinked preview section. No incomplete state is presented as the final receipt.
+
+Local noncredential evidence: `/tmp/strideos-publish108-privacy-readback.json`
+and `/tmp/strideos-publish108-privacy-final.png`. No public App Review or release,
+telemetry opt-in, payment activation or data-processing expansion occurred.
+The historical draft and its uncertainties below remain provenance, not current
+unresolved publication tasks.
+
+
 Read-only source review against native Build 106 (`13feb93`) and current source
 `dcc8120`, plus a live App Store Connect inspection. Independent platform and
 contrarian agents reviewed the classifications and cross-examined their findings.
