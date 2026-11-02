@@ -175,6 +175,30 @@ correction. This is the latest regression receipt; earlier runs remain above.
 
 ## Public-launch gates
 
+### Subsequent owner session: Apple key installed
+
+The owner completed registration/download for **StrideOS Sign In Key**,
+`RZ49DF832J`. Apple displayed Downloaded and the StrideOS-only draft association
+was preserved. Main located the matching file in the owner's private credential
+folder outside either checkout, verified its PKCS8/P-256 format and local
+signature, and installed only `STRIDEOS_APPLE_KEY_ID` and
+`STRIDEOS_APPLE_PRIVATE_KEY` in `pbzgrhnxpbtlkzpreizy`. Fresh metadata digests
+matched all four Apple settings exactly. No key contents were printed or
+committed; the temporary upload file was removed. Bet Desk and RevenueCat keys
+were unchanged. Earlier missing-key observations above are historical.
+
+Fresh authenticated endpoint checks passed all seven boundary responses, the
+reviewer login and the registration guard. Account-deletion capabilities now
+report `appleCodeExchange:true`, while `automaticProcessing:false` remains.
+This closes key provisioning, not real Apple exchange/revocation or deletion
+acceptance. Receipt: `APPLE_KEY_CONFIGURATION_20261102.json`.
+
+All four existing free public URLs returned HTTP 200 in this session. Custom
+SMTP remains off. Expo's signed-in billing page reports $12 used of $45 build
+credit on the existing Starter plan; no plan change or additional purchase was
+made. The next internal candidate can use that existing allowance; its exact
+source, artifact and Apple states must be recorded separately.
+
 Real Apple configuration/exchange/revocation, reliable account email recovery,
 new exact-artifact native acceptance, ordinary-user deletion operation, current
 authentic native assets/reviewer navigation, and real StoreKit/server lifecycle
