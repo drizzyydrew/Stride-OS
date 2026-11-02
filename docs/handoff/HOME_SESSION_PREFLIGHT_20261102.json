@@ -1,0 +1,88 @@
+{
+  "scope": "read_only_session_preparation",
+  "checkedAt": "2026-11-02T20:59:35.454Z",
+  "productionCandidate": "109",
+  "storedAppleEvidenceOnly": true,
+  "livePublicChecksRun": true,
+  "checks": [
+    {
+      "name": "canonical_production_still_109_billing_off",
+      "passed": true
+    },
+    {
+      "name": "stored_archive_receipt_matches_109",
+      "passed": true
+    },
+    {
+      "name": "stored_apple_receipt_matches_internal_109",
+      "passed": true
+    },
+    {
+      "name": "unauthenticated_get_denied",
+      "passed": true,
+      "httpStatus": 401
+    },
+    {
+      "name": "cors_preflight",
+      "passed": true,
+      "httpStatus": 200
+    },
+    {
+      "name": "public_page_home",
+      "passed": true,
+      "httpStatus": 200
+    },
+    {
+      "name": "public_page_support.html",
+      "passed": true,
+      "httpStatus": 200
+    },
+    {
+      "name": "public_page_privacy.html",
+      "passed": true,
+      "httpStatus": 200
+    },
+    {
+      "name": "public_page_terms.html",
+      "passed": true,
+      "httpStatus": 200
+    }
+  ],
+  "preparationChecksPassed": true,
+  "humanGates": [
+    {
+      "name": "production_email_delivery",
+      "status": "NOT_ACCEPTED_BY_THIS_TOOL"
+    },
+    {
+      "name": "ai_vendor_spending_limit",
+      "status": "NOT_ACCEPTED_BY_THIS_TOOL"
+    },
+    {
+      "name": "native_phone_watch_acceptance",
+      "status": "NOT_ACCEPTED_BY_THIS_TOOL"
+    },
+    {
+      "name": "real_provider_account_deletion",
+      "status": "NOT_ACCEPTED_BY_THIS_TOOL"
+    },
+    {
+      "name": "sandbox_purchase_lifecycle",
+      "status": "NOT_ACCEPTED_BY_THIS_TOOL"
+    },
+    {
+      "name": "current_native_screenshots",
+      "status": "NOT_ACCEPTED_BY_THIS_TOOL"
+    },
+    {
+      "name": "final_submission_decision",
+      "status": "NOT_ACCEPTED_BY_THIS_TOOL"
+    }
+  ],
+  "publicLaunchReady": false,
+  "purchaseLifecycleVerified": false,
+  "providerDeletionVerified": false,
+  "emailSent": false,
+  "aiRequestMade": false,
+  "settingsChanged": false
+}

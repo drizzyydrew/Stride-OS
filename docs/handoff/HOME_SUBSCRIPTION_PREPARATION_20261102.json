@@ -1,0 +1,28 @@
+{
+  "scope": "read_only_catalog_and_configuration_checks",
+  "revenueCatProject": "proj1a3600d5",
+  "appStoreApp": "app173317761f",
+  "defaultOffering": "ofrng36b3a38697",
+  "packagesObserved": {
+    "$rc_monthly": "strideos_pro_monthly",
+    "$rc_annual": "strideos_pro_annual"
+  },
+  "proEntitlement": "entl0c642305f9",
+  "attachedProductCount": 2,
+  "easPublicIosSdkKeyMatchesApp": true,
+  "keyContentsPrinted": false,
+  "secretRevenueCatKeyRetrieved": false,
+  "appleGroup": "22532701",
+  "appleProductsObserved": {
+    "strideos_pro_monthly": { "id": "6829288874", "duration": "1 month", "status": "Prepare for Submission" },
+    "strideos_pro_annual": { "id": "6829293174", "duration": "1 year", "status": "Prepare for Submission" }
+  },
+  "annualAvailabilityObserved": "5 of 175 countries or regions",
+  "availabilityOrPricesChanged": false,
+  "annualReviewScreenshotPresent": false,
+  "annualReviewNotesPresent": false,
+  "newPurchaseTested": false,
+  "renewalRefundOrExpiryTested": false,
+  "productionNotificationTest401Resolved": false,
+  "globalBillingEnabled": false
+}

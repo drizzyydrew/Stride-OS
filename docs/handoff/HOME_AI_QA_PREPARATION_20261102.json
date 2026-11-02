@@ -1,0 +1,30 @@
+{
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "name": "ai-coach",
+  "version": 14,
+  "bundleSHA256": "5243f8f6f6472e74d3bdba70e79a8569af3c30ffe0947525801d2c08a0589261",
+  "verifyJWT": true,
+  "files": [
+    {
+      "name": "ai-coach/index.ts",
+      "match": true
+    },
+    {
+      "name": "_shared/launchHandlers.ts",
+      "match": true
+    },
+    {
+      "name": "_shared/revenueCatAccess.ts",
+      "match": true
+    }
+  ],
+  "qaOwnerConfigured": false,
+  "globalBillingEnabled": false,
+  "livePurchaseTested": false,
+  "sourceTestsPassed": 49,
+  "denoTypecheckPassed": true,
+  "postDeployBoundaryChecksPassed": 7,
+  "reviewerAuthenticationPassed": true,
+  "registrationGuardVerified": true,
+  "aiPostMade": false
+}

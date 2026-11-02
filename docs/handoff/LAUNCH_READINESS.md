@@ -1,5 +1,21 @@
 # StrideOS Launch Readiness
 
+Latest independent preparation, November 2: private purchase-test **110** is
+signed-archive verified and **VALID / IN_BETA_TESTING internally**, isolated from
+the saved public draft **109 / manual release / Prepare for Submission**. No
+global billing or QA owner was enabled. AI Coach v14 deploys the existing inert
+single-owner test policy; downloaded source matches, 49 focused tests and seven
+post-deploy boundary checks passed. A new read-only home preflight passed 9/9
+preparation checks; its ten focused safety/boundary tests and TypeScript passed.
+These checks do not accept real devices, deletion, email or purchases.
+Branded email templates are prepared locally; Supabase requires custom SMTP
+before editing them, so they were not deployed. RevenueCat product mappings and
+the existing public iOS SDK key match were freshly verified. Production
+notification TEST 401 remains unresolved. See
+[`HOME_LAUNCH_SESSION_20261102.md`](HOME_LAUNCH_SESSION_20261102.md) for each
+section's estimate and owner-only actions, and
+[`BILLING_QA110_RELEASE.md`](BILLING_QA110_RELEASE.md) for the private build.
+
 Latest continuation: **November 2, 2026** — see
 [`LAUNCH_PROGRESS_20261102.md`](LAUNCH_PROGRESS_20261102.md). Source regression
 passed 1,581/1,581; scoped live database acceptance passed 1,262 checks. Reviewed

@@ -1,6 +1,17 @@
 # Deletion acceptance and policy handoff
 
-## Current status — November 1, 2026 late Pacific
+## Latest preparation — November 2, 2026
+
+Production 109 is the current verified internal candidate. Separate Apple key
+provisioning and actual shared signer verification are complete; real provider
+exchange/revocation, native cleanup and a usable public deletion service are
+still unaccepted. Controls remain off/empty/no active worker jobs. No account
+was deleted by home-session preparation. Use `BUILD109_RELEASE.md`,
+`APPLE_KEY_CONFIGURATION_20261102.json` and `HOME_LAUNCH_SESSION_20261102.md` for
+current scope. Older deployment versions, 106/108 artifacts and synthetic tests
+below retain their dated evidence boundaries.
+
+## Historical status — November 1, 2026 late Pacific
 
 Production **108** is VALID / IN_BETA_TESTING internally; it supersedes the native
 candidate 106 section preserved below. All three actual archive targets contain

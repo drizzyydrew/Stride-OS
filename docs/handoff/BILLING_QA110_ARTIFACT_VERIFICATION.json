@@ -1,0 +1,44 @@
+{
+  "buildId": "94bf0704-0f90-452f-938f-3d2986ed853f",
+  "sourceCommit": "fe8d4db0e8d38435cc8c32a6b86fb59946b71661",
+  "sha256": "43f9795b61c94d200b81dcae31242d9864d0329ebd80cd190121e450770a1a69",
+  "bytes": 129568275,
+  "targets": [
+    {
+      "bundle": "com.mooremovement.strideos",
+      "version": "1.0.0",
+      "build": "110",
+      "sdk": "iphoneos26.5",
+      "signatureValid": true,
+      "debugSigning": false
+    },
+    {
+      "bundle": "com.mooremovement.strideos.watch",
+      "version": "1.0.0",
+      "build": "110",
+      "sdk": "watchos26.5",
+      "signatureValid": true,
+      "debugSigning": false
+    },
+    {
+      "bundle": "com.mooremovement.strideos.liveactivity",
+      "version": "1.0.0",
+      "build": "110",
+      "sdk": "iphoneos26.5",
+      "signatureValid": true,
+      "debugSigning": false
+    }
+  ],
+  "privacyManifestsParsed": 21,
+  "compiled1024IconOpaque": true,
+  "embeddedBundleBytes": 12311400,
+  "embeddedBundleSHA256": "42c265092e0b78668e8b46bb7a5280f7e50803ace4932c10cf4bf1adeb7cd83e",
+  "noCredentialFilenamesInArchive": true,
+  "physicalDeviceAccepted": false,
+  "realAppleExchangeAccepted": false,
+  "purpose": "private_purchase_test_only",
+  "publicPromotionAllowed": false,
+  "clientBillingProfileFlag": true,
+  "globalServerBillingEnabled": false,
+  "qaOwnerBound": false
+}

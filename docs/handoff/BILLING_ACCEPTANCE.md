@@ -1,6 +1,31 @@
 # Billing acceptance and inert private QA preparation
 
-## Current status — November 1, 2026 late Pacific
+## Latest preparation — November 2, 2026
+
+Production 109 remains billing-off and selected in the saved manual-release
+draft. The owner's newer request to prepare work before the home session
+supersedes the earlier deferral for **preparation only**, not actual purchases
+or public-payment activation. The existing inert owner-specific QA policy is
+now deployed as AI Coach v14: all three downloaded source files match, JWT
+verification is on, 49 focused tests and Deno checks passed, and all seven
+post-deployment boundary responses plus reviewer login/signup guard passed.
+Global billing and QA-owner settings remain absent. No QA account is bound,
+no allowance reserved and no AI/purchase request was made by this preparation.
+See `HOME_AI_QA_PREPARATION_20261102.json`.
+
+Private purchase-test **110 is signed-archive verified and VALID /
+IN_BETA_TESTING internally**, from isolated branch `codex/strideos-billing-qa110`,
+source `fe8d4db`. The existing internal group was freshly verified to contain
+only the owner. No external group/invitation was created. The public draft was
+freshly read back selecting **109, manual release, Prepare for Submission**.
+Never select 110 in that draft. The canonical checkout stays on production 109.
+See `BILLING_QA110_RELEASE.md` and its artifact/Apple receipts. The optional
+What to Test note is not confirmed saved: browser control disconnected during
+entry, before Save/readback. The home-session guide carries the warning instead.
+See `HOME_LAUNCH_SESSION_20261102.md` for timing and exact owner steps. Real
+lifecycle acceptance and final paid-production alignment remain open.
+
+## Historical status — November 1, 2026 late Pacific
 
 Production **108** is VALID / IN_BETA_TESTING internally. Its explicit client
 billing flag is false. The complete live Supabase secret-name inventory shows

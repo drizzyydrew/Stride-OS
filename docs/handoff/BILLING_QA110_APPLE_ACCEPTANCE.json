@@ -1,0 +1,41 @@
+{
+  "checkedAt": "2026-11-02T21:25:01.962564+00:00",
+  "purpose": "private_purchase_test_only",
+  "publicPromotionAllowed": false,
+  "buildId": "94bf0704-0f90-452f-938f-3d2986ed853f",
+  "sourceCommit": "fe8d4db0e8d38435cc8c32a6b86fb59946b71661",
+  "submissionId": "339b15c4-4671-4dac-86be-13459a3a2186",
+  "submissionStatus": "FINISHED",
+  "testFlight": {
+    "appVersion": "1.0.0",
+    "buildNumber": "110",
+    "processingState": "VALID",
+    "internalState": "IN_BETA_TESTING",
+    "externalState": "READY_FOR_BETA_SUBMISSION",
+    "uploadedDate": "2026-11-02T13:17:04-08:00",
+    "expired": false,
+    "easSubmissionId": "339b15c4-4671-4dac-86be-13459a3a2186",
+    "easBuildId": "94bf0704-0f90-452f-938f-3d2986ed853f",
+    "fingerprintHash": "3c5d5e5eb43a2443e3bc0271e9ace12c65010539"
+  },
+  "appleBuildId": "8f68d310-df68-4087-9126-c2386e00a80e",
+  "group": {
+    "name": "Team (Expo)",
+    "type": "Internal",
+    "testers": 1,
+    "otherGroups": 0,
+    "individualTesters": 0
+  },
+  "publicDraft": {
+    "build": "109",
+    "releaseType": "MANUAL",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "freshBrowserReadback": true
+  },
+  "whatToTestNoteSaved": false,
+  "whatToTestNoteBlocker": "Browser connection stopped while entering the note; no Save/readback confirmed.",
+  "globalServerBillingEnabled": false,
+  "qaOwnerBound": false,
+  "deviceAccepted": false,
+  "purchaseLifecycleAccepted": false
+}
