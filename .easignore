@@ -35,6 +35,7 @@ docs/build38-prototypes/
 
 # Source references and generated browser QA are not production dependencies.
 /docs/handoff/badge-review/
+/docs/assets/screenshots/
 /docs/handoff/update-2026-10-15/visual-qa.js
 /docs/handoff/update-2026-10-15/active-outdoor-qa.js
 /docs/handoff/update-2026-10-17/regression-qa.js
