@@ -12,7 +12,7 @@ const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE
 });
 const appleKeys = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'), { timeoutDuration: 10_000 });
 const fields = 'id,requested_at,status,completed_at';
-type ProviderToken = { provider: 'apple' | 'google'; kind: 'google_access_token' | 'apple_authorization_code' | 'apple_refresh_token'; subject: string; token: string };
+type ProviderToken = { provider: 'apple' | 'google'; kind: 'google_access_token' | 'apple_authorization_code' | 'apple_refresh_token' | 'apple_capture_refresh_token' | 'apple_capture_access_token'; subject: string; token: string; capture_id?: string; client_id?: string };
 
 async function rpc(name: string, args: Record<string, unknown>) {
   const { data, error } = await admin.rpc(name, args);
@@ -21,6 +21,39 @@ async function rpc(name: string, args: Record<string, unknown>) {
 }
 async function assertLease(requestId: string, token: string) {
   if (await rpc('renew_stride_deletion', { request_id: requestId, claim_token: token }) !== true) throw new Error('Deletion lease is not confirmed.');
+}
+
+async function appleDeletionClientSecret(): Promise<string | undefined> {
+  const fallback = Deno.env.get('STRIDEOS_APPLE_CLIENT_SECRET');
+  const mint = Deno.env.get('STRIDEOS_APPLE_PRIVATE_KEY') && Deno.env.get('STRIDEOS_APPLE_KEY_ID') && Deno.env.get('STRIDEOS_APPLE_TEAM_ID');
+  // Load signing code only when minting is needed. Existing static-secret deployments remain supported.
+  return mint ? (await import('./appleGrantCrypto.ts')).configuredAppleClientSecret() : fallback;
+}
+
+// A successful revoke covers the supplied token, not every saved authorization.
+// Acknowledge each refresh/access credential separately; retain progress on retry.
+export async function revokeRetainedAppleTokens(requestId: string, lease: string, tokens: ProviderToken[]) {
+  if (!tokens.length) return;
+  const clientId=Deno.env.get('STRIDEOS_APPLE_CLIENT_ID');
+  const secret=await appleDeletionClientSecret();
+  if (!clientId || !secret) throw new ProviderRemovalError('configuration');
+  for (const token of tokens.slice(0,6)) {
+    if (!token.capture_id || token.client_id!==clientId || !['apple_capture_refresh_token','apple_capture_access_token'].includes(token.kind)) throw new ProviderRemovalError('identity');
+    await assertLease(requestId,lease);
+    const response=await fetch('https://appleid.apple.com/auth/revoke',{
+      method:'POST',redirect:'error',signal:AbortSignal.timeout(10_000),headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({client_id:clientId,client_secret:secret,token:token.token,
+        token_type_hint:token.kind==='apple_capture_refresh_token'?'refresh_token':'access_token'}).toString(),
+    });
+    await response.body?.cancel();
+    if (response.status!==200) throw new ProviderRemovalError('provider_unavailable');
+    const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token.token));
+    const hash=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+    if (await rpc('ack_stride_apple_capture_token',{request_id:requestId,claim_token:lease,capture_id:token.capture_id,token_kind:token.kind,token_hash:hash})!==true)
+      throw new ProviderRemovalError('provider_unavailable');
+  }
+  // Bound a single worker turn without abandoning unprocessed credentials.
+  if (tokens.length>6) throw new ProviderRemovalError('provider_unavailable');
 }
 
 export async function processDeletionRequest(requestId: string) {
@@ -32,7 +65,7 @@ export async function processDeletionRequest(requestId: string) {
       const plan = validateDeletionPlan(await rpc('stride_deletion_plan', { request_id: id }), id);
       const tokens = await rpc('read_stride_deletion_provider_tokens', { request_id: id, claim_token: lease }) as ProviderToken[];
       if (!Array.isArray(tokens) || tokens.some(t => !t || !['apple', 'google'].includes(t.provider)
-        || !['google_access_token', 'apple_authorization_code', 'apple_refresh_token'].includes(t.kind)
+        || !['google_access_token', 'apple_authorization_code', 'apple_refresh_token', 'apple_capture_refresh_token', 'apple_capture_access_token'].includes(t.kind)
         || (t.provider === 'google' && t.kind !== 'google_access_token')
         || (t.provider === 'apple' && t.kind === 'google_access_token')
         || typeof t.subject !== 'string' || !t.subject || t.subject.length > 512
@@ -42,15 +75,16 @@ export async function processDeletionRequest(requestId: string) {
         if (provider !== 'apple' && provider !== 'google') throw new Error('Unsupported provider.');
         const previous = plan.provider_actions?.find(a => a.provider === provider);
         if (previous?.status === 'revoked' || previous?.status === 'manual_required') continue;
-        const retained = tokens.filter(t => t.provider === provider);
+        const retained = tokens.filter(t => t.provider === provider && !t.kind.startsWith('apple_capture_'));
         if (retained.length > 1) throw new Error('Ambiguous provider state.');
         const token = retained[0];
         await assertLease(id, lease);
         try {
+          if (provider==='apple') await revokeRetainedAppleTokens(id,lease,tokens.filter(t=>t.provider==='apple' && t.kind.startsWith('apple_capture_')));
           const action = await disconnectDeletionProvider(provider, token?.subject ?? 'legacy-unavailable',
             token?.kind === 'apple_authorization_code' ? { authorizationCode: token.token } : { token: token?.token }, {
               appleClientId: Deno.env.get('STRIDEOS_APPLE_CLIENT_ID'),
-              appleClientSecret: Deno.env.get('STRIDEOS_APPLE_CLIENT_SECRET'),
+              appleClientSecret: provider === 'apple' && token ? await appleDeletionClientSecret() : undefined,
               googleClientId: Deno.env.get('STRIDEOS_GOOGLE_CLIENT_ID') ?? STRIDEOS_GOOGLE_CLIENT_ID,
             }, {
               fetch,
@@ -121,7 +155,8 @@ export const deletionDependencies: DeletionHandlersDependencies = {
   },
   automationEnabled: async ownerId => await rpc('stride_deletion_automation_enabled', { owner_id: ownerId }) === true,
   capabilities: () => ({
-    appleCodeExchange: Boolean(Deno.env.get('STRIDEOS_APPLE_CLIENT_ID') && Deno.env.get('STRIDEOS_APPLE_CLIENT_SECRET')),
+    appleCodeExchange: Boolean(Deno.env.get('STRIDEOS_APPLE_CLIENT_ID') && (Deno.env.get('STRIDEOS_APPLE_CLIENT_SECRET')
+      || Deno.env.get('STRIDEOS_APPLE_PRIVATE_KEY') && Deno.env.get('STRIDEOS_APPLE_KEY_ID') && Deno.env.get('STRIDEOS_APPLE_TEAM_ID'))),
     googleTokenRevoke: Boolean(Deno.env.get('STRIDEOS_GOOGLE_CLIENT_ID') ?? STRIDEOS_GOOGLE_CLIENT_ID),
   }),
   start: (userId, hash, tokens) => rpc('start_stride_deletion', { user_id: userId, receipt_hash: hash, provider_tokens: tokens }),

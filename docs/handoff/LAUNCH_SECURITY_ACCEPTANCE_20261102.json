@@ -1,0 +1,25 @@
+{
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "projectBinding": "Explicit project_id in Supabase execute_sql",
+  "audit": "strideos-launch-security-v5",
+  "acceptanceRevision": "20261102-legacy-maintenance-5",
+  "sourceBase": "cbf1932",
+  "sourceMigrations": {
+    "20261102081943_apple_grant_custody.sql": "747d3e324a7856eb113f372c37f3469d359d8a6a6dc02a802c64a27372cbc1b3",
+    "20261102083331_launch_owner_policy_hardening.sql": "5082af90a0de256fecdd67e062fabd444e78fde9d0ec82ea456bb0b29b039c96",
+    "20261102100131_launch_legacy_maintenance_privileges.sql": "a55122b148001bd2ed463de8e5c8f6cb3c85abea69b8431886ffce9cc73b915b"
+  },
+  "status": "PASS",
+  "phases": {
+    "catalog": {
+      "status": "PASS",
+      "checks": 1259,
+      "nonPassChecks": []
+    },
+    "dormant_control": {
+      "status": "PASS",
+      "checks": 3,
+      "nonPassChecks": []
+    }
+  }
+}

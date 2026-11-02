@@ -4,6 +4,15 @@ This is an execution checklist, not a legal opinion, independent audit, physical
 device report, or assertion that the app is ready for the market. Public payments
 and public release remain disabled until the relevant gates are actually passed.
 
+November 2 source/backend continuation is recorded in
+[`LAUNCH_PROGRESS_20261102.md`](LAUNCH_PROGRESS_20261102.md): final regression
+1,581/1,581, scoped live database audit 1,262/1,262, reviewed function deployment
+and byte readback, plus rollback-only custody/Storage acceptance. New registrations
+are temporarily closed for email-verification safety. Apple private-key setup,
+production email and exact-artifact native/provider acceptance remain open;
+the prepared key is not registered. The 108 receipts below retain their original
+artifact scope and do not accept these newer source changes.
+
 ## Current Acceptance Target — 108 Available In Internal TestFlight; Device Acceptance Pending
 
 November 1, 2026 Pacific: canonical source

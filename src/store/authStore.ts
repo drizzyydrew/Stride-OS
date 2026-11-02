@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
-import { isAuthRetryableFetchError } from '@supabase/supabase-js';
+import { createClient, isAuthRetryableFetchError } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
+import { APPLE_SIGN_IN_INCOMPLETE, sameAppleSignInSession, signInWithCapturedAppleGrant } from '../lib/appleSignInFlow';
 import {
-  getSupabaseAvailability, supabaseUnavailableMessage, localDataOwner,
+  getSupabaseAvailability, getSupabaseConfigAvailability, supabaseUnavailableMessage, localDataOwner,
   initializeLocalOwnership, readCachedSupabaseSession, clearCachedSupabaseSession,
   withExplicitAuthAttempt, isExplicitAuthAttempt,
 } from '../lib/supabase';
@@ -273,24 +274,68 @@ export const useAuthStore = create<AuthStore>((set) => ({
     const { client: supabase } = supabaseState;
 
     try {
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
+      const Crypto = await import('expo-crypto');
+      const config = getSupabaseConfigAvailability();
+      if (config.status !== 'configured') return supabaseUnavailableMessage('Apple sign in');
+      // A process exit before grant capture must not leave a usable persisted login.
+      const transient = createClient(config.supabaseUrl, config.supabaseAnonKey, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      });
+      let commitStarted = false;
+      let partialCommit: Session | null = null;
+      const session = await signInWithCapturedAppleGrant<Session>({
+        randomBytes: Crypto.getRandomBytesAsync,
+        sha256: value => Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, value),
+        authorize: challenge => AppleAuthentication.signInAsync({
+          ...challenge,
+          requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
+        }),
+        current: () => attempt === authAttemptGeneration,
+        exclusive: work => withExplicitAuthAttempt(work, () => attempt === authAttemptGeneration),
+        authenticate: credentials => transient.auth.signInWithIdToken({ provider: 'apple', ...credentials }),
+        capture: async (created, body) => {
+          const result = await transient.functions.invoke('apple-grant', {
+            headers: { Authorization: `Bearer ${created.access_token}` }, body, timeout: 15_000,
+          });
+          if (result.error) throw new Error(APPLE_SIGN_IN_INCOMPLETE);
+          return result.data;
+        },
+        commitSession: async created => {
+          commitStarted = true;
+          const result = await supabase.auth.setSession({ access_token: created.access_token, refresh_token: created.refresh_token });
+          partialCommit = result.data.session;
+          if (result.error || !partialCommit) throw new Error(APPLE_SIGN_IN_INCOMPLETE);
+          return partialCommit;
+        },
+        discardPartialSession: async created => {
+          // The transient client never writes device credentials. Revoke only
+          // its Supabase session; never unlink Apple or delete the Auth account.
+          void transient.auth.signOut({ scope: 'local' }).catch(() => undefined);
+          if (!commitStarted) return;
+          const expected = partialCommit ?? created;
+          const { data } = await supabase.auth.getSession();
+          // setSession may refresh and persist before throwing. Match that
+          // session's owner + issuer + session_id, never merely its owner.
+          if (attempt !== authAttemptGeneration || !sameAppleSignInSession(expected, data.session)) return;
+          const fence = localDataOwner.signOut();
+          publishAccess();
+          supabase.auth.stopAutoRefresh();
+          try { await fence; }
+          finally {
+            // Remove the durable partial session before SDK logout can await a
+            // network response. Restart must remain signed out even offline.
+            try { await clearCachedSupabaseSession(); }
+            finally { publishAccess(); }
+            await supabase.auth.signOut({ scope: 'local' });
+          }
+        },
       });
       if (attempt !== authAttemptGeneration) return STALE_AUTH_ATTEMPT;
-      if (!credential.identityToken) return 'Apple sign in failed — no token returned.';
-      const identityToken = credential.identityToken;
-      const { data, error } = await withExplicitAuthAttempt(() => supabase.auth.signInWithIdToken({
-        provider: 'apple',
-        token: identityToken,
-      }), () => attempt === authAttemptGeneration);
-      if (attempt !== authAttemptGeneration) return STALE_AUTH_ATTEMPT;
-      return error?.message ?? await finishExplicitSignIn(data.session, attempt);
+      return finishExplicitSignIn(session, attempt);
     } catch (e: any) {
+      if (attempt !== authAttemptGeneration) return STALE_AUTH_ATTEMPT;
       if (e.code === 'ERR_REQUEST_CANCELED') return null;
-      return e.message ?? 'Apple sign in failed.';
+      return APPLE_SIGN_IN_INCOMPLETE;
     }
   },
 

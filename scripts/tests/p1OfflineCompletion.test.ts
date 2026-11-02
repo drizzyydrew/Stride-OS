@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
+import { createHash } from 'node:crypto';
 import ts from 'typescript';
 import { createJSONStorage } from 'zustand/middleware';
 import { LocalDataOwner, LOCAL_DATA_OWNER_KEY } from '../../src/lib/localDataOwner';
@@ -556,6 +557,7 @@ function authHarness(options: { cachedId?: string | null; sessionError?: unknown
   let clearCalls = 0;
   let credentialCalls = 0;
   let callbackCalls = 0;
+  let randomDraw = 0;
   let listener: ((event: string, session: unknown) => void) | null = null;
   const client = { auth: {
     getSession: async () => ({ data: { session: options.sessionError ? null : cache }, error: options.sessionError ?? null }),
@@ -574,11 +576,16 @@ function authHarness(options: { cachedId?: string | null; sessionError?: unknown
     signInWithOAuth: async () => ({ data: { url: 'https://example.test/auth' }, error: null }),
   } };
   const exported = loadSource('src/store/authStore.ts', {
-    '@supabase/supabase-js': { isAuthRetryableFetchError: (error: any) => error?.name === 'AuthRetryableFetchError' },
-    'expo-apple-authentication': { signInAsync: options.apple, AppleAuthenticationScope: { FULL_NAME: 0, EMAIL: 1 } },
+    '@supabase/supabase-js': { createClient: () => client, isAuthRetryableFetchError: (error: any) => error?.name === 'AuthRetryableFetchError' },
+    'expo-apple-authentication': { signInAsync: async ({ state }: { state: string }) => ({
+      ...await options.apple?.() as object, authorizationCode: 'synthetic-apple-code', state,
+    }), AppleAuthenticationScope: { FULL_NAME: 0, EMAIL: 1 } },
+    'expo-crypto': { getRandomBytesAsync: async () => new Uint8Array(32).fill(++randomDraw),
+      CryptoDigestAlgorithm: { SHA256: 'SHA-256' }, digestStringAsync: async (_algorithm: string, value: string) => createHash('sha256').update(value).digest('hex') },
     'expo-web-browser': { openAuthSessionAsync: options.browser },
     '../lib/supabase': {
       localDataOwner: owner, getSupabaseAvailability: () => ({ status: 'available', client }),
+      getSupabaseConfigAvailability: () => ({ status: 'configured', supabaseUrl: 'https://fixture.supabase.co', supabaseAnonKey: 'fixture-public-key' }),
       initializeLocalOwnership: async () => {
         if (options.cachedReadFails) throw new Error('device locked');
         await owner.initialize(cache?.user.id ?? null, async () => options.hasExistingData ?? true);

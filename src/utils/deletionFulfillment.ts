@@ -9,6 +9,7 @@ export type DeletionPlan = {
   shared_auth_tables: string[];
   identity_providers: string[];
   fulfillment_version?: 0 | 1;
+  apple_capture_recovery_attested?: boolean;
   provider_actions?: { provider: string; status: 'pending' | 'revoked' | 'manual_required'; reason: string }[];
 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -26,6 +27,7 @@ export function validateDeletionPlan(value: unknown, requestId: string): Deletio
     || !Array.isArray(p.shared_auth_tables) || !p.shared_auth_tables.every(table => typeof table === 'string')
     || !Array.isArray(p.identity_providers) || !p.identity_providers.every(provider => typeof provider === 'string')
     || (p.fulfillment_version !== undefined && ![0, 1].includes(p.fulfillment_version))
+    || (p.apple_capture_recovery_attested !== undefined && typeof p.apple_capture_recovery_attested !== 'boolean')
     || (p.provider_actions !== undefined && (!Array.isArray(p.provider_actions)
       || p.provider_actions.length > 2 || new Set(p.provider_actions.map(a => a?.provider)).size !== p.provider_actions.length
       || !p.provider_actions.every(a => a && ['apple', 'google'].includes(a.provider)
@@ -50,7 +52,8 @@ export function deletionBlockers(plan: DeletionPlan): string[] {
   if (plan.identity_providers.some(provider => provider !== 'email' && !(plan.fulfillment_version === 1
     && plan.provider_actions?.some(action => action.provider === provider
       && ((action.status === 'revoked' && action.reason === 'provider_confirmed')
-        || (action.status === 'manual_required' && action.reason === 'legacy_token_unavailable')))))) {
+        || (action.status === 'manual_required' && (action.reason === 'legacy_token_unavailable'
+          || (provider === 'apple' && action.reason === 'capture_outcome_unknown' && plan.apple_capture_recovery_attested === true)))))))) {
     blockers.push('Social-provider disconnection is not yet confirmed.');
   }
   return blockers;

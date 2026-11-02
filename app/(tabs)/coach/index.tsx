@@ -1,8 +1,9 @@
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import AiSharingPreferences from '../../../src/components/settings/AiSharingPreferences';
-import { useAiConsent } from '../../../src/store/aiConsentStore';
+import { aiConsent, useAiConsent } from '../../../src/store/aiConsentStore';
 import { billingIsConfigured } from '../../../src/lib/revenueCat';
 import { useSubscriptionStore } from '../../../src/store/subscriptionStore';
+import { captureOwnerLease } from '../../../src/lib/localDataOwner';
 // ─── AI Coach ─────────────────────────────────────────────────────────────────
 //
 // Chat interface powered by Claude. Builds a system prompt from the user's
@@ -11,6 +12,7 @@ import { useSubscriptionStore } from '../../../src/store/subscriptionStore';
 
 import {
   ActivityIndicator,
+  AppState,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -21,8 +23,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 
@@ -607,9 +609,25 @@ function buildContextSummary(data: ReturnType<typeof useOnboardingStore.getState
 export default function CoachScreen() {
   const aiSharing = useAiConsent();
   const membership = useSubscriptionStore();
-  useEffect(() => {
-    if (aiSharing.allowed && billingIsConfigured()) void useSubscriptionStore.getState().refresh();
-  }, [aiSharing.allowed, aiSharing.owner]);
+  useFocusEffect(useCallback(() => {
+    let focused = true;
+    let previousState = AppState.currentState;
+    const refreshMembership = () => {
+      const consent = aiConsent.getState();
+      const lease = captureOwnerLease(true);
+      if (!focused || (AppState.currentState != null && AppState.currentState !== 'active')
+        || !consent.ready || !consent.allowed || !lease || consent.owner !== lease.ownerUserId
+        || !billingIsConfigured()) return;
+      void useSubscriptionStore.getState().refresh();
+    };
+    refreshMembership();
+    const subscription = AppState.addEventListener('change', nextState => {
+      const returned = nextState === 'active' && previousState !== 'active';
+      previousState = nextState;
+      if (returned) refreshMembership();
+    });
+    return () => { focused = false; subscription.remove(); };
+  }, [aiSharing.ready, aiSharing.allowed, aiSharing.owner]));
   const C = useColors();
   useFeatureTour('ai-coach');
   const insets = useSafeAreaInsets();

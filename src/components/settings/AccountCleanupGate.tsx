@@ -5,6 +5,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { accountDeletionControl, initializeAccountDeletionControl } from '../../lib/accountDeletionControl';
 import { pollAccountDeletion, refreshDeletionProviderCredentials, DeletionHttpError } from '../../lib/accountDeletion';
 import { APPLE_MANUAL_REVOKE_URL } from '../../lib/accountDeletionProtocol';
+import { LEGAL_URLS } from '../../utils/legal';
 
 /** Outside navigation and recording/sync bridges. It never logs receipt state or
  * exposes the secret. Same-runtime reopening is intentionally unavailable. */
@@ -79,8 +80,15 @@ export default function AccountCleanupGate({ children }: { children: ReactNode }
         {request?.provider_actions?.filter(action => action.status === 'pending').map(action => <View key={action.provider} style={{ gap: 10 }}>
           <Text style={{ color: '#F4EDE5', lineHeight: 23 }}>{action.provider === 'apple' ? 'Apple' : 'Google'} revocation is pending.
             {action.reason === 'configuration_unavailable' ? ' Server configuration needs attention; signing in again will not repair it.'
-              : action.reason === 'credential_refresh_required' ? ' A fresh confirmation from this account is needed.' : ' Retry status to resume the already-authorized processing attempt.'}
+              : action.reason === 'credential_refresh_required' ? ' A fresh confirmation from this account is needed.'
+                : action.reason === 'capture_in_flight' ? ' Apple sign-in is still being checked. Wait, then retry status.'
+                  : action.reason === 'capture_outcome_unknown' ? ' An interrupted Apple sign-in needs support review. Deletion stays pending until its outcome is resolved; repeatedly signing in will not resolve it.'
+                    : ' Retry status to resume the already-authorized processing attempt.'}
           </Text>
+          {action.reason === 'capture_outcome_unknown' ? <TouchableOpacity accessibilityRole="link"
+            onPress={() => { void Linking.openURL(LEGAL_URLS.support).catch(() => undefined); }} style={{ minHeight: 48, justifyContent: 'center' }}>
+            <Text style={{ color: '#DCC0A7', fontSize: 17 }}>Get help with this deletion request</Text>
+          </TouchableOpacity> : null}
           {action.reason === 'credential_refresh_required' ? <TouchableOpacity accessibilityRole="button" disabled={!!repairing || checking}
             onPress={() => { void repair(action.provider); }} style={{ minHeight: 48, justifyContent: 'center' }}>
             <Text style={{ color: '#DCC0A7', fontSize: 17 }}>{repairing === action.provider ? 'Confirming identity…' : `Confirm ${action.provider === 'apple' ? 'Apple' : 'Google'} identity`}</Text>

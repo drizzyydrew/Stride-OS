@@ -1,0 +1,26 @@
+{
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "migration": "launch_owner_policy_hardening",
+  "migrationApplied": true,
+  "probe": "scripts/probes/storage-owner-rollback.sql",
+  "execution": "Supabase execute_sql completed entire BEGIN / DO assertions / SELECT / ROLLBACK batch without error",
+  "receipt": {
+    "probe": "storage_owner_rollback",
+    "deleteTested": false,
+    "rollbackOnly": true,
+    "anonymousDenied": true,
+    "fileBytesTested": false,
+    "authUsersCreated": 0,
+    "foreignOwnerDenied": true,
+    "allAssertionsPassed": true,
+    "syntheticObjectRows": 3,
+    "authIdentitiesCreated": 0,
+    "crossBucketCheckDenied": true,
+    "crossPrefixCheckDenied": true,
+    "ownerSelectUpdateInsert": true,
+    "httpJwtVerificationTested": false,
+    "requiresFinalRollbackSuccess": true,
+    "deniedOperationsPreservedRows": true,
+    "restrictiveFreezeSelectUpdateInsert": true
+  }
+}

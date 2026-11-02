@@ -20,12 +20,15 @@ export function publicDeletionReceipt(value: unknown): Receipt | null {
   const provider_actions: Receipt['provider_actions'] = [];
   for (const provider of ['apple', 'google'] as const) {
     const status = dispositions?.[provider];
-    if (status === 'revoked' || status === 'manual_required') provider_actions.push({ provider, status,
-      reason: status === 'revoked' ? 'provider_confirmed' : 'legacy_token_unavailable' });
+    if (status === 'revoked' || status === 'manual_required') {
+      const manual = Array.isArray(r.provider_actions) ? r.provider_actions.find(a => a && a.provider === provider && a.status === 'manual_required') : null;
+      provider_actions.push({ provider, status, reason: status === 'revoked' ? 'provider_confirmed'
+        : provider === 'apple' && manual?.reason === 'capture_outcome_unknown' ? 'capture_outcome_unknown' : 'legacy_token_unavailable' });
+    }
     else {
       const pending = Array.isArray(r.provider_actions) ? r.provider_actions.find(a => a && a.provider === provider && a.status === 'pending') : null;
       if (pending) provider_actions.push({ provider, status: 'pending', reason:
-        ['configuration_unavailable', 'provider_failure', 'credential_refresh_required', 'provider_retry_requested'].includes(pending.reason)
+        ['configuration_unavailable', 'provider_failure', 'credential_refresh_required', 'provider_retry_requested', 'capture_in_flight', 'capture_outcome_unknown'].includes(pending.reason)
           ? pending.reason : 'not_prepared' });
     }
   }
@@ -75,10 +78,13 @@ export function createDeletionAccountHandler(deps: DeletionHandlersDependencies)
       if (!user || !UUID.test(user.id)) return json({ error: 'Sign in to request account deletion.' }, 401);
       if (req.method === 'GET') {
         const saved = await deps.readAuthenticated(user.id);
-        return json({ request: publicDeletionReceipt(saved), capabilities: {
+        const custody = saved && typeof saved === 'object' && (saved as Record<string, unknown>).apple_grant_retained === true;
+        const receipt = custody ? (saved as Record<string, unknown>).request : saved;
+        return json({ request: publicDeletionReceipt(receipt), capabilities: {
           automaticProcessing: await deps.automationEnabled(user.id), ...deps.capabilities(),
-          providerCredentialRefreshReady: Boolean(saved && typeof saved === 'object'
-            && (saved as Record<string, unknown>).provider_credential_refresh_ready === true),
+          ...(custody ? { appleGrantRetained: true } : {}),
+          providerCredentialRefreshReady: Boolean(receipt && typeof receipt === 'object'
+            && (receipt as Record<string, unknown>).provider_credential_refresh_ready === true),
         } });
       }
       let body: Record<string, unknown>;

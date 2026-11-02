@@ -46,7 +46,7 @@ export default function ForgotPasswordScreen() {
           <Text style={s.icon}>✉️</Text>
           <Text style={s.successTitle}>Check your email</Text>
           <Text style={s.successDesc}>
-            We sent a password reset link to {email}. Click the link to set a new password, then sign in.
+            If a password reset email is available for {email}, use its link to set a new password, then sign in. Check your inbox and spam folder. Email delivery may be delayed.
           </Text>
           <Pressable style={s.btn} onPress={() => router.replace('/auth/sign-in' as never)}>
             <Text style={s.btnTxt}>Back to Sign In</Text>
@@ -65,7 +65,7 @@ export default function ForgotPasswordScreen() {
         <View style={s.card}>
           <Text style={s.heading}>Reset password</Text>
           <Text style={s.subheading}>
-            Enter your email and we will send you a link to reset your password.
+            Enter your email to request a password reset link.
           </Text>
 
           {error ? <Text style={s.error}>{error}</Text> : null}

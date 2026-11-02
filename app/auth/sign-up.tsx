@@ -55,7 +55,7 @@ export default function SignUpScreen() {
           <Text style={s.successIcon}>✉️</Text>
           <Text style={s.successTitle}>Check your email</Text>
           <Text style={s.successDesc}>
-            We sent a confirmation link to {email}. Click it to activate your account, then sign in.
+            If confirmation is required, check the inbox and spam folder for {email}. Use the confirmation link before signing in. Email delivery may be delayed.
           </Text>
           <Pressable style={s.btn} onPress={() => router.replace('/auth/sign-in' as never)}>
             <Text style={s.btnTxt}>Go to Sign In</Text>

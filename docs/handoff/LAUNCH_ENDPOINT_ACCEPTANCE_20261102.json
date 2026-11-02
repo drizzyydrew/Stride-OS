@@ -1,0 +1,88 @@
+{
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "existingReviewerLoginVerified": true,
+  "newRegistrationsDisabled": true,
+  "endpointChecks": [
+    {
+      "endpoint": "account-deletion",
+      "method": "GET",
+      "authenticated": true,
+      "status": 200,
+      "expected": 200,
+      "passed": true,
+      "requestExists": false,
+      "capabilities": {
+        "automaticProcessing": false,
+        "appleCodeExchange": false,
+        "googleTokenRevoke": true,
+        "providerCredentialRefreshReady": false
+      }
+    },
+    {
+      "endpoint": "ai-coach",
+      "method": "GET",
+      "authenticated": true,
+      "status": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "endpoint": "apple-grant",
+      "method": "GET",
+      "authenticated": true,
+      "status": 405,
+      "expected": 405,
+      "passed": true
+    },
+    {
+      "endpoint": "apple-grant",
+      "method": "POST",
+      "authenticated": false,
+      "status": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "endpoint": "apple-grant",
+      "method": "POST",
+      "authenticated": true,
+      "status": 503,
+      "expected": 503,
+      "passed": true
+    },
+    {
+      "endpoint": "account-deletion-worker",
+      "method": "POST",
+      "authenticated": false,
+      "status": 401,
+      "expected": 401,
+      "passed": true
+    },
+    {
+      "endpoint": "account-deletion-status",
+      "method": "POST",
+      "authenticated": false,
+      "status": 404,
+      "expected": 404,
+      "passed": true
+    }
+  ],
+  "aiSmoke": {
+    "endpoint": "ai-coach",
+    "status": 200,
+    "liveProviderResponseVerified": true,
+    "syntheticMessages": 1,
+    "personalTrainingOrHealthDataSent": false,
+    "quotaReservationsConsumed": 1,
+    "vendorDollarCapVerified": false
+  },
+  "emailReadback": {
+    "customSMTPEnabled": false,
+    "authHooksConfigured": false,
+    "endToEndDeliveryVerified": false
+  },
+  "realAppleExchangeVerified": false,
+  "realGoogleRevocationVerified": false,
+  "nativeDeviceAcceptance": false,
+  "vendorSpendingHardCapVerified": false
+}

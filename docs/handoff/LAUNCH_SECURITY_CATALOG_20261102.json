@@ -1,0 +1,210 @@
+{
+  "audit": "strideos-launch-security-v1",
+  "phases": {
+    "catalog": {
+      "status": "FAIL",
+      "fail_count": 15,
+      "pass_count": 915,
+      "review_count": 2,
+      "issues": [
+        {
+          "status": "REVIEW",
+          "target": "public.handle_new_user()",
+          "check_id": "function_contract",
+          "observed": {
+            "exists": true,
+            "result": "trigger",
+            "definer": true,
+            "body_md5": "fc0e692c32cd0f78ccc2f2a239cea040",
+            "language": "plpgsql",
+            "argument_names": null,
+            "expected_body_md5": null,
+            "search_path_pinned": true
+          }
+        },
+        {
+          "status": "REVIEW",
+          "target": "public.rls_auto_enable()",
+          "check_id": "function_contract",
+          "observed": {
+            "exists": true,
+            "result": "event_trigger",
+            "definer": true,
+            "body_md5": "99be20677b456ea8d3be47bdd44fb369",
+            "language": "plpgsql",
+            "argument_names": null,
+            "expected_body_md5": null,
+            "search_path_pinned": true
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "public.analysis_requests:own requests:anon",
+          "check_id": "owner_policy",
+          "observed": {
+            "check": null,
+            "using": "(auth.uid() = user_id)",
+            "command": "*",
+            "permissive": true
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "public.movement_videos:own videos:anon",
+          "check_id": "owner_policy",
+          "observed": {
+            "check": null,
+            "using": "(auth.uid() = user_id)",
+            "command": "*",
+            "permissive": true
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "public.profiles:own profile:anon",
+          "check_id": "owner_policy",
+          "observed": {
+            "check": null,
+            "using": "(auth.uid() = id)",
+            "command": "*",
+            "permissive": true
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "own video files delete:anon",
+          "check_id": "storage_policy",
+          "observed": {
+            "check": null,
+            "using": "((bucket_id = 'movement-videos'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+            "command": "d",
+            "permissive": true
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "own video files read:anon",
+          "check_id": "storage_policy",
+          "observed": {
+            "check": null,
+            "using": "((bucket_id = 'movement-videos'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+            "command": "r",
+            "permissive": true
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "own video files upload:anon",
+          "check_id": "storage_policy",
+          "observed": {
+            "check": "((bucket_id = 'movement-videos'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+            "using": null,
+            "command": "a",
+            "permissive": true
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "w",
+          "check_id": "storage_policy_coverage",
+          "observed": {
+            "expected": "SELECT/INSERT/UPDATE/DELETE prefix-scoped policy; upsert needs all first three"
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "public.analysis_requests:service_role:DELETE",
+          "check_id": "table_acl",
+          "observed": {
+            "kind": "legacy_owner",
+            "grant_option": false,
+            "effective_table_or_column": false
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "public.analysis_requests:service_role:INSERT",
+          "check_id": "table_acl",
+          "observed": {
+            "kind": "legacy_owner",
+            "grant_option": false,
+            "effective_table_or_column": false
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "public.analysis_requests:service_role:SELECT",
+          "check_id": "table_acl",
+          "observed": {
+            "kind": "legacy_owner",
+            "grant_option": false,
+            "effective_table_or_column": false
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "public.analysis_requests:service_role:UPDATE",
+          "check_id": "table_acl",
+          "observed": {
+            "kind": "legacy_owner",
+            "grant_option": false,
+            "effective_table_or_column": false
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "public.movement_videos:service_role:DELETE",
+          "check_id": "table_acl",
+          "observed": {
+            "kind": "legacy_owner",
+            "grant_option": false,
+            "effective_table_or_column": false
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "public.movement_videos:service_role:INSERT",
+          "check_id": "table_acl",
+          "observed": {
+            "kind": "legacy_owner",
+            "grant_option": false,
+            "effective_table_or_column": false
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "public.movement_videos:service_role:SELECT",
+          "check_id": "table_acl",
+          "observed": {
+            "kind": "legacy_owner",
+            "grant_option": false,
+            "effective_table_or_column": false
+          }
+        },
+        {
+          "status": "FAIL",
+          "target": "public.movement_videos:service_role:UPDATE",
+          "check_id": "table_acl",
+          "observed": {
+            "kind": "legacy_owner",
+            "grant_option": false,
+            "effective_table_or_column": false
+          }
+        }
+      ]
+    },
+    "dormant_control": {
+      "status": "PASS",
+      "fail_count": 0,
+      "pass_count": 3,
+      "review_count": 0,
+      "issues": []
+    }
+  },
+  "status": "FAIL",
+  "source_head": "cbf1932",
+  "expected_project_ref": "pbzgrhnxpbtlkzpreizy",
+  "evidence_full_path": "/tmp/strideos-launch-security-baseline-full.json",
+  "evidence_sha256": "f465cda9becdd0514024cbb799a31a859e6d61c68be38cfc9c66655d67014e6f",
+  "checkpoint": "Read-only baseline before launch hardening; failures include explicit audit expectations requiring review, not proof of exposed customer data."
+}

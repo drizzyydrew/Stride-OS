@@ -8,6 +8,7 @@ import ts from 'typescript';
 import { createAccountStorageBarrier, runLocalAccountCleanup } from '../../src/lib/localAccountCleanup';
 import * as manifest from '../../src/lib/localAccountCleanupManifest';
 import * as protocol from '../../src/lib/accountDeletionProtocol';
+import * as appleSignInFlow from '../../src/lib/appleSignInFlow';
 
 // Execute actual client source against synthetic native/network adapters only.
 // No production client, real keychain, account, browser or network call is used.
@@ -140,6 +141,7 @@ test('reopening the root after failed intent persistence cannot reuse stale auth
     '@supabase/supabase-js': { isAuthRetryableFetchError: () => false },
     'expo-apple-authentication': { addRevokeListener: () => ({ remove: () => undefined }) },
     'expo-web-browser': {},
+    '../lib/appleSignInFlow': appleSignInFlow,
     '../lib/localDataOwner': h.owners,
     '../lib/supabase': {
       localDataOwner: h.boundary,

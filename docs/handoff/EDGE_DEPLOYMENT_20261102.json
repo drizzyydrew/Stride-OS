@@ -1,0 +1,82 @@
+{
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "functions": [
+    {
+      "name": "account-deletion",
+      "version": 5,
+      "status": "ACTIVE",
+      "verifyJWT": true,
+      "filesMatched": 9,
+      "allSourceBytesMatch": true,
+      "bundleSHA256": "bfc226a7db937ff5ed77327c5778cd555debd0ab0059df6684e3e4cab311f493",
+      "sourceSHA256": {
+        "supabase/functions/account-deletion/index.ts": "c37dc9516d94264a443c258f7acf5160f3b78873bed15b215007a7163398291d",
+        "supabase/functions/_shared/deletionHandlers.ts": "34de734c3ab19036d8ea984e5745be1afe9df00564b627904e2942879db372b6",
+        "supabase/functions/_shared/launchHandlers.ts": "eb5524995f3c61b42f84a57640c0ed40887cc249bb5320f32e46f06845eff856",
+        "supabase/functions/_shared/deletionRuntime.ts": "9dc2ee56a854cd167cefc2678ca8a29d3737adffdabb93ea6204a30688b3c76b",
+        "src/utils/deletionFulfillment.ts": "19b5319a6c93c8096838f60f13cda549ab37ac6862d227856e014fe937a26131",
+        "supabase/functions/_shared/deletionProviders.ts": "4e7576359e77d7045827401636ae913c7a00b5f7a6c9b7fcf43975659d57b190",
+        "supabase/functions/_shared/deletionProviderConfig.ts": "f5049e6bc944a3986f2433a64ca76ba7e9688b879faea3292416801e86f6e743",
+        "supabase/functions/_shared/appleGrantCrypto.ts": "f29b7537155d4b9c2fcc47de123797caf66ec4816eefe419852a9d430a52ca18",
+        "supabase/functions/_shared/appleGrantClientSecret.ts": "7553c49197a26bda407a96aaddd26ffb726d30489a508084306afa26a6b26a99"
+      }
+    },
+    {
+      "name": "account-deletion-status",
+      "version": 3,
+      "status": "ACTIVE",
+      "verifyJWT": false,
+      "filesMatched": 9,
+      "allSourceBytesMatch": true,
+      "bundleSHA256": "4bf6e7d6acd027938842c2865b1c48cc03d3622f828a7b9260a239e883f7918c",
+      "sourceSHA256": {
+        "supabase/functions/account-deletion-status/index.ts": "934c49c3a1e48c5adf5588313429b711a28e462a8a1e46f8c694c03f165eb703",
+        "supabase/functions/_shared/deletionHandlers.ts": "34de734c3ab19036d8ea984e5745be1afe9df00564b627904e2942879db372b6",
+        "supabase/functions/_shared/launchHandlers.ts": "eb5524995f3c61b42f84a57640c0ed40887cc249bb5320f32e46f06845eff856",
+        "supabase/functions/_shared/deletionRuntime.ts": "9dc2ee56a854cd167cefc2678ca8a29d3737adffdabb93ea6204a30688b3c76b",
+        "src/utils/deletionFulfillment.ts": "19b5319a6c93c8096838f60f13cda549ab37ac6862d227856e014fe937a26131",
+        "supabase/functions/_shared/deletionProviders.ts": "4e7576359e77d7045827401636ae913c7a00b5f7a6c9b7fcf43975659d57b190",
+        "supabase/functions/_shared/deletionProviderConfig.ts": "f5049e6bc944a3986f2433a64ca76ba7e9688b879faea3292416801e86f6e743",
+        "supabase/functions/_shared/appleGrantCrypto.ts": "f29b7537155d4b9c2fcc47de123797caf66ec4816eefe419852a9d430a52ca18",
+        "supabase/functions/_shared/appleGrantClientSecret.ts": "7553c49197a26bda407a96aaddd26ffb726d30489a508084306afa26a6b26a99"
+      }
+    },
+    {
+      "name": "account-deletion-worker",
+      "version": 3,
+      "status": "ACTIVE",
+      "verifyJWT": false,
+      "filesMatched": 9,
+      "allSourceBytesMatch": true,
+      "bundleSHA256": "b08b5a6185fd883085f5ead65f0539473db61644032356a69840c57503d74ee0",
+      "sourceSHA256": {
+        "supabase/functions/account-deletion-worker/index.ts": "d55281c9e6ee4186ca164a74ac8f3b0989a78ef14ca23367a50a674408574445",
+        "supabase/functions/_shared/deletionHandlers.ts": "34de734c3ab19036d8ea984e5745be1afe9df00564b627904e2942879db372b6",
+        "supabase/functions/_shared/launchHandlers.ts": "eb5524995f3c61b42f84a57640c0ed40887cc249bb5320f32e46f06845eff856",
+        "supabase/functions/_shared/deletionRuntime.ts": "9dc2ee56a854cd167cefc2678ca8a29d3737adffdabb93ea6204a30688b3c76b",
+        "src/utils/deletionFulfillment.ts": "19b5319a6c93c8096838f60f13cda549ab37ac6862d227856e014fe937a26131",
+        "supabase/functions/_shared/deletionProviders.ts": "4e7576359e77d7045827401636ae913c7a00b5f7a6c9b7fcf43975659d57b190",
+        "supabase/functions/_shared/deletionProviderConfig.ts": "f5049e6bc944a3986f2433a64ca76ba7e9688b879faea3292416801e86f6e743",
+        "supabase/functions/_shared/appleGrantCrypto.ts": "f29b7537155d4b9c2fcc47de123797caf66ec4816eefe419852a9d430a52ca18",
+        "supabase/functions/_shared/appleGrantClientSecret.ts": "7553c49197a26bda407a96aaddd26ffb726d30489a508084306afa26a6b26a99"
+      }
+    },
+    {
+      "name": "apple-grant",
+      "version": 1,
+      "status": "ACTIVE",
+      "verifyJWT": true,
+      "filesMatched": 6,
+      "allSourceBytesMatch": true,
+      "bundleSHA256": "aa7f002f3f6187a2700ddbec7a612d0ef7a120538d1f33b48e54a0f85abfd11f",
+      "sourceSHA256": {
+        "supabase/functions/apple-grant/index.ts": "e3eca3def2e922d37faca9409c44551a4b3b92a1f1b4c26649458d5d270cc771",
+        "supabase/functions/_shared/appleGrantRuntime.ts": "a188f3ff78b66be8b56aeaa97eb4b918b3173418e004c72b6817408388a4182e",
+        "supabase/functions/_shared/appleGrant.ts": "86e3f0836e8cdda36252a0c3d6f010df256b76ae79af1fd6db5f57fda4227d69",
+        "supabase/functions/_shared/launchHandlers.ts": "eb5524995f3c61b42f84a57640c0ed40887cc249bb5320f32e46f06845eff856",
+        "supabase/functions/_shared/appleGrantCrypto.ts": "f29b7537155d4b9c2fcc47de123797caf66ec4816eefe419852a9d430a52ca18",
+        "supabase/functions/_shared/appleGrantClientSecret.ts": "7553c49197a26bda407a96aaddd26ffb726d30489a508084306afa26a6b26a99"
+      }
+    }
+  ]
+}

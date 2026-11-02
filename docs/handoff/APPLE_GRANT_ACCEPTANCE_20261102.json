@@ -1,0 +1,32 @@
+{
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "migrationSHA256": "747d3e324a7856eb113f372c37f3469d359d8a6a6dc02a802c64a27372cbc1b3",
+  "migrationApplied": true,
+  "probe": "scripts/probes/apple-grant-rollback.sql",
+  "probeSHA256": "d3dc4eabd6ff1a44268bf7245d257bdbebbc928e80ae0a6737082dd52f37a287",
+  "execution": "Supabase execute_sql completed the entire BEGIN / DO assertions / SELECT / ROLLBACK batch without error. The historical HOLD header was superseded by Darwin's frozen-artifact approval before execution.",
+  "receipt": {
+    "probe": "apple_grant_rollback",
+    "rollbackOnly": true,
+    "allAssertionsPassed": true,
+    "deletionCaptureFence": true,
+    "invalidLeaseRejected": true,
+    "unknownOutcomeVisible": true,
+    "authCascadePurgedVault": true,
+    "retainedRefreshAdopted": true,
+    "syntheticTokenACKsOnly": true,
+    "generatedSyntheticOwners": 2,
+    "grantFKNotReportedUnsafe": true,
+    "identityMismatchRejected": true,
+    "idempotentCapturedReceipt": true,
+    "fullTokenResponseRoundTrip": true,
+    "lateCustodyWithoutLoginACK": true,
+    "liveProviderExchangeVerified": false,
+    "requiresFinalRollbackSuccess": true,
+    "unresolvedFinalizationBlocked": true,
+    "liveProviderRevocationVerified": false,
+    "syntheticAttestationPurgedAllRefs": true,
+    "everyRetainedCredentialRequiresACK": true,
+    "failedReplacementPreservedOldGrant": true
+  }
+}

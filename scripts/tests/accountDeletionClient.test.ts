@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import test from 'node:test';
 import vm from 'node:vm';
 import ts from 'typescript';
-import { parseDeletionRequest } from '../../src/lib/accountDeletionProtocol';
+import { parseDeletionCapabilities, parseDeletionRequest } from '../../src/lib/accountDeletionProtocol';
 
 function loadSource<T>(path: string, mocks: Record<string, unknown>, globals: Record<string, unknown> = {}): T {
   const filename = resolve(path);
@@ -34,6 +34,7 @@ async function harness() {
   const hooks = { lostPost: false, completed: false, authDeleted: false, recording: false,
     failControlReadback: false, failRemove: false, badStatus: false, foreignOnStatus: false,
     appleExchange: false, googleRevoke: false, automation: true, refreshReady: false,
+    appleGrantRetained: undefined as unknown, beforeCapabilityResponse: null as null | (() => void),
     providerFailure: null as 'apple' | 'google' | null, providerReason: 'credential_refresh_required', wrongReauthOwner: false,
     rejectStartBeforeCommit: false, pauseControlWrite: null as null | (() => Promise<void>) };
   let serverSecret: string | null = null;
@@ -108,9 +109,13 @@ async function harness() {
     const call = { url: input, method: init.method!, headers: init.headers as Record<string, string>, body };
     calls.push(call);
     const capabilities = { automaticProcessing: hooks.automation, appleCodeExchange: hooks.appleExchange, googleTokenRevoke: hooks.googleRevoke,
-      providerCredentialRefreshReady: hooks.refreshReady };
+      providerCredentialRefreshReady: hooks.refreshReady,
+      ...(hooks.appleGrantRetained !== undefined ? { appleGrantRetained: hooks.appleGrantRetained } : {}) };
     const currentRequest = request && { ...request, ...(hooks.providerFailure ? { provider_actions: [{ provider: hooks.providerFailure, status: 'pending', reason: hooks.providerReason }] } : {}) };
-    if (input.endsWith('/account-deletion') && init.method === 'GET') return new Response(JSON.stringify({ request: currentRequest, capabilities }));
+    if (input.endsWith('/account-deletion') && init.method === 'GET') {
+      hooks.beforeCapabilityResponse?.();
+      return new Response(JSON.stringify({ request: currentRequest, capabilities }));
+    }
     if (input.endsWith('/account-deletion') && init.method === 'POST') {
       assert.equal(JSON.parse(secureValues.get(CONTROL)!).receiptSecret, body.receiptSecret, 'secret must be durable before POST');
       if (hooks.rejectStartBeforeCommit) throw new Error('synthetic request never reached server');
@@ -247,6 +252,70 @@ test('Apple code collection is gated by server capability; existing verified Goo
   const applePost = apple.calls.find(c => c.url.endsWith('/account-deletion') && c.method === 'POST')!;
   assert.deepEqual(applePost.body!.providerTokens, { appleAuthorizationCode: 'synthetic-apple-code' });
   assert.equal(apple.secureValues.get(CONTROL)!.includes('synthetic-apple-code'), false);
+});
+test('retained Apple grant capability accepts only boolean true and defaults false for older or malformed responses', () => {
+  assert.equal(parseDeletionCapabilities({ appleGrantRetained: true }).appleGrantRetained, true);
+  for (const value of [undefined, null, {}, false, 'true', 1, []]) {
+    assert.equal(parseDeletionCapabilities(value).appleGrantRetained, false);
+  }
+  for (const value of [undefined, null, false, 'true', 'false', 1, 0, {}, [], new Boolean(true)]) {
+    assert.equal(parseDeletionCapabilities({ appleGrantRetained: value }).appleGrantRetained, false);
+  }
+});
+test('retained Apple grant skips the initial prompt but keeps explicit repair available and Google collection intact', async () => {
+  const h = await harness();
+  h.user.identities = [{ provider: 'apple', identity_data: { sub: 'apple-subject' } }, { provider: 'google', identity_data: {} }];
+  h.hooks.appleExchange = true; h.hooks.appleGrantRetained = true; h.hooks.googleRevoke = true;
+  await h.client.startAccountDeletion();
+  assert.equal(h.appleCalls, 0);
+  const initial = h.calls.find(c => c.url.endsWith('/account-deletion') && c.method === 'POST')!;
+  assert.deepEqual(initial.body!.providerTokens, { google: 'synthetic-provider-token' });
+  const secret = JSON.parse(h.secureValues.get(CONTROL)!).receiptSecret;
+  h.hooks.providerFailure = 'apple'; h.hooks.refreshReady = true;
+  await h.client.pollAccountDeletion(); assert.equal(h.appleCalls, 0);
+  await h.client.refreshDeletionProviderCredentials('apple');
+  assert.equal(h.appleCalls, 1, 'explicit repair must still obtain fresh Apple credentials');
+  const repair = h.calls.find(c => c.body?.refreshProviderCredentials === true)!;
+  assert.equal(repair.body!.receiptSecret, secret);
+  assert.deepEqual(repair.body!.providerTokens, { appleAuthorizationCode: 'synthetic-apple-code' });
+  assert.equal(h.secureValues.get(CONTROL)!.includes('synthetic-apple-code'), false);
+  assert.equal(h.values.get('activity-store'), 'saved activities');
+});
+test('missing, false and malformed retained-grant capabilities preserve the initial Apple prompt', async () => {
+  for (const value of [undefined, false, 'true', 1, null, {}]) {
+    const h = await harness();
+    h.user.identities = [{ provider: 'apple', identity_data: { sub: 'apple-subject' } }];
+    h.hooks.appleExchange = true; h.hooks.appleGrantRetained = value;
+    await h.client.startAccountDeletion(); assert.equal(h.appleCalls, 1);
+    const post = h.calls.find(c => c.url.endsWith('/account-deletion') && c.method === 'POST')!;
+    assert.deepEqual(post.body!.providerTokens, { appleAuthorizationCode: 'synthetic-apple-code' });
+  }
+});
+test('retained-grant initial path still verifies the original session after capability lookup', async () => {
+  const h = await harness(); let reads = 0;
+  h.user.identities = [{ provider: 'apple', identity_data: { sub: 'apple-subject' } }];
+  h.hooks.appleExchange = true; h.hooks.appleGrantRetained = true;
+  h.hooks.beforeCapabilityResponse = () => { if (++reads === 2) h.hooks.authDeleted = true; };
+  await assert.rejects(h.client.startAccountDeletion(), /not confirmed/);
+  assert.equal(reads, 2); assert.equal(h.appleCalls, 0);
+  assert.equal(h.calls.some(c => c.method === 'POST'), false);
+  assert.equal(h.values.get('activity-store'), 'saved activities');
+});
+test('retained grant does not bypass repair readiness, exchange configuration or same-owner authentication', async () => {
+  const h = await harness();
+  h.user.identities = [{ provider: 'apple', identity_data: { sub: 'apple-subject' } }];
+  h.hooks.appleGrantRetained = true; h.hooks.providerFailure = 'apple';
+  await h.client.startAccountDeletion();
+  await assert.rejects(h.client.refreshDeletionProviderCredentials('apple'), /released credential repair/);
+  h.hooks.refreshReady = true;
+  await assert.rejects(h.client.refreshDeletionProviderCredentials('apple'), /not configured/);
+  assert.equal(h.appleCalls, 0);
+  h.hooks.appleExchange = true; h.hooks.wrongReauthOwner = true;
+  await assert.rejects(h.client.refreshDeletionProviderCredentials('apple'), /Apple account that owns/);
+  assert.equal(h.appleCalls, 1);
+  assert.equal(h.calls.some(c => c.body?.refreshProviderCredentials === true), false);
+  assert.equal(JSON.parse(h.secureValues.get(OWNER_KEY)!).ownerUserId, OWNER);
+  assert.equal(h.values.get('activity-store'), 'saved activities');
 });
 test('disabled server automation and active recordings cannot initiate deletion', async () => {
   const h = await harness(); h.hooks.automation = false;

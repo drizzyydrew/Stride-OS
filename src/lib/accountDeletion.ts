@@ -59,7 +59,9 @@ async function collectProviderTokens(owner: string, capabilities: DeletionCapabi
   const tokens: ProviderTokens = {};
   const identities = user.identities ?? [];
   if (capabilities.googleTokenRevoke && identities.some(identity => identity.provider === 'google') && session.provider_token) tokens.google = session.provider_token;
-  if (allowPrompt && capabilities.appleCodeExchange) {
+  // Retained server custody avoids only the initial prompt; explicit credential
+  // repair below still performs fresh same-owner Apple authentication.
+  if (allowPrompt && capabilities.appleCodeExchange && !capabilities.appleGrantRetained) {
     const apple = identities.find(identity => identity.provider === 'apple');
     const subject = apple?.identity_data?.sub;
     if (typeof subject === 'string' && subject && await AppleAuthentication.isAvailableAsync()) {

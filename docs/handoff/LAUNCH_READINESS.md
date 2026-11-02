@@ -1,6 +1,15 @@
 # StrideOS Launch Readiness
 
-Current checkpoint: November 1, 2026 Pacific. Canonical Developer source
+Latest continuation: **November 2, 2026** — see
+[`LAUNCH_PROGRESS_20261102.md`](LAUNCH_PROGRESS_20261102.md). Source regression
+passed 1,581/1,581; scoped live database acceptance passed 1,262 checks. Reviewed
+Apple custody/deletion functions are deployed and privacy is updated. New public
+registrations are temporarily closed pending secure email setup; existing
+reviewer login is verified. The separate Apple key is prepared for the owner,
+not registered. Real provider/device/billing acceptance and current native
+assets remain open. These source changes have no new native build yet.
+
+Prior artifact checkpoint: November 1, 2026 Pacific. Canonical Developer source
 `cf41d1a38b3353f8de2fb84363fcdfdb1b16a428` is committed and pushed. Engineering
 and scoped council reviews are not a human security audit, clinical validation,
 legal opinion or physical-device acceptance. Dated evidence below is preserved;
