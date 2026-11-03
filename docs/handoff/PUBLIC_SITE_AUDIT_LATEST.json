@@ -1,6 +1,6 @@
 {
-  "checkedAt": "2026-11-03T07:42:43.929638+00:00",
-  "scope": "HTTPS content and source-relative file-target audit; no external linked-service actions or full accessibility/legal certification",
+  "checkedAt": "2026-11-03T08:11:37.286432+00:00",
+  "scope": "HTTPS source-byte and relative-file-target audit; no legal certification",
   "pages": [
     {
       "page": "index.html",
@@ -22,9 +22,9 @@
       "page": "privacy.html",
       "httpStatus": "200",
       "matchesCanonical": true,
-      "sha256": "d8649406007d0d7052015ced6b8387d744d97581f061af1974b4c0655c1fe336",
+      "sha256": "1d72a59fdbf41268b703055cb0afbbce9360c887d3623cf71e8dd6bccc33474d",
       "missingRelativeTargets": [],
-      "links": 9
+      "links": 10
     },
     {
       "page": "terms.html",
@@ -35,7 +35,10 @@
       "links": 9
     }
   ],
-  "expected_publication_changes": false,
+  "publishedPaths": [
+    "docs/privacy.html"
+  ],
+  "publicationCommit": "3d6bfe59100cf064ed4ae46a34f278390ff81627",
   "appSourceChanged": false,
   "newBuildStarted": false,
   "paidServiceAdded": false

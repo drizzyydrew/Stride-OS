@@ -42,3 +42,12 @@ owner; consider qualified trademark counsel before committing to a final name.
 No rebrand, new domain, filing, paid search or contact with the other developer
 is authorized by this review. The preparation work remains useful whichever
 public name is ultimately accepted.
+
+The owner decision is whether to retain the current name after appropriate
+review and differentiation, or develop a more distinctive public name before
+promotion. Retaining it preserves existing work but leaves the observed
+discovery/support confusion to resolve. A more distinctive name may reduce
+that confusion but requires new clearance and updates to public materials;
+adding “fitness” alone does not establish rights or availability. This report
+does not select or clear a replacement name. Existing accounts, keys, domain
+and app identifiers remain intact while that decision is considered.

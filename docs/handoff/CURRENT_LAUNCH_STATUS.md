@@ -55,7 +55,9 @@ Neither draft has been sent, posted or saved into Apple's review fields.
 November 3 council continuation corrected unsupported professional-analysis
 wording and the support-correspondence disclosure, mapped reviewer navigation,
 clarified historical checkpoints and strengthened proposed support/reviewer
-custody. Private financial source documents are organized outside both app
+custody. The factual privacy corrections are published and byte-verified at the
+existing free URL; no launch promotion was posted. Private financial source
+documents and a service-cost register are organized outside both app
 checkouts; no invoice, private manifest or source email is stored here. The
 supplemental mailbox sweep was rate-limited, and Apple's original invoice remains
 uncollected despite captured order/enrollment evidence. See

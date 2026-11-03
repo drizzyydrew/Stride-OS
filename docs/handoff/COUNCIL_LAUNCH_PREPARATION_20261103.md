@@ -101,7 +101,15 @@ Whitespace and relevant link checks, reviewer-note size, financial attachment
 byte identity, indexes, local-page targets and privacy rendering are checked.
 The privacy page renders without horizontal overflow at 393 and desktop width;
 there is no professional-analysis service claim in the corrected body.
-Publication readback is recorded after the exact Pages write.
+Only `docs/privacy.html` was published to the existing Pages branch in
+`3d6bfe59100cf064ed4ae46a34f278390ff81627`; Pages reports built with no error.
+All four public pages returned HTTPS 200 and matched canonical source after the
+write. Corrected privacy SHA-256:
+`1d72a59fdbf41268b703055cb0afbbce9360c887d3623cf71e8dd6bccc33474d`.
+Live browser readback and `/tmp/strideos-council-privacy-live-20261103.png`
+show the support disclosure and corrected analysis-tool wording. Exact receipt:
+`COUNCIL_PUBLICATION_20261103.json`. No promotional or handoff document was
+published to the website by that commit.
 
 No native regression suite was repeated for documentation, privacy HTML and
 ignore-rule changes. Device, provider-deletion and purchase acceptance remain

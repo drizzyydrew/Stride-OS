@@ -1,0 +1,21 @@
+{
+  "sourceCommit": "8bf794b",
+  "hostingBranch": "claude/stride-os-visibility-sxl7xl",
+  "publicationCommit": "3d6bfe59100cf064ed4ae46a34f278390ff81627",
+  "publishedPaths": [
+    "docs/privacy.html"
+  ],
+  "pagesStatus": "built",
+  "privacySHA256": "1d72a59fdbf41268b703055cb0afbbce9360c887d3623cf71e8dd6bccc33474d",
+  "httpsStatus": 200,
+  "matchesCanonical": true,
+  "localMobileWidth": 393,
+  "mobileHorizontalOverflow": false,
+  "nativeSourceChanged": false,
+  "newAccountsCreated": false,
+  "newCostsAdded": false,
+  "publicAppReleased": false,
+  "browserVerified": true,
+  "proofScreenshot": "/tmp/strideos-council-privacy-live-20261103.png",
+  "verifiedAt": "2026-11-03T08:13:50.285294+00:00"
+}
