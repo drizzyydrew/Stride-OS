@@ -1,115 +1,81 @@
-# Resend Auth email setup — selected, not connected
+# Resend Auth email setup — domain verified; SMTP owner handoff
 
-Owner decision: use Resend instead of Brevo. Canonical StrideOS Supabase project
-is `pbzgrhnxpbtlkzpreizy`. Bet Desk is outside this change. Existing free website,
-support, privacy and terms URLs stay unchanged. Preserve the unfinished Brevo
-account and its records; do not delete it or complete its address form.
+Verified November 2, 2026 Pacific (November 3 UTC). This supersedes the earlier
+cart/private-card checkpoint in `RESEND_ACCOUNT_PREPARATION_20261102.json`.
+The current redacted receipt is `RESEND_DOMAIN_CONNECTION_20261102.json`.
 
-## Prepared
+## Completed and verified
 
-- Owner sign-in is verified in Resend. The owner reports Google sign-in; the
-  dashboard and actual usage page confirm the expected owner account and Free
-  transactional plan, 0/3,000 monthly sends, 0/100 daily sends and 0/3 domains.
-  Pay-as-you-go switches are off. This does not guarantee later billing or fraud
-  checks never request an address.
-- Existing confirmation/recovery HTML templates can be reused without app code
-  or another native build merely to change the SMTP provider.
-- Current published Free transactional plan is $0, 3,000 emails/month and
-  100/day. SMTP is included. Do not select Pro, add-ons, paid inboxes or credits.
-- Sending domain and DNS ownership are still required for production. The
-  GitHub project website is not a domain whose email DNS the owner controls.
-  Resend's shared `resend.dev` sender can only test the account's own inbox;
-  it cannot be a production-sending workaround for arbitrary app users.
-- Vercel's read-only connector returned `trainwithstrideos.com` and
-  `strideosfitness.com` available, each quoted at $12.03 for one year and $12.03
-  renewal at lookup time. No purchase is authorized by this research. Tax/final
-  checkout, current availability and renewal settings must be checked before
-  any charge. The owner has now chosen **strideosfitness.com**; it remains
-  unpurchased and no DNS record is written. A fresh exact-name/one-year lookup
-  still returns available, $12.03 registration and $12.03 renewal.
-- The first three candidates returned `available:false`: `strideos.app`,
-  `getstrideos.com`, `strideos.run`. That means unavailable or not confirmed,
-  not proof of ownership. See `RESEND_DOMAIN_OPTIONS_20261102.json`.
+- The owner completed Vercel registration of **strideosfitness.com**. Its order
+  is completed for one year at a listed registration price of **$12.03**;
+  final tax/charged total was not independently inspected. The approved cap
+  was $15 including fees. No additional purchase was made by the agent.
+- Expiration is **November 2, 2027**. The initial registration enabled renewal.
+  The UI toggle did not persist; the official CLI disabled it and the connector
+  independently returned **renew=false**. Manual renewal is required to retain
+  the domain after this term. No hosting upgrade or add-on was purchased.
+- Authoritative nameservers are Vercel. Existing root/wildcard ALIAS and CAA
+  records are preserved. The domain is not attached to a Bet Desk project.
+- Resend's **auth.strideosfitness.com** domain now reads **Verified / ready to
+  send emails**. The actual dashboard supplied a public DKIM TXT record and
+  two Forge CNAME records; these were added exactly as supplied, rather than
+  substituting an older generic MX/SPF setup. Both authoritative DNS and a
+  public recursive resolver returned the exact values.
+- The optional provider-recommended `_dmarc` TXT baseline is `v=DMARC1; p=none;`.
+  It specifies no reporting recipient and does not reject mail. See the receipt
+  for separate DNS propagation/readback status.
+- Resend Free was verified: 3,000/month, 100/day, $0 plan, pay-as-you-go off.
+  No receiving mailbox or tracking subdomain was created. The tracking editor
+  was only inspected and left without saving its default draft options.
+- Existing free GitHub Pages website/support/privacy/terms URLs remain in use.
+  Registering this domain does not automatically move the website or create a
+  support inbox. Preserve the unfinished Brevo account and its records.
 
-## Execution after account and domain approval
+## Exact owner handoff, prepared in the browser
 
-1. Verify the correct owner Resend account and Free plan. Account creation and
-   terms are owner actions. Keep credentials and codes out of chat and logs.
-2. Present the exact chosen domain, registration term, final price/tax, renewal
-   preference and registrant privacy for approval before purchase. Registrars
-   still require truthful contact information even when public WHOIS privacy is
-   included. Private registrant details are owner-entered, not copied from chat
-   history. No automatic renewal or unrelated Vercel plan is authorized here.
-3. After ownership is established, add an authentication sending subdomain in
-   Resend, using the exact DNS records it supplies. Keep existing records and
-   website URLs. Verify actual DNS and Resend status, not just accepted writes.
-   Disable open and click tracking for Auth messages; prepare DMARC accurately.
-4. Prepare a dedicated `StrideOS Supabase Auth` API key with Sending access,
-   restricted to the verified sending domain where supported. The owner handles
-   creation/copy/private entry. Never place it in public app/EAS variables,
-   source, screenshots or chat. Do not generate an unrestricted spare key.
-5. Configure only StrideOS Auth SMTP: host `smtp.resend.com`, port `465`,
-   username `resend`, password the private API key, and verified-domain From
-   address with display name StrideOS. These are Resend's documented Supabase
-   SMTP settings; use Supabase's secure transport configuration. No credential
-   exists or is installed yet. No provider switch is saved by this document.
-6. Review the email processor/privacy disclosure before activation. Apply the
-   prepared Supabase HTML templates preserving `{{ .ConfirmationURL }}`.
-   Enforce the correct native callback/redirect allowlist and existing limits.
-   A paid Supabase custom domain is an optional deliverability improvement,
-   not an automatic purchase or prerequisite for this SMTP integration.
-7. Test confirmation and recovery in signed native build 109 using an agreed
-   disposable identity: inbox delivery, one-use/expired/resend behavior, reset
-   password, correct project/callback and retained-history isolation. Keep raw
-   tokens/links/private inbox contents out of receipts. Check the delivered
-   footer to establish actual address exposure instead of generalizing the
-   former Brevo banner. Reopen signup only after accepted outcomes.
+1. Resend API keys form: **StrideOS Supabase Auth**, **Sending access**, domain
+   **auth.strideosfitness.com**. The owner clicks **Add** and copies the newly
+   generated key privately. No key has been generated by the agent.
+2. In the open StrideOS Supabase SMTP form, paste the key into **Password** and
+   click **Save changes**. Other fields are already drafted:
 
-## Current owner handoff
+   | Field | Value |
+   | --- | --- |
+   | Project | stride-os / `pbzgrhnxpbtlkzpreizy` / Moore Movement |
+   | Sender | `no-reply@auth.strideosfitness.com` |
+   | Sender name | StrideOS |
+   | Host | `smtp.resend.com` |
+   | Port | 465 |
+   | Username | `resend` |
 
-The Vercel cart contains only strideosfitness.com at $12.03. Both the compact
-and full checkout routes stalled at Billing Information; the separate team
-billing page loaded and confirms **no payment method added**. Its Add a Card
-form is prepared for owner-only entry. The draft checkbox using this billing
-address as the team's primary address was unchecked; no card, address or team
-setting was saved. Do not infer an actual saved card from the quote tool's
-generic default-payment-method wording.
+The SMTP toggle is on only in an **unsaved form draft** at handoff. The saved
+configuration was off when opened. No save, credential entry, test email or
+signup reopening was performed by the agent. After owner action, read back
+saved settings without exposing the key. Browser credential policy requires
+owner creation, copy/private entry and submission; no key in source, chat,
+screenshots, public app or EAS variables.
 
-The owner explicitly approved a **$15 total maximum including tax/fees**, one
-year and **auto-renew off** for strideosfitness.com through Vercel. This approval
-does not extend to a hosting upgrade, add-on, second domain or Resend paid plan.
-The read-only quote discloses non-refundable, immediate registration and possible
-tax/fees beyond its $12.03 base. Quotes expire; refresh/recheck before any charge
-while preserving the owner's approved ceiling and scope. An API quote's broader
-account spend cap is not this task's spending authorization. Do not charge
-against an unknown final total that could exceed $15. No
-Vercel plan upgrade or add-on is part of this scope. WHOIS privacy is listed as
-included for .com; truthful registrar contact information is still required
-privately. Do not copy contact or payment details from prior chat or memory.
+## Remaining acceptance
 
-Resend's Add domain form is prepared with `auth.strideosfitness.com` but not
-submitted. Establish ownership before creating the sending domain and its key.
-Cart proof: `/tmp/strideosfitness-domain-cart-ready.png`. Free-plan proof:
-`/tmp/strideos-resend-free-plan-verified.png`.
-
-Fresh post-approval browser readback still shows no Vercel payment method,
-an open Add a Card form and the primary-team-address draft checkbox unchecked.
-Owner payment entry is handed off. No private payment/contact values are
-recorded or entered by the agent. Do not repeat spending confirmation for
-unchanged work within the approved scope; private owner input remains separate.
-
-Current state: owner account signed in and Free plan verified; domain chosen
-and purchase budget approved, awaiting owner private billing entry; no
-account/key creation by agent, no domain purchase, no SMTP save, no test email,
-no delivery acceptance. See
-`RESEND_ACCOUNT_PREPARATION_20261102.json` for the redacted checkpoint.
+- Review/publish accurate Resend processor disclosure before real-user sending.
+  Auth email processing exposes recipient email and authentication-message
+  content to the provider; it does not need workouts, HealthKit, GPS or videos.
+- After SMTP is saved, deploy the prepared confirmation and password-recovery
+  HTML, preserving `{{ .ConfirmationURL }}`. Keep open/click tracking disabled.
+- Verify exact signed-app callback and production redirect allowlist. Test inbox
+  delivery, reset/confirmation, expired/one-use/resend behavior and native return
+  in signed build 109 using an agreed disposable identity. The owner enters any
+  new password privately. Keep raw links/tokens out of receipts.
+- Check delivered footer/address exposure and record actual results. A sending
+  domain being Verified does not accept inbox delivery or prove a privacy audit.
+- Keep public signup closed until acceptance passes. Keep payments/public
+  release off; Bet Desk and real customer records are outside this setup.
 
 ## Primary references
 
-- [Resend signup](https://resend.com/signup)
-- [Current pricing](https://resend.com/pricing.md)
-- [Supabase SMTP integration](https://resend.com/docs/send-with-supabase-smtp)
-- [Verified sending domains](https://resend.com/docs/dashboard/domains/introduction)
-- [Shared sender restrictions](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain)
-- [Auth deliverability and tracking](https://resend.com/docs/knowledge-base/how-do-i-maximize-deliverability-for-supabase-auth-emails)
-- [Vercel domain pricing and WHOIS privacy](https://vercel.com/domains/pricing)
+- [Resend Supabase SMTP](https://resend.com/docs/send-with-supabase-smtp)
+- [Verified domains](https://resend.com/docs/dashboard/domains/introduction)
+- [Restricted API keys](https://resend.com/docs/dashboard/api-keys/introduction)
+- [Auth deliverability](https://resend.com/docs/knowledge-base/how-do-i-maximize-deliverability-for-supabase-auth-emails)
+- [Supabase custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp)
+- [Resend pricing](https://resend.com/pricing.md)

@@ -1,0 +1,93 @@
+{
+  "checkedAt": "2026-11-03T04:52:04.905742+00:00",
+  "domain": "strideosfitness.com",
+  "registrar": "Vercel",
+  "teamId": "team_mIT8D6GGqwbcK4MaIookMLul",
+  "orderId": "01M6FT2NV4W4BWZ6ZPQDA8TN22",
+  "orderStatus": "completed",
+  "registrationYears": 1,
+  "registrationPriceUSD": 12.03,
+  "taxOrFinalChargedTotalIndependentlyVerified": false,
+  "ownerCompletedPurchase": true,
+  "agentMadePurchase": false,
+  "approvedTotalMaximumUSD": 15,
+  "expiresOn": "2027-11-02",
+  "autoRenew": false,
+  "autoRenewReadbackVerified": true,
+  "autoRenewChangedVia": "Vercel CLI 60.1.3 domains auto-renew off; connector readback renew=false",
+  "nameservers": [
+    "ns1.vercel-dns.com",
+    "ns2.vercel-dns.com"
+  ],
+  "existingRootAndWildcardRecordsPreserved": true,
+  "resendPlan": "Free",
+  "sendingDomain": "auth.strideosfitness.com",
+  "resendDomainId": "293334df-e9de-43cf-8441-b24065f9c0a7",
+  "resendStatus": "Verified",
+  "resendSendingReadyObserved": true,
+  "receivingEnabled": false,
+  "trackingSubdomainConfigured": false,
+  "dns": [
+    {
+      "id": "rec_3c27975c1b2a7866c46ac633",
+      "name": "resend._domainkey.auth",
+      "type": "TXT",
+      "purpose": "Resend supplied public DKIM",
+      "authoritativeAndPublicResolverVerified": true
+    },
+    {
+      "id": "rec_b703a6e4aefc4554f6e7eb26",
+      "name": "rsend.auth",
+      "type": "CNAME",
+      "value": "rsend.forge.rmta.net",
+      "authoritativeAndPublicResolverVerified": true
+    },
+    {
+      "id": "rec_e7eb1d8085a79e6b61aa0e14",
+      "name": "send.auth",
+      "type": "CNAME",
+      "value": "send.forge.rmta.net",
+      "authoritativeAndPublicResolverVerified": true
+    },
+    {
+      "id": "rec_e5f917a149a684b77e546cb0",
+      "name": "_dmarc",
+      "type": "TXT",
+      "value": "v=DMARC1; p=none;",
+      "authoritativeAndPublicResolverVerified": true
+    }
+  ],
+  "keyDraft": {
+    "name": "StrideOS Supabase Auth",
+    "permission": "Sending access",
+    "domain": "auth.strideosfitness.com",
+    "generatedByAgent": false,
+    "ownerCreationPending": true
+  },
+  "smtpDraft": {
+    "projectRef": "pbzgrhnxpbtlkzpreizy",
+    "sender": "no-reply@auth.strideosfitness.com",
+    "senderName": "StrideOS",
+    "host": "smtp.resend.com",
+    "port": 465,
+    "username": "resend",
+    "passwordEmptyAtHandoff": true,
+    "savedByAgent": false
+  },
+  "ownerHandoffPending": true,
+  "smtpEnabledVerified": false,
+  "emailSentByAgent": false,
+  "deliveryAndCallbackAccepted": false,
+  "signupReopenedByAgent": false,
+  "websiteURLsChanged": false,
+  "paidPlanOrAddOnPurchasedByAgent": false,
+  "proofScreenshots": [
+    "/tmp/strideos-resend-domain-verified.png",
+    "/tmp/strideos-resend-key-draft.png"
+  ],
+  "limitations": [
+    "Domain verification is not SMTP, inbox delivery or native callback acceptance.",
+    "The From address is sending-only, not a provisioned support mailbox.",
+    "Owner must keep API keys out of chat and copy the key directly to Supabase."
+  ]
+}

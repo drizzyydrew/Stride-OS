@@ -1,27 +1,26 @@
 # StrideOS Launch Readiness
 
-Email-provider decision: **Resend selected and owner sign-in verified**,
-superseding the Brevo test proposal. Actual account usage confirms Free,
-3,000/month and 100/day, with no pay-as-you-go enabled. The owner selected
-**strideosfitness.com**; fresh quote is $12.03/year and current renewal $12.03.
-Single-domain cart and private Add a Card form are prepared. The account has no
-saved Vercel payment method; domain checkout stalls while loading billing.
-The owner has approved a $15 total maximum including tax/fees, one year and
-auto-renew off. Fresh readback still shows no saved Vercel payment method;
-private card entry is handed off without saving a card/address or changing
-team settings. Production sending still requires domain ownership/verification,
-private SMTP key installation and delivery/callback acceptance. No domain
-purchase, sending-domain creation, key generation or DNS change occurred.
-See `email-templates/RESEND_SETUP.md`. Public registration and SMTP remain off;
-neither provider signup nor a template draft establishes launch readiness.
+Email update, November 2: the owner completed **strideosfitness.com** registration.
+Vercel order is completed for one year; expiration November 2, 2027, listed
+registration price $12.03 (final charged tax/total not independently inspected).
+**Auto-renew was disabled and independently read back false.** Resend Free is
+retained. **auth.strideosfitness.com is Verified / ready to send** after exact
+DKIM/Forge DNS records were added and verified through authoritative/public DNS.
+Root/wildcard/CAA records and the free website URLs are preserved. No paid
+hosting, add-on, mailbox or agent-initiated second purchase.
 
-Owner-access update, November 2: the owner approved a **$20/month Claude API
-organization limit**, saved and verified after reload. No credits purchased or
-auto-reload changed; no over-limit request was sent. Apple and Claude are signed
-in. The owner has no email provider or domain; the free Brevo signup page is
-prepared for owner account creation. Sender activation, SMTP, actual delivery,
-recovery and long-term sender identity remain unaccepted. See
-`AI_VENDOR_SPENDING_20261102.json` and `email-templates/BREVO_TEST_SETUP.md`.
+Owner handoff: the domain-restricted **Sending access** key form and StrideOS
+SMTP form are prepared. The owner must create/copy the key directly into
+Supabase Password and Save changes. The agent has not generated/entered a key
+or saved SMTP. Public signup remains closed; delivery, native callbacks, reset,
+templates and processor disclosure acceptance remain open. Domain verification
+is not delivery acceptance. See `email-templates/RESEND_SETUP.md` and
+`email-templates/RESEND_DOMAIN_CONNECTION_20261102.json`.
+
+The Claude API organization limit is separately saved/read back at **$20/month**;
+no credits bought or auto-reload changed. The earlier Brevo/no-domain proposal
+is superseded by the completed domain and Resend configuration above. It does
+not reopen any closed launch gate or enable billing/public release.
 
 Latest independent preparation, November 2: private purchase-test **110** is
 signed-archive verified and **VALID / IN_BETA_TESTING internally**, isolated from

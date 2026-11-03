@@ -11,30 +11,30 @@ verified as **109 / manual release / Prepare for Submission**. See
 `BILLING_QA110_RELEASE.md`. Following renewed owner sign-in, 110's private-QA
 test note is saved and verified after reload. No new tester invitation was sent.
 
-Owner-access follow-up: Apple and the Claude API console are signed in. The
-owner's Resend account is now signed in and its Free plan verified; custom SMTP
-remains off.
-The owner approved reducing the signed-in Claude organization's monthly limit
-from $1,000 to **$20**. It is saved and verified after reload, with the next
-reset shown as December 1 UTC. This applies to every API project in that
-organization. No credits were purchased or auto-reload changed. See
-`AI_VENDOR_SPENDING_20261102.json`; this receipt does not test an actual
-over-limit request or independently match the deployed API key's organization.
-The owner confirmed **no domain is owned** and subsequently selected **Resend**
-instead of Brevo after the address-onboarding concern. Google sign-in is
-reported by the owner and Resend dashboard/Free-plan access is verified. The agent did not
-create a provider account, key, SMTP connection or paid plan. The existing email
-templates can be reused. A controlled sending domain is required before
-production sending; the shared GitHub hostname is not a DNS-controlled sending
-domain. The owner selected **strideosfitness.com**. It is freshly available at
-$12.03/year with the same current renewal quote. The single-domain cart and
-private payment form are prepared, but the account has no saved Vercel payment
-method and the actual domain checkout stalled while loading billing. The owner
-has approved a $15 total maximum including tax/fees, one year and no auto-renew.
-Fresh post-approval readback still shows no payment method; private card entry
-is handed off, with the team-primary-address draft checkbox unchecked. No
-domain is purchased, sending domain created or API key generated. See
-`email-templates/RESEND_SETUP.md`.
+Owner-access follow-up: Apple and Claude were signed in. The Claude organization's
+**$20/month** limit is saved/read back; no credits or automatic reload purchased.
+That organization-wide limit does not independently prove which organization
+owns the deployed API key. See `AI_VENDOR_SPENDING_20261102.json`.
+
+The owner completed **strideosfitness.com** registration at Vercel for one year.
+The completed order lists $12.03; final charged tax/total was not inspected.
+Expiration is November 2, 2027. Auto-renew is **off**, verified through a separate
+connector readback after the official CLI changed it. The approved cap was $15
+including tax/fees. No hosting upgrade/add-on or second domain was purchased.
+
+**auth.strideosfitness.com is Verified in Resend and ready to send.** The exact
+provider DKIM TXT and Forge CNAME records are live in authoritative and public
+DNS; existing domain records and free website URLs are preserved. Resend stays
+on Free. No receiving mailbox or tracking subdomain is configured.
+
+The owner-only key/SMTP step is prepared: create the `StrideOS Supabase Auth`
+key with Sending access restricted to the verified domain, copy directly into
+the open StrideOS Supabase SMTP Password field and Save changes. All public
+SMTP fields are drafted. No new credential was generated/entered by the agent,
+SMTP save performed, email sent or signup reopened. Templates, processor
+privacy disclosure, inbox/native-callback acceptance remain to be completed.
+See `email-templates/RESEND_SETUP.md` and its current domain-connection receipt.
+Earlier card/cart and Brevo checkpoints are historical, not current blockers.
 
 ## Planning estimate
 
