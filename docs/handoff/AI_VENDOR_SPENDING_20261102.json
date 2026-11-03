@@ -1,0 +1,20 @@
+{
+  "checkedAt": "2026-11-03T03:30:06.462216+00:00",
+  "service": "Claude API Console",
+  "scope": "all API projects in the signed-in organization",
+  "ownerApproved": true,
+  "previousMonthlyLimitUSD": 1000,
+  "savedMonthlyLimitUSD": 20,
+  "verifiedAfterReload": true,
+  "nextResetObserved": "2026-12-01 UTC",
+  "creditsPurchased": false,
+  "autoReloadChanged": false,
+  "actualOverLimitRequestTested": false,
+  "deployedApiKeyOrganizationIndependentlyMatched": false,
+  "emailProviderExists": false,
+  "ownerControlsDomain": false,
+  "brevoFreeSignupPrepared": true,
+  "brevoAccountCreatedByAgent": false,
+  "smtpEnabledByAgent": false,
+  "screenshot": "/tmp/strideos-ai-limit-20-saved.png"
+}

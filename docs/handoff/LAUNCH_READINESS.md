@@ -1,5 +1,13 @@
 # StrideOS Launch Readiness
 
+Owner-access update, November 2: the owner approved a **$20/month Claude API
+organization limit**, saved and verified after reload. No credits purchased or
+auto-reload changed; no over-limit request was sent. Apple and Claude are signed
+in. The owner has no email provider or domain; the free Brevo signup page is
+prepared for owner account creation. Sender activation, SMTP, actual delivery,
+recovery and long-term sender identity remain unaccepted. See
+`AI_VENDOR_SPENDING_20261102.json` and `email-templates/BREVO_TEST_SETUP.md`.
+
 Latest independent preparation, November 2: private purchase-test **110** is
 signed-archive verified and **VALID / IN_BETA_TESTING internally**, isolated from
 the saved public draft **109 / manual release / Prepare for Submission**. No

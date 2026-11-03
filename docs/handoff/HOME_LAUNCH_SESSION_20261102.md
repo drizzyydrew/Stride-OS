@@ -13,10 +13,17 @@ test note is saved and verified after reload. No new tester invitation was sent.
 
 Owner-access follow-up: Apple and the Claude API console are signed in. The
 owner confirmed **no email provider exists yet**; custom SMTP remains off.
-The signed-in Claude organization shows a $1,000 monthly limit, not an approved
-testing budget. A proposed $20 organization-wide cap and existing-domain
-availability are awaiting explicit owner answers. No limit, credit purchase,
-auto-reload, sender account or paid plan was changed by that inspection.
+The owner approved reducing the signed-in Claude organization's monthly limit
+from $1,000 to **$20**. It is saved and verified after reload, with the next
+reset shown as December 1 UTC. This applies to every API project in that
+organization. No credits were purchased or auto-reload changed. See
+`AI_VENDOR_SPENDING_20261102.json`; this receipt does not test an actual
+over-limit request or independently match the deployed API key's organization.
+The owner confirmed **no domain is owned**. Brevo's free signup page is prepared
+for an owner-created account as a possible testing path; no provider account,
+SMTP connection, domain or paid plan has been created by the agent. Its
+replacement sender is a temporary measure, not an accepted long-term
+production solution. See `email-templates/BREVO_TEST_SETUP.md`.
 
 ## Planning estimate
 
