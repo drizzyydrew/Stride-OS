@@ -1,5 +1,10 @@
 # Brevo free email testing setup — not connected
 
+**Superseded:** the owner selected Resend after raising concerns about Brevo's
+required organization-address form. Do not continue Brevo onboarding or connect
+it. Preserve the partially created account; no deletion is authorized. Use
+`RESEND_SETUP.md` for the active plan. The historical research below is retained.
+
 November 2, 2026. Owner confirms no existing email service and no controlled
 domain. Keep GitHub Pages URLs and the no-unapproved-purchase preference.
 

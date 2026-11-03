@@ -19,11 +19,14 @@ reset shown as December 1 UTC. This applies to every API project in that
 organization. No credits were purchased or auto-reload changed. See
 `AI_VENDOR_SPENDING_20261102.json`; this receipt does not test an actual
 over-limit request or independently match the deployed API key's organization.
-The owner confirmed **no domain is owned**. Brevo's free signup page is prepared
-for an owner-created account as a possible testing path; no provider account,
-SMTP connection, domain or paid plan has been created by the agent. Its
-replacement sender is a temporary measure, not an accepted long-term
-production solution. See `email-templates/BREVO_TEST_SETUP.md`.
+The owner confirmed **no domain is owned** and subsequently selected **Resend**
+instead of Brevo after the address-onboarding concern. Resend signup is open
+for owner password creation, terms and email verification. The agent did not
+create a provider account, key, SMTP connection or paid plan. The existing email
+templates can be reused. A controlled sending domain is required before
+production sending; the shared GitHub hostname is not a DNS-controlled sending
+domain. Two domain candidates have live availability/one-year price receipts,
+but none is selected or purchased. See `email-templates/RESEND_SETUP.md`.
 
 ## Planning estimate
 

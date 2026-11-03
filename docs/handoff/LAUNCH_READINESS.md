@@ -1,5 +1,13 @@
 # StrideOS Launch Readiness
 
+Email-provider decision: **Resend selected by the owner**, superseding the
+Brevo test proposal. Signup is handed off for owner credentials, terms and
+verification. Production sending still requires a verified owned domain,
+private SMTP key installation and delivery/callback acceptance. Domain lookup
+and one-year price options are prepared, with no purchase or DNS change.
+See `email-templates/RESEND_SETUP.md`. Public registration and SMTP remain off;
+neither provider signup nor a template draft establishes launch readiness.
+
 Owner-access update, November 2: the owner approved a **$20/month Claude API
 organization limit**, saved and verified after reload. No credits purchased or
 auto-reload changed; no over-limit request was sent. Apple and Claude are signed
