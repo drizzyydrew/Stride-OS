@@ -37,7 +37,7 @@ source checks are not a physical-device reproduction or acceptance result.
 
 ## Review and verification
 
-Two independent council reviewers examined platform behavior and contrarian/data
+Two independent automated code reviewers examined platform behavior and contrarian/data
 custody risks, cross-examined findings, and reviewed revisions. Final security
 verdict: **proceed with scoped source; no P1 remains in reviewed paths**. No claim
 of whole-app security or device reliability follows from that verdict.
@@ -59,8 +59,10 @@ of whole-app security or device reliability follows from that verdict.
 
 Build **111**, production profile, client payments explicitly off. Private billing
 QA build 110 remains separate. Public draft was previously 109/manual release;
-do not submit it as though this fix were installed. New build, artifact inspection,
-Apple upload, internal availability and device acceptance are separate states.
+do not submit it as though this fix were installed. Build 111 is built, signed-archive inspected, uploaded, and confirmed
+**VALID / IN_BETA_TESTING** in the existing owner-only group. See
+`BUILD111_RELEASE.md` and the artifact/Apple receipts. Device acceptance remains
+separate and pending.
 No App Review/public release, signup reopening, subscription activation or
 account deletion is performed by this change.
 

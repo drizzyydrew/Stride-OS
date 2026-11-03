@@ -32,5 +32,27 @@
     "cancelled": 0
   },
   "typeScriptPassed": true,
-  "expoCompatibilityPassed": true
+  "expoCompatibilityPassed": true,
+  "sourceCommit": "dc318bf8e9c296efc3ef63351bb2d7dca8b3faa2",
+  "buildId": "be1f0cb0-dc73-4089-839a-4e23d1af4a86",
+  "buildStatus": "FINISHED",
+  "buildURL": "https://expo.dev/accounts/drizzyydrew/projects/StrideOS/builds/be1f0cb0-dc73-4089-839a-4e23d1af4a86",
+  "archiveVerified": true,
+  "artifactReceipt": "BUILD111_ARTIFACT_VERIFICATION.json",
+  "sourceMapUploadComplete": true,
+  "sourceMapRelease": "com.mooremovement.strideos@1.0.0+111",
+  "submissionId": "709968c7-bcb0-4a62-8fcf-4c8c1b8e89b3",
+  "submissionStatus": "FINISHED",
+  "testFlightGroup": "Team (Expo)",
+  "testFlightGroupId": "531e9db1-cac3-4779-8466-8426e2944a34",
+  "testFlightGroupInternalTesterCountObserved": 1,
+  "newTestersInvited": false,
+  "lastSubmissionCheckedAt": "2026-11-03T06:26:26.161946+00:00",
+  "appleProcessingObservedInWorkerLog": true,
+  "appleProcessingState": "VALID",
+  "appleInternalState": "IN_BETA_TESTING",
+  "internalAvailabilityVerified": true,
+  "testFlightNotesSavedAndReloaded": true,
+  "appleAcceptanceReceipt": "BUILD111_APPLE_ACCEPTANCE.json",
+  "proofScreenshot": "/tmp/strideos-build111-testflight-ready.png"
 }

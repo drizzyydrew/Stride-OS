@@ -2,8 +2,8 @@
 
 Password-reset incident update: the first reset reportedly worked, but repeating
 it after closing StrideOS left build 109 on **Finishing sign in…**. Email delivery
-is accepted; native recovery is not. A scoped source fix and regression coverage
-are prepared for **build 111**; see `AUTH_RESET_COLD_START_20261102.md`. Do not
+is accepted; native recovery is not. The scoped source fix passed 1,623 tests and signed-archive checks; **build 111
+is VALID / IN_BETA_TESTING internally**; see `AUTH_RESET_COLD_START_20261102.md`. Do not
 claim the installed build or public draft contains this fix before replacement
 artifact/upload/device acceptance is verified. No data deletion or public release.
 

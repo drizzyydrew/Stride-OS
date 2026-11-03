@@ -92,5 +92,15 @@
     "observedScreen": "Finishing sign in...",
     "status": "Source fix prepared for build 111; physical-device retest pending",
     "noAccountOrTrainingDataDeleted": true
+  },
+  "resendDeliveryDashboard": {
+    "checkedAt": "2026-11-03T06:09:18.287942+00:00",
+    "resetMessagesObserved": 3,
+    "statuses": [
+      "Delivered",
+      "Delivered",
+      "Delivered"
+    ],
+    "messageBodiesOrResetURLsOpened": false
   }
 }

@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-11-03T06:27:46.039517+00:00",
+  "build": {
+    "appVersion": "1.0.0",
+    "buildNumber": "111",
+    "processingState": "VALID",
+    "internalState": "IN_BETA_TESTING",
+    "externalState": "READY_FOR_BETA_SUBMISSION",
+    "uploadedDate": "2026-11-02T22:21:36-08:00",
+    "expired": false,
+    "easSubmissionId": "709968c7-bcb0-4a62-8fcf-4c8c1b8e89b3",
+    "easBuildId": "be1f0cb0-dc73-4089-839a-4e23d1af4a86",
+    "fingerprintHash": "9d9cca5c6edf3e61223c39e260d7c7ed042189df"
+  },
+  "groupName": "Team (Expo)",
+  "groupId": "531e9db1-cac3-4779-8466-8426e2944a34",
+  "groupAssignmentBrowserVerified": true,
+  "internalTesterCountObserved": 1,
+  "newInvitationsSent": false,
+  "publicReviewSubmitted": false,
+  "physicalDeviceAccepted": false,
+  "testFlightNotesSavedAndReloaded": true,
+  "proofScreenshot": "/tmp/strideos-build111-testflight-ready.png"
+}
