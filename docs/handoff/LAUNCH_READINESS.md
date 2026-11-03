@@ -1,5 +1,14 @@
 # StrideOS Launch Readiness
 
+November 3 council continuation: private business records are organized outside
+the checkouts with original-attachment byte verification. Apple's enrollment/order
+evidence is retained, but the original invoice remains uncollected. Supplemental
+mailbox searches hit the provider's rate limit, so completeness is not claimed.
+The social review found a separate fitness app named StrideOS; hold promotional
+publication, new public handles and additional brand spending for owner naming
+review. No rename or account creation occurred. See
+`COUNCIL_LAUNCH_PREPARATION_20261103.md` and `SOCIAL_HANDLE_REVIEW.md`.
+
 For the current execution sequence, use
 [Current launch status](CURRENT_LAUNCH_STATUS.md). Dated checkpoints below retain
 their original evidence scope; their earlier missing-service/build instructions
@@ -23,8 +32,9 @@ confirmation, real provider deletion, purchases and current store assets remain
 open. No public review/release, billing activation or customer deletion.
 
 Email update, November 2: the owner completed **strideosfitness.com** registration.
-Vercel order is completed for one year; expiration November 2, 2027, listed
-registration price $12.03 (final charged tax/total not independently inspected).
+Vercel order is completed for one year; expiration November 2, 2027. The original
+paid receipt was subsequently inspected on November 3 and confirms $12.03 total
+paid for the domain. That private source is retained outside the app checkouts.
 **Auto-renew was disabled and independently read back false.** Resend Free is
 retained. **auth.strideosfitness.com is Verified / ready to send** after exact
 DKIM/Forge DNS records were added and verified through authoritative/public DNS.
@@ -53,14 +63,16 @@ no credits bought or auto-reload changed. The earlier Brevo/no-domain proposal
 is superseded by the completed domain and Resend configuration above. It does
 not reopen any closed launch gate or enable billing/public release.
 
-Latest independent preparation, November 2: private purchase-test **110** is
-signed-archive verified and **VALID / IN_BETA_TESTING internally**, isolated from
+Historical private billing-QA preparation, November 2: private purchase-test **110**
+is signed-archive verified and **VALID / IN_BETA_TESTING internally**, isolated from
 the saved public draft **109 / manual release / Prepare for Submission**. No
 global billing or QA owner was enabled. AI Coach v14 deploys the existing inert
 single-owner test policy; downloaded source matches, 49 focused tests and seven
 post-deploy boundary checks passed. A new read-only home preflight passed 9/9
 preparation checks; its ten focused safety/boundary tests and TypeScript passed.
-These checks do not accept real devices, deletion, email or purchases.
+These checks do not accept real devices, deletion, email or purchases. This
+checkpoint predates the reset fix in 111; it is not a recommendation to use 110
+as the normal candidate. Follow the current status page for the next action.
 The earlier undeployed email-template checkpoint is superseded by the saved
 SMTP and exact template readback recorded above. RevenueCat product mappings and
 the existing public iOS SDK key match were freshly verified. Production
@@ -69,7 +81,7 @@ notification TEST 401 remains unresolved. See
 section's estimate and owner-only actions, and
 [`BILLING_QA110_RELEASE.md`](BILLING_QA110_RELEASE.md) for the private build.
 
-Latest continuation: **November 2, 2026** — see
+Historical 109 source/backend continuation: **November 2, 2026** — see
 [`LAUNCH_PROGRESS_20261102.md`](LAUNCH_PROGRESS_20261102.md). Source regression
 passed 1,581/1,581; scoped live database acceptance passed 1,262 checks. Reviewed
 Apple custody/deletion functions are deployed and privacy is updated. New public
@@ -79,13 +91,17 @@ key and main installed/verified its server settings. New native **109** is
 signed-archive verified, **VALID / IN_BETA_TESTING internally**, and selected in
 the saved manual-release draft. See [`BUILD109_RELEASE.md`](BUILD109_RELEASE.md). Real
 provider/device/billing acceptance, production email and current native assets
-remain open. No public review submission or release has occurred.
+remain open. No public review submission or release has occurred. These are that
+checkpoint's observations: the email-service/reset receipts above supersede its
+missing-email setup wording, and 111 supersedes its internal candidate target.
+The last recorded public-draft selection remains separately scoped to 109.
 
 Prior artifact checkpoint: November 1, 2026 Pacific. Canonical Developer source
 `cf41d1a38b3353f8de2fb84363fcdfdb1b16a428` is committed and pushed. Engineering
 and scoped council reviews are not a human security audit, clinical validation,
 legal opinion or physical-device acceptance. Dated evidence below is preserved;
-conflicting old readiness/next-build instructions are superseded by this status.
+conflicting old readiness/next-build instructions are superseded by
+[Current launch status](CURRENT_LAUNCH_STATUS.md).
 
 ## Prior Checkpoint — 108 Internal TestFlight; Device Acceptance Pending
 
@@ -147,7 +163,10 @@ conflicting old readiness/next-build instructions are superseded by this status.
   text. See `NATIVE_CAPTURE_BOOTSTRAP_FIX.md` and the capture manifest. Historical
   106 archive/internal-TestFlight receipts are not fresh-login acceptance for 108.
 
-### Public Gates Remain Open
+### Historical 108 public-gate checklist
+
+These requirements were written for 108. Use the current status page for the
+candidate and remaining acceptance; do not reinstall an old build to follow them.
 
 - Accept the exact inspected 108 artifact on the physical phone and advertised
   paired Watch/Health/GPS paths, including history safety, interruptions/offline,
@@ -178,7 +197,8 @@ operational/provider acceptance remains open.
 ## Historical Continuations — 106 And Earlier
 
 The following dated receipts retain their original source/build scope. They do
-not supersede the current 108 build/submission status or close its public gates.
+not supersede [Current launch status](CURRENT_LAUNCH_STATUS.md) or close the
+current candidate's public gates.
 
 - Owner completion, November 1 Pacific: live Apple reload confirms the updated
   Developer Program agreement was accepted November 1. After the owner accepted
@@ -268,7 +288,7 @@ is 95/100 as a judgment under the repository gate, not a measured reliability
 probability. Native compilation, upload and Apple processing must each be checked
 separately and appended after they happen. No score waives the public-launch gates.
 
-## Scope And Decision
+## Historical scope and decision
 
 ### Build 103 Native Dependency Correction
 
@@ -534,7 +554,7 @@ separately and appended after they happen. No score waives the public-launch gat
 
 The user authorized working through the launch checklist autonomously and using Chrome/computer use, with owner-dependent steps last. No paid service purchase, freelancer hire, acceptance of third-party contracts, or public App Store release is being performed without the owner's specific decision. Engineering review agents do not replace independent device QA or professional legal/security review.
 
-## Implemented In Source
+## Historical implemented-source checkpoint
 
 - Explicit, versioned, account-bound Anthropic sharing choice. Enabling waits for storage confirmation; logout, revocation, failed storage and owner races fail closed. Chat requests and late responses are owner/consent fenced. Context disclosure includes potentially sensitive training/recovery/movement information; unrelated on-device guidance stays usable without consent.
 - Authenticated AI handler with bounded input, fixed server safety instructions, sanitized errors, cancellation, no automatic retry, maximum 1,024 output tokens, and atomic reservations capped at 20 requests/account/UTC day and 500 requests globally/UTC day. Reservations are charged even if a provider call fails, to prevent retry abuse. This bounds requests, not a guaranteed dollar bill; vendor spend caps remain an owner setting.
@@ -543,7 +563,13 @@ The user authorized working through the launch checklist autonomously and using 
 - Subscription SDK installed and exact version locked; owner-fenced serialized purchase/restore operations, only known monthly/annual products, locale prices from Apple/RevenueCat, cancellation/renewal disclosures, and no fabricated active entitlement. Billing is disabled unless explicitly enabled with a valid iOS project key.
 - Tutorial replay consumes its request only after the focused/hydrated screen starts the walkthrough. Background mounted tabs cannot steal it. Bubble pointer and in-bubble close control added. Activity metric spacing increased; split refresh moved to the bottom.
 
-## Hard Launch Gates Still Open
+## Historical hard-launch-gate checklist
+
+This checklist records an earlier SDK/build/service state. Completed agreements,
+banking/tax, privacy publication, reviewer credentials and email setup are not
+reopened by the wording below. Its old Build 106 target and SDK 56 dependency
+counts are historical. Use [Current launch status](CURRENT_LAUNCH_STATUS.md) for
+the current candidate, remaining checks and owner involvement.
 
 1. **Complete intended-user deletion acceptance.** The new backend and recovery/cleanup source are implemented, and the parent verified three synthetic API/server completions, including scheduler-only recovery. The original account remains unchanged; automation is now off. This does not accept real Apple/Google grant revocation, native cleanup/restart, other-device behavior, support operations or retained-record/backup handling. See `DELETION_ACCEPTANCE.md` for exact receipts and limitations. A request reference or plan reset is not completed deletion. Confirm the intended in-app availability, processing expectations and operational responsibility before making public completion-time claims.
 2. **Paid configuration and lifecycle.** Do not enable `EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` merely because purchase UI compiles. AI Coach chat has source-level Pro gates and server-authoritative RevenueCat entitlement verification; core recording/history/Insights remain free. Products, `pro`, default offering, group levels, five territories, individual purchase options, exact local prices/trials, public iOS key, read-only server key and notification URLs are configured. Sandbox TEST delivery passed; production TEST returned 401 and needs resolution. Keep client/server billing switches aligned (`EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED` and Supabase `STRIDEOS_BILLING_ENABLED`). Test real sandbox purchase/restore/refund/expiration, grace and revocation before enabling either switch. No paid feature or charge is activated in this run.
@@ -553,7 +579,11 @@ The user authorized working through the launch checklist autonomously and using 
 6. **Release.** Final tests, exact native archive, SDK/privacy manifests, source-map upload, TestFlight processing, external beta feedback, and App Review/public-release decisions are separate gates. Current Build 106 compiled, passed actual archive checks, uploaded to Apple and is VALID / IN_BETA_TESTING internally. Physical installation, independent beta acceptance and public-review readiness remain. No public release is claimed.
 7. **Residual dependency review.** High/critical findings are now zero without changing Expo SDK 56. Eighteen moderate/low upstream findings remain. The release review must assess their actual exposure and compatible fixes; neither a clean high-severity threshold nor successful bundling establishes whole-app security.
 
-## Deletion Operator Runbook (Not Yet An Accepted End-User Service)
+## Historical deletion operator runbook (not an accepted end-user service)
+
+Preserved for provenance, not a current execution instruction or authorization.
+Use `DELETION_ACCEPTANCE.md` and the current status page for later provider,
+endpoint and acceptance evidence; no deletion should be run from this checklist.
 
 The implementation is `scripts/process-account-deletion.ts` and the pure engine
 `src/utils/deletionFulfillment.ts`. It requires secure, server-only operator
@@ -573,11 +603,14 @@ No real user has been removed to test this engine.
 - Account for local copies and other devices, restricted backups, legal holds and paid subscriptions. Account deletion does not cancel Apple renewal or remove Apple Health/photo originals.
 - Verify record/object isolation and removal, notify the requester, then record completion appropriately. Test the whole procedure using dedicated test identities first. This runbook is not permission to delete existing users.
 
-## External Review Brief
+## Historical external-review proposal
+
+Use `INDEPENDENT_REVIEW_BRIEF.md` for the prepared scope. The planning amounts
+below are historical suggestions, not quotes, an approved budget or engagement.
 
 Hire a senior React Native/iOS reviewer with shipped HealthKit, Watch, Supabase RLS/storage and StoreKit/RevenueCat experience for a fixed-scope launch audit, not a rewrite. Ask for prioritized findings, repro steps, affected code, test evidence and a capped remediation estimate. Add real-device QA and a licensed privacy/consumer-app attorney. Give least-privilege access and dedicated test accounts; retain ownership of all accounts and source. Proposed planning budgets, not quotes: engineer $1,000-$3,000, QA $400-$1,000, legal $750-$2,000; optional independent training-content review $300-$1,000.
 
-## Verified Checkpoint Receipts
+## Historical verified checkpoint receipts
 
 - Latest complete serial regression suite after compatible dependency patches, hiding unavailable legacy Movement Lab promotion panels, and durable AI-consent failure recovery: **1,212/1,212 passed**, no failures/skips, `/tmp/strideos-launch-tests-complete.log`. Final `npm run check` passed both the semantic TypeScript check and Expo dependency compatibility. The grid retains its existing narrow-screen two-column sizing and changes vertical spacing; no tracking or metrics calculation changed.
 - New privacy/AI/server entitlement/purchase race/replay tests exercise actual factories and runtime bindings, including owner changes during awaited SDK identity and offering lookups, no SDK initialization while billing is disabled, and consumed replay timers on retained screens.
@@ -589,7 +622,7 @@ Hire a senior React Native/iOS reviewer with shipped HealthKit, Watch, Supabase 
 - Privacy, support, and terms were published atomically to the existing GitHub Pages hosting branch only, preserving its unrelated files. Commit `5e5d315dea1b70bee743d741b44e567236811b41`; all three pages returned HTTP 200 with the new copy. Follow-up privacy-only commit `fd5a2895155a595b247f739f5b1f65bbdb58419d` discloses first-party operational counters and deletion receipts; Pages reported that commit built. This does not publish an iOS app or constitute attorney approval.
 - GPS, HealthKit, native Watch/Live Activity, route-builder, strength-engine and root startup sources were not edited. The native subscription dependency still requires an actual archive/StoreKit test before any paid launch.
 
-## Owner Handoff Prepared Last
+## Historical owner handoff
 
 - Supabase and RevenueCat are signed in. The owner completed the private Apple key upload/save; RevenueCat shows Valid credentials. Products, Pro mapping and the default offering are saved. No private key contents, password, OTP, or new binding agreement was entered by the assistant.
 - Backend isolation is complete with the existing projects, not blocked on another paid project. Needed decisions/access: provider revocation and end-to-end deletion acceptance, RevenueCat/App Store keys and approved paid scope, optional paid security settings, independent-review budget, and eventual public-release approval. Credentials belong in the relevant vendor UI/secret store, never in chat.

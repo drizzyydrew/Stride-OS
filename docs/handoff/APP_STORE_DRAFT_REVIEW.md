@@ -6,9 +6,12 @@ The older build-1/108 observations below are historical and do not supersede tha
 readback. Current reviewer-note preparation is `APP_REVIEW_NOTES_111_DRAFT.md`;
 it has not been saved to Apple or accepted as a complete submission packet.
 
-## Current publish preparation — November 1, 2026 late Pacific
+## Historical publish preparation — November 1, 2026 late Pacific
 
-This section supersedes older statuses below while retaining their chronology.
+This section records that session's readback. It superseded earlier observations
+at the time, but does not supersede the current navigation above. Build selection,
+credentials, assets and declarations below retain their original evidence scope;
+do not repeat completed setup or use these old targets as current instructions.
 
 - Apple session is authenticated. Version 1.0 remains Prepare for Submission;
   manual release remains selected. The draft still selects historical build 1;
@@ -52,7 +55,7 @@ This section supersedes older statuses below while retaining their chronology.
   purchase activation, or new service charge was performed.
 
 
-## Store URL and asset continuation — November 1, 2026 Pacific
+## Historical store URL and asset continuation — November 1, 2026 Pacific
 
 All four existing public pages returned HTTP 200. The homepage's fake download
 buttons, old screenshot display and overbroad media wording were corrected and
@@ -83,7 +86,7 @@ its native acceptance remains pending. Do not submit Build 106 publicly
 or classify the replacement set as ready on the strength of a storyboard.
 See `NATIVE_CAPTURE_BOOTSTRAP_FIX.md` for exact observations and boundaries.
 
-## Owner completion readback — November 1, 2026 Pacific
+## Historical owner completion readback — November 1, 2026 Pacific
 
 The owner personally submitted banking and U.S. Form W-9 information, then
 accepted the updated Developer Program agreement. A fresh Apple Developer
@@ -106,7 +109,11 @@ review, release or production billing activation was performed.
 Only status readback was needed; private taxpayer IDs and bank account values
 were not requested, entered or recorded in this handoff.
 
-## November 1, 2026 Pacific continuation
+## Historical November 1, 2026 Pacific continuation
+
+Earlier pending declarations, privacy publication and financial setup in this
+section were superseded by the completion receipts above. They are not new
+owner tasks. Use [Current launch status](CURRENT_LAUNCH_STATUS.md) for open work.
 
 - Live Apple session is authenticated. The app remains **1.0 Prepare for
   Submission**; no public review, release, binary promotion or payment activation.
@@ -145,7 +152,7 @@ were not requested, entered or recorded in this handoff.
   locally under `/tmp`; the latter contains owner contact details and is not
   committed. No customer records or private keys were inspected.
 
-## Earlier read-only metadata pull
+## Historical read-only metadata pull
 
 October 31, 2026 Pacific / November 1 UTC. A supported EAS CLI metadata pull
 completed successfully for the existing StrideOS production submit profile.
@@ -171,8 +178,9 @@ Verified saved fields:
   readback, not acceptance of its accuracy; reconcile each answer with actual
   released behavior and the current questionnaire before submitting.
 
-Still requires acceptance: current screenshots and selected binary, an isolated
-working reviewer account and clear review instructions, truthful privacy labels
+At this historical checkpoint, outstanding acceptance included current screenshots
+and selected binary, an isolated working reviewer account and clear review
+instructions, truthful privacy labels
 and age answers, agreements/tax/banking, subscription review assets/lifecycle,
 availability and final public-release approval. The metadata pull does not verify
 all those fields. Public policy pages were separately published and verified in

@@ -2,6 +2,11 @@
 
 Responsibility: truthful public metadata and the outstanding App Review submission fields. This document is not proof that App Store Connect has been updated or that Apple has approved the app.
 
+November 3 naming review: another fitness app publicly uses StrideOS under a
+different seller. Keep this listing copy as a draft pending owner naming review;
+see [the handle and naming evidence](handoff/SOCIAL_HANDLE_REVIEW.md). This does
+not rename the existing app, determine trademark rights or authorize publication.
+
 ## Listing Draft
 
 Name: StrideOS: Run, Lift, Recover

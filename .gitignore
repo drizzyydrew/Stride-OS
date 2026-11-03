@@ -64,3 +64,6 @@ docs/handoff/update-2026-10-17/regression-qa.js
 
 # Private browser exports are not app or marketing source.
 /docs/assets/screenshots/**/App Store Connect.html
+
+# Financial source documents and private manifests stay outside app/Pages source.
+StrideOS Business Records/

@@ -105,7 +105,7 @@
     <div class="tagline">Your plan. Your pace.</div>
 
     <h1>Privacy Policy</h1>
-    <p class="updated">Effective date: November 2, 2026</p>
+    <p class="updated">Effective date: November 3, 2026</p>
 
     <p>
       StrideOS is a personal training application for runners.
@@ -122,12 +122,13 @@
     <p><strong>Purchases.</strong> In builds where subscriptions are enabled, viewing purchase options connects to RevenueCat with your StrideOS account identifier. Apple processes payment; RevenueCat manages purchase records and entitlements. We do not receive your full payment-card details. Health measurements, routes, videos, and chat messages are not sent to RevenueCat.</p>
     <p><strong>Service operations.</strong> To enforce AI request limits, StrideOS stores account-scoped daily request counts, not chat text, in Supabase. Old counters are cleaned up during subsequent service use. Account-deletion processing stores your account identifier, request reference, timestamps, processing status, provider-disconnection results, and a hash of a private recovery receipt. The recovery receipt is kept in secure storage on the device so status can be checked even after sign-in access is removed. Provider credentials supplied for disconnection are stored in encrypted server secret storage while needed; they are removed after confirmed revocation or completed deletion. These operational records are separate from optional third-party product analytics.</p>
     <p><strong>Optional usage and diagnostics.</strong> Both are off by default and can be controlled independently in Settings under Privacy &amp; Diagnostics. If you opt in, PostHog receives a small allowlist of basic app and tutorial events with a randomly generated, session-only identifier. It receives no account identifier, health or workout measurements, routes, messages, photos, or videos. Sentry receives sanitized JavaScript exception types and code locations, not original error messages, account identifiers, screenshots, attachments, or native crash dumps. Neither service records your screen or automatically captures its contents.</p>
+    <p><strong>Support correspondence.</strong> If you email the support address below, your email address, message and any attachments are processed through the existing Gmail mailbox provided by Google. We use that correspondence to investigate and respond to your request. Please do not send passwords, reset links, one-time codes, private deletion recovery secrets, raw health exports or private videos.</p>
 
     <h2>2. How We Use Your Data</h2>
     <ul>
       <li>To power the core features of the app — training plans, analytics, zone calculations, and progress tracking.</li>
       <li>To back up supported training records and restore available backups when you sign in. Failed or incomplete backups cannot recreate missing records.</li>
-      <li>To provide Movement Lab storage and professional analysis services when requested.</li>
+      <li>To provide supported Movement Lab analysis tools and storage for media you explicitly upload.</li>
       <li>To authenticate your account and keep your data secure.</li>
       <li>With your separate opt-in choices, to understand basic feature use and diagnose software errors. Service connections necessarily expose a network IP address to the receiving infrastructure; disabling location enrichment does not make these connections anonymous.</li>
     </ul>
@@ -138,6 +139,7 @@
     <ul>
       <li><strong>Supabase</strong> — Authentication, database, and file storage. <a href="https://supabase.com/privacy" target="_blank">Supabase Privacy Policy</a></li>
       <li><strong>Resend</strong> — Delivery of account authentication emails sent by Supabase. Email open and click tracking are not configured for this connection. <a href="https://resend.com/legal/privacy-policy" target="_blank">Resend Privacy Policy</a></li>
+      <li><strong>Google (Gmail)</strong> — Email delivery and storage for correspondence sent to the existing support address. This is separate from the automated authentication-email service. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a></li>
       <li><strong>Anthropic (Claude)</strong> — AI responses in the Coach tab. Messages are processed by Claude. <a href="https://www.anthropic.com/privacy" target="_blank">Anthropic Privacy Policy</a></li>
       <li><strong>Apple HealthKit</strong> (optional) — With the permissions you grant, StrideOS reads health and workout data for training features and restoration, and writes completed workouts to Apple Health. HealthKit content is not sent to PostHog or Sentry.</li>
       <li><strong>Strava</strong> (optional) — If you connect Strava, completed workouts are uploaded to your Strava account. <a href="https://www.strava.com/legal/privacy" target="_blank">Strava Privacy Policy</a></li>
@@ -153,6 +155,7 @@
     <p>Apple or Google access is revoked when the supported flow has usable credentials and the provider confirms disconnection. If legacy credentials are unavailable, the app can provide manual account-connection instructions instead; that is not a claim of automatic revocation. An expired credential or provider/configuration failure can keep processing pending and may require an explicit identity confirmation or support assistance.</p>
     <p>Local app records and media are separate from server records. Uninstalling the app is not a deletion request and may prevent its saved recovery flow from finishing. Account deletion does not erase Apple Health records, original photo-library media, copies already sent to Strava or other connected services, or local copies on other devices. Where purchases were made, this flow does not erase Apple's or RevenueCat's purchase records. Manage those copies and connections separately. <strong>Deleting an account or uninstalling the app does not cancel an Apple subscription.</strong> Manage renewal in your <a href="https://apps.apple.com/account/subscriptions">Apple Account subscription settings</a>.</p>
     <p>Turning optional sharing off stops new reports and discards the app's unsent session data. It does not recall requests already transmitted or delete previously received vendor reports. No analytics or diagnostic offline queue is persisted by StrideOS. Contact us for requests about previously submitted reports; the reporting identifiers do not contain your account identity.</p>
+    <p>Support correspondence is handled separately from in-app account deletion. Deleting your StrideOS account does not automatically delete emails in the support mailbox. You may contact us below about access to or deletion of that correspondence.</p>
 
     <h2>5. Children's Privacy</h2>
     <p>StrideOS is not directed at children under 13. We do not knowingly collect personal information from children under 13.</p>

@@ -57,5 +57,25 @@ the least privileges needed. Keep account ownership, banking/tax information
 and credential entry with Drew. Require permission before subcontracting,
 copying customer data, adding services, changing production or deleting data.
 
+Before granting access, agree confidentiality and handling conditions with the
+named reviewer. Treat supplied source, test access and nonpublic findings as
+confidential; use them only for the agreed review and share them only with
+explicitly approved participants. Agree the storage locations, transfer methods
+and review tools in advance. Do not upload supplied material to external AI
+tools, public repositories or other unapproved services. Any proposed AI use
+needs explicit approval of the tool, material and its retention/training settings.
+
+Record who grants and revokes access, its scope and an expiry date covering the
+agreed review and retest. Access extensions require owner approval. At closure
+or earlier withdrawal of access, revoke the reviewer's access and arrange return
+of agreed deliverables and deletion of reviewer-held copies, including test
+exports and temporary artifacts. Preserve Drew's originals. Agree any necessary
+retained copies, purpose and deletion conditions in advance, including how
+reviewer-controlled backups are handled; obtain written confirmation of the
+completed return/deletion and any remaining copies or limitations.
+
+These are engagement items to agree before access, not an executed agreement
+or a claim that confidentiality, access expiry or deletion is already enforced.
+
 No reviewer is engaged and no budget is approved by this brief. It is ready for
 the owner to share after choosing recipients and reviewing its scope.

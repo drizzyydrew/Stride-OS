@@ -1,5 +1,10 @@
 # StrideOS launch copy drafts
 
+**Publication hold:** the November 3 naming review found another fitness app
+using StrideOS under a different seller. Keep these drafts unpublished pending
+the owner's naming decision; see `SOCIAL_HANDLE_REVIEW.md`. No public handle,
+new domain, paid promotion or automatic rebrand is approved by these drafts.
+
 Audience: people who combine running and strength training, including those
 training without a race date. The following drafts use the current website and
 implemented feature scope. They have not been posted or sent. Availability

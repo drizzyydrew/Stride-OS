@@ -27,6 +27,7 @@ is a publicly released app. The final release candidate may change after testing
 | Account deletion | Real provider exchange/revocation, device receipt/cleanup/restart and support handling; general automation remains off | Identified disposable identities, native prompts and explicit deletion approval |
 | Paid subscriptions | Current isolated QA candidate and real purchase, restore, renewal, expiry/refund/revocation acceptance | Sandbox dialogs and observed results; some checks need elapsed time |
 | Store package | Final genuine screenshot coverage, final candidate attachment, privacy/reviewer reconciliation and submission decision | Capture assistance if needed and final owner decision |
+| Naming review | Another Health & Fitness app uses StrideOS under a different seller; see `SOCIAL_HANDLE_REVIEW.md`. Hold new public handles, promotional publication and additional brand spending pending a naming decision | Owner direction and, if commissioned, qualified trademark review; no unilateral rename |
 
 The historical Apple production notification TEST 401 remains unresolved.
 Sandbox TEST previously succeeded. Do not equate it with proven production
@@ -50,3 +51,12 @@ these preparation tasks.
 
 Prepared copy: `APP_REVIEW_NOTES_111_DRAFT.md` and `LAUNCH_COPY_DRAFT.md`.
 Neither draft has been sent, posted or saved into Apple's review fields.
+
+November 3 council continuation corrected unsupported professional-analysis
+wording and the support-correspondence disclosure, mapped reviewer navigation,
+clarified historical checkpoints and strengthened proposed support/reviewer
+custody. Private financial source documents are organized outside both app
+checkouts; no invoice, private manifest or source email is stored here. The
+supplemental mailbox sweep was rate-limited, and Apple's original invoice remains
+uncollected despite captured order/enrollment evidence. See
+`COUNCIL_LAUNCH_PREPARATION_20261103.md` for the bounded review and receipt.

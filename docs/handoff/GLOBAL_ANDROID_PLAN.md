@@ -1,5 +1,32 @@
 # International And Android Release Decision
 
+## November 3 preparation update
+
+The current owner-independent council used two independent automated reviewers
+and cross-examination; see `COUNCIL_LAUNCH_PREPARATION_20261103.md`. No Android
+implementation, build, account purchase or Play acceptance occurred. Keep this
+as a post-iOS track and respect the naming review in `SOCIAL_HANDLE_REVIEW.md`.
+The older geography, fee and configuration observations below retain their dated
+scope; reverify provider prices and storefront requirements before execution.
+
+Existing groundwork is limited: `app.json` defines the Android package, version
+code, adaptive icons and basic permissions; `eas.json` has a preview APK profile.
+Expo 57 dependencies do not establish an accepted Android artifact or device flow.
+
+| Preparation step | Source-grounded gap and acceptance target |
+| --- | --- |
+| Define initial supported features | Preserve phone training/history/manual workflows. HealthKit is iOS-gated in `src/lib/healthKit.ts`; Apple Watch, Live Activities and Apple-only pose modules do not establish Android equivalents. Health Connect is a separate implementation decision; Wear OS is outside this initial draft. |
+| Resolve existing-user sign-in | Google uses browser OAuth in `src/store/authStore.ts`. Test Android callback, cold start, cancellation, recovery and account isolation later. The non-iOS Apple button in `src/components/auth/SocialAuthButtons.tsx` still calls native Apple auth; that SDK does not support Android. Define a supported existing-Apple-user access/linking route without duplicate identities. |
+| Accept Android recording and devices | Review foreground-service/background-location configuration, visible notifications, battery restrictions, interruptions, maps, BLE, media permissions, single save/restart and deletion on actual Android devices. `app.json` currently enables the iOS location background flag, not proof of Android background behavior. |
+| Prepare Play billing separately | `src/lib/revenueCat.ts` explicitly gates billing to iOS. Prepare separate Play products/base plans, SDK key mapping, entitlement ownership and server verification. Require actual pending/cancelled purchase, purchase/restore, renewal, expiry and refund/revocation evidence before enabling it. |
+| Prepare owner signing and store handoff | Existing Play ownership, account verification, upload-key custody/recovery, Play signing and scoped submission access are unverified. Prepare actual Android screenshots and privacy/Data safety/health/deletion declarations for implemented behavior. Create no new credentials, accounts or services during preparation. |
+
+Primary versioned references: [Expo 57 AppleAuthentication](https://docs.expo.dev/versions/v57.0.0/sdk/apple-authentication/)
+and [Expo 57 Location](https://docs.expo.dev/versions/v57.0.0/sdk/location/).
+An iOS acceptance result does not close any Android row.
+
+## Historical October 31 decision
+
 Decision checkpoint: October 31, 2026. The owner delegated the geography decision
 to the council, requested a path informed by Runna, Strava and Nike Run Club,
 asked to avoid unnecessary costs, and confirmed eventual Android availability.
