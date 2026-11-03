@@ -4,8 +4,9 @@ Password-reset retest update: **the owner reports the corrected build 111
 cold-start reset now works**. This accepts that reported reset retest, not every
 recovery edge case or the full device suite. Source passed 1,623 tests; build 111
 is signed-archive verified and VALID / IN_BETA_TESTING internally. See
-`AUTH_RESET_COLD_START_20261102.md`. Next owner check: short outdoor recording,
-screen lock, pause/resume, exactly-one save and restart/readback. Signup
+`AUTH_RESET_COLD_START_20261102.md`. The owner has deferred outdoor recording,
+screen lock, pause/resume, exactly-one save and restart/readback until later.
+Continue indoor preparation using `INDOOR_LAUNCH_NEXT_STEPS_20261102.md`. Signup
 confirmation, real provider deletion, purchases and current store assets remain
 open. No public review/release, billing activation or customer deletion.
 
@@ -48,9 +49,9 @@ entered by the agent, no test message sent, no public signup reopened.
 The owner initiated a reset and supplied two iPhone Gmail screenshots confirming
 actual inbox delivery, expected StrideOS subject/sender, TLS and readable branded
 content. This accepts a single reset email, not the whole authentication flow.
-The owner now reports the build 111 closed-app reset retest worked. Next is
-recording/background/save/restart acceptance; email signup confirmation remains
-separate. Keep Apple's review credentials current if
+The owner now reports the build 111 closed-app reset retest worked. The
+recording/background/save/restart check is deferred at the owner's request;
+email signup confirmation remains separate. Keep Apple's review credentials current if
 that account's password changes. Signup remains off and Confirm email is also
 off; confirmation policy/flow must be enabled and accepted before reopening
 signup. See `email-templates/RESEND_SMTP_ACCEPTANCE_20261102.json`.

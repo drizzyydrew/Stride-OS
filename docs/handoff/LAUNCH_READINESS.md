@@ -4,8 +4,9 @@ Password-reset retest update: **the owner reports the corrected build 111
 cold-start reset now works**. This accepts that reported reset retest, not every
 recovery edge case or the full device suite. Source passed 1,623 tests; build 111
 is signed-archive verified and VALID / IN_BETA_TESTING internally. See
-`AUTH_RESET_COLD_START_20261102.md`. Next owner check: short outdoor recording,
-screen lock, pause/resume, exactly-one save and restart/readback. Signup
+`AUTH_RESET_COLD_START_20261102.md`. The owner has deferred outdoor recording,
+screen lock, pause/resume, exactly-one save and restart/readback until later.
+Continue indoor preparation using `INDOOR_LAUNCH_NEXT_STEPS_20261102.md`. Signup
 confirmation, real provider deletion, purchases and current store assets remain
 open. No public review/release, billing activation or customer deletion.
 
