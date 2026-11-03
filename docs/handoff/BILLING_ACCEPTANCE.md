@@ -20,8 +20,9 @@ only the owner. No external group/invitation was created. The public draft was
 freshly read back selecting **109, manual release, Prepare for Submission**.
 Never select 110 in that draft. The canonical checkout stays on production 109.
 See `BILLING_QA110_RELEASE.md` and its artifact/Apple receipts. The optional
-What to Test note is not confirmed saved: browser control disconnected during
-entry, before Save/readback. The home-session guide carries the warning instead.
+What to Test note is now saved and verified after a full reload following the
+owner's renewed Apple sign-in. It explicitly distinguishes core-device 109
+from private-purchase 110 and requires verified test-owner binding first.
 See `HOME_LAUNCH_SESSION_20261102.md` for timing and exact owner steps. Real
 lifecycle acceptance and final paid-production alignment remain open.
 

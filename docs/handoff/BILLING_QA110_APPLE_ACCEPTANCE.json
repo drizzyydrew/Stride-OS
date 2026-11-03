@@ -32,10 +32,11 @@
     "state": "PREPARE_FOR_SUBMISSION",
     "freshBrowserReadback": true
   },
-  "whatToTestNoteSaved": false,
-  "whatToTestNoteBlocker": "Browser connection stopped while entering the note; no Save/readback confirmed.",
+  "whatToTestNoteSaved": true,
   "globalServerBillingEnabled": false,
   "qaOwnerBound": false,
   "deviceAccepted": false,
-  "purchaseLifecycleAccepted": false
+  "purchaseLifecycleAccepted": false,
+  "whatToTestNoteVerifiedAfterReload": true,
+  "whatToTestNoteCheckedAt": "2026-11-03T03:25:32.287701+00:00"
 }

@@ -8,9 +8,15 @@ replace the public draft with that QA binary. Availability is recorded separatel
 Private 110 is now signed-archive verified and **VALID / IN_BETA_TESTING
 internally** in the existing owner-only group. The saved public draft was freshly
 verified as **109 / manual release / Prepare for Submission**. See
-`BILLING_QA110_RELEASE.md`. Browser control stopped while entering 110's optional
-test note; its Save/readback is unconfirmed. Use this guide's purchase warning
-until that note is saved after reconnection. No new tester invitation was sent.
+`BILLING_QA110_RELEASE.md`. Following renewed owner sign-in, 110's private-QA
+test note is saved and verified after reload. No new tester invitation was sent.
+
+Owner-access follow-up: Apple and the Claude API console are signed in. The
+owner confirmed **no email provider exists yet**; custom SMTP remains off.
+The signed-in Claude organization shows a $1,000 monthly limit, not an approved
+testing budget. A proposed $20 organization-wide cap and existing-domain
+availability are awaiting explicit owner answers. No limit, credit purchase,
+auto-reload, sender account or paid plan was changed by that inspection.
 
 ## Planning estimate
 

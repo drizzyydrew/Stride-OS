@@ -39,10 +39,11 @@ no QA owner is bound, and no purchase or AI request was executed by preparation.
   invitation, public beta link or public review submission was created.
 - A separate fresh draft readback shows 109, manual release, Prepare for
   Submission. That read did not change the draft or select 110.
-- Browser control disconnected during entry of the optional What to Test note.
-  No Save/readback is confirmed. Before testing, save the private-QA warning
-  from `HOME_LAUNCH_SESSION_20261102.md` after browser reconnection. Do not count
-  the attempted note as completed website work.
+- Initial browser disconnection and a subsequent expired-session redirect left
+  the What to Test note unsaved. After the owner signed back in, the note was
+  saved and verified after a full reload. It explicitly states private purchase
+  QA only, core-device 109, sandbox purchases and verified test-owner binding
+  before testing. Screenshot: `/tmp/strideos-private110-note-saved.png`.
 
 ## Required before purchases
 
