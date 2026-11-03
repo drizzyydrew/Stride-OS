@@ -15,6 +15,14 @@ available in TestFlight yet; see `BILLING_QA112_RELEASE.md`. This does not repla
 saved public draft 109. `DESK_PREPARATION_20261103.md` retains the other checks
 and screenshot inventory.
 
+Further desk preparation is in `SUBMISSION_PREPARATION_20261103.md`: fresh
+RevenueCat package/Pro/credential readback, the saved $20 Claude organization
+limit and exact deployed AI Coach v14 source match, a paid-privacy overlay and
+reviewer purchase paragraph. No model/purchase request, service setting, public
+label, submission or release changed in that pass. Actual deployed-key
+organization matching, production notification diagnosis and support operating
+decisions remain open.
+
 Earlier November 3 continuation: fresh browser readback confirms the public draft is
 still 109 / Prepare for Submission / manual release, and TestFlight lists 111
 with Team (Expo). Expo shows build 111 Succeeded at source dc318bf. GitHub still

@@ -1,0 +1,65 @@
+{
+  "checkedAt": "2026-11-03T20:55:22.018249+00:00",
+  "scope": "read_only_operations_preparation",
+  "aiCoach": {
+    "version": 14,
+    "status": "ACTIVE",
+    "verifyJWT": true,
+    "sourceFiles": [
+      {
+        "file": "supabase/functions/ai-coach/index.ts",
+        "sha256": "b8ca9206496ad62ac629f95cb20aac8ab1ea6da15a5b062ffce88c4e2c2c8cde",
+        "matchesLocal": true
+      },
+      {
+        "file": "supabase/functions/_shared/launchHandlers.ts",
+        "sha256": "eb5524995f3c61b42f84a57640c0ed40887cc249bb5320f32e46f06845eff856",
+        "matchesLocal": true
+      },
+      {
+        "file": "supabase/functions/_shared/revenueCatAccess.ts",
+        "sha256": "013507ff25328e6ff601d96271f18efee8b8f101454d17ece14addef294927dd",
+        "matchesLocal": true
+      }
+    ],
+    "allSourceFilesMatch": true
+  },
+  "anthropicConsole": {
+    "organizationName": "Drew Moore\u2019s Individual Org",
+    "savedMonthlyLimitUSD": 20,
+    "displayedSpendThisMonthUSD": 0,
+    "reset": "2026-12-01 UTC",
+    "deployedKeyOrganizationMatched": false,
+    "overLimitRequestTested": false,
+    "settingsChanged": false
+  },
+  "revenueCat": {
+    "appId": "app173317761f",
+    "bundleId": "com.mooremovement.strideos",
+    "purchaseKeyStatus": "Valid credentials",
+    "lastNotificationReceived": "2026-10-31T21:23 UTC",
+    "notificationUrlConfiguredAndMasked": true,
+    "trackNewPurchasesFromServerNotifications": false,
+    "credentialContentsRead": false,
+    "settingsChanged": false,
+    "production401Retested": false,
+    "production401CauseConfirmed": false,
+    "defaultOffering": "default",
+    "packages": {
+      "$rc_monthly": "strideos_pro_monthly",
+      "$rc_annual": "strideos_pro_annual"
+    },
+    "entitlement": "pro",
+    "bothProductsAttachedToPro": true
+  },
+  "appUseRequiredForTheseChecks": false,
+  "supportCoverage": "awaiting_owner_choice",
+  "modelRequestsMade": 0,
+  "purchasesMade": 0,
+  "serverBindingsChanged": false,
+  "publicPrivacyLabelsChanged": false,
+  "publicReviewSubmitted": false,
+  "catalogCheckedAt": "2026-11-03T20:58:32.283698+00:00",
+  "preparedPrivacyOverlay": "Purchase History linked, App Functionality and Analytics; review User ID purposes before paid activation",
+  "preparedReviewerPurchasePath": "More > Settings > Account & Legal > StrideOS Pro membership"
+}

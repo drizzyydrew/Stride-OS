@@ -7,6 +7,11 @@ the verified deletion steps, and match the text to the exact submitted binary.
 If billing is enabled in a later candidate, replace the billing paragraph with
 the accepted purchase/access instructions and reconcile privacy disclosures.
 
+The source-mapped paid paragraph and privacy overlay are now prepared in
+`SUBMISSION_PREPARATION_20261103.md`. Their native/payment/deletion outcomes must
+be accepted on the exact normal public candidate before use; private QA112's
+deliberate no-quota stop is not the ordinary reviewer experience.
+
 The paths below were mapped against current source, not exercised on native 111
 by this documentation review. Expected outcomes are acceptance targets, not
 observed passes. Confirm each label and outcome on the exact submission candidate

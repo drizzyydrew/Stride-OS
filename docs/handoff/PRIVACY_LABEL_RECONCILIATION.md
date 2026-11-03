@@ -1,5 +1,11 @@
 # Privacy label reconciliation — November 1, 2026 Pacific
 
+November 3 preparation: `SUBMISSION_PREPARATION_20261103.md` contains the
+purchase-enabled overlay. Current RevenueCat guidance calls for Purchase History
+to cover App Functionality and Analytics, with user linkage for the authenticated
+owner ID. Reassess User ID purposes too. This overlay is a draft for the final
+paid scope; it has not changed the published billing-off label below.
+
 ## Published reconciliation — supersedes the draft-only status below
 
 November 1, 2026 late Pacific. Applied through the authenticated App Store
