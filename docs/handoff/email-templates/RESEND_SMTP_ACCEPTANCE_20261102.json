@@ -1,0 +1,74 @@
+{
+  "checkedAt": "2026-11-03T05:31:35.961966+00:00",
+  "projectRef": "pbzgrhnxpbtlkzpreizy",
+  "ownerReportedSmtpSaved": true,
+  "smtpEnabledAfterReload": true,
+  "smtpHost": "smtp.resend.com",
+  "smtpPort": 465,
+  "senderName": "StrideOS",
+  "savedPasswordHidden": true,
+  "keyPermissionObserved": "Sending access",
+  "keyDomainObserved": "auth.strideosfitness.com",
+  "keyUseCountObserved": 0,
+  "keySecretReadByAgent": false,
+  "smtpPasswordEnteredByAgent": false,
+  "templates": {
+    "confirmation": {
+      "file": "confirm-signup.html",
+      "subject": "Confirm your StrideOS email",
+      "sha256": "2c2833990345b40827f0c7317ee08f3e219f03435d9b05c2e0eef363213e3d81",
+      "savedAndReloadedExactHTMLMatch": true,
+      "confirmationURLPlaceholderPreserved": true,
+      "browserPreviewInspected": true
+    },
+    "recovery": {
+      "file": "recover-password.html",
+      "subject": "Reset your StrideOS password",
+      "sha256": "e1a1554060e533373e44999daadacb718cb176ed54999870d91bfdb8c74b6065",
+      "savedAndReloadedExactHTMLMatch": true,
+      "confirmationURLPlaceholderPreserved": true,
+      "browserPreviewInspected": true
+    }
+  },
+  "privacy": {
+    "hostingBranch": "claude/stride-os-visibility-sxl7xl",
+    "commit": "ef830a1d08fa4151b8357ae28259270db4473ac5",
+    "url": "https://drizzyydrew.github.io/Stride-OS/privacy.html",
+    "buildStatus": "built",
+    "http": 200,
+    "liveExactlyMatchesLocal": true,
+    "resendRecipientMessageLinkAndDeliveryDisclosure": true
+  },
+  "callbackConfig": {
+    "siteURL": "strideos://",
+    "redirectURLs": [
+      "strideos://auth/new-password",
+      "strideos://auth/callback",
+      "strideos://**"
+    ],
+    "changedByAgent": false
+  },
+  "signupEnabledObserved": false,
+  "confirmEmailEnabledObserved": false,
+  "confirmationPolicyChangedByAgent": false,
+  "publicSignupReopened": false,
+  "emailSentByAgent": false,
+  "actualDeliveryAccepted": false,
+  "nativeRecoveryAccepted": false,
+  "ownerActionPending": "Request reset from the dedicated test/reviewer identity in installed TestFlight 109; report actual inbox outcome, then validate native callback privately.",
+  "screenshots": [
+    "/tmp/strideos-smtp-saved.png",
+    "/tmp/strideos-confirm-email-saved.png",
+    "/tmp/strideos-reset-email-saved.png",
+    "/tmp/strideos-resend-privacy-live.png"
+  ],
+  "notes": [
+    "Domain verification, stored SMTP credentials and template previews do not prove actual SMTP delivery.",
+    "Before reopening signup, enable and test email confirmation without disrupting existing accounts.",
+    "If the reviewer password changes during testing, update it directly in Apple App Review Information.",
+    "Public release and billing remain off; no existing account or training data removed."
+  ],
+  "senderEmailAddress": "no-reply@auth.strideosfitness.com",
+  "smtpUsername": "resend",
+  "senderAndUsernameVisuallyVerified": true
+}

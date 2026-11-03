@@ -1,7 +1,7 @@
-# Prepared Auth email templates — not deployed
+# Auth email templates — deployed; delivery acceptance pending
 
-Use Supabase Auth's template editor for StrideOS `pbzgrhnxpbtlkzpreizy` after the
-approved sender is connected. These files contain no real recipient, token,
+Saved in Supabase Auth for StrideOS `pbzgrhnxpbtlkzpreizy` after the owner
+connected Resend SMTP. Both HTML files match full-reload editor readback exactly. These files contain no real recipient, token,
 credential or tracking pixel. The placeholder is not an actual email link.
 
 | Template | Subject | Supabase content field |
@@ -19,11 +19,13 @@ Reference: [Supabase templates](https://supabase.com/docs/guides/auth/auth-email
 Mail security scanners can consume one-use links; test the owner's actual inbox
 and resend/recovery behavior rather than claiming a static preview proves it.
 
-Dashboard readback explicitly requires **custom SMTP before template editing**.
-The CLI preview showed subjects only, not complete HTML-body changes, so no
-partial configuration was pushed. Both drafts rendered and were visually
-inspected locally. This proves neither delivery nor mail-client rendering.
+The custom SMTP prerequisite is now satisfied. Both subjects and complete HTML
+bodies were saved, reloaded, compared exactly and previewed in the dashboard.
+Proof: `/tmp/strideos-confirm-email-saved.png` and
+`/tmp/strideos-reset-email-saved.png`. These are template previews, not native
+screenshots or inbox delivery evidence. See `RESEND_SMTP_ACCEPTANCE_20261102.json`.
 
-Not changed by this preparation: SMTP, confirmation policy, signup restriction,
-rate limits, provider accounts, public URLs or existing users. No email sent.
-Previewing these HTML files is not native-app screenshot or inbox acceptance.
+No delivery test or password change was performed by the agent. Signup remains
+closed and Confirm email is currently off; verify the intended confirmation
+policy before reopening signup. Actual iPhone callback/reset and one-use link
+acceptance still require owner participation. Keep tokens/passwords out of chat.

@@ -27,14 +27,21 @@ provider DKIM TXT and Forge CNAME records are live in authoritative and public
 DNS; existing domain records and free website URLs are preserved. Resend stays
 on Free. No receiving mailbox or tracking subdomain is configured.
 
-The owner-only key/SMTP step is prepared: create the `StrideOS Supabase Auth`
-key with Sending access restricted to the verified domain, copy directly into
-the open StrideOS Supabase SMTP Password field and Save changes. All public
-SMTP fields are drafted. No new credential was generated/entered by the agent,
-SMTP save performed, email sent or signup reopened. Templates, processor
-privacy disclosure, inbox/native-callback acceptance remain to be completed.
-See `email-templates/RESEND_SETUP.md` and its current domain-connection receipt.
-Earlier card/cart and Brevo checkpoints are historical, not current blockers.
+The owner completed private key/SMTP entry. Custom SMTP is saved and enabled
+after reload; the stored password remains hidden. Resend key metadata verifies
+Sending access restricted to the auth domain. Branded confirmation/recovery
+subjects and HTML are saved and match full-reload source readback exactly.
+The Resend processor disclosure is published to the existing free privacy URL
+and verified live at HTTP 200, matching the canonical file. No key was read or
+entered by the agent, no test message sent, no public signup reopened.
+
+Next owner email check: request a password reset for the dedicated test/reviewer
+account in TestFlight 109, report actual inbox/spam arrival, then privately test
+the native callback/password change. Keep Apple's review credentials current if
+that account's password changes. Signup remains off and Confirm email is also
+off; confirmation policy/flow must be enabled and accepted before reopening
+signup. See `email-templates/RESEND_SMTP_ACCEPTANCE_20261102.json`.
+Earlier card/cart/Brevo/unsaved-SMTP checkpoints are historical, not blockers.
 
 ## Planning estimate
 

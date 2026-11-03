@@ -9,13 +9,20 @@ DKIM/Forge DNS records were added and verified through authoritative/public DNS.
 Root/wildcard/CAA records and the free website URLs are preserved. No paid
 hosting, add-on, mailbox or agent-initiated second purchase.
 
-Owner handoff: the domain-restricted **Sending access** key form and StrideOS
-SMTP form are prepared. The owner must create/copy the key directly into
-Supabase Password and Save changes. The agent has not generated/entered a key
-or saved SMTP. Public signup remains closed; delivery, native callbacks, reset,
-templates and processor disclosure acceptance remain open. Domain verification
-is not delivery acceptance. See `email-templates/RESEND_SETUP.md` and
-`email-templates/RESEND_DOMAIN_CONNECTION_20261102.json`.
+Email connection follow-up: **the owner saved SMTP, and it remains enabled after
+reload.** The saved password is hidden; the Resend key metadata confirms Sending
+access restricted to auth.strideosfitness.com. Both branded confirmation/reset
+subjects and complete HTML bodies are now saved and match canonical files after
+reload. The exact native callback is already allowlisted. The privacy update
+covering recipient/authentication-link/delivery processing is published and
+verified live (HTTP 200, exact local match, Pages built).
+
+**Delivery and native recovery remain unaccepted.** No email was sent by the
+agent; the owner has been asked to request a reset using a dedicated test identity
+in TestFlight 109. Signup is still off, and Confirm email is also off: enable and
+test the intended confirmation policy before reopening registration. Stored SMTP
+and template previews do not prove delivery. Current receipt:
+`email-templates/RESEND_SMTP_ACCEPTANCE_20261102.json`.
 
 The Claude API organization limit is separately saved/read back at **$20/month**;
 no credits bought or auto-reload changed. The earlier Brevo/no-domain proposal
@@ -30,8 +37,8 @@ single-owner test policy; downloaded source matches, 49 focused tests and seven
 post-deploy boundary checks passed. A new read-only home preflight passed 9/9
 preparation checks; its ten focused safety/boundary tests and TypeScript passed.
 These checks do not accept real devices, deletion, email or purchases.
-Branded email templates are prepared locally; Supabase requires custom SMTP
-before editing them, so they were not deployed. RevenueCat product mappings and
+The earlier undeployed email-template checkpoint is superseded by the saved
+SMTP and exact template readback recorded above. RevenueCat product mappings and
 the existing public iOS SDK key match were freshly verified. Production
 notification TEST 401 remains unresolved. See
 [`HOME_LAUNCH_SESSION_20261102.md`](HOME_LAUNCH_SESSION_20261102.md) for each
