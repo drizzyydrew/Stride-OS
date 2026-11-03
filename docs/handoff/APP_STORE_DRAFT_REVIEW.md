@@ -1,5 +1,11 @@
 # App Store draft readback
 
+Current navigation: [Current launch status](CURRENT_LAUNCH_STATUS.md). Latest
+internal candidate is 111; last verified public draft is 109/manual release.
+The older build-1/108 observations below are historical and do not supersede that
+readback. Current reviewer-note preparation is `APP_REVIEW_NOTES_111_DRAFT.md`;
+it has not been saved to Apple or accepted as a complete submission packet.
+
 ## Current publish preparation — November 1, 2026 late Pacific
 
 This section supersedes older statuses below while retaining their chronology.

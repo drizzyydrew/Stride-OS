@@ -1,5 +1,10 @@
 # StrideOS Launch Readiness
 
+For the current execution sequence, use
+[Current launch status](CURRENT_LAUNCH_STATUS.md). Dated checkpoints below retain
+their original evidence scope; their earlier missing-service/build instructions
+are not a reason to repeat completed setup.
+
 Website/support continuation: the public support page now includes password-reset,
 goal archive/open-training and optional AI guidance, with corrected training-estimate
 wording. Narrow/mobile overflow, FAQ heading semantics and keyboard navigation were

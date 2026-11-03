@@ -1,5 +1,14 @@
 # Owner launch steps — November 2, 2026
 
+**Superseded execution sequence:** use [Current launch status](CURRENT_LAUNCH_STATUS.md)
+for current actions. Candidate 111 supersedes the 109 target below; Resend/SMTP
+and the reported reset retest are completed, and the AI organization cap is
+saved. Public signup confirmation, actual key-to-organization verification,
+devices, deletion, billing and final assets remain open. The owner has deferred
+app testing; do not repeat completed key, email-service or bank/tax setup.
+
+## Historical instructions and receipts
+
 **New native candidate: 109; signed archive verified, VALID and available in
 internal TestFlight.** The saved App Store draft also selects 109 with manual
 release; it has not been submitted for public review. Source, backend deployment and

@@ -1,5 +1,10 @@
 # Home launch session — estimates and division of work
 
+Use [Current launch status](CURRENT_LAUNCH_STATUS.md) for the active sequence.
+The planning ranges below were prepared earlier; completed SMTP/domain/reset and
+spending-cap tasks should not be counted again as unfinished setup. Native,
+purchase and provider deletion acceptance remain open and owner testing is deferred.
+
 Password-reset retest update: **the owner reports the corrected build 111
 cold-start reset now works**. This accepts that reported reset retest, not every
 recovery edge case or the full device suite. Source passed 1,623 tests; build 111

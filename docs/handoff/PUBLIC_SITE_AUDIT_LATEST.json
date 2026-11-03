@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-11-03T07:42:43.929638+00:00",
+  "scope": "HTTPS content and source-relative file-target audit; no external linked-service actions or full accessibility/legal certification",
+  "pages": [
+    {
+      "page": "index.html",
+      "httpStatus": "200",
+      "matchesCanonical": true,
+      "sha256": "006590370d3494e8400a8ca66e2198b3722a13216bb4b87f80c98fb1bdf81454",
+      "missingRelativeTargets": [],
+      "links": 13
+    },
+    {
+      "page": "support.html",
+      "httpStatus": "200",
+      "matchesCanonical": true,
+      "sha256": "ab9b2ffb9c6347e09a6de467917fc1bad45ce0d0254be190fbadbba1ca0d7673",
+      "missingRelativeTargets": [],
+      "links": 12
+    },
+    {
+      "page": "privacy.html",
+      "httpStatus": "200",
+      "matchesCanonical": true,
+      "sha256": "d8649406007d0d7052015ced6b8387d744d97581f061af1974b4c0655c1fe336",
+      "missingRelativeTargets": [],
+      "links": 9
+    },
+    {
+      "page": "terms.html",
+      "httpStatus": "200",
+      "matchesCanonical": true,
+      "sha256": "e2925582fc5ff64deced5292f89079c80ce0ad53d08ad6f826b4b876e96c0dc7",
+      "missingRelativeTargets": [],
+      "links": 9
+    }
+  ],
+  "expected_publication_changes": false,
+  "appSourceChanged": false,
+  "newBuildStarted": false,
+  "paidServiceAdded": false
+}
