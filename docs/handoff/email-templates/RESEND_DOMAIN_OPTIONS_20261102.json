@@ -2,7 +2,7 @@
   "checkedAt": "2026-11-03T04:08:58.813322+00:00",
   "source": "Vercel read-only registrar connector",
   "availabilityAndPricingCanChange": true,
-  "domainChosen": false,
+  "domainChosen": true,
   "purchaseAuthorized": false,
   "domainPurchased": false,
   "dnsChanged": false,
@@ -28,5 +28,7 @@
     "strideos.run"
   ],
   "taxAndFinalCheckoutNotVerified": true,
-  "registrantInformationCollected": false
+  "registrantInformationCollected": false,
+  "selectedDomain": "strideosfitness.com",
+  "selectionRecordedAt": "2026-11-03T04:24:39.284370+00:00"
 }

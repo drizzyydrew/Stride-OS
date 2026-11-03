@@ -7,9 +7,11 @@ account and its records; do not delete it or complete its address form.
 
 ## Prepared
 
-- Resend signup is open in Chrome for owner credentials, terms and verification.
-  Its current initial form asks for email/password, not a postal address. This
-  does not guarantee later billing or fraud checks never request an address.
+- Owner sign-in is verified in Resend. The owner reports Google sign-in; the
+  dashboard and actual usage page confirm the expected owner account and Free
+  transactional plan, 0/3,000 monthly sends, 0/100 daily sends and 0/3 domains.
+  Pay-as-you-go switches are off. This does not guarantee later billing or fraud
+  checks never request an address.
 - Existing confirmation/recovery HTML templates can be reused without app code
   or another native build merely to change the SMTP provider.
 - Current published Free transactional plan is $0, 3,000 emails/month and
@@ -22,7 +24,9 @@ account and its records; do not delete it or complete its address form.
   `strideosfitness.com` available, each quoted at $12.03 for one year and $12.03
   renewal at lookup time. No purchase is authorized by this research. Tax/final
   checkout, current availability and renewal settings must be checked before
-  any charge. No name has been chosen and no DNS record written.
+  any charge. The owner has now chosen **strideosfitness.com**; it remains
+  unpurchased and no DNS record is written. A fresh exact-name/one-year lookup
+  still returns available, $12.03 registration and $12.03 renewal.
 - The first three candidates returned `available:false`: `strideos.app`,
   `getstrideos.com`, `strideos.run`. That means unavailable or not confirmed,
   not proof of ownership. See `RESEND_DOMAIN_OPTIONS_20261102.json`.
@@ -61,8 +65,33 @@ account and its records; do not delete it or complete its address form.
    footer to establish actual address exposure instead of generalizing the
    former Brevo banner. Reopen signup only after accepted outcomes.
 
-Current state: provider selected, signup handed off, no account/key creation by
-agent, no domain purchase, no SMTP save, no test email, no delivery acceptance.
+## Current owner handoff
+
+The Vercel cart contains only strideosfitness.com at $12.03. Both the compact
+and full checkout routes stalled at Billing Information; the separate team
+billing page loaded and confirms **no payment method added**. Its Add a Card
+form is prepared for owner-only entry. The draft checkbox using this billing
+address as the team's primary address was unchecked; no card, address or team
+setting was saved. Do not infer an actual saved card from the quote tool's
+generic default-payment-method wording.
+
+An explicit owner decision is pending for a proposed **$15 total maximum**, one
+year and **auto-renew off**. The read-only quote discloses non-refundable,
+immediate registration and possible tax/fees beyond its $12.03 base. A proposal
+is not authorization. Quotes expire; refresh/recheck before any charge. No
+Vercel plan upgrade or add-on is part of this scope. WHOIS privacy is listed as
+included for .com; truthful registrar contact information is still required
+privately. Do not copy contact or payment details from prior chat or memory.
+
+Resend's Add domain form is prepared with `auth.strideosfitness.com` but not
+submitted. Establish ownership before creating the sending domain and its key.
+Cart proof: `/tmp/strideosfitness-domain-cart-ready.png`. Free-plan proof:
+`/tmp/strideos-resend-free-plan-verified.png`.
+
+Current state: owner account signed in and Free plan verified; domain chosen,
+purchase approval pending, no account/key creation by agent, no domain purchase,
+no SMTP save, no test email, no delivery acceptance. See
+`RESEND_ACCOUNT_PREPARATION_20261102.json` for the redacted checkpoint.
 
 ## Primary references
 

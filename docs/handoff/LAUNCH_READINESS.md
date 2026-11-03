@@ -1,10 +1,15 @@
 # StrideOS Launch Readiness
 
-Email-provider decision: **Resend selected by the owner**, superseding the
-Brevo test proposal. Signup is handed off for owner credentials, terms and
-verification. Production sending still requires a verified owned domain,
-private SMTP key installation and delivery/callback acceptance. Domain lookup
-and one-year price options are prepared, with no purchase or DNS change.
+Email-provider decision: **Resend selected and owner sign-in verified**,
+superseding the Brevo test proposal. Actual account usage confirms Free,
+3,000/month and 100/day, with no pay-as-you-go enabled. The owner selected
+**strideosfitness.com**; fresh quote is $12.03/year and current renewal $12.03.
+Single-domain cart and private Add a Card form are prepared. The account has no
+saved Vercel payment method; domain checkout stalls while loading billing.
+Approval for a proposed $15 total maximum, one year and auto-renew off remains
+pending. Production sending still requires domain ownership/verification,
+private SMTP key installation and delivery/callback acceptance. No domain
+purchase, sending-domain creation, key generation or DNS change occurred.
 See `email-templates/RESEND_SETUP.md`. Public registration and SMTP remain off;
 neither provider signup nor a template draft establishes launch readiness.
 

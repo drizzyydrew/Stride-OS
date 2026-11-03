@@ -12,7 +12,8 @@ verified as **109 / manual release / Prepare for Submission**. See
 test note is saved and verified after reload. No new tester invitation was sent.
 
 Owner-access follow-up: Apple and the Claude API console are signed in. The
-owner confirmed **no email provider exists yet**; custom SMTP remains off.
+owner's Resend account is now signed in and its Free plan verified; custom SMTP
+remains off.
 The owner approved reducing the signed-in Claude organization's monthly limit
 from $1,000 to **$20**. It is saved and verified after reload, with the next
 reset shown as December 1 UTC. This applies to every API project in that
@@ -20,13 +21,18 @@ organization. No credits were purchased or auto-reload changed. See
 `AI_VENDOR_SPENDING_20261102.json`; this receipt does not test an actual
 over-limit request or independently match the deployed API key's organization.
 The owner confirmed **no domain is owned** and subsequently selected **Resend**
-instead of Brevo after the address-onboarding concern. Resend signup is open
-for owner password creation, terms and email verification. The agent did not
+instead of Brevo after the address-onboarding concern. Google sign-in is
+reported by the owner and Resend dashboard/Free-plan access is verified. The agent did not
 create a provider account, key, SMTP connection or paid plan. The existing email
 templates can be reused. A controlled sending domain is required before
 production sending; the shared GitHub hostname is not a DNS-controlled sending
-domain. Two domain candidates have live availability/one-year price receipts,
-but none is selected or purchased. See `email-templates/RESEND_SETUP.md`.
+domain. The owner selected **strideosfitness.com**. It is freshly available at
+$12.03/year with the same current renewal quote. The single-domain cart and
+private payment form are prepared, but the account has no saved Vercel payment
+method and the actual domain checkout stalled while loading billing. Approval
+for a proposed $15 total maximum, one year and no auto-renew is pending. No
+domain is purchased, sending domain created or API key generated. See
+`email-templates/RESEND_SETUP.md`.
 
 ## Planning estimate
 
