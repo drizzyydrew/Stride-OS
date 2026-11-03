@@ -32,12 +32,19 @@ Source: `dc318bf8e9c296efc3ef63351bb2d7dca8b3faa2`.
   after reload. Save is disabled with no pending edits; one internal group/tester
   remains. Proof: `/tmp/strideos-build111-testflight-ready.png`.
 
+## Owner reset retest
+
+The owner responded “Okay it worked” after the requested build 111 closed-app
+reset retest. Record this as an owner-reported pass for that workflow, not an
+independent observation of every step or whole-app device acceptance. Receipt:
+`BUILD111_APPLE_ACCEPTANCE.json` → `passwordResetDeviceRetest`.
+
 ## Remaining acceptance and release boundary
 
-Build 111 is available internally. The owner must now repeat the exact
-reported flow: request reset, close StrideOS, open the newest email, privately
-save the password and sign in; repeat with another email. Check warm opening,
-old/used links, interrupted connectivity and preserved account history.
+Build 111 is available internally and its reported cold-start reset retest
+passed. Next test recording/background/save/restart and the supported Watch
+flow. Warm opening, old/used links, interrupted connectivity, signup confirmation
+and account-history isolation remain separate acceptance cases.
 
 Current public draft was previously verified as 109/manual release; this run
 has not submitted it for public review or changed that attachment. Private

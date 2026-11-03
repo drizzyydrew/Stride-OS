@@ -1,11 +1,13 @@
 # StrideOS Launch Readiness
 
-Password-reset incident update: the first reset reportedly worked, but repeating
-it after closing StrideOS left build 109 on **Finishing sign in…**. Email delivery
-is accepted; native recovery is not. The scoped source fix passed 1,623 tests and signed-archive checks; **build 111
-is VALID / IN_BETA_TESTING internally**; see `AUTH_RESET_COLD_START_20261102.md`. Do not
-claim the installed build or public draft contains this fix before replacement
-artifact/upload/device acceptance is verified. No data deletion or public release.
+Password-reset retest update: **the owner reports the corrected build 111
+cold-start reset now works**. This accepts that reported reset retest, not every
+recovery edge case or the full device suite. Source passed 1,623 tests; build 111
+is signed-archive verified and VALID / IN_BETA_TESTING internally. See
+`AUTH_RESET_COLD_START_20261102.md`. Next owner check: short outdoor recording,
+screen lock, pause/resume, exactly-one save and restart/readback. Signup
+confirmation, real provider deletion, purchases and current store assets remain
+open. No public review/release, billing activation or customer deletion.
 
 Email update, November 2: the owner completed **strideosfitness.com** registration.
 Vercel order is completed for one year; expiration November 2, 2027, listed
@@ -27,8 +29,8 @@ verified live (HTTP 200, exact local match, Pages built).
 **One real password-reset inbox delivery is accepted** from the owner report
 and two iPhone Gmail screenshots: expected sender/subject, Inbox label, TLS
 header and visible branded rendering. No message was sent by the agent and no
-raw reset URL was retrieved. **Native recovery remains unaccepted**: the owner
-has been asked to follow the link, save a password privately and verify sign-in. Signup is still off, and Confirm email is also off: enable and
+raw reset URL was retrieved. **The owner now reports a successful cold-start reset retest on build 111**;
+this does not accept the full phone/Watch suite or every invalid-link case. Signup is still off, and Confirm email is also off: enable and
 test the intended confirmation policy before reopening registration. Stored SMTP
 and template previews do not prove delivery. Current receipt:
 `email-templates/RESEND_SMTP_ACCEPTANCE_20261102.json`.

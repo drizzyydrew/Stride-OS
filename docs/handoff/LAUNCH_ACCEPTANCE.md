@@ -1,5 +1,12 @@
 # Launch Acceptance And Reviewer Packet
 
+Current reset checkpoint: build **111** is signed-archive verified and available
+internally; final source suite passed **1,623/1,623**. The owner reports the
+closed-app password reset now works. Full device, signup-confirmation, deletion,
+purchase and current-assets acceptance remain open. Next owner check is a short
+recording with screen lock, pause/resume, single save and restart/readback.
+See `BUILD111_RELEASE.md`. Historical 108/109 targets below do not supersede 111.
+
 This is an execution checklist, not a legal opinion, independent audit, physical-
 device report, or assertion that the app is ready for the market. Public payments
 and public release remain disabled until the relevant gates are actually passed.

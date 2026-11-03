@@ -20,5 +20,13 @@
   "publicReviewSubmitted": false,
   "physicalDeviceAccepted": false,
   "testFlightNotesSavedAndReloaded": true,
-  "proofScreenshot": "/tmp/strideos-build111-testflight-ready.png"
+  "proofScreenshot": "/tmp/strideos-build111-testflight-ready.png",
+  "passwordResetDeviceRetest": {
+    "reportedAt": "2026-11-03T06:49:07.418033+00:00",
+    "buildNumber": "111",
+    "ownerResponse": "Okay it worked",
+    "scope": "Owner-reported successful retest of the requested cold-start password-reset flow on the corrected build. Individual steps were not independently observed.",
+    "broaderDeviceSuiteAccepted": false,
+    "nextDeviceCheck": "Short outdoor recording with screen lock, pause/resume, exactly-one save, restart and saved-detail readback."
+  }
 }

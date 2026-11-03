@@ -54,8 +54,8 @@
   "publicSignupReopened": false,
   "emailSentByAgent": false,
   "actualDeliveryAccepted": true,
-  "nativeRecoveryAccepted": false,
-  "ownerActionPending": "Tap the reset link once on the iPhone, verify native new-password screen, privately save a new password and verify sign-in; keep Apple review credentials synchronized if applicable.",
+  "nativeRecoveryAccepted": true,
+  "ownerActionPending": "Short build 111 recording/background/save/restart test. Signup confirmation, provider deletion and StoreKit lifecycle remain separate.",
   "screenshots": [
     "/tmp/strideos-smtp-saved.png",
     "/tmp/strideos-confirm-email-saved.png",
@@ -90,7 +90,7 @@
     "ownerFirstAttemptReportedWorking": true,
     "repeatAfterAppClosedHangs": true,
     "observedScreen": "Finishing sign in...",
-    "status": "Source fix prepared for build 111; physical-device retest pending",
+    "status": "Corrected build 111 delivered; owner reports successful cold-start reset retest.",
     "noAccountOrTrainingDataDeleted": true
   },
   "resendDeliveryDashboard": {
@@ -102,5 +102,14 @@
       "Delivered"
     ],
     "messageBodiesOrResetURLsOpened": false
+  },
+  "nativeRecoveryAcceptanceScope": "Owner-reported successful build 111 cold-start reset retest; does not accept signup confirmation, old/used links, every interruption case or the full launch suite.",
+  "passwordResetDeviceRetest": {
+    "reportedAt": "2026-11-03T06:49:07.418033+00:00",
+    "buildNumber": "111",
+    "ownerResponse": "Okay it worked",
+    "scope": "Owner-reported successful retest of the requested cold-start password-reset flow on the corrected build. Individual steps were not independently observed.",
+    "broaderDeviceSuiteAccepted": false,
+    "nextDeviceCheck": "Short outdoor recording with screen lock, pause/resume, exactly-one save, restart and saved-detail readback."
   }
 }

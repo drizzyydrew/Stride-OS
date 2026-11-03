@@ -66,7 +66,15 @@ separate and pending.
 No App Review/public release, signup reopening, subscription activation or
 account deletion is performed by this change.
 
-## Device acceptance still required
+## Owner retest result
+
+The owner reports the corrected build 111 reset worked in response to the
+requested closed-app retest. This closes the reported stuck-callback incident
+on owner evidence. The full device suite, signup confirmation and all recovery
+edge cases are not implied. See the dated reset entry in
+`BUILD111_APPLE_ACCEPTANCE.json`.
+
+## Additional device acceptance
 
 1. Install the corrected internal TestFlight build once confirmed available.
 2. Request a reset for a dedicated account; close StrideOS before opening the
