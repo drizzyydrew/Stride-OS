@@ -53,9 +53,9 @@
   "confirmationPolicyChangedByAgent": false,
   "publicSignupReopened": false,
   "emailSentByAgent": false,
-  "actualDeliveryAccepted": false,
+  "actualDeliveryAccepted": true,
   "nativeRecoveryAccepted": false,
-  "ownerActionPending": "Request reset from the dedicated test/reviewer identity in installed TestFlight 109; report actual inbox outcome, then validate native callback privately.",
+  "ownerActionPending": "Tap the reset link once on the iPhone, verify native new-password screen, privately save a new password and verify sign-in; keep Apple review credentials synchronized if applicable.",
   "screenshots": [
     "/tmp/strideos-smtp-saved.png",
     "/tmp/strideos-confirm-email-saved.png",
@@ -70,5 +70,20 @@
   ],
   "senderEmailAddress": "no-reply@auth.strideosfitness.com",
   "smtpUsername": "resend",
-  "senderAndUsernameVisuallyVerified": true
+  "senderAndUsernameVisuallyVerified": true,
+  "deliveryEvidenceAddedAt": "2026-11-03T05:34:16.466952+00:00",
+  "deliveryAcceptanceScope": "One owner-initiated password-reset email observed in Gmail inbox; full authentication lifecycle remains unaccepted.",
+  "deliveryEvidence": {
+    "ownerReportedArrival": true,
+    "twoOwnerScreenshotsInspected": true,
+    "subject": "Reset your StrideOS password",
+    "fromDisplayName": "StrideOS",
+    "fromAddressMatchesVerifiedDomain": true,
+    "inboxLabelVisible": true,
+    "gmailHeaderShowsStandardTLS": true,
+    "brandedResetButtonAndSupportLinkVisible": true,
+    "rawResetURLRetrieved": false,
+    "fullFooterInspected": false,
+    "smtpAuthenticationConfirmedBySuccessfulMessageDelivery": true
+  }
 }

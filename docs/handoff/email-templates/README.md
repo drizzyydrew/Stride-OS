@@ -1,4 +1,4 @@
-# Auth email templates — deployed; delivery acceptance pending
+# Auth email templates — deployed; native recovery acceptance pending
 
 Saved in Supabase Auth for StrideOS `pbzgrhnxpbtlkzpreizy` after the owner
 connected Resend SMTP. Both HTML files match full-reload editor readback exactly. These files contain no real recipient, token,
@@ -25,7 +25,10 @@ Proof: `/tmp/strideos-confirm-email-saved.png` and
 `/tmp/strideos-reset-email-saved.png`. These are template previews, not native
 screenshots or inbox delivery evidence. See `RESEND_SMTP_ACCEPTANCE_20261102.json`.
 
-No delivery test or password change was performed by the agent. Signup remains
+The owner has now initiated a reset: Gmail inbox arrival, expected sender, TLS
+header and visible branded rendering are confirmed by two supplied screenshots.
+The raw link was not retrieved. No password change was performed by the agent.
+Signup remains
 closed and Confirm email is currently off; verify the intended confirmation
 policy before reopening signup. Actual iPhone callback/reset and one-use link
 acceptance still require owner participation. Keep tokens/passwords out of chat.

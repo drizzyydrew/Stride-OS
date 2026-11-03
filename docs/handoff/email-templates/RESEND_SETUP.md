@@ -1,4 +1,4 @@
-# Resend Auth email setup — SMTP and templates saved; delivery pending
+# Resend Auth email setup — SMTP and templates saved; native recovery pending
 
 Verified November 2, 2026 Pacific (November 3 UTC). This supersedes the earlier
 cart/private-card checkpoint in `RESEND_ACCOUNT_PREPARATION_20261102.json`.
@@ -55,12 +55,19 @@ checkpoint. Its secret was not read or copied by the agent.
 Current receipt: `RESEND_SMTP_ACCEPTANCE_20261102.json`. The earlier domain
 connection receipt describes the prior unsaved handoff, now completed.
 
+## Actual inbox delivery verified
+
+The owner initiated a reset and reported arrival. Two supplied iPhone Gmail
+screenshots show **Reset your StrideOS password**, the Inbox label, StrideOS
+sender at the expected auth domain, the branded reset button/support link, and
+Gmail's **Standard encryption (TLS)** header. This accepts one actual reset-email
+delivery and visible mail-client rendering. The raw URL/token was not retrieved;
+the full footer, link execution, signup confirmation and other inboxes were not
+accepted by these screenshots. No message was sent by the agent.
+
 ## Remaining acceptance
 
-1. Using a dedicated test/reviewer identity in signed TestFlight build 109,
-   request a reset through **Forgot password? → Send Reset Link**. Verify actual
-   inbox/spam delivery and provider delivery events. No email was sent by the
-   agent at this checkpoint. A hidden stored key does not prove SMTP acceptance.
+1. Preserve this delivery result separately from the native callback result.
 2. The owner opens the link on the iPhone and enters any new password privately.
    Verify native return, successful new-password sign-in, one-use/expired/resend
    behavior and account-history isolation. Keep raw tokens/links out of receipts.

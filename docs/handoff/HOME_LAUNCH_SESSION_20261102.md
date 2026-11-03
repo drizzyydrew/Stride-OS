@@ -35,9 +35,11 @@ The Resend processor disclosure is published to the existing free privacy URL
 and verified live at HTTP 200, matching the canonical file. No key was read or
 entered by the agent, no test message sent, no public signup reopened.
 
-Next owner email check: request a password reset for the dedicated test/reviewer
-account in TestFlight 109, report actual inbox/spam arrival, then privately test
-the native callback/password change. Keep Apple's review credentials current if
+The owner initiated a reset and supplied two iPhone Gmail screenshots confirming
+actual inbox delivery, expected StrideOS subject/sender, TLS and readable branded
+content. This accepts a single reset email, not the whole authentication flow.
+Next owner email check: follow the reset link, privately save the password and
+verify native return/new-password sign-in. Keep Apple's review credentials current if
 that account's password changes. Signup remains off and Confirm email is also
 off; confirmation policy/flow must be enabled and accepted before reopening
 signup. See `email-templates/RESEND_SMTP_ACCEPTANCE_20261102.json`.

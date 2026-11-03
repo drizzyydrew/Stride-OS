@@ -17,9 +17,11 @@ reload. The exact native callback is already allowlisted. The privacy update
 covering recipient/authentication-link/delivery processing is published and
 verified live (HTTP 200, exact local match, Pages built).
 
-**Delivery and native recovery remain unaccepted.** No email was sent by the
-agent; the owner has been asked to request a reset using a dedicated test identity
-in TestFlight 109. Signup is still off, and Confirm email is also off: enable and
+**One real password-reset inbox delivery is accepted** from the owner report
+and two iPhone Gmail screenshots: expected sender/subject, Inbox label, TLS
+header and visible branded rendering. No message was sent by the agent and no
+raw reset URL was retrieved. **Native recovery remains unaccepted**: the owner
+has been asked to follow the link, save a password privately and verify sign-in. Signup is still off, and Confirm email is also off: enable and
 test the intended confirmation policy before reopening registration. Stored SMTP
 and template previews do not prove delivery. Current receipt:
 `email-templates/RESEND_SMTP_ACCEPTANCE_20261102.json`.
