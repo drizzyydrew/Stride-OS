@@ -39,10 +39,19 @@ physical app tests. This checkpoint does not accept the public launch.
 
 ## One useful laptop-only owner action
 
-Apple's Sandbox page currently has no test accounts. The signed-in browser is
-left at **Users and Access → Sandbox → New Tester**, with the fictional name
+Completed later November 3: the owner created the tester, and the browser shows
+one StrideOS QA Sandbox account for the United States. Its default monthly
+renewal rate is five minutes, and Interrupt Purchases is off. No settings were
+changed by inspection. See `SANDBOX_ACCOUNT_ACCEPTANCE_20261103.json`. The form
+instructions below are historical; no second tester is needed. QA112 is now
+compiled and signed-archive verified, with TestFlight delivery still pending;
+use `BILLING_QA112_RELEASE.md` for the current artifact/delivery
+state instead of the earlier source-patch-only receipt.
+
+At the initial preparation checkpoint, Apple's Sandbox page had no test
+accounts. The browser was left at **Users and Access → Sandbox → New Tester**, with the fictional name
 StrideOS QA and United States selected. Email/password fields are blank and
-Create remains disabled. The form has not been submitted.
+Create was disabled. The form had not yet been submitted at that checkpoint.
 
 Owner can finish this without opening StrideOS:
 

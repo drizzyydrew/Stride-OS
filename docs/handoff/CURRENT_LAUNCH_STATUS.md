@@ -6,10 +6,14 @@ the last verified public draft still selects 109 with manual release. Neither
 is a publicly released app. The final release candidate may change after testing.
 
 Latest November 3 desk preparation: **Confirm email is now ON**, saved and
-verified after reload; **public signup stays OFF**. The owner can complete the
-prepared Apple Sandbox tester form on a laptop using private email/password
-entry. No app use is needed for that step. See `DESK_PREPARATION_20261103.md` for
-the completed checks, screenshot inventory and next private-QA source patch.
+verified after reload; **public signup stays OFF**. The owner completed the
+Apple Sandbox tester, and browser readback confirms one StrideOS QA account
+for the United States. Do not repeat that setup. See
+`SANDBOX_ACCOUNT_ACCEPTANCE_20261103.json`. The reset-fixed private QA112 build
+is **compiled and signed-archive verified**, but not submitted to Apple or
+available in TestFlight yet; see `BILLING_QA112_RELEASE.md`. This does not replace normal internal 111 or the
+saved public draft 109. `DESK_PREPARATION_20261103.md` retains the other checks
+and screenshot inventory.
 
 Earlier November 3 continuation: fresh browser readback confirms the public draft is
 still 109 / Prepare for Submission / manual release, and TestFlight lists 111
@@ -35,6 +39,7 @@ Recover differentiates the listing without establishing name clearance.
 | Apple owner setup | Developer/Paid Apps agreements, bank and W-9 recorded Active; reviewer credentials previously authenticated against the separate backend. `APP_STORE_DRAFT_REVIEW.md` |
 | Public website | Home, support, privacy and terms return HTTPS 200, match canonical source and have no missing relative file targets in `PUBLIC_SITE_AUDIT_LATEST.json`. Support FAQ and mobile fixes are published. |
 | Support and review preparation | `LAUNCH_SUPPORT_PLAYBOOK.md` and `INDEPENDENT_REVIEW_BRIEF.md` are prepared; no reviewer hired. |
+| Private purchase preparation | Owner-created Sandbox tester verified. QA112 compiled and signed-archive verified, not TestFlight-delivered; global billing and QA-owner binding unchanged by this preparation. `BILLING_QA112_RELEASE.md` |
 
 ## Open launch gates
 
@@ -43,7 +48,7 @@ Recover differentiates the listing without establishing name clearance.
 | Account confirmation | Confirmation requirement is saved ON with signup OFF; actual signup email/native acceptance remains open | Dedicated test credentials and inbox/native return confirmation |
 | Device reliability | Recording with screen lock, interruption/offline, single save/restart, Health permissions/recovery, Watch and account isolation | Physical iPhone/Watch session, explicitly deferred |
 | Account deletion | Real provider exchange/revocation, device receipt/cleanup/restart and support handling; general automation remains off | Identified disposable identities, native prompts and explicit deletion approval |
-| Paid subscriptions | Current isolated QA candidate and real purchase, restore, renewal, expiry/refund/revocation acceptance | Sandbox dialogs and observed results; some checks need elapsed time |
+| Paid subscriptions | QA112 archive is ready; coordinate private TestFlight delivery, exact authenticated owner/customer binding, then real purchase, restore, renewal, expiry/refund/revocation acceptance | Device-side Sandbox sign-in/dialogs and observed results; account creation is complete; some checks need elapsed time |
 | Store package | Final genuine screenshot coverage, final candidate attachment, privacy/reviewer reconciliation and submission decision | Capture assistance if needed and final owner decision |
 | Naming review | Owner prefers keeping StrideOS, with fallback exploration if needed. Related public use remains unresolved; hold new public handles, promotional publication and additional brand spending pending clearance. See `NAMING_DIRECTION_20261103.md` | Further owner direction only if review requires a change or professional engagement; no unilateral rename |
 

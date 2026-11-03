@@ -1,0 +1,62 @@
+{
+  "checkedAt": "2026-11-03T15:19:11.481932+00:00",
+  "buildId": "f8dd8a90-7da4-4a4f-ba8c-e85d1580daac",
+  "sourceCommit": "821f113af4b00303b57f890c1d70df1bdf8f9a47",
+  "profile": "billing-qa",
+  "buildNumber": "112",
+  "clientBillingEnabledByQaProfile": true,
+  "bytes": 129573732,
+  "sha256": "b6a3c5c83aad9538ae4b193737777f0fea2481a1107a74f27f7fd16cc1c6cf24",
+  "targets": [
+    {
+      "bundleId": "com.mooremovement.strideos",
+      "version": "1.0.0",
+      "build": "112",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [
+        "group.com.mooremovement.strideos"
+      ],
+      "healthKit": true
+    },
+    {
+      "bundleId": "com.mooremovement.strideos.liveactivity",
+      "version": "1.0.0",
+      "build": "112",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [
+        "group.com.mooremovement.strideos"
+      ],
+      "healthKit": false
+    },
+    {
+      "bundleId": "com.mooremovement.strideos.watch",
+      "version": "1.0.0",
+      "build": "112",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [],
+      "healthKit": true
+    }
+  ],
+  "privacyManifestsParsed": 21,
+  "noCredentialFilenamesInArchive": true,
+  "embeddedBundleIsHermesBytecode": true,
+  "embeddedBundleBytes": 12320536,
+  "embeddedBundleSHA256": "04727ebe5fcf9f42332c66bd23fc8a2cbd0d099f878a0ccd3aab21a78104d19d",
+  "compiled1024Icons": [
+    {
+      "Name": "AppIcon",
+      "PixelWidth": 1024,
+      "PixelHeight": 1024,
+      "Opaque": true,
+      "Idiom": "phone"
+    }
+  ],
+  "nativeCallbackSchemePresent": true,
+  "locationAndHealthPurposeStringsPresent": true,
+  "physicalDeviceAccepted": false,
+  "purchaseLifecycleAccepted": false,
+  "publicReviewSubmitted": false
+}

@@ -4,9 +4,11 @@
 
 Normal internal candidate is 111, billing off. Public draft remains 109/manual
 release. QA110 predates the reset fix and is historical, never the normal
-candidate. A reset-fixed next-QA source patch is prepared but unbuilt; proposed
-112 is not reserved. See `BILLING_QA_NEXT_PREPARATION_20261103.json` and
-`DESK_PREPARATION_20261103.md`. Actual purchases and lifecycle acceptance remain
+candidate. The owner completed the Sandbox tester, and the reset-fixed QA112
+build is compiled and signed-archive verified, but not delivered to TestFlight.
+See `BILLING_QA112_RELEASE.md` for artifact/delivery
+state; `BILLING_QA_NEXT_PREPARATION_20261103.json` is the earlier patch-only
+checkpoint. Actual purchases and lifecycle acceptance remain
 open. The following receipts retain their historical scope.
 
 ## Historical preparation — November 2, 2026

@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-11-03T15:08:11.439466+00:00",
+  "scope": "read_only_sandbox_account_creation_confirmation",
+  "ownerReportedCreationComplete": true,
+  "browserVerified": true,
+  "testAccountCount": 1,
+  "displayName": "StrideOS QA",
+  "storefront": "United States",
+  "subscriptionRenewalRateDisplayed": "Monthly renewal every 5 minutes",
+  "interruptPurchases": false,
+  "settingsChangedByAgent": false,
+  "credentialsReadOrRecorded": false,
+  "newPurchaseTested": false,
+  "deviceSandboxSignInTested": false,
+  "revenueCatCustomerBindingVerified": false,
+  "supabaseQAOwnerBindingSet": false,
+  "note": "Account creation only. The Apple sandbox account and the authenticated StrideOS/Supabase test identity are separate bindings."
+}
