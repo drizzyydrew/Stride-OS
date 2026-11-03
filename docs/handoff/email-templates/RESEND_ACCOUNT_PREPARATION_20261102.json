@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-03T04:24:39.284370+00:00",
+  "checkedAt": "2026-11-03T04:35:42.159684+00:00",
   "ownerGoogleSignInReported": true,
   "resendDashboardVerified": true,
   "transactionalPlan": "Free",
@@ -15,7 +15,7 @@
   "baseQuoteUSD": 12.03,
   "currentRenewalQuoteUSD": 12.03,
   "taxAndFeesMayBeAdditional": true,
-  "purchaseBudgetApprovalPending": true,
+  "purchaseBudgetApprovalPending": false,
   "proposedTotalMaximumUSD": 15,
   "proposedAutoRenew": false,
   "registrationRefundable": false,
@@ -33,5 +33,11 @@
   "dnsChanged": false,
   "smtpEnabledByAgent": false,
   "emailSent": false,
-  "deliveryAccepted": false
+  "deliveryAccepted": false,
+  "purchaseBudgetApproved": true,
+  "approvedTotalMaximumUSD": 15,
+  "approvedYears": 1,
+  "approvedAutoRenew": false,
+  "privatePaymentEntryPending": true,
+  "postApprovalBillingReadbackVerified": true
 }

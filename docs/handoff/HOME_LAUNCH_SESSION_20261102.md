@@ -29,8 +29,10 @@ production sending; the shared GitHub hostname is not a DNS-controlled sending
 domain. The owner selected **strideosfitness.com**. It is freshly available at
 $12.03/year with the same current renewal quote. The single-domain cart and
 private payment form are prepared, but the account has no saved Vercel payment
-method and the actual domain checkout stalled while loading billing. Approval
-for a proposed $15 total maximum, one year and no auto-renew is pending. No
+method and the actual domain checkout stalled while loading billing. The owner
+has approved a $15 total maximum including tax/fees, one year and no auto-renew.
+Fresh post-approval readback still shows no payment method; private card entry
+is handed off, with the team-primary-address draft checkbox unchecked. No
 domain is purchased, sending domain created or API key generated. See
 `email-templates/RESEND_SETUP.md`.
 

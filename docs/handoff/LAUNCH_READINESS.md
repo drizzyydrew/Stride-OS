@@ -6,8 +6,10 @@ superseding the Brevo test proposal. Actual account usage confirms Free,
 **strideosfitness.com**; fresh quote is $12.03/year and current renewal $12.03.
 Single-domain cart and private Add a Card form are prepared. The account has no
 saved Vercel payment method; domain checkout stalls while loading billing.
-Approval for a proposed $15 total maximum, one year and auto-renew off remains
-pending. Production sending still requires domain ownership/verification,
+The owner has approved a $15 total maximum including tax/fees, one year and
+auto-renew off. Fresh readback still shows no saved Vercel payment method;
+private card entry is handed off without saving a card/address or changing
+team settings. Production sending still requires domain ownership/verification,
 private SMTP key installation and delivery/callback acceptance. No domain
 purchase, sending-domain creation, key generation or DNS change occurred.
 See `email-templates/RESEND_SETUP.md`. Public registration and SMTP remain off;

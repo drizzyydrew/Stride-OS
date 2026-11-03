@@ -75,10 +75,14 @@ address as the team's primary address was unchecked; no card, address or team
 setting was saved. Do not infer an actual saved card from the quote tool's
 generic default-payment-method wording.
 
-An explicit owner decision is pending for a proposed **$15 total maximum**, one
-year and **auto-renew off**. The read-only quote discloses non-refundable,
-immediate registration and possible tax/fees beyond its $12.03 base. A proposal
-is not authorization. Quotes expire; refresh/recheck before any charge. No
+The owner explicitly approved a **$15 total maximum including tax/fees**, one
+year and **auto-renew off** for strideosfitness.com through Vercel. This approval
+does not extend to a hosting upgrade, add-on, second domain or Resend paid plan.
+The read-only quote discloses non-refundable, immediate registration and possible
+tax/fees beyond its $12.03 base. Quotes expire; refresh/recheck before any charge
+while preserving the owner's approved ceiling and scope. An API quote's broader
+account spend cap is not this task's spending authorization. Do not charge
+against an unknown final total that could exceed $15. No
 Vercel plan upgrade or add-on is part of this scope. WHOIS privacy is listed as
 included for .com; truthful registrar contact information is still required
 privately. Do not copy contact or payment details from prior chat or memory.
@@ -88,9 +92,16 @@ submitted. Establish ownership before creating the sending domain and its key.
 Cart proof: `/tmp/strideosfitness-domain-cart-ready.png`. Free-plan proof:
 `/tmp/strideos-resend-free-plan-verified.png`.
 
-Current state: owner account signed in and Free plan verified; domain chosen,
-purchase approval pending, no account/key creation by agent, no domain purchase,
-no SMTP save, no test email, no delivery acceptance. See
+Fresh post-approval browser readback still shows no Vercel payment method,
+an open Add a Card form and the primary-team-address draft checkbox unchecked.
+Owner payment entry is handed off. No private payment/contact values are
+recorded or entered by the agent. Do not repeat spending confirmation for
+unchanged work within the approved scope; private owner input remains separate.
+
+Current state: owner account signed in and Free plan verified; domain chosen
+and purchase budget approved, awaiting owner private billing entry; no
+account/key creation by agent, no domain purchase, no SMTP save, no test email,
+no delivery acceptance. See
 `RESEND_ACCOUNT_PREPARATION_20261102.json` for the redacted checkpoint.
 
 ## Primary references

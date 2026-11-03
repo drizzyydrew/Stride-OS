@@ -3,7 +3,7 @@
   "source": "Vercel read-only registrar connector",
   "availabilityAndPricingCanChange": true,
   "domainChosen": true,
-  "purchaseAuthorized": false,
+  "purchaseAuthorized": true,
   "domainPurchased": false,
   "dnsChanged": false,
   "years": 1,
@@ -30,5 +30,10 @@
   "taxAndFinalCheckoutNotVerified": true,
   "registrantInformationCollected": false,
   "selectedDomain": "strideosfitness.com",
-  "selectionRecordedAt": "2026-11-03T04:24:39.284370+00:00"
+  "selectionRecordedAt": "2026-11-03T04:24:39.284370+00:00",
+  "authorizedDomain": "strideosfitness.com",
+  "authorizedTotalMaximumUSD": 15,
+  "authorizedYears": 1,
+  "authorizedAutoRenew": false,
+  "authorizationRecordedAt": "2026-11-03T04:35:42.159684+00:00"
 }
