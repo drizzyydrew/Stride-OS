@@ -113,7 +113,7 @@
     </p>
 
     <h2>1. Data We Collect</h2>
-    <p><strong>Account information.</strong> When you create an account, we collect your email address via Supabase Auth, a third-party authentication service.</p>
+    <p><strong>Account information.</strong> When you create an account, we collect your email address via Supabase Auth, a third-party authentication service. Supabase uses Resend to deliver authentication emails, including confirmation and password-reset messages. Resend processes the recipient email address, message content (including the authentication link), and delivery records. These emails do not include your workout history, HealthKit data, GPS routes, photos, or videos.</p>
     <p><strong>Sign in with Apple.</strong> In versions with secure Apple authorization, the app sends Apple's sign-in credentials to our backend to verify your identity and retain token responses in encrypted server secret storage. This lets us disconnect Apple access when you delete your account. These credentials are not sent to analytics services. Retained responses are removed after confirmed revocation or completed account deletion. An interrupted exchange with an unknown outcome can keep deletion pending while it is resolved.</p>
     <p><strong>Training and health data.</strong> Workout logs, strength sessions, check-ins, heart rate data, pace zones, race PRs, and other fitness information you enter in the app. This data is stored on your device (AsyncStorage) and, when you are signed in, backed up to our Supabase database.</p>
     <p><strong>Movement media.</strong> Saved clips, images, and pose-analysis files can remain in the app's local document storage. A video you explicitly upload can also be stored in the private movement-videos bucket in Supabase. Local still-frame analyses are not automatically uploaded as videos. Do not assume a local analysis or clip is backed up merely because you are signed in.</p>
@@ -137,6 +137,7 @@
     <p>StrideOS uses the following third-party services:</p>
     <ul>
       <li><strong>Supabase</strong> — Authentication, database, and file storage. <a href="https://supabase.com/privacy" target="_blank">Supabase Privacy Policy</a></li>
+      <li><strong>Resend</strong> — Delivery of account authentication emails sent by Supabase. Email open and click tracking are not configured for this connection. <a href="https://resend.com/legal/privacy-policy" target="_blank">Resend Privacy Policy</a></li>
       <li><strong>Anthropic (Claude)</strong> — AI responses in the Coach tab. Messages are processed by Claude. <a href="https://www.anthropic.com/privacy" target="_blank">Anthropic Privacy Policy</a></li>
       <li><strong>Apple HealthKit</strong> (optional) — With the permissions you grant, StrideOS reads health and workout data for training features and restoration, and writes completed workouts to Apple Health. HealthKit content is not sent to PostHog or Sentry.</li>
       <li><strong>Strava</strong> (optional) — If you connect Strava, completed workouts are uploaded to your Strava account. <a href="https://www.strava.com/legal/privacy" target="_blank">Strava Privacy Policy</a></li>
