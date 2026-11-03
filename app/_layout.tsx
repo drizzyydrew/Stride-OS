@@ -15,7 +15,7 @@ import 'react-native-reanimated';
 import { useOnboardingStore } from '../src/store/onboardingStore';
 import { useAuthStore }       from '../src/store/authStore';
 import { useThemeStore }      from '../src/store/themeStore';
-import { completeSupabaseAuthFromUrl } from '../src/lib/authRedirect';
+import { rememberAuthCallbackUrl } from '../src/lib/authRedirect';
 import { ToastProvider } from '../src/components/ui/Toast';
 import { ThemeProvider as StrideThemeProvider } from '../src/theme/ThemeProvider';
 import { getNavigationTheme } from '../src/theme/theme';
@@ -92,17 +92,12 @@ function AppRootContent() {
     return undefined;
   }, [loaded, error, initialize]);
 
-  // Handle Supabase auth deep links for OAuth, email confirmation, and password reset.
+  // Expo Router delivers auth links to auth/callback. That screen owns the
+  // exchange and recovery navigation, including cold-launch URL fragments.
   useEffect(() => {
-    async function handleUrl(url: string) {
-      const result = await completeSupabaseAuthFromUrl(url);
-      if (result.recovery && !result.error) {
-        router.push('/auth/new-password' as never);
-      }
-    }
-
-    Linking.getInitialURL().then(url => { if (url) handleUrl(url); });
-    const sub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+    // Capture transport only; never exchange credentials or navigate here.
+    const sub = Linking.addEventListener('url', ({ url }) => rememberAuthCallbackUrl(url));
+    void Linking.getInitialURL().then(url => { if (url) rememberAuthCallbackUrl(url, true); }).catch(() => undefined);
     return () => sub.remove();
   }, []);
 
@@ -237,6 +232,9 @@ function NavigationGate() {
     const path         = segments.join('/');
     const inAuth       = path.includes('auth');
     const inOnboarding = path.includes('onboarding');
+    // A restored session is expected during recovery. Do not let ordinary
+    // onboarding/dashboard redirects unmount the one-use link or password form.
+    if (path === 'auth/callback' || path === 'auth/new-password') return;
 
     if (!canAccessLocalData) {
       if (!inAuth) router.replace('/auth/sign-in' as never);

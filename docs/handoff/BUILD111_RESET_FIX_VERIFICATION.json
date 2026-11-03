@@ -1,0 +1,36 @@
+{
+  "preparedAt": "2026-11-03T06:05:36.298492+00:00",
+  "buildNumber": "111",
+  "profile": "production",
+  "billingEnabled": false,
+  "sourceHashes": {
+    "app.json": "c5ada7b2376ce864f03ed21ed4db7ac4436e3ed04e4b638cce813b2874b32b12",
+    "app/_layout.tsx": "f422a92da856c1ced276557186929b548dae4d266ffb8779916ef58dc896216e",
+    "app/auth/callback.tsx": "aec08d31ab2a4119aa43e6f20691a453add6681f8e4f8bb13b77715b80052a00",
+    "src/lib/authRedirect.ts": "a8c285c7973104a86f327001f738b18c28e7695f0a548af77f48f0bbc9caca5f",
+    "src/store/authStore.ts": "608830a463fc9ee9ece4e868fcc66f4cb685d63632e4f418c830c1a166e51cd1",
+    "scripts/tests/authLinkCompletion.test.ts": "9f0e763545ceee7cc2057cd367743d00802c7dd7c7da542337102cbb02820160",
+    "scripts/tests/authCallbackScreen.test.ts": "f3c21df33245fb23667eaf0cabfc3dd7cba11cc01d206a2c781bcf8c0d1a8b33"
+  },
+  "newTargetedTestsLog": "/tmp/strideos-reset-safety-final.log",
+  "targetedTestsPassed": 42,
+  "typeScriptAndExpoCheck": "/tmp/strideos-reset111-check-final.log",
+  "finalRegressionLog": "/tmp/strideos-reset111-regression-final.log",
+  "independentReviews": [
+    "platform/cold-start review and real-screen regression tests",
+    "contrarian/account-custody review; scoped proceed/no remaining P1 after delayed/rejected persistence probes"
+  ],
+  "deviceAccepted": false,
+  "publicRelease": false,
+  "nativeSourceTouched": false,
+  "sourceLinkSecretsPersistedOrLogged": false,
+  "finalRegression": {
+    "tests": 1623,
+    "passed": 1623,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "typeScriptPassed": true,
+  "expoCompatibilityPassed": true
+}

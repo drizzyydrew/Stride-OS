@@ -14,6 +14,9 @@ import {
   authRedirectUrl,
   completeSupabaseAuthFromUrl,
   hydrateUserData,
+  authCallbackKey,
+  isAuthCallbackUrl,
+  type AuthCompletionResult,
 } from '../lib/authRedirect';
 import { useWorkoutStore } from './workoutStore';
 import { useStrengthStore } from './strengthStore';
@@ -44,9 +47,11 @@ let initialization: Promise<void> | null = null;
 let authGeneration = 0;
 let authAttemptGeneration = 0;
 let authListenerInstalled = false;
+let recoverySession: { userId: string; attempt: number } | null = null;
 let appleRevokeListenerInstalled = false;
 const STALE_AUTH_ATTEMPT = 'This sign-in was cancelled by logout or a newer sign-in. Please retry.';
 function beginAuthAttempt() {
+  recoverySession = null;
   authGeneration += 1;
   return ++authAttemptGeneration;
 }
@@ -69,7 +74,10 @@ async function acceptSession(session: Session, explicitSignIn = false, offline =
   if (generation !== authGeneration) return 'The account changed. Please retry.';
   if (localDataOwner.canAccess) {
     try { await useWorkoutStore.getState().restorePendingCompletions(); }
-    catch { localDataOwner.block('storage-error'); }
+    catch {
+      if (generation !== authGeneration) return 'The account changed. Please retry.';
+      localDataOwner.block('storage-error');
+    }
   }
   if (generation !== authGeneration) return 'The account changed. Please retry.';
   publishAccess(offline ? null : session, session.user);
@@ -86,13 +94,101 @@ async function finishExplicitSignIn(session: Session | null, attempt: number): P
   let reason: string | null;
   try { reason = await acceptSession(session, true); }
   catch {
+    if (attempt !== authAttemptGeneration) return STALE_AUTH_ATTEMPT;
     localDataOwner.block('storage-error');
     publishAccess();
     return localAccessReason('storage-error');
   }
   const availability = getSupabaseAvailability();
-  if (reason && availability.status === 'available') availability.client.auth.stopAutoRefresh();
+  if (reason && attempt === authAttemptGeneration && availability.status === 'available') availability.client.auth.stopAutoRefresh();
   return reason;
+}
+
+// One owner for native/OAuth link exchange and local acceptance. A cold-start
+// session event must not race the same one-use link or bypass a logout fence.
+let linkedAttempt: { key: string; attempt: number; ownerGeneration: number; expires: number; cancel: (reason: string) => void; promise: Promise<AuthCompletionResult> } | null = null;
+export function cancelAuthLink(url: string, reason = 'This sign-in was cancelled. Request a new link.'): void {
+  if (isAuthCallbackUrl(url) && linkedAttempt?.key === authCallbackKey(url) && linkedAttempt.expires === Infinity) linkedAttempt.cancel(reason);
+}
+export function completeAuthLink(url: string, existingAttempt?: number): Promise<AuthCompletionResult> {
+  if (!isAuthCallbackUrl(url)) return Promise.resolve({ handled: false, recovery: false, error: 'This link is not a StrideOS sign-in callback.' });
+  if (localOwnerAccessAllowed && !localOwnerAccessAllowed(null)) return Promise.resolve({ handled: true, recovery: false, error: 'Finish the pending account recovery or deletion before signing in.' });
+  const key = authCallbackKey(url);
+  if (linkedAttempt?.key === key && linkedAttempt.attempt === authAttemptGeneration
+    && (linkedAttempt.expires === Infinity || linkedAttempt.ownerGeneration === localDataOwner.accessGeneration)
+    && linkedAttempt.expires > Date.now()) return linkedAttempt.promise;
+  const attempt = existingAttempt ?? beginAuthAttempt();
+  let cancelled = false, accepting = false;
+  let acceptedUserId: string | null = null;
+  const current = () => !cancelled && attempt === authAttemptGeneration;
+  const failure = (error: string): AuthCompletionResult => ({ handled: true, recovery: false, error });
+  let timer: ReturnType<typeof setTimeout>;
+  let cancel = (_reason: string) => {};
+  const deadline = new Promise<AuthCompletionResult>(resolve => {
+    cancel = reason => {
+      if (cancelled) return;
+      cancelled = true;
+      if (attempt === authAttemptGeneration) {
+        authAttemptGeneration += 1;
+        authGeneration += 1;
+        if (accepting) {
+          // A pending completion restore must not leave a restart-reusable
+          // login after this attempt expires. Preserve data and fence access
+          // durably; never erase a newer attempt's credentials during cleanup.
+          const cancellationGeneration = authAttemptGeneration;
+          const fence = localDataOwner.signOut();
+          publishAccess();
+          const cleanup = withExplicitAuthAttempt(async () => {
+            if (cancellationGeneration !== authAttemptGeneration) return;
+            const cached = await readCachedSupabaseSession();
+            if (cancellationGeneration === authAttemptGeneration && cached?.user.id === acceptedUserId) await clearCachedSupabaseSession();
+          }, () => cancellationGeneration === authAttemptGeneration);
+          // Bound the UI independently, but do not report secured cancellation
+          // until its durable fence/credential cleanup have actually settled.
+          void Promise.allSettled([fence, cleanup]).then(results => {
+            if (cancellationGeneration === authAttemptGeneration && results.some(result => result.status === 'rejected')) {
+              localDataOwner.block('storage-error'); publishAccess();
+              resolve(failure('Device storage could not secure sign-in. Please contact StrideOS support before continuing.'));
+            } else resolve(failure(reason));
+          });
+          return;
+        }
+      }
+      resolve(failure(reason));
+    };
+    timer = setTimeout(() => cancel('Sign-in is taking longer than expected. Go back and request a new reset link.'), 20_000);
+  });
+  const work = (async (): Promise<AuthCompletionResult> => {
+    await useAuthStore.getState().initialize();
+    if (!current()) return failure(STALE_AUTH_ATTEMPT);
+    const availability = getSupabaseAvailability();
+    if (availability.status !== 'available') return failure(supabaseUnavailableMessage('Sign in'));
+    const result = await withExplicitAuthAttempt(async () => {
+      const completion = await completeSupabaseAuthFromUrl(url);
+      if (completion.error || !completion.handled || !current()) return { completion, session: null };
+      if (!completion.verifiedSession) return { completion: failure('This link did not create a session. Request a new link.'), session: null };
+      return { completion, session: completion.verifiedSession };
+    }, current);
+    if (!current()) return failure(STALE_AUTH_ATTEMPT);
+    if (result.completion.error || !result.completion.handled) return result.completion;
+    accepting = true;
+    acceptedUserId = result.session?.user.id ?? null;
+    const reason = await finishExplicitSignIn(result.session, attempt);
+    if (!current()) return failure(STALE_AUTH_ATTEMPT);
+    if (!reason && result.completion.recovery && result.session) recoverySession = { userId: result.session.user.id, attempt };
+    // Do not cache credentials in the duplicate-delivery result.
+    return { handled: result.completion.handled, recovery: result.completion.recovery, error: reason };
+  })().catch(() => failure('This sign-in link could not finish. Request a new link and try again.'));
+  const entry = { key, attempt, ownerGeneration: localDataOwner.accessGeneration, expires: Infinity, cancel, promise: Promise.resolve(failure('Sign-in is pending.')) };
+  entry.promise = Promise.race([work.then(result => cancelled ? deadline : result), deadline]).then(result => {
+    clearTimeout(timer!);
+    entry.expires = Date.now() + 30_000;
+    entry.ownerGeneration = localDataOwner.accessGeneration;
+    if (result.error && linkedAttempt === entry) linkedAttempt = null;
+    return result;
+  });
+  linkedAttempt = entry;
+  return entry.promise;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -261,8 +357,25 @@ export const useAuthStore = create<AuthStore>((set) => ({
     if (supabaseState.status !== 'available') return supabaseUnavailableMessage('Password update');
     const { client: supabase } = supabaseState;
 
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    return error?.message ?? null;
+    const recovery = recoverySession;
+    const current = () => recovery !== null && recovery === recoverySession
+      && recovery.attempt === authAttemptGeneration && localDataOwner.canAccess
+      && localDataOwner.ownerUserId === recovery.userId;
+    if (!current()) return 'Request a new password-reset link before changing your password.';
+    try {
+      const error = await withExplicitAuthAttempt(async () => {
+        const { data, error } = await supabase.auth.getSession();
+        if (error || !current() || data.session?.user.id !== recovery!.userId) return 'The account changed. Request a new reset link.';
+        const result = await supabase.auth.updateUser({ password: newPassword });
+        if (!current()) return 'The account changed. Request a new reset link.';
+        const after = await supabase.auth.getSession();
+        if (after.error || !current() || after.data.session?.user.id !== recovery!.userId) return 'The account changed. Request a new reset link.';
+        return result.error?.message ?? null;
+      }, current);
+      if (!current()) return 'The account changed. Request a new reset link.';
+      if (!error) recoverySession = null;
+      return error;
+    } catch { return 'The password update could not finish. Request a new reset link and try again.'; }
   },
 
   signInWithApple: async () => {
@@ -364,12 +477,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
       if (attempt !== authAttemptGeneration) return STALE_AUTH_ATTEMPT;
       if (result.type === 'success') {
-        const completion = await withExplicitAuthAttempt(() => completeSupabaseAuthFromUrl(result.url), () => attempt === authAttemptGeneration);
+        const completion = await completeAuthLink(result.url, attempt);
         if (attempt !== authAttemptGeneration) return STALE_AUTH_ATTEMPT;
-        if (completion.error) return completion.error;
-        const { data, error: sessionError } = await supabase.auth.getSession();
-        if (attempt !== authAttemptGeneration) return STALE_AUTH_ATTEMPT;
-        return sessionError?.message ?? await finishExplicitSignIn(data.session, attempt);
+        return completion.error;
       }
       return null;
     } catch (e: any) {

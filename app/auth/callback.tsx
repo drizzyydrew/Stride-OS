@@ -3,7 +3,8 @@ import * as Linking from 'expo-linking';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AUTH_CALLBACK_PATH, completeSupabaseAuthFromUrl } from '../../src/lib/authRedirect';
+import { AUTH_CALLBACK_PATH, resolveAuthCallbackUrl } from '../../src/lib/authRedirect';
+import { completeAuthLink, cancelAuthLink } from '../../src/store/authStore';
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
@@ -14,6 +15,7 @@ function paramValue(value: string | string[] | undefined): string | undefined {
 
 export default function AuthCallbackScreen() {
   const params = useLocalSearchParams();
+  const incomingUrl = Linking.useURL();
   const [error, setError] = useState<string | null>(null);
 
   const callbackUrl = useMemo(() => {
@@ -23,16 +25,38 @@ export default function AuthCallbackScreen() {
       if (normalized) queryParams[key] = normalized;
     }
     return Linking.createURL(AUTH_CALLBACK_PATH, { queryParams });
-  }, [params]);
+  }, [params, incomingUrl]);
 
   useEffect(() => {
-    let mounted = true;
+    let mounted = true, timedOut = false;
+    let startedUrl: string | null = null;
+    setError(null);
+    const timer = setTimeout(() => {
+      if (!mounted) return;
+      timedOut = true;
+      if (startedUrl) cancelAuthLink(startedUrl, 'Sign-in is taking longer than expected. Go back and request a new reset link.');
+      setError('Sign-in is taking longer than expected. Go back and request a new reset link.');
+    }, 20_000);
 
-    completeSupabaseAuthFromUrl(callbackUrl)
+    (async () => {
+      const initial = incomingUrl ? null : await Linking.getInitialURL();
+      if (!mounted || timedOut) return null;
+      startedUrl = resolveAuthCallbackUrl(callbackUrl, incomingUrl, initial);
+      return completeAuthLink(startedUrl);
+    })()
       .then(result => {
-        if (!mounted) return;
+        if (!mounted || !result) return;
+        clearTimeout(timer);
+        if (timedOut) {
+          if (result.error) setError(result.error);
+          return;
+        }
         if (result.error) {
           setError(result.error);
+          return;
+        }
+        if (!result.handled) {
+          setError('This link is missing sign-in details. Request a new reset link.');
           return;
         }
         if (result.recovery) {
@@ -42,11 +66,12 @@ export default function AuthCallbackScreen() {
         }
       })
       .catch(e => {
-        if (mounted) setError(e instanceof Error ? e.message : 'Authentication callback failed.');
+        clearTimeout(timer);
+        if (mounted) setError('This sign-in link could not finish. Request a new link and try again.');
       });
 
-    return () => { mounted = false; };
-  }, [callbackUrl]);
+    return () => { mounted = false; clearTimeout(timer); };
+  }, [callbackUrl, incomingUrl]);
 
   return (
     <View style={s.root}>
@@ -67,6 +92,7 @@ export default function AuthCallbackScreen() {
     </View>
   );
 }
+
 
 const s = StyleSheet.create({
   root: {

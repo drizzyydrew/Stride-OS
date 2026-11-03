@@ -85,5 +85,12 @@
     "rawResetURLRetrieved": false,
     "fullFooterInspected": false,
     "smtpAuthenticationConfirmedBySuccessfulMessageDelivery": true
+  },
+  "nativeRecoveryIncident": {
+    "ownerFirstAttemptReportedWorking": true,
+    "repeatAfterAppClosedHangs": true,
+    "observedScreen": "Finishing sign in...",
+    "status": "Source fix prepared for build 111; physical-device retest pending",
+    "noAccountOrTrainingDataDeleted": true
   }
 }

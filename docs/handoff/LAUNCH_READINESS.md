@@ -1,5 +1,12 @@
 # StrideOS Launch Readiness
 
+Password-reset incident update: the first reset reportedly worked, but repeating
+it after closing StrideOS left build 109 on **Finishing sign in…**. Email delivery
+is accepted; native recovery is not. A scoped source fix and regression coverage
+are prepared for **build 111**; see `AUTH_RESET_COLD_START_20261102.md`. Do not
+claim the installed build or public draft contains this fix before replacement
+artifact/upload/device acceptance is verified. No data deletion or public release.
+
 Email update, November 2: the owner completed **strideosfitness.com** registration.
 Vercel order is completed for one year; expiration November 2, 2027, listed
 registration price $12.03 (final charged tax/total not independently inspected).
