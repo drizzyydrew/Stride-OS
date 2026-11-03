@@ -1,5 +1,12 @@
 # StrideOS Launch Readiness
 
+Website/support continuation: the public support page now includes password-reset,
+goal archive/open-training and optional AI guidance, with corrected training-estimate
+wording. Narrow/mobile overflow, FAQ heading semantics and keyboard navigation were
+checked. Publication is verified live; support operations and independent-review
+briefs are prepared in the handoff folder. See `WEBSITE_SUPPORT_VERIFICATION.md`.
+These non-device tasks do not accept the remaining native, billing or deletion gates.
+
 Password-reset retest update: **the owner reports the corrected build 111
 cold-start reset now works**. This accepts that reported reset retest, not every
 recovery edge case or the full device suite. Source passed 1,623 tests; build 111
