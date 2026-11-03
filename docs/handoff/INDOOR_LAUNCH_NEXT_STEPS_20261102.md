@@ -4,7 +4,12 @@ The owner explicitly deferred the build 111 outdoor/locked-screen recording test
 Keep that acceptance open and continue independent work. The owner-reported
 closed-app password-reset retest is accepted only for that reported flow.
 
-## Fresh read-only checks
+November 3 desk continuation: Confirm email is now saved ON with public signup
+still OFF. The earlier both-off observation below is historical. See
+`DESK_PREPARATION_20261103.md` for completed preparation and the laptop-only
+Sandbox tester form ready for private owner completion.
+
+## Earlier read-only checks
 
 - Apple build 111 detail still shows the existing internal Team (Expo) group,
   one tester and the saved reset-test notes. No build/group/tester was changed.

@@ -18,10 +18,12 @@ open. No public review/release, billing activation or customer deletion.
 Prepared November 2, 2026. Current corrected internal candidate is **111**, billing off.
 The public App Store draft was last verified as 109 with manual release;
 this run did not change or submit that draft. Private purchase-test
-candidate **110** is isolated in `/tmp/strideos-billing-qa110-20261102`; never
-replace the public draft with that QA binary. Availability is recorded separately.
+candidate **110** is historical and predates the build-111 reset fix. Its former
+`/tmp` checkout is not a durable artifact after restart. Prepare and inspect a
+current isolated QA candidate before purchase testing; never replace the public
+draft with a QA binary. Availability is recorded separately.
 
-Private 110 is now signed-archive verified and **VALID / IN_BETA_TESTING
+Historical November 2 receipt: private 110 was signed-archive verified and **VALID / IN_BETA_TESTING
 internally** in the existing owner-only group. The saved public draft was freshly
 verified as **109 / manual release / Prepare for Submission**. See
 `BILLING_QA110_RELEASE.md`. Following renewed owner sign-in, 110's private-QA
@@ -57,9 +59,11 @@ content. This accepts a single reset email, not the whole authentication flow.
 The owner now reports the build 111 closed-app reset retest worked. The
 recording/background/save/restart check is deferred at the owner's request;
 email signup confirmation remains separate. Keep Apple's review credentials current if
-that account's password changes. Signup remains off and Confirm email is also
-off; confirmation policy/flow must be enabled and accepted before reopening
-signup. See `email-templates/RESEND_SMTP_ACCEPTANCE_20261102.json`.
+that account's password changes. November 3 desk update: signup remains off,
+and Confirm email is now saved on with reload verification. Actual confirmation
+flow must still be accepted before reopening signup. See
+`AUTH_CONFIRMATION_PREPARATION_20261103.json` and
+`email-templates/RESEND_SMTP_ACCEPTANCE_20261102.json`.
 Earlier card/cart/Brevo/unsaved-SMTP checkpoints are historical, not blockers.
 
 ## Planning estimate
@@ -94,7 +98,11 @@ Apple currently reports 50% of submissions reviewed within 24 hours and 90%
 within 48 hours. Incomplete submissions and review issues can take longer;
 review is not approval or release. [Apple review timing](https://developer.apple.com/distribute/app-review/).
 
-## First 15–35 minutes at home: private account steps
+## Earlier private account setup — completed checkpoints
+
+The numbered setup below is retained as history. Resend/domain/SMTP setup and
+the approved Claude organization limit are already completed. Do not repeat
+those steps. Only dedicated test identity and actual acceptance remain.
 
 1. Confirm the existing email-sending service, or say none. Reuse approved access
    when possible. If a new service is needed, the owner completes its terms and
@@ -137,9 +145,11 @@ pending/interrupted recovery, server removal and local cleanup/restart. A pendin
 or manual outcome is not a completed provider revocation. Restore the agreed
 control state after the scoped test. General deletion is still off until accepted.
 
-## Purchase block: private 110, only after server binding is confirmed
+## Purchase block: current isolated QA candidate, after server binding is confirmed
 
-Do not start purchases just because 110 becomes installable. Main first confirms
+Do not test on obsolete QA110. First prepare and inspect a separate QA build
+containing the reset fix and current accepted source. Do not start purchases
+just because that build becomes installable. Main first confirms
 the dedicated authenticated owner's UUID, server QA binding, SDK registration
 and correct RevenueCat customer. The user enters sandbox credentials privately.
 
@@ -150,7 +160,8 @@ path's deliberate 429 means verified access with no AI/quota use; it is not norm
 AI success. Remove/verify the QA binding after testing. Keep global billing off
 until the intended production variant and remaining paid-launch gates pass.
 
-For a paid launch, 109 remains the billing-off baseline and 110 remains QA only.
+For a paid launch, 111 is the latest recorded normal internal candidate; 109
+is the saved public draft, and 110 is historical QA only.
 After lifecycle acceptance, prepare/verify the intended paid production variant,
 align its client/server settings, and review paid-scope privacy labels including
 purchase history before promotion. Budget another cloud-build/Apple-processing
@@ -186,7 +197,8 @@ release prematurely to clear it or count sandbox delivery as production proof.
 ./node_modules/.bin/tsx scripts/prepare-launch-session.ts --live
 ```
 
-Default reads only named local candidate/config receipts. `--live` adds exactly
+Default reads only named build-111 internal-candidate/config receipts. It does
+not inspect or change the live public draft, and cannot accept human gates. `--live` adds exactly
 six fixed-host, credential-free GET/OPTIONS checks: Coach public auth/CORS and
 four free public pages. No emails, AI, quota changes, purchases, account deletion
 or settings writes. Successful preparation never accepts human/device/provider
@@ -197,7 +209,7 @@ requires its separate official status readback; local receipts are historical.
 
 This was a single-assistant review using product, platform and contrarian lenses,
 not independent council consensus. Preparing a separate QA artifact saves owner
-waiting; mistaken public promotion is the strongest countercase. Isolating 110,
-preserving the saved 109 draft and leaving test-owner/global flags unset resolves
+waiting; mistaken public promotion is the strongest countercase. Isolating any current QA candidate,
+preserving the saved public draft and leaving test-owner/global flags unset resolves
 that preparation risk. Unverified purchase, provider and device outcomes remain
 launch blockers rather than being treated as setup successes.

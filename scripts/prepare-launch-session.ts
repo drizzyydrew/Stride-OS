@@ -3,13 +3,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { verifyRevenueCatServerBoundary } from './verify-revenuecat-server';
 
-const BUILD = '109';
-const BUILD_ID = 'eefedb6a-dee7-433a-a1fd-1bf8eb9ab5c3';
+const BUILD = '111';
+const BUILD_ID = 'be1f0cb0-dc73-4089-839a-4e23d1af4a86';
+const SOURCE_COMMIT = 'dc318bf8e9c296efc3ef63351bb2d7dca8b3faa2';
 export const PUBLIC_PAGES = ['', 'support.html', 'privacy.html', 'terms.html']
   .map(path => `https://drizzyydrew.github.io/Stride-OS/${path}`);
-export const HUMAN_GATES = ['production_email_delivery', 'ai_vendor_spending_limit',
+export const HUMAN_GATES = ['signup_confirmation_and_recovery_edges', 'deployed_ai_spending_enforcement',
   'native_phone_watch_acceptance', 'real_provider_account_deletion',
-  'sandbox_purchase_lifecycle', 'current_native_screenshots', 'final_submission_decision'];
+  'sandbox_purchase_lifecycle', 'current_native_screenshots', 'public_name_clearance', 'final_submission_decision'];
 
 type Check = { name: string; passed: boolean; httpStatus?: number | null };
 type Dependencies = {
@@ -25,20 +26,24 @@ export async function prepareLaunchSession(live = false, deps: Dependencies = {}
   try {
     const app = JSON.parse(read('app.json')).expo;
     const eas = JSON.parse(read('eas.json'));
-    const archive = JSON.parse(read('docs/handoff/BUILD109_ARTIFACT_VERIFICATION.json'));
-    const apple = JSON.parse(read('docs/handoff/BUILD109_APPLE_ACCEPTANCE.json')).testFlight;
+    const archive = JSON.parse(read('docs/handoff/BUILD111_ARTIFACT_VERIFICATION.json'));
+    const apple = JSON.parse(read('docs/handoff/BUILD111_APPLE_ACCEPTANCE.json')).build;
     const expected = ['com.mooremovement.strideos', 'com.mooremovement.strideos.watch',
       'com.mooremovement.strideos.liveactivity'].sort();
-    checks.push({ name: 'canonical_production_still_109_billing_off', passed:
+    checks.push({ name: 'canonical_internal_candidate_111_billing_off', passed:
       app.ios.buildNumber === BUILD && eas.build.production.env.EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED === 'false' });
-    checks.push({ name: 'stored_archive_receipt_matches_109', passed:
-      archive.buildId === BUILD_ID && archive.compiled1024IconOpaque === true
+    checks.push({ name: 'stored_archive_receipt_matches_111', passed:
+      archive.buildId === BUILD_ID && archive.sourceCommit === SOURCE_COMMIT
+      && archive.buildNumber === BUILD && archive.profile === 'production'
+      && archive.billingOffByProductionProfile === true
+      && archive.compiled1024Icons?.some((icon: { PixelWidth: number; PixelHeight: number; Opaque: boolean; Idiom: string }) =>
+        icon.PixelWidth === 1024 && icon.PixelHeight === 1024 && icon.Opaque === true && icon.Idiom === 'phone') === true
       && archive.privacyManifestsParsed === 21 && archive.noCredentialFilenamesInArchive === true
       && archive.targets?.length === 3
-      && JSON.stringify(archive.targets.map((t: { bundle: string }) => t.bundle).sort()) === JSON.stringify(expected)
-      && archive.targets.every((t: { build: string; signatureValid: boolean; debugSigning: boolean }) =>
-        t.build === BUILD && t.signatureValid === true && t.debugSigning === false) });
-    checks.push({ name: 'stored_apple_receipt_matches_internal_109', passed:
+      && JSON.stringify(archive.targets.map((t: { bundleId: string }) => t.bundleId).sort()) === JSON.stringify(expected)
+      && archive.targets.every((t: { build: string; strictSignatureVerified: boolean }) =>
+        t.build === BUILD && t.strictSignatureVerified === true) });
+    checks.push({ name: 'stored_apple_receipt_matches_internal_111', passed:
       apple.buildNumber === BUILD && apple.easBuildId === BUILD_ID
       && apple.processingState === 'VALID' && apple.internalState === 'IN_BETA_TESTING' && apple.expired === false });
   } catch {
@@ -61,7 +66,9 @@ export async function prepareLaunchSession(live = false, deps: Dependencies = {}
     }
   }
   return { scope: 'read_only_session_preparation', checkedAt: (deps.now ?? (() => new Date()))().toISOString(),
-    productionCandidate: BUILD, storedAppleEvidenceOnly: true, livePublicChecksRun: live,
+    internalCandidate: BUILD, candidateSourceCommit: SOURCE_COMMIT,
+    publicDraftEvidence: 'See CURRENT_LAUNCH_STATUS.md; this tool does not read the live App Store draft.',
+    storedAppleEvidenceOnly: true, livePublicChecksRun: live,
     checks, preparationChecksPassed: checks.every(c => c.passed),
     humanGates: HUMAN_GATES.map(name => ({ name, status: 'NOT_ACCEPTED_BY_THIS_TOOL' })),
     publicLaunchReady: false, purchaseLifecycleVerified: false, providerDeletionVerified: false,
@@ -76,7 +83,7 @@ export async function runPreparationCli(args: readonly string[], deps: Dependenc
     write('Usage: tsx scripts/prepare-launch-session.ts [--live|--help]'); return 2;
   }
   if (args[0] === '--help') {
-    write('Default: stored production-109 receipts only, no network or credentials.');
+    write('Default: stored internal-candidate-111 receipts only, no network or credentials.');
     write('--live: fixed-host public GET/OPTIONS checks only; no emails, purchases, AI or deletion.');
     write('Successful preparation checks never accept human gates or approve a public launch.');
     return 0;

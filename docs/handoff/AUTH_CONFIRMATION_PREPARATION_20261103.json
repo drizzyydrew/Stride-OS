@@ -1,0 +1,63 @@
+{
+  "checkedAt": "2026-11-03T14:33:00.245819+00:00",
+  "scope": "single_auth_policy_flag_and_desk_preparation",
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "organization": "Moore Movement",
+  "changedSetting": {
+    "name": "Confirm email",
+    "before": false,
+    "after": true,
+    "saved": true,
+    "reloadVerified": true
+  },
+  "unchangedObservedSettings": {
+    "allowNewUsersToSignUp": false,
+    "manualLinking": false,
+    "anonymousSignIn": false,
+    "emailProvider": true,
+    "appleProvider": true,
+    "googleProvider": true
+  },
+  "redirectsObserved": [
+    "strideos://auth/new-password",
+    "strideos://auth/callback",
+    "strideos://**"
+  ],
+  "siteURLObserved": "strideos://",
+  "authUserAggregateBeforeAndAfter": {
+    "total": 3,
+    "emailConfirmedTimestampPresent": 3,
+    "unconfirmed": 0
+  },
+  "priorAccountMailboxProofAccepted": false,
+  "signupEmailNativeFlowAccepted": false,
+  "testEvidence": {
+    "authenticationTestsPassed": 37,
+    "billingAndObservabilityTestsPassed": 34,
+    "fullAppSuiteRerun": false
+  },
+  "sandboxForm": {
+    "url": "https://appstoreconnect.apple.com/access/users/sandbox",
+    "existingTestersObserved": 0,
+    "firstName": "StrideOS",
+    "lastName": "QA",
+    "region": "United States",
+    "emailAndPasswordsBlank": true,
+    "submitted": false,
+    "ownerMustEnterAndSubmitNewCredentials": true,
+    "proofPath": "/Users/drew/Documents/StrideOS Launch Review/SANDBOX_TESTER_READY_20261103.png",
+    "proofSHA256": "b0cc1e258178e3ccb1426ab417c62c07b43286c0807ab88861cdea974ac29738"
+  },
+  "confirmationProof": {
+    "path": "/Users/drew/Documents/StrideOS Launch Review/CONFIRM_EMAIL_ENABLED_20261103.png",
+    "sha256": "e98c78fe2e833b60b4825b3c9ec9614a22faffa8b5bda95dcc1990bc4e785877"
+  },
+  "accountsCreated": 0,
+  "passwordsChanged": 0,
+  "emailsSent": 0,
+  "purchasesMade": 0,
+  "deletionRequestsMade": 0,
+  "cloudBuildsStarted": 0,
+  "publicReviewOrReleasePerformed": false,
+  "keysReadOrChanged": false
+}

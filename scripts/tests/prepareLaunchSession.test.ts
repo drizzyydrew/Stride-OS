@@ -1,22 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { prepareLaunchSession, runPreparationCli, PUBLIC_PAGES } from '../prepare-launch-session';
 import { REVENUECAT_COACH_PROBE_URL } from '../verify-revenuecat-server';
 
 function fixture(override: Record<string, unknown> = {}) {
+  const receipt = (name: string) => JSON.parse(readFileSync(resolve(__dirname, '../../docs/handoff', name), 'utf8'));
   const docs: Record<string, unknown> = {
-    'app.json': { expo: { ios: { buildNumber: '109' } } },
+    'app.json': { expo: { ios: { buildNumber: '111' } } },
     'eas.json': { build: { production: { env: { EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED: 'false' } } } },
-    'docs/handoff/BUILD109_ARTIFACT_VERIFICATION.json': {
-      buildId: 'eefedb6a-dee7-433a-a1fd-1bf8eb9ab5c3', compiled1024IconOpaque: true,
-      privacyManifestsParsed: 21, noCredentialFilenamesInArchive: true,
-      targets: ['com.mooremovement.strideos', 'com.mooremovement.strideos.watch', 'com.mooremovement.strideos.liveactivity']
-        .map(bundle => ({ bundle, build: '109', signatureValid: true, debugSigning: false })),
-    },
-    'docs/handoff/BUILD109_APPLE_ACCEPTANCE.json': { testFlight: {
-      buildNumber: '109', easBuildId: 'eefedb6a-dee7-433a-a1fd-1bf8eb9ab5c3',
-      processingState: 'VALID', internalState: 'IN_BETA_TESTING', expired: false,
-    } }, ...override,
+    'docs/handoff/BUILD111_ARTIFACT_VERIFICATION.json': receipt('BUILD111_ARTIFACT_VERIFICATION.json'),
+    'docs/handoff/BUILD111_APPLE_ACCEPTANCE.json': receipt('BUILD111_APPLE_ACCEPTANCE.json'),
+    ...override,
   };
   return (path: string) => { assert.ok(path in docs); return JSON.stringify(docs[path]); };
 }
@@ -24,14 +20,16 @@ function fixture(override: Record<string, unknown> = {}) {
 test('offline preparation reads only named candidate receipts and cannot approve human acceptance', async () => {
   const r = await prepareLaunchSession(false, { read: fixture(), fetch: async () => { throw Error('Network forbidden'); } });
   assert.equal(r.preparationChecksPassed, true); assert.equal(r.livePublicChecksRun, false);
-  assert.equal(r.publicLaunchReady, false); assert.equal(r.humanGates.length, 7);
+  assert.equal(r.publicLaunchReady, false); assert.equal(r.humanGates.length, 8);
+  assert.equal(r.internalCandidate, '111'); assert.equal(r.storedAppleEvidenceOnly, true);
+  assert.equal('productionCandidate' in r, false);
   assert.ok(r.humanGates.every(g => g.status === 'NOT_ACCEPTED_BY_THIS_TOOL'));
 });
 
-test('a private QA build cannot be mistaken for canonical production-109 preparation', async () => {
+test('a private QA build cannot be mistaken for internal-candidate-111 preparation', async () => {
   const r = await prepareLaunchSession(false, { read: fixture({ 'app.json': { expo: { ios: { buildNumber: '110' } } } }) });
   assert.equal(r.preparationChecksPassed, false);
-  assert.equal(r.checks.find(c => c.name === 'canonical_production_still_109_billing_off')?.passed, false);
+  assert.equal(r.checks.find(c => c.name === 'canonical_internal_candidate_111_billing_off')?.passed, false);
 });
 
 test('live preparation sends only the six fixed public requests, with no credentials, POSTs or bodies', async () => {
@@ -68,5 +66,28 @@ test('help and unknown arguments cannot read files, send requests or echo a mist
       fetch: async () => { throw Error('Unexpected request'); }, write: s => output.push(s) });
     assert.equal(code, args[0] === '--help' ? 0 : 2);
     assert.ok(!output.join('\n').includes('private_credential'));
+  }
+});
+
+test('stale receipts, mismatched targets and enabled billing fail preparation', async () => {
+  const base = fixture();
+  const archivePath = 'docs/handoff/BUILD111_ARTIFACT_VERIFICATION.json';
+  const applePath = 'docs/handoff/BUILD111_APPLE_ACCEPTANCE.json';
+  const archive = JSON.parse(base(archivePath));
+  const apple = JSON.parse(base(applePath));
+  const cases = [
+    { 'app.json': { expo: { ios: { buildNumber: '109' } } } },
+    { 'eas.json': { build: { production: { env: { EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED: 'true' } } } } },
+    { [archivePath]: { ...archive, sourceCommit: 'old-source' } },
+    { [archivePath]: { ...archive, targets: archive.targets.map((t: object, i: number) => i === 1 ? { ...t, build: '110' } : t) } },
+    { [archivePath]: { ...archive, targets: archive.targets.map((t: object) => ({ ...t, strictSignatureVerified: false })) } },
+    { [archivePath]: { ...archive, compiled1024Icons: [] } },
+    { [applePath]: { ...apple, build: { ...apple.build, easBuildId: 'old-build' } } },
+    { [applePath]: { ...apple, build: { ...apple.build, expired: true } } },
+  ];
+  for (const override of cases) {
+    const r = await prepareLaunchSession(false, { read: fixture(override) });
+    assert.equal(r.preparationChecksPassed, false);
+    assert.equal(r.publicLaunchReady, false);
   }
 });

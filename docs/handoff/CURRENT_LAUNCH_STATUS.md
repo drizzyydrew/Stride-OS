@@ -5,6 +5,24 @@ retain their original scope. The latest internally available candidate is 111;
 the last verified public draft still selects 109 with manual release. Neither
 is a publicly released app. The final release candidate may change after testing.
 
+Latest November 3 desk preparation: **Confirm email is now ON**, saved and
+verified after reload; **public signup stays OFF**. The owner can complete the
+prepared Apple Sandbox tester form on a laptop using private email/password
+entry. No app use is needed for that step. See `DESK_PREPARATION_20261103.md` for
+the completed checks, screenshot inventory and next private-QA source patch.
+
+Earlier November 3 continuation: fresh browser readback confirms the public draft is
+still 109 / Prepare for Submission / manual release, and TestFlight lists 111
+with Team (Expo). Expo shows build 111 Succeeded at source dc318bf. GitHub still
+has documentation commit 2c89521, with its successful Pages workflow; Vercel
+returns no deployment for that SHA and the separate native-branch preview is
+READY. All four public-page hashes match the completed-patch receipt. See
+`CONTINUATION_READBACK_20261103.json`. No service settings changed.
+
+The owner chose to keep StrideOS as the working name and consider distinctive
+fallbacks if needed. `NAMING_DIRECTION_20261103.md` explains why Run, Lift,
+Recover differentiates the listing without establishing name clearance.
+
 ## Completed preparation
 
 | Item | Latest evidence |
@@ -22,12 +40,12 @@ is a publicly released app. The final release candidate may change after testing
 
 | Gate | Remaining work | Owner dependency |
 | --- | --- | --- |
-| Account confirmation | Require and test the intended email-confirmation policy before reopening signup; preserve existing identities/history | Dedicated test credentials and inbox/native return confirmation |
+| Account confirmation | Confirmation requirement is saved ON with signup OFF; actual signup email/native acceptance remains open | Dedicated test credentials and inbox/native return confirmation |
 | Device reliability | Recording with screen lock, interruption/offline, single save/restart, Health permissions/recovery, Watch and account isolation | Physical iPhone/Watch session, explicitly deferred |
 | Account deletion | Real provider exchange/revocation, device receipt/cleanup/restart and support handling; general automation remains off | Identified disposable identities, native prompts and explicit deletion approval |
 | Paid subscriptions | Current isolated QA candidate and real purchase, restore, renewal, expiry/refund/revocation acceptance | Sandbox dialogs and observed results; some checks need elapsed time |
 | Store package | Final genuine screenshot coverage, final candidate attachment, privacy/reviewer reconciliation and submission decision | Capture assistance if needed and final owner decision |
-| Naming review | Another Health & Fitness app uses StrideOS under a different seller; see `SOCIAL_HANDLE_REVIEW.md`. Hold new public handles, promotional publication and additional brand spending pending a naming decision | Owner direction and, if commissioned, qualified trademark review; no unilateral rename |
+| Naming review | Owner prefers keeping StrideOS, with fallback exploration if needed. Related public use remains unresolved; hold new public handles, promotional publication and additional brand spending pending clearance. See `NAMING_DIRECTION_20261103.md` | Further owner direction only if review requires a change or professional engagement; no unilateral rename |
 
 The historical Apple production notification TEST 401 remains unresolved.
 Sandbox TEST previously succeeded. Do not equate it with proven production
@@ -35,7 +53,8 @@ delivery or release an unaccepted app merely to obtain production API access.
 
 Private billing QA build 110 predates the reset fix; do not make it the normal
 public candidate. Payments, general deletion automation and public release stay
-off. Signup and Confirm email were both off at the last dashboard readback.
+off. Signup is OFF and Confirm email is ON at the latest dashboard readback;
+`AUTH_CONFIRMATION_PREPARATION_20261103.json` supersedes the earlier both-off state.
 
 Independent engineering/device/legal reviews have not been commissioned.
 Automated scoped reviews do not establish those professional review outcomes.
@@ -51,6 +70,13 @@ these preparation tasks.
 
 Prepared copy: `APP_REVIEW_NOTES_111_DRAFT.md` and `LAUNCH_COPY_DRAFT.md`.
 Neither draft has been sent, posted or saved into Apple's review fields.
+
+The read-only `scripts/prepare-launch-session.ts` now checks internal candidate
+111 and its actual receipt schema. Its `--live` mode still makes only six fixed
+credential-free public GET/OPTIONS requests; a pass cannot accept native,
+signup, spending enforcement, deletion, purchase, naming or submission gates.
+The owner session no longer directs purchases to outdated QA110. These local
+preparation changes do not change the embedded build-111 app or the live draft.
 
 November 3 council continuation corrected unsupported professional-analysis
 wording and the support-correspondence disclosure, mapped reviewer navigation,

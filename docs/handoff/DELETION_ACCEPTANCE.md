@@ -1,6 +1,16 @@
 # Deletion acceptance and policy handoff
 
-## Latest preparation — November 2, 2026
+## Current navigation — November 3, 2026
+
+The latest normal internal candidate is 111; public draft 109 is separate.
+General deletion remains unaccepted and disabled per the recorded controls;
+this desk session made no deletion/control changes and did not freshly recheck
+those flags. Read `CURRENT_LAUNCH_STATUS.md` and `DESK_PREPARATION_20261103.md`
+before the historical candidate/version references below. Disposable identities,
+specific deletion authorization and real provider/device acceptance are still
+required.
+
+## Historical preparation — November 2, 2026
 
 Production 109 is the current verified internal candidate. Separate Apple key
 provisioning and actual shared signer verification are complete; real provider

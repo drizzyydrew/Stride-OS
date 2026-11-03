@@ -1,0 +1,104 @@
+{
+  "checkedAt": "2026-11-03T14:26:14.284422+00:00",
+  "scope": "local_original_files_only",
+  "files": [
+    {
+      "file": "01-hero.png",
+      "bytes": 151226,
+      "width": 1242,
+      "height": 2688,
+      "sha256": "5cb10e5cdbc2b3ae7679660cb97084d903478aafd3243a39e52daadb55f9dc06",
+      "capture_build": "unverified legacy",
+      "matches_original_manifest": false,
+      "use": "HOLD - provenance and current UI unverified"
+    },
+    {
+      "file": "02-readiness.png",
+      "bytes": 233713,
+      "width": 1242,
+      "height": 2688,
+      "sha256": "5c22ae9e71748dc9d97c0d6c7eaa64f5e963c0d2f27a0d9ea274e02e14e1cb4c",
+      "capture_build": "unverified legacy",
+      "matches_original_manifest": false,
+      "use": "HOLD - provenance and current UI unverified"
+    },
+    {
+      "file": "03-training.png",
+      "bytes": 218043,
+      "width": 1242,
+      "height": 2688,
+      "sha256": "1e8e39b62ceae5eca9c8ff6aa3d71b6a269a4ab86ca14af05c059e811cfcf358",
+      "capture_build": "unverified legacy",
+      "matches_original_manifest": false,
+      "use": "HOLD - provenance and current UI unverified"
+    },
+    {
+      "file": "04-analytics.png",
+      "bytes": 216905,
+      "width": 1242,
+      "height": 2688,
+      "sha256": "d47aa6528ec55a984d3e5073ea8eead5727da10e7f9a6a96a5dbbc8caf385950",
+      "capture_build": "unverified legacy",
+      "matches_original_manifest": false,
+      "use": "HOLD - provenance and current UI unverified"
+    },
+    {
+      "file": "05-appearance.png",
+      "bytes": 209524,
+      "width": 1242,
+      "height": 2688,
+      "sha256": "2fd31863beec8b8b89310b6ce9854aee2e144bcbb6a3ad8cb017f89aa6f59e3c",
+      "capture_build": "unverified legacy",
+      "matches_original_manifest": false,
+      "use": "HOLD - provenance and current UI unverified"
+    },
+    {
+      "file": "native-107/iphone/02-calendar-week.png",
+      "bytes": 229235,
+      "width": 1206,
+      "height": 2622,
+      "sha256": "3400999e6c14369d654c235920d9dd8f4160eb8c464b67e33f36c1399c1cffdc",
+      "capture_build": "1.0.0 (107)",
+      "matches_original_manifest": true,
+      "use": "historically reviewed draft placement; current-candidate acceptance open"
+    },
+    {
+      "file": "native-107/iphone/03-running-detail.png",
+      "bytes": 231280,
+      "width": 1206,
+      "height": 2622,
+      "sha256": "106d05fbd61d479bc056fd6f34a70ef2ac6177482782726f6f686867af1b885e",
+      "capture_build": "1.0.0 (107)",
+      "matches_original_manifest": true,
+      "use": "HOLD - recapture"
+    },
+    {
+      "file": "native-107/iphone/04-activity-history.png",
+      "bytes": 294010,
+      "width": 1206,
+      "height": 2622,
+      "sha256": "51e8cefca5017c179e747ad353c446f2a8f371fe3282edce8acd6bfb35b00ced",
+      "capture_build": "1.0.0 (107)",
+      "matches_original_manifest": true,
+      "use": "historically reviewed draft placement; current-candidate acceptance open"
+    },
+    {
+      "file": "native-107/iphone/06-strength-presets.png",
+      "bytes": 311856,
+      "width": 1206,
+      "height": 2622,
+      "sha256": "079408e93dd7281b3f10b3eaf1482e748ac23d819443ea688ce013a070f4dc14",
+      "capture_build": "1.0.0 (107)",
+      "matches_original_manifest": true,
+      "use": "historically reviewed draft placement; current-candidate acceptance open"
+    }
+  ],
+  "native_originals": 4,
+  "native_originals_match_manifest": true,
+  "current_candidate_capture_build": "111",
+  "current_candidate_captures_found": 0,
+  "appSupportsTablet": false,
+  "watch_originals_found": 0,
+  "apple_live_placements_rechecked": false,
+  "images_modified": false
+}

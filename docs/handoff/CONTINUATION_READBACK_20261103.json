@@ -1,0 +1,76 @@
+{
+  "checkedAt": "2026-11-03T14:11:55Z",
+  "scope": "read_only_continuation_reconciliation",
+  "repository": {
+    "checkout": "/Users/drew/Developer/StrideOS_App_clean_build19_v3_foundation_local",
+    "branch": "build-19-v3-foundation",
+    "head": "bff834b5c80615c3025647b8d1e1234b2ca9057b",
+    "cleanBeforeLocalPreparationEdits": true
+  },
+  "github": {
+    "documentationHead": "2c89521c6defb0821f94078f23002774c3948cb5",
+    "changedFiles": [
+      "vercel.json"
+    ],
+    "additions": 8,
+    "deletions": 0,
+    "pagesWorkflow": 41647716270,
+    "pagesConclusion": "success"
+  },
+  "vercel": {
+    "projectId": "prj_Rlx48hmBw5p7mvMmAOgrqsPnF7cE",
+    "deploymentCountForDocumentationSHA": 0,
+    "nativePreviewState": "READY",
+    "nativePreviewSource": "bff834b5c80615c3025647b8d1e1234b2ca9057b",
+    "limitation": "No explicit skip event or future-push test; no web export repair."
+  },
+  "appleBrowserReadback": {
+    "appId": "6782788130",
+    "publicDraftBuild": "109",
+    "version": "1.0",
+    "state": "Prepare for Submission",
+    "manualReleaseSelected": true,
+    "highestListedTestFlightBuild": "111",
+    "testFlightGroup": "Team (Expo)",
+    "build111DisplayedState": "Ready to Submit",
+    "build111ExpiresIn": "90 days",
+    "newBuildUploadOrSubmission": false,
+    "limitation": "Table/group readback; no physical device or purchase acceptance."
+  },
+  "expoBrowserReadback": {
+    "buildId": "be1f0cb0-dc73-4089-839a-4e23d1af4a86",
+    "status": "Succeeded",
+    "profile": "production",
+    "version": "1.0.0",
+    "buildNumber": "111",
+    "sourceCommitPrefix": "dc318bf"
+  },
+  "publicPages": {
+    "receipt": "/Users/drew/Documents/StrideOS Launch Review/CONTINUATION_SITE_READBACK_20261103.json",
+    "allFourHTTP200": true,
+    "allFourMatchHistoricalHashes": true
+  },
+  "notRechecked": [
+    "signup and email-confirmation dashboard switches",
+    "global billing and deletion server controls",
+    "provider revocation",
+    "actual purchase lifecycle",
+    "API-key organization and dollar enforcement"
+  ],
+  "settingsChanged": false,
+  "publicReviewSubmitted": false,
+  "publicReleasePerformed": false,
+  "localValidation": {
+    "targetedTestsPassed": 6,
+    "targetedTestFile": "scripts/tests/prepareLaunchSession.test.ts",
+    "livePreparationChecksPassed": 9,
+    "liveRequests": 6,
+    "liveRequestMethods": [
+      "GET",
+      "OPTIONS"
+    ],
+    "publicLaunchReady": false,
+    "fullAppSuiteRerun": false,
+    "diffWhitespaceCheckPassed": true
+  }
+}

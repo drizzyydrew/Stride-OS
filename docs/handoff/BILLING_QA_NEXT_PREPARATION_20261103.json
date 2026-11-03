@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-11-03T14:29:50.943818+00:00",
+  "scope": "local_qa_build_preparation_only",
+  "baselineCommit": "bff834b5c80615c3025647b8d1e1234b2ca9057b",
+  "includesResetFixCommit": "dc318bf8e9c296efc3ef63351bb2d7dca8b3faa2",
+  "nativeSourceDiffFrom111": [],
+  "patchPath": "/Users/drew/Documents/StrideOS Launch Review/BILLING_QA_NEXT_BUILD.patch",
+  "patchSHA256": "0208273767452a5ab026d386133d6c707f08a19e7d8c9760d13f2520064f0db1",
+  "patchFiles": [
+    "app.json"
+  ],
+  "proposedBuild": "112",
+  "buildNumberReserved": false,
+  "recheckEASAndAppleBeforeBuild": true,
+  "patchApplyCheckPassed": true,
+  "productionBillingOff": true,
+  "qaProfileClientBillingOn": true,
+  "canonicalBuildRemains": "111",
+  "cloudBuildStarted": false,
+  "newArtifactProduced": false,
+  "serverQAOwnerSet": false,
+  "purchasesExecuted": false,
+  "globalBillingEnabled": false,
+  "ownerNeededNowForSourcePreparation": false,
+  "ownerNeededForSandboxCredentials": true,
+  "note": "This prepares source/configuration, not an installable replacement for QA110. Existing allowance and unused build number must be checked before a cloud job."
+}

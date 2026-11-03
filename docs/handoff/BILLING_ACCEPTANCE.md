@@ -1,6 +1,15 @@
 # Billing acceptance and inert private QA preparation
 
-## Latest preparation — November 2, 2026
+## Current navigation — November 3, 2026
+
+Normal internal candidate is 111, billing off. Public draft remains 109/manual
+release. QA110 predates the reset fix and is historical, never the normal
+candidate. A reset-fixed next-QA source patch is prepared but unbuilt; proposed
+112 is not reserved. See `BILLING_QA_NEXT_PREPARATION_20261103.json` and
+`DESK_PREPARATION_20261103.md`. Actual purchases and lifecycle acceptance remain
+open. The following receipts retain their historical scope.
+
+## Historical preparation — November 2, 2026
 
 Production 109 remains billing-off and selected in the saved manual-release
 draft. The owner's newer request to prepare work before the home session
