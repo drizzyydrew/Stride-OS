@@ -1,5 +1,12 @@
 # Current StrideOS launch status
 
+November 4 phone observation: the owner attempted the App Review login on the
+iPhone holding their usual account's local data. The app displayed the exact
+`owner-conflict` guard message and blocked access. Installed build and return to
+the original account/history remain unconfirmed. See `PHONE_QA_20261104.md`.
+Do not treat this as a password failure, successful account switching or proof
+of a completed isolation/recovery test; do not uninstall/reset to bypass it.
+
 Owner support decision, November 3: Drew Moore will handle initial support and
 check the existing Gmail inbox daily. Coverage choice is closed. Subsequent
 delegated preparation adopted Gmail-only routine custody and a 90-day resolved
