@@ -14,4 +14,3 @@ Account deletion: More > Settings > Account & Legal > Request account deletion.
 [REPLACE_WITH_ACCEPTED_DELETION_RESULT_BEFORE_SUBMISSION]
 
 This candidate has subscriptions disabled. No purchase or trial is required. StrideOS provides general fitness information, not diagnosis, treatment or emergency care.
-

@@ -17,4 +17,3 @@ Core recording, calendar, saved history and on-device Insights remain available 
 
 AI Coach chat requires separate Anthropic-sharing consent and has usage limits.
 [VERIFY_PURCHASE_AND_RESTORE_OUTCOMES_ON_FINAL_CANDIDATE_BEFORE_SUBMISSION]
-

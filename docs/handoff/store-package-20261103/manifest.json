@@ -7,7 +7,7 @@
     "keywordsUTF8Bytes": 83,
     "descriptionCharacters": 2027,
     "reviewBillingOffUTF8Bytes": 1613,
-    "reviewPaidUTF8Bytes": 2113
+    "reviewPaidUTF8Bytes": 2112
   },
   "fieldLimitsPass": true,
   "readyToSubmit": false,
@@ -45,13 +45,13 @@
     },
     {
       "file": "review-billing-off.txt",
-      "sha256": "ed330d5b8a16b196b8bdd8fcd84cff055a267f294aa653d8bca868ad88d0f19b",
-      "bytes": 1614
+      "sha256": "36b94fe19fa8e1d470d85f7049861f33f2dcfac87386196dba5384b2820f846b",
+      "bytes": 1613
     },
     {
       "file": "review-paid.txt",
-      "sha256": "dba919c8e3c1bf1795da4cc0fda0c132849aec6885e7f70de6fe29d777743e91",
-      "bytes": 2113
+      "sha256": "643e6b8a3ca4b5c137e0ad15aa4bc271a834b45539d8010df880d58e5806ffc6",
+      "bytes": 2112
     }
   ]
 }

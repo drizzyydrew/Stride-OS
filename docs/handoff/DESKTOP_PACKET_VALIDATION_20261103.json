@@ -34,5 +34,14 @@
   "ownerAIProbeLiveRun": false,
   "syntheticAISafetyTestsPassed": 6,
   "publicStoreFieldsWritten": false,
-  "browserMetadataFreshReadbackSucceeded": false
+  "browserMetadataFreshReadbackSucceeded": false,
+  "packageRecheckedAt": "2026-11-04T02:37:35.777461+00:00",
+  "fieldChecks": {
+    "titleCharacters": 28,
+    "promotionalTextCharacters": 131,
+    "keywordsUTF8Bytes": 83,
+    "descriptionCharacters": 2027,
+    "reviewBillingOffUTF8Bytes": 1613,
+    "reviewPaidUTF8Bytes": 2112
+  }
 }
