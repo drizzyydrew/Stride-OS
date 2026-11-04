@@ -69,8 +69,10 @@ Provider references:
 
 ## Owner decisions that remain outside the app
 
-- Initial support handler and daily coverage: the earlier choice is unanswered.
-  No staffed coverage or response-time promise is claimed from label creation.
+- Initial support handler and coverage: subsequently confirmed by the owner.
+  Drew Moore will handle support and check the existing Gmail inbox daily.
+  No backup or public response-time guarantee is assigned. See
+  `SUPPORT_COVERAGE_CONFIRMATION_20261103.json`.
 - Retention/custody for support correspondence, minimal deletion records and
   provider backups: no period or automatic disposal rule is invented here.
 - Public-name review: keep StrideOS under the recorded direction while the

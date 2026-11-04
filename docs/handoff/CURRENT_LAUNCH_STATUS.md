@@ -1,5 +1,9 @@
 # Current StrideOS launch status
 
+Owner support decision, November 3: Drew Moore will handle initial support and
+check the existing Gmail inbox daily. Coverage choice is closed; retention and
+other custody decisions remain open. See `SUPPORT_COVERAGE_CONFIRMATION_20261103.json`.
+
 This is the current navigation page for launch preparation. Dated build receipts
 retain their original scope. The latest internally available candidate is 111;
 the last verified public draft still selects 109 with manual release. Neither

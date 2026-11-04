@@ -1,0 +1,14 @@
+{
+  "recordedAt": "2026-11-04T02:45:02.555260+00:00",
+  "decisionDatePacific": "2026-11-03",
+  "source": "Direct owner response in this chat",
+  "ownerResponse": "I\u2019ll handle support and check daily",
+  "initialSupportHandler": "Drew Moore",
+  "channel": "Existing Gmail support inbox",
+  "checkCadence": "daily",
+  "backupHandlerAssigned": false,
+  "publicResponseTimeGuarantee": false,
+  "retentionPolicyApproved": false,
+  "automationCreated": false,
+  "messagesSent": 0
+}

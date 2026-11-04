@@ -5,6 +5,13 @@ The authentication sender at auth.strideosfitness.com is for automated email;
 it is not a staffed support mailbox. Keep customer details in restricted support
 records rather than source control or public issue trackers.
 
+## Owner-confirmed initial coverage — November 3, 2026
+
+Drew Moore will handle initial launch support and check the existing Gmail
+support inbox daily. This is the owner's stated coverage commitment. No backup
+handler or public response-time guarantee is assigned. See
+`SUPPORT_COVERAGE_CONFIRMATION_20261103.json` for the decision receipt.
+
 ## Gmail queue setup — November 3, 2026
 
 The existing support Gmail account was verified through the connected profile.
@@ -21,20 +28,21 @@ retention, access or delete correspondence merely to move its status.
 
 No customer message was read, moved, labeled, exported or sent during setup.
 No auto-reply, mailbox filter, response deadline or automated monitoring was
-enabled. Handler/coverage and retention choices below remain open; creation of
-empty labels does not establish those decisions.
+enabled. The owner subsequently confirmed the daily coverage above. Retention
+and the other custody/access decisions below remain open.
 
 ## Proposed custody and coverage — not operational acceptance
 
-This playbook proposes handling steps; it does not establish staffed support,
-approved case storage, a verified identity procedure or a retention policy.
+The owner has accepted initial support coverage. This playbook's remaining
+handling steps do not establish approved case storage, a verified identity
+procedure or a retention policy.
 The existing inbox is a contact route, not proof that its access, backups or
 retention have been reviewed. Do not create additional customer-data copies or
 give a reviewer access until the owner records the decisions below privately.
 
 | Decision required before operation | Private record to complete |
 | --- | --- |
-| Case custodian and coverage | Named responsible person, authorized backup if any, coverage periods and who receives unresolved escalations; currently unassigned by this document |
+| Initial handler and coverage | Confirmed: Drew Moore handles support and checks the existing Gmail inbox daily; no backup designated or public response-time promise |
 | Storage | Exact owner-approved private case location outside Git/public trackers, how it is protected and backed up, and a case-reference-to-contact mapping kept only there; no location is approved here |
 | Access | Named people, necessary scope, authorization, expiry/review date and removal evidence; no shared public links or broad reviewer mailbox access |
 | Permitted tools and transfers | Approved tools/recipients and minimum redacted evidence each needs; no customer records in AI tools, personal accounts, external tickets or contractor systems without explicit approval for that use |

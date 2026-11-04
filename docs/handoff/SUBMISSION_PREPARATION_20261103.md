@@ -138,7 +138,9 @@ settings. Saved public draft 109 lacks the build-111 reset correction. Private
 QA112 is never the ordinary release candidate. Submission and manual release
 remain separate owner decisions.
 
-Support coverage is awaiting the owner's current choice. No support customer
+The owner confirmed initial support handling by Drew Moore with daily checks of
+the existing Gmail inbox; see `SUPPORT_COVERAGE_CONFIRMATION_20261103.json`.
+Retention and other custody decisions remain open. No support customer
 data, mailbox exports, access grants, response-time promise, external reviewer
 engagement or paid naming search was created here. Keep StrideOS as the working
 name under the owner's recorded direction; the fallback and clearance work is
