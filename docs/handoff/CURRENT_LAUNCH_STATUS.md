@@ -1,8 +1,11 @@
 # Current StrideOS launch status
 
 Owner support decision, November 3: Drew Moore will handle initial support and
-check the existing Gmail inbox daily. Coverage choice is closed; retention and
-other custody decisions remain open. See `SUPPORT_COVERAGE_CONFIRMATION_20261103.json`.
+check the existing Gmail inbox daily. Coverage choice is closed. Subsequent
+delegated preparation adopted Gmail-only routine custody and a 90-day resolved
+case review rule; see `SUPPORT_CUSTODY_RETENTION_20261103.md`. Actual mailbox
+controls, manual identity checks, backend-record duration and backups retain
+separate acceptance gaps.
 
 This is the current navigation page for launch preparation. Dated build receipts
 retain their original scope. The latest internally available candidate is 111;
@@ -24,8 +27,9 @@ RevenueCat package/Pro/credential readback, the saved $20 Claude organization
 limit and exact deployed AI Coach v14 source match, a paid-privacy overlay and
 reviewer purchase paragraph. No model/purchase request, service setting, public
 label, submission or release changed in that pass. Actual deployed-key
-organization matching, production notification diagnosis and support operating
-decisions remain open.
+organization matching and production notification diagnosis remain open.
+Support defaults were subsequently completed, with control/identity/backup
+acceptance kept separate below.
 
 Desktop continuation: `DESKTOP_COMPLETION_20261103.md` records actual empty
 Gmail support-queue setup, the assembled store packet in
@@ -33,9 +37,18 @@ Gmail support-queue setup, the assembled store packet in
 metadata-only AI key checker with six passing synthetic safety checks. All four
 public pages returned HTTPS 200 and matched local source. The current Apple
 field re-read was blocked by browser reconnection/control errors, so packet
-copy is explicitly from the prior recorded readback. The live key audit and
-support coverage/retention decisions remain open; no additional app test was
-accepted and no store field was published.
+copy is explicitly from the prior recorded readback. The live key audit remains
+open; support defaults were subsequently completed as described above. No
+additional app test was accepted and no store field was published.
+
+Latest operations continuation: `AUTONOMOUS_OPERATIONS_20261103.json` records
+live deployed-key digest and capped-organization ID readback, seven passing
+synthetic checker tests, and Supabase physical-backup inventory. The references
+are saved privately; the owner-run checker now needs only the original existing
+API key through its hidden prompt. No original key was available in the tool
+environment or canonical app dotenv files, and no live organization request was
+made. The backup API listed no available physical backups and PITR off; this
+does not prove absence or erasure of all provider copies.
 
 Earlier November 3 continuation: fresh browser readback confirms the public draft is
 still 109 / Prepare for Submission / manual release, and TestFlight lists 111
@@ -73,6 +86,7 @@ Recover differentiates the listing without establishing name clearance.
 | Paid subscriptions | QA112 archive is ready; coordinate private TestFlight delivery, exact authenticated owner/customer binding, then real purchase, restore, renewal, expiry/refund/revocation acceptance | Device-side Sandbox sign-in/dialogs and observed results; account creation is complete; some checks need elapsed time |
 | Store package | Final genuine screenshot coverage, final candidate attachment, privacy/reviewer reconciliation and submission decision | Capture assistance if needed and final owner decision |
 | Naming review | Owner prefers keeping StrideOS, with fallback exploration if needed. Related public use remains unresolved; hold new public handles, promotional publication and additional brand spending pending clearance. See `NAMING_DIRECTION_20261103.md` | Further owner direction only if review requires a change or professional engagement; no unilateral rename |
+| Operations evidence | Routine support custody/review defaults are adopted; actual mailbox controls, manual identity verification, backend deletion-record duration and recovery/backup handling remain unaccepted. Actual AI key-to-capped-org match remains open despite saved reference metadata | Protected credential/security steps and scoped ownership/deletion acceptance; policy documents cannot prove these controls |
 
 The historical Apple production notification TEST 401 remains unresolved.
 Sandbox TEST previously succeeded. Do not equate it with proven production

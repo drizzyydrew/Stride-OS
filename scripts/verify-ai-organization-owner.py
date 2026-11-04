@@ -4,13 +4,35 @@ import getpass
 import hashlib
 import hmac
 import json
+import os
 import re
+import stat
 import subprocess
 import sys
 import unittest
 from pathlib import Path
 
 URL = 'https://api.anthropic.com/v1/organizations/me'
+REFERENCE_PATH = Path.home() / 'Documents/StrideOS Launch Review/AI_ORG_REFERENCE_VALUES.json'
+
+
+def load_references(path):
+    """Read only an owner-private regular reference file; never a credential."""
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    with os.fdopen(fd) as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077 or info.st_size > 8192:
+            raise ValueError('invalid_reference_file')
+        data = json.load(stream)
+    if (data.get('projectId') != 'pbzgrhnxpbtlkzpreizy'
+            or data.get('secretName') != 'ANTHROPIC_API_KEY'
+            or not re.fullmatch(r'[0-9a-f]{64}', data.get('deployedKeySHA256', ''))
+            or not re.fullmatch(r'[A-Za-z0-9_-]{8,128}', data.get('organizationId', ''))):
+        raise ValueError('invalid_reference_file')
+    captured_at = datetime.datetime.fromisoformat(data['verifiedAt'])
+    if captured_at.tzinfo is None:
+        raise ValueError('invalid_reference_file')
+    return data['deployedKeySHA256'], data['organizationId'], captured_at.isoformat()
 
 
 def verify(key, digest, organization_id, run=subprocess.run):
@@ -106,6 +128,29 @@ class SafetyChecks(unittest.TestCase):
         self.assertFalse(value['passed'])
         self.assertNotIn(self.key, json.dumps(value))
 
+    def test_reference_file_requires_private_project_bound_metadata(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'references.json'
+            data = {'projectId': 'pbzgrhnxpbtlkzpreizy', 'secretName': 'ANTHROPIC_API_KEY',
+                    'deployedKeySHA256': 'a' * 64, 'organizationId': self.organization,
+                    'verifiedAt': '2026-11-04T00:00:00+00:00'}
+            path.write_text(json.dumps(data))
+            path.chmod(0o600)
+            self.assertEqual(load_references(path), ('a' * 64, self.organization, data['verifiedAt']))
+            path.chmod(0o644)
+            with self.assertRaises(ValueError):
+                load_references(path)
+            path.chmod(0o600)
+            data['projectId'] = 'another_project'
+            path.write_text(json.dumps(data))
+            with self.assertRaises(ValueError):
+                load_references(path)
+            link = Path(directory) / 'symlink.json'
+            link.symlink_to(path)
+            with self.assertRaises(OSError):
+                load_references(link)
+
 
 def main():
     if sys.argv[1:] == ['--self-test']:
@@ -115,15 +160,31 @@ def main():
         print('Run privately in an interactive terminal, or use --self-test with synthetic data.')
         return 2
     print('Use the existing deployed key. No new key, model request, or settings change is made.')
-    digest = input('SHA-256 digest of ANTHROPIC_API_KEY from StrideOS Supabase secret metadata: ').strip()
-    organization = input('Organization ID from the Claude organization with the saved $20 limit: ').strip()
+    recorded_references = False
+    reference_captured_at = None
+    try:
+        digest, organization, reference_captured_at = load_references(REFERENCE_PATH)
+        recorded_references = True
+        print(f'Using private StrideOS reference snapshot captured {reference_captured_at}.')
+        print('This matches the recorded deployment digest; it does not recheck current deployment or spending settings.')
+    except FileNotFoundError:
+        digest = input('SHA-256 digest of ANTHROPIC_API_KEY from StrideOS Supabase secret metadata: ').strip()
+        organization = input('Organization ID from the Claude organization with the saved $20 limit: ').strip()
+    except Exception:
+        print('Private reference file is invalid or inaccessible. No credential was requested or sent.')
+        return 2
     key = getpass.getpass('Existing API key (hidden; never saved): ')
     receipt = verify(key, digest, organization)
+    receipt['ownerSuppliedReferenceValues'] = not recorded_references
+    receipt['referenceSource'] = 'recorded_service_metadata_snapshot' if recorded_references else 'owner_entered'
+    receipt['referenceSnapshotCapturedAt'] = reference_captured_at
+    receipt['digestComparisonScope'] = 'supplied_reference_digest'
+    receipt['deployedMetadataRefetchedDuringCheck'] = False
+    receipt['spendLimitRefetchedDuringCheck'] = False
     del key
     output = Path.home() / 'Documents/StrideOS Launch Review/AI_ORG_OWNER_CHECK.json'
     output.parent.mkdir(parents=True, exist_ok=True)
     # Open without following a previously substituted symlink.
-    import os
     fd = os.open(output, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
     os.fchmod(fd, 0o600)
     with os.fdopen(fd, 'w') as stream:

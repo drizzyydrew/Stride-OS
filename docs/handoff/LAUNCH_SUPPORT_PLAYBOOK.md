@@ -28,34 +28,38 @@ retention, access or delete correspondence merely to move its status.
 
 No customer message was read, moved, labeled, exported or sent during setup.
 No auto-reply, mailbox filter, response deadline or automated monitoring was
-enabled. The owner subsequently confirmed the daily coverage above. Retention
-and the other custody/access decisions below remain open.
+enabled. The owner subsequently confirmed the daily coverage above. Internal
+custody and routine retention defaults are now recorded in
+`SUPPORT_CUSTODY_RETENTION_20261103.md`; actual mailbox controls, manual identity
+verification, exception-record storage and backend/backup acceptance remain open.
 
-## Proposed custody and coverage — not operational acceptance
+## Custody defaults — separate from operational acceptance
 
-The owner has accepted initial support coverage. This playbook's remaining
-handling steps do not establish approved case storage, a verified identity
-procedure or a retention policy.
-The existing inbox is a contact route, not proof that its access, backups or
-retention have been reviewed. Do not create additional customer-data copies or
-give a reviewer access until the owner records the decisions below privately.
+The delegated desktop work establishes Drew as custodian, the original Gmail
+thread plus existing labels as routine case storage, no new exports or recipients,
+and a manual review no later than 90 days after documented routine resolution.
+Remove unneeded records earlier; retain exceptions only for a specific purpose
+and dated review. Read `SUPPORT_CUSTODY_RETENTION_20261103.md` for the full rules.
+These are operating defaults, not proof of mailbox access/security, provider
+backup erasure, actual disposal or a validated identity-check procedure.
 
 | Decision required before operation | Private record to complete |
 | --- | --- |
 | Initial handler and coverage | Confirmed: Drew Moore handles support and checks the existing Gmail inbox daily; no backup designated or public response-time promise |
-| Storage | Exact owner-approved private case location outside Git/public trackers, how it is protected and backed up, and a case-reference-to-contact mapping kept only there; no location is approved here |
-| Access | Named people, necessary scope, authorization, expiry/review date and removal evidence; no shared public links or broad reviewer mailbox access |
+| Storage | Routine correspondence stays in its original Gmail thread and status labels; no extra copies, customer mapping or backup created. Storage for exceptional private handling notes remains unassigned |
+| Access | Drew is the sole designated handler. Actual MFA/delegation/forwarding/client/session configuration remains unverified; no reviewer mailbox access or new access grant |
 | Permitted tools and transfers | Approved tools/recipients and minimum redacted evidence each needs; no customer records in AI tools, personal accounts, external tickets or contractor systems without explicit approval for that use |
 | Confidentiality and outside review | Written confidentiality, approved tools/subprocessors, access expiry and return/deletion terms before case evidence is supplied; the review brief alone does not establish these terms |
-| Retention and disposal | Owner-approved purposes and periods for messages, attachments, case notes and backups; authorized exceptions/holds, responsible person and verified disposal/return procedure; all remain undecided here |
+| Retention and disposal | Routine cases reviewed by 90 days after documented resolution and disposed of when no purpose/hold remains; sensitive content minimized earlier. Exceptions need reason/owner/next review. Actual disposal, backend completion duration and provider backups remain unaccepted |
 
 Use a case reference rather than contact details in any redacted engineering
 handoff. Do not forward an entire thread or export a mailbox for convenience.
-If unnecessary sensitive material arrives, restrict access and escalate to the
-custodian for an authorized handling decision; do not circulate it, invent a
-retention deadline or promise that every provider copy has been erased.
-No cases, access grants, storage folders or retention controls are created by
-this checklist. Custody decisions still require approval and verification.
+If unnecessary sensitive material arrives, restrict access and escalate to Drew
+for an authorized handling decision; do not circulate it or promise that every
+provider copy has been erased. Gmail may require whole-message disposal.
+No cases, access grants, storage folders or automatic retention controls are
+created by this checklist. The documented defaults still require human execution;
+outstanding control/identity/backup acceptance cannot be closed by the policy.
 
 ## Collect a useful report
 

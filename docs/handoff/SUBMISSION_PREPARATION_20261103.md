@@ -140,7 +140,10 @@ remain separate owner decisions.
 
 The owner confirmed initial support handling by Drew Moore with daily checks of
 the existing Gmail inbox; see `SUPPORT_COVERAGE_CONFIRMATION_20261103.json`.
-Retention and other custody decisions remain open. No support customer
+Routine Gmail custody and manual 90-day resolved-case review defaults were
+subsequently adopted in `SUPPORT_CUSTODY_RETENTION_20261103.md`. Actual mailbox
+controls, manual identity verification, backend-record duration and backups
+retain separate acceptance gaps. No support customer
 data, mailbox exports, access grants, response-time promise, external reviewer
 engagement or paid naming search was created here. Keep StrideOS as the working
 name under the owner's recorded direction; the fallback and clearance work is

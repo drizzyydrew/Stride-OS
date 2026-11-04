@@ -18,15 +18,15 @@
     "final accepted normal binary; never QA112",
     "genuine final-candidate screenshot and product-review coverage",
     "current subtitle/metadata readback",
-    "support retention/custody decisions",
+    "support mailbox controls, manual identity and backend/backup operations acceptance",
     "remaining public-name risk and owner review",
     "final owner submission decision"
   ],
   "files": [
     {
       "file": "README.md",
-      "sha256": "18e886c5e09736786fb4187cbce62a8e38dd37599640c5035d066f863b73366e",
-      "bytes": 2058
+      "sha256": "bb2fe2bace270223499959fc934ed95e7febc4d54d603a7e0ef5586268173458",
+      "bytes": 2348
     },
     {
       "file": "description.txt",
@@ -53,5 +53,6 @@
       "sha256": "643e6b8a3ca4b5c137e0ad15aa4bc271a834b45539d8010df880d58e5806ffc6",
       "bytes": 2112
     }
-  ]
+  ],
+  "updatedAt": "2026-11-04T02:59:16.963779+00:00"
 }

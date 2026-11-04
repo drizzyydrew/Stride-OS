@@ -27,26 +27,59 @@ mapping to Pro, valid purchase credentials, the saved $20 Claude organization
 limit and exact deployed AI Coach v14 source match. Those checks were not
 repeated without a new reason. Actual key-to-organization matching remains open.
 
-## Private AI check — ready for owner input
+## Subsequent autonomous operations continuation
+
+The owner asked to complete these desktop items without him. Routine support
+custody and retention defaults are now adopted in
+`SUPPORT_CUSTODY_RETENTION_20261103.md`: original Gmail correspondence, Drew as
+custodian, no extra copies/recipients, and manual necessity review no later than
+90 days after documented resolution. Actual mailbox controls, manual identity
+checks, backend completion duration and backups are separately unaccepted.
+
+Read-only native browser control recovered service metadata access. Supabase's
+deployed `ANTHROPIC_API_KEY` digest was read in the project dashboard and matched
+the authenticated cached CLI metadata. Claude organization ID and the saved $20
+limit were read in the same selected organization. Reference values are now in
+the owner-only private `AI_ORG_REFERENCE_VALUES.json` file alongside this desktop
+review folder. They contain no API key and are excluded from source control.
+
+The checker now loads those project-bound references privately and asks only
+for the existing API key. Seven synthetic safety tests pass, including private
+file permissions, project binding and symlink rejection. No original key was
+available in the process environment or the five exact canonical dotenv paths
+checked; none of those dotenv files existed. No credential stores or unrelated
+files were searched. The live organization request remains unperformed.
+
+The read-only StrideOS backup inventory returned `walg_enabled: true`,
+`pitr_enabled: false`, an empty available-backups list and empty physical-backup
+data. This is an inventory result, not proof that all vendor copies are absent
+or erased, a tested restore, or an accepted disaster-recovery plan. No backup,
+restore, plan change or purge was performed. See
+`AUTONOMOUS_OPERATIONS_20261103.json` for the current receipt.
+
+## Private AI check — prepared for hidden existing-key entry
 
 This check can be done on the laptop without opening StrideOS. It does not
 create/rotate a credential, invoke a model, exhaust the budget or change settings.
 It checks an existing key's SHA-256 against the deployed secret metadata, then
 uses only the provider's authenticated organization-metadata endpoint.
 
-Owner reference inputs:
+Live reference metadata has now been saved privately:
 
 - The SHA-256 digest of `ANTHROPIC_API_KEY` in the StrideOS project
   `pbzgrhnxpbtlkzpreizy` secret metadata, not another app/project's secret.
 - The organization ID from the Claude organization holding the saved $20 limit.
-- The same existing API key, entered through the script's hidden terminal prompt.
+
+Only the same existing API key still needs hidden terminal entry. The saved
+reference file is mode 600 and project-bound; the checker refuses insecure,
+invalid or symlinked reference files. If the file is absent in a different
+environment, the original reference prompts remain available.
 
 Do not create another key just for this comparison. Never put the key in chat,
-a command argument, a repository file or a screenshot. Reference availability
-has not been established in this pass: the local process had no Anthropic key
-and no authenticated Supabase CLI available, and browser controls were failing.
-If the existing secret's metadata or original key is unavailable, keep this
-audit pending rather than changing a working credential merely to fill a row.
+a command argument, a repository file or a screenshot. The earlier lack of CLI
+access was resolved by finding and using the existing authenticated cached CLI;
+the original key remains unavailable. Keep the audit pending rather than
+changing a working credential merely to fill a row.
 
 Run privately in an interactive terminal:
 
@@ -58,9 +91,13 @@ python3 scripts/verify-ai-organization-owner.py
 The script sends the key only to the fixed HTTPS Anthropic metadata endpoint,
 never follows a redirect, and records only a redacted result at
 `/Users/drew/Documents/StrideOS Launch Review/AI_ORG_OWNER_CHECK.json`.
-Its reference values are supplied by the owner; it is not a live proof until
-that check succeeds. A pass establishes the key/digest/organization relationship,
-not an actual over-limit rejection. HTTP permission errors do not authorize
+Its references were read from live service metadata; it is not a live key proof
+until the check succeeds. A pass establishes the key/digest/organization relationship,
+using the dated reference snapshot, not proof that deployed secrets or the cap
+remain unchanged at a later run, nor an actual over-limit rejection. The receipt
+includes the snapshot capture time and states those settings were not refetched.
+Refresh the references after any key, organization or cap change.
+HTTP permission errors do not authorize
 creating a new Admin key or widening access.
 
 Provider references:
@@ -73,8 +110,10 @@ Provider references:
   Drew Moore will handle support and check the existing Gmail inbox daily.
   No backup or public response-time guarantee is assigned. See
   `SUPPORT_COVERAGE_CONFIRMATION_20261103.json`.
-- Retention/custody for support correspondence, minimal deletion records and
-  provider backups: no period or automatic disposal rule is invented here.
+- Routine support custody and retention review defaults are complete. Actual
+  mailbox controls, an exceptional handling-record location, manual ownership
+  verification, minimal deletion-record duration and provider recovery/backup
+  handling remain unaccepted; no automatic disposal is enabled.
 - Public-name review: keep StrideOS under the recorded direction while the
   related-name overlap and any qualified review remain unresolved.
 

@@ -3,6 +3,11 @@
 This is a local draft package. It has not been uploaded or published and is
 not ready for submission. The manifest records the remaining acceptance gates.
 
+Routine support custody/review defaults are now documented in
+`../SUPPORT_CUSTODY_RETENTION_20261103.md`. Mailbox controls, manual identity
+verification, backend-record duration and provider backups remain separate
+operations acceptance gaps; a policy is not proof those controls operate.
+
 - `metadata.json` maps the listing fields and recorded candidate identities.
   Title, promotional text, keywords and the 2,027-character description come
   from the earlier November 3 Apple readback. Browser reconnection/control
