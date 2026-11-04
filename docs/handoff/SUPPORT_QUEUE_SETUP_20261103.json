@@ -1,0 +1,35 @@
+{
+  "checkedAt": "2026-11-04T02:29:43.909212+00:00",
+  "scope": "empty_support_queue_setup",
+  "intendedExistingAccountVerified": true,
+  "labelsCreatedAndReadBack": [
+    {
+      "name": "StrideOS Support",
+      "messagesTotal": 0
+    },
+    {
+      "name": "StrideOS Support/New",
+      "messagesTotal": 0
+    },
+    {
+      "name": "StrideOS Support/Investigating",
+      "messagesTotal": 0
+    },
+    {
+      "name": "StrideOS Support/Waiting on user",
+      "messagesTotal": 0
+    },
+    {
+      "name": "StrideOS Support/Resolved",
+      "messagesTotal": 0
+    }
+  ],
+  "customerMessagesRead": 0,
+  "customerMessagesModified": 0,
+  "messagesSent": 0,
+  "mailboxExportsCreated": 0,
+  "autoReplyOrFiltersEnabled": false,
+  "accessOrRetentionChanged": false,
+  "handlerAndCoverageConfirmed": false,
+  "retentionPolicyConfirmed": false
+}

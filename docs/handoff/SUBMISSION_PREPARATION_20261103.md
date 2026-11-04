@@ -3,6 +3,11 @@
 November 3, 2026. This prepares submission material and operating checks while
 device use is deferred. A final accepted public binary has not been selected.
 
+The copy-ready local draft files and field validation are now assembled in
+`store-package-20261103/`. `DESKTOP_COMPLETION_20261103.md` records the Gmail
+queue setup, name screen and private AI verification helper. These additions
+do not close the remaining native or owner-decision gates.
+
 ## Division of work
 
 | Work | Preparation that can happen now | Evidence still needing app use |

@@ -1,0 +1,38 @@
+{
+  "checkedAt": "2026-11-04T02:35:21.707367+00:00",
+  "scope": "desktop_packet_validation_and_public_link_readback",
+  "fieldLengthsPass": true,
+  "allFileHashesMatch": true,
+  "reviewPlaceholdersRemain": true,
+  "readyToSubmit": false,
+  "publicPages": [
+    {
+      "page": "index.html",
+      "httpStatus": 200,
+      "matchesLocal": true,
+      "sha256": "006590370d3494e8400a8ca66e2198b3722a13216bb4b87f80c98fb1bdf81454"
+    },
+    {
+      "page": "privacy.html",
+      "httpStatus": 200,
+      "matchesLocal": true,
+      "sha256": "1d72a59fdbf41268b703055cb0afbbce9360c887d3623cf71e8dd6bccc33474d"
+    },
+    {
+      "page": "terms.html",
+      "httpStatus": 200,
+      "matchesLocal": true,
+      "sha256": "e2925582fc5ff64deced5292f89079c80ce0ad53d08ad6f826b4b876e96c0dc7"
+    },
+    {
+      "page": "support.html",
+      "httpStatus": 200,
+      "matchesLocal": true,
+      "sha256": "ab9b2ffb9c6347e09a6de467917fc1bad45ce0d0254be190fbadbba1ca0d7673"
+    }
+  ],
+  "ownerAIProbeLiveRun": false,
+  "syntheticAISafetyTestsPassed": 6,
+  "publicStoreFieldsWritten": false,
+  "browserMetadataFreshReadbackSucceeded": false
+}

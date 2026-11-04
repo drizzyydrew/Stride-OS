@@ -32,9 +32,10 @@ ownership conclusion has been reached, and no name change is yet proven necessar
 
 ## Fallback exploration
 
-These are creative working ideas only. None has been searched for existing
-use, trademark conflicts, App Store availability, domain or social availability.
-They are not cleared names or purchase recommendations.
+These began as creative working ideas. A limited November 3 web screen now
+found existing uses for three of them. It did not check trademark registers,
+registration flows or every intended territory. None is a cleared name or
+purchase recommendation.
 
 | Working idea | Intended fit | Question to test |
 | --- | --- | --- |
@@ -42,6 +43,16 @@ They are not cleared names or purchase recommendations.
 | Pacewoven | A connected training routine and lasting history | Does pace make it sound too running-specific? |
 | Moventra | A broad movement platform | Is the spelling easy to hear and remember? |
 | Trainvero | Training clarity and consistency | Does it feel credible without implying clinical validation? |
+
+| Initial screen | Observed evidence | Practical treatment |
+| --- | --- | --- |
+| Formward | [Formward](https://www.formward.ai/) advertises a personal-agent app; [Formward EU](https://formward.eu/) is an existing software service | Deprioritize as a distinctive new software brand |
+| Moventra | [Moventra Fitness](https://moventrafitness.com/) advertises coaching and training; [Moventra Health](https://moventrahealth.com/) sells fitness/recovery products | Remove from this practical fallback shortlist because related fitness uses already surfaced |
+| Trainvero | [Trainvero products](https://trainvero.com/products/) include weight-training and recovery equipment | Remove from this practical fallback shortlist because related training use already surfaced |
+| Pacewoven | No identifiable exact-name product surfaced in the limited queries used | Still unverified; no trademark, domain, handle or store availability conclusion |
+
+These observations do not determine legal rights or imply that the current
+StrideOS name is cleared. No registration, filing, purchase or contact occurred.
 
 Keep the current identifiers, domain, source, keys and assets intact. If a
 fallback becomes necessary, screen preferred candidates before any rebrand or

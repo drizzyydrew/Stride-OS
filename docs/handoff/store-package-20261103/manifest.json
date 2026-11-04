@@ -1,0 +1,57 @@
+{
+  "assembledAt": "2026-11-04T02:32:00.762785+00:00",
+  "scope": "local_draft_store_package",
+  "fieldChecks": {
+    "titleCharacters": 28,
+    "promotionalTextCharacters": 131,
+    "keywordsUTF8Bytes": 83,
+    "descriptionCharacters": 2027,
+    "reviewBillingOffUTF8Bytes": 1613,
+    "reviewPaidUTF8Bytes": 2113
+  },
+  "fieldLimitsPass": true,
+  "readyToSubmit": false,
+  "blocks": [
+    "native signup and device acceptance",
+    "accepted provider deletion and replacement of deletion placeholder",
+    "purchase lifecycle for a paid launch and replacement of paid placeholder",
+    "final accepted normal binary; never QA112",
+    "genuine final-candidate screenshot and product-review coverage",
+    "current subtitle/metadata readback",
+    "support operating/retention decisions",
+    "remaining public-name risk and owner review",
+    "final owner submission decision"
+  ],
+  "files": [
+    {
+      "file": "README.md",
+      "sha256": "18e886c5e09736786fb4187cbce62a8e38dd37599640c5035d066f863b73366e",
+      "bytes": 2058
+    },
+    {
+      "file": "description.txt",
+      "sha256": "7a5a7af95aee37f13e570b7ac774f7ac2071a7e853c2812176967d52f809745e",
+      "bytes": 2028
+    },
+    {
+      "file": "metadata.json",
+      "sha256": "d1cc74d60b9985025788de297dfd38f8f7c7dcaa565c6d981dc3b583073db148",
+      "bytes": 1192
+    },
+    {
+      "file": "privacy-paid.json",
+      "sha256": "9df055c0cad566f2a5890ae340fd72d410e096b3cab4ef6b1a34d19da9413ffb",
+      "bytes": 729
+    },
+    {
+      "file": "review-billing-off.txt",
+      "sha256": "ed330d5b8a16b196b8bdd8fcd84cff055a267f294aa653d8bca868ad88d0f19b",
+      "bytes": 1614
+    },
+    {
+      "file": "review-paid.txt",
+      "sha256": "dba919c8e3c1bf1795da4cc0fda0c132849aec6885e7f70de6fe29d777743e91",
+      "bytes": 2113
+    }
+  ]
+}

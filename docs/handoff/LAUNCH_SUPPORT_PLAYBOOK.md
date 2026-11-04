@@ -5,6 +5,25 @@ The authentication sender at auth.strideosfitness.com is for automated email;
 it is not a staffed support mailbox. Keep customer details in restricted support
 records rather than source control or public issue trackers.
 
+## Gmail queue setup — November 3, 2026
+
+The existing support Gmail account was verified through the connected profile.
+The following empty labels were created and read back, each with zero messages:
+StrideOS Support, StrideOS Support/New, StrideOS Support/Investigating,
+StrideOS Support/Waiting on user, and StrideOS Support/Resolved.
+
+Use New for intake, Investigating when a handler is actively working the issue,
+Waiting on user after a specific follow-up is sent, and Resolved after the
+recorded outcome is confirmed. Apply one status label at a time. Keep the email
+thread as its existing correspondence record; a label does not require copying
+the message or its attachments into Git or a new case database. Do not change
+retention, access or delete correspondence merely to move its status.
+
+No customer message was read, moved, labeled, exported or sent during setup.
+No auto-reply, mailbox filter, response deadline or automated monitoring was
+enabled. Handler/coverage and retention choices below remain open; creation of
+empty labels does not establish those decisions.
+
 ## Proposed custody and coverage — not operational acceptance
 
 This playbook proposes handling steps; it does not establish staffed support,
