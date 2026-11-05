@@ -11,6 +11,7 @@ import { useWeather } from '../../../src/hooks/useWeather';
 import { formatTemp } from '../../../src/lib/weather';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useActiveProfile } from '../../../src/store/profileStore';
+import { profileIdentityLabel } from '../../../src/utils/profileIdentity';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useAchievementStore } from '../../../src/store/achievementStore';
@@ -354,7 +355,7 @@ function getDayLabel(): string {
 
 export default function TodayScreen() {
   const C = useColors();
-  const athleteName = useActiveProfile()?.name?.trim();
+  const athleteName = profileIdentityLabel(useActiveProfile());
   useFeatureTour('today');
   const insets = useSafeAreaInsets();
   const router = useRouter();

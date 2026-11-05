@@ -10,18 +10,20 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { useAuthStore } from '../../src/store/authStore';
+import { authInputProps, resetEmailFromParam } from '../../src/lib/authInput';
 import { colors }  from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 
 export default function ForgotPasswordScreen() {
   const resetPassword = useAuthStore(s => s.resetPassword);
+  const params = useLocalSearchParams<{ email?: string | string[] }>();
 
-  const [email,   setEmail]   = useState('');
+  const [email,   setEmail]   = useState(() => resetEmailFromParam(params.email));
   const [error,   setError]   = useState<string | null>(null);
   const [sent,    setSent]    = useState(false);
   const [loading, setLoading] = useState(false);
@@ -79,8 +81,7 @@ export default function ForgotPasswordScreen() {
               placeholder="you@example.com"
               placeholderTextColor={colors.textSubtle}
               keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
+              {...authInputProps('email', Platform.OS)}
             />
           </View>
 

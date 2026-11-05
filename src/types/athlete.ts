@@ -222,6 +222,13 @@ export type AthleteProfile = {
 
   // Demographics
   name:        string;
+  // Optional for legacy profiles. `name` remains the lossless compatibility
+  // value; identity visibility is applied at display/prompt boundaries.
+  firstName?:   string;
+  lastName?:    string;
+  username?:    string;
+  showName?:    boolean;
+  showUsername?: boolean;
   age:         number;
   sex:         Sex;
   heightCm:    number;

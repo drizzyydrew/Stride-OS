@@ -33,6 +33,7 @@ import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
 import { useActiveProfile, useProfileStore } from '../../../src/store/profileStore';
 import { profilePowerMass } from '../../../src/utils/profilePower';
+import { getProfileIdentity } from '../../../src/utils/profileIdentity';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
@@ -219,6 +220,7 @@ export default function SettingsScreen() {
   const signOut = useAuthStore(state => state.signOut);
   const { data, updateData, setUserWeight } = useOnboardingStore();
   const profile = useActiveProfile();
+  const identity = getProfileIdentity(profile);
   const savedWeightKg = profilePowerMass(profile)?.bodyMassKg;
   const workoutHistory = useWorkoutStore(state => state.history);
   const strengthHistory = useStrengthStore(state => state.history);
@@ -736,7 +738,7 @@ export default function SettingsScreen() {
               <Image source={{ uri: data.profilePhotoUri }} style={styles.avatarImage} />
             ) : (
               <Text style={[{ fontSize: 20, fontWeight: '800', color: C.primary }]}>
-                {(data.name || 'A').slice(0, 2).toUpperCase()}
+                {identity.initials}
               </Text>
             )}
             <View style={[styles.avatarAdd, { backgroundColor: C.primary }]}>
@@ -744,7 +746,8 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
           <View>
-            <Text style={[{ fontSize: 16, fontWeight: '700', color: C.text }]}>{profile?.name?.trim() || 'Athlete'}</Text>
+            <Text style={[{ fontSize: 16, fontWeight: '700', color: C.text }]}>{identity.primaryLabel}</Text>
+            {identity.visibleName && identity.visibleUsername ? <Text style={{ color: C.textMuted, fontSize: 13 }}>{identity.visibleUsername}</Text> : null}
             <Text style={[{ fontSize: 11, color: C.textDim, marginTop: 2 }]}>Tap photo to change</Text>
           </View>
         </View>

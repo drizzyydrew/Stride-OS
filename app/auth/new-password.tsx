@@ -13,17 +13,21 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 
 import { useAuthStore } from '../../src/store/authStore';
+import { authInputProps } from '../../src/lib/authInput';
+import { finishCredentialAutofill } from '../../src/lib/credentialAutofill';
 import { colors }  from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
 
 export default function NewPasswordScreen() {
   const updatePassword = useAuthStore(s => s.updatePassword);
+  const recoveryEmail = useAuthStore(s => s.canAccessLocalData ? s.session?.user.email ?? '' : '');
+  const currentUserId = useAuthStore(s => s.canAccessLocalData ? s.session?.user.id ?? null : null);
 
   const [password,  setPassword]  = useState('');
   const [confirm,   setConfirm]   = useState('');
   const [error,     setError]     = useState<string | null>(null);
-  const [done,      setDone]      = useState(false);
+  const [doneForUserId, setDoneForUserId] = useState<string | null>(null);
   const [loading,   setLoading]   = useState(false);
 
   async function handleUpdate() {
@@ -37,24 +41,41 @@ export default function NewPasswordScreen() {
     }
     setLoading(true);
     setError(null);
+    const recoveryUserId = useAuthStore.getState().session?.user.id;
     const err = await updatePassword(password);
-    setLoading(false);
     if (err) {
       setError(err);
+    } else if (!recoveryUserId || useAuthStore.getState().session?.user.id !== recoveryUserId
+      || !useAuthStore.getState().canAccessLocalData) {
+      setError('The account changed. Request a new reset link.');
     } else {
-      setDone(true);
+      await finishCredentialAutofill();
+      setPassword('');
+      setConfirm('');
+      const current = useAuthStore.getState();
+      if (current.canAccessLocalData && current.session?.user.id === recoveryUserId) {
+        setDoneForUserId(recoveryUserId);
+      } else {
+        setError('The account changed. Sign in to continue.');
+      }
     }
+    setLoading(false);
   }
 
-  if (done) {
+  if (doneForUserId) {
+    const canContinue = currentUserId === doneForUserId;
     return (
       <View style={s.root}>
         <View style={s.successBox}>
           <Text style={s.icon}>✅</Text>
           <Text style={s.successTitle}>Password updated</Text>
-          <Text style={s.successDesc}>Your new password is set. Sign in to continue.</Text>
-          <Pressable style={s.btn} onPress={() => router.replace('/auth/sign-in' as never)}>
-            <Text style={s.btnTxt}>Sign In</Text>
+          <Text style={s.successDesc}>Your new password is set.{canContinue ? '' : ' Sign in to continue.'}</Text>
+          <Pressable style={s.btn} onPress={() => {
+            const current = useAuthStore.getState();
+            router.replace(current.canAccessLocalData && current.session?.user.id === doneForUserId
+              ? '/(tabs)/dashboard' : '/auth/sign-in' as never);
+          }}>
+            <Text style={s.btnTxt}>{canContinue ? 'Continue' : 'Sign In'}</Text>
           </Pressable>
         </View>
       </View>
@@ -73,6 +94,20 @@ export default function NewPasswordScreen() {
 
           {error ? <Text style={s.error}>{error}</Text> : null}
 
+          {recoveryEmail ? (
+            <View style={s.field}>
+              <Text style={s.label}>ACCOUNT</Text>
+              <TextInput
+                style={s.input}
+                value={recoveryEmail}
+                editable={false}
+                accessibilityLabel="Account email"
+                keyboardType="email-address"
+                {...authInputProps('username', Platform.OS)}
+              />
+            </View>
+          ) : null}
+
           <View style={s.field}>
             <Text style={s.label}>NEW PASSWORD</Text>
             <TextInput
@@ -82,6 +117,7 @@ export default function NewPasswordScreen() {
               placeholder="Min. 6 characters"
               placeholderTextColor={colors.textSubtle}
               secureTextEntry
+              {...authInputProps('new-password', Platform.OS)}
             />
           </View>
 
@@ -94,6 +130,7 @@ export default function NewPasswordScreen() {
               placeholder="Re-enter password"
               placeholderTextColor={colors.textSubtle}
               secureTextEntry
+              {...authInputProps('new-password', Platform.OS)}
             />
           </View>
 

@@ -1,11 +1,29 @@
 # Current StrideOS launch status
 
+Latest November 4 owner report confirms build 111 / iPhone 13 Pro history intact,
+screen-lock recording, pause/resume and in-progress recording retained after
+closing/reopening. The owner clarified the activity had not been stopped/saved;
+completed-save durability and the other blank phone/Health/Watch checks remain
+open. `PHONE_QA_20261104.md` contains the scoped report and requested corrections.
+Resume/Stop recovery, profile name/username visibility and credential-form
+improvements are prepared in source for a future native build. The Apple
+association file is live at the owned domain and mirrored by Apple's CDN;
+matching native entitlement configuration is staged. These changes are not in
+installed build 111. See `IOS_PASSWORD_AUTOFILL_ASSOCIATION_20261104.md`.
+
 November 4 phone observation: the owner attempted the App Review login on the
 iPhone holding their usual account's local data. The app displayed the exact
-`owner-conflict` guard message and blocked access. Installed build and return to
-the original account/history remain unconfirmed. See `PHONE_QA_20261104.md`.
+`owner-conflict` guard message and blocked access. The subsequent owner report
+identifies build 111 and confirms their original history is intact. See
+`PHONE_QA_20261104.md`.
 Do not treat this as a password failure, successful account switching or proof
 of a completed isolation/recovery test; do not uninstall/reset to bypass it.
+
+`PHONE_FEEDBACK_CHANGES_20261104.md` and its validation receipt record the
+implemented corrections: 1,673 passing full-suite tests, TypeScript/Expo checks,
+source-only recovery review and public association readback. No new native
+build/TestFlight delivery was performed; allocate a new build number and verify
+signed entitlements before device acceptance of these changes.
 
 Owner support decision, November 3: Drew Moore will handle initial support and
 check the existing Gmail inbox daily. Coverage choice is closed. Subsequent

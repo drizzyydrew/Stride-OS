@@ -45,7 +45,7 @@ type ProfileStore = {
   setActiveAthlete:   (id: string) => void;
 
   // ── Generic profile patch (escapes the need for N individual setters) ────────
-  updateProfile: (id: string, patch: Partial<AthleteProfile>) => void;
+  updateProfile: (id: string, patch: Partial<AthleteProfile>) => Promise<void>;
   updateActive:  (patch: Partial<AthleteProfile>) => void;
 
   // ── PR management ────────────────────────────────────────────────────────────
@@ -114,8 +114,8 @@ export const useProfileStore = create<ProfileStore>()(
 
       // ── Updates ────────────────────────────────────────────────────────────────
 
-      updateProfile: (id, patch) =>
-        set(state => {
+      updateProfile: async (id, patch) => {
+        await set(state => {
           const prev = state.profiles[id];
           if (!prev) return state;
           return {
@@ -124,7 +124,8 @@ export const useProfileStore = create<ProfileStore>()(
               [id]: { ...prev, ...preserveWeightProvenance(prev, patch), updatedAt: Date.now() },
             },
           };
-        }),
+        });
+      },
 
       updateActive: (patch) => {
         const id = get().activeAthleteId;

@@ -5,6 +5,7 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../theme/tokens';
 import type { AthleteProfile } from '../../types/athlete';
+import { getProfileIdentity } from '../../utils/profileIdentity';
 
 type Props = {
   profile: AthleteProfile;
@@ -53,6 +54,7 @@ const sc = StyleSheet.create({
 });
 
 export default function ProfileOverviewCard({ profile }: Props) {
+  const identity = getProfileIdentity(profile);
   const heightFt = profile.heightCm > 0
     ? `${Math.floor(profile.heightCm / 30.48)}'${Math.round((profile.heightCm % 30.48) / 2.54)}"`
     : '—';
@@ -66,7 +68,8 @@ export default function ProfileOverviewCard({ profile }: Props) {
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.sectionLabel}>ATHLETE PROFILE</Text>
-          <Text style={styles.name}>{profile.name || 'Athlete'}</Text>
+          <Text style={styles.name}>{identity.primaryLabel}</Text>
+          {identity.visibleName && identity.visibleUsername ? <Text style={styles.sectionLabel}>{identity.visibleUsername}</Text> : null}
         </View>
         <View style={styles.ageWrap}>
           <Text style={styles.ageBig}>{profile.age || '—'}</Text>

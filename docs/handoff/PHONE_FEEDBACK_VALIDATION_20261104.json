@@ -1,0 +1,208 @@
+{
+  "checkedAt": "2026-11-05T05:23:12.673002+00:00",
+  "scope": "phone_feedback_source_implementation_and_technical_association_hosting",
+  "baseCommit": "a30ad0b",
+  "userReportedBuild": "111",
+  "newNativeBuildStarted": false,
+  "testFlightDeliveryPerformed": false,
+  "publicAppSubmissionOrRelease": false,
+  "billingSignupOrDeletionControlsChanged": false,
+  "validation": {
+    "fullSuite": {
+      "command": "tsx --test --test-concurrency=2 src/utils/__tests__/*.test.ts scripts/tests/*.test.ts",
+      "tests": 1673,
+      "passed": 1673,
+      "failed": 0,
+      "skipped": 0,
+      "logSHA256": "7def9ef1de4718d598b9c07b589a1874492d1e16764afe5b938f2bac4eff33fc"
+    },
+    "semanticTypeScriptPassed": true,
+    "expoCompatibilityPassed": true,
+    "focusedNewScenarios": {
+      "coldLaunchRecovery": 19,
+      "authScreens": 9,
+      "profileIdentityAndPersistence": 17,
+      "credentialHelper": 4
+    },
+    "androidAutolinkDiscoveryPassed": true,
+    "androidNativeCompilationVerified": false,
+    "iosEntitlementIntrospectionPassed": true,
+    "newSignedCandidateEntitlementVerified": false,
+    "physicalDeviceAcceptanceForChanges": false
+  },
+  "association": {
+    "projectId": "prj_vTtsKG8f6mVn7XKR7BKB1Vx9ktT1",
+    "projectName": "strideos-password-association",
+    "deploymentId": "dpl_21GiGoCU3LGekAtAMEoDr1BGUBNn",
+    "deploymentReady": true,
+    "previousApexProjectAssignmentCount": 0,
+    "apexAssignmentVerified": true,
+    "dnsRecordsEdited": false,
+    "mailServiceChanged": false,
+    "existingGitHubPagesWebsiteChanged": false,
+    "paidPlanOrAddonPurchased": false,
+    "accountStorageQuotaClearanceProven": false,
+    "publicReadbacks": [
+      {
+        "url": "https://strideosfitness.com/.well-known/apple-app-site-association",
+        "status": 200,
+        "redirects": 0,
+        "contentType": "application/json",
+        "expectedIdentifierMatches": true,
+        "bodySHA256": "e59a4c85dbcbe9f00ff27e41abdd273f9700fbea641815d10618d088e6a78610"
+      },
+      {
+        "url": "https://app-site-association.cdn-apple.com/a/v1/strideosfitness.com",
+        "status": 200,
+        "redirects": 0,
+        "contentType": "application/json",
+        "expectedIdentifierMatches": true,
+        "bodySHA256": "e59a4c85dbcbe9f00ff27e41abdd273f9700fbea641815d10618d088e6a78610"
+      }
+    ],
+    "expoAssociatedDomain": "webcredentials:strideosfitness.com",
+    "signedApplicationIdentifierReference": "QA112 inspected host entitlement"
+  },
+  "council": {
+    "independentReviewers": 3,
+    "crossExaminationCompleted": true,
+    "sourceRegressionJudgmentThresholdMet": true,
+    "judgmentIsMeasuredDeviceReliability": false,
+    "watchWorkingBuild90Reference": "aee249649697a5b95b21791d3e9973c2d9affbd7",
+    "nativeWatchGpsAndExistingCompletionSourceUnchangedFromBase": true
+  },
+  "sourceFileHashes": [
+    {
+      "file": "app.json",
+      "sha256": "311ff0ef63d05f12d542b3ce0dd8bbc145edc5d404dd30d7ec11dd3dde03765a"
+    },
+    {
+      "file": "app/(tabs)/coach/index.tsx",
+      "sha256": "820cf8fd1000ed02dd657ecf3b03cdd90bd47035db6bfc58a68655c7e24f7d63"
+    },
+    {
+      "file": "app/(tabs)/dashboard/index.tsx",
+      "sha256": "c80fb9467c6b64b9f525c4f2fa764afa0f0e5504c465942e67bd1a7092942d5f"
+    },
+    {
+      "file": "app/(tabs)/profile/index.tsx",
+      "sha256": "eb94baff9744fd1a0583f4e670d41eff892ed2e1a0c7fe7eb03537a4f7e93884"
+    },
+    {
+      "file": "app/(tabs)/settings/index.tsx",
+      "sha256": "961d14941031b15e3afdbdce204230962fc70ff7b45124d36828af635ae1f2b8"
+    },
+    {
+      "file": "app/_layout.tsx",
+      "sha256": "fdd91c655964159539f22283f2900804bd53fdeda7b764ea52a892b29194a763"
+    },
+    {
+      "file": "app/auth/forgot-password.tsx",
+      "sha256": "c8793ab23d010650982906d4bb40cb7565e33da409b1113196d34e5ffe1093aa"
+    },
+    {
+      "file": "app/auth/new-password.tsx",
+      "sha256": "f96728d325e0b63a0503468d72aac6a71e5df364ebdd6252275ab694568e447e"
+    },
+    {
+      "file": "app/auth/sign-in.tsx",
+      "sha256": "d38830fbed53195074c782fbc9bf691c58d697088827b5cff2ff9e50535b6220"
+    },
+    {
+      "file": "app/auth/sign-up.tsx",
+      "sha256": "edd7880802feda5c230fd98f2a67b2905431164133135a555f9c652263007fe6"
+    },
+    {
+      "file": "docs/handoff/password-autofill/apple-app-site-association",
+      "sha256": "3c3d85ff075e60417b7bddcf8e71a88360bffd5b70f7cb43603ec7e0e512f40f"
+    },
+    {
+      "file": "docs/handoff/password-autofill/vercel.json",
+      "sha256": "a75fc0362adffc29cb07350bdd37a68e6a9dd2d72b4def105c107f1c38de9895"
+    },
+    {
+      "file": "modules/stride-credential-autofill/LICENSE",
+      "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4"
+    },
+    {
+      "file": "modules/stride-credential-autofill/android/build.gradle",
+      "sha256": "9596858fec36718c4401607eae501479ebf413b13b66a81cd49ecf3f89034394"
+    },
+    {
+      "file": "modules/stride-credential-autofill/android/src/main/AndroidManifest.xml",
+      "sha256": "21058c692532098e42afc39cf09de946c38229ec414bb7ac32f4fc90ba9a5f45"
+    },
+    {
+      "file": "modules/stride-credential-autofill/android/src/main/java/expo/modules/stridecredentialautofill/StrideCredentialAutofillModule.kt",
+      "sha256": "08984716241497c6331a014c39a2278d2d70427312154f07d6d3bdd42a96e423"
+    },
+    {
+      "file": "modules/stride-credential-autofill/expo-module.config.json",
+      "sha256": "bbec189badb7ffbc9d599c6836059e3f5604c41ca2ff3b3b9141d3a19f9b09c6"
+    },
+    {
+      "file": "modules/stride-credential-autofill/src/StrideCredentialAutofillModule.ts",
+      "sha256": "0f23d361c3f34a8f6dacba8caadec08c5849c708f1accb89143bb29d1c3a2977"
+    },
+    {
+      "file": "scripts/tests/authInputScreens.test.ts",
+      "sha256": "6d2fe653fe78f68b1fd2ab3f0015c0e6fa7ae12c7a9046b0bd0a2e1a3276b0af"
+    },
+    {
+      "file": "scripts/tests/coldLaunchActivityRecovery.test.ts",
+      "sha256": "6426a61eeeee9fd7992aa8421660a8627de227c1535616bbfcd1469417a98c8f"
+    },
+    {
+      "file": "scripts/tests/credentialAutofill.test.ts",
+      "sha256": "d23fdd78536e0f777e33a45c52fb3fa40ab42e195dcbc4236b6832a2fd79d2d4"
+    },
+    {
+      "file": "scripts/tests/profileIdentityEditing.test.ts",
+      "sha256": "832c2c886812f78cc1eb661c0c3d93a5ca979fa4914900296d70a0cbb77f942b"
+    },
+    {
+      "file": "src/components/activity/RecoveredActivityPrompt.tsx",
+      "sha256": "7e92548e5f3f604e1307fc08c6ef8b1239eb3f18b539e414f6edc6ee2ee7a0d6"
+    },
+    {
+      "file": "src/components/profile/ProfileIdentityEditor.tsx",
+      "sha256": "5fce2ec0812fc9c53e30b1de362f1b98364c133ac1c339a69b6f8340ba7ac53e"
+    },
+    {
+      "file": "src/components/profile/ProfileOverviewCard.tsx",
+      "sha256": "cd11d0eb2ce1de21a6b9afb21992683673a0a90f65c6e515700c9cbc43771730"
+    },
+    {
+      "file": "src/lib/authInput.ts",
+      "sha256": "d3ef2f622094964d2d35e1a6e4d2d192c43de5abe94496dc1eb08ddc89ecccd9"
+    },
+    {
+      "file": "src/lib/coldLaunchActivityRecovery.ts",
+      "sha256": "7413d5f1429287637ea9bff92436d511ed18fa1960424978e217344a856b388e"
+    },
+    {
+      "file": "src/lib/credentialAutofill.ts",
+      "sha256": "cb35843af3d2ee13a0f9fb83720208776101519d9791fd6566fe4d74dd6f990a"
+    },
+    {
+      "file": "src/lib/profileIdentityEditing.ts",
+      "sha256": "b2e9342608c54ab175e1bcf085c3d8ba611e15fa4db72ad544658409867ac994"
+    },
+    {
+      "file": "src/store/profileStore.ts",
+      "sha256": "5389a3b690a34641f1788255def4ed9c5fb0be97841fd00fdd60722f892e5e00"
+    },
+    {
+      "file": "src/types/athlete.ts",
+      "sha256": "6495b5ce97dd767f996ca6641323d773ccc9ca7d9f2677f3be9bcdaaf062e80a"
+    },
+    {
+      "file": "src/utils/__tests__/profileIdentity.test.ts",
+      "sha256": "6cc32b1565098b4912d07ebc39bd1139d2df5bedee0b0f67f0cbd1cd71c54961"
+    },
+    {
+      "file": "src/utils/profileIdentity.ts",
+      "sha256": "639d8b9ab94193fdc652676a363a4e75128ab89657fff64a4589841db9e20241"
+    }
+  ]
+}

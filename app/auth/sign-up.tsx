@@ -14,6 +14,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 
 import { SocialAuthButtons } from '../../src/components/auth/SocialAuthButtons';
+import { authInputProps } from '../../src/lib/authInput';
+import { finishCredentialAutofill } from '../../src/lib/credentialAutofill';
 import { useAuthStore } from '../../src/store/authStore';
 import { colors }  from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
@@ -38,14 +40,14 @@ export default function SignUpScreen() {
     setLoading(true);
     setError(null);
     const err = await signUp(email.trim(), password);
-    setLoading(false);
     if (err) {
       setError(err);
-    } else if (useAuthStore.getState().session) {
-      // Email confirmation is disabled — user is immediately signed in; NavigationGate will redirect
     } else {
-      setSuccess(true);
+      await finishCredentialAutofill();
+      setPassword('');
+      if (!useAuthStore.getState().session) setSuccess(true);
     }
+    setLoading(false);
   }
 
   if (success) {
@@ -91,8 +93,7 @@ export default function SignUpScreen() {
               placeholder="you@example.com"
               placeholderTextColor={colors.textSubtle}
               keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
+              {...authInputProps('new-username', Platform.OS)}
             />
           </View>
 
@@ -105,6 +106,7 @@ export default function SignUpScreen() {
               placeholder="Min. 6 characters"
               placeholderTextColor={colors.textSubtle}
               secureTextEntry
+              {...authInputProps('new-password', Platform.OS)}
             />
           </View>
 

@@ -29,6 +29,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
+import { useActiveProfile } from '../../../src/store/profileStore';
+import { profileIdentityLabel } from '../../../src/utils/profileIdentity';
 import { useMovementStore }   from '../../../src/store/movementStore';
 import { useMobilityStore, weeklyCompletionCount } from '../../../src/store/mobilityStore';
 import { getMobilityWorkout } from '../../../src/constants/mobilityBank';
@@ -633,10 +635,13 @@ export default function CoachScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ ask?: string; analysisId?: string }>();
   const storedData = useOnboardingStore(s => s.data);
+  const identityLabel = profileIdentityLabel(useActiveProfile());
   const planTrainingMode = useTrainingPlanStore(s => s.trainingMode);
+  // Respect the same independent visibility choices in newly built AI context;
+  // never fall back to the raw onboarding name when a name is hidden.
   const data = useMemo(() => planTrainingMode === 'open'
-    ? { ...storedData, primaryGoal: 'general_fitness' as const, goalRaceLabel: '', raceName: '', raceDate: '' }
-    : storedData, [storedData, planTrainingMode]);
+    ? { ...storedData, name: identityLabel, primaryGoal: 'general_fitness' as const, goalRaceLabel: '', raceName: '', raceDate: '' }
+    : { ...storedData, name: identityLabel }, [storedData, planTrainingMode, identityLabel]);
   const riskFlags = useMovementStore(s => s.getActiveRiskFlags);
   const videos = useMovementStore(s => s.videos);
   const movementAnalyses = useMovementStore(s => s.analyses);

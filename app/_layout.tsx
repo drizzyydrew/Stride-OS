@@ -31,6 +31,7 @@ import CloudBackupBridge from '../src/components/sync/CloudBackupBridge';
 import HealthActivityWriter from '../src/components/sync/HealthActivityWriter';
 import ObservabilityBridge from '../src/components/sync/ObservabilityBridge';
 import ActiveLocationTrackingReconciler from '../src/components/activity/ActiveLocationTrackingReconciler';
+import RecoveredActivityPrompt from '../src/components/activity/RecoveredActivityPrompt';
 import {
   clearTrainingNotifications,
   getNotificationAccessStatus,
@@ -205,6 +206,7 @@ function AppRootContent() {
       <WatchWorkoutBridge />
       <RunTelemetryBridge />
       <RunCompletionRecovery />
+      <RecoveredActivityPrompt />
       <CloudBackupBridge />
       <HealthActivityWriter />
       <AchievementAwardReconciler />

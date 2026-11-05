@@ -12,6 +12,8 @@ import { useColors } from '../../../src/theme/useColors';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useActiveProfile } from '../../../src/store/profileStore';
+import ProfileIdentityEditor from '../../../src/components/profile/ProfileIdentityEditor';
+import { getProfileIdentity } from '../../../src/utils/profileIdentity';
 import { profilePowerMass } from '../../../src/utils/profilePower';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
@@ -61,6 +63,7 @@ export default function ProfileScreen() {
   const imp = units === 'imperial';
   const { data, updateData, setUserWeight } = useOnboardingStore();
   const profile = useActiveProfile();
+  const identity = getProfileIdentity(profile);
   const savedWeightKg = profilePowerMass(profile)?.bodyMassKg;
   const weeklyMileage = useAthleteStore(s => s.weeklyMileage);
   const savedGoalRace = useAthleteStore(s => s.goalRace);
@@ -154,14 +157,15 @@ export default function ProfileScreen() {
             {data.profilePhotoUri ? (
               <Image source={{ uri: data.profilePhotoUri }} style={styles.avatarImage} />
             ) : (
-              <Text style={{ fontSize: 20, fontWeight: '800', color: C.primary }}>{(data.name || 'A').slice(0, 2).toUpperCase()}</Text>
+              <Text style={{ fontSize: 20, fontWeight: '800', color: C.primary }}>{identity.initials}</Text>
             )}
             <View style={[styles.avatarAdd, { backgroundColor: C.primary }]}>
               <Text style={{ color: C.onPrimary, fontSize: 13, fontWeight: '800' }}>+</Text>
             </View>
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.profileName, { color: C.text }]}>{data.name || profile?.name || 'Athlete'}</Text>
+            <Text style={[styles.profileName, { color: C.text }]}>{identity.primaryLabel}</Text>
+            {identity.visibleName && identity.visibleUsername ? <Text style={[styles.caption, { color: C.textMuted }]}>{identity.visibleUsername}</Text> : null}
             <Text style={[styles.caption, { color: C.textMuted }]}>
               {Math.round(weeklyMileage)} mi/week · Goal {goalRace || 'general fitness'}
             </Text>
@@ -189,6 +193,7 @@ export default function ProfileScreen() {
             </View>
           ))}
         </View>
+        {profile ? <ProfileIdentityEditor key={`${profile.athleteId}:${profile.createdAt}`} profile={profile} /> : null}
       </View>
 
       <TouchableOpacity

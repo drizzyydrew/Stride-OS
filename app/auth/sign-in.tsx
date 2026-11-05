@@ -13,6 +13,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 
 import { SocialAuthButtons } from '../../src/components/auth/SocialAuthButtons';
+import { authInputProps, resetEmailFromParam } from '../../src/lib/authInput';
+import { finishCredentialAutofill } from '../../src/lib/credentialAutofill';
 import { useAuthStore } from '../../src/store/authStore';
 import { colors }  from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
@@ -40,6 +42,12 @@ export default function SignInScreen() {
     setError(null);
     setNotice(null);
     const err = await signIn(email.trim(), password);
+    const current = useAuthStore.getState();
+    if (!err && current.canAccessLocalData && current.session?.user.id
+      && current.session.user.email?.trim().toLowerCase() === email.trim().toLowerCase()) {
+      await finishCredentialAutofill();
+      setPassword('');
+    }
     setLoading(false);
     if (err) setError(err);
   }
@@ -86,8 +94,7 @@ export default function SignInScreen() {
               placeholder="you@example.com"
               placeholderTextColor={colors.textSubtle}
               keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
+              {...authInputProps('username', Platform.OS)}
             />
           </View>
 
@@ -100,6 +107,7 @@ export default function SignInScreen() {
               placeholder="••••••••"
               placeholderTextColor={colors.textSubtle}
               secureTextEntry
+              {...authInputProps('current-password', Platform.OS)}
             />
           </View>
 
@@ -114,7 +122,7 @@ export default function SignInScreen() {
             }
           </Pressable>
 
-          <Pressable onPress={() => router.push('/auth/forgot-password' as never)} style={s.forgotWrap}>
+          <Pressable onPress={() => router.push({ pathname: '/auth/forgot-password', params: { email: resetEmailFromParam(email) } } as never)} style={s.forgotWrap}>
             <Text style={s.forgotTxt}>Forgot password?</Text>
           </Pressable>
 
