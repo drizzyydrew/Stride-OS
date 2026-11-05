@@ -1,3 +1,4 @@
+import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -231,7 +232,7 @@ export default function GearScreen() {
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
       <ScreenHeader eyebrow="GEAR" title="Shoes & Equipment" onBack={() => router.back()} />
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <FeatureTourScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <FeatureTourTarget targetId="gear.shoes" style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.section, { color: C.textDim }]}>ADD SHOE</Text>
           <View style={s.inputRow}>
@@ -464,7 +465,7 @@ export default function GearScreen() {
             </View>
           </View>
         ))}
-      </ScrollView>
+      </FeatureTourScrollView>
     </SafeAreaView>
   );
 }

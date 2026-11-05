@@ -21,6 +21,8 @@ import { formatPace, formatRaceTime, vdotFromRacePR } from '../../../src/utils/c
 import { formatYMDForDisplay } from '../../../src/utils/dateFormatting';
 import StrideDateField from '../../../src/components/ui/StrideDateField';
 import { todayDateOnly } from '../../../src/utils/dateOnly';
+import { bestRacePRsByDistance, isValidRacePerformance, parseRaceElapsedTime } from '../../../src/utils/racePerformance';
+import { goalArchiveLink } from '../../../src/utils/goal-archive-link';
 
 const DISTANCES: { key: StandardDistance; label: string }[] = [
   { key: '5k', label: '5K' },
@@ -40,11 +42,7 @@ const METHODS: { key: ZoneMethod; title: string; body: string }[] = [
 ];
 
 function parseTimeToSeconds(value: string) {
-  const parts = value.trim().split(':').map(Number);
-  if (parts.some(n => !Number.isFinite(n))) return null;
-  if (parts.length === 2) return parts[0] * 60 + parts[1];
-  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  return null;
+  return parseRaceElapsedTime(value);
 }
 
 function parsePaceToSeconds(value: string) {
@@ -129,6 +127,10 @@ export default function CalibrationScreen() {
       date: prDate || today(),
       official: true,
     };
+    if (!isValidRacePerformance(pr)) {
+      Alert.alert('Check race result', 'Use a completed race date and a positive finish time as MM:SS or H:MM:SS.');
+      return;
+    }
     addRacePR(profile.athleteId, pr);
     setPrTime('');
     setTimeout(runRecalibration, 0);
@@ -206,12 +208,15 @@ export default function CalibrationScreen() {
   }
 
   const sortedPrs = [...profile.racePRs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const bestPrIds = new Set(bestRacePRsByDistance(profile.racePRs).map(pr => pr.id));
   const mafTests = [...profile.mafTests].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: C.bg }}
       contentContainerStyle={{ paddingHorizontal: 18, paddingTop: insets.top + 6, paddingBottom: LAYOUT.screenPadBottom }}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
       showsVerticalScrollIndicator={false}
     >
       <Header C={C} title="Performance Calibration" onBack={() => router.back()} />
@@ -252,7 +257,7 @@ export default function CalibrationScreen() {
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>RACE PRS + VDOT</Text>
         <Text style={[styles.body, { color: C.textMuted }]}>
-          Add recent race results or time trials. StrideOS uses the best valid PR to update VDOT, training paces, and race predictions. PRs older than 18 months are treated as less reliable.
+          Saved race results and time trials inform VDOT, training paces, and race predictions. Your first result at a distance sets your personal best; a faster result replaces it. Current calibration considers recent performances, and results older than 18 months carry less confidence.
         </Text>
         <View style={styles.pills}>
           {DISTANCES.map(item => (
@@ -260,23 +265,25 @@ export default function CalibrationScreen() {
               key={item.key}
               style={[styles.pill, { backgroundColor: distance === item.key ? C.primaryDim : C.cardAlt, borderColor: distance === item.key ? C.primary : C.border }]}
               onPress={() => setDistance(item.key)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: distance === item.key }}
             >
               <Text style={[styles.pillText, { color: distance === item.key ? C.primary : C.textMuted }]}>{item.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
         <View style={styles.formRow}>
-          <Field C={C} label="Time" value={prTime} onChangeText={setPrTime} placeholder="22:30" />
-          <View style={{ flex: 1 }}>
-            <StrideDateField
-              label="Date"
-              value={prDate}
-              onChange={setPrDate}
-              title="Race PR Date"
-              maxDate={today()}
-              accessibilityHint="Opens a calendar. Future PR dates are disabled."
-            />
-          </View>
+          <Field C={C} label="Finish time · MM:SS or H:MM:SS" value={prTime} onChangeText={setPrTime} placeholder={distance === 'half_marathon' || distance === 'marathon' ? '1:45:00' : '22:30'} />
+        </View>
+        <View style={styles.raceDateRow}>
+          <StrideDateField
+            label="Race date"
+            value={prDate}
+            onChange={setPrDate}
+            title="Race PR Date"
+            maxDate={today()}
+            accessibilityHint="Opens a calendar. Future PR dates are disabled."
+          />
         </View>
         <TouchableOpacity style={[styles.secondaryBtn, { borderColor: C.primary }]} onPress={addPr}>
           <Text style={[styles.secondaryText, { color: C.primary }]}>Add PR</Text>
@@ -287,13 +294,29 @@ export default function CalibrationScreen() {
             <View key={pr.id} style={[styles.listRow, { borderBottomColor: C.border }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.rowTitle, { color: C.text }]}>{pr.distanceLabel} · {formatRaceTime(pr.timeSeconds)}</Text>
+                {bestPrIds.has(pr.id) ? <Text style={[styles.caption, { color: C.primary }]}>Personal best</Text> : null}
                 <Text style={[styles.caption, { color: stale ? C.warning : C.textMuted }]}>
                   {formatYMDForDisplay(pr.date)} · VDOT {vdotFromRacePR(pr.distanceMeters, pr.timeSeconds).toFixed(1)}{stale ? ' · may be stale' : ''}
                 </Text>
+                {pr.source ? <Text style={[styles.caption, { color: C.textMuted }]}>{pr.source.kind === 'custom_workout' ? 'From a logged race or time trial' : 'From your saved race result · edit the original to update this result'}</Text> : null}
               </View>
-              <TouchableOpacity onPress={() => { removeRacePR(profile.athleteId, pr.id); setTimeout(runRecalibration, 0); }}>
+              {pr.source?.kind === 'goal_archive' ? <TouchableOpacity
+                style={styles.resultAction}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit ${pr.distanceLabel} race result`}
+                onPress={() => { if (pr.source?.kind === 'goal_archive') router.push(goalArchiveLink(pr.source.archiveId) as never); }}>
+                <Ionicons name="create-outline" size={20} color={C.primary} />
+              </TouchableOpacity> : pr.source?.kind === 'activity' ? <TouchableOpacity
+                style={styles.resultAction}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit ${pr.distanceLabel} race result`}
+                onPress={() => { if (pr.source?.kind === 'activity') router.push({ pathname: '/(tabs)/activity/manual', params: { activityId: pr.source.activityId } } as never); }}>
+                <Ionicons name="create-outline" size={20} color={C.primary} />
+              </TouchableOpacity> : !pr.source ? <TouchableOpacity style={styles.resultAction}
+                accessibilityRole="button" accessibilityLabel={`Remove ${pr.distanceLabel} result from ${formatYMDForDisplay(pr.date)}`}
+                onPress={() => { removeRacePR(profile.athleteId, pr.id); setTimeout(runRecalibration, 0); }}>
                 <Ionicons name="trash-outline" size={18} color={C.critical} />
-              </TouchableOpacity>
+              </TouchableOpacity> : null}
             </View>
           );
         })}
@@ -408,6 +431,7 @@ function Field({
     <View style={{ flex: 1, minWidth: 96 }}>
       <Text style={[styles.fieldLabel, { color: C.textMuted }]}>{label}</Text>
       <TextInput
+        accessibilityLabel={label}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -448,13 +472,15 @@ const styles = StyleSheet.create({
   pill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
   pillText: { fontSize: 12, fontWeight: '800' },
   formRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 10 },
+  raceDateRow: { width: '100%', marginBottom: 14 },
   fieldLabel: { fontSize: 11, fontWeight: '800', marginBottom: 5 },
-  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 9, fontSize: 13, fontWeight: '700' },
+  input: { borderWidth: 1, borderRadius: 10, minHeight: 48, paddingHorizontal: 12, paddingVertical: 12, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] },
   primaryBtn: { borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
   primaryText: { fontSize: 13, fontWeight: '900' },
   secondaryBtn: { borderWidth: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center', paddingHorizontal: 12 },
   secondaryText: { fontSize: 13, fontWeight: '900' },
   buttonRow: { flexDirection: 'row', gap: 10 },
   listRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 10, borderBottomWidth: 1 },
+  resultAction: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   rowTitle: { fontSize: 13, fontWeight: '900' },
 });

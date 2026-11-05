@@ -1,3 +1,4 @@
+import { goalArchiveLink } from '../../../src/utils/goal-archive-link';
 import { useMemo } from 'react';
 import { FlatList, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
@@ -43,7 +44,7 @@ export default function GoalArchiveScreen() {
           {item.closureReason ? <GoalMessage>Closed when you changed your training focus. The race result is separate.</GoalMessage> : null}
           {item.race && item.race.date > item.endDate ? <GoalMessage>Planned race date: {goalDate(item.race.date)}</GoalMessage> : null}
           <GoalMessage>{item.summary.completedActivities} completed · {item.summary.partialActivities} partial activities recorded during this window</GoalMessage>
-          <GoalAction label={`View results: ${item.title}`} onPress={() => router.push({ pathname: '/(tabs)/settings/goal-archive-detail', params: { id: item.id } } as never)} />
+          <GoalAction label={`View results: ${item.title}`} onPress={() => router.push(goalArchiveLink(item.id) as never)} />
         </View>} />
     </PageSafeAreaView>
   );

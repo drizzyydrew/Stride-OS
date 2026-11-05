@@ -34,6 +34,7 @@ struct StrideOSWatchApp: App {
 //   hand-tuned vertical padding.
 struct StrideWatchContentView: View {
   @EnvironmentObject private var workout: StrideWatchWorkoutManager
+  @Environment(\.scenePhase) private var scenePhase
 
   var body: some View {
     NavigationStack {
@@ -55,6 +56,9 @@ struct StrideWatchContentView: View {
     .task {
       workout.prepareForPhoneControl()
     }
+    .onChange(of: scenePhase) { _, phase in
+      if phase == .active { workout.presentPendingHealthSetupWhenIdle() }
+    }
   }
 }
 
@@ -64,9 +68,11 @@ private struct WorkoutPickerFace: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 8) {
+#if DEBUG
         if let trail = workout.startTrailLabel {
           StrideWatchStartTrailCard(text: trail, crashed: workout.startTrailCrashed)
         }
+#endif
 
         HStack(spacing: 8) {
           Image(systemName: "iphone")
@@ -90,8 +96,21 @@ private struct WorkoutPickerFace: View {
           .lineLimit(1)
           .minimumScaleFactor(0.82)
 
+#if DEBUG
         StrideWatchDiagnostics()
-        Button("Enable Workout Metrics", systemImage: "heart.text.square") { workout.enableWorkoutMetrics() }
+#else
+        if let error = workout.lastError {
+          Text(error)
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(StrideWatchPalette.clay)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+#endif
+        if let message = workout.healthSetupMessage {
+          Text(message)
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(StrideWatchPalette.cream)
+        }
         if workout.canEnableCadence {
           Button("Enable Cadence", systemImage: "figure.run") { workout.enableCadence() }
         }

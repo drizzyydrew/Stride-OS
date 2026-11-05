@@ -45,6 +45,7 @@ import { parseYMD } from '../../../src/utils/calendarEngine';
 import type { TrainingGoalType, Race, RacePriority } from '../../../src/types/plan';
 import type { RaceDistance } from '../../../src/types/training';
 import { getAppleHealthWriteStatus, isAppleHealthAvailable, requestPermissions as requestHealthPermissions } from '../../../src/lib/healthKit';
+import { requestStrideWatchHealthSetup } from '../../../modules/stride-watch-connectivity/src';
 import {
   clearTrainingNotifications,
   getNotificationAccessStatus,
@@ -502,10 +503,16 @@ export default function SettingsScreen() {
     }
   }
 
-  async function connectAppleHealth() {
-    if (integrations.healthKitEnabled) {
-      integrations.setHealthKit(false);
-      Alert.alert('Apple Health disconnected', 'StrideOS will stop writing workouts to Apple Health.');
+  async function connectAppleHealth(reviewPermissions = false) {
+    if (integrations.healthKitEnabled && !reviewPermissions) {
+      Alert.alert('Apple Health', 'Review the measurements you share or turn off workout saving.', [
+        { text: 'Review permissions', onPress: () => { void connectAppleHealth(true); } },
+        { text: 'Stop workout saving', onPress: () => {
+          integrations.setHealthKit(false);
+          Alert.alert('Workout saving off', 'StrideOS will stop writing completed workouts to Apple Health. You can manage read permissions in Apple Health.');
+        } },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
       return;
     }
     if (Platform.OS !== 'ios') {
@@ -524,11 +531,15 @@ export default function SettingsScreen() {
         return;
       }
       const ok = await requestHealthPermissions();
+      const watchSetup = ok ? await requestStrideWatchHealthSetup().catch(() => 'failed' as const) : 'unavailable';
       const canWrite = ok && await getAppleHealthWriteStatus();
       integrations.setHealthKit(canWrite);
-      Alert.alert(canWrite ? 'Apple Health connected' : 'Apple Health unavailable', canWrite
-        ? 'StrideOS can now read heart rate during runs and write completed workouts to Apple Health.'
-        : 'Apple Health write permission was not granted. Enable workout write access in Apple Health settings.');
+      Alert.alert(canWrite ? 'Apple Health connected' : 'Workout saving is off', canWrite
+        ? 'Workout saving is enabled. StrideOS can use the Health measurements you chose to share when available.'
+          + (watchSetup === 'queued' ? ' Open StrideOS on your Apple Watch while no workout is running to review any Watch permissions.'
+            : watchSetup === 'failed' ? ' Watch permission setup could not be queued. You can retry Health setup later.' : '')
+        : 'Workout write access is off. You can review it in Apple Health settings. Reading measurements follows your individual permission choices.'
+          + (watchSetup === 'queued' ? ' Open StrideOS on your Apple Watch while idle to review any Watch permissions.' : ''));
     } catch (error) {
       Alert.alert('Apple Health connection failed', error instanceof Error ? error.message : 'Could not connect Apple Health.');
     } finally {
@@ -1062,12 +1073,14 @@ export default function SettingsScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.settingTitle, { color: C.text }]}>Apple Health</Text>
-              <Text style={[styles.settingCaption, { color: C.textMuted }]}>Heart rate during runs, sleep, HRV, and workout saving</Text>
+              <Text style={[styles.settingCaption, { color: C.textMuted }]}>Choose access to heart rate, sleep, HRV, workout saving, and supported running and cycling metrics</Text>
             </View>
           </View>
           <TouchableOpacity
             style={[styles.connectBtn, integrations.healthKitEnabled ? { backgroundColor: C.cardAlt } : { backgroundColor: C.critical }, busy === 'health' && { opacity: 0.6 }]}
-            onPress={connectAppleHealth}
+            onPress={() => { void connectAppleHealth(); }}
+            accessibilityRole="button"
+            accessibilityLabel={integrations.healthKitEnabled ? 'Manage Apple Health permissions' : 'Connect Apple Health'}
             disabled={busy === 'health'}
             activeOpacity={0.8}
           >
@@ -1109,7 +1122,7 @@ export default function SettingsScreen() {
       <AccountPrivacy />
 
       {/* Apple Watch */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+      {__DEV__ ? <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>APPLE WATCH</Text>
         <View style={styles.settingRow}>
           <View style={{ flex: 1, paddingRight: 12 }}>
@@ -1123,7 +1136,7 @@ export default function SettingsScreen() {
             thumbColor={C.card}
           />
         </View>
-      </View>
+      </View> : null}
 
       {/* Notifications */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>

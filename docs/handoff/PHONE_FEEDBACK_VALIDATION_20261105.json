@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-05T15:33:48.987636+00:00",
+  "checkout": "/Users/drew/Developer/StrideOS_App_clean_build19_v3_foundation_local",
+  "sourceBaseCommit": "82d60d71edc9f2c9b595fb9b954f9e74524b5d47",
+  "scope": "November 5 archive, tour, race-result, PR-form, Health setup and release diagnostics corrections",
+  "fullSuite": {
+    "command": "./node_modules/.bin/tsx --test --test-concurrency=4 src/utils/__tests__/*.test.ts scripts/tests/*.test.ts",
+    "passed": 1766,
+    "failed": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "log": "/tmp/strideos-feedback-20261105-tests-final-verified.log"
+  },
+  "semanticTypeScript": {
+    "command": "npm run typecheck",
+    "exitCode": 0,
+    "log": "/tmp/strideos-feedback-20261105-typecheck.log"
+  },
+  "nativeWatch": {
+    "configuration": "Release, unsigned",
+    "architecture": "arm64_32_v8",
+    "sdk": "watchOS 11.5, local Xcode 16.4",
+    "targetBuildSucceeded": true,
+    "newSetupFileCompiledAndLinked": true,
+    "swiftPhoneBridgeParsed": true,
+    "signedPhoneCandidateCompiled": false,
+    "physicalDeviceTested": false,
+    "log": "/tmp/strideos-watch-health-target-build.log",
+    "removedMetricsButtonAndSyncDetailsAbsentFromReleaseBinary": true
+  },
+  "focusedSuites": {
+    "watchSetupPassed": 33,
+    "archiveTourDistinctScenariosPassed": 58,
+    "raceCalibrationFinalPassed": 31,
+    "existingManualActivityFormRegressionPassed": 25
+  },
+  "localUi": {
+    "kind": "Browser fixtures using production components with synthetic environment data",
+    "physicalDeviceEvidence": false,
+    "prFormWidths": [
+      390,
+      320
+    ],
+    "dateFieldHeights": [
+      58,
+      58
+    ],
+    "dateFieldWidths": [
+      320,
+      250
+    ],
+    "calendarSelectionConfirmed": true,
+    "tourRevealScrollOffset": 900,
+    "tourOutlineBorder": "rgb(255, 216, 77)",
+    "tourOutlineRect": {
+      "x": 16,
+      "y": 72.5,
+      "width": 358,
+      "height": 136
+    },
+    "nextTargetAndCloseVerified": true,
+    "previews": [
+      "update-2026-11-05/pr-form-390.jpg",
+      "update-2026-11-05/tour-390.jpg"
+    ]
+  },
+  "expoCompatibility": {
+    "onlineExitCode": 1,
+    "onlineResult": "Newer SDK-57 patch versions recommended; not a passed online check",
+    "offlineExitCode": 0,
+    "offlineResult": "Matches installed Expo 57.0.31 bundled versions; CLI warns offline validation is unreliable",
+    "dependencyChangesMade": false,
+    "newerRecommended": {
+      "expo": "~57.0.32",
+      "expo-asset": "~57.0.21",
+      "expo-constants": "~57.0.23",
+      "expo-image-picker": "~57.0.21",
+      "expo-location": "~57.0.23",
+      "expo-notifications": "~57.0.25",
+      "expo-router": "~57.0.30",
+      "expo-splash-screen": "~57.0.11",
+      "expo-task-manager": "~57.0.22"
+    }
+  },
+  "review": {
+    "independentCrossExamination": true,
+    "watchPlatformSourceScore": 96,
+    "watchCustodySourceScore": 96,
+    "scoreScale": 100,
+    "scoreMeaning": "subjective bounded regression review, not measured device reliability"
+  },
+  "preservedBoundaries": {
+    "archiveIdsAndSnapshotsNotRewritten": true,
+    "noHistoricalRaceInferenceFromNotesOrActiveTime": true,
+    "manualPrHistoryPreserved": true,
+    "rawActivityMetricsNotChangedByRaceMarking": true,
+    "hrMaxAndRestingHrNotInferredFromRaceTime": true,
+    "unconfirmedMissingArchiveSourceCannotEraseDerivedResult": true,
+    "readPermissionProcessingNotRepresentedAsGranted": true,
+    "startWatchdogAndBaselineAuthorizationPreserved": true
+  },
+  "remaining": [
+    "New phone/Watch candidate and device acceptance",
+    "Expo patch-version alignment for next candidate",
+    "General race-PR celebration/badge artwork and award integration",
+    "Actual optional authorized sensor values and denied/re-enabled/delayed Watch setup checks"
+  ],
+  "externalActions": {
+    "easBuild": false,
+    "testFlightDelivery": false,
+    "appleSubmission": false,
+    "publicRelease": false,
+    "productionBackendMutation": false,
+    "accountResetOrDeletion": false,
+    "personalTrainingHistoryRecreated": false
+  },
+  "sourceSha256": {
+    "app/(tabs)/activity/manual.tsx": "8cdd2c9654f40509355af6b2ce382901cc02167fe60f19e39039fbb202ed52c1",
+    "app/(tabs)/profile/calibration.tsx": "62f3a2815ae2c22529b8b255e45c68ef4ed6aa587dad289cb80727d7bc6f5ece",
+    "app/(tabs)/settings/index.tsx": "3b6ce81ea813e8a9ecb517f9d287ce5759f045d37c4741911859133143b04e1c",
+    "app/_layout.tsx": "4c406dcf59cf73e13798cda674a68f70a7de1a28a6e78c92bc922a1edf842b65",
+    "src/lib/raceCalibration.ts": "f54feb6701977e0aa5e3517304c7e63d5f904b5a489747b9f44257d224665c64",
+    "src/utils/racePerformance.ts": "1a031851871448b5aa5412e3c1e6d56236c8303c52cf43cefc33ee0350f571af",
+    "src/utils/goal-archive-link.ts": "271137c20b14788baf658982f7dc211eb92b694be0d801fdfeb13c00bff9a683",
+    "src/components/featureTour/FeatureTourProvider.tsx": "aaaecc2b35edbf34e098b63d32a6fabf91f3b4684bc910087994ec6b484c6341",
+    "src/components/featureTour/FeatureTourTarget.tsx": "993be1c820f7c2f8e7a2bf465cdea84484b50f784d104308316ea25b6cb7754f",
+    "src/components/featureTour/FeatureTourScrollView.tsx": "affcb03e285b397af1e9f9b24ab7a2a90d875cfbb03ecb5f64d3ed138933e1c4",
+    "src/utils/feature-tour-runtime.ts": "6724f9de043006c42ff01841186ea9665264312598c7b1538841aeb656a0ffeb",
+    "targets/StrideOSWatch/StrideWatchHealthSetup.swift": "d849f332700309d32ebca44680a1edd89353327f3c921a2907175856b0563fff",
+    "targets/StrideOSWatch/StrideWatchWorkoutManager.swift": "d7516e1cfd5624ee269a621dea19dfc239a129b6ca2e9fbc00ac1c3f20d95d86",
+    "targets/StrideOSWatch/StrideOSWatchApp.swift": "64a30129553c11a142bed8ac82e716fd0d01349c1cb386ab91be020154dd61ee",
+    "modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift": "492e29336d6e25888f5ea9499053b4aa6b47e67b19a482df19ef105b5e7eedb1",
+    "modules/stride-watch-connectivity/src/index.ts": "c629056010f62a8eb21422aa940f6107af352d2c6d1cf57f992089b71e105c6a"
+  }
+}

@@ -68,6 +68,7 @@ import type {
   ZoneMethod,
 } from '../types/athlete';
 import type { PaceZones, PaceGuidance } from '../types/training';
+import { isValidRacePerformance } from './racePerformance';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -133,7 +134,7 @@ function pctVo2MaxAtDuration(durationMinutes: number): number {
 }
 
 export function vdotFromRacePR(distanceMeters: number, timeSeconds: number): number {
-  if (timeSeconds <= 0 || distanceMeters <= 0) return 0;
+  if (!Number.isFinite(timeSeconds) || !Number.isFinite(distanceMeters) || timeSeconds <= 0 || distanceMeters <= 0) return 0;
   const durationMin = timeSeconds / 60;
   const velocity    = distanceMeters / durationMin;
   const vo2         = vo2AtVelocity(velocity);
@@ -584,7 +585,10 @@ export function calibrationToPaceZones(calibration: CalibrationOutput): PaceZone
 // Pure function. Same input → same output. No side effects.
 
 export function runCalibration(input: CalibrationInput): CalibrationOutput {
-  const { profile, weeklyMileage, recentWorkoutCount, lastWorkoutDaysAgo, currentRecoveryScore } = input;
+  const { weeklyMileage, recentWorkoutCount, lastWorkoutDaysAgo, currentRecoveryScore } = input;
+  // Invalid/future stored entries stay in history, but cannot drive current
+  // fitness or inflate confidence. The most recent valid result still wins.
+  const profile = { ...input.profile, racePRs: input.profile.racePRs.filter(pr => isValidRacePerformance(pr)) };
 
   // ── 1. Determine VDOT ────────────────────────────────────────────────────────
   let vdot = 0;

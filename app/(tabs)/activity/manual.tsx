@@ -45,6 +45,9 @@ import { dateOnlyToLocalTimestamp, timestampToDateOnly, todayDateOnly } from '..
 import { elevationInputText, hasRecordedEvidence, mergeManualActivityEdit, parseElevationInput } from '../../../src/utils/manualActivityEdit';
 import { withAutomaticActivityPower } from '../../../src/utils/automaticActivityPower';
 import { withAutomaticClimbingWork } from '../../../src/utils/climbingWork';
+import RaceResultFields, { type RaceResultKindInput } from '../../../src/components/activity/RaceResultFields';
+import { buildActivityRaceResult, completedActivityRaceResult, isValidRacePerformance } from '../../../src/utils/racePerformance';
+import { formatRaceTime } from '../../../src/utils/calibrationEngine';
 
 const TYPES: { key: string; type: ActivityType; subtype?: ActivitySubtype; label: string }[] = [
   { key: 'running', type: 'running', subtype: 'outdoor', label: 'Running' },
@@ -182,6 +185,12 @@ export default function ManualActivityScreen() {
   const [routeId, setRouteId] = useState<string | null>(prefillActivity?.metrics.routeId ?? null);
   const [shoeId, setShoeId] = useState<string | null>(prefillActivity?.shoeId ?? defaultShoeId ?? null);
   const [pool, setPool] = useState(initialPool);
+  const [raceResultKind, setRaceResultKind] = useState<RaceResultKindInput>(prefillActivity?.raceResult?.kind ?? 'none');
+  const [raceDistanceKey, setRaceDistanceKey] = useState<NonNullable<ActivityDraft['raceResult']>['distanceKey']>(prefillActivity?.raceResult?.distanceKey ?? '5k');
+  const [raceFinishTime, setRaceFinishTime] = useState(prefillActivity?.raceResult ? formatRaceTime(prefillActivity.raceResult.elapsedTimeSeconds) : '');
+  const [raceCustomUnit, setRaceCustomUnit] = useState<'mi' | 'km'>(units === 'metric' ? 'km' : 'mi');
+  const [raceCustomDistance, setRaceCustomDistance] = useState(prefillActivity?.raceResult?.distanceKey === 'custom'
+    ? String(prefillActivity.raceResult.distanceMeters / (units === 'metric' ? 1000 : 1609.344)) : '');
   const hydratedRef = useRef(Boolean(prefillActivity));
   const [hydratedActivityId, setHydratedActivityId] = useState(prefillActivity?.id);
   const baselineSnapshotRef = useRef<string | null>(null);
@@ -209,6 +218,12 @@ export default function ManualActivityScreen() {
     setRouteId(prefillActivity.metrics.routeId ?? null);
     setShoeId(prefillActivity.shoeId ?? null);
     setPool(prefillActivity.subtype !== 'open_water');
+    setRaceResultKind(prefillActivity.raceResult?.kind ?? 'none');
+    setRaceDistanceKey(prefillActivity.raceResult?.distanceKey ?? '5k');
+    setRaceFinishTime(prefillActivity.raceResult ? formatRaceTime(prefillActivity.raceResult.elapsedTimeSeconds) : '');
+    setRaceCustomUnit(units === 'metric' ? 'km' : 'mi');
+    setRaceCustomDistance(prefillActivity.raceResult?.distanceKey === 'custom'
+      ? String(prefillActivity.raceResult.distanceMeters / (units === 'metric' ? 1000 : 1609.344)) : '');
   }, [prefillActivity]);
 
   const isSwim = activityType === 'swimming';
@@ -247,9 +262,11 @@ export default function ManualActivityScreen() {
     routeId,
     shoeId,
     pool,
+    raceResultKind, raceDistanceKey, raceFinishTime, raceCustomDistance, raceCustomUnit,
   }), [
     activityKey, completionState, durationMinutes, activityDate, distance, distanceUnit, elevationGain,
     averageHr, maximumHr, rpe, laps, cadence, power, rounds, notes, routeId, shoeId, pool,
+    raceResultKind, raceDistanceKey, raceFinishTime, raceCustomDistance, raceCustomUnit,
   ]);
 
   useEffect(() => {
@@ -308,8 +325,24 @@ export default function ManualActivityScreen() {
         || activityType === 'mobility'
         || (isSwim && pool),
     });
+    const raceResult = activityType === 'running' && raceResultKind !== 'none'
+      ? buildActivityRaceResult(raceResultKind, raceDistanceKey, raceFinishTime,
+        numeric(raceCustomDistance) == null ? undefined : numeric(raceCustomDistance)! * (raceCustomUnit === 'km' ? 1000 : 1609.344))
+      : undefined;
+    if (activityType === 'running' && raceResultKind !== 'none') {
+      const date = recordedEdit && prefillActivity ? timestampToDateOnly(prefillActivity.startTime) : activityDate;
+      if (!raceResult || draft.status !== 'completed' || !isValidRacePerformance({
+        id: 'draft', distanceKey: raceResult.distanceKey, distanceLabel: 'Result',
+        distanceMeters: raceResult.distanceMeters, timeSeconds: raceResult.elapsedTimeSeconds,
+        date, official: raceResultKind === 'race',
+      })) {
+        Alert.alert('Check race or time-trial result', 'Use a completed activity date, an event distance, and a positive elapsed finish time as MM:SS or H:MM:SS. For a partial activity, choose Regular training.');
+        return;
+      }
+    }
     const completedDraft: ActivityDraft = {
       ...draft,
+      raceResult: raceResult ?? undefined,
       id: prefillActivity?.id,
       subtype: isSwim ? (pool ? 'pool' : 'open_water') : selectedType.subtype ?? draft.subtype,
       completionClassification: options.classification ?? draft.completionClassification,
@@ -329,6 +362,7 @@ export default function ManualActivityScreen() {
         mixedModal: isMixed ? { rounds: numeric(rounds) } : undefined,
       },
     };
+    completedDraft.raceResult = completedActivityRaceResult(completedDraft);
     let activityId: string;
     try {
       if (prefillActivity) {
@@ -339,6 +373,7 @@ export default function ManualActivityScreen() {
         const changed = new Set(Object.keys(current).filter(key => current[key] !== baseline[key]));
         const edited = mergeManualActivityEdit(latest, completedDraft, changed);
         if (options.classification) { edited.completionClassification = options.classification; edited.status = activityStatusForClassification(options.classification); }
+        edited.raceResult = completedActivityRaceResult(edited);
         if (options.unlinkSchedule) { edited.scheduled = false; edited.scheduledSessionId = undefined; edited.associatedTrainingBlockId = undefined; edited.associatedGoalId = undefined; }
         edited.metrics = withAutomaticActivityPower({ ...latest, ...edited, id: latest.id, trainingLoad: latest.trainingLoad }, profile);
         updateActivity(latest.id, edited);
@@ -460,7 +495,10 @@ export default function ManualActivityScreen() {
             ].map(([key, label]) => (
               <TouchableOpacity
                 key={key}
-                onPress={() => setCompletionState(key as CompletionState)}
+                onPress={() => {
+                  setCompletionState(key as CompletionState);
+                  if (key === 'partial' || key === 'stopped_early') setRaceResultKind('none');
+                }}
                 style={[s.pill, {
                   backgroundColor: key === completionState ? C.primaryDim : C.card,
                   borderColor: key === completionState ? C.primary : C.border,
@@ -513,6 +551,12 @@ export default function ManualActivityScreen() {
             {isBike ? <Field label="Average power" value={power} onChange={setPower} suffix="W" optional /> : null}
             {isMixed ? <Field label="Rounds" value={rounds} onChange={setRounds} optional /> : null}
           </View>
+          {activityType === 'running' ? <RaceResultFields
+            kind={raceResultKind} distanceKey={raceDistanceKey} finishTime={raceFinishTime}
+            customDistance={raceCustomDistance} customUnit={raceCustomUnit}
+            onKindChange={setRaceResultKind} onDistanceChange={setRaceDistanceKey} onFinishTimeChange={setRaceFinishTime}
+            onCustomDistanceChange={setRaceCustomDistance} onCustomUnitChange={setRaceCustomUnit}
+          /> : null}
           {showDistancePace ? (
             <View style={s.unitRow}>
               <TouchableOpacity

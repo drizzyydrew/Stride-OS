@@ -1,3 +1,4 @@
+import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import Modal from '../../../src/components/ui/RecoverableModal';
 // ─── Movement Lab ─────────────────────────────────────────────────────────────
 //
@@ -521,7 +522,7 @@ export default function MovementIndexScreen() {
         </View>
       )}
 
-      <ScrollView style={s.list} contentContainerStyle={s.listContent} showsVerticalScrollIndicator={false}>
+      <FeatureTourScrollView style={s.list} contentContainerStyle={s.listContent} showsVerticalScrollIndicator={false}>
         {/* Running/Walking Readiness — single clean entry point */}
         <FeatureTourTarget targetId="movement.capture">
           <ReadinessEntryCard />
@@ -598,7 +599,7 @@ export default function MovementIndexScreen() {
         )}
         </>
         )}
-      </ScrollView>
+      </FeatureTourScrollView>
 
       <AddVideoModal
         visible={showAdd}

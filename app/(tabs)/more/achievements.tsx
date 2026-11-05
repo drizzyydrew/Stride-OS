@@ -1,3 +1,4 @@
+import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import { useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
@@ -108,7 +109,6 @@ function canonicalListForFilter(achievements: readonly EvaluatedAchievement[], f
 
 export default function AchievementHubScreen() {
   const C = useColors();
-  useFeatureTour('achievements');
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const activities = useActivityStore(state => state.activities);
@@ -142,6 +142,10 @@ export default function AchievementHubScreen() {
     assessmentResults,
   }).filter(item => CANONICAL_BADGE_FAMILIES.has(item.family)), [activities, assessmentResults, awarded, readinessHistory, units, weekSessions]);
   const canonicalVisible = canonicalListForFilter(canonicalAchievements, familyFilter);
+  useFeatureTour('achievements', targetId => {
+    if (targetId === 'achievements.share') setFamilyFilter('all');
+  });
+  const tourShareBadgeId = canonicalListForFilter(canonicalAchievements, 'all').slice(0, 36).find(item => item.state !== 'locked')?.id;
 
   function shareAchievement(definition: AchievementDefinition) {
     setSelectedShareId(definition.id);
@@ -164,7 +168,7 @@ export default function AchievementHubScreen() {
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
       <ScreenHeader eyebrow="STRIDEOS" title="Achievements" onBack={() => router.back()} />
-      <ScrollView
+      <FeatureTourScrollView
         contentContainerStyle={[s.content, { paddingBottom: LAYOUT.tabBarHeight + Math.max(insets.bottom, 16) + 28 }]}
         showsVerticalScrollIndicator={false}
       >
@@ -185,6 +189,7 @@ export default function AchievementHubScreen() {
           <View style={s.sectionHeaderRow}>
             <Text style={[s.sectionTitle, { color: C.text }]}>Achievement System</Text>
           </View>
+          <FeatureTourTarget targetId="achievements.system">
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterRail}>
             {FAMILY_FILTERS.map(filter => {
               const active = familyFilter === filter;
@@ -201,11 +206,13 @@ export default function AchievementHubScreen() {
               );
             })}
           </ScrollView>
+          </FeatureTourTarget>
           {canonicalVisible.slice(0, familyFilter === 'all' ? 36 : canonicalVisible.length).map(item => {
             const earned = item.state !== 'locked';
             return (
+              <FeatureTourTarget key={item.id} targetId={item.id === tourShareBadgeId ? 'achievements.share' : `achievements.badge.${item.id}`}
+                onActivate={item.id === tourShareBadgeId ? () => router.push({ pathname: '/(tabs)/more/achievement-detail', params: { id: item.id } } as never) : undefined}>
               <TouchableOpacity
-                key={item.id}
                 style={[s.badgeRow, { backgroundColor: earned ? C.primaryDim : C.cardAlt, borderColor: earned ? C.primary : C.border }]}
                 onPress={() => router.push({ pathname: '/(tabs)/more/achievement-detail', params: { id: item.id, ...(familyFilter === 'challenges' || familyFilter === 'strength' ? { badgeFamily: familyFilter } : {}) } } as never)}
                 accessibilityRole="button"
@@ -222,6 +229,7 @@ export default function AchievementHubScreen() {
                   </View>
                 </View>
               </TouchableOpacity>
+              </FeatureTourTarget>
             );
           })}
           {familyFilter === 'all' && canonicalVisible.length > 36 ? (
@@ -307,7 +315,7 @@ export default function AchievementHubScreen() {
         </View>
 
         {selectedShareDefinition ? (
-          <FeatureTourTarget targetId="achievements.share" style={[s.section, { borderColor: C.border }]}>
+          <FeatureTourTarget targetId="achievements.share-preview" style={[s.section, { borderColor: C.border }]}>
             <Text style={[s.sectionTitle, { color: C.text }]}>Share Achievement</Text>
             <View style={s.variantGrid}>
               {ACHIEVEMENT_SHARE_VARIANTS.map(item => {
@@ -347,7 +355,7 @@ export default function AchievementHubScreen() {
           </FeatureTourTarget>
         ) : null}
 
-      </ScrollView>
+      </FeatureTourScrollView>
     </SafeAreaView>
   );
 }

@@ -1,3 +1,4 @@
+import { archiveFromLink } from '../../../src/utils/goal-archive-link';
 import { useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -135,10 +136,9 @@ export default function GoalArchiveDetailScreen() {
   const lifecycle = useGoalLifecycle();
   const C = useColors();
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string | string[] }>();
-  const id = typeof params.id === 'string' ? params.id : null;
+  const params = useLocalSearchParams<{ archiveKey?: string | string[]; id?: string | string[] }>();
   const archive = lifecycle.status === 'ready' && lifecycle.isDefaultAthlete
-    ? lifecycle.archives.find(item => item.id === id && item.athleteId === 'athlete_default') : undefined;
+    ? archiveFromLink(lifecycle.archives.filter(item => item.athleteId === 'athlete_default'), params) : undefined;
   return <PageSafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
     <Stack.Screen options={{ title: 'Archived block' }} />
     <ScreenHeader title="Archived block" eyebrow="TRAINING HISTORY"

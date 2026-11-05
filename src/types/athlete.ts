@@ -56,6 +56,11 @@ export type RacePR = {
   date:           string;   // "YYYY-MM-DD"
   course?:        string;
   official:       boolean;  // race result vs. training time-trial
+  /** Linked performance, recalculated from its retained source rather than copied manually. */
+  source?:
+    | { kind: 'goal_archive'; archiveId: string; ownerUserId: string }
+    | { kind: 'custom_workout'; logId: string; ownerUserId: string }
+    | { kind: 'activity'; activityId: string; ownerUserId: string };
 };
 
 // ─── Threshold field test ─────────────────────────────────────────────────────

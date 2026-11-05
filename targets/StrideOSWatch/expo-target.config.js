@@ -12,6 +12,10 @@ module.exports = (config) => ({
   },
   plist: {
     NSMotionUsageDescription: 'StrideOS reads your current step cadence during workouts.',
+    NSHealthShareUsageDescription:
+      'StrideOS uses the workout measurements you choose to share, such as heart rate, distance, energy, steps, running metrics, and cycling cadence or power, to record and review your activities.',
+    NSHealthUpdateUsageDescription:
+      'StrideOS saves completed Apple Watch workouts you record in StrideOS to Apple Health.',
     WKBackgroundModes: ['workout-processing'],
     UIBackgroundModes: ['location'],
     NSLocationWhenInUseUsageDescription:

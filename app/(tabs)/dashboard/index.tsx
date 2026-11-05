@@ -1,6 +1,7 @@
+import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import Modal from '../../../src/components/ui/RecoverableModal';
 import { useMemo, useState } from 'react';
-import { Pressable, ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, type DimensionValue } from 'react-native';
+import { Pressable, ActivityIndicator, Alert, Linking, StyleSheet, Text, TouchableOpacity, View, type DimensionValue } from 'react-native';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -356,7 +357,7 @@ function getDayLabel(): string {
 export default function TodayScreen() {
   const C = useColors();
   const athleteName = profileIdentityLabel(useActiveProfile());
-  useFeatureTour('today');
+  const { activeTargetId: tourTarget } = useFeatureTour('today');
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const todayReadiness = useReadinessStore(s => s.todayReadiness);
@@ -397,7 +398,7 @@ export default function TodayScreen() {
     ? describeRunWalk(primarySession.runWalk)
     : primarySession ? `${primarySession.durationMinutes} min` : 'Rest day';
   const workoutFeel = cleanFeelLine(primarySession?.target, primarySession?.durationMinutes);
-  const showBalancedDetails = experienceModeAllows(experienceMode, 'balanced');
+  const showBalancedDetails = experienceModeAllows(experienceMode, 'balanced') || tourTarget === 'today.forecast';
   const showDataRichDetails = experienceModeAllows(experienceMode, 'data_rich');
   const trainingOutlook = useMemo(() => buildTrainingOutlook({
     activities,
@@ -539,7 +540,7 @@ export default function TodayScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
+      <FeatureTourScrollView
         style={styles.scroll}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: LAYOUT.screenPadBottom }}
         showsVerticalScrollIndicator={false}
@@ -869,7 +870,7 @@ export default function TodayScreen() {
           </Text>
         ) : null}
       </FeatureTourTarget> : null}
-      </ScrollView>
+      </FeatureTourScrollView>
       <ForecastChartDetailModal
         metric={forecastChartMetric}
         confidence={performanceForecast.confidence}

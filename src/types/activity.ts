@@ -336,7 +336,17 @@ export type WatchRecordingEvidence = {
   state: 'running' | 'paused' | 'ended';
 };
 
+export type ActivityRaceResult = {
+  kind: 'race' | 'time_trial';
+  distanceKey: import('./athlete').StandardDistance | 'custom';
+  /** Athlete-confirmed event/course distance, separate from GPS distance. */
+  distanceMeters: number;
+  /** Full elapsed finish time, including any stops. Never inferred from active time. */
+  elapsedTimeSeconds: number;
+};
+
 export type Activity = {
+  raceResult?: ActivityRaceResult;
   workoutInstanceId?: string;
   /** Native Watch recording confirmation, not connectivity or a Health save receipt. */
   watchRecording?: WatchRecordingEvidence;

@@ -1,6 +1,7 @@
+import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -167,7 +168,6 @@ function actionLabelForEntries(entries: CalendarEntry[], isToday: boolean): stri
 
 export default function CalendarScreen() {
   const C = useColors();
-  useFeatureTour('calendar');
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -188,6 +188,10 @@ export default function CalendarScreen() {
   const todayYMD = useMemo(() => toYMD(today), [today]);
 
   const [view, setView] = useState<CalendarView>('week');
+  useFeatureTour('calendar', targetId => {
+    if (targetId === 'calendar.week') setView('week');
+    if (targetId === 'calendar.day') setView('day');
+  });
   const [selectedDate, setSelectedDate] = useState(today);
   const [displayedMonth, setDisplayedMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
 
@@ -834,7 +838,7 @@ export default function CalendarScreen() {
   }
 
   return (
-    <ScrollView
+    <FeatureTourScrollView
       style={{ flex: 1, backgroundColor: C.bg }}
       contentContainerStyle={{ paddingHorizontal: 18, paddingTop: insets.top + 6, paddingBottom: LAYOUT.screenPadBottom }}
       showsVerticalScrollIndicator={false}
@@ -865,14 +869,14 @@ export default function CalendarScreen() {
 
       <FeatureTourTarget targetId="calendar.view" style={[styles.segmentWrap, { backgroundColor: C.card, borderColor: C.border }]}>
         {renderSegment('Month', 'month')}
-        {renderSegment('Week', 'week')}
-        {renderSegment('Day', 'day')}
+        <FeatureTourTarget targetId="calendar.view.week" onActivate={() => setView('week')} style={{ flex: 1 }}>{renderSegment('Week', 'week')}</FeatureTourTarget>
+        <FeatureTourTarget targetId="calendar.view.day" onActivate={() => setView('day')} style={{ flex: 1 }}>{renderSegment('Day', 'day')}</FeatureTourTarget>
       </FeatureTourTarget>
 
       {view === 'month' ? renderMonthView() : null}
       {view === 'week' ? renderWeekView() : null}
       {view === 'day' ? renderDayView() : null}
-    </ScrollView>
+    </FeatureTourScrollView>
   );
 }
 

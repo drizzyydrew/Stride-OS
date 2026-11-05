@@ -1,3 +1,4 @@
+import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import Modal from '../../../src/components/ui/RecoverableModal';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -2029,7 +2030,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
           />
           <View style={[styles.watchStatusPanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
             {watchConnection}
-            {showWatchSyncDetails ? <WatchStatusDiagnostics status={{ ...watchStatus, lastError: null }} mutedColor={C.textMuted} warningColor={C.warning} detailed /> : null}
+            {__DEV__ && showWatchSyncDetails ? <WatchStatusDiagnostics status={{ ...watchStatus, lastError: null }} mutedColor={C.textMuted} warningColor={C.warning} detailed /> : null}
           </View>
         </ScrollView>
         <View style={[styles.runControlPanel, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: (fullScreen ? insets.bottom : 0) + spacing.md }]}>
@@ -2139,7 +2140,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const showIndoorSetupPlaceholder = runState === 'idle' && pendingEnvironment === 'indoor';
 
   return (
-    <ScrollView
+    <FeatureTourScrollView
       key={`setup:${pendingEnvironment}:${runState === 'idle' ? 'idle' : 'session'}`}
       style={{ flex: 1, backgroundColor: panelBg }}
       contentContainerStyle={[styles.activeIdleContent, { paddingTop: fullScreen ? insets.top : 0, paddingBottom: (fullScreen ? insets.bottom : 0) + LAYOUT.screenPadBottom }]}
@@ -2275,7 +2276,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         ) : null}
         <View style={[styles.watchStatusPanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
           {watchConnection}
-          {showWatchSyncDetails ? <WatchStatusDiagnostics status={{ ...watchStatus, lastError: null }} mutedColor={C.textMuted} warningColor={C.warning} detailed /> : null}
+          {__DEV__ && showWatchSyncDetails ? <WatchStatusDiagnostics status={{ ...watchStatus, lastError: null }} mutedColor={C.textMuted} warningColor={C.warning} detailed /> : null}
         </View>
         {environment === 'outdoor' ? (
           <GpsSignalChip active={isActive} paused={isPaused} lastGoodFixAt={lastGoodFixAt} startedAt={startTime} />
@@ -2667,7 +2668,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         onConfirm={v => { setRacePaceSecInput(v); setGoalPickerFor(null); }}
         onClose={() => setGoalPickerFor(null)}
       />
-    </ScrollView>
+    </FeatureTourScrollView>
   );
 }
 
@@ -3614,12 +3615,14 @@ function GPSTab() {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function RunningScreen() {
   const C = useColors();
-  useFeatureTour('running');
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const navigation = useNavigation();
   const params = useLocalSearchParams<{ tab?: string; scheduledSessionId?: string }>();
   const [tab, setTab] = useState<RunTab>('plan');
+  useFeatureTour('running', targetId => {
+    if (targetId !== 'running.tabs' && targetId !== 'running.tab.active') setTab('active');
+  });
   const isActive = useActiveRunStore(s => s.isActive);
   const isPaused = useActiveRunStore(s => s.isPaused);
   const isRunning = isActive || isPaused;
@@ -3679,14 +3682,15 @@ export default function RunningScreen() {
       {/* Sub-tab bar */}
       <FeatureTourTarget targetId="running.tabs" style={[styles.subTabBar, { backgroundColor: C.card, borderColor: C.border }]}>
         {TABS.map(t => (
+          <FeatureTourTarget key={t.key} targetId={`running.tab.${t.key}`} onActivate={() => setTab(t.key)} style={{ flex: 1 }}>
           <TouchableOpacity
-            key={t.key}
             style={[styles.subTab, tab === t.key && { backgroundColor: C.primaryDim }]}
             onPress={() => setTab(t.key)}
             activeOpacity={0.7}
           >
             <Text style={[styles.subTabText, { color: tab === t.key ? C.primary : C.textDim }]}>{t.label}</Text>
           </TouchableOpacity>
+          </FeatureTourTarget>
         ))}
       </FeatureTourTarget>
 

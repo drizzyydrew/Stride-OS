@@ -1,17 +1,22 @@
 import React, { useCallback, useEffect, useRef, type PropsWithChildren } from 'react';
-import { View, type LayoutChangeEvent, type ViewStyle } from 'react-native';
+import { View, type ViewStyle } from 'react-native';
 
 import { useFeatureTourRegistry } from './FeatureTourProvider';
 import type { FeatureTourRect } from '../../utils/featureTours';
+import { useFeatureTourScroll } from './FeatureTourScrollView';
 
 type Props = PropsWithChildren<{
   targetId: string;
   style?: ViewStyle | ViewStyle[];
+  onActivate?: () => void;
 }>;
 
-export default function FeatureTourTarget({ targetId, style, children }: Props) {
+export default function FeatureTourTarget({ targetId, style, onActivate, children }: Props) {
   const ref = useRef<View>(null);
   const { registerTarget } = useFeatureTourRegistry();
+  const scroll = useFeatureTourScroll();
+  const activateRef = useRef(onActivate);
+  activateRef.current = onActivate;
 
   const measure = useCallback(() => new Promise<FeatureTourRect | null>((resolve) => {
     const node = ref.current;
@@ -28,15 +33,13 @@ export default function FeatureTourTarget({ targetId, style, children }: Props) 
     });
   }), []);
 
-  useEffect(() => registerTarget(targetId, { measure }), [measure, registerTarget, targetId]);
-
-  function onLayout(_event: LayoutChangeEvent) {
-    // Registration uses measureInWindow so tours can target the rendered screen
-    // position after safe areas, tabs, and scroll offsets are applied.
-  }
+  useEffect(() => registerTarget(targetId, { measure,
+    reveal: scroll ? current => scroll.reveal(ref.current, current) : undefined,
+    activate: onActivate ? () => activateRef.current?.() : undefined,
+  }), [measure, registerTarget, targetId, scroll, !!onActivate]);
 
   return (
-    <View ref={ref} collapsable={false} onLayout={onLayout} style={style}>
+    <View ref={ref} collapsable={false} style={style}>
       {children}
     </View>
   );

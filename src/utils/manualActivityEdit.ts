@@ -1,4 +1,5 @@
 import type { Activity, ActivityDraft, ActivityMetrics } from '../types/activity';
+import { completedActivityRaceResult } from './racePerformance';
 
 export function parseElevationInput(text: string, units: 'metric' | 'imperial'): { meters?: number; error?: string } {
   if (!text.trim()) return {};
@@ -31,6 +32,10 @@ export function mergeManualActivityEdit(existing: Activity, draft: ActivityDraft
   if (changed.has('pool') && !recorded) { next.subtype = draft.subtype; next.indoor = draft.indoor; }
   if (changed.has('completionState')) { next.status = draft.status; next.completionClassification = draft.completionClassification; }
   if (changed.has('notes')) next.notes = draft.notes;
+  if (['raceResultKind', 'raceDistanceKey', 'raceFinishTime', 'raceCustomDistance', 'raceCustomUnit'].some(key => changed.has(key))) {
+    next.raceResult = draft.raceResult;
+  }
+  next.raceResult = completedActivityRaceResult(next);
   if (changed.has('rpe')) next.rpe = draft.rpe;
   if (changed.has('shoeId')) next.shoeId = draft.shoeId;
   if (!recorded && changed.has('activityDate')) {

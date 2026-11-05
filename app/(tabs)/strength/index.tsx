@@ -1,3 +1,4 @@
+import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -85,12 +86,12 @@ function SegmentedControl({ segment, setSegment, C }: {
     { label: 'Mobility', value: 'mobility' },
   ];
   return (
-    <View style={[segStyles.wrap, { backgroundColor: C.cardAlt }]}>
+    <FeatureTourTarget targetId="strength.tabs" style={[segStyles.wrap, { backgroundColor: C.cardAlt }]}>
       {options.map(opt => {
         const active = segment === opt.value;
         return (
+          <FeatureTourTarget key={opt.value} targetId={`strength.tab.${opt.value}`} onActivate={() => setSegment(opt.value)} style={{ flex: 1 }}>
           <TouchableOpacity
-            key={opt.value}
             style={[segStyles.btn, active && { backgroundColor: C.card }]}
             onPress={() => setSegment(opt.value)}
             activeOpacity={0.75}
@@ -99,9 +100,10 @@ function SegmentedControl({ segment, setSegment, C }: {
               {opt.label}
             </Text>
           </TouchableOpacity>
+          </FeatureTourTarget>
         );
       })}
-    </View>
+    </FeatureTourTarget>
   );
 }
 
@@ -520,10 +522,12 @@ function dayLabelFor(dateYMD: string, todayYMD: string): string {
 
 export default function StrengthScreen() {
   const C = useColors();
-  useFeatureTour('strength');
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [segment, setSegment] = useState<Segment>('strength');
+  useFeatureTour('strength', targetId => {
+    if (targetId === 'strength.today') setSegment('strength');
+  });
   const { units } = useSettingsStore();
   const showDataRichDetails = useExperienceModeAllows('data_rich');
   const weekPlan = useWeekPlan();
@@ -1037,14 +1041,14 @@ export default function StrengthScreen() {
         </View>
         <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
         <View style={{ paddingHorizontal: 18 }}>
-          <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <FeatureTourTarget targetId="strength.today" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[styles.subTitle, { color: C.text, marginBottom: 6 }]}>Your plan hasn't started yet</Text>
             <Text style={[{ fontSize: 13, color: C.textMuted, lineHeight: 19 }]}>
               {weekPlan.metadata.startsOn
                 ? `Strength sessions begin the week of ${weekPlan.metadata.startsOn}.`
                 : 'Set a program start date in Settings to see your strength sessions here.'}
             </Text>
-          </View>
+          </FeatureTourTarget>
           <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.primaryDim }]} onPress={() => launchCustomWorkout()} activeOpacity={0.8}>
             <Text style={[styles.bigBtnText, { color: C.primary }]}>Do My Own Workout</Text>
           </TouchableOpacity>
@@ -1066,11 +1070,11 @@ export default function StrengthScreen() {
         </View>
         <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
         <View style={{ paddingHorizontal: 18 }}>
-          <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          <FeatureTourTarget targetId="strength.today" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[{ fontSize: 13, color: C.textMuted, lineHeight: 19 }]}>
               No strength session is scheduled this week — {weekPlan.strengthWeek.phaseNote || 'check back next week.'}
             </Text>
-          </View>
+          </FeatureTourTarget>
           <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.primaryDim }]} onPress={() => launchCustomWorkout()} activeOpacity={0.8}>
             <Text style={[styles.bigBtnText, { color: C.primary }]}>Do My Own Workout</Text>
           </TouchableOpacity>
@@ -1095,11 +1099,9 @@ export default function StrengthScreen() {
         )}
       </View>
 
-      <FeatureTourTarget targetId="strength.tabs">
-        <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
-      </FeatureTourTarget>
+      <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
 
-      <ScrollView
+      <FeatureTourScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: LAYOUT.screenPadBottom }}
         showsVerticalScrollIndicator={false}
@@ -1501,7 +1503,7 @@ export default function StrengthScreen() {
             </View>
           )}
         </TouchableOpacity>
-      </ScrollView>
+      </FeatureTourScrollView>
 
       {/* Weight Picker */}
       <PickerWheel

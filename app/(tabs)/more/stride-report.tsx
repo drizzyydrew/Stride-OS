@@ -1,3 +1,4 @@
+import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
@@ -120,7 +121,7 @@ export default function StrideReportScreen() {
           onBack={() => router.back()}
         />
       </View>
-      <ScrollView
+      <FeatureTourScrollView
         contentContainerStyle={[
           s.content,
           { paddingBottom: LAYOUT.tabBarHeight + Math.max(insets.bottom, 16) + 24 },
@@ -263,7 +264,7 @@ export default function StrideReportScreen() {
           <Text style={[s.primaryButtonText, { color: C.onPrimary }]}>Create Share Card</Text>
         </Pressable>
         {shareMessage ? <Text style={[s.shareMessage, { color: C.textMuted }]}>{shareMessage}</Text> : null}
-      </ScrollView>
+      </FeatureTourScrollView>
     </View>
   );
 }

@@ -9,14 +9,16 @@ import { createWatchStartCoordinator } from '../../src/utils/watchAvailability';
 const read = (path: string) => readFileSync(path, 'utf8');
 const watch = read('targets/StrideOSWatch/StrideWatchWorkoutManager.swift');
 
-test('Watch launch keeps baseline scopes; new permission sheets require foreground idle setup', () => {
+test('Watch launch keeps baseline scopes; optional permissions belong to requested foreground idle Health setup', () => {
   const startupAuthorization = watch.slice(watch.indexOf('private func requestAuthorization('), watch.indexOf('private func optionalMetricIdentifiers('));
   for (const scope of ['.heartRate', '.activeEnergyBurned', '.distanceWalkingRunning', '.distanceCycling']) assert.ok(startupAuthorization.includes(scope));
   assert.doesNotMatch(startupAuthorization, /optionalMetricIdentifiers|distanceDownhillSnowSports|runningPower|cyclingPower/);
-  const setup = watch.slice(watch.indexOf('func enableWorkoutMetrics()'), watch.indexOf('func cycleMetricPage()'));
-  assert.match(setup, /guard !isActive, !isStartingWorkout, WKExtension.shared\(\).applicationState == .active/);
+  const setup = watch.slice(watch.indexOf('func presentPendingHealthSetupWhenIdle()'), watch.indexOf('func cycleMetricPage()'));
+  assert.match(setup, /healthSetup.hasPendingRequest/);
+  assert.match(setup, /!self.isActive && !self.isStartingWorkout && !self.isEnding/);
+  assert.match(setup, /self.session == nil && WKExtension.shared\(\).applicationState == .active/);
   assert.match(setup, /optionalMetricIdentifiers/);
-  assert.match(read('targets/StrideOSWatch/StrideOSWatchApp.swift'), /Button\("Enable Workout Metrics".*workout.enableWorkoutMetrics\(\)/);
+  assert.doesNotMatch(read('targets/StrideOSWatch/StrideOSWatchApp.swift'), /Enable Workout Metrics|enableWorkoutMetrics/);
 });
 
 test('Watch cadence callback belongs to the session, not the replaceable provisional recording ID', () => {

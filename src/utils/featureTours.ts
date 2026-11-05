@@ -24,6 +24,9 @@ export type FeatureTourStep = {
   actionLabel?: string;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  /** The target exposes an explicit, safe navigation action for this step. */
+  targetAction?: boolean;
+  unavailableDescription?: string;
 };
 
 export type FeatureTourDefinition = {
@@ -56,6 +59,14 @@ export type FeatureTourCardPlacement = {
   width: number;
   placement: FeatureTourPlacement;
 };
+
+/** Keep a real target clear of scroll clipping; long sections align at the top. */
+export function scrollOffsetForTourTarget(target: FeatureTourRect, viewport: FeatureTourRect, currentOffset: number): number {
+  const top = viewport.y + 24;
+  const bottom = viewport.y + viewport.height - 24;
+  if (target.y >= top && target.y + target.height <= bottom) return currentOffset;
+  return Math.max(0, currentOffset + target.y - top);
+}
 
 const HELP_TARGET = 'feature-tour.help';
 
@@ -105,8 +116,9 @@ export const FEATURE_TOURS: FeatureTourDefinition[] = [
     entryLabel: 'Calendar',
     description: 'Schedule views, completed activities, and planned sessions.',
     steps: [
-      { id: 'calendar-view', targetId: 'calendar.view', title: 'Choose A View', description: 'Switch between month, week, and day views without changing the underlying plan.', preferredPlacement: 'bottom' },
+      { id: 'calendar-view', targetId: 'calendar.view.week', title: 'Choose A View', description: 'Tap Week to review the schedule. Month, week, and day views all use the same underlying plan.', preferredPlacement: 'bottom', targetAction: true, actionLabel: 'Open Week' },
       { id: 'calendar-week', targetId: 'calendar.week', title: 'Scheduled Workouts', description: 'Calendar uses the same scheduled-session spine as Today, Running, Strength, and AI Coach.', preferredPlacement: 'top' },
+      { id: 'calendar-open-day', targetId: 'calendar.view.day', title: 'Open Day View', description: 'Tap the highlighted Day button to see session actions for the selected date.', preferredPlacement: 'bottom', targetAction: true, actionLabel: 'Open Day' },
       { id: 'calendar-day', targetId: 'calendar.day', title: 'Day Actions', description: 'Tap a session to start, complete, reschedule, or review it while preserving completed history.', preferredPlacement: 'top' },
     ],
   },
@@ -117,7 +129,7 @@ export const FEATURE_TOURS: FeatureTourDefinition[] = [
     entryLabel: 'Running',
     description: 'Run setup, Live Activities, voice cues, routes, and hydration.',
     steps: [
-      { id: 'running-tabs', targetId: 'running.tabs', title: 'Running Modes', description: 'Plan, Active, Hydration, and Routes all feed the canonical run workflow.', preferredPlacement: 'bottom' },
+      { id: 'running-tabs', targetId: 'running.tab.active', title: 'Open Run Setup', description: 'Tap Active to see run setup. This opens the controls without starting a workout.', preferredPlacement: 'bottom', targetAction: true, actionLabel: 'Open Active' },
       { id: 'running-start', targetId: 'running.start', title: 'Start Run', description: 'Start a planned, custom, interval, treadmill, or free run from the active setup.', preferredPlacement: 'top' },
       { id: 'running-options', targetId: 'running.options', title: 'Workout Setup', description: 'Pick the run type and indoor or outdoor context before tracking begins.', preferredPlacement: 'top' },
       { id: 'running-live', targetId: 'running.live', title: 'Live Activity', description: 'When iOS allows it, active workouts can show key metrics while the phone is locked.', preferredPlacement: 'top' },
@@ -129,11 +141,11 @@ export const FEATURE_TOURS: FeatureTourDefinition[] = [
     version: 1,
     title: 'Strength Walkthrough',
     entryLabel: 'Strength',
-    description: 'Planned strength, presets, custom work, and completed history.',
+    description: 'Planned strength, presets, and mobility navigation.',
     steps: [
-      { id: 'strength-tabs', targetId: 'strength.tabs', title: 'Strength Areas', description: 'Move between planned strength, presets, and mobility without creating duplicate workout records.', preferredPlacement: 'bottom' },
+      { id: 'strength-tabs', targetId: 'strength.tab.strength', title: 'Strength Areas', description: 'Tap Strength to review scheduled training. Presets and Mobility are available alongside it.', preferredPlacement: 'bottom', targetAction: true, actionLabel: 'Open Strength' },
       { id: 'strength-today', targetId: 'strength.today', title: "Today's Strength", description: 'Start or review the strength work scheduled for today.', preferredPlacement: 'top' },
-      { id: 'strength-history', targetId: 'strength.history', title: 'Training History', description: 'Completed sets, reps, resistance, and RPE contribute to training history where supported.', preferredPlacement: 'top' },
+      { id: 'strength-presets', targetId: 'strength.tab.presets', title: 'Preset Workouts', description: 'Tap Presets to browse strength workouts. Opening this section does not start or log a workout.', preferredPlacement: 'bottom', targetAction: true, actionLabel: 'Open Presets' },
     ],
   },
   {
@@ -177,12 +189,12 @@ export const FEATURE_TOURS: FeatureTourDefinition[] = [
     version: 1,
     title: 'Achievements Walkthrough',
     entryLabel: 'Achievements',
-    description: 'Milestones, records, run levels, and mountain elevation.',
+    description: 'Milestones, records, run levels, and badge details.',
     steps: [
       { id: 'achievements-hub', targetId: 'achievements.hub', title: 'Achievements', description: 'Achievements recognize consistency, progression, milestones, and notable performances.', preferredPlacement: 'bottom' },
       { id: 'achievements-levels', targetId: 'achievements.hub', title: 'Run Levels', description: 'Run Levels track lifetime running-distance progression using the current StrideOS thresholds.', preferredPlacement: 'top' },
-      { id: 'achievements-elevation', targetId: 'achievements.elevation', title: 'Cumulative Elevation', description: 'Accumulated elevation unlocks real mountain landmarks, without needing to climb the actual mountain.', preferredPlacement: 'top' },
-      { id: 'achievements-share', targetId: 'achievements.share', title: 'Share Achievements', description: 'Unlocked achievements can be shared with privacy-safe StrideOS cards where supported.', preferredPlacement: 'top' },
+      { id: 'achievements-system', targetId: 'achievements.system', title: 'Browse Badge Families', description: 'Choose a family to browse milestones and see progress from recorded activity.', preferredPlacement: 'bottom' },
+      { id: 'achievements-share', targetId: 'achievements.share', title: 'Review An Earned Badge', description: 'Tap the highlighted earned badge to open its details and sharing options. This does not publish anything.', preferredPlacement: 'top', targetAction: true, actionLabel: 'Open Badge', unavailableDescription: 'An earned badge must be available before its sharing options can be shown. Keep recording activities and replay this tour anytime.' },
     ],
   },
   {

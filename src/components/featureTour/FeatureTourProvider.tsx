@@ -41,13 +41,15 @@ import {
   type FeatureTourRect,
 } from '../../utils/featureTours';
 import { recordFeatureTourEvent } from '../../utils/featureTourEvents';
+import { locateFeatureTourTarget, type FeatureTourTargetHandle } from '../../utils/feature-tour-runtime';
 
-type TargetMeasurement = {
-  measure: () => Promise<FeatureTourRect | null>;
-};
+type TargetMeasurement = FeatureTourTargetHandle;
 
 type FeatureTourContextValue = {
   registerTarget: (targetId: string, target: TargetMeasurement) => () => void;
+  registerScreen: (tourId: FeatureTourId, prepare: (targetId: string) => void) => () => void;
+  activeTourId: FeatureTourId | null;
+  activeTargetId: string | null;
   startTour: (tourId: FeatureTourId, entrySource?: 'first_use' | 'replay' | 'manual') => void;
 };
 
@@ -58,6 +60,9 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
   const insets = useSafeAreaInsets();
   const dimensions = useWindowDimensions();
   const targetsRef = useRef(new Map<string, TargetMeasurement>());
+  const screensRef = useRef(new Map<FeatureTourId, (targetId: string) => void>());
+  const [targetRevision, setTargetRevision] = useState(0);
+  const [targetStatus, setTargetStatus] = useState<'locating' | 'ready' | 'unavailable'>('locating');
   const explanationRef = useRef<View>(null);
   const measurementGeneration = useRef(0);
   const pathname = usePathname();
@@ -77,23 +82,22 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
   const measureStep = useCallback(async () => {
     const generation = ++measurementGeneration.current;
     setTargetRect(null);
-    if (!activeStep) {
-      setTargetRect(null);
-      return;
-    }
-    const target = targetsRef.current.get(activeStep.targetId);
-    if (!target) {
-      setTargetRect(null);
-      return;
-    }
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-    const rect = await Promise.race([
-      target.measure().catch(() => null),
-      new Promise<null>(resolve => { timeout = setTimeout(() => resolve(null), 650); }),
-    ]);
-    if (timeout) clearTimeout(timeout);
-    if (generation === measurementGeneration.current) setTargetRect(rect);
-  }, [activeStep]);
+    setTargetStatus('locating');
+    if (!activeStep || !activeTourId) return;
+    const rect = await locateFeatureTourTarget({
+      prepare: () => screensRef.current.get(activeTourId)?.(activeStep.targetId),
+      find: () => {
+        const target = targetsRef.current.get(activeStep.targetId);
+        return activeStep.targetAction && !target?.activate ? undefined : target;
+      },
+      current: () => generation === measurementGeneration.current,
+      visible: value => highlightRectForTarget(value, dimensions.width, dimensions.height) !== null,
+    });
+    if (generation !== measurementGeneration.current) return;
+    setTargetRect(rect);
+    setTargetStatus(rect ? 'ready' : 'unavailable');
+    measurementGeneration.current += 1;
+  }, [activeStep, activeTourId, dimensions.width, dimensions.height]);
 
   useEffect(() => {
     let mounted = true;
@@ -118,7 +122,7 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
       stepNumber: stepIndex + 1,
     });
     return () => { measurementGeneration.current += 1; };
-  }, [activeStep, activeTour, measureStep, stepIndex, dimensions.width, dimensions.height]);
+  }, [activeStep, activeTour, measureStep, stepIndex, dimensions.width, dimensions.height, targetRevision]);
 
   useEffect(() => {
     if (!activeStep || !explanationRef.current) return;
@@ -135,9 +139,11 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
 
   const registerTarget = useCallback((targetId: string, target: TargetMeasurement) => {
     targetsRef.current.set(targetId, target);
+    setTargetRevision(value => value + 1);
     return () => {
       if (targetsRef.current.get(targetId) === target) {
         targetsRef.current.delete(targetId);
+        setTargetRevision(value => value + 1);
         measurementGeneration.current += 1;
         setTargetRect(null);
       }
@@ -168,7 +174,12 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
     setStepIndex(0);
   }, [pathname]);
 
-  const value = useMemo(() => ({ registerTarget, startTour }), [registerTarget, startTour]);
+  const registerScreen = useCallback((tourId: FeatureTourId, prepare: (targetId: string) => void) => {
+    screensRef.current.set(tourId, prepare);
+    return () => { if (screensRef.current.get(tourId) === prepare) screensRef.current.delete(tourId); };
+  }, []);
+  const value = useMemo(() => ({ registerTarget, registerScreen, startTour, activeTourId,
+    activeTargetId: activeStep?.targetId ?? null }), [registerTarget, registerScreen, startTour, activeTourId, activeStep]);
 
   function closeAsSkipped() {
     measurementGeneration.current += 1;
@@ -188,6 +199,11 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
 
   function goNext() {
     if (!activeTour) return;
+    if (activeStep?.targetAction && targetStatus !== 'unavailable') {
+      const activate = targetsRef.current.get(activeStep.targetId)?.activate;
+      if (!activate || targetStatus !== 'ready') return;
+      activate();
+    }
     if (stepIndex >= activeTour.steps.length - 1) {
       completeTour();
       return;
@@ -241,8 +257,12 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
             <View style={[styles.dim, { backgroundColor: C.overlay }]} />
           )}
           {highlightRect ? (
-            <View
-              pointerEvents="none"
+            <Pressable
+              pointerEvents={activeStep?.targetAction && targetStatus === 'ready' ? 'auto' : 'none'}
+              onPress={event => { event.stopPropagation(); goNext(); }}
+              accessibilityRole={activeStep?.targetAction ? 'button' : undefined}
+              accessibilityLabel={activeStep?.targetAction ? activeStep.actionLabel ?? `Open ${activeStep.title}` : undefined}
+              testID="feature-tour-highlight"
               style={[
                 styles.highlight,
                 {
@@ -250,7 +270,7 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
                   top: highlightRect.y,
                   width: highlightRect.width,
                   height: highlightRect.height,
-                  borderColor: C.primary,
+                  borderColor: '#FFD84D',
                   backgroundColor: 'transparent',
                 },
               ]}
@@ -292,6 +312,9 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
                 </TouchableOpacity>
               </View>
               <Text style={[styles.description, { color: C.textMuted }]}>{activeStep.description}</Text>
+              {targetStatus === 'locating' ? <Text style={[styles.description, { color: C.textDim }]}>Finding this feature…</Text> : null}
+              {targetStatus === 'unavailable' ? <Text style={[styles.description, { color: C.textDim }]}>{activeStep.unavailableDescription ?? 'This feature is unavailable in the current view. Your data is unchanged; continue or close the tour.'}</Text> : null}
+              {activeStep.targetAction && targetStatus === 'ready' ? <Text style={[styles.description, { color: C.textMuted }]}>Tap the yellow outline, or use the button below.</Text> : null}
               <View style={styles.footer}>
                 <Text style={[styles.progress, { color: C.textDim }]}>{stepIndex + 1} of {totalSteps}</Text>
                 <View style={styles.actions}>
@@ -303,8 +326,8 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
                   <TouchableOpacity style={[styles.secondary, { borderColor: C.border }]} onPress={closeAsSkipped} accessibilityRole="button" accessibilityLabel="Skip walkthrough">
                     <Text style={[styles.secondaryText, { color: C.textMuted }]}>Skip</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.primary, { backgroundColor: C.primary }]} onPress={goNext} accessibilityRole="button" accessibilityLabel={stepIndex === totalSteps - 1 ? 'Finish walkthrough' : 'Next walkthrough step'}>
-                    <Text style={[styles.primaryText, { color: C.onPrimary }]}>{stepIndex === totalSteps - 1 ? 'Done' : activeStep.actionLabel ?? 'Next'}</Text>
+                  <TouchableOpacity disabled={targetStatus === 'locating' && !!activeStep.targetAction} style={[styles.primary, { backgroundColor: C.primary, opacity: targetStatus === 'locating' && activeStep.targetAction ? 0.5 : 1 }]} onPress={goNext} accessibilityRole="button" accessibilityLabel={activeStep.targetAction && targetStatus === 'ready' ? activeStep.actionLabel ?? `Open ${activeStep.title}` : stepIndex === totalSteps - 1 ? 'Finish walkthrough' : 'Next walkthrough step'}>
+                    <Text style={[styles.primaryText, { color: C.onPrimary }]}>{activeStep.targetAction && targetStatus === 'ready' ? activeStep.actionLabel ?? 'Open' : stepIndex === totalSteps - 1 ? 'Done' : 'Next'}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -318,9 +341,13 @@ export function FeatureTourProvider({ children }: PropsWithChildren) {
   );
 }
 
-export function useFeatureTour(tourId: FeatureTourId) {
+export function useFeatureTour(tourId: FeatureTourId, prepareTarget?: (targetId: string) => void) {
   const focused = useIsFocused();
   const context = useContext(FeatureTourContext);
+  const prepareRef = useRef(prepareTarget);
+  prepareRef.current = prepareTarget;
+  const registerScreen = context?.registerScreen;
+  useEffect(() => registerScreen?.(tourId, targetId => prepareRef.current?.(targetId)), [registerScreen, tourId]);
   const status = useFeatureTourStore(s => s.tourStatus[tourId]);
   const replayRequest = useFeatureTourStore(s => s.replayRequests[tourId]);
   const consumeReplay = useFeatureTourStore(s => s.consumeReplay);
@@ -357,6 +384,7 @@ export function useFeatureTour(tourId: FeatureTourId) {
   }, [consumeReplay, context, replayRequest, tourId, focused, hydrated]);
 
   return {
+    activeTargetId: context?.activeTourId === tourId ? context.activeTargetId : null,
     replay: () => context?.startTour(tourId, 'manual'),
   };
 }
@@ -383,7 +411,7 @@ const styles = StyleSheet.create({
   },
   highlight: {
     position: 'absolute',
-    borderWidth: 2,
+    borderWidth: 3,
     borderRadius: 16,
     shadowColor: '#000',
     shadowOpacity: 0.45,

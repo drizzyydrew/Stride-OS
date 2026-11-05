@@ -25,9 +25,9 @@
     <key>NSMotionUsageDescription</key>
     <string>StrideOS reads your current step cadence during workouts.</string>
     <key>NSHealthShareUsageDescription</key>
-    <string>StrideOS reads Apple Watch heart rate during workouts you start from StrideOS.</string>
+    <string>StrideOS uses the workout measurements you choose to share, such as heart rate, distance, energy, steps, running metrics, and cycling cadence or power, to record and review your activities.</string>
     <key>NSHealthUpdateUsageDescription</key>
-    <string>StrideOS starts workout sessions on Apple Watch so heart rate and workout metrics can be measured during StrideOS activities.</string>
+    <string>StrideOS saves completed Apple Watch workouts you record in StrideOS to Apple Health.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>StrideOS records your route on Apple Watch during outdoor workouts, so your run or hike is mapped even if your iPhone is off.</string>
     <key>UIBackgroundModes</key>

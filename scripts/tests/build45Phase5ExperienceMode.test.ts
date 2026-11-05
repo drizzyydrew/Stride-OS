@@ -103,5 +103,11 @@ test('Today daily check-in is collapsed behind a disclosure and header stays out
   assert.match(dashboard, /<ReadinessCheckInCard[\s\S]*embedded/);
   assert.match(dashboard, /styles\.fixedHeader/);
   assert.match(returnSection, /<View style=\{\[styles\.screen/);
-  assert.match(returnSection, /<ScrollView/);
+  const scrollStart = returnSection.search(/<(?:FeatureTour)?ScrollView\b/);
+  assert.ok(scrollStart > returnSection.indexOf('styles.fixedHeader'), 'fixed Today header precedes the scrolling body');
+  if (returnSection.includes('<FeatureTourScrollView')) {
+    const wrapper = read('src/components/featureTour/FeatureTourScrollView.tsx');
+    assert.match(wrapper, /import \{ ScrollView,.*\} from 'react-native'/);
+    assert.match(wrapper, /<ScrollView \{\.\.\.props\}/, 'tour reveal wrapper retains the native scrolling body');
+  }
 });

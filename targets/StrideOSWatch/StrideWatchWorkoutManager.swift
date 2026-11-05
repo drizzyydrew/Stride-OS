@@ -151,6 +151,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   @Published private(set) var preferredUnitSystem: String = "imperial"
   @Published private(set) var metricPage: StrideWatchMetricPage = .heartRate
   @Published private(set) var isStartingWorkout: Bool = false
+  @Published private(set) var healthSetupMessage: String?
   // Runtime diagnostics shown on the watch screen (main thread only).
   @Published private(set) var connectivityLabel: String = "WC: not activated"
   @Published private(set) var lastCommandLabel: String = "Cmd: none"
@@ -165,6 +166,8 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private var targetZone: Int?
 
   private let healthStore = HKHealthStore()
+  private let healthSetup = StrideWatchHealthSetup()
+  private var pendingHealthSetupWorkItem: DispatchWorkItem?
   private var session: HKWorkoutSession?
   private var builder: HKLiveWorkoutBuilder?
   private var workoutInstanceId: String?
@@ -359,6 +362,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     guard WCSession.isSupported() else { return }
     scheduleConnectivityActivation(reportErrors: false, delay: 1.5)
     requestRoutePermissionsWhenIdle()
+    presentPendingHealthSetupWhenIdle()
   }
 
   /// Asks once, while the watch app is open and idle, for location access.
@@ -375,6 +379,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
         let manager = CLLocationManager()
         if manager.authorizationStatus == .notDetermined {
           self.locationManager = manager
+          manager.delegate = self
           manager.requestWhenInUseAuthorization()
         }
       }
@@ -547,6 +552,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   ) -> String? {
     guard !isActive else { return "already_active" }
     guard !isStartingWorkout else { return "already_starting" }
+    guard healthSetup.inFlightId == nil else {
+      publishError("Finish Health permissions on Apple Watch, then retry. Phone recording can continue.")
+      return "health_setup_in_progress"
+    }
     // A new start supersedes any pending launch state. (A launch start sets
     // isProvisionalLaunch again right after this returns.)
     discardWhenRunning = false
@@ -607,14 +616,41 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     CMPedometer.isCadenceAvailable() && CMPedometer.authorizationStatus() == .notDetermined
   }
 
-  func enableWorkoutMetrics() {
-    guard !isActive, !isStartingWorkout, WKExtension.shared().applicationState == .active,
-      HKHealthStore.isHealthDataAvailable() else { return }
-    let identifiers = Set(StrideWatchWorkoutKind.allCases.flatMap { optionalMetricIdentifiers(for: $0) }
-      + [.distanceDownhillSnowSports])
-    let readTypes = Set(identifiers.compactMap { HKObjectType.quantityType(forIdentifier: $0) })
-    healthStore.requestAuthorization(toShare: [], read: readTypes) { [weak self] _, error in
-      if let error { self?.publishError(error.localizedDescription) }
+  /// Invoked only by an explicit iPhone Health-setup request. The request may
+  /// wait for the next foreground idle screen; it never launches a workout or
+  /// presents a new permission sheet underneath the workout-start watchdog.
+  func presentPendingHealthSetupWhenIdle() {
+    onMain {
+      guard self.healthSetup.hasPendingRequest else { return }
+      self.pendingHealthSetupWorkItem?.cancel()
+      let item = DispatchWorkItem { [weak self] in
+        guard let self else { return }
+        let foregroundIdle = !self.isActive && !self.isStartingWorkout && !self.isEnding
+          && self.session == nil && WKExtension.shared().applicationState == .active
+        // Let the pre-existing idle location prompt finish before HealthKit's
+        // sheet. The location delegate or next foreground entry resumes this.
+        let locationDecided = (self.locationManager ?? CLLocationManager()).authorizationStatus != .notDetermined
+        guard HKHealthStore.isHealthDataAvailable(),
+          let id = self.healthSetup.beginIfIdle(canPresent: foregroundIdle && locationDecided,
+            now: Date().timeIntervalSince1970) else { return }
+        self.healthSetupMessage = "Review Health permissions on your watch."
+        let identifiers = Set(StrideWatchWorkoutKind.allCases.flatMap { self.optionalMetricIdentifiers(for: $0) }
+          + [.heartRate, .activeEnergyBurned, .distanceWalkingRunning, .distanceCycling, .distanceDownhillSnowSports])
+        let readTypes = Set(identifiers.compactMap { HKObjectType.quantityType(forIdentifier: $0) })
+        self.healthStore.requestAuthorization(toShare: [HKObjectType.workoutType()], read: readTypes) { [weak self] processed, error in
+          self?.onMain {
+            guard let self else { return }
+            self.healthSetup.complete(id: id)
+            self.healthSetupMessage = nil
+            if let error { self.publishError("Health setup could not finish: \(error.localizedDescription)") }
+            else if !processed { self.publishError("Health setup could not finish. Reconnect Apple Health on iPhone to try again.") }
+            // No enabled/granted flag: HealthKit deliberately hides read denial.
+            self.presentPendingHealthSetupWhenIdle()
+          }
+        }
+      }
+      self.pendingHealthSetupWorkItem = item
+      DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: item)
     }
   }
 
@@ -1138,6 +1174,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       timer = nil
       session = nil
       builder = nil
+      presentPendingHealthSetupWhenIdle()
     case .prepared:
       healthKitLabel = "HK: prepared"
     case .stopped:
@@ -1233,6 +1270,11 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       }
 
       switch type {
+      case "setupHealthPermissions":
+        guard let id = message["setupRequestId"] as? String else { return }
+        if self.healthSetup.enqueue(id: id, requestedAt: sentAt / 1000, now: Date().timeIntervalSince1970) {
+          self.presentPendingHealthSetupWhenIdle()
+        }
       case "requestCapabilities":
         self.sendCapabilities()
       case "startWorkout", "startRun":
@@ -1543,6 +1585,10 @@ enum StrideWatchStartTrail {
 
 
 extension StrideWatchWorkoutManager: CLLocationManagerDelegate {
+  func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+    if manager.authorizationStatus != .notDetermined { presentPendingHealthSetupWhenIdle() }
+  }
+
   func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
     // Accurate fixes only; the route is a map, not a distance source.
     let usable = locations.filter { $0.horizontalAccuracy > 0 && $0.horizontalAccuracy <= 50 }

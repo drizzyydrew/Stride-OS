@@ -100,6 +100,7 @@ type StrideWatchConnectivityNativeModule = {
   stopPhoneCadence?: (workoutInstanceId: string) => void;
   snapshot: () => StrideWatchStatus;
   activate: () => Promise<StrideWatchStatus>;
+  requestHealthSetup?: () => Promise<boolean>;
   startRun: (
     workoutInstanceId?: string | null,
     title?: string | null,
@@ -186,6 +187,19 @@ export async function activateStrideWatchConnectivity(): Promise<StrideWatchStat
     return normalizeStatus(await nativeModule.activate());
   } catch {
     return FALLBACK_STATUS;
+  }
+}
+
+/** Only call from the person's explicit Apple Health setup action. */
+export async function requestStrideWatchHealthSetup(): Promise<'queued' | 'unavailable' | 'failed'> {
+  const nativeModule = getNativeModule();
+  // Older installed phone modules keep their existing recording behavior.
+  if (!nativeModule?.requestHealthSetup) return 'unavailable';
+  try {
+    return await nativeModule.requestHealthSetup() ? 'queued' : 'unavailable';
+  } catch {
+    // A failed Watch setup request must not undo iPhone Health permissions.
+    return 'failed';
   }
 }
 

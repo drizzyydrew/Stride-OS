@@ -1,3 +1,4 @@
+import { goalArchiveLink } from '../../utils/goal-archive-link';
 import { createElement, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Keyboard, Text, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -166,7 +167,7 @@ export default function GoalLifecycleCard() {
       </> : <>
         <GoalMessage>{archive ? 'Your recorded training is saved. Choose a new goal whenever you’re ready.' : 'Train at your own pace. A new goal is optional.'}</GoalMessage>
         {lifecycle.archives.length > 0 ? <GoalBackupStatus status={'syncStatus' in lifecycle ? lifecycle.syncStatus : undefined} /> : null}
-        {archive ? <GoalAction label="View results" disabled={busy} onPress={() => router.push({ pathname: '/(tabs)/settings/goal-archive-detail', params: { id: archive.id } } as never)} /> : null}
+        {archive ? <GoalAction label="View results" disabled={busy} onPress={() => router.push(goalArchiveLink(archive.id) as never)} /> : null}
         <GoalAction label="Choose a new goal" disabled={busy} secondary onPress={() => router.push('/(tabs)/settings/next-goal' as never)} />
         {archive ? <GoalAction label={busy ? 'Saving…' : 'Keep training without a plan'} disabled={busy} secondary onPress={() => { void keepTraining(); }} /> : null}
         <GoalAction label="Training archive" disabled={busy} secondary onPress={() => router.push('/(tabs)/settings/goal-archive' as never)} />

@@ -516,6 +516,25 @@ public final class StrideWatchConnectivityModule: Module {
       promise.resolve(StrideWatchConnectivityCoordinator.shared.snapshot())
     }
 
+    // An explicit Health setup request, separate from workout commands. It may
+    // queue until the Watch next opens; receipt is never an authorization grant.
+    AsyncFunction("requestHealthSetup") { (promise: Promise) in
+      let coordinator = StrideWatchConnectivityCoordinator.shared
+      coordinator.activate()
+      let status = coordinator.snapshot()
+      guard status["isPaired"] as? Bool == true,
+        status["isWatchAppInstalled"] as? Bool == true else {
+        promise.resolve(false)
+        return
+      }
+      do {
+        try coordinator.sendCommand("setupHealthPermissions", payload: ["setupRequestId": UUID().uuidString])
+        promise.resolve(true)
+      } catch {
+        promise.reject("ERR_STRIDE_WATCH_HEALTH_SETUP", error.localizedDescription)
+      }
+    }
+
     AsyncFunction("startPhoneCadence") { (id: String, promise: Promise) in
       DispatchQueue.main.async {
         // A missing usage description must never crash the production app.

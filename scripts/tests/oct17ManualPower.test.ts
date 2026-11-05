@@ -6,6 +6,7 @@ import ts from 'typescript';
 import type { Activity, ActivityDraft } from '../../src/types/activity';
 import * as completion from '../../src/utils/activityCompletion';
 import * as edit from '../../src/utils/manualActivityEdit';
+import * as racePerformance from '../../src/utils/racePerformance';
 import * as automatic from '../../src/utils/automaticActivityPower';
 import * as power from '../../src/utils/outdoorPower';
 import * as profilePower from '../../src/utils/profilePower';
@@ -202,7 +203,7 @@ function harness(path: string, initial?: Activity, options: { units?: 'metric' |
     themeStore: { useThemeMode: () => 'dark' },
     useWeekPlan: { useWeekPlan: () => ({}) },
     useScheduledSessions: { useScheduledSessions: () => ({}) },
-    activityCompletion: completion, manualActivityEdit: edit, automaticActivityPower: automatic, outdoorPower: power,
+    activityCompletion: completion, manualActivityEdit: edit, racePerformance, automaticActivityPower: automatic, outdoorPower: power,
     profilePower, climbingWork: climbing, activityPowerPresentation: powerPresentation, powerEquivalents, dateOnly: dates, substitution, displayLabels: { displayLabel: (value: any) => value },
     prescriptionFormat: {}, recalculation: { runRecalculation: async () => {} },
   };

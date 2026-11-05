@@ -1,3 +1,4 @@
+import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import AiSharingPreferences from '../../../src/components/settings/AiSharingPreferences';
 import { aiConsent, useAiConsent } from '../../../src/store/aiConsentStore';
@@ -631,7 +632,6 @@ export default function CoachScreen() {
     return () => { focused = false; subscription.remove(); };
   }, [aiSharing.ready, aiSharing.allowed, aiSharing.owner]));
   const C = useColors();
-  useFeatureTour('ai-coach');
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ ask?: string; analysisId?: string }>();
   const storedData = useOnboardingStore(s => s.data);
@@ -778,6 +778,9 @@ export default function CoachScreen() {
   );
 
   const [tab,       setTab]       = useState<CoachTab>('chat');
+  useFeatureTour('ai-coach', targetId => {
+    if (targetId === 'coach.context' || targetId === 'coach.input') setTab('chat');
+  });
   const [messages,  setMessages]  = useState<Message[]>([]);
   const [input,     setInput]     = useState('');
   const [loading,   setLoading]   = useState(false);
@@ -941,7 +944,7 @@ export default function CoachScreen() {
         </View>
       ) : tab === 'chat' ? (
         <>
-          <ScrollView
+          <FeatureTourScrollView
             ref={scrollRef}
             style={s.messages}
             contentContainerStyle={[s.messagesContent, { paddingBottom: spacing.xxl + insets.bottom + 84 }]}
@@ -992,7 +995,7 @@ export default function CoachScreen() {
                 <Text style={s.errorTxt}>{error}</Text>
               </View>
             )}
-          </ScrollView>
+          </FeatureTourScrollView>
 
           <FeatureTourTarget targetId="coach.input" style={[s.inputRow, { paddingBottom: insets.bottom + 10 }]}>
             <TextInput

@@ -1,5 +1,18 @@
 # Current StrideOS launch status
 
+November 5 source corrections: archive ID transport, tour yellow outlines and
+scroll/reveal/guided taps, full-width PR date entry, explicit Activity race/time-
+trial results with automatic PR/calibration refresh, Health-setup-driven optional
+Watch permissions and release-hidden sync diagnostics are prepared locally.
+See `PHONE_FEEDBACK_CHANGES_20261105.md` and its validation receipt. These are
+not installed in build 111. Historical live Race-mode notes are not automatically
+promoted to official results; use explicit result confirmation. A generic new-
+race-PR celebration is absent and remains a separate owner-requested follow-up.
+Validation: 1,766/1,766 tests and semantic TypeScript pass; unsigned Release
+arm64_32 Watch compilation and local phone-width UI previews pass. The online
+Expo check recommends newer SDK-57 patch versions and remains open for next-
+candidate preparation; dependencies/build numbers are unchanged.
+
 Latest November 5 update: the owner reports the entire phone-started Watch block
 worked, including Watch Pause/Resume controlling the phone, locked-phone
 continuation, Watch End and exactly one saved session. Basic Watch control/save
