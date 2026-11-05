@@ -1,9 +1,17 @@
 # Current StrideOS launch status
 
+November 5 phone update: the owner confirms Connected and the completed test
+workout appears in Apple Health. A shared Health Highlights screenshot shows
+one Running entry with the StrideOS source icon, supporting basic workout-write
+presence. No exhaustive duplicate audit, denied-permission recovery or Watch
+acceptance is inferred. See `PHONE_QA_20261104.md` and
+`HEALTH_DEVICE_READBACK_20261105.json`. Watch is the next device block.
+
 Latest phone update: the owner confirms the full eight-minute offline-save block
 worked, including Run saved, the completed activity surviving a full offline
 close/reopen, and exactly one activity after reconnecting. These are reported
-device/UI passes; route plausibility, Health and Watch remain open. The separate
+device/UI passes; route plausibility and Watch remain open. Basic Health writing
+is subsequently reported passed above. The separate
 Running auto-pause Off/announcement/persistence defect is reproduced in source
 and its correction is prepared for a future build. The corrected source passes
 1,718 tests, TypeScript and Expo compatibility; it is not installed in 111.

@@ -1,0 +1,17 @@
+{
+  "recordedAt": "2026-11-05T14:28:53.483690+00:00",
+  "scope": "owner_report_and_shared_apple_health_ui",
+  "reportedBuild": "111",
+  "appHealthConnection": "owner_reports_connected",
+  "completedRunVisibleInAppleHealth": true,
+  "visibleStrideOSRunningEntries": 1,
+  "evidenceView": "Apple Health Workouts Highlights",
+  "basicWorkoutWritePresenceAccepted": true,
+  "exhaustiveDuplicateAuditPerformed": false,
+  "healthSourceUUIDOrExactTimeIndependentlyMatched": false,
+  "permissionDenialOrRecoveryAccepted": false,
+  "watchBehaviorAccepted": false,
+  "personalHealthValuesCopied": false,
+  "screenshotCopied": false,
+  "newBuildOrServiceChangePerformed": false
+}

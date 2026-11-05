@@ -76,8 +76,10 @@ At the initial checkpoint, the reopened activity was still recording, so that
 observation established active-session persistence only. The owner subsequently
 confirmed the entire eight-minute offline-save block: Run saved, completed
 activity retained after full offline close/reopen, exactly one after reconnect.
-Those are reported passes. Plausible route/distance, Health and Watch behavior
-remain open. Use the original form rather than repeating passed checks. See
+Those are reported passes. Basic Apple Health workout-write presence is also
+accepted by the November 5 owner report and Health screenshot. Plausible
+route/distance, Health permission recovery and Watch behavior remain open.
+Use the original form rather than repeating passed checks. See
 `PHONE_QA_20261104.md` for the latest report and separate auto-pause issue.
 
 The completed offline block does not need repeating solely to fill its earlier
