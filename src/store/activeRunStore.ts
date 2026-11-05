@@ -24,7 +24,7 @@ import {
 } from '../utils/voiceCoachingEngine';
 import { useSettingsStore } from './settingsStore';
 import { enqueueVoiceCue } from '../lib/voiceCue';
-import { initialAutoPauseState, reduceAutoPause, type AutoPauseState } from '../utils/autoPause';
+import { initialAutoPauseState, reconcileAutoPauseMode, reduceAutoPause, type AutoPauseState } from '../utils/autoPause';
 import { captureTrainingRunEnd } from '../utils/trainingRunEndSnapshot';
 
 export type Coordinate = {
@@ -139,6 +139,7 @@ export type ActiveRunStore = {
   cancelRun:         () => void;
   requestCompletion: (endedAt?: number) => void;
   clearCompletionRequest: () => void;
+  syncAutoPauseMode: () => void;
   confirmTreadmillSpeed:  (speedMph: number) => void;
   setManualLiveDistance:  (miles: number) => void;
   setEquipmentLiveDistance: (miles: number, source: DistanceSource) => void;
@@ -294,6 +295,18 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     });
   },
 
+  syncAutoPauseMode: () => {
+    if (!(useSettingsStore.persist?.hasHydrated?.() ?? true)) return;
+    const state = get();
+    if (!state.isActive || state.environment !== 'outdoor' || state.completionRequestedAt != null) return;
+    const mode = useSettingsStore.getState().autoPauseMode;
+    const before = state.autoPauseState ?? {
+      ...initialAutoPauseState('running', mode), paused: state.isPaused, manualPaused: state.isPaused,
+    };
+    const next = reconcileAutoPauseMode(before, mode, state.isPaused);
+    if (!state.autoPauseState || next !== before) set({ autoPauseState: next });
+  },
+
   confirmTreadmillSpeed: (speedMph) => {
     const state = get();
     if (!state.isActive || state.isPaused) return;
@@ -324,6 +337,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
   },
 
   addLocationUpdate: (loc) => {
+    get().syncAutoPauseMode();
     const state = get();
     if (!state.isActive || state.completionRequestedAt != null) return;
     if (typeof loc.coords.accuracy === 'number' && loc.coords.accuracy > MAX_ALLOWED_ACCURACY_METERS) return;
@@ -337,9 +351,14 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
 
     const previousCoord = state.coordinates.at(-1);
     if (previousCoord && coord.timestamp <= previousCoord.timestamp) return;
+    const resumedAt = state.recordingPauses.at(-1)?.endTime;
+    // A background batch may arrive after manual Resume with fixes captured
+    // during the pause. They must not become unpaused distance or a new anchor.
+    if (!state.isPaused && resumedAt != null && coord.timestamp < resumedAt) return;
     set({ lastGoodFixAt: coord.timestamp });
 
-    if (state.environment === 'outdoor' && state.autoPauseState && previousCoord) {
+    if ((useSettingsStore.persist?.hasHydrated?.() ?? true)
+      && state.environment === 'outdoor' && state.autoPauseState && previousCoord) {
       const deltaSeconds = Math.max(0, (coord.timestamp - previousCoord.timestamp) / 1000);
       const displacementMeters = haversineMiles(previousCoord, coord) * 1609.344;
       const gpsSpeedMps = typeof loc.coords.speed === 'number' && loc.coords.speed >= 0
@@ -380,6 +399,14 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     }
 
     if (state.isPaused) return;
+
+    if (previousCoord && resumedAt != null && previousCoord.timestamp < resumedAt) {
+      // The first actual post-pause fix starts a new measurement segment. Never
+      // count movement or elevation between it and the pre-pause coordinate.
+      set({ coordinates: [...state.coordinates, coord],
+        elevationRefM: coord.altitudeM != null && Number.isFinite(coord.altitudeM) ? coord.altitudeM : null });
+      return;
+    }
 
     // Fixes now arrive every second even when standing still (auto-pause needs
     // them). Don't store points that haven't moved: long workouts would grow
@@ -596,7 +623,10 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     if (!merged.treadmillPhonePlacement) merged.treadmillPhonePlacement = 'on_body';
     if (merged.environment !== 'outdoor') merged.autoPauseState = null;
     if (merged.environment === 'outdoor' && !merged.autoPauseState) {
-      merged.autoPauseState = initialAutoPauseState('running', useSettingsStore.getState().autoPauseMode);
+      merged.autoPauseState = {
+        ...initialAutoPauseState('running', useSettingsStore.getState().autoPauseMode),
+        paused: merged.isPaused, manualPaused: merged.isPaused,
+      };
     }
     if (
       !merged.splitVoiceState
@@ -608,3 +638,17 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
     return merged;
   },
 }));
+
+function syncHydratedRunAutoPauseMode() {
+  if (!useActiveRunStore.persist.hasHydrated() || !(useSettingsStore.persist?.hasHydrated?.() ?? true)) return;
+  useActiveRunStore.getState().syncAutoPauseMode();
+}
+
+// Both stores hydrate independently. Whichever finishes second reconciles a
+// retained recording against the athlete's actual saved preference.
+useActiveRunStore.persist.onFinishHydration(syncHydratedRunAutoPauseMode);
+useSettingsStore.persist?.onFinishHydration?.(syncHydratedRunAutoPauseMode);
+useSettingsStore.subscribe?.((next, previous) => {
+  if (next.autoPauseMode !== previous.autoPauseMode) syncHydratedRunAutoPauseMode();
+});
+syncHydratedRunAutoPauseMode();

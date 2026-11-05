@@ -1,0 +1,108 @@
+{
+  "checkedAt": "2026-11-05T06:58:14.019248+00:00",
+  "scope": "auto_pause_source_fix_and_owner_qa_reconciliation",
+  "baseCommit": "7003d82",
+  "reportedInstalledBuild": "111",
+  "reportedActivityComparison": "walking_or_hiking",
+  "verifiedCauses": [
+    "Running Active announcement switch mislabeled as automatic behavior",
+    "explicit persisted off migrated back to both in build111",
+    "active detector retained old mode after real settings changes"
+  ],
+  "changes": {
+    "actualRunPolicyControl": true,
+    "voiceControlLabelsClarified": true,
+    "explicitOffPreservedOnHydration": true,
+    "bothHydrationOrdersAndHotPolicyChangesCovered": true,
+    "otherSportPreferencePreserved": true,
+    "heldPauseRequiresExplicitResume": true,
+    "knownOutdoorSubtypesRetained": true,
+    "pausedGpsGapNotCountedInLiveDistanceOrElevation": true,
+    "nativeTrackingAndExistingCompletionCodeUnchanged": true,
+    "detectorThresholdsUnchanged": true
+  },
+  "validation": {
+    "fullSuiteTests": 1718,
+    "fullSuitePassed": 1718,
+    "fullSuiteFailed": 0,
+    "fullSuiteSkipped": 0,
+    "fullSuiteConcurrency": 2,
+    "logSHA256": "2172a5bc5159477be163fc35d5d021d1252bd58f6f68396f3dfa2fdc3942e155",
+    "newCoreCasesPassed": 36,
+    "newSettingsAndControlCasesPassed": 9,
+    "semanticTypeScriptPassed": true,
+    "expoCompatibilityPassed": true,
+    "diffWhitespaceCheckPassed": true,
+    "physicalVerificationOfFix": false
+  },
+  "council": {
+    "independentPlatformAndContrarianPasses": true,
+    "crossExaminationAndActualDiffReviewed": true,
+    "historicalSourceReview95ThresholdMetAfterChecks": true,
+    "measuredDeviceReliabilityProbabilityClaimed": false,
+    "watchBaseline": "aee249649697a5b95b21791d3e9973c2d9affbd7"
+  },
+  "ownerQa": {
+    "offlineEightMinuteSaveBlock": "owner_reports_pass",
+    "completedActivityReopensOffline": "owner_reports_pass",
+    "visibleDuplicateAfterReconnect": "owner_reports_none",
+    "independentBackendSyncIdAudit": false,
+    "repeatOfPassedBlockRequested": false,
+    "routePlausibility": "not_reported",
+    "health": "not_reported",
+    "watch": "not_reported",
+    "autoPauseOffOnInstalled111": "unaccepted"
+  },
+  "delivery": {
+    "newBuildStarted": false,
+    "testFlightDelivered": false,
+    "sourcePushed": false,
+    "publicReleaseOrControlActivation": false,
+    "serviceOrCredentialChanged": false
+  },
+  "knownUnchangedLimitations": [
+    "Running rolling pace window still requires separate pause-aware/device follow-up; no full pace parity claimed"
+  ],
+  "sourceFileHashes": [
+    {
+      "file": "app/(tabs)/settings/index.tsx",
+      "sha256": "a868bf2cac01e5dd8f53901616f36db0d200eddebd143c37f035b5e346c7b473"
+    },
+    {
+      "file": "app/(tabs)/training/index.tsx",
+      "sha256": "d977e8ab1b5d10d41366d313902d2b6f915f9b728c989fe906af8efe2fe176ee"
+    },
+    {
+      "file": "scripts/tests/autoPauseControls.test.ts",
+      "sha256": "4f089c1368dac82f0d78702e3bdc2da1c17cb31f57a6c1d7aea6468f1a19a2a0"
+    },
+    {
+      "file": "scripts/tests/autoPausePolicy.test.ts",
+      "sha256": "949e2d4dc77fecc0f907e22e8a237b8bdb30bcab654329077cd35572882d27f4"
+    },
+    {
+      "file": "src/components/running/RunningAutoPauseControl.tsx",
+      "sha256": "1daa668247b80182a4c5c51c9fdc0ff02c45d2157134335e28df279a41dc22e0"
+    },
+    {
+      "file": "src/store/activeActivityStore.ts",
+      "sha256": "e9577130a8d71c6fc026390f6f7e39452d3d8e752b7f07cbfd18f84224fb0ebb"
+    },
+    {
+      "file": "src/store/activeRunStore.ts",
+      "sha256": "1d14ab04be6b3657cc01e849a95e99ba805ab6d52a7d8ad04f15d20ab57aa796"
+    },
+    {
+      "file": "src/store/settingsStore.ts",
+      "sha256": "320ba7837b301b0d5e8bd48d471dc27f2a487066d194d43f8d5fe7a8f9082b5c"
+    },
+    {
+      "file": "src/utils/autoPause.ts",
+      "sha256": "2132d4978180b7fe858768f0f246c6d0ac6977cd6f34e3b4cc485375412b50db"
+    },
+    {
+      "file": "src/utils/autoPauseSettings.ts",
+      "sha256": "a25fa801b8b8062dd35cdc6b6542adc61ca93e89ac5f1157dd06a9247720ff4d"
+    }
+  ]
+}

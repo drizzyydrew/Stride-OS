@@ -9,6 +9,7 @@ import {
 import type { ExperienceMode } from '../utils/experienceMode';
 import type { ActivityDetectionMode } from '../utils/activityDetection';
 import type { AutoPauseMode } from '../utils/autoPause';
+import { restoredAutoPauseMode } from '../utils/autoPauseSettings';
 import type { TreadmillPhonePlacement } from '../utils/treadmillPlacement';
 
 export type UnitSystem = 'imperial' | 'metric';
@@ -129,9 +130,7 @@ export const useSettingsStore = create<SettingsStore>()(
           },
           voiceDistanceUpdateInterval: saved?.voiceDistanceUpdateInterval === 'one' ? 'one' : 'half',
           liveActivitiesEnabled: saved?.liveActivitiesEnabled ?? true,
-          autoPauseMode: saved?.autoPauseMode === 'off' || saved?.autoPauseMode == null
-            ? 'running_and_cycling'
-            : saved.autoPauseMode,
+          autoPauseMode: restoredAutoPauseMode(saved?.autoPauseMode, current.autoPauseMode),
           announceAutoPause: saved?.announceAutoPause ?? true,
           announceAutoResume: saved?.announceAutoResume ?? true,
           activityDetectionMode: saved?.activityDetectionMode ?? 'off',

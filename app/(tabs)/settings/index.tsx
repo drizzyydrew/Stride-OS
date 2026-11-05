@@ -875,7 +875,7 @@ export default function SettingsScreen() {
             Live Activities {liveActivitiesEnabled ? 'on' : 'off'} · Auto-Pause {AUTO_PAUSE_COPY[autoPauseMode]}
           </Text>
           <Text style={[styles.settingCaption, { color: C.textMuted }]}>
-            Lock Screen workout cards, 1-second running auto-pause, activity detection, and treadmill defaults. Detection: {activityDetectionMode === 'off' ? 'off' : 'suggestions on'}.
+            Lock Screen workout cards, GPS running/cycling auto-pause, activity detection, and treadmill defaults. Detection: {activityDetectionMode === 'off' ? 'off' : 'suggestions on'}.
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={16} color={C.textMuted} />

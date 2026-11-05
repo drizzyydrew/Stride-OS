@@ -75,6 +75,33 @@ export function isAutoPauseEnabled(mode: AutoPauseMode, activity: AutoPauseActiv
     || (mode === 'cycling_only' && activity === 'cycling');
 }
 
+/** Change detector policy without issuing a workout pause/resume command.
+ * A pause already in progress remains held until the athlete explicitly resumes.
+ * Changing only the other sport's preference must not reset this detector.
+ */
+export function reconcileAutoPauseMode(
+  state: AutoPauseState,
+  mode: AutoPauseMode,
+  isPaused = state.paused,
+): AutoPauseState {
+  if (state.mode === mode) return state;
+  if (isAutoPauseEnabled(state.mode, state.activity) === isAutoPauseEnabled(mode, state.activity)) {
+    return { ...state, mode };
+  }
+  return {
+    ...state,
+    mode,
+    paused: isPaused,
+    manualPaused: isPaused,
+    candidateSinceMs: null,
+    resumeCandidateSinceMs: null,
+    stationarySamples: 0,
+    movingSamples: 0,
+    lastDecisionAtMs: null,
+    lastReason: undefined,
+  };
+}
+
 export function reduceAutoPause(state: AutoPauseState, sample: AutoPauseSample): AutoPauseDecision {
   const params = PARAMS[state.activity];
   if (!isAutoPauseEnabled(state.mode, state.activity) || state.manualPaused) {

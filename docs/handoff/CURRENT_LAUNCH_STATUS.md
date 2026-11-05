@@ -1,10 +1,20 @@
 # Current StrideOS launch status
 
+Latest phone update: the owner confirms the full eight-minute offline-save block
+worked, including Run saved, the completed activity surviving a full offline
+close/reopen, and exactly one activity after reconnecting. These are reported
+device/UI passes; route plausibility, Health and Watch remain open. The separate
+Running auto-pause Off/announcement/persistence defect is reproduced in source
+and its correction is prepared for a future build. The corrected source passes
+1,718 tests, TypeScript and Expo compatibility; it is not installed in 111.
+See `PHONE_QA_20261104.md` and `AUTO_PAUSE_FIX_20261104.md`.
+
 Latest November 4 owner report confirms build 111 / iPhone 13 Pro history intact,
 screen-lock recording, pause/resume and in-progress recording retained after
 closing/reopening. The owner clarified the activity had not been stopped/saved;
-completed-save durability and the other blank phone/Health/Watch checks remain
-open. `PHONE_QA_20261104.md` contains the scoped report and requested corrections.
+completed-save durability was untested at that checkpoint and is subsequently
+reported passed above. Other blank phone/Health/Watch checks remain open.
+`PHONE_QA_20261104.md` contains the scoped report and requested corrections.
 Resume/Stop recovery, profile name/username visibility and credential-form
 improvements are prepared in source for a future native build. The Apple
 association file is live at the owned domain and mirrored by Apple's CDN;

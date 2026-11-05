@@ -17,7 +17,7 @@ import {
 import { elapsedSecondsExcludingPause } from '../utils/activeTime';
 import { buildWorkoutInstanceId, synthesizeWorkoutInstanceId } from '../utils/workoutInstance';
 import { enqueueVoiceCue } from '../lib/voiceCue';
-import { initialAutoPauseState, reduceAutoPause, type AutoPauseState } from '../utils/autoPause';
+import { initialAutoPauseState, reconcileAutoPauseMode, reduceAutoPause, type AutoPauseActivity, type AutoPauseState } from '../utils/autoPause';
 import { useSettingsStore } from './settingsStore';
 
 export type ActiveOutdoorType = OutdoorSport;
@@ -98,6 +98,7 @@ export type ActiveActivityStore = {
   // Live workout instance identity — see src/utils/workoutInstance.ts.
   workoutInstanceId: string | null;
   autoPauseState: AutoPauseState | null;
+  syncAutoPauseMode: () => void;
   start: (input: {
     activityType: ActiveOutdoorType;
     subtype?: ActivitySubtype;
@@ -136,6 +137,11 @@ export function activeOutdoorElapsedSeconds(
 
 function labelFor(type: ActiveOutdoorType): string {
   return OUTDOOR_SPORTS[type].label;
+}
+
+function gpsAutoPauseActivity(state: Pick<ActiveActivityStore, 'activityType' | 'subtype'>): AutoPauseActivity | null {
+  if (state.subtype === 'indoor' || state.subtype === 'treadmill' || state.subtype === 'stationary') return null;
+  return state.activityType === 'running' || state.activityType === 'cycling' ? state.activityType : null;
 }
 
 export const useActiveActivityStore = create<ActiveActivityStore>()(
@@ -177,9 +183,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
 
       start: input => {
         const now = Date.now();
-        const autoPauseActivity = input.activityType === 'running' || input.activityType === 'cycling'
-          ? input.activityType
-          : null;
+        const autoPauseActivity = gpsAutoPauseActivity({ activityType: input.activityType, subtype: input.subtype ?? 'outdoor' });
         set({
           activityId: `active_${now}`,
           activityType: input.activityType,
@@ -249,7 +253,21 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
         });
       },
 
+      syncAutoPauseMode: () => {
+        if (!(useSettingsStore.persist?.hasHydrated?.() ?? true)) return;
+        const state = get();
+        const activity = gpsAutoPauseActivity(state);
+        if (!state.isActive || !activity || state.completionRequestedAt != null) return;
+        const mode = useSettingsStore.getState().autoPauseMode;
+        const before = state.autoPauseState ?? {
+          ...initialAutoPauseState(activity, mode), paused: state.isPaused, manualPaused: state.isPaused,
+        };
+        const next = reconcileAutoPauseMode(before, mode, state.isPaused);
+        if (!state.autoPauseState || next !== before) set({ autoPauseState: next });
+      },
+
       addLocation: (location, activeSeconds) => {
+        get().syncAutoPauseMode();
         const state = get();
         if (!state.isActive || state.completionRequestedAt != null) return;
         const point = {
@@ -261,10 +279,12 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
             ? location.coords.altitude : undefined,
           accuracyMeters: location.coords.accuracy ?? undefined,
         };
+        const resumedAt = state.recordingPauses.at(-1)?.endTime;
+        if (!state.isPaused && resumedAt != null && point.timestamp < resumedAt) return;
         if ((point.accuracyMeters ?? 0) <= MAX_TRACKING_ACCURACY_METERS) {
           set({ lastGoodFixAt: point.timestamp });
         }
-        if (state.autoPauseState && (state.activityType === 'running' || state.activityType === 'cycling')) {
+        if ((useSettingsStore.persist?.hasHydrated?.() ?? true) && gpsAutoPauseActivity(state) && state.autoPauseState) {
           const previous = state.aggregate.points.at(-1);
           if (previous && point.timestamp > previous.timestamp) {
             const deltaSeconds = Math.max(0, (point.timestamp - previous.timestamp) / 1000);
@@ -307,6 +327,12 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
           }
         }
         if (state.isPaused) return;
+        const previousPoint = state.aggregate.points.at(-1);
+        if (previousPoint && resumedAt != null && previousPoint.timestamp < resumedAt) {
+          if ((point.accuracyMeters ?? 0) > MAX_TRACKING_ACCURACY_METERS) return;
+          set({ aggregate: { ...state.aggregate, points: [...state.aggregate.points, point] } });
+          return;
+        }
         let nextRunWalkCueElapsedSeconds = state.lastRunWalkCueElapsedSeconds;
         if (state.intervalPromptsEnabled && state.runWalkIntervals.length > 0) {
           const cue = evaluateRunWalkCue({
@@ -408,17 +434,33 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
         if (!Number.isFinite(merged.lastRunWalkCueElapsedSeconds)) {
           merged.lastRunWalkCueElapsedSeconds = 0;
         }
-        if (merged.activityType !== 'running' && merged.activityType !== 'cycling') {
+        const autoPauseActivity = gpsAutoPauseActivity(merged);
+        if (!autoPauseActivity) {
           merged.autoPauseState = null;
         }
-        if (merged.isActive && (merged.activityType === 'running' || merged.activityType === 'cycling') && !merged.autoPauseState) {
-          merged.autoPauseState = initialAutoPauseState(merged.activityType, useSettingsStore.getState().autoPauseMode);
+        if (merged.isActive && autoPauseActivity && !merged.autoPauseState) {
+          merged.autoPauseState = {
+            ...initialAutoPauseState(autoPauseActivity, useSettingsStore.getState().autoPauseMode),
+            paused: merged.isPaused, manualPaused: merged.isPaused,
+          };
         }
         return merged;
       },
     },
   ),
 );
+
+function syncHydratedActivityAutoPauseMode() {
+  if (!useActiveActivityStore.persist.hasHydrated() || !(useSettingsStore.persist?.hasHydrated?.() ?? true)) return;
+  useActiveActivityStore.getState().syncAutoPauseMode();
+}
+
+useActiveActivityStore.persist.onFinishHydration(syncHydratedActivityAutoPauseMode);
+useSettingsStore.persist?.onFinishHydration?.(syncHydratedActivityAutoPauseMode);
+useSettingsStore.subscribe?.((next, previous) => {
+  if (next.autoPauseMode !== previous.autoPauseMode) syncHydratedActivityAutoPauseMode();
+});
+syncHydratedActivityAutoPauseMode();
 
 function distanceBetween(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const radius = 6_371_000;

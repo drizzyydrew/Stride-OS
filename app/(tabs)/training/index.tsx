@@ -10,6 +10,7 @@ import { requestLocationRecovery } from '../../../src/lib/locationPermissionReco
 import MapView, { Marker, Polyline, type LatLng, type MapViewRef, type Region } from '../../../src/components/maps/MapComponents';
 import RoutePreviewMap from '../../../src/components/maps/RoutePreviewMap';
 import WatchStatusDiagnostics from '../../../src/components/watch/WatchStatusDiagnostics';
+import RunningAutoPauseControl from '../../../src/components/running/RunningAutoPauseControl';
 import WatchConnectionStatus, { useWatchStartRequest } from '../../../src/components/watch/WatchConnectionStatus';
 import { createWatchStartCoordinator } from '../../../src/utils/watchAvailability';
 import GpsSignalChip from '../../../src/components/activity/GpsSignalChip';
@@ -2093,6 +2094,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
               <RunStat key={metric.label} {...metric} color={C.text} muted={C.textMuted} />
             ))}
           </View>
+          <RunningAutoPauseControl paused />
           {goalPanel}
           <View style={styles.runStatusChipRow}>
             <View style={[styles.runStatusChip, { backgroundColor: zoneToneColor + '22', borderColor: zoneToneColor }]}>
@@ -2196,6 +2198,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       </FeatureTourTarget>
 
       <FeatureTourTarget targetId="running.voice" style={[styles.runControlPanel, styles.runControlPanelFlow, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: spacing.md }]}>
+        {(isActive ? environment : pendingEnvironment) === 'outdoor' ? <RunningAutoPauseControl /> : null}
         <RunPrimaryMetrics time={fmt(elapsed)} distance={distStr} unit={distUnit} />
         <View style={[styles.runDivider, { backgroundColor: C.border }]} />
         <View style={styles.runSecondaryRow}>
@@ -2237,7 +2240,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             ))}
             <View style={[styles.voiceRow, { borderBottomColor: C.border }]}>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.voiceLabel, { color: C.text }]}>Auto-Pause</Text>
+                <Text style={[styles.voiceLabel, { color: C.text }]}>Announce auto-pause</Text>
                 <Text style={[styles.voiceDetail, { color: C.textMuted }]}>Say “pausing workout” when movement stops.</Text>
               </View>
               <Switch
@@ -2249,7 +2252,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             </View>
             <View style={styles.voiceRow}>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.voiceLabel, { color: C.text }]}>Auto-Resume</Text>
+                <Text style={[styles.voiceLabel, { color: C.text }]}>Announce auto-resume</Text>
                 <Text style={[styles.voiceDetail, { color: C.textMuted }]}>Say “resuming workout” when movement resumes.</Text>
               </View>
               <Switch

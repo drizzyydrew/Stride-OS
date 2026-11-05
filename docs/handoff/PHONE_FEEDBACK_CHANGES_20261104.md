@@ -72,16 +72,17 @@ were preserved; this change does not alter native Watch/GPS/completion code.
 
 ## Continue the owner's existing checklist
 
-The owner clarified the reopened activity was still recording. That accepts
-their reported active-session persistence only. Finished-save durability,
-offline save/reconnect duplicates, plausible route/distance, Health and Watch
-behavior remain untested in the submitted form. Use the original form rather
-than asking for passing checks again.
+At the initial checkpoint, the reopened activity was still recording, so that
+observation established active-session persistence only. The owner subsequently
+confirmed the entire eight-minute offline-save block: Run saved, completed
+activity retained after full offline close/reopen, exactly one after reconnect.
+Those are reported passes. Plausible route/distance, Health and Watch behavior
+remain open. Use the original form rather than repeating passed checks. See
+`PHONE_QA_20261104.md` for the latest report and separate auto-pause issue.
 
-Finish the current recording before another test. Once at least eight active
-minutes have accumulated, stop and confirm Run saved. Reopen its completed
-detail after closing the app to test finished-save durability. The separate
-offline-save block can then complete the original blank fields.
+The completed offline block does not need repeating solely to fill its earlier
+blank fields. The later automatic-pause correction requires its own scoped
+device retest on a future build, not a retroactive failure of that save result.
 
 Before delivering these corrections, allocate a new native build number above
 the existing candidates, verify signed app/Watch/extension identities and the
