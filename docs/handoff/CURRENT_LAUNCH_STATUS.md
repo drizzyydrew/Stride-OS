@@ -1,11 +1,19 @@
 # Current StrideOS launch status
 
+Latest November 5 update: the owner reports the entire phone-started Watch block
+worked, including Watch Pause/Resume controlling the phone, locked-phone
+continuation, Watch End and exactly one saved session. Basic Watch control/save
+flow is now owner-reported passed. Optional live metric values, disconnect/
+reconnect, denied-permission recovery and the pending corrected build are not
+accepted by that statement. See `WATCH_DEVICE_READBACK_20261105.json`.
+
 November 5 phone update: the owner confirms Connected and the completed test
 workout appears in Apple Health. A shared Health Highlights screenshot shows
 one Running entry with the StrideOS source icon, supporting basic workout-write
 presence. No exhaustive duplicate audit, denied-permission recovery or Watch
 acceptance is inferred. See `PHONE_QA_20261104.md` and
-`HEALTH_DEVICE_READBACK_20261105.json`. Watch is the next device block.
+`HEALTH_DEVICE_READBACK_20261105.json`. Watch was subsequently reported passed
+within the scope above.
 
 Latest phone update: the owner confirms the full eight-minute offline-save block
 worked, including Run saved, the completed activity surviving a full offline

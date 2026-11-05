@@ -1,0 +1,31 @@
+{
+  "recordedAt": "2026-11-05T14:38:28.173046+00:00",
+  "scope": "owner_report_of_instructed_phone_started_watch_block",
+  "reportedBuildSession": "111",
+  "evidence": "owner states complete sequence all worked great",
+  "ownerReportedPasses": {
+    "watchReceivesPhoneStart": true,
+    "watchPauseControlsPhone": true,
+    "watchResumeControlsPhone": true,
+    "phoneLockedContinuation": true,
+    "watchEndFinishesPhoneRecording": true,
+    "oneVisibleSavedActivity": true
+  },
+  "independentDeviceLogsInspected": false,
+  "watchAppBuildIndependentlyVerified": false,
+  "optionalLiveMetricValuesAccepted": false,
+  "watchDisconnectionRecoveryAccepted": false,
+  "permissionDenialRecoveryAccepted": false,
+  "correctedFutureCandidateAccepted": false,
+  "buttonSourceFinding": {
+    "purpose": "optional extra HealthKit read permissions while foreground and idle",
+    "requestsWriteTypes": false,
+    "basicStartupAlreadyRequestsHeartRateEnergyDistanceAndWorkoutWrite": true,
+    "buttonStartsWorkout": false,
+    "successfulPermissionRequestProvesAllReadAccess": false
+  },
+  "personalHealthValuesStored": false,
+  "credentialsStored": false,
+  "nativeCodeOrPermissionsChangedByAgent": false,
+  "newBuildOrReleasePerformed": false
+}
