@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-05T16:13:15.799541+00:00",
+  "checkout": "/Users/drew/Developer/StrideOS_App_clean_build19_v3_foundation_local",
+  "baseCommit": "1e3dbb42b005a19ed8ff006795e1914b0a7ba00c",
+  "request": "Six new-PR badges with previous-artwork inspection and design council consultation",
+  "newIds": [
+    "race_pr_800m",
+    "race_pr_1_mile",
+    "race_pr_5k",
+    "race_pr_10k",
+    "race_pr_half_marathon",
+    "race_pr_marathon"
+  ],
+  "registry": {
+    "previousDefinitionsRetained": 99,
+    "newDefinitions": 6,
+    "total": 105,
+    "duplicates": 0,
+    "legacyContinuousSegmentPrIdsRepurposed": false
+  },
+  "artwork": {
+    "canonicalStates": [
+      "unlocked",
+      "locked",
+      "transparent"
+    ],
+    "svgCount": 18,
+    "pngCount": 18,
+    "viewBox": "0 0 100 100",
+    "pngPixels": 1024,
+    "oneCanonicalRenderer": true,
+    "runtimeFontDependency": false,
+    "stateGeometryChecks": 18,
+    "freshPngParityChecks": 18,
+    "smallSizeFullAndCompactChecks": 180,
+    "sizes": [
+      48,
+      64,
+      96,
+      128,
+      256
+    ],
+    "lockedGrayscale": true,
+    "transparentInteriorAndExteriorAlpha": true,
+    "shareOpaqueAliasesUnlocked": true,
+    "shareTransparentAliasesTransparent": true,
+    "existingApprovedArtworkChanged": false,
+    "validationFile": "badge-review/race-pr/validation.json",
+    "preview": "badge-review/race-pr/six-race-pr-badges.png"
+  },
+  "council": {
+    "design": "PASS",
+    "independentArtExportReview": "PASS",
+    "independentAwardCustodyReview": "PASS",
+    "independentReviewFile": "badge-review/race-pr/INDEPENDENT_COUNCIL_REVIEW.md",
+    "scope": "New derivative artwork, exports and source integration; not historical owner acceptance or physical-device verification"
+  },
+  "tests": {
+    "command": "./node_modules/.bin/tsx --test --test-concurrency=4 src/utils/__tests__/*.test.ts scripts/tests/*.test.ts",
+    "passed": 1796,
+    "failed": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "log": "/tmp/strideos-race-pr-full-suite.log"
+  },
+  "semanticTypeScript": {
+    "command": "npm run typecheck",
+    "typescriptVersion": "5.9.3",
+    "exitCode": 0,
+    "log": "/tmp/strideos-race-pr-typecheck-final.log"
+  },
+  "assetValidation": {
+    "command": "npm run validate:race-pr-assets",
+    "exitCode": 0,
+    "log": "/tmp/strideos-race-pr-art-validation-final.log"
+  },
+  "expoOnlineCompatibility": {
+    "exitCode": 1,
+    "reason": "Existing newer SDK-57 patch recommendations, unchanged from previous receipt",
+    "dependencyVersionsChanged": false,
+    "log": "/tmp/strideos-race-pr-expo-check.log"
+  },
+  "earningChecks": {
+    "firstNewBaselineAndLaterStrictlyFaster": true,
+    "allSixExactEventClasses": true,
+    "underFiveMinute800mAndMileSupported": true,
+    "existingHistoricalSeedQuiet": true,
+    "freshInputDuringInitialSourceLoadCelebrates": true,
+    "tieSlowerAndDuplicateSuppressed": true,
+    "observedSourceCorrectionsUpdateQuietly": true,
+    "noIrreversibleTypoFloor": true,
+    "newDistanceAwardDateUsesPublicationTime": true,
+    "durableLedgerBeforeBadgeBeforePopup": true,
+    "badgedPersistenceFailureRecoversOwnershipQuietly": true,
+    "ownerDefaultAthleteAndSnapshotGuards": true,
+    "newStorageKeyInAccountCleanupFence": true,
+    "staleOrWithdrawnPopupSuppressed": true,
+    "rawHistoryNotRewritten": true
+  },
+  "remaining": [
+    "Next candidate build and physical-device acceptance",
+    "Owner review of these new derivative designs",
+    "Existing Expo patch-version alignment item"
+  ],
+  "externalActions": {
+    "easBuild": false,
+    "testFlightDelivery": false,
+    "appStoreSubmission": false,
+    "publicRelease": false,
+    "backendWrite": false,
+    "realDeviceAction": false,
+    "realAccountDeletion": false
+  },
+  "sourceSha256": {
+    "src/achievements/racePr/racePrDefinitions.ts": "29a2fd2d44a65b66e77462b7267035610d248bb979413aa3730c43745f1adfc6",
+    "src/achievements/racePr/racePrArtwork.ts": "de5e5db033d3c8deada22b929c0cd567ded1505f978449ac28a7414237238d76",
+    "src/achievements/racePr/racePrTypography.ts": "7a1de4cbe236abb3593fe10bc735e3f1bed686946a2e8474f4ad5f5acfd4d95f",
+    "src/achievements/racePr/RacePrBadge.tsx": "ec39594ab90659a8af348a0f6dc1cfa0344faf3d024c958a558b7f5942a5efa1",
+    "src/utils/racePrAwards.ts": "004a9afed691971de7d19fcf8072919294d52fd53f6935c71e130c55a914b03f",
+    "src/lib/racePrAwardLedger.ts": "ded9c415c3ce6a9f0a4a7d3a1e668f350e639d2083d69386f37a3e1937ff64a2",
+    "src/store/achievementStore.ts": "54f6c318749939d731e05e842f063503b55dc280c4e8f1ac137f2a86481c59b6",
+    "src/lib/localAccountCleanupManifest.ts": "514f53fce9edee9b93b30a0a7ed7c9c562ec70e810889ab3b10e38eeb962f960",
+    "src/lib/raceCalibration.ts": "a6b44f1db4e28267cf36e7b157a67e7930ba4c1ee0e3ac1977f4d18d8ead8f08",
+    "src/utils/racePerformance.ts": "27c4bcb22596e2d3316e0dfc9b3856b87a65ce113f43a40cf07d4b2b15a47e95",
+    "src/components/achievements/AchievementBadge.tsx": "93cb536018ff9f646e800b7740dd57c5ef3d54d620e2f33ff28c2ef92e62357c",
+    "src/components/achievements/AchievementUnlockModal.tsx": "6f7d96c98a1f411a830a3c6688c00138365ae3bce99354318c1f84937b8e1d38",
+    "src/utils/achievementSystem.ts": "5fdfb2765c0035e9c93293700a47ea3ad56736c4ad71ae2c02903459eb42284e",
+    "src/utils/achievements.ts": "80f720cf4b5687f010ea92dff9e72311fff945d72754b014c22094ae224a8dc8",
+    "app/(tabs)/more/achievements.tsx": "e0360ed21830ae9e23c0d0ca9f2e0720b2308aaf5a31a3ebd62decd429ad515a",
+    "app/(tabs)/more/achievement-detail.tsx": "056c584459b8d08a7ae8c795810adbd60c94d5b1787335180e95491b35fe220d",
+    "app/(tabs)/profile/calibration.tsx": "32471047bef8dead855ceeed0c251452f1ebcc67655c200246e5f478aa0fb7ef",
+    "app/(tabs)/activity/manual.tsx": "9b48a5aec989a7a6a34996fa3da313273f76a27feb8bd1a5d0474a3442242c62",
+    "src/components/share/ShareStudio.tsx": "8163db1c46696fd743f7003fd41d5d4e1fc50131709baf9648d3fc753e1ca5b9"
+  },
+  "postSuiteCleanup": {
+    "change": "Removed trailing whitespace from canonical SVG strings and regenerated exports/review sheets; no geometry, palette, type or earning logic changed",
+    "all18PngExportsByteIdentical": true,
+    "focusedIntegrationTestsPassed": 5,
+    "assetValidationPassed": true,
+    "testLog": "/tmp/strideos-race-pr-post-cleanup-tests.log"
+  }
+}

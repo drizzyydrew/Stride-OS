@@ -10,6 +10,7 @@ import { STRENGTH_REGISTRY_DEFINITIONS } from '../achievements/strength/strength
 import { STREAK_MILESTONE_DEFINITIONS } from '../achievements/streaks/streakDefinitions';
 import { WEEKLY_DISTANCE_DEFINITIONS } from '../achievements/weeklyDistance/weeklyDistanceDefinitions';
 import type { ScheduledSession } from './scheduledSessions';
+import { RACE_PR_DEFINITIONS } from '../achievements/racePr/racePrDefinitions';
 
 export type AchievementId = string;
 
@@ -189,6 +190,10 @@ export const HEALTHY_ACHIEVEMENTS: AchievementDefinition[] = [
 ];
 
 export const PERSONAL_RECORD_DEFINITIONS: AchievementDefinition[] = [
+  ...RACE_PR_DEFINITIONS.map(definition => ({
+    id: definition.id, title: definition.title, description: definition.description,
+    criteria: definition.criteria, category: 'personal_record' as const,
+  })),
   { id: 'pr_longest_run', title: 'Longest Run', description: 'Most time in one completed run.', criteria: 'Longest completed running duration.', category: 'personal_record' },
   { id: 'pr_farthest_run', title: 'Farthest Run', description: 'Most distance in one completed run.', criteria: 'Farthest completed running distance.', category: 'personal_record' },
   { id: 'pr_fastest_1k', title: 'Fastest 1K', description: 'Fastest valid continuous 1K effort.', criteria: 'Requires supported best-effort segment data; not awarded from fragmented totals.', category: 'personal_record' },

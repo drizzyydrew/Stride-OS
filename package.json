@@ -80,7 +80,7 @@
     "expo:check": "expo install --check",
     "check": "npm run typecheck && npm run expo:check",
     "test": "tsx --test src/utils/__tests__/*.test.ts scripts/tests/*.test.ts",
-    "generate:achievement-assets": "tsx scripts/generate-achievement-system-assets.ts && tsx scripts/generate-run-level-assets.ts && tsx scripts/generate-lifetime-distance-running-assets.ts && tsx scripts/generate-lifetime-distance-cycling-assets.ts && tsx scripts/generate-weekly-distance-assets.ts && tsx scripts/generate-monthly-distance-assets.ts && tsx scripts/generate-streak-assets.ts && tsx scripts/generate-firsts-assets.ts && tsx scripts/generate-strength-assets.ts && tsx scripts/generate-recovery-assets.ts && tsx scripts/generate-challenges-assets.ts",
+    "generate:achievement-assets": "tsx scripts/generate-achievement-system-assets.ts && tsx scripts/generate-run-level-assets.ts && tsx scripts/generate-lifetime-distance-running-assets.ts && tsx scripts/generate-lifetime-distance-cycling-assets.ts && tsx scripts/generate-weekly-distance-assets.ts && tsx scripts/generate-monthly-distance-assets.ts && tsx scripts/generate-streak-assets.ts && tsx scripts/generate-firsts-assets.ts && tsx scripts/generate-strength-assets.ts && tsx scripts/generate-recovery-assets.ts && tsx scripts/generate-challenges-assets.ts && tsx scripts/generate-race-pr-assets.ts",
     "generate:run-level-assets": "tsx scripts/generate-run-level-assets.ts",
     "generate:lifetime-running-assets": "tsx scripts/generate-lifetime-distance-running-assets.ts",
     "generate:lifetime-cycling-assets": "tsx scripts/generate-lifetime-distance-cycling-assets.ts",
@@ -101,8 +101,10 @@
     "validate:strength-assets": "tsx scripts/validate-strength-assets.ts",
     "validate:recovery-assets": "tsx scripts/validate-recovery-assets.ts",
     "validate:challenges-assets": "tsx scripts/validate-challenges-assets.ts",
-    "validate:achievement-assets": "tsx scripts/validate-run-level-assets.ts && tsx scripts/validate-lifetime-distance-running-assets.ts && tsx scripts/validate-lifetime-distance-cycling-assets.ts && tsx scripts/validate-weekly-distance-assets.ts && tsx scripts/validate-monthly-distance-assets.ts && tsx scripts/validate-streak-assets.ts && tsx scripts/validate-firsts-assets.ts && tsx scripts/validate-strength-assets.ts && tsx scripts/validate-recovery-assets.ts && tsx scripts/validate-challenges-assets.ts",
-    "badge-qa-board": "tsx scripts/render-badge-qa-board.ts"
+    "validate:achievement-assets": "tsx scripts/validate-run-level-assets.ts && tsx scripts/validate-lifetime-distance-running-assets.ts && tsx scripts/validate-lifetime-distance-cycling-assets.ts && tsx scripts/validate-weekly-distance-assets.ts && tsx scripts/validate-monthly-distance-assets.ts && tsx scripts/validate-streak-assets.ts && tsx scripts/validate-firsts-assets.ts && tsx scripts/validate-strength-assets.ts && tsx scripts/validate-recovery-assets.ts && tsx scripts/validate-challenges-assets.ts && tsx scripts/validate-race-pr-assets.ts",
+    "badge-qa-board": "tsx scripts/render-badge-qa-board.ts",
+    "generate:race-pr-assets": "tsx scripts/generate-race-pr-assets.ts",
+    "validate:race-pr-assets": "tsx scripts/validate-race-pr-assets.ts"
   },
   "overrides": {
     "@babel/core": "7.29.6",

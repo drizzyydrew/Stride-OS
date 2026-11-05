@@ -21,6 +21,7 @@ import { lifetimeDistanceRunningDefinitionFromAchievementId } from '../../achiev
 import { streakDefinitionFromAchievementId } from '../../achievements/streaks';
 import { weeklyDistanceDefinitionFromAchievementId } from '../../achievements/weeklyDistance';
 import { monthlyDistanceDefinitionFromAchievementId } from '../../achievements/monthlyDistance';
+import { racePrDefinitionFromAchievementId } from '../../achievements/racePr';
 import AchievementBadge from '../achievements/AchievementBadge';
 import ShareBrandMark from './ShareBrandMark';
 import BadgeShareCanvas from './BadgeShareCanvas';
@@ -292,10 +293,11 @@ function ActivityShareStudio({
   const monthlyDistanceDefinition = achievement ? monthlyDistanceDefinitionFromAchievementId(achievement.id) : null;
   const streakDefinition = achievement ? streakDefinitionFromAchievementId(achievement.id) : null;
   const firstDefinition = achievement ? firstAchievementDefinitionFromAchievementId(achievement.id) : null;
+  const racePrDefinition = achievement ? racePrDefinitionFromAchievementId(achievement.id) : null;
   const strengthDefinition = achievement ? strengthAchievementDefinitionFromAchievementId(achievement.id) : null;
   const recoveryDefinition = achievement ? recoveryAchievementDefinitionFromAchievementId(achievement.id) : null;
   const challengeDefinition = achievement?.category === 'challenges' ? challengeAchievementDefinitionFromAchievementId(achievement.id) : null;
-  const canonicalBadgeDefinition = challengeDefinition ?? lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? monthlyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition;
+  const canonicalBadgeDefinition = racePrDefinition ?? challengeDefinition ?? lifetimeRunDefinition ?? lifetimeCyclingDefinition ?? weeklyDistanceDefinition ?? monthlyDistanceDefinition ?? streakDefinition ?? firstDefinition ?? strengthDefinition ?? recoveryDefinition;
   const canonicalBadgeState = canonicalBadgeDefinition
     ? isOverlay
       ? 'transparent'

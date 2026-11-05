@@ -9,6 +9,7 @@ import { todayDateOnly } from '../utils/dateOnly';
 import { calibrationHistorySignals, isValidRacePerformance, reconcileRacePerformances } from '../utils/racePerformance';
 import type { AthleteProfile } from '../types/athlete';
 import type { GoalArchiveState } from '../store/goalArchiveStore';
+import { reconcileRacePrAwards } from './racePrAwardLedger';
 
 let queue: Promise<unknown> = Promise.resolve();
 let lastSuccessfulSignature: string | null = null;
@@ -84,7 +85,10 @@ export function reconcileRaceCalibration(now = Date.now()): Promise<'deferred' |
     };
     const signature = JSON.stringify({ owner: lease.ownerUserId, generation: lease.generation,
       day: todayDateOnly(new Date(now)), profile: { ...profileInputs, racePRs }, input });
-    if (signature === lastSuccessfulSignature) return 'unchanged' as const;
+    if (signature === lastSuccessfulSignature) {
+      await reconcileRacePrAwards(lease, racePRs, Date.now());
+      return 'unchanged' as const;
+    }
     const output = runCalibration({ ...input, profile: { ...profile, racePRs: racePRs.filter(pr => isValidRacePerformance(pr, now)) } });
     if (!ownerLeaseIsCurrent(lease) || useProfileStore.getState().activeAthleteId !== state.activeAthleteId) return 'deferred' as const;
     // One patch keeps the profile's source-linked history, VDOT and predictions
@@ -92,6 +96,7 @@ export function reconcileRaceCalibration(now = Date.now()): Promise<'deferred' |
     await useProfileStore.getState().updateProfile(state.activeAthleteId, { racePRs, vdot: output.vdot, calibration: output });
     if (!ownerLeaseIsCurrent(lease)) return 'deferred' as const;
     lastSuccessfulSignature = signature;
+    await reconcileRacePrAwards(lease, racePRs, Date.now());
     return 'updated' as const;
   });
   queue = task.catch(() => undefined);

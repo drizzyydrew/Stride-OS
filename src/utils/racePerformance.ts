@@ -54,6 +54,7 @@ export function activityRacePerformance(activity: Activity, ownerUserId: string,
     distanceLabel: result.distanceKey === 'custom' ? `${Number((result.distanceMeters / 1000).toFixed(3))} km` : DISTANCE_LABELS[result.distanceKey],
     distanceMeters: result.distanceMeters, timeSeconds: result.elapsedTimeSeconds,
     date: todayDateOnly(new Date(activity.startTime)), official: result.kind === 'race',
+    ...(result.recordedAt == null ? {} : { recordedAt: result.recordedAt }),
     source: { kind: 'activity', activityId: activity.id, ownerUserId },
   };
   return isValidRacePerformance(pr, now) ? pr : null;
@@ -84,6 +85,7 @@ function archivePerformance(archive: GoalArchive, ownerUserId: string, athleteId
     id: `archive-result:${archive.id}`, distanceKey: key, distanceLabel: DISTANCE_LABELS[key],
     distanceMeters: meters, timeSeconds: archive.result.timeSeconds, date: archive.race.date,
     course: archive.race.name, official: true,
+    ...(archive.result.source === 'user' && Number.isFinite(archive.result.updatedAt) ? { recordedAt: archive.result.updatedAt } : {}),
     source: { kind: 'goal_archive', archiveId: archive.id, ownerUserId },
   };
   return isValidRacePerformance(pr, now) ? pr : null;

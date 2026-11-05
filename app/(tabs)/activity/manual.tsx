@@ -342,7 +342,7 @@ export default function ManualActivityScreen() {
     }
     const completedDraft: ActivityDraft = {
       ...draft,
-      raceResult: raceResult ?? undefined,
+      raceResult: raceResult ? { ...raceResult, recordedAt: Date.now() } : undefined,
       id: prefillActivity?.id,
       subtype: isSwim ? (pool ? 'pool' : 'open_water') : selectedType.subtype ?? draft.subtype,
       completionClassification: options.classification ?? draft.completionClassification,

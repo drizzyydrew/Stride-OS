@@ -54,6 +54,8 @@ export type RacePR = {
   distanceMeters: number;
   timeSeconds:    number;
   date:           string;   // "YYYY-MM-DD"
+  /** When the athlete explicitly saved this result, distinct from its event date. */
+  recordedAt?:    number;
   course?:        string;
   official:       boolean;  // race result vs. training time-trial
   /** Linked performance, recalculated from its retained source rather than copied manually. */

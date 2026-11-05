@@ -40,6 +40,7 @@ import {
 } from '../../achievements/challenges';
 import type { UnitSystem } from '../../store/settingsStore';
 import type { AchievementCategory, AchievementId } from '../../utils/achievements';
+import { RacePrBadge, racePrDefinitionFromAchievementId } from '../../achievements/racePr';
 
 type AchievementBadgeTone = {
   base: string;
@@ -107,7 +108,7 @@ function categoryFor(id: AchievementId, category?: AchievementCategory): Achieve
   if (id.startsWith('strength_') || id === 'prehab_resilience_block') return 'strength';
   if (id.startsWith('recovery_')) return 'recovery';
   if (id.startsWith('challenge_')) return 'challenges';
-  if (id.startsWith('pr_')) return 'personal_record';
+  if (id.startsWith('pr_') || id.startsWith('race_pr_')) return 'personal_record';
   if (id.startsWith('monthly_')) return 'monthly_distance';
   if (id.startsWith('stride_level_')) return 'stride_level';
   if (id.startsWith('elevation_')) return 'cumulative_elevation';
@@ -346,6 +347,9 @@ export default function AchievementBadge({ id, category, earned = true, size = '
   const dimmed = !earned;
   const box = SIZE[size];
   const resolvedBadgeState = badgeState ?? (earned ? 'unlocked' : 'locked');
+
+  const racePr = racePrDefinitionFromAchievementId(id);
+  if (racePr) return <RacePrBadge achievement={racePr.id} state={resolvedBadgeState} size={box} compact={size === 'small'} />;
 
   if (resolvedCategory === 'streak') {
     const definition = streakDefinitionFromAchievementId(id);

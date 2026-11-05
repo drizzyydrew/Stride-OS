@@ -51,8 +51,8 @@ test('retirement blocks new 5K awards in both evaluators without moving the 150K
       assert.equal(achievementShareAllowed(retired), false);
       assert.equal(badgeFamilyPresentationRows(evaluated, 'all').some(item => item.id === retiredId), false);
       const active = select(evaluated, 'all');
-      assert.equal(evaluated.length, 99, 'canonical lookup includes archival definitions');
-      assert.equal(active.length, 98, 'active total excludes the unattainable retired goal');
+      assert.equal(evaluated.length, 105, 'canonical lookup includes archival definitions and six race PRs');
+      assert.equal(active.length, 104, 'active total excludes the unattainable retired goal');
       assert.equal(active.filter(item => item.state === 'locked').length, evaluated.filter(item => item.state === 'locked').length - 1);
       assert.equal(active.filter(item => item.state !== 'locked').length, evaluated.filter(item => item.state !== 'locked').length);
       assert.equal(active.filter(item => item.state === 'locked').some(item => item.id === retiredId), false);
@@ -94,7 +94,7 @@ test('historical string and object awards stay earned, addressable and shareable
       assert.equal(achievementBadgePresentation(retired, 'challenges'), retired);
       assert.equal(badgeFamilyPresentationRows(evaluated, 'all').filter(item => item.id === retiredId).length, 1);
       assert.equal(badgeFamilyPresentationRows(evaluated, 'recent').filter(item => item.id === retiredId).length, 1);
-      assert.equal(select(evaluated, 'all').length, 99, 'earned archival badges remain in historical browsing totals');
+      assert.equal(select(evaluated, 'all').length, 105, 'earned archival badges remain alongside the six race PRs in historical browsing totals');
       assert.equal(select(evaluated, 'recent').filter(item => item.id === retiredId).length, 1);
       if (typeof reference !== 'string' && reference.supportingActivityIds) {
         assert.deepEqual(retired.supportingActivityIds, reference.supportingActivityIds);

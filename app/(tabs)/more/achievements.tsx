@@ -26,6 +26,7 @@ import { useAchievementStore } from '../../../src/store/achievementStore';
 import { useAssessmentStore } from '../../../src/store/assessmentStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
+import { useActiveProfile } from '../../../src/store/profileStore';
 import { useColors } from '../../../src/theme/useColors';
 import {
   buildAchievementHubModel,
@@ -65,6 +66,7 @@ const FAMILY_FILTERS: Array<'all' | AchievementFamily> = [
   'recent',
   'run_levels',
   'firsts',
+  'personal_records',
   'lifetime_running',
   'lifetime_cycling',
   'weekly_distance',
@@ -78,6 +80,7 @@ const FAMILY_FILTERS: Array<'all' | AchievementFamily> = [
 const CANONICAL_BADGE_FAMILIES = new Set<AchievementFamily>([
   'run_levels',
   'firsts',
+  'personal_records',
   'lifetime_running',
   'lifetime_cycling',
   'weekly_distance',
@@ -113,6 +116,9 @@ export default function AchievementHubScreen() {
   const insets = useSafeAreaInsets();
   const activities = useActivityStore(state => state.activities);
   const awarded = useAchievementStore(state => state.awarded);
+  const profile = useActiveProfile();
+  const isPrimaryAthlete = profile?.athleteId === 'athlete_default';
+  const visibleAwards = useMemo(() => isPrimaryAthlete ? awarded : awarded.filter(item => !item.id.startsWith('race_pr_')), [awarded, isPrimaryAthlete]);
   const readinessHistory = useReadinessStore(state => state.history);
   const assessmentResults = useAssessmentStore(state => state.results);
   const units = useSettingsStore(state => state.units);
@@ -125,8 +131,8 @@ export default function AchievementHubScreen() {
   const weekPlan = useWeekPlan();
   const { weekSessions } = useScheduledSessions(weekPlan);
   const model = useMemo(
-    () => buildAchievementHubModel(activities, awarded, { scheduledSessions: weekSessions }),
-    [activities, awarded, weekSessions],
+    () => buildAchievementHubModel(activities, visibleAwards, { scheduledSessions: weekSessions }),
+    [activities, visibleAwards, weekSessions],
   );
 
   const selectedShareDefinition = selectedShareId ? model.shareable.find(item => item.id === selectedShareId) : undefined;
@@ -135,12 +141,13 @@ export default function AchievementHubScreen() {
   const nextLevel = model.strideLevels.find(item => !item.complete);
   const canonicalAchievements = useMemo(() => evaluateAchievementSystem({
     activities,
-    awarded,
+    awarded: visibleAwards,
+    racePRs: isPrimaryAthlete ? profile?.racePRs : [],
     units,
     scheduledSessions: weekSessions,
     readinessHistory,
     assessmentResults,
-  }).filter(item => CANONICAL_BADGE_FAMILIES.has(item.family)), [activities, assessmentResults, awarded, readinessHistory, units, weekSessions]);
+  }).filter(item => CANONICAL_BADGE_FAMILIES.has(item.family)), [activities, assessmentResults, visibleAwards, isPrimaryAthlete, profile?.racePRs, readinessHistory, units, weekSessions]);
   const canonicalVisible = canonicalListForFilter(canonicalAchievements, familyFilter);
   useFeatureTour('achievements', targetId => {
     if (targetId === 'achievements.share') setFamilyFilter('all');

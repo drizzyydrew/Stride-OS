@@ -69,6 +69,7 @@ async function harness() {
   const module = { exports: {} };
   const store = (get: () => unknown, hydrated?: () => boolean) => ({ getState: get, persist: { hasHydrated: hydrated } });
   const mocks: Record<string, unknown> = {
+    './racePrAwardLedger': { reconcileRacePrAwards: async () => {} },
     './localDataOwner': { captureOwnerLease: () => owner.capture(), ownerLeaseIsCurrent: (lease: Parameters<LocalDataOwner['isCurrent']>[0]) => owner.isCurrent(lease) },
     '../store/activityStore': { useActivityStore: store(() => activities) },
     '../store/athleteStore': { useAthleteStore: store(() => athlete, () => hydration.athlete) },

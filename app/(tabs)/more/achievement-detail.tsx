@@ -23,6 +23,8 @@ import { useActivityStore } from '../../../src/store/activityStore';
 import { useAssessmentStore } from '../../../src/store/assessmentStore';
 import { useReadinessStore } from '../../../src/store/readinessStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
+import { useActiveProfile } from '../../../src/store/profileStore';
+import { formatRaceTime } from '../../../src/utils/calibrationEngine';
 import { useColors } from '../../../src/theme/useColors';
 import {
   achievementFamilyLabel,
@@ -42,6 +44,9 @@ export default function AchievementDetailScreen() {
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const activities = useActivityStore(state => state.activities);
   const awarded = useAchievementStore(state => state.awarded);
+  const profile = useActiveProfile();
+  const isPrimaryAthlete = profile?.athleteId === 'athlete_default';
+  const visibleAwards = useMemo(() => isPrimaryAthlete ? awarded : awarded.filter(item => !item.id.startsWith('race_pr_')), [awarded, isPrimaryAthlete]);
   const units = useSettingsStore(state => state.units);
   const readinessHistory = useReadinessStore(state => state.history);
   const assessmentResults = useAssessmentStore(state => state.results);
@@ -53,12 +58,13 @@ export default function AchievementDetailScreen() {
   const shareRef = useRef<View>(null);
   const achievements = useMemo(() => evaluateAchievementSystem({
     activities,
-    awarded,
+    awarded: visibleAwards,
+    racePRs: isPrimaryAthlete ? profile?.racePRs : [],
     units,
     scheduledSessions: weekSessions,
     readinessHistory,
     assessmentResults,
-  }), [activities, assessmentResults, awarded, readinessHistory, units, weekSessions]);
+  }), [activities, assessmentResults, visibleAwards, isPrimaryAthlete, profile?.racePRs, readinessHistory, units, weekSessions]);
   const canonicalAchievement = achievements.find(item => item.id === id);
   const badgeFamily = Array.isArray(params.badgeFamily) ? params.badgeFamily[0] : params.badgeFamily;
   const achievement = canonicalAchievement ? achievementBadgePresentation(canonicalAchievement, badgeFamily) : undefined;
@@ -111,7 +117,12 @@ export default function AchievementDetailScreen() {
           <Text style={[s.state, { color: achievement.state === 'locked' ? C.textMuted : C.primary }]}>
             {achievement.state === 'locked' ? achievement.displayRemaining : `Earned ${shortDate(achievement.achievedDate)}`}
           </Text>
-          {achievement.family === 'run_levels' ? (
+          {achievement.ruleKind === 'race_pr' ? (
+            <Text selectable style={[s.progressText, { color: C.textMuted }]}>
+              {achievement.personalBest ? `Current best · ${formatRaceTime(achievement.personalBest.timeSeconds)} · ${achievement.personalBest.date}`
+                : achievement.state === 'locked' ? 'Save a confirmed race or time-trial result to establish your first PR.' : 'Badge earned previously. No current confirmed result is available.'}
+            </Text>
+          ) : achievement.family === 'run_levels' ? (
             <RunLevelProgress currentMeters={achievement.currentProgress} units={units} style={s.runLevelProgress} />
           ) : (
             <>

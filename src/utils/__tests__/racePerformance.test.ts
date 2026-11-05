@@ -204,3 +204,22 @@ test('invalid and future stored race entries cannot inflate calibration VDOT, co
   assert.equal(output.primarySource, baseline.primarySource);
   assert.deepEqual(output.racePredictions, baseline.racePredictions);
 });
+
+test('PR notification provenance uses explicit result entry time, never arbitrary activity/archive update time', () => {
+  const confirmed = { kind: 'race' as const, distanceKey: '5k' as const, distanceMeters: 5000, elapsedTimeSeconds: 1500, recordedAt: NOW - 100 };
+  assert.equal(activityRacePerformance(activity({ raceResult: confirmed }), 'owner', NOW)?.recordedAt, NOW - 100);
+  const { recordedAt: _unused, ...legacy } = confirmed;
+  assert.equal(activityRacePerformance(activity({ raceResult: legacy, updatedAt: NOW }), 'owner', NOW)?.recordedAt, undefined);
+  const explicit = archive({ result: { status: 'finished', timeSeconds: 7200, source: 'user', updatedAt: NOW - 200 } });
+  assert.equal(reconcileRacePerformances([], [explicit], [], 'owner', 'athlete_default', NOW)[0].recordedAt, NOW - 200);
+  const automatic = archive({ result: { status: 'finished', timeSeconds: 7200, source: 'race_record', updatedAt: NOW } });
+  assert.equal(reconcileRacePerformances([], [automatic], [], 'owner', 'athlete_default', NOW)[0].recordedAt, undefined);
+});
+
+test('unrelated activity edits retain explicit result-entry time while result edits may replace it', () => {
+  const raceResult = { kind: 'race' as const, distanceKey: '5k' as const, distanceMeters: 5000, elapsedTimeSeconds: 1500, recordedAt: NOW - 1000 };
+  const saved = activity({ raceResult });
+  const draft = { ...saved, notes: 'Updated notes', raceResult: { ...raceResult, recordedAt: NOW } };
+  assert.equal(mergeManualActivityEdit(saved, draft, new Set(['notes'])).raceResult?.recordedAt, NOW - 1000);
+  assert.equal(mergeManualActivityEdit(saved, draft, new Set(['raceFinishTime'])).raceResult?.recordedAt, NOW);
+});

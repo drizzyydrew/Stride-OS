@@ -343,6 +343,8 @@ export type ActivityRaceResult = {
   distanceMeters: number;
   /** Full elapsed finish time, including any stops. Never inferred from active time. */
   elapsedTimeSeconds: number;
+  /** Explicit result-entry time; absent on older records and retained on unrelated edits. */
+  recordedAt?: number;
 };
 
 export type Activity = {

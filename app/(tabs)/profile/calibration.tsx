@@ -125,6 +125,7 @@ export default function CalibrationScreen() {
       distanceMeters: meters,
       timeSeconds: seconds,
       date: prDate || today(),
+      recordedAt: Date.now(),
       official: true,
     };
     if (!isValidRacePerformance(pr)) {

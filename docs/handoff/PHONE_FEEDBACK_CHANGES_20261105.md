@@ -115,7 +115,11 @@ remain. This implements the owner's request to remove troubleshooting details
 from the release UI; do not restore them for launch. The Release Watch binary was
 checked for absence of the removed button and Sync details labels.
 
-## Badge follow-up retained
+## Badge gap at this checkpoint
+
+This section records the gap before the owner's subsequent six-distance badge
+request. That follow-up is implemented in `RACE_PR_BADGES_20261105.md` using new
+race-PR IDs and canonical artwork; the legacy segment definitions remain separate.
 
 The catalog contains fastest 1K/mile/5K/10K entries, but the existing PR evaluator
 does not award those from race-result records. There is no generic new-race-PR

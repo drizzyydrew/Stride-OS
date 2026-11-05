@@ -18,6 +18,10 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { useColors } from '../../theme/useColors';
 import { ACHIEVEMENT_SYSTEM_REGISTRY, achievementFamilyLabel } from '../../utils/achievementSystem';
 import AchievementBadge from './AchievementBadge';
+import { useProfileStore } from '../../store/profileStore';
+import { useAuthStore } from '../../store/authStore';
+import { racePrNotificationIsCurrent } from '../../utils/racePrAwards';
+import { formatRaceTime } from '../../utils/calibrationEngine';
 
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 const EASE_IN_OUT = Easing.bezier(0.77, 0, 0.175, 1);
@@ -28,6 +32,12 @@ export default function AchievementUnlockModal() {
   const units = useSettingsStore(state => state.units);
   const nextAward = useAchievementStore(state => state.unlockQueue[0]);
   const dismissNextUnlock = useAchievementStore(state => state.dismissNextUnlock);
+  const dismissRacePrUnlock = useAchievementStore(state => state.dismissRacePrUnlock);
+  const profile = useProfileStore(state => state.profiles[state.activeAthleteId]);
+  const athleteId = useProfileStore(state => state.activeAthleteId);
+  const accountId = useAuthStore(state => state.user?.id ?? state.offlineOwnerId);
+  const raceEvent = nextAward?.racePR;
+  const currentRaceEvent = !raceEvent || racePrNotificationIsCurrent(raceEvent, profile?.racePRs ?? [], accountId, athleteId);
   const reduceMotion = useReducedMotion();
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.96);
@@ -36,6 +46,10 @@ export default function AchievementUnlockModal() {
   const definition = nextAward
     ? ACHIEVEMENT_SYSTEM_REGISTRY.find(item => item.id === nextAward.id)
     : undefined;
+
+  useEffect(() => {
+    if (raceEvent && !currentRaceEvent) dismissRacePrUnlock(raceEvent.eventKey);
+  }, [currentRaceEvent, dismissRacePrUnlock, raceEvent]);
 
   useEffect(() => {
     if (!nextAward) return undefined;
@@ -67,7 +81,7 @@ export default function AchievementUnlockModal() {
     ],
   }));
 
-  if (!nextAward || !definition) return null;
+  if (!nextAward || !definition || !currentRaceEvent) return null;
 
   const title = definition.title;
   const family = achievementFamilyLabel(definition.family);
@@ -82,9 +96,13 @@ export default function AchievementUnlockModal() {
       <View style={s.backdrop} accessibilityViewIsModal>
         <Pressable style={StyleSheet.absoluteFill} onPress={dismissNextUnlock} accessibilityLabel="Close achievement unlock" />
         <Animated.View style={[s.card, { backgroundColor: C.card, borderColor: C.primary }, cardStyle]}>
-          <Text style={[s.eyebrow, { color: C.primary }]}>NEW BADGE UNLOCKED</Text>
+          <Text style={[s.eyebrow, { color: C.primary }]}>{raceEvent ? 'NEW PERSONAL BEST' : 'NEW BADGE UNLOCKED'}</Text>
           <Text style={[s.title, { color: C.text }]} numberOfLines={2} adjustsFontSizeToFit>{title}</Text>
-          <Text style={[s.copy, { color: C.textMuted }]}>New base unlocked.</Text>
+          <Text style={[s.copy, { color: C.textMuted }]}>{raceEvent
+            ? raceEvent.previousTimeSeconds === undefined ? 'Your first recorded best at this distance.'
+              : `${formatRaceTime(raceEvent.previousTimeSeconds - raceEvent.timeSeconds)} faster than your previous best.`
+            : 'New base unlocked.'}</Text>
+          {raceEvent ? <Text selectable style={[s.recordTime, { color: C.text }]}>{formatRaceTime(raceEvent.timeSeconds)}</Text> : null}
           <View style={s.badgeWrap}>
             <AchievementBadge
               id={definition.id}
@@ -158,6 +176,7 @@ const s = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
   },
+  recordTime: { fontSize: 24, fontWeight: '800', fontVariant: ['tabular-nums'], textAlign: 'center' },
   badgeWrap: {
     marginTop: 4,
   },

@@ -20,7 +20,8 @@ test('approved integration covers exactly nine additional families and 300 canon
   assert.equal(new Set(APPROVED_BADGE_ASSETS.map(entry => entry.family)).size, 9);
   assert.equal(APPROVED_BADGE_ASSETS.length * 3, 300);
   assert.equal(new Set(APPROVED_BADGE_ASSETS.map(entry => `${entry.family}:${entry.id}:${entry.units}`)).size, APPROVED_BADGE_ASSETS.length);
-  assert.equal(auditAchievementRegistry().total, 99);
+  assert.equal(auditAchievementRegistry().total, 105);
+  assert.equal(ACHIEVEMENT_SYSTEM_REGISTRY.filter(entry => entry.ruleKind !== 'race_pr').length, 99, 'the six new race PRs do not replace existing awards');
   assert.deepEqual(auditAchievementRegistry().duplicateIds, []);
   for (const id of ['monthly_run_150k', 'monthly_run_200k', 'first_structured_workout', 'challenge_5k_month']) assert.equal(ACHIEVEMENT_SYSTEM_REGISTRY.filter(entry => entry.id === id).length, 1);
   assert.equal(ACHIEVEMENT_SYSTEM_REGISTRY.find(entry => entry.id === 'first_structured_workout')?.family, 'firsts');

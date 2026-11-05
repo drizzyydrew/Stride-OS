@@ -2,6 +2,10 @@ import type { UnitSystem } from '../store/settingsStore';
 import type { Activity } from '../types/activity';
 import type { AssessmentResult } from '../types/assessment';
 import type { DailyReadiness } from '../types/readiness';
+import type { RacePR } from '../types/athlete';
+import { RACE_PR_DEFINITIONS, racePrDefinitionFromAchievementId } from '../achievements/racePr/racePrDefinitions';
+import { racePrBestByDistance } from './racePrAwards';
+import { formatRaceTime } from './calibrationEngine';
 import {
   CUMULATIVE_ELEVATION_ACHIEVEMENTS,
   STREAK_ACHIEVEMENTS,
@@ -118,6 +122,7 @@ export type AchievementPeriod =
   | 'current_streak';
 
 export type AchievementRuleKind =
+  | 'race_pr'
   | 'first'
   | 'lifetime_distance'
   | 'weekly_distance'
@@ -151,7 +156,7 @@ export type AchievementDefinitionV2 = {
   shareArtPath?: string;
   shareOverlayPath?: string;
   shareCardEligibility: boolean;
-  repeatability: 'once' | 'periodic';
+  repeatability: 'once' | 'periodic' | 'record';
   period: AchievementPeriod;
   tier?: number;
   dominantColor: string;
@@ -160,6 +165,7 @@ export type AchievementDefinitionV2 = {
 };
 
 export type EvaluatedAchievement = AchievementDefinitionV2 & {
+  personalBest?: { timeSeconds: number; date: string };
   state: 'locked' | 'earned' | 'newly_earned' | 'current';
   achievedDate?: number;
   achievedActivityId?: string;
@@ -176,6 +182,7 @@ export type EvaluatedAchievement = AchievementDefinitionV2 & {
 };
 
 export type AchievementEvaluationInput = {
+  racePRs?: readonly RacePR[];
   activities: readonly Activity[];
   units: UnitSystem;
   awarded?: readonly AchievementAwardReference[];
@@ -197,6 +204,7 @@ type EvaluationContext = {
 };
 
 type DefinitionEvaluationResult = {
+  racePR?: RacePR;
   complete: boolean;
   current: number;
   achievedAt?: number;
@@ -248,6 +256,18 @@ const CHALLENGE_EVALUATION_PARAMS: Record<string, ChallengeEvaluationParams> = {
 };
 
 export const ACHIEVEMENT_SYSTEM_REGISTRY: AchievementDefinitionV2[] = [
+  ...RACE_PR_DEFINITIONS.map(definition => baseDef({
+    id: definition.id, family: 'personal_records', category: 'personal_record',
+    title: definition.title, shortTitle: definition.compactTitle,
+    description: definition.description, criteria: definition.criteria,
+    ruleKind: 'race_pr', unitBehavior: 'race_distance_class',
+    threshold: 1, thresholdUnit: 'count', sportApplicability: ['running'],
+    artworkKey: `race-pr-${definition.slug}`, artworkPath: definition.artworkPath,
+    lockedArtworkPath: definition.lockedArtworkPath, shareArtPath: definition.unlockedPngPath,
+    shareOverlayPath: definition.shareTransparentPngPath,
+    repeatability: 'record', period: 'lifetime', dominantColor: '#E7C486',
+    sourceNotes: 'Six original StrideOS race-PR stopwatch badges, derived from the existing Firsts frame and outlined typography. Each new confirmed best is evaluated separately from once-earned badge ownership.',
+  })),
   ...RUN_LEVEL_DEFINITIONS.map(level => baseDef({
     id: level.id,
     family: 'run_levels',
@@ -835,6 +855,16 @@ function evaluateFirst(def: AchievementDefinitionV2, ctx: EvaluationContext): De
 }
 
 function evaluateDefinition(def: AchievementDefinitionV2, ctx: EvaluationContext): DefinitionEvaluationResult {
+  if (def.ruleKind === 'race_pr') {
+    const definition = racePrDefinitionFromAchievementId(def.id);
+    const pr = definition ? racePrBestByDistance(ctx.input.racePRs, ctx.input.now)[definition.distanceKey] : undefined;
+    const reference = ctx.input.awarded.find(item => awardId(item) === def.id);
+    const ids = pr?.source?.kind === 'activity' ? [pr.source.activityId]
+      : !pr && reference && typeof reference !== 'string' ? reference.supportingActivityIds ?? [] : [];
+    return { complete: Boolean(pr) || ctx.existingAwards.has(def.id), current: pr ? 1 : 0,
+      achievedAt: pr ? new Date(`${pr.date}T00:00:00`).getTime() : undefined,
+      activityId: ids[0], ids, racePR: pr };
+  }
   if (isRetiredAchievement(def.id)) {
     const earned = ctx.existingAwards.has(def.id);
     const reference = ctx.input.awarded.find(item => awardId(item) === def.id);
@@ -991,6 +1021,7 @@ function evaluateChallenge(def: AchievementDefinitionV2, ctx: EvaluationContext)
 export function evaluateAchievementSystem(input: AchievementEvaluationInput): EvaluatedAchievement[] {
   const ctx: EvaluationContext = {
     input: {
+      racePRs: input.racePRs ?? [],
       activities: input.activities,
       units: input.units,
       awarded: input.awarded ?? [],
@@ -1006,6 +1037,7 @@ export function evaluateAchievementSystem(input: AchievementEvaluationInput): Ev
 
   return ACHIEVEMENT_SYSTEM_REGISTRY.map(def => {
     const result = evaluateDefinition(def, ctx);
+    const raceDefinition = def.ruleKind === 'race_pr' ? racePrDefinitionFromAchievementId(def.id) : null;
     const achievedDate = result.achievedAt ?? (ctx.existingAwards.get(def.id) || undefined);
     const complete = Boolean(result.complete || achievedDate);
     const current = Math.max(0, Math.min(result.current ?? 0, Math.max(def.threshold, result.current ?? 0)));
@@ -1020,7 +1052,11 @@ export function evaluateAchievementSystem(input: AchievementEvaluationInput): Ev
         ? 'newly_earned'
         : 'earned'
       : 'locked';
-    const remainingText = def.id === 'challenge_elevation_month'
+    const remainingText = raceDefinition
+      ? result.racePR ? `Current best ${formatRaceTime(result.racePR.timeSeconds)}`
+        : ctx.existingAwards.has(def.id) ? 'Previously earned · no current confirmed result'
+          : `Log a confirmed ${raceDefinition.distanceLabel} race or time trial`
+      : def.id === 'challenge_elevation_month'
       ? 'Threshold pending confirmation'
       : def.family === 'run_levels' && remaining > 0
       ? `${displayRunLevelDistance(remaining, ctx.input.units)} to ${def.title}`
@@ -1039,6 +1075,7 @@ export function evaluateAchievementSystem(input: AchievementEvaluationInput): Ev
         : `${displayAchievementProgressValue(remaining, def, ctx.input.units)} remaining`;
     return {
       ...def,
+      personalBest: result.racePR ? { timeSeconds: result.racePR.timeSeconds, date: result.racePR.date } : undefined,
       criteria: unitAwareCriteria(def, ctx.input.units),
       state,
       achievedDate,
@@ -1048,10 +1085,10 @@ export function evaluateAchievementSystem(input: AchievementEvaluationInput): Ev
       targetProgress: def.threshold,
       remaining,
       progressPercentage,
-      displayProgress: displayAchievementProgressValue(current, def, ctx.input.units),
-      displayTarget: formatAchievementSupportValue(def, ctx.input.units),
+      displayProgress: raceDefinition ? result.racePR ? formatRaceTime(result.racePR.timeSeconds) : 'No current result' : displayAchievementProgressValue(current, def, ctx.input.units),
+      displayTarget: raceDefinition ? raceDefinition.distanceLabel : formatAchievementSupportValue(def, ctx.input.units),
       displayRemaining: remainingText,
-      accessibilityLabel: achievementAccessibilityLabel(def, state, complete, remaining, remainingText, progressPercentage, ctx.input.units),
+      accessibilityLabel: raceDefinition ? `${def.title}. ${complete ? 'Earned' : 'Locked'}. ${remainingText}.` : achievementAccessibilityLabel(def, state, complete, remaining, remainingText, progressPercentage, ctx.input.units),
       currentPeriodKey: result.currentPeriodKey,
     };
   });

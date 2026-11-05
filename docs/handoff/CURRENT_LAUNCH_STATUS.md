@@ -1,5 +1,15 @@
 # Current StrideOS launch status
 
+Latest November 5 PR-badge update: the owner requested six race PR badges.
+800m, 1 mile, 5K, 10K, half marathon and marathon are implemented as a new
+canonical stopwatch family, with design-council PASS and source integration for
+first-result and repeat-improvement celebrations. Existing history unlocks quietly;
+ties, corrections and repeated imports do not replay popups. See
+`RACE_PR_BADGES_20261105.md` and its validation receipt. This closes the generic
+race-PR celebration/artwork gap in source, not on installed build 111.
+Integrated verification: 1,796/1,796 tests, TypeScript 5.9.3 and the canonical
+artwork validator pass. No native build/delivery was performed for this addition.
+
 November 5 source corrections: archive ID transport, tour yellow outlines and
 scroll/reveal/guided taps, full-width PR date entry, explicit Activity race/time-
 trial results with automatic PR/calibration refresh, Health-setup-driven optional
@@ -7,7 +17,8 @@ Watch permissions and release-hidden sync diagnostics are prepared locally.
 See `PHONE_FEEDBACK_CHANGES_20261105.md` and its validation receipt. These are
 not installed in build 111. Historical live Race-mode notes are not automatically
 promoted to official results; use explicit result confirmation. A generic new-
-race-PR celebration is absent and remains a separate owner-requested follow-up.
+race-PR celebration was absent at that checkpoint; the requested follow-up is
+subsequently implemented in the PR-badge update above.
 Validation: 1,766/1,766 tests and semantic TypeScript pass; unsigned Release
 arm64_32 Watch compilation and local phone-width UI previews pass. The online
 Expo check recommends newer SDK-57 patch versions and remains open for next-
