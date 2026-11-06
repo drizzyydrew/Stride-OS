@@ -33,8 +33,8 @@ const entries: { id: RacePrAchievementId; distanceKey: StandardDistance; slug: s
   { id: 'race_pr_1_mile', distanceKey: '1_mile', slug: '1-mile', distanceLabel: '1 Mile', faceLabel: '1MI' },
   { id: 'race_pr_5k', distanceKey: '5k', slug: '5k', distanceLabel: '5K', faceLabel: '5K' },
   { id: 'race_pr_10k', distanceKey: '10k', slug: '10k', distanceLabel: '10K', faceLabel: '10K' },
-  { id: 'race_pr_half_marathon', distanceKey: 'half_marathon', slug: 'half-marathon', distanceLabel: 'Half Marathon', faceLabel: 'HM' },
-  { id: 'race_pr_marathon', distanceKey: 'marathon', slug: 'marathon', distanceLabel: 'Marathon', faceLabel: 'MAR' },
+  { id: 'race_pr_half_marathon', distanceKey: 'half_marathon', slug: 'half-marathon', distanceLabel: 'Half Marathon', faceLabel: '13.1' },
+  { id: 'race_pr_marathon', distanceKey: 'marathon', slug: 'marathon', distanceLabel: 'Marathon', faceLabel: '26.2' },
 ];
 const asset = (slug: string, state: RacePrBadgeState, ext: 'svg' | 'png') => `assets/achievements/race-pr/race-pr-${slug}-${state}.${ext}`;
 export const RACE_PR_DEFINITIONS: readonly RacePrDefinition[] = entries.map(entry => ({

@@ -24,6 +24,7 @@ async function validate() {
  let stateGeometryChecks=0,pngParityChecks=0,smallRenderChecks=0;
  const sharp = firstsRasterizer() as any;
  for(const definition of RACE_PR_DEFINITIONS){
+   assert.equal(RACE_PR_TYPOGRAPHY.badges[definition.slug as keyof typeof RACE_PR_TYPOGRAPHY.badges].face.text,definition.faceLabel,'Outlined face label differs from its canonical definition');
    const unlocked = renderRacePrBadgeSvg(definition.id,'unlocked');
    assert.deepEqual(renderRacePrBadgeSvg(definition.id,'share-opaque'),unlocked);
    assert.deepEqual(renderRacePrBadgeSvg(definition.id,'share-transparent'),renderRacePrBadgeSvg(definition.id,'transparent'));

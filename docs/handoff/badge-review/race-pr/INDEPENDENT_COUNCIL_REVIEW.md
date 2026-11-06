@@ -101,3 +101,22 @@ A persistence failure may suppress the transient celebration while permanent
 badge ownership is retained or recovered. Previously consumed celebrations do
 not replay after restart. These failure semantics prioritize durable history and
 notification idempotence over promising an animation in every failure case.
+
+## Owner-requested mileage-label revision — November 5
+
+The owner specifically requested **13.1** instead of HM and **26.2** instead of
+MAR inside the Half Marathon and Marathon stopwatch faces. This current direction
+supersedes the earlier council preference for HM/MAR; the full HALF MARATHON and
+MARATHON labels remain unchanged below the clock.
+
+Focused revision verdict: **PASS**. The reviewer inspected the revised six-badge
+preview and all three fresh state/size boards, including 48, 64, 96, 128 and 256
+pixels and compact 64. Both decimal labels fit within the dial and clear its
+ticks. Independently checked state geometry, exact face wording, locked grayscale
+and sampled transparent alpha for all six affected state exports. All 24 SVG/PNG
+assets for the other four distances are byte-identical to HEAD. The scoped earning,
+record-storage and calibration source files have no changes in this revision.
+
+The numbers are artwork labels for the named race classes, not replacement
+qualification thresholds. The owner explicitly withheld TestFlight submission;
+this design review performs and authorizes no build delivery or submission.

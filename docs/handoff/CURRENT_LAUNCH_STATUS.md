@@ -1,5 +1,12 @@
 # Current StrideOS launch status
 
+Latest November 5 owner revision: Half Marathon/Marathon PR badge faces use
+13.1/26.2 miles in place of HM/MAR, retaining the full race names. Other designs
+are accepted. The owner explicitly does not want TestFlight submission yet;
+prepare locally for the next app-test round without submitting or delivering.
+The mileage revision passes canonical artwork validation, five integration tests
+and focused design-council review. See `RACE_PR_MILEAGE_REVISION_20261105.json`.
+
 Latest November 5 PR-badge update: the owner requested six race PR badges.
 800m, 1 mile, 5K, 10K, half marathon and marathon are implemented as a new
 canonical stopwatch family, with design-council PASS and source integration for

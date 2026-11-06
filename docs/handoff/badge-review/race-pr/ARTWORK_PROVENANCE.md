@@ -39,9 +39,12 @@ unlocked and share-transparent aliases transparent byte-for-byte. All states
 keep fitted geometry; locked is achromatic, transparent has true empty-interior
 and exterior alpha. Actual race times and progress remain outside the artwork.
 
-Full badges show an explicit event title and NEW PR. HM and MAR inside the
-stopwatch are supported by HALF MARATHON and MARATHON below, avoiding ambiguity
-with meters or fixed-unit decimal distance labels. Compact mode uses the same
+Full badges show an explicit event title and NEW PR. Following the owner's
+November 5 revision, the stopwatch faces show 13.1 for Half Marathon and 26.2
+for Marathon, with HALF MARATHON and MARATHON below. These fixed mile identities
+are artwork labels; the exact standard event distances and PR rules are unchanged.
+The owner accepted the other designs and explicitly withheld TestFlight submission.
+Compact mode uses the same
 canonical stopwatch and face label under a uniform transform; no redraw or
 state-dependent geometry. The group is centered using the visible crown-inclusive
 bounds, improving 64-pixel balance and distance legibility while omitting footer

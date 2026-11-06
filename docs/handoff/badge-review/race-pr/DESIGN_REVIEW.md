@@ -1,5 +1,11 @@
 # Race PR design council
 
+November 5 owner revision: replace HM/MAR with 13.1/26.2 in all normal,
+compact and state variants, retaining full race names. The focused independent
+review passed; this explicit owner choice supersedes the initial lettering
+discussion below. TestFlight submission is explicitly on hold. See
+`INDEPENDENT_COUNCIL_REVIEW.md` and `../../RACE_PR_MILEAGE_REVISION_20261105.json`.
+
 ## Decision
 
 PASS for the six new derivative Race PR artworks, three canonical states, local

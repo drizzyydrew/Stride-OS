@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-06T03:03:05.860057+00:00",
+  "baseCommit": "ccaac02975d1f03471cb4aeb04f230b900102344",
+  "ownerRequest": "Half Marathon face 13.1 and Marathon face 26.2; no TestFlight submission yet",
+  "labels": {
+    "race_pr_half_marathon": "13.1",
+    "race_pr_marathon": "26.2"
+  },
+  "labelUnits": "Fixed mile identities as explicitly requested; no event-distance or unit-preference logic changes",
+  "fullRaceNamesRetained": true,
+  "otherFourAssetsByteIdentical": 24,
+  "newPrAndAllFullTitleLetteringUnchanged": true,
+  "standardDistancesMetersUnchanged": {
+    "half_marathon": 21097.5,
+    "marathon": 42195
+  },
+  "earningAndCalibrationCodeChanged": false,
+  "validation": {
+    "assetCommand": "npm run validate:race-pr-assets",
+    "exitCode": 0,
+    "geometryChecks": 18,
+    "freshPngComparisons": 18,
+    "smallSizeFullAndCompactRenders": 180,
+    "sizes": [
+      48,
+      64,
+      96,
+      128,
+      256
+    ],
+    "grayscaleAndTrueAlpha": true,
+    "outlinedFaceMatchesDefinitionCheck": true,
+    "integrationTestsPassed": 5,
+    "integrationTestsFailed": 0,
+    "integrationLog": "/tmp/strideos-race-pr-mileage-integration.log",
+    "assetLog": "/tmp/strideos-race-pr-mileage-validation.log",
+    "fullSuiteRerun": false,
+    "scope": "Two artwork labels and regenerated canonical states/exports; previous 1796-test run remains historical"
+  },
+  "independentCouncil": "PASS; viewed updated preview and all state/size boards, checked affected SVG/PNG geometry and alpha",
+  "releaseHold": "Owner explicitly does not want TestFlight submission yet",
+  "externalActions": {
+    "easBuild": false,
+    "testFlightSubmission": false,
+    "testFlightDelivery": false,
+    "appStoreSubmission": false,
+    "publicRelease": false,
+    "deviceInstall": false
+  },
+  "preview": "badge-review/race-pr/six-race-pr-badges.png",
+  "sourceSha256": {
+    "src/achievements/racePr/racePrDefinitions.ts": "6560f8b69924b88f7704ebe06fc60b76ccf5ead89f72b85c1343914eb3aeedce",
+    "src/achievements/racePr/racePrTypography.ts": "e0912fe7012976a79732901ec7dcb5c246db782b9b8a7204ec6d8d0bb50bc07d",
+    "docs/handoff/badge-review/race-pr/outline-typography.py": "e264aa79a7faca4b2430f8ef2aee5496f3a635317c05bfe293728389f34ca8a1"
+  },
+  "preservedAssetsSha256": {
+    "assets/achievements/race-pr/race-pr-800m-unlocked.svg": "18aa0ccfde20af29cd7f7aa8fb11a4016911905b86e4cdb32aaff4cdb95cd805",
+    "assets/achievements/race-pr/race-pr-800m-unlocked.png": "736538f8d5467beaa7115c668f1d336454026f02b821c6757892afbf6ecd93dc",
+    "assets/achievements/race-pr/race-pr-800m-locked.svg": "48f97e782d409c89421b0c6b94f26cbd32f974f87a5786a3b132069e8f618827",
+    "assets/achievements/race-pr/race-pr-800m-locked.png": "d4fa95fb0ada41e935e431b6db7a5cbf8b70dde4a7061408b566b2cf8f3f5e1f",
+    "assets/achievements/race-pr/race-pr-800m-transparent.svg": "1670ffb3cf7a4f9429df36a07c674fa9e64b325aa49a98d71ca94a3be03942c2",
+    "assets/achievements/race-pr/race-pr-800m-transparent.png": "faf254059900c4927c782360929e20ae3cefa9fc877fc7d8e3464a088c5a12dd",
+    "assets/achievements/race-pr/race-pr-1-mile-unlocked.svg": "335e2422f895f24aa33142eca2b6790283f1d055a8072c0b4ae9c25549d2fbab",
+    "assets/achievements/race-pr/race-pr-1-mile-unlocked.png": "51e912f1a577e03f050c130a03bb3b7b101ff4fbf9a38148e9b5bbc10f84433e",
+    "assets/achievements/race-pr/race-pr-1-mile-locked.svg": "d4dd59dc16520bf52573ed7ae4f70463227b4f8939ef64d291db0124de300418",
+    "assets/achievements/race-pr/race-pr-1-mile-locked.png": "912fe9f27bf598b298494c3bacfe2855a1f2f3735c1aaa9550490a886e05c22b",
+    "assets/achievements/race-pr/race-pr-1-mile-transparent.svg": "c908fa191e5055c6c4ca55de8627236713d9e3da5332ef21adc4806b48f50a6d",
+    "assets/achievements/race-pr/race-pr-1-mile-transparent.png": "163c5a1f68082c1dcb31040a1c05385cd9c6a880bd5b635b641dab2f7d433a3a",
+    "assets/achievements/race-pr/race-pr-5k-unlocked.svg": "4553fa8c38d6ba731bc033450a4853b354642a0a346d2ce168b6c037ffa6888a",
+    "assets/achievements/race-pr/race-pr-5k-unlocked.png": "2a5152b976d54a6fe032471f0f697f5b81b88a9a5bb3e8ac1c5306b6d07a925a",
+    "assets/achievements/race-pr/race-pr-5k-locked.svg": "04f71eb92a4f630105c2c25834a8241fd4b50b1be0b283d1431aaf767f482cd8",
+    "assets/achievements/race-pr/race-pr-5k-locked.png": "d389d24bcd14b68f7b7e4c74f10ecba83b84a12cc7f77f6ff41e89783ad275ea",
+    "assets/achievements/race-pr/race-pr-5k-transparent.svg": "d2aea514f6f79f7042c44d20127ad451ab78145fd7d22c3dfe14b31dc8727a5f",
+    "assets/achievements/race-pr/race-pr-5k-transparent.png": "42f0d32ceee9d83df83905380b48eb5479ce33f993536e5cee2f13fa5c6f2520",
+    "assets/achievements/race-pr/race-pr-10k-unlocked.svg": "252abea4a8ec74fd1586dd02eaa0d69d24dc94ef0b12526e1b97fe0097fd6752",
+    "assets/achievements/race-pr/race-pr-10k-unlocked.png": "77e901cd965a0d79b5406d16d1afee46cdc23eb93f001bfcad707cf7017a95bd",
+    "assets/achievements/race-pr/race-pr-10k-locked.svg": "ff51127368730a079153f36990ff402ff4e2d151acd7f00d2d5eb1acbc8bf647",
+    "assets/achievements/race-pr/race-pr-10k-locked.png": "56b8ac63910bb1a4fe582364f5bec417bce9ae04c3c07f08f69a08904351a43b",
+    "assets/achievements/race-pr/race-pr-10k-transparent.svg": "832b3374c1818e88013a4b63211fa6405acad64170b61c7d17cb2e3b16313309",
+    "assets/achievements/race-pr/race-pr-10k-transparent.png": "6fdc7fbb0956e2bf1677a43c64a9952c70ca22c0a2850033c638b9b5b4dc4a99"
+  }
+}

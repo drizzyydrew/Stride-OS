@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parent
 REPO=ROOT.parents[3]
 FONT=Path('/System/Library/Fonts/Supplemental/Arial Narrow.ttf')
-labels=[('800m','800M','800 METERS'),('1-mile','1MI','1 MILE'),('5k','5K','5K'),('10k','10K','10K'),('half-marathon','HM','HALF MARATHON'),('marathon','MAR','MARATHON')]
+labels=[('800m','800M','800 METERS'),('1-mile','1MI','1 MILE'),('5k','5K','5K'),('10k','10K','10K'),('half-marathon','13.1','HALF MARATHON'),('marathon','26.2','MARATHON')]
 entries=[{'key':'newPr','text':'NEW PR','size':8.8,'baseline':68.2,'maximumWidth':46,'tracking':.08}]
 for slug,face,title in labels:
  entries.extend([{'key':slug+':face','text':face,'size':14.5,'baseline':39,'maximumWidth':24,'tracking':0}, {'key':slug+':title','text':title,'size':8.8,'baseline':59.8,'maximumWidth':50,'tracking':.05}])

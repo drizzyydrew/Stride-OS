@@ -12,8 +12,14 @@ They do not repurpose the legacy `pr_fastest_*` continuous-segment definitions.
 The new family reuses the existing approved Firsts single softened hexagon,
 warm-gold palette, outlined light Arial Narrow treatment, STRIDEOS wordmark and
 two bottom chevrons. A new restrained stopwatch, event identity and NEW PR copy
-distinguish a personal best from a first completion. HM/MAR timing-face labels
-are accompanied by the full Half Marathon/Marathon title. Distances are event
+distinguish a personal best from a first completion. The owner subsequently
+requested 13.1/26.2 timing-face labels in place of HM/MAR, while retaining the
+full Half Marathon/Marathon title. These are fixed mile artwork labels, independent
+of unit preferences; exact event distances and PR thresholds remain unchanged.
+The scoped mileage-label checks and explicit no-TestFlight instruction are recorded
+in `RACE_PR_MILEAGE_REVISION_20261105.json`; the original full-suite receipt below
+retains its earlier implementation scope.
+Distances are event
 identities, not a color or prestige ladder. Personal finish times stay outside
 the artwork.
 
@@ -84,6 +90,9 @@ in three states at 48, 64, 96, 128 and 256 pixels.
 See `RACE_PR_BADGES_VALIDATION_20261105.json` for the integrated test/typecheck
 receipt. The Expo online compatibility recommendation for newer SDK-57 patches
 remains a separate next-candidate item; no dependencies were upgraded here.
+
+The owner explicitly says not to submit to TestFlight yet. Keep the next test
+preparation local until further instruction.
 
 This implementation is local source/artwork. Installed build 111 does not contain
 it. No new EAS build, TestFlight delivery, App Store submission, public release,
