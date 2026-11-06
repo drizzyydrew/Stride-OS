@@ -1,0 +1,20 @@
+StrideOS 1.0.0 (114) — new fixes and race-PR badges
+
+Update the existing installation and paired Watch app. Use your usual account. Do not uninstall, Reset Plan, clear history or switch to another tester account over your personal local data. Finish any recording before updating. Purchases are disabled in this normal testing build.
+
+Please test in this order:
+
+1. History: open More > Activity, confirm old workouts remain, and open an older saved detail.
+2. Archive: More > Settings > Goal archive > View results: Rome Half Marathon. Confirm the existing archive opens, including after a full close/reopen. Do not recreate it if it fails.
+3. Feature Tours: More > Settings > Feature Tours. Replay Today, Running, Calendar, Strength and Achievements. Check yellow target outlines, scrolling/reveal, readable controls, Back/Next and outside-tap dismissal.
+4. Profile: open the person icon on Today > Name & username. Save first/last name and display username; try the two independent visibility switches, then restore your preference. Check profile/Today and persistence after restart.
+5. PRs: check the readable Race PRs + VDOT Time/Date layout. Edit a genuinely completed race under Activity > detail > Edit > Race or time-trial result. Choose the exact event and full elapsed finish time, then Save. Confirm the source-linked PR/calibration and appropriate badge, with no duplicate after restart. Do not invent faster results to force a popup.
+6. Badges: More > Achievements > personal records. Inspect 800m, 1 Mile, 5K, 10K, Half Marathon and Marathon. The last two faces must read 13.1 and 26.2. Preview an earned badge in Share Studio if offered; no publication needed.
+7. Health/Watch: while idle, keep Watch app open and use iPhone Settings > Apple Health > Connected > Review permissions. Complete the permission sheets. The separate Enable Workout Metrics button and raw sync-detail panels should be gone. Ordinary error/retry messages may remain.
+8. Run: Running tab, outdoors, Auto-pause runs Off. Confirm standing still does not pause. Check lock-screen continuation and Watch Pause/Resume. Test On briefly, then return Off; manually Resume if already paused. Reach at least eight ACTIVE minutes. Fully close/reopen while recording and choose Resume activity in Activity still open. Confirm the same session returns. In Airplane Mode with Wi-Fi off, STOP RUN once, wait for Run saved, reopen the saved Activity offline after full close/reopen, reconnect and confirm exactly one result and one matching Health workout when writing is allowed.
+9. Walking/Hiking: Activity > Track Workout. These types use manual pause/resume in this release; Running auto-pause does not apply. Check manual controls and one saved result.
+10. Password carry-over last: after all recordings are saved and you privately know your usual login, sign out, type that email in Sign in, tap Forgot password and confirm it carries over. Return and sign into the SAME account. Report actual Apple Passwords Save/Update behavior; iOS controls its prompt.
+
+Send the build number, pass/fail by section, and for any problem the screen, exact error and approximate time. Never send passwords, reset links or recovery codes. Stop testing immediately for missing history or a failed save.
+
+Signup/reviewer isolation, disposable-account deletion and controlled subscription lifecycle are separate coordinated launch tests. Do not delete your usual account or attempt purchases in this build. TestFlight availability does not approve a public App Store launch.

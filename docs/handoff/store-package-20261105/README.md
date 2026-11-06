@@ -1,6 +1,6 @@
 # App Store packet — November 5 refresh
 
-Prepared alongside normal internal candidate 113. The owner authorized building
+Prepared alongside normal internal candidate 114. The owner authorized building
 and submitting the new work to TestFlight and asked for complete launch
 preparation. The earlier TestFlight hold is lifted for this candidate. Public
 App Review submission and manual public launch still require the final owner
@@ -13,20 +13,20 @@ decision after acceptance.
   Categories remain Health & Fitness / Sports and release remains manual.
 - Apple still has dedicated restricted reviewer credentials. No credential is
   copied into this packet, and presence is not native reviewer-login acceptance.
-- `review-billing-off.txt` is the concise candidate-matched base for 113's billing
+- `review-billing-off.txt` is the concise candidate-matched base for 114's billing
   scope. The deletion placeholder remains deliberately visible until the actual
   service and native outcome are accepted.
 - `review-paid.txt` and `privacy-paid.json` retain the separate paid-scope draft.
-  Do not use them for billing-off 113 or represent private QA112 as the final
+  Do not use them for billing-off 114 or represent private QA112 as the final
   public candidate. A paid launch needs its own accepted current candidate.
-- `../BUILD113_OWNER_TEST_GUIDE.md` gives the ordered new-build tests and the
+- `../BUILD114_OWNER_TEST_GUIDE.md` gives the ordered new-build tests and the
   subsequent clean-account, deletion, purchase and final-package sequence.
 - `manifest.json` checks field lengths and hashes while explicitly retaining the
   unresolved acceptance gates.
 
 ## Finalize in this order
 
-1. Accept 113's corrected archive, tours, identity, race/PR, auto-pause, recovered
+1. Accept 114's corrected archive, tours, identity, race/PR, auto-pause, recovered
    recording and Health/Watch flows on the owner device. Build-111 passes remain
    recorded; only changed-candidate regression is requested.
 2. Accept signup confirmation/native return and dedicated reviewer navigation in
@@ -37,7 +37,7 @@ decision after acceptance.
    support handling. Replace the notes placeholder with observed instructions.
 4. If launching with Pro, finish controlled StoreKit/RevenueCat lifecycle and
    client/server alignment, genuine product-review screenshots and paid privacy
-   reconciliation. The normal 113 build keeps purchases off.
+   reconciliation. The normal 114 build keeps purchases off.
 5. Verify the final public binary and genuine current screenshot coverage in
    Apple's required wells. Current metadata reports three iPhone, three legacy
    iPad and four legacy Watch assets. These counts do not accept image accuracy,

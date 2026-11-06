@@ -17,7 +17,7 @@
       "associatedDomains": [
         "webcredentials:strideosfitness.com"
       ],
-      "buildNumber": "113",
+      "buildNumber": "114",
       "backgroundColor": "#11100F",
       "entitlements": {
         "com.apple.security.application-groups": [

@@ -1,18 +1,18 @@
-# Build 113 — ordered phone and Watch test guide
+# Build 114 — ordered phone and Watch test guide
 
-Follow this order after TestFlight offers **StrideOS 1.0.0 (113)**. Build and
-delivery evidence is recorded separately in `BUILD113_RELEASE.md`; this guide
+Follow this order after TestFlight offers **StrideOS 1.0.0 (114)**. Build and
+delivery evidence is recorded separately in `BUILD114_RELEASE.md`; this guide
 is a test plan, not a record of successful device tests.
 
-Build 113 contains the new fixes and six race-PR badges. Purchases remain off.
+Build 114 contains the new fixes and six race-PR badges. Purchases remain off.
 The owner explicitly authorized TestFlight delivery after the earlier hold.
 Public App Store review and public launch have not been authorized.
 
 ## 1. Update safely and check your existing history
 
 1. Finish and save any recording before updating.
-2. Open TestFlight → StrideOS. Select **Update** for **1.0.0 (113)**. If an older
-   build is selected, open Previous Builds and choose 113. Do not select private
+2. Open TestFlight → StrideOS. Select **Update** for **1.0.0 (114)**. If an older
+   build is selected, open Previous Builds and choose 114. Do not select private
    purchase build 110 or 112 for this test.
 3. Update the paired Watch app as well. On iPhone, open Watch → My Watch, find
    StrideOS, and confirm it is installed on the Watch. Give installation time to
@@ -24,7 +24,7 @@ Public App Store review and public launch have not been authorized.
 6. If history is missing or you see the other-account ownership warning, stop
    here and report the screen. Do not reset, clear data or reinstall to bypass it.
 
-**Pass:** 113 installed, Watch app updated, normal account and old history intact.
+**Pass:** 114 installed, Watch app updated, normal account and old history intact.
 
 ## 2. Open the previously broken training archive
 
@@ -237,7 +237,7 @@ Copy this and fill it in. Stop at the first serious data/saving problem and send
 that error immediately; the rest can wait.
 
 ```text
-Build installed: 113
+Build installed: 114
 Watch app updated: yes / no
 Old history intact:
 Rome archive opens, including after restart:
@@ -271,14 +271,14 @@ After these results, the remaining order is:
 3. **Subscriptions, if launch is paid:** use an explicitly identified private
    purchase candidate and test-owner binding. Complete Apple's sandbox purchase,
    cancellation, restore, renewal, expiry/refund/revocation and entitlement checks.
-   Build 113 keeps purchases disabled; do not try to buy in it or install an old
+   Build 114 keeps purchases disabled; do not try to buy in it or install an old
    private build without coordination. These steps include time-based events.
 4. **Final store packet:** verify actual required screenshot wells, current native
    captures without personal data, accepted reviewer/deletion/payment instructions,
    exact accepted public binary, privacy answers and manual release. The prepared
    package is not public-review-ready until these acceptance gates are closed.
 5. **Owner final decision:** approve public App Review submission; after approval,
-   approve the manual public launch. Neither happens merely by installing 113.
+   approve the manual public launch. Neither happens merely by installing 114.
 
 The assistant owns the technical preparation, receipt checks, store drafting and
 reconciliation; the owner supplies only private prompts, physical-device results,

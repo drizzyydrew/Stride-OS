@@ -1,5 +1,5 @@
 {
-  "assembledAt": "2026-11-06T05:34:47.089394+00:00",
+  "assembledAt": "2026-11-06T05:53:43.378600+00:00",
   "scope": "local refreshed draft; fresh public metadata readback, no Apple metadata mutation",
   "fieldChecks": {
     "titleCharacters": 28,
@@ -26,7 +26,7 @@
     {
       "file": "README.md",
       "bytes": 3861,
-      "sha256": "80821e313e618c49341f5ccf003c9fdb89987e0f944af5bc014400b3433f72f1"
+      "sha256": "f0f6426e87d33345b4f94546375b71a7042386391460e9cbc9cf6e332fd9efe5"
     },
     {
       "file": "description.txt",
@@ -36,7 +36,7 @@
     {
       "file": "metadata.json",
       "bytes": 1256,
-      "sha256": "c2f914f2d2a210d0f1b0cda02f299757ec809bfa35d8b4fa5f8e36d424aecc37"
+      "sha256": "3056bd096ded65b525b6d63a343e12e3f84e238b93963f260a027f132b0c4fd1"
     },
     {
       "file": "privacy-paid.json",

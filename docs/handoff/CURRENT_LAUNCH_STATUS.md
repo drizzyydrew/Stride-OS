@@ -1,22 +1,26 @@
 # Current StrideOS launch status
 
-## Authorized build-113 continuation — November 5
+## Authorized build-114 continuation — November 5
 
 The owner explicitly requested updating the build with all prepared work,
 submitting it to TestFlight and giving detailed ordered next steps. They also
 requested complete App Store launch preparation. This lifts the earlier
 TestFlight hold for the new normal candidate; it does not approve public App
-Review submission or manual public release. Prepare normal **1.0.0 (113)** with
-purchases disabled; keep private QA112 separate. `BUILD113_RELEASE.md` will
+Review submission or manual public release. Prepare normal **1.0.0 (114)** with
+purchases disabled; keep private QA112 separate. `BUILD114_RELEASE.md` will
 record the actual build/upload/Apple state; no result is inferred from this plan.
 
-The ordered owner instructions are `BUILD113_OWNER_TEST_GUIDE.md`. Updated store
+The ordered owner instructions are `BUILD114_OWNER_TEST_GUIDE.md`. Updated store
 drafts are in `store-package-20261105/`; a fresh supported Apple metadata pull
 confirms the saved title/subtitle, description, categories, reviewer fields and
 manual release (`APP_STORE_READBACK_20261105.json`). Private credentials and raw
 pulled assets are outside the repository. Final screenshots, exact public binary,
 signup/reviewer/deletion outcomes, paid lifecycle if included, operations and the
 final owner release decisions still govern full launch readiness.
+
+Build 113 failed on the older provisioning profile and was not submitted.
+`BUILD113_FAILURE.json` and `BUILD114_SIGNING_REPAIR.json` record the failure
+and verified Associated Domains/profile repair. No app feature was removed.
 
 The dated paragraphs below retain their historical scopes. Earlier “TestFlight
 hold” and “no new build” statements describe those earlier checkpoints, not the

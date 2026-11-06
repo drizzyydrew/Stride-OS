@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-11-06T05:49:45.981Z",
+  "bundleId": "com.mooremovement.strideos",
+  "appleBundleId": "575VVK86Q9",
+  "associatedDomainsEnabled": true,
+  "associatedDomainsReadbackVerified": true,
+  "previousCapabilitiesPreserved": true,
+  "newKeyOrCertificateCreated": false,
+  "privateValuesStored": false,
+  "verifiedAt": "2026-11-06T05:51:11.770475+00:00",
+  "oldPhoneProfileId": "M5L3226NG3",
+  "updatedPhoneProfileId": "FAN8XCTS36",
+  "updatedProfileSha256": "15256958087995f0e33f4ddd8cc07b9f107c9c03dfa477811c89ec62b739a6d5",
+  "updatedProfileAllowsWebcredentialsEntitlement": true,
+  "healthAndAppGroupEntitlementsPreserved": true,
+  "existingDistributionCertificatePreserved": true,
+  "watchAndLiveActivityProfilesPreserved": true,
+  "temporaryExistingApiKeyCopyRemoved": true
+}
