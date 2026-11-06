@@ -1,0 +1,27 @@
+{
+  "scope": "proposed_purchase_enabled_overlay",
+  "published": false,
+  "fields": [
+    {
+      "data": "Purchase History",
+      "linked": true,
+      "purposes": [
+        "App Functionality",
+        "Analytics"
+      ],
+      "tracking": false
+    },
+    {
+      "data": "User ID",
+      "linked": true,
+      "purposes": [
+        "App Functionality",
+        "Analytics"
+      ],
+      "tracking": false,
+      "status": "Review existing purposes and add RevenueCat use for final paid scope"
+    }
+  ],
+  "otherData": "Retain/reconcile the existing billing-off matrix in ../PRIVACY_LABEL_RECONCILIATION.md",
+  "reference": "https://www.revenuecat.com/docs/platform-resources/apple-platform-resources/apple-app-privacy"
+}

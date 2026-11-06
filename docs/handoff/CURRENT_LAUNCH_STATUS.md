@@ -1,5 +1,27 @@
 # Current StrideOS launch status
 
+## Authorized build-113 continuation — November 5
+
+The owner explicitly requested updating the build with all prepared work,
+submitting it to TestFlight and giving detailed ordered next steps. They also
+requested complete App Store launch preparation. This lifts the earlier
+TestFlight hold for the new normal candidate; it does not approve public App
+Review submission or manual public release. Prepare normal **1.0.0 (113)** with
+purchases disabled; keep private QA112 separate. `BUILD113_RELEASE.md` will
+record the actual build/upload/Apple state; no result is inferred from this plan.
+
+The ordered owner instructions are `BUILD113_OWNER_TEST_GUIDE.md`. Updated store
+drafts are in `store-package-20261105/`; a fresh supported Apple metadata pull
+confirms the saved title/subtitle, description, categories, reviewer fields and
+manual release (`APP_STORE_READBACK_20261105.json`). Private credentials and raw
+pulled assets are outside the repository. Final screenshots, exact public binary,
+signup/reviewer/deletion outcomes, paid lifecycle if included, operations and the
+final owner release decisions still govern full launch readiness.
+
+The dated paragraphs below retain their historical scopes. Earlier “TestFlight
+hold” and “no new build” statements describe those earlier checkpoints, not the
+owner's new authorization.
+
 Latest November 5 device report: the owner says all remaining listed build-111
 checks looked good: plausible GPS map/distance/pace, live Watch measurements,
 Watch disconnect/reconnect during recording, and denied/re-enabled Apple Health

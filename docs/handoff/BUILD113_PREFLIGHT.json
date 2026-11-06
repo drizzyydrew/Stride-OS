@@ -1,0 +1,72 @@
+{
+  "checkedAt": "2026-11-06T05:37:14.289978+00:00",
+  "buildNumber": "113",
+  "appVersion": "1.0.0",
+  "profile": "production",
+  "storeDistribution": true,
+  "clientBillingEnabled": false,
+  "sourceParent": "8faa92c46d03bd220c4a0c2914c1c67caded54a8",
+  "fullSuite": {
+    "tests": 1796,
+    "passed": 1796,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "concurrency": 2
+  },
+  "semanticTypeScriptPassed": true,
+  "expoCompatibilityPassed": true,
+  "cleanNativeGenerationPassed": true,
+  "generatedPhoneInfoPlistBuild": "113",
+  "iosHermesBundleExportPassed": true,
+  "sixBadgeAssetValidationPassed": true,
+  "expoPatchUpdatesOnly": true,
+  "dependencyContractsUpdatedForUpstreamJsonSchemaMigration": true,
+  "npmAuditCounts": {
+    "info": 0,
+    "low": 0,
+    "moderate": 7,
+    "high": 0,
+    "critical": 0,
+    "total": 7
+  },
+  "noBuild113InFreshEasHistory": true,
+  "newBuildSubmissionAuthorized": true,
+  "publicAppReviewAuthorized": false,
+  "publicReleaseAuthorized": false,
+  "subjectiveConfidenceForBoundedInternalCandidate": 95,
+  "physicalDeviceAccepted": false,
+  "publicLaunchReady": false,
+  "logs": {
+    "tests": {
+      "path": "/tmp/strideos-build113-tests-release.log",
+      "sha256": "098db5464247e53cd62fb22dbeece46cce595e475fcd7e22ae91c02dff212412"
+    },
+    "typecheck": {
+      "path": "/tmp/strideos-build113-typecheck-final.log",
+      "sha256": "12fc70d2feb72f584a6828cd9e1102cc9f447725b6b1bb2abda352bf6797e415"
+    },
+    "expo": {
+      "path": "/tmp/strideos-build113-expo-check-final.log",
+      "sha256": "bd9a35261fde78096b948d6d82f75427487729ed25e06a856170d972b9571d47"
+    },
+    "prebuild": {
+      "path": "/tmp/strideos-build113-prebuild.log",
+      "sha256": "4ef078d91eedb906232a7d997f4b08c69daac768f39d3f7b267c49b6322afe66"
+    },
+    "iosExport": {
+      "path": "/tmp/strideos-build113-ios-export.log",
+      "sha256": "5168d93d3bbe17f5e572a6c018e27c4c9b972fa82b4880e78a152f59b8f2eff9"
+    },
+    "badges": {
+      "path": "/tmp/strideos-build113-badges.log",
+      "sha256": "bd7bea87b5d0291ae18c24bca48993414e3c18caece7b3a2ed71a772ec7a6ccc"
+    }
+  },
+  "sourceFileHashes": {
+    "app.json": "08802e2f4ff66593ba50d74c380c977db0da84e0d0fc03c9b6451cbb58b4b178",
+    "package.json": "050ee20850f39db1db81645faa0e34bc654ff7d15fa53a0bdbf8ae58334d7826",
+    "package-lock.json": "5362d6f67d5799a498afc20bfc149c7fa4569b70e78a24a14cc01005e5cdc1d4",
+    "scripts/tests/launchDependencies.test.ts": "3cf3651473212fa9b6c5c99cb57cbff9d475b33129d28a573547d1d085a0cfb4"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-11-06T05:30:32.259087+00:00",
+  "source": "Supported EAS 23.2.0 metadata pull; read-only App Store Connect request",
+  "appId": "6782788130",
+  "title": "StrideOS: Run, Lift, Recover",
+  "subtitle": "Your plan. Your pace.",
+  "descriptionCharacters": 2027,
+  "releaseMode": "manual",
+  "categories": [
+    "HEALTH_AND_FITNESS",
+    "SPORTS"
+  ],
+  "reviewerCredentialsPresent": true,
+  "reviewerNativeLoginAcceptedByThisReadback": false,
+  "savedReviewerNotesCharacters": 1293,
+  "screenshotGroupCounts": {
+    "APP_IPHONE_61": 3,
+    "APP_IPAD_PRO_3GEN_129": 3,
+    "APP_WATCH_ULTRA": 4
+  },
+  "privacyLabelLiveReadbackPerformed": false,
+  "selectedPublicBinaryReadbackPerformed": false,
+  "privateMetadataKeptOutsideRepository": true,
+  "settingsChanged": false,
+  "publicReviewSubmitted": false
+}

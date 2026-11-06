@@ -100,15 +100,20 @@ test('Expo Metro assets use the actual vendored image parser and reject the form
   assert.equal(result.stdout, 'bounded');
 });
 
-test('the actual Expo CLI schemas accept supported plugins and reject invalid output after Zod update', () => {
+test('the actual Expo CLI JSON schemas accept supported plugins and reject invalid output', () => {
   const expoRequire = createRequire(require.resolve('expo/package.json'));
   const cliRoot = dirname(expoRequire.resolve('@expo/cli/package.json'));
-  const { PluginSchema, DevToolsPluginOutputSchema } = require(join(cliRoot, 'build/src/start/server/DevToolsPlugin.schema.js'));
+  const schemaPath = join(cliRoot, 'build/src/start/server/devtools/DevToolsPlugin.schema.js');
+  const { PluginSchema, DevToolsPluginOutputSchema } = require(schemaPath);
+  const { validate, ValidationError } = createRequire(schemaPath)('@expo/schema-utils');
   const plugin = { packageName: 'test-plugin', packageRoot: '/test', cliExtensions: { description: 'Test', entryPoint: 'index.js', commands: [{ name: 'status', title: 'Status', environments: ['cli', 'mcp'], parameters: [{ name: 'count', type: 'number' }] }] } };
-  assert.equal(PluginSchema.safeParse(plugin).success, true);
-  assert.equal(PluginSchema.safeParse({ packageName: '', packageRoot: '/test' }).success, false);
-  assert.equal(DevToolsPluginOutputSchema.safeParse([{ type: 'text', text: 'Ready', level: 'info' }]).success, true);
-  assert.equal(DevToolsPluginOutputSchema.safeParse([{ type: 'audio', url: 'not a URL' }]).success, false);
+  assert.doesNotThrow(() => validate(PluginSchema, plugin));
+  assert.throws(() => validate(PluginSchema, { packageName: '', packageRoot: '/test' }), ValidationError);
+  assert.doesNotThrow(() => validate(DevToolsPluginOutputSchema, [{ type: 'text', text: 'Ready', level: 'info' }]));
+  assert.throws(() => validate(DevToolsPluginOutputSchema, [{ type: 'audio', url: 'not a URL' }]), ValidationError);
+  const consumer = readFileSync(join(cliRoot, 'build/src/start/server/devtools/DevToolsPluginCliExtensionResults.js'), 'utf8');
+  assert.match(consumer, /require\(["']@expo\/schema-utils["']\)/);
+  assert.match(consumer, /\.validate\)\(_DevToolsPluginschema\.DevToolsPluginOutputSchema, output\)/);
 });
 
 test('both Expo plist consumers retain round-trip compatibility with the patched XML parser', () => {
@@ -135,8 +140,11 @@ test('the dependency lock contains the patched upstream versions and local adapt
   // graph rather than manufacturing a package merely to satisfy an old test.
   assert.deepEqual(Object.keys(lock.packages).filter(key => key.endsWith('/image-size')), []);
   assert.equal(require('./../../package.json').overrides.metro['image-size'], '2.0.4');
-  const zod = lockedPackage(cliRequire.resolve('zod'), 'zod');
-  assert.equal(zod.manifest.version, '4.6.7');
+  // Expo CLI 57.0.33 replaced runtime Zod with its own JSON-schema validator.
+  // Verify the actual replacement rather than installing an unused old parser.
+  lockedPackage(cliRequire.resolve('@expo/schema-utils'), '@expo/schema-utils');
+  assert.equal(cliRequire('./package.json').dependencies.zod, undefined);
+  assert.deepEqual(Object.keys(lock.packages).filter(key => key.endsWith('/zod')), []);
   assert.ok(readFileSync(join(process.cwd(), 'vendor/decode-uri-component-cjs/index.cjs'), 'utf8').includes("require('strideos-uri-decoder')"));
 });
 

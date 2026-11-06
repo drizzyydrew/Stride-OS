@@ -1,0 +1,60 @@
+{
+  "assembledAt": "2026-11-06T05:34:47.089394+00:00",
+  "scope": "local refreshed draft; fresh public metadata readback, no Apple metadata mutation",
+  "fieldChecks": {
+    "titleCharacters": 28,
+    "subtitleCharacters": 21,
+    "promotionalTextCharacters": 131,
+    "keywordsUTF8Bytes": 83,
+    "descriptionCharacters": 2027,
+    "reviewBillingOffUTF8Bytes": 1613,
+    "reviewPaidUTF8Bytes": 2112
+  },
+  "fieldLimitsPass": true,
+  "readyToSubmit": false,
+  "blocks": [
+    "updated-candidate device regression",
+    "clean-context signup confirmation and reviewer navigation",
+    "approved disposable provider/native deletion and replacement of notes placeholder",
+    "purchase lifecycle and accepted current paid candidate if launching with subscriptions",
+    "final accepted public binary and genuine screenshot/product-review coverage",
+    "operations controls and retention/backup acceptance",
+    "existing public-name overlap review",
+    "final owner public App Review and launch decisions"
+  ],
+  "files": [
+    {
+      "file": "README.md",
+      "bytes": 3861,
+      "sha256": "80821e313e618c49341f5ccf003c9fdb89987e0f944af5bc014400b3433f72f1"
+    },
+    {
+      "file": "description.txt",
+      "bytes": 2028,
+      "sha256": "7a5a7af95aee37f13e570b7ac774f7ac2071a7e853c2812176967d52f809745e"
+    },
+    {
+      "file": "metadata.json",
+      "bytes": 1256,
+      "sha256": "c2f914f2d2a210d0f1b0cda02f299757ec809bfa35d8b4fa5f8e36d424aecc37"
+    },
+    {
+      "file": "privacy-paid.json",
+      "bytes": 729,
+      "sha256": "9df055c0cad566f2a5890ae340fd72d410e096b3cab4ef6b1a34d19da9413ffb"
+    },
+    {
+      "file": "review-billing-off.txt",
+      "bytes": 1613,
+      "sha256": "36b94fe19fa8e1d470d85f7049861f33f2dcfac87386196dba5384b2820f846b"
+    },
+    {
+      "file": "review-paid.txt",
+      "bytes": 2112,
+      "sha256": "643e6b8a3ca4b5c137e0ad15aa4bc271a834b45539d8010df880d58e5806ffc6"
+    }
+  ],
+  "credentialsIncluded": false,
+  "publicReviewSubmitted": false,
+  "publicReleasePerformed": false
+}

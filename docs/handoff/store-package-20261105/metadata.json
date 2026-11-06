@@ -1,0 +1,30 @@
+{
+  "appId": "6782788130",
+  "bundleId": "com.mooremovement.strideos",
+  "locale": "en-US",
+  "version": "1.0",
+  "title": "StrideOS: Run, Lift, Recover",
+  "subtitle": "Your plan. Your pace.",
+  "promotionalText": "Bring running, strength, and recovery into one training routine. Record workouts, review your progress, and find your next session.",
+  "keywords": "running,training,strength,workout,GPS,walking,hiking,calendar,recovery,pace,fitness",
+  "descriptionFile": "description.txt",
+  "supportURL": "https://drizzyydrew.github.io/Stride-OS/support.html",
+  "marketingURL": "https://drizzyydrew.github.io/Stride-OS/",
+  "privacyPolicyURL": "https://drizzyydrew.github.io/Stride-OS/privacy.html",
+  "copyright": "2026 Drew Moore",
+  "releaseMode": "manual",
+  "nextInternalCandidate": "113",
+  "lastVerifiedPublicDraftBuild": "109",
+  "publicDraftBuildStatus": "historical selection; this metadata pull does not expose selected build",
+  "privateQABuild": "112",
+  "finalPublicBuild": null,
+  "categories": [
+    "HEALTH_AND_FITNESS",
+    "SPORTS"
+  ],
+  "reviewerCredentialsPresent": true,
+  "reviewerCredentialsIncluded": false,
+  "appleReadbackAt": "2026-11-06T05:30:32.259087+00:00",
+  "publishedByThisPackage": false,
+  "readyToSubmit": false
+}

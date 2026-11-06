@@ -1,0 +1,16 @@
+Sign-in is required. Use the dedicated review credentials supplied privately in App Review Information. If initial fitness-profile setup appears, use fictional information.
+
+Apple Health, location, notifications, AI sharing, usage sharing and diagnostic reporting have separate controls. Optional permissions can be declined; manual logging and saved-history review remain available.
+
+Navigation: Today for the next session; Calendar for scheduled/completed sessions; Running for supported outdoor recording; More for Activity, Strength and Settings. In More > Settings, Goal archive opens Training archive. Users can choose another goal or continue open training.
+
+For manual logging, open More > Activity, use Log activity, choose Walking, enter a fictional duration, leave optional measurements blank and choose Save. The saved detail should open. Test entries are manual inputs, not measured GPS or heart-rate data.
+
+AI Coach requires separate consent before messages and selected training context go to Anthropic. Responses can be wrong and usage limits apply. On-device Insights do not require AI sharing.
+
+Movement Lab uses selected media for approximate two-dimensional fitness movement review, not medical assessment. Personal health records or real-person media are not needed for basic review.
+
+Account deletion: More > Settings > Account & Legal > Request account deletion.
+[REPLACE_WITH_ACCEPTED_DELETION_RESULT_BEFORE_SUBMISSION]
+
+This candidate has subscriptions disabled. No purchase or trial is required. StrideOS provides general fitness information, not diagnosis, treatment or emergency care.
