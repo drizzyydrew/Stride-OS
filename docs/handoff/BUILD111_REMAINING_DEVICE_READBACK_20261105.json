@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-06T05:16:56.189925+00:00",
+  "reportedBuildSession": "111",
+  "scope": "Owner response to remaining listed installed-build GPS, Watch and Health checks",
+  "ownerStatement": "I did all of those too and they look good",
+  "ownerReportedPasses": {
+    "knownOutdoorRouteMapDistanceAndPacePlausible": true,
+    "liveWatchMeasurementsAppearReasonable": true,
+    "watchDisconnectReconnectDuringRecording": true,
+    "healthDeniedAndReenabledPermissionRecovery": true
+  },
+  "watchMetricTypesAndSensorCoverageSpecified": false,
+  "allOptionalSensorMetricsAccepted": false,
+  "independentDeviceLogsInspected": false,
+  "exactDistanceOrPaceErrorMeasured": false,
+  "healthSourceUuidMatched": false,
+  "listedBuild111RecordingGpsWatchHealthChecksClosedOnOwnerReport": true,
+  "updatedSourceCandidateAccepted": false,
+  "knownBuild111DefectsReclassifiedAsFixed": false,
+  "accountConfirmationAcceptedByThisReport": false,
+  "accountDeletionAcceptedByThisReport": false,
+  "subscriptionLifecycleAcceptedByThisReport": false,
+  "personalHealthValuesStored": false,
+  "rawLocationOrRouteStored": false,
+  "testFlightHoldStillActive": true,
+  "newBuildInstallSubmitOrDeliveryPerformed": false
+}

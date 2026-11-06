@@ -1,5 +1,15 @@
 # Current StrideOS launch status
 
+Latest November 5 device report: the owner says all remaining listed build-111
+checks looked good: plausible GPS map/distance/pace, live Watch measurements,
+Watch disconnect/reconnect during recording, and denied/re-enabled Apple Health
+permission recovery. Those scoped checks are owner-reported passed; do not
+repeat them on 111 simply to fill prior blanks. Exact metric/sensor coverage,
+independent logs and the pending corrected candidate are not established.
+See `BUILD111_REMAINING_DEVICE_READBACK_20261105.json` and `PHONE_QA_20261104.md`.
+This does not accept account, deletion, purchase or public-release gates.
+TestFlight submission/delivery remains explicitly on hold.
+
 Latest November 5 owner revision: Half Marathon/Marathon PR badge faces use
 13.1/26.2 miles in place of HM/MAR, retaining the full race names. Other designs
 are accepted. The owner explicitly does not want TestFlight submission yet;
@@ -163,7 +173,7 @@ Recover differentiates the listing without establishing name clearance.
 | Gate | Remaining work | Owner dependency |
 | --- | --- | --- |
 | Account confirmation | Confirmation requirement is saved ON with signup OFF; actual signup email/native acceptance remains open | Dedicated test credentials and inbox/native return confirmation |
-| Device reliability | Recording with screen lock, interruption/offline, single save/restart, Health permissions/recovery, Watch and account isolation | Physical iPhone/Watch session, explicitly deferred |
+| Device reliability | Listed build-111 recording, GPS, Watch and Health checks are owner-reported passed. Known defects remain pending acceptance of the corrected candidate; account isolation remains separately scoped. | Scoped regression on the updated candidate and remaining account-isolation acceptance; no repeat of completed 111 checks solely to fill earlier blanks |
 | Account deletion | Real provider exchange/revocation, device receipt/cleanup/restart and support handling; general automation remains off | Identified disposable identities, native prompts and explicit deletion approval |
 | Paid subscriptions | QA112 archive is ready; coordinate private TestFlight delivery, exact authenticated owner/customer binding, then real purchase, restore, renewal, expiry/refund/revocation acceptance | Device-side Sandbox sign-in/dialogs and observed results; account creation is complete; some checks need elapsed time |
 | Store package | Final genuine screenshot coverage, final candidate attachment, privacy/reviewer reconciliation and submission decision | Capture assistance if needed and final owner decision |
