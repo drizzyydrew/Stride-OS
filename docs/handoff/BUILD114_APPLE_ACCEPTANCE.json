@@ -1,0 +1,37 @@
+{
+  "checkedAt": "2026-11-06T06:12:44.023Z",
+  "build": {
+    "appVersion": "1.0.0",
+    "buildNumber": "114",
+    "appleBuildId": "410bafa9-0597-46bf-b7a3-85d03aadbeaf",
+    "processingState": "VALID",
+    "internalState": "IN_BETA_TESTING",
+    "externalState": "READY_FOR_BETA_SUBMISSION",
+    "uploadedDate": "2026-11-05T22:09:02-08:00",
+    "expired": false,
+    "easSubmissionId": "aad9c5ce-e380-4f47-8aca-54b0825bdaf2",
+    "easBuildId": "184207fd-0412-4788-8790-806c723579f5",
+    "sourceCommit": "0b24c1c744b448d2a0fb0c4d8d1658ddd042b4fe"
+  },
+  "groupName": "Team (Expo)",
+  "groupId": "531e9db1-cac3-4779-8466-8426e2944a34",
+  "existingInternalGroupAssignmentVerified": true,
+  "internalTesterCountObserved": 1,
+  "newInvitationsSent": false,
+  "newGroupCreated": false,
+  "testFlightNotesSavedAndReadBack": true,
+  "testFlightNotesCharacters": 3535,
+  "testFlightNotesSha256": "0a181da255211d8331534bd1307218beadb047d80ee42ab0749193e9ece80f2f",
+  "publicDraft": {
+    "version": "1.0",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "releaseType": "MANUAL",
+    "selectedBuild": "109"
+  },
+  "publicReviewSubmitted": false,
+  "publicReleasePerformed": false,
+  "physicalDeviceAccepted": false,
+  "purchaseLifecycleAccepted": false,
+  "credentialsCopiedToRepository": false,
+  "privateKeyStoredByThisStep": false
+}

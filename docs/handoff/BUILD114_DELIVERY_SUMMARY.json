@@ -1,0 +1,19 @@
+{
+  "buildNumber": "114",
+  "sourceCommit": "0b24c1c744b448d2a0fb0c4d8d1658ddd042b4fe",
+  "easBuildId": "184207fd-0412-4788-8790-806c723579f5",
+  "easSubmissionId": "aad9c5ce-e380-4f47-8aca-54b0825bdaf2",
+  "signedArchiveSha256": "0e6a360f9566cc36cfe2f7c3c501cf01691ccf974f82bb63c287784d808820ba",
+  "appleProcessingState": "VALID",
+  "appleInternalState": "IN_BETA_TESTING",
+  "existingGroupAndOneTesterVerified": true,
+  "testFlightInstructionsSavedAndReadBack": true,
+  "ownerGuide": "BUILD114_OWNER_TEST_GUIDE.md",
+  "refreshedAppStorePacket": "store-package-20261105/",
+  "readyForOwnerRegression": true,
+  "publicLaunchReady": false,
+  "publicReviewSubmitted": false,
+  "publicReleasePerformed": false,
+  "temporaryPrivateKeyCopyRemoved": true,
+  "temporaryReviewerCredentialPullRemoved": true
+}

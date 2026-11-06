@@ -13,9 +13,9 @@
   "privacyPolicyURL": "https://drizzyydrew.github.io/Stride-OS/privacy.html",
   "copyright": "2026 Drew Moore",
   "releaseMode": "manual",
-  "nextInternalCandidate": "114",
+  "nextInternalCandidate": null,
   "lastVerifiedPublicDraftBuild": "109",
-  "publicDraftBuildStatus": "historical selection; this metadata pull does not expose selected build",
+  "publicDraftBuildStatus": "Fresh official Apple API confirms 109 VALID, version 1.0 PREPARE_FOR_SUBMISSION, MANUAL release; APP_STORE_PUBLIC_DRAFT_20261105.json",
   "privateQABuild": "112",
   "finalPublicBuild": null,
   "categories": [
@@ -26,5 +26,15 @@
   "reviewerCredentialsIncluded": false,
   "appleReadbackAt": "2026-11-06T05:30:32.259087+00:00",
   "publishedByThisPackage": false,
-  "readyToSubmit": false
+  "readyToSubmit": false,
+  "savedDescriptionReadbackFile": "description-apple-readback.txt",
+  "descriptionDraftChangedLocally": true,
+  "descriptionDraftAdds": [
+    "source-mapped paired Apple Watch behavior",
+    "explicit race results and six PR badges"
+  ],
+  "descriptionDraftRequiresUpdatedCandidateAcceptance": true,
+  "currentNormalInternalBuild": "114",
+  "currentNormalInternalState": "VALID / IN_BETA_TESTING",
+  "deliveryReceipt": "../BUILD114_APPLE_ACCEPTANCE.json"
 }

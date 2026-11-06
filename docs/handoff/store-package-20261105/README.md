@@ -8,9 +8,14 @@ decision after acceptance.
 
 ## Prepared and freshly checked
 
-- `metadata.json` and `description.txt` reflect a fresh, supported EAS metadata
-  pull from App Store Connect. Subtitle is confirmed as **Your plan. Your pace.**
-  Categories remain Health & Fitness / Sports and release remains manual.
+- `metadata.json` records a fresh, supported EAS metadata pull from App Store
+  Connect. Subtitle is confirmed as **Your plan. Your pace.** Categories remain
+  Health & Fitness / Sports and release remains manual. Fresh official Apple
+  API readback also confirms public draft 109 / Prepare for Submission / manual.
+- `description-apple-readback.txt` preserves Apple's saved description.
+  `description.txt` prepares two source-mapped additions for the paired Watch
+  and explicit race results/six PR badges. These additions have not been saved
+  to Apple and require the updated candidate's acceptance.
 - Apple still has dedicated restricted reviewer credentials. No credential is
   copied into this packet, and presence is not native reviewer-login acceptance.
 - `review-billing-off.txt` is the concise candidate-matched base for 114's billing

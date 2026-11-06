@@ -1,14 +1,19 @@
 # Current StrideOS launch status
 
-## Authorized build-114 continuation — November 5
+## Latest verified delivery — build 114, November 5
 
 The owner explicitly requested updating the build with all prepared work,
 submitting it to TestFlight and giving detailed ordered next steps. They also
 requested complete App Store launch preparation. This lifts the earlier
 TestFlight hold for the new normal candidate; it does not approve public App
-Review submission or manual public release. Prepare normal **1.0.0 (114)** with
-purchases disabled; keep private QA112 separate. `BUILD114_RELEASE.md` will
-record the actual build/upload/Apple state; no result is inferred from this plan.
+Review submission or manual public release. Normal **1.0.0 (114)** is now
+**VALID / IN_BETA_TESTING**, with purchases disabled, in the existing Team
+(Expo) internal group with one tester. Exact EAS build
+`184207fd-0412-4788-8790-806c723579f5` and submission
+`aad9c5ce-e380-4f47-8aca-54b0825bdaf2` are FINISHED. Signed archive inspection,
+group assignment and saved TestFlight testing instructions are verified in
+`BUILD114_RELEASE.md` and `BUILD114_APPLE_ACCEPTANCE.json`. No physical-device
+acceptance of 114 is inferred. Historical QA112 remains separate.
 
 The ordered owner instructions are `BUILD114_OWNER_TEST_GUIDE.md`. Updated store
 drafts are in `store-package-20261105/`; a fresh supported Apple metadata pull
@@ -18,6 +23,12 @@ pulled assets are outside the repository. Final screenshots, exact public binary
 signup/reviewer/deletion outcomes, paid lifecycle if included, operations and the
 final owner release decisions still govern full launch readiness.
 
+Fresh official Apple readback confirms public version 1.0 still selects **109**,
+**PREPARE_FOR_SUBMISSION / MANUAL**. No public review or release occurred.
+The local description draft now adds source-mapped Watch and race-PR paragraphs;
+Apple's saved description is preserved separately. Four public policy/marketing
+pages and both origin/Apple-CDN password association endpoints were read back.
+
 Build 113 failed on the older provisioning profile and was not submitted.
 `BUILD113_FAILURE.json` and `BUILD114_SIGNING_REPAIR.json` record the failure
 and verified Associated Domains/profile repair. No app feature was removed.
@@ -25,6 +36,8 @@ and verified Associated Domains/profile repair. No app feature was removed.
 The dated paragraphs below retain their historical scopes. Earlier “TestFlight
 hold” and “no new build” statements describe those earlier checkpoints, not the
 owner's new authorization.
+
+## Earlier device and preparation checkpoints
 
 Latest November 5 device report: the owner says all remaining listed build-111
 checks looked good: plausible GPS map/distance/pace, live Watch measurements,
@@ -184,15 +197,15 @@ Recover differentiates the listing without establishing name clearance.
 
 | Item | Latest evidence |
 | --- | --- |
-| Internal candidate 111 | Signed archive verified; Apple VALID / IN_BETA_TESTING in the existing internal group. `BUILD111_RELEASE.md` and `BUILD111_APPLE_ACCEPTANCE.json` |
-| Source checks for 111 | 1,623 passing tests, TypeScript and Expo compatibility. These are recorded runs, not a new test run for later documentation changes. |
+| Internal candidate 114 | Signed archive verified; fresh Apple VALID / IN_BETA_TESTING, exact existing group/one tester and saved testing instructions. `BUILD114_RELEASE.md` and `BUILD114_APPLE_ACCEPTANCE.json` |
+| Source checks for 114 | 1,796 passing tests on identical app-feature source, final-114 TypeScript/Expo/native generation, badge validation and iOS bundle export; cloud Expo Doctor 21/21 and source-map upload verified. `BUILD114_PREFLIGHT.json` and `BUILD114_CLOUD_VERIFICATION.json` |
 | Password reset | Resend delivery observed and owner-reported successful cold-start retest on 111. This accepts that reported flow only. |
 | Sending service | auth.strideosfitness.com verified, custom SMTP saved, branded templates saved; Resend Free retained. `email-templates/RESEND_SMTP_ACCEPTANCE_20261102.json` |
 | AI organization cap | Approved $20/month limit saved and read back. Actual deployed API-key organization and over-limit enforcement are not independently matched/tested. `AI_VENDOR_SPENDING_20261102.json` |
 | Apple owner setup | Developer/Paid Apps agreements, bank and W-9 recorded Active; reviewer credentials previously authenticated against the separate backend. `APP_STORE_DRAFT_REVIEW.md` |
 | Public website | Home, support, privacy and terms return HTTPS 200, match canonical source and have no missing relative file targets in `PUBLIC_SITE_AUDIT_LATEST.json`. Support FAQ and mobile fixes are published. |
 | Support and review preparation | `LAUNCH_SUPPORT_PLAYBOOK.md` and `INDEPENDENT_REVIEW_BRIEF.md` are prepared; no reviewer hired. |
-| Private purchase preparation | Owner-created Sandbox tester verified. QA112 compiled and signed-archive verified, not TestFlight-delivered; global billing and QA-owner binding unchanged by this preparation. `BILLING_QA112_RELEASE.md` |
+| Private purchase preparation | Owner-created Sandbox tester verified. Historical QA112 compiled/inspected but was not delivered; it predates the new source/profile. Prepare/revalidate the coordinated current private purchase candidate before use. `BILLING_QA112_RELEASE.md` and `BUILD114_RELEASE.md` |
 
 ## Open launch gates
 
@@ -201,7 +214,7 @@ Recover differentiates the listing without establishing name clearance.
 | Account confirmation | Confirmation requirement is saved ON with signup OFF; actual signup email/native acceptance remains open | Dedicated test credentials and inbox/native return confirmation |
 | Device reliability | Listed build-111 recording, GPS, Watch and Health checks are owner-reported passed. Known defects remain pending acceptance of the corrected candidate; account isolation remains separately scoped. | Scoped regression on the updated candidate and remaining account-isolation acceptance; no repeat of completed 111 checks solely to fill earlier blanks |
 | Account deletion | Real provider exchange/revocation, device receipt/cleanup/restart and support handling; general automation remains off | Identified disposable identities, native prompts and explicit deletion approval |
-| Paid subscriptions | QA112 archive is ready; coordinate private TestFlight delivery, exact authenticated owner/customer binding, then real purchase, restore, renewal, expiry/refund/revocation acceptance | Device-side Sandbox sign-in/dialogs and observed results; account creation is complete; some checks need elapsed time |
+| Paid subscriptions | Historical QA112 predates the current features and phone-profile repair. Prepare/revalidate the exact current private purchase candidate after normal 114 acceptance; bind only the intended authenticated owner/customer, then accept purchase, restore, renewal, expiry/refund/revocation. Do not blindly submit old QA112. | Device-side Sandbox dialogs and observed results; Sandbox account creation is complete; some checks need elapsed time |
 | Store package | Final genuine screenshot coverage, final candidate attachment, privacy/reviewer reconciliation and submission decision | Capture assistance if needed and final owner decision |
 | Naming review | Owner prefers keeping StrideOS, with fallback exploration if needed. Related public use remains unresolved; hold new public handles, promotional publication and additional brand spending pending clearance. See `NAMING_DIRECTION_20261103.md` | Further owner direction only if review requires a change or professional engagement; no unilateral rename |
 | Operations evidence | Routine support custody/review defaults are adopted; actual mailbox controls, manual identity verification, backend deletion-record duration and recovery/backup handling remain unaccepted. Actual AI key-to-capped-org match remains open despite saved reference metadata | Protected credential/security steps and scoped ownership/deletion acceptance; policy documents cannot prove these controls |

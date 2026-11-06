@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-11-06T05:55:33.550Z",
+  "source": "Official Apple API with existing same-app EAS key; no key stored",
+  "appId": "6782788130",
+  "versions": [
+    {
+      "version": "1.0",
+      "state": "PREPARE_FOR_SUBMISSION",
+      "releaseType": "MANUAL",
+      "selectedBuildId": "32ca556b-cd7c-4911-bc2d-7bac224e9a13"
+    }
+  ],
+  "selectedBuilds": [
+    {
+      "id": "32ca556b-cd7c-4911-bc2d-7bac224e9a13",
+      "buildNumber": "109",
+      "processingState": "VALID"
+    }
+  ],
+  "publicReviewSubmittedByThisReadback": false,
+  "settingsChanged": false
+}

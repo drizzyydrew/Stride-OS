@@ -1,12 +1,12 @@
 {
-  "assembledAt": "2026-11-06T05:53:43.378600+00:00",
+  "assembledAt": "2026-11-06T06:14:19.409082+00:00",
   "scope": "local refreshed draft; fresh public metadata readback, no Apple metadata mutation",
   "fieldChecks": {
     "titleCharacters": 28,
     "subtitleCharacters": 21,
     "promotionalTextCharacters": 131,
     "keywordsUTF8Bytes": 83,
-    "descriptionCharacters": 2027,
+    "descriptionCharacters": 2499,
     "reviewBillingOffUTF8Bytes": 1613,
     "reviewPaidUTF8Bytes": 2112
   },
@@ -25,18 +25,23 @@
   "files": [
     {
       "file": "README.md",
-      "bytes": 3861,
-      "sha256": "f0f6426e87d33345b4f94546375b71a7042386391460e9cbc9cf6e332fd9efe5"
+      "bytes": 4229,
+      "sha256": "4c1bcf45c6a3f12fbcfe45a8342380d60d07d4ca961fa75a7eafe88959b2a05d"
     },
     {
-      "file": "description.txt",
+      "file": "description-apple-readback.txt",
       "bytes": 2028,
       "sha256": "7a5a7af95aee37f13e570b7ac774f7ac2071a7e853c2812176967d52f809745e"
     },
     {
+      "file": "description.txt",
+      "bytes": 2500,
+      "sha256": "2a046d40603a907fc337e15ec3e302cabcbdb2295e81967c218ee8d5a7586fa7"
+    },
+    {
       "file": "metadata.json",
-      "bytes": 1256,
-      "sha256": "3056bd096ded65b525b6d63a343e12e3f84e238b93963f260a027f132b0c4fd1"
+      "bytes": 1773,
+      "sha256": "f922d5a9b274f10653168b682306bd749c95605b8796b267694422a0c2114bea"
     },
     {
       "file": "privacy-paid.json",
@@ -56,5 +61,8 @@
   ],
   "credentialsIncluded": false,
   "publicReviewSubmitted": false,
-  "publicReleasePerformed": false
+  "publicReleasePerformed": false,
+  "savedAppleDescriptionCharacters": 2027,
+  "descriptionDraftDiffersFromApple": true,
+  "currentInternalDelivery": "114 VALID / IN_BETA_TESTING; not device acceptance"
 }

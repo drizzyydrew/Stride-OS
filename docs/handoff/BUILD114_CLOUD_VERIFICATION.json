@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-11-06T06:06:24.859Z",
+  "buildId": "184207fd-0412-4788-8790-806c723579f5",
+  "sourceCommit": "0b24c1c744b448d2a0fb0c4d8d1658ddd042b4fe",
+  "buildNumber": "114",
+  "cloudExpoDoctor21ChecksPassed": true,
+  "sourceMapUploadReportPresent": true,
+  "expectedReleasePresent": true,
+  "sentryFileUploadComplete": true,
+  "nativeCrashSymbolicationAccepted": false,
+  "physicalDeviceAccepted": false
+}

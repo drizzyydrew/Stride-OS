@@ -31,18 +31,47 @@ this document.
 
 ## Current release state
 
-Prepared after the signing-only failed 113 attempt; local validation and exact source identity are recorded in
-`BUILD114_PREFLIGHT.json` when complete. Cloud build, signed artifact, submission,
-Apple processing and existing-group assignment must each be recorded explicitly
-before calling this candidate available. No build ID is inferred here.
+EAS build `184207fd-0412-4788-8790-806c723579f5` is **FINISHED**, from source
+`0b24c1c744b448d2a0fb0c4d8d1658ddd042b4fe`. The exact downloaded IPA is
+129,611,690 bytes, SHA-256
+`0e6a360f9566cc36cfe2f7c3c501cf01691ccf974f82bb63c287784d808820ba`.
+
+`BUILD114_ARTIFACT_VERIFICATION.json` records strict/deep signed app, Watch and
+Live Activity version 1.0.0/114, expected team/application IDs, no debug signing,
+HealthKit/shared app groups, signed webcredentials domain and compatible
+provisioning, 21 parsed privacy manifests, opaque compiled 1024px icon and
+Hermes bytecode. No credential-like filenames were found in the IPA.
+`BUILD114_CLOUD_VERIFICATION.json` confirms cloud Expo Doctor 21/21 and the
+Sentry source-map upload report, matching release and completed upload. Native
+crash-symbolication and physical-device behavior remain separate.
+
+Exact-build submission `aad9c5ce-e380-4f47-8aca-54b0825bdaf2` is **FINISHED**.
+Fresh official Apple readback confirms **114 VALID / IN_BETA_TESTING**, not
+expired, and actual assignment to the existing **Team (Expo)** internal group
+with **one tester**. No new group or invitation was created. The 3,535-character
+What to Test instructions were saved through Apple's beta-build localization API
+and read back exactly. `BUILD114_APPLE_ACCEPTANCE.json` records the full identity
+chain and text hash. This is internal availability, not physical acceptance.
+
+Fresh Apple readback also confirms public draft **1.0 / 109 / Prepare for
+Submission / Manual**. No public review or release was performed. The prepared
+normal candidate is intentionally billing-off; paid lifecycle and final public
+candidate selection are separate acceptance gates.
 
 ## Validation and scope boundaries
 
 The normal `production` profile resolves store distribution, production EAS
 environment, remote credentials and client billing false. Generated phone
 Info.plist reports 1.0.0/114; source uses continuous native generation and ignored
-`ios/` is excluded from the uploaded source. Inspect the actual signed phone,
-Watch and Live Activity versions/capabilities before submission.
+`ios/` is excluded from the uploaded source. The actual signed phone, Watch and
+Live Activity versions/capabilities were inspected before submission.
+
+The signing repair refreshed the phone profile from M5L3226NG3 to FAN8XCTS36.
+Historical private QA112 predates both this profile change and the new features;
+its dated archive inspection is not a current delivery authorization/validation.
+Revalidate or replace that private purchase candidate when coordinating StoreKit
+acceptance after the normal candidate's regression. Do not deliver old QA112
+merely because its prior receipt said it was ready.
 
 No new customer records, account reset/deletion, signup activation, subscription
 activation, server QA binding, invitations, public review or public release are

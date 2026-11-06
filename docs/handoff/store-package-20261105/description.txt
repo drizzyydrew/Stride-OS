@@ -9,8 +9,14 @@ When a training block ends, keep its summary and add your race result in Goal ar
 RECORD YOUR WORKOUTS
 Record supported outdoor activities with GPS, log strength sessions, and review saved workouts in your calendar and activity history. GPS and connected-device coverage can affect recorded measurements.
 
+ON YOUR APPLE WATCH
+Start supported outdoor recording on iPhone, then follow available workout measurements and pause, resume, or end the paired session from Apple Watch. Measurements depend on permissions, activity type, device, and sensors.
+
 UNDERSTAND YOUR PROGRESS
 Review pace, heart rate when available, distance splits, training history, and activity-specific Work metrics. Estimates are labeled and are not clinical measurements. Missing source data is shown as unavailable rather than invented.
+
+RACE RESULTS AND PERSONAL BESTS
+Add completed race or time-trial results to review personal bests, VDOT-based training paces, and race-time estimates. Earn race-PR badges for 800m, 1 mile, 5K, 10K, half marathon, and marathon.
 
 MOVEMENT LAB
 Use saved clips and images to review supported movement-analysis results. Camera-derived angles are approximate two-dimensional estimates and are not a medical assessment. Local media is not automatically a cloud backup.
