@@ -38,9 +38,11 @@ The prior `store-package-20261105/` retains the metadata, saved-description
 readback, proposed Watch/PR additions and separate billing-off/paid review drafts.
 Do not represent those proposed additions as already saved to Apple.
 
-Before final public review notes are saved, update the billing-off navigation
-paragraph to reflect the visible Running → Active quick-start path, the compact
-Training options disclosure, and identity editing from the profile header.
+The candidate-matched billing-off reviewer and description drafts are now in
+`store-package-20261111/`. They reflect Running → Active, the compact Training
+options disclosure, identity editing from the profile header, and race links.
+The reviewer draft explicitly marks the unresolved deletion acceptance and must
+not be submitted in that draft state.
 Describe pre/post-recording race links only after the exact candidate is accepted.
 Use the existing private reviewer fields; do not copy credentials into a note,
 repository, screenshot or chat. Basic review can use fictional profile/manual-log

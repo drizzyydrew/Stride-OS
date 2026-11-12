@@ -1,0 +1,18 @@
+Sign-in is required. Use the dedicated review credentials supplied privately in App Review Information. If initial fitness-profile setup appears, use fictional information.
+
+Apple Health, location, notifications, AI sharing, usage sharing and diagnostic reporting have separate controls. Optional permissions can be declined; manual logging and saved-history review remain available.
+
+Navigation: Today shows weather, current streak and training. Training options expands secondary goal and archive actions. Calendar shows scheduled/completed sessions. Running > Active starts supported outdoor recording, including open training without a plan. More opens Activity, Strength and Settings. Profile name/username editing opens from the profile header; the photo control is separate. In More > Settings, Goal archive opens Training archive. Users can choose another goal or continue open training. At a section root, Home returns to the top of Today.
+
+For manual logging, open More > Activity, use Log activity, choose Walking, enter a fictional duration, leave optional measurements blank and choose Save. The saved detail should open. Test entries are manual inputs, not measured GPS or heart-rate data.
+
+A named race can be selected before outdoor recording or linked to a genuine saved run afterward. Finishing and stopping early are separate outcomes. Recorded training bests use supported measured efforts; actual race/time-trial results are separate calibration evidence. Basic review does not require an invented race result.
+
+AI Coach requires separate consent before messages and selected training context go to Anthropic. Responses can be wrong and usage limits apply. On-device Insights do not require AI sharing.
+
+Movement Lab uses selected media for approximate two-dimensional fitness movement review, not medical assessment. Personal health records or real-person media are not needed for basic review.
+
+Account deletion: More > Settings > Account & Legal > Request account deletion.
+This draft still requires the separately approved disposable-account deletion acceptance described in the package README; do not submit these draft instructions before that gate is resolved.
+
+This candidate has subscriptions disabled. No purchase or trial is required. StrideOS provides general fitness information, not diagnosis, treatment or emergency care.

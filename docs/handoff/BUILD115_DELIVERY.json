@@ -1,0 +1,85 @@
+{
+  "recordedAt": "2026-11-12T05:50:58.119058+00:00",
+  "candidate": "1.0.0 (115)",
+  "branch": "codex/build115-feedback-20261111",
+  "sourceCommit": "3cc2ae0958a79eea58283a316014b8cdba6caa8e",
+  "eas": {
+    "buildId": "fbb77311-791c-4a79-b3f4-2e24f58764bd",
+    "buildStatus": "FINISHED",
+    "buildUrl": "https://expo.dev/accounts/drizzyydrew/projects/StrideOS/builds/fbb77311-791c-4a79-b3f4-2e24f58764bd",
+    "artifactUrl": "https://expo.dev/artifacts/eas/SNHgCBUyp5Nt0bPNZKhyVR69ZGBpuRMQ9j-WMozU_YM.ipa",
+    "submissionId": "4da2be4c-7629-4f0c-b4b8-c61e3aa63bd7",
+    "submissionStatus": "FINISHED"
+  },
+  "artifact": {
+    "bytes": 129859076,
+    "sha256": "745584639662cff37540ed94d2774ae57fe7f84189e0a49b3ed11fa9adafb441",
+    "verifiedTargets": [
+      "com.mooremovement.strideos",
+      "com.mooremovement.strideos.liveactivity",
+      "com.mooremovement.strideos.watch"
+    ]
+  },
+  "apple": {
+    "checkedAt": "2026-11-12T05:49:47.988Z",
+    "easBuildId": "fbb77311-791c-4a79-b3f4-2e24f58764bd",
+    "sourceCommit": "3cc2ae0958a79eea58283a316014b8cdba6caa8e",
+    "appleBuildId": "a57f8987-e5dd-4dce-8d25-a8a0c362c49d",
+    "version": "115",
+    "processingState": "VALID",
+    "expired": false,
+    "uploadedDate": "2026-11-11T21:44:42-08:00",
+    "internalBuildState": "IN_BETA_TESTING",
+    "externalBuildState": "READY_FOR_BETA_SUBMISSION",
+    "group": {
+      "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+      "name": "Team (Expo)",
+      "isInternal": true,
+      "hasAccessToAllBuilds": true,
+      "actuallyAssigned": true,
+      "testerCount": 1,
+      "testerStates": [
+        "INSTALLED"
+      ]
+    },
+    "whatToTest": {
+      "locale": "en-US",
+      "exactReadback": true,
+      "characters": 1720,
+      "sha256": "43e30bdf19e58c8a2584a386620d98378d591cd29b0762181f14fc1bbf9f7226"
+    },
+    "publicVersion": {
+      "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+      "version": "1.0",
+      "state": "PREPARE_FOR_SUBMISSION",
+      "releaseType": "MANUAL",
+      "selectedBuild": "109"
+    },
+    "physicalDeviceAccepted": false,
+    "purchasesEnabled": false,
+    "publicReviewSubmitted": false
+  },
+  "sourceGate": {
+    "testsPassed": 1897,
+    "failed": 0,
+    "skipped": 0,
+    "typecheck": "PASS",
+    "expoDependencyCheck": "PASS",
+    "diffCheck": "PASS",
+    "council": "three favorable bounded source reviews; 95/100 subjective confidence each",
+    "cloudDoctor": "21/21",
+    "compilerErrors": 0,
+    "compilerWarnings": 33
+  },
+  "ownerGuide": "BUILD115_OWNER_TEST_GUIDE.md",
+  "storeDrafts": "store-package-20261111/",
+  "publicLaunchReady": false,
+  "remaining": [
+    "Phone/Watch acceptance and reported crash verification",
+    "Clean signup/reviewer access and approved disposable-account deletion acceptance",
+    "Paid lifecycle if paid launch is chosen; normal115 billing disabled",
+    "Genuine accepted-candidate store captures and final binary/metadata reconciliation",
+    "Naming/operational/public submission and manual launch decisions",
+    "Google shared-project branding decision; paid Auth-domain replacement not purchased"
+  ]
+}

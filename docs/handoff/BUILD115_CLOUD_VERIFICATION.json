@@ -1,0 +1,44 @@
+{
+  "checkedAt": "2026-11-12T05:43:09.169917+00:00",
+  "buildId": "fbb77311-791c-4a79-b3f4-2e24f58764bd",
+  "sourceCommit": "3cc2ae0958a79eea58283a316014b8cdba6caa8e",
+  "state": "FINISHED",
+  "appVersion": "1.0.0",
+  "appBuildVersion": "115",
+  "profile": "production",
+  "image": "macos-tahoe-26.5-xcode-26.6",
+  "expoDoctor": {
+    "passed": 21,
+    "total": 21,
+    "evidenceFound": true
+  },
+  "compiler": {
+    "errors": 0,
+    "warnings": 33,
+    "summaryFound": true,
+    "fullCurrentSdkPhoneWatchAndLiveActivityArchive": "passed; signed artifacts inspected separately"
+  },
+  "warningCategories": [
+    "existing ActivityKit contentState deprecations",
+    "existing AVAsset metadata API deprecations",
+    "duplicate C++ library",
+    "Sentry build-script dependency analysis",
+    "cloud Ruby/fastlane runtime warning",
+    "cloud Metal toolchain search path"
+  ],
+  "sentry": {
+    "nativeCaptureEnabled": false,
+    "vendorIngestionVerified": false,
+    "sourceMapUploadVerifiedByThisReceipt": true,
+    "nativeCrashSymbolicationVerified": false,
+    "note": "Matching bundle/source-map upload is reported complete by sentry-cli. Server processing, event ingestion and native crash symbolication are separate, unverified gates.",
+    "reportedRelease": "com.mooremovement.strideos@1.0.0+115",
+    "reportedDist": "115",
+    "artifactDebugId": "00cd2a2f-324e-4f2e-a393-cc049c7d1180",
+    "uploadWorkerMessage": "File upload complete (processing pending on server)"
+  },
+  "artifactReceipt": "BUILD115_ARTIFACT_VERIFICATION.json",
+  "physicalDeviceAccepted": false,
+  "reportedCrashAttributed": false,
+  "publicReviewSubmitted": false
+}

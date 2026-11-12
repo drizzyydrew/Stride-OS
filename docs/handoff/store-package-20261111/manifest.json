@@ -1,0 +1,21 @@
+{
+  "candidate": "1.0.0 (115)",
+  "status": "draft only; not uploaded to Apple",
+  "files": [
+    {
+      "file": "README.md",
+      "characters": 1530,
+      "sha256": "b851ddaed32668eb89c4d1fa1df2103e742d91a13cab96e1a75191c5c1cb6bf9"
+    },
+    {
+      "file": "description-DRAFT.txt",
+      "characters": 2592,
+      "sha256": "adb5e25ced41de1372118bec519eccf91b3cac0f59d7ff17347a08400fe44c0d"
+    },
+    {
+      "file": "review-billing-off-DRAFT.txt",
+      "characters": 2358,
+      "sha256": "36b0fa81fe5106d66b99dace42c5d79f1774299e8272f25793549ffd3da0519b"
+    }
+  ]
+}

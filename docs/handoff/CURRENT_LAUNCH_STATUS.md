@@ -1,48 +1,47 @@
 # Current StrideOS launch status
 
-## November 11 continuation — candidate 115 source gate passed; delivery pending
+## Latest verified delivery — build 115, November 11
 
-The owner completed the build114 checklist and supplied13 photos. They reported
-history, recovery, offline persistence/reconnect and several other flows working,
-but also missing Running subtabs, archive layout overflow, crowded identity/test
-presentation, and a phone crash with missing Watch metrics. Reported successes
-are scoped device evidence, not acceptance of the pending fixes. The08:49 crash
-prompt is confirmed by a photo; its root cause remains unconfirmed.
+**1.0.0 (115) is VALID / IN_BETA_TESTING**, not expired, actually assigned to the
+existing Team (Expo) internal group with one installed tester. EAS build
+`fbb77311-791c-4a79-b3f4-2e24f58764bd` and exact submission
+`4da2be4c-7629-4f0c-b4b8-c61e3aa63bd7` are FINISHED. Source commit
+`3cc2ae0958a79eea58283a316014b8cdba6caa8e` is committed/pushed and matches the
+build metadata. Beta testing text was saved and read back exactly. Purchases
+remain disabled. BUILD115_RELEASE.md and BUILD115_DELIVERY.json record the
+identity chain and destination checks.
 
-The owner now explicitly authorizes implementation, a cleaner dashboard with
-optional explanations tucked away, browser/computer use, commit/push, the next
-build and TestFlight delivery **after council approval**. The next planned
-normal candidate is115; it has not been built or submitted at this checkpoint.
-Public review/release and paid add-ons remain separate decisions. Known Watch
-startup failure is being corrected and independently reviewed before the source
-gate. No successful source test is described as a crash fix or device pass.
+All 1,897 tests passed with no skips, along with typecheck, Expo dependency check,
+diff check,21/21 cloud Doctor and the current-SDK native archive. Three council
+seats favor the bounded source candidate at 95/100 subjective confidence. Signed
+phone/Watch/Live Activity versions/capabilities and final Hermes bundle were
+verified. Internal availability is not physical acceptance. The reported 08:49
+crash remains unattributed; use BUILD115_OWNER_TEST_GUIDE.md for the changed
+paths and 20-minute phone/Watch check.
 
-Source work includes restored idle Running controls, Today order/spacing,
-uniform navigation labels and Home behavior, bounded archive layout, separate
-profile identity editing/onboarding, explanatory test disclosures, measured
-recorded PRs with separate fitness-evidence rules, pre/post-recording named-race
-links, plain race outcomes, and the chevrons on the lock screen. Primary actions,
-errors and required confirmations remain visible. Earlier phases passed1864tests;
-the final integrated suite now passes 1,897/1,897 tests with no skips; typecheck,
-Expo dependency check and diff check pass after the115 build-number bump. Three
-council seats favor the bounded source candidate at95/100 subjective confidence.
-The frozen source manifest is BUILD115_PREFLIGHT.json. Cloud compilation, signed
-archive inspection, Apple processing and tester access remain delivery gates.
+Included changes cover clean Today order/spacing and disclosures, uniform
+navigation/Home, restored Running subtabs, bounded archive layout/clear wording,
+separate identity editing/onboarding, optional test help, measured bests/repeat
+PR awards, pre/post-recording named-race links, explicit race outcomes, Watch
+startup/recovery/End protection, telemetry caching and chevron branding. Earlier
+114 device passes remain scoped evidence and do not accept115's changed paths.
 
-The owned domain now serves the existing four public pages byte for byte, with
-the password association preserved at origin and Apple CDN. This does not change
-private-beta availability. Google branding is held for one focused owner decision
-because its verified StrideOS OAuth client shares project-wide branding with an
-older Desktop client. The proposed actual Auth-domain replacement additionally
-requires a paid Supabase plan/add-on; none was purchased. See
-`PHOTO_REVIEW_AND_SIGNIN_BRANDING_20261111.md` and the destination receipt.
+The owned domain serves the existing four public pages byte for byte, preserving
+the password association at origin and Apple CDN. Google branding is held for a
+focused owner decision because the verified StrideOS client shares project-wide
+branding with an older Desktop client. A branded Auth-host replacement requires
+a paid Supabase plan/add-on; none was purchased. No provider, DNS or billing
+settings were changed as part of 115 delivery.
 
-`BUILD115_OWNER_TEST_GUIDE.md` is a plan for after verified delivery. The build114
-receipt below remains the latest verified TestFlight delivery until superseded
-by a fresh candidate receipt. Fresh Apple readback still finds public version1.0
-on109 / PREPARE_FOR_SUBMISSION / MANUAL. No public version was changed.
+Candidate-matched store drafts are in store-package-20261111/. They remain drafts,
+including an explicit unresolved deletion-acceptance note. Public launch readiness
+remains false pending candidate hardware, signup/reviewer/disposable-deletion,
+paid lifecycle if chosen, genuine captures and final binary/metadata/naming/
+operational decisions. The owner handles support and checks daily; no response-
+time promise was published. Fresh Apple readback still finds public 1.0 selecting
+109 / PREPARE_FOR_SUBMISSION / MANUAL. No public review/release occurred.
 
-## Latest verified delivery — build 114, November 5
+## Previous verified delivery — build 114, November 5
 
 The owner explicitly requested updating the build with all prepared work,
 submitting it to TestFlight and giving detailed ordered next steps. They also

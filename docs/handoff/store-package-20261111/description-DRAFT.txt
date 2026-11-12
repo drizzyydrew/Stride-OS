@@ -1,0 +1,34 @@
+StrideOS brings running, strength, and recovery into one connected training routine.
+
+YOUR NEXT SESSION
+Plan your week, review your scheduled sessions, and adjust your training around your goals and availability.
+
+YOUR NEXT GOAL
+When a training block ends, keep its summary and add your race result in Goal archive. Choose a new goal or continue with open training at your own pace. Your workout history stays available.
+
+RECORD YOUR WORKOUTS
+Record supported outdoor activities with GPS, log strength sessions, and review saved workouts in your calendar and activity history. GPS and connected-device coverage can affect recorded measurements.
+
+ON YOUR APPLE WATCH
+Start supported outdoor recording on iPhone, then follow available workout measurements and pause, resume, or end the paired session from Apple Watch. Measurements depend on permissions, activity type, device, and sensors.
+
+UNDERSTAND YOUR PROGRESS
+Review pace, heart rate when available, distance splits, training history, and activity-specific Work metrics. Estimates are labeled and are not clinical measurements. Missing source data is shown as unavailable rather than invented.
+
+RACE RESULTS AND PERSONAL BESTS
+Select a named race before recording or link a genuine saved run afterward. Review supported measured personal bests, and use completed race or time-trial results for VDOT-based training paces and race-time estimates. Earn repeat race-PR achievements for improvements at 800m, 1 mile, 5K, 10K, half marathon, and marathon.
+
+MOVEMENT LAB
+Use saved clips and images to review supported movement-analysis results. Camera-derived angles are approximate two-dimensional estimates and are not a medical assessment. Local media is not automatically a cloud backup.
+
+OPTIONAL AI COACH
+With your explicit permission, send messages and selected training context to Anthropic's Claude through StrideOS for fitness guidance. AI responses can be wrong and are subject to usage limits and service availability. On-device Insights do not require AI sharing.
+
+YOUR DATA, YOUR CHOICES
+Apple Health, location access, AI sharing, basic usage sharing, and diagnostic reporting have separate controls. Optional usage and diagnostics are off by default. StrideOS does not use HealthKit data for advertising.
+
+StrideOS provides fitness information, not diagnosis, treatment, emergency care, or a guarantee of injury prevention. Seek a qualified clinician's advice for medical concerns.
+
+Privacy: https://strideosfitness.com/privacy.html
+Terms: https://strideosfitness.com/terms.html
+Support: https://strideosfitness.com/support.html

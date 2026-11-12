@@ -1,7 +1,7 @@
-# Build 115 — ordered verification after TestFlight delivery
+# Build 115 — ordered verification for the delivered candidate
 
-This is the next-candidate test plan. It is not a delivery receipt or a record
-of device passes. Follow it only when TestFlight offers **1.0.0 (115)** and the
+Build 115 is verified available for internal testing; BUILD115_RELEASE.md is the
+delivery receipt. This checklist is not a record of device passes. Follow it only when TestFlight offers **1.0.0 (115)** and the
 matching release receipt confirms Apple processing and tester availability.
 Purchases remain disabled. Public App Store review and launch remain separate.
 
