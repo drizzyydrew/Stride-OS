@@ -588,7 +588,10 @@ export function runCalibration(input: CalibrationInput): CalibrationOutput {
   const { weeklyMileage, recentWorkoutCount, lastWorkoutDaysAgo, currentRecoveryScore } = input;
   // Invalid/future stored entries stay in history, but cannot drive current
   // fitness or inflate confidence. The most recent valid result still wins.
-  const profile = { ...input.profile, racePRs: input.profile.racePRs.filter(pr => isValidRacePerformance(pr)) };
+  // An easy training run can establish a recorded best without establishing
+  // maximal race fitness. Keep those records visible, outside this model.
+  const profile = { ...input.profile, racePRs: input.profile.racePRs.filter(pr =>
+    pr.source?.kind !== 'recorded_effort' && isValidRacePerformance(pr)) };
 
   // ── 1. Determine VDOT ────────────────────────────────────────────────────────
   let vdot = 0;

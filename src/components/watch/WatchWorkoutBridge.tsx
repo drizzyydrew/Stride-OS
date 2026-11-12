@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 import {
   activateStrideWatchConnectivity,
+  cancelPendingStrideWatchStart,
   addStrideWatchErrorListener,
   addStrideWatchHeartRateListener,
   addStrideWatchStatusListener,
@@ -21,6 +22,7 @@ import { isFreshObservation } from '../../utils/outdoorTelemetry';
 import { useSettingsStore } from '../../store/settingsStore';
 import { watchRecordingForEvent } from '../../utils/watchRecordingEvidence';
 import { completeWatchActivityEnd } from '../../lib/outdoorCompletion';
+import { getLocalDataOwner } from '../../lib/localDataOwner';
 
 const APPLE_WATCH_DEVICE = {
   id: 'apple_watch',
@@ -321,6 +323,7 @@ export default function WatchWorkoutBridge() {
 
   useEffect(() => {
     if (Platform.OS !== 'ios') return undefined;
+    const unsubscribeLease = getLocalDataOwner()?.onLeaseInvalidated(reason => cancelPendingStrideWatchStart(reason === 'revoke'));
 
     // The native buffer flushes on the first observer: End must already have its listener.
     const workoutStateSub = addStrideWatchWorkoutStateListener(event => {
@@ -399,6 +402,8 @@ export default function WatchWorkoutBridge() {
     activateStrideWatchConnectivity().catch(() => undefined);
 
     return () => {
+      cancelPendingStrideWatchStart();
+      unsubscribeLease?.();
       statusSub?.remove();
       heartRateSub?.remove();
       workoutStateSub?.remove();

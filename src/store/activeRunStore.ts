@@ -26,12 +26,15 @@ import { useSettingsStore } from './settingsStore';
 import { enqueueVoiceCue } from '../lib/voiceCue';
 import { initialAutoPauseState, reconcileAutoPauseMode, reduceAutoPause, type AutoPauseState } from '../utils/autoPause';
 import { captureTrainingRunEnd } from '../utils/trainingRunEndSnapshot';
+import type { RaceActivityLink } from '../types/raceLink';
+import { isValidRaceActivityLink } from '../utils/raceLink';
 
 export type Coordinate = {
   lat:       number;
   lng:       number;
   timestamp: number;
   altitudeM?: number;
+  horizontalAccuracyMeters?: number;
 };
 
 // Run modes: how the athlete wants this run framed. 'quick' is plain GPS
@@ -53,6 +56,7 @@ export type RunModeConfig = {
   treadmillPhonePlacement?: TreadmillPhonePlacement;
   workoutInstanceId?:     string | null;
   startedAtMs?:           number | null;
+  raceLink?:              RaceActivityLink;
 };
 
 // Rolling window for pace calculation (seconds of data to average)
@@ -108,6 +112,7 @@ export type ActiveRunStore = {
   goalMinutes:            number | null;
   goalMiles:              number | null;
   targetPaceSecPerMile:   number | null;
+  raceLink:              RaceActivityLink | null;
   completionRequestedAt:  number | null;
 
   // Live workout instance identity — see src/utils/workoutInstance.ts. Every
@@ -131,6 +136,7 @@ export type ActiveRunStore = {
   autoPauseState:         AutoPauseState | null;
 
   startRun:          (plannedWorkout: RichWorkout | null, config?: RunModeConfig) => void;
+  confirmRaceOutcome: (workoutInstanceId: string, outcome: 'finished' | 'did_not_finish', ownerUserId: string, endedAt?: number) => boolean;
   pauseRun:          (source?: 'manual' | 'auto') => void;
   resumeRun:         (source?: 'manual' | 'auto') => void;
   addLocationUpdate: (loc: LocationObject) => void;
@@ -183,6 +189,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
   goalMinutes:            null,
   goalMiles:              null,
   targetPaceSecPerMile:   null,
+  raceLink:              null,
   completionRequestedAt:  null,
   workoutInstanceId:      null,
   environment:            'outdoor',
@@ -196,6 +203,9 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       autoPauseState:         null,
 
   startRun: (plannedWorkout, config) => {
+    if (config?.raceLink && (!isValidRaceActivityLink(config.raceLink) || config.mode !== 'race')) {
+      throw new Error('Choose a valid race before starting this recording');
+    }
     const now = Date.now();
     const startedAt = Number.isFinite(config?.startedAtMs ?? NaN) && (config?.startedAtMs ?? 0) > 0
       ? Number(config?.startedAtMs)
@@ -226,6 +236,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       goalMinutes:            config?.goalMinutes ?? null,
       goalMiles:              config?.goalMiles ?? null,
       targetPaceSecPerMile:   config?.targetPaceSecPerMile ?? null,
+      raceLink:              config?.raceLink ? JSON.parse(JSON.stringify(config.raceLink)) : null,
       completionRequestedAt:  null,
       workoutInstanceId:      config?.workoutInstanceId ?? buildWorkoutInstanceId(config?.scheduledSessionId ?? null, startedAt),
       environment,
@@ -243,6 +254,18 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
   },
 
   setLastEnvironmentPreference: (environment) => set({ lastEnvironmentPreference: environment }),
+
+  confirmRaceOutcome: (workoutInstanceId, outcome, ownerUserId, endedAt = Date.now()) => {
+    const state = get();
+    if (!state.isActive || state.workoutInstanceId !== workoutInstanceId || state.completionRequestedAt != null
+      || !state.raceLink || !isValidRaceActivityLink(state.raceLink, ownerUserId)
+      || state.raceLink.outcome !== 'unrecorded' || state.startTime == null
+      || !Number.isFinite(endedAt) || endedAt <= state.startTime || endedAt > Date.now() + 5_000
+      || !['finished', 'did_not_finish'].includes(outcome)) return false;
+    set({ raceLink: { ...state.raceLink, outcome } });
+    get().requestCompletion(endedAt);
+    return true;
+  },
 
   appendTelemetry: (workoutInstanceId, samples) => {
     const state = get();
@@ -347,6 +370,8 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       lng:       loc.coords.longitude,
       timestamp: loc.timestamp,
       altitudeM: typeof loc.coords.altitude === 'number' ? loc.coords.altitude : undefined,
+      ...(typeof loc.coords.accuracy === 'number' && Number.isFinite(loc.coords.accuracy) && loc.coords.accuracy >= 0
+        ? { horizontalAccuracyMeters: loc.coords.accuracy } : {}),
     };
 
     const previousCoord = state.coordinates.at(-1);
@@ -513,6 +538,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       plannedWorkout:         null,
       scheduledSessionId:     null,
       runMode:                'quick',
+      raceLink:               null,
       goalMinutes:            null,
       goalMiles:              null,
       targetPaceSecPerMile:   null,
@@ -551,6 +577,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       plannedWorkout:         null,
       scheduledSessionId:     null,
       runMode:                'quick',
+      raceLink:               null,
       goalMinutes:            null,
       goalMiles:              null,
       targetPaceSecPerMile:   null,

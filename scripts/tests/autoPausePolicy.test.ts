@@ -4,6 +4,11 @@ import test from 'node:test';
 import { createJSONStorage } from 'zustand/middleware';
 import { initialAutoPauseState, reconcileAutoPauseMode, reduceAutoPause, type AutoPauseMode, type AutoPauseState } from '../../src/utils/autoPause';
 import type { LocationObject } from 'expo-location';
+import type { ActiveRunStore } from '../../src/store/activeRunStore';
+import type { RunWorkoutRecord } from '../../src/utils/runCompletionIdentity';
+import { captureTrainingRunEnd } from '../../src/utils/trainingRunEndSnapshot';
+import { activityFromWorkoutRecord } from '../../src/utils/activityMigration';
+import { RunCompletionJournal } from '../../src/lib/runCompletionJournal';
 
 function load<T>(path: string, mocks: Record<string, unknown>): T {
   const loader = Module as unknown as { _load: (id: string, ...args: unknown[]) => unknown };
@@ -109,6 +114,40 @@ function recorder(kind: 'run' | 'activity', options: {
       setMode(mode); settingsHydrated = true; hydratedListeners.forEach(listener => listener());
     } };
 }
+
+test('real Running GPS accuracy survives the End journal and Activity migration with unchanged session identity and distance', async t => {
+  t.mock.method(Date, 'now', () => BASE + 30_000);
+  const h = recorder('run'); await h.ready(); h.start();
+  for (const [index, accuracy] of [0, 7.5, null, -1, NaN].entries()) {
+    const point = location(BASE + index * 5000, index * 0.0001, 2);
+    point.coords.accuracy = accuracy;
+    h.add(point);
+  }
+  const state = h.store.getState() as ActiveRunStore;
+  assert.equal(state.coordinates.length, 5);
+  assert.equal(state.coordinates[0].horizontalAccuracyMeters, 0);
+  assert.equal(state.coordinates[1].horizontalAccuracyMeters, 7.5);
+  for (const point of state.coordinates.slice(2)) assert.equal(Object.hasOwn(point, 'horizontalAccuracyMeters'), false);
+  const command = { workoutInstanceId: state.workoutInstanceId!, endedAt: BASE + 30_000 };
+  const entry = captureTrainingRunEnd(state, command);
+  assert.ok(Math.abs(entry.distanceMiles * 1609.344 - h.distance()) < 1e-9);
+  const values = new Map<string, string>();
+  const storage = { getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => { values.set(key, value); } };
+  await new RunCompletionJournal(storage).save({ ownerUserId: 'A', entry, week: 1, fatigue: 10, recovery: 70 });
+  const restored = (await new RunCompletionJournal(storage).read())[0].entry;
+  const record: RunWorkoutRecord = { ...restored, id: restored.completionKey, workoutId: restored.type,
+    timestamp: BASE + 30_000, week: 1, completed: true,
+    estimatedLoad: 0, estimatedDistanceMiles: restored.distanceMiles,
+    fatigueBefore: 10, fatigueAfter: 10, fatigueDelta: 0, recoveryBefore: 70, recoveryDelta: 0 };
+  const activity = activityFromWorkoutRecord(record, false);
+  assert.equal(activity.workoutInstanceId, state.workoutInstanceId);
+  assert.equal(activity.startTime, BASE); assert.equal(activity.endTime, command.endedAt);
+  assert.equal(activity.metrics.distanceMeters, entry.distanceMiles * 1609.344);
+  assert.deepEqual(activity.metrics.routeCoordinates!.map(point => point.horizontalAccuracyMeters), [0, 7.5, undefined, undefined, undefined]);
+  assert.equal(restored.routeCoordinates![1].horizontalAccuracyMeters, 7.5);
+  assert.equal(restored.distanceMiles, entry.distanceMiles);
+});
 
 test('a policy change clears detector candidates without resuming a paused workout', () => {
   const paused: AutoPauseState = { ...initialAutoPauseState('running', 'running_and_cycling'), paused: true,

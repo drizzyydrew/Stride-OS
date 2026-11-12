@@ -1,0 +1,132 @@
+{
+  "scope": "Preparation only. Exact existing public HTML; no copy, claims, assets, auth, DNS, billing or dependency changes. No deployment, build or push performed.",
+  "intendedProject": {
+    "name": "strideos-password-association",
+    "id": "prj_vTtsKG8f6mVn7XKR7BKB1Vx9ktT1",
+    "domain": "strideosfitness.com"
+  },
+  "deploymentFiles": [
+    "index.html",
+    "privacy.html",
+    "terms.html",
+    "support.html",
+    ".well-known/apple-app-site-association",
+    "vercel.json"
+  ],
+  "pages": [
+    {
+      "path": "index.html",
+      "sourceUrl": "https://drizzyydrew.github.io/Stride-OS/",
+      "httpStatus": 200,
+      "bytes": 10806,
+      "sha256": "006590370d3494e8400a8ca66e2198b3722a13216bb4b87f80c98fb1bdf81454",
+      "repositoryComparison": {
+        "path": "docs/index.html",
+        "byteIdentical": true
+      },
+      "localLinks": [
+        "./",
+        "support.html",
+        "support.html",
+        "privacy.html",
+        "support.html",
+        "support.html",
+        "privacy.html",
+        "terms.html"
+      ],
+      "externalAssets": []
+    },
+    {
+      "path": "privacy.html",
+      "sourceUrl": "https://drizzyydrew.github.io/Stride-OS/privacy.html",
+      "httpStatus": 200,
+      "bytes": 16001,
+      "sha256": "1d72a59fdbf41268b703055cb0afbbce9360c887d3623cf71e8dd6bccc33474d",
+      "repositoryComparison": {
+        "path": "docs/privacy.html",
+        "byteIdentical": true
+      },
+      "localLinks": [],
+      "externalAssets": []
+    },
+    {
+      "path": "terms.html",
+      "sourceUrl": "https://drizzyydrew.github.io/Stride-OS/terms.html",
+      "httpStatus": 200,
+      "bytes": 4577,
+      "sha256": "e2925582fc5ff64deced5292f89079c80ce0ad53d08ad6f826b4b876e96c0dc7",
+      "repositoryComparison": {
+        "path": "docs/terms.html",
+        "byteIdentical": true
+      },
+      "localLinks": [
+        "privacy.html",
+        "support.html",
+        "privacy.html",
+        "privacy.html",
+        "support.html"
+      ],
+      "externalAssets": []
+    },
+    {
+      "path": "support.html",
+      "sourceUrl": "https://drizzyydrew.github.io/Stride-OS/support.html",
+      "httpStatus": 200,
+      "bytes": 13024,
+      "sha256": "ab9b2ffb9c6347e09a6de467917fc1bad45ce0d0254be190fbadbba1ca0d7673",
+      "repositoryComparison": {
+        "path": "docs/support.html",
+        "byteIdentical": true
+      },
+      "localLinks": [
+        "index.html",
+        "privacy.html",
+        "privacy.html",
+        "index.html",
+        "privacy.html",
+        "terms.html"
+      ],
+      "externalAssets": []
+    }
+  ],
+  "association": {
+    "path": ".well-known/apple-app-site-association",
+    "sourceUrl": "https://strideosfitness.com/.well-known/apple-app-site-association",
+    "httpStatus": 200,
+    "redirected": false,
+    "bytes": 70,
+    "sha256": "e59a4c85dbcbe9f00ff27e41abdd273f9700fbea641815d10618d088e6a78610",
+    "responseHeaders": {
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=3600"
+    },
+    "legacyPrepFile": {
+      "path": "apple-app-site-association",
+      "bytes": 96,
+      "sha256": "3c3d85ff075e60417b7bddcf8e71a88360bffd5b70f7cb43603ec7e0e512f40f",
+      "unchanged": true,
+      "jsonSemanticallyIdentical": true,
+      "deploy": false
+    }
+  },
+  "vercelConfig": {
+    "path": "vercel.json",
+    "sha256": "a75fc0362adffc29cb07350bdd37a68e6a9dd2d72b4def105c107f1c38de9895",
+    "unchanged": true,
+    "framework": null,
+    "buildCommand": null,
+    "installCommand": null
+  },
+  "observedApexBeforePreparation": {
+    "homepageStatus": 404,
+    "rootAssociationStatus": 404,
+    "wellKnownAssociationStatus": 200
+  },
+  "verification": {
+    "allLivePagesByteIdenticalToRepositoryDocs": true,
+    "allLocalLinksResolveWithinFourPageSet": true,
+    "externalAssetsRequired": false,
+    "onlyListedDeploymentFilesShouldBeUploaded": true,
+    "publicationNotVerified": true
+  }
+}

@@ -21,7 +21,7 @@ function GoalControlLabel({ label, children }: { label: string; children: ReactN
   </>;
   return process.env.EXPO_OS === 'web'
     ? createElement('label', { style: { display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 } }, content)
-    : <View style={{ gap: 8 }}>{content}</View>;
+    : <View style={{ gap: 8, minWidth: 0, width: '100%' }}>{content}</View>;
 }
 
 // Shared presentation primitives stay in this bounded sidecar, outside route files.
@@ -111,8 +111,8 @@ export function GoalDisclosure({ label, children }: { label: string; children: R
   return (
     <Host matchContents={{ vertical: true }} colorScheme={mode} seedColor={C.primary} style={{ width: '100%' }}>
       <Collapsible label={label} isOpen={open} onOpenChange={setOpen}
-        labelStyle={{ color: C.text, fontSize: 16 * fontScale, lineHeight: 44 * fontScale }}>
-        {open ? <RNHostView matchContents><View style={{ gap: 12, paddingVertical: 12 }}>{children}</View></RNHostView> : null}
+        labelStyle={{ color: C.text, fontSize: 16 * fontScale, lineHeight: (process.env.EXPO_OS === 'ios' ? 44 : 22) * fontScale }}>
+        {open ? <RNHostView matchContents={{ vertical: true }}><View style={{ gap: 12, paddingVertical: 12, minWidth: 0, width: '100%' }}>{children}</View></RNHostView> : null}
       </Collapsible>
     </Host>
   );
@@ -121,7 +121,7 @@ export function GoalDisclosure({ label, children }: { label: string; children: R
 export function GoalMessage({ children, error = false }: { children: ReactNode; error?: boolean }) {
   const C = useColors();
   return <Text selectable accessibilityRole={error ? 'alert' : undefined} accessibilityLiveRegion={error ? 'polite' : undefined}
-    style={{ color: error ? C.text : C.textMuted, fontSize: 15, lineHeight: 23 }}>{children}</Text>;
+    style={{ color: error ? C.text : C.textMuted, fontSize: 15, lineHeight: 23, minWidth: 0, flexShrink: 1 }}>{children}</Text>;
 }
 
 export function goalDate(value: string) { return formatDateOnly(value) || '—'; }
@@ -156,8 +156,9 @@ export default function GoalLifecycleCard() {
   }
 
   const archive = lifecycle.pendingArchive;
+  const backupStatus = 'syncStatus' in lifecycle ? lifecycle.syncStatus : undefined;
   return (
-    <View style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1, borderRadius: 16, padding: 18, gap: 12 }}>
+    <View style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1, borderRadius: 16, padding: 18, gap: 12, marginBottom: 16 }}>
       <Text accessibilityRole="header" style={{ color: C.text, fontSize: 21, fontWeight: '700' }}>
         {lifecycle.status === 'error' ? 'Training archive needs attention' : archive ? `${archive.title} · Archived` : 'Open Training'}
       </Text>
@@ -165,12 +166,15 @@ export default function GoalLifecycleCard() {
         <GoalMessage error>{lifecycle.error ?? 'Saved training could not be loaded. Retry to see your archive.'}</GoalMessage>
         <GoalAction label="Retry" onPress={lifecycle.retry} />
       </> : <>
-        <GoalMessage>{archive ? 'Your recorded training is saved. Choose a new goal whenever you’re ready.' : 'Train at your own pace. A new goal is optional.'}</GoalMessage>
-        {lifecycle.archives.length > 0 ? <GoalBackupStatus status={'syncStatus' in lifecycle ? lifecycle.syncStatus : undefined} /> : null}
+        <GoalMessage>{archive ? 'Your recorded training is saved.' : 'Train at your own pace.'}</GoalMessage>
+        {backupStatus === 'error' ? <GoalBackupStatus status={backupStatus} /> : null}
         {archive ? <GoalAction label="View results" disabled={busy} onPress={() => router.push(goalArchiveLink(archive.id) as never)} /> : null}
-        <GoalAction label="Choose a new goal" disabled={busy} secondary onPress={() => router.push('/(tabs)/settings/next-goal' as never)} />
-        {archive ? <GoalAction label={busy ? 'Saving…' : 'Keep training without a plan'} disabled={busy} secondary onPress={() => { void keepTraining(); }} /> : null}
-        <GoalAction label="Training archive" disabled={busy} secondary onPress={() => router.push('/(tabs)/settings/goal-archive' as never)} />
+        <GoalDisclosure label="Training options">
+          {lifecycle.archives.length > 0 && backupStatus !== 'error' ? <GoalBackupStatus status={backupStatus} /> : null}
+          <GoalAction label="Choose a new goal" disabled={busy} secondary onPress={() => router.push('/(tabs)/settings/next-goal' as never)} />
+          {archive ? <GoalAction label={busy ? 'Saving…' : 'Keep training without a plan'} disabled={busy} secondary onPress={() => { void keepTraining(); }} /> : null}
+          <GoalAction label="Training archive" disabled={busy} secondary onPress={() => router.push('/(tabs)/settings/goal-archive' as never)} />
+        </GoalDisclosure>
       </>}
       {error ? <GoalMessage error>{error}</GoalMessage> : null}
     </View>

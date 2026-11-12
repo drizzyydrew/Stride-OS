@@ -1,3 +1,4 @@
+import type { RaceActivityLink } from './raceLink';
 export const ACTIVITY_TYPES = [
   'running',
   'walking',
@@ -198,6 +199,8 @@ export type RunningDynamicsSummary = {
 export type ActivityMetrics = {
   durationSeconds?: number;
   elapsedTimeSeconds?: number;
+  /** Actual recording start/end, rather than a legacy moving-duration fallback. */
+  elapsedTimeSource?: 'recorded_wall_clock';
   activeTimeSeconds?: number;
   distanceMeters?: number;
   elevationGainMeters?: number;
@@ -337,6 +340,7 @@ export type WatchRecordingEvidence = {
 };
 
 export type ActivityRaceResult = {
+  timingSource?: 'recorded_elapsed' | 'user_entered';
   kind: 'race' | 'time_trial';
   distanceKey: import('./athlete').StandardDistance | 'custom';
   /** Athlete-confirmed event/course distance, separate from GPS distance. */
@@ -348,6 +352,9 @@ export type ActivityRaceResult = {
 };
 
 export type Activity = {
+  raceLink?: RaceActivityLink;
+  /** Monotonic edit/tombstone revision; stale completion projections cannot relink an activity. */
+  raceLinkUpdatedAt?: number;
   raceResult?: ActivityRaceResult;
   workoutInstanceId?: string;
   /** Native Watch recording confirmation, not connectivity or a Health save receipt. */

@@ -41,7 +41,9 @@ export type GoalArchive = {
   result: {
     status: 'unrecorded' | 'finished' | 'did_not_finish' | 'did_not_start';
     timeSeconds?: number;
-    source?: 'race_record' | 'user';
+    source?: 'race_record' | 'user' | 'activity_link';
+    /** A reference only; current outcome/time are derived from this Activity. */
+    linkedActivityId?: string;
     updatedAt?: number;
   };
 };

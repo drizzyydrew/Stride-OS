@@ -44,8 +44,8 @@ import {
   activateStrideWatchConnectivity,
   addStrideWatchStatusListener,
   getStrideWatchStatus,
-  pauseStrideWatchWorkout,
-  resumeStrideWatchWorkout,
+  pauseStrideWatchWorkoutExplicit,
+  resumeStrideWatchWorkoutExplicit,
   setStrideWatchWorkoutContext,
   startStrideWatchWorkout,
 } from '../../../modules/stride-watch-connectivity/src';
@@ -503,10 +503,10 @@ export default function StartOutdoorActivityScreen() {
           if (!latest.isActive || latest.completionRequestedAt != null || latest.workoutInstanceId !== active.workoutInstanceId) return;
           if (latest.isPaused) {
             latest.resume();
-            resumeStrideWatchWorkout().catch(() => undefined);
+            resumeStrideWatchWorkoutExplicit(latest.workoutInstanceId).catch(() => undefined);
           } else {
             latest.pause();
-            pauseStrideWatchWorkout().catch(() => undefined);
+            pauseStrideWatchWorkoutExplicit(latest.workoutInstanceId).catch(() => undefined);
           }
         }} onFinish={finish} />
     </SafeAreaView>

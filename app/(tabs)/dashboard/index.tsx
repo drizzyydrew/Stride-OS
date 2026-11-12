@@ -1,7 +1,7 @@
 import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import Modal from '../../../src/components/ui/RecoverableModal';
-import { useMemo, useState } from 'react';
-import { Pressable, ActivityIndicator, Alert, Linking, StyleSheet, Text, TouchableOpacity, View, type DimensionValue } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { Pressable, ActivityIndicator, Alert, Linking, StyleSheet, Text, TouchableOpacity, View, type DimensionValue, type ScrollView } from 'react-native';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +19,7 @@ import { useAchievementStore } from '../../../src/store/achievementStore';
 import { useRecalculationStore } from '../../../src/store/recalculationStore';
 import { todayDateKey } from '../../../src/types/checkin';
 import ReadinessCheckInCard from '../../../src/components/today/ReadinessCheckInCard';
+import { useTodayScrollToTop } from '../../../src/components/layout/NavigationEscape';
 import GoalLifecycleCard from '../../../src/components/goals/GoalLifecycleCard';
 import { StreakBadge, StreakProgress, buildCurrentStreakSummary } from '../../../src/achievements/streaks';
 import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
@@ -355,6 +356,8 @@ function getDayLabel(): string {
 }
 
 export default function TodayScreen() {
+  const scrollRef = useRef<ScrollView>(null);
+  useTodayScrollToTop(scrollRef);
   const C = useColors();
   const athleteName = profileIdentityLabel(useActiveProfile());
   const { activeTargetId: tourTarget } = useFeatureTour('today');
@@ -541,13 +544,13 @@ export default function TodayScreen() {
       </View>
 
       <FeatureTourScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: LAYOUT.screenPadBottom }}
         showsVerticalScrollIndicator={false}
       >
 
       <WeatherCard />
-      <GoalLifecycleCard />
 
       <TouchableOpacity
         style={[styles.currentStreakCard, { backgroundColor: C.card, borderColor: C.border }]}
@@ -566,6 +569,7 @@ export default function TodayScreen() {
           <StreakProgress days={currentStreak.days} />
         </View>
       </TouchableOpacity>
+      <GoalLifecycleCard />
 
       {/* One dominant answer for the day: what to do, how it should feel, and why. */}
       <FeatureTourTarget targetId="today.workout" style={[styles.primaryWorkoutCard, { backgroundColor: C.card, borderColor: C.primary }]}>
@@ -750,14 +754,14 @@ export default function TodayScreen() {
         <Text style={[styles.cardLabel, { color: C.textDim }]}>TRAINING OUTLOOK</Text>
         <Text style={[styles.outlookTitle, { color: C.text }]}>{trainingOutlook.statusLabel}</Text>
         <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{trainingOutlook.recommendation}</Text>
-        <TouchableOpacity
+        {showBalancedDetails || showDataRichDetails ? <TouchableOpacity
           onPress={() => setOutlookOpen(open => !open)}
           style={styles.disclosureButton}
           accessibilityRole="button"
           accessibilityState={{ expanded: outlookOpen }}
         >
           <Text style={[styles.updateCheckInText, { color: C.primary }]}>Training Details {outlookOpen ? '−' : '+'}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> : null}
         {showBalancedDetails && outlookOpen ? (
           <View style={styles.outlookDecisionStack}>
             <View style={[styles.outlookDecisionRow, { borderColor: C.border, backgroundColor: C.cardAlt }]}>
@@ -1008,6 +1012,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
     marginBottom: 6,
   },
   cardLabel: {

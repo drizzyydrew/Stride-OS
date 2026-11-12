@@ -1,3 +1,4 @@
+import { isValidRaceActivityLink } from './raceLink';
 import type { Activity } from '../types/activity';
 import type { RacePR } from '../types/athlete';
 import type { GoalArchive, GoalArchiveDescriptor } from '../types/goalArchive';
@@ -80,8 +81,14 @@ function uniqueActivities(activities: readonly Activity[]): Activity[] {
     || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
-function raceResult(descriptor: GoalArchiveDescriptor, racePRs: readonly RacePR[], now: number): GoalArchive['result'] {
+function raceResult(descriptor: GoalArchiveDescriptor, racePRs: readonly RacePR[], now: number, activities: readonly Activity[]): GoalArchive['result'] {
   const race = descriptor.race;
+  if (race) {
+    const linked = activities.filter(activity => isValidRaceActivityLink(activity.raceLink, descriptor.ownerUserId)
+      && activity.raceLink.event.id === race.id);
+    if (linked.length === 1) return { status: 'unrecorded', source: 'activity_link', linkedActivityId: linked[0].id, updatedAt: now };
+    if (linked.length > 1) return { status: 'unrecorded' };
+  }
   if (!race || !localDate(race.date) || race.date < descriptor.startDate || race.date > descriptor.endDate) {
     return { status: 'unrecorded' };
   }
@@ -178,6 +185,6 @@ export function buildGoalArchive(
         durationActivities: rows.filter(row => row.duration !== null).length,
       },
     },
-    result: raceResult(descriptor, racePRs, now),
+    result: raceResult(descriptor, racePRs, now, activities),
   });
 }

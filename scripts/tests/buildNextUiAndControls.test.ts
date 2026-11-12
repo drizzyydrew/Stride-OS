@@ -68,7 +68,8 @@ test('bottom tabs remain evenly spaced after moving Strength into More', () => {
   assert.equal((visibleSection.match(/<Tabs\.Screen/g) ?? []).length, 5);
   assert.match(tabs, /TAB_ICON_SIZE\s*=\s*25/);
   assert.match(tabs, /TAB_LABEL_FONT_SIZE\s*=\s*10/);
-  assert.match(tabs, /minimumFontScale=\{0\.85\}/);
+  assert.doesNotMatch(tabs, /adjustsFontSizeToFit|minimumFontScale/, 'labels keep one shared size instead of shrinking longer names');
+  assert.match(tabs, /tabBarIconStyle:\s*\{ width: '100%'/, 'icon-and-label content uses the full equal-width cell');
   assert.match(tabs, /minWidth:\s*0/);
   assert.match(tabs, /flex:\s*1/);
   assert.match(tabs, /paddingHorizontal:\s*LAYOUT\.tabBarPadHorizontal/);

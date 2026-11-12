@@ -40,8 +40,8 @@ const asset = (slug: string, state: RacePrBadgeState, ext: 'svg' | 'png') => `as
 export const RACE_PR_DEFINITIONS: readonly RacePrDefinition[] = entries.map(entry => ({
   ...entry, distanceMeters: STANDARD_DISTANCE_METERS[entry.distanceKey]!, title: `${entry.distanceLabel} PR`,
   compactTitle: `${entry.distanceLabel} PR`,
-  description: `A personal best for ${entry.distanceLabel.toLowerCase()} from a confirmed race or time trial.`,
-  criteria: `Save a valid elapsed ${entry.distanceLabel.toLowerCase()} result to establish your first personal best, then beat that time to celebrate another PR.`,
+  description: `A personal best for ${entry.distanceLabel.toLowerCase()} from a recorded effort, race or time trial.`,
+  criteria: `Record a supported ${entry.distanceLabel.toLowerCase()} effort or save an elapsed race result to establish your first personal best, then beat that time to celebrate another PR.`,
   artworkPath: asset(entry.slug, 'unlocked', 'svg'), lockedArtworkPath: asset(entry.slug, 'locked', 'svg'),
   unlockedPngPath: asset(entry.slug, 'unlocked', 'png'), lockedPngPath: asset(entry.slug, 'locked', 'png'),
   shareTransparentSvgPath: asset(entry.slug, 'transparent', 'svg'), shareTransparentPngPath: asset(entry.slug, 'transparent', 'png'),

@@ -174,7 +174,7 @@ function load<T>(path: string, mocks: Record<string, unknown>): T {
 function nativePromptHarness(options: { elapsedSeconds?: number; outdoor?: boolean } = {}) {
   let effect!: () => () => void;
   const alerts: { title: string; message: string; buttons: { text: string; onPress: () => void }[] }[] = [];
-  const stops: unknown[] = []; const routes: string[] = [];
+  const stops: unknown[] = []; const routes: string[] = []; const watchDiscoveries: string[] = [];
   const lease = { ownerUserId: 'athlete-a', generation: 1 };
   let ownerCurrent = true;
   const run = { isActive: !options.outdoor, workoutInstanceId: 'retained-outdoor-run', startTime: Date.now() - 600_000,
@@ -200,9 +200,10 @@ function nativePromptHarness(options: { elapsedSeconds?: number; outdoor?: boole
     '../../store/activityStore': { useActivityStore: store({ activities: [] }) },
     '../../store/workoutStore': { useWorkoutStore: store({ history: [] }) },
     '../../store/onboardingStore': { useOnboardingStore: () => true },
+    '../../../modules/stride-watch-connectivity/src': { recoverStrideWatchControlIdentity: (id: string) => { watchDiscoveries.push(id); } },
   });
   component.default(); const unmount = effect();
-  return { alerts, stops, routes, unmount, foreground: (state: string) => foreground(state),
+  return { alerts, stops, routes, watchDiscoveries, unmount, foreground: (state: string) => foreground(state),
     revokeOwner: () => { ownerCurrent = false; }, ready: () => new Promise(resolve => setImmediate(resolve)) };
 }
 
@@ -232,6 +233,7 @@ test('native short-run warning can keep the same recording or explicitly confirm
   const keep = nativePromptHarness({ elapsedSeconds: 60 }); await keep.ready();
   keep.alerts[0].buttons.find(button => button.text === 'Stop activity')!.onPress();
   keep.alerts[1].buttons.find(button => button.text === 'Continue recording')!.onPress();
+  assert.deepEqual(keep.watchDiscoveries, ['retained-outdoor-run']);
   assert.deepEqual(keep.stops, []); assert.deepEqual(keep.routes, ['/(tabs)/training']); keep.unmount();
   const stop = nativePromptHarness({ elapsedSeconds: 60 }); await stop.ready();
   stop.alerts[0].buttons.find(button => button.text === 'Stop activity')!.onPress();

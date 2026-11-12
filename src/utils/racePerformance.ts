@@ -1,8 +1,10 @@
+import { isValidRaceActivityLink, recordedRaceElapsedSeconds } from './raceLink';
 import type { Activity, ActivityRaceResult } from '../types/activity';
 import { STANDARD_DISTANCE_METERS, type RacePR } from '../types/athlete';
 import type { CustomWorkoutLog } from '../types/customWorkout';
 import type { GoalArchive } from '../types/goalArchive';
 import { isValidDateOnly, todayDateOnly } from './dateOnly';
+import { recordedRunPerformances } from './recordedRunPerformances';
 
 const DAY_MS = 86_400_000;
 const DISTANCE_LABELS: Record<string, string> = {
@@ -36,7 +38,7 @@ export function buildActivityRaceResult(
   const seconds = parseRaceElapsedTime(elapsedText);
   const meters = distanceKey === 'custom' ? customDistanceMeters : STANDARD_DISTANCE_METERS[distanceKey];
   if (!['race', 'time_trial'].includes(kind) || seconds == null || meters == null || !Number.isFinite(meters) || meters <= 0) return null;
-  return { kind, distanceKey, distanceMeters: meters, elapsedTimeSeconds: seconds };
+  return { kind, distanceKey, distanceMeters: meters, elapsedTimeSeconds: seconds, timingSource: 'user_entered' };
 }
 
 export function completedActivityRaceResult(activity: Pick<Activity, 'activityType' | 'status' | 'completionClassification' | 'raceResult'>): ActivityRaceResult | undefined {
@@ -45,17 +47,21 @@ export function completedActivityRaceResult(activity: Pick<Activity, 'activityTy
 }
 
 export function activityRacePerformance(activity: Activity, ownerUserId: string, now = Date.now()): RacePR | null {
+  const link = activity.raceLink;
+  if (link && (!isValidRaceActivityLink(link, ownerUserId) || link.outcome !== 'finished')) return null;
   const result = completedActivityRaceResult(activity);
   if (!result
     || !['race', 'time_trial'].includes(result.kind) || !Number.isFinite(activity.startTime)) return null;
+  if (link && (result.kind !== 'race' || result.distanceKey !== link.event.distance || result.distanceMeters !== link.event.distanceMeters)) return null;
+  if (result.timingSource === 'recorded_elapsed' && recordedRaceElapsedSeconds(activity) !== result.elapsedTimeSeconds) return null;
   if (result.distanceKey !== 'custom' && STANDARD_DISTANCE_METERS[result.distanceKey] !== result.distanceMeters) return null;
   const pr: RacePR = {
     id: `activity-result:${activity.id}`, distanceKey: result.distanceKey,
     distanceLabel: result.distanceKey === 'custom' ? `${Number((result.distanceMeters / 1000).toFixed(3))} km` : DISTANCE_LABELS[result.distanceKey],
     distanceMeters: result.distanceMeters, timeSeconds: result.elapsedTimeSeconds,
-    date: todayDateOnly(new Date(activity.startTime)), official: result.kind === 'race',
+    date: todayDateOnly(new Date(activity.startTime)), official: result.kind === 'race' && result.timingSource !== 'recorded_elapsed',
     ...(result.recordedAt == null ? {} : { recordedAt: result.recordedAt }),
-    source: { kind: 'activity', activityId: activity.id, ownerUserId },
+    source: { kind: 'activity', activityId: activity.id, ownerUserId, ...(link ? { raceId: link.event.id } : {}) },
   };
   return isValidRacePerformance(pr, now) ? pr : null;
 }
@@ -76,7 +82,7 @@ export function bestRacePRsByDistance(records: readonly RacePR[], now = Date.now
 
 function archivePerformance(archive: GoalArchive, ownerUserId: string, athleteId: string, now: number): RacePR | null {
   if (archive.ownerUserId !== ownerUserId || archive.athleteId !== athleteId
-    || archive.kind !== 'race' || !archive.race || archive.result.status !== 'finished'
+    || archive.kind !== 'race' || !archive.race || archive.result.source === 'activity_link' || archive.result.status !== 'finished'
     || archive.result.timeSeconds == null) return null;
   const key = archive.race.distance;
   const meters = STANDARD_DISTANCE_METERS[key];
@@ -86,7 +92,7 @@ function archivePerformance(archive: GoalArchive, ownerUserId: string, athleteId
     distanceMeters: meters, timeSeconds: archive.result.timeSeconds, date: archive.race.date,
     course: archive.race.name, official: true,
     ...(archive.result.source === 'user' && Number.isFinite(archive.result.updatedAt) ? { recordedAt: archive.result.updatedAt } : {}),
-    source: { kind: 'goal_archive', archiveId: archive.id, ownerUserId },
+    source: { kind: 'goal_archive', archiveId: archive.id, ownerUserId, raceId: archive.race.id },
   };
   return isValidRacePerformance(pr, now) ? pr : null;
 }
@@ -95,18 +101,48 @@ function archivePerformance(archive: GoalArchive, ownerUserId: string, athleteId
  * Only invoke once both complete source collections have loaded for this owner.
  * Result corrections, DNF/DNS/unrecorded and deleted source rows replace/remove
  * their linked performances. User-entered PR rows are never removed or rewritten.
- * Activities alone and legacy custom-log durationMinutes do not establish a
- * full elapsed race finish time. An explicit result is required.
+ * Recorded training efforts retain separate provenance from explicit race
+ * finishes. Legacy custom-log durationMinutes alone is not elapsed evidence.
  */
 export function reconcileRacePerformances(
   existing: readonly RacePR[], archives: readonly GoalArchive[], _customLogs: readonly CustomWorkoutLog[],
   ownerUserId: string, athleteId: string, now = Date.now(), activities: readonly Activity[] = [],
 ): RacePR[] {
-  const manual = existing.filter(pr => !pr.source || !['goal_archive', 'custom_workout', 'activity'].includes(pr.source.kind));
-  const linked = [
-    ...archives.map(archive => archivePerformance(archive, ownerUserId, athleteId, now)),
-    ...(athleteId === 'athlete_default' ? activities.map(activity => activityRacePerformance(activity, ownerUserId, now)) : []),
-  ].filter((pr): pr is RacePR => pr !== null);
+  const manual = existing.filter(pr => !pr.source || !['goal_archive', 'custom_workout', 'activity', 'recorded_effort'].includes(pr.source.kind));
+  const ownedArchives = archives.filter(row => row.ownerUserId === ownerUserId && row.athleteId === athleteId && row.kind === 'race' && row.race);
+  const manualEvents = new Set(ownedArchives.filter(row => row.result.source === 'user' && (row.result.status !== 'unrecorded' || row.result.timeSeconds !== undefined)).map(row => row.race!.id));
+  const claimCounts = new Map<string, number>();
+  for (const activity of activities) {
+    if (isValidRaceActivityLink(activity.raceLink, ownerUserId)) {
+      const id = activity.raceLink.event.id;
+      claimCounts.set(id, (claimCounts.get(id) ?? 0) + 1);
+    }
+  }
+  const activityEligible = (activity: Activity) => !activity.raceLink || isValidRaceActivityLink(activity.raceLink, ownerUserId)
+    && claimCounts.get(activity.raceLink.event.id) === 1 && !manualEvents.has(activity.raceLink.event.id);
+  const archiveCandidates = ownedArchives.filter(row => row.result.source !== 'activity_link'
+    && (row.result.source === 'user' || !claimCounts.has(row.race!.id)))
+    .map(row => archivePerformance(row, ownerUserId, athleteId, now)).filter((row): row is RacePR => row !== null);
+  // Multiple archive copies of one event may agree. Conflicting saved finishes
+  // remain visible in archives, but cannot silently choose a PR winner.
+  const archiveGroups = new Map<string, RacePR[]>();
+  for (const pr of archiveCandidates) {
+    const id = pr.source?.kind === 'goal_archive' ? pr.source.raceId ?? pr.id : pr.id;
+    archiveGroups.set(id, [...archiveGroups.get(id) ?? [], pr]);
+  }
+  const archivePrs = [...archiveGroups.values()].flatMap(group => new Set(group.map(pr => `${pr.distanceMeters}:${pr.timeSeconds}`)).size === 1
+    ? [group.sort((a, b) => a.id.localeCompare(b.id))[0]] : []);
+  const activityPrs = athleteId === 'athlete_default' ? activities.filter(activityEligible).map(activity => {
+    const pr = activityRacePerformance(activity, ownerUserId, now);
+    if (pr?.source?.kind === 'activity' && pr.source.raceId) {
+      const source = pr.source;
+      const archive = ownedArchives.find(row => row.race!.id === source.raceId);
+      if (archive) source.archiveId = archive.id;
+    }
+    return pr;
+  }).filter((row): row is RacePR => row !== null) : [];
+  const linked = [...archivePrs, ...activityPrs,
+    ...(athleteId === 'athlete_default' ? activities.filter(activityEligible).flatMap(activity => recordedRunPerformances(activity, ownerUserId, now)) : [])];
   // Keep source identities, including when one result was also manually entered.
   // Equal values do not prove that two entries describe the same race.
   const seen = new Set(manual.map(pr => pr.id));

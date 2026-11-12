@@ -1,0 +1,67 @@
+{
+  "scope": "actual source functions extracted to React Native Web / Expo UI; synthetic data and inert services; not native device acceptance",
+  "capturedAt": "2026-11-12T03:35:33.427744+00:00",
+  "widthsCssPx": [
+    320,
+    400
+  ],
+  "textScale": 1.35,
+  "surfaces": [
+    "lifecycle",
+    "profile",
+    "race"
+  ],
+  "states": [
+    "closed",
+    "expanded"
+  ],
+  "observedHorizontalOverflowElements": 0,
+  "tests": {
+    "passed": 34,
+    "failed": 0,
+    "log": "/tmp/strideos-minimalism-tests.txt"
+  },
+  "sourceSha256": {
+    "src/components/goals/GoalLifecycleCard.tsx": "d95eefdb5f1c71462687707011d2398b31cb6efb669d8150691e58602cd16263",
+    "src/components/profile/profile-identity-fields.tsx": "41f84fb815c8337886a13991d7f1b7f9374350b9f3119d030e7e92cc747f2227",
+    "src/components/activity/RaceLinkEditor.tsx": "9d44647d9a7dfd00ccfb0a95f8c8d889be2030085d1088878916a79de8a20173",
+    "scripts/tests/minimalismPresentation.test.ts": "fc2fe1da01986912eb33eb793200518a35c5a4761e055618cf48e13177fa54c4",
+    "scripts/tests/raceLinkUi.test.ts": "9cf41013c9b747fccb134684b9b76be74b670a3b951b48ca0d9a3d5fb51a7427",
+    "docs/handoff/race-link-20261111/generate-minimalism-fixture.cjs": "bb2637280b5ecfef75d4f8402ad73cf018ee075c221765d94ba3e0377d9096a3"
+  },
+  "screenshots": {
+    "lifecycle-320-closed.png": "33b29bdb14fb2e1ae9a0c8abdfabafc30746bae2029771ca143c57e1bc40287a",
+    "lifecycle-320-open.png": "9445da0df5ccdf3e4987e8e51aaa4650a11b71cc412f126c3ffc535db7e84d29",
+    "lifecycle-400-closed.png": "9c43a3a32d4ce03490a6d3f57afac5b99023a3c95a35a0bcb74393c22aba3978",
+    "lifecycle-400-open.png": "ff2dea1d6cd9cba357df7d152dec0ea339f430d10480df7737af9084389b0c13",
+    "profile-320-closed.png": "f7c47549abf9c9bfcd87d24ae5a3a2d925b45836edce98d2d3f1af20fbf1dc6d",
+    "profile-320-open.png": "de1166e5983df8a512581ae7a692883e4832aeff77a22b5a95bb38ce7901ae00",
+    "profile-400-closed.png": "0c477a6ae85636078a858e12de7dd90c7071bc499efd55a0cdbb6ac1425be679",
+    "profile-400-open.png": "02baeda5fc548bb2243ab4237ad290ae308f9b7ae0fb019e5ca0f79006ce3088",
+    "race-320-closed.png": "7aed9a782e469a5dbdeddefaf3bef0e9af81219d605f90371afcbe27789da906",
+    "race-320-open.png": "fd92ede3c9f3eb599330a526e1b147589068424e8cb18f84f5751b1072d488b4",
+    "race-400-closed.png": "1f84f19b91d65d55ba1cda0d3ee897d9ac6a1cd3f7fb8b431acdd503ac0de346",
+    "race-400-open.png": "8b3626ea17a5b04babc3229fb26e85a85691546b0f323d748fb88c461dc216a8"
+  },
+  "crop": {
+    "originalPixels": [
+      2432,
+      1750
+    ],
+    "bodyY": 162,
+    "320xBounds": [
+      952,
+      1592
+    ],
+    "400xBounds": [
+      872,
+      1672
+    ]
+  },
+  "limitations": [
+    "Native Dynamic Type / DisclosureGroup / Picker rendering remains device QA.",
+    "Screenshots show the current viewport; long expanded sections scroll vertically.",
+    "Single-line text inputs retain normal horizontal editing; full selected race title wraps in adjacent summary.",
+    "No account, recording, persistence, HealthKit or Watch operation performed."
+  ]
+}

@@ -1,6 +1,6 @@
 // ─── Onboarding Complete ────────────────────────────────────────────────────────
 //
-// Final onboarding step. Collects a name, then initializes the athlete profile
+// Final onboarding step. Confirms identity choices, then initializes the athlete profile
 // with all data gathered across steps 1–8. Generates baseline calibration and
 // navigates to the main dashboard.
 
@@ -10,11 +10,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../src/lib/localDataOwner';
+import { saveOnboardingIdentity } from '../../src/lib/profileIdentityEditing';
+import { onboardingIdentityForCompletion } from '../../src/utils/onboardingIdentity';
+import { getProfileIdentity } from '../../src/utils/profileIdentity';
 
 import { useOnboardingStore }    from '../../src/store/onboardingStore';
 import { useProfileStore }       from '../../src/store/profileStore';
@@ -106,7 +109,7 @@ export default function CompleteScreen() {
   const { data, completeOnboarding } = useOnboardingStore();
   const {
     initDefaultProfile,
-    updateActive,
+    updateProfile,
     addRacePR,
     recalibrate,
     activeAthleteId,
@@ -121,7 +124,10 @@ export default function CompleteScreen() {
     initialized: planInitialized,
   } = useTrainingPlanStore();
 
-  const [name,     setName]     = useState('');
+  const [lease] = useState(() => captureOwnerLease());
+  const [initialAthleteId] = useState(activeAthleteId);
+  const buildingRef = useRef(false);
+  const [error, setError] = useState('');
   const [building, setBuilding] = useState(false);
 
   const hasPR      = data.hasPR && data.prDistance !== null && data.prTimeSeconds > 0;
@@ -130,7 +136,8 @@ export default function CompleteScreen() {
     : null;
   const vdotFinal  = vdotCalc ?? estimateVdotFromProfile(data.weeklyMileage, data.yearsRunning);
   const hrMaxEst   = data.age > 0 ? estimateHRMax(data.age) : null;
-  const displayName = name.trim() || 'Athlete';
+  const identity = onboardingIdentityForCompletion(data, useProfileStore.getState().getActiveProfile());
+  const displayName = identity.ok ? getProfileIdentity(identity.patch).primaryLabel : 'Athlete';
 
   function formatTime(sec: number): string {
     const h = Math.floor(sec / 3600);
@@ -141,96 +148,124 @@ export default function CompleteScreen() {
   }
 
   async function handleBuild() {
-    setBuilding(true);
-
-    // 1. Create the athlete profile (no-op if already exists)
-    initDefaultProfile(displayName, vdotFinal);
-
-    // 2. Populate all onboarding fields
-    updateActive({
-      name:                  displayName,
-      age:                   data.age,
-      sex:                   data.sex,
-      heightCm:              data.heightCm,
-      weightKg:              data.weightKg,
-      weightProvenance:      data.weightProvenance ?? null,
-      hrResting:             data.hrResting,
-      hrMax:                 hrMaxEst,
-      hrMaxManual:           false,
-      trainingAgeYears:      data.yearsRunning,
-      availableDays:         data.availableDays,
-      runDays:               data.runDays,
-      liftDays:              data.liftDays,
-      targetSessions:        data.targetSessions,
-      vo2Estimate:           vdotFinal,
-      vdot:                  vdotFinal,
-    });
-
-    // 3. Record race PR if provided
-    if (hasPR && data.prDistance) {
-      const pr: RacePR = {
-        id:             `pr_onboarding_${Date.now()}`,
-        distanceKey:    data.prDistance,
-        distanceLabel:  DISTANCE_LABELS[data.prDistance],
-        distanceMeters: DISTANCE_METERS[data.prDistance],
-        timeSeconds:    data.prTimeSeconds,
-        date:           data.prDate || todayDateOnly(),
-        official:       false,
-      };
-      addRacePR(activeAthleteId, pr);
+    if (buildingRef.current) return;
+    const currentLease = lease ?? captureOwnerLease();
+    const current = () => ownerLeaseIsCurrent(currentLease)
+      && useProfileStore.getState().activeAthleteId === initialAthleteId;
+    if (!current()) {
+      setError('Your account or active profile changed. Reopen setup before building your training system.'); return;
     }
-
-    // 4. Run initial calibration with conservative defaults (no workout history yet)
-    recalibrate({
-      weeklyMileage:        data.weeklyMileage,
-      currentPhase:         'base',
-      recentWorkoutCount:   0,
-      lastWorkoutDaysAgo:   7,
-      currentFatigueScore:  30,
-      currentRecoveryScore: 70,
-    });
-
-    // 5. Wire onboarding data to athleteStore (goal race + mileage + name)
-    const goalRaceStr = buildGoalRaceLabel(
-      data.primaryGoal,
-      data.goalRaceLabel,
-      data.prDistance,
-      data.prTimeSeconds,
-    );
-    setGoalRace(goalRaceStr);
-    setAthleteWeeklyMileage(data.weeklyMileage);
-    setAthleteName(displayName);
-
-    // 5b. Write the plan spine (goal type, program start date, race calendar).
-    // ensureInitialized is a no-op after the first call — call it first so the
-    // `initialized` flag flips true, then override with the real onboarding
-    // choices so the tabs-layout migration effect never clobbers them.
-    const startDate = data.programStartDate || toYMD(new Date());
-    if (!planInitialized) {
-      useTrainingPlanStore.getState().ensureInitialized({
-        goalType:         data.goalType,
-        programStartDate: startDate,
+    if (!identity.ok) { setError(identity.error); return; }
+    buildingRef.current = true;
+    setBuilding(true); setError('');
+    try {
+      // 1. Save identity without switching or mirroring a secondary athlete.
+      const saved = await saveOnboardingIdentity(identity.patch, initialAthleteId, {
+        ownerIsCurrent: current,
+        activeAthleteId: () => useProfileStore.getState().activeAthleteId,
+        activeProfile: () => useProfileStore.getState().getActiveProfile(),
+        seedDefault: () => initDefaultProfile(displayName, vdotFinal),
+        writeProfile: (id, patch) => updateProfile(id, patch),
+        writeLegacyNames: [name => useOnboardingStore.getState().updateData({ name }),
+          name => setAthleteName(name || 'Athlete')],
       });
-    }
-    setGoalType(data.goalType);
-    setProgramStartDate(startDate);
-    if (data.goalType === 'race_prep' && data.raceName && data.raceDate) {
-      const alreadyAdded = races.some(r => r.name === data.raceName && r.date === data.raceDate);
-      if (!alreadyAdded) {
-        addRace({
-          name:     data.raceName,
-          date:     data.raceDate,
-          distance: data.raceDistance,
-          priority: data.racePriority,
+      if (saved.status !== 'saved') { setError(saved.message); return; }
+      const target = saved.target;
+      if (!current() || useProfileStore.getState().getActiveProfile()?.createdAt !== target.createdAt) { setError('Your active profile changed. Reopen setup.'); return; }
+      // 2. Populate all onboarding fields on the same captured athlete.
+      await updateProfile(target.athleteId, {
+        age:                   data.age,
+        sex:                   data.sex,
+        heightCm:              data.heightCm,
+        weightKg:              data.weightKg,
+        weightProvenance:      data.weightProvenance ?? null,
+        hrResting:             data.hrResting,
+        hrMax:                 hrMaxEst,
+        hrMaxManual:           false,
+        trainingAgeYears:      data.yearsRunning,
+        availableDays:         data.availableDays,
+        runDays:               data.runDays,
+        liftDays:              data.liftDays,
+        targetSessions:        data.targetSessions,
+        vo2Estimate:           vdotFinal,
+        vdot:                  vdotFinal,
+      });
+
+      if (!current() || useProfileStore.getState().getActiveProfile()?.createdAt !== target.createdAt) {
+        setError('Your account or active profile changed. Reopen setup before continuing.'); return;
+      }
+
+      // 3. Record race PR if provided
+      if (hasPR && data.prDistance) {
+        const pr: RacePR = {
+          id:             `pr_onboarding_${Date.now()}`,
+          distanceKey:    data.prDistance,
+          distanceLabel:  DISTANCE_LABELS[data.prDistance],
+          distanceMeters: DISTANCE_METERS[data.prDistance],
+          timeSeconds:    data.prTimeSeconds,
+          date:           data.prDate || todayDateOnly(),
+          official:       false,
+        };
+        addRacePR(activeAthleteId, pr);
+      }
+
+      // 4. Run initial calibration with conservative defaults (no workout history yet)
+      recalibrate({
+        weeklyMileage:        data.weeklyMileage,
+        currentPhase:         'base',
+        recentWorkoutCount:   0,
+        lastWorkoutDaysAgo:   7,
+        currentFatigueScore:  30,
+        currentRecoveryScore: 70,
+      });
+
+      // 5. Wire onboarding data to athleteStore (goal race + mileage + name)
+      const goalRaceStr = buildGoalRaceLabel(
+        data.primaryGoal,
+        data.goalRaceLabel,
+        data.prDistance,
+        data.prTimeSeconds,
+      );
+      setGoalRace(goalRaceStr);
+      setAthleteWeeklyMileage(data.weeklyMileage);
+      // Identity mirrors were saved with the original profile's owner checks above.
+
+      // 5b. Write the plan spine (goal type, program start date, race calendar).
+      // ensureInitialized is a no-op after the first call — call it first so the
+      // `initialized` flag flips true, then override with the real onboarding
+      // choices so the tabs-layout migration effect never clobbers them.
+      const startDate = data.programStartDate || toYMD(new Date());
+      if (!planInitialized) {
+        useTrainingPlanStore.getState().ensureInitialized({
+          goalType:         data.goalType,
+          programStartDate: startDate,
         });
       }
+      setGoalType(data.goalType);
+      setProgramStartDate(startDate);
+      if (data.goalType === 'race_prep' && data.raceName && data.raceDate) {
+        const alreadyAdded = races.some(r => r.name === data.raceName && r.date === data.raceDate);
+        if (!alreadyAdded) {
+          addRace({
+            name:     data.raceName,
+            date:     data.raceDate,
+            distance: data.raceDistance,
+            priority: data.racePriority,
+          });
+        }
+      }
+
+      // 6. Mark onboarding complete — root layout will redirect to tabs
+      await completeOnboarding();
+      if (!current()) return;
+
+      router.replace('/(tabs)/dashboard');
+    } catch {
+      setError('Your training setup could not be saved. Keep this screen open and retry.');
+    } finally {
+      buildingRef.current = false;
+      setBuilding(false);
     }
-
-    // 6. Mark onboarding complete — root layout will redirect to tabs
-    completeOnboarding();
-
-    setBuilding(false);
-    router.replace('/(tabs)/dashboard');
   }
 
   return (
@@ -248,19 +283,12 @@ export default function CompleteScreen() {
         </Text>
       </View>
 
-      {/* Name input */}
       <View style={s.section}>
-        <Text style={s.sectionLabel}>WHAT SHOULD WE CALL YOU?</Text>
-        <TextInput
-          style={s.nameInput}
-          value={name}
-          onChangeText={setName}
-          placeholder="Your name or nickname"
-          placeholderTextColor={colors.textSubtle}
-          autoCapitalize="words"
-          autoCorrect={false}
-          returnKeyType="done"
-        />
+        <Text style={s.sectionLabel}>PROFILE IDENTITY</Text>
+        <Text style={s.heroSub}>{displayName}</Text>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/onboarding/identity')}>
+          <Text style={{ color: colors.primary, paddingVertical: 10 }}>Edit name, username &amp; visibility</Text>
+        </Pressable>
       </View>
 
       {/* Summary card */}
@@ -313,6 +341,8 @@ export default function CompleteScreen() {
           </View>
         ))}
       </View>
+
+      {error ? <Text accessibilityRole="alert" style={{ color: colors.critical }}>{error}</Text> : null}
 
       {/* CTA */}
       <Pressable
@@ -375,16 +405,7 @@ const s = StyleSheet.create({
     fontWeight:    FontWeight.black,
     letterSpacing: 0.6,
   },
-  nameInput: {
-    backgroundColor: colors.card,
-    borderRadius:    Radius.sm,
-    borderWidth:     1,
-    borderColor:     colors.border,
-    color:           colors.text,
-    fontSize:        FontSize.md,
-    fontWeight:      FontWeight.bold,
-    padding:         spacing.md,
-  },
+
   summaryCard: {
     backgroundColor: colors.card,
     borderRadius:    12,

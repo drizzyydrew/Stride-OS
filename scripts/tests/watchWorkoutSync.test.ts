@@ -104,7 +104,9 @@ test('watch manager mutates state on the main thread and ends a session at most 
   // "running" is published only from the HealthKit delegate, not also from beginWorkout.
   const beginBody = watchManager.slice(watchManager.indexOf('private func beginWorkout'), watchManager.indexOf('private func requestAuthorization'));
   assert.doesNotMatch(beginBody, /sendWorkoutState\("running"\)/);
-  assert.match(watchManager, /case \.running:[\s\S]{0,700}sendWorkoutState\("running"\)/);
+  const stateCallback = watchManager.slice(watchManager.indexOf('fileprivate func handleWorkoutSessionStateChange'), watchManager.indexOf('fileprivate func handleWorkoutSessionFailure'));
+  const runningCase = stateCallback.slice(stateCallback.indexOf('case .running:'), stateCallback.indexOf('case .paused:'));
+  assert.match(runningCase, /sendWorkoutState\("running"\)/);
   // end() is idempotent and guarded by HealthKit session state.
   const endBody = watchManager.slice(watchManager.indexOf('func endWorkout()'), watchManager.indexOf('private func armStartWatchdog'));
   assert.match(endBody, /guard !isEnding else \{ return \}/);

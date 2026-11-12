@@ -26,6 +26,7 @@ export class LocalDataOwner {
   private authenticatedUserId: string | null = null;
   private writes: Promise<void> = Promise.resolve();
   private invalidationListeners = new Set<() => void>();
+  private leaseInvalidationListeners = new Set<(reason: 'refresh' | 'revoke') => void>();
   status: LocalAccessStatus = 'loading';
 
   constructor(private readonly storage: OwnerStorage) {}
@@ -38,6 +39,17 @@ export class LocalDataOwner {
     this.invalidationListeners.add(listener);
     return () => { this.invalidationListeners.delete(listener); };
   }
+  /** Revoke native pending work synchronously before an ownership lease changes. */
+  onLeaseInvalidated(listener: (reason: 'refresh' | 'revoke') => void) {
+    this.leaseInvalidationListeners.add(listener);
+    return () => { this.leaseInvalidationListeners.delete(listener); };
+  }
+  private advanceGeneration(reason: 'refresh' | 'revoke') {
+    this.leaseInvalidationListeners.forEach(listener => {
+      try { listener(reason); } catch { /* A cancellation observer must not prevent logout. */ }
+    });
+    this.generation += 1;
+  }
   get canAccess() {
     return (this.status === 'ready' || this.status === 'offline')
       && !this.record.logoutFence && !!this.record.ownerUserId
@@ -48,7 +60,7 @@ export class LocalDataOwner {
     this.record = record;
     const write = this.writes.then(() => this.storage.setItem(LOCAL_DATA_OWNER_KEY, JSON.stringify(record)));
     this.writes = write.catch(() => undefined);
-    try { await write; } catch (error) { this.status = 'storage-error'; throw error; }
+    try { await write; } catch (error) { this.advanceGeneration('revoke'); this.status = 'storage-error'; throw error; }
   }
 
   async initialize(cachedUserId: string | null, hasExistingData: () => Promise<boolean>) {
@@ -75,7 +87,7 @@ export class LocalDataOwner {
   async accept(userId: string, options: { explicitSignIn?: boolean; offline?: boolean } = {}) {
     if (!localAccessGuard(userId)) { this.block('signed-out'); return; }
     if (this.canAccess && this.authenticatedUserId === userId && this.status === (options.offline ? 'offline' : 'ready')) return;
-    this.generation += 1;
+    this.advanceGeneration(this.canAccess && this.authenticatedUserId === userId ? 'refresh' : 'revoke');
     this.authenticatedUserId = userId;
     this.status = 'loading';
     if (!this.loaded) throw new Error('Local ownership has not loaded');
@@ -94,7 +106,7 @@ export class LocalDataOwner {
       this.block('storage-error');
       throw new Error('Account ownership must finish loading before logout can be secured');
     }
-    this.generation += 1;
+    this.advanceGeneration('revoke');
     this.authenticatedUserId = null;
     this.status = status;
     this.invalidationListeners.forEach(listener => listener());
@@ -102,7 +114,7 @@ export class LocalDataOwner {
   }
 
   block(status: LocalAccessStatus) {
-    this.generation += 1;
+    this.advanceGeneration('revoke');
     this.authenticatedUserId = null;
     this.status = status;
     this.invalidationListeners.forEach(listener => listener());

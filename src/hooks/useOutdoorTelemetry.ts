@@ -7,7 +7,7 @@ import { getLatestHeartRateSample } from '../lib/healthKit';
 import { useLiveSensorStore } from '../store/liveSensorStore';
 import type { ActivityType, CadenceSample, HeartRateSample, PowerSample } from '../types/activity';
 import {
-  appendTelemetrySamples, EMPTY_OUTDOOR_TELEMETRY, selectLiveTelemetry,
+  appendTelemetrySamples, EMPTY_OUTDOOR_TELEMETRY, retainLiveTelemetryWindow, selectLiveTelemetry,
   type OutdoorTelemetry,
 } from '../utils/outdoorTelemetry';
 
@@ -44,18 +44,28 @@ export function useOutdoorTelemetry(input: Input): LiveTelemetry {
     const steps = activityType === 'running' || activityType === 'walking' || activityType === 'hiking';
     const cycling = activityType === 'cycling';
     const liveFrom = Date.now();
+    let lastCacheAt = liveFrom;
 
-    const publish = () => {
+    const pruneDisplayCache = (now: number) => {
+      // A wall-clock correction must not resurrect previously expired readings.
+      if (now < lastCacheAt) observed = EMPTY_OUTDOOR_TELEMETRY;
+      lastCacheAt = now;
+      observed = retainLiveTelemetryWindow(observed, liveFrom, now);
+    };
+    const publish = (now = Date.now()) => {
       if (cancelled) return;
-      setLive(selectLiveTelemetry(observed, liveFrom, Date.now()));
+      pruneDisplayCache(now);
+      setLive(selectLiveTelemetry(observed, liveFrom, now));
     };
     const ingest = (samples: Partial<OutdoorTelemetry>) => {
       if (cancelled) return;
-      const valid = appendTelemetrySamples(EMPTY_OUTDOOR_TELEMETRY, samples, liveFrom, Date.now());
+      const now = Date.now();
+      pruneDisplayCache(now);
+      const valid = appendTelemetrySamples(EMPTY_OUTDOOR_TELEMETRY, samples, liveFrom, now);
       if (!valid.rawHeartRateSamples.length && !valid.cadenceSamples.length && !valid.powerSamples.length) return;
-      observed = appendTelemetrySamples(observed, valid, startedAt, Date.now());
+      observed = appendTelemetrySamples(observed, valid, startedAt, now);
       onSamples.current?.(id, valid);
-      publish();
+      publish(now);
     };
 
     const hrSub = addStrideWatchHeartRateListener(event => {
@@ -107,7 +117,7 @@ export function useOutdoorTelemetry(input: Input): LiveTelemetry {
     }
     void pollHealthKit();
     const hrTimer = setInterval(() => void pollHealthKit(), 5_000);
-    const timer = setInterval(publish, 1_000);
+    const timer = setInterval(() => publish(), 1_000);
     return () => {
       cancelled = true;
       clearInterval(hrTimer);

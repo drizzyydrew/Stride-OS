@@ -19,7 +19,7 @@ export default function WelcomeScreen() {
       step={0}
       title="Your training, calibrated."
       subtitle="StrideOS builds a personalized running and strength system from your physiology."
-      onNext={() => router.push('/onboarding/goal')}
+      onNext={() => router.push('/onboarding/identity')}
       nextLabel="Get Started"
     >
       <View style={styles.pillars}>

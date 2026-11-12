@@ -1,0 +1,18 @@
+// Reproducible extraction; generated TSX/React bundle stay private in /tmp.
+require('./generate-ui-fixture.cjs');
+const fs=require('node:fs'),repo=process.cwd(),ts=require(repo+'/node_modules/typescript'),build=require(repo+'/node_modules/esbuild');
+const dir='/tmp/strideos-minimalism-ui-20261111';fs.mkdirSync(dir,{recursive:true});
+function extracted(file,names){const text=fs.readFileSync(file,'utf8'),ast=ts.createSourceFile(file,text,99,true,4);return ast.statements.filter(node=>ts.isFunctionDeclaration(node)&&names.includes(node.name.text)).map(node=>node.getText(ast).replace(/^export (?:default )?/,'')).join('\n');}
+const profileFile='src/components/profile/profile-identity-fields.tsx',profileSource=fs.readFileSync(profileFile,'utf8');
+const profile=extracted(profileFile,['FieldLabel','IdentityField','ProfileIdentityFields'])+'\n'+profileSource.slice(profileSource.indexOf('const s = StyleSheet.create('));
+const lifecycle=extracted('src/components/goals/GoalLifecycleCard.tsx',['GoalLifecycleCard','GoalBackupStatus']);
+let source=fs.readFileSync('/tmp/strideos-race-link-ui-20261111/fixture.tsx','utf8').replace('Button,Collapsible,Host,Picker,RNHostView','Button,Collapsible,Host,Picker,Switch,RNHostView');
+const start=source.indexOf('function Fixture()'),end=source.indexOf('\ncreateRoot(',start);
+source=source.slice(0,start)+`\nif(q.has('linked')){activities[0].raceLink={ownerUserId:'synthetic-owner',athleteId:'athlete_default',event,outcome:'finished',linkedAt:now};activities[0].raceResult={kind:'race',distanceKey:'half_marathon',distanceMeters:21097.5,elapsedTimeSeconds:5400,timingSource:'recorded_elapsed'};}
+const useRouter=()=>({push(){feedback='Synthetic navigation requested';}}),goalArchiveLink=id=>({pathname:'/(tabs)/settings/goal-archive-detail',params:{id}}),continueOpenTraining=async()=>{};
+const useGoalLifecycle=()=>({isDefaultAthlete:true,status:'ready',pendingArchive:{id:'synthetic-archive',title:'Mountain Valley Anniversary Half Marathon'},archives:[{}],syncStatus:q.has('error')?'error':'synced'});
+${lifecycle}\n${profile}
+function Fixture(){const section=q.get('section')||'lifecycle';return <main style={{width,margin:'0 auto',padding:18,background:C.bg,color:C.text,fontFamily:'sans-serif'}}><p>Synthetic source fixture · {width}px · {scale}x text</p>{section==='lifecycle'?<GoalLifecycleCard/>:section==='profile'?<ProfileIdentityFields draft={{firstName:'Alexandria Catherine',lastName:'Long-Synthetic-Familyname',username:'synthetic_runner_long_alias',showName:true,showUsername:true}} onChange={()=>{}}/>:<><h1>Race result</h1><RaceLinkEditor ownerUserId="synthetic-owner" units="imperial" events={events} activities={activities} archives={archives} initialActivityId="synthetic-activity" initialEventId="synthetic-event" onClose={()=>{feedback='Synthetic close requested';}}/></>}<p id="fixture-report"/></main>;}
+`+source.slice(end);
+fs.writeFileSync(dir+'/fixture.tsx',source);fs.writeFileSync(dir+'/index.html','<!doctype html><html><head><meta charset="utf-8"><title>StrideOS minimalism source UI</title><style>html,body,#root{margin:0;background:#11100f}*{box-sizing:border-box}</style></head><body><div id="root"></div><script src="fixture.js?v='+Date.now()+'"></script></body></html>');
+build.buildSync({entryPoints:[dir+'/fixture.tsx'],bundle:true,jsx:'automatic',nodePaths:[repo+'/node_modules'],outfile:dir+'/fixture.js',alias:{'react-native':'react-native-web'},resolveExtensions:['.web.tsx','.web.ts','.web.js','.tsx','.ts','.jsx','.js','.json'],platform:'browser',conditions:['browser'],loader:{'.js':'jsx'},define:{'process.env':'{}','process.env.NODE_ENV':'"development"','process.env.EXPO_OS':'"web"','__DEV__':'true'}});console.log(dir);

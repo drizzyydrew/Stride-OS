@@ -43,8 +43,17 @@ export type RacePrLedger = {
 };
 
 export function racePrSourceIdentity(pr: RacePR): string {
-  return pr.source?.kind === 'activity' ? `activity:${pr.source.activityId}`
+  if ((pr.source?.kind === 'activity' || pr.source?.kind === 'goal_archive') && pr.source.raceId) return `race:${pr.source.raceId}`;
+  return pr.source?.kind === 'activity' || pr.source?.kind === 'recorded_effort' ? `activity:${pr.source.activityId}`
     : pr.source?.kind === 'goal_archive' ? `archive:${pr.source.archiveId}` : `manual:${pr.id}`;
+}
+function racePrSourceAliases(pr: RacePR): string[] {
+  const values = [racePrSourceIdentity(pr)];
+  if (pr.source?.kind === 'activity') {
+    values.push(`activity:${pr.source.activityId}`);
+    if (pr.source.archiveId) values.push(`archive:${pr.source.archiveId}`);
+  } else if (pr.source?.kind === 'goal_archive') values.push(`archive:${pr.source.archiveId}`);
+  return values;
 }
 export function racePrPerformanceFingerprint(pr: RacePR): string {
   return JSON.stringify([pr.distanceKey, pr.distanceMeters, pr.date, pr.timeSeconds]);
@@ -80,7 +89,7 @@ export function nextRacePrLedger(previous: RacePrLedger | null, records: readonl
     const before = previous?.best[distanceKey]?.timeSeconds;
     const newlyRecorded = Number.isFinite(record.recordedAt) && record.recordedAt! >= (previous?.initializedAt ?? now)
       && record.recordedAt! <= now;
-    if (previous && newlyRecorded && !seenSources.has(source) && !seenPerformances.has(fingerprint)
+    if (previous && newlyRecorded && !racePrSourceAliases(record).some(alias => seenSources.has(`${distanceKey}:${alias}`)) && !seenPerformances.has(fingerprint)
       && (before === undefined || record.timeSeconds < before)) {
       notifications.push({ eventKey: JSON.stringify([ownerUserId, distanceKey, racePrSourceIdentity(record)]),
         ownerUserId, athleteId: 'athlete_default', distanceKey, timeSeconds: record.timeSeconds,
@@ -91,7 +100,7 @@ export function nextRacePrLedger(previous: RacePrLedger | null, records: readonl
   // must not masquerade as a newly completed performance.
   for (const record of owned) {
     if (!racePrBestByDistance([record], now)[record.distanceKey as StandardDistance]) continue;
-    seenSources.add(`${record.distanceKey}:${racePrSourceIdentity(record)}`);
+    for (const alias of racePrSourceAliases(record)) seenSources.add(`${record.distanceKey}:${alias}`);
     seenPerformances.add(racePrPerformanceFingerprint(record));
   }
   return { ledger: { version: 1, ownerUserId, athleteId: 'athlete_default', initializedAt: previous?.initializedAt ?? now,

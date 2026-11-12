@@ -88,6 +88,17 @@ struct StrideRunLiveActivity: Widget {
 
 // ─── Lock screen view ─────────────────────────────────────────────────────────
 
+// The unchanged app-icon artwork keeps the approved three-chevron mark exact.
+private struct StrideOSBrandMark: View {
+  var body: some View {
+    Image("StrideOSMark")
+      .resizable()
+      .scaledToFit()
+      .frame(width: 28, height: 28)
+      .accessibilityLabel("StrideOS logo")
+  }
+}
+
 // Lock Screen presentations are capped at 160pt by ActivityKit — anything
 // taller is clipped by the system. This layout budgets ~140pt: one compact
 // header, ONE row of four metrics (never stacked numerals), one action row.
@@ -106,9 +117,7 @@ private struct LockScreenRunView: View {
     VStack(alignment: .leading, spacing: 9) {
       // Header: brand + run status + zone
       HStack(spacing: 6) {
-        Text("MM")
-          .font(.system(size: 11, weight: .bold, design: .serif))
-          .foregroundStyle(StrideDesign.clay)
+        StrideOSBrandMark()
         Text(context.state.isPaused ? "Paused · \(context.attributes.runName)" : context.attributes.runName)
           .font(.system(size: 12, weight: .semibold))
           .foregroundStyle(context.state.isPaused ? StrideDesign.clay : primaryText)
@@ -419,7 +428,8 @@ private struct LockScreenStrengthView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
       // Header: name + status, timer right-aligned
-      HStack(alignment: .firstTextBaseline, spacing: 8) {
+      HStack(alignment: .center, spacing: 8) {
+        StrideOSBrandMark()
         Text(context.state.isPaused ? "Paused · \(context.attributes.workoutName)" : context.attributes.workoutName)
           .font(.system(size: 14, weight: .bold))
           .foregroundStyle(context.state.isPaused ? Color(red: 0.91, green: 0.69, blue: 0.34) : .white)

@@ -269,9 +269,12 @@ test('actual onboarding physiology controls record explicit edits only and compl
     const data = onboarding.getState().data;
     assert.equal(data.weightProvenance?.source, touched ? 'user_entered' : undefined);
     const completeAst = sourceAst('app/onboarding/complete.tsx');
-    const update = find(completeAst, (node): node is ts.CallExpression => ts.isCallExpression(node) && node.expression.getText(completeAst) === 'updateActive');
-    const completeContext = createContext({ data, displayName: 'Athlete', hrMaxEst: 190, vdotFinal: 40, updateActive: profiles.getState().updateActive });
-    execute(update.getText(completeAst), completeContext);
+    const update = find(completeAst, (node): node is ts.CallExpression => ts.isCallExpression(node) && node.expression.getText(completeAst) === 'updateProfile' && node.arguments.length === 2
+      && ts.isObjectLiteralExpression(node.arguments[1]) && node.arguments[1].properties.some(property =>
+        ts.isPropertyAssignment(property) && property.name.getText(completeAst) === 'weightProvenance'));
+    const target = profiles.getState().getActiveProfile();
+    const completeContext = createContext({ data, target, hrMaxEst: 190, vdotFinal: 40, updateProfile: profiles.getState().updateProfile });
+    await execute(update.getText(completeAst), completeContext);
     assert.equal(weights.profilePowerMass(profiles.getState().getActiveProfile())?.bodyMassKg, touched ? 70.5 : undefined);
   }
 });

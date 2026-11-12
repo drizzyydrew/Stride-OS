@@ -38,7 +38,7 @@ export default function CrossTrainingOnboardingScreen() {
 
   return (
     <OnboardingShell
-      step={9}
+      step={10}
       title="Would you like cross-training included in your program?"
       subtitle="Choose only what you actually use. You can change these preferences later."
       onNext={() => router.push('/onboarding/complete')}

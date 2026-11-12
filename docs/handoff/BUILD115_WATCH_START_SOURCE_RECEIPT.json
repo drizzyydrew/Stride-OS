@@ -1,0 +1,225 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-11-12T05:24:05Z",
+  "localReviewDate": "2026-11-11",
+  "scope": "build115-watch-start-bounded-source-review",
+  "status": "all three seats renewed favorable 95/100 subjective bounded source confidence on final 53/53 source; root integrated and delivery gates separate",
+  "baseCommit": "5c2791110333cb413a809154035ad6ce5237b503",
+  "comparisonRef": "watch-working-build90",
+  "comparisonCommit": "aee249649697a5b95b21791d3e9973c2d9affbd7",
+  "files": [
+    {
+      "path": "modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift",
+      "sha256": "301af28040b74918d9548f10b60f77a579b4d81a4135f3c8d60a6aa7c9a2f626",
+      "kind": "production"
+    },
+    {
+      "path": "modules/stride-watch-connectivity/src/index.ts",
+      "sha256": "2dc07be62251487386ecaf19e9a702cad3256271b2c524d124e3dffb493e94a5",
+      "kind": "production"
+    },
+    {
+      "path": "src/components/watch/WatchWorkoutBridge.tsx",
+      "sha256": "9e9d0d9b0a37c9703d6db31964a2a1cd3d191a651bb87d4b94846313930f3838",
+      "kind": "production"
+    },
+    {
+      "path": "src/lib/localDataOwner.ts",
+      "sha256": "104b0cc20a4d1a674fa29d4b086dc6acb9b6a692a0d2685cfd9ccc1ddf69bff1",
+      "kind": "production"
+    },
+    {
+      "path": "targets/StrideOSWatch/StrideWatchWorkoutManager.swift",
+      "sha256": "a03bb78cb30c3cda65ab6034cfd5f3157465858923dd79c0003adbc0053c0f18",
+      "kind": "production"
+    },
+    {
+      "path": "targets/StrideOSWatch/StrideWatchStartFence.swift",
+      "sha256": "66f5bf5145ec51b316119901d94612ecab4a450592b647d67bf6a1ca0a817287",
+      "kind": "production"
+    },
+    {
+      "path": "scripts/tests/watchStartFence.test.ts",
+      "sha256": "ee9c815929bcd6eb443a81dc9f2c1a8c4e3cd12e3fd46ab81cefc4d295fc866b",
+      "kind": "test"
+    },
+    {
+      "path": "scripts/tests/watchStartLease.test.ts",
+      "sha256": "951bbdf9c6273dfee06f1bb92cb85b6ca2fb38203b95afea5a81a16ad0bec425",
+      "kind": "test"
+    },
+    {
+      "path": "scripts/tests/fixtures/watch-start-harness.swift",
+      "sha256": "bb72d6fa5325a9f53ceed005a9ea5bf152132ecae4913d7a0e4303497212e889",
+      "kind": "test"
+    },
+    {
+      "path": "scripts/tests/watchWorkoutSync.test.ts",
+      "sha256": "abafbc88db79c520d001498a44a5893b0f9606224e74e1b240838b3b799196b9",
+      "kind": "test"
+    },
+    {
+      "path": "scripts/tests/build90Features.test.ts",
+      "sha256": "347ba87b6502a9705aca4c6688b57664a428669a777996325d1b69e1ecb49a66",
+      "kind": "test"
+    }
+  ],
+  "commands": {
+    "targeted": "./node_modules/.bin/tsx --test --test-concurrency=1 scripts/tests/watchStartFence.test.ts scripts/tests/watchStartLease.test.ts scripts/tests/watchWorkoutSync.test.ts scripts/tests/build90Features.test.ts",
+    "latest_native_adversarial": "./node_modules/.bin/tsx --test --test-concurrency=1 scripts/tests/watchStartFence.test.ts",
+    "watch_core_typecheck": "STRIDE_WATCH_SDK=$(xcrun --sdk watchos --show-sdk-path)\nxcrun swiftc -typecheck -parse-as-library -sdk \"$STRIDE_WATCH_SDK\" -target arm64_32-apple-watchos10.0 -swift-version 5 targets/StrideOSWatch/StrideWatchWorkoutManager.swift targets/StrideOSWatch/StrideWatchHealthSetup.swift targets/StrideOSWatch/StrideWatchStartFence.swift",
+    "phone_parse": "xcrun swiftc -frontend -parse modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift",
+    "diff_check": "git diff --check",
+    "baseline_comparison": "git diff watch-working-build90 -- modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift targets/StrideOSWatch/StrideWatchWorkoutManager.swift"
+  },
+  "validation": {
+    "targeted": {
+      "passed": 53,
+      "failed": 0,
+      "execution": "single serial combined run of Watch fence, lease/wrapper, Watch sync and build90 suites on final source"
+    },
+    "latestNativeAdversarialAfterUnpairedCase": {
+      "passed": 1,
+      "failed": 0,
+      "includes": "final activation failure retains journal; successful logical End accepted into OS background queue even when live"
+    },
+    "watchActualCoreArm64_32Typecheck": "passed on final logical-ID fence/receiver source",
+    "phoneFullSourceParse": "passed on final explicit-control/terminal-End source",
+    "diffCheck": "passed",
+    "testMechanism": "actual coordinator extracted and compiled/executed; actual Watch receive/start methods extracted with transport/HealthKit fakes; actual JS wrapper/Bridge/owner methods executed",
+    "groups": [
+      "Reachable cached true, async live failure, one forced HealthKit launch and one exact packet retry",
+      "Idempotent prepare, early accepted ACK, exact global End, benign same-owner cleanup",
+      "Owner cancellation before queued registration or delayed callbacks",
+      "Stale ACK, old End, new nonce, cancelled launch completion, peer capability reset",
+      "Old Watch capability opt-out, synchronous callback reentrancy, terminal negative ACK",
+      "Cold activation queue, synchronous Stop before queued Start execution, pending Pause preservation",
+      "Watch End-before-Start and Start-before-End, duplicate End saves once and cannot restart",
+      "Stale authorization granted/denied, failure retires attempt, explicit genuine retry",
+      "Hard revocation with actual Watch running preserves Health workout by existing End/save despite lost ACK/status",
+      "Unknown provisional fresh-builder handoff, stale timeout, B pause survives A cancel, legacy provisional path",
+      "Persistent exact revocation, four-hour context retention plus skew, corruption, saturation, rollback",
+      "Lost ACK soft cleanup keeps exact control association; temporary unpaired End still fences locally",
+      "Phone restart fresh matching capability recovers original exact nonce/session for End",
+      "Accepted ACK then authorization denial permits explicit new-nonce Retry without automatic relaunch",
+      "Late capability after terminal rejection and End/revoke; peer reset; newer logical B; pending old authorization",
+      "Unpaired End retains obligation: late reply cannot submit, reconnect requests fresh exact ID, original End/save once",
+      "Matching negative ACK visibly updates lastError; stale older failure cannot overwrite current attempt",
+      "Cold RecoveryPrompt Stop without prepare: running, pending authorization, temporary unpairing, unrelated ID, newer B and legacy fallback; no Start or Health launch",
+      "Resume recovery applies only latest explicit Pause/Resume once to original tuple; terminal End wins; superseded Pause error cannot enqueue after Resume",
+      "Immediate dedicated endRecording before unknown in-flight N1 or prepared B, no capability response; persistent logical-ID fence survives Watch relaunch; all same-ID nonces rejected; new UUID B allowed",
+      "Exact nonce N1 End/cancel cannot stop N2 or prevent failed-start retry; logical user End does retire all future same-ID attempts; optional old JSON schema and shared 128-slot saturation",
+      "Offline logical End survives later owner revocation and reconnects before unknown Start",
+      "Cold manual Pause/Resume without prepare uses one optional synchronous native API and only latest explicit known-ID lookup for 90 seconds; live-only exact control; no generic auto lookup/replay",
+      "Actual Resume read-only prepare without startPrepared: no Start/HK/new builder, initial generic Resume not replayed, future generic Pause/Resume use original exact tuple; missing capability stays unavailable",
+      "Hour-old acknowledged association after benign cleanup and pruned normal discovery: every explicit ID End ensures a fresh bounded terminal intent before association retirement, temporary unpairing cannot lose reconnection End/save",
+      "Terminal-intent map capacity reuses same-ID discovery or throws while preserving exact cleanup retry; local Start is fenced and retry succeeds after expiry",
+      "Both cold and selected actual transport failures propagate to exact cleanup; generic End returns visible error; activation RAM queue is not accepted as durable submission; activated logical End always enters OS transferUserInfo queue",
+      "Activated authoritative absence with no actual submitted/ACKed/launched attempt preserves optional Watch phone completion even after read-only Resume/unsubmitted message/capacity; inactive flags remain unknown",
+      "Actual JS native wrapper and actual Run cleanup function complete phone GPS/store/journal for no Watch, no app and read-only Resume without calling Watch legacy End or any Start",
+      "Nullable/omitted/empty explicit-control IDs immediately use legacy generic API and never call native explicit discovery",
+      "Lost read-only capability followed by >90 seconds and manual Pause renews explicit lookup; fresh actual tuple is cached for subsequent generic controls without Start/HK",
+      "Captured stale prepared nonce prevents old explicit capability reply from retiring/caching over a newer same-ID token, different B or terminal End"
+    ],
+    "rootReportedActualCallerIntegration": {
+      "passed": 9,
+      "failed": 0,
+      "owner": "root",
+      "test": "scripts/tests/watchExplicitControls.test.ts",
+      "scope": "manual-only exact-ID controls and guarded RecoveryPrompt Resume/Continue read-only discovery"
+    }
+  },
+  "toolchain": {
+    "xcode": "16.4",
+    "xcodeBuild": "16F6",
+    "appleSwift": "6.1.2",
+    "swiftBuild": "swiftlang-6.1.2.1.2 clang-1700.0.13.5",
+    "watchSdk": "11.5",
+    "iphoneSdk": "18.5",
+    "watchTypecheckTarget": "arm64_32-apple-watchos10.0",
+    "swiftLanguageMode": "5",
+    "cloudCurrentSdkCompile": "not yet claimed by this receipt"
+  },
+  "council": [
+    {
+      "reviewer": "platform implementation reviewer",
+      "score": 95,
+      "denominator": 100,
+      "meaning": "subjective confidence in bounded source regression gate; not device reliability probability",
+      "verdict": "favor internal hardware-verification candidate conditional on root integrated checks and current-SDK compilation"
+    },
+    {
+      "reviewer": "independent UI/navigation reviewer",
+      "score": 95,
+      "denominator": 100,
+      "meaning": "subjective confidence in bounded source regression gate; not device reliability probability",
+      "verdict": "favor internal hardware-verification candidate conditional on root integrated checks and current-SDK compilation"
+    },
+    {
+      "reviewer": "independent training/data-custody reviewer",
+      "score": 95,
+      "denominator": 100,
+      "meaning": "subjective confidence in bounded source regression gate; not device reliability probability",
+      "verdict": "favor internal hardware-verification candidate conditional on root integrated checks and current-SDK compilation"
+    }
+  ],
+  "diagnostics": {
+    "reportedIncident": "Phone crash reported around 08:49 PST on 2026-11-11 during run; unattributed",
+    "exactBuild114AppleCrashFeedbackCount": 0,
+    "zeroDisprovesCrash": false,
+    "appWideFeedback": "two older-build reports only",
+    "diagnosticSignaturesEndpoint": "404",
+    "xcodeOrganizer": "No Crash Logs under broad recent filters",
+    "localDeviceCrashLogs": "No StrideOS crash report found in inspected Xcode log locations",
+    "devices": "disconnected/unavailable during read-only investigation",
+    "sentryNativeCapture": "disabled in existing source; not enabled",
+    "separateDsymArtifact": "not confirmed",
+    "privateDataIncluded": false
+  },
+  "limitations": [
+    "No physical end-to-end acceptance or current-SDK cloud native build/submission claimed here",
+    "Already-dispatched packets and OS launch cannot be synchronously retracted while disconnected",
+    "Persistent corrupt/unreadable fence fails closed and does not have automatic repair; phone recording remains available",
+    "Whole unchanged Watch UI has a local old-SDK toolbar overload ambiguity; actual recording core typecheck passed",
+    "Capability terminal intents are bounded in-memory transport state; remote End is not proved by a local fence or a queued message"
+  ],
+  "delivery": {
+    "buildStartedByThisAgent": false,
+    "submittedByThisAgent": false,
+    "rootFinalIntegratedAndDeliveryReceipt": "recorded separately by root"
+  },
+  "councilRereview": "Both independent reviewers renewed PASS95/100 after final phone301af280/index2dc07be6/harnessbb72d6fa actual delta and hash review. No remaining reproduced source P1.",
+  "integrationDependencies": [
+    "Root-owned manual button calls in app/(tabs)/training/index.tsx and app/(tabs)/activity/start.tsx select explicit wrappers and immutable IDs; automatic pause effect keeps generic APIs",
+    "Root-owned scripts/tests/watchExplicitControls.test.ts validates actual manual/auto caller wiring separately",
+    "Root-owned RecoveredActivityPrompt Resume invokes optional read-only recoverStrideWatchControlIdentity for current owned outdoor ID before resuming; no Start fallback"
+  ],
+  "resolvedCounterexamples": [
+    "cold RecoveryPrompt Stop without prepare",
+    "late original capability reply after End",
+    "unknown in-flight nonce arriving after local Stop reaches Watch",
+    "manual Pause/Resume during or without prepare on cold Resume",
+    "persisted automatic Resume must not become manual replay",
+    "phone-only/no-app completion must not be blocked by strict Watch transport failure handling",
+    "read-only prepare token is not evidence of an actual Watch attempt",
+    "terminal intent capacity and transport errors must retain exact durable cleanup retry",
+    "four actual-callsite nullable-ID TypeScript errors",
+    "expired read-only token shadowed actual Watch identity after lost capability; manual and subsequent generic controls now recover safely"
+  ],
+  "applePrimaryDocumentation": [
+    {
+      "claim": "Pair/app-install flags require successfully activated session; installed false indicates app absent",
+      "url": "https://developer.apple.com/documentation/watchconnectivity/wcsession/iswatchappinstalled"
+    },
+    {
+      "claim": "Paired false indicates no paired Watch; valid only after activation",
+      "url": "https://developer.apple.com/documentation/watchconnectivity/wcsession/1615665-paired?language=objc"
+    }
+  ],
+  "limitsOfAcceptance": [
+    "OS background queue acceptance is not proof of remote End or remote recording state",
+    "95/100 is subjective bounded source regression confidence, not a measured reliability probability",
+    "Reported 08:49 phone crash remains unattributed",
+    "No public launch, physical device acceptance, new build or submission is claimed by this agent"
+  ]
+}

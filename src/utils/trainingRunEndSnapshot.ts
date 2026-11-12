@@ -46,6 +46,7 @@ export function captureTrainingRunEnd(state: ActiveRunStore, command: RunEndComm
     watchRecording: matchingWatchRecording(command.watchRecording, command.workoutInstanceId, startedAt)
       ?? matchingWatchRecording(state.watchRecording, command.workoutInstanceId, startedAt),
     actualStartTime: startedAt, actualEndTime: command.endedAt,
+    ...(state.raceLink ? { raceLink: JSON.parse(JSON.stringify(state.raceLink)) } : {}),
     scheduledSessionId: state.scheduledSessionId ?? undefined,
     source: state.plannedWorkout ? 'generated' : 'manual', workoutId: state.plannedWorkout?.id,
     type: state.plannedWorkout?.type ?? 'easy_run', intensity: state.plannedWorkout?.intensity ?? 'easy',

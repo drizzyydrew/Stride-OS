@@ -61,7 +61,7 @@ export default function PhysiologyScreen() {
 
   return (
     <OnboardingShell
-      step={4}
+      step={5}
       title="Your physiology"
       subtitle="Age and weight help calibrate HR zones. All optional except age."
       onNext={handleNext}

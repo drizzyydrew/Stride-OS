@@ -35,7 +35,7 @@ export default function InjuryScreen() {
 
   return (
     <OnboardingShell
-      step={7}
+      step={8}
       title="Current injuries"
       subtitle="Tell us about any areas you want to consider when adjusting your training."
       onNext={handleNext}

@@ -112,6 +112,8 @@ async function harness(options: { local?: string | GoalArchive[]; cloud?: unknow
     },
     rpc: (name: string, args: { archive: GoalArchive }) => {
       assert.equal(name, 'merge_stride_goal_archive');
+      // Deployed SQL accepts these two sources only; no schema/RPC changes.
+      assert.ok(args.archive.result.source === undefined || ['race_record', 'user'].includes(args.archive.result.source), 'deployed RPC source allowlist');
       return { setHeader: async (header: string, value: string) => {
         assert.equal(header, 'Authorization'); headers.push(value); rpcCalls++;
         await onCloud(`rpc:${rpcCalls}`);
@@ -445,5 +447,36 @@ test('cloud restore cannot publish readiness after a lease change at any authent
     assert.notEqual(h.store.getState().status, 'ready');
     assert.equal(h.writes.length, 0);
     assert.equal(h.calls.at(-1), stage);
+  }
+});
+
+
+test('linked Activity pointer uses deployed SQL-compatible wire source and restores locally without copying finish data', async () => {
+  const snapshot = archive();
+  snapshot.result = { status: 'unrecorded', source: 'activity_link', linkedActivityId: 'saved-run', updatedAt: 200 };
+  const before = JSON.stringify(snapshot);
+  const h = await harness({ local: [snapshot], cloud: [] });
+  await h.store.getState().load(h.lease());
+  await h.store.getState().sync(h.lease());
+  assert.equal(h.cloud()[0].result.source, 'race_record');
+  assert.equal(h.cloud()[0].result.linkedActivityId, 'saved-run');
+  assert.equal(h.cloud()[0].result.timeSeconds, undefined);
+  assert.equal(h.local()[0].result.source, 'activity_link');
+  assert.equal(h.local()[0].result.linkedActivityId, 'saved-run');
+  assert.equal(JSON.stringify(snapshot), before);
+  const restarted = h.makeStore();
+  await restarted.getState().load(h.lease());
+  assert.equal(restarted.getState().archives[0].result.source, 'activity_link');
+  assert.equal(restarted.getState().archives[0].result.timeSeconds, undefined);
+  const migration = readFileSync('supabase/migrations/20261031210327_owner_scoped_goal_archives.sql', 'utf8');
+  assert.match(migration, /not in \('race_record', 'user'\)/);
+});
+
+test('malformed encoded linked pointers cannot enter local state as copied or finished race records', async () => {
+  const h = await harness();
+  for (const result of [{ status: 'finished', source: 'race_record', linkedActivityId: 'run', timeSeconds: 1200 },
+    { status: 'unrecorded', source: 'race_record', linkedActivityId: '' },
+    { status: 'did_not_finish', source: 'race_record', linkedActivityId: 'run' }]) {
+    assert.throws(() => h.sync.decodeGoalArchives([{ ...archive(), result }], 'owner'), /Invalid goal archive result/);
   }
 });

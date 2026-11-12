@@ -133,7 +133,7 @@ test('builder: presets can be expanded into the full segment editor; Start Run n
   assert.match(creator, /Save & Go to Start Run/);
   assert.doesNotMatch(creator, /handleStartGPS/);
   const runScreen = read('app/(tabs)/training/index.tsx');
-  assert.match(runScreen, /if \(selectedCustomWorkout\?\.id && !isActive\) setPendingMode\('workout'\)/);
+  assert.match(runScreen, /if \(selectedCustomWorkout\?\.id && !isActive && !raceParams\.raceId\) setPendingMode\('workout'\)/);
   assert.match(runScreen, /Build Custom Workout Instead/);
   assert.doesNotMatch(read('app/(tabs)/training/[dayIndex].tsx'), /run-tracking\?dayIndex/);
 });
@@ -298,16 +298,29 @@ test('watch sync details are opt-in on the phone and folded on the watch', () =>
 
 test('auto-launch: provisional branches are unreachable from a normal open-app start', () => {
   const manager = read('targets/StrideOSWatch/StrideWatchWorkoutManager.swift');
-  // isProvisionalLaunch is set only by the launch entry point, and by the
-  // discard-when-running branch, which itself is only armed by the launch
-  // timeout (discardWhenRunning = true appears once, in armProvisionalTimeout).
-  assert.equal((manager.match(/isProvisionalLaunch = true/g) ?? []).length, 2);
-  assert.equal((manager.match(/discardWhenRunning = true/g) ?? []).length, 1);
-  const timeoutFn = manager.slice(manager.indexOf('private func armProvisionalTimeout'), manager.indexOf('private func sendHeartRate') > 0 ? manager.indexOf('private func armProvisionalTimeout') + 1200 : undefined);
+  const swiftMember = (marker: string) => {
+    const start = manager.indexOf(marker); assert.ok(start >= 0, marker);
+    const brace = manager.indexOf('{', start); let depth = 1, end = brace + 1;
+    while (depth && end < manager.length) {
+      if (manager[end] === '{') depth++;
+      if (manager[end] === '}') depth--;
+      end++;
+    }
+    return manager.slice(start, end);
+  };
+  // Pin the legacy entry points independently of the new explicitly fenced
+  // cancellation/handoff branches, whose ordering executes in the Swift harness.
+  const normalStart = swiftMember('func startWorkout(');
+  assert.doesNotMatch(normalStart, /isProvisionalLaunch = true|discardWhenRunning = true/);
+  const timeoutFn = swiftMember('private func armProvisionalTimeout(');
+  assert.equal((timeoutFn.match(/discardWhenRunning = true/g) ?? []).length, 1);
   assert.match(timeoutFn, /self\.discardWhenRunning = true/);
   assert.match(manager, /if discardWhenRunning \{\s+discardWhenRunning = false\s+discardSession = session\s+isProvisionalLaunch = true/);
-  const launchFn = manager.slice(manager.indexOf('func startProvisionalWorkoutFromLaunch'), manager.indexOf('private func adoptPhoneStartIfProvisional'));
+  const launchFn = swiftMember('func startProvisionalWorkoutFromLaunch');
   assert.match(launchFn, /self\.isProvisionalLaunch = true/);
+  assert.equal((launchFn.match(/isProvisionalLaunch = true/g) ?? []).length, 1);
+  const fencedDiscard = swiftMember('private func discardFencedStart(');
+  assert.match(fencedDiscard, /guard phoneStartIdentity == identity \|\| \(isProvisionalLaunch && phoneStartIdentity == nil\) else \{ return \}/);
   // Adoption is a no-op unless provisional.
   assert.match(manager, /guard isProvisionalLaunch, isActive \|\| isStartingWorkout,\s+!isEnding, discardSession == nil, !discardWhenRunning else \{ return false \}/);
   // Any new start clears leftover launch state before the launch path re-arms it.

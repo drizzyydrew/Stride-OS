@@ -41,8 +41,6 @@ function TabBtn({
       </View>
       <Text
         numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.85}
         style={[styles.tabLabel, { color: focused ? C.primary : C.textMuted }]}
       >
         {label}
@@ -74,6 +72,7 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
+        tabBarIconStyle: { width: '100%', height: TAB_ITEM_MIN_HEIGHT },
         tabBarActiveTintColor: C.primary,
         tabBarInactiveTintColor: C.textMuted,
         tabBarStyle: {
@@ -177,6 +176,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tabLabel: {
+    width: '100%',
     fontSize: TAB_LABEL_FONT_SIZE,
     lineHeight: TAB_LABEL_LINE_HEIGHT,
     fontWeight: '700',

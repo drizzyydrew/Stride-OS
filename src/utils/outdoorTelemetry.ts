@@ -32,6 +32,15 @@ export function isFreshObservation(timestamp: number, startedAt: number, now: nu
     && now - timestamp <= maxAgeMs;
 }
 
+/** Display-only window. Recording stores retain the original complete sample history. */
+export function retainLiveTelemetryWindow(observed: OutdoorTelemetry, startedAt: number, now: number): OutdoorTelemetry {
+  return {
+    rawHeartRateSamples: observed.rawHeartRateSamples.filter(sample => isFreshObservation(sample.timestamp, startedAt, now)),
+    cadenceSamples: observed.cadenceSamples.filter(sample => isFreshObservation(sample.timestamp, startedAt, now)),
+    powerSamples: observed.powerSamples.filter(sample => isFreshObservation(sample.timestamp, startedAt, now)),
+  };
+}
+
 function mergeSamples<T extends { timestamp: number; source: string }>(
   existing: T[], incoming: T[], valid: (sample: T) => boolean, startedAt: number, now: number,
 ): T[] {

@@ -205,8 +205,8 @@ test('retained completion disables presentation immediately and a stale Pause/Re
         pause: () => calls.push('pause'), resume: () => calls.push('resume') };
       const context = createContext({ active: { ...latest, completionRequestedAt: null },
         useActiveActivityStore: { getState: () => latest },
-        pauseStrideWatchWorkout: () => { calls.push('native-pause'); return Promise.resolve(); },
-        resumeStrideWatchWorkout: () => { calls.push('native-resume'); return Promise.resolve(); },
+        pauseStrideWatchWorkoutExplicit: () => { calls.push('native-pause'); return Promise.resolve(); },
+        resumeStrideWatchWorkoutExplicit: () => { calls.push('native-resume'); return Promise.resolve(); },
       });
       attributeValue(session, 'onPauseResume', context)();
       assert.deepEqual(calls, []);

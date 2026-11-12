@@ -152,6 +152,7 @@ export function sanitizeActivityMetrics(
     heartRateSummary: metrics.heartRateSummary,
     rawHeartRateSamples: metrics.rawHeartRateSamples,
     healthKitDistance: metrics.healthKitDistance,
+    ...(metrics.elapsedTimeSource === 'recorded_wall_clock' ? { elapsedTimeSource: metrics.elapsedTimeSource } : {}),
     recordingPauses: metrics.recordingPauses,
     stepCount: metrics.stepCount,
     metricSources: metrics.metricSources,

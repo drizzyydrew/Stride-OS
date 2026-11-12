@@ -14,6 +14,7 @@ import { useActiveStrengthSessionStore } from '../../store/activeStrengthSession
 import { useActivityStore } from '../../store/activityStore';
 import { useWorkoutStore } from '../../store/workoutStore';
 import { useOnboardingStore } from '../../store/onboardingStore';
+import { recoverStrideWatchControlIdentity } from '../../../modules/stride-watch-connectivity/src';
 
 // This instance survives auth-gate remounts within the same process. Signing
 // back in or returning from the lock screen does not create a new launch.
@@ -101,13 +102,26 @@ export default function RecoveredActivityPrompt() {
             if (!cancelled && decision.isOwnerCurrent()) Alert.alert('Activity not yet saved', 'Your recording is retained. Return to its controls to review or retry finishing it.');
           });
         };
+        const resume = () => {
+          if (cancelled || !decision.isOwnerCurrent()) return;
+          const current = readActivity();
+          if (!current || current.domain !== decision.activity.domain
+            || current.workoutInstanceId !== decision.activity.workoutInstanceId
+            || current.startedAt !== decision.activity.startedAt || current.ending || current.alreadySaved) return;
+          if (current.domain === 'outdoor' || useActiveRunStore.getState().environment === 'outdoor') {
+            // Discover only the existing Watch tuple. Resume never starts a
+            // Watch workout or replays an earlier automatic pause decision.
+            recoverStrideWatchControlIdentity(current.workoutInstanceId);
+          }
+          decision.resume();
+        };
         Alert.alert('Activity still open', `${decision.activity.name} is still open. Resume to return to its controls, or stop to finish it.`, [
-          { text: 'Resume activity', onPress: () => { if (!cancelled) decision.resume(); } },
+          { text: 'Resume activity', onPress: resume },
           { text: 'Stop activity', onPress: () => {
             if (cancelled) return;
             if (decision.requiresDiscardConfirmation()) {
               Alert.alert('Short recording', 'Runs under five active minutes are discarded when stopped. Continue this recording, or stop it anyway?', [
-                { text: 'Continue recording', style: 'cancel', onPress: () => { if (!cancelled) decision.resume(); } },
+                { text: 'Continue recording', style: 'cancel', onPress: resume },
                 { text: 'Stop anyway', style: 'destructive', onPress: () => finish(true) },
               ], { cancelable: false });
             } else finish();

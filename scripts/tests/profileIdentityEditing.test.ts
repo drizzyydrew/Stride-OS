@@ -8,7 +8,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import * as calibration from '../../src/utils/calibrationEngine';
 import * as weights from '../../src/utils/profilePower';
 import { LocalDataOwner } from '../../src/lib/localDataOwner';
-import { saveProfileIdentity } from '../../src/lib/profileIdentityEditing';
+import { saveOnboardingIdentity, saveProfileIdentity } from '../../src/lib/profileIdentityEditing';
 import { profileIdentityLabel } from '../../src/utils/profileIdentity';
 
 const draft = { firstName: 'Private', lastName: 'Person', username: 'my.alias', showName: false, showUsername: true };
@@ -149,4 +149,58 @@ test('owner invalidation during a compatibility write prevents the next mirror a
   await h.owner.signOut(); gate.resolve();
   assert.equal((await saving).status, 'account-changed');
   assert.equal(laterWrites, 0);
+});
+
+
+test('onboarding reset completes for an existing secondary athlete without seeding, switching or changing default identity', async () => {
+  const h = await harness('second');
+  const before = JSON.stringify(h.store.getState().profiles.athlete_default);
+  let seeds = 0;
+  const result = await saveOnboardingIdentity(draft, 'second', { ...h.adapter,
+    activeAthleteId: () => h.store.getState().activeAthleteId,
+    seedDefault: () => { seeds++; },
+  });
+  assert.equal(result.status, 'saved');
+  assert.equal(seeds, 0);
+  assert.equal(h.store.getState().activeAthleteId, 'second');
+  assert.equal(JSON.stringify(h.store.getState().profiles.athlete_default), before);
+  assert.deepEqual(h.mirrors, []);
+});
+
+test('onboarding cannot seed a missing secondary athlete or seed after owner invalidation', async () => {
+  const h = await harness('second');
+  let seeds = 0;
+  const adapter = { ...h.adapter, activeAthleteId: () => 'missing', activeProfile: () => undefined,
+    seedDefault: () => { seeds++; } };
+  assert.equal((await saveOnboardingIdentity(draft, 'missing', adapter)).status, 'account-changed');
+  h.owner.block('signed-out');
+  assert.equal((await saveOnboardingIdentity(draft, 'athlete_default', { ...adapter, activeAthleteId: () => 'athlete_default' })).status, 'account-changed');
+  assert.equal(seeds, 0);
+});
+
+test('fresh onboarding can seed and save the original profile after the owner boundary is ready', async () => {
+  const h = await harness();
+  await h.store.setState({ profiles: {} });
+  let seeds = 0;
+  const result = await saveOnboardingIdentity(draft, 'athlete_default', { ...h.adapter,
+    activeAthleteId: () => h.store.getState().activeAthleteId,
+    seedDefault: () => { seeds++; h.store.getState().initDefaultProfile('Athlete', 40); },
+  });
+  assert.equal(result.status, 'saved');
+  assert.equal(seeds, 1);
+  assert.equal(profileIdentityLabel(h.store.getState().getActiveProfile()), '@my.alias');
+});
+
+test('replacing a same-id profile during onboarding persistence cannot finish against the replacement', async () => {
+  const h = await harness();
+  const gate = deferred(); h.waitForWrite(gate.promise);
+  const saving = saveOnboardingIdentity(draft, 'athlete_default', { ...h.adapter,
+    activeAthleteId: () => h.store.getState().activeAthleteId, seedDefault: () => {},
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  h.store.setState({ profiles: { ...h.store.getState().profiles,
+    athlete_default: { ...h.target, createdAt: h.target.createdAt + 1 } } });
+  gate.resolve();
+  assert.equal((await saving).status, 'account-changed');
+  assert.deepEqual(h.mirrors, []);
 });

@@ -1,10 +1,10 @@
 import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import Modal from '../../../src/components/ui/RecoverableModal';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AppState, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { requestLocationRecovery } from '../../../src/lib/locationPermissionRecovery';
@@ -15,6 +15,11 @@ import RunningAutoPauseControl from '../../../src/components/running/RunningAuto
 import WatchConnectionStatus, { useWatchStartRequest } from '../../../src/components/watch/WatchConnectionStatus';
 import { createWatchStartCoordinator } from '../../../src/utils/watchAvailability';
 import GpsSignalChip from '../../../src/components/activity/GpsSignalChip';
+import RaceEventPicker from '../../../src/components/activity/RaceEventPicker';
+import type { RaceEventSnapshot } from '../../../src/types/raceLink';
+import { createRaceActivityLink, raceEventSnapshot } from '../../../src/utils/raceLink';
+import { todayDateOnly } from '../../../src/utils/dateOnly';
+import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
 import { FittedMetricText, livePrimaryMetricBasis } from '../../../src/components/activity/ActiveOutdoorSession';
 import {
   INITIAL_PACE_CUE_STATE,
@@ -49,7 +54,7 @@ import { runCompletionKey } from '../../../src/utils/runCompletionIdentity';
 import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
-import { useCalibration } from '../../../src/store/profileStore';
+import { useCalibration, useProfileStore } from '../../../src/store/profileStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import { useExperienceModeAllows } from '../../../src/hooks/useExperienceMode';
@@ -101,6 +106,8 @@ import {
   getStrideWatchStatus,
   pauseStrideWatchRun,
   resumeStrideWatchRun,
+  pauseStrideWatchWorkoutExplicit,
+  resumeStrideWatchWorkoutExplicit,
   startStrideWatchRun,
   type StrideWatchStatus,
 } from 'stride-watch-connectivity';
@@ -844,6 +851,14 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const router = useRouter();
   const mode = useThemeMode();
   const insets = useSafeAreaInsets();
+  const raceParams = useLocalSearchParams<{ raceId?: string }>();
+  const plannedRaces = useTrainingPlanStore(state => state.races);
+  const activeAthleteId = useProfileStore(state => state.activeAthleteId);
+  const [pendingRaceEvent, setPendingRaceEvent] = useState<RaceEventSnapshot | null>(null);
+  const selectedRaceParam = useRef<string | null>(null);
+  const raceEvents = useMemo(() => plannedRaces.flatMap(race => {
+    try { return [raceEventSnapshot(race)]; } catch { return []; }
+  }), [plannedRaces]);
   const {
     units,
     treadmillPhonePlacementDefault,
@@ -885,6 +900,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     goalMinutes,
     goalMiles,
     targetPaceSecPerMile,
+    raceLink,
     plannedWorkout,
     workoutInstanceId,
     watchRecording,
@@ -945,11 +961,18 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [turnGuidance, setTurnGuidance] = useState<RouteGuidancePlan | null>(null);
   const [turnGuidanceProgress, setTurnGuidanceProgress] = useState<RouteGuidanceProgress | null>(null);
   const [pendingMode, setPendingMode] = useState<RunMode>(() => (selectedCustomWorkout ? 'workout' : 'quick'));
+  useEffect(() => {
+    if (isActive || !raceParams.raceId || selectedRaceParam.current === raceParams.raceId) return;
+    const event = raceEvents.find(item => item.id === raceParams.raceId);
+    if (!event) return;
+    selectedRaceParam.current = event.id;
+    setPendingRaceEvent(event); setPendingMode('race');
+  }, [isActive, raceEvents, raceParams.raceId]);
   // "Save & use today" from the builder selects a custom run for today; the
   // Active tab must then be ready to run it, not fall back to Quick Start.
   useEffect(() => {
-    if (selectedCustomWorkout?.id && !isActive) setPendingMode('workout');
-  }, [selectedCustomWorkout?.id, isActive]);
+    if (selectedCustomWorkout?.id && !isActive && !raceParams.raceId) setPendingMode('workout');
+  }, [selectedCustomWorkout?.id, isActive, raceParams.raceId]);
   const [pendingEnvironment, setPendingEnvironment] = useState<RunEnvironment>(() => lastEnvironmentPreference);
   const [pendingTreadmillPlacement, setPendingTreadmillPlacement] = useState<TreadmillPhonePlacement>(() => treadmillPhonePlacementDefault);
   const [showTreadmillCompletion, setShowTreadmillCompletion] = useState(false);
@@ -1143,7 +1166,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     void stop();
   }, [clearCompletionRequest, completionRequestedAt, isActive]);
 
-  async function start() {
+  async function start(confirmedRaceDate?: string) {
     if (!activeSessionStoresHydrated()) {
       Alert.alert('Restoring session', 'StrideOS is restoring your active-session state. Try again in a moment.');
       return;
@@ -1182,6 +1205,29 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       pendingMode === 'race'     ? { mode: 'race', goalMiles: toMiles(raceMilesInput), targetPaceSecPerMile: toSecPerMile(racePaceSecInput) } :
       pendingMode === 'workout' && startWorkout ? { mode: 'workout', scheduledSessionId: usingCustomWorkout ? undefined : todayPlannedSession?.scheduledSessionId } :
       { mode: 'quick' };
+    const raceOwner = pendingMode === 'race' && pendingRaceEvent ? captureOwnerLease() : null;
+    if (pendingMode === 'race' && pendingRaceEvent) {
+      if (!raceOwner || !ownerLeaseIsCurrent(raceOwner) || activeAthleteId !== 'athlete_default') {
+        Alert.alert('Race unavailable', 'Use the original athlete profile and confirm its account before linking a race.'); return;
+      }
+      const currentRace = useTrainingPlanStore.getState().races.find(item => item.id === pendingRaceEvent.id);
+      let currentEvent: RaceEventSnapshot | null = null;
+      try { if (currentRace) currentEvent = raceEventSnapshot(currentRace); } catch { /* Re-select an invalid/edited event. */ }
+      if (!currentRace || JSON.stringify(currentEvent) !== JSON.stringify(pendingRaceEvent)) {
+        Alert.alert('Race changed', 'Choose the race again to review its current date and distance.'); return;
+      }
+      if (pendingEnvironment !== 'outdoor') {
+        Alert.alert('Link after saving', 'Record the indoor run, then use Link to race from its saved activity.'); return;
+      }
+      if (pendingRaceEvent.date !== todayDateOnly() && confirmedRaceDate !== `${pendingRaceEvent.id}:${pendingRaceEvent.date}`) {
+        Alert.alert('Race date differs', `${pendingRaceEvent.name} is scheduled for ${pendingRaceEvent.date}. Record it today?`, [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Record this race', onPress: () => { void start(`${pendingRaceEvent.id}:${pendingRaceEvent.date}`); } },
+        ]); return;
+      }
+      config.raceLink = createRaceActivityLink(currentRace, raceOwner.ownerUserId, Date.now());
+      config.goalMiles = pendingRaceEvent.distanceMeters / 1609.344;
+    }
     config.environment = pendingEnvironment;
     if (pendingEnvironment === 'indoor') {
       config.treadmillPhonePlacement = pendingTreadmillPlacement;
@@ -1219,6 +1265,10 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     goalDoneRef.current = false;
     paceCueStateRef.current = INITIAL_PACE_CUE_STATE;
 
+    if (config.raceLink && (!raceOwner || !ownerLeaseIsCurrent(raceOwner)
+      || useProfileStore.getState().activeAthleteId !== 'athlete_default')) {
+      Alert.alert('Account changed', 'Choose the race again in its original account.'); return;
+    }
     startRun(startWorkout, config);
     speakCue('Starting workout.', 'interval');
     const firstSegment = startWorkout ? workoutSegments(startWorkout)[0] : null;
@@ -1253,7 +1303,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       } else if (config.mode === 'distance') {
         speakCue(`${goalMilesInput} ${unitWord} run. Start easy.`);
       } else if (config.mode === 'race') {
-        speakCue(`Race mode. Target pace ${paceLabel(racePaceSecInput)} per ${unitWord} over ${raceMilesInput} ${unitWord}s. Hold back the first ${unitWord}.`, 'pace');
+        const raceDistance = config.goalMiles == null ? raceMilesInput : Number((config.goalMiles * (imp ? 1 : 1.609344)).toFixed(2));
+        speakCue(`Race mode. Target pace ${paceLabel(racePaceSecInput)} per ${unitWord} over ${raceDistance} ${unitWord}s. Hold back the first ${unitWord}.`, 'pace');
       } else if (config.mode === 'workout' && startWorkout) {
         speakCue(`${startWorkout.title}. ${startWorkout.purpose ?? ''}`);
       } else if (selectedRoute) {
@@ -1271,14 +1322,39 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
 
   function pause() {
     pauseRun();
-    pauseStrideWatchRun(workoutInstanceId).then(setWatchStatus).catch(() => undefined);
+    pauseStrideWatchWorkoutExplicit(workoutInstanceId).then(setWatchStatus).catch(() => undefined);
     speakCue('Pausing workout.', 'interval');
   }
 
   function resume() {
     resumeRun();
-    resumeStrideWatchRun(workoutInstanceId).then(setWatchStatus).catch(() => undefined);
+    resumeStrideWatchWorkoutExplicit(workoutInstanceId).then(setWatchStatus).catch(() => undefined);
     speakCue('Resuming workout.', 'interval');
+  }
+
+  function requestStop() {
+    const current = useActiveRunStore.getState();
+    if (!current.raceLink || current.completionRequestedAt != null) { void stop(); return; }
+    const lease = captureOwnerLease();
+    const instance = current.workoutInstanceId;
+    if (!lease || !instance || !ownerLeaseIsCurrent(lease) || current.raceLink.ownerUserId !== lease.ownerUserId
+      || useProfileStore.getState().activeAthleteId !== 'athlete_default') {
+      Alert.alert('Confirm recording owner', 'Return to this recording’s original account before saving its race result.'); return;
+    }
+    function finish(outcome: 'finished' | 'did_not_finish') {
+      if (!ownerLeaseIsCurrent(lease) || useProfileStore.getState().activeAthleteId !== 'athlete_default'
+        || !useActiveRunStore.getState().confirmRaceOutcome(instance!, outcome, lease!.ownerUserId)) {
+        Alert.alert('Recording changed', 'The recording has already ended or changed. Review its saved activity to link a result.'); return;
+      }
+      // Latch outcome and the first End together before any native/storage await.
+      useActiveRunStore.getState().requestCompletion(Date.now());
+      void stop();
+    }
+    Alert.alert('Save race result', `Confirm the outcome for ${current.raceLink.event.name}. Finish race uses the full recorded elapsed time, including pauses.`, [
+      { text: 'Keep recording', style: 'cancel' },
+      { text: 'Stop race early', style: 'destructive', onPress: () => finish('did_not_finish') },
+      { text: 'Finish race', onPress: () => finish('finished') },
+    ]);
   }
 
   async function stop() {
@@ -1330,7 +1406,8 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     const completedTrainingBlockId = todayPlannedSession?.trainingBlockId;
     const completedGoalPlanId = todayPlannedSession?.goalPlanId;
 
-    if (finalElapsed >= 300) {
+    const keepLinkedRace = Boolean(finalState.raceLink && endedAt > (finalState.startTime ?? endedAt));
+    if (finalElapsed >= 300 || keepLinkedRace) {
       const modeNote =
         runMode === 'time' && goalMinutes ? ` · Time goal ${goalMinutes} min` :
         runMode === 'distance' && goalMiles ? ` · Distance goal ${goalMiles.toFixed(1)} mi` :
@@ -1342,6 +1419,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
           completionKey: id,
           workoutInstanceId: finalState.workoutInstanceId ?? undefined,
           watchRecording: finalState.watchRecording,
+          ...(finalState.raceLink ? { raceLink: finalState.raceLink } : {}),
           actualStartTime: finalState.startTime ?? undefined,
           actualEndTime: endedAt,
           scheduledSessionId: completedScheduledSessionId,
@@ -1382,14 +1460,14 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     endStrideWatchRun(finalState.workoutInstanceId).then(setWatchStatus).catch(() => undefined);
     await stopLocationTrackingWhen(completionStillOwned).catch(console.warn);
     if (!completionStillOwned()) return;
-    if (finalElapsed >= 300) speakCue(`Run complete. ${finalDurationMin} minutes, ${finalDistanceMiles.toFixed(2)} miles saved.`, 'motivation');
+    if (finalElapsed >= 300 || keepLinkedRace) speakCue(`Run complete. ${finalDurationMin} minutes, ${finalDistanceMiles.toFixed(2)} miles saved.`, 'motivation');
     finishRun();
     setElapsed(0);
     setRouteSegmentIndex(0);
     maxRouteProgressRef.current = 0;
     segmentStartRef.current = null;
     onFinished?.();
-    if (finalElapsed >= 300) Alert.alert('Run saved', `${finalDurationMin} min · ${finalDistanceMiles.toFixed(2)} mi saved to Activity Log.`);
+    if (finalElapsed >= 300 || keepLinkedRace) Alert.alert('Run saved', `${finalDurationMin} min · ${finalDistanceMiles.toFixed(2)} mi saved to Activity Log.${finalState.raceLink?.outcome === 'unrecorded' ? ' Review the saved run to confirm its race result.' : ''}`);
     else Alert.alert('Run discarded', 'Runs under 5 minutes are not saved.');
     } catch {
       Alert.alert('Run not yet saved', 'Your recording has not been cleared. Unlock the device, confirm the original account, and retry saving.');
@@ -2058,13 +2136,13 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
           )}
           <TouchableOpacity
             style={[styles.stopRunPill, { backgroundColor: C.critical }]}
-            onPress={stop}
+            onPress={requestStop}
             activeOpacity={0.82}
             accessibilityRole="button"
-            accessibilityLabel="Stop run"
+            accessibilityLabel={raceLink ? 'End race, choose outcome' : 'Stop run'}
           >
             <Ionicons name="stop-circle" size={18} color="#FFFFFF" />
-            <Text style={styles.stopRunPillText}>STOP RUN</Text>
+            <Text style={styles.stopRunPillText}>{raceLink ? 'END RACE' : 'STOP RUN'}</Text>
           </TouchableOpacity>
         </View>
         <TreadmillCompletionSheet
@@ -2122,13 +2200,13 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.stopRunPill, { backgroundColor: C.critical }]}
-            onPress={stop}
+            onPress={requestStop}
             activeOpacity={0.82}
             accessibilityRole="button"
-            accessibilityLabel="Stop run"
+            accessibilityLabel={raceLink ? 'End race, choose outcome' : 'Stop run'}
           >
             <Ionicons name="stop-circle" size={18} color="#FFFFFF" />
-            <Text style={styles.stopRunPillText}>STOP RUN</Text>
+            <Text style={styles.stopRunPillText}>{raceLink ? 'END RACE' : 'STOP RUN'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -2404,13 +2482,19 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             ) : null}
             {pendingMode === 'race' ? (
               <>
+                {activeAthleteId === 'athlete_default' ? <RaceEventPicker
+                  events={raceEvents} value={pendingRaceEvent?.id ?? null} onChange={setPendingRaceEvent} label="Race event · optional" /> : null}
+                {pendingRaceEvent ? <Text style={[styles.modeDesc, { color: C.textDim }]}>
+                  Start at the race start line. Finish race records your elapsed result; Stop race early keeps the run without a finish time.
+                </Text> : null}
                 <TouchableOpacity
                   style={[styles.goalConfigRow, { backgroundColor: C.cardAlt, borderColor: C.border }]}
-                  onPress={() => setGoalPickerFor('raceDist')}
+                  onPress={() => { if (!pendingRaceEvent) setGoalPickerFor('raceDist'); }}
+                  disabled={Boolean(pendingRaceEvent)}
                   activeOpacity={0.8}
                 >
                   <Text style={[styles.goalConfigLabel, { color: C.textMuted }]}>Race distance</Text>
-                  <Text style={[styles.goalConfigValue, { color: C.text }]}>{raceMilesInput} {distUnit} ›</Text>
+                  <Text style={[styles.goalConfigValue, { color: C.text }]}>{pendingRaceEvent ? (pendingRaceEvent.distanceMeters / (imp ? 1609.344 : 1000)).toFixed(2) : raceMilesInput} {distUnit}{pendingRaceEvent ? '' : ' ›'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.goalConfigRow, { backgroundColor: C.cardAlt, borderColor: C.border }]}
@@ -2421,7 +2505,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
                   <Text style={[styles.goalConfigValue, { color: C.text }]}>{paceLabel(racePaceSecInput)} {imp ? '/mi' : '/km'} ›</Text>
                 </TouchableOpacity>
                 <Text style={[styles.modeDesc, { color: C.textDim }]}>
-                  Goal finish ~{fmtClockDuration(raceMilesInput * racePaceSecInput)} · hydration every {plannerReminder.hydrationReminderIntervalMin} min · fuel every {plannerReminder.fuelReminderIntervalMin} min
+                  Goal finish ~{fmtClockDuration((pendingRaceEvent ? pendingRaceEvent.distanceMeters / (imp ? 1609.344 : 1000) : raceMilesInput) * racePaceSecInput)} · hydration every {plannerReminder.hydrationReminderIntervalMin} min · fuel every {plannerReminder.fuelReminderIntervalMin} min
                 </Text>
               </>
             ) : null}
@@ -2507,7 +2591,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             <FeatureTourTarget targetId="running.start">
             <TouchableOpacity
               style={[styles.startRunPill, { backgroundColor: C.primary }]}
-              onPress={start}
+              onPress={() => { void start(); }}
               activeOpacity={0.82}
               accessibilityRole="button"
               accessibilityLabel="Start run"
@@ -2532,13 +2616,13 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.stopRunPill, { backgroundColor: C.critical }]}
-              onPress={stop}
+              onPress={requestStop}
               activeOpacity={0.82}
               accessibilityRole="button"
-              accessibilityLabel="Stop run"
+              accessibilityLabel={raceLink ? 'End race, choose outcome' : 'Stop run'}
             >
               <Ionicons name="stop-circle" size={18} color="#FFFFFF" />
-              <Text style={styles.stopRunPillText}>STOP RUN</Text>
+              <Text style={styles.stopRunPillText}>{raceLink ? 'END RACE' : 'STOP RUN'}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -3618,7 +3702,7 @@ export default function RunningScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const navigation = useNavigation();
-  const params = useLocalSearchParams<{ tab?: string; scheduledSessionId?: string }>();
+  const params = useLocalSearchParams<{ tab?: string; scheduledSessionId?: string; raceId?: string }>();
   const [tab, setTab] = useState<RunTab>('plan');
   useFeatureTour('running', targetId => {
     if (targetId !== 'running.tabs' && targetId !== 'running.tab.active') setTab('active');
@@ -3637,7 +3721,7 @@ export default function RunningScreen() {
   // While a run is active/paused, hand the whole screen over to the tracking
   // UI: hide this screen's own header/sub-tab chrome and the app's bottom
   // tab bar so it behaves like a native full-screen run tracker.
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     const parent = navigation.getParent();
     if (!parent) return;
     const tabBarStyle = {
@@ -3651,7 +3735,7 @@ export default function RunningScreen() {
     };
     parent.setOptions({ tabBarStyle: isRunning ? { display: 'none' } : tabBarStyle });
     return () => parent.setOptions({ tabBarStyle });
-  }, [C.bg, C.border, isRunning, navigation]);
+  }, [C.bg, C.border, isRunning, navigation]));
 
   useEffect(() => {
     if (params.tab === 'active') setTab('active');
@@ -3682,11 +3766,14 @@ export default function RunningScreen() {
       {/* Sub-tab bar */}
       <FeatureTourTarget targetId="running.tabs" style={[styles.subTabBar, { backgroundColor: C.card, borderColor: C.border }]}>
         {TABS.map(t => (
-          <FeatureTourTarget key={t.key} targetId={`running.tab.${t.key}`} onActivate={() => setTab(t.key)} style={{ flex: 1 }}>
+          <FeatureTourTarget key={t.key} targetId={`running.tab.${t.key}`} onActivate={() => setTab(t.key)} style={{ flex: 1, minWidth: 0 }}>
           <TouchableOpacity
             style={[styles.subTab, tab === t.key && { backgroundColor: C.primaryDim }]}
             onPress={() => setTab(t.key)}
             activeOpacity={0.7}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === t.key }}
+            accessibilityLabel={t.label}
           >
             <Text style={[styles.subTabText, { color: tab === t.key ? C.primary : C.textDim }]}>{t.label}</Text>
           </TouchableOpacity>
@@ -3733,8 +3820,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   subTab: {
-    flex: 1,
-    height: 30,
+    minHeight: 44,
+    paddingVertical: 8,
+    paddingHorizontal: 2,
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',

@@ -69,6 +69,8 @@ function harness(initial: Activity, source = screenSource) {
       useRouter: () => ({ back: () => {}, push: () => {}, replace: () => {} }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     activityStore: { useActivityStore: (selector: any) => selector({ activities: [activity], hydrationStatus: 'ready' }) },
+    profileStore: { useProfileStore: (selector: any) => selector({ activeAthleteId: 'athlete_default' }) },
+    GoalLifecycleCard: { GoalAction: 'GoalAction', GoalMessage: 'GoalMessage' },
     settingsStore: { useSettingsStore: (selector: any) => selector({ units: 'imperial' }) },
     useColors: { useColors: () => ({}) },
     activityResolution: { resolveActivityDetail },

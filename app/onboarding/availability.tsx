@@ -35,7 +35,7 @@ export default function AvailabilityScreen() {
 
   return (
     <OnboardingShell
-      step={5}
+      step={6}
       title="Training availability"
       subtitle="Which days can you run? We'll schedule around your life."
       onNext={handleNext}

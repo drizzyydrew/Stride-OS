@@ -1,3 +1,4 @@
+import { isValidRaceActivityLink } from './raceLink';
 import type { Activity, ActivityDraft, ActivityMetrics } from '../types/activity';
 import { completedActivityRaceResult } from './racePerformance';
 
@@ -33,9 +34,23 @@ export function mergeManualActivityEdit(existing: Activity, draft: ActivityDraft
   if (changed.has('completionState')) { next.status = draft.status; next.completionClassification = draft.completionClassification; }
   if (changed.has('notes')) next.notes = draft.notes;
   if (['raceResultKind', 'raceDistanceKey', 'raceFinishTime', 'raceCustomDistance', 'raceCustomUnit'].some(key => changed.has(key))) {
-    next.raceResult = draft.raceResult;
+    next.raceResult = draft.raceResult ? { ...draft.raceResult, timingSource: 'user_entered' } : undefined;
+    if (existing.raceLink || existing.raceLinkUpdatedAt != null) {
+      next.raceLinkUpdatedAt = Math.max(Date.now(), (existing.raceLinkUpdatedAt ?? existing.raceLink?.linkedAt ?? 0) + 1);
+      const link = existing.raceLink;
+      if (isValidRaceActivityLink(link) && next.raceResult?.kind === 'race'
+        && next.raceResult.distanceKey === link.event.distance && next.raceResult.distanceMeters === link.event.distanceMeters) {
+        next.raceLink = { ...link, outcome: 'finished' };
+      } else next.raceLink = undefined;
+    }
   }
   next.raceResult = completedActivityRaceResult(next);
+  if (changed.has('completionState') && next.raceLink) {
+    next.raceLinkUpdatedAt = Math.max(Date.now(), (existing.raceLinkUpdatedAt ?? existing.raceLink?.linkedAt ?? 0) + 1);
+    if (next.status !== 'completed' || ['partial', 'stopped_early', 'skipped'].includes(next.completionClassification ?? '')) {
+      next.raceLink = { ...next.raceLink, outcome: next.completionClassification === 'stopped_early' ? 'did_not_finish' : 'unrecorded' };
+    } else if (next.raceLink.outcome === 'did_not_finish') next.raceLink = { ...next.raceLink, outcome: 'unrecorded' };
+  }
   if (changed.has('rpe')) next.rpe = draft.rpe;
   if (changed.has('shoeId')) next.shoeId = draft.shoeId;
   if (!recorded && changed.has('activityDate')) {

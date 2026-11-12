@@ -4,6 +4,8 @@ import { useIsFocused, useRoute, useRouter } from 'expo-router';
 import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { Ionicons } from '@expo/vector-icons';
 
+import { GoalAction, GoalMessage } from '../../../src/components/goals/GoalLifecycleCard';
+import { useProfileStore } from '../../../src/store/profileStore';
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useColors } from '../../../src/theme/useColors';
@@ -38,6 +40,7 @@ export default function ActivityDetailScreen() {
   useLayoutEffect(() => () => { focusSession.active = false; }, [focusSession]);
   // IDs already contain encoded recording lineage; do not URI-decode them again.
   const { activityId } = (useRoute().params ?? {}) as { activityId?: string | string[] };
+  const activeAthleteId = useProfileStore(state => state.activeAthleteId);
   const activities = useActivityStore(state => state.activities);
   const hydrationStatus = useActivityStore(state => state.hydrationStatus);
   const units = useSettingsStore(state => state.units);
@@ -212,6 +215,12 @@ export default function ActivityDetailScreen() {
             </>}
           </View>
         ) : null}
+        {activity.activityType === 'running' && activeAthleteId === 'athlete_default' ? <View style={[s.recoveryCard, { backgroundColor: C.card, borderColor: C.border }]}>
+          <Text style={[s.recoveryTitle, { color: C.text }]}>Race result</Text>
+          {activity.raceLink ? <GoalMessage>{activity.raceLink.event.name}{'\n'}{activity.raceLink.outcome === 'finished' ? 'Finished' : activity.raceLink.outcome === 'did_not_finish' ? 'Did not finish' : 'No result added yet'}</GoalMessage> : null}
+          <GoalAction label={activity.raceLink ? 'Edit race link' : 'Link to race'} secondary
+            onPress={() => router.push({ pathname: '/(tabs)/activity/link-race', params: { activityId: activity.id } } as never)} />
+        </View> : null}
         <ActivityRouteReview activity={activity} units={units} onInteractionActiveChange={setShareInteractionActive} />
         <View style={s.grid}>
           {summary.primary.map(({ label, value }) => (

@@ -1,0 +1,83 @@
+{
+  "checkedAt": "2026-11-12T03:43:07.340Z",
+  "deploymentId": "dpl_HpVJdT2Pit2gET3xPiuVRqiJ7kZG",
+  "projectId": "prj_vTtsKG8f6mVn7XKR7BKB1Vx9ktT1",
+  "target": "production",
+  "scope": "Existing public pages mirrored; association bytes retained. No DNS/Auth/billing changes.",
+  "pass": true,
+  "rows": [
+    {
+      "path": "index.html",
+      "url": "https://strideosfitness.com/",
+      "expected": "006590370d3494e8400a8ca66e2198b3722a13216bb4b87f80c98fb1bdf81454",
+      "status": 200,
+      "bytes": 10806,
+      "sha256": "006590370d3494e8400a8ca66e2198b3722a13216bb4b87f80c98fb1bdf81454",
+      "byteMatch": true,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "redirect": null
+    },
+    {
+      "path": "privacy.html",
+      "url": "https://strideosfitness.com/privacy.html",
+      "expected": "1d72a59fdbf41268b703055cb0afbbce9360c887d3623cf71e8dd6bccc33474d",
+      "status": 200,
+      "bytes": 16001,
+      "sha256": "1d72a59fdbf41268b703055cb0afbbce9360c887d3623cf71e8dd6bccc33474d",
+      "byteMatch": true,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "redirect": null
+    },
+    {
+      "path": "terms.html",
+      "url": "https://strideosfitness.com/terms.html",
+      "expected": "e2925582fc5ff64deced5292f89079c80ce0ad53d08ad6f826b4b876e96c0dc7",
+      "status": 200,
+      "bytes": 4577,
+      "sha256": "e2925582fc5ff64deced5292f89079c80ce0ad53d08ad6f826b4b876e96c0dc7",
+      "byteMatch": true,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "redirect": null
+    },
+    {
+      "path": "support.html",
+      "url": "https://strideosfitness.com/support.html",
+      "expected": "ab9b2ffb9c6347e09a6de467917fc1bad45ce0d0254be190fbadbba1ca0d7673",
+      "status": 200,
+      "bytes": 13024,
+      "sha256": "ab9b2ffb9c6347e09a6de467917fc1bad45ce0d0254be190fbadbba1ca0d7673",
+      "byteMatch": true,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "redirect": null
+    },
+    {
+      "path": ".well-known/apple-app-site-association",
+      "url": "https://strideosfitness.com/.well-known/apple-app-site-association",
+      "expected": "e59a4c85dbcbe9f00ff27e41abdd273f9700fbea641815d10618d088e6a78610",
+      "status": 200,
+      "bytes": 70,
+      "sha256": "e59a4c85dbcbe9f00ff27e41abdd273f9700fbea641815d10618d088e6a78610",
+      "byteMatch": true,
+      "contentType": "application/json",
+      "cacheControl": "public, max-age=3600",
+      "redirect": null,
+      "correctApp": true
+    },
+    {
+      "path": "apple-cdn",
+      "url": "https://app-site-association.cdn-apple.com/a/v1/strideosfitness.com",
+      "expected": null,
+      "status": 200,
+      "bytes": 70,
+      "sha256": "e59a4c85dbcbe9f00ff27e41abdd273f9700fbea641815d10618d088e6a78610",
+      "contentType": "application/json",
+      "cacheControl": "max-age=3600,public",
+      "redirect": null,
+      "correctApp": true
+    }
+  ]
+}

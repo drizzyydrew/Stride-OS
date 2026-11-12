@@ -15,6 +15,7 @@ import { activityFromWorkoutRecord } from '../utils/activityMigration';
 import { captureOwnerLease, ownerLeaseIsCurrent, type OwnerLease } from '../lib/localDataOwner';
 import { RunCompletionJournal, type LiveRunEntry, type PendingRunCompletion } from '../lib/runCompletionJournal';
 import { matchingWatchRecording, runCompletionKey, sameRecording, type RunWorkoutRecord } from '../utils/runCompletionIdentity';
+import { isValidRaceActivityLink } from '../utils/raceLink';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -227,6 +228,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
       commitRunEnd: (entry, week, fatigue, recovery, setFatigueScore, setRecentEasyLoad, discardShort = false) => {
         const lease = captureOwnerLease();
         if (!lease) return Promise.reject(new Error('Confirm the owner of this recording before saving'));
+        if (entry.raceLink && !isValidRaceActivityLink(entry.raceLink, lease.ownerUserId)) {
+          return Promise.reject(new Error('The race link does not belong to this recording owner'));
+        }
         return serializedCompletion(async () => {
           await waitForHistoryHydration();
           if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed before the run could be saved');
@@ -243,7 +247,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
             }
           }
           const pending: PendingRunCompletion = { ownerUserId: lease.ownerUserId, entry: { ...entry, ownerUserId: lease.ownerUserId, completionKey },
-            discarded: discardShort && entry.durationMinutes < 5, week, fatigue, recovery };
+            discarded: discardShort && entry.durationMinutes < 5 && !(entry.raceLink && entry.actualEndTime! > entry.actualStartTime!), week, fatigue, recovery };
           await completionJournal.save(pending);
           if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed; the saved run is retained for its original owner');
           const saved = (await completionJournal.read()).find(item => item.ownerUserId === lease.ownerUserId && item.entry.completionKey === completionKey)!;
@@ -478,6 +482,9 @@ export const useWorkoutStore = create<WorkoutStore>()(
         setFatigueScore, setRecentEasyLoad,
       ) => {
         const lease = captureOwnerLease();
+        if (entry.raceLink && (!lease || !isValidRaceActivityLink(entry.raceLink, lease.ownerUserId))) {
+          throw new Error('The race link does not belong to this recording owner');
+        }
         if (!lease) throw new Error('Local training data is locked until its owner is confirmed');
         if (entry.ownerUserId && entry.ownerUserId !== lease.ownerUserId) throw new Error('Run belongs to a different local account');
         const existing = get().history.find(record => record.id === entry.completionKey
@@ -515,6 +522,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           actualEndTime:          entry.actualEndTime,
           scheduledSessionId:     entry.scheduledSessionId,
           ownerUserId:            lease.ownerUserId,
+          ...(entry.raceLink ? { raceLink: JSON.parse(JSON.stringify(entry.raceLink)) } : {}),
           distanceSource:         entry.distanceSource,
           associatedTrainingBlockId: entry.associatedTrainingBlockId,
           associatedGoalId:       entry.associatedGoalId,

@@ -1,4 +1,5 @@
 import type { Activity, ActivityType } from '../types/activity';
+import { isValidRaceActivityLink, raceResultFromRecordedLink } from './raceLink';
 import type { CompletedWorkoutRecord, WorkoutType } from '../types/training';
 import type { StrengthLogRecord } from '../types/strength';
 import type { MobilityCompletion } from '../types/mobility';
@@ -54,6 +55,9 @@ export function activityFromWorkoutRecord(
   record: RunWorkoutRecord,
   legacyImport = true,
 ): Activity {
+  if (record.raceLink && (!record.ownerUserId || !isValidRaceActivityLink(record.raceLink, record.ownerUserId))) {
+    throw new Error('Saved race link does not match the recording owner');
+  }
   const activityType = legacyWorkoutActivityType(record.type);
   const durationMinutes = record.actualDurationMinutes ?? record.durationMinutes;
   const distanceMiles = record.actualDistanceMiles ?? record.estimatedDistanceMiles;
@@ -61,10 +65,13 @@ export function activityFromWorkoutRecord(
     && Number.isFinite(record.actualStartTime) && Number.isFinite(record.actualEndTime)
     && record.actualEndTime >= record.actualStartTime
     ? (record.actualEndTime - record.actualStartTime) / 1000 : undefined;
+  // Legacy duration-derived end times cannot inherit a measured-time claim.
+  const { elapsedTimeSource: _elapsedTimeSource, ...recordMetrics } = record.activityMetrics ?? {};
   const metrics = sanitizeActivityMetrics(activityType, {
-    ...record.activityMetrics,
+    ...recordMetrics,
     durationSeconds: durationMinutes * 60,
     elapsedTimeSeconds: record.activityMetrics?.elapsedTimeSeconds ?? recordedElapsed ?? durationMinutes * 60,
+    ...(recordedElapsed != null ? { elapsedTimeSource: 'recorded_wall_clock' as const } : {}),
     activeTimeSeconds: record.activityMetrics?.activeTimeSeconds ?? durationMinutes * 60,
     distanceMeters: activityType === 'running' ? distanceMiles * 1609.344 : undefined,
     routeCoordinates: activityType === 'running'
@@ -73,6 +80,8 @@ export function activityFromWorkoutRecord(
           longitude: point.lng,
           timestamp: point.timestamp,
           altitudeMeters: point.altitudeM,
+          ...(typeof point.horizontalAccuracyMeters === 'number' && Number.isFinite(point.horizontalAccuracyMeters) && point.horizontalAccuracyMeters >= 0
+            ? { horizontalAccuracyMeters: point.horizontalAccuracyMeters } : {}),
         }))
       : undefined,
     runWalkIntervals: record.type === 'run_walk' ? [] : undefined,
@@ -101,7 +110,11 @@ export function activityFromWorkoutRecord(
       ? 'legacy_import'
       : record.workoutInstanceId ? 'tracked' : record.source === 'manual' ? 'manual' : 'training_plan',
     status: record.skipped ? 'skipped' : 'completed',
-    completionClassification: record.skipped ? 'skipped' : 'completed_as_prescribed',
+    completionClassification: record.skipped ? 'skipped' : record.raceLink?.outcome === 'did_not_finish' ? 'stopped_early' : 'completed_as_prescribed',
+    ...(record.raceLink ? {
+      raceLink: JSON.parse(JSON.stringify(record.raceLink)),
+      raceResult: raceResultFromRecordedLink(record.raceLink, record.actualStartTime, record.actualEndTime),
+    } : {}),
     scheduled: Boolean(record.scheduledSessionId) || record.source === 'generated',
     associatedTrainingBlockId: record.associatedTrainingBlockId,
     associatedGoalId: record.associatedGoalId,

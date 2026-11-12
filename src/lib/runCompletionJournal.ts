@@ -2,6 +2,7 @@ import type { WorkoutIntensity, WorkoutType } from '../types/training';
 import type { RunCompletionIdentity, RunWorkoutRecord } from '../utils/runCompletionIdentity';
 import { matchingWatchRecording, runCompletionKey } from '../utils/runCompletionIdentity';
 import type { DistanceSource } from '../types/activity';
+import { isValidRaceActivityLink } from '../utils/raceLink';
 
 export const RUN_COMPLETION_JOURNAL_KEY = 'strideos-run-completion-journal-v1';
 export type LiveRunEntry = RunCompletionIdentity & {
@@ -43,6 +44,7 @@ function validPending(value: unknown): value is PendingRunCompletion {
     && !!entry && typeof entry.workoutInstanceId === 'string' && entry.workoutInstanceId.length > 0
     && entry.completionKey === runCompletionKey(entry.workoutInstanceId)
     && (!entry.ownerUserId || entry.ownerUserId === item.ownerUserId)
+    && (entry.raceLink === undefined || isValidRaceActivityLink(entry.raceLink, item.ownerUserId))
     && (entry.watchRecording === undefined || !!matchingWatchRecording(entry.watchRecording, entry.workoutInstanceId, entry.actualStartTime))
     && typeof entry.actualStartTime === 'number' && Number.isFinite(entry.actualStartTime)
     && typeof entry.actualEndTime === 'number' && Number.isFinite(entry.actualEndTime) && entry.actualEndTime >= entry.actualStartTime

@@ -29,6 +29,8 @@ function harness(status = 'ready') {
     'expo-router': { useIsFocused: () => focused, useRoute: () => ({ params: { activityId: id } }), useRouter: () => ({ replace: (value: any) => navigation.push(value), back: () => navigation.push('back') }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     activityStore: { useActivityStore: (selector: any) => selector({ activities, hydrationStatus: status }) },
+    profileStore: { useProfileStore: (selector: any) => selector({ activeAthleteId: 'athlete_default' }) },
+    GoalLifecycleCard: { GoalAction: 'GoalAction', GoalMessage: 'GoalMessage' },
     settingsStore: { useSettingsStore: (selector: any) => selector({ units: 'metric' }) },
     useColors: { useColors: () => ({}) },
     shareCard: { shareCardUnavailableReason: () => null },

@@ -1,0 +1,28 @@
+{
+  "checkedAtUtc": "2026-11-12T03:28:26.721948+00:00",
+  "phase": "Race linking before later authorized minimalism/native release work",
+  "fullSuite": {
+    "command": "tsx --test --test-concurrency=4 src/utils/__tests__/*.test.ts scripts/tests/*.test.ts",
+    "exitCode": 0,
+    "tests": 1864,
+    "pass": 1864,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "typecheck": {
+    "command": "npm run typecheck",
+    "exitCode": 0
+  },
+  "expoCheck": {
+    "command": "npm run expo:check",
+    "exitCode": 0
+  },
+  "diffCheck": {
+    "command": "git diff --check",
+    "exitCode": 0
+  },
+  "deviceOrCloudAccepted": false,
+  "sourceManifest": "Final candidate manifest must be captured after the later authorized minimalism/native work; these counts are this phase only.",
+  "buildOrSubmissionPerformedInThisPhase": false
+}

@@ -79,7 +79,8 @@ test('bottom tab labels and icons use one uniform visual contract', () => {
   assert.match(tabs, /TAB_LABEL_LINE_HEIGHT\s*=\s*12/);
   assert.match(tabs, /fontWeight:\s*'700'/);
   assert.match(tabs, /includeFontPadding:\s*false/);
-  assert.match(tabs, /minimumFontScale=\{0\.85\}/);
+  assert.doesNotMatch(tabs, /adjustsFontSizeToFit|minimumFontScale/, 'labels keep one shared size instead of shrinking longer names');
+  assert.match(tabs, /tabBarIconStyle:\s*\{ width: '100%'/, 'icon-and-label content uses the full equal-width cell');
   assert.match(tabs, /tabBarItemStyle:\s*\{/);
   assert.match(tabs, /paddingHorizontal:\s*0/);
   assert.match(tabs, /paddingHorizontal:\s*LAYOUT\.tabBarPadHorizontal/);

@@ -69,9 +69,9 @@ test('paused Training metrics scroll independently while Resume and Stop remain 
   const scroll = find(paused, node => jsxName(node, 'ScrollView'))!;
   assert.ok(scroll);
   assert.ok(find(scroll, node => ts.isJsxSelfClosingElement(node) && node.tagName.getText(training) === 'RunPrimaryMetrics'));
-  assert.doesNotMatch(scroll.getText(training), /accessibilityLabel="(?:Resume|Stop) run"/);
+  assert.doesNotMatch(scroll.getText(training), /accessibilityLabel=(?:"(?:Resume|Stop) run"|\{raceLink \? 'End race, choose outcome')/);
   assert.match(paused.getText(training), /accessibilityLabel="Resume run"/);
-  assert.match(paused.getText(training), /accessibilityLabel="Stop run"/);
+  assert.match(paused.getText(training), /accessibilityLabel=\{raceLink \? 'End race, choose outcome' : 'Stop run'\}/);
 });
 
 test('Training setup resets only its presentation scroll subtree on idle/environment transitions', () => {

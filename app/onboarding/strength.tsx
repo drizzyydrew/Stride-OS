@@ -52,7 +52,7 @@ export default function StrengthScreen() {
 
   return (
     <OnboardingShell
-      step={6}
+      step={7}
       title="Strength background"
       subtitle="Helps us balance running load with strength work safely."
       onNext={handleNext}

@@ -112,7 +112,7 @@ export default function GoalScreen() {
 
   return (
     <OnboardingShell
-      step={1}
+      step={2}
       title="What's your primary goal?"
       subtitle="We'll build your training system around this focus."
       onNext={handleNext}

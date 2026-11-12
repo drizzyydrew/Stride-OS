@@ -1,0 +1,46 @@
+{
+  "scope": "Concrete Google brand proposal, not saved. Await shared-project branding decision. No credential, permission, callback, or billing changes.",
+  "project": {
+    "id": "clever-tracker-481109-r7",
+    "number": "471742251572",
+    "label": "My First Project"
+  },
+  "verifiedStrideOSClient": "471742251572-ubj5q3fdhg7bh3m8tplr9opoc59mho6u.apps.googleusercontent.com",
+  "current": {
+    "appName": "PFF Database",
+    "supportEmail": "mooredrew5@gmail.com",
+    "home": null,
+    "privacy": null,
+    "terms": null,
+    "authorizedDomains": [
+      "pbzgrhnxpbtlkzpreizy.supabase.co"
+    ]
+  },
+  "proposed": {
+    "appName": "StrideOS",
+    "supportEmail": "mooredrew5@gmail.com",
+    "home": "https://strideosfitness.com/",
+    "privacy": "https://strideosfitness.com/privacy.html",
+    "terms": "https://strideosfitness.com/terms.html",
+    "authorizedDomains": [
+      "pbzgrhnxpbtlkzpreizy.supabase.co",
+      "strideosfitness.com"
+    ],
+    "logo": {
+      "path": "assets/images/icon.png",
+      "bytes": 47133,
+      "sha256": "ea0a126faaf054008b769b244b3508f2b2f314c34e82d7548ab5da8f57b20aec"
+    }
+  },
+  "sharedClientCaution": "The same project also has an iOS client and older Desktop client. Project overview says all clients active but gives no traffic data. Rename applies project-wide.",
+  "verification": "Google controls verification and publication. A saved draft does not establish a changed account chooser.",
+  "unchanged": {
+    "oauthCallbacks": [
+      "https://pbzgrhnxpbtlkzpreizy.supabase.co/auth/v1/callback"
+    ],
+    "credentials": true,
+    "scopes": true,
+    "supabasePlan": "Free",
+    "customAuthDomainConfigured": false
+  }
+}

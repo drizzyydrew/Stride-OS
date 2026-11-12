@@ -55,7 +55,7 @@ export function captureOutdoorCompletion(state: ActiveActivityStore, command: Ou
     associatedTrainingBlockId: state.associatedTrainingBlockId ?? undefined, associatedGoalId: state.associatedGoalId ?? undefined,
     startTime: startedAt, endTime: command.endedAt, indoor: false,
     metrics: {
-      ...telemetry, durationSeconds: activeSeconds, elapsedTimeSeconds: wallSeconds, activeTimeSeconds: activeSeconds,
+      ...telemetry, durationSeconds: activeSeconds, elapsedTimeSeconds: wallSeconds, elapsedTimeSource: 'recorded_wall_clock', activeTimeSeconds: activeSeconds,
       distanceMeters: distance, distanceSource: 'gps',
       elevationGainMeters: speed.elevationGainMeters, elevationLossMeters: speed.elevationLossMeters,
       speed: { currentMetersPerSecond: speed.currentMetersPerSecond, averageMetersPerSecond: speed.averageMetersPerSecond,

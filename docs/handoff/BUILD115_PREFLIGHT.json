@@ -1,0 +1,475 @@
+{
+  "recordedAtUtc": "2026-11-12T05:28:41.700708+00:00",
+  "candidate": "1.0.0 (115)",
+  "branch": "codex/build115-feedback-20261111",
+  "baseCommit": "5c2791110333cb413a809154035ad6ce5237b503",
+  "status": "source preflight only; no cloud build or Apple acceptance yet",
+  "checks": {
+    "fullSuite": {
+      "passed": 1897,
+      "failed": 0,
+      "skipped": 0,
+      "concurrency": 2,
+      "durationMs": 114780.384583
+    },
+    "finalJsExport": "PASS: no-bytecode final module graph; production EAS Hermes unchanged",
+    "earlierHermesExport": "PASS before final nullable fallback; cloud final-bytecode compilation still required",
+    "credentialPatternScan": {
+      "files": 149,
+      "findings": 0
+    },
+    "typecheckAfter115Bump": "PASS",
+    "expoDependencyCheckAfter115Bump": "PASS: dependencies up to date",
+    "gitDiffCheck": "PASS",
+    "councilFrozenHashVerification": "PASS: all eleven files match"
+  },
+  "council": {
+    "sourceVote": "three favorable 95/100 subjective bounded source reviews",
+    "receipt": "BUILD115_WATCH_START_SOURCE_RECEIPT.json",
+    "deviceReliabilityProbability": false
+  },
+  "authorizedScope": [
+    "feedback UI and navigation",
+    "archive containment and clear coverage",
+    "identity and test help",
+    "measured bests and repeat PR awards",
+    "named race pre/post linking",
+    "Watch startup/control recovery and logical End protection",
+    "Live Activity branding",
+    "existing owned website page mirror",
+    "commit/push and internal TestFlight candidate"
+  ],
+  "unchangedProtectedPaths": [
+    "src/lib/gpsTracking.ts",
+    "src/lib/runLiveActivity.ts",
+    "modules/stride-live-activity/",
+    "src/lib/healthKit.ts",
+    "src/store/routeStore.ts",
+    "src/components/strength/",
+    "src/utils/strengthEngine.ts",
+    "app/(tabs)/strength/",
+    "src/lib/supabase.ts",
+    "src/lib/syncService.ts",
+    "supabase/",
+    "app/auth/",
+    "src/store/authStore.ts",
+    "src/lib/authRedirect.ts",
+    "package.json",
+    "package-lock.json",
+    "eas.json"
+  ],
+  "limitations": [
+    "Reported 08:49 crash remains unattributed",
+    "Cloud SDK26 compile/signature/archive verification pending",
+    "Phone and Watch physical acceptance pending",
+    "No Google shared-project brand rename or paid auth domain applied",
+    "No public App Review submission or launch",
+    "Normal candidate purchases disabled"
+  ],
+  "files": [
+    {
+      "path": "app.json",
+      "sha256": "e11bc3bbb33f4e99c57bc88bacb059bc46c739ad265d38a66204b6a746037765"
+    },
+    {
+      "path": "app/(tabs)/_layout.tsx",
+      "sha256": "3f27ad15444203c54d291e63921ab3a773227c2e1dae1bf4938927e280224b3b"
+    },
+    {
+      "path": "app/(tabs)/activity/[activityId].tsx",
+      "sha256": "34b9a8e51c6032983c3c7b576c04c254aac8db12afcab6b07a174dd71e86ea1f"
+    },
+    {
+      "path": "app/(tabs)/activity/link-race.tsx",
+      "sha256": "633943f4fd6a4e4143550d53d25ce9454ac7547ac23336352eabfcbbba8ee09c"
+    },
+    {
+      "path": "app/(tabs)/activity/start.tsx",
+      "sha256": "efb1b920b4abef6cae0aaab731aec6f67335350349e9ac37f723a7324f6f1ae0"
+    },
+    {
+      "path": "app/(tabs)/calendar/index.tsx",
+      "sha256": "b164489d17c8b720f7292a0fad250bf13816b54c5cac415c85b55e6a01cb79fe"
+    },
+    {
+      "path": "app/(tabs)/dashboard/index.tsx",
+      "sha256": "4ac5dc0b5e14c66a43d357c45e8a4e816fb450c61d2b5e64a7e67115d61b4dd1"
+    },
+    {
+      "path": "app/(tabs)/profile/calibration.tsx",
+      "sha256": "5bcfc38d839fad7cd42ebd24833350190e9ea59e420f08218f19b48281bd873c"
+    },
+    {
+      "path": "app/(tabs)/profile/edit-identity.tsx",
+      "sha256": "03050556ffbb42c13967a616b74f692f9c3fcc54e3262a9721a64bce1dc34645"
+    },
+    {
+      "path": "app/(tabs)/profile/index.tsx",
+      "sha256": "10d380b01003d7e372bb19fc5a65349305c253460751602507ca640828e626c8"
+    },
+    {
+      "path": "app/(tabs)/settings/goal-archive-detail.tsx",
+      "sha256": "c2bbe0512c29a1022e1fa826bff3e45f6b909a38080f0125abfd2303af6787fa"
+    },
+    {
+      "path": "app/(tabs)/training/index.tsx",
+      "sha256": "c607bfb3d9a191e917f6eac510149f02a1c7948ca8fd2f3b0a51186ab86c6821"
+    },
+    {
+      "path": "app/onboarding/availability.tsx",
+      "sha256": "ccdcce7efc872d16ab83d0388d70a918413160131029d14f14ae5c48acdd219d"
+    },
+    {
+      "path": "app/onboarding/complete.tsx",
+      "sha256": "713dfc8acdb2385f0abe1a86e2f4ad5cc128ee1daca485ebf1fc5a5aad4e5987"
+    },
+    {
+      "path": "app/onboarding/cross-training.tsx",
+      "sha256": "16f38d58ee99db7680502c7e651802d12aee8fa42b4f2ea95cfef4433583c5ac"
+    },
+    {
+      "path": "app/onboarding/experience.tsx",
+      "sha256": "f24ad96ab495f9d07791301e1d53900c20dad8f39a7d7f29fde90440082d9f4f"
+    },
+    {
+      "path": "app/onboarding/goal.tsx",
+      "sha256": "dc71ae7864c1f232bd4d9d05e12984a59c896f32ddc6d97578c273bc0ddd2671"
+    },
+    {
+      "path": "app/onboarding/identity.tsx",
+      "sha256": "b11845bb600bbb8bbafdb85545820ed112d2f550877da67075cc7233539184d5"
+    },
+    {
+      "path": "app/onboarding/index.tsx",
+      "sha256": "ac2772624b1569a4497e998556548933561fd8799ce0ccd5b36b7d62f829b9f9"
+    },
+    {
+      "path": "app/onboarding/injury.tsx",
+      "sha256": "1908588f67823043fabb8a0316718162bdd00d05d09cf2522138106482c27998"
+    },
+    {
+      "path": "app/onboarding/physiology.tsx",
+      "sha256": "b1ab355f8ab4fdb015425f88aaacbc024a1bea66f2eca852e166580cb7df0fc3"
+    },
+    {
+      "path": "app/onboarding/race.tsx",
+      "sha256": "b20c2dc32a6d453aa166d9d99719b87c995372e89c8550725c921957efbfb122"
+    },
+    {
+      "path": "app/onboarding/strength.tsx",
+      "sha256": "12e7e3dfdd107839bf03dad605788cd489c08bee5059253e3d3f2347436aa4a7"
+    },
+    {
+      "path": "app/onboarding/style.tsx",
+      "sha256": "6cd98aa6ad428dd59b4e81b0c54d7cb3a85596a891d7e9dbbd08768ddeb01d35"
+    },
+    {
+      "path": "modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift",
+      "sha256": "301af28040b74918d9548f10b60f77a579b4d81a4135f3c8d60a6aa7c9a2f626"
+    },
+    {
+      "path": "modules/stride-watch-connectivity/src/index.ts",
+      "sha256": "2dc07be62251487386ecaf19e9a702cad3256271b2c524d124e3dffb493e94a5"
+    },
+    {
+      "path": "scripts/tests/activityMigration.test.ts",
+      "sha256": "3e879055aa10b6f74739883e0f887371b7fcd1ef0a546f4c5fd628d843ef807f"
+    },
+    {
+      "path": "scripts/tests/activityRecoveryUI.test.ts",
+      "sha256": "9cc9579aa7ed981bcf5a7ebbefa88a861ccaac4857321704171f9c9f9c854d35"
+    },
+    {
+      "path": "scripts/tests/autoPausePolicy.test.ts",
+      "sha256": "020ce16ba3bdf2c8beeebdbc305b084d44bc63f0e248e112d47df3cb683352d5"
+    },
+    {
+      "path": "scripts/tests/build45Phase5ExperienceMode.test.ts",
+      "sha256": "23dec4033760aac26773bc07f048f56a7c97e38ace341dba92629e73d2c9e788"
+    },
+    {
+      "path": "scripts/tests/build90Features.test.ts",
+      "sha256": "347ba87b6502a9705aca4c6688b57664a428669a777996325d1b69e1ecb49a66"
+    },
+    {
+      "path": "scripts/tests/buildNextAdditionalCorrections.test.ts",
+      "sha256": "b124071eae2db72e299b08095f4c8bfaa878e1488dc4c53aba8a32d6b77a4d3b"
+    },
+    {
+      "path": "scripts/tests/buildNextUiAndControls.test.ts",
+      "sha256": "9a28875c6019eed35534a2d4e93d0636f8c613fc0b1b0c331cb5c0441695ef8c"
+    },
+    {
+      "path": "scripts/tests/coldLaunchActivityRecovery.test.ts",
+      "sha256": "536440b8abba83c0b541f8093e97593911ccfb08df1e0731f447f337154120f1"
+    },
+    {
+      "path": "scripts/tests/dashboardGuidedDetails.test.ts",
+      "sha256": "1b98af516f83e938d2f1746eb7857f610e9c376f32da20284db2ff26079ad713"
+    },
+    {
+      "path": "scripts/tests/fixtures/watch-start-harness.swift",
+      "sha256": "bb72d6fa5325a9f53ceed005a9ea5bf152132ecae4913d7a0e4303497212e889"
+    },
+    {
+      "path": "scripts/tests/goalArchiveStore.test.ts",
+      "sha256": "1c181e6321069da8301e75a1acb3b8444e26bf319a71d003bd3e5fb309ee7155"
+    },
+    {
+      "path": "scripts/tests/healthRefreshVisibility.test.ts",
+      "sha256": "6341aec5597be3dbedb90d936e4a3c5dd4aca2f500e7d936dc5a59c086c895ad"
+    },
+    {
+      "path": "scripts/tests/liveTelemetryCache.test.ts",
+      "sha256": "67b4ab3f9b9949ef40405165a8e7f9bf8e90f7bd2c6930d0082f19ec2403a2fa"
+    },
+    {
+      "path": "scripts/tests/minimalismPresentation.test.ts",
+      "sha256": "fc2fe1da01986912eb33eb793200518a35c5a4761e055618cf48e13177fa54c4"
+    },
+    {
+      "path": "scripts/tests/oct15OutdoorUI.test.ts",
+      "sha256": "d6300f38b865095bebd55d5fea9eaf657ca4b878d87b85f658a64a179bfc8822"
+    },
+    {
+      "path": "scripts/tests/oct17LayoutRegression.test.ts",
+      "sha256": "4999adb86f247f7828bc6531556824baa439eec237506da7e7ceca04a041d980"
+    },
+    {
+      "path": "scripts/tests/oct17WeightPersistence.test.ts",
+      "sha256": "df881781dec5736a06b90cd4330e8956827bfccae04da4e752099f6e1a53de5b"
+    },
+    {
+      "path": "scripts/tests/onboardingIdentity.test.ts",
+      "sha256": "52bdb457732bf6f18e5e496b87857d75a6e1985033c800d54cefa5237805a1d1"
+    },
+    {
+      "path": "scripts/tests/profileIdentityEditing.test.ts",
+      "sha256": "83a726a724254ccc7af945d67611fb8f2d6f30bc3c9c95cb8ab8d426a4a0f6fa"
+    },
+    {
+      "path": "scripts/tests/raceActivityLink.test.ts",
+      "sha256": "11c8d1a79025ea06cd93298e570f73d798c0bbbafff9c98aefb222383934cea9"
+    },
+    {
+      "path": "scripts/tests/raceLinkUi.test.ts",
+      "sha256": "da7ec25af27cf514525a0c3e32e8a73abc8a3fc42eae000770c76e8008537998"
+    },
+    {
+      "path": "scripts/tests/raceRecordingLifecycle.test.ts",
+      "sha256": "47cde1a2f469d7b637e1f44dfe0e7055426ffc7ca5cc2d8f60a432f8d0e8ad9c"
+    },
+    {
+      "path": "scripts/tests/sourceUiNavigation.test.ts",
+      "sha256": "9e6d1d857096b57c1f3adcbbb6695b75aade4110c8cb06322f87171c49fcda80"
+    },
+    {
+      "path": "scripts/tests/watchExplicitControls.test.ts",
+      "sha256": "6cb9ca1742c7fb1235d47f5a1533a12d54ad2e8f4930c70003e27c5185f28419"
+    },
+    {
+      "path": "scripts/tests/watchStartFence.test.ts",
+      "sha256": "ee9c815929bcd6eb443a81dc9f2c1a8c4e3cd12e3fd46ab81cefc4d295fc866b"
+    },
+    {
+      "path": "scripts/tests/watchStartLease.test.ts",
+      "sha256": "951bbdf9c6273dfee06f1bb92cb85b6ca2fb38203b95afea5a81a16ad0bec425"
+    },
+    {
+      "path": "scripts/tests/watchWorkoutSync.test.ts",
+      "sha256": "abafbc88db79c520d001498a44a5893b0f9606224e74e1b240838b3b799196b9"
+    },
+    {
+      "path": "src/achievements/racePr/racePrDefinitions.ts",
+      "sha256": "242b7c0f280fee2de3e0a7957ecfe18c08d971b0f2981494a2a62f2ccddc9036"
+    },
+    {
+      "path": "src/components/activity/RaceEventPicker.tsx",
+      "sha256": "736f78ca7bd95a53b19fcd73f5555a8b715439b723f478f0643ab7c2be8ad1fc"
+    },
+    {
+      "path": "src/components/activity/RaceLinkEditor.tsx",
+      "sha256": "9d44647d9a7dfd00ccfb0a95f8c8d889be2030085d1088878916a79de8a20173"
+    },
+    {
+      "path": "src/components/activity/RecoveredActivityPrompt.tsx",
+      "sha256": "655f2bb2a1af043187a1e1105641c26640c5c6ef49a3e6330cac8be6bc662d19"
+    },
+    {
+      "path": "src/components/goals/GoalLifecycleCard.tsx",
+      "sha256": "d95eefdb5f1c71462687707011d2398b31cb6efb669d8150691e58602cd16263"
+    },
+    {
+      "path": "src/components/layout/NavigationEscape.tsx",
+      "sha256": "02944abfa491d25654af4ae550bd1ddc513a628f525322af6226640a6979fa28"
+    },
+    {
+      "path": "src/components/profile/ProfileIdentityEditor.tsx",
+      "sha256": "a7d60fa0709b00e504e56121192e7fd1b5db1c5e27018daf703becc620a7f9f7"
+    },
+    {
+      "path": "src/components/profile/calibration-help.tsx",
+      "sha256": "ea151bca8b1fce668c0acd6db79712414fae7144771e37b7f78ebc5982954681"
+    },
+    {
+      "path": "src/components/profile/profile-identity-fields.tsx",
+      "sha256": "41f84fb815c8337886a13991d7f1b7f9374350b9f3119d030e7e92cc747f2227"
+    },
+    {
+      "path": "src/components/watch/WatchWorkoutBridge.tsx",
+      "sha256": "9e9d0d9b0a37c9703d6db31964a2a1cd3d191a651bb87d4b94846313930f3838"
+    },
+    {
+      "path": "src/hooks/useOutdoorTelemetry.ts",
+      "sha256": "b9126b3e3ae815c1d114aa5e06ac99c70723bdebdef6a7436f8b73ae9e819212"
+    },
+    {
+      "path": "src/lib/goalArchiveSync.ts",
+      "sha256": "9ea1b2dcf67efbf5dc52dc6ca3dd09461bf82f42a3814005122f10473f1332d9"
+    },
+    {
+      "path": "src/lib/localDataOwner.ts",
+      "sha256": "104b0cc20a4d1a674fa29d4b086dc6acb9b6a692a0d2685cfd9ccc1ddf69bff1"
+    },
+    {
+      "path": "src/lib/profileIdentityEditing.ts",
+      "sha256": "15e3b41dc831a1352b73865aeaee4ce7cd34ef40dec97b71083549af99993939"
+    },
+    {
+      "path": "src/lib/raceActivityLink.ts",
+      "sha256": "4f13ff3bd8aae21b97210dc111a758be2131602504b761edb42f1e37c712cfa6"
+    },
+    {
+      "path": "src/lib/runCompletionJournal.ts",
+      "sha256": "6b2fd2041cc8491eb9e31fbb203a41b9cdbfddf58ac239814de70836db6438c3"
+    },
+    {
+      "path": "src/store/activeRunStore.ts",
+      "sha256": "eb8e1a52642c18bc2de3a43399b5ce1f6f9fe538891e4957a4dfe46f138b7d97"
+    },
+    {
+      "path": "src/store/onboardingStore.ts",
+      "sha256": "830884ad6467ca28667fe98c895608189691924d7a858308e8ad8c099cdf8b20"
+    },
+    {
+      "path": "src/store/workoutStore.ts",
+      "sha256": "aa88be5e670a2bc1ec0b289009df96a2d2225018c57c49a49bf1e4197c510dfa"
+    },
+    {
+      "path": "src/types/activity.ts",
+      "sha256": "6e96c7795b1f2817d66ffc58a2a50a9efa0973da15be033af4cb595becbd406b"
+    },
+    {
+      "path": "src/types/athlete.ts",
+      "sha256": "b13c3799498ffb77a60425474e56a0c903acfb4149c0eae0994e4d8ea064da00"
+    },
+    {
+      "path": "src/types/goalArchive.ts",
+      "sha256": "ed29c0a032a235733454dc26f8e0aa8c03fadb6a988dd8fae768f7f3551e8662"
+    },
+    {
+      "path": "src/types/raceLink.ts",
+      "sha256": "e3eb66d9ffca0aa21f52e464ffcf0f032921f0845070e59a8806e3ebb7de8da1"
+    },
+    {
+      "path": "src/types/training.ts",
+      "sha256": "3b760b59ad2be1ad66bd832984d948658874d5f1f13be810e7b6f545ff205623"
+    },
+    {
+      "path": "src/utils/__tests__/goalArchiveCoverage.test.ts",
+      "sha256": "bea1605cf55cb86b5a3bb60a1a2b90e75f72a634d3d89544932847417ef4c209"
+    },
+    {
+      "path": "src/utils/__tests__/racePerformance.test.ts",
+      "sha256": "3401d169d7a1afa4fce22b8c577d9eecf2c409236d07ccc2998e20daa893f959"
+    },
+    {
+      "path": "src/utils/__tests__/recordedRunPerformances.test.ts",
+      "sha256": "2e96541819ba5f72c8925f180e5233fd467275a009603efd657b2081a8a3c7ce"
+    },
+    {
+      "path": "src/utils/activityLoad.ts",
+      "sha256": "500a684d58f4708ca018fc8a346cbba66869e86a277c0ac1a653979b105add78"
+    },
+    {
+      "path": "src/utils/activityMigration.ts",
+      "sha256": "5e28f4319b122930da9551be37951821c796414a977e85169864fc0061f3426f"
+    },
+    {
+      "path": "src/utils/calibrationEngine.ts",
+      "sha256": "7e5d2ab7d6833e732fa726b5a088c75f77ba42e86c9a4a4f03bf48358ea8854a"
+    },
+    {
+      "path": "src/utils/goalArchive.ts",
+      "sha256": "8713c006142971cd2f0de381706e505244fda82e23c850073bbf80df92760c39"
+    },
+    {
+      "path": "src/utils/goalArchiveCoverage.ts",
+      "sha256": "aa5b7cc49b910a195c1323937df9346c33f78b57089006f6fb7fcf3e073ac6c7"
+    },
+    {
+      "path": "src/utils/manualActivityEdit.ts",
+      "sha256": "bc63502dacdb45d7a72b8b6a965227962a9ad9e030c16413219bc960d7451ba4"
+    },
+    {
+      "path": "src/utils/navigationEscape.ts",
+      "sha256": "486e9feada7566291643ef032ac6b906214a87d8c611731fc46ea8d8613ea3a4"
+    },
+    {
+      "path": "src/utils/onboardingIdentity.ts",
+      "sha256": "f1407611441ed1393773b905dd8ef1c291fc090a1ef6f4f1202e1f357abbb122"
+    },
+    {
+      "path": "src/utils/outdoorCompletionSnapshot.ts",
+      "sha256": "1fcc8c9d5c64a20d243aac99bde2f481f5f75c443511094bf3d01eb9b3e3f3db"
+    },
+    {
+      "path": "src/utils/outdoorTelemetry.ts",
+      "sha256": "14b698cc39fe8fc9eea6f1ed80d21794176d0cff3a8ac95c26a63a2dcc8c87e8"
+    },
+    {
+      "path": "src/utils/raceLink.ts",
+      "sha256": "965a84c666fa01cf84f7c35f36833a2768fb66470e99aa4c142310b7d434a34f"
+    },
+    {
+      "path": "src/utils/racePerformance.ts",
+      "sha256": "3b8729659833d71f4273a1817ff14a8cef786a470f35dc6ac7603b40a17dcc1b"
+    },
+    {
+      "path": "src/utils/racePrAwards.ts",
+      "sha256": "41196b3d9a809bc6134d96685e09ec4f7b70428ca564d1e6e5c2b7b55ef0c8ba"
+    },
+    {
+      "path": "src/utils/recordedRunPerformances.ts",
+      "sha256": "dfecfb35b49c415139162c65e9c6f577c5a1ffdc5065bb7eb5374577211996dc"
+    },
+    {
+      "path": "src/utils/runCompletionIdentity.ts",
+      "sha256": "588d6d10813320c67e644c260740e41a67b051483491dc846c033ab4205682bf"
+    },
+    {
+      "path": "src/utils/trainingRunEndSnapshot.ts",
+      "sha256": "efcb88a1f9decb7eac8d74922843e61fe30f695a6e1e69fe72bf9bf5e966a482"
+    },
+    {
+      "path": "targets/StrideOSWatch/StrideWatchStartFence.swift",
+      "sha256": "66f5bf5145ec51b316119901d94612ecab4a450592b647d67bf6a1ca0a817287"
+    },
+    {
+      "path": "targets/StrideOSWatch/StrideWatchWorkoutManager.swift",
+      "sha256": "a03bb78cb30c3cda65ab6034cfd5f3157465858923dd79c0003adbc0053c0f18"
+    },
+    {
+      "path": "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/Contents.json",
+      "sha256": "0c7c0d6e22732ea8b93beee9af305a9e95e734ece94daa9bdc97bb246841eca4"
+    },
+    {
+      "path": "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/StrideOSMark.png",
+      "sha256": "ea0a126faaf054008b769b244b3508f2b2f314c34e82d7548ab5da8f57b20aec"
+    },
+    {
+      "path": "targets/StrideRunLiveActivity/StrideRunLiveActivity.swift",
+      "sha256": "ad5a1279b488fed77d51f3bfd1b99fd48cf1cc2fe296a4463b40bff2f7ccc8ee"
+    }
+  ]
+}

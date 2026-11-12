@@ -52,7 +52,7 @@ export default function StyleScreen() {
 
   return (
     <OnboardingShell
-      step={8}
+      step={9}
       title="Training philosophy"
       subtitle="How should your weekly runs be distributed? This shapes intensity balance."
       onNext={handleNext}

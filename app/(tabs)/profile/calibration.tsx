@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { Ionicons } from '@expo/vector-icons';
 
+import CalibrationHelp from '../../../src/components/profile/calibration-help';
 import { LAYOUT } from '../../../src/constants/layout';
 import { colors } from '../../../src/theme/colors';
 import { useColors } from '../../../src/theme/useColors';
@@ -224,6 +225,7 @@ export default function CalibrationScreen() {
 
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>CURRENT MODEL</Text>
+        <CalibrationHelp topic="model" />
         <View style={styles.metricsRow}>
           <Metric label="VDOT" value={calibration ? calibration.vdot.toFixed(1) : '--'} color={C.text} />
           <Metric label="HR Max" value={calibration?.estimatedHRMax ? String(calibration.estimatedHRMax) : maxHr || '--'} color={C.text} />
@@ -239,8 +241,8 @@ export default function CalibrationScreen() {
         {METHODS.map(method => {
           const active = profile.activeZoneMethod === method.key;
           return (
+            <View key={method.key}>
             <TouchableOpacity
-              key={method.key}
               style={[styles.methodRow, { borderColor: active ? C.primary : C.border, backgroundColor: active ? C.primaryDim : C.cardAlt }]}
               onPress={() => chooseMethod(method.key)}
               activeOpacity={0.78}
@@ -251,12 +253,15 @@ export default function CalibrationScreen() {
               </View>
               {active ? <Ionicons name="checkmark-circle" size={20} color={C.primary} /> : null}
             </TouchableOpacity>
+            <CalibrationHelp topic={method.key} />
+            </View>
           );
         })}
       </View>
 
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>RACE PRS + VDOT</Text>
+        <CalibrationHelp topic="races" />
         <Text style={[styles.body, { color: C.textMuted }]}>
           Saved race results and time trials inform VDOT, training paces, and race predictions. Your first result at a distance sets your personal best; a faster result replaces it. Current calibration considers recent performances, and results older than 18 months carry less confidence.
         </Text>
@@ -297,9 +302,9 @@ export default function CalibrationScreen() {
                 <Text style={[styles.rowTitle, { color: C.text }]}>{pr.distanceLabel} · {formatRaceTime(pr.timeSeconds)}</Text>
                 {bestPrIds.has(pr.id) ? <Text style={[styles.caption, { color: C.primary }]}>Personal best</Text> : null}
                 <Text style={[styles.caption, { color: stale ? C.warning : C.textMuted }]}>
-                  {formatYMDForDisplay(pr.date)} · VDOT {vdotFromRacePR(pr.distanceMeters, pr.timeSeconds).toFixed(1)}{stale ? ' · may be stale' : ''}
+                  {formatYMDForDisplay(pr.date)}{pr.source?.kind === 'recorded_effort' ? '' : ` · VDOT ${vdotFromRacePR(pr.distanceMeters, pr.timeSeconds).toFixed(1)}`}{stale ? ' · may be stale' : ''}
                 </Text>
-                {pr.source ? <Text style={[styles.caption, { color: C.textMuted }]}>{pr.source.kind === 'custom_workout' ? 'From a logged race or time trial' : 'From your saved race result · edit the original to update this result'}</Text> : null}
+                {pr.source ? <Text style={[styles.caption, { color: C.textMuted }]}>{pr.source.kind === 'recorded_effort' ? 'Recorded best effort · excluded from fitness calibration' : pr.source.kind === 'custom_workout' ? 'From a logged race or time trial' : 'From your saved race result · edit the original to update this result'}</Text> : null}
               </View>
               {pr.source?.kind === 'goal_archive' ? <TouchableOpacity
                 style={styles.resultAction}
@@ -325,9 +330,7 @@ export default function CalibrationScreen() {
 
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>HEART RATE ZONES</Text>
-        <Text style={[styles.body, { color: C.textMuted }]}>
-          Tanaka estimates HRmax from age. Karvonen uses HR reserve, so resting HR improves accuracy. Use measured HRmax only if you have tested it safely.
-        </Text>
+        <CalibrationHelp topic="heart_rate" />
         <View style={styles.formRow}>
           <Field C={C} label="Resting HR" value={restingHr} onChangeText={setRestingHr} placeholder="52" keyboardType="number-pad" />
           <Field C={C} label="Measured HRmax" value={maxHr} onChangeText={setMaxHr} placeholder="188" keyboardType="number-pad" />
@@ -339,9 +342,7 @@ export default function CalibrationScreen() {
 
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>THRESHOLD FIELD TEST</Text>
-        <Text style={[styles.body, { color: C.textMuted }]}>
-          Warm up, then run 30 minutes as hard as you can sustain. Record average HR and pace for the last 20 minutes. This estimates lactate threshold HR and threshold pace.
-        </Text>
+        <CalibrationHelp topic="threshold" />
         <View style={styles.formRow}>
           <Field C={C} label="Last 20 min HR" value={thresholdHr} onChangeText={setThresholdHr} placeholder="172" keyboardType="number-pad" />
           <Field C={C} label="Last 20 min pace" value={thresholdPace} onChangeText={setThresholdPace} placeholder="7:10" />
@@ -360,9 +361,7 @@ export default function CalibrationScreen() {
 
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>MAF TEST</Text>
-        <Text style={[styles.body, { color: C.textMuted }]}>
-          Run the same route at about 180 minus age bpm. Over time, faster pace with less HR drift suggests aerobic improvement. It is a trend test, not the main prescription system.
-        </Text>
+        <CalibrationHelp topic="maf" />
         <View style={styles.formRow}>
           <Field C={C} label="Miles" value={mafDistance} onChangeText={setMafDistance} keyboardType="decimal-pad" />
           <Field C={C} label="Minutes" value={mafDuration} onChangeText={setMafDuration} keyboardType="decimal-pad" />
@@ -387,6 +386,7 @@ export default function CalibrationScreen() {
       {calibration?.racePredictions?.length ? (
         <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[styles.sectionLabel, { color: C.textDim }]}>PREDICTED RACE TIMES</Text>
+          <CalibrationHelp topic="race_prediction" />
           {calibration.racePredictions.map(pred => (
             <View key={pred.distanceKey} style={[styles.listRow, { borderBottomColor: C.border }]}>
               <Text style={[styles.rowTitle, { color: C.text }]}>{pred.distance}</Text>

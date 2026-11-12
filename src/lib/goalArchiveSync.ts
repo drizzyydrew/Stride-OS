@@ -36,16 +36,34 @@ export function validateGoalArchiveResult(value: unknown): asserts value is Goal
   if (!object(value) || typeof value.status !== 'string'
     || !['unrecorded', 'finished', 'did_not_finish', 'did_not_start'].includes(value.status)
     || (value.updatedAt !== undefined && !nonnegative(value.updatedAt))
-    || (value.source !== undefined && value.source !== 'race_record' && value.source !== 'user')
+    || (value.source !== undefined && value.source !== 'race_record' && value.source !== 'user' && value.source !== 'activity_link')
+    || (value.source === 'activity_link' && (value.status !== 'unrecorded' || value.timeSeconds !== undefined
+      || typeof value.linkedActivityId !== 'string' || !value.linkedActivityId.trim()))
+    || (value.source !== 'activity_link' && value.linkedActivityId !== undefined)
     || (value.timeSeconds !== undefined && (!nonnegative(value.timeSeconds) || value.timeSeconds <= 0 || value.status !== 'finished'))) {
     throw new Error('Invalid goal archive result; saved history was retained');
   }
+}
+
+/** Preserve the deployed RPC's original source allowlist. Older clients see an
+ * unrecorded result; newer clients recover the reference without copied time. */
+export function encodeGoalArchiveForCloud(archive: GoalArchive): GoalArchive {
+  validateGoalArchiveResult(archive.result);
+  return archive.result.source === 'activity_link'
+    ? { ...archive, result: { ...archive.result, source: 'race_record' } } : archive;
+}
+export function decodeGoalArchiveResult(value: unknown): GoalArchive['result'] {
+  const result = object(value) && value.source === 'race_record' && value.linkedActivityId !== undefined
+    ? { ...value, source: 'activity_link' } : value;
+  validateGoalArchiveResult(result);
+  return result;
 }
 
 /** Reject the entire payload rather than silently dropping unreadable history. */
 export function decodeGoalArchives(value: unknown, ownerUserId: string): GoalArchive[] {
   if (!Array.isArray(value)) throw new Error('Unreadable goal archives; saved history was retained');
   const ids = new Set<string>();
+  const decoded: GoalArchive[] = [];
   for (const archive of value) {
     if (!object(archive) || archive.schemaVersion !== 1 || archive.ownerUserId !== ownerUserId
       || typeof archive.id !== 'string' || !archive.id || ids.has(archive.id)
@@ -61,10 +79,11 @@ export function decodeGoalArchives(value: unknown, ownerUserId: string): GoalArc
       || !nonnegative(archive.archivedAt) || !validSummary(archive.summary)) {
       throw new Error('Unreadable or foreign goal archives; saved history was retained');
     }
-    validateGoalArchiveResult(archive.result);
+    const result = decodeGoalArchiveResult(archive.result);
+    decoded.push({ ...archive, result } as GoalArchive);
     ids.add(archive.id);
   }
-  return value as GoalArchive[];
+  return decoded;
 }
 
 export function goalArchiveResultTime(result: GoalArchive['result']): number {
@@ -134,7 +153,7 @@ export async function syncGoalArchives(local: readonly GoalArchive[], lease: Own
     const existing = cloudById.get(archive.id);
     if (existing && goalArchiveResultTime(existing.result) >= goalArchiveResultTime(archive.result)) continue;
     requireGoalArchiveLease(lease, true);
-    const response = await context.supabase.rpc('merge_stride_goal_archive', { archive })
+    const response = await context.supabase.rpc('merge_stride_goal_archive', { archive: encodeGoalArchiveForCloud(archive) })
       .setHeader('Authorization', context.authorization);
     requireGoalArchiveLease(lease, true);
     if (response.error) throw new Error('Goal archive cloud backup failed; local history was retained');

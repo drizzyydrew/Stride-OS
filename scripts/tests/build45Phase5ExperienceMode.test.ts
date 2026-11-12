@@ -91,13 +91,15 @@ test('bottom tab visual contract is centralized and uniform', () => {
   assert.match(tabs, /paddingHorizontal:\s*LAYOUT\.tabBarPadHorizontal/);
   assert.match(tabs, /width:\s*TAB_ICON_BOX_SIZE/);
   assert.match(tabs, /height:\s*TAB_ICON_BOX_SIZE/);
-  assert.match(tabs, /minimumFontScale=\{0\.85\}/);
+  assert.doesNotMatch(tabs, /adjustsFontSizeToFit|minimumFontScale/, 'labels keep one shared size instead of shrinking longer names');
+  assert.match(tabs, /tabBarIconStyle:\s*\{ width: '100%'/, 'icon-and-label content uses the full equal-width cell');
   assert.match(tabs, /includeFontPadding:\s*false/);
 });
 
 test('Today daily check-in is collapsed behind a disclosure and header stays outside scrolling', () => {
   const dashboard = read('app/(tabs)/dashboard/index.tsx');
-  const returnSection = dashboard.slice(dashboard.indexOf('return ('), dashboard.indexOf('<WeatherCard'));
+  const todayStart = dashboard.indexOf('export default function TodayScreen');
+  const returnSection = dashboard.slice(dashboard.indexOf('  return (', todayStart), dashboard.indexOf('<WeatherCard', todayStart));
   assert.match(dashboard, /checkInOpen/);
   assert.match(dashboard, /accessibilityState=\{\{ expanded: checkInOpen \}\}/);
   assert.match(dashboard, /<ReadinessCheckInCard[\s\S]*embedded/);

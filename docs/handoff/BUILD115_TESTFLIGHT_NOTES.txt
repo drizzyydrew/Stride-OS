@@ -1,0 +1,13 @@
+Update both the iPhone and paired Apple Watch apps, keeping your usual account and existing data. Do not uninstall or clear storage.
+
+Focus for this candidate:
+- Running: idle subtabs, including Active, remain visible; a quick run is reachable without a plan.
+- Today/navigation: Weather then Current streak, even card spacing, uniform bottom labels, and section-root Home returning to the top of Today.
+- Archive/profile: expanded sections remain within card margins; clearer recorded-data coverage and plain race outcomes; separate identity editing and optional onboarding identity fields; test explanations on demand.
+- PRs/races: measured recorded efforts can establish supported-distance bests; genuine race results remain separate performance evidence. Select a named race before outdoor recording or link a genuine saved run afterward. Do not add invented faster results to your real history.
+- Watch: verify phone-started outdoor recording with the updated Watch, pause/resume/end, missing-metric recovery, and a recording lasting at least 20 minutes. Late startup work must not restart an ended session. Strength and indoor-ride startup retain their existing path.
+- Save: one completed activity after offline save/reopen/reconnect, and one matching Health workout when workout-writing permission is enabled. Lock-screen header uses the three chevrons.
+
+The prior reported phone crash is not yet attributed; this candidate needs physical verification. If a crash recurs, share the TestFlight report if offered and note the approximate local time and what the phone/Watch were doing.
+
+Purchases remain disabled. No public App Store release is included. Follow BUILD115_OWNER_TEST_GUIDE.md for the ordered steps.

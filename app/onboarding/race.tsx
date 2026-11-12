@@ -47,7 +47,7 @@ export default function RaceScreen() {
 
   return (
     <OnboardingShell
-      step={3}
+      step={4}
       title="Recent race or time trial"
       subtitle="A recent PR lets us calculate your VDOT and calibrate pace zones precisely."
       onNext={handleNext}

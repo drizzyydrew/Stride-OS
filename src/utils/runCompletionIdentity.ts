@@ -2,6 +2,7 @@ import type { Activity, DistanceSource } from '../types/activity';
 import type { CompletedWorkoutRecord } from '../types/training';
 
 export type RunCompletionIdentity = {
+  raceLink?: import('../types/raceLink').RaceActivityLink;
   workoutInstanceId?: string;
   watchRecording?: Activity['watchRecording'];
   actualStartTime?: number;
@@ -62,6 +63,10 @@ export function mergeRecording(existing: ActivityLineage, incoming: ActivityLine
     || (existing.source !== 'legacy_import' && incoming.source === 'legacy_import');
   const primary = preferExisting ? existing : incoming;
   const secondary = preferExisting ? incoming : existing;
+  // An explicit post-save link, correction or unlink belongs to the Activity.
+  // Re-projecting an older workout/Health row cannot restore its former link.
+  const preserveRaceEdit = Number.isFinite(existing.raceLinkUpdatedAt)
+    && existing.raceLinkUpdatedAt! >= (incoming.raceLinkUpdatedAt ?? incoming.raceLink?.linkedAt ?? 0);
   return {
     ...secondary, ...primary,
     id: existing.id, createdAt: existing.createdAt,
@@ -71,6 +76,9 @@ export function mergeRecording(existing: ActivityLineage, incoming: ActivityLine
     scheduledSessionId: primary.scheduledSessionId ?? secondary.scheduledSessionId,
     legacyWorkoutId: primary.legacyWorkoutId ?? secondary.legacyWorkoutId,
     healthKit: incoming.healthKit ?? existing.healthKit,
+    ...(preserveRaceEdit ? { raceLink: existing.raceLink, raceResult: existing.raceResult,
+      raceLinkUpdatedAt: existing.raceLinkUpdatedAt, completionClassification: existing.completionClassification,
+      status: existing.status } : {}),
     metrics: {
       ...secondary.metrics, ...Object.fromEntries(Object.entries(primary.metrics).filter(([, value]) => value !== undefined)),
       routeCoordinates: primary.metrics.routeCoordinates?.length ? primary.metrics.routeCoordinates : secondary.metrics.routeCoordinates,

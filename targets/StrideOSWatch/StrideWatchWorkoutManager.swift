@@ -178,6 +178,12 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private var timer: Timer?
   private var endedStateSentForWorkoutInstanceId: String?
   private var handledPhoneCommandKeys: [String] = []
+  private let startFence = StrideWatchStartFence()
+  private var phoneStartIdentity: StrideWatchStartIdentity?
+  private var startAttemptID = UUID()
+  private var pendingFencedStart: [String: Any]?
+  private var pendingFencedPause: Bool?
+  private var pendingPauseIdentity: StrideWatchStartIdentity?
   private var isEnding = false
   private var startWatchdog: DispatchWorkItem?
   // Auto-launch (iPhone called HKHealthStore.startWatchApp while this app
@@ -522,8 +528,9 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
   private func armProvisionalTimeout() {
     provisionalTimeout?.cancel()
+    let attempt = startAttemptID
     let item = DispatchWorkItem { [weak self] in
-      guard let self, self.isProvisionalLaunch else { return }
+      guard let self, self.startAttemptID == attempt, self.isProvisionalLaunch else { return }
       StrideWatchStartTrail.mark("launch discarded: no phone start", terminal: true)
       guard let session = self.session else {
         // HealthKit hasn't created the session yet; drop it when it runs.
@@ -548,7 +555,8 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     title: String?,
     workoutInstanceId: String?,
     environment: String?,
-    targetZone: Int?
+    targetZone: Int?,
+    phoneIdentity: StrideWatchStartIdentity? = nil
   ) -> String? {
     guard !isActive else { return "already_active" }
     guard !isStartingWorkout else { return "already_starting" }
@@ -565,6 +573,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     StrideWatchStartTrail.mark("2 start accepted (\(kind.rawValue))")
     lastError = nil
     isStartingWorkout = true
+    startAttemptID = UUID()
+    let attempt = startAttemptID
+    self.phoneStartIdentity = phoneIdentity
+    if pendingPauseIdentity != phoneIdentity { pendingFencedPause = nil; pendingPauseIdentity = nil }
     isEnding = false
     healthKitLabel = "HK: requesting auth"
     let resolvedEnvironment = environment ?? (kind.tracksDistance ? "outdoor" : "indoor")
@@ -581,10 +593,11 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     armStartWatchdog()
 
     StrideWatchStartTrail.mark("3 auth request")
-    requestAuthorization { [weak self] granted in
+    requestAuthorization(attempt: attempt) { [weak self] granted in
       guard let self else { return }
-      StrideWatchStartTrail.mark("5 auth done granted=\(granted)")
       self.onMain {
+        guard self.startAttemptID == attempt else { return }
+        StrideWatchStartTrail.mark("5 auth done granted=\(granted)")
         StrideWatchStartTrail.mark("6 main hop")
         guard granted else {
           self.failStart("Health permission needed.", label: "HK: auth denied")
@@ -705,8 +718,9 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
   private func armStartWatchdog() {
     startWatchdog?.cancel()
+    let attempt = startAttemptID
     let item = DispatchWorkItem { [weak self] in
-      guard let self, self.isStartingWorkout, self.state != .running else { return }
+      guard let self, self.startAttemptID == attempt, self.isStartingWorkout, self.state != .running else { return }
       self.failStart("Workout did not start. Try again from iPhone.", label: "HK: start timed out")
     }
     startWatchdog = item
@@ -721,10 +735,18 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   private func failStart(_ message: String, label: String) {
     StrideWatchStartTrail.mark("failed: \(message)", terminal: true)
     clearStartWatchdog()
+    startAttemptID = UUID()
+    let failedIdentity = phoneStartIdentity
+    if let identity = failedIdentity {
+      _ = startFence.revoke(identity, now: Date().timeIntervalSince1970 * 1000)
+      sendCommandAck(command: "startWorkout", message: ["workoutInstanceId": identity.workoutInstanceId,
+        "startNonce": identity.startNonce, "ownerEpoch": identity.ownerEpoch], reason: "start_failed")
+      discardFencedStart(identity)
+    }
     isStartingWorkout = false
     healthKitLabel = label
     abandonRoute()
-    publishError(message)
+    publishError(message, startIdentity: failedIdentity)
   }
 
   private func recordingMetadata(for kind: StrideWatchWorkoutKind) -> [String: Any] {
@@ -790,12 +812,12 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       session.startActivity(with: now)
       StrideWatchStartTrail.mark("12 beginCollection")
       builder.beginCollection(withStart: now) { [weak self] success, error in
-        StrideWatchStartTrail.mark("14 collection cb ok=\(success)")
         guard let self else { return }
-        if let error {
-          self.publishError(error.localizedDescription)
-        } else if !success {
-          self.publishError("Workout collection did not start")
+        self.onMain {
+          guard self.session === session, self.builder === builder else { return }
+          StrideWatchStartTrail.mark("14 collection cb ok=\(success)")
+          if let error { self.publishError(error.localizedDescription) }
+          else if !success { self.publishError("Workout collection did not start") }
         }
       }
       StrideWatchStartTrail.mark("13 timer")
@@ -810,7 +832,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     }
   }
 
-  private func requestAuthorization(_ completion: @escaping (Bool) -> Void) {
+  private func requestAuthorization(attempt: UUID, _ completion: @escaping (Bool) -> Void) {
     guard HKHealthStore.isHealthDataAvailable() else {
       completion(false)
       return
@@ -826,11 +848,12 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     let shareTypes: Set<HKSampleType> = [HKObjectType.workoutType()]
 
     healthStore.requestAuthorization(toShare: shareTypes, read: readTypes) { [weak self] granted, error in
-      StrideWatchStartTrail.mark("4 auth callback")
-      if let error {
-        self?.publishError(error.localizedDescription)
+      self?.onMain {
+        guard let self, self.startAttemptID == attempt else { return }
+        StrideWatchStartTrail.mark("4 auth callback")
+        if let error { self.publishError(error.localizedDescription) }
+        completion(granted)
       }
-      completion(granted)
     }
   }
 
@@ -894,6 +917,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   private func finishBuilderIfNeeded() {
+    let finishingIdentity = phoneStartIdentity
     // Take this workout's route now, so a quick restart can't hand the next
     // workout's route builder to this workout's completion.
     let routeBuilder = self.routeBuilder
@@ -912,7 +936,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
           }
         }
         if let error {
-          self?.publishError(error.localizedDescription)
+          self?.publishError(error.localizedDescription, startIdentity: finishingIdentity)
         }
       }
     }
@@ -1043,6 +1067,8 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     if let id = (message["workoutInstanceId"] as? String) ?? workoutInstanceId {
       payload["workoutInstanceId"] = id
     }
+    if let nonce = message["startNonce"] as? String { payload["startNonce"] = nonce }
+    if let epoch = message["ownerEpoch"] as? String { payload["ownerEpoch"] = epoch }
     sendToPhone(payload)
   }
 
@@ -1105,14 +1131,21 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     payloads.forEach { sendToPhone($0) }
   }
 
-  private func publishError(_ message: String) {
+  private func publishError(_ message: String, startIdentity: StrideWatchStartIdentity? = nil) {
     onMain {
+      if let startIdentity, let current = self.phoneStartIdentity, current != startIdentity { return }
       self.lastError = message
-      self.sendToPhone([
+      var payload: [String: Any] = [
         "type": "error",
         "message": message,
         "timestamp": Date().timeIntervalSince1970 * 1000,
-      ], reportFailures: false)
+      ]
+      if let startIdentity {
+        payload["workoutInstanceId"] = startIdentity.workoutInstanceId
+        payload["startNonce"] = startIdentity.startNonce
+        payload["ownerEpoch"] = startIdentity.ownerEpoch
+      }
+      self.sendToPhone(payload, reportFailures: false)
     }
   }
 
@@ -1142,6 +1175,14 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       clearStartWatchdog()
       isStartingWorkout = false
       healthKitLabel = "HK: running"
+      if pendingPauseIdentity == phoneStartIdentity, pendingFencedPause == true {
+        pendingFencedPause = nil
+        pendingPauseIdentity = nil
+        pauseWorkout()
+        return
+      }
+      pendingFencedPause = nil
+      pendingPauseIdentity = nil
       sendWorkoutState("running")
     case .paused:
       healthKitLabel = "HK: paused"
@@ -1174,6 +1215,10 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       timer = nil
       session = nil
       builder = nil
+      phoneStartIdentity = nil
+      if pendingFencedStart == nil { pendingFencedPause = nil; pendingPauseIdentity = nil }
+      startAttemptID = UUID()
+      startPendingFencedWorkoutIfIdle()
       presentPendingHealthSetupWhenIdle()
     case .prepared:
       healthKitLabel = "HK: prepared"
@@ -1185,6 +1230,14 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
   }
 
   fileprivate func handleWorkoutSessionFailure(_ error: Error) {
+    if isDiscardingCurrentSession, pendingFencedStart != nil {
+      handleWorkoutSessionStateChange(.ended)
+      return
+    }
+    if isStartingWorkout, phoneStartIdentity != nil {
+      failStart(error.localizedDescription, label: "HK: start failed")
+      return
+    }
     if isDiscardingCurrentSession { discardSession = nil }
     StrideWatchStartTrail.mark("HK failure: \(error.localizedDescription)", terminal: true)
     clearStartWatchdog()
@@ -1216,6 +1269,97 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     lastCommandLabel = "Cmd: \(type) \(via) \(result)"
   }
 
+  /// Fenced ownership starts with a fresh HealthKit builder. A launch-created
+  /// provisional may already contain samples, so it is never relabelled.
+  private func beginFencedPhoneStart(_ message: [String: Any]) -> String? {
+    guard let identity = StrideWatchStartIdentity(message),
+      let sentAt = message["sentAt"] as? NSNumber,
+      startFence.allows(identity, sentAt: sentAt.doubleValue, now: Date().timeIntervalSince1970 * 1000) else {
+      return startFence.failure ?? "start_revoked_or_expired"
+    }
+    if let owned = phoneStartIdentity {
+      if owned != identity, isDiscardingCurrentSession, pendingFencedStart == nil {
+        pendingFencedStart = message
+        return nil
+      }
+      return owned == identity ? nil : "already_active"
+    }
+    if let pending = pendingFencedStart {
+      return StrideWatchStartIdentity(pending) == identity ? nil : "already_starting"
+    }
+    if isProvisionalLaunch {
+      pendingFencedStart = message
+      discardProvisionalForFencedHandoff()
+      return nil
+    }
+    return startFencedWorkoutNow(message, identity: identity)
+  }
+
+  private func startFencedWorkoutNow(_ message: [String: Any], identity: StrideWatchStartIdentity) -> String? {
+    guard let kind = StrideWatchWorkoutKind.from(message["workoutKind"] as? String) else { return "unsupported_workout_kind" }
+    return startWorkout(kind: kind, title: message["title"] as? String,
+      workoutInstanceId: identity.workoutInstanceId, environment: message["environment"] as? String,
+      targetZone: message["targetZone"] as? Int, phoneIdentity: identity)
+  }
+
+  private func discardProvisionalForFencedHandoff() {
+    provisionalTimeout?.cancel()
+    provisionalTimeout = nil
+    clearStartWatchdog()
+    if let session {
+      discardSession = session
+      if session.state != .running && session.state != .paused && session.state != .prepared {
+        discardWhenRunning = true
+      }
+      endWorkout()
+    } else {
+      // Authorization has not created a session yet. Revoke that callback and
+      // start the current tuple with a new attempt and empty builder instead.
+      startAttemptID = UUID()
+      isStartingWorkout = false
+      isProvisionalLaunch = false
+      isEnding = false
+      phoneStartIdentity = nil
+      startPendingFencedWorkoutIfIdle()
+    }
+  }
+
+  private func startPendingFencedWorkoutIfIdle() {
+    guard session == nil, !isStartingWorkout, !isEnding, let message = pendingFencedStart else { return }
+    pendingFencedStart = nil
+    guard let identity = StrideWatchStartIdentity(message), let sentAt = message["sentAt"] as? NSNumber,
+      startFence.allows(identity, sentAt: sentAt.doubleValue, now: Date().timeIntervalSince1970 * 1000) else {
+      publishError(startFence.failure ?? "Watch start was cancelled or expired. Retry from iPhone.")
+      return
+    }
+    let pause = pendingFencedPause
+    let pauseIdentity = pendingPauseIdentity
+    if let reason = startFencedWorkoutNow(message, identity: identity) { publishError(reason) }
+    else { pendingFencedPause = pause; pendingPauseIdentity = pauseIdentity }
+  }
+
+  private func discardFencedStart(_ identity: StrideWatchStartIdentity) {
+    let pendingMatches = pendingFencedStart.flatMap(StrideWatchStartIdentity.init) == identity
+    if pendingMatches { pendingFencedStart = nil }
+    guard phoneStartIdentity == identity || (isProvisionalLaunch && phoneStartIdentity == nil) else { return }
+    if pendingPauseIdentity == identity { pendingFencedPause = nil; pendingPauseIdentity = nil }
+    clearStartWatchdog()
+    if let session {
+      discardSession = session
+      isProvisionalLaunch = true
+      if session.state != .running && session.state != .paused && session.state != .prepared { discardWhenRunning = true }
+      endWorkout()
+    } else {
+      startAttemptID = UUID()
+      isStartingWorkout = false
+      isEnding = false
+      isProvisionalLaunch = false
+      phoneStartIdentity = nil
+      provisionalTimeout?.cancel()
+      provisionalTimeout = nil
+    }
+  }
+
   fileprivate func handlePhoneCommand(
     _ message: [String: Any],
     via: String,
@@ -1235,7 +1379,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     // Int: on 32-bit watches that conversion traps on every phone command.
     let safeSentAt = sentAt.isFinite && sentAt >= 0 && sentAt < Double(Int64.max)
     let sentAtKey = safeSentAt ? Int64(sentAt.rounded()) : 0
-    let commandKey = "\(type ?? "")|\(commandWorkoutInstanceId)|\(sentAtKey)"
+    let commandKey = "\(type ?? "")|\(commandWorkoutInstanceId)|\(sentAtKey)|\(message["startNonce"] as? String ?? "")|\(message["ownerEpoch"] as? String ?? "")|\(message["capabilityRequestNonce"] as? String ?? "")"
     onMain {
       guard let type else { return }
       self.refreshConnectivityLabel()
@@ -1248,6 +1392,11 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       // late duplicates never restart or re-end a workout.
       if sentAt > 0 && self.handledPhoneCommandKeys.contains(commandKey) {
         self.noteCommand(type, via: via, result: "dup")
+        if (type == "startWorkout" || type == "startRun"), let identity = StrideWatchStartIdentity(message) {
+          let current = self.phoneStartIdentity == identity || self.pendingFencedStart.flatMap(StrideWatchStartIdentity.init) == identity
+          let allowed = self.startFence.allows(identity, sentAt: sentAt, now: Date().timeIntervalSince1970 * 1000)
+          self.sendCommandAck(command: type, message: message, reason: current && allowed ? nil : "start_revoked_or_expired")
+        }
         return
       }
       // Only a live start (phone sent it while this app was open) may start
@@ -1276,12 +1425,19 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
           self.presentPendingHealthSetupWhenIdle()
         }
       case "requestCapabilities":
-        self.sendCapabilities()
+        self.sendCapabilities(requestNonce: message["capabilityRequestNonce"] as? String,
+          expectedWorkoutId: message["expectedWorkoutInstanceId"] as? String)
       case "startWorkout", "startRun":
         guard let kind: StrideWatchWorkoutKind = type == "startRun"
           ? .run : StrideWatchWorkoutKind.from(message["workoutKind"] as? String) else {
           self.sendCommandAck(command: type, message: message, reason: "unsupported_workout_kind")
           return
+        }
+        if message["startNonce"] != nil || message["ownerEpoch"] != nil {
+          let reason = self.beginFencedPhoneStart(message)
+          self.noteCommand(type, via: via, result: reason ?? "accepted")
+          self.sendCommandAck(command: type, message: message, reason: reason)
+          break
         }
         if self.adoptPhoneStartIfProvisional(message) {
           self.noteCommand(type, via: via, result: "adopted")
@@ -1300,15 +1456,72 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
         self.sendCommandAck(command: type, message: message, reason: reason)
       case "pauseWorkout", "pauseRun":
         let reason = self.controlRejection(message)
-        if reason == nil { self.pauseWorkout() }
+        if reason == nil {
+          if (self.isStartingWorkout || self.isProvisionalLaunch || self.isEnding),
+            self.phoneStartIdentity != nil || self.pendingFencedStart != nil {
+            self.pendingFencedPause = true; self.pendingPauseIdentity = StrideWatchStartIdentity(message)
+          }
+          else { self.pauseWorkout() }
+        }
         self.noteCommand(type, via: via, result: reason ?? "ok")
         self.sendCommandAck(command: type, message: message, reason: reason)
       case "resumeWorkout", "resumeRun":
         let reason = self.controlRejection(message)
-        if reason == nil { self.resumeWorkout() }
+        if reason == nil {
+          if (self.isStartingWorkout || self.isProvisionalLaunch || self.isEnding),
+            self.phoneStartIdentity != nil || self.pendingFencedStart != nil {
+            self.pendingFencedPause = false; self.pendingPauseIdentity = StrideWatchStartIdentity(message)
+          }
+          else { self.resumeWorkout() }
+        }
         self.noteCommand(type, via: via, result: reason ?? "ok")
         self.sendCommandAck(command: type, message: message, reason: reason)
-      case "endWorkout", "endRun":
+      case "endRecording":
+        // Dedicated local-user terminal event, never an attempt cancellation.
+        // Persist before no-active handling so an unknown delayed nonce cannot
+        // start this immutable recording after a cold phone recovery Stop.
+        guard let id = message["workoutInstanceId"] as? String, !id.isEmpty, id.count <= 256,
+          message["startNonce"] == nil, message["ownerEpoch"] == nil,
+          sentAt.isFinite, sentAt > 0, sentAt <= Date().timeIntervalSince1970 * 1000 + 5_000 else {
+          self.sendCommandAck(command: type, message: message, reason: "invalid_recording_end")
+          return
+        }
+        let persisted = self.startFence.endRecording(id, now: Date().timeIntervalSince1970 * 1000)
+        if !persisted { self.publishError(self.startFence.failure ?? "Watch start safety queue is unavailable") }
+        if self.pendingFencedStart?["workoutInstanceId"] as? String == id { self.pendingFencedStart = nil }
+        if self.pendingPauseIdentity?.workoutInstanceId == id { self.pendingPauseIdentity = nil; self.pendingFencedPause = nil }
+        if let identity = self.phoneStartIdentity, identity.workoutInstanceId == id {
+          if !self.isProvisionalLaunch, self.session?.state == .running || self.session?.state == .paused { self.endWorkout() }
+          else { self.discardFencedStart(identity) }
+        } else if self.workoutInstanceId == id, !self.isProvisionalLaunch { self.endWorkout() }
+        self.sendCommandAck(command: type, message: message, reason: persisted ? nil : self.startFence.failure)
+      case "cancelStart", "endWorkout", "endRun":
+        // Persist revocation BEFORE no-active rejection. End-before-Start must
+        // not become a resurrected recording after a delayed live packet.
+        if message["startNonce"] != nil || message["ownerEpoch"] != nil {
+          guard let identity = StrideWatchStartIdentity(message), sentAt.isFinite,
+            sentAt > 0, sentAt <= Date().timeIntervalSince1970 * 1000 + 5_000 else {
+            self.sendCommandAck(command: type, message: message, reason: "invalid_start_identity")
+            return
+          }
+          if !self.startFence.revoke(identity, now: Date().timeIntervalSince1970 * 1000) {
+            self.publishError(self.startFence.failure ?? "Watch start safety queue is unavailable")
+          }
+          if type == "cancelStart", self.phoneStartIdentity == identity, !self.isProvisionalLaunch,
+            self.session?.state == .running || self.session?.state == .paused {
+            self.endWorkout()
+            self.sendCommandAck(command: type, message: message, reason: nil)
+            break
+          }
+          if type == "cancelStart" || self.session == nil || self.isProvisionalLaunch {
+            self.discardFencedStart(identity)
+            self.sendCommandAck(command: type, message: message, reason: nil)
+            break
+          }
+        } else if type == "cancelStart" {
+          self.sendCommandAck(command: type, message: message, reason: "invalid_start_identity")
+          break
+        }
         let reason = self.controlRejection(message)
         if reason == nil { self.endWorkout() }
         self.noteCommand(type, via: via, result: reason ?? "ok")
@@ -1322,17 +1535,31 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
     }
   }
 
-  private func sendCapabilities() {
-    sendToPhone([
+  private func sendCapabilities(requestNonce: String? = nil, expectedWorkoutId: String? = nil) {
+    var payload: [String: Any] = [
       "type": "capabilities", "protocolVersion": 2,
+      "startFenceProtocolVersion": 1,
       "supportedWorkoutKinds": StrideWatchWorkoutKind.allCases.map { $0.rawValue },
       "timestamp": Date().timeIntervalSince1970 * 1000,
-    ])
+    ]
+    if let requestNonce { payload["capabilityRequestNonce"] = requestNonce }
+    if requestNonce != nil, let owned = phoneStartIdentity, owned.workoutInstanceId == expectedWorkoutId,
+      !isProvisionalLaunch, session?.state == .running || session?.state == .paused || isStartingWorkout {
+      payload["activeStart"] = ["workoutInstanceId": owned.workoutInstanceId, "startNonce": owned.startNonce,
+        "ownerEpoch": owned.ownerEpoch, "state": isStartingWorkout ? "starting" : session?.state == .paused ? "paused" : "running"]
+    }
+    sendToPhone(payload)
   }
 
   /// nil when a pause/resume/end command applies to the current workout.
   private func controlRejection(_ message: [String: Any]) -> String? {
-    guard isActive || session != nil else { return "no_active_workout" }
+    if let pending = pendingFencedStart.flatMap(StrideWatchStartIdentity.init), StrideWatchStartIdentity(message) == pending {
+      return nil
+    }
+    if let owned = phoneStartIdentity {
+      guard let requested = StrideWatchStartIdentity(message), requested == owned else { return "start_identity_mismatch" }
+    } else if StrideWatchStartIdentity(message) != nil { return "start_identity_mismatch" }
+    guard isActive || session != nil || isStartingWorkout else { return "no_active_workout" }
     if let requestedId = message["workoutInstanceId"] as? String, !requestedId.isEmpty,
       let currentId = workoutInstanceId, !currentId.isEmpty, requestedId != currentId
     {
@@ -1352,6 +1579,8 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       "resumeRun",
       "endWorkout",
       "endRun",
+      "cancelStart",
+      "endRecording",
     ]
     guard controlCommands.contains(type) else { return false }
     let nowMs = Date().timeIntervalSince1970 * 1000

@@ -43,7 +43,7 @@ export default function ExperienceScreen() {
 
   return (
     <OnboardingShell
-      step={2}
+      step={3}
       title="Your running background"
       subtitle="Helps calibrate training load and progression pace."
       onNext={handleNext}

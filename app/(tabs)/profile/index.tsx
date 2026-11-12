@@ -12,7 +12,6 @@ import { useColors } from '../../../src/theme/useColors';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useActiveProfile } from '../../../src/store/profileStore';
-import ProfileIdentityEditor from '../../../src/components/profile/ProfileIdentityEditor';
 import { getProfileIdentity } from '../../../src/utils/profileIdentity';
 import { profilePowerMass } from '../../../src/utils/profilePower';
 import { useAthleteStore } from '../../../src/store/athleteStore';
@@ -153,6 +152,8 @@ export default function ProfileScreen() {
             style={[styles.avatar, { backgroundColor: C.primaryDim, borderColor: C.primary }]}
             onPress={chooseProfilePhoto}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo"
           >
             {data.profilePhotoUri ? (
               <Image source={{ uri: data.profilePhotoUri }} style={styles.avatarImage} />
@@ -163,14 +164,17 @@ export default function ProfileScreen() {
               <Text style={{ color: C.onPrimary, fontSize: 13, fontWeight: '800' }}>+</Text>
             </View>
           </TouchableOpacity>
-          <View style={{ flex: 1 }}>
+          <TouchableOpacity style={{ flex: 1, minWidth: 0, minHeight: 60, justifyContent: 'center' }}
+            accessibilityRole="button" accessibilityLabel="Edit name and username"
+            accessibilityHint="Opens your profile identity and visibility settings"
+            onPress={() => router.push('/(tabs)/profile/edit-identity' as never)}>
             <Text style={[styles.profileName, { color: C.text }]}>{identity.primaryLabel}</Text>
             {identity.visibleName && identity.visibleUsername ? <Text style={[styles.caption, { color: C.textMuted }]}>{identity.visibleUsername}</Text> : null}
             <Text style={[styles.caption, { color: C.textMuted }]}>
               {Math.round(weeklyMileage)} mi/week · Goal {goalRace || 'general fitness'}
             </Text>
-            <Text style={[styles.caption, { color: C.textDim }]}>Tap photo to change</Text>
-          </View>
+            <Text style={[styles.caption, { color: C.textDim }]}>Edit name &amp; username ›</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={{ gap: 10, marginTop: 4 }}>
@@ -193,7 +197,6 @@ export default function ProfileScreen() {
             </View>
           ))}
         </View>
-        {profile ? <ProfileIdentityEditor key={`${profile.athleteId}:${profile.createdAt}`} profile={profile} /> : null}
       </View>
 
       <TouchableOpacity

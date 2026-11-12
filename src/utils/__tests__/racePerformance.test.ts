@@ -71,7 +71,7 @@ test('explicit archived race result supplies event distance and elapsed time wit
   assert.equal(rows.length, 1);
   assert.equal(rows[0].distanceMeters, 21097.5);
   assert.equal(rows[0].timeSeconds, 7200);
-  assert.deepEqual(rows[0].source, { kind: 'goal_archive', archiveId: 'rome', ownerUserId: 'owner' });
+  assert.deepEqual(rows[0].source, { kind: 'goal_archive', archiveId: 'rome', ownerUserId: 'owner', raceId: 'rome' });
   assert.equal(JSON.stringify(snapshot), before);
   assert.deepEqual(reconcileRacePerformances(rows, [snapshot], [], 'owner', 'athlete_default', NOW), rows);
 });

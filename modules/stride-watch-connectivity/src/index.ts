@@ -21,6 +21,7 @@ export type StrideWatchStatus = {
   lastWatchStateAt?: number;
   lastWatchState?: string | null;
   supportedWorkoutKinds?: string[];
+  startFenceProtocolVersion?: number;
 };
 
 export type StrideWatchAckEvent = {
@@ -101,6 +102,11 @@ type StrideWatchConnectivityNativeModule = {
   snapshot: () => StrideWatchStatus;
   activate: () => Promise<StrideWatchStatus>;
   requestHealthSetup?: () => Promise<boolean>;
+  prepareWorkoutStart?: (workoutInstanceId: string) => string;
+  cancelPendingStart?: (revokeRemote: boolean) => void;
+  endPreparedWorkout?: (workoutInstanceId: string | null) => StrideWatchStatus | null;
+  startPreparedWorkout?: (nonce: string, kind: string, id: string, title: string | null,
+    environment: string | null, targetZone: number | null) => Promise<StrideWatchStatus>;
   startRun: (
     workoutInstanceId?: string | null,
     title?: string | null,
@@ -118,6 +124,7 @@ type StrideWatchConnectivityNativeModule = {
   pauseWorkout: (workoutInstanceId?: string | null) => Promise<StrideWatchStatus>;
   resumeRun: (workoutInstanceId?: string | null) => Promise<StrideWatchStatus>;
   resumeWorkout: (workoutInstanceId?: string | null) => Promise<StrideWatchStatus>;
+  sendExplicitWorkoutControl?: (type: 'pauseWorkout' | 'resumeWorkout', workoutInstanceId: string) => StrideWatchStatus;
   endRun: (workoutInstanceId?: string | null) => Promise<StrideWatchStatus>;
   endWorkout: (workoutInstanceId?: string | null) => Promise<StrideWatchStatus>;
   setWorkoutContext: (
@@ -222,6 +229,13 @@ export async function startStrideWatchWorkout(options: {
   const nativeModule = getNativeModule();
   if (!nativeModule) return FALLBACK_STATUS;
   try {
+    const fencedOutdoor = options.environment === 'outdoor' && !['strength', 'mobility'].includes(options.workoutKind ?? 'run');
+    if (fencedOutdoor && options.workoutInstanceId && nativeModule.prepareWorkoutStart && nativeModule.startPreparedWorkout
+      && nativeModule.cancelPendingStart) {
+      const nonce = nativeModule.prepareWorkoutStart(options.workoutInstanceId);
+      return normalizeStatus(await nativeModule.startPreparedWorkout(nonce, options.workoutKind ?? 'run',
+        options.workoutInstanceId, options.title ?? null, options.environment ?? null, options.targetZone ?? null));
+    }
     return normalizeStatus(await nativeModule.startWorkout(
       options.workoutKind ?? 'run',
       options.workoutInstanceId ?? null,
@@ -232,6 +246,18 @@ export async function startStrideWatchWorkout(options: {
   } catch (error) {
     return { ...getStrideWatchStatus(), lastError: messageFromError(error) };
   }
+}
+
+/** Synchronous native fence; call before changing an owner generation or removing the bridge. */
+export function cancelPendingStrideWatchStart(revokeRemote = false): void {
+  getNativeModule()?.cancelPendingStart?.(revokeRemote);
+}
+
+/** Read-only identity discovery for an existing, owner-guarded recovered recording. */
+export function recoverStrideWatchControlIdentity(workoutInstanceId: string): void {
+  if (!workoutInstanceId) return;
+  try { getNativeModule()?.prepareWorkoutStart?.(workoutInstanceId); }
+  catch { /* Watch discovery must not prevent the existing phone Resume path. */ }
 }
 
 export async function pauseStrideWatchRun(workoutInstanceId?: string | null): Promise<StrideWatchStatus> {
@@ -262,6 +288,26 @@ export async function resumeStrideWatchWorkout(workoutInstanceId?: string | null
   }
 }
 
+async function sendExplicitStrideWatchWorkoutControl(type: 'pauseWorkout' | 'resumeWorkout', workoutInstanceId?: string | null): Promise<StrideWatchStatus> {
+  if (!workoutInstanceId) {
+    return type === 'pauseWorkout' ? pauseStrideWatchWorkout(workoutInstanceId) : resumeStrideWatchWorkout(workoutInstanceId);
+  }
+  const nativeModule = getNativeModule();
+  if (nativeModule?.sendExplicitWorkoutControl) {
+    try { return normalizeStatus(nativeModule.sendExplicitWorkoutControl(type, workoutInstanceId)); }
+    catch (error) { return { ...getStrideWatchStatus(), lastError: messageFromError(error) }; }
+  }
+  return type === 'pauseWorkout' ? pauseStrideWatchWorkout(workoutInstanceId) : resumeStrideWatchWorkout(workoutInstanceId);
+}
+
+export function pauseStrideWatchWorkoutExplicit(workoutInstanceId?: string | null): Promise<StrideWatchStatus> {
+  return sendExplicitStrideWatchWorkoutControl('pauseWorkout', workoutInstanceId);
+}
+
+export function resumeStrideWatchWorkoutExplicit(workoutInstanceId?: string | null): Promise<StrideWatchStatus> {
+  return sendExplicitStrideWatchWorkoutControl('resumeWorkout', workoutInstanceId);
+}
+
 export async function endStrideWatchRun(workoutInstanceId?: string | null): Promise<StrideWatchStatus> {
   return endStrideWatchWorkout(workoutInstanceId);
 }
@@ -270,6 +316,8 @@ export async function endStrideWatchWorkout(workoutInstanceId?: string | null): 
   const nativeModule = getNativeModule();
   if (!nativeModule) return FALLBACK_STATUS;
   try {
+    const fenced = nativeModule.endPreparedWorkout?.(workoutInstanceId ?? null);
+    if (fenced) return normalizeStatus(fenced);
     return normalizeStatus(await nativeModule.endWorkout(workoutInstanceId ?? null));
   } catch (error) {
     return { ...getStrideWatchStatus(), lastError: messageFromError(error) };
@@ -281,6 +329,7 @@ export async function endStrideWatchWorkoutIfMatching(workoutInstanceId: string)
   if (!workoutInstanceId) throw new Error('Watch cleanup requires a recording ID');
   const nativeModule = getNativeModule();
   if (!nativeModule) return;
+  if (nativeModule.endPreparedWorkout?.(workoutInstanceId)) return;
   const status = getStrideWatchStatus();
   if (!status.isPaired || !status.isWatchAppInstalled) return;
   await nativeModule.endWorkout(workoutInstanceId);
@@ -437,6 +486,7 @@ function normalizeStatus(input: Partial<StrideWatchStatus> | null | undefined): 
     lastWatchStateAt: finiteOrZero(input?.lastWatchStateAt),
     lastWatchState: typeof input?.lastWatchState === 'string' ? input.lastWatchState : null,
     supportedWorkoutKinds: Array.isArray(input?.supportedWorkoutKinds) ? input.supportedWorkoutKinds.filter(kind => typeof kind === 'string') : [],
+    startFenceProtocolVersion: finiteOrZero(input?.startFenceProtocolVersion),
   };
 }
 

@@ -1,6 +1,6 @@
-import { archiveFromLink } from '../../../src/utils/goal-archive-link';
+import { archiveFromLink, goalArchiveLink } from '../../../src/utils/goal-archive-link';
 import { useRef, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import PageSafeAreaView from '../../../src/components/layout/PageSafeAreaView';
@@ -11,13 +11,13 @@ import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDa
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useGoalArchiveStore } from '../../../src/store/goalArchiveStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
+import { unlinkLink } from '../../../src/lib/raceActivityLink';
+import { RACE_RESULT_OPTIONS, resolveArchiveActivityResult } from '../../../src/utils/raceLink';
 import { useColors } from '../../../src/theme/useColors';
 import type { GoalArchive } from '../../../src/types/goalArchive';
+import { formatArchivedCoverage } from '../../../src/utils/goalArchiveCoverage';
 
-const RESULTS: { value: GoalArchive['result']['status']; label: string }[] = [
-  { value: 'unrecorded', label: 'Result not recorded' }, { value: 'finished', label: 'Finished' },
-  { value: 'did_not_finish', label: 'Did not finish · DNF' }, { value: 'did_not_start', label: 'Did not start · DNS' },
-];
+const RESULTS = RACE_RESULT_OPTIONS;
 
 function elapsed(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value) || value < 0) return '—';
@@ -43,6 +43,9 @@ function ArchiveBody({ archive }: { archive: GoalArchive }) {
   const activities = useActivityStore(state => state.activities);
   const activityHydration = useActivityStore(state => state.hydrationStatus);
   const units = useSettingsStore(state => state.units);
+  const effectiveResult = resolveArchiveActivityResult(archive, activities, archive.ownerUserId);
+  const linkedActivityId = archive.result.linkedActivityId ?? effectiveResult.linkedActivityId;
+  const linked = archive.result.source === 'activity_link' || !!effectiveResult.linkedActivityId;
   const saveResult = useGoalArchiveStore(state => state.saveResult);
   const [status, setStatus] = useState(archive.result.status);
   const [time, setTime] = useState(() => archive.result.timeSeconds == null ? '' : elapsed(archive.result.timeSeconds));
@@ -58,6 +61,9 @@ function ArchiveBody({ archive }: { archive: GoalArchive }) {
 
   async function save() {
     if (inFlight.current) return;
+    if (activityHydration !== 'ready') { setError('Wait for saved activities to finish loading before changing the race result.'); return; }
+    const latestArchive = useGoalArchiveStore.getState().archives.find(item => item.id === archive.id) ?? archive;
+    if (resolveArchiveActivityResult(latestArchive, useActivityStore.getState().activities, archive.ownerUserId).linkedActivityId) { setError('This race now has a linked run. Edit or unlink that race link before entering a separate result.'); return; }
     setError(null); setSaved(false);
     const seconds = status === 'finished' && time.trim() ? parseElapsed(time) : undefined;
     if (seconds === null) { setError('Enter a positive elapsed time as m:ss or hh:mm:ss, with seconds and hour-format minutes from 00 to 59.'); return; }
@@ -74,6 +80,25 @@ function ArchiveBody({ archive }: { archive: GoalArchive }) {
     finally { inFlight.current = false; setBusy(false); }
   }
 
+  function editLink() {
+    router.push({ pathname: '/(tabs)/activity/link-race', params: {
+      ...goalArchiveLink(archive.id).params,
+      ...(linkedActivityId ? { activityId: linkedActivityId } : {}),
+    } } as never);
+  }
+  async function unlinkRace() {
+    if (inFlight.current || !linkedActivityId) return;
+    const lease = captureOwnerLease();
+    if (!lease || !ownerLeaseIsCurrent(lease) || lease.ownerUserId !== archive.ownerUserId) { setError('Sign in with this archive’s owner before unlinking.'); return; }
+    inFlight.current = true; setBusy(true); setError(null); setSaved(false);
+    try {
+      await unlinkLink(linkedActivityId, lease);
+      if (!ownerLeaseIsCurrent(lease)) throw new Error('Your account changed. Reopen this archive to check its race result.');
+      setSaved(true);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'The race link could not be removed.'); }
+    finally { inFlight.current = false; setBusy(false); }
+  }
+
   return <View style={{ gap: 20 }}>
     <Text selectable accessibilityRole="header" style={{ color: C.text, fontSize: 24, fontWeight: '700' }}>{archive.title}</Text>
     <GoalMessage>{goalDate(archive.startDate)} – {goalDate(archive.endDate)}</GoalMessage>
@@ -83,17 +108,29 @@ function ArchiveBody({ archive }: { archive: GoalArchive }) {
       <Text accessibilityRole="header" style={{ color: C.text, fontSize: 19, fontWeight: '700' }}>Recorded training during this block</Text>
       <GoalMessage>Frozen as of {new Date(archive.archivedAt).toLocaleString()}. These are recorded activities within the date window, not adherence or plan-completion scores. Later imports and corrections do not rewrite this snapshot.</GoalMessage>
       <GoalMessage>Completed activities: {number(archive.summary.completedActivities)}{ '\n' }Partial activities: {number(archive.summary.partialActivities)}{ '\n' }Active days: {number(archive.summary.activeDays)}{ '\n' }Recorded distance: {distance(archive.summary.distanceMeters)}{ '\n' }Recorded duration: {elapsed(archive.summary.durationSeconds)}{ '\n' }Elevation gain: {archive.summary.elevationGainMeters == null ? '—' : `${number(archive.summary.elevationGainMeters / (metric ? 1 : 0.3048))} ${metric ? 'm' : 'ft'}`}{ '\n' }Recorded training load: {number(archive.summary.trainingLoad)}</GoalMessage>
-      <GoalMessage>Distance recorded for {archive.summary.coverage.distanceActivities} activities; duration recorded for {archive.summary.coverage.durationActivities}. — means unavailable. Totals include known values only.</GoalMessage>
+      <GoalMessage>{formatArchivedCoverage(archive.summary)}</GoalMessage>
     </View>
     <View style={section}>
-      <Text accessibilityRole="header" style={{ color: C.text, fontSize: 19, fontWeight: '700' }}>Result</Text>
-      <GoalMessage>Saved result: {RESULTS.find(item => item.value === archive.result.status)?.label ?? 'Result not recorded'}{archive.result.timeSeconds == null ? '' : ` · ${elapsed(archive.result.timeSeconds)}`}</GoalMessage>
-      <GoalMessage>A result is separate from the frozen training totals. No result does not mean DNF or DNS.</GoalMessage>
-      <GoalPicker label="Result status" value={status} options={RESULTS} disabled={busy} onChange={value => { setStatus(value); setSaved(false); }} />
-      {status === 'finished' ? <GoalField label="Finish time · optional" placeholder="m:ss or hh:mm:ss" value={time} disabled={busy} onChange={value => { setTime(value); setSaved(false); }} /> : null}
+      <Text accessibilityRole="header" style={{ color: C.text, fontSize: 19, fontWeight: '700' }}>Race result</Text>
+      {linked && activityHydration !== 'ready' ? <GoalMessage>{activityHydration === 'error' ? 'The linked run could not be loaded. Retry after loading Activity history.' : 'Loading the linked run…'}</GoalMessage>
+        : <GoalMessage>{RESULTS.find(item => item.value === effectiveResult.status)?.label ?? 'No result added yet'}{effectiveResult.timeSeconds == null ? '' : ` · ${elapsed(effectiveResult.timeSeconds)}`}</GoalMessage>}
+      {linked ? <>
+        {activityHydration === 'ready' && effectiveResult.availability === 'unavailable' ? <GoalMessage>The linked run is unavailable. Choose another saved run or unlink it.</GoalMessage> : null}
+        {activityHydration === 'ready' && effectiveResult.availability === 'available' && linkedActivityId ? <GoalAction label="Open linked run" secondary disabled={busy} onPress={() => {
+          const lease = captureOwnerLease();
+          if (!lease || !ownerLeaseIsCurrent(lease) || lease.ownerUserId !== archive.ownerUserId) { setError('Sign in with this archive’s owner to open the linked run.'); return; }
+          router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: linkedActivityId! } } as never);
+        }} /> : null}
+        <GoalAction label="Edit race link" secondary disabled={busy} onPress={editLink} />
+        <GoalAction label={busy ? 'Updating…' : 'Unlink race'} secondary disabled={busy} onPress={() => Alert.alert('Unlink this race?', 'The saved run and recorded training totals stay unchanged.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Unlink', style: 'destructive', onPress: () => { void unlinkRace(); } }])} />
+      </> : <>
+        <GoalPicker label="Race result" value={status} options={RESULTS} disabled={busy || activityHydration !== 'ready'} onChange={value => { setStatus(value); setSaved(false); }} />
+        {status === 'finished' ? <GoalField label="Finish time · optional" placeholder="m:ss or hh:mm:ss" value={time} disabled={busy || activityHydration !== 'ready'} onChange={value => { setTime(value); setSaved(false); }} /> : null}
+        <GoalAction label={busy ? 'Saving race result…' : 'Save race result'} disabled={busy || activityHydration !== 'ready'} onPress={() => { void save(); }} />
+        {archive.race ? <GoalAction label="Link a saved run" secondary disabled={busy} onPress={editLink} /> : null}
+      </>}
       {error ? <GoalMessage error>{error}</GoalMessage> : null}
-      {saved ? <GoalMessage>Result saved. Archived training totals are unchanged.</GoalMessage> : null}
-      <GoalAction label={busy ? 'Saving result…' : 'Save result'} disabled={busy} onPress={() => { void save(); }} />
+      {saved ? <GoalMessage>Race result updated. Archived training totals are unchanged.</GoalMessage> : null}
     </View>
     <View style={section}>
       <GoalDisclosure label="Weekly recorded totals">

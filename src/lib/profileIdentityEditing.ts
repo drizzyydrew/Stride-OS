@@ -41,3 +41,22 @@ export async function saveProfileIdentity(draft: ProfileIdentityDraft, target: P
   }
   return { status: 'saved', patch: result.patch, message: 'Profile details saved on this device.' };
 }
+
+/** Initial setup may seed the original athlete, but a secondary athlete must
+ * already exist. Never switch to or mirror the original athlete during reset. */
+type OnboardingIdentitySaveResult = Exclude<IdentitySaveResult, { status: 'saved' }>
+  | (Extract<IdentitySaveResult, { status: 'saved' }> & { target: ProfileTarget });
+export async function saveOnboardingIdentity(draft: ProfileIdentityDraft, initialAthleteId: string,
+  adapter: SaveAdapter & { activeAthleteId: () => string; seedDefault: () => void }): Promise<OnboardingIdentitySaveResult> {
+  const current = () => adapter.ownerIsCurrent() && adapter.activeAthleteId() === initialAthleteId;
+  if (!current()) return { status: 'account-changed', message: 'Your account or active profile changed. Reopen setup before continuing.' };
+  const validation = profileIdentityPatch(draft);
+  if (!validation.ok) return { status: 'invalid', message: validation.error };
+  if (initialAthleteId === 'athlete_default' && !adapter.activeProfile()) adapter.seedDefault();
+  const target = adapter.activeProfile();
+  if (!target || target.athleteId !== initialAthleteId || !current()) {
+    return { status: 'account-changed', message: 'Your athlete profile is unavailable. Reopen setup before continuing.' };
+  }
+  const result = await saveProfileIdentity(draft, target, { ...adapter, ownerIsCurrent: current });
+  return result.status === 'saved' ? { ...result, target } : result;
+}

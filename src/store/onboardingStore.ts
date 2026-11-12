@@ -25,6 +25,12 @@ export type { GoalType, StrengthLevel, TrainingStyle };
 export type OnboardingData = {
   // Step 1: Name
   name:            string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  showName?: boolean;
+  showUsername?: boolean;
+  identityConfigured?: boolean;
 
   // Step 2: Goal
   primaryGoal:     GoalType;
@@ -116,7 +122,7 @@ const DEFAULT_DATA: OnboardingData = {
 
 // ─── Store shape ──────────────────────────────────────────────────────────────
 
-export const ONBOARDING_TOTAL_STEPS = 11;  // Welcome + 10 data steps
+export const ONBOARDING_TOTAL_STEPS = 12;  // Welcome + identity + 10 existing steps
 
 type OnboardingStore = {
   onboardingComplete: boolean;

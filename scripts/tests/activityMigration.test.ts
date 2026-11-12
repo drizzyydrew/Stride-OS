@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import type { CompletedWorkoutRecord } from '../../src/types/training';
+import type { RunWorkoutRecord } from '../../src/utils/runCompletionIdentity';
+import { sanitizeActivityMetrics } from '../../src/utils/activityLoad';
 import {
   activityFromMobilityCompletion,
   activityFromStrengthRecord,
@@ -47,6 +49,63 @@ test('legacy running history migrates to stable Activity IDs and preserves route
     timestamp: 100,
     altitudeMeters: undefined,
   });
+});
+
+test('running route migration preserves observed accuracy and leaves missing or invalid quality absent', () => {
+  const accuracyValues = [0, 7.5, undefined, -1, NaN, Infinity];
+  const record = legacy({ routeCoordinates: accuracyValues.map((horizontalAccuracyMeters, index) => ({
+    lat: 47.6, lng: -122.3 + index * 0.0001, timestamp: index * 1000,
+    ...(horizontalAccuracyMeters !== undefined ? { horizontalAccuracyMeters } : {}),
+  })) });
+  const migrated = activityFromWorkoutRecord(record);
+  const originalIdentity = activityFromWorkoutRecord({ ...record, routeCoordinates: undefined });
+  const points = migrated.metrics.routeCoordinates!;
+  assert.equal(points[0].horizontalAccuracyMeters, 0, 'an observed zero is not missing');
+  assert.equal(points[1].horizontalAccuracyMeters, 7.5);
+  for (const point of points.slice(2)) assert.equal(Object.hasOwn(point, 'horizontalAccuracyMeters'), false);
+  assert.equal(migrated.id, originalIdentity.id);
+  assert.equal(migrated.startTime, originalIdentity.startTime);
+  assert.equal(migrated.endTime, originalIdentity.endTime);
+  assert.equal(migrated.metrics.distanceMeters, originalIdentity.metrics.distanceMeters);
+});
+
+test('only a real saved start/end pair establishes recorded wall-clock elapsed including pauses', () => {
+  const start = 1_700_000_000_000;
+  const end = start + 600_000;
+  const pauses = [{ startTime: start + 240_000, endTime: start + 360_000 }];
+  const record: RunWorkoutRecord = { ...legacy({ durationMinutes: 8 }),
+    actualStartTime: start, actualEndTime: end, workoutInstanceId: 'wall-clock-run',
+    activityMetrics: { recordingPauses: pauses, metricSources: {} } };
+  const migrated = activityFromWorkoutRecord(record, false);
+  assert.equal(migrated.startTime, start); assert.equal(migrated.endTime, end);
+  assert.equal(migrated.metrics.elapsedTimeSeconds, 600);
+  assert.equal(migrated.metrics.activeTimeSeconds, 480);
+  assert.equal(migrated.metrics.elapsedTimeSource, 'recorded_wall_clock');
+  assert.deepEqual(migrated.metrics.recordingPauses, pauses);
+  const sanitized = sanitizeActivityMetrics('running', migrated.metrics);
+  assert.equal(sanitized.elapsedTimeSource, 'recorded_wall_clock');
+  assert.equal(sanitized.elapsedTimeSeconds, 600);
+  assert.deepEqual(sanitized.recordingPauses, pauses);
+});
+
+test('synthesized legacy elapsed and incomplete or invalid actual-time pairs do not acquire a recorded wall-clock marker', () => {
+  const start = 1_700_000_000_000;
+  const cases: Partial<RunWorkoutRecord>[] = [
+    {}, { actualStartTime: start }, { actualEndTime: start + 600_000 },
+    { actualStartTime: start, actualEndTime: start - 1000 },
+    { actualStartTime: NaN, actualEndTime: start + 600_000 },
+  ];
+  for (const overrides of cases) {
+    const migrated = activityFromWorkoutRecord({ ...legacy({ durationMinutes: 10 }), ...overrides });
+    assert.equal(Object.hasOwn(migrated.metrics, 'elapsedTimeSource'), false, JSON.stringify(overrides));
+  }
+  const synthesized = activityFromWorkoutRecord(legacy({ durationMinutes: 10 }));
+  assert.equal(synthesized.metrics.elapsedTimeSeconds, 600);
+  assert.equal(synthesized.endTime, start + 600_000);
+  assert.equal(Object.hasOwn(sanitizeActivityMetrics('running', synthesized.metrics), 'elapsedTimeSource'), false);
+  const claimed = activityFromWorkoutRecord(legacy({ activityMetrics: { elapsedTimeSource: 'recorded_wall_clock' } }));
+  assert.equal(Object.hasOwn(claimed.metrics, 'elapsedTimeSource'), false,
+    'a legacy marker cannot replace the missing actual start/end pair');
 });
 
 test('legacy cross-training cannot leak estimated running distance', () => {

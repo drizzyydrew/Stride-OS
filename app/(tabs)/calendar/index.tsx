@@ -6,6 +6,7 @@ import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/compone
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
+import { GoalAction } from '../../../src/components/goals/GoalLifecycleCard';
 import { LAYOUT } from '../../../src/constants/layout';
 import { useColors } from '../../../src/theme/useColors';
 import InfoButton from '../../../src/components/shared/InfoButton';
@@ -31,13 +32,19 @@ import {
 import { endStrengthLiveActivity } from '../../../src/lib/strengthLiveActivity';
 
 import { addDays, parseYMD, toYMD } from '../../../src/utils/calendarEngine';
-import type { CalendarEntry }       from '../../../src/utils/calendarEngine';
+import type { CalendarEntry as BaseCalendarEntry }       from '../../../src/utils/calendarEngine';
 import { getPhaseTypesForWeek }     from '../../../src/utils/workoutEngine';
 import { getPhaseSessionPreview } from '../../../src/utils/strengthEngine';
 import { RICH_TYPE_LABEL }          from '../../../src/utils/trainingEngine';
 import type { MacroWeek, Race }     from '../../../src/types/plan';
 import type { ActivityType } from '../../../src/types/activity';
+import { useAuthStore } from '../../../src/store/authStore';
+import { useProfileStore } from '../../../src/store/profileStore';
+import { goalArchiveLink } from '../../../src/utils/goal-archive-link';
+import { raceEventSnapshot, resolveArchiveActivityResult, resolveRaceActivityResult } from '../../../src/utils/raceLink';
 import { displayLabel } from '../../../src/utils/displayLabels';
+
+type CalendarEntry = BaseCalendarEntry & { raceId?: string; raceOutcome?: string; raceArchiveKey?: string };
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -173,9 +180,15 @@ export default function CalendarScreen() {
 
   const weekPlan  = useWeekPlan();
   const timeline  = usePlanTimeline();
-  const goalArchives = useGoalArchiveStore(state => state.archives);
+  const owner = useAuthStore(state => state.user?.id ?? state.offlineOwnerId);
+  const access = useAuthStore(state => state.canAccessLocalData);
+  const athleteId = useProfileStore(state => state.activeAthleteId);
+  const archiveState = useGoalArchiveStore();
+  const goalArchives = access && athleteId === 'athlete_default' && archiveState.ownerUserId === owner && archiveState.status === 'ready'
+    ? archiveState.archives.filter(archive => archive.ownerUserId === owner && archive.athleteId === 'athlete_default') : [];
   const progressionLevel = useAthleteStore(s => s.progressionLevel);
   const activities = useActivityStore(s => s.activities);
+  const activityStatus = useActivityStore(s => s.hydrationStatus);
   const addActivity = useActivityStore(s => s.addActivity);
   const scheduled = useScheduledSessions(weekPlan);
   const selectScheduledSessionForDate = useScheduledSessionSelectionStore(s => s.selectForDate);
@@ -235,7 +248,22 @@ export default function CalendarScreen() {
   }
 
   function raceEntry(race: Race): CalendarEntry {
-    return { date: race.date, type: 'race', label: `Race Day: ${race.name}`, color: '#DCC0A7', completed: false };
+    const archive = goalArchives.find(item => item.race?.id === race.id);
+    const canLink = access && owner && athleteId === 'athlete_default';
+    const ready = canLink && activityStatus === 'ready'
+      && archiveState.status === 'ready' && archiveState.ownerUserId === owner;
+    let result;
+    let valid = false;
+    try {
+      const event = raceEventSnapshot(race);
+      valid = true;
+      result = ready ? archive ? resolveArchiveActivityResult(archive, activities, owner)
+        : resolveRaceActivityResult(event, activities, owner) : undefined;
+    } catch { /* Invalid legacy races remain visible without an actionable link. */ }
+    return { date: race.date, type: 'race', ...(valid && canLink ? { raceId: race.id } : {}),
+      label: `Race Day: ${race.name}`, color: '#DCC0A7', completed: result?.status === 'finished',
+      raceOutcome: !canLink || result?.availability === 'unavailable' ? 'unavailable' : result?.status,
+      ...(archive ? { raceArchiveKey: goalArchiveLink(archive.id).params.archiveKey } : {}) };
   }
 
   function entriesForDate(date: Date): { entries: CalendarEntry[]; macroWeek: MacroWeek | null; beforeStart: boolean } {
@@ -354,6 +382,11 @@ export default function CalendarScreen() {
   }
 
   function handleEntryPress(entry: CalendarEntry, entryDateYMD: string, isToday: boolean) {
+    if (entry.type === 'race' && entry.raceId) {
+      router.push({ pathname: '/(tabs)/activity/link-race', params: { raceId: entry.raceId,
+        ...(entry.raceArchiveKey ? { archiveKey: entry.raceArchiveKey } : {}) } } as never);
+      return;
+    }
     if (entry.completedActivityId && !entry.scheduledSessionId) {
       router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: entry.completedActivityId } } as never);
       return;
@@ -799,13 +832,20 @@ export default function CalendarScreen() {
                     </Text>
                   ) : null}
                   <Text style={[styles.futureText, { color: entry.completed ? C.positive : entry.missed ? C.critical : C.textMuted, marginTop: 6, fontWeight: '700' }]}>
-                    {entry.status === 'partial' ? 'Partially completed' : entry.completed ? 'Completed' : entry.missed ? 'Missed' : isFuture ? 'Upcoming' : 'Planned'}
+                    {entry.type === 'race' ? entry.raceOutcome === 'finished' ? 'Finished' : entry.raceOutcome === 'did_not_finish' ? 'Did not finish' : entry.raceOutcome === 'did_not_start' ? 'Did not start' : entry.raceOutcome === 'unavailable' ? 'Race result unavailable' : !entry.raceOutcome ? 'Loading race result…' : isFuture ? 'Upcoming' : 'No result added yet' : entry.status === 'partial' ? 'Partially completed' : entry.completed ? 'Completed' : entry.missed ? 'Missed' : isFuture ? 'Upcoming' : 'Planned'}
                   </Text>
                 </TouchableOpacity>
                 {entry.type !== 'race' ? (
                   <InfoButton term={entry.workout?.type ?? (entry.type === 'strength' ? 'strength' : 'rest')} />
                 ) : null}
               </View>
+              {entry.type === 'race' && entry.raceId ? <View style={{ gap: 10, marginTop: 14 }}>
+                <GoalAction label={entry.completed ? 'Edit race result' : 'Link a saved run'} secondary
+                  onPress={() => handleEntryPress(entry, toYMD(selectedDate), isToday)} />
+                {(isToday || isFuture) && !entry.completed ? <GoalAction label="Record this race" onPress={() => router.push({
+                  pathname: '/(tabs)/training', params: { tab: 'active', raceId: entry.raceId! },
+                } as never)} /> : null}
+              </View> : null}
             </View>
           ))
         )}
