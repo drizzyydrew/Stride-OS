@@ -1,0 +1,67 @@
+{
+  "checkedAt": "2026-11-15T23:35:17.861351+00:00",
+  "buildId": "c24aa00d-e197-491a-a658-2c4f1269b997",
+  "sourceCommit": "f036de1d8b1eb6e3907f7ba23e4f21a15b188935",
+  "profile": "billing-qa",
+  "buildNumber": "116",
+  "clientBillingEnabledByQaProfile": true,
+  "publicServerBillingEnabled": false,
+  "bytes": 129865666,
+  "sha256": "96c06e026c89f814e5d6f13daf6337771a44e5a752d2161197b737970617b112",
+  "targets": [
+    {
+      "bundleId": "com.mooremovement.strideos",
+      "version": "1.0.0",
+      "build": "116",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [
+        "group.com.mooremovement.strideos"
+      ],
+      "healthKit": true,
+      "unexpiredStoreProfile": true
+    },
+    {
+      "bundleId": "com.mooremovement.strideos.liveactivity",
+      "version": "1.0.0",
+      "build": "116",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [
+        "group.com.mooremovement.strideos"
+      ],
+      "healthKit": false,
+      "unexpiredStoreProfile": true
+    },
+    {
+      "bundleId": "com.mooremovement.strideos.watch",
+      "version": "1.0.0",
+      "build": "116",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [],
+      "healthKit": true,
+      "unexpiredStoreProfile": true
+    }
+  ],
+  "privacyManifestsParsed": 21,
+  "noCredentialFilenamesInArchive": true,
+  "embeddedBundleIsHermesBytecode": true,
+  "embeddedBundleBytes": 12537264,
+  "embeddedBundleSHA256": "71de60daf36cef4796db3713a4c04d3d968c2513ee84dba52ea730faebe15183",
+  "compiled1024Icons": [
+    {
+      "Name": "AppIcon",
+      "PixelWidth": 1024,
+      "PixelHeight": 1024,
+      "Opaque": true,
+      "Idiom": "phone"
+    }
+  ],
+  "nativeCallbackSchemePresent": true,
+  "locationAndHealthPurposeStringsPresent": true,
+  "signedWebcredentialsDomainAndProvisioningVerified": true,
+  "physicalDeviceAccepted": false,
+  "purchaseLifecycleAccepted": false,
+  "publicReviewSubmitted": false
+}

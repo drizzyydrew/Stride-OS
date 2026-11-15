@@ -1,0 +1,50 @@
+{
+  "checkedAt": "2026-11-15T23:37:57.460718+00:00",
+  "buildId": "c24aa00d-e197-491a-a658-2c4f1269b997",
+  "sourceCommit": "f036de1d8b1eb6e3907f7ba23e4f21a15b188935",
+  "state": "FINISHED",
+  "appVersion": "1.0.0",
+  "appBuildVersion": "116",
+  "profile": "billing-qa",
+  "image": "macos-tahoe-26.5-xcode-26.6",
+  "expoDoctor": {
+    "passed": 21,
+    "total": 21,
+    "evidenceFound": true
+  },
+  "compiler": {
+    "errors": 0,
+    "warnings": 33,
+    "summaryFound": true,
+    "fullCurrentSdkPhoneWatchAndLiveActivityArchive": "passed; signed artifacts inspected separately"
+  },
+  "warningCategories": [
+    "existing ActivityKit contentState deprecations",
+    "existing AVAsset metadata API deprecations",
+    "existing Mapbox logging API deprecations",
+    "duplicate C++ library",
+    "build-script dependency analysis",
+    "cloud Ruby/fastlane runtime warning",
+    "cloud Metal toolchain search path"
+  ],
+  "sentry": {
+    "nativeCaptureEnabled": false,
+    "vendorIngestionVerified": false,
+    "sourceMapUploadVerifiedByThisReceipt": true,
+    "nativeCrashSymbolicationVerified": false,
+    "reportedRelease": "com.mooremovement.strideos@1.0.0+116",
+    "reportedDist": "116",
+    "artifactDebugId": "f53d4c20-02d7-4684-9bdd-8695ea1a6acd",
+    "uploadWorkerMessage": "File upload complete (processing pending on server)",
+    "note": "The upload worker reports complete. Vendor processing, event ingestion and native crash symbolication are separate unverified gates."
+  },
+  "sourceManifest": {
+    "entriesMatched": 40,
+    "runtimeSourceChangedAfterUpload": false
+  },
+  "artifactReceipt": "BUILD116_ARTIFACT_VERIFICATION.json",
+  "physicalDeviceAccepted": false,
+  "purchaseLifecycleAccepted": false,
+  "publicServerBillingEnabled": false,
+  "publicReviewSubmitted": false
+}

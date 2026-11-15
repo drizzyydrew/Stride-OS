@@ -20,8 +20,11 @@ background/save check remains appropriate for the TaskManager patch.
 Candidate 116 uses the existing billing-qa store profile (client purchases enabled)
 for private acceptance. Its version preflight passes, including 22 actual generated
 native target checks. The production profile and public server billing remain off;
-no private QA owner is bound. Do not claim cloud delivery before BUILD116_RELEASE.md
-and the exact Apple receipt are saved. Use BUILD116_OWNER_TEST_GUIDE.md afterward.
+no private QA owner is bound. Exact cloud build and submission are FINISHED, and
+Apple116 is VALID / IN_BETA_TESTING with actual existing-group assignment and
+exact saved beta-note readback. See BUILD116_RELEASE.md and BUILD116_DELIVERY.json.
+Use BUILD116_OWNER_TEST_GUIDE.md for the changed native paths and controlled
+purchase acceptance; delivery alone does not close those gates.
 
 Fresh Apple readback still finds public 1.0 selecting 109 / PREPARE_FOR_SUBMISSION /
 MANUAL. Both subscriptions are MISSING_METADATA with absent review screenshots;
@@ -30,7 +33,7 @@ and one-week trial match the approved configuration. A first paid release needs
 accepted client/server purchases, genuine assets and matching paid privacy/reviewer
 material before app+products are submitted together. No public action occurred.
 
-## Latest verified delivery — build 115, November 11
+## Previous verified delivery — build 115, November 11
 
 **1.0.0 (115) is VALID / IN_BETA_TESTING**, not expired, actually assigned to the
 existing Team (Expo) internal group with one installed tester. EAS build

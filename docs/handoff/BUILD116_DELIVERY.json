@@ -1,0 +1,100 @@
+{
+  "recordedAt": "2026-11-15T23:41:34.878097+00:00",
+  "candidate": "1.0.0 (116)",
+  "branch": "codex/launch-polish-20261115",
+  "sourceCommit": "f036de1d8b1eb6e3907f7ba23e4f21a15b188935",
+  "eas": {
+    "buildId": "c24aa00d-e197-491a-a658-2c4f1269b997",
+    "buildStatus": "FINISHED",
+    "buildUrl": "https://expo.dev/accounts/drizzyydrew/projects/StrideOS/builds/c24aa00d-e197-491a-a658-2c4f1269b997",
+    "profile": "billing-qa",
+    "artifactUrl": "https://expo.dev/artifacts/eas/g37tms3iD_OLgYSjJqeFQGti6qcDKAUy9NPoNpItqQw.ipa",
+    "submissionId": "a97bbf08-3502-4624-9df3-9ccc12b0c308",
+    "submissionStatus": "FINISHED",
+    "submissionCompletedAt": "2026-11-15T23:36:17.951Z"
+  },
+  "artifact": {
+    "bytes": 129865666,
+    "sha256": "96c06e026c89f814e5d6f13daf6337771a44e5a752d2161197b737970617b112",
+    "verifiedTargets": [
+      "com.mooremovement.strideos",
+      "com.mooremovement.strideos.liveactivity",
+      "com.mooremovement.strideos.watch"
+    ]
+  },
+  "apple": {
+    "checkedAt": "2026-11-15T23:41:24.592Z",
+    "easBuildId": "c24aa00d-e197-491a-a658-2c4f1269b997",
+    "sourceCommit": "f036de1d8b1eb6e3907f7ba23e4f21a15b188935",
+    "appleBuildId": "39c7404f-638a-4830-9221-46d71a932ede",
+    "version": "116",
+    "processingState": "VALID",
+    "expired": false,
+    "uploadedDate": "2026-11-15T15:37:38-08:00",
+    "internalBuildState": "IN_BETA_TESTING",
+    "externalBuildState": "READY_FOR_BETA_SUBMISSION",
+    "group": {
+      "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+      "name": "Team (Expo)",
+      "isInternal": true,
+      "hasAccessToAllBuilds": true,
+      "actuallyAssigned": true,
+      "testerCount": 1,
+      "testerStates": [
+        "INSTALLED"
+      ]
+    },
+    "whatToTest": {
+      "locale": "en-US",
+      "exactReadback": true,
+      "characters": 1939,
+      "sha256": "e39b5fc9d49e994856eb8441c3d7c25093b504fc3b5b29433b3017cc79120ba3"
+    },
+    "publicVersion": {
+      "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+      "version": "1.0",
+      "state": "PREPARE_FOR_SUBMISSION",
+      "releaseType": "MANUAL",
+      "selectedBuild": "109"
+    },
+    "physicalDeviceAccepted": false,
+    "purchasesEnabled": true,
+    "publicServerBillingEnabled": false,
+    "privateQaOwnerBound": false,
+    "publicReviewSubmitted": false
+  },
+  "sourceGate": {
+    "testsPassed": 1924,
+    "failed": 0,
+    "skipped": 0,
+    "typecheck": "PASS",
+    "expoDependencyCheck": "PASS",
+    "diffCheck": "PASS",
+    "nativeVersionChecksPassed": 22,
+    "council": "three favorable bounded source reviews; 95/100 subjective confidence each",
+    "cloudDoctor": "21/21",
+    "compilerErrors": 0,
+    "compilerWarnings": 33,
+    "sourceManifestEntriesMatched": 40
+  },
+  "billing": {
+    "clientPurchasesEnabled": true,
+    "publicServerBillingEnabled": false,
+    "privateQaOwnerIdentified": false,
+    "privateQaOwnerBound": false,
+    "purchaseLifecycleAccepted": false,
+    "normalProductionProfileBillingEnabled": false
+  },
+  "ownerGuide": "BUILD116_OWNER_TEST_GUIDE.md",
+  "storeDrafts": "store-package-20261115/",
+  "publicLaunchReady": false,
+  "remaining": [
+    "Native DOB/wheels/Back/metric layout and brief background/offline-save acceptance on116",
+    "Controlled Sandbox purchase/restore/renewal/expiry and authenticated server agreement for the confirmed usual app owner",
+    "Controlled signup/email/native return and working reviewer login; public signups currently disabled",
+    "Approved fresh disposable-account deletion and cleanup acceptance; deletion currently disabled",
+    "Genuine accepted-candidate large-iPhone and subscription review screenshots; product metadata currently incomplete",
+    "Final paid privacy/reviewer/binary reconciliation, public submission and manual release decisions",
+    "Existing working-name/shared Google-project branding decision; no paid custom Auth domain purchased"
+  ]
+}

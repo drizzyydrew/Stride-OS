@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-11-15T23:20:30.112Z",
+  "scope": "read-only public Auth settings; no registration, email, login or config writes",
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "httpStatus": 200,
+  "signupDisabled": true,
+  "emailAutoConfirmed": false,
+  "enabledProviders": [
+    "apple",
+    "google",
+    "email"
+  ]
+}

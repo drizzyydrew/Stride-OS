@@ -1,0 +1,19 @@
+Sign-in is required. Use the dedicated review credentials supplied privately in App Review Information. If initial fitness-profile setup appears, use fictional information.
+
+Apple Health, location, notifications, AI sharing, usage sharing and diagnostic reporting have separate controls. Optional permissions can be declined; manual logging and saved-history review remain available.
+
+Navigation: Today for weather, streak and training; Calendar for scheduled/completed sessions; Running > Active for outdoor recording; More for Activity, Strength and Settings. Settings > Profile opens the existing athlete page, with identity, calibration and availability editors. Workout Intelligence contains auto-pause controls. Settings > Goal archive opens Training archive. Users can choose another goal or continue open training.
+
+For manual logging, open More > Activity, use Log activity, choose Walking, enter a fictional duration, leave optional measurements blank and choose Save. The saved detail should open. Test entries are manual inputs, not measured GPS or heart-rate data.
+
+AI Coach requires separate consent before messages and selected training context go to Anthropic. Responses can be wrong and usage limits apply. On-device Insights do not require AI sharing.
+
+Movement Lab uses selected media for approximate two-dimensional fitness movement review, not medical assessment. Personal health records or real-person media are not needed for basic review.
+
+Account deletion: More > Settings > Account & Legal > Request account deletion.
+[INTERNAL DRAFT: ordinary in-app deletion is still disabled at the November 15 readback; replace this note only after approved disposable-account acceptance and rollout.]
+
+Core recording, calendar, saved history and on-device Insights remain available without Pro. To view subscriptions, open More > Settings > Account & Legal > StrideOS Pro membership, then View plans with RevenueCat. Select Monthly membership or Annual membership and follow Apple's confirmation dialog. Prices, currency and introductory eligibility are supplied by the store. Restore purchases and Retry membership check are on this screen. Manage renewal through Manage Apple subscriptions in Account & Legal.
+
+AI Coach chat requires separate Anthropic-sharing consent and has usage limits.
+[INTERNAL DRAFT: current purchase/restore/lifecycle and authenticated server entitlement acceptance remain pending. Do not upload this draft to Apple.]

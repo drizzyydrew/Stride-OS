@@ -1,0 +1,46 @@
+{
+  "checkedAt": "2026-11-15T23:23:34.150Z",
+  "scope": "read-only exact deployed source and public-boundary/configuration audit; no secrets, user records, purchases, emails, quota or AI calls",
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "aiCoach": {
+    "version": 14,
+    "verifyJwt": true,
+    "files": [
+      {
+        "path": "ai-coach/index.ts",
+        "remoteSha256": "b8ca9206496ad62ac629f95cb20aac8ab1ea6da15a5b062ffce88c4e2c2c8cde",
+        "localSha256": "b8ca9206496ad62ac629f95cb20aac8ab1ea6da15a5b062ffce88c4e2c2c8cde",
+        "exactSourceMatch": true
+      },
+      {
+        "path": "_shared/launchHandlers.ts",
+        "remoteSha256": "eb5524995f3c61b42f84a57640c0ed40887cc249bb5320f32e46f06845eff856",
+        "localSha256": "eb5524995f3c61b42f84a57640c0ed40887cc249bb5320f32e46f06845eff856",
+        "exactSourceMatch": true
+      },
+      {
+        "path": "_shared/revenueCatAccess.ts",
+        "remoteSha256": "013507ff25328e6ff601d96271f18efee8b8f101454d17ece14addef294927dd",
+        "localSha256": "013507ff25328e6ff601d96271f18efee8b8f101454d17ece14addef294927dd",
+        "exactSourceMatch": true
+      }
+    ]
+  },
+  "edgeSecretInventory": {
+    "nameCount": 14,
+    "globalBillingFlagPresent": false,
+    "privateQaOwnerPresent": false,
+    "revenueCatCredentialNamePresent": true,
+    "credentialValuesRead": false,
+    "credentialValidityVerified": false
+  },
+  "deletionControl": {
+    "enabled": false,
+    "scopedOwnerCount": 0,
+    "publicScope": false,
+    "activeWorkerJobs": 0
+  },
+  "purchaseLifecycleAccepted": false,
+  "authenticatedRevenueCatLookupAccepted": false,
+  "publicBillingActivated": false
+}

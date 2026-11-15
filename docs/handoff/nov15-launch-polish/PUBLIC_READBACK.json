@@ -7,42 +7,48 @@
       "httpStatus": 200,
       "curlExit": 0,
       "bytes": 10806,
-      "sha256": "006590370d3494e8400a8ca66e2198b3722a13216bb4b87f80c98fb1bdf81454"
+      "sha256": "006590370d3494e8400a8ca66e2198b3722a13216bb4b87f80c98fb1bdf81454",
+      "matchesReviewedSource": true
     },
     {
       "url": "https://strideosfitness.com/privacy.html",
       "httpStatus": 200,
       "curlExit": 0,
       "bytes": 16001,
-      "sha256": "1d72a59fdbf41268b703055cb0afbbce9360c887d3623cf71e8dd6bccc33474d"
+      "sha256": "1d72a59fdbf41268b703055cb0afbbce9360c887d3623cf71e8dd6bccc33474d",
+      "matchesReviewedSource": true
     },
     {
       "url": "https://strideosfitness.com/terms.html",
       "httpStatus": 200,
       "curlExit": 0,
       "bytes": 4577,
-      "sha256": "e2925582fc5ff64deced5292f89079c80ce0ad53d08ad6f826b4b876e96c0dc7"
+      "sha256": "e2925582fc5ff64deced5292f89079c80ce0ad53d08ad6f826b4b876e96c0dc7",
+      "matchesReviewedSource": true
     },
     {
       "url": "https://strideosfitness.com/support.html",
       "httpStatus": 200,
       "curlExit": 0,
       "bytes": 13024,
-      "sha256": "ab9b2ffb9c6347e09a6de467917fc1bad45ce0d0254be190fbadbba1ca0d7673"
+      "sha256": "ab9b2ffb9c6347e09a6de467917fc1bad45ce0d0254be190fbadbba1ca0d7673",
+      "matchesReviewedSource": true
     },
     {
       "url": "https://strideosfitness.com/.well-known/apple-app-site-association",
       "httpStatus": 200,
       "curlExit": 0,
       "bytes": 70,
-      "sha256": "e59a4c85dbcbe9f00ff27e41abdd273f9700fbea641815d10618d088e6a78610"
+      "sha256": "e59a4c85dbcbe9f00ff27e41abdd273f9700fbea641815d10618d088e6a78610",
+      "matchesReviewedSource": true
     },
     {
       "url": "https://app-site-association.cdn-apple.com/a/v1/strideosfitness.com",
       "httpStatus": 200,
       "curlExit": 0,
       "bytes": 70,
-      "sha256": "e59a4c85dbcbe9f00ff27e41abdd273f9700fbea641815d10618d088e6a78610"
+      "sha256": "e59a4c85dbcbe9f00ff27e41abdd273f9700fbea641815d10618d088e6a78610",
+      "matchesReviewedSource": true
     }
   ]
 }

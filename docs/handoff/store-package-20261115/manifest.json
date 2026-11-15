@@ -1,0 +1,26 @@
+{
+  "status": "draft only, not uploaded to Apple",
+  "sourceCommit": "f036de1d8b1eb6e3907f7ba23e4f21a15b188935",
+  "files": [
+    {
+      "file": "README.md",
+      "sha256": "da1f31257e15afa61cf0486fa08ce757e70958d27ed1632f676c932b9c4df5d1",
+      "bytes": 3559
+    },
+    {
+      "file": "review-paid-DRAFT.txt",
+      "sha256": "6957539a152da485dc1c6bd303f1aba85dc2373c0b95d3d898172416fbf5f5ce",
+      "bytes": 2459
+    },
+    {
+      "file": "privacy-paid-DRAFT.json",
+      "sha256": "b451bca1ba94134761831e5c0203c1e34622c0c1a5b88e46fe81c1ff4cdcbb80",
+      "bytes": 973
+    },
+    {
+      "file": "privacy-local-dob-DRAFT.txt",
+      "sha256": "a59c46a669fd427876e2398793f5088631909d7b31fa35bfe222401b0c229ff9",
+      "bytes": 762
+    }
+  ]
+}

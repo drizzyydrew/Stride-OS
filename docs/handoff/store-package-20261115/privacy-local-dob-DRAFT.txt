@@ -1,0 +1,12 @@
+Proposed clarification for the existing privacy notice; not published:
+
+An optional date of birth entered through the profile is stored on the device to
+calculate age. StrideOS excludes that structured date from its cloud-profile
+payload and automatic coaching context. Device or operating-system backups may
+contain the local date. Information you deliberately type into an AI message is
+handled under the separate AI-sharing terms and consent. Removing the profile
+date keeps the current age used for training and does not erase historical
+workouts or independently managed operating-system backups.
+
+Reconcile the existing general backup wording against the actual data paths
+before publishing this clarification. No new off-device DOB collection is implied.
