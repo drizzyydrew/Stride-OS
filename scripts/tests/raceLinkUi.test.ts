@@ -9,6 +9,7 @@ import { formatDistance } from '../../src/lib/units';
 import { todayDateOnly } from '../../src/utils/dateOnly';
 import { parseRaceElapsedTime } from '../../src/utils/racePerformance';
 import { formatArchivedCoverage } from '../../src/utils/goalArchiveCoverage';
+import { formatHistoryNumber } from '../../src/utils/historyFormatting';
 
 function declared(file: string, name: string): string {
   const source = readFileSync(file, 'utf8');
@@ -177,7 +178,7 @@ test('an archive derived from its linked Activity shows link actions rather than
   const store = Object.assign((select: (state: unknown) => unknown) => select({ activities: [activity], hydrationStatus: 'ready' }), { getState: () => ({ activities: [activity] }) });
   const context = { React: ReactFixture, useColors: () => ({}), useRouter: () => ({}), useActivityStore: store, useSettingsStore: (select: any) => select({ units: 'imperial' }), useGoalArchiveStore: (select: any) => select({ saveResult() {} }),
     useState: (value: unknown) => [typeof value === 'function' ? (value as () => unknown)() : value, () => {}], useRef: (current: unknown) => ({ current }),
-    resolveArchiveActivityResult, formatArchivedCoverage, RESULTS: RACE_RESULT_OPTIONS, elapsed: (value: unknown) => String(value), goalDate: (value: string) => value,
+    resolveArchiveActivityResult, formatArchivedCoverage, formatHistoryNumber, RESULTS: RACE_RESULT_OPTIONS, elapsed: (value: unknown) => String(value), goalDate: (value: string) => value,
     View: 'View', Text: 'Text', GoalMessage: 'GoalMessage', GoalPicker: 'GoalPicker', GoalField: 'GoalField', GoalAction: 'GoalAction', GoalDisclosure: 'GoalDisclosure',
   };
   const render = runInNewContext(declared('app/(tabs)/settings/goal-archive-detail.tsx', 'ArchiveBody'), context);

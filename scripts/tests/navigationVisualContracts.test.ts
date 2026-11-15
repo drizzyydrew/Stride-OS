@@ -51,7 +51,6 @@ test('More contains only valid secondary destinations and does not duplicate pri
     'Movement Lab',
     'Analytics',
     'Adaptive Performance',
-    'Profile',
     'Settings',
   ]);
   assert.equal(labels.includes('Running'), false);

@@ -7,6 +7,8 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import * as calibration from '../../src/utils/calibrationEngine';
 import * as weights from '../../src/utils/profilePower';
+import * as measurements from '../../src/utils/profileMeasurements';
+import { saveProfileMeasurement } from '../../src/lib/profileMeasurementEditing';
 import { withAutomaticActivityPower } from '../../src/utils/automaticActivityPower';
 import type { AthleteProfile } from '../../src/types/athlete';
 
@@ -32,7 +34,8 @@ async function stores(options: { profileWeight?: number; onboardingWeight?: numb
     const module = { exports: {} as any };
     const mocks: Record<string, any> = { zustand: { create }, 'zustand/middleware': { persist },
       './persistStorage': { createAppJSONStorage: () => storage }, '../utils/calibrationEngine': calibration,
-      '../utils/profilePower': weights, ...additional };
+      '../utils/profilePower': weights, '../utils/profileMeasurements': measurements,
+      '../hooks/useLocalCalendarDay': { useLocalCalendarDay: () => '2026-11-15' }, react: { useMemo: (fn: () => unknown) => fn() }, ...additional };
     runInNewContext(ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText,
       { module, exports: module.exports, require: (name: string) => { assert.ok(mocks[name], `unmocked store import ${name}`); return mocks[name]; } });
     return module.exports;
@@ -186,64 +189,53 @@ function execute(text: string, context: any): any {
   return runInContext(ts.transpileModule(text, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText, context);
 }
 
-test('actual Profile and Settings weight-change/blur handlers save to the active profile without promoting untouched defaults', async () => {
-  for (const path of ['app/(tabs)/profile/index.tsx', 'app/(tabs)/settings/index.tsx']) {
-    for (const imp of [false, true]) {
-      const { profiles, onboarding } = await stores();
-      const ast = sourceAst(path);
-      const context = createContext({ imp, savedWeightKg: undefined, weightInput: '', weightEditedRef: { current: false },
-        setUserWeight: onboarding.getState().setUserWeight,
-        setWeightInput: (text: string) => { context.weightInput = text; } });
-      for (const name of ['formatWeight', 'commitWeight']) execute(find(ast, (node): node is ts.FunctionDeclaration => ts.isFunctionDeclaration(node) && node.name?.text === name).getText(ast), context);
-      execute('commitWeight()', context);
-      assert.equal(weights.profilePowerMass(profiles.getState().getActiveProfile()), null, path);
-      const field = find(ast, (node): node is ts.ObjectLiteralExpression => ts.isObjectLiteralExpression(node)
-        && node.properties.some(prop => ts.isPropertyAssignment(prop) && prop.name.getText(ast) === 'label' && prop.initializer.getText(ast) === "'Weight'"));
-      const change = field.properties.find((node): node is ts.PropertyAssignment => ts.isPropertyAssignment(node) && node.name.getText(ast) === 'onChangeText')!;
-      const blur = field.properties.find((node): node is ts.PropertyAssignment => ts.isPropertyAssignment(node) && node.name.getText(ast) === 'onBlur')!;
-      execute(`(${change.initializer.getText(ast)})('${imp ? 180 : 82}')`, context);
-      execute(`${blur.initializer.getText(ast)}()`, context);
-      const saved = profiles.getState().getActiveProfile();
-      assert.equal(saved.weightKg, 82, path);
-      assert.equal(saved.weightProvenance.source, 'user_entered', path);
-      assert.equal(onboarding.getState().data.weightKg, 82);
-      await profiles.persist.rehydrate();
-      assert.equal(weights.profilePowerMass(profiles.getState().getActiveProfile())?.bodyMassKg, 82);
-    }
+function measurementAdapter(profiles: any, onboarding: any, raw: Map<string, string>) {
+  const matches = (value: any, patch: any) => Object.entries(patch).every(([key, wanted]) => JSON.stringify(value?.[key]) === JSON.stringify(wanted));
+  return {
+    ownerIsCurrent: () => true, activeProfile: () => profiles.getState().getActiveProfile(),
+    writeProfile: profiles.getState().updateProfile,
+    confirmProfile: async (id: string, patch: any) => matches(JSON.parse(raw.get('profile-store')!).state.profiles[id], patch),
+    writeLegacy: onboarding.getState().updateData,
+    confirmLegacy: async (patch: any) => matches(JSON.parse(raw.get('onboarding-store')!).state.data, patch),
+  };
+}
+
+test('actual measurement Save preserves untouched defaults and stores precise active-profile weight with durable provenance', async () => {
+  for (const imp of [false, true]) {
+    const { profiles, onboarding, raw } = await stores();
+    const target = profiles.getState().getActiveProfile();
+    const adapter = measurementAdapter(profiles, onboarding, raw);
+    await saveProfileMeasurement({ field: 'weightKg', value: 70, changed: false }, target, adapter);
+    assert.equal(weights.profilePowerMass(profiles.getState().getActiveProfile()), null);
+    const kg = measurements.weightFromDigits(imp ? [1, 8, 0] : [0, 8, 2], imp);
+    const result = await saveProfileMeasurement({ field: 'weightKg', value: kg, changed: true }, target, adapter);
+    assert.equal(result.status, 'saved');
+    const saved = profiles.getState().getActiveProfile();
+    assert.equal(saved.weightKg, kg); assert.equal(saved.weightProvenance.source, 'user_entered');
+    assert.equal(onboarding.getState().data.weightKg, kg);
+    await profiles.persist.rehydrate();
+    assert.equal(weights.profilePowerMass(profiles.getState().getActiveProfile())?.bodyMassKg, kg);
   }
+  const settings = readFileSync('app/(tabs)/settings/index.tsx', 'utf8');
+  assert.match(settings, /profile/);
+  assert.doesNotMatch(settings, /function commitWeight|setUserWeight|weightEditedRef/);
 });
 
-test('Profile and Settings display/edit secondary profile weight and unrelated fields never replace it with global onboarding weight', async () => {
-  for (const path of ['app/(tabs)/profile/index.tsx', 'app/(tabs)/settings/index.tsx']) {
-    for (const delay of ['profile', 'onboarding'] as const) {
-      const { profiles, onboarding, raw } = await stores({ profileWeight: 82, onboardingWeight: 82, otherActive: true, delay });
-      onboarding.getState().setUserWeight(100);
-      const ast = sourceAst(path);
-      const context = createContext({ imp: false, profile: profiles.getState().getActiveProfile(), profilePowerMass: weights.profilePowerMass,
-        savedWeightKg: 100, weightInput: '', weightEditedRef: { current: false },
-        setUserWeight: onboarding.getState().setUserWeight, useEffect: (fn: () => void) => fn(),
-        setWeightInput: (value: string) => { context.weightInput = value; } });
-      for (const name of ['formatWeight', 'commitWeight']) execute(find(ast, (node): node is ts.FunctionDeclaration => ts.isFunctionDeclaration(node) && node.name?.text === name).getText(ast), context);
-      const displayed = find(ast, (node): node is ts.VariableDeclaration => ts.isVariableDeclaration(node) && node.name.getText(ast) === 'savedWeightKg');
-      const effect = find(ast, (node): node is ts.CallExpression => ts.isCallExpression(node) && node.expression.getText(ast) === 'useEffect'
-        && node.arguments[0]!.getText(ast).includes('setWeightInput'));
-      execute(`(() => { const ${displayed.getText(ast)}; ${effect.getText(ast)}; })()`, context);
-      assert.equal(context.weightInput, '100', path);
-      const field = find(ast, (node): node is ts.ObjectLiteralExpression => ts.isObjectLiteralExpression(node)
-        && node.properties.some(prop => ts.isPropertyAssignment(prop) && prop.name.getText(ast) === 'label' && prop.initializer.getText(ast) === "'Weight'"));
-      const change = field.properties.find((node): node is ts.PropertyAssignment => ts.isPropertyAssignment(node) && node.name.getText(ast) === 'onChangeText')!;
-      execute(`(${change.initializer.getText(ast)})('101'); commitWeight()`, context);
-      assert.equal(profiles.getState().profiles.other.weightKg, 101);
-      onboarding.getState().updateData({ age: 40, profilePhotoUri: 'local-photo' });
-      assert.equal(onboarding.getState().data.weightKg, 82);
-      assert.equal(profiles.getState().profiles.other.weightKg, 101);
-      const restarted = await stores({ persisted: raw, delay });
-      context.profile = restarted.profiles.getState().getActiveProfile();
-      execute(`(() => { const ${displayed.getText(ast)}; ${effect.getText(ast)}; })()`, context);
-      assert.equal(context.weightInput, '101', `${path}/${delay}`);
-      assert.equal(restarted.profiles.getState().profiles.athlete_default.weightKg, 82);
-      assert.equal(restarted.profiles.getState().profiles.other.weightProvenance.source, 'user_entered');
-    }
+test('measurement Save and restart isolate secondary profile weight from global defaults in both hydration orders', async () => {
+  for (const delay of ['profile', 'onboarding'] as const) {
+    const { profiles, onboarding, raw } = await stores({ profileWeight: 82, onboardingWeight: 82, otherActive: true, delay });
+    onboarding.getState().setUserWeight(100);
+    const target = profiles.getState().getActiveProfile();
+    assert.equal(weights.profilePowerMass(target)?.bodyMassKg, 100);
+    const result = await saveProfileMeasurement({ field: 'weightKg', value: 101.25, changed: true }, target, measurementAdapter(profiles, onboarding, raw));
+    assert.equal(result.status, 'saved');
+    onboarding.getState().updateData({ age: 40, profilePhotoUri: 'local-photo' });
+    assert.equal(onboarding.getState().data.weightKg, 82);
+    assert.equal(profiles.getState().profiles.other.weightKg, 101.25);
+    const restarted = await stores({ persisted: raw, delay });
+    assert.equal(weights.profilePowerMass(restarted.profiles.getState().getActiveProfile())?.bodyMassKg, 101.25);
+    assert.equal(restarted.profiles.getState().profiles.athlete_default.weightKg, 82);
+    assert.equal(restarted.profiles.getState().profiles.other.weightProvenance.source, 'user_entered');
   }
 });
 
@@ -252,18 +244,17 @@ test('actual onboarding physiology controls record explicit edits only and compl
     const { profiles, onboarding } = await stores();
     onboarding.getState().resetOnboarding();
     const ast = sourceAst('app/onboarding/physiology.tsx');
-    const context = createContext({ age: 30, sex: 'prefer_not_to_say', heightCm: 175, weightKg: 70,
+    const context = createContext({ age: 30, dateOfBirth: undefined, sex: 'prefer_not_to_say', heightCm: 175, weightKg: 70,
       weightEdited: false, hasResting: false, hrResting: 55, router: { push: () => {} },
+      setupCurrent: () => true, captureGuard: () => () => true, ageFromDateOfBirth: measurements.ageFromDateOfBirth,
+      userEnteredWeightPatch: weights.userEnteredWeightPatch,
       updateData: onboarding.getState().updateData, setUserWeight: onboarding.getState().setUserWeight,
+      setDateOfBirth: (value: string | null) => { context.dateOfBirth = value; },
+      setHeightCm: (value: number) => { context.heightCm = value; },
       setWeightEdited: (value: boolean) => { context.weightEdited = value; },
-      setWeightKg: (fn: (value: number) => number) => { context.weightKg = fn(context.weightKg); } });
-    const row = find(ast, (node): node is ts.JsxSelfClosingElement => ts.isJsxSelfClosingElement(node) && node.tagName.getText(ast) === 'Row'
-      && node.attributes.properties.some(attr => ts.isJsxAttribute(attr) && attr.name.getText(ast) === 'label' && attr.initializer?.getText(ast) === '"Weight"'));
-    if (touched) {
-      const inc = row.attributes.properties.find((attr): attr is ts.JsxAttribute => ts.isJsxAttribute(attr) && attr.name.getText(ast) === 'onInc')!;
-      assert.ok(inc.initializer && ts.isJsxExpression(inc.initializer));
-      execute(`(${inc.initializer.expression!.getText(ast)})()`, context);
-    }
+      setWeightKg: (value: number) => { context.weightKg = value; } });
+    execute(find(ast, (node): node is ts.FunctionDeclaration => ts.isFunctionDeclaration(node) && node.name?.text === 'createMeasurementSave').getText(ast), context);
+    await execute(`createMeasurementSave()({field:'weightKg',value:70.5,changed:${touched}})`, context);
     execute(find(ast, (node): node is ts.FunctionDeclaration => ts.isFunctionDeclaration(node) && node.name?.text === 'handleNext').getText(ast), context);
     execute('handleNext()', context);
     const data = onboarding.getState().data;
@@ -273,7 +264,7 @@ test('actual onboarding physiology controls record explicit edits only and compl
       && ts.isObjectLiteralExpression(node.arguments[1]) && node.arguments[1].properties.some(property =>
         ts.isPropertyAssignment(property) && property.name.getText(completeAst) === 'weightProvenance'));
     const target = profiles.getState().getActiveProfile();
-    const completeContext = createContext({ data, target, hrMaxEst: 190, vdotFinal: 40, updateProfile: profiles.getState().updateProfile });
+    const completeContext = createContext({ data, target, resolvedAge: measurements.profileAge(data), hrMaxEst: 190, vdotFinal: 40, updateProfile: profiles.getState().updateProfile });
     await execute(update.getText(completeAst), completeContext);
     assert.equal(weights.profilePowerMass(profiles.getState().getActiveProfile())?.bodyMassKg, touched ? 70.5 : undefined);
   }

@@ -54,6 +54,7 @@
 //   `runCalibration(input)` is the designated AI override point.
 //   Interface MUST NOT change — only the implementation.
 
+import { ageFromDateOfBirth, profileAge } from './profileMeasurements';
 import type {
   CalibrationInput,
   CalibrationOutput,
@@ -405,7 +406,8 @@ export function buildThresholdZones(
 
 // ─── HRmax source label ────────────────────────────────────────────────────────
 
-export function buildHRMaxSourceLabel(profile: AthleteProfile): string {
+export function buildHRMaxSourceLabel(storedProfile: AthleteProfile, ageDate = new Date()): string {
+  const profile = { ...storedProfile, age: profileAge(storedProfile, ageDate) };
   if (profile.hrMax !== null && profile.hrMaxManual) {
     return `Measured HRmax: ${profile.hrMax} bpm`;
   }
@@ -418,6 +420,18 @@ export function buildHRMaxSourceLabel(profile: AthleteProfile): string {
     return `Estimated: Tanaka 2001 (208 − 0.7 × ${profile.age} = ${est} bpm)`;
   }
   return 'HRmax unknown — enter age or measured HRmax';
+}
+
+/** An age-only HR estimate cannot keep yesterday's zones beside today's DOB
+ * age. Withhold that stale cache until the existing calibration path refreshes
+ * it. Manual and threshold anchors, legacy profiles and history stay intact. */
+export function calibrationForCurrentAge(profile: AthleteProfile, ageDate = new Date()): CalibrationOutput | null {
+  const output = profile.calibration;
+  if (!output || ageFromDateOfBirth(profile.dateOfBirth, ageDate) == null) return output;
+  // Match runCalibration's HRmax precedence. A thresholdTest object by itself
+  // does not outrank age when hrThreshold is still null.
+  if (profile.hrMaxManual || profile.hrThreshold !== null) return output;
+  return output.hrMaxSource === buildHRMaxSourceLabel(profile, ageDate) ? output : null;
 }
 
 // ─── VDOT fallback estimation ──────────────────────────────────────────────────
@@ -584,13 +598,13 @@ export function calibrationToPaceZones(calibration: CalibrationOutput): PaceZone
 // AI REPLACEMENT HOOK — see file header.
 // Pure function. Same input → same output. No side effects.
 
-export function runCalibration(input: CalibrationInput): CalibrationOutput {
+export function runCalibration(input: CalibrationInput, ageDate = new Date()): CalibrationOutput {
   const { weeklyMileage, recentWorkoutCount, lastWorkoutDaysAgo, currentRecoveryScore } = input;
   // Invalid/future stored entries stay in history, but cannot drive current
   // fitness or inflate confidence. The most recent valid result still wins.
   // An easy training run can establish a recorded best without establishing
   // maximal race fitness. Keep those records visible, outside this model.
-  const profile = { ...input.profile, racePRs: input.profile.racePRs.filter(pr =>
+  const profile = { ...input.profile, age: profileAge(input.profile, ageDate), racePRs: input.profile.racePRs.filter(pr =>
     pr.source?.kind !== 'recorded_effort' && isValidRacePerformance(pr)) };
 
   // ── 1. Determine VDOT ────────────────────────────────────────────────────────
@@ -670,7 +684,7 @@ export function runCalibration(input: CalibrationInput): CalibrationOutput {
   const primarySource   = resolveCalibrationSource(profile);
   const missingInputs   = buildMissingInputs(profile, confidenceScore);
 
-  const hrMaxSource = buildHRMaxSourceLabel(profile);
+  const hrMaxSource = buildHRMaxSourceLabel(profile, ageDate);
 
   // ── 5. Active zone method ─────────────────────────────────────────────────────
   // Respect user preference; fall back gracefully when data is unavailable.

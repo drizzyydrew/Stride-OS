@@ -1,3 +1,4 @@
+import { formatHistoryNumber } from '../../../src/utils/historyFormatting';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useMemo, useState } from 'react';
 import {
@@ -144,7 +145,7 @@ export default function ActivityLogScreen() {
         const weightText = detail?.weightLb
           ? units === 'metric'
             ? `${Math.round(detail.weightLb * 0.453592)} kg`
-            : `${detail.weightLb} lb`
+            : `${formatHistoryNumber(detail.weightLb)} lb`
           : completedSets.find(set => set.load)?.load;
         const row = byExercise.get(exercise.exerciseId) ?? {
           id: exercise.exerciseId,
@@ -269,8 +270,8 @@ export default function ActivityLogScreen() {
                 </Text>
                 <Text style={[s.rowMeta, { color: C.textMuted }]}>
                   {entry.kind === 'run'
-                    ? `${fmtDate(entry.timestamp)} · ${entry.record.actualDurationMinutes ?? entry.record.durationMinutes} min · ${entry.record.actualDistanceMiles ? fmtPace(entry.record.actualDistanceMiles, entry.record.actualDurationMinutes ?? entry.record.durationMinutes) : 'Distance --'}${entry.record.rpe ? ` · RPE ${entry.record.rpe}` : ''}`
-                    : `${fmtDate(entry.timestamp)} · ${entry.record.actualDuration ?? entry.record.plannedDuration} min · ${entry.record.exercises.length} exercises${entry.record.overallRpe ? ` · RPE ${entry.record.overallRpe}` : ''}`}
+                    ? `${fmtDate(entry.timestamp)} · ${formatHistoryNumber(entry.record.actualDurationMinutes ?? entry.record.durationMinutes)} min · ${entry.record.actualDistanceMiles ? fmtPace(entry.record.actualDistanceMiles, entry.record.actualDurationMinutes ?? entry.record.durationMinutes) : 'Distance --'}${entry.record.rpe ? ` · RPE ${entry.record.rpe}` : ''}`
+                    : `${fmtDate(entry.timestamp)} · ${formatHistoryNumber(entry.record.actualDuration ?? entry.record.plannedDuration)} min · ${entry.record.exercises.length} exercises${entry.record.overallRpe ? ` · RPE ${entry.record.overallRpe}` : ''}`}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={C.textMuted} />

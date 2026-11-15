@@ -7,6 +7,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import * as calibration from '../../src/utils/calibrationEngine';
 import * as weights from '../../src/utils/profilePower';
+import * as measurements from '../../src/utils/profileMeasurements';
 import { LocalDataOwner } from '../../src/lib/localDataOwner';
 import { saveOnboardingIdentity, saveProfileIdentity } from '../../src/lib/profileIdentityEditing';
 import { profileIdentityLabel } from '../../src/utils/profileIdentity';
@@ -39,6 +40,9 @@ async function harness(active = 'athlete_default', existing?: Map<string, string
     zustand: { create }, 'zustand/middleware': { persist },
     './persistStorage': { createAppJSONStorage: () => storage },
     '../utils/calibrationEngine': calibration, '../utils/profilePower': weights,
+    '../utils/profileMeasurements': measurements,
+    '../hooks/useLocalCalendarDay': { useLocalCalendarDay: () => '2026-11-15' },
+    react: { useMemo: (fn: () => unknown) => fn() },
   };
   runInNewContext(ts.transpileModule(readFileSync('src/store/profileStore.ts', 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },

@@ -1,12 +1,12 @@
+import { formatHistoryNumber } from '../../../src/utils/historyFormatting';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import HealthRestoreCard from '../../../src/components/activity/HealthRestoreCard';
 import ObservabilityPreferences from '../../../src/components/settings/ObservabilityPreferences';
 import AiSharingPreferences from '../../../src/components/settings/AiSharingPreferences';
 import AccountPrivacy from '../../../src/components/settings/AccountPrivacy';
 import {
   Alert,
-  Image,
   Linking,
   Platform,
   ScrollView,
@@ -21,7 +21,6 @@ import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/compone
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import * as ImagePicker from 'expo-image-picker';
 
 import { useColors } from '../../../src/theme/useColors';
 import { useThemeStore } from '../../../src/store/themeStore';
@@ -31,9 +30,7 @@ import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useAuthStore } from '../../../src/store/authStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { useStrengthStore } from '../../../src/store/strengthStore';
-import { useActiveProfile, useProfileStore } from '../../../src/store/profileStore';
-import { profilePowerMass } from '../../../src/utils/profilePower';
-import { getProfileIdentity } from '../../../src/utils/profileIdentity';
+import { useProfileStore } from '../../../src/store/profileStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
@@ -58,42 +55,6 @@ import PickerWheel from '../../../src/components/ui/PickerWheel';
 import { formatYMDForDisplay, parseDisplayDateToYMD } from '../../../src/utils/dateFormatting';
 import StrideDateField from '../../../src/components/ui/StrideDateField';
 import { todayDateOnly } from '../../../src/utils/dateOnly';
-
-function formatHeight(heightCm: number, imperial: boolean) {
-  if (!heightCm) return '';
-  if (!imperial) return String(Math.round(heightCm));
-  const totalInches = Math.round(heightCm / 2.54);
-  const feet = Math.floor(totalInches / 12);
-  const inches = totalInches % 12;
-  return `${feet}'${inches}`;
-}
-
-function parseHeightInput(value: string, imperial: boolean) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-
-  if (!imperial) {
-    const cm = Math.round(Number(trimmed));
-    return Number.isFinite(cm) ? cm : null;
-  }
-
-  const feetInchesMatch = trimmed.match(/^(\d+)\s*(?:'|ft)?\s*(\d{0,2})?\s*(?:"|in)?$/i);
-  if (feetInchesMatch) {
-    const feet = Number(feetInchesMatch[1]);
-    const inches = Number(feetInchesMatch[2] || 0);
-    if (Number.isFinite(feet) && Number.isFinite(inches)) {
-      return Math.round((feet * 12 + inches) * 2.54);
-    }
-  }
-
-  const totalInches = Number(trimmed);
-  return Number.isFinite(totalInches) ? Math.round(totalInches * 2.54) : null;
-}
-
-function formatWeight(weightKg: number, imperial: boolean) {
-  if (!weightKg) return '';
-  return imperial ? String(Math.round(weightKg * 2.20462)) : String(Math.round(weightKg));
-}
 
 function normalizeReminderTime(value: string) {
   const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
@@ -219,10 +180,6 @@ export default function SettingsScreen() {
   const integrations = useIntegrationsStore();
   const legacyMorningReminderEnabled = useReadinessStore(state => state.reminderEnabled);
   const signOut = useAuthStore(state => state.signOut);
-  const { data, updateData, setUserWeight } = useOnboardingStore();
-  const profile = useActiveProfile();
-  const identity = getProfileIdentity(profile);
-  const savedWeightKg = profilePowerMass(profile)?.bodyMassKg;
   const workoutHistory = useWorkoutStore(state => state.history);
   const strengthHistory = useStrengthStore(state => state.history);
 
@@ -241,10 +198,6 @@ export default function SettingsScreen() {
   const imp = units === 'imperial';
   const [busy, setBusy] = useState<string | null>(null);
   const [notificationSchedule, setNotificationSchedule] = useState<TrainingNotificationScheduleStatus | null>(null);
-  const [ageInput, setAgeInput] = useState('');
-  const [heightInput, setHeightInput] = useState('');
-  const [weightInput, setWeightInput] = useState('');
-  const weightEditedRef = useRef(false);
   const [showNotificationTimePicker, setShowNotificationTimePicker] = useState(false);
 
   function saveRaceForm() {
@@ -343,8 +296,8 @@ export default function SettingsScreen() {
       id: `run-${record.id}`,
       title: record.skipped ? 'Skipped run' : 'Run workout',
       meta: `${formatHistoryDate(record.timestamp)} · ${
-        record.actualDurationMinutes ?? record.durationMinutes
-      } min${record.actualDistanceMiles ? ` · ${(imp ? record.actualDistanceMiles : record.actualDistanceMiles * 1.609344).toFixed(1)} ${imp ? 'mi' : 'km'}` : ''}`,
+        formatHistoryNumber(record.actualDurationMinutes ?? record.durationMinutes)
+      } min${record.actualDistanceMiles ? ` · ${formatHistoryNumber(imp ? record.actualDistanceMiles : record.actualDistanceMiles * 1.609344)} ${imp ? 'mi' : 'km'}` : ''}`,
       timestamp: record.timestamp,
       skipped: Boolean(record.skipped),
     }));
@@ -352,7 +305,7 @@ export default function SettingsScreen() {
     const strength = strengthHistory.map(record => ({
       id: `strength-${record.id}`,
       title: record.skipped ? 'Skipped strength' : 'Strength session',
-      meta: `${formatHistoryDate(record.timestamp)} · ${record.actualDuration ?? record.plannedDuration} min`,
+      meta: `${formatHistoryDate(record.timestamp)} · ${formatHistoryNumber(record.actualDuration ?? record.plannedDuration)} min`,
       timestamp: record.timestamp,
       skipped: Boolean(record.skipped),
     }));
@@ -361,16 +314,6 @@ export default function SettingsScreen() {
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 5);
   }, [imp, strengthHistory, workoutHistory]);
-
-  useEffect(() => {
-    setAgeInput(data.age ? String(data.age) : '');
-    setHeightInput(formatHeight(data.heightCm, imp));
-  }, [data.age, data.heightCm, imp]);
-
-  useEffect(() => {
-    setWeightInput(savedWeightKg == null ? '' : formatWeight(savedWeightKg, imp));
-    weightEditedRef.current = false;
-  }, [profile?.athleteId, savedWeightKg, imp]);
 
   useEffect(() => {
     if (!integrations.morningReminderMigratedV37) {
@@ -441,67 +384,6 @@ export default function SettingsScreen() {
     integrations.readinessNotificationSchedule,
     integrations.readinessNotificationDays,
   ]);
-
-  async function chooseProfilePhoto() {
-    try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Permission needed', 'StrideOS needs photo library access to update your profile photo.');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.85,
-      });
-
-      if (!result.canceled && result.assets[0]?.uri) {
-        updateData({ profilePhotoUri: result.assets[0].uri });
-      }
-    } catch (error) {
-      Alert.alert('Photo update failed', error instanceof Error ? error.message : 'Could not update your profile photo.');
-    }
-  }
-
-  function commitAge() {
-    const nextAge = Math.round(Number(ageInput));
-    if (Number.isFinite(nextAge) && nextAge > 0 && nextAge < 120) {
-      updateData({ age: nextAge });
-      setAgeInput(String(nextAge));
-    } else {
-      setAgeInput(data.age ? String(data.age) : '');
-    }
-  }
-
-  function commitHeight() {
-    const heightCm = parseHeightInput(heightInput, imp);
-    if (heightCm && heightCm > 90 && heightCm < 245) {
-      updateData({ heightCm });
-      setHeightInput(formatHeight(heightCm, imp));
-    } else {
-      setHeightInput(formatHeight(data.heightCm, imp));
-    }
-  }
-
-  function commitWeight() {
-    if (!weightEditedRef.current) return;
-    weightEditedRef.current = false;
-    const value = Number(weightInput);
-    if (!Number.isFinite(value) || value <= 0) {
-      setWeightInput(savedWeightKg == null ? '' : formatWeight(savedWeightKg, imp));
-      return;
-    }
-
-    const weightKg = imp ? Math.round(value / 2.20462) : Math.round(value);
-    if (weightKg > 25 && weightKg < 275) {
-      setUserWeight(weightKg);
-      setWeightInput(formatWeight(weightKg, imp));
-    } else {
-      setWeightInput(savedWeightKg == null ? '' : formatWeight(savedWeightKg, imp));
-    }
-  }
 
   async function connectAppleHealth(reviewPermissions = false) {
     if (integrations.healthKitEnabled && !reviewPermissions) {
@@ -737,78 +619,23 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      {/* User card */}
-      <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
-        <View style={[styles.userRow, { borderBottomColor: C.border }]}>
-          <TouchableOpacity
-            style={[styles.avatar, { backgroundColor: C.primaryDim, borderColor: C.primary }]}
-            onPress={chooseProfilePhoto}
-            activeOpacity={0.8}
-          >
-            {data.profilePhotoUri ? (
-              <Image source={{ uri: data.profilePhotoUri }} style={styles.avatarImage} />
-            ) : (
-              <Text style={[{ fontSize: 20, fontWeight: '800', color: C.primary }]}>
-                {identity.initials}
-              </Text>
-            )}
-            <View style={[styles.avatarAdd, { backgroundColor: C.primary }]}>
-              <Text style={[{ color: C.onPrimary, fontSize: 13, fontWeight: '800' }]}>+</Text>
-            </View>
-          </TouchableOpacity>
-          <View>
-            <Text style={[{ fontSize: 16, fontWeight: '700', color: C.text }]}>{identity.primaryLabel}</Text>
-            {identity.visibleName && identity.visibleUsername ? <Text style={{ color: C.textMuted, fontSize: 13 }}>{identity.visibleUsername}</Text> : null}
-            <Text style={[{ fontSize: 11, color: C.textDim, marginTop: 2 }]}>Tap photo to change</Text>
-          </View>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Profile"
+        accessibilityHint="Open your athlete profile, identity and measurements."
+        style={[styles.card, styles.navCard, { backgroundColor: C.card, borderColor: C.border, minHeight: 76 }]}
+        activeOpacity={0.75}
+        onPress={() => router.push('/(tabs)/settings/profile')}
+      >
+        <View style={[styles.navIcon, { backgroundColor: C.primaryDim }]}>
+          <Ionicons name="person-outline" size={19} color={C.primary} />
         </View>
-        <View style={{ gap: 10, marginTop: 4 }}>
-          {[
-            {
-              label: 'Age',
-              value: ageInput,
-              onChangeText: setAgeInput,
-              onBlur: commitAge,
-              placeholder: '—',
-              keyboardType: 'number-pad' as const,
-              unit: 'yrs',
-            },
-            {
-              label: 'Height',
-              value: heightInput,
-              onChangeText: setHeightInput,
-              onBlur: commitHeight,
-              placeholder: imp ? `5'10` : '178',
-              keyboardType: 'default' as const,
-              unit: imp ? 'ft/in' : 'cm',
-            },
-            {
-              label: 'Weight',
-              value: weightInput,
-              onChangeText: (value: string) => { weightEditedRef.current = true; setWeightInput(value); },
-              onBlur: commitWeight,
-              placeholder: '—',
-              keyboardType: 'number-pad' as const,
-              unit: imp ? 'lbs' : 'kg',
-            },
-          ].map(f => (
-            <View key={f.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Text style={[{ fontSize: 12, color: C.textMuted, width: 64 }]}>{f.label}</Text>
-              <TextInput
-                value={f.value}
-                onChangeText={f.onChangeText}
-                onBlur={f.onBlur}
-                onSubmitEditing={f.onBlur}
-                placeholder={f.placeholder}
-                placeholderTextColor={C.textDim}
-                keyboardType={f.keyboardType}
-                style={[styles.profileInput, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
-              />
-              {f.unit ? <Text style={[{ fontSize: 12, color: C.textDim }]}>{f.unit}</Text> : null}
-            </View>
-          ))}
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={[styles.settingTitle, { color: C.text }]}>Profile</Text>
+          <Text style={[styles.settingCaption, { color: C.textMuted }]}>Name, photo and measurements</Text>
         </View>
-      </View>
+        <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+      </TouchableOpacity>
 
       {/* Appearance */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>

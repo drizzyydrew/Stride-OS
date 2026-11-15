@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
+import { profileAge } from '../../src/utils/profileMeasurements';
 import { useRef, useState } from 'react';
 import { captureOwnerLease, ownerLeaseIsCurrent } from '../../src/lib/localDataOwner';
 import { saveOnboardingIdentity } from '../../src/lib/profileIdentityEditing';
@@ -135,7 +136,8 @@ export default function CompleteScreen() {
     ? vdotFromRacePR(DISTANCE_METERS[data.prDistance], data.prTimeSeconds)
     : null;
   const vdotFinal  = vdotCalc ?? estimateVdotFromProfile(data.weeklyMileage, data.yearsRunning);
-  const hrMaxEst   = data.age > 0 ? estimateHRMax(data.age) : null;
+  const resolvedAge = profileAge(data);
+  const hrMaxEst   = resolvedAge > 0 ? estimateHRMax(resolvedAge) : null;
   const identity = onboardingIdentityForCompletion(data, useProfileStore.getState().getActiveProfile());
   const displayName = identity.ok ? getProfileIdentity(identity.patch).primaryLabel : 'Athlete';
 
@@ -174,7 +176,8 @@ export default function CompleteScreen() {
       if (!current() || useProfileStore.getState().getActiveProfile()?.createdAt !== target.createdAt) { setError('Your active profile changed. Reopen setup.'); return; }
       // 2. Populate all onboarding fields on the same captured athlete.
       await updateProfile(target.athleteId, {
-        age:                   data.age,
+        age:                   resolvedAge,
+        dateOfBirth:           data.dateOfBirth,
         sex:                   data.sex,
         heightCm:              data.heightCm,
         weightKg:              data.weightKg,

@@ -1,6 +1,6 @@
 // These destinations are section landing pages; detail routes keep real Back.
 const SECTION_ROOTS = new Set(['/', '/dashboard', '/calendar', '/training', '/coach', '/more',
-  '/activity', '/strength', '/movement', '/analytics', '/performance', '/profile', '/settings', '/activity-log']);
+  '/activity', '/strength', '/movement', '/analytics', '/performance', '/settings', '/activity-log']);
 export function isSectionRoot(path: string): boolean { return SECTION_ROOTS.has(path.replace(/\/index$/, '').replace(/\/$/, '') || '/'); }
 
 type BackAction = { path: string; invoke: () => void };

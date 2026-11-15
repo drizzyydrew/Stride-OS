@@ -1,0 +1,353 @@
+{
+  "scope": "Extracted actual ProfileMeasurementFields + Wheel; synthetic values and inert save. Actual Edit buttons and unit selection clicked by the local fixture script, inside a phone-width iframe. No account/storage/native hooks.",
+  "nativeLimit": "Web BottomSheet/select/date fallback; does not verify native Apple calendar, native wheel presentation or iOS hit targets.",
+  "fontScale": 1.35,
+  "scaling": "Explicit and default React Native Text font sizes are scaled. Web select fallback typography is not native wheel typography.",
+  "cases": [
+    {
+      "case": "profile-320-height-metric",
+      "geometry": {
+        "bounds": [
+          340,
+          0,
+          320,
+          850
+        ],
+        "child": {
+          "viewport": 320,
+          "rawOverflow": 1,
+          "visibleOverflow": 0,
+          "outside": [
+            {
+              "tag": "H2",
+              "text": "Bottom sheet",
+              "clip": "rect(0px, 0px, 0px, 0px)",
+              "left": -1,
+              "width": 1
+            }
+          ],
+          "buttons": [
+            {
+              "label": "Edit date of birth",
+              "width": 167.828125,
+              "height": 44
+            },
+            {
+              "label": "Edit height",
+              "width": 167.828125,
+              "height": 44
+            },
+            {
+              "label": "Edit weight",
+              "width": 167.828125,
+              "height": 44
+            },
+            {
+              "label": "Imperial",
+              "width": 138,
+              "height": 48
+            },
+            {
+              "label": "Metric",
+              "width": 138,
+              "height": 48
+            },
+            {
+              "label": "Cancel",
+              "width": 138,
+              "height": 46
+            },
+            {
+              "label": "Save",
+              "width": 138,
+              "height": 46
+            }
+          ],
+          "saveCalls": 0,
+          "opened": true,
+          "switched": true
+        }
+      },
+      "screenshot": "screenshots/profile-320-height-metric.png",
+      "sha256": "21011366c0e8183b4cf0151599a286cb1f7696bac076d73485d1cf48f294d9fe"
+    },
+    {
+      "case": "profile-320-rows",
+      "geometry": {
+        "bounds": [
+          340,
+          0,
+          320,
+          850
+        ],
+        "child": {
+          "viewport": 320,
+          "rawOverflow": 0,
+          "visibleOverflow": 0,
+          "outside": [],
+          "buttons": [
+            {
+              "label": "Edit date of birth",
+              "width": 167.828125,
+              "height": 44
+            },
+            {
+              "label": "Edit height",
+              "width": 167.828125,
+              "height": 44
+            },
+            {
+              "label": "Edit weight",
+              "width": 167.828125,
+              "height": 44
+            }
+          ],
+          "saveCalls": 0,
+          "opened": false,
+          "switched": false
+        }
+      },
+      "screenshot": "screenshots/profile-320-rows.png",
+      "sha256": "ba3d9cf7f08acd27014bd4412a8ab5974318d7cee913483d78806135c073cc80"
+    },
+    {
+      "case": "profile-320-weight",
+      "geometry": {
+        "bounds": [
+          340,
+          0,
+          320,
+          850
+        ],
+        "child": {
+          "viewport": 320,
+          "rawOverflow": 1,
+          "visibleOverflow": 0,
+          "outside": [
+            {
+              "tag": "H2",
+              "text": "Bottom sheet",
+              "clip": "rect(0px, 0px, 0px, 0px)",
+              "left": -1,
+              "width": 1
+            }
+          ],
+          "buttons": [
+            {
+              "label": "Edit date of birth",
+              "width": 167.828125,
+              "height": 44
+            },
+            {
+              "label": "Edit height",
+              "width": 167.828125,
+              "height": 44
+            },
+            {
+              "label": "Edit weight",
+              "width": 167.828125,
+              "height": 44
+            },
+            {
+              "label": "Imperial",
+              "width": 138,
+              "height": 48
+            },
+            {
+              "label": "Metric",
+              "width": 138,
+              "height": 48
+            },
+            {
+              "label": "Cancel",
+              "width": 138,
+              "height": 46
+            },
+            {
+              "label": "Save",
+              "width": 138,
+              "height": 46
+            }
+          ],
+          "saveCalls": 0,
+          "opened": true,
+          "switched": false
+        }
+      },
+      "screenshot": "screenshots/profile-320-weight.png",
+      "sha256": "8d075befba3c9b06303bb37ff0b2515a7b65a1e8d143019751a9023384cb7404"
+    },
+    {
+      "case": "profile-390-date-of-birth",
+      "geometry": {
+        "bounds": [
+          305,
+          0,
+          390,
+          850
+        ],
+        "child": {
+          "viewport": 390,
+          "rawOverflow": 1,
+          "visibleOverflow": 0,
+          "outside": [
+            {
+              "tag": "H2",
+              "text": "Bottom sheet",
+              "clip": "rect(0px, 0px, 0px, 0px)",
+              "left": -1,
+              "width": 1
+            }
+          ],
+          "buttons": [
+            {
+              "label": "Edit date of birth",
+              "width": 208.671875,
+              "height": 44
+            },
+            {
+              "label": "Edit height",
+              "width": 208.671875,
+              "height": 44
+            },
+            {
+              "label": "Edit weight",
+              "width": 208.671875,
+              "height": 44
+            },
+            {
+              "label": "Remove date of birth",
+              "width": 358,
+              "height": 46
+            },
+            {
+              "label": "Cancel",
+              "width": 173,
+              "height": 46
+            },
+            {
+              "label": "Save",
+              "width": 173,
+              "height": 46
+            }
+          ],
+          "saveCalls": 0,
+          "opened": true,
+          "switched": false
+        }
+      },
+      "screenshot": "screenshots/profile-390-date-of-birth.png",
+      "sha256": "f55cc5c8d24d5774e8ea31e1ecfc1c4385ee6220f8891d1355894cdd35016847"
+    },
+    {
+      "case": "profile-390-rows",
+      "geometry": {
+        "bounds": [
+          305,
+          0,
+          390,
+          850
+        ],
+        "child": {
+          "viewport": 390,
+          "rawOverflow": 0,
+          "visibleOverflow": 0,
+          "outside": [],
+          "buttons": [
+            {
+              "label": "Edit date of birth",
+              "width": 208.671875,
+              "height": 44
+            },
+            {
+              "label": "Edit height",
+              "width": 208.671875,
+              "height": 44
+            },
+            {
+              "label": "Edit weight",
+              "width": 208.671875,
+              "height": 44
+            }
+          ],
+          "saveCalls": 0,
+          "opened": false,
+          "switched": false
+        }
+      },
+      "screenshot": "screenshots/profile-390-rows.png",
+      "sha256": "e82b47d8251c4e05f872d5a241d51a5550c96bee4da256af356c27a651466782"
+    },
+    {
+      "case": "profile-400-weight-metric",
+      "geometry": {
+        "bounds": [
+          300,
+          0,
+          400,
+          850
+        ],
+        "child": {
+          "viewport": 400,
+          "rawOverflow": 1,
+          "visibleOverflow": 0,
+          "outside": [
+            {
+              "tag": "H2",
+              "text": "Bottom sheet",
+              "clip": "rect(0px, 0px, 0px, 0px)",
+              "left": -1,
+              "width": 1
+            }
+          ],
+          "buttons": [
+            {
+              "label": "Edit date of birth",
+              "width": 214.5,
+              "height": 44
+            },
+            {
+              "label": "Edit height",
+              "width": 214.5,
+              "height": 44
+            },
+            {
+              "label": "Edit weight",
+              "width": 214.5,
+              "height": 44
+            },
+            {
+              "label": "Imperial",
+              "width": 178,
+              "height": 48
+            },
+            {
+              "label": "Metric",
+              "width": 178,
+              "height": 48
+            },
+            {
+              "label": "Cancel",
+              "width": 178,
+              "height": 46
+            },
+            {
+              "label": "Save",
+              "width": 178,
+              "height": 46
+            }
+          ],
+          "saveCalls": 0,
+          "opened": true,
+          "switched": true
+        }
+      },
+      "screenshot": "screenshots/profile-400-weight-metric.png",
+      "sha256": "3c84738497d7fbc4b240314ca332a68b4917f8357b17e788594c91077190ed63"
+    }
+  ],
+  "sourceSha256": "910eff6b28a975e7c879ff4ccb4f3fed1afb55bc7955de91c23e9aa6716cce47",
+  "generatorSha256": "51cbc16255938ffb7a701bc2821fdb617d11b063fc96098f8df95f815be03245",
+  "boundsNote": "Open sheets contain the Expo UI / Radix intentionally screen-reader-only H2 title Bottom sheet at left=-1,width=1,clip=rect(0,0,0,0). Raw overflow counts include it; visibleOverflow excludes only that exact verified title. No product clipping workaround was added.",
+  "runnerNote": "Private headless browser processes were stopped after complete DOM and PNG artifacts were captured; no interactive user browser service was automated."
+}

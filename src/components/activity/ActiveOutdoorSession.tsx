@@ -186,7 +186,7 @@ function Metric({ metric }: { metric: OutdoorSessionMetric }) {
 }
 
 export function FittedMetricText({ value, unit = '', primary = false, align = 'left', color }: {
-  value: string; unit?: string; primary?: boolean; align?: 'left' | 'right'; color: string;
+  value: string; unit?: string; primary?: boolean; align?: 'left' | 'center' | 'right'; color: string;
 }) {
   const [width, setWidth] = useState<number | null>(null);
   const { fontScale = 1 } = useWindowDimensions();

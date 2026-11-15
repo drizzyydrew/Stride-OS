@@ -1,8 +1,8 @@
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
-import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMemo } from 'react';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -13,7 +13,7 @@ import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useActiveProfile } from '../../../src/store/profileStore';
 import { getProfileIdentity } from '../../../src/utils/profileIdentity';
-import { profilePowerMass } from '../../../src/utils/profilePower';
+import ProfileMeasurementEditor from '../../../src/components/profile/profile-measurement-editor';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
 import { useActivityStore } from '../../../src/store/activityStore';
@@ -29,41 +29,15 @@ function metersToDisplay(meters: number, units: 'imperial' | 'metric'): string {
   return formatDistance(meters / 1609.344, units);
 }
 
-function formatHeight(heightCm: number, imperial: boolean) {
-  if (!heightCm) return '';
-  if (!imperial) return String(Math.round(heightCm));
-  const totalInches = Math.round(heightCm / 2.54);
-  return `${Math.floor(totalInches / 12)}'${totalInches % 12}`;
-}
-
-function parseHeightInput(value: string, imperial: boolean) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (!imperial) {
-    const cm = Math.round(Number(trimmed));
-    return Number.isFinite(cm) ? cm : null;
-  }
-  const match = trimmed.match(/^(\d+)\s*(?:'|ft)?\s*(\d{0,2})?\s*(?:"|in)?$/i);
-  if (match) return Math.round((Number(match[1]) * 12 + Number(match[2] || 0)) * 2.54);
-  const inches = Number(trimmed);
-  return Number.isFinite(inches) ? Math.round(inches * 2.54) : null;
-}
-
-function formatWeight(weightKg: number, imperial: boolean) {
-  if (!weightKg) return '';
-  return imperial ? String(Math.round(weightKg * 2.20462)) : String(Math.round(weightKg));
-}
-
 export default function ProfileScreen() {
   const C = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const withinSettings = usePathname().startsWith('/settings/');
   const { units } = useSettingsStore();
-  const imp = units === 'imperial';
-  const { data, updateData, setUserWeight } = useOnboardingStore();
+  const { data, updateData } = useOnboardingStore();
   const profile = useActiveProfile();
   const identity = getProfileIdentity(profile);
-  const savedWeightKg = profilePowerMass(profile)?.bodyMassKg;
   const weeklyMileage = useAthleteStore(s => s.weeklyMileage);
   const savedGoalRace = useAthleteStore(s => s.goalRace);
   const trainingMode = useTrainingPlanStore(s => s.trainingMode);
@@ -73,21 +47,6 @@ export default function ProfileScreen() {
   const hubModel = useMemo(() => buildAchievementHubModel(activities, awarded), [activities, awarded]);
   const activeRunLevel = [...hubModel.strideLevels].reverse().find(item => item.complete) ?? hubModel.strideLevels[0];
   const nextRunLevel = hubModel.strideLevels.find(item => !item.complete);
-
-  const [ageInput, setAgeInput] = useState('');
-  const [heightInput, setHeightInput] = useState('');
-  const [weightInput, setWeightInput] = useState('');
-  const weightEditedRef = useRef(false);
-
-  useEffect(() => {
-    setAgeInput(data.age ? String(data.age) : '');
-    setHeightInput(formatHeight(data.heightCm, imp));
-  }, [data.age, data.heightCm, imp]);
-
-  useEffect(() => {
-    setWeightInput(savedWeightKg == null ? '' : formatWeight(savedWeightKg, imp));
-    weightEditedRef.current = false;
-  }, [profile?.athleteId, savedWeightKg, imp]);
 
   const calibration = profile?.calibration ?? null;
   const racePredictions = calibration?.racePredictions?.slice(1, 5) ?? [];
@@ -111,27 +70,6 @@ export default function ProfileScreen() {
     }
   }
 
-  function commitAge() {
-    const nextAge = Math.round(Number(ageInput));
-    if (Number.isFinite(nextAge) && nextAge > 0 && nextAge < 120) updateData({ age: nextAge });
-    else setAgeInput(data.age ? String(data.age) : '');
-  }
-
-  function commitHeight() {
-    const heightCm = parseHeightInput(heightInput, imp);
-    if (heightCm && heightCm > 90 && heightCm < 245) updateData({ heightCm });
-    else setHeightInput(formatHeight(data.heightCm, imp));
-  }
-
-  function commitWeight() {
-    if (!weightEditedRef.current) return;
-    const value = Number(weightInput);
-    const weightKg = imp ? Math.round(value / 2.20462) : Math.round(value);
-    if (Number.isFinite(weightKg) && weightKg > 25 && weightKg < 275) setUserWeight(weightKg);
-    else setWeightInput(savedWeightKg == null ? '' : formatWeight(savedWeightKg, imp));
-    weightEditedRef.current = false;
-  }
-
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: C.bg }}
@@ -139,7 +77,8 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
-        <LegacyBackControl onBack={() => router.back()} />
+        <LegacyBackControl onBack={() => withinSettings ? router.dismissTo('/(tabs)/settings')
+          : router.canGoBack() ? router.back() : router.replace('/(tabs)/settings')} />
         <View style={{ marginLeft: 10 }}>
           <Text style={[styles.headerLabel, { color: C.textDim }]}>PROFILE</Text>
           <Text style={[styles.headerTitle, { color: C.text }]}>Athlete Profile</Text>
@@ -167,7 +106,7 @@ export default function ProfileScreen() {
           <TouchableOpacity style={{ flex: 1, minWidth: 0, minHeight: 60, justifyContent: 'center' }}
             accessibilityRole="button" accessibilityLabel="Edit name and username"
             accessibilityHint="Opens your profile identity and visibility settings"
-            onPress={() => router.push('/(tabs)/profile/edit-identity' as never)}>
+            onPress={() => router.push((withinSettings ? '/(tabs)/settings/profile-identity' : '/(tabs)/profile/edit-identity') as never)}>
             <Text style={[styles.profileName, { color: C.text }]}>{identity.primaryLabel}</Text>
             {identity.visibleName && identity.visibleUsername ? <Text style={[styles.caption, { color: C.textMuted }]}>{identity.visibleUsername}</Text> : null}
             <Text style={[styles.caption, { color: C.textMuted }]}>
@@ -177,26 +116,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={{ gap: 10, marginTop: 4 }}>
-          {[
-            { label: 'Age', value: ageInput, onChangeText: setAgeInput, onBlur: commitAge, unit: 'yrs', keyboardType: 'number-pad' as const },
-            { label: 'Height', value: heightInput, onChangeText: setHeightInput, onBlur: commitHeight, unit: imp ? 'ft/in' : 'cm', keyboardType: 'default' as const },
-            { label: 'Weight', value: weightInput, onChangeText: (value: string) => { weightEditedRef.current = true; setWeightInput(value); }, onBlur: commitWeight, unit: imp ? 'lbs' : 'kg', keyboardType: 'number-pad' as const },
-          ].map(f => (
-            <View key={f.label} style={styles.inputRow}>
-              <Text style={[styles.inputLabel, { color: C.textMuted }]}>{f.label}</Text>
-              <TextInput
-                value={f.value}
-                onChangeText={f.onChangeText}
-                onBlur={f.onBlur}
-                onSubmitEditing={f.onBlur}
-                keyboardType={f.keyboardType}
-                style={[styles.profileInput, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
-              />
-              <Text style={[styles.unit, { color: C.textDim }]}>{f.unit}</Text>
-            </View>
-          ))}
-        </View>
+        {profile ? <ProfileMeasurementEditor key={`${profile.athleteId}:${profile.createdAt}`} profile={profile} units={units} /> : null}
       </View>
 
       <TouchableOpacity
@@ -223,7 +143,7 @@ export default function ProfileScreen() {
 
       <TouchableOpacity
         style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}
-        onPress={() => router.push('/(tabs)/profile/calibration' as any)}
+        onPress={() => router.push((withinSettings ? '/(tabs)/settings/profile-calibration' : '/(tabs)/profile/calibration') as never)}
         activeOpacity={0.78}
       >
         <View style={styles.cardHeaderRow}>
@@ -261,7 +181,7 @@ export default function ProfileScreen() {
 
       <TouchableOpacity
         style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}
-        onPress={() => router.push('/(tabs)/profile/availability' as any)}
+        onPress={() => router.push((withinSettings ? '/(tabs)/settings/profile-availability' : '/(tabs)/profile/availability') as never)}
         activeOpacity={0.78}
       >
         <View style={styles.cardHeaderRow}>

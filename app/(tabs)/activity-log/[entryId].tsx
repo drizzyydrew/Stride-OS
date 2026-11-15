@@ -1,3 +1,4 @@
+import { formatHistoryNumber } from '../../../src/utils/historyFormatting';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -84,8 +85,8 @@ function RunSummary({ record }: { record: CompletedWorkoutRecord }) {
   const distanceMiles = record.actualDistanceMiles ?? record.estimatedDistanceMiles;
   const durationMin = record.actualDurationMinutes ?? record.durationMinutes;
   const distance = units === 'metric'
-    ? `${(distanceMiles * 1.609344).toFixed(1)} km`
-    : `${distanceMiles.toFixed(1)} mi`;
+    ? `${formatHistoryNumber(distanceMiles * 1.609344)} km`
+    : `${formatHistoryNumber(distanceMiles)} mi`;
 
   const routeCoords = (record.routeCoordinates ?? []).map(point => ({ latitude: point.lat, longitude: point.lng }));
 
@@ -107,7 +108,7 @@ function RunSummary({ record }: { record: CompletedWorkoutRecord }) {
         </View>
       ) : null}
       <View style={s.statGrid}>
-        <Stat label="Duration" value={`${durationMin} min`} />
+        <Stat label="Duration" value={`${formatHistoryNumber(durationMin)} min`} />
         <Stat label="Distance" value={distance} />
         <Stat label="Pace" value={fmtPace(distanceMiles, durationMin)} />
         <Stat label="RPE" value={record.rpe ? `${record.rpe}/10` : '--'} />
@@ -133,7 +134,7 @@ function StrengthSummary({ record }: { record: StrengthLogRecord }) {
   return (
     <>
       <View style={s.statGrid}>
-        <Stat label="Duration" value={`${record.actualDuration ?? record.plannedDuration} min`} />
+        <Stat label="Duration" value={`${formatHistoryNumber(record.actualDuration ?? record.plannedDuration)} min`} />
         <Stat label="Exercises" value={`${record.exercises.length}`} />
         <Stat label="RPE" value={record.overallRpe ? `${record.overallRpe}/10` : '--'} />
         <Stat label="Load" value={`${Math.round(record.estimatedLoad)}`} />
@@ -146,7 +147,7 @@ function StrengthSummary({ record }: { record: StrengthLogRecord }) {
           const weight = detail?.weightLb
             ? units === 'metric'
               ? `${Math.round(detail.weightLb * 0.453592)} kg`
-              : `${detail.weightLb} lb`
+              : `${formatHistoryNumber(detail.weightLb)} lb`
             : undefined;
           return (
             <View key={exercise.exerciseId} style={[s.exerciseBlock, { borderBottomColor: C.border }]}>

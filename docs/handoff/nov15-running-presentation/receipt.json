@@ -1,0 +1,374 @@
+{
+  "scope": "Extracted production RunPrimaryMetrics/FittedMetricText functions and styles; synthetic values; no recording/owner/native hooks run.",
+  "baselineCommit": "4d12413",
+  "sourceSha256": {
+    "app/(tabs)/training/index.tsx": "f8c1e07be4c373be592ffe76ce600565e3e012eca560b5d26a6eedcc5569ccd6",
+    "src/components/activity/ActiveOutdoorSession.tsx": "59dcb351d145c9843497f597fb2a949a7a78f2fd8ea892d47730d0c0b97959b1",
+    "docs/handoff/nov15-running-presentation/generate-fixture.cjs": "fd5780953c566e0ee5609b7fa4668687fa0bcfdcdcff2add166e17ace631a543"
+  },
+  "rendering": "Isolated headless Chrome, private /tmp profiles, localhost source fixture. Main column cropped to observed DOM bounds. User Chrome was not used for retained current screenshots.",
+  "fontScaling": "Fixture explicitly scales RN Text font/line heights and provides fontScale to the actual fit/reflow functions. Browser proof is not native Dynamic Type verification.",
+  "cases": [
+    {
+      "stage": "baseline",
+      "width": 320,
+      "fontScale": 1,
+      "geometry": {
+        "bounds": [
+          340,
+          16,
+          320,
+          589
+        ],
+        "cells": [
+          [
+            [
+              364,
+              113,
+              272,
+              80
+            ],
+            [
+              364,
+              217,
+              272,
+              80
+            ]
+          ],
+          [
+            [
+              364,
+              338,
+              272,
+              79
+            ],
+            [
+              364,
+              441,
+              272,
+              80
+            ]
+          ]
+        ],
+        "overflow": 0,
+        "rows": [
+          "stacked",
+          "stacked"
+        ]
+      },
+      "screenshot": "screenshots/baseline-320-text-1.png",
+      "sha256": "bc16bf4d3d0f25914d657d767f818ec30a76d0410f858de3657bd35f3436de0e"
+    },
+    {
+      "stage": "current",
+      "width": 320,
+      "fontScale": 1,
+      "geometry": {
+        "bounds": [
+          340,
+          16,
+          320,
+          589
+        ],
+        "cells": [
+          [
+            [
+              364,
+              113,
+              272,
+              80
+            ],
+            [
+              364,
+              217,
+              272,
+              80
+            ]
+          ],
+          [
+            [
+              364,
+              338,
+              272,
+              79
+            ],
+            [
+              364,
+              441,
+              272,
+              80
+            ]
+          ]
+        ],
+        "overflow": 0,
+        "rows": [
+          "stacked",
+          "stacked"
+        ]
+      },
+      "screenshot": "screenshots/current-320-text-1.png",
+      "sha256": "018ba79e885ea9149c40be2204c47a29c35a36d7af04ced456cba37a16a702a1"
+    },
+    {
+      "stage": "current",
+      "width": 320,
+      "fontScale": 1.5,
+      "geometry": {
+        "bounds": [
+          340,
+          16,
+          320,
+          685
+        ],
+        "cells": [
+          [
+            [
+              364,
+              113,
+              272,
+              119
+            ],
+            [
+              364,
+              256,
+              272,
+              119
+            ]
+          ],
+          [
+            [
+              364,
+              416,
+              272,
+              85
+            ],
+            [
+              364,
+              525,
+              272,
+              92
+            ]
+          ]
+        ],
+        "overflow": 0,
+        "rows": [
+          "stacked",
+          "stacked"
+        ]
+      },
+      "screenshot": "screenshots/current-320-text-1.5.png",
+      "sha256": "1fe3cc56e99ecb769a47c3bce32bfe36926f0b2f6a595e77a8bf044208ec6469"
+    },
+    {
+      "stage": "current",
+      "width": 320,
+      "fontScale": 2,
+      "geometry": {
+        "bounds": [
+          340,
+          16,
+          320,
+          710
+        ],
+        "cells": [
+          [
+            [
+              364,
+              113,
+              272,
+              128
+            ],
+            [
+              364,
+              265,
+              272,
+              126
+            ]
+          ],
+          [
+            [
+              364,
+              432,
+              272,
+              93
+            ],
+            [
+              364,
+              549,
+              272,
+              93
+            ]
+          ]
+        ],
+        "overflow": 0,
+        "rows": [
+          "stacked",
+          "stacked"
+        ]
+      },
+      "screenshot": "screenshots/current-320-text-2.png",
+      "sha256": "ba4275a8e6685efb38ba5aecf3ffe8c2cdfb86ede6895be4431ef18a29e6f89d"
+    },
+    {
+      "stage": "current",
+      "width": 390,
+      "fontScale": 1,
+      "geometry": {
+        "bounds": [
+          305,
+          16,
+          390,
+          467
+        ],
+        "cells": [
+          [
+            [
+              329,
+              114,
+              159,
+              74
+            ],
+            [
+              512,
+              113,
+              159,
+              75
+            ]
+          ],
+          [
+            [
+              329,
+              229,
+              342,
+              80
+            ],
+            [
+              329,
+              333,
+              342,
+              80
+            ]
+          ]
+        ],
+        "overflow": 0,
+        "rows": [
+          "side by side",
+          "stacked"
+        ]
+      },
+      "screenshot": "screenshots/current-390-text-1.png",
+      "sha256": "1df146d840514a69884b3dbd69dd06a7073267a18e965475abf4b602f8472393"
+    },
+    {
+      "stage": "current",
+      "width": 390,
+      "fontScale": 1.5,
+      "geometry": {
+        "bounds": [
+          305,
+          16,
+          390,
+          709
+        ],
+        "cells": [
+          [
+            [
+              329,
+              113,
+              342,
+              119
+            ],
+            [
+              329,
+              256,
+              342,
+              119
+            ]
+          ],
+          [
+            [
+              329,
+              416,
+              342,
+              101
+            ],
+            [
+              329,
+              541,
+              342,
+              114
+            ]
+          ]
+        ],
+        "overflow": 0,
+        "rows": [
+          "stacked",
+          "stacked"
+        ]
+      },
+      "screenshot": "screenshots/current-390-text-1.5.png",
+      "sha256": "df3f32200140e84afde1a7aea208cc2c8025034d75959ddd21f2045e46565603"
+    },
+    {
+      "stage": "current",
+      "width": 390,
+      "fontScale": 2,
+      "geometry": {
+        "bounds": [
+          305,
+          16,
+          390,
+          790
+        ],
+        "cells": [
+          [
+            [
+              329,
+              113,
+              342,
+              155
+            ],
+            [
+              329,
+              292,
+              342,
+              156
+            ]
+          ],
+          [
+            [
+              329,
+              489,
+              342,
+              108
+            ],
+            [
+              329,
+              621,
+              342,
+              115
+            ]
+          ]
+        ],
+        "overflow": 0,
+        "rows": [
+          "stacked",
+          "stacked"
+        ]
+      },
+      "screenshot": "screenshots/current-390-text-2.png",
+      "sha256": "8dc58ed0f24a6aade85137d026d86dc0dda1e464df019bfe9e63eecd68b6cd06"
+    }
+  ],
+  "targetedTests": {
+    "passed": 13,
+    "failed": 0,
+    "command": "tsx --test scripts/tests/oct17LayoutRegression.test.ts scripts/tests/autoPauseControls.test.ts",
+    "log": "/tmp/strideos-nov15-running-checks.log"
+  },
+  "limitations": [
+    "Actual iOS font/rendering and native large-text acceptance remain device QA.",
+    "Initial tiny headless window captures were discarded because browser minimum viewport cropped the fixture; retained images use observed bounds inside a larger isolated viewport.",
+    "No app build, submission, native/Watch/GPS or preference logic changes."
+  ]
+}

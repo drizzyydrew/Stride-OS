@@ -1,0 +1,25 @@
+{
+  "scope": "Source/installed pure router reducers, not live native navigation. Four Settings-stack aliases preserve existing screen implementations.",
+  "filesSha256": {
+    "app/(tabs)/profile/index.tsx": "525d1b9ce2960889a880e6386477e6c130177d79d3ddf630aca46df205c79749",
+    "app/(tabs)/settings/profile.tsx": "d4dac00944709a4ea10c62886023bd747492e3c24b93253d9347b98b250a9b5a",
+    "app/(tabs)/settings/profile-identity.tsx": "c813cda9d2ae1ed6445eae02edefa06b110cc5f925172764e7bae459569c3b48",
+    "app/(tabs)/settings/profile-calibration.tsx": "f0a856b3dd097112bea5e2caaaf0e29a987a5700a7f443d7c53a0e24b34c8a37",
+    "app/(tabs)/settings/profile-availability.tsx": "ec4ec58ecd3ec2b6e62783bf34d2ca831666488ea42c9eb73ca19d644819cb87",
+    "scripts/tests/settingsProfileNavigation.test.ts": "03c094cfc1152081770ba5e0950cfadf0443854b628649045787ed24e84f3719"
+  },
+  "installedExpoRouter": "57.0.31",
+  "tests": {
+    "passed": 5,
+    "failed": 0,
+    "command": "tsx --test scripts/tests/settingsProfileNavigation.test.ts",
+    "log": "/tmp/strideos-nov15-settings-profile-nav.log"
+  },
+  "covered": [
+    "Actual default TabRouter reproduces old cross-tab Back to Dashboard.",
+    "Actual Settings card and context-sensitive Profile child handlers select all four Settings stack aliases.",
+    "Installed StackRouter pushes index/Profile/each child and Back returns Profile; Profile dismiss returns Settings.",
+    "Cold Profile root POP_TO replacement fallback and unchanged legacy Profile destinations/Back."
+  ],
+  "excluded": "Cold direct Settings child aliases without preceding Profile are not public entry points and remain outside this flow; child screens and draft handlers are unchanged."
+}

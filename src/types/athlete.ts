@@ -239,6 +239,8 @@ export type AthleteProfile = {
   showName?:    boolean;
   showUsername?: boolean;
   age:         number;
+  /** Local calendar date, optional for legacy profiles; excluded from cloud/AI payloads. */
+  dateOfBirth?: string | null;
   sex:         Sex;
   heightCm:    number;
   weightKg:    number;

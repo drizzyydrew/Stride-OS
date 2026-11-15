@@ -1,3 +1,4 @@
+import { formatHistoryNumber } from '../../../src/utils/historyFormatting';
 import { useMemo, useState } from 'react';
 import { Alert, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -49,11 +50,11 @@ function iconFor(type: ActivityType): keyof typeof Ionicons.glyphMap {
 }
 
 function metricLine(activity: Activity): string {
-  const duration = Math.round((activity.metrics.durationSeconds ?? 0) / 60);
+  const duration = formatHistoryNumber((activity.metrics.durationSeconds ?? 0) / 60);
   const distanceMiles = (activity.metrics.distanceMeters ?? 0) / 1609.344;
   const details = [`${duration} min`];
   if (distanceMiles > 0) details.push(`${distanceMiles.toFixed(2)} mi`);
-  if (activity.rpe) details.push(`RPE ${activity.rpe}`);
+  if (activity.rpe) details.push(`RPE ${formatHistoryNumber(activity.rpe)}`);
   details.push(`Load ${Math.round(activity.trainingLoad.wholeBody)}`);
   return details.join(' · ');
 }

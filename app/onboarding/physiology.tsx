@@ -1,6 +1,12 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import ProfileMeasurementFields, { type MeasurementSave } from '../../src/components/profile/profile-measurement-fields';
+import { ageFromDateOfBirth, profileAge } from '../../src/utils/profileMeasurements';
+import { userEnteredWeightPatch } from '../../src/utils/profilePower';
+import { captureOwnerLease, getLocalDataOwner, ownerLeaseIsCurrent } from '../../src/lib/localDataOwner';
+import { useProfileStore } from '../../src/store/profileStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 
 import OnboardingShell from '../../src/components/onboarding/OnboardingShell';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
@@ -34,22 +40,53 @@ function Row({
 
 export default function PhysiologyScreen() {
   const { data, updateData, setUserWeight } = useOnboardingStore();
-  const [age,      setAge]      = useState(data.age);
+  const [dateOfBirth, setDateOfBirth] = useState(data.dateOfBirth);
+  const age = profileAge({ age: data.age, dateOfBirth });
+  const units = useSettingsStore(s => s.units);
   const [sex,      setSex]      = useState<Sex>(data.sex);
   const [heightCm, setHeightCm] = useState(data.heightCm);
   const [weightKg, setWeightKg] = useState(data.weightKg);
   const [weightEdited, setWeightEdited] = useState(false);
   const [hrResting, setHrResting] = useState(data.hrResting ?? 55);
   const [hasResting, setHasResting] = useState(data.hrResting !== null);
+  const [error, setError] = useState('');
+  function captureGuard() {
+    const lease = captureOwnerLease(); const boundary = getLocalDataOwner();
+    const generation = boundary?.accessGeneration;
+    const initial = useProfileStore.getState();
+    const id = initial.activeAthleteId; const createdAt = initial.profiles[id]?.createdAt;
+    return () => (lease ? ownerLeaseIsCurrent(lease) : !captureOwnerLease() && boundary?.accessGeneration === generation)
+      && useProfileStore.getState().activeAthleteId === id && useProfileStore.getState().profiles[id]?.createdAt === createdAt;
+  }
+  const [setupCurrent] = useState(() => captureGuard());
+
+  function createMeasurementSave(): MeasurementSave {
+    const current = captureGuard();
+    return async draft => {
+      if (!current()) return { status: 'account-changed', message: 'Your account or athlete changed. Reopen setup.' };
+      if (!draft.changed) return { status: 'unchanged', message: '' };
+      if (draft.field === 'dateOfBirth') {
+        const nextAge = typeof draft.value === 'string' ? ageFromDateOfBirth(draft.value) : null;
+        if (draft.value !== null && nextAge == null) return { status: 'invalid', message: 'Choose a valid date of birth.' };
+        setDateOfBirth(draft.value as string | null);
+      } else if (draft.field === 'heightCm') {
+        if (typeof draft.value !== 'number' || !Number.isFinite(draft.value) || draft.value <= 90 || draft.value >= 245) return { status: 'invalid', message: 'Choose a height between 90 and 245 cm.' };
+        setHeightCm(draft.value);
+      } else {
+        if (typeof draft.value !== 'number' || !userEnteredWeightPatch(draft.value)) return { status: 'invalid', message: 'Choose a weight between 20 and 300 kg.' };
+        setWeightEdited(true); setWeightKg(draft.value);
+      }
+      return { status: 'saved', message: '' };
+    };
+  }
 
   const tanakaHRMax = age > 0 ? estimateHRMax(age) : null;
-  const heightFt = Math.floor(heightCm / 30.48);
-  const heightIn = Math.round((heightCm % 30.48) / 2.54);
-  const weightLb = Math.round(weightKg * 2.205);
 
   function handleNext() {
+    if (!setupCurrent()) { setError('Your account or athlete changed. Reopen setup before continuing.'); return; }
     updateData({
       age,
+      dateOfBirth,
       sex,
       heightCm,
       hrResting: hasResting ? hrResting : null,
@@ -63,17 +100,13 @@ export default function PhysiologyScreen() {
     <OnboardingShell
       step={5}
       title="Your physiology"
-      subtitle="Age and weight help calibrate HR zones. All optional except age."
+      subtitle="Your saved age helps calibrate HR zones. Date of birth is optional."
       onNext={handleNext}
       onBack={() => router.back()}
       nextEnabled={age >= 14}
     >
-      <Row
-        label="Age"
-        display={`${age} years`}
-        onInc={() => setAge(v => Math.min(99, v + 1))}
-        onDec={() => setAge(v => Math.max(14, v - 1))}
-      />
+      <ProfileMeasurementFields values={{ age: data.age, dateOfBirth, heightCm, weightKg }} units={units} createSave={createMeasurementSave} />
+      {error ? <Text accessibilityRole="alert" style={s.estimate}>{error}</Text> : null}
 
       {tanakaHRMax && (
         <Text style={s.estimate}>
@@ -97,20 +130,6 @@ export default function PhysiologyScreen() {
           ))}
         </View>
       </View>
-
-      <Row
-        label="Height"
-        display={`${heightFt}'${heightIn}"`}
-        onInc={() => setHeightCm(v => Math.min(240, v + 1))}
-        onDec={() => setHeightCm(v => Math.max(120, v - 1))}
-      />
-
-      <Row
-        label="Weight"
-        display={`${weightLb} lb`}
-        onInc={() => { setWeightEdited(true); setWeightKg(v => +(Math.min(300, v + 0.5)).toFixed(1)); }}
-        onDec={() => { setWeightEdited(true); setWeightKg(v => +(Math.max(30, v - 0.5)).toFixed(1)); }}
-      />
 
       {/* Resting HR */}
       <View style={s.group}>

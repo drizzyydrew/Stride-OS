@@ -1,5 +1,35 @@
 # Current StrideOS launch status
 
+## November 15 — owner report and paid-launch polish
+
+The owner reports that build 115 works and requests a smaller final UI pass:
+auto-pause only in Workout Intelligence, aligned Running metrics, Profile inside
+Settings without duplicate demographic editors, actual DOB/native measurement
+pickers, and at most two history decimals. The owner now explicitly chooses
+**subscriptions available at launch**. This does not establish purchase lifecycle,
+fresh signup/reviewer/deletion acceptance, new native picker behavior, or public
+submission/release acceptance.
+
+These source changes and the narrow SDK 57 compatibility patches passed 1,924 tests
+with no failures/skips, typecheck, Expo dependency check, diff check and iOS module
+export. Three council seats renewed 95/100 subjective bounded source approval.
+Actual installed-router checks prove the Settings-stack round trip. Native
+recording/Watch/GPS and auto-pause policy source are unchanged; a brief new-binary
+background/save check remains appropriate for the TaskManager patch.
+
+Candidate 116 uses the existing billing-qa store profile (client purchases enabled)
+for private acceptance. Its version preflight passes, including 22 actual generated
+native target checks. The production profile and public server billing remain off;
+no private QA owner is bound. Do not claim cloud delivery before BUILD116_RELEASE.md
+and the exact Apple receipt are saved. Use BUILD116_OWNER_TEST_GUIDE.md afterward.
+
+Fresh Apple readback still finds public 1.0 selecting 109 / PREPARE_FOR_SUBMISSION /
+MANUAL. Both subscriptions are MISSING_METADATA with absent review screenshots;
+large-iPhone screenshot coverage is missing. Existing USA $9.99 monthly/$79.99 annual
+and one-week trial match the approved configuration. A first paid release needs
+accepted client/server purchases, genuine assets and matching paid privacy/reviewer
+material before app+products are submitted together. No public action occurred.
+
 ## Latest verified delivery — build 115, November 11
 
 **1.0.0 (115) is VALID / IN_BETA_TESTING**, not expired, actually assigned to the

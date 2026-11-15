@@ -1,0 +1,11 @@
+Private purchase-enabled candidate plus November 15 UI cleanup. Keep your usual StrideOS sign-in and existing history; do not uninstall or clear storage. The Apple Sandbox payment account is separate from your StrideOS app account. Public server billing remains off; an enabled purchase client is not paid-server acceptance.
+
+Check More > Settings > Profile: one navigation card, no duplicate Settings demographics. The same Profile page now has a native birth-date calendar and measurement wheels. Opening/canceling or switching entry units must preserve saved values. Do not save an invented birthday or measurement. Exact DOB remains local and is excluded from automatic cloud/coaching payloads. Check Back through identity, calibration and availability to Profile, then Settings.
+
+Auto-pause belongs in Settings > Workout Intelligence; Running no longer duplicates it. Check centered Time/Distance together when they fit and readable stacking with large text/long values. Training-history numbers show at most two decimals without altering saved precision.
+
+After the compatible SDK 57 patches, perform a brief six-active-minute phone/Watch recording, including phone lock, pause/resume and offline save/reopen/reconnect. Confirm one saved activity and one Health workout if writing was enabled. Prior 115 successes do not need a full repeat without a regression.
+
+For purchases, use Account & Legal > StrideOS Pro membership > View plans with RevenueCat. Record actual monthly/annual prices and Apple trial eligibility. Controlled Sandbox purchase, cancellation, restore, renewal/expiry and client/server verification require the exact test-account setup first; do not substitute a usual Apple charge. Core recording/calendar/history/Insights remain free. Pro AI Coach is up to 20 requests/account/UTC day, subject to service availability.
+
+Follow BUILD116_OWNER_TEST_GUIDE.md. No public App Review submission or release is included.

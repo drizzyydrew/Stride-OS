@@ -1,3 +1,4 @@
+import { formatHistoryNumber } from '../../../src/utils/historyFormatting';
 import { archiveFromLink, goalArchiveLink } from '../../../src/utils/goal-archive-link';
 import { useRef, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
@@ -56,7 +57,7 @@ function ArchiveBody({ archive }: { archive: GoalArchive }) {
   const metric = units === 'metric';
   const distance = (meters: number | null) => meters == null || !Number.isFinite(meters) ? '—'
     : `${(meters / (metric ? 1000 : 1609.344)).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${metric ? 'km' : 'mi'}`;
-  const number = (value: number | null) => value == null || !Number.isFinite(value) ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+  const number = formatHistoryNumber;
   const section = { backgroundColor: C.card, borderColor: C.border, borderWidth: 1, borderRadius: 16, padding: 18, gap: 12 } as const;
 
   async function save() {
@@ -145,7 +146,7 @@ function ArchiveBody({ archive }: { archive: GoalArchive }) {
           <GoalMessage>Beginner path · {archive.beginnerPlan.durationWeeks} weeks · target {goalDate(archive.beginnerPlan.targetDate)}</GoalMessage>
           {archive.beginnerPlan.weeks.map(week => <View key={week.weekNumber} style={{ gap: 6 }}>
             <GoalMessage>Week {week.weekNumber}: {week.focus}</GoalMessage>
-            {week.sessions.map(session => <GoalMessage key={session.id}>Day {session.dayIndex + 1} · {session.kind.replace(/_/g, ' ')} · {session.durationMinutes} min{ '\n' }{session.explanation}</GoalMessage>)}
+            {week.sessions.map(session => <GoalMessage key={session.id}>Day {session.dayIndex + 1} · {session.kind.replace(/_/g, ' ')} · {formatHistoryNumber(session.durationMinutes)} min{ '\n' }{session.explanation}</GoalMessage>)}
           </View>)}
         </> : null}
         {!archive.macroPlan && !archive.beginnerPlan ? <GoalMessage>No plan outline was captured. Historical workouts have not been invented.</GoalMessage> : null}

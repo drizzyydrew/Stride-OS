@@ -1,0 +1,238 @@
+{
+  "recordedAt": "2026-11-15T23:00:46.218328+00:00",
+  "status": "all source gates passed; build116 paid private TestFlight configuration verified; cloud delivery pending",
+  "branch": "codex/launch-polish-20261115",
+  "baseCommit": "4d12413fa2c79b41259c4a822a3cc9c07bbd7fda",
+  "ownerReport": {
+    "date": "2026-11-15",
+    "candidate": "115",
+    "statement": "Everything seems to work on this new build",
+    "scope": "owner-reported build115 working; does not execute new pickers, paid purchases, signup/deletion or new dependency-patch acceptance"
+  },
+  "launchDecision": {
+    "subscriptionsAtLaunch": true,
+    "publicReviewAuthorized": false,
+    "publicBillingActivated": false,
+    "qaOwnerIdentified": false,
+    "qaOwnerBindingApplied": false
+  },
+  "preliminaryGate": {
+    "firstCombinedSuite": {
+      "tests": 1919,
+      "passed": 1915,
+      "failed": 4,
+      "explanation": [
+        "More expected duplicate Profile still present in old fixture; updated to requested new menu",
+        "Archive VM did not inject actual new history formatter; fixed without dropping assertions",
+        "Ignored generated local iOS project had114 versions; regenerated via actual Expo prebuild115",
+        "Unchanged Swift deadline compile timed out during competing work; isolated5/5PASS and clean final suite still required"
+      ]
+    },
+    "postNavigationTypecheck": "PASS",
+    "expoDependencyAlignment": "PASS: five direct SDK57 patch bumps, thirteen transitive version changes",
+    "council": "three renewed favorable95/100 subjective bounded source reviews; no device probability"
+  },
+  "limits": [
+    "Native calendar/wheel/large-text behavior not yet exercised",
+    "Source/browser fixtures are not store screenshots",
+    "Paid client/server lifecycle unaccepted",
+    "Public App Store remains109/manual at fresh readback"
+  ],
+  "files": [
+    {
+      "path": "app.json",
+      "sha256": "f3e0d44e10b6e6ec1692fd6ba5ebca914ad986c43cbaa6bf04586bd47a878377"
+    },
+    {
+      "path": "app/(tabs)/activity-log/[entryId].tsx",
+      "sha256": "2414575ccba9ccc768a136b52d124f932977f750b93ac2e02bfad48222b65ac7"
+    },
+    {
+      "path": "app/(tabs)/activity-log/index.tsx",
+      "sha256": "7fbb862f77f28c88c4a3aaca4677a71497d3e1e77121e4de6d1c792f8de915ae"
+    },
+    {
+      "path": "app/(tabs)/activity/index.tsx",
+      "sha256": "50fefde7380906c6a58e57ce295fba9501b0560e032dc39f2c58da424502898e"
+    },
+    {
+      "path": "app/(tabs)/more/index.tsx",
+      "sha256": "6f27b1d8dbc5c96039910018150f772489d776170e8de4b8d36783722596561d"
+    },
+    {
+      "path": "app/(tabs)/profile/index.tsx",
+      "sha256": "525d1b9ce2960889a880e6386477e6c130177d79d3ddf630aca46df205c79749"
+    },
+    {
+      "path": "app/(tabs)/settings/goal-archive-detail.tsx",
+      "sha256": "d7cb4363310e68b00a8c1fbfcdc449cf41415d0a4d6d6429f60bc8832aa41c58"
+    },
+    {
+      "path": "app/(tabs)/settings/index.tsx",
+      "sha256": "1e556eaf446e1759ae2788b7b74d805c8c8cf9b626e54f79a719760baee1a2ef"
+    },
+    {
+      "path": "app/(tabs)/settings/profile-availability.tsx",
+      "sha256": "ec4ec58ecd3ec2b6e62783bf34d2ca831666488ea42c9eb73ca19d644819cb87"
+    },
+    {
+      "path": "app/(tabs)/settings/profile-calibration.tsx",
+      "sha256": "f0a856b3dd097112bea5e2caaaf0e29a987a5700a7f443d7c53a0e24b34c8a37"
+    },
+    {
+      "path": "app/(tabs)/settings/profile-identity.tsx",
+      "sha256": "c813cda9d2ae1ed6445eae02edefa06b110cc5f925172764e7bae459569c3b48"
+    },
+    {
+      "path": "app/(tabs)/settings/profile.tsx",
+      "sha256": "d4dac00944709a4ea10c62886023bd747492e3c24b93253d9347b98b250a9b5a"
+    },
+    {
+      "path": "app/(tabs)/training/index.tsx",
+      "sha256": "f8c1e07be4c373be592ffe76ce600565e3e012eca560b5d26a6eedcc5569ccd6"
+    },
+    {
+      "path": "app/onboarding/complete.tsx",
+      "sha256": "6a88eeff462af337d6e7487e29e1a60f970467d469b0c403c277188d7ba95b68"
+    },
+    {
+      "path": "app/onboarding/physiology.tsx",
+      "sha256": "f400b9e651edb8db246e717fad862254def9054b800e647c0fd42e768c770eca"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "cba526d161a5cf5e77fc1f3a39b2d306d154b0056b434d5fa5eb27cfeaa6e783"
+    },
+    {
+      "path": "package.json",
+      "sha256": "66854bb602654e8e29c57a2a3ad89aa9eff2beffed196365d904fe77dc11755e"
+    },
+    {
+      "path": "scripts/tests/historyPresentation.test.ts",
+      "sha256": "8cfedf4adf0dacf49f6a9edf4f23ade1605eb7f5297deb298e454558bc07f9a5"
+    },
+    {
+      "path": "scripts/tests/navigationVisualContracts.test.ts",
+      "sha256": "1b11db82271581dc3bf997128a3620501d1ca4c9e1ce2efe1c34914701178f18"
+    },
+    {
+      "path": "scripts/tests/oct17WeightPersistence.test.ts",
+      "sha256": "161216587ddcef588d0e601fef953adc93edea2768dc05e63ba8317f1f3f02f4"
+    },
+    {
+      "path": "scripts/tests/profileIdentityEditing.test.ts",
+      "sha256": "f4b598368f4ab9861d33d8af784461e4117d8ac4f22784b4690d1ebce8543f89"
+    },
+    {
+      "path": "scripts/tests/profileMeasurementUi.test.ts",
+      "sha256": "ce53804f43637a69250b08dfefced97c8fbcec3c1e550007d73a46e10e2b1da7"
+    },
+    {
+      "path": "scripts/tests/profileMeasurements.test.ts",
+      "sha256": "f819f9eeb6138551b956857a52a99d4d1ec03f16ab228958563d587fd8d19b04"
+    },
+    {
+      "path": "scripts/tests/raceLinkUi.test.ts",
+      "sha256": "eac33c8c01a690a13aa54ddeb29d42baa88578a117bf062851771b90ed47a16e"
+    },
+    {
+      "path": "scripts/tests/settingsProfileNavigation.test.ts",
+      "sha256": "03c094cfc1152081770ba5e0950cfadf0443854b628649045787ed24e84f3719"
+    },
+    {
+      "path": "scripts/tests/sourceUiNavigation.test.ts",
+      "sha256": "af672046376d665c7702206d1d1e865cee7680ae677053d1486b129fc2cb476f"
+    },
+    {
+      "path": "src/components/activity/ActiveOutdoorSession.tsx",
+      "sha256": "59dcb351d145c9843497f597fb2a949a7a78f2fd8ea892d47730d0c0b97959b1"
+    },
+    {
+      "path": "src/components/profile/profile-measurement-editor.tsx",
+      "sha256": "bc17c639e33ed9545959fd6ad4a308abfe487933157c213b2103775f212b4c70"
+    },
+    {
+      "path": "src/components/profile/profile-measurement-fields.tsx",
+      "sha256": "910eff6b28a975e7c879ff4ccb4f3fed1afb55bc7955de91c23e9aa6716cce47"
+    },
+    {
+      "path": "src/components/strength/StrengthHistoryCard.tsx",
+      "sha256": "4bc1e96721d31a091cabc0afe8f59adae0b10f0413602ac76daa7157986430ab"
+    },
+    {
+      "path": "src/hooks/useLocalCalendarDay.ts",
+      "sha256": "f4a8516b858a946d2ef7f09ebdc93b715053f0bba49dfbd02689ac7e2261ee9c"
+    },
+    {
+      "path": "src/lib/profileMeasurementEditing.ts",
+      "sha256": "9ba7d6a35d8eb5125e5ffbfb450630a4435077ca127c29e856a9def1fe71532b"
+    },
+    {
+      "path": "src/lib/syncService.ts",
+      "sha256": "82b498272d37c8c764a9573e0ca927d212dad7cd9e371268d2c3b83c5b5fbd33"
+    },
+    {
+      "path": "src/store/onboardingStore.ts",
+      "sha256": "505dbfbb2893d03cbbd01b2b14016f6836061ddd52ea840a0da8415169f751e8"
+    },
+    {
+      "path": "src/store/profileStore.ts",
+      "sha256": "25e0eb4441d5be0ba7eac4aed5b274a0340b3efa581dd7ead24dd6e0671fa67f"
+    },
+    {
+      "path": "src/types/athlete.ts",
+      "sha256": "cf3db13c038aefdea6e2d1b4311a561b2ae8bf02824d592c01a57b8ec189776d"
+    },
+    {
+      "path": "src/utils/calibrationEngine.ts",
+      "sha256": "09b4439212136335fef554d64c380dccc758b7d5f08e7d178d6080f357239d9e"
+    },
+    {
+      "path": "src/utils/historyFormatting.ts",
+      "sha256": "b41227210e384470e57aa9899806a926bd54c38b94f0d3798242237261ac8b8a"
+    },
+    {
+      "path": "src/utils/navigationEscape.ts",
+      "sha256": "efab2f6ad6e576c8c7413b0e73fd2495963a527e51664d7df219df1a550ee844"
+    },
+    {
+      "path": "src/utils/profileMeasurements.ts",
+      "sha256": "3d30db58438db7e07761de0406bbea96908c0f2a28ad93b27c668b6b91bf0326"
+    }
+  ],
+  "finalIntegratedGate": {
+    "recordedAt": "2026-11-15T23:11:24.098833+00:00",
+    "tests": 1924,
+    "passed": 1924,
+    "failed": 0,
+    "skipped": 0,
+    "concurrency": 1,
+    "durationMs": 328101.672866,
+    "postNavigationTypecheck": "PASS",
+    "expoCompatibility": "PASS",
+    "diffCheck": "PASS",
+    "finalIosModuleGraphExport": "PASS; no-bytecode local graph only, production Hermes unchanged",
+    "council": "three renewed95/100 subjective bounded source votes inclactualSettingsstackdelta"
+  },
+  "candidate": {
+    "version": "1.0.0",
+    "build": "116",
+    "profile": "billing-qa",
+    "clientBillingEnabled": true,
+    "publicServerBillingEnabled": false,
+    "privateQaOwnerBound": false,
+    "publicSubmissionPerformed": false
+  },
+  "versionPreflight": {
+    "typecheck": "PASS",
+    "expoDependencyCheck": "PASS",
+    "diffCheck": "PASS",
+    "actualGeneratedNativeTargetChecks": {
+      "passed": 22,
+      "failed": 0
+    },
+    "apple116AlreadyExists": false,
+    "easLatest": "115",
+    "easProfileChanged": false
+  }
+}

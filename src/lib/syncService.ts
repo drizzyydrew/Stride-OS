@@ -186,6 +186,12 @@ export async function syncCheckIn(checkIn: DailyCheckIn): Promise<void> {
 
 // ── User profile ──────────────────────────────────────────────────────────────
 
+/** Exact DOB is retained on this device, outside the existing cloud contract. */
+export function serializeOnboardingForCloud(data: OnboardingData): Omit<OnboardingData, 'dateOfBirth'> {
+  const { dateOfBirth: _localDateOfBirth, ...cloudData } = data;
+  return cloudData;
+}
+
 export async function syncUserProfile(
   onboardingData: OnboardingData,
   athleteData: { athleteName: string; goalRace: string; weeklyMileage: number },
@@ -198,7 +204,7 @@ export async function syncUserProfile(
     .from('profiles')
     .upsert({
       id:              user_id,
-      onboarding_data: onboardingData,
+      onboarding_data: serializeOnboardingForCloud(onboardingData),
       athlete_data:    athleteData,
       updated_at:      new Date().toISOString(),
     }).setHeader('Authorization', authorization);

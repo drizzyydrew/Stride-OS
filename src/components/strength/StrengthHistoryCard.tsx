@@ -1,3 +1,4 @@
+import { formatHistoryNumber } from '../../utils/historyFormatting';
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../ui/Card';
 import { colors } from '../../theme/colors';
@@ -67,7 +68,7 @@ export default function StrengthHistoryCard({ history, limit = 5 }: Props) {
                 <View style={styles.rowRight}>
                   <Text style={styles.rowSets}>{completedSets} sets</Text>
                   {record.actualDuration !== undefined && (
-                    <Text style={styles.rowDuration}>{record.actualDuration} min</Text>
+                    <Text style={styles.rowDuration}>{formatHistoryNumber(record.actualDuration)} min</Text>
                   )}
                   {record.overallRpe !== undefined && (
                     <View style={styles.rpeBadge}>

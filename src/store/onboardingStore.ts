@@ -48,6 +48,7 @@ export type OnboardingData = {
 
   // Step 5: Physiology
   age:             number;
+  dateOfBirth?:    string | null;
   sex:             Sex;
   heightCm:        number;
   weightKg:        number;

@@ -3,8 +3,8 @@ import test from 'node:test';
 import { createBackActionRegistry, isSectionRoot } from '../../src/utils/navigationEscape';
 
 test('house appears on section roots while archive/edit/session details retain Back', () => {
-  for (const path of ['/', '/dashboard', '/training', '/training/index', '/profile/', '/activity', '/more', '/calendar']) assert.equal(isSectionRoot(path), true, path);
-  for (const path of ['/settings/goal-archive-detail', '/profile/calibration', '/training/run-creator', '/activity/start', '/auth/sign-in', '/onboarding/identity']) assert.equal(isSectionRoot(path), false, path);
+  for (const path of ['/', '/dashboard', '/training', '/training/index', '/activity', '/more', '/calendar']) assert.equal(isSectionRoot(path), true, path);
+  for (const path of ['/profile', '/profile/', '/settings/goal-archive-detail', '/profile/calibration', '/training/run-creator', '/activity/start', '/auth/sign-in', '/onboarding/identity']) assert.equal(isSectionRoot(path), false, path);
 });
 
 test('Home queues scroll until retained Today is focused and consumes cold-entry reset once', () => {

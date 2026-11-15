@@ -11,7 +11,6 @@ import { requestLocationRecovery } from '../../../src/lib/locationPermissionReco
 import MapView, { Marker, Polyline, type LatLng, type MapViewRef, type Region } from '../../../src/components/maps/MapComponents';
 import RoutePreviewMap from '../../../src/components/maps/RoutePreviewMap';
 import WatchStatusDiagnostics from '../../../src/components/watch/WatchStatusDiagnostics';
-import RunningAutoPauseControl from '../../../src/components/running/RunningAutoPauseControl';
 import WatchConnectionStatus, { useWatchStartRequest } from '../../../src/components/watch/WatchConnectionStatus';
 import { createWatchStartCoordinator } from '../../../src/utils/watchAvailability';
 import GpsSignalChip from '../../../src/components/activity/GpsSignalChip';
@@ -416,11 +415,11 @@ function RunPrimaryMetrics({ time, distance, unit }: { time: string; distance: s
   const flexBasis = livePrimaryMetricBasis(time, distance, width - 48, fontScale);
   return <View style={styles.runPrimaryRow}>
     <View style={[styles.runPrimaryCell, { flexBasis }]}>
-      <FittedMetricText value={time} primary color={C.text} />
+      <FittedMetricText value={time} primary align="center" color={C.text} />
       <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Time</Text>
     </View>
-    <View style={[styles.runPrimaryCell, { flexBasis, alignItems: 'flex-end' }]}>
-      <FittedMetricText value={distance} unit={unit} primary align="right" color={C.accent} />
+    <View style={[styles.runPrimaryCell, { flexBasis }]}>
+      <FittedMetricText value={distance} unit={unit} primary align="center" color={C.accent} />
       <Text style={[styles.runMetricLabel, { color: C.textMuted }]}>Distance</Text>
     </View>
   </View>;
@@ -2173,7 +2172,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
               <RunStat key={metric.label} {...metric} color={C.text} muted={C.textMuted} />
             ))}
           </View>
-          <RunningAutoPauseControl paused />
           {goalPanel}
           <View style={styles.runStatusChipRow}>
             <View style={[styles.runStatusChip, { backgroundColor: zoneToneColor + '22', borderColor: zoneToneColor }]}>
@@ -2277,7 +2275,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       </FeatureTourTarget>
 
       <FeatureTourTarget targetId="running.voice" style={[styles.runControlPanel, styles.runControlPanelFlow, { backgroundColor: panelBg, borderTopColor: C.border, paddingBottom: spacing.md }]}>
-        {(isActive ? environment : pendingEnvironment) === 'outdoor' ? <RunningAutoPauseControl /> : null}
         <RunPrimaryMetrics time={fmt(elapsed)} distance={distStr} unit={distUnit} />
         <View style={[styles.runDivider, { backgroundColor: C.border }]} />
         <View style={styles.runSecondaryRow}>
@@ -3892,7 +3889,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: spacing.xl,
   },
-  runPrimaryCell: { flexGrow: 1, flexShrink: 1, minWidth: 0, maxWidth: '100%' },
+  runPrimaryCell: { flexGrow: 1, flexShrink: 1, minWidth: 0, maxWidth: '100%', alignItems: 'center' },
   runMetricLabel: {
     fontSize: 13,
     fontWeight: typographyTokens.weights.bold,

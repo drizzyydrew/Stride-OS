@@ -17,6 +17,7 @@
 //     - App foreground (stale check; skip if < 24h since last calibration)
 
 import { create } from 'zustand';
+import { useMemo } from 'react';
 import { persist } from 'zustand/middleware';
 import { createAppJSONStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,8 +27,10 @@ import type {
   CalibrationInput, CalibrationOutput, ThresholdTestData, MAFTestRecord, ZoneMethod,
 } from '../types/athlete';
 import type { RaceDistance, TrainingPhase } from '../types/training';
-import { runCalibration, createDefaultProfile } from '../utils/calibrationEngine';
+import { runCalibration, createDefaultProfile, calibrationForCurrentAge } from '../utils/calibrationEngine';
 import { migrateStoredWeight, preserveWeightProvenance } from '../utils/profilePower';
+import { profileAge } from '../utils/profileMeasurements';
+import { useLocalCalendarDay } from '../hooks/useLocalCalendarDay';
 
 // ─── Store shape ───────────────────────────────────────────────────────────────
 
@@ -331,14 +334,13 @@ export const useProfileStore = create<ProfileStore>()(
 // these signatures need to gain an optional `athleteId` parameter.
 
 export function useActiveProfile(): AthleteProfile | undefined {
-  return useProfileStore(s => s.profiles[s.activeAthleteId]);
+  const profile = useProfileStore(s => s.profiles[s.activeAthleteId]);
+  const day = useLocalCalendarDay();
+  return useMemo(() => profile?.dateOfBirth ? { ...profile, age: profileAge(profile), calibration: calibrationForCurrentAge(profile) } : profile, [profile, day]);
 }
 
 export function useCalibration(): CalibrationOutput | null {
-  return useProfileStore(s => {
-    const p = s.profiles[s.activeAthleteId];
-    return p?.calibration ?? null;
-  });
+  return useActiveProfile()?.calibration ?? null;
 }
 
 export function useReadinessThresholds() {
