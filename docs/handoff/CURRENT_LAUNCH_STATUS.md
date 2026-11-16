@@ -10,6 +10,19 @@ pickers, and at most two history decimals. The owner now explicitly chooses
 fresh signup/reviewer/deletion acceptance, new native picker behavior, or public
 submission/release acceptance.
 
+Later November 15 device report: the owner says the updated layouts look good
+and the six-active-minute recording/offline-save check passes. Keep those checks
+closed within that reported scope. The sole UI follow-up removes the visible
+Hundreds/Tens/Ones captions from the weight wheels, preserving their accessible
+labels and the height unit labels. That small source patch is after immutable116
+and is not yet installed. See BUILD116_DEVICE_READBACK_20261115.json.
+
+The owner supplied their usual StrideOS email for subscription QA. Exact Auth
+owner verification is pending: two MCP read-only lookups and the CLI Management
+API route returned connection timeouts. No private QA owner is bound and no
+billing flag was changed. Plan loading/cancel inspection can proceed on116;
+authenticated paid-server acceptance remains open.
+
 These source changes and the narrow SDK 57 compatibility patches passed 1,924 tests
 with no failures/skips, typecheck, Expo dependency check, diff check and iOS module
 export. Three council seats renewed 95/100 subjective bounded source approval.

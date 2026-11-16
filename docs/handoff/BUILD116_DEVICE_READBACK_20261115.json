@@ -1,0 +1,48 @@
+{
+  "recordedAt": "2026-11-15T23:58:08.463533+00:00",
+  "candidate": "1.0.0 (116)",
+  "easBuildId": "c24aa00d-e197-491a-a658-2c4f1269b997",
+  "builtSourceCommit": "f036de1d8b1eb6e3907f7ba23e4f21a15b188935",
+  "evidence": "owner report in this chat; no independent device instrumentation",
+  "ownerReported": {
+    "updatedLayouts": "PASS except requested removal of visible weight place-value captions",
+    "feetAndInchesLabels": "KEEP",
+    "otherRequestedUpdates": "look good",
+    "sixActiveMinuteRecordingAndOfflineSave": "PASS"
+  },
+  "limits": [
+    "Report does not independently establish individual sensor samples, Health duplicate count, or every picker persistence/edge case",
+    "No purchase, restore, expiry, authenticated server entitlement or fresh signup/deletion acceptance reported"
+  ],
+  "weightCaptionFollowup": {
+    "removeVisibleHundredsTensOnes": true,
+    "keepWheelSelectionsAndAccessibleLabels": true,
+    "keepHeightLabels": true,
+    "status": "source-only patch after immutable116 upload; not delivered in116",
+    "verification": {
+      "existingMeasurementInteractionTests": {
+        "passed": 3,
+        "failed": 0
+      },
+      "canonicalProjectTypecheck": "PASS",
+      "diffCheck": "PASS",
+      "changedRuntimeFile": "src/components/profile/profile-measurement-fields.tsx",
+      "fileSHA256": "3e3d5f1f6d1f84f3dfbbc261ad6f49b329ed5479be4bac637cee880fce52e64e",
+      "newNativeBuildOrDelivery": false
+    }
+  },
+  "subscriptionPreparation": {
+    "usualAppEmailSuppliedByOwner": true,
+    "authOwnerIdIndependentlyVerified": false,
+    "lookupAttempts": {
+      "mcpReadonlySql": 2,
+      "cliReadonlySqlViaManagementApi": 1,
+      "result": "connection timeout; CLI login-role initialization also failed before the query"
+    },
+    "privateQaOwnerBound": false,
+    "publicServerBillingEnabled": false,
+    "purchasesMadeByAgent": false,
+    "accountOrTrainingDataModified": false,
+    "nextSafeDeviceStep": "Load the two real plans on116 and capture the display; server QA stays inactive until exact owner lookup succeeds"
+  }
+}

@@ -16,12 +16,12 @@ type Props = { values: MeasurementValues; units: 'imperial' | 'metric'; createSa
 const labels = { dateOfBirth: 'Date of birth', heightCm: 'Height', weightKg: 'Weight' };
 const range = (length: number) => Array.from({ length }, (_, i) => i);
 
-function Wheel({ label, value, values, onChange, disabled }: {
-  label: string; value: number; values: number[]; onChange: (value: number) => void; disabled: boolean;
+function Wheel({ label, showLabel = true, value, values, onChange, disabled }: {
+  label: string; showLabel?: boolean; value: number; values: number[]; onChange: (value: number) => void; disabled: boolean;
 }) {
   const C = useColors(); const mode = useThemeMode();
   return <View style={{ flex: 1, minWidth: 0 }} accessibilityLabel={label}>
-    <Text style={[s.wheelLabel, { color: C.textMuted }]}>{label}</Text>
+    {showLabel ? <Text style={[s.wheelLabel, { color: C.textMuted }]}>{label}</Text> : null}
     <Host colorScheme={mode} seedColor={C.primary} style={{ width: '100%', height: 180 }}>
       <Picker appearance="wheel" selectedValue={value} onValueChange={onChange} enabled={!disabled} testID={`measurement-${label}`}>
         {values.map(number => <Picker.Item key={number} value={number} label={String(number)} />)}
@@ -98,7 +98,7 @@ export default function ProfileMeasurementFields({ values, units, createSave, su
               onChange={major => change(heightFromParts(major, height[1], imp))} />
             <Wheel label={imp ? 'Inches' : 'Centimeters'} value={height[1]} values={range(imp ? 12 : 100)} disabled={busy}
               onChange={minor => change(heightFromParts(height[0], minor, imp))} />
-          </> : digits.map((value, index) => <Wheel key={index} label={['Hundreds', 'Tens', 'Ones'][index]} value={value} values={range(10)} disabled={busy}
+          </> : digits.map((value, index) => <Wheel key={index} label={['Hundreds', 'Tens', 'Ones'][index]} showLabel={false} value={value} values={range(10)} disabled={busy}
             onChange={number => { const next = [...digits]; next[index] = number; change(weightFromDigits(next, imp)); }} />)}
         </View>
         <Text style={[s.selection, { color: C.text }]}>{draft?.field === 'heightCm' ? formatProfileHeight(numeric, imp) : formatProfileWeight(numeric, imp)}</Text>
