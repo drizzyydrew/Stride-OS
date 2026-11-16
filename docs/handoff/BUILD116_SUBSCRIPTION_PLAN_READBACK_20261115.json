@@ -1,0 +1,34 @@
+{
+  "recordedAt": "2026-11-16T01:50:54.072674+00:00",
+  "candidate": "1.0.0 (116)",
+  "evidence": "owner-provided device screenshots in this chat",
+  "planLoading": "PASS",
+  "plans": [
+    {
+      "name": "Annual membership",
+      "displayedPrice": "$79.99 per year, billed automatically"
+    },
+    {
+      "name": "Monthly membership",
+      "displayedPrice": "$9.99 per month, billed automatically"
+    }
+  ],
+  "selectedPlan": "Annual",
+  "subscribeButton": "Subscribe for $79.99 per year",
+  "capture": {
+    "path": "build116-subscriptions/plans-owner-capture.jpg",
+    "sha256": "61b114a8f1c747d641dcd3482f50150cc60ed9b01539d68b0902f4558441b580",
+    "pixels": [
+      591,
+      1280
+    ],
+    "originalAttachmentCopiedWithoutEditing": true,
+    "acceptedAsStoreOrSubscriptionReviewAsset": false
+  },
+  "purchaseConfirmed": false,
+  "purchaseCanceled": false,
+  "restoreAccepted": false,
+  "renewalExpiryAccepted": false,
+  "serverEntitlementAccepted": false,
+  "nextDeviceStep": "Select Monthly, open Apple confirmation with Subscribe, cancel before approval, and report the returned app message."
+}

@@ -57,9 +57,15 @@ something regresses. Report any crash/disconnect with its approximate local time
 ## 4. Subscription phase — wait for the exact test-account setup
 
 Client purchases are enabled in this private candidate, but that alone does not
-prove server paid-access enforcement. The server QA binding is not activated by
-this guide. The app email and test window must be confirmed before server checks.
-Keep the usual app sign-in; do not send passwords, tokens or recovery secrets.
+prove server paid-access enforcement. November15 follow-up: the usual app owner
+is now uniquely verified and the temporary owner-only QA binding is saved with
+an exact digest readback. Public server billing remains off. Both real plans
+loaded on the device; next is the canceled-purchase check, then the controlled
+lifecycle. During this private QA window, successful Pro verification intentionally
+stops before quota/AI and may show the existing daily-limit message. Remove the
+binding after acceptance before normal AI use. No authenticated entitlement pass
+is inferred from configuration alone. Keep the usual app sign-in; do not send
+passwords, tokens or recovery secrets.
 
 1. Open More → Settings → Account & Legal → StrideOS Pro membership.
 2. Select View plans with RevenueCat. Both Monthly and Annual should load real

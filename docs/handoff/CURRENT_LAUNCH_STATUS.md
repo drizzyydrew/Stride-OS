@@ -17,11 +17,21 @@ Hundreds/Tens/Ones captions from the weight wheels, preserving their accessible
 labels and the height unit labels. That small source patch is after immutable116
 and is not yet installed. See BUILD116_DEVICE_READBACK_20261115.json.
 
-The owner supplied their usual StrideOS email for subscription QA. Exact Auth
-owner verification is pending: two MCP read-only lookups and the CLI Management
-API route returned connection timeouts. No private QA owner is bound and no
-billing flag was changed. Plan loading/cancel inspection can proceed on116;
-authenticated paid-server acceptance remains open.
+The owner supplied their usual StrideOS email for subscription QA. The earlier
+connection timeouts resolved: one confirmed, active Auth owner was verified.
+The deployed v14 source still matches all three reviewed files, JWT verification
+is on, and the temporary STRIDEOS_BILLING_QA_OWNER_ID binding was saved with an
+exact owner-digest readback. Public server billing remains off. For that owner,
+successful Pro verification deliberately stops at429 before quota/AI; remove the
+binding after the controlled session before normal AI use. This configuration
+receipt is not an authenticated entitlement/lifecycle pass. See
+BUILD116_PRIVATE_BILLING_QA_20261115.json.
+
+Owner device captures show both real plans: Annual$79.99/year and Monthly$9.99/month.
+Plan loading passes. Cancellation, purchase, restore, renewal/expiry and server
+verification remain open. The original591×1280 capture is preserved unchanged;
+it is not a substitute for accepted store-size coverage or product review assets.
+See BUILD116_SUBSCRIPTION_PLAN_READBACK_20261115.json.
 
 These source changes and the narrow SDK 57 compatibility patches passed 1,924 tests
 with no failures/skips, typecheck, Expo dependency check, diff check and iOS module
@@ -33,7 +43,8 @@ background/save check remains appropriate for the TaskManager patch.
 Candidate 116 uses the existing billing-qa store profile (client purchases enabled)
 for private acceptance. Its version preflight passes, including 22 actual generated
 native target checks. The production profile and public server billing remain off;
-no private QA owner is bound. Exact cloud build and submission are FINISHED, and
+At delivery no private QA owner was bound; its later controlled binding is recorded
+above. Exact cloud build and submission are FINISHED, and
 Apple116 is VALID / IN_BETA_TESTING with actual existing-group assignment and
 exact saved beta-note readback. See BUILD116_RELEASE.md and BUILD116_DELIVERY.json.
 Use BUILD116_OWNER_TEST_GUIDE.md for the changed native paths and controlled

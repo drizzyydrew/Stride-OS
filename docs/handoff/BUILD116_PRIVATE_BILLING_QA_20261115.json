@@ -1,0 +1,39 @@
+{
+  "checkedAt": "2026-11-16T01:49:12.135438+00:00",
+  "candidate": "1.0.0 (116)",
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "usualAccountConfirmedByOwner": true,
+  "authAccountUniqueConfirmedActive": true,
+  "ownerIdInPublicReceipt": false,
+  "deployedFunctionVersion": 14,
+  "verifyJwt": true,
+  "sourceFiles": [
+    {
+      "path": "ai-coach/index.ts",
+      "sha256": "b8ca9206496ad62ac629f95cb20aac8ab1ea6da15a5b062ffce88c4e2c2c8cde",
+      "exactMatch": true
+    },
+    {
+      "path": "_shared/launchHandlers.ts",
+      "sha256": "eb5524995f3c61b42f84a57640c0ed40887cc249bb5320f32e46f06845eff856",
+      "exactMatch": true
+    },
+    {
+      "path": "_shared/revenueCatAccess.ts",
+      "sha256": "013507ff25328e6ff601d96271f18efee8b8f101454d17ece14addef294927dd",
+      "exactMatch": true
+    }
+  ],
+  "privateQaOwnerBound": true,
+  "exactOwnerDigestReadbackMatches": true,
+  "publicServerBillingFlagPresent": false,
+  "publicServerBillingEnabled": false,
+  "revenueCatServerKeyValueRead": false,
+  "purchaseLifecycleAccepted": false,
+  "authenticatedServerRequestMade": false,
+  "quotaConsumedByThisSetup": false,
+  "aiRequestMade": false,
+  "trainingDataModified": false,
+  "temporaryEffect": "For this exact owner, successful Pro verification deliberately stops at429 before quota or AI; other owners retain previous global-off policy",
+  "cleanup": "Unset STRIDEOS_BILLING_QA_OWNER_ID after the controlled acceptance window and verify absence before normal AI use"
+}
