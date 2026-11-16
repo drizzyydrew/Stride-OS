@@ -1,13 +1,28 @@
 # Current StrideOS launch status
 
-## November16 UTC — owner correction and Monthly test purchase
+## Latest verified delivery — build 117, November 16 UTC
+
+The owner chose logo and weight captions only. Exact source 194eb1708fe54e5731eabe65ab7b1b125c08cb82
+built and uploaded successfully. Apple 117 is VALID / IN_BETA_TESTING, actually
+assigned to the existing internal group with exact beta-note readback.
+BUILD117_RELEASE.md and BUILD117_DELIVERY.json record the identity chain.
+
+The three-chevron icon replaces the auth lightning bolt; weight place-value
+captions are hidden. Authentication/membership/navigation and dependencies are
+unchanged from 116. The 34 focused checks, canonical typecheck/dependency/diff, cloud
+Doctor 21/21 and signed phone/Watch/Live Activity artifact checks pass.
+Physical 117 acceptance is not inferred. No public App Review/release occurred.
+Continue the existing Monthly entitlement/restore checks without purchasing again.
+
+## November 16 UTC — owner correction and Monthly test purchase
 
 The owner reports that reconnecting resolved both perceived sign-in/subscription
 issues and describes the prior report as a false alarm likely due to the internet.
-An actual Apple sheet now reports the Monthly test purchase successful. This
-establishes Apple UI success, not yet StrideOS active-Pro, restore, renewal/expiry
-or authenticated server acceptance. Tap OK and inspect the app result before any
-further Subscribe attempt. See BUILD116_SUBSCRIPTION_PLAN_READBACK_20261115.json.
+An actual Apple sheet now reports the Monthly test purchase successful. The owner then confirms StrideOS says Your Pro subscription is active, establishing
+client entitlement recognition after this purchase. The owner also reports Pro active after the instructed relaunch and Restore
+purchases check. Renewal/expiry, other lifecycle cases and authenticated server
+enforcement remain unaccepted. Do not
+Subscribe again to test an existing entitlement. See BUILD116_SUBSCRIPTION_PLAN_READBACK_20261115.json.
 
 Sign-in/membership safeguards were prepared and independently reviewed locally,
 but no117 cloud build/submission occurred. Compiler/export work was stopped and

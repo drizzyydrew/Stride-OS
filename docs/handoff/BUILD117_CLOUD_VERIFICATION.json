@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-11-16T07:57:54.382200+00:00",
+  "buildId": "c4a2e44e-4f71-451c-aef6-dbb4fd58992b",
+  "sourceCommit": "194eb1708fe54e5731eabe65ab7b1b125c08cb82",
+  "state": "FINISHED",
+  "appBuildVersion": "117",
+  "profile": "billing-qa",
+  "image": "macos-tahoe-26.5-xcode-26.6",
+  "expoDoctor": {
+    "passed": 21,
+    "total": 21
+  },
+  "compiler": {
+    "errors": 0,
+    "warnings": 33,
+    "archiveSucceeded": true
+  },
+  "sourceManifestEntriesMatched": 17,
+  "sentry": {
+    "sourceMapUploadReportedComplete": true,
+    "reportedRelease": "com.mooremovement.strideos@1.0.0+117",
+    "reportedDist": "117",
+    "debugId": "707938f1-4c8a-4630-aab4-d943ebcd742c",
+    "vendorEventIngestionVerified": false,
+    "nativeCaptureEnabled": false,
+    "nativeCrashSymbolicationVerified": false
+  },
+  "physicalDeviceAccepted": false,
+  "publicReviewSubmitted": false
+}

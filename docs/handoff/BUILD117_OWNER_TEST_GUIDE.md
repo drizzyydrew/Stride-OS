@@ -19,17 +19,18 @@ the proposed reliability safeguards are not included.
 3. The sign-in/sign-up screens now show the same three-chevron icon as the app.
    There is no need to sign out merely to inspect this cosmetic replacement.
 
-## Continue checking the existing no-charge Monthly purchase
+## Membership checks already completed on build 116
 
-Apple already displayed “Your purchase was successful” on build 116. That is an
-Apple transaction success, not yet proof of StrideOS active-Pro, restore, renewal
-or server entitlement enforcement.
+The owner reported Apple's successful no-charge Monthly purchase, StrideOS Pro
+active, and Pro active after closing/reopening and explicitly restoring once.
+That checkpoint is complete. Restore is a test/recovery option, not a requirement
+on every app open, and no repeat purchase or restore is needed for this cosmetic
+update. AI Coach checks membership on focus/foreground when consent and the online
+account are ready; the membership-page confirmation message is action-scoped.
 
-1. Dismiss Apple's success alert with OK and report the StrideOS membership message.
-2. If Pro is active, close/reopen normally and use Restore purchases once to
-   confirm the same account retains access.
-3. If access cannot be verified, record the exact message and time; do not repeatedly
-   Subscribe or make another purchase while the earlier outcome is unknown.
+If access fails later, report the exact message and time rather than purchasing
+again. Cancellation, renewal/expiry, other lifecycle cases and authenticated
+server enforcement remain separate open gates.
 
 The owner attributes the earlier sign-in/button symptoms to connectivity.
 No reliability behavior is changed in this candidate. The six-minute recording

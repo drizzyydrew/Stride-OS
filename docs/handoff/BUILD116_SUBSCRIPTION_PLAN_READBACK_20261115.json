@@ -27,10 +27,10 @@
   },
   "purchaseConfirmed": true,
   "purchaseCanceled": false,
-  "restoreAccepted": false,
+  "restoreAccepted": true,
   "renewalExpiryAccepted": false,
   "serverEntitlementAccepted": false,
-  "nextDeviceStep": "Tap OK on Apple success and report the resulting StrideOS membership message; do not start another purchase. Restore/relaunch and server lifecycle checks remain separate.",
+  "nextDeviceStep": "No more purchase or restore repetition needed for this checkpoint. Clarify whether AI Chat returned an actual reply before subscription; renewal/expiry and authenticated server enforcement remain separate.",
   "cancellationAttempt": {
     "recordedAt": "2026-11-16T05:38:59.935389+00:00",
     "evidence": "owner screenshot, phone clock9:36; date not inferred from the clock",
@@ -79,10 +79,32 @@
       "originalAttachmentCopiedWithoutEditing": true,
       "acceptedAsStoreOrProductReviewAsset": false
     },
-    "clientActiveProVerified": false,
+    "clientActiveProVerified": true,
     "restoreVerified": false,
     "serverEntitlementVerified": false,
     "behaviorRepairs": "local/uncommitted; no new EAS build or TestFlight submission; held pending owner choice",
     "cosmeticFollowups": "logo and weight captions retained for next candidate"
+  },
+  "clientActiveProReadback": {
+    "recordedAt": "2026-11-16T07:46:09.837791+00:00",
+    "source": "owner response after dismissing Apple success",
+    "message": "Your Pro subscription is active",
+    "candidate": "116",
+    "accepted": true,
+    "scope": "client entitlement recognized after this test purchase; not server enforcement or restore/renewal"
+  },
+  "restoreAfterRelaunchReadback": {
+    "recordedAt": "2026-11-16T07:50:52.944758+00:00",
+    "source": "owner response to close/reopen and Restore purchases instructions",
+    "message": "Your Pro subscription is active",
+    "accepted": true,
+    "scope": "owner-reported same-account relaunch-plus-restore, not independent native instrumentation or expiry/renewal/server proof"
+  },
+  "restoreUXObservation": {
+    "ownerConcern": "Restore should not be required each time the app is closed",
+    "sourceVerified": "AI Coach current source refreshes membership on focus and foreground after consent/online-owner readiness; membership screen success message is action-scoped",
+    "automaticAccessLossDemonstrated": false,
+    "freePaidSplit": "Core app and Insights free; personalized AI Coach Chat requires Pro when billing client is configured",
+    "serverEnforcement": "global flag remains off during controlled testing; public launch gate still open"
   }
 }
