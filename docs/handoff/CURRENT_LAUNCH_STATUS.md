@@ -1,5 +1,23 @@
 # Current StrideOS launch status
 
+## November16 UTC — owner correction and Monthly test purchase
+
+The owner reports that reconnecting resolved both perceived sign-in/subscription
+issues and describes the prior report as a false alarm likely due to the internet.
+An actual Apple sheet now reports the Monthly test purchase successful. This
+establishes Apple UI success, not yet StrideOS active-Pro, restore, renewal/expiry
+or authenticated server acceptance. Tap OK and inspect the app result before any
+further Subscribe attempt. See BUILD116_SUBSCRIPTION_PLAN_READBACK_20261115.json.
+
+Sign-in/membership safeguards were prepared and independently reviewed locally,
+but no117 cloud build/submission occurred. Compiler/export work was stopped and
+the behavior patch/new tests preserved outside the repo pending the owner's
+choice of cosmetic-only versus including those safeguards. No permanent-session
+promise or attribution of the owner's incident is inferred from the source tests.
+Logo/weight-caption follow-ups remain separate. The temporary private QA owner
+was removed with absent readback while testing was held; public billing remains
+off. BUILD116_BILLING_QA_CLEANUP_20261116.json records that cleanup.
+
 ## November 15 — owner report and paid-launch polish
 
 The owner reports that build 115 works and requests a smaller final UI pass:

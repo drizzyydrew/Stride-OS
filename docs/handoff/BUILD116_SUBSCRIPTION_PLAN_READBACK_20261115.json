@@ -25,12 +25,12 @@
     "originalAttachmentCopiedWithoutEditing": true,
     "acceptedAsStoreOrSubscriptionReviewAsset": false
   },
-  "purchaseConfirmed": false,
+  "purchaseConfirmed": true,
   "purchaseCanceled": false,
   "restoreAccepted": false,
   "renewalExpiryAccepted": false,
   "serverEntitlementAccepted": false,
-  "nextDeviceStep": "Close Apple confirmation with X and check the app cancellation message. If the expected cancellation message appears, reopen Monthly and approve one no-charge test subscription, then report the app membership result; stop on an error or a confirmation sheet without the no-charge test message. Server entitlement verification remains a separate open gate.",
+  "nextDeviceStep": "Tap OK on Apple success and report the resulting StrideOS membership message; do not start another purchase. Restore/relaunch and server lifecycle checks remain separate.",
   "cancellationAttempt": {
     "recordedAt": "2026-11-16T05:38:59.935389+00:00",
     "evidence": "owner screenshot, phone clock9:36; date not inferred from the clock",
@@ -65,5 +65,24 @@
       "authOwnerRecheck": "connection timeout; earlier setup receipt remains historical evidence only",
       "authenticatedEntitlementLookupPerformed": false
     }
+  },
+  "purchaseConfirmationScope": "Apple native successful-purchase UI only; StrideOS/RevenueCat active-Pro readback and server verification not yet established",
+  "ownerClarification": {
+    "recordedAt": "2026-11-16T07:31:38.871092+00:00",
+    "report": "Owner says both prior issues were likely due to their internet connection and are a false alarm",
+    "causalAttribution": "owner hypothesis, not a demonstrated root cause",
+    "appleMessage": "You\u2019re all set. Your purchase was successful.",
+    "productInBackground": "Monthly, $9.99/month",
+    "capture": {
+      "path": "build116-subscriptions/monthly-test-success-owner-capture.jpg",
+      "sha256": "9d4d10739eb0cca568e03fba7d9e0272a0735970932e6e8175ed2001aad89010",
+      "originalAttachmentCopiedWithoutEditing": true,
+      "acceptedAsStoreOrProductReviewAsset": false
+    },
+    "clientActiveProVerified": false,
+    "restoreVerified": false,
+    "serverEntitlementVerified": false,
+    "behaviorRepairs": "local/uncommitted; no new EAS build or TestFlight submission; held pending owner choice",
+    "cosmeticFollowups": "logo and weight captions retained for next candidate"
   }
 }

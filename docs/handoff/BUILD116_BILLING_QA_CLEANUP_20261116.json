@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-11-16T07:08:48.680934+00:00",
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "reason": "Owner reported unexpected logout and silent repeated subscription action; further purchase acceptance held for repair",
+  "removedOnlySetting": "STRIDEOS_BILLING_QA_OWNER_ID",
+  "removedSettingUpdatedAtMatchesOurSetup": true,
+  "qaOwnerSettingAbsentReadback": true,
+  "publicBillingFlagAbsentReadback": true,
+  "publicServerBillingEnabled": false,
+  "providerKeyValuesRead": false,
+  "purchaseOrAuthActionPerformed": false,
+  "trainingDataModified": false,
+  "note": "Removes the deliberate no-quota429 QA guard. This does not grant a paid entitlement or accept client/server lifecycle; public billing remains off under the pre-existing policy."
+}
