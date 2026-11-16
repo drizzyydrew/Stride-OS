@@ -7,7 +7,10 @@ type ProductEvent = {
   properties: Record<string, string | number | boolean>;
 };
 
-const SIMPLE_EVENTS = new Set(['app_opened', 'onboarding_completed', 'settings_opened']);
+const SIMPLE_EVENTS = new Set(['app_opened', 'onboarding_completed', 'settings_opened',
+  'membership_viewed', 'membership_purchase_cancelled', 'membership_purchase_failed']);
+const MEMBERSHIP_PERIOD_EVENTS = new Set(['membership_plan_selected', 'membership_purchase_started']);
+const MEMBERSHIP_SOURCES = new Set(['purchase', 'restore', 'check']);
 const TOUR_EVENTS = new Set([
   'feature_tour_started',
   'feature_tour_step_viewed',
@@ -43,6 +46,14 @@ export function sanitizeProductEvent(
   props: Record<string, unknown>,
 ): ProductEvent | null {
   if (SIMPLE_EVENTS.has(name)) return { event: name, properties: {} };
+  if (MEMBERSHIP_PERIOD_EVENTS.has(name)) {
+    if (!isRecord(props) || !['month', 'year'].includes(props.period as string)) return null;
+    return { event: name, properties: { period: props.period as string } };
+  }
+  if (name === 'membership_access_confirmed') {
+    if (!isRecord(props) || !MEMBERSHIP_SOURCES.has(props.source as string)) return null;
+    return { event: name, properties: { source: props.source as string } };
+  }
   if (!TOUR_EVENTS.has(name) || !isRecord(props)) return null;
 
   const tourId = aliasedProperty(props, 'tourId', 'tour_id');

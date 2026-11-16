@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createAppJSONStorage } from './persistStorage';
+import { assertProAccess } from '../lib/pro-access';
+import { adaptationNeedsPro } from '../utils/pro-access';
 import type { AdaptationResult } from '../types/adaptation';
 import {
   serializeConfirmedAdaptations,
@@ -60,9 +62,10 @@ export const useAdaptationStore = create<AdaptationStore>()(
 
       getAdaptation: (week) => get().adaptations[`w${week}`],
 
-      setPreview: preview => set(state => ({
-        previews: { ...state.previews, [preview.weekKey]: preview },
-      })),
+      setPreview: preview => {
+        if (adaptationNeedsPro(preview.overlays, preview.requiresPro)) assertProAccess('week-rebuild');
+        set(state => ({ previews: { ...state.previews, [preview.weekKey]: preview } }));
+      },
 
       clearPreview: weekKey => set(state => {
         const previews = { ...state.previews };
@@ -73,6 +76,7 @@ export const useAdaptationStore = create<AdaptationStore>()(
       confirmPreview: (weekKey, confirmedAt = Date.now()) => {
         const preview = get().previews[weekKey];
         if (!preview || preview.conflicts.length > 0) return null;
+        if (adaptationNeedsPro(preview.overlays, preview.requiresPro)) assertProAccess('week-rebuild');
         const confirmed: ConfirmedAdaptation = {
           ...preview,
           confirmedAt,

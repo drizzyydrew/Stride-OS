@@ -13,6 +13,11 @@ import { useColors } from '../../../src/theme/useColors';
 import type { RacePriority, TrainingGoalType } from '../../../src/types/plan';
 import type { RaceDistance } from '../../../src/types/training';
 import { addDaysToDateOnly, isValidDateOnly, todayDateOnly } from '../../../src/utils/dateOnly';
+import { useProAccess } from '../../../src/hooks/useProAccess';
+import ProAccessNotice from '../../../src/components/subscription/ProAccessNotice';
+import { onboardingGoalDraft } from '../../../src/utils/pro-access';
+import { useOnboardingStore } from '../../../src/store/onboardingStore';
+import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
 
 const GOALS: { value: TrainingGoalType; label: string }[] = [
   { value: 'race_prep', label: 'Prepare for a race' },
@@ -27,18 +32,25 @@ const DISTANCES: { value: RaceDistance; label: string }[] = [
 
 export default function NextGoalScreen() {
   const lifecycle = useGoalLifecycle();
+  const pro = useProAccess();
   const C = useColors();
   const router = useRouter();
-  const params = useLocalSearchParams<{ focus?: string }>();
-  const [goalType, setGoalType] = useState<TrainingGoalType>(() => GOALS.find(goal => goal.value === params.focus)?.value ?? 'general_running');
-  const [title, setTitle] = useState('');
-  const [raceName, setRaceName] = useState('');
-  const [distance, setDistance] = useState<RaceDistance>('5k');
-  const [priority, setPriority] = useState<RacePriority>('A');
+  const params = useLocalSearchParams<{ focus?: string; source?: string }>();
+  const [setupDraft] = useState(() => {
+    const plan = useTrainingPlanStore.getState();
+    return onboardingGoalDraft({ source: params.source, openTraining: plan.trainingMode === 'open',
+      hasProgrammedBefore: !!(plan.programmingStartedAt || plan.goalBlockId || plan.activePresetGoal || plan.goalTitle),
+      data: useOnboardingStore.getState().data, today: todayDateOnly() });
+  });
+  const [goalType, setGoalType] = useState<TrainingGoalType>(() => setupDraft?.goalType ?? GOALS.find(goal => goal.value === params.focus)?.value ?? 'general_running');
+  const [title, setTitle] = useState(setupDraft?.title ?? '');
+  const [raceName, setRaceName] = useState(setupDraft?.raceName ?? '');
+  const [distance, setDistance] = useState<RaceDistance>(setupDraft?.distance ?? '5k');
+  const [priority, setPriority] = useState<RacePriority>(setupDraft?.priority ?? 'A');
   const [dateMode, setDateMode] = useState<'duration' | 'date'>('duration');
   const [weeks, setWeeks] = useState('8');
   const [endDate, setEndDate] = useState(() => addDaysToDateOnly(todayDateOnly(), 55));
-  const [raceDate, setRaceDate] = useState(() => addDaysToDateOnly(todayDateOnly(), 56));
+  const [raceDate, setRaceDate] = useState(() => setupDraft?.raceDate ?? addDaysToDateOnly(todayDateOnly(), 56));
   const [busy, setBusy] = useState<'save' | 'skip' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
@@ -113,7 +125,8 @@ export default function NextGoalScreen() {
           <Text style={{ color: C.textMuted, fontSize: 14, lineHeight: 21 }}>Your archived training stays in history when you start a new goal.</Text>
         </View>
         {error ? <GoalMessage error>{error}</GoalMessage> : null}
-        <GoalAction label={busy === 'save' ? 'Saving goal…' : 'Start this goal'} onPress={() => { void submit(false); }} disabled={!ready || !!busy} />
+        <ProAccessNotice access={pro} />
+        <GoalAction label={busy === 'save' ? 'Saving goal…' : 'Start this goal'} onPress={() => { void submit(false); }} disabled={!ready || !!busy || !pro.allowed} />
         <GoalAction label={busy === 'skip' ? 'Saving choice…' : 'Skip · keep training without a plan'} onPress={() => { void submit(true); }} disabled={!ready || !!busy} secondary />
         <GoalAction label="Explore beginner training paths" disabled={!ready || !!busy} secondary onPress={() => router.push('/(tabs)/activity/plans' as never)} />
       </ScrollView>

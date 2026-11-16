@@ -1,0 +1,194 @@
+{
+  "recordedAt": "2026-11-16T10:35:44.402485+00:00",
+  "buildNumber": "118",
+  "profile": "billing-qa",
+  "sourceParent": "0b5fd9965a0903dd72d8cc51b96cf86918fcb54d",
+  "checks": {
+    "canonicalTypecheck": "PASS",
+    "expoDependencyAlignment": "PASS",
+    "fullSuite": {
+      "tests": 1963,
+      "firstPassPassed": 1960,
+      "firstPassNativeCompilerTimeouts": 3,
+      "isolatedFailedFilesRerun": {
+        "tests": 9,
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0
+      },
+      "allOriginalCasesNowPassed": true,
+      "timeoutsNotSilentlyExcluded": true
+    },
+    "finalFocusedCore": 59,
+    "finalMembershipSdk": 31,
+    "nativeVersionAndLiveActivity": 29,
+    "syntheticLayoutCases": 18,
+    "nativePhysicalUiAccepted": false
+  },
+  "protectedRuntimeFiles": [
+    "package.json",
+    "package-lock.json",
+    "eas.json",
+    "app/_layout.tsx",
+    "src/store/authStore.ts",
+    "src/lib/supabase.ts"
+  ],
+  "nativeWatchGpsHealthSourcesUnchanged": true,
+  "dependenciesUnchanged": true,
+  "billingServerEnabled": false,
+  "trialConfigurationReadback": "launch118/APPLE_TRIAL_READBACK.json",
+  "files": [
+    {
+      "path": "docs/handoff/BUILD118_OWNER_TEST_GUIDE.md",
+      "sha256": "76327dc0069b326411e04fb11d95379e1c96493af3b1927791c089b18479edd8"
+    },
+    {
+      "path": "docs/handoff/BUILD118_TESTFLIGHT_NOTES.txt",
+      "sha256": "b90834eab7deb0548ccf1261603918e0ec759911958545bcd13fdb29a20bd70a"
+    },
+    {
+      "path": "docs/handoff/launch118/APPLE_TRIAL_READBACK.json",
+      "sha256": "c648f870bc8cdd534a81c42a07c39072d81b4b3b796dba3e5cdd8e146d2e8e37"
+    },
+    {
+      "path": "docs/handoff/launch118/COPY.md",
+      "sha256": "45034fcdb0be827089d2ab6329e620401806cdc2eacd91356d30d6e601cd29ea"
+    },
+    {
+      "path": "docs/handoff/launch118/COUNCIL_REVIEW.md",
+      "sha256": "74a5e0e10c6cc163ed1fb381e71a205fdf2d56f2405ea3cfc0d1342cc178530d"
+    },
+    {
+      "path": "docs/handoff/launch118/GROWTH_PLAN.md",
+      "sha256": "ff300932737cc7f64ab5b5126b99ede05314d4c43f33fe0e44cd2c17088a8725"
+    },
+    {
+      "path": "docs/handoff/launch118/LAYOUT_READBACK.json",
+      "sha256": "1071423f39d2e157a5e509da173b753e66f030f5a9829d39d7472822be2d265c"
+    },
+    {
+      "path": "docs/handoff/launch118/REVENUE_SCENARIO.json",
+      "sha256": "fea7b001654f84724bc8ac3e13af1772f8ab4747e8d681f234cee4c714ac69d2"
+    },
+    {
+      "path": "docs/handoff/launch118/SERVER_READBACK.json",
+      "sha256": "8409f83fc16a233c3522a1f6dd49d2bb721d7b2e12f95b63ca4686fa86b80b19"
+    },
+    {
+      "path": "scripts/launch-revenue-plan.cjs",
+      "sha256": "3d9c085a2aa39da3e7b4dc8281bff35e7d5fc1c373882520d60c0f44a779ab45"
+    },
+    {
+      "path": "scripts/tests/adaptationProContext.test.ts",
+      "sha256": "c060ed11d7378b3397bc4f62123fd814029cca3740d890da85bb611d3f220ddf"
+    },
+    {
+      "path": "scripts/tests/launchRevenuePlan.test.ts",
+      "sha256": "7cdadc25ed097857e00f4c0f7f9a8a0622416e469007945eaa7d2d88f1dbac0b"
+    },
+    {
+      "path": "scripts/tests/onboardingProAccess.test.ts",
+      "sha256": "cb3a3ad17a67aeb552aeb1781188eaa11f66f4bfb4c7425454f32c75fecec5a6"
+    },
+    {
+      "path": "scripts/tests/proFeatureAccess.test.ts",
+      "sha256": "432317dfb48e6757f3ff398f717c175b8f579180faa0c8393735b56e270df8d1"
+    },
+    {
+      "path": "scripts/tests/subscriptionAccessStore.test.ts",
+      "sha256": "74ff093b534d63c70a6c0b1f498839ba83090b442d2c7d46d00f266411567eda"
+    },
+    {
+      "path": "src/components/subscription/ProAccessNotice.tsx",
+      "sha256": "13a846a06060adacda52d3d3fdbf788c6d9cf3dcbaf9ae4283a882f22a2f7344"
+    },
+    {
+      "path": "src/hooks/useProAccess.ts",
+      "sha256": "ee4d4af318ceacafdc5bbc366b572d9de61f380e3961892d360d8ea412361b42"
+    },
+    {
+      "path": "src/lib/pro-access.ts",
+      "sha256": "f8bb79d2d8dc2d6c3e58462f7aa33fa9c1f3ca4cf4b6dd54bc4f4e9e46a747da"
+    },
+    {
+      "path": "src/utils/pro-access.ts",
+      "sha256": "fcd596359bf4888d693299a2dce6c7c4b4e6783a3b6e46dd51e9968b7e03def3"
+    },
+    {
+      "path": "app.json",
+      "sha256": "c05e4057287dcf2debd8578e2fa52c70e8bc49546585a1edf1d1289500540aab"
+    },
+    {
+      "path": "app/(tabs)/activity/plans.tsx",
+      "sha256": "10009d84ce7aed9feecfcd9eb1bffbc9d365c88121898d798605dde5302dba34"
+    },
+    {
+      "path": "app/(tabs)/settings/membership.tsx",
+      "sha256": "205d9bc3089a9d21a66237cf787a4d8e0615120105ebd3122a6b1727760b11cd"
+    },
+    {
+      "path": "app/(tabs)/settings/next-goal.tsx",
+      "sha256": "1a2d77781299ac055105424d8c1f9952cca806c64a3ad707cd10f35892d18845"
+    },
+    {
+      "path": "app/(tabs)/training/adapt.tsx",
+      "sha256": "424518ae26fc1a03427eda3b30617c8e8c7d04ad4dff033746e4295dade1f5b0"
+    },
+    {
+      "path": "app/onboarding/complete.tsx",
+      "sha256": "71d028ef82c9d0f9984fe36b7fa5f8f2ad0ae510c0f9bc621c42aa638954dbea"
+    },
+    {
+      "path": "docs/index.html",
+      "sha256": "e3ea02ca249e3e6f2d4afdebd8bd492f24373346ce79b4eae9e70d65680e41b0"
+    },
+    {
+      "path": "docs/privacy.html",
+      "sha256": "cada2ce214ee443062541fa5bd09380139e5b458736dc16f3389e181d22a5d4e"
+    },
+    {
+      "path": "docs/terms.html",
+      "sha256": "c0ee646c7544b6785f583843f2d474b213d235392673a68d90fea7ae8d708551"
+    },
+    {
+      "path": "scripts/tests/goalLifecycleRuntime.test.ts",
+      "sha256": "595ff0c50c982a4e8ab3ff0789c7a6d50e043435a294af388b48f8a64bc308bf"
+    },
+    {
+      "path": "scripts/tests/membershipScreenRefresh.test.ts",
+      "sha256": "4614e80cc9f3b6ead17de1dba67a50b2690cad9f66b10e4648409a1d9be1d42f"
+    },
+    {
+      "path": "scripts/tests/observabilityPrivacy.test.ts",
+      "sha256": "7089f52cc645840eb62de0cd5e25df1df376d979e6c7c53d9abfc5e59604ef36"
+    },
+    {
+      "path": "scripts/tests/subscriptionLifecycle.test.ts",
+      "sha256": "5b8e83828863d0a5e3123e186c761367d5f435ff690def7d6eaf44e9db2f2680"
+    },
+    {
+      "path": "src/lib/goalLifecycle.ts",
+      "sha256": "9ef488e02d4b1d7b29c057f5ddab2101a16bd107ca0658b9b3a1caaecfd8182a"
+    },
+    {
+      "path": "src/lib/revenueCat.ts",
+      "sha256": "93a02be6daf114cd07f358be61118e8f806862cd6f209e8a457da37fe1862588"
+    },
+    {
+      "path": "src/store/adaptationStore.ts",
+      "sha256": "09f287c17836cf294af0254dd8a9b5b476f18883c9248645c66edd97e1357f23"
+    },
+    {
+      "path": "src/store/subscriptionStore.ts",
+      "sha256": "8eb6be25825d4323340880e2bee84735d3f73bc916b8132f0b17cdf1b73fead4"
+    },
+    {
+      "path": "src/utils/adaptationWorkflow.ts",
+      "sha256": "1b6a94d55cf3a10d7ffc4c11229318fe403d7d335d2bed80237f3af2f6391934"
+    },
+    {
+      "path": "src/utils/observabilityPrivacy.ts",
+      "sha256": "35962dd3925071c359cd42a1086adb146d2ad3ea4e963c112ebed1dd6bcfd474"
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "checkedAt": "2026-11-16T10:33:59.562Z",
+  "synthetic": true,
+  "nativeVerified": false,
+  "disclosureNativeControlSubstituted": true,
+  "checks": 18,
+  "errors": [],
+  "externalRequests": [],
+  "cases": [
+    {
+      "state": "inactive",
+      "theme": "dark",
+      "width": 320,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "inactive",
+      "theme": "dark",
+      "width": 393,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "inactive",
+      "theme": "dark",
+      "width": 768,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "inactive",
+      "theme": "light",
+      "width": 320,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "inactive",
+      "theme": "light",
+      "width": 393,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "inactive",
+      "theme": "light",
+      "width": 768,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "active",
+      "theme": "dark",
+      "width": 320,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "active",
+      "theme": "dark",
+      "width": 393,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "active",
+      "theme": "dark",
+      "width": 768,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "active",
+      "theme": "light",
+      "width": 320,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "active",
+      "theme": "light",
+      "width": 393,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "active",
+      "theme": "light",
+      "width": 768,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "error",
+      "theme": "dark",
+      "width": 320,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "error",
+      "theme": "dark",
+      "width": 393,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "error",
+      "theme": "dark",
+      "width": 768,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "error",
+      "theme": "light",
+      "width": 320,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "error",
+      "theme": "light",
+      "width": 393,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    },
+    {
+      "state": "error",
+      "theme": "light",
+      "width": 768,
+      "noHorizontalOverflow": true,
+      "subscribeShownOnlyWhenVerifiedInactive": true
+    }
+  ]
+}

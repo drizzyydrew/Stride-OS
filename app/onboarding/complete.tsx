@@ -19,11 +19,14 @@ import { captureOwnerLease, ownerLeaseIsCurrent } from '../../src/lib/localDataO
 import { saveOnboardingIdentity } from '../../src/lib/profileIdentityEditing';
 import { onboardingIdentityForCompletion } from '../../src/utils/onboardingIdentity';
 import { getProfileIdentity } from '../../src/utils/profileIdentity';
+import { getProAccess, proMembershipEnabled } from '../../src/lib/pro-access';
+import { onboardingTrainingChoice } from '../../src/utils/pro-access';
+import { useProAccess } from '../../src/hooks/useProAccess';
 
 import { useOnboardingStore }    from '../../src/store/onboardingStore';
 import { useProfileStore }       from '../../src/store/profileStore';
 import { useAthleteStore }       from '../../src/store/athleteStore';
-import { useTrainingPlanStore }  from '../../src/store/trainingPlanStore';
+import { useTrainingPlanStore, saveTrainingPlanChoice } from '../../src/store/trainingPlanStore';
 import { toYMD }                 from '../../src/utils/calendarEngine';
 import { todayDateOnly }         from '../../src/utils/dateOnly';
 import { vdotFromRacePR, estimateHRMax } from '../../src/utils/calibrationEngine';
@@ -107,6 +110,7 @@ const STRENGTH_LABELS: Record<string, string> = {
 };
 
 export default function CompleteScreen() {
+  const pro = useProAccess();
   const { data, completeOnboarding } = useOnboardingStore();
   const {
     initDefaultProfile,
@@ -122,7 +126,6 @@ export default function CompleteScreen() {
   } = useAthleteStore();
   const {
     setGoalType, setProgramStartDate, addRace, races,
-    initialized: planInitialized,
   } = useTrainingPlanStore();
 
   const [lease] = useState(() => captureOwnerLease());
@@ -233,20 +236,26 @@ export default function CompleteScreen() {
       setAthleteWeeklyMileage(data.weeklyMileage);
       // Identity mirrors were saved with the original profile's owner checks above.
 
-      // 5b. Write the plan spine (goal type, program start date, race calendar).
-      // ensureInitialized is a no-op after the first call — call it first so the
-      // `initialized` flag flips true, then override with the real onboarding
-      // choices so the tabs-layout migration effect never clobbers them.
+      // Existing and migrated plans are never replaced by onboarding or a
+      // membership check. A new free account starts in open training; all of
+      // its setup choices remain saved for a later personalized goal.
+      const trainingChoice = onboardingTrainingChoice({ billingEnabled: proMembershipEnabled(),
+        hasExistingPlan: useTrainingPlanStore.getState().initialized, proAllowed: getProAccess().allowed });
       const startDate = data.programStartDate || toYMD(new Date());
-      if (!planInitialized) {
+      if (trainingChoice === 'structured') {
         useTrainingPlanStore.getState().ensureInitialized({
           goalType:         data.goalType,
           programStartDate: startDate,
         });
       }
-      setGoalType(data.goalType);
-      setProgramStartDate(startDate);
-      if (data.goalType === 'race_prep' && data.raceName && data.raceDate) {
+      // Confirm open mode on disk before unlocking the main tabs. A close or
+      // storage failure here must not leave a new unpaid account structured.
+      if (trainingChoice === 'open') await saveTrainingPlanChoice(currentLease!, { open: true }, current);
+      if (trainingChoice === 'structured') {
+        setGoalType(data.goalType);
+        setProgramStartDate(startDate);
+      }
+      if (trainingChoice === 'structured' && data.goalType === 'race_prep' && data.raceName && data.raceDate) {
         const alreadyAdded = races.some(r => r.name === data.raceName && r.date === data.raceDate);
         if (!alreadyAdded) {
           addRace({
@@ -262,7 +271,7 @@ export default function CompleteScreen() {
       await completeOnboarding();
       if (!current()) return;
 
-      router.replace('/(tabs)/dashboard');
+      router.replace(trainingChoice === 'open' ? { pathname: '/(tabs)/settings/membership', params: { source: 'onboarding' } } : '/(tabs)/dashboard');
     } catch {
       setError('Your training setup could not be saved. Keep this screen open and retry.');
     } finally {
@@ -330,11 +339,11 @@ export default function CompleteScreen() {
 
       {/* What gets generated */}
       <View style={s.generatesCard}>
-        <Text style={s.generatesTitle}>WHAT WE'RE BUILDING</Text>
+        <Text style={s.generatesTitle}>YOUR TRAINING FOUNDATION</Text>
         {[
           'Pace zones calibrated to your fitness',
           'Heart rate training zones',
-          'Weekly training structure',
+          pro.allowed ? 'Personalized weekly training structure' : 'Open training · record at your own pace',
           'Fatigue & recovery thresholds',
           'Initial performance baseline',
         ].map(item => (
@@ -355,7 +364,7 @@ export default function CompleteScreen() {
       >
         {building
           ? <ActivityIndicator color={colors.bg} />
-          : <Text style={s.ctaTxt}>Build My Training System</Text>
+          : <Text style={s.ctaTxt}>{pro.allowed ? 'Build My Training System' : 'Finish Setup'}</Text>
         }
       </Pressable>
 

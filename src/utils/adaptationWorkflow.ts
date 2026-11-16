@@ -76,6 +76,8 @@ export type AdaptationPreview = {
   unchangedSessionIds: string[];
   summary: string;
   conflicts: AdaptationConflict[];
+  /** Marks automatic generation even if every hard session became easy. */
+  requiresPro?: 'week-rebuild';
 };
 
 export type ConfirmedAdaptation = AdaptationPreview & {

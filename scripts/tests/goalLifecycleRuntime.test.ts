@@ -151,8 +151,11 @@ async function harness(options: { unfinished?: boolean; races?: Race[]; goalRace
   const activeActivity = store({ isActive: false });
   const ride = store({ isActive: false });
   const strength = store<{ session: object | null }>({ session: null });
+  let proAllowed = true;
+  const assertProAccess = () => { if (!proAllowed) throw new Error('StrideOS Pro membership required'); };
   const runtime = loadSource<typeof import('../../src/lib/goalLifecycle')>('src/lib/goalLifecycle.ts', {
     './localDataOwner': ownership, './trackingTaskHydration': { waitForPersistedStoreHydration },
+    './pro-access': { assertProAccess, requireProAccess: async () => assertProAccess(), hasProAccess: () => proAllowed },
     './goalTransitionJournal': journal,
     '../store/trainingPlanStore': planModule,
     '../store/goalArchiveStore': { useGoalArchiveStore: archiveStore },
@@ -173,6 +176,7 @@ async function harness(options: { unfinished?: boolean; races?: Race[]; goalRace
   events.length = 0;
   return { runtime, plan, archiveStore, activity, activities, run, activeActivity, ride, strength,
     profile, beginner, beginnerModule, planModule, owner, hooks, events, values,
+    allowPro: (allowed: boolean) => { proAllowed = allowed; },
     get activityMutations() { return activityMutations; } };
 }
 
@@ -189,6 +193,43 @@ test('failed archive persistence never retires the active block; retry commits b
   assert.equal(h.archiveStore.getState().archives.length, 1);
   assert.equal(h.plan.getState().trainingMode, 'open');
   assert.ok(h.events.indexOf('archive-write') < h.events.indexOf('mode:open'));
+});
+
+test('inactive membership prevents a new personalized goal before any archive or plan write', async () => {
+  const h = await harness({ unfinished: true });
+  const before = JSON.stringify([...h.values]);
+  h.allowPro(false);
+  await assert.rejects(h.runtime.startNextGoal(nextGoal), /Pro membership/);
+  assert.equal(JSON.stringify([...h.values]), before);
+  assert.equal(h.events.length, 0);
+  assert.equal(h.plan.getState().goalBlockId, 'original');
+  assert.equal(h.activityMutations, 0);
+});
+
+test('membership expiry does not block free goal archival or the choice to continue open training', async () => {
+  const h = await harness();
+  h.allowPro(false);
+  await h.runtime.reconcileGoalLifecycle();
+  assert.equal(h.archiveStore.getState().archives.length, 1);
+  await h.runtime.continueOpenTraining();
+  assert.equal(h.plan.getState().trainingMode, 'open');
+  assert.equal(h.activities.length, 1);
+  assert.equal(h.activityMutations, 0);
+});
+
+test('membership revoked during a new goal journal write cannot commit a personalized plan', async () => {
+  const h = await harness({ unfinished: true });
+  const oldSetItem = h.values.set.bind(h.values);
+  h.values.set = (key, value) => {
+    if (key.startsWith('goal-transition:')) h.allowPro(false);
+    return oldSetItem(key, value);
+  };
+  await assert.rejects(h.runtime.startNextGoal(nextGoal), /Membership|not ready/);
+  assert.equal(h.plan.getState().goalBlockId, 'original');
+  assert.equal(h.archiveStore.getState().archives.length, 0);
+  assert.equal(h.activityMutations, 0);
+  await h.runtime.reconcileGoalLifecycle();
+  assert.equal(h.plan.getState().goalBlockId, 'original');
 });
 
 test('duplicate foreground calls share one operation and preserve the first durable snapshot', async () => {
@@ -490,6 +531,16 @@ async function seedBeginner(h: Awaited<ReturnType<typeof harness>>) {
     selectedAt: Date.now(), targetDate: repeated.targetDate });
   return repeated;
 }
+
+test('repeating an existing beginner week remains available after membership expiry', async () => {
+  const h = await harness({ unfinished: true });
+  const original = await seedBeginner(h);
+  h.allowPro(false);
+  await h.runtime.repeatCurrentBeginnerWeek(1);
+  assert.equal(h.plan.getState().activePresetPlan?.id, original.id);
+  assert.ok((h.plan.getState().activePresetPlan?.adaptationAudit?.length ?? 0) > (original.adaptationAudit?.length ?? 0));
+  assert.equal(h.activityMutations, 0);
+});
 
 test('switching unfinished beginner paths preserves the full old plan and audit before publishing the new path', async () => {
   const h = await harness({ unfinished: true });

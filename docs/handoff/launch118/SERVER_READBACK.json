@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-11-16T10:22:31.174176+00:00",
+  "scope": "secret-name inventory; no values recorded",
+  "publicBillingSettingPresent": false,
+  "privateQaOwnerSettingPresent": false,
+  "revenueCatReadCredentialPresent": true,
+  "modelOverridePresent": true,
+  "publicPaidEnforcementAccepted": false,
+  "configurationChanged": false
+}

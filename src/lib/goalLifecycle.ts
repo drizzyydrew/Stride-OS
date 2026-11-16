@@ -21,6 +21,7 @@ import type { GoalArchive, GoalArchiveDescriptor } from '../types/goalArchive';
 import type { GeneratedBeginnerPlan } from '../types/beginnerPlan';
 import { repeatBeginnerWeek, BEGINNER_PLAN_DEFINITIONS } from '../utils/beginnerPlans';
 import { readGoalTransition, saveGoalTransition, type GoalTransition } from './goalTransitionJournal';
+import { assertProAccess, hasProAccess, requireProAccess } from './pro-access';
 
 export function currentBeginnerPlan(): GeneratedBeginnerPlan | null {
   return useTrainingPlanStore.getState().activePresetPlan ?? useBeginnerPlanStore.getState().activePlan;
@@ -149,13 +150,14 @@ async function recoverTransition(lease: OwnerLease) {
 }
 
 async function commitChoice(lease: OwnerLease, requestKey: string, snapshots: GoalArchive[],
-  choice: Parameters<typeof saveTrainingPlanChoice>[1], alreadySelected: () => boolean) {
+  choice: Parameters<typeof saveTrainingPlanChoice>[1], alreadySelected: () => boolean, canCommit: () => boolean = () => true) {
   const revision = useTrainingPlanStore.getState().revision;
   const previous = await readGoalTransition(lease);
   requireOwner(lease);
   if (previous?.status === 'complete' && previous.requestKey === requestKey
     && useTrainingPlanStore.getState().lastTransitionId === previous.id && alreadySelected()) return;
   if (useTrainingPlanStore.getState().revision !== revision) throw new Error('Training changed while saving. Please retry.');
+  if (!canCommit()) throw new Error('Membership changed before saving. Your previous training was retained.');
   const transition: GoalTransition = { schemaVersion: 1, id: `goal_transition_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
     ownerUserId: lease.ownerUserId, requestKey, snapshots, status: 'prepared' };
   // This recovery copy is durable BEFORE changing programming, but it is not
@@ -164,7 +166,7 @@ async function commitChoice(lease: OwnerLease, requestKey: string, snapshots: Go
   requireOwner(lease);
   if (sessionInProgress() || useTrainingPlanStore.getState().revision !== revision) throw new Error('Training changed while saving. Please retry.');
   await saveTrainingPlanChoice(lease, choice,
-    () => !sessionInProgress() && useProfileStore.getState().activeAthleteId === 'athlete_default', transition.id);
+    () => !sessionInProgress() && useProfileStore.getState().activeAthleteId === 'athlete_default' && canCommit(), transition.id);
   requireOwner(lease);
   applyCurrentGoalContext();
   await finishTransition(transition, lease);
@@ -254,10 +256,13 @@ async function startGoal(input: NextGoal): Promise<void> {
     || (input.goalType === 'race_prep' && (!input.race || input.race.date !== input.endDate))) {
     throw new Error('Choose a goal name and a valid target date today or later.');
   }
+  await requireProAccess('personalized-plans');
+  requireOwner(lease);
   await ready(lease);
   if (sessionInProgress()) throw new Error('Finish your current workout before changing your training goal.');
   await reconcileGoalLifecycle();
   requireOwner(lease);
+  assertProAccess('personalized-plans');
   if (sessionInProgress()) throw new Error('Finish your current workout before changing your training goal.');
   const snapshots = captureCurrentFocus(lease, 'replaced');
   if (sessionInProgress()) throw new Error('Finish your current workout before changing your training goal.');
@@ -268,7 +273,7 @@ async function startGoal(input: NextGoal): Promise<void> {
     const state = useTrainingPlanStore.getState();
     return state.trainingMode === 'structured' && !state.activePresetGoal && state.goalType === input.goalType
       && state.goalTitle === choice.title && state.goalEndDate === input.endDate && state.programStartDate === today;
-  });
+  }, () => hasProAccess('personalized-plans'));
 }
 
 export function activateBeginnerGoal(plan: GeneratedBeginnerPlan): Promise<void> {
@@ -278,9 +283,12 @@ export function activateBeginnerGoal(plan: GeneratedBeginnerPlan): Promise<void>
 async function activateBeginner(plan: GeneratedBeginnerPlan): Promise<void> {
   const lease = captureOwnerLease();
   if (!lease) throw new Error('Sign in to the account that owns this training history.');
+  await requireProAccess('personalized-plans');
+  requireOwner(lease);
   await ready(lease);
   await reconcileGoalLifecycle();
   requireOwner(lease);
+  assertProAccess('personalized-plans');
   if (sessionInProgress()) throw new Error('Finish your current workout before changing your training goal.');
   const snapshots = captureCurrentFocus(lease, 'replaced');
   requireOwner(lease);
@@ -311,7 +319,7 @@ async function activateBeginner(plan: GeneratedBeginnerPlan): Promise<void> {
       const state = useTrainingPlanStore.getState();
       return state.trainingMode === 'structured' && state.activePresetGoal?.goal === plan.goal
         && state.activePresetPlan?.targetDate === plan.targetDate && state.activePresetPlan?.startDate === plan.startDate;
-    });
+    }, () => hasProAccess('personalized-plans'));
   requireOwner(lease);
   // Legacy readers may use this cache. Failure cannot orphan the new selection:
   // its complete plan and active pointer are already in one confirmed record.

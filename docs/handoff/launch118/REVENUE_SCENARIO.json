@@ -1,0 +1,19 @@
+{
+  "metric": "gross monthly recurring revenue before fees and expenses",
+  "currency": "USD",
+  "targetMrrUsd": 10000,
+  "monthlyPriceUsd": 9.99,
+  "annualPriceUsd": 79.99,
+  "scenarios": {
+    "monthlyOnlyPaidSubscribers": 1002,
+    "annualOnlyPaidSubscribers": 1501,
+    "monthlyOnlyOfferVisitorsAtHypotheticalFivePercentPaidConversion": 20040
+  },
+  "actual": null,
+  "caveats": [
+    "Trial starts and TestFlight purchases are not paid MRR.",
+    "Annual payments are normalized over 12 months, not counted in full each month.",
+    "Counts supplied by the operator are not independently verified by this offline calculator.",
+    "Revenue is not profit or cash deposited. Audience size and conversion are unverified."
+  ]
+}

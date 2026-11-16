@@ -8,7 +8,39 @@ let sdk: typeof Purchases | undefined;
 let queue: Promise<unknown> = Promise.resolve();
 
 export type Entitlements = { hasAnalysisCredits: boolean; isPro: boolean };
-export type SubscriptionOption = { id: string; period: 'month' | 'year'; price: string; package: PurchasesPackage };
+export type SubscriptionOption = {
+  id: string;
+  period: 'month' | 'year';
+  price: string;
+  amount?: number;
+  currency?: string;
+  monthlyEquivalent?: string;
+  /** Present only when this owner is explicitly eligible for a store-supplied, zero-price offer. */
+  freeTrial?: string;
+  package: PurchasesPackage;
+};
+
+function freeTrialLabel(product: PurchasesPackage['product'], eligible: boolean): string | undefined {
+  const intro = product.introPrice;
+  if (!eligible || !intro || intro.price !== 0 || !Number.isSafeInteger(intro.cycles) || intro.cycles < 1
+    || !Number.isSafeInteger(intro.periodNumberOfUnits) || intro.periodNumberOfUnits < 1) return undefined;
+  const unit = ({ DAY: 'D', WEEK: 'W', MONTH: 'M', YEAR: 'Y' } as Record<string, string>)[intro.periodUnit];
+  if (!unit || intro.period !== `P${intro.periodNumberOfUnits}${unit}`) return undefined;
+  const count = intro.periodNumberOfUnits * intro.cycles;
+  if (!Number.isSafeInteger(count)) return undefined;
+  return unit === 'D' || unit === 'W' ? `${count * (unit === 'W' ? 7 : 1)}-day`
+    : `${count}-${unit === 'M' ? 'month' : 'year'}`;
+}
+
+/** Compare actual recurring prices only; never parse a localized price string. */
+export function annualSavingsPercent(options: SubscriptionOption[]): number | null {
+  const annual = options.find(option => option.period === 'year');
+  const monthly = options.find(option => option.period === 'month');
+  if (!annual?.currency || annual.currency !== monthly?.currency || !Number.isFinite(annual.amount)
+    || !Number.isFinite(monthly.amount) || annual.amount! <= 0 || monthly.amount! <= 0) return null;
+  const savings = Math.floor((1 - annual.amount! / (monthly.amount! * 12)) * 100);
+  return savings > 0 && savings < 100 ? savings : null;
+}
 
 export function billingIsConfigured() {
   return Platform.OS === 'ios' && process.env.EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED === 'true'
@@ -55,12 +87,25 @@ export async function checkEntitlements(): Promise<Entitlements> {
   return withPurchases(async client => entitlements(await client.getCustomerInfo()));
 }
 export async function getSubscriptionOptions(): Promise<SubscriptionOption[]> {
-  return withPurchases(async client => {
+  return withPurchases(async (client, assertCurrent) => {
     const current = (await client.getOfferings()).current;
-    return (current?.availablePackages ?? []).flatMap(pkg => {
-      if (!PRODUCT_IDS.has(pkg.product.identifier) || pkg.product.price <= 0) return [];
+    assertCurrent();
+    const packages = (current?.availablePackages ?? []).filter(pkg => PRODUCT_IDS.has(pkg.product.identifier)
+      && Number.isFinite(pkg.product.price) && pkg.product.price > 0
+      && pkg.product.subscriptionPeriod === (pkg.product.identifier === 'strideos_pro_annual' ? 'P1Y' : 'P1M'));
+    let eligibility: Awaited<ReturnType<typeof client.checkTrialOrIntroductoryPriceEligibility>> = {};
+    if (packages.some(pkg => pkg.product.introPrice?.price === 0)) {
+      try { eligibility = await client.checkTrialOrIntroductoryPriceEligibility(packages.map(pkg => pkg.product.identifier)); }
+      catch { /* Unknown eligibility shows the standard price. Apple's confirmation remains authoritative. */ }
+      assertCurrent();
+    }
+    return packages.map(pkg => {
       const period = pkg.product.identifier === 'strideos_pro_annual' ? 'year' as const : 'month' as const;
-      return [{ id: pkg.identifier, period, price: pkg.product.priceString, package: pkg }];
+      const eligibleStatus = client.INTRO_ELIGIBILITY_STATUS?.INTRO_ELIGIBILITY_STATUS_ELIGIBLE;
+      const eligible = eligibleStatus !== undefined && eligibility[pkg.product.identifier]?.status === eligibleStatus;
+      return { id: pkg.identifier, period, price: pkg.product.priceString, amount: pkg.product.price,
+        currency: pkg.product.currencyCode, monthlyEquivalent: period === 'year' ? pkg.product.pricePerMonthString ?? undefined : undefined,
+        freeTrial: freeTrialLabel(pkg.product, eligible), package: pkg };
     });
   });
 }

@@ -1,0 +1,122 @@
+{
+  "checkedAt": "2026-11-16T10:28:35.726Z",
+  "passed": true,
+  "trialDays": 14,
+  "effectiveStartDate": "2026-11-16",
+  "products": [
+    {
+      "id": "6829288874",
+      "offers": [
+        {
+          "id": "eyJzIjoiNjgyOTI4ODg3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJBVSIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "AUS"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI4ODg3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJDQSIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "CAN"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI4ODg3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJHQiIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "GBR"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI4ODg3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJOWiIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "NZL"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI4ODg3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJVUyIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "USA"
+        }
+      ]
+    },
+    {
+      "id": "6829293174",
+      "offers": [
+        {
+          "id": "eyJzIjoiNjgyOTI5MzE3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJBVSIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "AUS"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI5MzE3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJDQSIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "CAN"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI5MzE3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJHQiIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "GBR"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI5MzE3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJOWiIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "NZL"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI5MzE3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJVUyIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "USA"
+        }
+      ]
+    }
+  ],
+  "pricesChanged": false,
+  "availabilityExpanded": false,
+  "existingSubscribersExtended": false,
+  "sandboxPropagationCanTakeOneHour": true
+}

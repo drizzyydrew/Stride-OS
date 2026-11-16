@@ -23,6 +23,8 @@ import { displayLabel } from '../../../src/utils/displayLabels';
 import { formatYMDForDisplay } from '../../../src/utils/dateFormatting';
 import StrideDateField from '../../../src/components/ui/StrideDateField';
 import { todayDateOnly } from '../../../src/utils/dateOnly';
+import { useProAccess } from '../../../src/hooks/useProAccess';
+import ProAccessNotice from '../../../src/components/subscription/ProAccessNotice';
 
 const GOALS = Object.values(BEGINNER_PLAN_DEFINITIONS);
 
@@ -42,6 +44,7 @@ function today(): string {
 export default function TrainingPathsScreen() {
   const C = useColors();
   const router = useRouter();
+  const pro = useProAccess();
   const enduranceMode = useTrainingPreferencesStore(state => state.primaryEnduranceMode);
   const lifecycle = useGoalLifecycle();
   const legacyPlan = useBeginnerPlanStore(state => state.activePlan);
@@ -92,6 +95,7 @@ export default function TrainingPathsScreen() {
   }
 
   function choosePlan() {
+    if (!pro.allowed) { router.push('/(tabs)/settings/membership' as never); return; }
     if (recommendation.accelerated) {
       setAcknowledgeVisible(true);
       return;
@@ -142,6 +146,7 @@ export default function TrainingPathsScreen() {
         onBack={() => router.back()}
       />
       <ScrollView contentContainerStyle={s.content}>
+        <ProAccessNotice access={pro} />
         {activePlan ? (
           <View style={[s.activeCard, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
             <Text style={[s.eyebrow, { color: C.primary }]}>ACTIVE TRAINING PATH</Text>

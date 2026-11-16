@@ -33,6 +33,31 @@ test('only exact allowlisted product event names are accepted', () => {
   }
 });
 
+test('membership measurement discards identity, receipt, health, price and arbitrary source fields', () => {
+  const privateProperties = { owner: SECRET, receipt: SECRET, health: SECRET, price: 79.99, url: SECRET };
+  for (const event of ['membership_viewed', 'membership_purchase_cancelled', 'membership_purchase_failed']) {
+    assert.deepEqual(sanitizeProductEvent(event, privateProperties), { event, properties: {} });
+  }
+  for (const event of ['membership_plan_selected', 'membership_purchase_started']) {
+    for (const period of ['month', 'year']) {
+      const safe = sanitizeProductEvent(event, { ...privateProperties, period });
+      assert.deepEqual(safe, { event, properties: { period } });
+      assert.deepEqual(sanitizeProductEvent(safe!.event, safe!.properties), safe);
+      assertNoSecrets(safe);
+    }
+    for (const period of [SECRET, 'lifetime', null, undefined, 1, {}, ['month']]) {
+      assert.equal(sanitizeProductEvent(event, { ...privateProperties, period }), null);
+    }
+  }
+  for (const source of ['purchase', 'restore', 'check']) {
+    assert.deepEqual(sanitizeProductEvent('membership_access_confirmed', { ...privateProperties, source }),
+      { event: 'membership_access_confirmed', properties: { source } });
+  }
+  for (const source of [SECRET, '__proto__', null, undefined, {}, ['purchase']]) {
+    assert.equal(sanitizeProductEvent('membership_access_confirmed', { source }), null);
+  }
+});
+
 test('all current tour definitions and tour events produce fresh minimal properties', () => {
   for (const tour of FEATURE_TOURS) {
     for (const event of TOUR_EVENTS) {

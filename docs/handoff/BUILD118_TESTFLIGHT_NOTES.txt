@@ -1,0 +1,11 @@
+StrideOS Pro — personalized training in one membership
+
+• Pro now includes new personalized running/hybrid goal plans, deliberate automatic week rebuilding, and personalized AI Coach chat. Manual changes, recovery actions, and repeating an existing beginner week stay available.
+• Membership loads plans and checks access automatically when opened or foregrounded. Active Pro is shown without pressing Restore purchases. Restore remains an explicit recovery option.
+• Pricing, annual savings and eligible free-trial text come from actual Apple/RevenueCat product information. Both billing options include the same Pro features. The approved introductory offer is now 14 days for eligible subscribers; Apple decides eligibility and confirms the final terms.
+• New setup preserves your choices through membership into the goal form. Existing plans and history are retained. Cancelling Pro does not delete saved training.
+• Optional membership-screen usage events respect the existing analytics consent and exclude account identity, health data, prices and receipts.
+
+Please update without uninstalling. Check active membership, prices/trial eligibility, and your current plan/history. Do not subscribe again if Pro is active. Recording, calendar, saved history, existing plans, manual changes and on-device Insights stay available without Pro.
+
+This is internal subscription testing. Public App Review/release and authenticated server billing acceptance remain separate. TestFlight purchases are test transactions, not real revenue.

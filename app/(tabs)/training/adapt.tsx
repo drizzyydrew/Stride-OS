@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import SafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -23,6 +23,14 @@ import {
   type AdaptationAction,
   type AdaptationReason,
 } from '../../../src/utils/adaptationWorkflow';
+import { useProAccess } from '../../../src/hooks/useProAccess';
+import ProAccessNotice from '../../../src/components/subscription/ProAccessNotice';
+import { requireProAccess } from '../../../src/lib/pro-access';
+import { adaptationNeedsPro } from '../../../src/utils/pro-access';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
+import { useProfileStore } from '../../../src/store/profileStore';
+import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
+import { useActivityStore } from '../../../src/store/activityStore';
 
 const WEEK_REASONS: { id: AdaptationReason; label: string }[] = [
   { id: 'illness_symptoms', label: 'Illness' },
@@ -95,6 +103,7 @@ function isHealthMode(mode?: string): boolean { return mode === 'health'; }
 
 export default function AdaptMyWeekScreen() {
   const router = useRouter();
+  const pro = useProAccess();
   const { mode, scheduledSessionId, preferredAction } = useLocalSearchParams<{
     mode?: string;
     scheduledSessionId?: string;
@@ -126,9 +135,29 @@ export default function AdaptMyWeekScreen() {
     const requests = isMissedMode(mode) ? missedWorkoutActions(session, reason) : alternativesForSession(session, reason);
     return requests.map(request => request.action);
   }, [mode, reason, session]);
+  const previewContext = useRef('');
+  previewContext.current = JSON.stringify({ weekKey, selectedId, action, reason, selectedMoveDate, availableDays,
+    sessions: scheduled.canonicalWeekSessions });
 
-  function preview() {
+  async function preview() {
     if (!session) return;
+    if (action === 'rebuild_week') {
+      const lease = captureOwnerLease();
+      const athlete = useProfileStore.getState().activeAthleteId;
+      const context = previewContext.current;
+      const revision = useTrainingPlanStore.getState().revision;
+      const activities = useActivityStore.getState().activities;
+      const confirmed = useAdaptationStore.getState().confirmed;
+      try {
+        await requireProAccess('week-rebuild');
+        if (!ownerLeaseIsCurrent(lease) || useProfileStore.getState().activeAthleteId !== athlete
+          || previewContext.current !== context || useTrainingPlanStore.getState().revision !== revision
+          || useActivityStore.getState().activities !== activities || useAdaptationStore.getState().confirmed !== confirmed) {
+          throw new Error('Your account, athlete, or schedule changed. Review the current week before rebuilding.');
+        }
+      }
+      catch (error) { Alert.alert('Personalized week rebuilding', error instanceof Error ? error.message : 'Membership could not be verified.'); return; }
+    }
     const weekDates = [...new Set(scheduled.weekSessions.map(item => item.date))].sort();
     const planStartDate = toYMD(weekPlan.weekStartDate);
     const planEnd = new Date(weekPlan.weekStartDate);
@@ -169,11 +198,14 @@ export default function AdaptMyWeekScreen() {
         lockedDates,
       },
     );
-    setPreview(next);
+    try { setPreview(action === 'rebuild_week' ? { ...next, requiresPro: 'week-rebuild' } : next); }
+    catch (error) { Alert.alert('Preview not saved', error instanceof Error ? error.message : 'Membership could not be verified.'); }
   }
 
   function confirm() {
-    const confirmed = confirmPreview(weekKey);
+    let confirmed;
+    try { confirmed = confirmPreview(weekKey); }
+    catch (error) { Alert.alert('Change not applied', error instanceof Error ? error.message : 'Membership could not be verified.'); return; }
     if (!confirmed) {
       Alert.alert('Review needed', 'Resolve the schedule conflicts before applying this change.');
       return;
@@ -237,7 +269,8 @@ export default function AdaptMyWeekScreen() {
           {storedPreview.conflicts.length > 0 ? storedPreview.conflicts.map(conflict => <Text key={`${conflict.code}:${conflict.sessionIds.join(':')}`} style={styles.conflict}>{conflict.message}</Text>) : <Text style={styles.ok}>No scheduling conflicts found.</Text>}
           <Button label="Apply confirmed change" onPress={confirm} disabled={storedPreview.conflicts.length > 0} style={{ marginTop: spacing.md }} />
         </Card>}
-        <Button label="Preview change" onPress={preview} variant="secondary" />
+        {(action === 'rebuild_week' || adaptationNeedsPro(storedPreview?.overlays ?? [], storedPreview?.requiresPro)) && <ProAccessNotice access={pro} />}
+        <Button label="Preview change" onPress={() => { void preview(); }} variant="secondary" />
       </ScrollView>
     </SafeAreaView>
   );
