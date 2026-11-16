@@ -11,10 +11,14 @@ further Subscribe attempt. See BUILD116_SUBSCRIPTION_PLAN_READBACK_20261115.json
 
 Sign-in/membership safeguards were prepared and independently reviewed locally,
 but no117 cloud build/submission occurred. Compiler/export work was stopped and
-the behavior patch/new tests preserved outside the repo pending the owner's
-choice of cosmetic-only versus including those safeguards. No permanent-session
+the behavior patch/new tests preserved outside the repo. The owner explicitly
+selected logo and weight captions only. All nine tracked behavior/test files were
+restored, three new behavior tests removed from the checkout after preservation,
+and no reliability changes are included in candidate 117. No permanent-session
 promise or attribution of the owner's incident is inferred from the source tests.
-Logo/weight-caption follow-ups remain separate. The temporary private QA owner
+Build 117 contains only the logo/weight-caption cosmetic follow-ups and build metadata;
+34 focused checks, canonical typecheck, dependency alignment and scope comparison
+passed. Cloud/Apple delivery is not claimed until BUILD117_RELEASE.md is saved. The temporary private QA owner
 was removed with absent readback while testing was held; public billing remains
 off. BUILD116_BILLING_QA_CLEANUP_20261116.json records that cleanup.
 

@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -73,7 +74,7 @@ export default function SignInScreen() {
     >
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
         <View style={s.brand}>
-          <Text style={s.logo}>⚡</Text>
+          <Image source={require('../../assets/images/icon.png')} style={s.logo} resizeMode="contain" accessibilityLabel="StrideOS logo" />
           <Text style={s.appName}>StrideOS</Text>
           <Text style={s.tagline}>Your performance operating system</Text>
         </View>
@@ -168,7 +169,8 @@ const s = StyleSheet.create({
     gap:        spacing.xs,
   },
   logo: {
-    fontSize: 48,
+    width: 64,
+    height: 64,
   },
   appName: {
     color:         colors.text,

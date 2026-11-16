@@ -43,7 +43,7 @@ function screen(name: Screen, options: {
       push: (path: any) => navigation.push(path), replace: (path: any) => navigation.push(path), back() {},
     } },
     'react-native': { Platform: { OS: options.platform ?? 'ios' }, StyleSheet: { create: (value: unknown) => value },
-      ...Object.fromEntries(['ActivityIndicator', 'KeyboardAvoidingView', 'Pressable', 'ScrollView', 'Text', 'TextInput', 'View'].map(value => [value, value])),
+      ...Object.fromEntries(['ActivityIndicator', 'Image', 'KeyboardAvoidingView', 'Pressable', 'ScrollView', 'Text', 'TextInput', 'View'].map(value => [value, value])),
       Linking: { openURL: async () => undefined } },
     '../../src/store/authStore': { useAuthStore },
     '../../src/lib/authInput': { authInputProps, resetEmailFromParam },
@@ -54,6 +54,7 @@ function screen(name: Screen, options: {
       await options.finish?.();
     } },
     '../../src/components/auth/SocialAuthButtons': { SocialAuthButtons: 'SocialAuthButtons' },
+    '../../assets/images/icon.png': 'approved-strideos-icon',
     '../../src/components/layout/NavigationEscape': { LegacyBackControl: 'LegacyBackControl' },
     '../../src/theme/colors': { colors: {} }, '../../src/theme/spacing': { spacing: {} },
     '../../src/theme/tokens': { FontSize: {}, FontWeight: {}, Radius: {} },

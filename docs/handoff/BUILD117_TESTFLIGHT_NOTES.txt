@@ -1,0 +1,13 @@
+Cosmetic update only, as requested after the owner confirmed the earlier sign-in and membership symptoms resolved with connectivity.
+
+The existing three-chevron StrideOS app icon replaces the lightning bolt on sign-in and sign-up. Weight wheels no longer show Hundreds/Tens/Ones captions; their values, accessible labels, units, Save/Cancel behavior and height labels are preserved.
+
+Update without uninstalling or clearing data, keep the usual StrideOS account and confirm existing history remains. Check Settings > Profile > Weight and Height. No need to sign out just to inspect the logo or repeat the full recording checklist.
+
+Authentication, session recovery, membership and navigation behavior are unchanged from build 116. The proposed reliability safeguards are not included. Purchases remain enabled in this private TestFlight candidate.
+
+Apple's prior Monthly test purchase showed success. Read the app membership result and use Restore purchases to verify existing access before any new Subscribe attempt. Do not repeat a purchase when its prior result is unknown. TestFlight purchases are no-charge tests; real App Store payment is not part of this test.
+
+Public server billing remains off; the temporary owner-only server QA binding was removed. No new client/server paid lifecycle pass, public App Review or release is claimed.
+
+Follow BUILD117_OWNER_TEST_GUIDE.md.

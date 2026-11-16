@@ -1,0 +1,137 @@
+{
+  "recordedAt": "2026-11-16T07:41:17.585148+00:00",
+  "candidate": "1.0.0 (117)",
+  "profile": "billing-qa",
+  "ownerScope": "Logo and weight captions only",
+  "baseShippedSourceCommit": "f036de1d8b1eb6e3907f7ba23e4f21a15b188935",
+  "parentCommit": "f61be4ae55cb5c1a01817caa4afd3704f64f9953",
+  "runtimeDeltaFrom116": [
+    "app.json",
+    "app/auth/sign-in.tsx",
+    "app/auth/sign-up.tsx",
+    "src/components/profile/profile-measurement-fields.tsx"
+  ],
+  "protectedBehaviorAndDependenciesMatch116ByteForByte": [
+    "app/_layout.tsx",
+    "app/(tabs)/settings/membership.tsx",
+    "src/store/authStore.ts",
+    "src/lib/supabase.ts",
+    "src/lib/revenueCat.ts",
+    "src/store/subscriptionStore.ts",
+    "eas.json",
+    "package.json",
+    "package-lock.json"
+  ],
+  "scopeReview": {
+    "logo": "Reuse exact existing approved icon.png,64x64,on both auth forms; no artwork change",
+    "weight": "Only visible place-value captions hidden; accessible labels, wheel events, values, unit conversion and storage unchanged",
+    "behaviorRepairs": "Not included; saved outside checkout after owner declined",
+    "nativeWatchGpsHealth": "unchanged from116 apart from embedded build-number allocation",
+    "council": "Earlier independent bounded brand review passed; Chair approves only the explicitly chosen cosmetic subset. Auth/billing reliability review is not included as new behavior."
+  },
+  "checks": {
+    "canonicalProjectTypecheck": "PASS",
+    "expoDependencyCheck": "PASS; same exact package/lock hashes as the fresh preflight check",
+    "diffCheck": "PASS",
+    "existingAuthInputAndPickerTests": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    "actualNativeTargetVersioningAndExistingWatchSyncTests": {
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0
+    },
+    "priorFullSuite": {
+      "candidate": "116",
+      "passed": 1924,
+      "scope": "historical baseline only; not a new full-suite run for117"
+    },
+    "fullSuiteRerun": false,
+    "localModuleExport": "Earlier broader local export not used as acceptance of this reduced candidate; final production bundle checked in cloud archive"
+  },
+  "server": {
+    "publicBillingEnabled": false,
+    "privateQaOwnerBindingRemoved": true,
+    "cleanupReceipt": "BUILD116_BILLING_QA_CLEANUP_20261116.json"
+  },
+  "purchaseEvidence": {
+    "appleMonthlySuccess": true,
+    "appActiveProVerified": false,
+    "restoreAccepted": false,
+    "serverEntitlementAccepted": false
+  },
+  "files": [
+    {
+      "path": "app.json",
+      "sha256": "4230d09550ab6182ecb4e5d65810954959896ecd5dfdd5b48c8d06c1102bbaff"
+    },
+    {
+      "path": "app/(tabs)/settings/membership.tsx",
+      "sha256": "f2a41aee51717ca11d5569f9591e6d6e93a82a2f3ec38e6a5e9a1359cab9b7d6"
+    },
+    {
+      "path": "app/_layout.tsx",
+      "sha256": "4c406dcf59cf73e13798cda674a68f70a7de1a28a6e78c92bc922a1edf842b65"
+    },
+    {
+      "path": "app/auth/sign-in.tsx",
+      "sha256": "82933b9eb9b841074cbb9951c4ec42fca36866d25893e51999c2e88ef71df723"
+    },
+    {
+      "path": "app/auth/sign-up.tsx",
+      "sha256": "ce6bccd8640c28b8508301fe9680a4dbb648ced0aca5989ac7000c7e6ae0e674"
+    },
+    {
+      "path": "assets/images/icon.png",
+      "sha256": "ea0a126faaf054008b769b244b3508f2b2f314c34e82d7548ab5da8f57b20aec"
+    },
+    {
+      "path": "eas.json",
+      "sha256": "32d8bc95882cf8f3375b3c63bc6091580f01d9381c5bd8dbb9dd813f2b9825d8"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "cba526d161a5cf5e77fc1f3a39b2d306d154b0056b434d5fa5eb27cfeaa6e783"
+    },
+    {
+      "path": "package.json",
+      "sha256": "66854bb602654e8e29c57a2a3ad89aa9eff2beffed196365d904fe77dc11755e"
+    },
+    {
+      "path": "scripts/tests/authInputScreens.test.ts",
+      "sha256": "291651749f4061d450e754b7e75b2a7783a3d8241b2e2714133c116365bd03a0"
+    },
+    {
+      "path": "scripts/tests/profileMeasurementUi.test.ts",
+      "sha256": "ce53804f43637a69250b08dfefced97c8fbcec3c1e550007d73a46e10e2b1da7"
+    },
+    {
+      "path": "scripts/tests/watchWorkoutSync.test.ts",
+      "sha256": "abafbc88db79c520d001498a44a5893b0f9606224e74e1b240838b3b799196b9"
+    },
+    {
+      "path": "src/components/profile/profile-measurement-fields.tsx",
+      "sha256": "3e3d5f1f6d1f84f3dfbbc261ad6f49b329ed5479be4bac637cee880fce52e64e"
+    },
+    {
+      "path": "src/lib/revenueCat.ts",
+      "sha256": "e40f5dc35eaab0e975c1d9cac95eecfc2312fdce611bfed8105bb51139277f50"
+    },
+    {
+      "path": "src/lib/supabase.ts",
+      "sha256": "4ce0b0083aa4bf1782746564cce0667aa01e969f453b515cca1b81033ca282c8"
+    },
+    {
+      "path": "src/store/authStore.ts",
+      "sha256": "608830a463fc9ee9ece4e868fcc66f4cb685d63632e4f418c830c1a166e51cd1"
+    },
+    {
+      "path": "src/store/subscriptionStore.ts",
+      "sha256": "3dc9612a5ade4f90f8ed7f6b4a693a4258f054ea454d652bc3005b2385e28b6b"
+    }
+  ],
+  "physicalDeviceAccepted": false,
+  "publicReviewSubmitted": false
+}
