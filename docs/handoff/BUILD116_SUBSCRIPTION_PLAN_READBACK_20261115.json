@@ -30,5 +30,18 @@
   "restoreAccepted": false,
   "renewalExpiryAccepted": false,
   "serverEntitlementAccepted": false,
-  "nextDeviceStep": "Select Monthly, open Apple confirmation with Subscribe, cancel before approval, and report the returned app message."
+  "nextDeviceStep": "Tap Not Now on Apple Account Verification and report the resulting app message. If verification continues to block purchase confirmation, complete Apple-owned account verification separately before retrying the confirmation/cancel test.",
+  "cancellationAttempt": {
+    "recordedAt": "2026-11-16T05:38:59.935389+00:00",
+    "evidence": "owner screenshot, phone clock9:36; date not inferred from the clock",
+    "selectedPlan": "Monthly",
+    "visibleSystemPrompt": "Apple Account Verification; asks for password in Settings; Not Now / Settings actions",
+    "stage": "Apple account verification before purchase confirmation",
+    "screenshotSha256": "41c453fd3169cb4193afe4aa47fe980b44096a674bca146ac243cf848518e9f9",
+    "screenshotCopiedToRepository": false,
+    "reasonNotCopied": "contains private Apple Account address",
+    "cancellationAccepted": false,
+    "purchaseConfirmed": false,
+    "nextStep": "Dismiss using Not Now and inspect the resulting StrideOS message; verification dismissal is not yet proof of cancellation at the purchase confirmation sheet."
+  }
 }
