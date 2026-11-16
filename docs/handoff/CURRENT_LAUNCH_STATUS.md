@@ -30,8 +30,13 @@ BUILD116_PRIVATE_BILLING_QA_20261115.json.
 Owner device captures show both real plans: Annual$79.99/year and Monthly$9.99/month.
 Plan loading passes. The first Monthly purchase attempt reached Apple Account
 Verification (password requested in Settings), before the purchase confirmation
-sheet. No cancellation/purchase result is inferred from that prompt. Cancellation,
-purchase, restore, renewal/expiry and server verification remain open. The original591×1280 capture is preserved unchanged;
+sheet. A later capture reaches the actual Apple Monthly confirmation and explicitly
+states it is for testing with no charge; it displays a one-week trial and$9.99/month.
+The QA-owner setting is still present and global billing remains absent. A fresh
+Auth lookup timed out, so the exact owner binding is not newly authenticated by
+this recheck. No authenticated entitlement POST or AI call was made. The capture
+verifies the no-charge test UI, not approval/activation or elapsed renewal.
+Cancellation, purchase, restore, renewal/expiry and server verification remain open. The original591×1280 capture is preserved unchanged;
 it is not a substitute for accepted store-size coverage or product review assets.
 See BUILD116_SUBSCRIPTION_PLAN_READBACK_20261115.json.
 

@@ -30,7 +30,7 @@
   "restoreAccepted": false,
   "renewalExpiryAccepted": false,
   "serverEntitlementAccepted": false,
-  "nextDeviceStep": "Tap Not Now on Apple Account Verification and report the resulting app message. If verification continues to block purchase confirmation, complete Apple-owned account verification separately before retrying the confirmation/cancel test.",
+  "nextDeviceStep": "Close Apple confirmation with X and check the app cancellation message. If the expected cancellation message appears, reopen Monthly and approve one no-charge test subscription, then report the app membership result; stop on an error or a confirmation sheet without the no-charge test message. Server entitlement verification remains a separate open gate.",
   "cancellationAttempt": {
     "recordedAt": "2026-11-16T05:38:59.935389+00:00",
     "evidence": "owner screenshot, phone clock9:36; date not inferred from the clock",
@@ -43,5 +43,27 @@
     "cancellationAccepted": false,
     "purchaseConfirmed": false,
     "nextStep": "Dismiss using Not Now and inspect the resulting StrideOS message; verification dismissal is not yet proof of cancellation at the purchase confirmation sheet."
+  },
+  "applePurchaseConfirmation": {
+    "recordedAt": "2026-11-16T06:32:32.426767+00:00",
+    "evidence": "owner-provided actual Apple In-App Purchase sheet",
+    "productDisplayName": "StrideOS Pro Monthly",
+    "trialDisplayed": "1-week free trial",
+    "renewalPriceDisplayed": "$9.99 per month",
+    "renewalDateDisplayed": "Nov22,2026",
+    "noChargeMessage": "For testing purposes only. You will not be charged for confirming this purchase.",
+    "noChargeTestEnvironmentVisuallyVerified": true,
+    "purchaseApprovalOrActivationVerified": false,
+    "screenshotSHA256": "7aef48dbf3c52252b5e36ffbf509010239203235990bf2ce4fd7862abfd0f544",
+    "screenshotCopiedToRepository": false,
+    "reasonNotCopied": "contains private Apple Account address",
+    "serverSetupRecheck": {
+      "checkedAt": "2026-11-16T06:32:32.426767+00:00",
+      "qaOwnerSettingPresent": true,
+      "globalBillingFlagAbsent": true,
+      "currentExactOwnerDigestMatchVerified": false,
+      "authOwnerRecheck": "connection timeout; earlier setup receipt remains historical evidence only",
+      "authenticatedEntitlementLookupPerformed": false
+    }
   }
 }
