@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-11-16T10:50:44.265185+00:00",
+  "buildId": "e5a06e42-613e-47d2-b9b8-31e566b6df8c",
+  "sourceCommit": "bd33864ef75c68cd2981b5aa057ee91a74ef4091",
+  "archiveSucceeded": true,
+  "expoDoctor21of21": true,
+  "nativeErrorCount": 0,
+  "nativeWarningCount": 33,
+  "sentrySourceMapUploadLines": [],
+  "nativeDeviceAccepted": false
+}

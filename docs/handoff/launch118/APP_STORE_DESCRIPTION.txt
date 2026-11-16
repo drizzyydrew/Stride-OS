@@ -1,0 +1,23 @@
+Build a training week around your goal.
+
+StrideOS brings running, strength, recovery and saved training history into one routine. Record supported activities, review your calendar, and see the work behind your progress.
+
+STRIDEOS PRO
+Create a personalized running or hybrid training plan. When your week changes, review an automatic week rebuild before applying it. Ask AI Coach training questions using the context you choose to share.
+
+ONE MEMBERSHIP
+Monthly and annual billing include the same Pro features. Eligible new subscribers can receive a 14-day introductory free trial. Your local price, eligibility, billing period and renewal terms appear before purchase and in Apple's confirmation. AI Coach requires separate sharing permission, allows up to 20 requests per UTC day and is subject to service availability.
+
+YOUR HISTORY STAYS AVAILABLE
+Recording, calendar, saved plans and training history, manual training changes, recovery actions, existing-week repeats and existing on-device Insights remain available without Pro. Ending membership does not delete your saved training data.
+
+OPTIONAL CONNECTIONS
+Connect Apple Health and supported devices when you want the available workout measurements. Permissions, device availability and GPS conditions affect what can be recorded. Movement camera measurements and training indicators are estimates with limitations.
+
+StrideOS provides general fitness guidance, not medical care, diagnosis, human coaching, or a guarantee of performance or injury prevention.
+
+Subscriptions renew automatically unless cancelled at least 24 hours before the current period ends. Manage or cancel through your Apple Account subscriptions. Removing the app does not cancel a subscription.
+
+Privacy: https://strideosfitness.com/privacy.html
+Terms: https://strideosfitness.com/terms.html
+Support: https://strideosfitness.com/support.html

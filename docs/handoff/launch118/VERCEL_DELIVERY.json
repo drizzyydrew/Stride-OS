@@ -1,0 +1,56 @@
+{
+  "checkedAt": "2026-11-16T10:44:41.693558+00:00",
+  "deploymentId": "dpl_BoV64hdBQvhg5f5UJo1ZLpAoryyz",
+  "projectId": "prj_vTtsKG8f6mVn7XKR7BKB1Vx9ktT1",
+  "target": "production",
+  "sourceCommit": "bd33864ef75c68cd2981b5aa057ee91a74ef4091",
+  "allMatched": true,
+  "rows": [
+    {
+      "path": "index.html",
+      "url": "https://strideosfitness.com/",
+      "httpSuccess": true,
+      "bytes": 12625,
+      "sha256": "e3ea02ca249e3e6f2d4afdebd8bd492f24373346ce79b4eae9e70d65680e41b0",
+      "matchesExpectedBytes": true
+    },
+    {
+      "path": "privacy.html",
+      "url": "https://strideosfitness.com/privacy.html",
+      "httpSuccess": true,
+      "bytes": 16221,
+      "sha256": "cada2ce214ee443062541fa5bd09380139e5b458736dc16f3389e181d22a5d4e",
+      "matchesExpectedBytes": true
+    },
+    {
+      "path": "terms.html",
+      "url": "https://strideosfitness.com/terms.html",
+      "httpSuccess": true,
+      "bytes": 5200,
+      "sha256": "c0ee646c7544b6785f583843f2d474b213d235392673a68d90fea7ae8d708551",
+      "matchesExpectedBytes": true
+    },
+    {
+      "path": "support.html",
+      "url": "https://strideosfitness.com/support.html",
+      "httpSuccess": true,
+      "bytes": 13024,
+      "sha256": "ab9b2ffb9c6347e09a6de467917fc1bad45ce0d0254be190fbadbba1ca0d7673",
+      "matchesExpectedBytes": true
+    },
+    {
+      "path": ".well-known/apple-app-site-association",
+      "url": "https://strideosfitness.com/.well-known/apple-app-site-association",
+      "httpSuccess": true,
+      "bytes": 70,
+      "sha256": "e59a4c85dbcbe9f00ff27e41abdd273f9700fbea641815d10618d088e6a78610",
+      "matchesExpectedBytes": true
+    }
+  ],
+  "passwordAssociationHeadersVerified": {
+    "status": 200,
+    "contentType": "application/json",
+    "noRedirect": true,
+    "bytes": 70
+  }
+}

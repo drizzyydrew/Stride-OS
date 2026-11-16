@@ -1,0 +1,74 @@
+{
+  "checkedAt": "2026-11-16T10:50:52.671973+00:00",
+  "buildId": "e5a06e42-613e-47d2-b9b8-31e566b6df8c",
+  "sourceCommit": "bd33864ef75c68cd2981b5aa057ee91a74ef4091",
+  "profile": "billing-qa",
+  "buildNumber": "118",
+  "clientBillingEnabledByQaProfile": true,
+  "publicServerBillingEnabled": false,
+  "bytes": 129913050,
+  "sha256": "9389be0ef2399f028fd930ac7718dae4ba641cb084bb0b141a58a7889669a49d",
+  "targets": [
+    {
+      "bundleId": "com.mooremovement.strideos",
+      "version": "1.0.0",
+      "build": "118",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [
+        "group.com.mooremovement.strideos"
+      ],
+      "healthKit": true,
+      "unexpiredStoreProfile": true
+    },
+    {
+      "bundleId": "com.mooremovement.strideos.liveactivity",
+      "version": "1.0.0",
+      "build": "118",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [
+        "group.com.mooremovement.strideos"
+      ],
+      "healthKit": false,
+      "unexpiredStoreProfile": true
+    },
+    {
+      "bundleId": "com.mooremovement.strideos.watch",
+      "version": "1.0.0",
+      "build": "118",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [],
+      "healthKit": true,
+      "unexpiredStoreProfile": true
+    }
+  ],
+  "privacyManifestsParsed": 21,
+  "noCredentialFilenamesInArchive": true,
+  "embeddedBundleIsHermesBytecode": true,
+  "embeddedBundleBytes": 12560416,
+  "embeddedBundleSHA256": "42cedf7b8b04678d96087dc73d6345e7a07e9434e880b04f7cf1a68b105dd920",
+  "compiled1024Icons": [
+    {
+      "Name": "AppIcon",
+      "PixelWidth": 1024,
+      "PixelHeight": 1024,
+      "Opaque": true,
+      "Idiom": "phone"
+    }
+  ],
+  "nativeCallbackSchemePresent": true,
+  "locationAndHealthPurposeStringsPresent": true,
+  "signedWebcredentialsDomainAndProvisioningVerified": true,
+  "authLogoOriginalAssetFoundInArchive": true,
+  "physicalDeviceAccepted": false,
+  "purchaseLifecycleAccepted": false,
+  "publicReviewSubmitted": false,
+  "newMembershipAndAccessPolicyStringsEmbedded": {
+    "Training that grows with you": true,
+    "Personalized plans and automatic week rebuilding": true,
+    "Membership has not been verified.": true,
+    "membership_purchase_started": true
+  }
+}

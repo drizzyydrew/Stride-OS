@@ -6,5 +6,15 @@
   "revenueCatReadCredentialPresent": true,
   "modelOverridePresent": true,
   "publicPaidEnforcementAccepted": false,
-  "configurationChanged": false
+  "configurationChanged": false,
+  "deployedFunctionVersion": 16,
+  "deployedFunctionJwtVerification": true,
+  "deployedSourceMatchesLocalFiles": [
+    "ai-coach/index.ts",
+    "_shared/launchHandlers.ts",
+    "_shared/revenueCatAccess.ts"
+  ],
+  "actualModelOverrideValueRead": false,
+  "publicServerBillingEnabled": false,
+  "authenticatedRevenueCatGuardAccepted": false
 }

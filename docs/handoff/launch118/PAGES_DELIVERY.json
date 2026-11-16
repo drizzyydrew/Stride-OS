@@ -1,0 +1,217 @@
+{
+  "verifiedAt": "2026-11-16T10:41:23.787166+00:00",
+  "worktree": "/Users/drew/.cache/strideos-pages-pro-preview-20261116",
+  "sourceCommit": "bd33864ef75c68cd2981b5aa057ee91a74ef4091",
+  "publicationCommit": "bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+  "publicationBranch": "claude/stride-os-visibility-sxl7xl",
+  "remoteHead": "bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+  "changedFiles": [
+    "docs/index.html",
+    "docs/privacy.html",
+    "docs/terms.html"
+  ],
+  "workingTreeStatus": "",
+  "githubPagesBuild": {
+    "status": "built",
+    "commit": "bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+    "error": {
+      "message": null
+    },
+    "created_at": "2026-11-16T10:38:51Z",
+    "updated_at": "2026-11-16T10:39:26Z"
+  },
+  "publicReadback": {
+    "checkedAt": "2026-11-16T10:40:56.513022+00:00",
+    "commit": "bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+    "transport": "system curl with normal TLS verification; Python local CA store could not verify either site",
+    "checks": [
+      {
+        "url": "https://strideosfitness.com/index.html?release=bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+        "expectedSha256": "e3ea02ca249e3e6f2d4afdebd8bd492f24373346ce79b4eae9e70d65680e41b0",
+        "curlExit": 0,
+        "response": "200 https://strideosfitness.com/index.html?release=bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+        "sha256": "006590370d3494e8400a8ca66e2198b3722a13216bb4b87f80c98fb1bdf81454",
+        "bytes": 10806,
+        "headers": [
+          "HTTP/2 200 ",
+          "content-type: text/html; charset=utf-8",
+          "etag: \"26ccf7ee58923209b315343db4e4e092\"",
+          "last-modified: Mon, 16 Nov 2026 10:40:55 GMT",
+          "server: Vercel",
+          "x-vercel-cache: MISS"
+        ],
+        "matchesExpected": false
+      },
+      {
+        "url": "https://strideosfitness.com/privacy.html?release=bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+        "expectedSha256": "cada2ce214ee443062541fa5bd09380139e5b458736dc16f3389e181d22a5d4e",
+        "curlExit": 0,
+        "response": "200 https://strideosfitness.com/privacy.html?release=bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+        "sha256": "1d72a59fdbf41268b703055cb0afbbce9360c887d3623cf71e8dd6bccc33474d",
+        "bytes": 16001,
+        "headers": [
+          "HTTP/2 200 ",
+          "content-type: text/html; charset=utf-8",
+          "etag: \"d91182b4b3f0aaa674edc0dcf460976e\"",
+          "last-modified: Sun, 15 Nov 2026 23:14:21 GMT",
+          "server: Vercel",
+          "x-vercel-cache: HIT"
+        ],
+        "matchesExpected": false
+      },
+      {
+        "url": "https://strideosfitness.com/terms.html?release=bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+        "expectedSha256": "c0ee646c7544b6785f583843f2d474b213d235392673a68d90fea7ae8d708551",
+        "curlExit": 0,
+        "response": "200 https://strideosfitness.com/terms.html?release=bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+        "sha256": "e2925582fc5ff64deced5292f89079c80ce0ad53d08ad6f826b4b876e96c0dc7",
+        "bytes": 4577,
+        "headers": [
+          "HTTP/2 200 ",
+          "content-type: text/html; charset=utf-8",
+          "etag: \"c11c8f893f481d70f9bfde9d343a2441\"",
+          "last-modified: Sun, 15 Nov 2026 10:46:13 GMT",
+          "server: Vercel",
+          "x-vercel-cache: HIT"
+        ],
+        "matchesExpected": false
+      },
+      {
+        "url": "https://drizzyydrew.github.io/Stride-OS/index.html?release=bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+        "expectedSha256": "e3ea02ca249e3e6f2d4afdebd8bd492f24373346ce79b4eae9e70d65680e41b0",
+        "curlExit": 0,
+        "response": "200 https://drizzyydrew.github.io/Stride-OS/index.html?release=bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+        "sha256": "e3ea02ca249e3e6f2d4afdebd8bd492f24373346ce79b4eae9e70d65680e41b0",
+        "bytes": 12625,
+        "headers": [
+          "HTTP/2 200 ",
+          "server: GitHub.com",
+          "content-type: text/html; charset=utf-8",
+          "last-modified: Mon, 16 Nov 2026 10:39:26 GMT",
+          "etag: \"6afadd5e-3151\""
+        ],
+        "matchesExpected": true
+      },
+      {
+        "url": "https://drizzyydrew.github.io/Stride-OS/privacy.html?release=bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+        "expectedSha256": "cada2ce214ee443062541fa5bd09380139e5b458736dc16f3389e181d22a5d4e",
+        "curlExit": 0,
+        "response": "200 https://drizzyydrew.github.io/Stride-OS/privacy.html?release=bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+        "sha256": "cada2ce214ee443062541fa5bd09380139e5b458736dc16f3389e181d22a5d4e",
+        "bytes": 16221,
+        "headers": [
+          "HTTP/2 200 ",
+          "server: GitHub.com",
+          "content-type: text/html; charset=utf-8",
+          "last-modified: Mon, 16 Nov 2026 10:39:26 GMT",
+          "etag: \"6afadd5e-3f5d\""
+        ],
+        "matchesExpected": true
+      },
+      {
+        "url": "https://drizzyydrew.github.io/Stride-OS/terms.html?release=bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+        "expectedSha256": "c0ee646c7544b6785f583843f2d474b213d235392673a68d90fea7ae8d708551",
+        "curlExit": 0,
+        "response": "200 https://drizzyydrew.github.io/Stride-OS/terms.html?release=bdccb05c5aaef9e1ee8de764b6861c5019b76270",
+        "sha256": "c0ee646c7544b6785f583843f2d474b213d235392673a68d90fea7ae8d708551",
+        "bytes": 5200,
+        "headers": [
+          "HTTP/2 200 ",
+          "server: GitHub.com",
+          "content-type: text/html; charset=utf-8",
+          "last-modified: Mon, 16 Nov 2026 10:39:26 GMT",
+          "etag: \"6afadd5e-1450\""
+        ],
+        "matchesExpected": true
+      }
+    ]
+  },
+  "mobileAudit": [
+    {
+      "file": "index.html",
+      "width": 320,
+      "viewport": 320,
+      "documentWidth": 320,
+      "bodyWidth": 320,
+      "overflow": [],
+      "errors": []
+    },
+    {
+      "file": "privacy.html",
+      "width": 320,
+      "viewport": 320,
+      "documentWidth": 320,
+      "bodyWidth": 320,
+      "overflow": [],
+      "errors": []
+    },
+    {
+      "file": "terms.html",
+      "width": 320,
+      "viewport": 320,
+      "documentWidth": 320,
+      "bodyWidth": 320,
+      "overflow": [],
+      "errors": []
+    },
+    {
+      "file": "index.html",
+      "width": 393,
+      "viewport": 393,
+      "documentWidth": 393,
+      "bodyWidth": 393,
+      "overflow": [],
+      "errors": []
+    },
+    {
+      "file": "privacy.html",
+      "width": 393,
+      "viewport": 393,
+      "documentWidth": 393,
+      "bodyWidth": 393,
+      "overflow": [],
+      "errors": []
+    },
+    {
+      "file": "terms.html",
+      "width": 393,
+      "viewport": 393,
+      "documentWidth": 393,
+      "bodyWidth": 393,
+      "overflow": [],
+      "errors": []
+    },
+    {
+      "file": "index.html",
+      "width": 768,
+      "viewport": 768,
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "overflow": [],
+      "errors": []
+    },
+    {
+      "file": "privacy.html",
+      "width": 768,
+      "viewport": 768,
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "overflow": [],
+      "errors": []
+    },
+    {
+      "file": "terms.html",
+      "width": 768,
+      "viewport": 768,
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "overflow": [],
+      "errors": []
+    }
+  ],
+  "visualInspection": "Viewed full-page393px landing screenshot; no overlapping/clipped text observed. Automated320/393/768 checks all9pages:nohorizontaloverfloworJSerrors.",
+  "siteScope": "PrivatebetaPropreviewandexistingpublicmailboxmailtoonly;noactivecheckout/openbeta/signupform/outreach/AppStorepublicrelease.",
+  "remainingGap": "strideosfitness.com servesprevious3filesfromVercel. Pagesbranchhasgit.deploymentEnabled=falseforVercel;separateVerceldeploymentrequired.",
+  "previewManifest": "/Users/drew/.cache/strideos-pages-pro-preview-20261116-review.json",
+  "customDomainGapResolvedBy": "VERCEL_DELIVERY.json: later Vercel production deployment and 5/5 byte readback"
+}

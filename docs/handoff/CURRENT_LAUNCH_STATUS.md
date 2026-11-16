@@ -1,5 +1,17 @@
 # Current StrideOS launch status
 
+<!-- BUILD118_DELIVERED -->
+## Latest: build 118 delivered, Pro training bundle (2026-11-16)
+
+Build118 is VALID / IN_BETA_TESTING in the existing internal Team (Expo) group. Source `bd33864ef75c68cd2981b5aa057ee91a74ef4091`; EAS `e5a06e42-613e-47d2-b9b8-31e566b6df8c`; submission `35337421-3e1a-47c4-98fe-cf21dd0dea90`. See BUILD118_RELEASE.md and BUILD118_DELIVERY.json.
+
+New personalized goals and automatic week rebuilding join AI Coach in one Pro membership. Saved plans/history and free recording/manual/recovery controls remain accessible. Membership checks and pricing load automatically. Both existing Apple products now have eligible14-day trials in the same five markets; current prices remain unchanged. Public website preview/legal pages are deployed and byte-verified on both hosting surfaces. Launch copy, a non-fabricated revenue scenario calculator and the gross$10,000MRR target are recorded under launch118/. No outreach, ad spend, public App Review or app release.
+
+Integrated checks passed with the three parallel Swift timeouts rerun successfully in isolation; native archive and all three signed118 targets were verified. Owner device acceptance remains pending. Auth/native Watch/GPS/Health/dependencies unchanged.
+
+Public AI billing is still off and private QA owner absent. Authenticated RevenueCat/server acceptance, actual AI budget/capacity, production signup/reviewer/deletion and paid lifecycle, genuine current screenshots/product-review materials and public binary reconciliation remain open. Public draft still109/PREPARE_FOR_SUBMISSION/MANUAL. Historical sections below are dated receipts, not current gates or new authorizations.
+
+
 ## Latest verified delivery — build 117, November 16 UTC
 
 The owner chose logo and weight captions only. Exact source 194eb1708fe54e5731eabe65ab7b1b125c08cb82

@@ -1,0 +1,56 @@
+{
+  "recordedAt": "2026-11-16T10:57:49.354743+00:00",
+  "version": "1.0.0",
+  "buildNumber": "118",
+  "profile": "billing-qa",
+  "sourceCommit": "bd33864ef75c68cd2981b5aa057ee91a74ef4091",
+  "buildId": "e5a06e42-613e-47d2-b9b8-31e566b6df8c",
+  "submissionId": "35337421-3e1a-47c4-98fe-cf21dd0dea90",
+  "appleBuildId": "58b7cebd-74c6-4941-a0a4-7001f9458a6c",
+  "easStatus": "FINISHED",
+  "submissionStatus": "FINISHED",
+  "appleProcessingState": "VALID",
+  "internalBuildState": "IN_BETA_TESTING",
+  "existingGroup": {
+    "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+    "name": "Team (Expo)",
+    "isInternal": true,
+    "hasAccessToAllBuilds": true,
+    "actuallyAssigned": true,
+    "testerCount": 1,
+    "testerStates": [
+      "INSTALLED"
+    ]
+  },
+  "betaNotesExactReadback": {
+    "locale": "en-US",
+    "exactReadback": true,
+    "characters": 1531,
+    "sha256": "b90834eab7deb0548ccf1261603918e0ec759911958545bcd13fdb29a20bd70a"
+  },
+  "archiveSHA256": "9389be0ef2399f028fd930ac7718dae4ba641cb084bb0b141a58a7889669a49d",
+  "scope": "One Pro membership for new personalized goals and reviewed automatic week rebuilding plus existing AI Coach; retained history and free training controls; eligible14dayAppletrial",
+  "publicWebsiteVerified": true,
+  "publicWebsiteDeploymentId": "dpl_BoV64hdBQvhg5f5UJo1ZLpAoryyz",
+  "clientPurchasesEnabled": true,
+  "publicServerBillingEnabled": false,
+  "physicalDeviceAccepted": false,
+  "publicReviewSubmitted": false,
+  "publicVersion": {
+    "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "version": "1.0",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "releaseType": "MANUAL",
+    "selectedBuild": "109"
+  },
+  "revenueTarget": {
+    "grossMrrUsd": 10000,
+    "days": {
+      "minimum": 7,
+      "maximum": 14
+    },
+    "actualRevenueVerified": false,
+    "guaranteed": false
+  },
+  "allRuntimeManifestEntriesVerified": 26
+}
