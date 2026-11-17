@@ -1,5 +1,14 @@
 # Current StrideOS launch status
 
+## Latest: build119 logo fix delivered — November17
+
+Build119 is VALID / IN_BETA_TESTING in the existing internal Team(Expo) group, with exact saved beta-note readback. Source827ad9984a70b638a3018c677465e22a13662d3c; EASd531ddf6-0143-41d5-8e6b-d91846977829; submission3959fe55-9d53-486b-a6f1-df7940c7a9fb. See BUILD119_RELEASE.md and BUILD119_DELIVERY.json.
+
+Transparent point-sized three-chevron assets and original/fullColor rendering replace the oversized LiveActivity app-icon tile.35focused checks, native semantic/asset compilation,21/21cloudDoctor and signed three-target archive verification passed. Actual installed119 LockScreen/AlwaysOn acceptance is pending. Controls, metric freshness, recording, Watch transport, Auth and Pro policies unchanged. Owner118 checks remain accepted; no backend/provider settings changed or public review/release occurred. Public draft still109/PREPARE_FOR_SUBMISSION/MANUAL.
+
+The owner authorized precise illustrative screenshot edits:8phone and8Watch examples plus framed large-phone canvases are on the Desktop with manifests/QA and the review ZIP. These are fictional marketing data, not native recaptures or sensor/clinical/reliability proof. Original files remain preserved; personal map geometry, city/street references and LockScreen faces/notification are excluded from candidate images. Membership photo is held for a genuine current-UI capture. See SCREENSHOT_DEMO_PREPARATION_20261117.md.
+
+
 ## November 16 Pacific — owner accepts build 118 checks
 
 The owner reports installing build118, completing all supplied checks, and finding them good. This closes the owner-reported BUILD118_OWNER_TEST_GUIDE scope; do not repeat those checks without a new failure or relevant change. It does not establish the separately identified authenticated server billing, production signup/reviewer/deletion, or paid-lifecycle scenarios.

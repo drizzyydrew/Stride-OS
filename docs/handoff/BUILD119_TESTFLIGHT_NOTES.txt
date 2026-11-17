@@ -1,9 +1,15 @@
-Build119 — Live Activity logo
+Build 119 — Live Activity logo
 
-The Lock Screen Live Activity now uses your approved three-chevron StrideOS mark on a transparent background, sized for its28-point header space. Point-sized1x/2x/3x assets replace the old large app-icon tile, and the widget requests original/full-color rendering.
+The Lock Screen Live Activity now uses the approved three-chevron StrideOS logo with a transparent background, sized to fit beside the activity title.
 
-After updating without uninstalling: start a brief activity, lock your iPhone and confirm the chevrons appear beside the activity title with no gray or brown square. Check ordinary and dimmed Lock Screen appearance if available. Confirm Pause/Resume and Stop still work. No outdoor run or new subscription purchase is needed for this check.
+After updating without uninstalling:
+1. Start a brief activity and lock your iPhone.
+2. Confirm the three chevrons appear beside the title with no gray or brown square.
+3. Check the dimmed Lock Screen too, if your phone supports it.
+4. Pause, resume and stop normally.
 
-This build contains the logo fix and build metadata. Watch connectivity, recording, metric freshness, activity history, account/session behavior and membership policies are unchanged. Fictional marketing screenshot data is kept outside the app and never written into your training account.
+No outdoor run, new subscription purchase or repeat of the full Build 118 checklist is needed for this logo check. Do not reset your training data.
 
-Build118's owner-reported checks remain accepted. Public App Review and release are separate from this internal TestFlight update.
+This update changes the logo assets and rendering only. Watch connectivity, recording, metric freshness, saved history, sign-in and membership policies are unchanged. The fictional marketing screenshot examples are kept outside the app and were not written into your account.
+
+Public App Review and release remain separate from this internal TestFlight update.

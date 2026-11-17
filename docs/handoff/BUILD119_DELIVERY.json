@@ -1,0 +1,76 @@
+{
+  "recordedAt": "2026-11-17T11:37:43.513402+00:00",
+  "version": "1.0.0",
+  "buildNumber": "119",
+  "profile": "billing-qa",
+  "sourceCommit": "827ad9984a70b638a3018c677465e22a13662d3c",
+  "buildId": "d531ddf6-0143-41d5-8e6b-d91846977829",
+  "submissionId": "3959fe55-9d53-486b-a6f1-df7940c7a9fb",
+  "appleBuildId": "522b7b8b-8462-41a2-b5c1-15d264592b94",
+  "easStatus": "FINISHED",
+  "submissionStatus": "FINISHED",
+  "appleProcessingState": "VALID",
+  "internalBuildState": "IN_BETA_TESTING",
+  "existingGroup": {
+    "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+    "name": "Team (Expo)",
+    "isInternal": true,
+    "hasAccessToAllBuilds": true,
+    "actuallyAssigned": true,
+    "testerCount": 1,
+    "testerStates": [
+      "INSTALLED"
+    ]
+  },
+  "betaNotes": {
+    "locale": "en-US",
+    "exactReadback": true,
+    "characters": 964,
+    "sha256": "ed7bb645d062b169c5799308283705563edc65a1614371ca2ebd65cdfd850028"
+  },
+  "archiveSha256": "d803add27a6e89a87a4f36c46d8bdb09dad6e376df50e6b272e9d00a9f451343",
+  "scope": "Transparent point-sized three-chevron LiveActivity brand asset and original/fullColor image rendering; build metadata",
+  "nativeTargetsVerified": 3,
+  "compiledBrandRenditions": [
+    {
+      "Name": "StrideOSMark",
+      "PixelWidth": 28,
+      "PixelHeight": 28,
+      "Scale": 1,
+      "Opaque": false,
+      "TemplateMode": null
+    },
+    {
+      "Name": "StrideOSMark",
+      "PixelWidth": 56,
+      "PixelHeight": 56,
+      "Scale": 2,
+      "Opaque": false,
+      "TemplateMode": null
+    },
+    {
+      "Name": "StrideOSMark",
+      "PixelWidth": 84,
+      "PixelHeight": 84,
+      "Scale": 3,
+      "Opaque": false,
+      "TemplateMode": null
+    }
+  ],
+  "focusedChecksPassed": 35,
+  "nativeSemanticTypecheck": "PASS",
+  "cloudDoctorPassed": 21,
+  "physicalLockScreenAccepted": false,
+  "billingBackendChangedInThisTask": false,
+  "watchTransportOrMetricCodeChanged": false,
+  "demoScreenshotDataShippedInApp": false,
+  "publicReviewSubmitted": false,
+  "publicVersion": {
+    "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "version": "1.0",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "releaseType": "MANUAL",
+    "selectedBuild": "109"
+  },
+  "screenshotWork": "SCREENSHOT_DEMO_PREPARATION_20261117.md"
+}

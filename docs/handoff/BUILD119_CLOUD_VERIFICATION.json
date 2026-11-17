@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-11-17T11:27:24.025001+00:00",
+  "buildId": "d531ddf6-0143-41d5-8e6b-d91846977829",
+  "sourceCommit": "827ad9984a70b638a3018c677465e22a13662d3c",
+  "buildNumber": "119",
+  "status": "FINISHED",
+  "completedAt": "2026-11-17T11:22:06.994Z",
+  "doctorPassed": 21,
+  "doctorTotal": 21,
+  "archiveSucceeded": true,
+  "archiveErrors": 0,
+  "archiveWarnings": 33,
+  "publicReviewSubmitted": false
+}
