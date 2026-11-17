@@ -1,0 +1,96 @@
+{
+  "source": "assets/images/icon.png",
+  "sourceSha256": "ea0a126faaf054008b769b244b3508f2b2f314c34e82d7548ab5da8f57b20aec",
+  "sourceInkBounds": [
+    289,
+    353,
+    777,
+    671
+  ],
+  "sourceInkPixels": [
+    488,
+    318
+  ],
+  "pointSize": 28,
+  "inkWidthPoints": 26,
+  "canonicalColors": [
+    [
+      139,
+      146,
+      124
+    ],
+    [
+      220,
+      192,
+      167
+    ],
+    [
+      94,
+      126,
+      146
+    ]
+  ],
+  "outputs": [
+    {
+      "file": "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/StrideOSMark.png",
+      "pixels": [
+        28,
+        28
+      ],
+      "scale": 1,
+      "logicalPoints": [
+        28.0,
+        28.0
+      ],
+      "visibleBounds": [
+        1,
+        5,
+        27,
+        22
+      ],
+      "visibleChevronComponents": 3,
+      "sha256": "5587247c4b7187679089b002212d97790c32a84fedfc8c2df975d71f6b37fa89"
+    },
+    {
+      "file": "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/StrideOSMark@2x.png",
+      "pixels": [
+        56,
+        56
+      ],
+      "scale": 2,
+      "logicalPoints": [
+        28.0,
+        28.0
+      ],
+      "visibleBounds": [
+        2,
+        11,
+        54,
+        45
+      ],
+      "visibleChevronComponents": 3,
+      "sha256": "5811af3249c0663503ab00e3986000a27fb9a518a726b6e0465a4769abc702fe"
+    },
+    {
+      "file": "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/StrideOSMark@3x.png",
+      "pixels": [
+        84,
+        84
+      ],
+      "scale": 3,
+      "logicalPoints": [
+        28.0,
+        28.0
+      ],
+      "visibleBounds": [
+        3,
+        16,
+        81,
+        67
+      ],
+      "visibleChevronComponents": 3,
+      "sha256": "c195ae3b2d168b9d157046fdebdc0a167b7833c85cc0c111236655f1c9fb2191"
+    }
+  ],
+  "check": true
+}

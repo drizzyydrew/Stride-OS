@@ -1,0 +1,9 @@
+Build119 — Live Activity logo
+
+The Lock Screen Live Activity now uses your approved three-chevron StrideOS mark on a transparent background, sized for its28-point header space. Point-sized1x/2x/3x assets replace the old large app-icon tile, and the widget requests original/full-color rendering.
+
+After updating without uninstalling: start a brief activity, lock your iPhone and confirm the chevrons appear beside the activity title with no gray or brown square. Check ordinary and dimmed Lock Screen appearance if available. Confirm Pause/Resume and Stop still work. No outdoor run or new subscription purchase is needed for this check.
+
+This build contains the logo fix and build metadata. Watch connectivity, recording, metric freshness, activity history, account/session behavior and membership policies are unchanged. Fictional marketing screenshot data is kept outside the app and never written into your training account.
+
+Build118's owner-reported checks remain accepted. Public App Review and release are separate from this internal TestFlight update.

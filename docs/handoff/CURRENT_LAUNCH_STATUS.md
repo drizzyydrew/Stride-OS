@@ -1,5 +1,11 @@
 # Current StrideOS launch status
 
+## November 16 Pacific — owner accepts build 118 checks
+
+The owner reports installing build118, completing all supplied checks, and finding them good. This closes the owner-reported BUILD118_OWNER_TEST_GUIDE scope; do not repeat those checks without a new failure or relevant change. It does not establish the separately identified authenticated server billing, production signup/reviewer/deletion, or paid-lifecycle scenarios.
+
+Fresh read-only Apple verification at 2026-11-17T02:45Z still finds public1.0 selecting109 / PREPARE_FOR_SUBMISSION / MANUAL. The en-US listing has three iPhone6.1 screenshots, three iPad screenshots and four Watch screenshots; the iPhone6.5 set is empty. Both subscriptions remain MISSING_METADATA with no App Review screenshot. No screenshot upload, build selection, public review submission or release occurred in this status check. See BUILD118_LAUNCH_NEXT_STEPS.md.
+
 <!-- BUILD118_DELIVERED -->
 ## Latest: build 118 delivered, Pro training bundle (2026-11-16)
 

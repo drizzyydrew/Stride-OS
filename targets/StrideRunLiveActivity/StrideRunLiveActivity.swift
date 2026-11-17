@@ -88,11 +88,15 @@ struct StrideRunLiveActivity: Widget {
 
 // ─── Lock screen view ─────────────────────────────────────────────────────────
 
-// The unchanged app-icon artwork keeps the approved three-chevron mark exact.
+// Point-sized, transparent exports retain the approved three-chevron artwork.
+// Request original/full-color rendering in accented widget modes. The asset
+// has no tile; the Live Activity supplies its own surrounding background.
 private struct StrideOSBrandMark: View {
   var body: some View {
     Image("StrideOSMark")
+      .renderingMode(.original)
       .resizable()
+      .widgetAccentedRenderingMode(.fullColor)
       .scaledToFit()
       .frame(width: 28, height: 28)
       .accessibilityLabel("StrideOS logo")

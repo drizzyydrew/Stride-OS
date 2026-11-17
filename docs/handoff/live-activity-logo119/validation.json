@@ -1,0 +1,78 @@
+{
+  "scopedVerdict": "PASS",
+  "sourceBaseCommit": "92b076aca5112ca3b047478b1fe10fcd627326dd",
+  "onlyBrandMarkSwiftChanged": true,
+  "controlsNativeModuleIntentsTargetConfigAndPlistUnchanged": true,
+  "assetCheck": "asset-check.json",
+  "existingLiveActivityContracts": {
+    "passed": 25,
+    "failed": 0
+  },
+  "nativeSemanticTypecheck": {
+    "target": "arm64-apple-ios18.0-simulator",
+    "sdk": "iOS18.5 local Xcode16.4",
+    "passed": true,
+    "warnings": "existing contentState deprecations in unchanged shared intents"
+  },
+  "assetCatalog": {
+    "compiled": true,
+    "renditions": [
+      {
+        "pixels": [
+          28,
+          28
+        ],
+        "scale": 1,
+        "logicalPoints": [
+          28,
+          28
+        ],
+        "opaque": false
+      },
+      {
+        "pixels": [
+          56,
+          56
+        ],
+        "scale": 2,
+        "logicalPoints": [
+          28,
+          28
+        ],
+        "opaque": false
+      },
+      {
+        "pixels": [
+          84,
+          84
+        ],
+        "scale": 3,
+        "logicalPoints": [
+          28,
+          28
+        ],
+        "opaque": false
+      }
+    ]
+  },
+  "nativeRender": {
+    "path": "native-brand-mark-bound-render.png",
+    "kind": "Native macOS SwiftUI modifier/layout chain with explicit PNG dependency binding",
+    "dimensions": [
+      516,
+      252
+    ],
+    "actualViewSourceShapeAndModifiers": true,
+    "assetNameResolutionVerifiedByRender": false,
+    "physicalLockScreenOrAlwaysOnVerified": false
+  },
+  "noCommitPushBuildCandidateOrSubmit": true,
+  "sourceSha256": {
+    "scripts/generate-live-activity-brand-mark.py": "c59455e4ca42c7f2cb1b131b236e8b55f8a6960da2501d0a6d122ba2e59a4ec0",
+    "targets/StrideRunLiveActivity/StrideRunLiveActivity.swift": "33610079368aa9c070b975a485ff50c9991ac486eff7185f20482827afaec004",
+    "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/Contents.json": "9241fd7c1ac7b4cca59fe2e09c179fa5dd53c5336a9cd43999018af8b09897fe",
+    "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/StrideOSMark.png": "5587247c4b7187679089b002212d97790c32a84fedfc8c2df975d71f6b37fa89",
+    "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/StrideOSMark@2x.png": "5811af3249c0663503ab00e3986000a27fb9a518a726b6e0465a4769abc702fe",
+    "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/StrideOSMark@3x.png": "c195ae3b2d168b9d157046fdebdc0a167b7833c85cc0c111236655f1c9fb2191"
+  }
+}

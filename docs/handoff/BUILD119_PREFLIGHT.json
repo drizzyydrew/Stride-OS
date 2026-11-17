@@ -1,0 +1,53 @@
+{
+  "recordedAt": "2026-11-17T11:11:00.425623+00:00",
+  "buildNumber": "119",
+  "profile": "billing-qa",
+  "sourceParent": "92b076aca5112ca3b047478b1fe10fcd627326dd",
+  "scope": "Transparent point-sized LiveActivity brand asset and image rendering only; build metadata",
+  "checks": {
+    "nativePrebuild": "PASS",
+    "combinedNativeContracts": {
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0
+    },
+    "wholeWidgetSemanticTypecheck": "PASS",
+    "compiledAssetCatalogRenditions": "PASS",
+    "independentPlatformContrarian": "PASS",
+    "physicalLockScreen": "PENDING"
+  },
+  "publicServerBillingChanged": false,
+  "sourceOwnerTrainingDataChanged": false,
+  "screenshotDemoDataShipped": false,
+  "protectedNativeRuntimeSourcesUnchanged": true,
+  "files": [
+    {
+      "path": "app.json",
+      "sha256": "9d5caa10131108325c24723f4a7c6cb807b4127f7c49980ff796e07053fedcd9"
+    },
+    {
+      "path": "scripts/generate-live-activity-brand-mark.py",
+      "sha256": "c59455e4ca42c7f2cb1b131b236e8b55f8a6960da2501d0a6d122ba2e59a4ec0"
+    },
+    {
+      "path": "targets/StrideRunLiveActivity/StrideRunLiveActivity.swift",
+      "sha256": "33610079368aa9c070b975a485ff50c9991ac486eff7185f20482827afaec004"
+    },
+    {
+      "path": "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/Contents.json",
+      "sha256": "9241fd7c1ac7b4cca59fe2e09c179fa5dd53c5336a9cd43999018af8b09897fe"
+    },
+    {
+      "path": "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/StrideOSMark.png",
+      "sha256": "5587247c4b7187679089b002212d97790c32a84fedfc8c2df975d71f6b37fa89"
+    },
+    {
+      "path": "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/StrideOSMark@2x.png",
+      "sha256": "5811af3249c0663503ab00e3986000a27fb9a518a726b6e0465a4769abc702fe"
+    },
+    {
+      "path": "targets/StrideRunLiveActivity/Assets.xcassets/StrideOSMark.imageset/StrideOSMark@3x.png",
+      "sha256": "c195ae3b2d168b9d157046fdebdc0a167b7833c85cc0c111236655f1c9fb2191"
+    }
+  ]
+}
