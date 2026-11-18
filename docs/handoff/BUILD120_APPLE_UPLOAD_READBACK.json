@@ -1,0 +1,37 @@
+{
+  "checkedAt": "2026-11-18T10:52:56.912Z",
+  "uploads": [
+    {
+      "id": "1c10224c-a17b-46bb-9511-064f2cea6e0b",
+      "attributes": {
+        "cfBundleVersion": "120",
+        "createdDate": "2026-11-18T02:44:23-08:00",
+        "state": {
+          "errors": [],
+          "warnings": [
+            {
+              "code": "90725",
+              "description": "SDK version issue. This app was built with the iOS 26.5 SDK. Starting April 2027, iOS and iPadOS apps must be built with the iOS 27 SDK or later, included in Xcode 27 or later, in order to be uploaded to App Store Connect or submitted for distribution."
+            }
+          ],
+          "infos": [],
+          "state": "COMPLETE"
+        },
+        "cfBundleShortVersionString": "1.0.0",
+        "uploadedDate": "2026-11-18T02:44:26-08:00",
+        "platform": "IOS"
+      },
+      "build": {
+        "type": "builds",
+        "id": "1c10224c-a17b-46bb-9511-064f2cea6e0b"
+      }
+    }
+  ],
+  "builds": [
+    {
+      "id": "1c10224c-a17b-46bb-9511-064f2cea6e0b",
+      "version": "120",
+      "processingState": "VALID"
+    }
+  ]
+}

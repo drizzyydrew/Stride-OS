@@ -4,18 +4,51 @@
   "sourceParent": "d5ebf9c",
   "scope": "Authenticated own-account AI usage read, quiet native disclosure and example, account-fenced refresh, build metadata and cloud typecheck gate",
   "checks": {
-    "focusedUsagePrivacyBudgetRevenueTests": {"passed": 24, "failed": 0, "skipped": 0},
-    "nativeAndDependencyRegressionTests": {"passed": 20, "failed": 0, "skipped": 0},
-    "independentUsageReview": {"passed": 8, "failed": 0, "skipped": 0},
+    "focusedUsagePrivacyBudgetRevenueTests": {
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0
+    },
+    "nativeAndDependencyRegressionTests": {
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0
+    },
+    "independentUsageReview": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
     "independentPlatformReview": "PASS scoped source",
     "independentContrarianReview": "PASS scoped source",
     "nativePrebuild": "PASS phone Info.plist120 and extension build settings120",
     "dependencyAlignment": "PASS up to date",
     "diffWhitespace": "PASS",
-    "typecheck": "LOCAL RUNNING; canonical npm run typecheck is also a required cloud post-install gate before archive",
+    "typecheck": "PASS local canonical npm run typecheck and required cloud POST_INSTALL_HOOK before archive",
     "physicalCounterDisclosure": "PENDING"
   },
-  "backend": {"function": "ai-coach", "version": 17, "filesExact": 4, "verifyJwt": true, "unauthenticatedUsageStatus": 401},
-  "unchanged": ["daily20 and global500 allowance", "quota reservation and provider POST", "subscription policy and credentials", "database schema and privileges", "Watch runtime", "recording runtime", "Live Activity runtime", "dependencies"],
-  "limits": ["No authenticated device usage GET acceptance yet", "No native visual interaction acceptance yet; computer-use service unavailable", "Prior118 checks and119 ordinary Lock Screen logo acceptance remain scoped owner reports", "No public App Review or release authorization inferred"]
+  "backend": {
+    "function": "ai-coach",
+    "version": 17,
+    "filesExact": 4,
+    "verifyJwt": true,
+    "unauthenticatedUsageStatus": 401
+  },
+  "unchanged": [
+    "daily20 and global500 allowance",
+    "quota reservation and provider POST",
+    "subscription policy and credentials",
+    "database schema and privileges",
+    "Watch runtime",
+    "recording runtime",
+    "Live Activity runtime",
+    "dependencies"
+  ],
+  "limits": [
+    "No authenticated device usage GET acceptance yet",
+    "No native visual interaction acceptance yet; computer-use service unavailable",
+    "Prior118 checks and119 ordinary Lock Screen logo acceptance remain scoped owner reports",
+    "No public App Review or release authorization inferred"
+  ],
+  "finalValidation": "BUILD120_VALIDATION.json"
 }

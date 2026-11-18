@@ -1,0 +1,57 @@
+{
+  "recordedAt": "2026-11-18T10:54:29.960732+00:00",
+  "version": "1.0.0",
+  "buildNumber": "120",
+  "profile": "billing-qa",
+  "sourceCommit": "ade9c221422262c85f352d083a7d416673d32a08",
+  "buildId": "9745aa33-3d0c-4e5e-a5b4-7704bb9eedfd",
+  "submissionId": "b6168ea4-c69f-4e50-94f9-088d8eb70dd6",
+  "appleBuildId": "1c10224c-a17b-46bb-9511-064f2cea6e0b",
+  "easStatus": "FINISHED",
+  "submissionStatus": "FINISHED",
+  "appleProcessingState": "VALID",
+  "internalBuildState": "IN_BETA_TESTING",
+  "existingGroup": {
+    "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+    "name": "Team (Expo)",
+    "isInternal": true,
+    "hasAccessToAllBuilds": true,
+    "actuallyAssigned": true,
+    "testerCount": 1,
+    "testerStates": [
+      "INSTALLED"
+    ]
+  },
+  "betaNotes": {
+    "locale": "en-US",
+    "exactReadback": true,
+    "characters": 1061,
+    "sha256": "fe70c4a3c18fea34ddd91a54275983a411d97daff5c3c7570eb3ec879e9d2c39"
+  },
+  "archiveSha256": "f444f03fb87c367abad988e4662047034161de7cf8c67a50f037a852630b4f4f",
+  "archiveBytes": 129910365,
+  "signedTargetsVerified": 3,
+  "usageFeatureStringsInSignedHermesBundle": true,
+  "backendVersion": 17,
+  "backendFilesExact": 4,
+  "backendVerifyJwt": true,
+  "unauthenticatedUsageStatus": 401,
+  "localAndCloudTypecheck": "PASS",
+  "cloudDoctorPassed": 21,
+  "focusedAndRegressionTestsPassed": 44,
+  "council": "Independent platform and Contrarian scoped source PASS",
+  "dailyAllowanceChanged": false,
+  "subscriptionPolicyChanged": false,
+  "databaseSchemaOrPrivilegesChanged": false,
+  "watchRecordingOrLiveActivityRuntimeChanged": false,
+  "physicalCounterDisclosureAccepted": false,
+  "authenticatedDeviceUsageReadAccepted": false,
+  "publicReviewSubmitted": false,
+  "publicVersion": {
+    "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "version": "1.0",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "releaseType": "MANUAL",
+    "selectedBuild": "109"
+  }
+}

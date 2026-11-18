@@ -1,5 +1,13 @@
 # Current StrideOS launch status
 
+## Latest: build 120 AI usage counter delivered — November 18
+
+Build 120 is VALID / IN_BETA_TESTING in the existing internal Team (Expo) group, with exact testing-note readback. Source ade9c221422262c85f352d083a7d416673d32a08; EAS 9745aa33-3d0c-4e5e-a5b4-7704bb9eedfd; submission b6168ea4-c69f-4e50-94f9-088d8eb70dd6. See BUILD120_RELEASE.md and BUILD120_DELIVERY.json.
+
+Ask Coach now has a quiet native disclosure showing account-specific requests used today, with remaining allowance, local/UTC reset time, example and refresh behind expansion. Deployed ai-coach v17 reads only the authenticated owner's count; four source files match, JWT stays on, unauthenticated usage returns401. No quota, paid policy, secrets, database permissions/schema or protected native runtime changed. Independent platform/Contrarian reviews,44 focused/regression tests, local/cloud typechecks, dependency/prebuild checks,21/21 cloud Doctor and signed three-target120 artifact checks passed. Actual installed counter/disclosure and authenticated device read acceptance remain pending. The owner's119 ordinary Lock Screen logo and current membership captures are accepted within their reported scope.
+
+Public draft still109/PREPARE_FOR_SUBMISSION/MANUAL. No public review/release or new purchase occurred. Remaining paid-server/cost/capacity, account/reviewer/deletion, paid lifecycle and Store-material gates remain open. The owner reports Apple website sign-in; browser recheck was unavailable through computer use, while existing API access was verified and used for delivery.
+
 ## November 18 — owner confirms Lock Screen logo and current membership
 
 The owner reports the Lock Screen logo looks excellent and supplies a physical-phone screenshot showing the approved three chevrons beside Paused · Training Run without the gray square. This closes the ordinary Lock Screen logo check within that reported scope; a dimmed/Always On check is not established. Two current membership photos show Training that grows with you, the three current benefits, and an active Pro subscription. Current membership capture is received; full-resolution store export/selection remains separate.

@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-11-18T10:40:16.048045+00:00",
+  "buildId": "9745aa33-3d0c-4e5e-a5b4-7704bb9eedfd",
+  "sourceCommit": "ade9c221422262c85f352d083a7d416673d32a08",
+  "buildNumber": "120",
+  "status": "FINISHED",
+  "completedAt": "2026-11-18T10:26:21.351Z",
+  "doctorPassed": 21,
+  "typecheck": {
+    "result": "PASS",
+    "command": "npm run typecheck / pinned TypeScript5.9.3",
+    "phase": "POST_INSTALL_HOOK",
+    "start": "2026-11-18T10:17:09.693Z",
+    "end": "2026-11-18T10:17:21.857Z",
+    "beforeNativeArchive": true
+  },
+  "nativeArchive": {
+    "result": "PASS",
+    "errors": 0,
+    "warnings": 34,
+    "observedWarning": "Optional MetalToolchain Swift search path not found"
+  },
+  "publicReviewSubmitted": false
+}
