@@ -38,6 +38,7 @@ export function validCoachPayload(value: unknown): value is { messages: CoachMes
 export function createCoachHandler(deps: {
   authenticate(req: Request): Promise<string | null>;
   configured(): boolean;
+  readUsage?(userId: string): Promise<{ used: number; limit: number; remaining: number; resetsAt: string }>;
   canUsePlan?(userId: string): Promise<boolean>;
   consumeAllowance(userId: string): Promise<boolean>;
   reply(payload: { messages: CoachMessage[]; system: string }, signal: AbortSignal): Promise<{ content: { type: 'text'; text: string }[] }>;
@@ -48,7 +49,13 @@ export function createCoachHandler(deps: {
     try {
       const userId = await deps.authenticate(req);
       if (!userId) return json({ error: 'Please sign in again.' }, 401);
-      if (req.method === 'GET') return json({ ok: deps.configured() });
+      if (req.method === 'GET') {
+        if (new URL(req.url).searchParams.get('usage') === '1') {
+          if (!deps.readUsage) return json({ error: 'Usage is temporarily unavailable.' }, 503);
+          return json({ usage: await deps.readUsage(userId) });
+        }
+        return json({ ok: deps.configured() });
+      }
       let body: unknown;
       try { body = await readJson(req); } catch { return json({ error: 'Invalid or oversized request.' }, 400); }
       if (!validCoachPayload(body)) return json({ error: 'AI sharing permission or message format is invalid. Update the app and review AI Coach Privacy.' }, 400);

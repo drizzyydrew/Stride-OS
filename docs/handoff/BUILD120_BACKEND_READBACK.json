@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-11-18T09:53:03.568Z",
+  "version": 17,
+  "verify_jwt": true,
+  "status": "ACTIVE",
+  "files": [
+    {
+      "name": "ai-coach/index.ts",
+      "exact": true
+    },
+    {
+      "name": "_shared/launchHandlers.ts",
+      "exact": true
+    },
+    {
+      "name": "_shared/revenueCatAccess.ts",
+      "exact": true
+    },
+    {
+      "name": "_shared/coachAllowance.ts",
+      "exact": true
+    }
+  ],
+  "unauthenticatedUsageHttpStatus": 401,
+  "quotaOrProviderCallMadeForVerification": false,
+  "databaseSchemaChanged": false,
+  "databasePrivilegesChanged": false,
+  "billingOrQuotaPolicyChanged": false,
+  "authenticatedDeviceUsageReadAccepted": false
+}

@@ -72,6 +72,7 @@
   },
   "scripts": {
     "eas-build-pre-install": "node scripts/check-observability-release.cjs",
+    "eas-build-post-install": "npm run typecheck",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",

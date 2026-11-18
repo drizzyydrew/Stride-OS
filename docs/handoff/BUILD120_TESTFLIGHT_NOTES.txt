@@ -1,0 +1,7 @@
+AI Coach now has a small daily usage counter above Your Training Context. Tap it to expand usage details, a simple example, your remaining personal allowance and the reset time in your timezone. The section starts collapsed.
+
+Counts come from your signed-in account on the server. They refresh after sending, when returning to chat, on foregrounding and while chat is open. Failed reads show unavailable or the last checked reading instead of a false zero. Account changes clear the reading.
+
+The existing 20 requests per UTC day and membership rules are unchanged. Some failed AI replies can still consume a request; usage checks do not. Shared service limits may also affect availability. Recording, history, existing plans and on-device Insights are unchanged.
+
+Please check the collapsed/expanded row, example and local reset time, send one normal message if desired, then reopen chat and check the refreshed count. Do not purchase again. Previous build 118 checks and the build 119 Lock Screen logo acceptance remain accepted within their reported scopes.

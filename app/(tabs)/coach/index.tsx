@@ -53,6 +53,8 @@ import { useAchievementStore } from '../../../src/store/achievementStore';
 import { useGearStore } from '../../../src/store/gearStore';
 import { useRecalculationStore } from '../../../src/store/recalculationStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
+import { useCoachUsage } from '../../../src/hooks/useCoachUsage';
+import CoachUsageDetails from '../../../src/components/coaching/CoachUsageDetails';
 import { pickTargetRace } from '../../../src/utils/plan/macroPlanner';
 import { buildCoachingInput } from '../../../src/utils/coachingInputBuilder';
 import { buildBudgetedCoachPrompt } from '../../../src/utils/coachPromptBudget';
@@ -784,6 +786,7 @@ export default function CoachScreen() {
   const [messages,  setMessages]  = useState<Message[]>([]);
   const [input,     setInput]     = useState('');
   const [loading,   setLoading]   = useState(false);
+  const coachUsage = useCoachUsage(tab === 'chat' && aiSharing.allowed, loading);
   const [error,     setError]     = useState<string | null>(null);
   // The analysis the athlete tapped "Discuss with AI Coach" on. Captured from
   // the deep-link param and kept in state past the param-clear so it grounds
@@ -953,6 +956,8 @@ export default function CoachScreen() {
             keyboardShouldPersistTaps="handled"
             onScrollBeginDrag={() => Keyboard.dismiss()}
           >
+            <CoachUsageDetails usage={coachUsage.usage} status={coachUsage.status}
+              checkedAt={coachUsage.checkedAt} sending={loading} onRefresh={() => { void coachUsage.refresh(); }} />
             <FeatureTourTarget targetId="coach.context" style={s.contextCard}>
               <Text style={s.contextEyebrow}>Your Training Context</Text>
               <Text style={s.contextTxt}>{contextSummary}</Text>

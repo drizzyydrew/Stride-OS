@@ -1,6 +1,7 @@
 import { getSupabaseFunctionHeaders, getSupabaseFunctionUrl } from './supabase';
 import { aiConsent } from '../store/aiConsentStore';
 import { captureOwnerLease, ownerLeaseIsCurrent } from './localDataOwner';
+import { parseCoachUsage, type CoachUsage } from '../utils/coachUsage';
 import {
   budgetCoachMessages,
   enforceCoachSystemPrompt,
@@ -35,6 +36,21 @@ export function isAiCoachConfigured(): boolean {
 
 function coachEndpoint(): string | null {
   return getSupabaseFunctionUrl('ai-coach');
+}
+
+/** Read only the signed-in account's allowance; this never sends training data
+ * to the AI provider or reserves a request. No client-supplied account ID. */
+export async function fetchCoachUsage(signal: AbortSignal): Promise<CoachUsage> {
+  const lease = captureOwnerLease(true);
+  if (!lease) throw new Error('Connect to check your usage.');
+  const endpoint = coachEndpoint();
+  const headers = await getSupabaseFunctionHeaders();
+  if (!endpoint || !headers || !ownerLeaseIsCurrent(lease, true)) throw new Error('Usage is temporarily unavailable.');
+  const response = await fetch(`${endpoint}?usage=1`, { method: 'GET', headers, signal });
+  const body: unknown = await response.json().catch(() => null);
+  if (signal.aborted || !ownerLeaseIsCurrent(lease, true)) throw new Error('The account changed.');
+  if (!response.ok) throw new Error('Usage is temporarily unavailable.');
+  return parseCoachUsage(body);
 }
 
 function errorMessage(body: CoachResponse, status: number): string {
