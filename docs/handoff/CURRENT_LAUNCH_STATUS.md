@@ -1,5 +1,11 @@
 # Current StrideOS launch status
 
+## November 18 — owner confirms Lock Screen logo and current membership
+
+The owner reports the Lock Screen logo looks excellent and supplies a physical-phone screenshot showing the approved three chevrons beside Paused · Training Run without the gray square. This closes the ordinary Lock Screen logo check within that reported scope; a dimmed/Always On check is not established. Two current membership photos show Training that grows with you, the three current benefits, and an active Pro subscription. Current membership capture is received; full-resolution store export/selection remains separate.
+
+Read-only checks on November18 confirm Apple Developer's Chrome page is signed out, while the existing App Store Connect API successfully reads the StrideOS app. Live Supabase function v16 and database allowance code still use20 reservations/account/UTC day and500 globally/UTC day. The last-seven-day usage query returned no rows; this is not an authenticated allowance or AI-provider acceptance test. The current UI displays the same daily-limit error for individual/global exhaustion, with no remaining count/reset time. Reservations precede the provider call and are not refunded after provider failure. No policy, credentials, backend configuration, subscription or public release changes were made. See BUILD119_OWNER_AND_ALLOWANCE_READBACK_20261118.md.
+
 ## Latest: build119 logo fix delivered — November17
 
 Build119 is VALID / IN_BETA_TESTING in the existing internal Team(Expo) group, with exact saved beta-note readback. Source827ad9984a70b638a3018c677465e22a13662d3c; EASd531ddf6-0143-41d5-8e6b-d91846977829; submission3959fe55-9d53-486b-a6f1-df7940c7a9fb. See BUILD119_RELEASE.md and BUILD119_DELIVERY.json.
