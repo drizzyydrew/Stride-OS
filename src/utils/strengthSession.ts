@@ -55,6 +55,8 @@ export type ActiveSetEntry = {
 
 export type ActiveStrengthExercise = {
   id: string;
+  canonicalExerciseId?: string;
+  modifiedTargets?: boolean;
   name: string;
   // Legacy prescribed shape — still the source of truth for what was
   // programmed; setEntries below is the live, athlete-editable record of
@@ -72,6 +74,7 @@ export type ActiveStrengthExercise = {
   // Set when this exercise replaced a prescribed one (substitution), or
   // when it was added freeform during a custom session.
   substitutedFromId?: string;
+  substitutedFromPrescription?: { exerciseId: string; name: string; sets: number; reps: string; repScheme?: RepScheme; targetRpe?: number; restSeconds?: number; loadTarget?: string };
   // True when the athlete added an exercise that was not prescribed.
   // Substitutions use `substitutedFromId` instead.
   added?: boolean;
@@ -205,6 +208,9 @@ export function ensureExerciseShape(exercise: Partial<ActiveStrengthExercise> & 
     equipment: exercise.equipment ?? [],
     equipmentType: exercise.equipmentType ?? mapEquipmentType(exercise.equipment),
     notes: exercise.notes,
+    canonicalExerciseId: exercise.canonicalExerciseId,
+    modifiedTargets: exercise.modifiedTargets,
+    substitutedFromPrescription: exercise.substitutedFromPrescription,
     plannedRpe: exercise.plannedRpe,
     plannedRestSeconds: exercise.plannedRestSeconds,
     plannedLoadTarget: exercise.plannedLoadTarget,
@@ -250,6 +256,9 @@ function mapExercise(
 
 export type AddExerciseInput = {
   name: string;
+  canonicalExerciseId?: string;
+  plannedSets?: number;
+  plannedReps?: string;
   equipmentType?: EquipmentType;
   equipment?: string[];
   notes?: string;
@@ -310,25 +319,46 @@ export function substituteExercise(
 ): ActiveStrengthSession {
   const index = session.exercises.findIndex(exercise => exercise.id === exerciseId);
   if (index < 0) return session;
+  const original = session.exercises[index]!;
+  const performed = original.setEntries.filter(set => set.completed && !set.isWarmup).length;
+  const workingSets = original.setEntries.filter(set => !set.isWarmup);
+  if (session.completedExerciseIds.includes(exerciseId) || (workingSets.length > 0 && workingSets.every(set => set.completed))) return session;
+  const remaining = original.sets > 0 ? Math.max(0, original.sets - performed) : Math.max(1, workingSets.filter(set => !set.completed).length);
+  if (!remaining) return session;
+  const plannedSets = Math.max(1, Math.min(remaining, replacement.plannedSets ?? remaining));
   const next: ActiveStrengthExercise = {
     id: generateExerciseId(),
+    canonicalExerciseId: replacement.canonicalExerciseId,
     name: replacement.name.trim() || 'Exercise',
-    sets: 0,
-    reps: '',
+    sets: replacement.plannedSets === undefined ? 0 : plannedSets,
+    reps: replacement.plannedReps ?? '',
     repScheme: replacement.repScheme,
     equipment: replacement.equipment ?? [],
     equipmentType: replacement.equipmentType ?? mapEquipmentType(replacement.equipment),
     notes: replacement.notes,
-    setEntries: replacement.seedSet === false ? [] : [{ id: generateSetId(), completed: false }],
+    setEntries: replacement.seedSet === false ? [] : Array.from({ length: replacement.plannedSets === undefined ? 1 : plannedSets }, () => ({ id: generateSetId(), completed: false })),
     substitutedFromId: exerciseId,
+    substitutedFromPrescription: original.substitutedFromPrescription ?? {
+      exerciseId: original.canonicalExerciseId ?? original.id, name: original.name, sets: original.sets, reps: original.reps,
+      repScheme: original.repScheme, targetRpe: original.plannedRpe, restSeconds: original.plannedRestSeconds, loadTarget: original.plannedLoadTarget,
+    },
     added: false,
   };
   const exercises = [...session.exercises];
-  exercises.splice(index, 1, next);
+  // Performed work is immutable. Keep its original row and insert only the
+  // remaining work, rather than erase actuals or duplicate the full dose.
+  const anyPerformed = original.setEntries.some(set => set.completed);
+  if (anyPerformed) {
+    exercises[index] = { ...original, setEntries: original.setEntries.filter(set => set.completed),
+      notes: `${original.notes ?? ''}${original.notes ? ' ' : ''}Performed work retained; remaining targets were moved to the chosen alternative.` };
+    exercises.splice(index + 1, 0, next);
+  }
+  else exercises.splice(index, 1, next);
   return {
     ...session,
     exercises,
-    completedExerciseIds: session.completedExerciseIds.filter(id => id !== exerciseId),
+    completedExerciseIds: anyPerformed ? [...new Set([...session.completedExerciseIds, exerciseId])] : session.completedExerciseIds.filter(id => id !== exerciseId),
+    currentExerciseIndex: anyPerformed ? index + 1 : index,
   };
 }
 

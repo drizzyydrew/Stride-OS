@@ -89,6 +89,14 @@ function classifyRun(session: ScheduledSession, text: string, richType?: RichWor
 
 function classifyStrength(session: ScheduledSession, text: string): SessionStressProfile['axes'] {
   const duration = axisForDuration(session.durationMinutes);
+  const prescription = session.strengthSession;
+  if (prescription?.lowerDemand === 'reduced_support') {
+    const lower = prescription.exercises.filter(ex => ['squat', 'hinge', 'lunge', 'calf_ankle', 'plyometric'].includes(ex.exercise.pattern));
+    if (lower.every(ex => ex.exercise.pattern !== 'plyometric' && ex.sets === 1 && Number.isFinite(ex.rpe) && ex.rpe >= 1 && ex.rpe <= 5)) {
+      return { ...ZERO_AXES, lowerMuscular: lower.length ? 1 : 0,
+        upperMuscular: prescription.exercises.some(ex => ['push', 'pull'].includes(ex.exercise.pattern)) ? 2 : 1, duration };
+    }
+  }
   const lower = includesAny(text, [/lower/, /leg/, /squat/, /deadlift/, /hinge/, /lunge/, /plyo/, /power/]);
   const upper = includesAny(text, [/upper/, /push/, /pull/, /press/, /row/]);
   const recovery = includesAny(text, [/mobility/, /recovery/, /prehab/, /activation/, /deload/]);

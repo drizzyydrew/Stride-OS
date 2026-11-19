@@ -87,6 +87,9 @@ export default function PresetStrengthDetailScreen() {
         repScheme: exercise.repScheme,
         equipment: exercise.equipment,
         notes: exercise.notes,
+        plannedRpe: exercise.targetRpe,
+        plannedRestSeconds: exercise.restSeconds,
+        plannedLoadTarget: exercise.targetRpe ? `Target RPE ${exercise.targetRpe}; calibrate this setup` : undefined,
       }));
       startSession({
         source: 'preset',
@@ -160,6 +163,7 @@ export default function PresetStrengthDetailScreen() {
           </Text>
           <Text style={[styles.detailLabel, { color: C.textDim }]}>INTENDED USE</Text>
           <Text style={[styles.body, { color: C.textMuted }]}>{workout.description}</Text>
+          {workout.planningNote ? <Text style={[styles.body, { color: C.textMuted }]}>{workout.planningNote}</Text> : null}
           <Text style={[styles.detailLabel, { color: C.textDim }]}>RECOMMENDED FREQUENCY</Text>
           <Text style={[styles.body, { color: C.textMuted }]}>Use 1–3 times per week when it fits your running load, recovery, and current training block.</Text>
           <Text style={[styles.sectionTitle, { color: C.primary }]}>WHY THIS WORKOUT</Text>
@@ -176,6 +180,7 @@ export default function PresetStrengthDetailScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.exerciseName, { color: C.text }]}>{exercise.name}</Text>
               <Text style={[styles.meta, { color: C.textMuted }]}>{formatPrescriptionWithSets(exercise.sets, exercise.repScheme, exercise.reps)} · {displayLabels(exercise.equipment)}</Text>
+              <Text style={[styles.meta, { color: C.textMuted }]}>Target RPE {exercise.targetRpe ?? 'not set'} · rest {exercise.restSeconds ?? 90}s</Text>
               <Text style={[styles.detailLabel, { color: C.textDim }]}>HOW TO PERFORM</Text>
               <Text style={[styles.body, { color: C.textMuted }]}>
                 Use a controlled range you can own. Keep the prescribed setup stable and stop the set before technique meaningfully changes.

@@ -2416,6 +2416,7 @@
       "canonicalId": "exercise_kettlebell_deadlift",
       "canonicalName": "Kettlebell Deadlift",
       "ids": [
+        "sw_kettlebell_beginner_kettlebell_deadlift",
         "sw_kettlebell_full_body_b_kettlebell_deadlift",
         "sw_kettlebell_lower_body_kettlebell_deadlift"
       ],

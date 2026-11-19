@@ -72,8 +72,41 @@ const PLAN_TEMPLATES: Record<RaceDistance, PlanTemplate> = {
 // (src/utils/plan/macroPlanner.ts) can proportionally scale phase boundaries
 // to fit a specific weeks-to-race window without duplicating the templates.
 
-export function getPlanTemplateForDistance(distance: RaceDistance): PlanTemplate {
-  return PLAN_TEMPLATES[distance];
+const SPECIFICITY_TEMPLATES: Record<RaceDistance, PlanTemplate> = {
+  marathon: { totalWeeks: 18, phases: [
+    { phase: 'base', startWeek: 1, endWeek: 4 },
+    { phase: 'aerobic_development', startWeek: 5, endWeek: 8 },
+    { phase: 'threshold', startWeek: 9, endWeek: 12 },
+    { phase: 'race_specific', startWeek: 13, endWeek: 16 },
+    { phase: 'taper', startWeek: 17, endWeek: 18 },
+  ] },
+  half_marathon: { totalWeeks: 12, phases: [
+    { phase: 'base', startWeek: 1, endWeek: 3 },
+    { phase: 'aerobic_development', startWeek: 4, endWeek: 5 },
+    { phase: 'threshold', startWeek: 6, endWeek: 8 },
+    { phase: 'race_specific', startWeek: 9, endWeek: 10 },
+    { phase: 'taper', startWeek: 11, endWeek: 12 },
+  ] },
+  '10k': { totalWeeks: 12, phases: [
+    { phase: 'base', startWeek: 1, endWeek: 3 },
+    { phase: 'aerobic_development', startWeek: 4, endWeek: 5 },
+    { phase: 'threshold', startWeek: 6, endWeek: 7 },
+    { phase: 'vo2', startWeek: 8, endWeek: 9 },
+    { phase: 'race_specific', startWeek: 10, endWeek: 10 },
+    { phase: 'taper', startWeek: 11, endWeek: 12 },
+  ] },
+  '5k': { totalWeeks: 12, phases: [
+    { phase: 'base', startWeek: 1, endWeek: 3 },
+    { phase: 'aerobic_development', startWeek: 4, endWeek: 5 },
+    { phase: 'threshold', startWeek: 6, endWeek: 6 },
+    { phase: 'vo2', startWeek: 7, endWeek: 9 },
+    { phase: 'race_specific', startWeek: 10, endWeek: 10 },
+    { phase: 'taper', startWeek: 11, endWeek: 12 },
+  ] },
+};
+
+export function getPlanTemplateForDistance(distance: RaceDistance, programmingVersion: 1 | 2 = 1): PlanTemplate {
+  return programmingVersion === 2 ? SPECIFICITY_TEMPLATES[distance] : PLAN_TEMPLATES[distance];
 }
 
 // ─── Plan Builder ─────────────────────────────────────────────────────────────

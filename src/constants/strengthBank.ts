@@ -18,7 +18,12 @@ export type StrengthEquipment =
   | 'dumbbell'
   | 'kettlebell'
   | 'band'
-  | 'bodyweight';
+  | 'bodyweight'
+  | 'pull_up_bar'
+  | 'support'
+  | 'step'
+  | 'secure_anchor'
+  | 'box';
 
 export type StrengthPresetCategory =
   | 'recommended'
@@ -41,6 +46,8 @@ export type PresetStrengthExercise = {
   repScheme?: RepScheme;
   equipment:  StrengthEquipment[];
   notes?:     string;
+  targetRpe?: number;
+  restSeconds?: number;
 };
 
 export function presetExerciseId(workoutId: string, exerciseName: string): string {
@@ -55,11 +62,17 @@ export type PresetStrengthWorkout = {
   equipment:    StrengthEquipment[];
   categories:   StrengthPresetCategory[];
   exercises:    PresetStrengthExercise[];
+  trainingPurpose?: 'strength' | 'running_support' | 'power' | 'activation' | 'recovery';
+  planningNote?: string;
 };
 
 function ex(name: string, sets: number, reps: string, equipment: StrengthEquipment[], notes?: string): PresetStrengthExercise {
   const repScheme = parsePrescriptionScheme(reps, { exerciseName: name, notes });
-  return notes ? { name, sets, reps, repScheme, equipment, notes } : { name, sets, reps, repScheme, equipment };
+  const setup: StrengthEquipment[] = /pull-up/i.test(name) ? ['pull_up_bar'] : /bodyweight dip/i.test(name) ? ['support']
+    : /step-up/i.test(name) ? ['step'] : /box jump/i.test(name) ? ['box']
+      : /box squat|bulgarian split squat|hip thrust/i.test(name) ? ['bench'] : /band (row|face pull|chest press)/i.test(name) ? ['secure_anchor'] : [];
+  const required = [...new Set([...equipment, ...setup])];
+  return notes ? { name, sets, reps, repScheme, equipment: required, notes } : { name, sets, reps, repScheme, equipment: required };
 }
 
 function workoutEquipment(exercises: PresetStrengthExercise[]): StrengthEquipment[] {
@@ -76,7 +89,23 @@ function preset(
   categories: StrengthPresetCategory[],
   exercises: PresetStrengthExercise[],
 ): PresetStrengthWorkout {
-  return { id, title, description, durationMin, equipment: workoutEquipment(exercises), categories, exercises };
+  const trainingPurpose = categories.includes('pre_run') ? 'activation' : categories.includes('post_run_recovery') ? 'recovery'
+    : /power/i.test(title) ? 'power' : categories.includes('runner_strength') ? 'running_support' : 'strength';
+  const beginner = /beginner/i.test(title);
+  const fitted = exercises.map(exercise => {
+    const lowDemand = trainingPurpose === 'activation' || trainingPurpose === 'recovery';
+    const targetRpe = lowDemand ? 3 : beginner ? 6 : trainingPurpose === 'running_support' || trainingPurpose === 'power' ? 6 : 7;
+    const sets = lowDemand ? Math.min(2, exercise.sets) : beginner || trainingPurpose === 'running_support' ? Math.min(2, exercise.sets) : exercise.sets;
+    return { ...exercise, sets, targetRpe, restSeconds: lowDemand ? 30 : trainingPurpose === 'power' ? 150 : 90 };
+  });
+  const planningNote = trainingPurpose === 'power'
+    ? 'Quality repetitions with full recovery. End the set when speed or control drops; this is not a fatigue circuit.'
+    : trainingPurpose === 'running_support'
+      ? 'A supporting strength dose. Protect your key run and long run; reduce remaining sets when running demands or recovery require it.'
+      : trainingPurpose === 'activation' || trainingPurpose === 'recovery'
+        ? 'Keep this light and comfortable. It does not replace a full rest day or a progressive strength session.'
+        : 'Repeat the setup and record actual sets, load and effort. Progress one variable only when performance supports it; a standalone preset is not a complete periodized plan.';
+  return { id, title, description, durationMin, equipment: workoutEquipment(fitted), categories, exercises: fitted, trainingPurpose, planningNote };
 }
 
 // ─── Gym / Barbell (15 — barbell, squat rack, deadlift, and bench combinations) ──
@@ -116,7 +145,7 @@ const GYM_BARBELL: PresetStrengthWorkout[] = [
     ex('Bench Press', 4, '6-8', ['barbell', 'bench']),
     ex('Overhead Press', 3, '6-8', ['barbell']),
     ex('Barbell Row', 4, '8-10', ['barbell']),
-    ex('Pull-Up', 3, 'AMRAP', ['bodyweight']),
+    ex('Pull-Up', 3, '4-8', ['bodyweight'], 'Choose suitable assistance and stop with two to three good repetitions in reserve.'),
   ]),
   preset('sw_barbell_squat_rack_strength', 'Squat Rack Strength', 'Three squat-rack variations in one session to build well-rounded lower-body strength.', 45, ['gym_barbell', 'lower_body'], [
     ex('Back Squat', 4, '6-8', ['barbell', 'squat_rack']),
@@ -165,11 +194,11 @@ const GYM_BARBELL: PresetStrengthWorkout[] = [
     ex('Barbell Walking Lunge', 3, '8 per leg', ['barbell']),
     ex('Standing Calf Raise', 3, '12-15', ['barbell']),
   ]),
-  preset('sw_barbell_total_body_power', 'Total-Body Barbell Power', 'Hinge, press, squat, and row in one session for well-rounded barbell strength.', 45, ['gym_barbell', 'full_body'], [
-    ex('Trap Bar Deadlift', 4, '5', ['barbell']),
-    ex('Push Press', 3, '6-8', ['barbell']),
-    ex('Front Squat', 3, '6-8', ['barbell', 'squat_rack']),
-    ex('Barbell Row', 3, '8-10', ['barbell']),
+  preset('sw_barbell_total_body_power', 'Total-Body Barbell Power', 'Low-repetition lower-body strength and crisp overhead power, with full rests between sets.', 45, ['gym_barbell', 'full_body'], [
+    ex('Trap Bar Deadlift', 3, '3-5', ['barbell'], 'Strength support: choose a repeatable submaximal load rather than grind repetitions.'),
+    ex('Push Press', 3, '3-5', ['barbell'], 'Purposeful speed and stable overhead control. Rest fully; stop before repetitions slow markedly.'),
+    ex('Front Squat', 2, '5', ['barbell', 'squat_rack']),
+    ex('Barbell Row', 2, '6-8', ['barbell']),
   ]),
 ];
 
@@ -270,9 +299,9 @@ const KETTLEBELL: PresetStrengthWorkout[] = [
     ex('Kettlebell Single-Leg Deadlift', 3, '8 per leg', ['kettlebell']),
     ex('Kettlebell Reverse Lunge', 3, '8 per leg', ['kettlebell']),
   ]),
-  preset('sw_kettlebell_beginner', 'Beginner Kettlebell Full Body', 'An introductory kettlebell session to build technique on the swing, squat, and row.', 25, ['kettlebell', 'full_body'], [
+  preset('sw_kettlebell_beginner', 'Beginner Kettlebell Full Body', 'An introductory kettlebell session to practise squat, controlled hip hinge, and row patterns before adding faster variations.', 25, ['kettlebell', 'full_body'], [
     ex('Kettlebell Goblet Squat', 3, '10', ['kettlebell']),
-    ex('Kettlebell Swing', 3, '10-12', ['kettlebell'], 'Hinge from the hips, not a squat-and-lift.'),
+    ex('Kettlebell Deadlift', 2, '8-10', ['kettlebell'], 'Practise a repeatable hip hinge and controllable load before introducing a swing.'),
     ex('Kettlebell Row', 3, '10 per side', ['kettlebell']),
   ]),
   preset('sw_kettlebell_conditioning_strength', 'Kettlebell Conditioning Strength', 'Higher-rep kettlebell circuit blending strength and light conditioning.', 30, ['kettlebell', 'full_body'], [
@@ -292,7 +321,7 @@ const BODYWEIGHT: PresetStrengthWorkout[] = [
     ex('Reverse Lunge', 3, '10 per leg', ['bodyweight']),
     ex('Plank', 3, '30-45s', ['bodyweight']),
   ]),
-  preset('sw_bodyweight_full_body_b', 'Full-Body Bodyweight B', 'A second no-equipment full-body session to rotate with Bodyweight A.', 25, ['bodyweight', 'full_body'], [
+  preset('sw_bodyweight_full_body_b', 'Full-Body Bodyweight B', 'A second bodyweight session using a stable step where listed.', 25, ['bodyweight', 'full_body'], [
     ex('Glute Bridge', 3, '15', ['bodyweight']),
     ex('Push-Up', 3, '10-15', ['bodyweight']),
     ex('Step-Up', 3, '10 per leg', ['bodyweight'], 'Use a stair or sturdy low bench.'),
@@ -304,9 +333,9 @@ const BODYWEIGHT: PresetStrengthWorkout[] = [
     ex('Single-Leg Glute Bridge', 3, '10 per leg', ['bodyweight']),
     ex('Calf Raise', 3, '15-20', ['bodyweight']),
   ]),
-  preset('sw_bodyweight_upper_body', 'Bodyweight Upper Body', 'Push and pull patterns using only bodyweight.', 20, ['bodyweight', 'upper_body'], [
+  preset('sw_bodyweight_upper_body', 'Bodyweight Upper Body', 'Upper-body pressing and pulling. Pull-ups require a secure bar; use a suitable assisted setup when needed.', 20, ['bodyweight', 'upper_body'], [
     ex('Push-Up', 4, '10-15', ['bodyweight']),
-    ex('Pull-Up', 3, 'AMRAP', ['bodyweight'], 'Substitute inverted rows if no bar is available.'),
+    ex('Pull-Up', 3, '4-8', ['bodyweight'], 'Use suitable assistance and leave about two to three good repetitions in reserve. A different pulling setup needs its own calibration.'),
     ex('Pike Push-Up', 3, '8-10', ['bodyweight']),
   ]),
   preset('sw_bodyweight_core', 'Bodyweight Core', 'A core-focused circuit covering anti-extension, anti-rotation, and lateral stability.', 20, ['bodyweight', 'full_body'], [
@@ -315,7 +344,7 @@ const BODYWEIGHT: PresetStrengthWorkout[] = [
     ex('Dead Bug', 3, '10 per side', ['bodyweight']),
     ex('Bird Dog', 3, '10 per side', ['bodyweight']),
   ]),
-  preset('sw_bodyweight_single_leg_focus', 'Single-Leg Focus — Bodyweight', 'Unilateral bodyweight work to build side-to-side control without equipment.', 25, ['bodyweight', 'lower_body', 'problem_area'], [
+  preset('sw_bodyweight_single_leg_focus', 'Single-Leg Focus — Bodyweight', 'Unilateral bodyweight work using a stable step and bench or support where listed.', 25, ['bodyweight', 'lower_body', 'problem_area'], [
     ex('Single-Leg Glute Bridge', 3, '10 per leg', ['bodyweight']),
     ex('Step-Up', 3, '10 per leg', ['bodyweight']),
     ex('Single-Leg Calf Raise', 3, '12 per leg', ['bodyweight']),

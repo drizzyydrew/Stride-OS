@@ -163,6 +163,10 @@ export function suggestProgression(
   currentEquipmentType?: import('./strengthSession').EquipmentType,
 ): ProgressionSuggestion | null {
   if (!last) return null;
+  if (!Number.isFinite(last.timestamp) || last.timestamp > Date.now() || last.timestamp < daysAgo(42)) return {
+    headline: 'Recalibrate your starting load',
+    reason: 'This is an older performance reference. Use current reps, setup and effort before adding load; the historical workout remains unchanged.',
+  };
 
   const loadValue = parseLoadValue(last.load);
   const isBodyweight = /^bw$/i.test(last.load?.trim() ?? '');

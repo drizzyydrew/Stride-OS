@@ -31,6 +31,7 @@ export type Race = {
 // ─── Macro week / plan ────────────────────────────────────────────────────────
 
 export type MacroWeek = {
+  mesocycle?: import('../utils/plan/goalMesocycle').GoalMesocycle;
   weekNumber:  number;
   startDate:   string;         // Sunday, "YYYY-MM-DD"
   phase:       TrainingPhase;
@@ -42,6 +43,7 @@ export type MacroWeek = {
 };
 
 export type MacroPlan = {
+  programmingVersion?: 1 | 2;
   goalType:        TrainingGoalType;
   startDate:       string;      // Sunday, "YYYY-MM-DD"
   totalWeeks:      number;

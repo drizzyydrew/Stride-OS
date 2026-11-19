@@ -24,6 +24,8 @@ import type {
 import type { TrainingPhase, ProgressionLevel } from '../types/training';
 import { parsePrescriptionScheme } from './prescriptionFormat';
 import { estimateStrengthSessionMinutes, fitStrengthSessionToTime, strengthExerciseReviewNote, strengthExerciseEquipment, strengthExercisesForEquipment, strengthProgressionLevel, strengthTimeBudget } from './strengthDesign';
+import { applyGoalStrengthProgramming } from './goalStrengthProgramming';
+import { getGoalMesocycle } from './plan/goalMesocycle';
 
 // ─── Exercise library ─────────────────────────────────────────────────────────
 //
@@ -579,6 +581,7 @@ function buildSession(
   let exercises = selectedIds.map(id =>
     buildExercise(id, template, isDeload),
   );
+  let goalProgrammingNote = '';
 
   if (personFirst) {
     exercises = exercises.map(ex => ({
@@ -589,13 +592,15 @@ function buildSession(
       progressionRule: 'First repeat the setup and prescribed reps at the intended effort. Consider a small rep or load change only from recorded working-set performance; keep failure optional.',
       loadTarget: ex.exercise.pattern === 'mobility' ? ex.loadTarget : `RPE ${ex.rpe} — choose a repeatable, submaximal effort; this is not a measured maximum`,
     }));
-    exercises = fitStrengthSessionToTime(exercises, strengthTimeBudget(input.availableTimeMin));
+    const designed = applyGoalStrengthProgramming(exercises, input, sessionType, STRENGTH_EXERCISES);
+    exercises = fitStrengthSessionToTime(designed.exercises, strengthTimeBudget(input.availableTimeMin));
+    goalProgrammingNote = designed.note;
   }
 
   // Adjust duration for limited time
   const targetDuration = personFirst ? Math.min(strengthTimeBudget(input.availableTimeMin), estimateStrengthSessionMinutes(exercises)) : Math.min(input.availableTimeMin, template.duration);
 
-  const id = `strength_${sessionType}_${weekInBlock}_${index}`;
+  const id = personFirst ? `goal_${encodeURIComponent(input.goalScopeId ?? 'unscoped')}_w${input.currentWeek}_strength_slot_${index}` : `strength_${sessionType}_${weekInBlock}_${index}`;
 
   const progressionNote = personFirst ? strengthExerciseReviewNote(input.currentWeek) :
     phase === 'foundation' ? 'Foundation: movement quality — simple progressions, low RPE, no heavy loading yet' :
@@ -617,7 +622,7 @@ function buildSession(
     cooldownProtocol: personFirst ? 'Allow about 3 minutes to finish with easy movement. Optional comfortable mobility can fit here; extra recovery exercises are not required just to fill categories.' : 'Foam roll legs (IT band, hamstrings, quads) 60–90s per side. Hip flexor and calf stretches 30s per side.',
     purpose:          exercises.length ? template.purpose : 'No complete working-set prescription fits this time window. Choose more time or a shorter custom session rather than rush the planned work.',
     rationale:        template.rationale,
-    progressionNote: personFirst && exercises.length < template.exerciseIds.length ? `${progressionNote} Some supporting roles were omitted to fit the stated time or equipment; review coverage across the week.` : progressionNote,
+    progressionNote: personFirst ? `${goalProgrammingNote} ${exercises.length < template.exerciseIds.length ? 'Some supporting roles were omitted to fit the stated time or equipment; review coverage across the week.' : ''}` : progressionNote,
   };
 }
 
@@ -764,13 +769,14 @@ export function generateStrengthWeek(input: StrengthEngineInput): StrengthWeek {
   const weeklyVolumeSets = sessions.reduce((s, sess) =>
     s + sess.exercises.reduce((es, ex) => es + ex.sets, 0), 0);
 
+  const cycle = input.programmingVersion === 2 ? getGoalMesocycle(currentWeek, trainingPhase, input.goalType ?? 'general_running') : null;
   return {
     sessions,
     sessionDays:      config.sessionDays,
     weeklyVolumeSets,
     primaryGoal:      config.goal,
-    phaseNote:        config.phaseNote,
-    phaseRationale:   config.phaseRationale,
+    phaseNote:        cycle ? `${config.phaseNote} · Practice block ${cycle.blockNumber}, ${cycle.weekInBlock}/6` : config.phaseNote,
+    phaseRationale:   cycle ? `${cycle.focus}. The current phase and combined workload shape a manageable strength dose. Six-week exercise practice and the existing loading/recovery cycle are separate; actual performance determines progression.` : config.phaseRationale,
     generatedAt:      Date.now(),
     progressionState:  decision.progressionState,
     progressionReason: decision.progressionReason,

@@ -1,5 +1,7 @@
 # Person-first programming integration — 2026-11-19
 
+Historical initial-integration record for source checkpoint 03f76f6. The owner's subsequent expanded request is implemented in [BUILD121_PROGRAMMING.md](BUILD121_PROGRAMMING.md); that document supersedes the initial "remaining" entries where it describes completed macro/preset, exercise-adjustment, quality-running and practice-block work.
+
 This change connects Drew’s supplied training framework to the current StrideOS generator. It adds a bounded new-goal programming version, improves performance advice, and preserves existing goal plans rather than silently replacing their exercise prescriptions.
 
 ## Scope and preservation boundary

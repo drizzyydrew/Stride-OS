@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 
 import OnboardingShell from '../../src/components/onboarding/OnboardingShell';
-import { useOnboardingStore } from '../../src/store/onboardingStore';
+import { saveStrengthPlanningPreferences, useOnboardingStore } from '../../src/store/onboardingStore';
 import { colors }  from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { FontSize, FontWeight, Radius } from '../../src/theme/tokens';
@@ -76,7 +76,10 @@ export default function StrengthScreen() {
     try {
       await saveStrengthFitDraft({ ...fit, strengthLevel: level }, {
         ready: () => useOnboardingStore.persist.hasHydrated(), capture: () => lease,
-        isCurrent: current => ownerLeaseIsCurrent(current), write: updateData,
+        isCurrent: current => ownerLeaseIsCurrent(current), write: draft => {
+          if (!lease) throw new Error('Profile is not ready');
+          return saveStrengthPlanningPreferences(draft, lease);
+        },
       });
       if (mounted.current && ownerLeaseIsCurrent(lease)) router.push('/onboarding/injury');
     } catch { if (mounted.current) setError('Could not save your choices. They are still here—please try again.'); }

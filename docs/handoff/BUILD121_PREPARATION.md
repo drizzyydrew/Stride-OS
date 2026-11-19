@@ -1,6 +1,6 @@
-# Build 121 preparation — submission held
+# Build 121 preparation — programming integration
 
-The owner explicitly said on 2026-11-19: “don’t submit to test flight just yet.” No EAS build or submission was queued for 121 in this task. The version number is reserved locally as 1.0.0 (121); it does not mean a signed archive exists. Public review and release are also untouched.
+The owner held the earlier 121 source checkpoint (03f76f6) on 2026-11-19. The subsequent request expanded programming, presets and exercise adjustments and explicitly authorized: “you have my permission to push and submit to TestFlight.” That newer instruction lifts the internal-TestFlight hold for the completed combined change. Public App Review and release remain separate. Build/upload/Apple receipts will be recorded separately; the local version number alone is not delivery proof.
 
 ## Changes prepared
 
@@ -12,17 +12,19 @@ The owner explicitly said on 2026-11-19: “don’t submit to test flight just y
 - The new band-row identifier resolves into the existing exercise inventory and has a text coaching guide.
 - An older server-QA test harness now includes the existing Build 120 allowance module and URL global. No backend or subscription behavior changed.
 
-No images, artwork, sharing components, Watch/native runtime source, authentication, billing policy, providers, dependencies or cloud services changed. The embedded share-image request was excluded under the owner's explicit instruction to ignore images.
+The expanded programming implementation and its boundaries are documented in [BUILD121_PROGRAMMING.md](BUILD121_PROGRAMMING.md). It includes actual goal-specific macro phases, explicit practice/recovery clocks, actual-volume and quality progression, eligible Norwegian 4×4, hybrid placement, preset dose/setup corrections, per-exercise adjustments, and durable future preferences.
+
+No images, artwork, sharing components, Watch/native runtime source, authentication policy, billing policy, providers, dependencies or cloud services changed. The embedded share-image request was excluded under the owner's explicit instruction to ignore images.
 
 ## Verification boundary
 
-- Final integrated affected checks: 188 passed, 0 failed, 0 skipped across 19 files. Log: `/Users/drew/.cache/strideos-build121-final-focused.log`.
-- Canonical `npm run typecheck`: exit 0. Log: `/Users/drew/.cache/strideos-build121-typecheck-final.log`.
-- Dependency alignment and native prebuild passed. Prebuild does not establish archive signing or device acceptance.
-- The broader serial regression attempt has no final completion receipt and is not reported as a full-suite pass. It exposed the missing exercise inventory alias and stale server-QA harness; both pass their subsequent focused checks. An unchanged Swift deadline probe exceeded its 30-second limit under the broader run, then passed in isolation (1/1, no skips) without changing native code.
-- Independent platform and contrarian actual-diff reviews passed. The final contrarian focused run reported 55/55 passing; the domain author's final run reported 49/49. These overlap the integrated suite and are not additional test totals. No current-build native visual acceptance or signed-archive verification is claimed.
+- The earlier source checkpoint passed 188 focused checks. That is historical evidence for 03f76f6 and is not added to the final total.
+- Expanded final regression: **2,058/2,058 passed**, zero failures/cancellations/skips, across 227 files. The first expanded attempt exposed outdated strict test mocks for new store imports; those fixtures were corrected without changing their assertions, and the complete rerun exited 0.
+- Final canonical npm run typecheck exited 0; dependency alignment and native prebuild passed. See BUILD121_PROGRAMMING_VERIFICATION.json for log hashes and the tested runtime fingerprint.
+- Independent source review passed. Its 96 focused tests and final 5-case beginner-boundary rerun overlap the full suite and are not extra totals. The domain runs likewise overlap.
+- Signed archive, Apple processing, tester assignment and final physical-device acceptance are separate stages. No new native visual/device acceptance is claimed from local tests.
 
-The complete supplied-principle mapping, implemented boundaries and future examples are in [the programming integration matrix](PERSON_FIRST_PROGRAMMING_20261119.md). Generic e1RM automation, forced six-week exercise rotations and universal race taper protocols are not claimed as implemented.
+The expanded implementation and remaining boundaries are in [BUILD121_PROGRAMMING.md](BUILD121_PROGRAMMING.md). The earlier principle matrix is retained as a historical record. Generic e1RM automation, mandatory six-week exercise replacement and a universally individualized taper are not claimed.
 
 ## Checks when a future build is authorized
 
@@ -32,4 +34,4 @@ The complete supplied-principle mapping, implemented boundaries and future examp
 4. Keep an existing goal and verify it retains its plan. In a separate test goal, select lifting experience, a short time budget and available equipment; review the generated roles, dose and rest day.
 5. Start a strength workout, return after navigation or a schedule change, edit actual sets/load, and finish. Confirm one history entry, captured prescription, correct units and no automatic earned increase from attendance or missing actual effort.
 
-Do not submit 121 to TestFlight until the owner lifts the hold.
+The owner has lifted the internal-TestFlight hold for this expanded scope. Submit only the exact verified build after final checks and council review.

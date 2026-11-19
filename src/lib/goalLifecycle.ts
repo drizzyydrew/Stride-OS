@@ -15,6 +15,7 @@ import { useActiveStrengthSessionStore } from '../store/activeStrengthSessionSto
 import { buildGoalArchive } from '../utils/goalArchive';
 import { endedGoalDescriptors } from '../utils/goalLifecycle';
 import { buildMacroPlan } from '../utils/plan/macroPlanner';
+import { alignStoredBeginnerMacro } from '../utils/plan/storedBeginnerMacro';
 import { isValidDateOnly, todayDateOnly } from '../utils/dateOnly';
 import type { TrainingGoalType, Race } from '../types/plan';
 import type { GoalArchive, GoalArchiveDescriptor } from '../types/goalArchive';
@@ -95,9 +96,9 @@ function captureCurrentFocus(lease: OwnerLease, closureReason: 'replaced' | 'ope
       kind: 'goal', title: plan.goalTitle ?? plan.goalType.replaceAll('_', ' ') }];
   }
   const onboarding = useOnboardingStore.getState().data;
-  const macroPlan = isValidDateOnly(plan.programStartDate) ? buildMacroPlan({ goalType: plan.goalType,
+  const macroPlan = isValidDateOnly(plan.programStartDate) ? alignStoredBeginnerMacro(buildMacroPlan({ goalType: plan.goalType, programmingVersion: plan.strengthProgrammingVersion,
     startDate: plan.programStartDate, races: plan.races, progressionLevel: useAthleteStore.getState().progressionLevel,
-    yearsRunning: onboarding.yearsRunning, weeklyMileage: onboarding.weeklyMileage }) : undefined;
+    yearsRunning: onboarding.yearsRunning, weeklyMileage: onboarding.weeklyMileage }), currentBeginnerPlan()) : undefined;
   const snapshots: GoalArchive[] = [];
   for (const descriptor of descriptors) {
     requireOwner(lease);
@@ -191,11 +192,11 @@ export function reconcileGoalLifecycle(now = new Date()): Promise<void> {
         currentBeginnerPlan(), lease.ownerUserId, todayDateOnly(now));
       const profile = useProfileStore.getState().profiles.athlete_default;
       const onboarding = useOnboardingStore.getState().data;
-      const macroPlan = isValidDateOnly(plan.programStartDate) ? buildMacroPlan({
-        goalType: plan.goalType, startDate: plan.programStartDate, races: plan.races,
+      const macroPlan = isValidDateOnly(plan.programStartDate) ? alignStoredBeginnerMacro(buildMacroPlan({
+        goalType: plan.goalType, programmingVersion: plan.strengthProgrammingVersion, startDate: plan.programStartDate, races: plan.races,
         progressionLevel: useAthleteStore.getState().progressionLevel,
         yearsRunning: onboarding.yearsRunning, weeklyMileage: onboarding.weeklyMileage,
-      }) : undefined;
+      }), currentBeginnerPlan()) : undefined;
       for (const descriptor of descriptors) {
         requireOwner(lease);
         if (sessionInProgress() || useTrainingPlanStore.getState().revision !== revision) return;

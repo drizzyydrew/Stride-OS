@@ -1,0 +1,13 @@
+Workout controls and goal-directed programming
+
+Settings > Workout Intelligence now has actual auto-pause switches for runs and rides, separate from voice announcements. The header keeps Back/Home and adds Live to return to a retained workout. Expanded everyday energy/calculation text wraps within the card.
+
+New goal plans blend goal-specific macro phases, six-week exercise practice, recovery weeks and progression from actual reported work. Existing goals/history and started workouts are preserved. Presets have clearer purpose, effort, rest and equipment setup.
+
+During strength training, expand Adjust exercise for easier/harder remaining targets or a compatible replacement. Performed sets stay intact; different movements start their own load calibration. Eligible choices can be remembered for future generated workouts and reset later.
+
+Saved app runs have an optional Faster-work report in Activity detail. Report only repeats and effort actually completed. Future generated sessions can use it to build tolerated faster-work duration. Norwegian 4x4 appears only when history, goal, readiness, time and hybrid spacing support the full protocol; it is not expected in a beginner plan.
+
+Please check: actual auto-pause choices persist; Live returns to the same active/paused session; expanded energy text wraps; exercise changes preserve completed sets and original prescription; a new goal fits selected time/equipment and leaves recovery room. Existing goals retain their previous programming version.
+
+No images, sharing, purchases, AI limits, authentication policy, Watch/native runtime or backend services changed. No repeat subscription purchase is requested.

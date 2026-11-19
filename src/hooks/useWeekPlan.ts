@@ -27,6 +27,7 @@ import { useWorkoutStore }      from '../store/workoutStore';
 import { useCheckInStore }      from '../store/checkInStore';
 import { useStrengthStore }     from '../store/strengthStore';
 import { useActiveStrengthSessionStore } from '../store/activeStrengthSessionStore';
+import { useActiveRunStore } from '../store/activeRunStore';
 import { strengthEquipmentSelection, strengthSessionMinutes } from '../utils/strengthSessionFit';
 import { useProfileStore }      from '../store/profileStore';
 import { useTrainingPlanStore } from '../store/trainingPlanStore';
@@ -39,6 +40,7 @@ import { calculateACWR, activitiesToACWRRecords } from '../utils/training';
 import { getWeeklyMileage }                  from '../utils/historyUtils';
 import { computeConsistency }                from '../utils/analyticsEngine';
 import { buildMacroPlan, macroWeekForDate }  from '../utils/plan/macroPlanner';
+import { alignStoredBeginnerMacro } from '../utils/plan/storedBeginnerMacro';
 
 import { buildWeekPlan }   from '../utils/trainingEngine';
 import type { WeekPlan }   from '../utils/trainingEngine';
@@ -57,9 +59,12 @@ export function useWeekPlan(): WeekPlan {
 
   const onboardingData = useOnboardingStore(s => s.data);
   const activeStrengthSessionId = useActiveStrengthSessionStore(s => s.session?.source === 'training_block' ? s.session.workoutId : null);
+  const activeRunningWorkoutId = useActiveRunStore(s => s.isActive ? s.plannedWorkout?.id ?? null : null);
 
   // ── Plan spine ────────────────────────────────────────────────────────────
   const goalType         = useTrainingPlanStore(s => s.goalType);
+  const goalBlockId = useTrainingPlanStore(s => s.goalBlockId);
+  const programmingStartedAt = useTrainingPlanStore(s => s.programmingStartedAt);
   const strengthProgrammingVersion = useTrainingPlanStore(s => s.strengthProgrammingVersion);
   const programStartDate = useTrainingPlanStore(s => s.programStartDate);
   const savedRaces       = useTrainingPlanStore(s => s.races);
@@ -141,16 +146,17 @@ export function useWeekPlan(): WeekPlan {
 
   const macroPlan = useMemo(() => {
     if (!programStartDate) return null;
-    return buildMacroPlan({
+    return alignStoredBeginnerMacro(buildMacroPlan({
+      programmingVersion: strengthProgrammingVersion,
       goalType,
       startDate:     programStartDate,
       races,
       progressionLevel,
       yearsRunning:  onboardingData.yearsRunning,
       weeklyMileage: onboardingData.weeklyMileage,
-    });
+    }), activeBeginnerPlan);
   }, [
-    goalType, programStartDate, races, progressionLevel,
+    goalType, strengthProgrammingVersion, programStartDate, races, progressionLevel, activeBeginnerPlan,
     onboardingData.yearsRunning, onboardingData.weeklyMileage,
   ]);
 
@@ -178,6 +184,7 @@ export function useWeekPlan(): WeekPlan {
 
     // Plan spine
     goalType,
+    goalScopeId: goalBlockId ?? `${goalType}:${programStartDate}:${programmingStartedAt ?? 'legacy'}`,
     trainingMode,
     macroWeek,
     beforeStart,
@@ -202,7 +209,9 @@ export function useWeekPlan(): WeekPlan {
     strengthProgrammingVersion,
     strengthSessionMinutes: strengthProgrammingVersion === 2 ? strengthSessionMinutes(onboardingData.strengthSessionMinutes) : undefined,
     strengthEquipment: strengthProgrammingVersion === 2 ? strengthEquipmentSelection(onboardingData.strengthEquipment) : undefined,
+    strengthExercisePreferences: strengthProgrammingVersion === 2 ? onboardingData.strengthExercisePreferences : undefined,
     activeStrengthSessionId,
+    activeRunningWorkoutId,
 
     // Daily readiness
     soreness:   checkedIn ? (todayCheckIn?.soreness   ?? null) : null,
@@ -222,17 +231,18 @@ export function useWeekPlan(): WeekPlan {
 
     // Strength history
     strengthHistory,
+    runningHistory: history,
   }), [
     goalRace, weeklyMileage, fatigueScore, recoveryScore,
     currentWeek, trainingPhase, progressionLevel,
-    goalType, strengthProgrammingVersion, activeStrengthSessionId, trainingMode, macroWeek, beforeStart, programStartDate, races, activeBeginnerPlan,
+    goalType, goalBlockId, programmingStartedAt, strengthProgrammingVersion, activeStrengthSessionId, activeRunningWorkoutId, trainingMode, macroWeek, beforeStart, programStartDate, races, activeBeginnerPlan,
     calibration, profile,
     onboardingData,
     checkedIn, todayCheckIn,
     acwrResult.acwr,
     recentIntensityDist, recentHardSessions,
     adherenceRate, consistencyScore, longRunConsistency,
-    completedWorkouts, strengthHistory, completedStrength,
+    completedWorkouts, history, strengthHistory, completedStrength,
   ]);
 
   // ── Build and return the plan — re-runs only when engineInput changes ──

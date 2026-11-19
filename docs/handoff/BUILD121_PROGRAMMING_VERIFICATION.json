@@ -1,0 +1,63 @@
+{
+  "checkedAt": "2026-11-19T23:39:55.667717+00:00",
+  "baseCheckpoint": "03f76f6de4db47668d95e18ceb28cb0ff37d2ebe",
+  "plannedBuildNumber": "121",
+  "fullRegression": {
+    "testFiles": 227,
+    "tests": 2058,
+    "passed": 2058,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "concurrency": 1
+  },
+  "typecheckExitCode": 0,
+  "dependenciesAligned": true,
+  "nativePrebuildExitCode": 0,
+  "independentCouncilSourceVerdict": "PASS",
+  "independentFocusedTests": 96,
+  "independentFinalBoundaryRerun": 5,
+  "focusedCountsOverlapFullSuite": true,
+  "runtimeFingerprint": {
+    "algorithm": "sha256(sorted relative path + NUL + content + NUL)",
+    "extensions": [
+      ".ts",
+      ".tsx",
+      ".swift",
+      ".json"
+    ],
+    "roots": [
+      "src",
+      "app",
+      "modules",
+      "targets"
+    ],
+    "files": 798,
+    "sha256": "e0e6c739a3db6c5b1a942c2f1c9b82cd8b49dc8f59f336b7cc73edefeeea4bc5"
+  },
+  "logs": {
+    "strideos-build121-full-programming-tests.log": {
+      "path": "/Users/drew/.cache/strideos-build121-full-programming-tests.log",
+      "sha256": "379f9039f46510c80fad256ea48331a550a01ef75dcaefcb6a72200185537675"
+    },
+    "strideos-build121-programming-typecheck-final.log": {
+      "path": "/Users/drew/.cache/strideos-build121-programming-typecheck-final.log",
+      "sha256": "12fc70d2feb72f584a6828cd9e1102cc9f447725b6b1bb2abda352bf6797e415"
+    },
+    "strideos-build121-programming-dependencies.log": {
+      "path": "/Users/drew/.cache/strideos-build121-programming-dependencies.log",
+      "sha256": "8152e1dfe2839254529bd71a5c9d6f299c93bc1132025c5930dcc5dc042489db"
+    },
+    "strideos-build121-programming-prebuild.log": {
+      "path": "/Users/drew/.cache/strideos-build121-programming-prebuild.log",
+      "sha256": "4ef078d91eedb906232a7d997f4b08c69daac768f39d3f7b267c49b6322afe66"
+    }
+  },
+  "imageAndShareSourcesChanged": false,
+  "backendOrBillingPolicyChanged": false,
+  "physicalDeviceAccepted": false,
+  "archiveVerified": false,
+  "testflightAvailable": false,
+  "publicReviewSubmitted": false
+}

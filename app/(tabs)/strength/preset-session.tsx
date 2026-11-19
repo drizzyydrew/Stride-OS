@@ -27,6 +27,7 @@ import { summarizeStrengthSession } from '../../../src/utils/strengthSummary';
 import { completedExercisesFromActiveSession } from '../../../src/utils/strengthPersistence';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import StrengthSetEditor from '../../../src/components/strength/StrengthSetEditor';
+import ExerciseAdjustment from '../../../src/components/strength/ExerciseAdjustment';
 import { formatPrescriptionWithSets } from '../../../src/utils/prescriptionFormat';
 import {
   endStrideWatchWorkout,
@@ -201,6 +202,7 @@ export default function PresetStrengthSessionScreen() {
       overallRpe,
       notes: `Preset Workout · ${session.workoutName}`,
       source: 'preset',
+      completionClassification: session.exercises.some(exercise => exercise.substitutedFromId || exercise.modifiedTargets) ? 'modified' : undefined,
       presetId: session.workoutId,
       workoutName: session.workoutName,
     }, fatigueScore);
@@ -323,6 +325,7 @@ export default function PresetStrengthSessionScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.exerciseName, { color: C.text }]}>{exercise.name}</Text>
                   <Text style={[styles.meta, { color: C.textMuted }]}>{formatPrescriptionWithSets(exercise.sets, exercise.repScheme, exercise.reps)} · {displayLabels(exercise.equipment)}</Text>
+                  {exercise.plannedRpe !== undefined ? <Text style={[styles.meta, { color: C.textMuted }]}>Target RPE {exercise.plannedRpe} · rest {exercise.plannedRestSeconds ?? 90}s</Text> : null}
                 </View>
                 {done ? <Ionicons name="checkmark-circle" size={23} color={C.primary} /> : null}
               </View>
@@ -351,6 +354,7 @@ export default function PresetStrengthSessionScreen() {
                     <Text style={[styles.secondaryText, { color: C.text }]}>RPE</Text>
                     <Text style={[styles.rpeValue, { color: C.primary }]}>{session.rpeByExercise[exercise.id] ?? 'Set effort'}</Text>
                   </TouchableOpacity>
+                  <ExerciseAdjustment exercise={exercise} workoutInstanceId={session.workoutInstanceId} />
                   <StrengthSetEditor
                     sets={exercise.setEntries}
                     equipmentType={exercise.equipmentType}

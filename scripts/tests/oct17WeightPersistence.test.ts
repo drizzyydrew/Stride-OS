@@ -34,6 +34,7 @@ async function stores(options: { profileWeight?: number; onboardingWeight?: numb
     const module = { exports: {} as any };
     const mocks: Record<string, any> = { zustand: { create }, 'zustand/middleware': { persist },
       './persistStorage': { createAppJSONStorage: () => storage }, '../utils/calibrationEngine': calibration,
+      '../lib/localDataOwner': { ownerLeaseIsCurrent: () => false },
       '../utils/profilePower': weights, '../utils/profileMeasurements': measurements,
       '../hooks/useLocalCalendarDay': { useLocalCalendarDay: () => '2026-11-15' }, react: { useMemo: (fn: () => unknown) => fn() }, ...additional };
     runInNewContext(ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText,

@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { createAppJSONStorage, getAppStorage } from './persistStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { CompletedWorkoutRecord, Workout, WorkoutIntensity, WorkoutType } from '../types/training';
+import type { CompletedWorkoutRecord, RunningQualityFeedback, Workout, WorkoutIntensity, WorkoutType } from '../types/training';
 import type { Activity } from '../types/activity';
 import { calculateTrainingLoad } from '../utils/training';
 import { calculateUpdatedFatigue } from '../utils/calculateFatigue';
@@ -16,6 +16,7 @@ import { captureOwnerLease, ownerLeaseIsCurrent, type OwnerLease } from '../lib/
 import { RunCompletionJournal, type LiveRunEntry, type PendingRunCompletion } from '../lib/runCompletionJournal';
 import { matchingWatchRecording, runCompletionKey, sameRecording, type RunWorkoutRecord } from '../utils/runCompletionIdentity';
 import { isValidRaceActivityLink } from '../utils/raceLink';
+import { canReportRunningQuality, normalizeRunningQuality } from '../utils/runningQualityFeedback';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -116,6 +117,7 @@ function migrateRecord(r: Partial<RunWorkoutRecord>): RunWorkoutRecord {
     recoveryDelta:          r.recoveryDelta          ?? 0,
     // Optional extended fields — preserved if present
     actualDurationMinutes: r.actualDurationMinutes,
+    runningQuality: normalizeRunningQuality(r.runningQuality, r.actualDurationMinutes),
     actualDistanceMiles:   r.actualDistanceMiles,
     routeCoordinates:      r.routeCoordinates,
     rpe:                   r.rpe,
@@ -578,3 +580,33 @@ export const useWorkoutStore = create<WorkoutStore>()(
     },
   ),
 );
+
+/** One explicit report on an exact saved run. Do not publish training evidence
+ * until its local bytes are confirmed, or reconstruct it from a planned label. */
+export function saveRunningQualityFeedback(id: string, feedback: RunningQualityFeedback | null, lease: OwnerLease): Promise<void> {
+  return serializedCompletion(async () => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (!ownerLeaseIsCurrent(lease) || !useWorkoutStore.persist.hasHydrated()) throw new Error('Run history is not ready for this account');
+      const state = useWorkoutStore.getState();
+      const original = state.history.find(record => record.id === id);
+      if (!canReportRunningQuality(original) || (original?.ownerUserId && original.ownerUserId !== lease.ownerUserId)) throw new Error('This saved run cannot accept a quality report');
+      const quality = feedback === null ? undefined : normalizeRunningQuality(feedback, original!.actualDurationMinutes);
+      if (feedback !== null && !quality) throw new Error('Check the completed repeats, work time and effort against the actual run duration');
+      const updated = { ...original!, runningQuality: quality };
+      const history = state.history.map(record => record.id === id ? updated : record);
+      const encoded = JSON.stringify({ state: { history, completedWorkouts: state.completedWorkouts }, version: 0 });
+      const storage = getAppStorage();
+      await storage.setItem('workout-store', encoded);
+      if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed while saving the report');
+      if (useWorkoutStore.getState().history !== state.history || useWorkoutStore.getState().completedWorkouts !== state.completedWorkouts) continue;
+      const saved = await storage.getItemOnce('workout-store');
+      if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed while confirming the report');
+      if (saved !== encoded) throw new Error('Report saving could not be confirmed. Your run was kept; retry Save.');
+      if (useWorkoutStore.getState().history !== state.history || useWorkoutStore.getState().completedWorkouts !== state.completedWorkouts) continue;
+      useWorkoutStore.setState({ history });
+      syncWorkoutLog(updated).catch(console.warn);
+      return;
+    }
+    throw new Error('Run history changed while saving. Retry the report.');
+  });
+}

@@ -16,6 +16,7 @@ import { LAYOUT } from '../../../src/constants/layout';
 import type { CompletedWorkoutRecord } from '../../../src/types/training';
 import type { StrengthLogRecord } from '../../../src/types/strength';
 import { displayLabel } from '../../../src/utils/displayLabels';
+import RunningQualityFeedback from '../../../src/components/activity/RunningQualityFeedback';
 
 function fmtDate(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
@@ -92,6 +93,7 @@ function RunSummary({ record }: { record: CompletedWorkoutRecord }) {
 
   return (
     <>
+      <RunningQualityFeedback recordId={record.id} />
       {routeCoords.length > 1 ? (
         <View style={[s.mapCard, { borderColor: C.border }]}>
           <MapView

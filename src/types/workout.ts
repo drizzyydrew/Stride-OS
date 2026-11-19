@@ -149,6 +149,7 @@ export type PhysiologicalRationale = {
 // ─── Rich workout ─────────────────────────────────────────────────────────────
 
 export type RichWorkout = Workout & {
+  paceTargetSource?: 'calibration' | 'effort';
   richType:      RichWorkoutType;
   protocol?:     'norwegian_4x4';
   dayIndex:      number;           // 0–6 position in the week
@@ -185,6 +186,12 @@ export type RichWorkout = Workout & {
 // ─── Engine input / output ────────────────────────────────────────────────────
 
 export type WorkoutEngineInput = {
+  raceDistance?: import('./training').RaceDistance;
+  goalScopeId?: string;
+  programmingVersion?: 1 | 2;
+  goalType?: import('./plan').TrainingGoalType;
+  runningHistory?: import('./training').CompletedWorkoutRecord[];
+  referenceDate?: string;
   // Calibration (null = use goalRace fallback paces)
   calibration:           CalibrationOutput | null;
   fatigueSensitivity:    number;         // 0.5–2.0 from AthleteProfile

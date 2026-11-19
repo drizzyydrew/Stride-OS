@@ -10,6 +10,10 @@ import { LAYOUT } from '../../../src/constants/layout';
 import { getMobilityWorkout, getMobilityExercise } from '../../../src/constants/mobilityBank';
 import { useMobilityStore } from '../../../src/store/mobilityStore';
 import type { MobilityDose } from '../../../src/types/mobility';
+import MobilityExerciseAdjustment from '../../../src/components/strength/MobilityExerciseAdjustment';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
+import { compatibleExerciseOptions, type ExerciseAdjustmentReason } from '../../../src/utils/exerciseAdaptation';
+import { MOBILITY_EXERCISES } from '../../../src/constants/mobilityBank';
 
 type FeedbackOption = 'easy' | 'right' | 'hard';
 
@@ -45,7 +49,7 @@ export default function MobilitySessionScreen() {
 
   const workout = id ? getMobilityWorkout(id) : undefined;
 
-  const steps = useMemo(() => {
+  const baseSteps = useMemo(() => {
     if (!workout) return [];
     return workout.exercises.map(planned => {
       const exercise = getMobilityExercise(planned.exerciseId);
@@ -53,6 +57,14 @@ export default function MobilitySessionScreen() {
       return { planned, exercise, dose };
     }).filter((s): s is { planned: typeof s.planned; exercise: NonNullable<typeof s.exercise>; dose: MobilityDose } => !!s.exercise);
   }, [workout]);
+  const [stepChanges, setStepChanges] = useState<Record<number, { exerciseId: string; dose: MobilityDose }>>({});
+  const [changeNotes, setChangeNotes] = useState<string[]>([]);
+  const owner = useRef(captureOwnerLease());
+  const steps = baseSteps.map((step, position) => {
+    const change = stepChanges[position];
+    const exercise = change ? getMobilityExercise(change.exerciseId) : step.exercise;
+    return change && exercise ? { ...step, exercise, dose: change.dose } : step;
+  });
 
   const [index, setIndex] = useState(0);
   const [finished, setFinished] = useState(false);
@@ -117,8 +129,36 @@ export default function MobilitySessionScreen() {
       completedAt: Date.now(),
       durationMin,
       feedback: feedback ?? undefined,
+      notes: changeNotes.length ? changeNotes.join('\n') : undefined,
     });
     router.replace('/(tabs)/strength' as any);
+  }
+
+  function adjustCurrent(reason: ExerciseAdjustmentReason, alternativeId?: string) {
+    if (!current || !ownerLeaseIsCurrent(owner.current)) return;
+    const previousDuration = doseCountdownSeconds(current.dose);
+    const remainingSeconds = secondsLeft ?? previousDuration;
+    const spent = previousDuration !== null && remainingSeconds !== null ? Math.max(0, previousDuration - remainingSeconds) : 0;
+    const replacement = alternativeId ? getMobilityExercise(alternativeId) : undefined;
+    if (replacement && !compatibleExerciseOptions(current.exercise, MOBILITY_EXERCISES).some(item => item.id === replacement.id)) return;
+    if (replacement && remainingSeconds !== null && remainingSeconds <= 0) return;
+    pauseTimer();
+    const dose: MobilityDose = replacement ? { ...replacement.dose } : { ...current.dose };
+    if (replacement) {
+      if (remainingSeconds !== null) {
+        if (dose.holdSec !== undefined) dose.holdSec = Math.min(dose.holdSec, remainingSeconds);
+        if (dose.timeSec !== undefined) dose.timeSec = Math.min(dose.timeSec, remainingSeconds);
+      }
+    } else if (reason === 'too_easy' || reason === 'too_hard') {
+      const scale = reason === 'too_easy' ? 1.05 : 0.8;
+      if (dose.holdSec !== undefined) dose.holdSec = spent + Math.max(0, Math.round((remainingSeconds ?? dose.holdSec) * scale * 10) / 10);
+      if (dose.timeSec !== undefined) dose.timeSec = spent + Math.max(0, Math.round((remainingSeconds ?? dose.timeSec) * scale * 10) / 10);
+      if (dose.reps !== undefined) dose.reps = reason === 'too_easy' ? dose.reps + 1 : Math.max(1, Math.floor(dose.reps * 0.8));
+    }
+    setStepChanges(previous => ({ ...previous, [index]: { exerciseId: replacement?.id ?? current.exercise.id, dose } }));
+    const nextDuration = doseCountdownSeconds(dose);
+    setSecondsLeft(replacement ? nextDuration : nextDuration === null ? null : Math.max(0, nextDuration - spent));
+    setChangeNotes(previous => [...previous, `${current.exercise.name}: ${reason.replace(/_/g, ' ')}.${replacement ? ` Remaining work changed to ${replacement.name}; ${spent}s already timed on the original movement.` : ` Remaining target adjusted; ${spent}s already timed was kept.`} Original target: ${doseSummary(current.dose)}. New target: ${doseSummary(dose)}.`]);
   }
 
   if (!workout) {
@@ -247,6 +287,8 @@ export default function MobilitySessionScreen() {
           <Text style={[styles.cardLabel, { color: C.warning, marginBottom: 6 }]}>WHEN TO STOP OR MODIFY</Text>
           <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{exercise.whenToStopOrModify}</Text>
         </View>
+
+        <MobilityExerciseAdjustment key={`${index}:${exercise.id}`} exercise={exercise} onChange={adjustCurrent} />
 
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
           <TouchableOpacity

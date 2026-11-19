@@ -21,6 +21,7 @@ async function loadStore(raw: Map<string, string>) {
   const mocks: Record<string, unknown> = {
     zustand: { create }, 'zustand/middleware': { persist },
     './persistStorage': { createAppJSONStorage: () => storage },
+    '../lib/localDataOwner': { ownerLeaseIsCurrent: () => false },
     '@react-native-async-storage/async-storage': {},
     './profileStore': { useProfileStore: profileStore }, '../utils/profilePower': weights,
   };

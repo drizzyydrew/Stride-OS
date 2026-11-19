@@ -193,6 +193,17 @@ export type ReadinessState = {
 // for records written before this schema existed.
 export type WorkoutLogSource = 'generated' | 'manual';
 
+export type RunningQualityFeedback = {
+  version: 1;
+  source: 'athlete_reported';
+  rung: 'strides' | 'gentle_fartlek' | 'tempo_threshold' | 'intervals' | 'norwegian_4x4';
+  completedReps: number;
+  workSeconds: number;
+  rpe: number;
+  comfortableRecovery: boolean;
+  recordedAt?: number;
+};
+
 export type CompletedWorkoutRecord = {
   id:                     string;           // week-scoped key: "w1_easy_run_0"
   workoutId:              string;           // raw workout.id from generator: "easy_run"
@@ -212,6 +223,7 @@ export type CompletedWorkoutRecord = {
 
   // Extended fields — optional for backward compatibility with existing stored records
   actualDurationMinutes?: number;           // what was actually done (may differ from planned)
+  runningQuality?: RunningQualityFeedback;  // explicit report, never inferred from the planned workout
   actualDistanceMiles?:   number;           // measured distance
   routeCoordinates?:      { lat: number; lng: number; timestamp: number; altitudeM?: number; horizontalAccuracyMeters?: number }[];
   rpe?:                   number;           // 1–10 actual perceived exertion

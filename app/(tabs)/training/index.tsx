@@ -1822,7 +1822,9 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             </Text>
           ) : null}
           <Text style={[styles.goalPanelLine, { color: C.textMuted }]} numberOfLines={2}>
-            {plannedWorkout.paceRange
+            {plannedWorkout.paceTargetSource === 'effort'
+              ? plannedWorkout.paceGuidance.targetPace
+              : plannedWorkout.paceRange
               ? `Target ${paceLabel(plannedWorkout.paceRange.minSecPerMi)}–${paceLabel(plannedWorkout.paceRange.maxSecPerMi)} /mi · Zone ${plannedWorkout.hrZoneTarget}`
               : plannedWorkout.purpose}
           </Text>

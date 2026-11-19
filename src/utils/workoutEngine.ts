@@ -19,6 +19,11 @@ import { buildPaceContext, buildRichWorkout, BuildContext } from './workoutBuild
 import { applyAdaptiveModifiers } from './adaptiveModifier';
 import { formatPace } from './calibrationEngine';
 import { getWeekInBlock, shouldApplyDeload } from './training/deloadModel';
+import { runningSpecificityDecision, applyRunningSpecificity } from './training/runningSpecificity';
+import { buildSpecificityWorkout } from './training/runningSpecificityWorkout';
+import { getGoalMesocycle } from './plan/goalMesocycle';
+import { addDays, parseYMD, toYMD } from './calendarEngine';
+import { fitRunningWeekToVolume, resizeRunningEasyWorkout } from './training/runningVolume';
 
 // ─── Phase intensity multipliers ──────────────────────────────────────────────
 
@@ -114,7 +119,7 @@ const DELOAD_OVERRIDE: Record<ProgressionLevel, RichWorkoutType[]> = {
 
 // ─── Week-level scoring ────────────────────────────────────────────────────────
 
-function computeWeekScore(workouts: RichWorkout[]): RichWeek['weekScore'] {
+export function computeWeekScore(workouts: RichWorkout[]): RichWeek['weekScore'] {
   let totalIntendedLoad    = 0;
   let intendedFatigueDelta = 0;
   let easy = 0, moderate = 0, hard = 0;
@@ -311,7 +316,7 @@ export function applyExperienceSafety(
   return result;
 }
 
-function limitRunDays(types: RichWorkoutType[], desiredRunDays?: number): RichWorkoutType[] {
+function limitRunDays(types: RichWorkoutType[], desiredRunDays?: number, preserveEarnedStrides = false): RichWorkoutType[] {
   if (!desiredRunDays || desiredRunDays >= types.filter(t => t !== 'rest' && t !== 'mobility').length) {
     return types;
   }
@@ -326,7 +331,7 @@ function limitRunDays(types: RichWorkoutType[], desiredRunDays?: number): RichWo
     hill_repeats: 72,
     marathon_pace: 70,
     easy_run: 55,
-    strides: 50,
+    strides: preserveEarnedStrides ? 76 : 50,
     recovery_run: 40,
     deload_session: 35,
     taper_session: 35,
@@ -366,7 +371,17 @@ export function buildRichDay(
     progressionLevel: input.progressionLevel,
     calibration:      input.calibration,
   };
-  return buildRichWorkout(richType, ctx, dayIndex);
+  if (input.programmingVersion !== 2) return buildRichWorkout(richType, ctx, dayIndex);
+  const decision = runningSpecificityDecision(specificityInputForDay(input, dayIndex));
+  const selected = applyRunningSpecificity([richType], decision)[0]!;
+  const built = { ...buildSpecificityWorkout(buildRichWorkout(selected, ctx, dayIndex), decision, input.calibration !== null),
+    id: `goal_${encodeURIComponent(input.goalScopeId ?? 'unscoped')}_w${input.currentWeek}_run_slot_${dayIndex}` };
+  const planned = generateRichWeek(input).workouts[dayIndex];
+  if (planned && built.durationMinutes > planned.durationMinutes) {
+    return resizeRunningEasyWorkout(built, planned.durationMinutes, input.calibration !== null,
+      'Retain this slot’s weekly time ceiling when replacing quality work with an easier session.');
+  }
+  return built;
 }
 
 // ─── Baseline template lookup ─────────────────────────────────────────────────
@@ -394,6 +409,19 @@ export function getBaseTemplate(input: WorkoutEngineInput): RichWorkoutType[] {
   return getPhaseTypesForWeek(input.trainingPhase, input.progressionLevel, weekInBlock);
 }
 
+/** Match calendarEngine's Nth-selected-day mapping. Spacing is checked at the
+ * candidate quality session's date, not the Sunday before that session. */
+function specificityInputForDay(input: WorkoutEngineInput, dayIndex: number): WorkoutEngineInput {
+  if (!input.referenceDate) return input;
+  const indices: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const chosen = input.runDays?.length ? input.runDays : input.availableDays;
+  const days = chosen?.length ? chosen.map(day => indices[day]).filter((day): day is number => day !== undefined).sort((a, b) => a - b) : [1, 2, 3, 4, 5, 6];
+  if (!days.length) return input;
+  const date = parseYMD(input.referenceDate);
+  if (!Number.isFinite(date.getTime())) return input;
+  return { ...input, referenceDate: toYMD(addDays(date, days[dayIndex % days.length]!)) };
+}
+
 // ─── Main engine ───────────────────────────────────────────────────────────────
 
 export function generateRichWeek(input: WorkoutEngineInput): RichWeek {
@@ -414,7 +442,11 @@ export function generateRichWeek(input: WorkoutEngineInput): RichWeek {
   const adaptedTypes = applyAdaptiveModifiers(baseTemplate, input, weekInBlock);
   const styledTypes  = applyTrainingStyle(adaptedTypes, input.trainingStyle);
   const safeTypes     = applyExperienceSafety(styledTypes, progressionLevel, trainingPhase);
-  const plannedTypes = limitRunDays(safeTypes, input.runDays?.length);
+  const firstQualityIndex = safeTypes.findIndex(type => ['strides', 'fartlek', 'hill_repeats', 'tempo', 'threshold', 'vo2', 'marathon_pace', 'progression_run'].includes(type));
+  const specificity = input.programmingVersion === 2 ? runningSpecificityDecision(specificityInputForDay(input, Math.max(0, firstQualityIndex))) : undefined;
+  const specificTypes = specificity ? applyRunningSpecificity(safeTypes, specificity) : safeTypes;
+  const desiredRunDays = specificity ? Math.min(6, input.runDays?.length || input.availableDays?.length || 6) : input.runDays?.length;
+  const plannedTypes = limitRunDays(specificTypes, desiredRunDays, specificity !== undefined);
 
   const multiplier = isAutoDeload
     ? PHASE_MULTIPLIER['deload']!
@@ -431,22 +463,23 @@ export function generateRichWeek(input: WorkoutEngineInput): RichWeek {
     calibration,
   };
 
-  const workouts: RichWorkout[] = plannedTypes.map((richType, dayIndex) => {
-    const workout = buildRichWorkout(richType, ctx, dayIndex);
-    const envAdj  = computeEnvAdjustment(
-      workout.paceRange,
-      workout.durationMinutes,
-      temperatureCelsius,
-      altitudeMeters,
-    );
+  const builtWorkouts: RichWorkout[] = plannedTypes.map((richType, dayIndex) => {
+    const baseWorkout = buildRichWorkout(richType, ctx, dayIndex);
+    const workout = specificity ? { ...buildSpecificityWorkout(baseWorkout, specificity, calibration !== null),
+      id: `goal_${encodeURIComponent(input.goalScopeId ?? 'unscoped')}_w${currentWeek}_run_slot_${dayIndex}` } : baseWorkout;
+    return workout;
+  });
+  const volumeFit = specificity ? fitRunningWeekToVolume(input, builtWorkouts) : undefined;
+  const workouts = (volumeFit?.workouts ?? builtWorkouts).map(workout => {
+    const envAdj = computeEnvAdjustment(workout.paceRange, workout.durationMinutes, temperatureCelsius, altitudeMeters);
     return envAdj ? { ...workout, environmentAdjustment: envAdj } : workout;
   });
 
   return {
     workouts,
     weekScore:       computeWeekScore(workouts),
-    progressionNote: buildProgressionNote(trainingPhase, weekInBlock, currentWeek),
-    phaseRationale:  PHASE_RATIONALE[trainingPhase] ?? '',
+    progressionNote: specificity ? `Practice block ${getGoalMesocycle(currentWeek, trainingPhase, input.goalType ?? 'general_running').blockNumber}, week ${getGoalMesocycle(currentWeek, trainingPhase, input.goalType ?? 'general_running').weekInBlock}/6; load/recovery week ${weekInBlock}/4. ${specificity.rationale} ${volumeFit?.budget.rationale ?? ''}` : buildProgressionNote(trainingPhase, weekInBlock, currentWeek),
+    phaseRationale:  specificity ? `${getGoalMesocycle(currentWeek, trainingPhase, input.goalType ?? 'general_running').focus}. ${specificity.rationale}` : PHASE_RATIONALE[trainingPhase] ?? '',
     generatedAt:     Date.now(),
   };
 }

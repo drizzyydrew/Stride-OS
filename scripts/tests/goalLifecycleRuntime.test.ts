@@ -403,6 +403,7 @@ test('a new race goal uses the same target in Calendar timeline as the active we
     race: { ...race('new'), date: addDaysToDateOnly(future, 14) } });
   const hook = loadSource<typeof import('../../src/hooks/usePlanTimeline')>('src/hooks/usePlanTimeline.ts', {
     react: { useMemo },
+    '../store/beginnerPlanStore': { useBeginnerPlanStore: selector(h.beginner) },
     '../store/trainingPlanStore': { useTrainingPlanStore: selector(h.plan) },
     '../store/goalArchiveStore': { useGoalArchiveStore: selector(h.archiveStore) },
     '../store/athleteStore': { useAthleteStore: selector(store({ progressionLevel: 'intermediate' })) },

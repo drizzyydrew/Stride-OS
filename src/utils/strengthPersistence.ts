@@ -15,11 +15,12 @@ export function completedExercisesFromActiveSession(
   loadByExercise: Record<string, string> = {},
 ): CompletedExercise[] {
   return exercises.map(exercise => ({
-    exerciseId: exercise.id,
+    exerciseId: exercise.canonicalExerciseId ?? exercise.id,
     name: exercise.name,
     equipmentType: exercise.equipmentType,
     skipped: exercise.skipped || undefined,
     substitutedFromExerciseId: exercise.substitutedFromId,
+    substitutedFromPrescription: exercise.substitutedFromPrescription,
     // Custom sessions do not have a prescribed exercise list. A replacement
     // still carries substitutedFromExerciseId above, so callers can tell the
     // two cases apart without inference.
@@ -87,6 +88,6 @@ export function trainingBlockCompletionFromActiveSession(session: ActiveStrength
     notes: `${session.workoutName} completed from its captured active workout.${session.trackingContext ? '' : ' Legacy draft: original goal, session type and program week were not captured; full-body/maintenance/week1 are neutral compatibility fields.'}`,
     workoutName: session.workoutName,
     source: session.trackingContext ? 'generated' as const : 'manual' as const,
-    completionClassification: partial ? 'partial' as const : 'completed_as_prescribed' as const,
+    completionClassification: partial ? 'partial' as const : session.exercises.some(ex => ex.substitutedFromId || ex.modifiedTargets) ? 'modified' as const : 'completed_as_prescribed' as const,
   };
 }

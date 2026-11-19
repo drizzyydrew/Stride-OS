@@ -26,7 +26,9 @@ import type { CalibrationOutput, TrainingDay } from '../types/athlete';
 import type { CalendarEntry } from './calendarEngine';
 import type { TrainingGoalType, MacroWeek, Race } from '../types/plan';
 import type { GeneratedBeginnerPlan } from '../types/beginnerPlan';
-import { generateRichWeek, getBaseTemplate } from './workoutEngine';
+import { buildRichDay, computeWeekScore, generateRichWeek, getBaseTemplate } from './workoutEngine';
+import { markCapturedRunCompletions, priorDemandingDates, protectNorwegianSchedule } from './specificitySchedule';
+import { balanceHybridStrength } from './hybridStrengthSchedule';
 import { generateStrengthWeek }     from './strengthEngine';
 import {
   mapWorkoutsToDates,
@@ -60,6 +62,8 @@ export type EngineInput = {
 
   // ── Plan spine (from trainingPlanStore + macroPlanner) ──────────────────────
   goalType:            TrainingGoalType;
+  goalScopeId?: string;
+  referenceDate?: string;
   trainingMode?:       'structured' | 'open';
   macroWeek:            MacroWeek | null;
   beforeStart:          boolean;
@@ -84,7 +88,9 @@ export type EngineInput = {
   strengthProgrammingVersion?: 1 | 2;
   strengthSessionMinutes?: number;
   strengthEquipment?: import('../types/strength').EquipmentOption[];
+  strengthExercisePreferences?: Record<string, string>;
   activeStrengthSessionId?: string | null;
+  activeRunningWorkoutId?: string | null;
 
   // ── Daily readiness (from checkInStore) ─────────────────────────────────────
   soreness:   number | null;   // 1–10; null = no check-in today
@@ -104,6 +110,7 @@ export type EngineInput = {
 
   // ── Strength history (from strengthStore) ────────────────────────────────────
   strengthHistory: StrengthLogRecord[];
+  runningHistory?: import('../types/training').CompletedWorkoutRecord[];
 
   // ── Environment (optional) ─────────────────────────────────────────────────
   temperatureCelsius?: number;
@@ -211,7 +218,7 @@ function diffAdaptations(
 // ─── Engine ───────────────────────────────────────────────────────────────────
 
 export function buildWeekPlan(input: EngineInput): WeekPlan {
-  const today    = new Date();
+  const today    = input.referenceDate ? parseYMD(input.referenceDate) : new Date();
   const todayYMD = toYMD(today);
 
   // ── Before the program has started: empty plan, no generation ─────────────
@@ -270,6 +277,12 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
 
   // ── Running sessions ──────────────────────────────────────────────────────
   const workoutInput: WorkoutEngineInput = {
+    programmingVersion: input.strengthProgrammingVersion,
+    goalType: input.goalType,
+    goalScopeId: input.goalScopeId,
+    runningHistory: input.runningHistory,
+    referenceDate: macroWeek.startDate,
+    raceDistance: input.goalType === 'race_prep' && input.programStartDate ? pickTargetRace(input.races, input.programStartDate)?.distance : undefined,
     calibration:            input.calibration,
     fatigueSensitivity:     input.fatigueSensitivity,
     recoveryResponsiveness: input.recoveryResponsiveness,
@@ -307,6 +320,8 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
     strengthLevel: input.strengthLevel,
     goalType: input.goalType,
     availableEquipment: input.strengthEquipment,
+    exercisePreferences: input.strengthExercisePreferences,
+    goalScopeId: input.goalScopeId,
     trainingPhase,
     progressionLevel: input.progressionLevel,
     weeklyMileage:    input.weeklyMileage,
@@ -430,6 +445,19 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   if (input.strengthProgrammingVersion === 2 && !input.activeBeginnerPlan) {
     const capturedCompletions = input.strengthHistory.filter(record => !record.skipped && record.scheduledSessionId).map(record => record.scheduledSessionId!);
     calendarMap = markCapturedStrengthCompletions(calendarMap, capturedCompletions);
+    const capturedRunCompletions = (input.runningHistory ?? []).filter(record => !record.skipped)
+      .map(record => (record as import('./runCompletionIdentity').RunWorkoutRecord).scheduledSessionId).filter((id): id is string => !!id);
+    calendarMap = markCapturedRunCompletions(calendarMap, capturedRunCompletions);
+    if (input.goalType !== 'general_strength') {
+      const balanced = balanceHybridStrength({ calendarMap, weekStart: weekStartDate,
+        liftDays: liftDays?.length ? liftDays : input.availableDays, activeStrengthSessionId: input.activeStrengthSessionId, today: todayYMD });
+      calendarMap = balanced.calendarMap;
+      if (balanced.replacements.size) {
+        const sessions = strengthWeek.sessions.map(session => balanced.replacements.get(session.id) ?? session);
+        strengthWeek = { ...strengthWeek, sessions, weeklyVolumeSets: sessions.reduce((sum, session) => sum + session.exercises.reduce((n, ex) => n + ex.sets, 0), 0) };
+      }
+      adaptations.push(...balanced.notes);
+    }
     const rest = reserveStrengthRestDay({ calendarMap, weekStartDate,
       liftDays: liftDays?.length ? liftDays : input.availableDays, activeStrengthSessionId: input.activeStrengthSessionId });
     calendarMap = markCapturedStrengthCompletions(rest.calendarMap, capturedCompletions);
@@ -439,6 +467,16 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
         phaseNote: `${sessions.length} strength ${sessions.length === 1 ? 'session' : 'sessions'} — full rest day protected` };
     }
     if (rest.note) adaptations.push(rest.note);
+    const guarded = protectNorwegianSchedule({ calendarMap, activeWorkoutId: input.activeRunningWorkoutId,
+      priorDemandingDates: priorDemandingDates(input.strengthHistory, input.runningHistory ?? [], weekStartDate),
+      completedScheduledIds: capturedRunCompletions,
+      easyAlternative: workout => buildRichDay('easy_run', workoutInput, workout.dayIndex) });
+    calendarMap = guarded.calendarMap;
+    if (guarded.replacements.size) {
+      const workouts = richWeek.workouts.map(workout => guarded.replacements.get(workout.id) ?? workout);
+      richWeek = { ...richWeek, workouts, weekScore: computeWeekScore(workouts), progressionNote: `${richWeek.progressionNote} ${guarded.notes.join(' ')}` };
+    }
+    adaptations.push(...guarded.notes);
   }
   const reconciled = reconcileMissedSessions({ calendarMap, todayYMD });
   calendarMap = reconciled.calendarMap;

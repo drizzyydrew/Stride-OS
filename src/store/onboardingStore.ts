@@ -8,7 +8,8 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { createAppJSONStorage } from './persistStorage';
+import { createAppJSONStorage, getAppStorage } from './persistStorage';
+import { ownerLeaseIsCurrent, type OwnerLease } from '../lib/localDataOwner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { Sex, TrainingDay, StandardDistance, WeightProvenance } from '../types/athlete';
@@ -68,6 +69,7 @@ export type OnboardingData = {
   strengthLevel:   StrengthLevel;
   strengthSessionMinutes?: number;
   strengthEquipment?: EquipmentOption[];
+  strengthExercisePreferences?: Record<string, string>;
 
   // Step 8: Injury
   hasCurrentInjury: boolean;
@@ -142,6 +144,20 @@ type OnboardingStore = {
 
 // ─── Implementation ───────────────────────────────────────────────────────────
 
+let onboardingWrites: Promise<unknown> = Promise.resolve();
+const onboardingJSONStorage = createAppJSONStorage();
+const onboardingStorage: typeof onboardingJSONStorage = onboardingJSONStorage && {
+  ...onboardingJSONStorage,
+  setItem: (name, value) => {
+    // Start at the existing account-storage boundary immediately; tracking
+    // these writes must not defer an old owner's payload into a new epoch.
+    const write = Promise.resolve(onboardingJSONStorage.setItem(name, value));
+    onboardingWrites = Promise.all([onboardingWrites.catch(() => undefined), write]);
+    void onboardingWrites.catch(() => undefined);
+    return write;
+  },
+};
+
 export const useOnboardingStore = create<OnboardingStore>()(
   persist(
     (set, get) => ({
@@ -185,7 +201,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
     }),
     {
       name:    'onboarding-store',
-      storage: createAppJSONStorage(),
+      storage: onboardingStorage,
       version: 1,
       migrate: (persisted) => {
         const state = persisted as Partial<OnboardingStore>;
@@ -216,6 +232,46 @@ export const useOnboardingStore = create<OnboardingStore>()(
     },
   ),
 );
+
+/** Publish limited planning choices only after their same-owner bytes survive
+ * readback. This does not change the legacy updateData contract. */
+export async function saveStrengthPlanningPreferences(
+  patch: Partial<Pick<OnboardingData, 'strengthLevel' | 'strengthSessionMinutes' | 'strengthEquipment'>>
+    & { strengthExercisePreferences?: Record<string, string | null> },
+  lease: OwnerLease,
+): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const ready = () => ownerLeaseIsCurrent(lease) && useOnboardingStore.persist.hasHydrated()
+      && useProfileStore.getState().activeAthleteId === 'athlete_default';
+    if (!ready()) throw new Error('Planning preferences are not ready for this athlete');
+    await onboardingWrites.catch(() => undefined);
+    if (!ready()) throw new Error('The account changed while saving');
+    const previous = useOnboardingStore.getState();
+    const preferences = { ...previous.data.strengthExercisePreferences };
+    for (const [exerciseId, target] of Object.entries(patch.strengthExercisePreferences ?? {})) {
+      if (target === null) delete preferences[exerciseId];
+      else if (typeof target === 'string' && target) preferences[exerciseId] = target;
+      else throw new Error('Invalid exercise preference');
+    }
+    const data: OnboardingData = { ...previous.data, ...patch,
+      strengthExercisePreferences: patch.strengthExercisePreferences ? preferences : previous.data.strengthExercisePreferences };
+    const encoded = JSON.stringify({ state: { onboardingComplete: previous.onboardingComplete, currentStep: previous.currentStep, data }, version: 1 });
+    const storage = getAppStorage();
+    await storage.setItem('onboarding-store', encoded);
+    if (!ready()) throw new Error('The account changed while saving');
+    if (await storage.getItemOnce('onboarding-store') !== encoded) throw new Error('Planning preferences could not be confirmed');
+    if (!ready()) throw new Error('The account changed while saving');
+    if (useOnboardingStore.getState() !== previous) continue;
+    useOnboardingStore.setState({ data });
+    await onboardingWrites;
+    if (!ready()) throw new Error('The account changed while saving');
+    if (useOnboardingStore.getState().data !== data) continue;
+    if (await storage.getItemOnce('onboarding-store') !== encoded) throw new Error('Planning preferences could not be confirmed');
+    if (!ready()) throw new Error('The account changed while saving');
+    return;
+  }
+  throw new Error('Planning preferences changed while saving; retry your choice');
+}
 
 function syncLegacyOnboardingWeight(state: OnboardingStore) {
   if (!state.onboardingComplete) return;

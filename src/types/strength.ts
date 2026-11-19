@@ -136,6 +136,7 @@ export type StrengthSession = {
   purpose:          string;           // one-sentence what + why
   rationale:        string;           // physiological basis (2–3 sentences)
   progressionNote:  string;
+  lowerDemand?: 'reduced_support';
 };
 
 // ─── Weekly strength plan ─────────────────────────────────────────────────────
@@ -190,6 +191,7 @@ export type CompletedExercise = {
   // their original meaning rather than receiving invented execution detail.
   skipped?:   boolean;
   substitutedFromExerciseId?: string;
+  substitutedFromPrescription?: { exerciseId: string; name: string; sets: number; reps: string; repScheme?: RepScheme; targetRpe?: number; restSeconds?: number; loadTarget?: string };
   added?:     boolean;
   notes?:     string;
   /** Original captured prescription for new records; absent is unknown for
@@ -251,6 +253,8 @@ export type StrengthEngineInput = {
   strengthLevel?: import('./training').StrengthLevel;
   goalType?: import('./plan').TrainingGoalType;
   availableEquipment?: EquipmentOption[];
+  exercisePreferences?: Record<string, string>;
+  goalScopeId?: string;
   trainingPhase:    import('./training').TrainingPhase;
   progressionLevel: import('./training').ProgressionLevel;
   weeklyMileage:    number;

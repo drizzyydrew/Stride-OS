@@ -15,6 +15,7 @@ import type { MacroPlan, MacroWeek, Race, RacePriority, TrainingGoalType } from 
 import { sundayOf, addDays, toYMD, parseYMD } from '../calendarEngine';
 import { getPlanTemplateForDistance, type PlanTemplate } from '../periodization';
 import { resolvePhaseWithDeload } from '../training/deloadModel';
+import { getGoalMesocycle } from './goalMesocycle';
 
 export const RACE_BLOCK_MAX_WEEKS = 22;
 
@@ -167,8 +168,16 @@ function scalePhases(
       .map((p, i) => ({ i, len: p.len, taper: p.phase === 'taper' }))
       .filter(c => !c.taper)
       .sort((a, b) => b.len - a.len);
-    const target = nonTaper[0]?.i ?? 0;
-    scaled[target]!.len = Math.max(1, scaled[target]!.len + diff);
+    if (diff > 0) scaled[nonTaper[0]?.i ?? 0]!.len += diff;
+    else {
+      let remaining = -diff;
+      for (const item of nonTaper) {
+        const reduction = Math.min(remaining, scaled[item.i]!.len - 1);
+        scaled[item.i]!.len -= reduction;
+        remaining -= reduction;
+        if (!remaining) break;
+      }
+    }
   }
 
   let cursor = 1;
@@ -177,6 +186,25 @@ function scalePhases(
     const endWeek   = cursor + p.len - 1;
     cursor = endWeek + 1;
     return { phase: p.phase, startWeek, endWeek };
+  });
+}
+
+function scaleRacePhases(template: PlanTemplate, targetWeeks: number, programmingVersion: 1 | 2) {
+  const scaled = scalePhases(template, targetWeeks);
+  if (programmingVersion !== 2) return scaled;
+  const taper = scaled.findIndex(block => block.phase === 'taper');
+  if (taper < 0) return scaled;
+  const freed = Math.max(0, scaled[taper]!.endWeek - scaled[taper]!.startWeek + 1 - 2);
+  if (!freed) return scaled;
+  // Extra runway serves aerobic preparation, not a proportionally stretched
+  // taper. Preserve the existing two-week taper boundary for new goals.
+  const base = Math.max(0, scaled.findIndex(block => block.phase === 'base' || block.phase === 'aerobic_development'));
+  let cursor = 1;
+  return scaled.map((block, index) => {
+    const length = block.endWeek - block.startWeek + 1 + (index === base ? freed : 0) - (index === taper ? freed : 0);
+    const result = { ...block, startWeek: cursor, endWeek: cursor + length - 1 };
+    cursor = result.endWeek + 1;
+    return result;
   });
 }
 
@@ -315,6 +343,7 @@ function buildRacePrepPlan(
   race:          Race,
   foundationLen: number,
   allRaces:      Race[],
+  programmingVersion: 1 | 2 = 1,
 ): MacroPlan {
   const raceDate    = parseYMD(race.date);
   const raceWeekNum = weekNumberForDate(startDate, raceDate);
@@ -345,14 +374,14 @@ function buildRacePrepPlan(
       }));
     }
 
-    const template = getPlanTemplateForDistance(race.distance);
-    const scaled   = scalePhases(template, RACE_BLOCK_MAX_WEEKS);
+    const template = getPlanTemplateForDistance(race.distance, programmingVersion);
+    const scaled   = scaleRacePhases(template, RACE_BLOCK_MAX_WEEKS, programmingVersion);
     weekNumber     = appendRaceBlock(weeks, startDate, weekNumber, scaled, race, otherRaces);
     appendPostRace(weeks, startDate, weekNumber, minTotal, race);
 
   } else if (raceWeekNum >= 6) {
-    const template = getPlanTemplateForDistance(race.distance);
-    const scaled   = scalePhases(template, raceWeekNum);
+    const template = getPlanTemplateForDistance(race.distance, programmingVersion);
+    const scaled   = scaleRacePhases(template, raceWeekNum, programmingVersion);
     const nextWeek = appendRaceBlock(weeks, startDate, 1, scaled, race, otherRaces, foundationLen);
     appendPostRace(weeks, startDate, nextWeek, minTotal, race);
 
@@ -388,13 +417,14 @@ function buildRacePrepPlan(
 
 // ─── Main entry point ─────────────────────────────────────────────────────────
 
-export function buildMacroPlan(input: {
+function buildLegacyMacroPlan(input: {
   goalType:         TrainingGoalType;
   startDate:        string;
   races:            Race[];
   progressionLevel: ProgressionLevel;
   yearsRunning:      number;
   weeklyMileage:     number;
+  programmingVersion?: 1 | 2;
 }): MacroPlan {
   const { goalType, startDate, races, progressionLevel, yearsRunning, weeklyMileage } = input;
   const gated        = isBeginnerGated(progressionLevel, yearsRunning, weeklyMileage);
@@ -403,7 +433,7 @@ export function buildMacroPlan(input: {
   if (goalType === 'race_prep') {
     const targetRace = pickTargetRace(races, startDate);
     if (targetRace) {
-      return buildRacePrepPlan(startDate, targetRace, foundationLen, races);
+      return buildRacePrepPlan(startDate, targetRace, foundationLen, races, input.programmingVersion);
     }
     const fallback = buildGeneralRunningPlan(startDate, foundationLen, 'general_running');
     return {
@@ -422,6 +452,33 @@ export function buildMacroPlan(input: {
   }
 
   return buildGeneralRunningPlan(startDate, foundationLen, 'general_running');
+}
+
+/** New goals organize repeatable six-week practice blocks around the goal.
+ * The existing 3-load/1-recovery cadence remains explicit and independent;
+ * a later calendar week alone never authorizes a faster session. */
+export function buildMacroPlan(input: Parameters<typeof buildLegacyMacroPlan>[0]): MacroPlan {
+  if (input.programmingVersion !== 2) return buildLegacyMacroPlan(input);
+  let plan: MacroPlan;
+  const race = input.goalType === 'race_prep' ? pickTargetRace(input.races, input.startDate) : null;
+  if (race) plan = buildLegacyMacroPlan(input);
+  else {
+    const foundation = isBeginnerGated(input.progressionLevel, input.yearsRunning, input.weeklyMileage) ? 6 : 0;
+    const phases: TrainingPhase[] = input.goalType === 'general_strength' ? ['base', 'build']
+      : input.goalType === 'hybrid' ? ['aerobic_development', 'base', 'threshold', 'vo2']
+      : ['aerobic_development', 'threshold', 'aerobic_development', 'vo2'];
+    const weeks = Array.from({ length: MIN_TOTAL_WEEKS }, (_, index) => {
+      const week = index + 1;
+      const planned: TrainingPhase = week <= foundation ? 'foundation'
+        : phases[Math.floor((week - foundation - 1) / 6) % phases.length]!;
+      const phase = deloadOr(week, planned);
+      return makeWeek(input.startDate, week, phase, { focus: focusForPhase(phase, input.goalType) });
+    });
+    plan = { goalType: input.goalType, startDate: input.startDate, totalWeeks: weeks.length, weeks,
+      generatedAt: Date.now(), ...(input.goalType === 'race_prep' ? { limitationNote: 'Add a race date to anchor event-specific work; current training builds general aerobic capacity.' } : {}) };
+  }
+  return { ...plan, programmingVersion: 2, weeks: plan.weeks.map(week => ({ ...week,
+    mesocycle: getGoalMesocycle(week.weekNumber, week.phase, input.goalType) })) };
 }
 
 // ─── Date lookup ──────────────────────────────────────────────────────────────
@@ -443,5 +500,6 @@ export function macroWeekForDate(plan: MacroPlan, date: Date): MacroWeek | null 
     isTaper:    false,
     isRaceWeek: false,
     focus:      'Aerobic base — continuing steady training',
+    ...(plan.programmingVersion === 2 ? { mesocycle: getGoalMesocycle(weekNum, phase, plan.goalType) } : {}),
   };
 }

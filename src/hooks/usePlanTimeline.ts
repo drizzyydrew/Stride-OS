@@ -10,11 +10,13 @@ import { useMemo } from 'react';
 
 import { useTrainingPlanStore } from '../store/trainingPlanStore';
 import { useOnboardingStore }   from '../store/onboardingStore';
+import { useBeginnerPlanStore } from '../store/beginnerPlanStore';
 import { useAthleteStore }      from '../store/athleteStore';
 import { useGoalArchiveStore } from '../store/goalArchiveStore';
 import { toYMD } from '../utils/calendarEngine';
 import { calendarRacesForPlan } from '../utils/goalLifecycle';
 import { buildMacroPlan, macroWeekForDate } from '../utils/plan/macroPlanner';
+import { alignStoredBeginnerMacro } from '../utils/plan/storedBeginnerMacro';
 import type { MacroPlan, MacroWeek, Race, TrainingGoalType } from '../types/plan';
 
 export type PlanTimeline = {
@@ -28,6 +30,10 @@ export type PlanTimeline = {
 
 export function usePlanTimeline(): PlanTimeline {
   const goalType         = useTrainingPlanStore(s => s.goalType);
+  const programmingVersion = useTrainingPlanStore(s => s.strengthProgrammingVersion);
+  const presetGoal = useTrainingPlanStore(s => s.activePresetGoal);
+  const savedPreset = useTrainingPlanStore(s => s.activePresetPlan);
+  const legacyPreset = useBeginnerPlanStore(s => s.activePlan);
   const programStartDate = useTrainingPlanStore(s => s.programStartDate);
   const races            = useTrainingPlanStore(s => s.races);
   const goalRaceId       = useTrainingPlanStore(s => s.goalRaceId);
@@ -35,22 +41,25 @@ export function usePlanTimeline(): PlanTimeline {
   const archives = useGoalArchiveStore(s => s.archives);
   const progressionLevel = useAthleteStore(s => s.progressionLevel);
   const onboardingData   = useOnboardingStore(s => s.data);
+  const savedBeginner = savedPreset ?? legacyPreset;
+  const activeBeginner = trainingMode === 'structured' && presetGoal?.planId === savedBeginner?.id ? savedBeginner : null;
   const calendarRaces = useMemo(() => calendarRacesForPlan({ trainingMode, goalType, goalRaceId, programStartDate }, races, archives),
     [trainingMode, goalType, goalRaceId, programStartDate, races, archives]);
   const activeRaces = useMemo(() => calendarRaces.filter(race => !goalRaceId || race.id === goalRaceId), [calendarRaces, goalRaceId]);
 
   const macroPlan = useMemo(() => {
     if (!programStartDate) return null;
-    return buildMacroPlan({
+    return alignStoredBeginnerMacro(buildMacroPlan({
+      programmingVersion,
       goalType,
       startDate:     programStartDate,
       races: activeRaces,
       progressionLevel,
       yearsRunning:  onboardingData.yearsRunning,
       weeklyMileage: onboardingData.weeklyMileage,
-    });
+    }), activeBeginner);
   }, [
-    goalType, programStartDate, activeRaces, progressionLevel,
+    goalType, programmingVersion, programStartDate, activeRaces, progressionLevel, activeBeginner,
     onboardingData.yearsRunning, onboardingData.weeklyMileage,
   ]);
 

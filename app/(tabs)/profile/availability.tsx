@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LAYOUT } from '../../../src/constants/layout';
 import { colors } from '../../../src/theme/colors';
 import { useColors } from '../../../src/theme/useColors';
-import { useOnboardingStore } from '../../../src/store/onboardingStore';
+import { saveStrengthPlanningPreferences, useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useActiveProfile, useProfileStore } from '../../../src/store/profileStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import type { TrainingDay } from '../../../src/types/athlete';
@@ -142,7 +142,7 @@ export default function AvailabilityScreen() {
             const lease = captureOwnerLease();
             if (!lease || !ownerLeaseIsCurrent(lease) || !useOnboardingStore.persist.hasHydrated()
               || useProfileStore.getState().activeAthleteId !== 'athlete_default') throw new Error('Profile is not ready');
-            await useOnboardingStore.getState().updateData(patch);
+            await saveStrengthPlanningPreferences(patch, lease);
           }} />
       </View> : null}
 

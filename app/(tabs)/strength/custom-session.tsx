@@ -23,6 +23,7 @@ import { summarizeStrengthSession } from '../../../src/utils/strengthSummary';
 import { completedExercisesFromActiveSession } from '../../../src/utils/strengthPersistence';
 import { categoryFromScheduledType, classifySubstitution } from '../../../src/utils/substitution';
 import { warmupForSession, type WarmupSessionKind } from '../../../src/utils/warmupProtocols';
+import ExerciseAdjustment from '../../../src/components/strength/ExerciseAdjustment';
 import {
   endStrideWatchWorkout,
   pauseStrideWatchWorkout,
@@ -264,8 +265,8 @@ export default function CustomStrengthSessionScreen() {
 
         <Text style={[styles.eyebrow, styles.flowLabel, { color: C.textDim }]}>EXERCISES</Text>
         {session.exercises.map((exercise, index) => (
+          <View key={exercise.id}>
           <ExerciseCard
-            key={exercise.id}
             exercise={exercise}
             index={index}
             total={session.exercises.length}
@@ -281,6 +282,8 @@ export default function CustomStrengthSessionScreen() {
             onSkipExercise={() => skipExercise(exercise.id, !exercise.skipped)}
             onReorder={direction => reorderExercise(exercise.id, direction)}
           />
+          <ExerciseAdjustment exercise={exercise} workoutInstanceId={session.workoutInstanceId} />
+          </View>
         ))}
 
         <View style={[styles.summaryCard, { backgroundColor: C.card, borderColor: C.border, marginTop: 8 }]}>

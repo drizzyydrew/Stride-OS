@@ -61,6 +61,7 @@ import {
 import { displayLabel, displayLabels } from '../../../src/utils/displayLabels';
 import { trainingBlockCompletionFromActiveSession } from '../../../src/utils/strengthPersistence';
 import StrengthSetEditor from '../../../src/components/strength/StrengthSetEditor';
+import ExerciseAdjustment from '../../../src/components/strength/ExerciseAdjustment';
 import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
 import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import {
@@ -428,6 +429,7 @@ type ExDef = {
   equipment: string[];
   targetRpe?: number;
   loadTarget?: string;
+  programmingNote?: string;
 };
 
 const PATTERN_MUSCLES: Record<MovementPattern, string> = {
@@ -447,7 +449,8 @@ function sessionToExDefs(session: StrengthSession, strengthHistory: ReturnType<t
   return session.exercises.map(ex => {
     const expectedSetup = ex.exercise.equipment.length === 1 ? mapEquipmentType(ex.exercise.equipment) : null;
     const last = getLastLoggedExercise(strengthHistory, ex.exerciseId, unit, expectedSetup);
-    const parsedWeight = last?.load ? parseFloat(last.load) : NaN;
+    const recentReference = last && Number.isFinite(last.timestamp) && last.timestamp <= Date.now() && last.timestamp >= Date.now() - 42 * 86400000;
+    const parsedWeight = recentReference && last.load ? parseFloat(last.load) : NaN;
     return {
       id: ex.exerciseId,
       name: ex.exercise.name,
@@ -457,11 +460,12 @@ function sessionToExDefs(session: StrengthSession, strengthHistory: ReturnType<t
       weight: Number.isFinite(parsedWeight) ? parsedWeight : 0,
       restSeconds: ex.restSeconds,
       muscles: PATTERN_MUSCLES[ex.exercise.pattern] ?? displayLabel(ex.exercise.pattern),
-      desc: ex.exercise.rationale,
+      desc: `${ex.exercise.rationale}${ex.notes ? ` ${ex.notes}` : ''}`,
       cue: ex.exercise.coachingCues[0] ?? ex.rationale,
       equipment: ex.exercise.equipment,
       targetRpe: ex.rpe,
       loadTarget: ex.loadTarget,
+      programmingNote: ex.notes,
     };
   });
 }
@@ -742,7 +746,7 @@ export default function StrengthScreen() {
         repScheme: exercise.repScheme,
         equipment: exercise.equipment,
         equipmentType: exercise.equipment.length === 1 ? mapEquipmentType(exercise.equipment) : 'other',
-        notes: exercise.cue,
+        notes: [exercise.cue, exercise.programmingNote].filter(Boolean).join(' '),
         plannedRpe: exercise.targetRpe,
         plannedRestSeconds: exercise.restSeconds,
         plannedLoadTarget: exercise.loadTarget,
@@ -1395,6 +1399,7 @@ export default function StrengthScreen() {
                 </TouchableOpacity>
                 {activeExercise ? (
                   <>
+                    <ExerciseAdjustment exercise={activeExercise} workoutInstanceId={activeStrengthSession!.workoutInstanceId} />
                     <StrengthSetEditor
                       sets={activeExercise.setEntries}
                       equipmentType={activeExercise.equipmentType}
