@@ -1,0 +1,23 @@
+{
+  "recordedAt": "2026-11-19T04:59:44.741711+00:00",
+  "buildNumber": "120",
+  "source": "Owner reply in this conversation",
+  "ownerReply": "Complete",
+  "inResponseTo": "Please update to120 and check the collapsed and expanded views.",
+  "ownerReportedCounterDisclosureCheckComplete": true,
+  "scope": [
+    "AI Coach usage row",
+    "Collapsed and expanded usage details"
+  ],
+  "notEstablishedByThisReply": [
+    "Exact authenticated request count increment",
+    "UTC rollover",
+    "Offline recovery",
+    "Account switching",
+    "Server subscription enforcement",
+    "Subscription lifecycle",
+    "Public release readiness"
+  ],
+  "newBuildRequiredForThisRecord": false,
+  "publicReviewSubmittedInThisTask": false
+}

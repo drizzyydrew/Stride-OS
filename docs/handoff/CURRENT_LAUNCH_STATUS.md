@@ -1,10 +1,14 @@
 # Current StrideOS launch status
 
+## Owner accepts build 120 counter and dropdown
+
+The owner replies "Complete" to the request to update to120 and check the collapsed and expanded usage views. Record this as owner-reported completion of that focused UI check. Do not repeat it without a new issue. Exact request-count increments, UTC rollover, offline recovery, account switching, authenticated server entitlement enforcement and paid lifecycle were not separately reported by that reply. See BUILD120_OWNER_ACCEPTANCE.json. No app/backend change, new build or public submission is needed merely to record this acceptance.
+
 ## Latest: build 120 AI usage counter delivered — November 18
 
 Build 120 is VALID / IN_BETA_TESTING in the existing internal Team (Expo) group, with exact testing-note readback. Source ade9c221422262c85f352d083a7d416673d32a08; EAS 9745aa33-3d0c-4e5e-a5b4-7704bb9eedfd; submission b6168ea4-c69f-4e50-94f9-088d8eb70dd6. See BUILD120_RELEASE.md and BUILD120_DELIVERY.json.
 
-Ask Coach now has a quiet native disclosure showing account-specific requests used today, with remaining allowance, local/UTC reset time, example and refresh behind expansion. Deployed ai-coach v17 reads only the authenticated owner's count; four source files match, JWT stays on, unauthenticated usage returns401. No quota, paid policy, secrets, database permissions/schema or protected native runtime changed. Independent platform/Contrarian reviews,44 focused/regression tests, local/cloud typechecks, dependency/prebuild checks,21/21 cloud Doctor and signed three-target120 artifact checks passed. Actual installed counter/disclosure and authenticated device read acceptance remain pending. The owner's119 ordinary Lock Screen logo and current membership captures are accepted within their reported scope.
+Ask Coach now has a quiet native disclosure showing account-specific requests used today, with remaining allowance, local/UTC reset time, example and refresh behind expansion. Deployed ai-coach v17 reads only the authenticated owner's count; four source files match, JWT stays on, unauthenticated usage returns401. No quota, paid policy, secrets, database permissions/schema or protected native runtime changed. Independent platform/Contrarian reviews,44 focused/regression tests, local/cloud typechecks, dependency/prebuild checks,21/21 cloud Doctor and signed three-target120 artifact checks passed. The owner now reports the focused installed counter/disclosure check complete; authenticated count-increment and other server scenarios remain separate. The owner's119 ordinary Lock Screen logo and current membership captures are accepted within their reported scope.
 
 Public draft still109/PREPARE_FOR_SUBMISSION/MANUAL. No public review/release or new purchase occurred. Remaining paid-server/cost/capacity, account/reviewer/deletion, paid lifecycle and Store-material gates remain open. The owner reports Apple website sign-in; browser recheck was unavailable through computer use, while existing API access was verified and used for delivery.
 
