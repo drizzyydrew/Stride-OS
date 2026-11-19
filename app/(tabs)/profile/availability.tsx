@@ -11,6 +11,9 @@ import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useActiveProfile, useProfileStore } from '../../../src/store/profileStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import type { TrainingDay } from '../../../src/types/athlete';
+import StrengthSessionFit from '../../../src/components/strength/StrengthSessionFit';
+import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
 
 const DAYS: TrainingDay[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -32,6 +35,8 @@ export default function AvailabilityScreen() {
   const updateActive = useProfileStore(s => s.updateActive);
   const weeklyMileage = useAthleteStore(s => s.weeklyMileage);
   const goalRace = useAthleteStore(s => s.goalRace);
+  const programmingVersion = useTrainingPlanStore(s => s.strengthProgrammingVersion);
+  const activeAthleteId = useProfileStore(s => s.activeAthleteId);
 
   const availableDays = data.availableDays?.length ? data.availableDays : profile?.availableDays ?? [];
   const runDays = data.runDays?.length ? data.runDays : profile?.runDays ?? availableDays;
@@ -128,6 +133,18 @@ export default function AvailabilityScreen() {
         disabled={day => !availableDays.includes(day)}
         onToggle={toggleLift}
       />
+
+      {activeAthleteId === 'athlete_default' ? <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+        <StrengthSessionFit value={data} showExperience description={programmingVersion === 2
+          ? 'These choices guide generated strength sessions. Running and lifting experience are separate, and completed records stay unchanged.'
+          : 'These choices apply when you choose a new goal with the updated programming. Your current plan keeps its existing structure.'}
+          onChange={async patch => {
+            const lease = captureOwnerLease();
+            if (!lease || !ownerLeaseIsCurrent(lease) || !useOnboardingStore.persist.hasHydrated()
+              || useProfileStore.getState().activeAthleteId !== 'athlete_default') throw new Error('Profile is not ready');
+            await useOnboardingStore.getState().updateData(patch);
+          }} />
+      </View> : null}
 
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>HOW THIS CHANGES THE PLAN</Text>

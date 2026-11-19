@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { createAppJSONStorage } from './persistStorage';
+import { createAppJSONStorage, getAppStorage } from './persistStorage';
+import { captureOwnerLease, ownerLeaseIsCurrent, type OwnerLease } from '../lib/localDataOwner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type {
@@ -16,6 +17,21 @@ import { syncStrengthSessionToExternalServices } from '../lib/externalIntegratio
 import { useActivityStore } from './activityStore';
 import { activityFromStrengthRecord } from '../utils/activityMigration';
 import type { CompletionClassification } from '../types/activity';
+
+let confirmedStrengthWrites: Promise<unknown> = Promise.resolve();
+const strengthJSONStorage = createAppJSONStorage();
+const strengthStorage: typeof strengthJSONStorage = strengthJSONStorage && {
+  ...strengthJSONStorage,
+  setItem: (name, value) => {
+    const lease = captureOwnerLease();
+    const write = confirmedStrengthWrites.catch(() => undefined).then(() => {
+      if (!lease || !ownerLeaseIsCurrent(lease)) return;
+      return strengthJSONStorage.setItem(name, value);
+    });
+    confirmedStrengthWrites = write;
+    return write;
+  },
+};
 
 type StrengthLogEdits = Partial<Pick<StrengthLogRecord,
   'actualDuration' | 'overallRpe' | 'notes' | 'exercises'>>;
@@ -289,7 +305,7 @@ export const useStrengthStore = create<StrengthStore>()(
     }),
     {
       name:       'strength-store',
-      storage:    createAppJSONStorage(),
+      storage:    strengthStorage,
       partialize: (state) => ({
         completedSessions: state.completedSessions,
         history:           state.history,
@@ -302,3 +318,29 @@ export const useStrengthStore = create<StrengthStore>()(
     },
   ),
 );
+
+
+/** Keep the active draft until both strength history and its Activity project
+ * have survived local readback. Retry uses the same completion identity. */
+export function confirmStrengthCompletionSaved(completionKey: string, lease: OwnerLease): Promise<void> {
+  const write = confirmedStrengthWrites.catch(() => undefined).then(async () => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (!ownerLeaseIsCurrent(lease) || !useStrengthStore.persist.hasHydrated()) throw new Error('Strength history is not ready for this account');
+      const state = useStrengthStore.getState();
+      const record = state.history.find(item => item.id === completionKey);
+      if (!record || !state.completedSessions.includes(completionKey)) throw new Error('The workout has not been recorded yet');
+      const encoded = JSON.stringify({ state: { completedSessions: state.completedSessions, history: state.history }, version: 0 });
+      const storage = getAppStorage();
+      await storage.setItem('strength-store', encoded);
+      if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed while saving the workout');
+      const saved = await storage.getItemOnce('strength-store');
+      if (!ownerLeaseIsCurrent(lease) || saved !== encoded) throw new Error('Workout saving could not be confirmed. Your active workout was kept; retry Finish.');
+      await useActivityStore.getState().addActivityAndPersist(activityFromStrengthRecord(record, false), lease, { onlyIfMissing: true });
+      if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed while saving the workout');
+      if (useStrengthStore.getState().history === state.history && useStrengthStore.getState().completedSessions === state.completedSessions) return;
+    }
+    throw new Error('Strength history changed while saving. Your active workout was kept; retry Finish.');
+  });
+  confirmedStrengthWrites = write;
+  return write;
+}

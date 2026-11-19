@@ -14,7 +14,7 @@
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-import type { RepScheme } from '../types/strength';
+import type { RepScheme, StrengthSessionType, StrengthGoal } from '../types/strength';
 import {
   parsePrescriptionScheme,
   representativeDistanceMetersForScheme,
@@ -65,6 +65,9 @@ export type ActiveStrengthExercise = {
   equipment: string[];
   equipmentType?: EquipmentType;
   notes?: string;
+  plannedRpe?: number;
+  plannedRestSeconds?: number;
+  plannedLoadTarget?: string;
   setEntries: ActiveSetEntry[];
   // Set when this exercise replaced a prescribed one (substitution), or
   // when it was added freeform during a custom session.
@@ -77,7 +80,17 @@ export type ActiveStrengthExercise = {
   skipped?: boolean;
 };
 
+export type TrainingBlockTrackingContext = {
+  completionKey: string;
+  week: number;
+  sessionType: StrengthSessionType;
+  goal: StrengthGoal;
+  warmupProtocol?: string;
+  cooldownProtocol?: string;
+};
+
 export type ActiveStrengthSession = {
+  trackingContext?: TrainingBlockTrackingContext;
   workoutId: string;
   workoutName: string;
   plannedDurationMin: number;
@@ -192,6 +205,9 @@ export function ensureExerciseShape(exercise: Partial<ActiveStrengthExercise> & 
     equipment: exercise.equipment ?? [],
     equipmentType: exercise.equipmentType ?? mapEquipmentType(exercise.equipment),
     notes: exercise.notes,
+    plannedRpe: exercise.plannedRpe,
+    plannedRestSeconds: exercise.plannedRestSeconds,
+    plannedLoadTarget: exercise.plannedLoadTarget,
     setEntries: exercise.setEntries && exercise.setEntries.length > 0
       ? exercise.setEntries
       : synthesizeSetEntries(sets, reps, repScheme),

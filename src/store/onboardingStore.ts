@@ -16,6 +16,7 @@ import { useProfileStore } from './profileStore';
 import { matchingWeightProvenance, migrateStoredWeight, preserveWeightProvenance, userEnteredWeightPatch } from '../utils/profilePower';
 import type { ProgressionLevel, GoalType, StrengthLevel, TrainingStyle, RaceDistance } from '../types/training';
 import type { TrainingGoalType, RacePriority } from '../types/plan';
+import type { EquipmentOption } from '../types/strength';
 
 // Re-export so existing consumers importing from onboardingStore don't break.
 export type { GoalType, StrengthLevel, TrainingStyle };
@@ -65,6 +66,8 @@ export type OnboardingData = {
 
   // Step 7: Strength
   strengthLevel:   StrengthLevel;
+  strengthSessionMinutes?: number;
+  strengthEquipment?: EquipmentOption[];
 
   // Step 8: Injury
   hasCurrentInjury: boolean;

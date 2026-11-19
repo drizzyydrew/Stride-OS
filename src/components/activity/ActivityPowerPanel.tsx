@@ -21,7 +21,7 @@ function PowerDisclosure({ label, open, onChange, children }: { label: string; o
   return <View style={[s.disclosure, { borderColor: C.border }]}>
     <Host matchContents={{ vertical: true }} colorScheme={mode} seedColor={C.primary} style={{ width: '100%' }} ignoreSafeArea="all">
       <Collapsible label={label} labelStyle={{ fontSize: 15, fontWeight: '600', color: C.text }} isOpen={open} onOpenChange={onChange}>
-        {open ? <RNHostView matchContents><View style={s.disclosureBody}>{children}</View></RNHostView> : null}
+        {open ? <RNHostView matchContents={{ vertical: true }}><View style={s.disclosureBody}>{children}</View></RNHostView> : null}
       </Collapsible>
     </Host>
   </View>;
@@ -133,18 +133,18 @@ export default function ActivityPowerPanel({ activity, units }: { activity: Acti
 }
 
 const s = StyleSheet.create({
-  root: { paddingVertical: 20, borderTopWidth: StyleSheet.hairlineWidth, gap: 10 },
+  root: { width: '100%', minWidth: 0, paddingVertical: 20, borderTopWidth: StyleSheet.hairlineWidth, gap: 10 },
   headingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   heading: { fontSize: 20, fontWeight: '700', flexShrink: 1 },
   infoButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   value: { fontSize: 28, fontWeight: '700', fontVariant: ['tabular-nums'] },
   label: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
-  copy: { fontSize: 13, lineHeight: 20 },
+  copy: { fontSize: 13, lineHeight: 20, flexShrink: 1 },
   help: { borderLeftWidth: 2, paddingLeft: 14, gap: 16, paddingVertical: 8 },
   helpSection: { gap: 4 },
-  disclosure: { borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: 12 },
-  disclosureBody: { gap: 12, paddingTop: 16, paddingBottom: 4 },
-  comparison: { fontSize: 16, lineHeight: 24, fontWeight: '600' },
-  sourceLink: { flexDirection: 'row', alignItems: 'center', minHeight: 44, gap: 8 },
+  disclosure: { width: '100%', minWidth: 0, borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: 12 },
+  disclosureBody: { width: '100%', minWidth: 0, gap: 12, paddingTop: 16, paddingBottom: 4 },
+  comparison: { fontSize: 16, lineHeight: 24, fontWeight: '600', flexShrink: 1 },
+  sourceLink: { width: '100%', minWidth: 0, flexDirection: 'row', alignItems: 'center', minHeight: 44, gap: 8 },
   historyRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8 },
 });

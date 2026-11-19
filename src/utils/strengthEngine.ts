@@ -23,6 +23,7 @@ import type {
 } from '../types/strength';
 import type { TrainingPhase, ProgressionLevel } from '../types/training';
 import { parsePrescriptionScheme } from './prescriptionFormat';
+import { estimateStrengthSessionMinutes, fitStrengthSessionToTime, strengthExerciseReviewNote, strengthExerciseEquipment, strengthExercisesForEquipment, strengthProgressionLevel, strengthTimeBudget } from './strengthDesign';
 
 // ─── Exercise library ─────────────────────────────────────────────────────────
 //
@@ -37,21 +38,21 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['dumbbell', 'kettlebell'], unilateral: false, cnsLoad: 'medium',
     coachingCues: ['Chest tall, elbows inside knees', 'Drive knees out over toes', 'Full depth — crease of hip below knee'],
     contraindications: ['severe_knee_pain'],
-    rationale: 'Bilateral quad and glute loading with minimal spinal compression. Transfers directly to uphill running and the push-off phase.',
+    rationale: 'Knee-dominant strength using a repeatable front-held setup. Choose a tolerated range and load that fits the intended effort.',
   },
   squat_bulgarian: {
     id: 'squat_bulgarian', name: 'Bulgarian Split Squat', pattern: 'squat',
     equipment: ['dumbbell', 'bodyweight'], unilateral: true, cnsLoad: 'high',
     coachingCues: ['Front shin vertical at bottom', 'Drive through heel to stand', 'Stay tall — don\'t lean forward'],
     contraindications: ['hip_flexor_injury', 'knee_ligament_injury'],
-    rationale: 'The single most effective unilateral lower-body exercise for runners. Corrects symmetry imbalances, builds single-leg stability, and directly loads the push-off mechanics used in every stride.',
+    rationale: 'One option for challenging single-leg knee and hip strength. Support, stance and range can change to fit the person; no variation is universally best.',
   },
   squat_box: {
     id: 'squat_box', name: 'Box Squat (Bodyweight)', pattern: 'squat',
     equipment: ['bodyweight'], unilateral: false, cnsLoad: 'low',
     coachingCues: ['Sit back onto box with control', 'Pause momentarily — no bounce', 'Push floor away through whole foot'],
     contraindications: [],
-    rationale: 'Teaches correct hip hinge depth cue and reduces shear force on the knee. Ideal entry point for athletes new to strength training.',
+    rationale: 'A supported knee-dominant option for practicing a repeatable squat setup. Adjust box height and range to the person.',
   },
 
   // ── Hinge ─────────────────────────────────────────────────────────────────
@@ -60,28 +61,28 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['barbell', 'dumbbell'], unilateral: false, cnsLoad: 'high',
     coachingCues: ['Hinge at hips — not waist', 'Bar/dumbbells stay close to legs', 'Soft knee, proud chest throughout'],
     contraindications: ['lower_back_pain_acute'],
-    rationale: 'Primary posterior-chain developer. Hamstring and glute strength may support propulsive force and running performance in the late stance phase.',
+    rationale: 'Hip-dominant strength with a repeatable hinge and external load. Record whether the setup uses a barbell or dumbbells.',
   },
   hinge_single_rdl: {
     id: 'hinge_single_rdl', name: 'Single-Leg RDL', pattern: 'hinge',
     equipment: ['dumbbell', 'bodyweight'], unilateral: true, cnsLoad: 'medium',
     coachingCues: ['Hip and shoulders square to floor', 'Trace a line — hip, spine, trailing leg aligned', 'Slow eccentric — 3 seconds down'],
     contraindications: ['hip_flexor_injury'],
-    rationale: 'Builds the hip stability and single-leg eccentric strength critical for controlling landing forces and preventing IT band and hamstring injuries.',
+    rationale: 'Single-leg hip-dominant work. Use support or a smaller range when that better matches the intended stimulus.',
   },
   hinge_hip_thrust: {
     id: 'hinge_hip_thrust', name: 'Hip Thrust', pattern: 'hinge',
     equipment: ['barbell', 'bodyweight', 'dumbbell'], unilateral: false, cnsLoad: 'medium',
     coachingCues: ['Drive through heels, not toes', 'Squeeze glutes at top — full hip extension', 'Chin tucked — don\'t hyperextend lumbar'],
     contraindications: [],
-    rationale: 'Maximum glute activation in hip-extended position mirrors the propulsive phase of running. Directly builds the glute power used in the toe-off phase.',
+    rationale: 'Hip-extension strength using a stable setup. Bodyweight and externally loaded versions need their own starting calibration.',
   },
   hinge_nordic: {
     id: 'hinge_nordic', name: 'Nordic Hamstring Curl', pattern: 'hinge',
     equipment: ['bodyweight'], unilateral: false, cnsLoad: 'high',
     coachingCues: ['Control the fall for 3–5 seconds', 'Use hands to control final range — don\'t crash', 'Brace core throughout'],
     contraindications: ['hamstring_injury_acute'],
-    rationale: 'High-demand eccentric hamstring exercise that builds strength at longer muscle lengths. It requires careful progressive introduction and does not guarantee symptom prevention.',
+    rationale: 'A demanding eccentric knee-flexor option. Introduce only a controllable range and enough assistance to repeat the prescribed work.',
   },
 
   // ── Lunge ─────────────────────────────────────────────────────────────────
@@ -90,21 +91,21 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['dumbbell', 'bodyweight'], unilateral: true, cnsLoad: 'medium',
     coachingCues: ['Step back — not out', 'Front shin vertical — track over 2nd toe', 'Push through front heel to return'],
     contraindications: ['knee_pain_anterior'],
-    rationale: 'Lower knee shear than forward lunge. Builds single-leg balance and quad/glute strength for the absorption phase when running downhill.',
+    rationale: 'Single-leg knee and hip strength. Adjust stride, support and range for a repeatable, reasonably tolerated setup.',
   },
   lunge_lateral: {
     id: 'lunge_lateral', name: 'Lateral Lunge', pattern: 'lunge',
     equipment: ['dumbbell', 'bodyweight'], unilateral: true, cnsLoad: 'medium',
     coachingCues: ['Shift weight onto bending leg — straight leg stays straight', 'Foot flat, toes forward', 'Sit into the hip, not the knee'],
     contraindications: [],
-    rationale: 'Develops frontal-plane hip stability — the key plane neglected by pure sagittal running. Prevents IT band syndrome and runner\'s knee through adductor/abductor balance.',
+    rationale: 'A single-leg strength option that includes side-to-side loading. Choose it when that role serves the goal and is reasonably tolerated.',
   },
   lunge_step_up: {
     id: 'lunge_step_up', name: 'Step-Up', pattern: 'lunge',
     equipment: ['dumbbell', 'bodyweight'], unilateral: true, cnsLoad: 'medium',
     coachingCues: ['Drive up through heel of top foot', 'Don\'t push off bottom foot', 'Control the lowering — 2 seconds down'],
     contraindications: [],
-    rationale: 'Replicates the single-leg loading pattern of running with minimal knee stress. Excellent running economy transfer, especially for hill running.',
+    rationale: 'Single-leg strength for activities such as hiking and running. Step height, support and load determine the challenge.',
   },
 
   // ── Push ──────────────────────────────────────────────────────────────────
@@ -113,37 +114,44 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['bodyweight'], unilateral: false, cnsLoad: 'low',
     coachingCues: ['Body rigid — plank throughout', 'Elbows about 45 degrees from torso — not flared', 'Full ROM — chest grazes floor'],
     contraindications: ['shoulder_impingement'],
-    rationale: 'Upper body injury resilience for runners. Shoulder and chest strength protects against the postural fatigue that causes form breakdown in long races.',
+    rationale: 'A horizontal pushing option. Change hand elevation, range or assistance to match the intended effort.',
   },
   push_db_press: {
     id: 'push_db_press', name: 'Single-Arm DB Press', pattern: 'push',
     equipment: ['dumbbell'], unilateral: true, cnsLoad: 'low',
     coachingCues: ['Keep ribcage down — no arch', 'Controlled descent — 2 seconds', 'Feel the anti-rotation demand'],
     contraindications: ['shoulder_impingement'],
-    rationale: 'Unilateral pressing builds rotational core stability — the same stability runners need to prevent lateral trunk sway.',
+    rationale: 'A pressing option with a unilateral setup. Record the setup and use an appropriate range and load.',
   },
 
   // ── Pull ──────────────────────────────────────────────────────────────────
+  pull_band_row: {
+    id: 'pull_band_row', name: 'Resistance-Band Row', pattern: 'pull',
+    equipment: ['band'], unilateral: false, cnsLoad: 'medium',
+    coachingCues: ['Use a secure anchor and repeatable starting position', 'Pull toward the lower ribs with control', 'Record band resistance and setup rather than a guessed dumbbell weight'],
+    contraindications: [],
+    rationale: 'A horizontal pulling option when a band and secure anchor fit the available setup. It has its own resistance calibration rather than inheriting a dumbbell load.',
+  },
   pull_row: {
     id: 'pull_row', name: 'Single-Arm DB Row', pattern: 'pull',
     equipment: ['dumbbell'], unilateral: true, cnsLoad: 'medium',
     coachingCues: ['Pull elbow to hip — not shoulder to ear', 'Rotate torso with the pull', 'Full hang at bottom — feel lat stretch'],
     contraindications: [],
-    rationale: 'Upper back strength prevents the forward rounding posture that restricts breathing efficiency in long runs.',
+    rationale: 'Horizontal pulling strength with a supported, repeatable setup. Record the load used per dumbbell.',
   },
   pull_band_pull: {
     id: 'pull_band_pull', name: 'Band Pull-Apart', pattern: 'pull',
     equipment: ['band'], unilateral: false, cnsLoad: 'low',
     coachingCues: ['Arms straight throughout', 'Squeeze shoulder blades together at end', 'Control return — don\'t snap forward'],
     contraindications: [],
-    rationale: 'Posterior shoulder and rotator cuff health. Prevents the chronic shoulder pain many high-mileage runners develop from arm drive fatigue.',
+    rationale: 'A light pulling option for shoulder and upper-back work. It does not automatically replace a challenging row or pulldown.',
   },
   pull_facepull: {
     id: 'pull_facepull', name: 'Face Pull (Band)', pattern: 'pull',
     equipment: ['band'], unilateral: false, cnsLoad: 'low',
     coachingCues: ['Pull toward forehead — elbows high', 'Externally rotate at end range', 'No forward head — stay tall'],
     contraindications: [],
-    rationale: 'Maintains external rotation strength and rotator cuff balance — directly counters the internal rotation pattern of arm drive.',
+    rationale: 'A light upper-back and shoulder pulling option. Use it for its intended role rather than as a universal substitute for heavier pulling.',
   },
 
   // ── Carry ─────────────────────────────────────────────────────────────────
@@ -152,14 +160,14 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['dumbbell', 'kettlebell'], unilateral: false, cnsLoad: 'medium',
     coachingCues: ['Shoulders packed down and back', 'Tall spine — no lateral lean', 'Small steps, steady pace'],
     contraindications: [],
-    rationale: 'Full-body integration exercise that builds grip, core, and postural endurance simultaneously. Mirrors the total-body stability demands of race-paced running.',
+    rationale: 'A loaded carry for grip, trunk and whole-body support. Prescribe time or distance rather than a repetition-based maximum.',
   },
   carry_suitcase: {
     id: 'carry_suitcase', name: 'Suitcase Carry (Single-Arm)', pattern: 'carry',
     equipment: ['dumbbell', 'kettlebell'], unilateral: true, cnsLoad: 'medium',
     coachingCues: ['Resist the lean — stay perfectly upright', 'Think: push hip away from the weight', 'Breathe evenly'],
     contraindications: [],
-    rationale: 'Anti-lateral flexion core strength directly transfers to the lateral stability runners need when fatigued in the late miles of a race.',
+    rationale: 'An asymmetrical loaded carry for trunk support and grip. Record the side, load and time or distance.',
   },
 
   // ── Trunk / Core ──────────────────────────────────────────────────────────
@@ -168,28 +176,28 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['bodyweight'], unilateral: false, cnsLoad: 'low',
     coachingCues: ['Lower back pressed into floor throughout', 'Exhale as limbs extend — brace core', 'Slow and controlled — 3s per rep'],
     contraindications: [],
-    rationale: 'Anti-extension core stability that mirrors the lumbo-pelvic control needed to maintain efficient form at high mileage. A foundational injury resilience exercise for all runners.',
+    rationale: 'Trunk control while the limbs move. Adjust range and repetitions to keep the task repeatable.',
   },
   trunk_copenhagen: {
     id: 'trunk_copenhagen', name: 'Copenhagen Plank', pattern: 'trunk',
     equipment: ['bodyweight'], unilateral: true, cnsLoad: 'medium',
     coachingCues: ['Body in a straight line from head to heel', 'Top leg does the work — don\'t just hang', 'Start with short duration sets and build'],
     contraindications: ['groin_injury_acute'],
-    rationale: 'Progressive adductor loading that may support medial hip strength and single-leg control. Dose it conservatively and monitor symptoms.',
+    rationale: 'An optional trunk and adductor loading task. Support and duration can be adjusted to the intended challenge.',
   },
   trunk_side_plank: {
     id: 'trunk_side_plank', name: 'Side Plank', pattern: 'trunk',
     equipment: ['bodyweight'], unilateral: true, cnsLoad: 'low',
     coachingCues: ['Stack feet or stagger for less challenge', 'Drive hip away from floor', 'No sagging at waist'],
     contraindications: [],
-    rationale: 'Lateral core stability for the Trendelenburg control runners need on every single-leg stance phase. Weakness here = hip drop = IT band + knee overload.',
+    rationale: 'A side-support trunk task. Adjust lever length and duration to a repeatable effort; it is not an injury prediction or prevention test.',
   },
   trunk_bird_dog: {
     id: 'trunk_bird_dog', name: 'Bird Dog', pattern: 'trunk',
     equipment: ['bodyweight'], unilateral: false, cnsLoad: 'low',
     coachingCues: ['Don\'t rotate the pelvis as limbs extend', 'Imagine a glass of water on your lower back', 'Slow — full extension, full control'],
     contraindications: [],
-    rationale: 'Lumbar stability and anti-rotation. The diagonally-opposed limb pattern mirrors the cross-body coordination of running gait.',
+    rationale: 'A trunk-control task with opposing limb movement. Keep the setup consistent when comparing performance.',
   },
 
   // ── Calf / Ankle ──────────────────────────────────────────────────────────
@@ -198,21 +206,21 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['bodyweight', 'dumbbell'], unilateral: true, cnsLoad: 'low',
     coachingCues: ['Full range — heel below step, full rise', '2 seconds up, 2 seconds down', 'Keep knee soft — don\'t lock out'],
     contraindications: ['achilles_tendinopathy_reactive'],
-    rationale: 'Progressive gastrocnemius and Achilles loading that may support calf capacity for running. It is not a guarantee against pain or injury.',
+    rationale: 'Direct plantarflexor strength. Use a consistent range, support and load; record the work actually completed.',
   },
   calf_seated: {
     id: 'calf_seated', name: 'Seated Calf Raise', pattern: 'calf_ankle',
     equipment: ['dumbbell', 'machine'], unilateral: false, cnsLoad: 'low',
     coachingCues: ['Heavy load on top of quads', 'Full ROM — stretch and squeeze', 'Slow tempo isolates soleus'],
     contraindications: [],
-    rationale: 'Soleus-dominant loading. The soleus absorbs 6–8× body weight per stride — its endurance is as important as its strength for late-race form maintenance.',
+    rationale: 'A bent-knee plantarflexor strength option. Use a repeatable setup and a load suited to the intended effort.',
   },
   calf_pogo: {
     id: 'calf_pogo', name: 'Pogo Hops', pattern: 'calf_ankle',
     equipment: ['bodyweight'], unilateral: false, cnsLoad: 'low',
     coachingCues: ['Land on forefeet — zero heel contact', 'Stiff ankles — minimal knee bend', 'Fast ground contact — think springs'],
     contraindications: ['achilles_tendinopathy_reactive', 'plantar_fasciitis_acute'],
-    rationale: 'Reactive strength and Achilles tendon stiffness. Running economy is largely determined by the ability to store and return elastic energy — pogos directly train this capacity.',
+    rationale: 'A reactive hopping option. Keep repetitions controllable and choose a lower-impact alternative if this stimulus does not fit.',
   },
 
   // ── Plyometric ────────────────────────────────────────────────────────────
@@ -221,14 +229,14 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['bodyweight'], unilateral: false, cnsLoad: 'high',
     coachingCues: ['Land softly — absorb into squat position', 'Step down — don\'t jump down', 'Full reset between reps — quality over speed'],
     contraindications: ['knee_pain_anterior', 'ankle_sprain_acute'],
-    rationale: 'Maximal explosive power development. The rate of force development trained here directly improves stride power and the ability to maintain form when fatigued.',
+    rationale: 'An optional power task with low repetition counts and full resets. Box height and landing control should suit the person.',
   },
   plyo_single_hop: {
     id: 'plyo_single_hop', name: 'Single-Leg Hop', pattern: 'plyometric',
     equipment: ['bodyweight'], unilateral: true, cnsLoad: 'high',
     coachingCues: ['Stick the landing — control for 2 seconds', 'Soft knee — don\'t land stiff-legged', 'Progress from small to large amplitude'],
     contraindications: ['knee_ligament_injury', 'ankle_sprain_acute'],
-    rationale: 'Single-leg reactive strength that mirrors some plyometric demands of faster running. Side-to-side differences are estimates to review, not injury prediction.',
+    rationale: 'A single-leg reactive task. Choose the amplitude, support and repetition count for a repeatable effort.',
   },
 
   // ── Mobility / Prehab ─────────────────────────────────────────────────────
@@ -237,21 +245,21 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     equipment: ['bodyweight'], unilateral: true, cnsLoad: 'low',
     coachingCues: ['Both shins at 90° — sit tall', 'Lean into the front hip\'s internal rotation', 'Exhale into each position'],
     contraindications: [],
-    rationale: 'Hip internal and external rotation ROM that prevents the compensatory patterns (increased anterior pelvic tilt, medial knee collapse) that develop in high-mileage runners.',
+    rationale: 'An optional hip movement task. Use a comfortable range when mobility work fits the goal.',
   },
   mobility_hip_flexor: {
     id: 'mobility_hip_flexor', name: 'Half-Kneeling Hip Flexor Stretch', pattern: 'mobility',
     equipment: ['bodyweight'], unilateral: true, cnsLoad: 'low',
     coachingCues: ['Posteriorly tilt pelvis before leaning forward', 'Don\'t lean — drive hip forward', 'Breathe into the front of the hip'],
     contraindications: [],
-    rationale: 'Restores hip extension ROM lost from prolonged sitting. Hip flexor tightness reduces stride length and increases lumbar extension stress during running.',
+    rationale: 'An optional hip-flexor stretch. Choose a comfortable position and hold; a stretch is not a substitute for loaded strength.',
   },
   mobility_clamshell: {
     id: 'mobility_clamshell', name: 'Clamshell', pattern: 'mobility',
     equipment: ['bodyweight', 'band'], unilateral: true, cnsLoad: 'low',
     coachingCues: ['Feet stacked — pelvis still', 'Rotate the top knee open like a clamshell', 'Feel glute med — stop if you feel hip flexor'],
     contraindications: [],
-    rationale: 'Glute medius activation and hip abductor endurance. Weakness here causes the lateral trunk sway and excessive Trendelenburg drop that overtax the IT band and knee.',
+    rationale: 'A light hip-rotation task. It serves a different stimulus from a challenging step-up, split squat or loaded hinge.',
   },
 };
 
@@ -279,7 +287,7 @@ export const SESSION_TEMPLATES: Record<StrengthSessionType, SessionTemplate> = {
     patterns:    ['squat', 'hinge', 'lunge', 'trunk', 'calf_ankle'],
     exerciseIds: ['squat_goblet', 'hinge_rdl', 'lunge_reverse', 'trunk_dead_bug', 'calf_single_standing'],
     sets: 3, repRange: [6, 10], rpe: 7,
-    rationale: 'Full-body compound loading in the base phase builds the structural foundation — bone density, tendon stiffness, motor unit recruitment — that all higher-intensity work builds upon. 3–4 sets at 70–80% 1RM optimises both hypertrophy and neural adaptations (Blagrove et al. 2018).',
+    rationale: 'This template organizes repeatable strength work around selected movement roles. The chosen dose is a starting point to adjust from performance, available time and recovery.',
     purpose: 'Build structural strength across all running-relevant movement patterns. This is the session that makes every other adaptation possible.',
   },
   lower_power: {
@@ -293,8 +301,8 @@ export const SESSION_TEMPLATES: Record<StrengthSessionType, SessionTemplate> = {
       trunk_copenhagen: { kind: 'duration', secondsMin: 20, secondsMax: 30, perSide: true },
       calf_single_standing: { kind: 'reps_hold', repsMin: 8, repsMax: 12, holdSeconds: 2, perSide: true },
     },
-    rationale: 'High-intensity lower-body loading in the build phase converts aerobic base into race-specific power. Maximal force adaptations (Rønnestad & Mujika 2014) improve running economy by 2–8% — without any additional running volume.',
-    purpose: 'Develop maximum lower-body force production to translate into faster race pace at lower RPE.',
+    rationale: 'A lower-body strength emphasis can support an endurance goal when the person can recover from its combined demands. Exercise selection and dose remain adjustable.',
+    purpose: 'Develop lower-body strength while protecting time and recovery for the current training priority.',
   },
   running_economy: {
     title:       'Running Economy Session',
@@ -307,7 +315,7 @@ export const SESSION_TEMPLATES: Record<StrengthSessionType, SessionTemplate> = {
       squat_bulgarian: { kind: 'reps_tempo', repsMin: 5, repsMax: 8, tempo: '3:1:1', perSide: true },
       hinge_single_rdl: { kind: 'reps_tempo', repsMin: 5, repsMax: 8, tempo: '3:1:1', perSide: true },
     },
-    rationale: 'Explosive and reactive strength improves the elastic energy storage and return of the Achilles-calf complex. Paavolainen et al. (1999) demonstrated a 30-second 5k improvement with 9 weeks of explosive strength training, without any change in VO2max.',
+    rationale: 'An optional strength and reactive-work template for runners who are prepared for that stimulus. It is not a guarantee of a faster race or a required session for every runner.',
     purpose: 'Improve running efficiency so the same effort produces more speed — targeting elastic energy return and neuromuscular firing rate.',
   },
   prehab: {
@@ -322,8 +330,8 @@ export const SESSION_TEMPLATES: Record<StrengthSessionType, SessionTemplate> = {
       calf_single_standing: { kind: 'reps_hold', repsMin: 10, repsMax: 15, holdSeconds: 2, perSide: true },
       mobility_hip_flexor: { kind: 'duration', secondsMin: 30, perSide: true },
     },
-    rationale: 'Targeted prehabilitation maintains joint health and tissue resilience without adding meaningful fatigue. During deload and taper, this session protects the accumulated adaptations while allowing neuromuscular recovery.',
-    purpose: 'Maintain tissue health, correct imbalances, and prepare for the next training block — without adding fatigue.',
+    rationale: 'A lower-demand supporting session for weeks when reduced loading fits the person and goal. It still contributes to the total work of the day.',
+    purpose: 'Practice selected movement and supporting strength tasks with a lower planned demand.',
   },
   activation: {
     title:       'Neuromuscular Activation',
@@ -332,8 +340,8 @@ export const SESSION_TEMPLATES: Record<StrengthSessionType, SessionTemplate> = {
     patterns:    ['squat', 'hinge', 'trunk', 'calf_ankle'],
     exerciseIds: ['squat_box', 'hinge_hip_thrust', 'trunk_bird_dog', 'calf_single_standing'],
     sets: 2, repRange: [8, 10], rpe: 5,
-    rationale: 'Minimal-volume sessions during taper maintain neuromuscular potentiation without adding fatigue. The goal is to keep motor unit recruitment patterns "warm" so no fitness is lost in the final 10–14 days.',
-    purpose: 'Stay sharp — keep the neuromuscular system primed without adding any meaningful fatigue before race day.',
+    rationale: 'A reduced-volume template for practicing familiar movements near a race. It does not guarantee the absence of fatigue or fitness loss.',
+    purpose: 'Practice familiar movements with a reduced dose while race preparation takes priority.',
   },
 };
 
@@ -349,9 +357,9 @@ type PhaseConfig = {
 
 const PHASE_CONFIG: Record<TrainingPhase, Record<ProgressionLevel, PhaseConfig>> = {
   foundation: {
-    beginner:     { sessionTypes: ['prehab'], sessionDays: [1], goal: 'injury_resilience', phaseNote: 'Foundation: 1×/week movement quality', phaseRationale: 'Brand new to structured training — a single low-load, low-RPE session builds movement quality and joint resilience while the aerobic engine develops. Simple progressions only; no heavy loading yet.' },
+    beginner:     { sessionTypes: ['prehab'], sessionDays: [1], goal: 'injury_resilience', phaseNote: 'Foundation: 1×/week movement quality', phaseRationale: 'Brand new to structured training — a single low-load, low-RPE session builds movement quality and joint resilience while the aerobic engine develops. Use repeatable setup and submaximal effort; adjust after actual performance is recorded.' },
     intermediate: { sessionTypes: ['prehab'], sessionDays: [1], goal: 'injury_resilience', phaseNote: 'Foundation: 1×/week movement quality', phaseRationale: 'Foundation phase prioritises movement quality over load. One low-intensity session keeps CNS fatigue minimal while the running base is establishing itself.' },
-    advanced:     { sessionTypes: ['prehab', 'prehab'], sessionDays: [1, 4], goal: 'injury_resilience', phaseNote: 'Foundation: 2×/week movement quality', phaseRationale: 'Even for experienced lifters returning to running, foundation phase stays light — two low-RPE movement-quality sessions protect the tendons and joints adapting to new running volume.' },
+    advanced:     { sessionTypes: ['prehab', 'prehab'], sessionDays: [1, 4], goal: 'injury_resilience', phaseNote: 'Foundation: 2×/week movement quality', phaseRationale: 'Even for experienced lifters returning to running, foundation phase stays light — two low-RPE movement-quality sessions keep the added lifting demand modest while new running volume is established.' },
   },
   base: {
     beginner:     { sessionTypes: ['full_body'], sessionDays: [1], goal: 'force_production', phaseNote: 'Base: 1×/week full body', phaseRationale: 'New to strength training — one full-body session builds structural foundation without interference with running adaptation.' },
@@ -379,7 +387,7 @@ const PHASE_CONFIG: Record<TrainingPhase, Record<ProgressionLevel, PhaseConfig>>
     advanced:     { sessionTypes: ['running_economy', 'activation'], sessionDays: [1, 4], goal: 'maintenance', phaseNote: 'Race specific: low-volume economy', phaseRationale: 'Preserve economy and power with minimal volume as run specificity rises.' },
   },
   build: {
-    beginner:     { sessionTypes: ['prehab'], sessionDays: [2], goal: 'injury_resilience', phaseNote: 'Build: 1×/week prehab focus', phaseRationale: 'Running volume is climbing — one prehab session protects tissue health without adding CNS fatigue that would compromise key running sessions.' },
+    beginner:     { sessionTypes: ['prehab'], sessionDays: [2], goal: 'injury_resilience', phaseNote: 'Build: 1×/week prehab focus', phaseRationale: 'Running volume is climbing — one low-demand strength session keeps the added work manageable around key running sessions.' },
     intermediate: { sessionTypes: ['lower_power', 'prehab'], sessionDays: [1, 4], goal: 'running_economy', phaseNote: 'Build: 2×/week — power + prehab', phaseRationale: 'One high-intensity session converts base strength into race power; one prehab session manages the increased running load.' },
     advanced:     { sessionTypes: ['running_economy', 'lower_power'], sessionDays: [1, 4], goal: 'running_economy', phaseNote: 'Build: 2×/week — economy + power', phaseRationale: 'Two quality sessions in build phase: explosive/plyometric work for economy and heavy lower-body work for maximum force. Timed away from quality run sessions to minimise interference.' },
   },
@@ -539,7 +547,7 @@ function buildExercise(
       ? 'Maintain a pain-free hold; add time only if the stretch stays gentle and controlled.'
       : ex.cnsLoad === 'high'
       ? 'When top of rep range is reached for all sets at good technique, increase load by 2.5–5kg next session.'
-      : 'Add 1 rep per set per week; once all sets hit top of range, increase load by 2.5kg and return to lower rep target.',
+      : 'Repeat the prescribed reps at the intended effort. Consider a small rep or load increase only when actual working-set performance supports it.',
     regressionRule:  isStaticStretch ? 'If pain or symptoms appear, stop the stretch and use an easier position.' : 'If form deteriorates, reduce load by 10%. If fatigue prevents target reps, drop 1 set.',
     coachingCues:    ex.coachingCues,
     rationale:       ex.rationale,
@@ -555,18 +563,41 @@ function buildSession(
   phase:       TrainingPhase,
   input:       StrengthEngineInput,
 ): StrengthSession {
-  const template  = SESSION_TEMPLATES[sessionType];
+  const original = SESSION_TEMPLATES[sessionType];
+  const personFirst = input.programmingVersion === 2;
+  const level = strengthProgressionLevel(input.strengthLevel);
+  const template: SessionTemplate = personFirst && sessionType === 'full_body' ? {
+    ...original,
+    patterns: ['squat', 'push', 'pull', 'hinge', 'lunge', 'calf_ankle', 'trunk'],
+    exerciseIds: [index % 2 === 0 ? 'squat_goblet' : 'hinge_rdl', 'push_pushup', 'pull_row', index % 2 === 0 ? 'hinge_rdl' : 'squat_goblet', 'lunge_reverse', 'calf_single_standing', 'trunk_dead_bug'],
+    sets: 2, rpe: level === 'beginner' ? 6 : 7,
+    purpose: 'Build repeatable whole-body strength for your goal, with room to recover alongside aerobic training.',
+    rationale: 'Knee-dominant, hip-dominant, push, pull, single-leg, calf and trunk roles organize the work. Exercises are adjustable tools; weekly coverage and a manageable dose matter more than filling every category in every session.',
+  } : original;
   const isDeload  = phase === 'deload' || phase === 'taper' || input.fatigueScore > 75;
-  const exercises = template.exerciseIds.map(id =>
+  const selectedIds = personFirst ? strengthExercisesForEquipment(template.exerciseIds, input.availableEquipment, STRENGTH_EXERCISES) : template.exerciseIds;
+  let exercises = selectedIds.map(id =>
     buildExercise(id, template, isDeload),
   );
 
+  if (personFirst) {
+    exercises = exercises.map(ex => ({
+      ...ex,
+      exercise: { ...ex.exercise, equipment: strengthExerciseEquipment(ex.exercise, input.availableEquipment) },
+      tempo: ex.exercise.pattern === 'mobility' ? ex.tempo : ex.exercise.pattern === 'plyometric' ? 'Purposeful, quality repetitions with a full reset' : 'Controlled lowering; purposeful lifting',
+      repScheme: ex.repScheme?.kind === 'reps_tempo' ? { kind: 'reps' as const, repsMin: ex.repScheme.repsMin, repsMax: ex.repScheme.repsMax, perSide: ex.repScheme.perSide } : ex.repScheme,
+      progressionRule: 'First repeat the setup and prescribed reps at the intended effort. Consider a small rep or load change only from recorded working-set performance; keep failure optional.',
+      loadTarget: ex.exercise.pattern === 'mobility' ? ex.loadTarget : `RPE ${ex.rpe} — choose a repeatable, submaximal effort; this is not a measured maximum`,
+    }));
+    exercises = fitStrengthSessionToTime(exercises, strengthTimeBudget(input.availableTimeMin));
+  }
+
   // Adjust duration for limited time
-  const targetDuration = Math.min(input.availableTimeMin, template.duration);
+  const targetDuration = personFirst ? Math.min(strengthTimeBudget(input.availableTimeMin), estimateStrengthSessionMinutes(exercises)) : Math.min(input.availableTimeMin, template.duration);
 
   const id = `strength_${sessionType}_${weekInBlock}_${index}`;
 
-  const progressionNote =
+  const progressionNote = personFirst ? strengthExerciseReviewNote(input.currentWeek) :
     phase === 'foundation' ? 'Foundation: movement quality — simple progressions, low RPE, no heavy loading yet' :
     phase === 'base'   ? `Block week ${weekInBlock}/4 — ${weekInBlock < 3 ? 'progressive loading' : 'peak volume week'}` :
     phase === 'build'  ? `Build phase — convert strength to power (${weekInBlock}/4)` :
@@ -576,17 +607,17 @@ function buildSession(
 
   return {
     id,
-    title:            template.title,
+    title:            personFirst && sessionType === 'full_body' && !['push', 'pull'].every(role => exercises.some(ex => ex.exercise.pattern === role)) ? 'Strength Priorities' : template.title,
     goal:             template.goal,
     sessionType,
     targetDuration,
-    primaryPatterns:  template.patterns,
+    primaryPatterns:  personFirst ? [...new Set(exercises.map(ex => ex.exercise.pattern))] : template.patterns,
     exercises,
-    warmupProtocol:   'Dynamic warm-up: 5 min — leg swings (front/lateral), hip circles, glute bridges (2×10), and a light set of the first exercise at 40% load.',
-    cooldownProtocol: 'Foam roll legs (IT band, hamstrings, quads) 60–90s per side. Hip flexor and calf stretches 30s per side.',
-    purpose:          template.purpose,
+    warmupProtocol:   personFirst ? 'Allow about 5 minutes for easy movement and lighter rehearsal sets of the first exercises. Adjust setup, support and range before working sets; no maximum-strength test is required.' : 'Dynamic warm-up: 5 min — leg swings (front/lateral), hip circles, glute bridges (2×10), and a light set of the first exercise at 40% load.',
+    cooldownProtocol: personFirst ? 'Allow about 3 minutes to finish with easy movement. Optional comfortable mobility can fit here; extra recovery exercises are not required just to fill categories.' : 'Foam roll legs (IT band, hamstrings, quads) 60–90s per side. Hip flexor and calf stretches 30s per side.',
+    purpose:          exercises.length ? template.purpose : 'No complete working-set prescription fits this time window. Choose more time or a shorter custom session rather than rush the planned work.',
     rationale:        template.rationale,
-    progressionNote,
+    progressionNote: personFirst && exercises.length < template.exerciseIds.length ? `${progressionNote} Some supporting roles were omitted to fit the stated time or equipment; review coverage across the week.` : progressionNote,
   };
 }
 
@@ -626,39 +657,43 @@ function computeProgressionDecision(input: StrengthEngineInput): ProgressionDeci
 
   const rpeValues = recent
     .map(r => r.overallRpe)
-    .filter((v): v is number => v !== undefined);
+    .filter((v): v is number => v !== undefined && Number.isFinite(v) && v >= 1 && v <= 10);
   const avgRpe = rpeValues.length > 0
     ? rpeValues.reduce((s, v) => s + v, 0) / rpeValues.length
     : null;
 
   const soreness = input.soreness ?? 0;
 
-  if ((avgRpe !== null && avgRpe >= 8.5) || soreness >= 8 || completionRate < 0.4) {
+  if ((avgRpe !== null && avgRpe >= 8.5) || soreness >= 8) {
     const reasons: string[] = [];
     if (avgRpe !== null && avgRpe >= 8.5) reasons.push(`recent sessions averaging RPE ${avgRpe.toFixed(1)}`);
     if (soreness >= 8) reasons.push(`soreness at ${soreness}/10`);
-    if (completionRate < 0.4) reasons.push(`only ${Math.round(completionRate * 100)}% of planned sessions completed recently`);
     return {
       progressionState:  'regress',
       progressionReason: `Pulling back this week — ${reasons.join(' and ')}. Sets and RPE are reduced to protect recovery while the block resets.`,
     };
   }
 
-  if (completionRate >= 0.75 && (avgRpe === null || avgRpe <= 7) && input.recoveryScore >= 55) {
+  const workingSets = recent.flatMap(record => record.exercises.filter(ex => !ex.skipped).flatMap(ex => ex.sets.filter(set => set.completed && !set.isWarmup)));
+  const reportedPerformance = workingSets.length > 0 && workingSets.every(set => Number.isFinite(set.rpe) && set.rpe! >= 1 && set.rpe! <= 7
+    && ((set.reps ?? 0) > 0 || (set.holdSeconds ?? 0) > 0 || (set.distanceMeters ?? 0) > 0));
+  if (completionRate >= 0.75 && reportedPerformance && input.recoveryScore >= 55) {
     return {
       progressionState:  'progress',
-      progressionReason: `Consistent execution (${Math.round(completionRate * 100)}% of sessions)${avgRpe !== null ? ` at a manageable RPE (avg ${avgRpe.toFixed(1)})` : ''} — loads may increase next session. Your logged performance still decides the actual weight.`,
+      progressionReason: 'Actual working-set performance and effort were recorded at a manageable level. Review each exercise against its prescribed reps and setup before considering a small progression; attendance or the week number does not establish a gain.',
     };
   }
 
   return {
     progressionState:  'maintain',
-    progressionReason: 'Holding steady — recent execution is solid but not yet consistent enough to justify pushing load higher.',
+    progressionReason: completionRate < 0.4
+      ? 'Repeat a manageable baseline and review your available training days. Attendance alone does not establish a strength gain or loss.'
+      : 'Holding steady — record actual working-set performance and effort before considering more load. Completion alone is not a reason to increase weight.',
   };
 }
 
 // Applies the earned-progression decision to a built week: 'regress' trims
-// one set (min 2) and one RPE point (min 3) per exercise; 'progress'/'maintain'
+// one set (min 1) and one RPE point (min 3) per exercise; 'progress'/'maintain'
 // leave the programmed sets/RPE untouched (the note alone communicates intent).
 export function applyEarnedProgression(
   sessions: StrengthSession[],
@@ -674,7 +709,8 @@ export function applyEarnedProgression(
     ...s,
     exercises: s.exercises.map(ex => {
       const rpe = Math.max(3, ex.rpe - 1);
-      return { ...ex, sets: Math.max(2, ex.sets - 1), rpe, rir: 10 - rpe };
+      return { ...ex, sets: Math.max(1, ex.sets - 1), rpe, rir: 10 - rpe,
+        loadTarget: ex.loadTarget.replace(/RPE\s+\d+(?:\.\d+)?/, `RPE ${rpe}`) };
     }),
   }));
 
@@ -699,8 +735,19 @@ export function generateStrengthWeek(input: StrengthEngineInput): StrengthWeek {
   const { trainingPhase, progressionLevel, currentWeek } = input;
   const weekInBlock = ((currentWeek - 1) % 4) + 1;
 
-  const baseConfig = PHASE_CONFIG[trainingPhase]?.[progressionLevel]
+  const level = input.programmingVersion === 2 ? strengthProgressionLevel(input.strengthLevel) : progressionLevel;
+  let baseConfig = PHASE_CONFIG[trainingPhase]?.[level]
     ?? PHASE_CONFIG['base']!['intermediate']!;
+
+  if (input.programmingVersion === 2 && (trainingPhase === 'foundation'
+    || ((input.goalType === 'general_strength' || input.goalType === 'hybrid') && ['base', 'aerobic_development', 'build'].includes(trainingPhase)))) {
+    const count = Math.min(2, Math.max(1, input.liftDays?.length ?? (level === 'beginner' ? 1 : 2)));
+    baseConfig = { ...baseConfig, sessionTypes: Array.from({ length: count }, () => 'full_body' as const),
+      sessionDays: count > 1 ? [1, 4] : [1], goal: 'force_production',
+      phaseNote: `${count} whole-body strength ${count === 1 ? 'session' : 'sessions'} — lifting experience: ${input.strengthLevel ?? 'not yet specified'}`,
+      phaseRationale: 'Start with the person, goal and lifting experience separately from running experience. Repeat a manageable strength dose, then adjust from actual performance, recovery, time and equipment. The split serves that purpose; it is not a universal rule.',
+    };
+  }
 
   const config = applyStrengthAdaptations(baseConfig, input);
   const maxLiftDays = input.liftDays?.length;

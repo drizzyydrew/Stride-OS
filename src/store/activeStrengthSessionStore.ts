@@ -44,12 +44,16 @@ export type StartSessionExerciseInput = {
   reps: string;
   equipment: string[];
   notes?: string;
+  plannedRpe?: number;
+  plannedRestSeconds?: number;
+  plannedLoadTarget?: string;
   equipmentType?: EquipmentType;
   setEntries?: ActiveSetEntry[];
 };
 
 type StartSessionInput = {
   source: ActiveStrengthSource;
+  trackingContext?: import('../utils/strengthSession').TrainingBlockTrackingContext;
   workoutId: string;
   workoutName: string;
   plannedDurationMin: number;

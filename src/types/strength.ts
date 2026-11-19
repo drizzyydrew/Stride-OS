@@ -192,6 +192,9 @@ export type CompletedExercise = {
   substitutedFromExerciseId?: string;
   added?:     boolean;
   notes?:     string;
+  /** Original captured prescription for new records; absent is unknown for
+   * historical records. Never reconstructed from what the athlete performed. */
+  prescription?: { sets: number; reps: string; repScheme?: RepScheme; targetRpe?: number; restSeconds?: number; loadTarget?: string };
 };
 
 // ─── Per-exercise detail captured during the active workout ──────────────────
@@ -243,6 +246,11 @@ export type StrengthLogRecord = {
 // ─── Engine input ─────────────────────────────────────────────────────────────
 
 export type StrengthEngineInput = {
+  /** Missing/legacy remains1 so an update does not replace an existing plan. */
+  programmingVersion?: 1 | 2;
+  strengthLevel?: import('./training').StrengthLevel;
+  goalType?: import('./plan').TrainingGoalType;
+  availableEquipment?: EquipmentOption[];
   trainingPhase:    import('./training').TrainingPhase;
   progressionLevel: import('./training').ProgressionLevel;
   weeklyMileage:    number;

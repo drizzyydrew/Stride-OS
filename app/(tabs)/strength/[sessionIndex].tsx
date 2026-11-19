@@ -401,9 +401,12 @@ export default function StrengthSessionDetailScreen() {
   function handleLogSave(duration: number, rpe: number, notes: string) {
     const exercises: CompletedExercise[] = session.exercises.map(ex => ({
       exerciseId: ex.exerciseId,
+      prescription: { sets: ex.sets, reps: `${ex.repRange[0]}–${ex.repRange[1]}`, repScheme: ex.repScheme ? { ...ex.repScheme } : undefined,
+        targetRpe: ex.rpe, restSeconds: ex.restSeconds, loadTarget: ex.loadTarget },
       sets: Array.from({ length: ex.sets }, (): CompletedSet => ({
         reps:      representativeRepsForScheme(ex.repScheme) ?? ex.repRange[0],
-        rpe,
+        weight: exerciseWeightsLb[ex.exerciseId] ?? undefined,
+        weightUnit: exerciseWeightsLb[ex.exerciseId] ? 'lb' : undefined,
         completed: exerciseStatus[ex.exerciseId] !== 'skipped',
       })),
     }));

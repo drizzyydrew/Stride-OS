@@ -3,23 +3,53 @@ import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 're
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef, useState } from 'react';
+import { Host, Switch as NativeSwitch } from '@expo/ui';
 
 import { LAYOUT } from '../../../src/constants/layout';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useColors } from '../../../src/theme/useColors';
 import type { ActivityDetectionMode } from '../../../src/utils/activityDetection';
-import type { AutoPauseMode } from '../../../src/utils/autoPause';
+import { isAutoPauseEnabled, type AutoPauseActivity } from '../../../src/utils/autoPause';
+import { setActivityAutoPauseEnabled } from '../../../src/utils/autoPauseSettings';
 import type { TreadmillPhonePlacement } from '../../../src/utils/treadmillPlacement';
+import { useThemeMode } from '../../../src/store/themeStore';
 
 export default function WorkoutIntelligenceSettingsScreen() {
   const C = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const theme = useThemeMode();
+  const [autoPauseReady, setAutoPauseReady] = useState(() => useSettingsStore.persist.hasHydrated());
+  const [savingAutoPause, setSavingAutoPause] = useState(false);
+  const [autoPauseError, setAutoPauseError] = useState('');
+  const saving = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    const loading = useSettingsStore.persist.onHydrate(() => setAutoPauseReady(false));
+    const finished = useSettingsStore.persist.onFinishHydration(() => setAutoPauseReady(true));
+    setAutoPauseReady(useSettingsStore.persist.hasHydrated());
+    return () => { mounted.current = false; loading(); finished(); };
+  }, []);
+  async function changeAutoPause(activity: AutoPauseActivity, enabled: boolean) {
+    if (saving.current || !useSettingsStore.persist.hasHydrated()) return;
+    saving.current = true;
+    setSavingAutoPause(true); setAutoPauseError('');
+    try {
+      const settings = useSettingsStore.getState();
+      await settings.setAutoPauseMode(setActivityAutoPauseEnabled(settings.autoPauseMode, activity, enabled));
+    } catch {
+      if (mounted.current) setAutoPauseError('Your auto-pause choice could not be saved. Please try again.');
+    } finally {
+      saving.current = false;
+      if (mounted.current) setSavingAutoPause(false);
+    }
+  }
   const {
     liveActivitiesEnabled,
     setLiveActivitiesEnabled,
     autoPauseMode,
-    setAutoPauseMode,
     announceAutoPause,
     setAnnounceAutoPause,
     announceAutoResume,
@@ -60,9 +90,6 @@ export default function WorkoutIntelligenceSettingsScreen() {
             thumbColor={C.card}
           />
         </View>
-        <Text style={[styles.caption, { color: C.textMuted }]}>
-          Diagnostics were removed from Settings. TestFlight validation should verify Live Activity behavior on a physical device.
-        </Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
@@ -70,16 +97,19 @@ export default function WorkoutIntelligenceSettingsScreen() {
         <Text style={[styles.caption, { color: C.textMuted, marginBottom: 12 }]}>
           Applies only to live GPS running and cycling workouts. StrideOS pauses after 2 seconds of stopped GPS movement and resumes after 2 seconds of renewed movement.
         </Text>
-        <SegmentControl
-          options={[
-            { label: 'Off', value: 'off' },
-            { label: 'Run', value: 'running_only' },
-            { label: 'Ride', value: 'cycling_only' },
-            { label: 'Both', value: 'running_and_cycling' },
-          ]}
-          value={autoPauseMode}
-          onChange={value => setAutoPauseMode(value as AutoPauseMode)}
-        />
+        <Host matchContents={{ vertical: true }} colorScheme={theme} seedColor={C.primary} ignoreSafeArea="all" style={{ width: '100%' }}>
+          <NativeSwitch label="Auto-pause runs" value={isAutoPauseEnabled(autoPauseMode, 'running')}
+            disabled={!autoPauseReady || savingAutoPause} onValueChange={enabled => { void changeAutoPause('running', enabled); }} />
+        </Host>
+        <Host matchContents={{ vertical: true }} colorScheme={theme} seedColor={C.primary} ignoreSafeArea="all" style={{ width: '100%', marginTop: 12 }}>
+          <NativeSwitch label="Auto-pause rides" value={isAutoPauseEnabled(autoPauseMode, 'cycling')}
+            disabled={!autoPauseReady || savingAutoPause} onValueChange={enabled => { void changeAutoPause('cycling', enabled); }} />
+        </Host>
+        <Text style={[styles.caption, { color: C.textMuted, marginTop: 10 }]}>
+          {!autoPauseReady ? 'Loading your saved preferences…' : 'These switches control recording. Turning one off keeps recording when you stop moving. A workout already paused stays paused until you tap Resume.'}
+        </Text>
+        {autoPauseError ? <Text accessibilityRole="alert" style={[styles.caption, { color: C.critical, marginTop: 8 }]}>{autoPauseError}</Text> : null}
+        <Text style={[styles.sectionLabel, { color: C.textDim, marginTop: 20 }]}>VOICE ANNOUNCEMENTS</Text>
         <View style={[styles.settingRow, { borderBottomColor: C.border, marginTop: 16 }]}>
           <View style={{ flex: 1, paddingRight: 12 }}>
             <Text style={[styles.settingTitle, { color: C.text }]}>Announce pause</Text>

@@ -426,9 +426,10 @@
       "canonicalId": "exercise_band_row",
       "canonicalName": "Band Row",
       "ids": [
-        "sw_band_upper_body_band_row"
+        "sw_band_upper_body_band_row",
+        "pull_band_row"
       ],
-      "aliases": [],
+      "aliases": ["Resistance-Band Row"],
       "category": [
         "bodyweight",
         "strength_preset",

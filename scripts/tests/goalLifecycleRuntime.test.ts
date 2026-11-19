@@ -759,3 +759,16 @@ test('beginner retry after successful primary write with failed readback recover
   assert.equal(h.archiveStore.getState().archives[0].sourceKey, `beginner:${old.id}`);
   assert.equal(JSON.parse(h.values.get('goal-transition:owner')!).status, 'complete');
 });
+
+
+test('existing goal programming remains legacy until an explicit new goal choice', async () => {
+  const h = await harness({ unfinished: true });
+  assert.equal(h.plan.getState().strengthProgrammingVersion, 1);
+  h.plan.getState().setProgramStartDate(today);
+  assert.equal(h.plan.getState().strengthProgrammingVersion, 1);
+  const originalActivities = h.activity.getState().activities;
+  h.plan.getState().beginGoal({ ...nextGoal, startDate: today });
+  assert.equal(h.plan.getState().strengthProgrammingVersion, 2);
+  assert.equal(h.activity.getState().activities, originalActivities);
+  assert.equal(h.activityMutations, 0);
+});

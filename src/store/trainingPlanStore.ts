@@ -49,6 +49,7 @@ type TrainingPlanState = {
   goalEndDate: string | null;
   goalRaceId: string | null;
   programmingStartedAt: number | null;
+  strengthProgrammingVersion: 1 | 2;
   pendingArchiveId: string | null;
   revision: number;
   lastTransitionId: string | null;
@@ -76,6 +77,7 @@ function goalChoicePatch(state: TrainingPlanState, goal: GoalChoice): Partial<Tr
     goalType: goal.goalType, programStartDate: goal.startDate,
     goalTitle: goal.title, goalEndDate: goal.endDate, goalRaceId: race?.id ?? null,
     programmingStartedAt: Date.now(), goalBlockId: `goal_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+    strengthProgrammingVersion: 2,
     trainingMode: 'structured', activePresetGoal: null, activePresetPlan: null, pendingArchiveId: null,
     initialized: true, revision: state.revision + 1,
     races: race ? [...state.races, race] : state.races,
@@ -97,6 +99,7 @@ export const useTrainingPlanStore = create<TrainingPlanState>()(
       goalEndDate: null,
       goalRaceId: null,
       programmingStartedAt: null,
+      strengthProgrammingVersion: 1,
       pendingArchiveId: null,
       revision: 0,
       lastTransitionId: null,
@@ -108,7 +111,7 @@ export const useTrainingPlanStore = create<TrainingPlanState>()(
         : {}),
       continueOpen: () => set(state => ({ trainingMode: 'open', pendingArchiveId: null, revision: state.revision + 1 })),
 
-      setGoalType: (goalType) => set(state => ({ goalType, trainingMode: 'structured', goalBlockId: null, goalRaceId: null, goalTitle: null, goalEndDate: null, activePresetGoal: null, programmingStartedAt: Date.now(), pendingArchiveId: null, revision: state.revision + 1 })),
+      setGoalType: (goalType) => set(state => ({ goalType, trainingMode: 'structured', goalBlockId: null, goalRaceId: null, goalTitle: null, goalEndDate: null, activePresetGoal: null, programmingStartedAt: Date.now(), strengthProgrammingVersion: 2, pendingArchiveId: null, revision: state.revision + 1 })),
       setProgramStartDate: (date) => set(state => ({ programStartDate: date, revision: state.revision + 1 })),
 
       addRace: (race) => {
@@ -126,7 +129,7 @@ export const useTrainingPlanStore = create<TrainingPlanState>()(
       removeRace: (id) =>
         set(state => ({ races: state.races.filter(r => r.id !== id), revision: state.revision + 1 })),
 
-      setActivePresetGoal: (activePresetGoal) => set(state => ({ activePresetGoal, activePresetPlan: null, trainingMode: 'structured', goalBlockId: null, goalRaceId: null, goalTitle: null, goalEndDate: null, programmingStartedAt: Date.now(), pendingArchiveId: null, revision: state.revision + 1 })),
+      setActivePresetGoal: (activePresetGoal) => set(state => ({ activePresetGoal, activePresetPlan: null, trainingMode: 'structured', goalBlockId: null, goalRaceId: null, goalTitle: null, goalEndDate: null, programmingStartedAt: Date.now(), strengthProgrammingVersion: 2, pendingArchiveId: null, revision: state.revision + 1 })),
 
       // Clearing a goal intentionally affects only future goal programming.
       // Completed activity, readiness, analytics, and workout history live in
@@ -157,6 +160,7 @@ export const useTrainingPlanStore = create<TrainingPlanState>()(
           initialized:      state?.initialized       ?? current.initialized,
           trainingMode: state?.trainingMode === 'open' ? 'open' : 'structured',
           revision: Number.isSafeInteger(state?.revision) ? state!.revision! : 0,
+          strengthProgrammingVersion: state?.strengthProgrammingVersion === 2 ? 2 : 1,
         };
       },
     },
@@ -198,6 +202,7 @@ export async function saveTrainingPlanChoice(lease: OwnerLease,
       // Pointer and complete prescription are one durable record. The legacy
       // beginner store is only a compatibility cache, never a second authority.
       activePresetGoal: choice.beginner, activePresetPlan: choice.plan, programStartDate: choice.startDate,
+      strengthProgrammingVersion: previous.activePresetGoal?.planId === choice.plan.id ? previous.strengthProgrammingVersion : 2,
       goalType: 'general_running',
       trainingMode: 'structured', goalBlockId: null, goalRaceId: null, goalTitle: null, goalEndDate: null,
       programmingStartedAt: previous.activePresetGoal?.planId === choice.plan.id ? previous.programmingStartedAt : Date.now(), pendingArchiveId: null, revision: previous.revision + 1,
@@ -237,7 +242,7 @@ export async function recoverTrainingPlanChoice(transitionId: string, lease: Own
       || (candidate.activePresetPlan && candidate.activePresetGoal?.planId !== candidate.activePresetPlan.id)) throw new Error('Saved training transition is inconsistent; history was retained');
     if (current.lastTransitionId !== transitionId) {
       const fields = ['goalType', 'programStartDate', 'races', 'activePresetGoal', 'activePresetPlan', 'initialized',
-        'trainingMode', 'goalBlockId', 'goalTitle', 'goalEndDate', 'goalRaceId', 'programmingStartedAt',
+        'trainingMode', 'goalBlockId', 'goalTitle', 'goalEndDate', 'goalRaceId', 'programmingStartedAt', 'strengthProgrammingVersion',
         'pendingArchiveId', 'revision', 'lastTransitionId'] as const;
       useTrainingPlanStore.setState(Object.fromEntries(fields.map(field => [field, candidate[field]])));
     }

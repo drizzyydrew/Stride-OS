@@ -131,6 +131,14 @@ const GUIDES: Record<string, ExerciseGuide> = {
     mistakes:       ['Shrugging the shoulder toward the ear as you pull.', 'Twisting the torso open to heave the weight up.'],
     whenToUse:      'Balances all the forward posture of running and desk life; builds the mid-back that keeps arm swing efficient.',
   },
+  band_row: {
+    startPosition: 'Secure the band to a suitable anchor around lower-rib height. Stand or sit with a stable trunk and arms extended at a comfortable starting tension.',
+    finishPosition: 'Hands near the lower ribs, elbows drawn back without shrugging or leaning away.',
+    howTo: 'Pull the elbows back with control, then return to the same starting position. Choose resistance and range that fit the prescribed effort.',
+    tips: ['Check the band and anchor before each session.', 'Record the band, anchor height and starting distance so the setup is repeatable.'],
+    mistakes: ['Using trunk momentum to finish the pull.', 'Changing starting tension while treating the resistance as unchanged.'],
+    whenToUse: 'Horizontal pulling with a band and secure anchor. Calibrate this setup separately from dumbbell or machine rows.',
+  },
   band_pull_apart: {
     startPosition:  'Arms straight ahead at shoulder height, light band held with hands shoulder-width.',
     finishPosition: 'Band touching the chest, arms wide, shoulder blades squeezed together without shrugging.',
@@ -294,6 +302,7 @@ const EXERCISE_GUIDE_ALIASES: Record<string, string> = {
   push_pushup: 'push_up',
   push_db_press: 'db_press',
   pull_row: 'db_row',
+  pull_band_row: 'band_row',
   pull_band_pull: 'band_pull_apart',
   pull_facepull: 'face_pull',
   carry_farmers: 'farmers_carry',

@@ -15,6 +15,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const files = [
   'supabase/functions/ai-coach/index.ts', 'supabase/functions/_shared/revenueCatAccess.ts',
   'supabase/functions/_shared/launchHandlers.ts',
+  'supabase/functions/_shared/coachAllowance.ts',
 ];
 const sources = new Map(files.map(file => [resolve(file), readFileSync(file, 'utf8')]));
 
@@ -45,7 +46,7 @@ function harness(options: {
     },
   };
   const context = vm.createContext({
-    Request, Response, Headers, TextDecoder, AbortController, AbortSignal, setTimeout, clearTimeout,
+    Request, Response, Headers, URL, TextDecoder, AbortController, AbortSignal, setTimeout, clearTimeout,
     Deno: {
       env: { get: (name: string) => { reads.push(name); return env[name]; } },
       serve: (value: typeof handler) => { assert.equal(handler, undefined); handler = value; },

@@ -26,6 +26,8 @@ import { useOnboardingStore }   from '../store/onboardingStore';
 import { useWorkoutStore }      from '../store/workoutStore';
 import { useCheckInStore }      from '../store/checkInStore';
 import { useStrengthStore }     from '../store/strengthStore';
+import { useActiveStrengthSessionStore } from '../store/activeStrengthSessionStore';
+import { strengthEquipmentSelection, strengthSessionMinutes } from '../utils/strengthSessionFit';
 import { useProfileStore }      from '../store/profileStore';
 import { useTrainingPlanStore } from '../store/trainingPlanStore';
 import { useBeginnerPlanStore } from '../store/beginnerPlanStore';
@@ -54,9 +56,11 @@ export function useWeekPlan(): WeekPlan {
   const progressionLevel = useAthleteStore(s => s.progressionLevel);
 
   const onboardingData = useOnboardingStore(s => s.data);
+  const activeStrengthSessionId = useActiveStrengthSessionStore(s => s.session?.source === 'training_block' ? s.session.workoutId : null);
 
   // ── Plan spine ────────────────────────────────────────────────────────────
   const goalType         = useTrainingPlanStore(s => s.goalType);
+  const strengthProgrammingVersion = useTrainingPlanStore(s => s.strengthProgrammingVersion);
   const programStartDate = useTrainingPlanStore(s => s.programStartDate);
   const savedRaces       = useTrainingPlanStore(s => s.races);
   const trainingMode     = useTrainingPlanStore(s => s.trainingMode);
@@ -195,6 +199,10 @@ export function useWeekPlan(): WeekPlan {
     primaryGoal:      onboardingData.primaryGoal,
     hasCurrentInjury: onboardingData.hasCurrentInjury,
     strengthLevel:    onboardingData.strengthLevel,
+    strengthProgrammingVersion,
+    strengthSessionMinutes: strengthProgrammingVersion === 2 ? strengthSessionMinutes(onboardingData.strengthSessionMinutes) : undefined,
+    strengthEquipment: strengthProgrammingVersion === 2 ? strengthEquipmentSelection(onboardingData.strengthEquipment) : undefined,
+    activeStrengthSessionId,
 
     // Daily readiness
     soreness:   checkedIn ? (todayCheckIn?.soreness   ?? null) : null,
@@ -217,7 +225,7 @@ export function useWeekPlan(): WeekPlan {
   }), [
     goalRace, weeklyMileage, fatigueScore, recoveryScore,
     currentWeek, trainingPhase, progressionLevel,
-    goalType, trainingMode, macroWeek, beforeStart, programStartDate, races, activeBeginnerPlan,
+    goalType, strengthProgrammingVersion, activeStrengthSessionId, trainingMode, macroWeek, beforeStart, programStartDate, races, activeBeginnerPlan,
     calibration, profile,
     onboardingData,
     checkedIn, todayCheckIn,

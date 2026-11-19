@@ -131,6 +131,8 @@ export type LastExercisePerformance = {
   reps:         number;
   load?:        string;
   rpe?:         number;
+  comparableWorkingSets?: boolean;
+  equipmentType?: import('./strengthSession').EquipmentType;
 };
 
 // ─── Progression suggestion ───────────────────────────────────────────────────
@@ -157,13 +159,21 @@ export function suggestProgression(
   targetSets:       number,
   readinessLimited: boolean,
   unitLabel:        string,
+  targetTopReps?:   number | null,
+  currentEquipmentType?: import('./strengthSession').EquipmentType,
 ): ProgressionSuggestion | null {
   if (!last) return null;
 
   const loadValue = parseLoadValue(last.load);
-  const isBodyweight = loadValue === null || loadValue === 0;
-  const loadLabel = isBodyweight ? 'bodyweight' : (last.load ?? '');
+  const isBodyweight = /^bw$/i.test(last.load?.trim() ?? '');
+  const loadLabel = isBodyweight ? 'bodyweight' : (last.load ?? 'a suitable starting load');
   const finishedAllSets = last.completedSets >= targetSets;
+  const reportedEffort = Number.isFinite(last.rpe) && last.rpe! >= 1 && last.rpe! <= 10;
+
+  if (!last.load || last.comparableWorkingSets === false) return {
+    headline: 'Check the setup and starting load',
+    reason: 'Previous working-set loads were missing or varied. Confirm this exercise and setup rather than transfer an assumed load or treat missing load as bodyweight.',
+  };
 
   if (readinessLimited) {
     return {
@@ -172,24 +182,28 @@ export function suggestProgression(
     };
   }
 
-  if (last.rpe !== undefined && last.rpe >= 9) {
+  if (reportedEffort && last.rpe! >= 9) {
     return {
       headline: `Repeat ${loadLabel} (or drop ~5%)`,
       reason:   `Last time was RPE ${last.rpe} — near max. Own this load with 1–2 reps in reserve before moving up.`,
     };
   }
 
-  if (finishedAllSets && (last.rpe === undefined || last.rpe <= 7)) {
+  const unitMatches = isBodyweight || new RegExp(`\\b${unitLabel}\\b`, 'i').test(last.load ?? '');
+  const achievedReps = typeof targetTopReps === 'number' && targetTopReps > 0 && last.reps >= targetTopReps;
+  const matchingSetup = !!currentEquipmentType && last.equipmentType === currentEquipmentType;
+  if (finishedAllSets && achievedReps && reportedEffort && last.rpe! <= 7 && last.comparableWorkingSets === true && unitMatches && matchingSetup) {
     if (isBodyweight) {
       return {
         headline: 'Add 1–2 reps per set',
-        reason:   `All ${last.completedSets} sets done${last.rpe !== undefined ? ` at RPE ${last.rpe}` : ''} — progress bodyweight work by adding reps or slowing the tempo.`,
+        reason:   `All working sets reached the prescribed reps with reported RPE ${last.rpe}. Consider a small rep increase if technique and recovery remain suitable.`,
       };
     }
+    if (loadValue === null) return { headline: 'Confirm the recorded load', reason: 'A numeric load and its unit are needed before suggesting a load change.' };
     const increment = loadValue >= 50 ? 5 : 2.5;
     return {
       headline: `Try ${loadValue + increment} ${unitLabel} today`,
-      reason:   `All sets completed${last.rpe !== undefined ? ` at RPE ${last.rpe}` : ''} last time — a small +${increment} ${unitLabel} step keeps progressive overload on track.`,
+      reason:   `All working sets reached the prescribed reps with reported RPE ${last.rpe} at the same recorded load. Consider +${increment} ${unitLabel} if your equipment allows; recalibrate after a setup change.`,
     };
   }
 
@@ -197,20 +211,22 @@ export function suggestProgression(
     headline: `Repeat ${loadLabel}`,
     reason:   last.rpe !== undefined
       ? `Last session was RPE ${last.rpe}${finishedAllSets ? '' : ' with sets left on the table'} — win all sets at this load first, then add weight.`
-      : 'Complete all planned sets at this load, then progress next session.',
+      : 'Completion alone does not show how hard the work felt. Record working-set reps, load and actual RPE before considering more load.',
   };
 }
 
 export function getLastLoggedExercise(
   history:    StrengthLogRecord[],
   exerciseId: string,
+  displayUnit?: 'lb' | 'kg',
+  expectedEquipmentType?: import('./strengthSession').EquipmentType | null,
 ): LastExercisePerformance | null {
   const matches = history
     .filter(r => !r.skipped)
     .flatMap(r => {
       const match = r.exercises.find(e => e.exerciseId === exerciseId);
-      if (!match) return [];
-      const completed = match.sets.filter(s => s.completed);
+      if (!match || match.skipped) return [];
+      const completed = match.sets.filter(s => s.completed && !s.isWarmup);
       if (completed.length === 0) return [];
       return [{ timestamp: r.timestamp, match, completed }];
     })
@@ -219,12 +235,35 @@ export function getLastLoggedExercise(
   const latest = matches[0];
   if (!latest) return null;
 
-  const first = latest.completed[0];
+  const normalized = latest.completed.map(set => {
+    const label = set.load?.trim();
+    const parsed = label?.match(/^(\d+(?:\.\d+)?)\s*(lb|lbs|kg)$/i);
+    const unqualifiedWeight = Number.isFinite(set.weight) && set.weight! > 0 && set.weightUnit !== 'lb' && set.weightUnit !== 'kg';
+    const weight = unqualifiedWeight ? undefined : set.weight ?? (parsed ? Number(parsed[1]) : undefined);
+    const unit = unqualifiedWeight ? undefined : set.weightUnit ?? (parsed ? /^kg$/i.test(parsed[2]!) ? 'kg' : 'lb' : undefined);
+    const bodyweight = !(Number.isFinite(set.weight) && set.weight! > 0) && !(Number.isFinite(weight) && weight! > 0)
+      && (latest.match.equipmentType === 'bodyweight' || /^bw$/i.test(label ?? ''));
+    return { weight, unit, bodyweight };
+  });
+  const first = normalized[0]!;
+  const matchingSetup = expectedEquipmentType === undefined
+    || (expectedEquipmentType !== null && expectedEquipmentType !== 'other' && expectedEquipmentType === latest.match.equipmentType);
+  const comparable = matchingSetup && normalized.every(set => set.bodyweight && first.bodyweight
+    || !set.bodyweight && !first.bodyweight && Number.isFinite(set.weight) && set.weight! > 0
+      && !!set.unit && set.unit === first.unit && set.weight === first.weight);
+  const validReps = latest.completed.every(set => Number.isFinite(set.reps) && set.reps! > 0);
+  const validEffort = latest.completed.every(set => Number.isFinite(set.rpe) && set.rpe! >= 1 && set.rpe! <= 10);
+  const shownUnit = displayUnit ?? first.unit;
+  const shownWeight = first.weight && first.unit && shownUnit
+    ? first.weight * (first.unit === shownUnit ? 1 : shownUnit === 'lb' ? 2.2046226218 : 1 / 2.2046226218)
+    : undefined;
   return {
     timestamp:     latest.timestamp,
     completedSets: latest.completed.length,
-    reps:          first.reps ?? 0,
-    load:          first.load,
-    rpe:           first.rpe,
+    reps:          validReps ? Math.min(...latest.completed.map(set => set.reps!)) : 0,
+    load:          !comparable ? undefined : first.bodyweight ? 'BW' : shownWeight && shownUnit ? `${Math.round(shownWeight * 10) / 10} ${shownUnit}` : undefined,
+    rpe:           validEffort ? Math.max(...latest.completed.map(set => set.rpe!)) : undefined,
+    comparableWorkingSets: comparable && validReps,
+    equipmentType: latest.match.equipmentType,
   };
 }

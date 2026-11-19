@@ -44,6 +44,7 @@ import {
   sessionsFromBeginnerPlanForDate,
 } from './scheduledSessions';
 import { formatPrescriptionWithSets } from './prescriptionFormat';
+import { reserveStrengthRestDay, markCapturedStrengthCompletions } from './strengthRestDay';
 
 // ─── Engine input ─────────────────────────────────────────────────────────────
 
@@ -80,6 +81,10 @@ export type EngineInput = {
   primaryGoal:      GoalType;
   hasCurrentInjury: boolean;
   strengthLevel:    StrengthLevel;
+  strengthProgrammingVersion?: 1 | 2;
+  strengthSessionMinutes?: number;
+  strengthEquipment?: import('../types/strength').EquipmentOption[];
+  activeStrengthSessionId?: string | null;
 
   // ── Daily readiness (from checkInStore) ─────────────────────────────────────
   soreness:   number | null;   // 1–10; null = no check-in today
@@ -298,6 +303,10 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
 
   // ── Strength sessions ─────────────────────────────────────────────────────
   const strengthInput: StrengthEngineInput = {
+    programmingVersion: input.strengthProgrammingVersion,
+    strengthLevel: input.strengthLevel,
+    goalType: input.goalType,
+    availableEquipment: input.strengthEquipment,
     trainingPhase,
     progressionLevel: input.progressionLevel,
     weeklyMileage:    input.weeklyMileage,
@@ -308,13 +317,13 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
     injuryRisk:       input.hasCurrentInjury || input.returningFromInjury,
     acwr:             input.acwr,
     weeksToRace,
-    availableTimeMin: 60,
+    availableTimeMin: input.strengthSessionMinutes ?? 60,
     liftDays,
     strengthHistory:  input.strengthHistory,
     hybridBalance,
   };
 
-  const strengthWeek = generateStrengthWeek(strengthInput);
+  let strengthWeek = generateStrengthWeek(strengthInput);
 
   // ── Calendar mapping ──────────────────────────────────────────────────────
   const weekStartDate = parseYMD(macroWeek.startDate);
@@ -418,6 +427,19 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   }
 
   // ── Missed workout reconciliation ──────────────────────────────────────────
+  if (input.strengthProgrammingVersion === 2 && !input.activeBeginnerPlan) {
+    const capturedCompletions = input.strengthHistory.filter(record => !record.skipped && record.scheduledSessionId).map(record => record.scheduledSessionId!);
+    calendarMap = markCapturedStrengthCompletions(calendarMap, capturedCompletions);
+    const rest = reserveStrengthRestDay({ calendarMap, weekStartDate,
+      liftDays: liftDays?.length ? liftDays : input.availableDays, activeStrengthSessionId: input.activeStrengthSessionId });
+    calendarMap = markCapturedStrengthCompletions(rest.calendarMap, capturedCompletions);
+    if (rest.omittedSessionIds.length) {
+      const sessions = strengthWeek.sessions.filter(session => !rest.omittedSessionIds.includes(session.id));
+      strengthWeek = { ...strengthWeek, sessions, weeklyVolumeSets: sessions.reduce((sum, session) => sum + session.exercises.reduce((n, exercise) => n + exercise.sets, 0), 0),
+        phaseNote: `${sessions.length} strength ${sessions.length === 1 ? 'session' : 'sessions'} — full rest day protected` };
+    }
+    if (rest.note) adaptations.push(rest.note);
+  }
   const reconciled = reconcileMissedSessions({ calendarMap, todayYMD });
   calendarMap = reconciled.calendarMap;
 

@@ -17,10 +17,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../../src/theme/useColors';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useAthleteStore } from '../../../src/store/athleteStore';
-import { useStrengthStore } from '../../../src/store/strengthStore';
+import { useActivityStore } from '../../../src/store/activityStore';
+import { confirmStrengthCompletionSaved, useStrengthStore } from '../../../src/store/strengthStore';
 import { LAYOUT } from '../../../src/constants/layout';
 import type { MovementPattern, RepScheme, StrengthSession } from '../../../src/types/strength';
 import { getLastLoggedExercise, suggestProgression } from '../../../src/utils/strengthHistory';
+import { mapEquipmentType } from '../../../src/utils/strengthSession';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
+import { strengthWeightForDisplay } from '../../../src/utils/strengthDesign';
 import { getExerciseGuide } from '../../../src/constants/exerciseGuides';
 import { toYMD } from '../../../src/utils/calendarEngine';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
@@ -55,7 +59,7 @@ import {
   useActiveStrengthSessionStore,
 } from '../../../src/store/activeStrengthSessionStore';
 import { displayLabel, displayLabels } from '../../../src/utils/displayLabels';
-import { completedExercisesFromActiveSession } from '../../../src/utils/strengthPersistence';
+import { trainingBlockCompletionFromActiveSession } from '../../../src/utils/strengthPersistence';
 import StrengthSetEditor from '../../../src/components/strength/StrengthSetEditor';
 import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
 import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
@@ -422,6 +426,8 @@ type ExDef = {
   desc: string;
   cue: string;
   equipment: string[];
+  targetRpe?: number;
+  loadTarget?: string;
 };
 
 const PATTERN_MUSCLES: Record<MovementPattern, string> = {
@@ -437,9 +443,10 @@ const PATTERN_MUSCLES: Record<MovementPattern, string> = {
   mobility:    'Mobility',
 };
 
-function sessionToExDefs(session: StrengthSession, strengthHistory: ReturnType<typeof useStrengthStore.getState>['history']): ExDef[] {
+function sessionToExDefs(session: StrengthSession, strengthHistory: ReturnType<typeof useStrengthStore.getState>['history'], unit: 'lb' | 'kg'): ExDef[] {
   return session.exercises.map(ex => {
-    const last = getLastLoggedExercise(strengthHistory, ex.exerciseId);
+    const expectedSetup = ex.exercise.equipment.length === 1 ? mapEquipmentType(ex.exercise.equipment) : null;
+    const last = getLastLoggedExercise(strengthHistory, ex.exerciseId, unit, expectedSetup);
     const parsedWeight = last?.load ? parseFloat(last.load) : NaN;
     return {
       id: ex.exerciseId,
@@ -453,6 +460,8 @@ function sessionToExDefs(session: StrengthSession, strengthHistory: ReturnType<t
       desc: ex.exercise.rationale,
       cue: ex.exercise.coachingCues[0] ?? ex.rationale,
       equipment: ex.exercise.equipment,
+      targetRpe: ex.rpe,
+      loadTarget: ex.loadTarget,
     };
   });
 }
@@ -594,13 +603,17 @@ export default function StrengthScreen() {
   const sessionIndexInWeek = session ? weekPlan.strengthWeek.sessions.findIndex(item => item.id === session.id) : -1;
   const currentWeek = weekPlan.metadata.currentWeek;
 
-  const wDef = session
+  const ownsActiveTrainingBlock = activeStrengthSession?.source === 'training_block';
+  const wDef = ownsActiveTrainingBlock && activeStrengthSession
+    ? { title: activeStrengthSession.workoutName, label: 'Strength · In progress' }
+    : session
     ? { title: session.title, label: `Strength · ${dayLabelFor(activeEntry!.date, todayYMD)}` }
     : { title: 'Strength', label: 'STRENGTH' };
 
   const [strState, setStrState] = useState<'idle' | 'active' | 'paused'>('idle');
   const [timer, setTimer] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const finishingRef = useRef(false);
 
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [completedExercises, setCompletedExercises] = useState<Record<string, boolean>>({});
@@ -622,15 +635,22 @@ export default function StrengthScreen() {
     setWeights({});
     setCompletedExercises({});
     setRpe({});
-  }, [session?.id]);
+  }, [ownsActiveTrainingBlock ? activeStrengthSession?.workoutInstanceId : session?.id]);
 
-  const exercises = useMemo(() => session ? sessionToExDefs(session, strengthHistory) : [], [session, strengthHistory]);
-  const estimatedDurationMin = exercises.length > 0 ? estimateWorkoutDurationMin(exercises) : 0;
-
-  const ownsActiveTrainingBlock = Boolean(
-    activeStrengthSession?.source === 'training_block'
-    && activeStrengthSession.workoutId === session?.id,
-  );
+  const exercises = useMemo((): ExDef[] => {
+    if (ownsActiveTrainingBlock && activeStrengthSession) return activeStrengthSession.exercises.map(ex => {
+      const set = ex.setEntries.find(item => item.weight !== undefined && item.weightUnit);
+      const converted = strengthWeightForDisplay(set?.weight, set?.weightUnit, activeStrengthSession.loadByExercise[ex.id], wtUnit) ?? 0;
+      return { id: ex.id, name: ex.name, sets: ex.sets, reps: ex.reps, repScheme: ex.repScheme,
+        weight: Math.round(converted * 10) / 10, restSeconds: ex.plannedRestSeconds ?? 90,
+        muscles: PATTERN_MUSCLES[ex.id.split('_')[0] as MovementPattern] ?? 'Your captured workout',
+        desc: ex.notes ?? 'The exercise and prescription captured when this workout started.', cue: ex.notes ?? '',
+        equipment: ex.equipment, targetRpe: ex.plannedRpe, loadTarget: ex.plannedLoadTarget };
+    });
+    return session ? sessionToExDefs(session, strengthHistory, wtUnit) : [];
+  }, [ownsActiveTrainingBlock, activeStrengthSession, session, strengthHistory, wtUnit]);
+  const estimatedDurationMin = ownsActiveTrainingBlock && activeStrengthSession ? activeStrengthSession.plannedDurationMin
+    : exercises.length > 0 ? estimateWorkoutDurationMin(exercises) : 0;
 
   useEffect(() => {
     if (activeStrengthSession?.source !== 'training_block') return;
@@ -644,18 +664,16 @@ export default function StrengthScreen() {
     setTimer(activeStrengthElapsedSeconds(activeStrengthSession));
     setCompletedExercises(Object.fromEntries(activeStrengthSession.completedExerciseIds.map(id => [id, true])));
     setRpe(activeStrengthSession.rpeByExercise);
-    setWeights(Object.fromEntries(
-      Object.entries(activeStrengthSession.loadByExercise)
-        .map(([id, value]) => [id, Number.parseFloat(value)])
-        .filter((entry): entry is [string, number] => Number.isFinite(entry[1])),
-    ));
+    // Captured set/load values are converted in exercises above. A bare
+    // parseFloat here would turn50lb into50kg after switching display units.
+    setWeights({});
     setStrState(activeStrengthSession.status);
     if (activeStrengthSession.status === 'active') {
       intervalRef.current = setInterval(() => {
         setTimer(activeStrengthElapsedSeconds(useActiveStrengthSessionStore.getState().session));
       }, 1000);
     }
-  }, [activeStrengthSession?.workoutId, ownsActiveTrainingBlock]);
+  }, [activeStrengthSession?.workoutId, ownsActiveTrainingBlock, wtUnit]);
 
   useEffect(() => {
     if (ownsActiveTrainingBlock || strState === 'idle') return;
@@ -698,13 +716,19 @@ export default function StrengthScreen() {
   }
   function undoExercise(ex: ExDef) {
     setCompletedExercises(prev => ({ ...prev, [ex.id]: false }));
-    if (ownsActiveTrainingBlock) uncompleteActiveStrengthExercise(ex.id);
+    if (ownsActiveTrainingBlock) {
+      const activeExercise = activeStrengthSession?.exercises.find(item => item.id === ex.id);
+      activeExercise?.setEntries.forEach(setEntry => toggleActiveStrengthSetCompleted(ex.id, setEntry.id, false));
+      uncompleteActiveStrengthExercise(ex.id);
+    }
   }
 
   function launchTrainingBlock() {
     if (!session) return;
     startActiveStrengthSession({
       source: 'training_block',
+      trackingContext: { completionKey: `strength_w${currentWeek}_s${sessionIndexInWeek}`, week: currentWeek,
+        sessionType: session.sessionType, goal: session.goal, warmupProtocol: session.warmupProtocol, cooldownProtocol: session.cooldownProtocol },
       workoutId: session.id,
       workoutName: wDef.title,
       plannedDurationMin: estimatedDurationMin,
@@ -717,7 +741,11 @@ export default function StrengthScreen() {
         reps: exercise.reps,
         repScheme: exercise.repScheme,
         equipment: exercise.equipment,
+        equipmentType: exercise.equipment.length === 1 ? mapEquipmentType(exercise.equipment) : 'other',
         notes: exercise.cue,
+        plannedRpe: exercise.targetRpe,
+        plannedRestSeconds: exercise.restSeconds,
+        plannedLoadTarget: exercise.loadTarget,
       })),
     });
     const launchedSession = useActiveStrengthSessionStore.getState().session;
@@ -918,14 +946,30 @@ export default function StrengthScreen() {
     timer,
   ]);
 
-  function finishSession() {
+  async function finishSession() {
+    if (ownsActiveTrainingBlock && activeStrengthSession) {
+      if (finishingRef.current) return;
+      const lease = captureOwnerLease();
+      if (!lease || !useStrengthStore.persist.hasHydrated() || useActivityStore.getState().hydrationStatus !== 'ready') { Alert.alert('Workout kept', 'Local history is still restoring for your account. Retry Finish shortly.'); return; }
+      finishingRef.current = true;
+      const snapshot = activeStrengthSession;
+      try {
+        const entry = trainingBlockCompletionFromActiveSession(snapshot, activeStrengthElapsedSeconds(snapshot));
+        logStrengthSession(entry, fatigueScore);
+        await confirmStrengthCompletionSaved(entry.completionKey, lease);
+        if (!ownerLeaseIsCurrent(lease) || useActiveStrengthSessionStore.getState().session?.workoutInstanceId !== snapshot.workoutInstanceId) return;
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        endStrengthLiveActivity().catch(console.warn);
+        endStrideWatchWorkout().catch(() => undefined);
+        clearActiveStrengthSession();
+        setCompletedExercises({}); setTimer(0); setStrState('idle');
+        Alert.alert('Strength logged', `${snapshot.workoutName} was saved to your training history.`);
+      } catch (error) { Alert.alert('Workout kept', error instanceof Error ? error.message : 'Saving could not be confirmed. Retry Finish.'); }
+      finally { finishingRef.current = false; }
+      return;
+    }
     if (!session || sessionIndexInWeek === -1) return;
     if (intervalRef.current) clearInterval(intervalRef.current);
-    if (ownsActiveTrainingBlock) {
-      endStrengthLiveActivity().catch(console.warn);
-      endStrideWatchWorkout().catch(() => undefined);
-      clearActiveStrengthSession();
-    }
 
     const selectedRpes = exercises.map(ex => rpe[ex.id]).filter((value): value is number => typeof value === 'number');
     const overallRpe = selectedRpes.length
@@ -938,22 +982,11 @@ export default function StrengthScreen() {
     // prescribed sets as done. With nothing marked, treat the whole session
     // as completed (the athlete finished without ticking boxes).
     const anyMarked = Object.values(completedExercises).some(Boolean);
-    const loggedExercises = activeStrengthSession && ownsActiveTrainingBlock
-      ? completedExercisesFromActiveSession(
-        activeStrengthSession.exercises,
-        'training_block',
-        // A legacy session could have been completed before the per-set
-        // reducer existed. Preserve its deliberate exercise completions, but
-        // don't fabricate a set record while migrating persisted history.
-        anyMarked ? activeStrengthSession.completedExerciseIds : activeStrengthSession.exercises.map(exercise => exercise.id),
-        activeStrengthSession.rpeByExercise,
-        activeStrengthSession.loadByExercise,
-      )
-      : exercises.map(ex => ({
+    const loggedExercises = exercises.map(ex => ({
         exerciseId: ex.id,
         sets: Array.from({ length: ex.sets }, () => ({
           reps: representativeRepsForScheme(ex.repScheme, ex.reps) ?? primaryRepCount(ex.reps),
-          load: getWeight(ex) > 0 ? `${getWeight(ex)} ${wtUnit}` : 'BW',
+          load: getWeight(ex) > 0 ? `${getWeight(ex)} ${wtUnit}` : ex.equipment.length === 1 && ex.equipment[0] === 'bodyweight' ? 'BW' : undefined,
           rpe: rpe[ex.id] ?? overallRpe,
           completed: anyMarked ? isExerciseDone(ex) : true,
         })),
@@ -1029,7 +1062,7 @@ export default function StrengthScreen() {
   }
 
   // ── Before program start ────────────────────────────────────────────────────
-  if (weekPlan.metadata.currentWeek === 0) {
+  if (weekPlan.metadata.currentWeek === 0 && !ownsActiveTrainingBlock) {
     return (
       <View style={{ flex: 1, backgroundColor: C.bg }}>
         <View style={[styles.screenHeader, { paddingTop: insets.top + 6, backgroundColor: C.bg }]}>
@@ -1058,7 +1091,7 @@ export default function StrengthScreen() {
   }
 
   // ── No session available this week ─────────────────────────────────────────
-  if (!session) {
+  if (!session && !ownsActiveTrainingBlock) {
     return (
       <View style={{ flex: 1, backgroundColor: C.bg }}>
         <View style={[styles.screenHeader, { paddingTop: insets.top + 6, backgroundColor: C.bg }]}>
@@ -1092,7 +1125,7 @@ export default function StrengthScreen() {
           <Text style={[styles.headerLabel, { color: C.textDim }]}>{wDef.label.toUpperCase()}</Text>
           <Text style={[styles.headerTitle, { color: C.text }]}>{wDef.title}</Text>
         </View>
-        {strengthEntries.length > 1 && (
+        {strengthEntries.length > 1 && !ownsActiveTrainingBlock && (
           <TouchableOpacity onPress={() => setManualIndex((manualIndex ?? autoIndex) + 1)} style={{ padding: 4 }}>
             <Ionicons name="swap-horizontal-outline" size={20} color={C.primary} />
           </TouchableOpacity>
@@ -1120,7 +1153,7 @@ export default function StrengthScreen() {
             color: weekPlan.strengthWeek.progressionState === 'progress' ? C.positive
               : weekPlan.strengthWeek.progressionState === 'regress' ? C.critical : C.textMuted,
           }]}>
-            Strength: {weekPlan.strengthWeek.progressionState === 'progress' ? 'progressing'
+            Strength: {weekPlan.strengthWeek.progressionState === 'progress' ? 'ready to review'
               : weekPlan.strengthWeek.progressionState === 'regress' ? 'pulling back' : 'holding steady'}
           </Text>
           <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 17, marginTop: 2 }]}>
@@ -1222,7 +1255,7 @@ export default function StrengthScreen() {
           </View>
           {warmupOpen && (
             <View style={[{ borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10 }]}>
-              <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{session.warmupProtocol}</Text>
+              <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{ownsActiveTrainingBlock ? activeStrengthSession?.trackingContext?.warmupProtocol ?? 'Use the warmup captured or agreed when this workout started.' : session?.warmupProtocol}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -1235,13 +1268,16 @@ export default function StrengthScreen() {
           const isCurrent = !isDone && currentExercise?.id === ex.id;
           const htOpen = !!howOpen[ex.id];
           const rpeVal = rpe[ex.id];
-          const wDisplay = w > 0 ? `${w} ${wtUnit}` : 'BW';
-          const lastPerformance = getLastLoggedExercise(strengthHistory, ex.id);
-          const progression = suggestProgression(lastPerformance, ex.sets, readinessLimited, wtUnit);
+          const wDisplay = w > 0 ? `${w} ${wtUnit}` : ex.equipment.length === 1 && ex.equipment[0] === 'bodyweight' ? 'BW' : 'Load not set';
+          const activeExercise = ownsActiveTrainingBlock ? activeStrengthSession?.exercises.find(item => item.id === ex.id) : null;
+          const knownSetup = activeExercise?.equipmentType && activeExercise.equipmentType !== 'other' ? activeExercise.equipmentType
+            : ex.equipment.length === 1 ? mapEquipmentType(ex.equipment) : undefined;
+          const lastPerformance = getLastLoggedExercise(strengthHistory, ex.id, wtUnit, knownSetup ?? null);
+          const scheme = ex.repScheme;
+          const topReps = scheme && 'repsMin' in scheme ? scheme.repsMax ?? scheme.repsMin
+            : /sec|min|meter|metre|\bm\b|hold|carry/i.test(ex.reps) ? null : Number(ex.reps.match(/\d+/g)?.slice(-1)[0]) || null;
+          const progression = suggestProgression(lastPerformance, ex.sets, readinessLimited, wtUnit, topReps, knownSetup);
           const guide = getExerciseGuide(ex.id);
-          const activeExercise = ownsActiveTrainingBlock
-            ? activeStrengthSession?.exercises.find(item => item.id === ex.id)
-            : null;
           return (
             <View
               key={ex.id}
@@ -1266,7 +1302,7 @@ export default function StrengthScreen() {
                       )}
                     </View>
                     <Text style={[styles.subTitle, { color: C.text }]}>{ex.name}</Text>
-                    <Text style={[{ fontSize: 12, color: C.textMuted }]}>{ex.sets} × {ex.reps}{w > 0 ? ` · ${wDisplay}` : ''}</Text>
+                    <Text style={[{ fontSize: 12, color: C.textMuted }]}>{ex.sets} × {ex.reps}{w > 0 ? ` · ${wDisplay}` : ''}{ex.targetRpe !== undefined ? ` · target RPE ${ex.targetRpe}` : ''}</Text>
                     {lastPerformance && (
                       <Text style={[{ fontSize: 11, color: C.textDim, marginTop: 2 }]}>
                         Last time: {lastPerformance.completedSets}×{lastPerformance.reps}
@@ -1499,7 +1535,7 @@ export default function StrengthScreen() {
           </View>
           {cooldownOpen && (
             <View style={[{ borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10 }]}>
-              <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{session.cooldownProtocol}</Text>
+              <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{ownsActiveTrainingBlock ? activeStrengthSession?.trackingContext?.cooldownProtocol ?? 'Finish with comfortable easy movement.' : session?.cooldownProtocol}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -1511,11 +1547,11 @@ export default function StrengthScreen() {
         title={weightPickerFor ? `Set weight for ${weightPickerFor.name}` : 'Set weight'}
         values={WEIGHT_VALUES}
         selectedValue={weightPickerFor ? getWeight(weightPickerFor) : 0}
-        formatValue={v => v === 0 ? 'Bodyweight' : `${v % 5 === 0 ? v : v.toFixed(1)} ${wtUnit}`}
+        formatValue={v => v === 0 ? weightPickerFor?.equipment.length === 1 && weightPickerFor.equipment[0] === 'bodyweight' ? 'Bodyweight' : 'Not set' : `${v % 5 === 0 ? v : v.toFixed(1)} ${wtUnit}`}
         onConfirm={v => {
           if (weightPickerFor) {
             setWeights(p => ({ ...p, [weightPickerFor.id]: v }));
-            if (ownsActiveTrainingBlock) setActiveStrengthLoad(weightPickerFor.id, String(v));
+            if (ownsActiveTrainingBlock) setActiveStrengthLoad(weightPickerFor.id, v > 0 ? `${v} ${wtUnit}` : weightPickerFor.equipment.length === 1 && weightPickerFor.equipment[0] === 'bodyweight' ? 'BW' : '');
           }
           setWeightPickerFor(null);
         }}
