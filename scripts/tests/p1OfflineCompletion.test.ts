@@ -1401,3 +1401,20 @@ test('real workout/activity stores persist one live completion, preserve nearby 
   await assert.rejects(save(), /owner/);
   assert.equal(workout.getState().history.length, 4);
 });
+
+test('End snapshot and durable retry journal preserve only the original start-captured quality prescription', async () => {
+  const state = trainingEndFixture();
+  const original = { version: 1 as const, source: 'captured_prescription' as const, rung: 'strides' as const, completedReps: 4, workSeconds: 15 };
+  state.runningQualityPrescription = original;
+  const command = { workoutInstanceId: state.workoutInstanceId!, endedAt: 700_000 };
+  const entry = captureTrainingRunEnd(state, command);
+  original.workSeconds = 30;
+  assert.equal(entry.runningQualityPrescription?.workSeconds, 15);
+  let bytes: string | null = null;
+  const journal = new RunCompletionJournal({ getItem: () => bytes, setItem: (_key, value) => { bytes = value; } });
+  await journal.save({ ownerUserId: 'A', entry, week: 1, fatigue: 20, recovery: 80 });
+  const reopened = new RunCompletionJournal({ getItem: () => bytes, setItem: (_key, value) => { bytes = value; } });
+  const recovered = await reopened.read();
+  assert.equal(recovered[0]?.entry.runningQualityPrescription?.workSeconds, 15);
+  assert.equal((recovered[0]?.entry as any).runningQuality, undefined, 'a saved prescription alone is not performed quality evidence');
+});

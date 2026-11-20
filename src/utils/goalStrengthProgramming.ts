@@ -1,4 +1,5 @@
 import type { Exercise, PlannedExercise, StrengthEngineInput, StrengthLogRecord, StrengthSessionType } from '../types/strength';
+import { trainingGoalBlend } from './trainingGoals';
 import { compatibleExerciseOptions } from './exerciseAdaptation';
 import { getGoalMesocycle } from './plan/goalMesocycle';
 import { strengthExerciseEquipment, strengthProgressionLevel } from './strengthDesign';
@@ -49,7 +50,9 @@ export function applyGoalStrengthProgramming(exercises: PlannedExercise[], input
     || !Number.isFinite(input.acwr) || input.acwr < 0 || input.acwr > 1.4
     || (input.soreness !== null && !Number.isFinite(input.soreness))
     || input.recoveryScore < 55 || input.fatigueScore > 70 || (input.soreness ?? 0) >= 7;
+  const blend = trainingGoalBlend(input.goalType ?? 'general_running', input.secondaryGoalTypes);
   const strengthFirst = input.goalType === 'general_strength';
+  const strengthSupport = blend.secondary.includes('general_strength') || blend.secondary.includes('hybrid');
   const raceSupport = input.goalType === 'race_prep' && ['threshold', 'vo2', 'race_specific', 'build', 'peak', 'taper'].includes(input.trainingPhase);
   const candidates = Object.values(library).map(exercise => ({ ...exercise, equipment: strengthExerciseEquipment(exercise, input.availableEquipment) }))
     .filter(exercise => exercise.equipment.length > 0);
@@ -91,7 +94,7 @@ export function applyGoalStrengthProgramming(exercises: PlannedExercise[], input
     }
     const rpe = Math.min(exercise.rpe, recoveryLimited ? 6 : level === 'beginner' ? 7 : 8);
     return { ...exercise, sets, repRange, repScheme: { kind: 'reps' as const, repsMin: repRange[0], repsMax: repRange[1], perSide: scheme?.perSide ?? exercise.exercise.unilateral },
-      rpe, rir: 10 - rpe, restSeconds: Math.max(exercise.restSeconds, strengthFirst && index < 3 ? 120 : 90),
+      rpe, rir: 10 - rpe, restSeconds: Math.max(exercise.restSeconds, (strengthFirst || strengthSupport) && index < 3 ? 120 : 90),
       loadTarget: needsCalibration ? `RPE ${rpe} — calibrate this exercise and setup separately` : `RPE ${rpe} — choose a repeatable load for ${repRange[0]}–${repRange[1]} reps`,
       progressionRule: 'Repeat the same setup. Build to the top of the rep range at the intended effort before choosing a small equipment-appropriate load increase. Missing effort, changed setup or a new variation calls for calibration.',
       regressionRule: 'If the work is too hard, reduce load or reps while retaining the intended movement. Reduce a working set when recovery is limited; record what you actually complete.',

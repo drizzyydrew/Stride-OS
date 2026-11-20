@@ -4,6 +4,7 @@ import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import { authInputProps, resetEmailFromParam } from '../../src/lib/authInput';
+import { signInErrorMessage } from '../../src/lib/signInError';
 
 type Element = { type: string; props: Record<string, any>; children: any[] };
 type Screen = 'sign-in' | 'sign-up' | 'forgot-password' | 'new-password';
@@ -47,6 +48,7 @@ function screen(name: Screen, options: {
       Linking: { openURL: async () => undefined } },
     '../../src/store/authStore': { useAuthStore },
     '../../src/lib/authInput': { authInputProps, resetEmailFromParam },
+    '../../src/lib/signInError': { signInErrorMessage },
     '../../src/lib/credentialAutofill': { finishCredentialAutofill: async () => {
       // The native framework must still be able to inspect entered values.
       assert.ok(nodes().some(node => node.type === 'TextInput' && node.props.secureTextEntry && node.props.value));

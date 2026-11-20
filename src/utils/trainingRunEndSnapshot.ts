@@ -2,6 +2,7 @@ import type { ActiveRunStore, Coordinate } from '../store/activeRunStore';
 import type { LiveRunEntry } from '../lib/runCompletionJournal';
 import type { RunEndCommand } from '../lib/runCompletionCommand';
 import { capturedRunTelemetryMetrics } from './capturedRunTelemetryMetrics';
+import { normalizeRunningQualityPrescription } from './runningQualityFeedback';
 import { matchingWatchRecording, runCompletionKey } from './runCompletionIdentity';
 
 /** Coordinates already passed the Training Run GPS filters; retain its exact distance scale. */
@@ -48,6 +49,7 @@ export function captureTrainingRunEnd(state: ActiveRunStore, command: RunEndComm
     actualStartTime: startedAt, actualEndTime: command.endedAt,
     ...(state.raceLink ? { raceLink: JSON.parse(JSON.stringify(state.raceLink)) } : {}),
     scheduledSessionId: state.scheduledSessionId ?? undefined,
+    runningQualityPrescription: normalizeRunningQualityPrescription(state.runningQualityPrescription),
     source: state.plannedWorkout ? 'generated' : 'manual', workoutId: state.plannedWorkout?.id,
     type: state.plannedWorkout?.type ?? 'easy_run', intensity: state.plannedWorkout?.intensity ?? 'easy',
     durationMinutes: elapsed / 60, distanceMiles: distance, routeCoordinates: coordinates,

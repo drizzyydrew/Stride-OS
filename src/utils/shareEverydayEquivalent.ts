@@ -1,11 +1,13 @@
 import type { Activity } from '../types/activity';
 import type { UnitSystem } from '../store/settingsStore';
 import { activityPowerPresentation } from './activityPowerPresentation';
-import { energyReferencePool, equivalentRuntimeSeconds, formatEquivalentTime, formatPowerRatio, pickPowerReference, powerReferencePool } from './powerEquivalents';
+import { energyReferencePool, equivalentRuntimeSeconds, formatEquivalentTime, formatPowerRatio, pickPowerReference, powerReferencePool, type PowerReference } from './powerEquivalents';
 
 export type StoryIllustration = 'none' | 'route' | 'everyday';
 export type EverydayShareEquivalent = {
   referenceId: string;
+  reference: PowerReference;
+  spokenComparison: string;
   quantity: 'climbing' | 'metabolic' | 'power';
   comparison: string;
   sourceLabel: string;
@@ -50,7 +52,7 @@ export function shareEverydayEquivalent(activity: Activity | undefined, units: U
     caveat = result.quantity === 'metabolic' ? 'Metabolic power comparison, not electrical output.' : 'Reference power draw, not electrical output.';
     spoken = `About ${formatPowerRatio(value, reference.watts)} times the reference power draw of ${reference.label}.`;
   }
-  return { referenceId: reference.id, quantity: result.quantity, comparison,
+  return { referenceId: reference.id, reference, spokenComparison: spoken, quantity: result.quantity, comparison,
     sourceLabel: result.label, caveat,
     accessibilityLabel: `${result.label}. ${spoken} ${caveat}` };
 }

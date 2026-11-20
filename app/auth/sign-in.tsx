@@ -15,6 +15,7 @@ import { useState } from 'react';
 
 import { SocialAuthButtons } from '../../src/components/auth/SocialAuthButtons';
 import { authInputProps, resetEmailFromParam } from '../../src/lib/authInput';
+import { signInErrorMessage } from '../../src/lib/signInError';
 import { finishCredentialAutofill } from '../../src/lib/credentialAutofill';
 import { useAuthStore } from '../../src/store/authStore';
 import { colors }  from '../../src/theme/colors';
@@ -82,7 +83,7 @@ export default function SignInScreen() {
         <View style={s.card}>
           <Text style={s.heading}>Sign in</Text>
 
-          {error ? <Text style={s.error}>{error}</Text> : null}
+          {error ? <Text accessibilityRole="alert" style={s.error}>{error}</Text> : null}
           {notice ? <Text style={s.notice}>{notice}</Text> : null}
           {!error && localAccessReason ? <Text style={s.notice}>{localAccessReason}</Text> : null}
 
@@ -140,7 +141,7 @@ export default function SignInScreen() {
             </Pressable>
           ) : null}
 
-          <SocialAuthButtons mode="sign-in" onError={setError} />
+          <SocialAuthButtons mode="sign-in" onError={message => setError(signInErrorMessage(message))} />
         </View>
 
         <Pressable style={s.toggle} onPress={() => router.replace('/auth/sign-up' as never)}>

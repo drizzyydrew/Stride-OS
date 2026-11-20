@@ -1,3 +1,4 @@
+import { normalizeSupportingGoals } from './trainingGoals';
 import type { TrainingGoalType, RacePriority } from '../types/plan';
 import type { RaceDistance } from '../types/training';
 import { isValidDateOnly } from './dateOnly';
@@ -41,8 +42,8 @@ export function onboardingTrainingChoice(input: { billingEnabled: boolean; hasEx
 /** A route hint can restore setup inputs, never activate a plan or replace one. */
 export function onboardingGoalDraft(input: {
   source: unknown; openTraining: boolean; hasProgrammedBefore: boolean; today: string;
-  data: { goalType?: TrainingGoalType; raceName?: string; raceDate?: string; raceDistance?: RaceDistance; racePriority?: RacePriority };
-}): { goalType: TrainingGoalType; title: string; raceName: string; raceDate?: string; distance: RaceDistance; priority: RacePriority } | null {
+  data: { secondaryGoalTypes?: TrainingGoalType[]; goalType?: TrainingGoalType; raceName?: string; raceDate?: string; raceDistance?: RaceDistance; racePriority?: RacePriority };
+}): { secondaryGoalTypes?: TrainingGoalType[]; goalType: TrainingGoalType; title: string; raceName: string; raceDate?: string; distance: RaceDistance; priority: RacePriority } | null {
   if (input.source !== 'onboarding' || !input.openTraining || input.hasProgrammedBefore) return null;
   const { data } = input;
   const goalType = ['race_prep', 'general_running', 'get_faster', 'general_strength', 'hybrid'].includes(data.goalType ?? '') ? data.goalType! : 'general_running';
@@ -50,5 +51,6 @@ export function onboardingGoalDraft(input: {
   const raceDate = data.raceDate && isValidDateOnly(data.raceDate) && data.raceDate >= input.today ? data.raceDate : undefined;
   const distance = ['5k', '10k', 'half_marathon', 'marathon'].includes(data.raceDistance ?? '') ? data.raceDistance! : '5k';
   const priority = ['A', 'B', 'tune_up'].includes(data.racePriority ?? '') ? data.racePriority! : 'A';
-  return { goalType, title: goalType === 'race_prep' ? raceName : '', raceName, raceDate, distance, priority };
+  const secondaryGoalTypes = normalizeSupportingGoals(goalType, data.secondaryGoalTypes);
+  return { goalType, ...(secondaryGoalTypes.length ? { secondaryGoalTypes } : {}), title: goalType === 'race_prep' ? raceName : '', raceName, raceDate, distance, priority };
 }

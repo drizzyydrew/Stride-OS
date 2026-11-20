@@ -12,7 +12,8 @@ import { validActivityPowerEstimate } from '../../utils/outdoorPower';
 import { automaticPowerInputKey, withAutomaticActivityPower } from '../../utils/automaticActivityPower';
 import { profilePowerMass } from '../../utils/profilePower';
 import { activityPowerPresentation, formatActivityPowerValue } from '../../utils/activityPowerPresentation';
-import { energyReferencePool, equivalentRuntimeSeconds, formatEquivalentTime, formatPowerRatio, pickPowerReference, powerReferencePool, referenceDetails } from '../../utils/powerEquivalents';
+import { referenceDetails } from '../../utils/powerEquivalents';
+import { shareEverydayEquivalent } from '../../utils/shareEverydayEquivalent';
 import { useThemeMode } from '../../store/themeStore';
 
 function PowerDisclosure({ label, open, onChange, children }: { label: string; open: boolean; onChange: (open: boolean) => void; children: ReactNode }) {
@@ -38,10 +39,8 @@ export default function ActivityPowerPanel({ activity, units }: { activity: Acti
   const [infoOpen, setInfoOpen] = useState(false);
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [random, setRandom] = useState(() => Math.random());
   const [linkError, setLinkError] = useState(false);
   useFocusEffect(useCallback(() => {
-    setRandom(Math.random());
     setInfoOpen(false); setComparisonOpen(false); setDetailsOpen(false); setLinkError(false);
   }, [activity.id]));
   const attempted = useRef<string | null>(null);
@@ -61,12 +60,11 @@ export default function ActivityPowerPanel({ activity, units }: { activity: Acti
   }, [activity, inputKey, profileKey, updateActivity]);
 
   const presentation = useMemo(() => activityPowerPresentation(activity, units, profile), [activity, units, profile]);
-  const comparison = useMemo(() => presentation?.value != null && presentation.value > 0
-    ? pickPowerReference(presentation.quantity === 'climbing' ? energyReferencePool() : powerReferencePool(presentation.value), random) : undefined,
-  [activity.id, presentation?.value, presentation?.quantity, random]);
+  // One saved-activity reference drives detail, share preview and export.
+  const equivalent = useMemo(() => shareEverydayEquivalent(activity, units), [activity, units]);
   if (!presentation) return null;
+  const comparison = equivalent?.reference;
   const reference = comparison ? referenceDetails(comparison) : null;
-  const seconds = presentation.quantity === 'climbing' && comparison ? equivalentRuntimeSeconds(presentation.value!, comparison.watts) : null;
   const estimate = presentation.estimate;
   const comparable = estimate ? history.filter(item => item.id !== activity.id
     && validActivityPowerEstimate(item, item.metrics.powerEstimate)
@@ -97,14 +95,9 @@ export default function ActivityPowerPanel({ activity, units }: { activity: Acti
     {presentation.value != null && presentation.value > 0 ? <PowerDisclosure label="Everyday equivalent" open={comparisonOpen} onChange={setComparisonOpen}>
       {comparison && reference ? <>
         <Text selectable style={[s.comparison, { color: C.text }]}>
-          {presentation.quantity === 'climbing' ? seconds != null
-            ? `Energy equivalent of running ${comparison.label} for about ${formatEquivalentTime(seconds)}.`
-            : 'An energy comparison is unavailable for this result.'
-            : `About ${formatPowerRatio(presentation.value, comparison.watts)} times the reference power draw of ${comparison.label}.`}
+          {equivalent?.spokenComparison}
         </Text>
-        <Text style={[s.copy, { color: C.textMuted }]}>{presentation.quantity === 'climbing'
-          ? 'Uphill energy comparison only. No electricity was generated.' : presentation.quantity === 'metabolic'
-            ? 'Metabolic power comparison only, not electrical output.' : 'Power comparison only, not electrical output.'}</Text>
+        <Text style={[s.copy, { color: C.textMuted }]}>{equivalent?.caveat}</Text>
       </> : <Text style={[s.copy, { color: C.textMuted }]}>No matching reference is available above 2,000 W.</Text>}
     </PowerDisclosure> : null}
     <PowerDisclosure label="Calculation details" open={detailsOpen} onChange={setDetailsOpen}>

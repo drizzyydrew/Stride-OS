@@ -15,6 +15,7 @@ import type { MacroPlan, MacroWeek, Race, RacePriority, TrainingGoalType } from 
 import { sundayOf, addDays, toYMD, parseYMD } from '../calendarEngine';
 import { getPlanTemplateForDistance, type PlanTemplate } from '../periodization';
 import { resolvePhaseWithDeload } from '../training/deloadModel';
+import { trainingGoalBlend } from '../trainingGoals';
 import { getGoalMesocycle } from './goalMesocycle';
 
 export const RACE_BLOCK_MAX_WEEKS = 22;
@@ -424,6 +425,7 @@ function buildRacePrepPlan(
 // ─── Main entry point ─────────────────────────────────────────────────────────
 
 function buildLegacyMacroPlan(input: {
+  secondaryGoalTypes?: TrainingGoalType[];
   goalType:         TrainingGoalType;
   startDate:        string;
   races:            Race[];
@@ -465,13 +467,15 @@ function buildLegacyMacroPlan(input: {
  * a later calendar week alone never authorizes a faster session. */
 export function buildMacroPlan(input: Parameters<typeof buildLegacyMacroPlan>[0]): MacroPlan {
   if (input.programmingVersion !== 2) return buildLegacyMacroPlan(input);
+  const blend = trainingGoalBlend(input.goalType, input.secondaryGoalTypes);
+  const macroGoal = blend.runningGoal;
   let plan: MacroPlan;
   const race = input.goalType === 'race_prep' ? pickTargetRace(input.races, input.startDate) : null;
   if (race) plan = buildLegacyMacroPlan(input);
   else {
     const foundation = isBeginnerGated(input.progressionLevel, input.yearsRunning, input.weeklyMileage) ? 6 : 0;
-    const phases: TrainingPhase[] = input.goalType === 'general_strength' ? ['base', 'build']
-      : input.goalType === 'get_faster' ? ['aerobic_development', 'threshold', 'vo2', 'base']
+    const phases: TrainingPhase[] = input.goalType === 'general_strength' ? blend.speedSupport ? ['base', 'aerobic_development', 'threshold', 'base'] : ['base', 'build']
+      : macroGoal === 'get_faster' ? ['aerobic_development', 'threshold', 'vo2', 'base']
       : input.goalType === 'hybrid' ? ['aerobic_development', 'base', 'threshold', 'vo2']
       : ['aerobic_development', 'threshold', 'aerobic_development', 'vo2'];
     const weeks = Array.from({ length: MIN_TOTAL_WEEKS }, (_, index) => {
@@ -479,12 +483,12 @@ export function buildMacroPlan(input: Parameters<typeof buildLegacyMacroPlan>[0]
       const planned: TrainingPhase = week <= foundation ? 'foundation'
         : phases[Math.floor((week - foundation - 1) / 6) % phases.length]!;
       const phase = deloadOr(week, planned);
-      return makeWeek(input.startDate, week, phase, { focus: focusForPhase(phase, input.goalType) });
+      return makeWeek(input.startDate, week, phase, { focus: `${input.goalType === 'general_strength' && blend.speedSupport ? 'Strength priority · ' : ''}${focusForPhase(phase, macroGoal)}` });
     });
     plan = { goalType: input.goalType, startDate: input.startDate, totalWeeks: weeks.length, weeks,
       generatedAt: Date.now(), ...(input.goalType === 'race_prep' ? { limitationNote: 'Add a race date to anchor event-specific work; current training builds general aerobic capacity.' } : {}) };
   }
-  return { ...plan, programmingVersion: 2, weeks: plan.weeks.map(week => ({ ...week,
+  return { ...plan, secondaryGoalTypes: blend.secondary, programmingVersion: 2, weeks: plan.weeks.map(week => ({ ...week,
     mesocycle: getGoalMesocycle(week.weekNumber, week.phase, input.goalType) })) };
 }
 

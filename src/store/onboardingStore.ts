@@ -16,6 +16,7 @@ import type { Sex, TrainingDay, StandardDistance, WeightProvenance } from '../ty
 import { useProfileStore } from './profileStore';
 import { matchingWeightProvenance, migrateStoredWeight, preserveWeightProvenance, userEnteredWeightPatch } from '../utils/profilePower';
 import type { ProgressionLevel, GoalType, StrengthLevel, TrainingStyle, RaceDistance } from '../types/training';
+import { normalizeSupportingGoals } from '../utils/trainingGoals';
 import type { TrainingGoalType, RacePriority } from '../types/plan';
 import type { EquipmentOption } from '../types/strength';
 
@@ -83,6 +84,7 @@ export type OnboardingData = {
 
   // Build 33 plan spine — Step 2 (goal.tsx)
   goalType:         TrainingGoalType;
+  secondaryGoalTypes?: TrainingGoalType[];
   raceName:         string;
   raceDistance:     RaceDistance;
   raceDate:         string;          // "YYYY-MM-DD", '' = unset
@@ -119,6 +121,7 @@ const DEFAULT_DATA: OnboardingData = {
   profilePhotoUri:  null,
 
   goalType:         'general_running',
+  secondaryGoalTypes: [],
   raceName:         '',
   raceDistance:     'half_marathon',
   raceDate:         '',
@@ -175,7 +178,8 @@ export const useOnboardingStore = create<OnboardingStore>()(
             delete scoped.weightKg;
             delete scoped.weightProvenance;
           }
-          return { data: { ...state.data, ...preserveWeightProvenance(state.data, scoped) } };
+          return { data: { ...state.data, ...preserveWeightProvenance(state.data, scoped),
+            secondaryGoalTypes: normalizeSupportingGoals(scoped.goalType ?? state.data.goalType, scoped.secondaryGoalTypes ?? state.data.secondaryGoalTypes) } };
         }),
 
       setUserWeight: (weightKg) => {
@@ -226,7 +230,8 @@ export const useOnboardingStore = create<OnboardingStore>()(
         return {
           ...current,
           ...state,
-          data: { ...DEFAULT_DATA, ...current.data, ...state?.data },
+          data: { ...DEFAULT_DATA, ...current.data, ...state?.data,
+            secondaryGoalTypes: normalizeSupportingGoals(state?.data?.goalType ?? current.data.goalType, state?.data?.secondaryGoalTypes ?? current.data.secondaryGoalTypes) },
         };
       },
     },

@@ -2,6 +2,8 @@ import { StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
 
+import SupportingGoals from '../../src/components/goals/SupportingGoals';
+import { normalizeSupportingGoals } from '../../src/utils/trainingGoals';
 import OnboardingShell from '../../src/components/onboarding/OnboardingShell';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
 import { colors }  from '../../src/theme/colors';
@@ -58,6 +60,7 @@ function toLegacyGoal(goalType: TrainingGoalType, raceDistance: RaceDistance): G
 export default function GoalScreen() {
   const { data, updateData } = useOnboardingStore();
   const [selected, setSelected]   = useState<TrainingGoalType>(data.goalType);
+  const [secondaryGoalTypes, setSecondaryGoalTypes] = useState<TrainingGoalType[]>(data.secondaryGoalTypes ?? []);
   const [goalLabel, setGoalLabel] = useState(data.goalRaceLabel);
 
   const [raceName, setRaceName]         = useState(data.raceName);
@@ -102,6 +105,7 @@ export default function GoalScreen() {
       primaryGoal:      toLegacyGoal(selected, raceDistance),
       goalRaceLabel:    goalLabel,
       goalType:         selected,
+      secondaryGoalTypes: normalizeSupportingGoals(selected, secondaryGoalTypes),
       raceName:         selected === 'race_prep' ? raceName.trim() : '',
       raceDistance,
       raceDate:         raceDateFinal,
@@ -133,6 +137,8 @@ export default function GoalScreen() {
           </Pressable>
         ))}
       </View>
+
+      <SupportingGoals primary={selected} value={secondaryGoalTypes} onChange={setSecondaryGoalTypes} />
 
       {selected === 'race_prep' && (
         <View style={styles.raceSection}>

@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import test from 'node:test';
 import vm from 'node:vm';
 import ts from 'typescript';
+import { signInErrorMessage } from '../../src/lib/signInError';
 import { createAccountStorageBarrier, runLocalAccountCleanup } from '../../src/lib/localAccountCleanup';
 import * as manifest from '../../src/lib/localAccountCleanupManifest';
 import * as protocol from '../../src/lib/accountDeletionProtocol';
@@ -137,6 +138,7 @@ test('reopening the root after failed intent persistence cannot reuse stale auth
     stopAutoRefresh: () => undefined,
   } };
   const auth = load<typeof import('../../src/store/authStore')>('src/store/authStore.ts', {
+    '../lib/signInError': { signInErrorMessage },
     zustand: createRequire(resolve('package.json'))('zustand'),
     '@supabase/supabase-js': { isAuthRetryableFetchError: () => false },
     'expo-apple-authentication': { addRevokeListener: () => ({ remove: () => undefined }) },

@@ -60,6 +60,7 @@ export function runningVolumeBudget(input: WorkoutEngineInput, workouts: RichWor
     || (plannedQuality.richType === 'threshold' && ['strides', 'gentle_fartlek'].includes(latest.rung)));
   const recent = [...weeks[0]!, ...weeks[1]!];
   const tolerated = weeks[0]!.length >= 2 && weeks[1]!.length >= 2 && recent.every(record => {
+    if (record.runningQualityResponse && record.runningQualityResponse.value !== 'as_planned') return false;
     const effort = normalizeRunningQuality(record.runningQuality, actualRunningMinutes(record))?.rpe ?? record.rpe;
     return Number.isFinite(effort) && effort! >= 1 && effort! <= 6;
   });

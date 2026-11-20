@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { normalizeSupportingGoals, validateSupportingGoals } from '../utils/trainingGoals';
 import { captureOwnerLease, ownerLeaseIsCurrent, type OwnerLease } from './localDataOwner';
 import { waitForPersistedStoreHydration } from './trackingTaskHydration';
 import { useTrainingPlanStore, persistTrainingPlanChanges, saveTrainingPlanChoice, recoverTrainingPlanChoice } from '../store/trainingPlanStore';
@@ -96,7 +97,7 @@ function captureCurrentFocus(lease: OwnerLease, closureReason: 'replaced' | 'ope
       kind: 'goal', title: plan.goalTitle ?? plan.goalType.replaceAll('_', ' ') }];
   }
   const onboarding = useOnboardingStore.getState().data;
-  const macroPlan = isValidDateOnly(plan.programStartDate) ? alignStoredBeginnerMacro(buildMacroPlan({ goalType: plan.goalType, programmingVersion: plan.strengthProgrammingVersion,
+  const macroPlan = isValidDateOnly(plan.programStartDate) ? alignStoredBeginnerMacro(buildMacroPlan({ secondaryGoalTypes: plan.secondaryGoalTypes, goalType: plan.goalType, programmingVersion: plan.strengthProgrammingVersion,
     startDate: plan.programStartDate, races: plan.races, progressionLevel: useAthleteStore.getState().progressionLevel,
     yearsRunning: onboarding.yearsRunning, weeklyMileage: onboarding.weeklyMileage }), currentBeginnerPlan()) : undefined;
   const snapshots: GoalArchive[] = [];
@@ -118,7 +119,7 @@ function applyCurrentGoalContext() {
   const beginner = state.activePresetPlan;
   const race = state.races.find(item => item.id === state.goalRaceId);
   const title = beginner ? BEGINNER_PLAN_DEFINITIONS[beginner.goal].title : state.goalTitle || (state.goalType === 'get_faster' ? 'Get faster' : 'General Fitness');
-  useOnboardingStore.getState().updateData({ goalType: state.goalType, programStartDate: state.programStartDate ?? todayDateOnly(),
+  useOnboardingStore.getState().updateData({ goalType: state.goalType, secondaryGoalTypes: state.secondaryGoalTypes ?? [], programStartDate: state.programStartDate ?? todayDateOnly(),
     primaryGoal: race?.distance ?? 'general_fitness', goalRaceLabel: race ? `${race.name} · ${race.distance.replaceAll('_', ' ')}` : '',
     raceName: race?.name ?? '', raceDate: race?.date ?? '',
     ...(race ? { raceDistance: race.distance, racePriority: race.priority } : {}),
@@ -193,7 +194,7 @@ export function reconcileGoalLifecycle(now = new Date()): Promise<void> {
       const profile = useProfileStore.getState().profiles.athlete_default;
       const onboarding = useOnboardingStore.getState().data;
       const macroPlan = isValidDateOnly(plan.programStartDate) ? alignStoredBeginnerMacro(buildMacroPlan({
-        goalType: plan.goalType, programmingVersion: plan.strengthProgrammingVersion, startDate: plan.programStartDate, races: plan.races,
+        secondaryGoalTypes: plan.secondaryGoalTypes, goalType: plan.goalType, programmingVersion: plan.strengthProgrammingVersion, startDate: plan.programStartDate, races: plan.races,
         progressionLevel: useAthleteStore.getState().progressionLevel,
         yearsRunning: onboarding.yearsRunning, weeklyMileage: onboarding.weeklyMileage,
       }), currentBeginnerPlan()) : undefined;
@@ -244,7 +245,7 @@ async function continueOpen(): Promise<void> {
   await commitChoice(lease, 'open', snapshots, { open: true }, () => useTrainingPlanStore.getState().trainingMode === 'open');
 }
 
-type NextGoal = { title: string; goalType: TrainingGoalType; endDate: string; race?: Omit<Race, 'id'> };
+type NextGoal = { title: string; goalType: TrainingGoalType; secondaryGoalTypes?: TrainingGoalType[]; endDate: string; race?: Omit<Race, 'id'> };
 export function startNextGoal(input: NextGoal): Promise<void> {
   const captured = JSON.parse(JSON.stringify(input)) as NextGoal;
   return serializeChoice(() => startGoal(captured));
@@ -267,12 +268,14 @@ async function startGoal(input: NextGoal): Promise<void> {
   if (sessionInProgress()) throw new Error('Finish your current workout before changing your training goal.');
   const snapshots = captureCurrentFocus(lease, 'replaced');
   if (sessionInProgress()) throw new Error('Finish your current workout before changing your training goal.');
-  const choice = { ...input, title: input.title.trim(), startDate: today };
-  const requestKey = JSON.stringify({ kind: 'goal', title: choice.title, type: input.goalType, end: input.endDate, start: today,
+  const secondaryGoalTypes = validateSupportingGoals(input.goalType, input.secondaryGoalTypes);
+  const choice = { ...input, secondaryGoalTypes, title: input.title.trim(), startDate: today };
+  const requestKey = JSON.stringify({ kind: 'goal', title: choice.title, type: input.goalType, ...(secondaryGoalTypes.length ? { secondaryGoalTypes } : {}), end: input.endDate, start: today,
     race: input.race ? { name: input.race.name, date: input.race.date, distance: input.race.distance, priority: input.race.priority } : null });
   await commitChoice(lease, requestKey, snapshots, choice, () => {
     const state = useTrainingPlanStore.getState();
     return state.trainingMode === 'structured' && !state.activePresetGoal && state.goalType === input.goalType
+      && JSON.stringify(normalizeSupportingGoals(state.goalType, state.secondaryGoalTypes)) === JSON.stringify(secondaryGoalTypes)
       && state.goalTitle === choice.title && state.goalEndDate === input.endDate && state.programStartDate === today;
   }, () => hasProAccess('personalized-plans'));
 }

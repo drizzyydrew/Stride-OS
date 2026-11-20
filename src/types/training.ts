@@ -204,6 +204,11 @@ export type RunningQualityFeedback = {
   recordedAt?: number;
 };
 
+export type RunningQualityPrescription = {
+  version: 1; source: 'captured_prescription';
+  rung: RunningQualityFeedback['rung']; completedReps: number; workSeconds: number;
+};
+
 export type CompletedWorkoutRecord = {
   id:                     string;           // week-scoped key: "w1_easy_run_0"
   workoutId:              string;           // raw workout.id from generator: "easy_run"
@@ -223,6 +228,8 @@ export type CompletedWorkoutRecord = {
 
   // Extended fields — optional for backward compatibility with existing stored records
   actualDurationMinutes?: number;           // what was actually done (may differ from planned)
+  runningQualityResponse?: { version: 1; source: 'athlete_reported'; value: 'as_planned' | 'changed' | 'unsure'; recordedAt: number };
+  runningQualityPrescription?: RunningQualityPrescription; // planned work captured when this recording starts; never actual by itself
   runningQuality?: RunningQualityFeedback;  // explicit report, never inferred from the planned workout
   actualDistanceMiles?:   number;           // measured distance
   routeCoordinates?:      { lat: number; lng: number; timestamp: number; altitudeM?: number; horizontalAccuracyMeters?: number }[];

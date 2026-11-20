@@ -95,3 +95,42 @@ test('stored beginner sessions own the macro focus and never advertise unprescri
   const legacy = { ...macro, programmingVersion: undefined };
   assert.equal(alignStoredBeginnerMacro(legacy, stored), legacy);
 });
+
+test('strength-primary speed support changes an existing run slot while preserving the shared time and recovery budget', () => {
+  const base = input({ goalType: 'general_strength', macroWeek: { weekNumber: 11, startDate: '2026-11-15', phase: 'threshold', isDeload: false, isTaper: false, isRaceWeek: false, focus: 'Strength priority' } });
+  const ordinary = buildWeekPlan(base);
+  const combined = buildWeekPlan({ ...base, secondaryGoalTypes: ['get_faster', 'general_running'] });
+  const quality = (week: ReturnType<typeof buildWeekPlan>) => week.richWeek.workouts.filter(workout => !!workout.intervals);
+  assert.equal(quality(ordinary).length, 0);
+  assert.equal(quality(combined).length, 1, 'one existing run slot gets the earned speed stimulus');
+  assert.ok(combined.richWeek.workouts.filter(workout => workout.durationMinutes > 0).length <= base.runDays!.length);
+  assert.ok(combined.richWeek.workouts.reduce((sum, workout) => sum + workout.durationMinutes, 0)
+    <= ordinary.richWeek.workouts.reduce((sum, workout) => sum + workout.durationMinutes, 0) + 0.1);
+  const easyOnly = buildWeekPlan({ ...base, secondaryGoalTypes: ['get_faster'], trainingStyle: 'base_only' });
+  assert.equal(quality(easyOnly).length, 0, 'explicit easy-only preference wins over supporting speed');
+  assert.ok(JSON.stringify(easyOnly).includes('easy-only preference is active'));
+  const regressed = buildWeekPlan({ ...base, secondaryGoalTypes: ['get_faster'], recoveryScore: 30, fatigueScore: 90 });
+  assert.equal(quality(regressed).length, 0);
+});
+
+
+test('strength-primary speed support balances adjacent lower-body work without changing single-goal strength', () => {
+  const base = input({ goalType: 'general_strength', runDays: ['Mon', 'Wed', 'Fri'], liftDays: ['Tue', 'Thu'],
+    macroWeek: { ...input().macroWeek!, phase: 'threshold' } });
+  const ordinary = buildWeekPlan(base);
+  const emptySupporting = buildWeekPlan({ ...base, secondaryGoalTypes: [] });
+  assert.deepEqual({ runs: emptySupporting.richWeek.workouts, strength: emptySupporting.strengthWeek.sessions, calendar: emptySupporting.calendarMap, notes: emptySupporting.adaptations },
+    { runs: ordinary.richWeek.workouts, strength: ordinary.strengthWeek.sessions, calendar: ordinary.calendarMap, notes: ordinary.adaptations }, 'legacy single-goal strength prescriptions remain unchanged');
+  const combined = buildWeekPlan({ ...base, secondaryGoalTypes: ['get_faster'] });
+  const entries = [...combined.calendarMap.values()].flat();
+  const qualityDates = entries.filter(entry => !!(entry.workout as RichWorkout | undefined)?.intervals).map(entry => entry.date);
+  assert.equal(qualityDates.length, 1);
+  for (const entry of entries.filter(entry => entry.session)) {
+    if (qualityDates.some(date => Math.abs(new Date(date + 'T12:00:00').getTime() - new Date(entry.date + 'T12:00:00').getTime()) <= DAY)) {
+      assert.equal(isHardLowerStrengthStress(scheduled(entry)), false, 'nearby lower work is reduced within existing days');
+    }
+  }
+  assert.ok(combined.adaptations.some(note => /Lower-body work may be reduced/.test(note)));
+  const regressed = buildWeekPlan({ ...base, secondaryGoalTypes: ['get_faster'], recoveryScore: 30, fatigueScore: 90 });
+  assert.ok(regressed.richWeek.workouts.every(workout => !workout.intervals));
+});

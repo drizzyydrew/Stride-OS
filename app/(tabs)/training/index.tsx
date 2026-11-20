@@ -1417,6 +1417,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         {
           completionKey: id,
           workoutInstanceId: finalState.workoutInstanceId ?? undefined,
+          runningQualityPrescription: finalState.runningQualityPrescription,
           watchRecording: finalState.watchRecording,
           ...(finalState.raceLink ? { raceLink: finalState.raceLink } : {}),
           actualStartTime: finalState.startTime ?? undefined,
@@ -1518,6 +1519,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
         {
           completionKey: id,
           workoutInstanceId: captured?.workoutInstanceId ?? latestState.workoutInstanceId ?? undefined,
+          runningQualityPrescription: latestState.runningQualityPrescription,
           watchRecording: latestState.watchRecording,
           actualStartTime: captured?.startedAt ?? latestState.startTime ?? undefined,
           actualEndTime: captured.endedAt,
@@ -3765,7 +3767,7 @@ export default function RunningScreen() {
       {/* Sub-tab bar */}
       <FeatureTourTarget targetId="running.tabs" style={[styles.subTabBar, { backgroundColor: C.card, borderColor: C.border }]}>
         {TABS.map(t => (
-          <FeatureTourTarget key={t.key} targetId={`running.tab.${t.key}`} onActivate={() => setTab(t.key)} style={{ flex: 1, minWidth: 0 }}>
+          <FeatureTourTarget key={t.key} targetId={`running.tab.${t.key}`} onActivate={() => setTab(t.key)} style={{ flex: 1, minWidth: 0, minHeight: 44 }}>
           <TouchableOpacity
             style={[styles.subTab, tab === t.key && { backgroundColor: C.primaryDim }]}
             onPress={() => setTab(t.key)}
@@ -3810,6 +3812,8 @@ const styles = StyleSheet.create({
     fontFamily: 'CormorantGaramond_700Bold',
   },
   subTabBar: {
+    flexShrink: 0,
+    minHeight: 54,
     flexDirection: 'row',
     marginHorizontal: 16,
     borderRadius: 10,

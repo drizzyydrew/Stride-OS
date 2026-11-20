@@ -40,6 +40,7 @@ type StrengthLogEdits = Partial<Pick<StrengthLogRecord,
   'actualDuration' | 'overallRpe' | 'notes' | 'exercises'>>;
 
 type ManualStrengthEntry = {
+  templateId?: string;
   completionKey:   string;
   scheduledSessionId?: string;
   sessionType:     StrengthSessionType;
@@ -95,6 +96,7 @@ type StrengthStore = {
 
 function migrateStrengthRecord(r: Partial<StrengthLogRecord>): StrengthLogRecord {
   return {
+    templateId: typeof r.templateId==='string'?r.templateId:undefined,
     id:              r.id              ?? '',
     sessionId:       r.sessionId       ?? '',
     scheduledSessionId: r.scheduledSessionId,
@@ -262,6 +264,7 @@ export const useStrengthStore = create<StrengthStore>()(
           computeStrengthFatigue(fatigueBefore, estimatedLoad, entry.overallRpe);
 
         const record: StrengthLogRecord = {
+          templateId:      entry.templateId,
           id:              entry.completionKey,
           sessionId:       entry.completionKey,
           scheduledSessionId: entry.scheduledSessionId,

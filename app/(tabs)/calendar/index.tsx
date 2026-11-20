@@ -617,11 +617,12 @@ export default function CalendarScreen() {
     Alert.alert(entry.label, 'Choose how to use this scheduled session. This does not delete the planned session or completed history.', buttons);
   }
 
-  function renderSegment(label: string, value: CalendarView) {
+  function renderSegment(label: string, value: CalendarView, wrapped = false) {
     const selected = view === value;
     return (
       <TouchableOpacity
-        style={[styles.segment, selected && { backgroundColor: C.primaryDim }]}
+        style={[styles.segment, wrapped && { flex: 0 }, selected && { backgroundColor: C.primaryDim }]}
+        accessibilityRole="tab" accessibilityLabel={label} accessibilityState={{ selected }}
         onPress={() => setView(value)}
         activeOpacity={0.75}
       >
@@ -909,8 +910,8 @@ export default function CalendarScreen() {
 
       <FeatureTourTarget targetId="calendar.view" style={[styles.segmentWrap, { backgroundColor: C.card, borderColor: C.border }]}>
         {renderSegment('Month', 'month')}
-        <FeatureTourTarget targetId="calendar.view.week" onActivate={() => setView('week')} style={{ flex: 1 }}>{renderSegment('Week', 'week')}</FeatureTourTarget>
-        <FeatureTourTarget targetId="calendar.view.day" onActivate={() => setView('day')} style={{ flex: 1 }}>{renderSegment('Day', 'day')}</FeatureTourTarget>
+        <FeatureTourTarget targetId="calendar.view.week" onActivate={() => setView('week')} style={{ flex: 1, minHeight: 44 }}>{renderSegment('Week', 'week', true)}</FeatureTourTarget>
+        <FeatureTourTarget targetId="calendar.view.day" onActivate={() => setView('day')} style={{ flex: 1, minHeight: 44 }}>{renderSegment('Day', 'day', true)}</FeatureTourTarget>
       </FeatureTourTarget>
 
       {view === 'month' ? renderMonthView() : null}
@@ -968,6 +969,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   segmentWrap: {
+    flexShrink: 0,
+    minHeight: 54,
     flexDirection: 'row',
     gap: 4,
     borderRadius: 12,
@@ -977,7 +980,8 @@ const styles = StyleSheet.create({
   },
   segment: {
     flex: 1,
-    height: 30,
+    minHeight: 44,
+    paddingVertical: 8,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',

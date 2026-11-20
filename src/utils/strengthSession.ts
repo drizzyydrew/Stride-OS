@@ -38,6 +38,8 @@ export type BandLevel = 'extra_light' | 'light' | 'medium' | 'heavy' | 'extra_he
 
 export type ActiveSetEntry = {
   id: string;
+  dropSetGroupId?: string;
+  previousPerformance?: import('./strengthTemplates').PreviousSetPerformance;
   reps?: number;
   weight?: number;
   weightUnit?: 'lb' | 'kg';
@@ -56,6 +58,8 @@ export type ActiveSetEntry = {
 export type ActiveStrengthExercise = {
   id: string;
   canonicalExerciseId?: string;
+  templateExerciseId?: string;
+  group?: import('./strengthTemplates').StrengthExerciseGroup;
   modifiedTargets?: boolean;
   name: string;
   // Legacy prescribed shape — still the source of truth for what was
@@ -93,6 +97,7 @@ export type TrainingBlockTrackingContext = {
 };
 
 export type ActiveStrengthSession = {
+  templateId?: string;
   trackingContext?: TrainingBlockTrackingContext;
   workoutId: string;
   workoutName: string;
@@ -209,6 +214,8 @@ export function ensureExerciseShape(exercise: Partial<ActiveStrengthExercise> & 
     equipmentType: exercise.equipmentType ?? mapEquipmentType(exercise.equipment),
     notes: exercise.notes,
     canonicalExerciseId: exercise.canonicalExerciseId,
+    templateExerciseId: exercise.templateExerciseId,
+    group: exercise.group ? {...exercise.group} : undefined,
     modifiedTargets: exercise.modifiedTargets,
     substitutedFromPrescription: exercise.substitutedFromPrescription,
     plannedRpe: exercise.plannedRpe,
@@ -273,6 +280,7 @@ export function addExercise(session: ActiveStrengthSession, input: AddExerciseIn
   const exercise: ActiveStrengthExercise = {
     id: generateExerciseId(),
     name: input.name.trim() || 'Exercise',
+    canonicalExerciseId: input.canonicalExerciseId,
     sets: 0,
     reps: '',
     repScheme: input.repScheme,
@@ -291,7 +299,7 @@ export function removeExercise(session: ActiveStrengthSession, exerciseId: strin
   if (exercises.length === session.exercises.length) return session;
   return {
     ...session,
-    exercises,
+    exercises:exercises.map(ex=>ex.group&&exercises.filter(other=>other.group?.id===ex.group?.id).length<2?{...ex,group:undefined}:ex),
     completedExerciseIds: session.completedExerciseIds.filter(id => id !== exerciseId),
     currentExerciseIndex: Math.max(0, Math.min(session.currentExerciseIndex, exercises.length - 1)),
   };
@@ -382,7 +390,7 @@ export function duplicateSet(session: ActiveStrengthSession, exerciseId: string,
     const source = exercise.setEntries.find(entry => entry.id === setId);
     if (!source) return exercise;
     const index = exercise.setEntries.findIndex(entry => entry.id === setId);
-    const clone: ActiveSetEntry = { ...source, id: generateSetId(), completed: false };
+    const clone: ActiveSetEntry = { ...source, id: generateSetId(), completed: false, rpe:undefined, rir:undefined, previousPerformance:source.completed?{reps:source.reps,weight:source.weight,weightUnit:source.weightUnit,rpe:source.rpe,holdSeconds:source.holdSeconds,distanceMeters:source.distanceMeters}:source.previousPerformance };
     const setEntries = [...exercise.setEntries];
     setEntries.splice(index + 1, 0, clone);
     return { ...exercise, setEntries };

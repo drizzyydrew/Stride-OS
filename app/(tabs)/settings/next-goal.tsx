@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import { Keyboard, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
+import SupportingGoals from '../../../src/components/goals/SupportingGoals';
+import { normalizeSupportingGoals } from '../../../src/utils/trainingGoals';
 import PageSafeAreaView from '../../../src/components/layout/PageSafeAreaView';
 import ScreenHeader from '../../../src/components/layout/ScreenHeader';
 import StrideDateField from '../../../src/components/ui/StrideDateField';
@@ -44,6 +46,7 @@ export default function NextGoalScreen() {
       data: useOnboardingStore.getState().data, today: todayDateOnly() });
   });
   const [goalType, setGoalType] = useState<TrainingGoalType>(() => setupDraft?.goalType ?? GOALS.find(goal => goal.value === params.focus)?.value ?? 'general_running');
+  const [secondaryGoalTypes, setSecondaryGoalTypes] = useState<TrainingGoalType[]>(setupDraft?.secondaryGoalTypes ?? []);
   const [title, setTitle] = useState(setupDraft?.title ?? '');
   const [raceName, setRaceName] = useState(setupDraft?.raceName ?? '');
   const [distance, setDistance] = useState<RaceDistance>(setupDraft?.distance ?? '5k');
@@ -83,7 +86,7 @@ export default function NextGoalScreen() {
     inFlight.current = true; setBusy(skip ? 'skip' : 'save'); Keyboard.dismiss();
     try {
       if (skip) await continueOpenTraining();
-      else await startNextGoal({ title: title.trim(), goalType, endDate: finalEnd,
+      else await startNextGoal({ title: title.trim(), goalType, secondaryGoalTypes: normalizeSupportingGoals(goalType, secondaryGoalTypes), endDate: finalEnd,
         ...(isRace ? { race: { name: raceName.trim(), date: finalEnd, distance, priority } } : {}) });
       if (!ownerLeaseIsCurrent(lease)) throw new Error('Your account changed. Sign in with the original account before continuing.');
       router.replace((skip ? '/(tabs)/activity' : '/(tabs)/dashboard') as never);
@@ -107,6 +110,7 @@ export default function NextGoalScreen() {
         <View pointerEvents={ready && !busy ? 'auto' : 'none'} style={{ gap: 20, opacity: ready ? 1 : 0.6 }}>
           <GoalMessage>A goal is optional. You can keep training without a plan and choose one later.</GoalMessage>
           <GoalPicker label="Training focus" value={goalType} options={GOALS} onChange={setGoalType} disabled={!ready || !!busy} />
+          <SupportingGoals primary={goalType} value={secondaryGoalTypes} onChange={setSecondaryGoalTypes} disabled={!ready || !!busy} />
           <GoalField label="Block title" value={title} onChange={setTitle} disabled={!ready || !!busy} placeholder="For example, winter running" />
           {isRace ? <>
             <GoalField label="Race name" value={raceName} onChange={setRaceName} disabled={!ready || !!busy} />

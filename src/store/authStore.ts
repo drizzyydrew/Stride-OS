@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { signInErrorMessage } from '../lib/signInError';
 import type { Session, User } from '@supabase/supabase-js';
 import { createClient, isAuthRetryableFetchError } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -294,9 +295,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       const { data, error } = await withExplicitAuthAttempt(() => supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password }), () => attempt === authAttemptGeneration);
       if (attempt !== authAttemptGeneration) return STALE_AUTH_ATTEMPT;
-      return error?.message ?? await finishExplicitSignIn(data.session, attempt);
+      return error ? signInErrorMessage(error) : await finishExplicitSignIn(data.session, attempt);
     } catch (error) {
-      return attempt !== authAttemptGeneration ? STALE_AUTH_ATTEMPT : error instanceof Error ? error.message : 'Sign in could not finish. Please retry.';
+      return attempt !== authAttemptGeneration ? STALE_AUTH_ATTEMPT : signInErrorMessage(error);
     }
   },
 

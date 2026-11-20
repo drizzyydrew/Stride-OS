@@ -46,6 +46,7 @@ export type MacroWeek = {
 export type MacroPlan = {
   programmingVersion?: 1 | 2;
   goalType:        TrainingGoalType;
+  secondaryGoalTypes?: TrainingGoalType[];
   startDate:       string;      // Sunday, "YYYY-MM-DD"
   totalWeeks:      number;
   weeks:           MacroWeek[];

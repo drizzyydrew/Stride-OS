@@ -17,6 +17,8 @@ export function completedExercisesFromActiveSession(
   return exercises.map(exercise => ({
     exerciseId: exercise.canonicalExerciseId ?? exercise.id,
     name: exercise.name,
+    templateExerciseId: exercise.templateExerciseId,
+    group: exercise.group ? {...exercise.group} : undefined,
     equipmentType: exercise.equipmentType,
     skipped: exercise.skipped || undefined,
     substitutedFromExerciseId: exercise.substitutedFromId,
@@ -49,6 +51,7 @@ export function completedExercisesFromActiveSession(
       rpe: entry.rpe ?? rpeByExercise[exercise.id],
       isWarmup: entry.isWarmup,
       completed,
+      dropSetGroupId: entry.dropSetGroupId,
       notes: entry.notes,
       };
     }),

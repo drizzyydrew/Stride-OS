@@ -4,6 +4,7 @@
 // with all data gathered across steps 1–8. Generates baseline calibration and
 // navigates to the main dashboard.
 
+import { trainingGoalBlend } from '../../src/utils/trainingGoals';
 import {
   ActivityIndicator,
   Pressable,
@@ -252,7 +253,7 @@ export default function CompleteScreen() {
       // storage failure here must not leave a new unpaid account structured.
       if (trainingChoice === 'open') await saveTrainingPlanChoice(currentLease!, { open: true }, current);
       if (trainingChoice === 'structured') {
-        setGoalType(data.goalType);
+        setGoalType(data.goalType, data.secondaryGoalTypes);
         setProgramStartDate(startDate);
       }
       if (trainingChoice === 'structured' && data.goalType === 'race_prep' && data.raceName && data.raceDate) {
@@ -306,7 +307,7 @@ export default function CompleteScreen() {
       {/* Summary card */}
       <View style={s.summaryCard}>
         <Text style={s.summaryTitle}>PROFILE SUMMARY</Text>
-        <SummaryRow label="Goal"           value={data.goalType === 'get_faster' ? 'Get faster' : GOAL_LABELS[data.primaryGoal] ?? data.primaryGoal} />
+        <SummaryRow label="Goal"           value={trainingGoalBlend(data.goalType, data.secondaryGoalTypes).summary} />
         <SummaryRow label="Training style" value={STYLE_LABELS[data.trainingStyle] ?? data.trainingStyle} />
         <SummaryRow label="Strength"       value={STRENGTH_LABELS[data.strengthLevel] ?? data.strengthLevel} />
         <SummaryRow

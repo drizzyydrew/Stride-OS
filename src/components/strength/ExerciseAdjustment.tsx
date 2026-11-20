@@ -1,3 +1,4 @@
+import ExerciseMuscleTags from './ExerciseMuscleTags';
 import { useMemo, useRef, useState } from 'react';
 import { Text, View, useWindowDimensions } from 'react-native';
 import { Collapsible, Host, RNHostView, Switch } from '@expo/ui';
@@ -26,7 +27,7 @@ const ENGINE_OPTIONS: Choice[] = Object.values(STRENGTH_EXERCISES).flatMap(ex =>
 const CANDIDATES: Choice[] = [...ENGINE_OPTIONS, ...EXERCISE_ADAPTATION_OPTIONS].filter((item, index, all) =>
   all.findIndex(other => other.name.toLowerCase() === item.name.toLowerCase()) === index);
 
-export default function ExerciseAdjustment({ exercise, workoutInstanceId }: { exercise: ActiveStrengthExercise; workoutInstanceId: string }) {
+export default function ExerciseAdjustment({ exercise, workoutInstanceId, showMuscleTags=true }: { exercise: ActiveStrengthExercise; workoutInstanceId: string; showMuscleTags?:boolean }) {
   const C = useColors();
   const mode = useThemeMode();
   const { fontScale } = useWindowDimensions();
@@ -119,8 +120,8 @@ export default function ExerciseAdjustment({ exercise, workoutInstanceId }: { ex
     finally { busy.current = false; setSaving(false); }
   }
 
-  if (markedComplete || exercise.skipped) return <Text style={copy}>Recorded work is kept. Adjust a remaining exercise when needed.</Text>;
-  return <Host matchContents={{ vertical: true }} colorScheme={mode} seedColor={C.primary} ignoreSafeArea="all" style={{ width: '100%', minHeight: 44 }}>
+  if (markedComplete || exercise.skipped) return <View>{showMuscleTags?<ExerciseMuscleTags exercise={exercise} />:null}<Text style={copy}>Recorded work is kept. Adjust a remaining exercise when needed.</Text></View>;
+  return <View>{showMuscleTags?<ExerciseMuscleTags exercise={exercise} />:null}<Host matchContents={{ vertical: true }} colorScheme={mode} seedColor={C.primary} ignoreSafeArea="all" style={{ width: '100%', minHeight: 44 }}>
     <Collapsible label="Adjust exercise" labelStyle={{ color: C.primary, fontSize: 14 * fontScale, fontWeight: '600' }} isOpen={open} onOpenChange={setOpen}>
       {open ? <RNHostView matchContents={{ vertical: true }}><View style={{ width: '100%', minWidth: 0, gap: 12, paddingVertical: 12 }}>
         <GoalPicker label="What would help?" value={reason} options={REASONS} disabled={saving} onChange={value => { setReason(value); setSelected(''); setSetupConfirmed(false); setStatus(''); }} />
@@ -146,5 +147,5 @@ export default function ExerciseAdjustment({ exercise, workoutInstanceId }: { ex
         {status ? <Text accessibilityRole="alert" style={copy}>{status}</Text> : null}
       </View></RNHostView> : null}
     </Collapsible>
-  </Host>;
+  </Host></View>;
 }

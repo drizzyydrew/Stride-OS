@@ -8,6 +8,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import * as calibration from '../../src/utils/calibrationEngine';
 import * as weights from '../../src/utils/profilePower';
 import * as measurements from '../../src/utils/profileMeasurements';
+import * as trainingGoals from '../../src/utils/trainingGoals';
 import { saveProfileMeasurement } from '../../src/lib/profileMeasurementEditing';
 import { withAutomaticActivityPower } from '../../src/utils/automaticActivityPower';
 import type { AthleteProfile } from '../../src/types/athlete';
@@ -35,7 +36,7 @@ async function stores(options: { profileWeight?: number; onboardingWeight?: numb
     const mocks: Record<string, any> = { zustand: { create }, 'zustand/middleware': { persist },
       './persistStorage': { createAppJSONStorage: () => storage }, '../utils/calibrationEngine': calibration,
       '../lib/localDataOwner': { ownerLeaseIsCurrent: () => false },
-      '../utils/profilePower': weights, '../utils/profileMeasurements': measurements,
+      '../utils/profilePower': weights, '../utils/profileMeasurements': measurements, '../utils/trainingGoals': trainingGoals,
       '../hooks/useLocalCalendarDay': { useLocalCalendarDay: () => '2026-11-15' }, react: { useMemo: (fn: () => unknown) => fn() }, ...additional };
     runInNewContext(ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText,
       { module, exports: module.exports, require: (name: string) => { assert.ok(mocks[name], `unmocked store import ${name}`); return mocks[name]; } });

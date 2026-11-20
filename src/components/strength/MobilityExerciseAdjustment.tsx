@@ -1,3 +1,4 @@
+import ExerciseMuscleTags from './ExerciseMuscleTags';
 import { useState } from 'react';
 import { Text, View, useWindowDimensions } from 'react-native';
 import { Collapsible, Host, RNHostView, Switch } from '@expo/ui';
@@ -23,7 +24,7 @@ export default function MobilityExerciseAdjustment({ exercise, onChange }: {
   const [confirmed, setConfirmed] = useState(false);
   const advice = getExerciseAdjustment({ exercise, reason, candidates: MOBILITY_EXERCISES });
   const copy = { color: C.textMuted, fontSize: 13, lineHeight: 20 };
-  return <Host matchContents={{ vertical: true }} colorScheme={mode} seedColor={C.primary} ignoreSafeArea="all" style={{ width: '100%', minHeight: 44 }}>
+  return <View><ExerciseMuscleTags exercise={exercise} /><Host matchContents={{ vertical: true }} colorScheme={mode} seedColor={C.primary} ignoreSafeArea="all" style={{ width: '100%', minHeight: 44 }}>
     <Collapsible label="Adjust this movement" labelStyle={{ color: C.primary, fontSize: 14 * fontScale, fontWeight: '600' }} isOpen={open} onOpenChange={setOpen}>
       {open ? <RNHostView matchContents={{ vertical: true }}><View style={{ width: '100%', minWidth: 0, gap: 12, paddingVertical: 12 }}>
         <GoalPicker label="What would help?" value={reason} options={REASONS} onChange={value => { setReason(value); setAlternative(''); setConfirmed(false); }} />
@@ -42,5 +43,5 @@ export default function MobilityExerciseAdjustment({ exercise, onChange }: {
         <Text style={copy}>Changes apply to this workout. Work already performed is kept in the completion notes.</Text>
       </View></RNHostView> : null}
     </Collapsible>
-  </Host>;
+  </Host></View>;
 }

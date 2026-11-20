@@ -49,6 +49,7 @@ function harness() {
     react, 'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': { Text: 'Text', View: 'View', useWindowDimensions: () => ({ fontScale: 1 }) },
     '@expo/ui': { Collapsible: 'Collapsible', Host: 'Host', RNHostView: 'RNHostView', Switch: 'Switch' },
+    './ExerciseMuscleTags': { default: 'ExerciseMuscleTags' },
     '../goals/GoalLifecycleCard': { GoalAction: 'GoalAction', GoalPicker: 'GoalPicker' },
     '../../store/themeStore': { useThemeMode: () => 'dark' }, '../../theme/useColors': { useColors: () => ({}) },
     '../../lib/localDataOwner': { captureOwnerLease: () => current ? { ownerUserId: 'owner', generation: 1 } : null, ownerLeaseIsCurrent: () => current },

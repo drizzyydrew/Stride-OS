@@ -6,6 +6,7 @@ import { isValidRaceActivityLink } from '../utils/raceLink';
 
 export const RUN_COMPLETION_JOURNAL_KEY = 'strideos-run-completion-journal-v1';
 export type LiveRunEntry = RunCompletionIdentity & {
+  runningQualityPrescription?: import('../types/training').RunningQualityPrescription;
   completionKey: string;
   type: WorkoutType;
   intensity: WorkoutIntensity;

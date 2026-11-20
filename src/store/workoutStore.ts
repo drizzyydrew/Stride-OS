@@ -16,7 +16,7 @@ import { captureOwnerLease, ownerLeaseIsCurrent, type OwnerLease } from '../lib/
 import { RunCompletionJournal, type LiveRunEntry, type PendingRunCompletion } from '../lib/runCompletionJournal';
 import { matchingWatchRecording, runCompletionKey, sameRecording, type RunWorkoutRecord } from '../utils/runCompletionIdentity';
 import { isValidRaceActivityLink } from '../utils/raceLink';
-import { canReportRunningQuality, normalizeRunningQuality } from '../utils/runningQualityFeedback';
+import { canReportRunningQuality, normalizeRunningQuality, normalizeRunningQualityPrescription, normalizeRunningQualityResponse } from '../utils/runningQualityFeedback';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -117,6 +117,8 @@ function migrateRecord(r: Partial<RunWorkoutRecord>): RunWorkoutRecord {
     recoveryDelta:          r.recoveryDelta          ?? 0,
     // Optional extended fields — preserved if present
     actualDurationMinutes: r.actualDurationMinutes,
+    runningQualityPrescription: normalizeRunningQualityPrescription(r.runningQualityPrescription),
+    runningQualityResponse: normalizeRunningQualityResponse(r.runningQualityResponse),
     runningQuality: normalizeRunningQuality(r.runningQuality, r.actualDurationMinutes),
     actualDistanceMiles:   r.actualDistanceMiles,
     routeCoordinates:      r.routeCoordinates,
@@ -529,6 +531,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           associatedTrainingBlockId: entry.associatedTrainingBlockId,
           associatedGoalId:       entry.associatedGoalId,
           activityMetrics:        entry.activityMetrics,
+          runningQualityPrescription: normalizeRunningQualityPrescription(entry.runningQualityPrescription),
           indoor:                 entry.indoor,
           activitySubtype:        entry.activitySubtype,
           routeCoordinates:       entry.routeCoordinates,
@@ -583,24 +586,60 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
 /** One explicit report on an exact saved run. Do not publish training evidence
  * until its local bytes are confirmed, or reconstruct it from a planned label. */
-export function saveRunningQualityFeedback(id: string, feedback: RunningQualityFeedback | null, lease: OwnerLease): Promise<void> {
+export function saveRunningQualityFeedback(id: string, feedback: RunningQualityFeedback | null, lease: OwnerLease,
+  response?: CompletedWorkoutRecord['runningQualityResponse'], guard?: { expectedRecord: CompletedWorkoutRecord; isCurrent: () => boolean }): Promise<void> {
+  const signature = (record: CompletedWorkoutRecord | undefined) => JSON.stringify(record ? {
+    id: record.id, workoutId: record.workoutId, timestamp: record.timestamp, actualDurationMinutes: record.actualDurationMinutes,
+    prescription: normalizeRunningQualityPrescription(record.runningQualityPrescription),
+  } : null);
+  // Capture before entering the queue; a later same-ID record is not the editor's original.
+  const expectedSignature = guard ? signature(guard.expectedRecord) : null;
+  const guardCurrent = () => !guard || guard.isCurrent()
+    && useWorkoutStore.getState().history.find(record => record.id === id) === guard.expectedRecord
+    && signature(guard.expectedRecord) === expectedSignature;
   return serializedCompletion(async () => {
     for (let attempt = 0; attempt < 3; attempt++) {
       if (!ownerLeaseIsCurrent(lease) || !useWorkoutStore.persist.hasHydrated()) throw new Error('Run history is not ready for this account');
+      if (!guardCurrent()) throw new Error('Workout or athlete changed. Reopen feedback for the current saved run.');
       const state = useWorkoutStore.getState();
       const original = state.history.find(record => record.id === id);
       if (!canReportRunningQuality(original) || (original?.ownerUserId && original.ownerUserId !== lease.ownerUserId)) throw new Error('This saved run cannot accept a quality report');
       const quality = feedback === null ? undefined : normalizeRunningQuality(feedback, original!.actualDurationMinutes);
       if (feedback !== null && !quality) throw new Error('Check the completed repeats, work time and effort against the actual run duration');
-      const updated = { ...original!, runningQuality: quality };
+      const normalizedResponse = response ? normalizeRunningQualityResponse(response) : undefined;
+      if (response && !normalizedResponse) throw new Error('Workout feedback is invalid');
+      if (normalizedResponse && (normalizedResponse.value === 'as_planned') !== !!quality) throw new Error('Feedback and confirmed work must agree');
+      if (normalizedResponse?.value === 'as_planned') {
+        const plan = normalizeRunningQualityPrescription(original!.runningQualityPrescription);
+        if (!plan || !quality || plan.rung !== quality.rung || plan.completedReps !== quality.completedReps || plan.workSeconds !== quality.workSeconds) {
+          throw new Error('Confirmed work no longer matches the original workout. Reopen feedback.');
+        }
+      }
+      const updated = { ...original!, runningQuality: quality,
+        ...(normalizedResponse ? { runningQualityResponse: normalizedResponse } : {}) };
       const history = state.history.map(record => record.id === id ? updated : record);
-      const encoded = JSON.stringify({ state: { history, completedWorkouts: state.completedWorkouts }, version: 0 });
+      const encode = (value: Pick<WorkoutStore, 'history' | 'completedWorkouts'>) => JSON.stringify({ state: { history: value.history, completedWorkouts: value.completedWorkouts }, version: 0 });
+      const encoded = encode({ history, completedWorkouts: state.completedWorkouts });
       const storage = getAppStorage();
+      async function rejectRetiredDraft() {
+        if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed while saving the report');
+        if (guardCurrent()) return;
+        // The rejected write may already be on disk. Restore this owner's latest
+        // unmodified state, never the editor's old history over a newer record.
+        for (let retry = 0; retry < 3 && ownerLeaseIsCurrent(lease); retry++) {
+          const latest = useWorkoutStore.getState();
+          await storage.setItem('workout-store', encode(latest));
+          if (!ownerLeaseIsCurrent(lease)) break;
+          const current = useWorkoutStore.getState();
+          if (current.history === latest.history && current.completedWorkouts === latest.completedWorkouts) break;
+        }
+        throw new Error('Workout or athlete changed. Reopen feedback; the saved run was retained.');
+      }
       await storage.setItem('workout-store', encoded);
-      if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed while saving the report');
+      await rejectRetiredDraft();
       if (useWorkoutStore.getState().history !== state.history || useWorkoutStore.getState().completedWorkouts !== state.completedWorkouts) continue;
       const saved = await storage.getItemOnce('workout-store');
-      if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed while confirming the report');
+      await rejectRetiredDraft();
       if (saved !== encoded) throw new Error('Report saving could not be confirmed. Your run was kept; retry Save.');
       if (useWorkoutStore.getState().history !== state.history || useWorkoutStore.getState().completedWorkouts !== state.completedWorkouts) continue;
       useWorkoutStore.setState({ history });

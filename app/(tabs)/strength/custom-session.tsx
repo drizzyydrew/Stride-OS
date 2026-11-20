@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import ExerciseMuscleTags from '../../../src/components/strength/ExerciseMuscleTags';
+import CustomExercisePicker from '../../../src/components/strength/CustomExercisePicker';
+import SaveWorkoutTemplateControl from '../../../src/components/strength/SaveWorkoutTemplateControl';
+import StrengthSetEditor from '../../../src/components/strength/StrengthSetEditor';
+import { GoalAction } from '../../../src/components/goals/GoalLifecycleCard';
+import { captureOwnerLease, ownerLeaseIsCurrent, getLocalDataOwner } from '../../../src/lib/localDataOwner';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,18 +40,6 @@ function formatElapsed(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
-const EQUIPMENT_CHOICES: { type: EquipmentType; label: string }[] = [
-  { type: 'bodyweight', label: 'Bodyweight' },
-  { type: 'barbell', label: 'Barbell' },
-  { type: 'dumbbell', label: 'Dumbbell' },
-  { type: 'kettlebell', label: 'Kettlebell' },
-  { type: 'cable', label: 'Cable' },
-  { type: 'machine', label: 'Machine' },
-  { type: 'resistance_band', label: 'Band' },
-  { type: 'suspension_trainer', label: 'Suspension' },
-  { type: 'medicine_ball', label: 'Med Ball' },
-  { type: 'other', label: 'Other' },
-];
 
 function warmupKind(scheduledCategory: string | undefined): WarmupSessionKind {
   if (scheduledCategory === 'mobility') return 'mobility';
@@ -80,8 +74,11 @@ export default function CustomStrengthSessionScreen() {
   const toggleSetCompleted = useActiveStrengthSessionStore(state => state.toggleSetCompleted);
 
   const [elapsed, setElapsed] = useState(() => activeStrengthElapsedSeconds(session));
-  const [newExerciseName, setNewExerciseName] = useState('');
-  const [newExerciseEquipment, setNewExerciseEquipment] = useState<EquipmentType>('bodyweight');
+  const editorLease=useRef(captureOwnerLease());
+  const [selectMode,setSelectMode]=useState(false);
+  const [selectedIds,setSelectedIds]=useState<string[]>([]);
+  const [actionsOpen,setActionsOpen]=useState(false);
+  const [groupStatus,setGroupStatus]=useState('');
   const [warmupOpen, setWarmupOpen] = useState(false);
 
   useEffect(() => {
@@ -90,6 +87,10 @@ export default function CustomStrengthSessionScreen() {
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(()=>getLocalDataOwner()?.onInvalidated(()=>{setSelectMode(false);setSelectedIds([]);setActionsOpen(false);}),[]);
+
+  const groupLabels=useMemo(()=>{const labels=new Map<string,string>();const counts={superset:0,circuit:0};for(const exercise of session?.exercises??[]){const g=exercise.group;if(g&&!labels.has(g.id)){counts[g.kind]++;labels.set(g.id,`${g.kind==='superset'?'Superset':'Circuit'} ${counts[g.kind]}`);}}return labels;},[session?.exercises]);
 
   const isCustom = Boolean(session && session.source === 'custom');
   const warmup = useMemo(() => warmupForSession(warmupKind(session?.scheduledCategory)), [session?.scheduledCategory]);
@@ -125,11 +126,19 @@ export default function CustomStrengthSessionScreen() {
     resumeStrideWatchWorkout().catch(() => undefined);
   }
 
-  function commitAddOrSubstitute() {
-    if (!newExerciseName.trim()) return;
-    addExercise({ name: newExerciseName.trim(), equipmentType: newExerciseEquipment });
-    setNewExerciseName('');
-    setNewExerciseEquipment('bodyweight');
+  function currentEditor() {
+    const current=useActiveStrengthSessionStore.getState().session;
+    const lease=captureOwnerLease();return ownerLeaseIsCurrent(editorLease.current)&&!!lease&&lease.ownerUserId===editorLease.current?.ownerUserId&&ownerLeaseIsCurrent(lease)&&current?.workoutInstanceId===activeSession.workoutInstanceId&&current.source==='custom';
+  }
+  function groupSelected(kind:'superset'|'circuit'|null) {
+    if(!currentEditor())return;const selected=useActiveStrengthSessionStore.getState().session!.exercises.filter(ex=>selectedIds.includes(ex.id)&&!ex.skipped).map(ex=>ex.id);
+    if(kind&&(selected.length<2||kind==='superset'&&selected.length!==2)){setGroupStatus('Select two available exercises for a superset, or two or more for a circuit.');return;}
+    useActiveStrengthSessionStore.getState().groupExercises(selected,kind);
+    setGroupStatus(kind?`${kind==='superset'?'Superset':'Circuit'} saved. Complete and record each set separately.`:'Selected exercise groups removed.');setActionsOpen(false);setSelectedIds([]);setSelectMode(false);
+  }
+  function makeDropSet() {
+    if(!currentEditor()||selectedIds.length!==1)return;const exercise=useActiveStrengthSessionStore.getState().session!.exercises.find(ex=>ex.id===selectedIds[0]&&!ex.skipped);if(!exercise){setGroupStatus('Choose an available exercise for a drop set.');return;}useActiveStrengthSessionStore.getState().addDropSet(exercise.id);
+    setGroupStatus('Drop-set stage added to that exercise. Enter an appropriate lower load; no stage is marked complete.');setActionsOpen(false);setSelectedIds([]);setSelectMode(false);
   }
 
   function saveDraftAndExit() {
@@ -186,6 +195,7 @@ export default function CustomStrengthSessionScreen() {
 
     manualLog({
       completionKey: `custom_${activeSession.workoutInstanceId}`,
+      templateId: activeSession.templateId,
       scheduledSessionId: activeSession.scheduledSessionId,
       sessionType: scheduledSession?.strengthSession?.sessionType ?? 'full_body',
       goal: scheduledSession?.strengthSession?.goal ?? 'maintenance',
@@ -229,12 +239,24 @@ export default function CustomStrengthSessionScreen() {
         eyebrow="CUSTOM WORKOUT"
         title={session.workoutName}
         onBack={saveDraftAndExit}
-        titleNumberOfLines={1}
+        titleNumberOfLines={2}
         right={<Text style={[styles.timer, { color: C.primary }]}>{formatElapsed(elapsed)}</Text>}
       />
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: LAYOUT.tabBarHeight + 40 }]} keyboardShouldPersistTaps="handled">
         <View style={[styles.progressCard, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
-          <Text style={[styles.progress, { color: C.text }]}>{session.exercises.filter(e => !e.skipped).length} exercises added</Text>
+          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
+            <Text style={[styles.progress, { color: C.text }]}>{session.exercises.filter(e => !e.skipped).length} exercises added</Text>
+            <View style={{flexDirection:'row',gap:8}}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={selectMode?'Finish selecting exercises':'Select exercises'} onPress={()=>{setSelectMode(value=>!value);setSelectedIds([]);setActionsOpen(false);}} style={styles.secondaryButton}><Text style={[styles.secondaryText,{color:C.primary}]}>{selectMode?'Done':'Select'}</Text></TouchableOpacity>
+              {selectMode&&selectedIds.length?<TouchableOpacity accessibilityRole="button" accessibilityLabel="More actions for selected exercises" onPress={()=>setActionsOpen(value=>!value)} style={styles.secondaryButton}><Ionicons name="ellipsis-horizontal" size={22} color={C.primary}/></TouchableOpacity>:null}
+            </View>
+          </View>
+          {actionsOpen?<View style={{gap:8,marginTop:12}}>
+            <Text style={{color:C.textMuted,fontSize:13}}>{selectedIds.length} selected. Superset pairs two exercises; a circuit can contain two or more. A drop set is a sequence within one exercise.</Text>
+            {selectedIds.length>=2?<><GoalAction label="Make superset" disabled={selectedIds.length!==2} secondary onPress={()=>groupSelected('superset')}/><GoalAction label="Make circuit" secondary onPress={()=>groupSelected('circuit')}/></>:<GoalAction label="Add drop-set stage" secondary onPress={makeDropSet}/>}
+            <GoalAction label="Remove selected groups" secondary onPress={()=>groupSelected(null)}/>
+          </View>:null}
+          {groupStatus?<Text accessibilityRole="alert" style={{color:C.textMuted,fontSize:13,lineHeight:19,marginTop:8}}>{groupStatus}</Text>:null}
           <View style={styles.actions}>
             <TouchableOpacity style={[styles.secondaryButton, { borderColor: C.border }]} onPress={session.status === 'active' ? pauseSession : resumeSession}>
               <Ionicons name={session.status === 'active' ? 'pause' : 'play'} size={16} color={C.text} />
@@ -248,6 +270,8 @@ export default function CustomStrengthSessionScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        <View style={{marginBottom:16}}><SaveWorkoutTemplateControl key={session.workoutInstanceId} session={session}/></View>
 
         {warmup.items.length > 0 ? (
           <TouchableOpacity
@@ -272,6 +296,10 @@ export default function CustomStrengthSessionScreen() {
             total={session.exercises.length}
             C={C}
             weightUnit={weightUnit}
+            groupLabel={exercise.group?groupLabels.get(exercise.group.id):undefined}
+            selectMode={selectMode}
+            selected={selectedIds.includes(exercise.id)}
+            onSelect={()=>{if(!exercise.skipped&&currentEditor())setSelectedIds(ids=>ids.includes(exercise.id)?ids.filter(id=>id!==exercise.id):[...ids,exercise.id]);}}
             onAddSet={() => addSet(exercise.id)}
             onDuplicateSet={setId => duplicateSet(exercise.id, setId)}
             onRemoveSet={setId => removeSet(exercise.id, setId)}
@@ -282,40 +310,12 @@ export default function CustomStrengthSessionScreen() {
             onSkipExercise={() => skipExercise(exercise.id, !exercise.skipped)}
             onReorder={direction => reorderExercise(exercise.id, direction)}
           />
-          <ExerciseAdjustment exercise={exercise} workoutInstanceId={session.workoutInstanceId} />
+          <ExerciseAdjustment exercise={exercise} workoutInstanceId={session.workoutInstanceId} showMuscleTags={false} />
           </View>
         ))}
 
         <View style={[styles.summaryCard, { backgroundColor: C.card, borderColor: C.border, marginTop: 8 }]}>
-          <Text style={[styles.exerciseName, { color: C.text }]}>Add Exercise</Text>
-          <TextInput
-            value={newExerciseName}
-            onChangeText={setNewExerciseName}
-            placeholder="Exercise name, e.g. Goblet Squat"
-            placeholderTextColor={C.textDim}
-            style={[styles.input, { color: C.text, borderColor: C.border, backgroundColor: C.bg }]}
-          />
-          <View style={styles.chipRow}>
-            {EQUIPMENT_CHOICES.map(choice => (
-              <TouchableOpacity
-                key={choice.type}
-                style={[styles.chip, {
-                  backgroundColor: newExerciseEquipment === choice.type ? C.primaryDim : C.cardAlt,
-                  borderColor: newExerciseEquipment === choice.type ? C.primary : C.border,
-                }]}
-                onPress={() => setNewExerciseEquipment(choice.type)}
-              >
-                <Text style={[styles.chipText, { color: newExerciseEquipment === choice.type ? C.primary : C.textMuted }]}>{choice.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <TouchableOpacity
-            style={[styles.completeButton, { backgroundColor: newExerciseName.trim() ? C.primary : C.cardAlt, marginTop: 10 }]}
-            onPress={commitAddOrSubstitute}
-            disabled={!newExerciseName.trim()}
-          >
-            <Text style={[styles.completeText, { color: newExerciseName.trim() ? C.onPrimary : C.textMuted }]}>Add Exercise</Text>
-          </TouchableOpacity>
+          <CustomExercisePicker key={session.workoutInstanceId} onAdd={input=>{if(currentEditor())addExercise(input);}}/>
         </View>
 
         <TouchableOpacity style={[styles.finishButton, { backgroundColor: C.primary }]} onPress={finish}>
@@ -326,62 +326,8 @@ export default function CustomStrengthSessionScreen() {
   );
 }
 
-function SetRow({ set, index, C, weightUnit, onDuplicate, onRemove, onEdit, onToggleWarmup, onToggleCompleted }: {
-  set: ActiveSetEntry;
-  index: number;
-  C: ReturnType<typeof useColors>;
-  weightUnit: 'lb' | 'kg';
-  onDuplicate: () => void;
-  onRemove: () => void;
-  onEdit: (patch: Partial<Omit<ActiveSetEntry, 'id'>>) => void;
-  onToggleWarmup: () => void;
-  onToggleCompleted: () => void;
-}) {
-  return (
-    <View style={[styles.setRow, { borderColor: C.border, backgroundColor: set.isWarmup ? C.cardAlt : C.card }]}>
-      <Text style={[styles.setIndex, { color: C.textDim }]}>{set.isWarmup ? 'W' : index + 1}</Text>
-      <TextInput
-        value={set.reps != null ? String(set.reps) : ''}
-        onChangeText={value => onEdit({ reps: value ? Number(value.replace(/[^0-9]/g, '')) : undefined })}
-        placeholder="reps"
-        placeholderTextColor={C.textDim}
-        keyboardType="number-pad"
-        style={[styles.setInput, { color: C.text, borderColor: C.border }]}
-      />
-      <TextInput
-        value={set.weight != null ? String(set.weight) : ''}
-        onChangeText={value => onEdit({ weight: value ? Number(value.replace(/[^0-9.]/g, '')) : undefined, weightUnit })}
-        placeholder={weightUnit}
-        placeholderTextColor={C.textDim}
-        keyboardType="decimal-pad"
-        style={[styles.setInput, { color: C.text, borderColor: C.border }]}
-      />
-      <TextInput
-        value={set.rpe != null ? String(set.rpe) : ''}
-        onChangeText={value => onEdit({ rpe: value ? Number(value.replace(/[^0-9]/g, '')) : undefined })}
-        placeholder="RPE"
-        placeholderTextColor={C.textDim}
-        keyboardType="number-pad"
-        style={[styles.setInput, { color: C.text, borderColor: C.border }]}
-      />
-      <TouchableOpacity onPress={onToggleWarmup} hitSlop={6}>
-        <Ionicons name="flame-outline" size={18} color={set.isWarmup ? C.warning : C.textDim} />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={onDuplicate} hitSlop={6}>
-        <Ionicons name="copy-outline" size={18} color={C.textDim} />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={onRemove} hitSlop={6}>
-        <Ionicons name="trash-outline" size={18} color={C.critical} />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={onToggleCompleted} hitSlop={6}>
-        <Ionicons name={set.completed ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={set.completed ? C.primary : C.textDim} />
-      </TouchableOpacity>
-    </View>
-  );
-}
-
 function ExerciseCard({
-  exercise, index, total, C, weightUnit,
+  exercise, index, total, C, weightUnit, selectMode, selected, onSelect, groupLabel,
   onAddSet, onDuplicateSet, onRemoveSet, onEditSet, onToggleWarmup, onToggleCompleted,
   onRemoveExercise, onSkipExercise, onReorder,
 }: {
@@ -390,6 +336,7 @@ function ExerciseCard({
   total: number;
   C: ReturnType<typeof useColors>;
   weightUnit: 'lb' | 'kg';
+  selectMode:boolean; selected:boolean; onSelect:()=>void; groupLabel?:string;
   onAddSet: () => void;
   onDuplicateSet: (setId: string) => void;
   onRemoveSet: (setId: string) => void;
@@ -403,9 +350,12 @@ function ExerciseCard({
   return (
     <View style={[styles.exerciseCard, { backgroundColor: exercise.skipped ? C.cardAlt : C.card, borderColor: C.border, opacity: exercise.skipped ? 0.6 : 1 }]}>
       <View style={styles.exerciseHeader}>
+        {selectMode?<TouchableOpacity accessibilityRole="checkbox" accessibilityLabel={`Select ${exercise.name}`} accessibilityState={{checked:selected,disabled:Boolean(exercise.skipped)}} disabled={exercise.skipped} onPress={onSelect} style={{minWidth:44,minHeight:44,justifyContent:'center'}}><Ionicons name={selected?'checkbox':'square-outline'} size={24} color={C.primary}/></TouchableOpacity>:null}
         <View style={{ flex: 1 }}>
           <Text style={[styles.exerciseName, { color: C.text }]}>{exercise.name}{exercise.skipped ? ' (skipped)' : ''}</Text>
           <Text style={[styles.meta, { color: C.textMuted }]}>{exercise.equipmentType ?? 'other'}</Text>
+          <ExerciseMuscleTags exercise={exercise}/>
+          {exercise.group?<Text style={[styles.meta,{color:C.primary}]}>{groupLabel}</Text>:null}
         </View>
         <TouchableOpacity onPress={() => onReorder('up')} disabled={index === 0} hitSlop={6}>
           <Ionicons name="chevron-up" size={18} color={index === 0 ? C.textDim : C.text} />
@@ -422,24 +372,10 @@ function ExerciseCard({
       </View>
       {!exercise.skipped ? (
         <View style={{ marginTop: 8 }}>
-          {exercise.setEntries.map((set, setIndex) => (
-            <SetRow
-              key={set.id}
-              set={set}
-              index={setIndex}
-              C={C}
-              weightUnit={weightUnit}
-              onDuplicate={() => onDuplicateSet(set.id)}
-              onRemove={() => onRemoveSet(set.id)}
-              onEdit={patch => onEditSet(set.id, patch)}
-              onToggleWarmup={() => onToggleWarmup(set.id)}
-              onToggleCompleted={() => onToggleCompleted(set.id)}
-            />
-          ))}
-          <TouchableOpacity style={[styles.addSetButton, { borderColor: C.border }]} onPress={onAddSet}>
-            <Ionicons name="add" size={16} color={C.primary} />
-            <Text style={[styles.secondaryText, { color: C.primary }]}>Add Set</Text>
-          </TouchableOpacity>
+          <StrengthSetEditor sets={exercise.setEntries} equipmentType={exercise.equipmentType} weightUnit={weightUnit}
+            onAdd={onAddSet} onDuplicate={onDuplicateSet} onRemove={onRemoveSet} onEdit={onEditSet}
+            onToggleWarmup={onToggleWarmup} onToggleCompleted={onToggleCompleted}/>
+
         </View>
       ) : null}
     </View>

@@ -1,0 +1,14 @@
+Build 123: clearer libraries, reusable workouts and shared goal priorities.
+
+• Restored visible Strength, Presets, Mobility and other top-tab names.
+• Preset/Mobility libraries: choose Recommended or All, then open Filters. Combine target muscles/areas, existing categories and equipment where available. A maximum of 30 minutes includes shorter workouts. Apply updates results and closes the panel; Cancel discards draft choices.
+• Do My Own Workout: search known exercises, inspect muscle tags/setup/purpose and filter with native wheel choices. Weekly muscle work distinguishes direct, supporting and practice sets; warm-ups and unfinished targets do not count.
+• Custom workouts: Select exercises, then use the three-dot menu. Pair two in a superset or group two or more in a circuit. A drop set adds stages within one exercise. Every stage still needs its actual work logged.
+• Save a named workout and reopen it through Saved workouts. Order/groups are retained; prior loads/RPE are references, not new completed work. Check stored pounds versus current kilograms.
+• One primary training goal plus up to two supporting goals uses one schedule/time/recovery budget. No automatic extra sessions. Existing active and completed work stays intact.
+• The detailed Faster-work form is replaced with compact optional Workout feedback for captured original interval targets. Unknown/changed work stays conservative. No numeric interval report or hard workout is needed for this UI check.
+• Everyday equivalent now uses the same saved reference in Activity details, Story preview and export. Route and Everyday remain exclusive. No image assets were changed.
+• Activity > Track Workout > Open / Other: no target or GPS requirement, time/pause/resume and optional real heart rate. Update the Watch app too; cold-launch Other handling is included.
+• Sign-in failures show clear messages. Incorrect credentials, network issues and server unavailability are distinguished; raw provider response text is hidden.
+
+No repeat subscription purchase or hard workout is requested. Public App Review is separate from this internal beta.

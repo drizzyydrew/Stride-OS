@@ -9,7 +9,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createAppJSONStorage } from './persistStorage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { EXPANDED_EXERCISE_CATALOG, resolveExerciseMetadata, normalizedExerciseIdentityName } from '../utils/exerciseCatalog';
 
 import type { StrengthFocus } from '../types/customWorkout';
 
@@ -38,6 +38,11 @@ export type Exercise = {
   movementPattern: MovementPattern;
   primaryMuscles:  string[];
   isCustom:        boolean;
+  equipment?:      string[];
+  benefit?:        string;
+  setup?:          string;
+  supportMuscles?: string[];
+  mobilityTargets?: string[];
   notes?:          string;
   photoUri?:        string;
 };
@@ -54,7 +59,7 @@ type ExerciseStore = {
 // ─── Built-in catalogue ───────────────────────────────────────────────────────
 //
 // Conservative list of well-established exercises appropriate for runners.
-// Ordered roughly from highest to lowest evidence for running performance.
+// Entries cover different training roles; ordering does not rank effectiveness.
 
 const BUILTIN: Omit<Exercise, 'isCustom'>[] = [
   // Lower
@@ -111,7 +116,18 @@ const BUILTIN: Omit<Exercise, 'isCustom'>[] = [
   { id: 'b_ankle_mob',       name: 'Ankle Mobility Drill',     category: 'mobility_prehab', movementPattern: 'stretch',    primaryMuscles: ['ankle', 'calves'] },
 ];
 
-const BUILTIN_EXERCISES: Exercise[] = BUILTIN.map(e => ({ ...e, isCustom: false }));
+const legacy: Exercise[] = BUILTIN.map(ex => {
+  const metadata=resolveExerciseMetadata({id:ex.id,name:ex.name});
+  return {...ex, primaryMuscles:metadata.known ? [...metadata.primaryMuscles,...metadata.mobilityTargets] : ex.primaryMuscles,
+    equipment:metadata.equipment, setup:metadata.setup, benefit:metadata.benefit, supportMuscles:metadata.supportMuscles,
+    mobilityTargets:metadata.mobilityTargets, isCustom:false};
+});
+export const BUILTIN_EXERCISES: Exercise[] = [...legacy, ...EXPANDED_EXERCISE_CATALOG
+  .filter(item=>!legacy.some(ex=>normalizedExerciseIdentityName(ex.name)===normalizedExerciseIdentityName(item.name)))
+  .filter((item,index,all)=>all.findIndex(other=>other.canonicalId===item.canonicalId)===index)
+  .map(item=>({id:item.canonicalId,name:item.name,category:item.category,movementPattern:item.movementPattern as MovementPattern,
+    primaryMuscles:[...item.primaryMuscles,...item.mobilityTargets],supportMuscles:item.supportMuscles,mobilityTargets:item.mobilityTargets,
+    equipment:item.equipment,setup:item.setup,benefit:item.benefit,isCustom:false}))];
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
@@ -144,7 +160,7 @@ export const useExerciseStore = create<ExerciseStore>()(
         const q = query.toLowerCase();
         return get().exercises.filter(e =>
           e.name.toLowerCase().includes(q) ||
-          e.primaryMuscles.some(m => m.toLowerCase().includes(q)),
+          e.primaryMuscles.some(m => m.toLowerCase().includes(q)) || (e.equipment??[]).some(item=>item.toLowerCase().includes(q)),
         );
       },
     }),

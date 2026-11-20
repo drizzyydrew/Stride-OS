@@ -144,7 +144,7 @@ export async function hasRetainedLocalData(): Promise<boolean> {
     'readiness-store': ['history', 'todayReadiness'],
   };
   const keys = (await AsyncStorage.getAllKeys()).filter(key => !benign.has(key) && key !== LOCAL_DATA_OWNER_KEY
-    && (key.includes('-store') || key.startsWith('active-') || key.startsWith('goal-archives:') || key.startsWith('goal-transition:')
+    && (key.includes('-store') || key.startsWith('active-') || key.startsWith('goal-archives:') || key.startsWith('goal-transition:') || key.startsWith('strength-templates:')
       || key === 'hydration-planner-inputs' || key === 'strideos-run-completion-journal-v1'));
   for (const key of keys) {
     const raw = await AsyncStorage.getItem(key);

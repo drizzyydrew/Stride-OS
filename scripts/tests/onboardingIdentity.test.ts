@@ -6,6 +6,7 @@ import ts from 'typescript';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import * as weights from '../../src/utils/profilePower';
+import * as trainingGoals from '../../src/utils/trainingGoals';
 import { onboardingIdentityDraft, onboardingIdentityForCompletion } from '../../src/utils/onboardingIdentity';
 import { profileIdentityLabel } from '../../src/utils/profileIdentity';
 
@@ -23,7 +24,7 @@ async function loadStore(raw: Map<string, string>) {
     './persistStorage': { createAppJSONStorage: () => storage },
     '../lib/localDataOwner': { ownerLeaseIsCurrent: () => false },
     '@react-native-async-storage/async-storage': {},
-    './profileStore': { useProfileStore: profileStore }, '../utils/profilePower': weights,
+    './profileStore': { useProfileStore: profileStore }, '../utils/profilePower': weights, '../utils/trainingGoals': trainingGoals,
   };
   runInNewContext(ts.transpileModule(readFileSync('src/store/onboardingStore.ts', 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },

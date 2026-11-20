@@ -1,6 +1,6 @@
 import type { CompletedWorkoutRecord, RunningQualityFeedback } from '../../types/training';
 import type { WorkoutEngineInput, RichWorkoutType } from '../../types/workout';
-import { normalizeRunningQuality } from '../runningQualityFeedback';
+import { normalizeRunningQuality, normalizeRunningQualityResponse } from '../runningQualityFeedback';
 
 export type RunningQualityRung = 'strides' | 'gentle_fartlek' | 'tempo_threshold' | 'intervals' | 'norwegian_4x4';
 export type ReportedRunningQuality = RunningQualityFeedback;
@@ -34,10 +34,22 @@ export function actualRunningMinutes(record: CompletedWorkoutRecord): number {
 export function actualRunningHistory(records: readonly CompletedWorkoutRecord[], cutoff: number, lookbackDays = 84): CompletedWorkoutRecord[] {
   const exact = new Map<string, CompletedWorkoutRecord>();
   for (const record of records) {
+    if (!record.completed || record.skipped || !RUN_TYPES.has(record.type) || !Number.isFinite(record.timestamp)
+      || record.timestamp > cutoff || record.timestamp < cutoff - lookbackDays * DAY || actualRunningMinutes(record) < 5) continue;
     const instance = (record as CompletedWorkoutRecord & { workoutInstanceId?: unknown }).workoutInstanceId;
     const key = typeof instance === 'string' && instance ? `instance:${instance}` : `record:${record.id}`;
     const previous = exact.get(key);
-    if (!previous?.runningQuality || record.runningQuality) exact.set(key, record);
+    const previousResponse = normalizeRunningQualityResponse(previous?.runningQualityResponse);
+    const response = normalizeRunningQualityResponse(record.runningQualityResponse);
+    const observedPrevious = previousResponse && previousResponse.recordedAt <= cutoff ? previousResponse : undefined;
+    const observedNext = response && response.recordedAt <= cutoff ? response : undefined;
+    if (previous && (observedPrevious || observedNext)) {
+      const previousAt = observedPrevious?.recordedAt ?? previous.runningQuality?.recordedAt ?? previous.timestamp;
+      const nextAt = observedNext?.recordedAt ?? record.runningQuality?.recordedAt ?? record.timestamp;
+      const nextNegative = observedNext && observedNext.value !== 'as_planned';
+      const previousNegative = observedPrevious && observedPrevious.value !== 'as_planned';
+      if (nextAt > previousAt || (nextAt === previousAt && nextNegative && !previousNegative)) exact.set(key, record);
+    } else if (!previous?.runningQuality || record.runningQuality) exact.set(key, record);
   }
   return [...exact.values()].filter(record => record.completed && !record.skipped
     && RUN_TYPES.has(record.type) && Number.isFinite(record.timestamp) && record.timestamp <= cutoff
@@ -74,11 +86,15 @@ export function runningSpecificityDecision(input: WorkoutEngineInput): Specifici
     return q && (q.recordedAt === undefined || q.recordedAt <= evidenceCutoff) ? [{ ...q, timestamp: record.timestamp }] : [];
   }).sort((a, b) => b.timestamp - a.timestamp);
   const latest = reports[0];
+  const unconfirmed = history.filter(record => record.runningQualityResponse
+    && record.runningQualityResponse.recordedAt <= evidenceCutoff && record.runningQualityResponse.value !== 'as_planned')
+    .sort((a, b) => b.timestamp - a.timestamp)[0];
   const recentlyHard = history.some(record => record.timestamp > now - 6 * DAY && ['hard', 'max'].includes(record.intensity));
   if (recentlyHard) return hold('A recent demanding run already supplies the quality stimulus; do not stack another exposure.');
   const strides: SpecificityDecision = { ...base, stage: 'strides', reps: 4, workSeconds: 15, recoverySeconds: 75,
     rationale: 'Begin with four relaxed accelerations and full easy recovery. Report actual effort before adding sustained faster work.' };
-  if (!latest || latest.timestamp < now - 42 * DAY || input.trainingPhase === 'base') return strides;
+  if (!latest || latest.timestamp < now - 42 * DAY || input.trainingPhase === 'base'
+    || (unconfirmed && unconfirmed.timestamp >= latest.timestamp)) return strides;
   if (!latest.comfortableRecovery || latest.rpe > 8) return { ...strides,
     rationale: 'The last reported quality session was hard to recover from. Regress to relaxed accelerations or keep the run easy.' };
   const tolerated = reports.filter(report => report.timestamp >= now - 42 * DAY && report.comfortableRecovery && report.rpe <= 8);

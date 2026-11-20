@@ -20,13 +20,14 @@ export const ACCOUNT_CACHE_DIRS = ['movement-imports'] as const;
 export const ACCOUNT_SECURE_KEYS = ['strava_access_token', 'strava_refresh_token', 'strava_token_expiry'] as const;
 
 export function isAccountDataKey(key: string): boolean {
-  return (ACCOUNT_DATA_KEYS as readonly string[]).includes(key) || key.startsWith('goal-archives:') || key.startsWith('goal-transition:') || key.startsWith('race-pr-awards:');
+  return (ACCOUNT_DATA_KEYS as readonly string[]).includes(key) || key.startsWith('strength-templates:') || key.startsWith('goal-archives:') || key.startsWith('goal-transition:') || key.startsWith('race-pr-awards:');
 }
 
 export function accountCleanupKeys(keys: readonly string[], owner: string): string[] {
   if (!owner || owner.includes(':')) throw new Error('A verified cleanup owner is required');
   for (const key of keys) {
-    if ((key.startsWith('goal-archives:') && key !== `goal-archives:${owner}`)
+    if ((key.startsWith('strength-templates:') && key !== `strength-templates:${owner}`)
+      || (key.startsWith('goal-archives:') && key !== `goal-archives:${owner}`)
       || (key.startsWith('goal-transition:') && key !== `goal-transition:${owner}`)
       || (key.startsWith('race-pr-awards:') && key !== `race-pr-awards:${owner}:athlete_default`)) {
       throw new Error('Another owner has retained records. Cleanup stopped without reassigning them.');

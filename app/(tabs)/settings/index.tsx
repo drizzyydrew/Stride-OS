@@ -1,3 +1,4 @@
+import { trainingGoalBlend } from '../../../src/utils/trainingGoals';
 import { formatHistoryNumber } from '../../../src/utils/historyFormatting';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useEffect, useMemo, useState } from 'react';
@@ -185,6 +186,7 @@ export default function SettingsScreen() {
   const strengthHistory = useStrengthStore(state => state.history);
 
   const planGoalType     = useTrainingPlanStore(s => s.goalType);
+  const secondaryGoalTypes = useTrainingPlanStore(s => s.secondaryGoalTypes);
   const planStartDate    = useTrainingPlanStore(s => s.programStartDate);
   const planRaces        = useTrainingPlanStore(s => s.races);
   const setPlanStartDate = useTrainingPlanStore(s => s.setProgramStartDate);
@@ -772,6 +774,7 @@ export default function SettingsScreen() {
 
         <View style={[styles.settingRow, { borderBottomColor: C.border, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>
           <Text style={[styles.settingTitle, { color: C.text }]}>Goal</Text>
+          {secondaryGoalTypes?.length ? <Text style={[styles.settingCaption, { color: C.textMuted }]}>{trainingGoalBlend(planGoalType, secondaryGoalTypes).summary}</Text> : null}
           <View style={styles.pillRow}>
             {GOAL_TYPE_OPTIONS.map(g => (
               <TouchableOpacity

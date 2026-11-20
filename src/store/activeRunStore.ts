@@ -25,6 +25,7 @@ import {
 import { useSettingsStore } from './settingsStore';
 import { enqueueVoiceCue } from '../lib/voiceCue';
 import { initialAutoPauseState, reconcileAutoPauseMode, reduceAutoPause, type AutoPauseState } from '../utils/autoPause';
+import { captureRunningQualityPrescription } from '../utils/runningQualityFeedback';
 import { captureTrainingRunEnd } from '../utils/trainingRunEndSnapshot';
 import type { RaceActivityLink } from '../types/raceLink';
 import { isValidRaceActivityLink } from '../utils/raceLink';
@@ -107,6 +108,7 @@ export type ActiveRunStore = {
   lastRunCoordinates:     Coordinate[];
   currentIntervalIndex:   number;
   plannedWorkout:         RichWorkout | null;
+  runningQualityPrescription?: import('../types/training').RunningQualityPrescription;
   scheduledSessionId:     string | null;
   runMode:                RunMode;
   goalMinutes:            number | null;
@@ -231,6 +233,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       lastGoodFixAt:          null,
       currentIntervalIndex:   0,
       plannedWorkout,
+      runningQualityPrescription: captureRunningQualityPrescription(plannedWorkout),
       scheduledSessionId:     config?.scheduledSessionId ?? null,
       runMode:                config?.mode ?? (plannedWorkout ? 'workout' : 'quick'),
       goalMinutes:            config?.goalMinutes ?? null,
@@ -536,6 +539,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       lastGoodFixAt:          null,
       currentIntervalIndex:   0,
       plannedWorkout:         null,
+      runningQualityPrescription: undefined,
       scheduledSessionId:     null,
       runMode:                'quick',
       raceLink:               null,
@@ -575,6 +579,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       lastGoodFixAt:          null,
       currentIntervalIndex:   0,
       plannedWorkout:         null,
+      runningQualityPrescription: undefined,
       scheduledSessionId:     null,
       runMode:                'quick',
       raceLink:               null,

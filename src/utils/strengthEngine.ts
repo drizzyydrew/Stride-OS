@@ -25,6 +25,7 @@ import type { TrainingPhase, ProgressionLevel } from '../types/training';
 import { parsePrescriptionScheme } from './prescriptionFormat';
 import { applyGoalPlyometrics, PLYOMETRIC_CATALOG } from './goalPlyometrics';
 import { estimateStrengthSessionMinutes, fitStrengthSessionToTime, strengthExerciseReviewNote, strengthExerciseEquipment, strengthExercisesForEquipment, strengthProgressionLevel, strengthTimeBudget } from './strengthDesign';
+import { trainingGoalBlend } from './trainingGoals';
 import { applyGoalStrengthProgramming } from './goalStrengthProgramming';
 import { getGoalMesocycle } from './plan/goalMesocycle';
 
@@ -39,14 +40,14 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
   squat_goblet: {
     id: 'squat_goblet', name: 'Goblet Squat', pattern: 'squat',
     equipment: ['dumbbell', 'kettlebell'], unilateral: false, cnsLoad: 'medium',
-    coachingCues: ['Chest tall, elbows inside knees', 'Drive knees out over toes', 'Full depth — crease of hip below knee'],
+    coachingCues: ['Chest tall, elbows inside knees', 'Drive knees out over toes', 'Use a repeatable depth you can control comfortably'],
     contraindications: ['severe_knee_pain'],
     rationale: 'Knee-dominant strength using a repeatable front-held setup. Choose a tolerated range and load that fits the intended effort.',
   },
   squat_bulgarian: {
     id: 'squat_bulgarian', name: 'Bulgarian Split Squat', pattern: 'squat',
     equipment: ['dumbbell', 'bodyweight'], unilateral: true, cnsLoad: 'high',
-    coachingCues: ['Front shin vertical at bottom', 'Drive through heel to stand', 'Stay tall — don\'t lean forward'],
+    coachingCues: ['Choose stride and support for comfortable knee and hip loading', 'Press through the whole front foot to stand', 'Use a controlled torso position that fits your setup'],
     contraindications: ['hip_flexor_injury', 'knee_ligament_injury'],
     rationale: 'One option for challenging single-leg knee and hip strength. Support, stance and range can change to fit the person; no variation is universally best.',
   },
@@ -92,7 +93,7 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
   lunge_reverse: {
     id: 'lunge_reverse', name: 'Reverse Lunge', pattern: 'lunge',
     equipment: ['dumbbell', 'bodyweight'], unilateral: true, cnsLoad: 'medium',
-    coachingCues: ['Step back — not out', 'Front shin vertical — track over 2nd toe', 'Push through front heel to return'],
+    coachingCues: ['Step back to a comfortable stance', 'Let the front knee track in line with the foot', 'Press through the whole front foot to return'],
     contraindications: ['knee_pain_anterior'],
     rationale: 'Single-leg knee and hip strength. Adjust stride, support and range for a repeatable, reasonably tolerated setup.',
   },
@@ -320,7 +321,7 @@ export const SESSION_TEMPLATES: Record<StrengthSessionType, SessionTemplate> = {
       hinge_single_rdl: { kind: 'reps_tempo', repsMin: 5, repsMax: 8, tempo: '3:1:1', perSide: true },
     },
     rationale: 'An optional strength and reactive-work template for runners who are prepared for that stimulus. It is not a guarantee of a faster race or a required session for every runner.',
-    purpose: 'Improve running efficiency so the same effort produces more speed — targeting elastic energy return and neuromuscular firing rate.',
+    purpose: 'Practice running-support strength and optional reactive tasks when their stimulus fits the athlete; transfer to running performance varies.',
   },
   prehab: {
     title:       'Prehab & Resilience',
@@ -552,7 +553,7 @@ function buildExercise(
       : ex.cnsLoad === 'high'
       ? 'When top of rep range is reached for all sets at good technique, increase load by 2.5–5kg next session.'
       : 'Repeat the prescribed reps at the intended effort. Consider a small rep or load increase only when actual working-set performance supports it.',
-    regressionRule:  isStaticStretch ? 'If pain or symptoms appear, stop the stretch and use an easier position.' : 'If form deteriorates, reduce load by 10%. If fatigue prevents target reps, drop 1 set.',
+    regressionRule:  isStaticStretch ? 'If pain or symptoms appear, stop the stretch and use an easier position.' : 'If control or tolerance drops, reduce load, range or reps to a manageable effort. Reduce a working set when fatigue calls for less volume.',
     coachingCues:    ex.coachingCues,
     rationale:       ex.rationale,
   };
@@ -746,8 +747,10 @@ export function generateStrengthWeek(input: StrengthEngineInput): StrengthWeek {
   let baseConfig = PHASE_CONFIG[trainingPhase]?.[level]
     ?? PHASE_CONFIG['base']!['intermediate']!;
 
+  const goalBlend = trainingGoalBlend(input.goalType ?? 'general_running', input.secondaryGoalTypes);
   if (input.programmingVersion === 2 && (trainingPhase === 'foundation'
-    || ((input.goalType === 'general_strength' || input.goalType === 'hybrid') && ['base', 'aerobic_development', 'build'].includes(trainingPhase)))) {
+    || (goalBlend.strengthSupport && (['base', 'aerobic_development', 'build'].includes(trainingPhase)
+      || (input.goalType === 'general_strength' && goalBlend.speedSupport && trainingPhase === 'threshold'))))) {
     const count = Math.min(2, Math.max(1, input.liftDays?.length ?? (level === 'beginner' ? 1 : 2)));
     baseConfig = { ...baseConfig, sessionTypes: Array.from({ length: count }, () => 'full_body' as const),
       sessionDays: count > 1 ? [1, 4] : [1], goal: 'force_production',

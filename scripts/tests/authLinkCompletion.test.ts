@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import test from 'node:test';
 import vm from 'node:vm';
 import ts from 'typescript';
+import { signInErrorMessage } from '../../src/lib/signInError';
 
 function load<T>(file: string, mocks: Record<string, unknown>, globals: Record<string, unknown> = {}): T {
   const filename = resolve(file), module = { exports: {} };
@@ -69,6 +70,7 @@ async function harness() {
     zustand: createRequire(resolve('package.json'))('zustand'), '@supabase/supabase-js': { isAuthRetryableFetchError: () => false },
     'expo-apple-authentication': { addRevokeListener: () => {} }, 'expo-web-browser': {},
     '../lib/appleSignInFlow': {}, '../lib/supabase': sdk, '../lib/localDataOwner': owners, '../lib/authRedirect': redirects,
+    '../lib/signInError': { signInErrorMessage },
     './workoutStore': { useWorkoutStore: noopStore }, './strengthStore': { useStrengthStore: noopStore },
     './customWorkoutStore': { useCustomWorkoutStore: noopStore }, './checkInStore': { useCheckInStore: noopStore },
   }, globals);

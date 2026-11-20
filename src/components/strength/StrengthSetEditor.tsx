@@ -1,3 +1,4 @@
+import { strengthWeightForDisplay } from '../../utils/strengthDesign';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -83,7 +84,7 @@ export default function StrengthSetEditor({
             </TouchableOpacity>
           ) : (
             <TextInput
-              value={set.weight == null ? '' : String(set.weight)}
+              value={strengthWeightForDisplay(set.weight,set.weightUnit,undefined,weightUnit)==null?'':String(strengthWeightForDisplay(set.weight,set.weightUnit,undefined,weightUnit))}
               onChangeText={value => onEdit(set.id, { weight: numericValue(value), weightUnit })}
               placeholder="—"
               placeholderTextColor={C.textDim}
@@ -113,17 +114,19 @@ export default function StrengthSetEditor({
             accessibilityLabel={`Set ${index + 1} hold seconds`}
             style={[styles.input, { color: C.text, borderColor: C.border }]}
           />
+          {set.previousPerformance?<Text style={[styles.help,{color:C.textMuted,width:'100%'}]}>Last time: {set.previousPerformance.reps??'—'} reps{set.previousPerformance.weight!=null?` · ${set.previousPerformance.weight} ${set.previousPerformance.weightUnit??'unit not recorded'}`:''}{set.previousPerformance.rpe!=null?` · RPE ${set.previousPerformance.rpe}`:''}. Today's RPE starts blank.</Text>:null}
+          {set.dropSetGroupId?<Text style={[styles.help,{color:C.primary,width:'100%'}]}>Drop-set stage {sets.filter(item=>item.dropSetGroupId===set.dropSetGroupId).findIndex(item=>item.id===set.id)+1}. Enter a suitable lower load for the next stage; complete each stage you actually do.</Text>:null}
           <View style={styles.actions}>
-            <TouchableOpacity onPress={() => onToggleWarmup(set.id)} hitSlop={5} accessibilityLabel="Toggle warm-up set">
-              <Ionicons name="flame-outline" size={17} color={set.isWarmup ? C.warning : C.textDim} />
+            <TouchableOpacity onPress={() => onToggleWarmup(set.id)} hitSlop={5} style={{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'}} accessibilityLabel="Toggle warm-up set">
+              <View style={{flexDirection:'row',alignItems:'center',gap:4,minHeight:44}}><Ionicons name="flame-outline" size={17} color={set.isWarmup ? C.warning : C.textDim} /><Text style={{fontSize:12,color:set.isWarmup?C.warning:C.textMuted}}>Warm-up{set.isWarmup?' on':''}</Text></View>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => onDuplicate(set.id)} hitSlop={5} accessibilityLabel="Duplicate set">
+            <TouchableOpacity onPress={() => onDuplicate(set.id)} hitSlop={5} style={{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'}} accessibilityLabel="Duplicate set">
               <Ionicons name="copy-outline" size={17} color={C.textDim} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => onRemove(set.id)} hitSlop={5} accessibilityLabel="Remove set">
+            <TouchableOpacity onPress={() => onRemove(set.id)} hitSlop={5} style={{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'}} accessibilityLabel="Remove set">
               <Ionicons name="trash-outline" size={17} color={C.critical} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => onToggleCompleted(set.id)} hitSlop={5} accessibilityLabel="Toggle set complete">
+            <TouchableOpacity onPress={() => onToggleCompleted(set.id)} hitSlop={5} style={{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'}} accessibilityLabel="Toggle set complete">
               <Ionicons
                 name={set.completed ? 'checkmark-circle' : 'ellipse-outline'}
                 size={21}
@@ -142,7 +145,7 @@ export default function StrengthSetEditor({
         <Text style={[styles.addText, { color: C.primary }]}>Add Set</Text>
       </TouchableOpacity>
       <Text style={[styles.help, { color: C.textDim }]}>
-        W marks a warm-up set. Hold is recorded in seconds. Complete only sets you performed.
+        The flame / Warm-up button marks warm-up sets; W appears in the set column. Warm-ups stay separate from working-set volume. Hold is recorded in seconds. Complete only sets you performed.
       </Text>
     </View>
   );
@@ -157,7 +160,7 @@ const styles = StyleSheet.create({
   input: { flex: 1, minWidth: 42, minHeight: 34, borderWidth: 1, borderRadius: 7, paddingHorizontal: 7, fontSize: 11 },
   bandButton: { flex: 1, minWidth: 52, minHeight: 34, borderWidth: 1, borderRadius: 7, paddingHorizontal: 6, justifyContent: 'center' },
   bandText: { fontSize: 9, fontWeight: '700' },
-  actions: { width: '100%', flexDirection: 'row', justifyContent: 'flex-end', gap: 18, paddingHorizontal: 5, paddingTop: 2 },
+  actions: { width: '100%', flexDirection: 'row', flexWrap:'wrap', justifyContent: 'flex-end', gap: 18, paddingHorizontal: 5, paddingTop: 2 },
   addButton: { minHeight: 38, marginTop: 8, borderRadius: 9, borderWidth: 1, borderStyle: 'dashed', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   addText: { fontSize: 12, fontWeight: '800' },
   help: { fontSize: 10, lineHeight: 15, marginTop: 6 },

@@ -164,6 +164,7 @@ export type StrengthWeek = {
 
 export type CompletedSet = {
   id?:          string;
+  dropSetGroupId?: string;
   reps?:        number;
   // Legacy display value. New execution paths persist the structured fields
   // below instead of requiring this free text to be parsed later.
@@ -185,6 +186,8 @@ export type CompletedSet = {
 export type CompletedExercise = {
   impactResponse?: import('../utils/plyometricFeedback').PlyometricResponseFeedback;
   exerciseId: string;
+  templateExerciseId?: string;
+  group?: import('../utils/strengthTemplates').StrengthExerciseGroup;
   name?:      string;
   equipmentType?: import('../utils/strengthSession').EquipmentType;
   sets:       CompletedSet[];
@@ -214,6 +217,7 @@ export type ExerciseSessionDetail = {
 // backfills defaults for records written before a field was added.
 
 export type StrengthLogRecord = {
+  templateId?: string;
   id:              string;    // "sw${week}_${sessionId}_${index}"
   sessionId:       string;   // original session id
   // Canonical `week:${date}:strength:${strengthId}` scheduled-session id, set
@@ -253,6 +257,7 @@ export type StrengthEngineInput = {
   programmingVersion?: 1 | 2;
   strengthLevel?: import('./training').StrengthLevel;
   goalType?: import('./plan').TrainingGoalType;
+  secondaryGoalTypes?: import('./plan').TrainingGoalType[];
   availableEquipment?: EquipmentOption[];
   exercisePreferences?: Record<string, string>;
   goalScopeId?: string;

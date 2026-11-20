@@ -1,3 +1,4 @@
+import { groupStrengthExercises, addStrengthDropSet } from '../utils/strengthTemplates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -52,6 +53,7 @@ export type StartSessionExerciseInput = {
 };
 
 type StartSessionInput = {
+  templateId?: string;
   source: ActiveStrengthSource;
   trackingContext?: import('../utils/strengthSession').TrainingBlockTrackingContext;
   workoutId: string;
@@ -69,6 +71,9 @@ type ActiveStrengthSessionStore = {
   session: ActiveStrengthSession | null;
   completionRequestedAt: number | null;
   startSession: (session: StartSessionInput) => void;
+  groupExercises: (ids: string[], kind:'superset'|'circuit'|null) => void;
+  addDropSet: (exerciseId:string) => void;
+  attachTemplate: (workoutInstanceId:string, templateId:string) => void;
   pause: () => void;
   resume: () => void;
   setExerciseRpe: (exerciseId: string, rpe: number) => void;
@@ -195,6 +200,9 @@ export const useActiveStrengthSessionStore = create<ActiveStrengthSessionStore>(
       clearCompletionRequest: () => set({ completionRequestedAt: null }),
       clearSession: () => set({ session: null, completionRequestedAt: null }),
 
+      groupExercises: (ids,kind) => withSession(session=>groupStrengthExercises(session,ids,kind)),
+      addDropSet: id => withSession(session=>addStrengthDropSet(session,id)),
+      attachTemplate: (instance,templateId) => withSession(session=>session.workoutInstanceId===instance?{...session,templateId,exercises:session.exercises.map(ex=>({...ex,templateExerciseId:ex.id}))}:session),
       addExercise: input => withSession(session => ({ ...session, ...addExerciseReducer(session, input) })),
       removeExercise: exerciseId => withSession(session => ({ ...session, ...removeExerciseReducer(session, exerciseId) })),
       reorderExercise: (exerciseId, direction) => withSession(session => ({ ...session, ...reorderExerciseReducer(session, exerciseId, direction) })),

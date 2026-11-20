@@ -466,6 +466,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
       guard !self.isActive, !self.isStartingWorkout else { return }
       let kind: StrideWatchWorkoutKind
       switch configuration.activityType {
+      case .other: kind = .other
       case .running: kind = .run
       case .cycling: kind = .cycling
       case .traditionalStrengthTraining: kind = .strength
@@ -479,7 +480,7 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
         self.publishError("Unsupported workout type")
         return
       }
-      let environment = configuration.locationType == .indoor ? "indoor" : "outdoor"
+      let environment = kind == .other ? "unknown" : configuration.locationType == .indoor ? "indoor" : "outdoor"
       // Int64: 32-bit watches (Series 4-8, SE) trap on Int(ms).
       let provisionalId = "launch_\(Int64(Date().timeIntervalSince1970 * 1000))"
       StrideWatchStartTrail.mark("L launched by iPhone (\(kind.rawValue))")

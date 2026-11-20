@@ -43,14 +43,13 @@ import { useMobilityStore, weeklyCompletionCount, lastCompletedAt } from '../../
 import {
   MOBILITY_WORKOUTS,
   MOBILITY_CATEGORY_LABELS,
-  getMobilityWorkoutsByCategory,
+  MOBILITY_EXERCISES,
 } from '../../../src/constants/mobilityBank';
 import { formatPrescription, representativeRepsForScheme } from '../../../src/utils/prescriptionFormat';
 import type { MobilityCategory } from '../../../src/types/mobility';
 import {
   STRENGTH_PRESET_WORKOUTS,
   STRENGTH_PRESET_CATEGORY_LABELS,
-  getStrengthPresetWorkoutsByCategory,
   type PresetStrengthWorkout,
   type StrengthPresetCategory,
 } from '../../../src/constants/strengthBank';
@@ -63,6 +62,9 @@ import { trainingBlockCompletionFromActiveSession } from '../../../src/utils/str
 import StrengthSetEditor from '../../../src/components/strength/StrengthSetEditor';
 import ExerciseAdjustment from '../../../src/components/strength/ExerciseAdjustment';
 import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTarget';
+import WorkoutLibraryFilters, { LibraryViewSelector } from '../../../src/components/strength/WorkoutLibraryFilters';
+import { emptyWorkoutLibraryFilters, matchesWorkoutLibraryFilters, mobilityLibraryItem, presetLibraryItem, uniqueLibraryTags } from '../../../src/utils/workoutLibraryFilters';
+import { resolveExerciseMetadata } from '../../../src/utils/exerciseCatalog';
 import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import {
   activeSessionStoresHydrated,
@@ -95,8 +97,9 @@ function SegmentedControl({ segment, setSegment, C }: {
       {options.map(opt => {
         const active = segment === opt.value;
         return (
-          <FeatureTourTarget key={opt.value} targetId={`strength.tab.${opt.value}`} onActivate={() => setSegment(opt.value)} style={{ flex: 1 }}>
+          <FeatureTourTarget key={opt.value} targetId={`strength.tab.${opt.value}`} onActivate={() => setSegment(opt.value)} style={{ flex: 1, minWidth: 0, minHeight: 44 }}>
           <TouchableOpacity
+            accessibilityRole="tab" accessibilityLabel={opt.label} accessibilityState={{ selected: active }}
             style={[segStyles.btn, active && { backgroundColor: C.card }]}
             onPress={() => setSegment(opt.value)}
             activeOpacity={0.75}
@@ -114,6 +117,8 @@ function SegmentedControl({ segment, setSegment, C }: {
 
 const segStyles = StyleSheet.create({
   wrap: {
+    flexShrink: 0,
+    minHeight: 54,
     flexDirection: 'row',
     borderRadius: 10,
     padding: 4,
@@ -122,7 +127,8 @@ const segStyles = StyleSheet.create({
     marginBottom: 12,
   },
   btn: {
-    flex: 1,
+    minHeight: 44,
+    justifyContent: 'center',
     paddingVertical: 8,
     borderRadius: 8,
     alignItems: 'center',
@@ -134,8 +140,8 @@ const segStyles = StyleSheet.create({
 
 // ─── Mobility segment ──────────────────────────────────────────────────────────
 
-const CATEGORY_FILTERS: (MobilityCategory | 'all')[] = [
-  'all', 'full_body', 'problem_areas', 'ankle', 'hip', 'back_spine',
+const CATEGORY_FILTERS: MobilityCategory[] = [
+  'full_body', 'problem_areas', 'ankle', 'hip', 'back_spine',
   'pre_run', 'post_run', 'upper_body', 'lower_body', 'running_readiness', 'walking_readiness',
 ];
 
@@ -158,17 +164,18 @@ function MobilityTabContent({ segment, setSegment, C }: {
   const router = useRouter();
   const completions = useMobilityStore(s => s.completions);
   const recommendedWorkoutIds = useMobilityStore(s => s.recommendedWorkoutIds);
-  const [categoryFilter, setCategoryFilter] = useState<MobilityCategory | 'all'>('all');
+  const [libraryView, setLibraryView] = useState<'recommended' | 'all'>('all');
+  const [filters, setFilters] = useState(emptyWorkoutLibraryFilters);
+  const libraryItems = useMemo(() => MOBILITY_WORKOUTS.map(workout => mobilityLibraryItem(workout, MOBILITY_EXERCISES)), []);
 
   const weekCount = useMemo(() => weeklyCompletionCount(completions), [completions]);
   const recommended = useMemo(
     () => MOBILITY_WORKOUTS.filter(w => recommendedWorkoutIds.includes(w.id)),
     [recommendedWorkoutIds],
   );
-  const filteredWorkouts = useMemo(
-    () => categoryFilter === 'all' ? MOBILITY_WORKOUTS : getMobilityWorkoutsByCategory(categoryFilter),
-    [categoryFilter],
-  );
+  const filteredWorkouts = useMemo(() => (libraryView === 'recommended' ? recommended : MOBILITY_WORKOUTS)
+    .filter(workout => matchesWorkoutLibraryFilters(libraryItems.find(item => item.id === workout.id)!, filters)),
+    [libraryView, recommended, filters, libraryItems]);
 
   function openWorkout(id: string) {
     router.push({ pathname: '/(tabs)/strength/mobility-workout', params: { id } } as any);
@@ -191,7 +198,7 @@ function MobilityTabContent({ segment, setSegment, C }: {
               <Text style={[styles.subTitle, { color: C.text }]}>{workout.title}</Text>
               <InfoButton term="mobility" />
             </View>
-            <Text style={[{ fontSize: 12, color: C.textMuted, marginTop: 3 }]}>{workout.targetAreas.join(' · ')}</Text>
+            <Text style={[{ fontSize: 12, color: C.textMuted, marginTop: 3 }]}>{(libraryItems.find(item => item.id === workout.id)?.muscles ?? []).map(displayLabel).join(' · ') || workout.targetAreas.join(' · ')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
         </View>
@@ -227,41 +234,14 @@ function MobilityTabContent({ segment, setSegment, C }: {
           <Text style={[{ fontSize: 13, fontWeight: '700', color: C.text }]}>This week: {weekCount} session{weekCount === 1 ? '' : 's'}</Text>
         </View>
 
-        {/* Recommended for you */}
-        <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8, marginTop: 4 }]}>RECOMMENDED FOR YOU</Text>
-        {recommended.length > 0 ? (
-          recommended.map(w => renderWorkoutCard(w.id, `rec_${w.id}`))
-        ) : (
-          <View style={[styles.card, { backgroundColor: C.cardAlt, borderColor: C.border, marginBottom: 10 }]}>
-            <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>
-              Complete a Movement Lab readiness assessment to get personalized mobility recommendations.
-            </Text>
-          </View>
-        )}
-
-        {/* Category filter chips */}
-        <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8, marginTop: 10 }]}>ALL MOBILITY WORKOUTS</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {CATEGORY_FILTERS.map(cat => {
-              const active = categoryFilter === cat;
-              const label = cat === 'all' ? 'All' : MOBILITY_CATEGORY_LABELS[cat];
-              return (
-                <TouchableOpacity
-                  key={cat}
-                  style={[
-                    { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1 },
-                    { backgroundColor: active ? C.primaryDim : C.card, borderColor: active ? C.primary : C.border },
-                  ]}
-                  onPress={() => setCategoryFilter(cat)}
-                  activeOpacity={0.75}
-                >
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: active ? C.primary : C.textDim }}>{label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </ScrollView>
+        <LibraryViewSelector value={libraryView} onChange={setLibraryView} recommendedCount={recommended.length} allLabel="All mobility workouts" />
+        <WorkoutLibraryFilters value={filters} onApply={setFilters}
+          categories={CATEGORY_FILTERS.map(value => ({ value, label: MOBILITY_CATEGORY_LABELS[value] }))}
+          muscles={uniqueLibraryTags(libraryItems.flatMap(item => item.muscles))} />
+        <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8 }]}>{libraryView === 'recommended' ? 'RECOMMENDED FOR YOU' : 'ALL MOBILITY WORKOUTS'} · {filteredWorkouts.length}</Text>
+        {!filteredWorkouts.length ? <Text style={{ color: C.textMuted, marginBottom: 16, lineHeight: 19 }}>
+          {libraryView === 'recommended' && !recommended.length ? 'Complete a Movement Lab readiness assessment to get personalized mobility recommendations.' : 'No mobility workouts match these filters. Open Filters to change or clear your choices.'}
+        </Text> : null}
 
         {filteredWorkouts.map(w => renderWorkoutCard(w.id, w.id))}
       </ScrollView>
@@ -272,13 +252,12 @@ function MobilityTabContent({ segment, setSegment, C }: {
 // ─── Strength preset library segment ───────────────────────────────────────────
 //
 // Read-only presentation over STRENGTH_PRESET_WORKOUTS. Mirrors the mobility
-// library pattern above (recommended section + category filter chips + cards).
+// library pattern above (one selected list, draft/apply filters and cards).
 // The Training Block Workout segment (default tab) remains the primary,
 // personalized program; this is a browsable static library alongside it.
 // Does not touch strengthStore or any engine — Codex wires launch/logging.
 
-const PRESET_CATEGORY_FILTERS: (StrengthPresetCategory | 'all')[] = [
-  'all', 'gym_barbell', 'dumbbell', 'kettlebell', 'bodyweight',
+const PRESET_CATEGORY_FILTERS: StrengthPresetCategory[] = [ 'gym_barbell', 'dumbbell', 'kettlebell', 'bodyweight',
   'full_body', 'upper_body', 'lower_body', 'runner_strength',
   'pre_run', 'post_run_recovery', 'problem_area',
 ];
@@ -290,7 +269,9 @@ function PresetsTabContent({ segment, setSegment, C }: {
 }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [categoryFilter, setCategoryFilter] = useState<StrengthPresetCategory | 'all'>('all');
+  const [libraryView, setLibraryView] = useState<'recommended' | 'all'>('all');
+  const [filters, setFilters] = useState(emptyWorkoutLibraryFilters);
+  const libraryItems = useMemo(() => STRENGTH_PRESET_WORKOUTS.map(presetLibraryItem), []);
   const [openPresetId, setOpenPresetId] = useState<string | null>(null);
   const completedSessions = useStrengthStore(s => s.completedSessions);
 
@@ -298,10 +279,9 @@ function PresetsTabContent({ segment, setSegment, C }: {
     () => STRENGTH_PRESET_WORKOUTS.filter(w => w.categories.includes('recommended')),
     [],
   );
-  const filteredPresets = useMemo(
-    () => categoryFilter === 'all' ? STRENGTH_PRESET_WORKOUTS : getStrengthPresetWorkoutsByCategory(categoryFilter),
-    [categoryFilter],
-  );
+  const filteredPresets = useMemo(() => (libraryView === 'recommended' ? recommended : STRENGTH_PRESET_WORKOUTS)
+    .filter(workout => matchesWorkoutLibraryFilters(libraryItems.find(item => item.id === workout.id)!, filters)),
+    [libraryView, recommended, filters, libraryItems]);
 
   function renderPresetCard(preset: PresetStrengthWorkout, key: string) {
     const open = openPresetId === preset.id;
@@ -328,11 +308,15 @@ function PresetsTabContent({ segment, setSegment, C }: {
             {displayLabels(preset.equipment)}
           </Text>
         </View>
+        <Text style={{ color: C.textMuted, fontSize: 12, marginTop: 8 }}>{(libraryItems.find(item => item.id === preset.id)?.muscles ?? []).map(displayLabel).join(' · ')}</Text>
         {open && (
           <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10, gap: 6 }}>
             {preset.exercises.map(e => (
               <View key={e.name} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-                <Text style={[{ fontSize: 12, color: C.textMuted, flex: 1 }]}>{e.name}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 12, color: C.textMuted }}>{e.name}</Text>
+                  <Text style={{ fontSize: 11, color: C.textDim, marginTop: 2 }}>{resolveExerciseMetadata({ name: e.name }).primaryMuscles.map(displayLabel).join(' · ')}</Text>
+                </View>
                 <Text style={[{ fontSize: 12, fontWeight: '700', color: C.text }]}>{e.sets} × {e.reps}</Text>
               </View>
             ))}
@@ -372,42 +356,17 @@ function PresetsTabContent({ segment, setSegment, C }: {
       >
         <View style={[styles.card, { backgroundColor: C.cardAlt, borderColor: C.border }]}>
           <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>
-            Training Block Workouts and Preset Workouts remain independent. Open a preset for its purpose,
-            exercise instructions, session flow, loading, RPE, and history logging.
+            Choose a ready-made session for today. Use filters to find one that fits your muscles, equipment and available time.
           </Text>
         </View>
 
-        <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8, marginTop: 4 }]}>RECOMMENDED FOR YOU</Text>
-        {recommended.length > 0 ? (
-          recommended.map(w => renderPresetCard(w, `rec_${w.id}`))
-        ) : (
-          <View style={[styles.card, { backgroundColor: C.cardAlt, borderColor: C.border, marginBottom: 10 }]}>
-            <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>No recommended presets right now.</Text>
-          </View>
-        )}
-
-        <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8, marginTop: 10 }]}>ALL PRESETS</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {PRESET_CATEGORY_FILTERS.map(cat => {
-              const active = categoryFilter === cat;
-              const label = cat === 'all' ? 'All' : STRENGTH_PRESET_CATEGORY_LABELS[cat];
-              return (
-                <TouchableOpacity
-                  key={cat}
-                  style={[
-                    { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1 },
-                    { backgroundColor: active ? C.primaryDim : C.card, borderColor: active ? C.primary : C.border },
-                  ]}
-                  onPress={() => setCategoryFilter(cat)}
-                  activeOpacity={0.75}
-                >
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: active ? C.primary : C.textDim }}>{label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </ScrollView>
+        <LibraryViewSelector value={libraryView} onChange={setLibraryView} recommendedCount={recommended.length} allLabel="All presets" />
+        <WorkoutLibraryFilters value={filters} onApply={setFilters}
+          categories={PRESET_CATEGORY_FILTERS.map(value => ({ value, label: STRENGTH_PRESET_CATEGORY_LABELS[value] }))}
+          muscles={uniqueLibraryTags(libraryItems.flatMap(item => item.muscles))}
+          equipment={uniqueLibraryTags(libraryItems.flatMap(item => item.equipment))} />
+        <Text style={[styles.cardLabel, { color: C.textDim, marginBottom: 8 }]}>{libraryView === 'recommended' ? 'RECOMMENDED FOR YOU' : 'ALL PRESETS'} · {filteredPresets.length}</Text>
+        {!filteredPresets.length ? <Text style={{ color: C.textMuted, marginBottom: 16, lineHeight: 19 }}>No presets match these filters. Open Filters to change or clear your choices.</Text> : null}
 
         {filteredPresets.map(w => renderPresetCard(w, w.id))}
       </ScrollView>
@@ -1089,6 +1048,11 @@ export default function StrengthScreen() {
           <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.primaryDim }]} onPress={() => launchCustomWorkout()} activeOpacity={0.8}>
             <Text style={[styles.bigBtnText, { color: C.primary }]}>Do My Own Workout</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/strength/saved-workouts' as never)}
+            accessibilityRole="button" accessibilityLabel="Saved workouts"
+            style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
+            <Text style={{ color: C.primary, fontSize: 13, fontWeight: '600' }}>Saved workouts</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -1114,6 +1078,11 @@ export default function StrengthScreen() {
           </FeatureTourTarget>
           <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.primaryDim }]} onPress={() => launchCustomWorkout()} activeOpacity={0.8}>
             <Text style={[styles.bigBtnText, { color: C.primary }]}>Do My Own Workout</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/strength/saved-workouts' as never)}
+            accessibilityRole="button" accessibilityLabel="Saved workouts"
+            style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
+            <Text style={{ color: C.primary, fontSize: 13, fontWeight: '600' }}>Saved workouts</Text>
           </TouchableOpacity>
         </View>
       </View>

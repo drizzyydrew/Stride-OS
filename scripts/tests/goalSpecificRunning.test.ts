@@ -260,3 +260,27 @@ test('malformed calibrated pace cannot inflate a reported starting-time ceiling'
   const budget = runningVolumeBudget(input({ runningHistory: [], weeklyMileage: 3, calibration: broken }), []);
   assert.equal(budget.minutes, 30); assert.match(budget.rationale, /assumed ten minutes/);
 });
+
+test('a newer changed or unsure workout blocks older favorable interval evidence from raising the dose', () => {
+  const prior = withReports(report(8, 'tempo_threshold', 3, 180), report(15, 'tempo_threshold', 3, 180));
+  const latest = record(7, { runningQualityResponse: { version: 1, source: 'athlete_reported', value: 'changed', recordedAt: now - DAY } });
+  const decision = runningSpecificityDecision(input({ runningHistory: [...prior, latest] }));
+  assert.equal(decision.stage, 'strides');
+  assert.equal(decision.allowNorwegian, false);
+  const unsure = { ...latest, runningQualityResponse: { ...latest.runningQualityResponse!, value: 'unsure' as const } };
+  assert.equal(runningSpecificityDecision(input({ runningHistory: [...prior, unsure] })).stage, 'strides');
+});
+
+
+test('same-instance duplicate history retains the latest explicit negative feedback over older positive evidence', () => {
+  const positive = { ...report(7, 'intervals', 4, 180), workoutInstanceId: 'same', runningQuality: { ...report(7, 'intervals', 4, 180).runningQuality!, recordedAt: now - 3 * DAY } };
+  const negative = { ...record(7), workoutInstanceId: 'same', runningQualityResponse: { version: 1 as const, source: 'athlete_reported' as const, value: 'changed' as const, recordedAt: now - DAY } };
+  for (const records of [[positive, negative], [negative, positive]]) {
+    const actual = actualRunningHistory(records, now);
+    assert.equal(actual.length, 1);
+    assert.equal(actual[0]!.runningQualityResponse?.value, 'changed');
+    assert.equal(runningSpecificityDecision(input({ runningHistory: [...history(), ...records] })).stage, 'strides');
+  }
+  const futureNegative = { ...negative, timestamp: now + DAY };
+  assert.equal(actualRunningHistory([positive, futureNegative], now)[0]!.runningQuality?.rung, 'intervals');
+});

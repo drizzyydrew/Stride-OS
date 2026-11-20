@@ -1,0 +1,73 @@
+{
+  "checkedAt": "2026-11-20T09:55:20.562931+00:00",
+  "buildNumber": "123",
+  "profile": "billing-qa",
+  "fullRegression": {
+    "testFiles": 240,
+    "tests": 2170,
+    "pass": 2170,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "concurrency": 3,
+    "durationMs": 142816.666654
+  },
+  "initialSweep": {
+    "tests": 2170,
+    "pass": 2129,
+    "fail": 41,
+    "cause": "Six VM test dependency maps omitted new pure helpers or a passive tag component; fixtures updated with actual dependencies and existing semantic assertions retained. All affected files passed individually, then the entire suite passed on the frozen runtime."
+  },
+  "runtimeFingerprintReverified": {
+    "files": 801,
+    "sha256": "a706e6ecc6ab9df88d734afb6aba3dd6efb8bcad9818995f56f8955134937045",
+    "ordering": "Sorted relative POSIX path bytes; path NUL content NUL; runtime code/config, excluding tests and raster assets"
+  },
+  "canonicalTypecheck": "PASS on final frozen runtime; cloud post-install check required",
+  "dependenciesAligned": true,
+  "nativePrebuildExitCode": 0,
+  "imageAssetsChanged": false,
+  "dependenciesChanged": false,
+  "nativeWatchRuntimeChanged": true,
+  "backendPolicyChangedByBuild": false,
+  "publicReviewSubmitted": false,
+  "independentReviews": [
+    "Library/UI review",
+    "Catalog/custom workload and owner-fence review",
+    "Programming/compatibility and goal/phase matrix review",
+    "Open/Other native path review",
+    "Everyday share and auth error review"
+  ],
+  "physicalDeviceAccepted": false,
+  "logs": {
+    "strideos-build123-accepted-tests.log": {
+      "path": "/Users/drew/.cache/strideos-build123-accepted-tests.log",
+      "sha256": "698eefee2f0dafa25bf7ba44463db276eed8e57d023be7652c4d44e5753f54ba"
+    },
+    "strideos-build123-final-typecheck.log": {
+      "path": "/Users/drew/.cache/strideos-build123-final-typecheck.log",
+      "sha256": "12fc70d2feb72f584a6828cd9e1102cc9f447725b6b1bb2abda352bf6797e415"
+    },
+    "strideos-build123-dependencies.log": {
+      "path": "/Users/drew/.cache/strideos-build123-dependencies.log",
+      "sha256": "8152e1dfe2839254529bd71a5c9d6f299c93bc1132025c5930dcc5dc042489db"
+    },
+    "strideos-build123-prebuild.log": {
+      "path": "/Users/drew/.cache/strideos-build123-prebuild.log",
+      "sha256": "4ef078d91eedb906232a7d997f4b08c69daac768f39d3f7b267c49b6322afe66"
+    },
+    "strideos-build123-auth-fixture-tests.log": {
+      "path": "/Users/drew/.cache/strideos-build123-auth-fixture-tests.log",
+      "sha256": "4643ebb41626967c8c706d7d4bdcde0a6e8bb3ec73b51bc4358686c5c7a61c75"
+    },
+    "strideos-build123-cleanup-fixture-tests.log": {
+      "path": "/Users/drew/.cache/strideos-build123-cleanup-fixture-tests.log",
+      "sha256": "014cafee0a60608cc3ac002ec89b0f9a20d6b1b88921f2ba1f65452e68a549ad"
+    },
+    "strideos-build123-onboarding-fixtures.log": {
+      "path": "/Users/drew/.cache/strideos-build123-onboarding-fixtures.log",
+      "sha256": "23098f930b68b7fbcd7c780d409a449e8e94320143034772801076d0ce329ab3"
+    }
+  }
+}

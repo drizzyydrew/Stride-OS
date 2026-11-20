@@ -69,7 +69,7 @@ export function buildSpecificityWorkout(workout: RichWorkout, decision: Specific
     instructions: ['Warm up with ten minutes of easy running or walking.',
       `Complete ${decision.reps} × ${decision.workSeconds / 60} minutes at the described effort, with easy recovery between bouts.`,
       'Build into each bout; pace follows current capacity rather than an aspirational race target.',
-      'Finish with five minutes easy. Report the actual bouts, effort and recovery before the next progression.'],
+      'Finish with five minutes easy. Log how it felt and whether you followed the intervals before the next progression.'],
     executionCues: ['Controlled and repeatable.', 'Heart rate responds with a delay; do not sprint to chase a number.', 'Shorten the quality work if recovery is not comfortable.'],
     failureConditions: ['Stop quality work for pain, dizziness, unusual breathlessness or inability to recover comfortably.'],
     modifications: [{ condition: 'Too demanding or poor recovery', action: 'Shorten work bouts, add easy recovery, or finish as an easy run.' },

@@ -39,6 +39,7 @@ import {
   parseYMD,
   addDays,
 } from './calendarEngine';
+import { trainingGoalBlend } from './trainingGoals';
 import { pickTargetRace } from './plan/macroPlanner';
 import { reconcileMissedSessions } from './plan/missedWorkouts';
 import {
@@ -62,6 +63,7 @@ export type EngineInput = {
 
   // ── Plan spine (from trainingPlanStore + macroPlanner) ──────────────────────
   goalType:            TrainingGoalType;
+  secondaryGoalTypes?: TrainingGoalType[];
   goalScopeId?: string;
   referenceDate?: string;
   trainingMode?:       'structured' | 'open';
@@ -262,12 +264,13 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   }
 
   // ── Goal shaping ────────────────────────────────────────────────────────────
+  const blend = trainingGoalBlend(input.goalType, input.secondaryGoalTypes);
   let trainingStyle   = input.trainingStyle;
   let liftDays        = input.liftDays;
-  let hybridBalance   = false;
+  let hybridBalance   = blend.hybridBalance;
 
   if (input.goalType === 'general_strength') {
-    trainingStyle = 'base_only';
+    if (!blend.speedSupport || input.trainingStyle === 'base_only') trainingStyle = 'base_only';
     if (!liftDays || liftDays.length === 0) liftDays = ['Mon', 'Wed', 'Fri'];
   } else if (input.goalType === 'hybrid') {
     hybridBalance = true;
@@ -278,7 +281,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   // ── Running sessions ──────────────────────────────────────────────────────
   const workoutInput: WorkoutEngineInput = {
     programmingVersion: input.strengthProgrammingVersion,
-    goalType: input.goalType,
+    goalType: blend.runningGoal,
     goalScopeId: input.goalScopeId,
     runningHistory: input.runningHistory,
     referenceDate: macroWeek.startDate,
@@ -313,6 +316,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   let richWeek = generateRichWeek(workoutInput);
   const baseline = getBaseTemplate(workoutInput);
   const adaptations = diffAdaptations(baseline, richWeek.workouts, input, trainingPhase);
+  if (blend.note) adaptations.push(`${blend.note}${blend.speedSupport && input.trainingStyle === 'base_only' ? ' Your easy-only preference is active, so faster work stays off until you choose a style that includes it.' : ''}`);
 
   // ── Strength sessions ─────────────────────────────────────────────────────
   const strengthInput: StrengthEngineInput = {
@@ -322,6 +326,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
     runningHistory: input.runningHistory,
     activeStrengthSessionId: input.activeStrengthSessionId,
     goalType: input.goalType,
+    secondaryGoalTypes: blend.secondary,
     availableEquipment: input.strengthEquipment,
     exercisePreferences: input.strengthExercisePreferences,
     goalScopeId: input.goalScopeId,
@@ -451,7 +456,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
     const capturedRunCompletions = (input.runningHistory ?? []).filter(record => !record.skipped)
       .map(record => (record as import('./runCompletionIdentity').RunWorkoutRecord).scheduledSessionId).filter((id): id is string => !!id);
     calendarMap = markCapturedRunCompletions(calendarMap, capturedRunCompletions);
-    if (input.goalType !== 'general_strength') {
+    if (input.goalType !== 'general_strength' || blend.speedSupport) {
       const balanced = balanceHybridStrength({ calendarMap, weekStart: weekStartDate,
         liftDays: liftDays?.length ? liftDays : input.availableDays, activeStrengthSessionId: input.activeStrengthSessionId, today: todayYMD });
       calendarMap = balanced.calendarMap;

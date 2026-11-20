@@ -889,18 +889,21 @@ export default function CoachScreen() {
         <Pressable
           style={[s.segmentBtn, tab === 'chat' && s.segmentBtnActive]}
           onPress={() => setTab('chat')}
+          accessibilityRole="tab" accessibilityLabel="Ask Coach" accessibilityState={{ selected: tab === 'chat' }}
         >
           <Text style={[s.segmentTxt, tab === 'chat' && s.segmentTxtActive]}>Ask Coach</Text>
         </Pressable>
         <Pressable
           style={[s.segmentBtn, tab === 'insights' && s.segmentBtnActive]}
           onPress={() => setTab('insights')}
+          accessibilityRole="tab" accessibilityLabel="Insights" accessibilityState={{ selected: tab === 'insights' }}
         >
           <Text style={[s.segmentTxt, tab === 'insights' && s.segmentTxtActive]}>Insights</Text>
         </Pressable>
         <Pressable
           style={[s.segmentBtn, tab === 'video' && s.segmentBtnActive]}
           onPress={() => setTab('video')}
+          accessibilityRole="tab" accessibilityLabel="Video" accessibilityState={{ selected: tab === 'video' }}
         >
           <Text style={[s.segmentTxt, tab === 'video' && s.segmentTxtActive]}>Video</Text>
         </Pressable>
@@ -1124,6 +1127,8 @@ function makeStyles(C: Palette) {
   },
 
   segment: {
+    flexShrink: 0,
+    minHeight: 54,
     flexDirection: 'row',
     gap: 4,
     marginHorizontal: spacing.lg,
@@ -1137,7 +1142,8 @@ function makeStyles(C: Palette) {
   },
   segmentBtn: {
     flex: 1,
-    height: 30,
+    minHeight: 44,
+    paddingVertical: 8,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',

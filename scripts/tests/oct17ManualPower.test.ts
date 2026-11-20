@@ -15,6 +15,7 @@ import * as dates from '../../src/utils/dateOnly';
 import * as substitution from '../../src/utils/substitution';
 import * as powerPresentation from '../../src/utils/activityPowerPresentation';
 import * as powerEquivalents from '../../src/utils/powerEquivalents';
+import * as shareEverydayEquivalent from '../../src/utils/shareEverydayEquivalent';
 import { sanitizeActivityMetrics } from '../../src/utils/activityLoad';
 
 const startTime = new Date(2026, 9, 16, 8, 17, 23).getTime();
@@ -204,7 +205,7 @@ function harness(path: string, initial?: Activity, options: { units?: 'metric' |
     useWeekPlan: { useWeekPlan: () => ({}) },
     useScheduledSessions: { useScheduledSessions: () => ({}) },
     activityCompletion: completion, manualActivityEdit: edit, racePerformance, automaticActivityPower: automatic, outdoorPower: power,
-    profilePower, climbingWork: climbing, activityPowerPresentation: powerPresentation, powerEquivalents, dateOnly: dates, substitution, displayLabels: { displayLabel: (value: any) => value },
+    profilePower, climbingWork: climbing, activityPowerPresentation: powerPresentation, powerEquivalents, shareEverydayEquivalent, dateOnly: dates, substitution, displayLabels: { displayLabel: (value: any) => value },
     prescriptionFormat: {}, recalculation: { runRecalculation: async () => {} },
   };
   const module = { exports: {} as any };
@@ -402,12 +403,12 @@ test('real info icon explains meaning and value; dropdowns start collapsed and d
   assert.ok(ui.nodes().some(node => node.children.includes('Why care?')));
   assert.equal(ui.nodes().find(node => node.props.accessibilityLabel === 'About cycling work')!.props.accessibilityState.expanded, true);
   ui.nodes().find(node => node.type === 'Collapsible' && node.props.label === 'Everyday equivalent')!.props.onOpenChange(true); ui.render();
-  assert.ok(ui.nodes().some(node => node.children.some(child => typeof child === 'string' && child.includes('Power comparison only, not electrical output.'))));
+  assert.ok(ui.nodes().some(node => node.children.some(child => typeof child === 'string' && child.includes('Reference power draw, not electrical output.'))));
   assert.ok(!ui.nodes().some(node => node.props.accessibilityRole === 'link'), 'references stay in calculation details');
   assert.equal(ui.writes.length, before);
 });
 
-test('comparison is stable through toggles and units; refocusing and a different activity choose a fresh reference', () => {
+test('detail and share comparison agree through toggles, units, refocus and activity changes', () => {
   const hike = activity('hiking'); hike.source = 'manual'; delete hike.workoutInstanceId;
   let sample = 0;
   const options = { units: 'metric' as 'metric' | 'imperial', random: () => (sample++ * 0.19) % 1 };
@@ -418,13 +419,13 @@ test('comparison is stable through toggles and units; refocusing and a different
   ui.nodes().find(node => node.props.accessibilityLabel === 'About hiking work')!.props.onPress(); ui.render();
   options.units = 'imperial'; ui.render();
   assert.equal(text(), first);
-  assert.equal(sample, 2, 'only mount and first focus choose randomness');
+  assert.equal(sample, 0, 'no per-focus random choice can diverge from sharing');
+  assert.equal(first, shareEverydayEquivalent.shareEverydayEquivalent(ui.record, options.units)?.spokenComparison);
   ui.refocus(); assert.ok(ui.nodes().filter(node => node.type === 'Collapsible').every(node => !node.props.isOpen));
-  open(); assert.notEqual(text(), first);
-  const previous = text();
+  open(); assert.equal(text(), first);
   ui.changeRecord({ ...ui.record, id: 'another-hike' });
   assert.ok(ui.nodes().filter(node => node.type === 'Collapsible').every(node => !node.props.isOpen));
-  open(); assert.notEqual(text(), previous);
+  open(); assert.equal(text(), shareEverydayEquivalent.shareEverydayEquivalent(ui.record, options.units)?.spokenComparison);
 });
 
 test('unavailable result and valid zero never gain a made-up comparison or secondary energy', () => {

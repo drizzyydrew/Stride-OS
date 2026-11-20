@@ -773,3 +773,27 @@ test('existing goal programming remains legacy until an explicit new goal choice
   assert.equal(h.activity.getState().activities, originalActivities);
   assert.equal(h.activityMutations, 0);
 });
+
+test('explicit combined goal persists up to three priorities with the same archive and failure boundaries', async () => {
+  const h = await harness({ unfinished: true });
+  const input = { ...nextGoal, secondaryGoalTypes: ['get_faster', 'general_running'] as const };
+  h.hooks.failPlanWrite = true;
+  await assert.rejects(h.runtime.startNextGoal({ ...input, secondaryGoalTypes: [...input.secondaryGoalTypes] }), /disk full/);
+  assert.equal(h.plan.getState().goalBlockId, 'original');
+  h.hooks.failPlanWrite = false;
+  await h.runtime.startNextGoal({ ...input, secondaryGoalTypes: [...input.secondaryGoalTypes] });
+  assert.equal(h.plan.getState().goalType, 'general_strength');
+  assert.deepEqual(Array.from(h.plan.getState().secondaryGoalTypes ?? []), ['get_faster', 'general_running']);
+  const id = h.plan.getState().goalBlockId;
+  await h.runtime.startNextGoal({ ...input, secondaryGoalTypes: [...input.secondaryGoalTypes] });
+  assert.equal(h.plan.getState().goalBlockId, id, 'retry must not create another goal block');
+});
+
+test('a fourth goal or unanchored secondary race is rejected without publishing a goal', async () => {
+  const h = await harness({ unfinished: true });
+  const before = h.plan.getState().goalBlockId;
+  for (const secondaryGoalTypes of [['get_faster', 'general_running', 'hybrid'], ['race_prep']] as const) {
+    await assert.rejects(h.runtime.startNextGoal({ ...nextGoal, secondaryGoalTypes: [...secondaryGoalTypes] }), /up to two/);
+    assert.equal(h.plan.getState().goalBlockId, before);
+  }
+});
