@@ -1,0 +1,260 @@
+{
+  "checkedAt": "2026-11-20T02:55:11.909713+00:00",
+  "scope": "Build 122 step 2 technical launch checks; read-only runtime/configuration; no public release",
+  "overall": "PARTIAL_PUBLIC_LAUNCH_BLOCKED",
+  "project": {
+    "ref": "pbzgrhnxpbtlkzpreizy",
+    "region": "us-east-2",
+    "managementStatus": "ACTIVE_HEALTHY",
+    "organizationTier": "tier_free",
+    "managementProjectRecurringMonthlyUSD": 0,
+    "metadataIsNotRuntimeHealth": true
+  },
+  "deployedAiCoach": {
+    "version": 17,
+    "active": true,
+    "verifyJwt": true,
+    "sourceFiles": [
+      {
+        "name": "ai-coach/index.ts",
+        "exact": true,
+        "sha256": "059b3c61cc771a267e127ad167ac6e2f55e1513deb78f69a652c01ec1d712f18"
+      },
+      {
+        "name": "_shared/revenueCatAccess.ts",
+        "exact": true,
+        "sha256": "013507ff25328e6ff601d96271f18efee8b8f101454d17ece14addef294927dd"
+      },
+      {
+        "name": "_shared/launchHandlers.ts",
+        "exact": true,
+        "sha256": "d88e743d0a081abef570f06e05abc6ac7a5535f0139bcd2e57c0b6b9fc3c7d48"
+      },
+      {
+        "name": "_shared/coachAllowance.ts",
+        "exact": true,
+        "sha256": "74d1aba615da01399f00b1601618c30731614c4a6d36f9072193022f9080b4d9"
+      }
+    ]
+  },
+  "configuration": {
+    "checkedAt": "2026-11-20T02:51:03.736256+00:00",
+    "secretInventoryRead": true,
+    "names": [
+      "ANTHROPIC_API_KEY",
+      "ANTHROPIC_MODEL",
+      "REVENUECAT_SECRET_API_KEY",
+      "STRIDEOS_APPLE_CLIENT_ID",
+      "STRIDEOS_APPLE_KEY_ID",
+      "STRIDEOS_APPLE_PRIVATE_KEY",
+      "STRIDEOS_APPLE_TEAM_ID",
+      "SUPABASE_ANON_KEY",
+      "SUPABASE_DB_URL",
+      "SUPABASE_JWKS",
+      "SUPABASE_PUBLISHABLE_KEYS",
+      "SUPABASE_SECRET_KEYS",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "SUPABASE_URL"
+    ],
+    "publicBillingSettingPresent": false,
+    "publicBillingEnabled": false,
+    "privateQaOwnerPresent": false,
+    "revenueCatReadCredentialPresent": true,
+    "anthropicKeyPresent": true,
+    "modelDigestMatched": "claude-haiku-4-5-20251001",
+    "secretValuesRead": false,
+    "configurationChanged": false
+  },
+  "anonymousBoundary": {
+    "checkedAt": "2026-11-20T02:49:15.675579+00:00",
+    "checks": [
+      {
+        "method": "GET",
+        "usage": false,
+        "status": 401
+      },
+      {
+        "method": "GET",
+        "usage": true,
+        "status": 401
+      },
+      {
+        "method": "POST",
+        "usage": false,
+        "status": 401
+      },
+      {
+        "method": "OPTIONS",
+        "usage": false,
+        "status": 200
+      }
+    ],
+    "credentialsSent": false,
+    "quotaOrProviderCallPossible": false,
+    "tlsVerified": true
+  },
+  "originHealth": {
+    "sqlReadAttempts": 3,
+    "sqlOutcome": "connection terminated due to connection timeout",
+    "providerLogWindow": [
+      "2026-11-20T02:30:00Z",
+      "2026-11-20T02:54:00Z"
+    ],
+    "providerAuthStatuses": [
+      {
+        "method": "GET",
+        "path": "/auth/v1/health",
+        "status": 522,
+        "count": 1
+      },
+      {
+        "method": "GET",
+        "path": "/auth/v1/settings",
+        "status": 522,
+        "count": 1
+      },
+      {
+        "method": "POST",
+        "path": "/auth/v1/token",
+        "status": 522,
+        "count": 3
+      }
+    ],
+    "healthAdvisorLints": 0,
+    "globalStatus": "all systems operational",
+    "cause": "NOT_DIAGNOSED",
+    "restartOrPlanChangePerformed": false,
+    "providerLogTool": "Supabase query_logs unified ClickHouse logs; grouped method/path/status only; no headers or customer fields selected",
+    "healthAdvisorCheckedAt": "2026-11-20T02:53:53Z",
+    "globalStatusUrl": "https://status.supabase.com/",
+    "diagnosticLead": "Official Supabase KB describes database crash/overload as a possible cause of 522 plus SQL timeouts; not proven for this project",
+    "diagnosticUrls": [
+      "https://supabase.com/kb/troubleshooting/failed-to-retrieve-tables",
+      "https://supabase.com/kb/troubleshooting/failed-to-run-sql-query-connection-terminated-due-to-connection-timeout"
+    ],
+    "dashboardDiagnosis": "NOT_VERIFIED: browser held for owner Apple sign-in after initial loading page",
+    "directManagementDiagnostics": {
+      "officialEndpointsVerified": true,
+      "keychainUserInteractionDisabledPerProcess": true,
+      "credentialAccessible": false,
+      "keychainOsStatus": -25293,
+      "credentialPrintedOrSaved": false,
+      "managementRequestsAttempted": 0,
+      "stoppedWithoutRetry": true
+    }
+  },
+  "sourceQuotaContract": {
+    "perAccountPerUtcDay": 20,
+    "globalPerUtcDay": 500,
+    "reservationBeforeProvider": true,
+    "failedProviderReservationRefunded": false,
+    "inputPayloadMaxBytes": 65536,
+    "systemMaxCharacters": 5000,
+    "historyMaxMessages": 12,
+    "messageMaxCharacters": 4000,
+    "outputMaxTokens": 1024,
+    "inputTokenCap": null,
+    "currentLiveDatabaseDefinitionReconfirmed": false,
+    "reason": "project database read timeouts"
+  },
+  "localContractTests": {
+    "passed": 49,
+    "failed": 0,
+    "liveAuthenticatedAcceptance": false,
+    "files": [
+      "scripts/tests/revenueCatServer.test.ts",
+      "scripts/tests/revenueCatServerQa.test.ts",
+      "scripts/tests/revenueCatServerProbe.test.ts",
+      "scripts/tests/subscriptionLifecycle.test.ts",
+      "scripts/tests/coachUsage.test.ts",
+      "scripts/tests/coachPromptBudget.test.ts"
+    ],
+    "command": "node_modules/.bin/tsx --test scripts/tests/revenueCatServer.test.ts scripts/tests/revenueCatServerQa.test.ts scripts/tests/revenueCatServerProbe.test.ts scripts/tests/subscriptionLifecycle.test.ts scripts/tests/coachUsage.test.ts scripts/tests/coachPromptBudget.test.ts"
+  },
+  "pricing": {
+    "model": "claude-haiku-4-5-20251001",
+    "officialInputUsdPerMillionTokens": 1,
+    "officialOutputUsdPerMillionTokens": 5,
+    "providerInvoiceVerified": false,
+    "deployedKeyOrganizationMatchedToHistoricalBudget": false,
+    "historicalSavedMonthlyUsdLimit": 20,
+    "historicalLimitDate": "2026-11-03",
+    "currentLimitReverified": false,
+    "illustrativeScenarios": [
+      {
+        "label": "short",
+        "illustrativeInputTokens": 2000,
+        "illustrativeOutputTokens": 400,
+        "usdPerRequest": 0.004,
+        "usdAt600RequestsPerAccountPer30Days": 2.4,
+        "usdAt15000GlobalRequestsPer30Days": 60.0
+      },
+      {
+        "label": "moderate",
+        "illustrativeInputTokens": 4000,
+        "illustrativeOutputTokens": 512,
+        "usdPerRequest": 0.00656,
+        "usdAt600RequestsPerAccountPer30Days": 3.936,
+        "usdAt15000GlobalRequestsPer30Days": 98.4
+      },
+      {
+        "label": "long",
+        "illustrativeInputTokens": 12000,
+        "illustrativeOutputTokens": 1024,
+        "usdPerRequest": 0.01712,
+        "usdAt600RequestsPerAccountPer30Days": 10.272,
+        "usdAt15000GlobalRequestsPer30Days": 256.8
+      },
+      {
+        "label": "very long",
+        "illustrativeInputTokens": 50000,
+        "illustrativeOutputTokens": 1024,
+        "usdPerRequest": 0.05512,
+        "usdAt600RequestsPerAccountPer30Days": 33.072,
+        "usdAt15000GlobalRequestsPer30Days": 826.8
+      }
+    ],
+    "appleCommissionScenarios": [
+      0.15,
+      0.3
+    ],
+    "appleSmallBusinessEnrollmentVerified": false,
+    "revenueCatStandardMonthlyTrackedRevenueThresholdUsd": 2500,
+    "revenueCatStandardRateAfterThreshold": 0.01,
+    "accountSpecificRevenueCatInvoiceVerified": false
+  },
+  "capacity": {
+    "monthlyPriceUsd": 9.99,
+    "annualPriceUsd": 79.99,
+    "monthlySubscribersForGross10000Mrr": 1002,
+    "annualSubscribersForGross10000Mrr": 1501,
+    "globalDailyCapacityAt20Each": 25,
+    "globalDailyCapacityAtOneEach": 500,
+    "meanRequestsDailyAcross1002Subscribers": 0.499001996007984,
+    "revenueGoalIsNotGuaranteed": true
+  },
+  "notAccepted": [
+    "Authenticated deployed Pro lookup and inactive denial",
+    "Subscription renewal, expiry, refund/revocation and restoration lifecycle",
+    "Live personal/global quota concurrency and exhaustion",
+    "Current aggregate usage and actual Anthropic cost/balance/rate limits",
+    "Production capacity supporting offered allowance and target subscribers"
+  ],
+  "mutations": {
+    "serverConfiguration": false,
+    "schemaOrQuota": false,
+    "entitlements": false,
+    "purchase": false,
+    "ownerAccountSessionCreated": false,
+    "publicRelease": false,
+    "images": false
+  },
+  "sources": {
+    "anthropic": "https://platform.claude.com/docs/en/models/haiku-4-5/overview",
+    "revenuecat": "https://www.revenuecat.com/pricing",
+    "apple": "https://developer.apple.com/app-store/subscriptions/",
+    "appleSmallBusiness": "https://developer.apple.com/app-store/small-business-program/",
+    "supabase": "https://supabase.com/pricing",
+    "supabaseStatus": "https://status.supabase.com/"
+  }
+}

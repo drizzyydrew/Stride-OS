@@ -1,0 +1,82 @@
+{
+  "recordedAt": "2026-11-20T03:11:48.774402+00:00",
+  "version": "1.0.0",
+  "buildNumber": "122",
+  "profile": "billing-qa",
+  "sourceCommit": "8db3cab83b80219a7a4ebbf424f4cc4245d84a48",
+  "buildId": "60112771-fa3f-4e3e-8b8c-66590cfa852e",
+  "submissionId": "118dfd53-dda7-41ca-9457-bb8979083c64",
+  "appleBuildId": "fda117a0-125f-46ec-a0a1-79c053fbb6e6",
+  "easStatus": "FINISHED",
+  "submissionStatus": "FINISHED",
+  "appleProcessingState": "VALID",
+  "internalBuildState": "IN_BETA_TESTING",
+  "existingGroup": {
+    "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+    "name": "Team (Expo)",
+    "isInternal": true,
+    "hasAccessToAllBuilds": true,
+    "actuallyAssigned": true,
+    "testerCount": 1,
+    "testerStates": [
+      "INSTALLED"
+    ]
+  },
+  "betaNotes": {
+    "locale": "en-US",
+    "exactReadback": true,
+    "characters": 1771,
+    "sha256": "586ac695f36f23bce4ce48f7c5ababd55313e1ac440a76ce72130526f875606e"
+  },
+  "archiveSha256": "fef28519c5b8162a2dd005b8a7c6c2333e6c6e2e87b3fcaaa6aec0f16eb8713d",
+  "archiveBytes": 129998134,
+  "signedTargetsVerified": 3,
+  "affectedRegression": {
+    "testFiles": 51,
+    "tests": 424,
+    "pass": 424,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "concurrency": 1
+  },
+  "nativeReleasePreflight": {
+    "tests": 34,
+    "pass": 34,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "exitCode": 0
+  },
+  "localAndCloudTypecheck": "PASS",
+  "cloudDoctorPassed": 21,
+  "testedRuntimeFingerprintReverified": {
+    "files": 805,
+    "sha256": "9325de95652332255b555bc531580e714c990f66082bb9cbb3a6945e3ed54627",
+    "ordering": "Python pathlib path-component ordering; relative POSIX path bytes"
+  },
+  "imageAssetsChanged": false,
+  "shareCompositionChanged": true,
+  "backendOrBillingPolicyChanged": false,
+  "physicalDeviceAccepted": false,
+  "purchaseLifecycleAcceptedByThisDelivery": false,
+  "launchSteps2And3": "PARTIAL; see BUILD122_LAUNCH_CHECKS.md",
+  "publicReviewSubmitted": false,
+  "publicVersion": {
+    "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "version": "1.0",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "releaseType": "MANUAL",
+    "selectedBuild": "109"
+  },
+  "evidence": [
+    "BUILD122_LOCAL_CHECKS.json",
+    "BUILD122_CLOUD_CHECKS.json",
+    "BUILD122_ARTIFACT_VERIFICATION.json",
+    "BUILD122_SUBMISSION_VERIFICATION.json",
+    "BUILD122_APPLE_ACCEPTANCE.json",
+    "BUILD122_LAUNCH_CHECKS.md"
+  ],
+  "ownerGuide": "BUILD122_OWNER_TEST_GUIDE.md"
+}

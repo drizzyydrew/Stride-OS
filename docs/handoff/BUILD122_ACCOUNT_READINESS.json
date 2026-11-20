@@ -1,0 +1,163 @@
+{
+  "checkedAt": "2026-11-20T02:58:37.946707+00:00",
+  "stage": "PARTIAL_RUNTIME_AUTH_UNAVAILABLE",
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "projectMetadataStatus": "ACTIVE_HEALTHY",
+  "region": "us-east-2",
+  "scope": "Read-only account/reviewer/deletion readiness plus nonpersistent existing restricted reviewer sign-in attempt; no account or policy mutations",
+  "reviewer": {
+    "checkedAt": "2026-11-20T02:50:16.858Z",
+    "reviewDetailPresent": true,
+    "demoAccountRequired": true,
+    "usernamePresent": true,
+    "passwordPresent": true,
+    "nonPersistentAuth": true,
+    "signInStatus": 522,
+    "transportExitCode": 0,
+    "errorCode": null
+  },
+  "publicAuthHealth": {
+    "checkedAt": "2026-11-20T02:50:37.001Z",
+    "httpStatus": 522,
+    "transportExitCode": 0,
+    "json": false,
+    "serviceName": null,
+    "version": null
+  },
+  "publicAuthSettings": {
+    "checkedAt": "2026-11-20T02:50:57.327Z",
+    "keyType": "legacy_anon",
+    "httpStatus": 0,
+    "transportExitCode": 28,
+    "json": false,
+    "providers": null
+  },
+  "configurationHistoryOnly": {
+    "lastVerifiedAt": "2026-11-15T23:20:30.112Z",
+    "signupDisabled": true,
+    "emailConfirmationRequired": true,
+    "currentConfigurationReadAccepted": false,
+    "reason": "Historical public Auth settings; current management configuration independently confirmed below, while Auth origin settings remain unavailable",
+    "supersededByFreshManagementRead": true
+  },
+  "disposableAccount": {
+    "created": false,
+    "signupRequestSent": false,
+    "deletionRequestSent": false,
+    "reason": "No usable Auth response/session; creation or admin confirmation would not prove the requested public signup/email/native flow"
+  },
+  "deletionSource": {
+    "checkedAt": "2026-11-20T02:51:57.745975+00:00",
+    "functions": [
+      {
+        "slug": "account-deletion",
+        "version": 8,
+        "status": "ACTIVE",
+        "verifyJwt": true,
+        "files": 9,
+        "exactFiles": 8,
+        "nonExactFiles": [
+          "supabase/functions/_shared/launchHandlers.ts"
+        ]
+      },
+      {
+        "slug": "account-deletion-status",
+        "version": 6,
+        "status": "ACTIVE",
+        "verifyJwt": false,
+        "files": 9,
+        "exactFiles": 8,
+        "nonExactFiles": [
+          "supabase/functions/_shared/launchHandlers.ts"
+        ]
+      },
+      {
+        "slug": "account-deletion-worker",
+        "version": 6,
+        "status": "ACTIVE",
+        "verifyJwt": false,
+        "files": 9,
+        "exactFiles": 8,
+        "nonExactFiles": [
+          "supabase/functions/_shared/launchHandlers.ts"
+        ]
+      }
+    ],
+    "differenceScope": "Only shared launchHandlers createCoachHandler readUsage/GET usage additions differ; deletion handler/runtime/provider/fulfillment source matches. Whole-bundle exactness is not claimed."
+  },
+  "databaseProbes": {
+    "attempts": 2,
+    "bothConnectionTimedOut": true,
+    "mutationQueries": 0
+  },
+  "localChecks": {
+    "tests": 91,
+    "passed": 91,
+    "failed": 0,
+    "skipped": 0,
+    "testFiles": [
+      "scripts/tests/accountDeletionClient.test.ts",
+      "scripts/tests/deletionRuntime.test.ts",
+      "scripts/tests/deletionFulfillment.test.ts",
+      "scripts/tests/deletionHandlers.test.ts",
+      "scripts/tests/authCallbackScreen.test.ts",
+      "scripts/tests/authInputScreens.test.ts"
+    ],
+    "logSha256": "3e5d9e1499aaed77a2b62c1522950ae272deb863e7382e8650a4e63cbd7099b5",
+    "doesNotEstablishDeviceOrLiveProviderAcceptance": true
+  },
+  "providerStatusPage": {
+    "url": "https://status.supabase.com/",
+    "observed": "All systems operational",
+    "doesNotEstablishThisProjectRuntimeHealth": true
+  },
+  "remaining": [
+    "Restore and re-verify actual Auth/DB reachability before new-account tests",
+    "Public registration is currently disabled. Decide the intended launch registration policy, then verify SMTP delivery, real confirmation email and native app return on an isolated disposable identity after Auth recovers; no policy change was made in this audit",
+    "Recheck existing restricted reviewer sign-in after Auth responds; ordinary native reviewer navigation remains separate",
+    "Perform authorized scoped disposable-account server deletion, provider revocation where applicable, device cleanup and relaunch with absent readback; do not use the main training account"
+  ],
+  "mainTrainingAccountTouched": false,
+  "credentialsPrintedOrPersisted": false,
+  "purchasesMade": false,
+  "publicSignupOrDeletionPolicyChanged": false,
+  "publicReviewOrReleasePerformed": false,
+  "managementAuthConfig": {
+    "checkedAt": "2026-11-20T02:56:12.547656+00:00",
+    "command": "cached CLI v2.122.0 config pull --project-ref <exact> --dry-run --output-format json in private cache workdir",
+    "remoteConfigurationRead": true,
+    "dryRun": true,
+    "wrote": false,
+    "counts": {
+      "update": 0,
+      "remote_only": 24,
+      "local_only": 0,
+      "total": 24,
+      "written": 0,
+      "skipped": 24
+    },
+    "settings": {
+      "auth.enable_signup": false,
+      "auth.email.enable_confirmations": true,
+      "auth.email.smtp.enabled": true,
+      "auth.external.apple.enabled": true,
+      "auth.external.google.enabled": true,
+      "auth.rate_limit.email_sent": 30,
+      "auth.site_url": "strideos://",
+      "auth.additional_redirect_urls": [
+        "strideos://auth/new-password",
+        "strideos://auth/callback",
+        "strideos://**"
+      ],
+      "auth.email.smtp.hostPresent": true,
+      "auth.email.smtp.userPresent": true,
+      "auth.email.smtp.admin_emailPresent": true,
+      "auth.email.smtp.sender_namePresent": true
+    }
+  },
+  "cleanup": {
+    "privateConfigPullLogRemoved": true,
+    "temporaryPublicClientKeyCachesRemoved": true,
+    "passwordsOrSessionTokensPersisted": false
+  }
+}

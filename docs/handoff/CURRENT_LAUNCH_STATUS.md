@@ -1,12 +1,16 @@
 # Current StrideOS launch status
 
-## Build 122 authorized — preparation and launch audits in progress
+## Latest: build 122 delivered — November 19 Pacific
 
-The owner now authorizes committing, pushing and TestFlight delivery of the prepared Get faster, graded plyometric and Everyday sharing changes, superseding the earlier build hold. Technical launch and account/Apple review-readiness checks are also requested. See BUILD122_PREPARATION.md. Delivery is not established until the final Apple/group/note receipt exists; public App Review/release remains separate. Existing image assets are unchanged.
+Build 122 is VALID / IN_BETA_TESTING in the existing internal Team (Expo) group, with exact saved testing-note readback. Source `8db3cab83b80219a7a4ebbf424f4cc4245d84a48`; EAS `60112771-fa3f-4e3e-8b8c-66590cfa852e`; submission `118dfd53-dda7-41ca-9457-bb8979083c64`. Commit/push and TestFlight were authorized; the earlier hold below is historical and superseded. See BUILD122_RELEASE.md and BUILD122_DELIVERY.json.
 
-## Local candidate after 121 — Get faster, graded plyometrics and Everyday sharing
+Get faster, graded running-specific plyometric tasks/response logic and exclusive Route / Everyday equivalent Story illustrations are included. No image assets, native Watch runtime, backend billing policy or AI allowance changed. 424 affected/regression tests in 51 files, 34 native preflight checks, local/cloud typechecks, 21/21 cloud Doctor, native archive and signed three-target artifact verification passed. These are not a fresh whole-repository test run or physical-device acceptance. See BUILD122_OWNER_TEST_GUIDE.md.
 
-The owner explicitly requests **do not build yet**. Local changes add the Get faster goal, NSCA/CSCS- and ACSM-informed graded plyometric task/response logic, and mutually exclusive Route / Everyday equivalent Story sharing. No build number change, app build, prebuild, OTA update, commit, push or submission occurred for this candidate. Delivered 121 remains the last release recorded below; the new local features are not installed by that delivery.
+**Steps 2 and 3 are partial; public launch is not ready.** Auth HTTP 522/database timeouts block live account, reviewer, deletion, paid lifecycle and quota acceptance. Public signup and server Pro enforcement are off. Capacity/budget needs resolution. Apple agreements/business statuses are Active; two age answers were saved. Purchase History privacy is unsaved pending restored browser sign-in. Both subscription review images are absent, and uploaded iPad/Watch interfaces are outdated under the image hold. See BUILD122_LAUNCH_CHECKS.md and its linked technical/account/Apple evidence. No public review/release occurred; public draft still selects 109 / PREPARE_FOR_SUBMISSION / MANUAL.
+
+## Historical preparation hold after 121 — superseded by 122 authorization
+
+At this earlier preparation stage, the owner requested **do not build yet**. The subsequently authorized and delivered 122 source added the Get faster goal, NSCA/CSCS- and ACSM-informed graded plyometric task/response logic, and mutually exclusive Route / Everyday equivalent Story sharing. No build number change, app build, prebuild, OTA update, commit, push or submission occurred for this candidate. Delivered 121 remains the last release recorded below; the new local features are not installed by that delivery.
 
 See NEXT_BUILD_GET_FASTER_AND_SHARE.md for the implementation, evidence boundaries, source verification and later device checks. Existing actual sets and captured prescriptions are preserved; current-week impact holds can omit an optional jump from a regenerated completed-plan preview. No image assets, native runtime, dependencies, backend policy or AI/subscription limits changed. Earlier public-launch gates remain separate and open.
 

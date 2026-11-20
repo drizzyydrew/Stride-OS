@@ -1,0 +1,684 @@
+{
+  "checkedAt": "2026-11-20T02:55:23.108511+00:00",
+  "scope": "Apple/store readiness checks; two factual age descriptor answers patched with exact readback. No public submission/release, financial changes or image creation/edit/upload.",
+  "appId": "6782788130",
+  "publicVersion": [
+    {
+      "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+      "version": "1.0",
+      "state": "PREPARE_FOR_SUBMISSION",
+      "releaseType": "MANUAL",
+      "selectedBuild": "109"
+    }
+  ],
+  "reviewCredentials": {
+    "id": "8a4b651d-dc9d-48bf-8771-1a273ee76c63",
+    "demoAccountRequired": true,
+    "usernamePresent": true,
+    "passwordPresent": true,
+    "contactFirstNamePresent": true,
+    "contactLastNamePresent": true,
+    "contactPhonePresent": true,
+    "contactEmailPresent": true,
+    "notesPresent": true,
+    "notesCharacters": 1293
+  },
+  "reviewNotesMatchPaidCandidate": false,
+  "reviewNotesMismatch": "Current selected109 review note says subscriptions disabled; must replace only when reconciling the accepted paid public candidate.",
+  "agreementsVerifiedViaSignedInUI": {
+    "paidAppsAgreement": "Active",
+    "freeAppsAgreement": "Active",
+    "effectiveDate": "2026-11-01",
+    "expiryDate": "2027-06-20",
+    "bankAccountStatus": "Active",
+    "usW9Status": "Active",
+    "digitalServicesActStatus": "Active"
+  },
+  "appPrivacyVerifiedViaSignedInUI": {
+    "publishedAgoDays": 18,
+    "dataLinkedToIdentity": [
+      "Fitness",
+      "Name",
+      "Email Address",
+      "Photos or Videos",
+      "Other User Content",
+      "User ID",
+      "Precise Location",
+      "Health",
+      "Product Interaction",
+      "Crash Data",
+      "Other Diagnostic Data"
+    ],
+    "missingRequiredRevenueCatDisclosure": "Purchase History",
+    "proposedPurchaseHistory": {
+      "purposes": [
+        "App Functionality",
+        "Analytics"
+      ],
+      "linkedToIdentity": true,
+      "tracking": false,
+      "trackingAnswerCondition": "No other advertising/tracking integration is used; source audit supports this."
+    },
+    "otherDataTypes": "Existing labels are broad; individual collection/linkage/purpose classification requires final data inventory review.",
+    "draftCorrectionSaved": false,
+    "privacyPublished": false
+  },
+  "ageRatingCurrent": [
+    {
+      "id": "dbb00802-eda7-4b9d-88ec-b5ce2a5b3eb1",
+      "datingAndRelationships": null,
+      "messagingAndChat": false,
+      "sexualContentGraphicAndNudity": "NONE",
+      "gambling": false,
+      "horrorOrFearThemes": "NONE",
+      "parentalControls": false,
+      "advertising": false,
+      "ageRatingOverride": "NONE",
+      "ageRatingOverrideV2": "NONE",
+      "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+      "matureOrSuggestiveThemes": "NONE",
+      "healthOrWellnessTopics": true,
+      "unrestrictedWebAccess": false,
+      "violenceCartoonOrFantasy": "NONE",
+      "kidsAgeBand": null,
+      "sharedLocation": null,
+      "medicalOrTreatmentInformation": "INFREQUENT",
+      "lootBox": false,
+      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+      "gamblingSimulated": "NONE",
+      "violenceRealistic": "NONE",
+      "profanityOrCrudeHumor": "NONE",
+      "socialMedia": false,
+      "contests": "INFREQUENT",
+      "koreaAgeRatingOverride": "NONE",
+      "ageAssurance": false,
+      "userGeneratedContent": false,
+      "gunsOrOtherWeapons": "NONE",
+      "socialMediaAgeRestricted": false,
+      "gracRatingClassificationNumber": null,
+      "developerAgeRatingInfoUrl": null,
+      "sexualContentOrNudity": "NONE"
+    }
+  ],
+  "ageRatingProposals": {
+    "datingAndRelationships": false,
+    "sharedLocation": false,
+    "notWritten": false,
+    "sharedLocationRationale": "Private GPS/map and owner backup are not person-to-person sharing. Source inspected OS image export as normalized unlabelled route silhouette; Strava activity upload sends duration/distance, not route or live position. No current/ongoing location recipient/group sharing found. Inference requires confirming no other released location-sharing pathway.",
+    "status": "Both false saved with exact readback"
+  },
+  "subscriptions": [
+    {
+      "id": "6829293174",
+      "name": "StrideOS Pro Annual",
+      "productId": "strideos_pro_annual",
+      "state": "MISSING_METADATA",
+      "subscriptionPeriod": "ONE_YEAR",
+      "reviewScreenshot": null,
+      "localizations": [
+        {
+          "id": "027c503e-9e43-4002-a494-546eae651092",
+          "name": "StrideOS Pro Annual",
+          "locale": "en-US",
+          "description": "AI Coach chat with training context and daily limits.",
+          "state": "PREPARE_FOR_SUBMISSION"
+        }
+      ],
+      "introductoryOffers": [
+        {
+          "id": "eyJzIjoiNjgyOTI5MzE3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJBVSIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "AUS"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI5MzE3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJDQSIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "CAN"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI5MzE3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJHQiIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "GBR"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI5MzE3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJOWiIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "NZL"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI5MzE3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJVUyIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "USA"
+        }
+      ],
+      "availability": {
+        "id": "6829293174",
+        "availableInNewTerritories": false,
+        "territories": [
+          "AUS",
+          "USA",
+          "CAN",
+          "NZL",
+          "GBR"
+        ]
+      },
+      "usaPrices": [
+        {
+          "id": "eyJhIjoiNjgyOTI5MzE3NCIsImMiOiJVUyIsImQiOjAsInAiOiIwIn0",
+          "startDate": null,
+          "preserved": false,
+          "territory": "USA",
+          "pricePoint": {
+            "customerPrice": "79.99",
+            "proceeds": "56.0",
+            "proceedsYear2": "67.99"
+          }
+        }
+      ]
+    },
+    {
+      "id": "6829288874",
+      "name": "StrideOS Pro Monthly",
+      "productId": "strideos_pro_monthly",
+      "state": "MISSING_METADATA",
+      "subscriptionPeriod": "ONE_MONTH",
+      "reviewScreenshot": null,
+      "localizations": [
+        {
+          "id": "e75c94af-cb96-44fd-964f-4cbe69229022",
+          "name": "StrideOS Pro Monthly",
+          "locale": "en-US",
+          "description": "AI Coach chat with training context and daily limits.",
+          "state": "PREPARE_FOR_SUBMISSION"
+        }
+      ],
+      "introductoryOffers": [
+        {
+          "id": "eyJzIjoiNjgyOTI4ODg3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJBVSIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "AUS"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI4ODg3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJDQSIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "CAN"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI4ODg3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJHQiIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "GBR"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI4ODg3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJOWiIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "NZL"
+        },
+        {
+          "id": "eyJzIjoiNjgyOTI4ODg3NCIsImQiOjE3OTQ4MTYwMDAsImkiOiJVUyIsInQiOiIiLCJwIjoiMCJ9",
+          "startDate": "2026-11-16",
+          "endDate": null,
+          "duration": "TWO_WEEKS",
+          "offerMode": "FREE_TRIAL",
+          "numberOfPeriods": 1,
+          "targetSubscriptionPlanType": "UPFRONT",
+          "territory": "USA"
+        }
+      ],
+      "availability": {
+        "id": "6829288874",
+        "availableInNewTerritories": false,
+        "territories": [
+          "USA",
+          "GBR",
+          "NZL",
+          "CAN",
+          "AUS"
+        ]
+      },
+      "usaPrices": [
+        {
+          "id": "eyJhIjoiNjgyOTI4ODg3NCIsImMiOiJVUyIsImQiOjAsInAiOiIwIn0",
+          "startDate": null,
+          "preserved": false,
+          "territory": "USA",
+          "pricePoint": {
+            "customerPrice": "9.99",
+            "proceeds": "7.0",
+            "proceedsYear2": "8.49"
+          }
+        }
+      ]
+    }
+  ],
+  "uploadedScreenshotSets": [
+    {
+      "locale": "en-US",
+      "type": "APP_IPHONE_61",
+      "count": 3,
+      "images": [
+        {
+          "id": "f1d32ae3-3852-4d38-b3d0-f1a2cb085b63",
+          "fileName": "02-calendar-week.png",
+          "fileSize": 229235,
+          "deliveryState": "COMPLETE",
+          "imageAsset": {
+            "width": 1206,
+            "height": 2622
+          }
+        },
+        {
+          "id": "b5f15798-4b50-48bb-ab46-23e0e6d392de",
+          "fileName": "04-activity-history.png",
+          "fileSize": 294010,
+          "deliveryState": "COMPLETE",
+          "imageAsset": {
+            "width": 1206,
+            "height": 2622
+          }
+        },
+        {
+          "id": "dcd0d76f-d80b-4b4d-9723-2c5e0343e2ab",
+          "fileName": "06-strength-presets.png",
+          "fileSize": 311856,
+          "deliveryState": "COMPLETE",
+          "imageAsset": {
+            "width": 1206,
+            "height": 2622
+          }
+        }
+      ]
+    },
+    {
+      "locale": "en-US",
+      "type": "APP_IPAD_PRO_3GEN_129",
+      "count": 3,
+      "images": [
+        {
+          "id": "04ffe440-3c86-44b7-bc5d-c5cfd2e42b53",
+          "fileName": "ipad-02-training.png",
+          "fileSize": 308024,
+          "deliveryState": "COMPLETE",
+          "imageAsset": {
+            "width": 2064,
+            "height": 2752
+          }
+        },
+        {
+          "id": "2517dcb6-8acf-4ace-8dec-ad193930e251",
+          "fileName": "ipad-01-readiness.png",
+          "fileSize": 316437,
+          "deliveryState": "COMPLETE",
+          "imageAsset": {
+            "width": 2064,
+            "height": 2752
+          }
+        },
+        {
+          "id": "d3cbc51f-cd91-4471-9fbe-9d94e1900b05",
+          "fileName": "ipad-03-analytics.png",
+          "fileSize": 272947,
+          "deliveryState": "COMPLETE",
+          "imageAsset": {
+            "width": 2064,
+            "height": 2752
+          }
+        }
+      ]
+    },
+    {
+      "locale": "en-US",
+      "type": "APP_WATCH_ULTRA",
+      "count": 4,
+      "images": [
+        {
+          "id": "6e764149-31eb-4c8f-ae19-05e56d4c8cc9",
+          "fileName": "watch-01-readiness.jpg",
+          "fileSize": 16538,
+          "deliveryState": "COMPLETE",
+          "imageAsset": {
+            "width": 422,
+            "height": 514
+          }
+        },
+        {
+          "id": "e78c2350-eec0-4760-b848-8503b3962230",
+          "fileName": "watch-04-stats.jpg",
+          "fileSize": 16354,
+          "deliveryState": "COMPLETE",
+          "imageAsset": {
+            "width": 422,
+            "height": 514
+          }
+        },
+        {
+          "id": "40786420-4fe0-460e-9516-c73bacbed7c8",
+          "fileName": "watch-03-workout.jpg",
+          "fileSize": 15604,
+          "deliveryState": "COMPLETE",
+          "imageAsset": {
+            "width": 422,
+            "height": 514
+          }
+        },
+        {
+          "id": "defb4b13-39fe-403a-9557-5b64beb62373",
+          "fileName": "watch-02-active-run.jpg",
+          "fileSize": 15695,
+          "deliveryState": "COMPLETE",
+          "imageAsset": {
+            "width": 422,
+            "height": 514
+          }
+        }
+      ]
+    },
+    {
+      "locale": "en-US",
+      "type": "APP_IPHONE_65",
+      "count": 0,
+      "images": []
+    }
+  ],
+  "screenshotReadOnlyAssessment": {
+    "imageWritesPerformed": false,
+    "iphone": "Three native107 calendar/history/preset captures predate122; no new feature claims in inspected images. Not a full122 device rendering proof.",
+    "ipad": "Uploaded readiness/training marketing mockups use obsolete tab structure and UI, including Today/Training/Running/Profile and Coach Note; not validated as final interface.",
+    "watch": "Uploaded workout/active-run marketing layouts differ from current native paired Start from iPhone + single-metric pages.",
+    "requiredSizeAssessment": "Existing1206x2622 iPhone and2064x2752 iPad dimensions appear in current Apple spec. Current required-size introduction says medium Dynamic Island+iPad13. Legacy large-iPhone fallback text on same page remains; verify ASC validation at eventual public submission. EmptyAPP_IPHONE_65 alone is not established as a current size blocker.",
+    "subscriptionReviewImages": "Both absent; user forbids image additions/uploads, so left unresolved."
+  },
+  "desktopPackage": {
+    "checkedAt": "2026-11-20T02:54:58.379436+00:00",
+    "readOnly": true,
+    "fictionalSampleData": true,
+    "appleReviewApproved": false,
+    "publicUploadPerformed": false,
+    "exports": [
+      {
+        "file": "Store Image Candidates/iPhone Large 1290x2796/01-today-progress-demo.png",
+        "exists": true,
+        "dimensions": [
+          1290,
+          2796
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/iPhone Large 1290x2796/02-calendar-progress-demo.png",
+        "exists": true,
+        "dimensions": [
+          1290,
+          2796
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/iPhone Large 1290x2796/03-race-week-demo.png",
+        "exists": true,
+        "dimensions": [
+          1290,
+          2796
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/iPhone Large 1290x2796/04-active-run-private-map-demo.png",
+        "exists": true,
+        "dimensions": [
+          1290,
+          2796
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/iPhone Large 1290x2796/05-activity-history-demo.png",
+        "exists": true,
+        "dimensions": [
+          1290,
+          2796
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/iPhone Large 1290x2796/06-fictional-athlete-profile.png",
+        "exists": true,
+        "dimensions": [
+          1290,
+          2796
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/iPhone Large 1290x2796/07-ai-coach-demo.png",
+        "exists": true,
+        "dimensions": [
+          1290,
+          2796
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/iPhone Large 1290x2796/08-saved-routes-demo.png",
+        "exists": true,
+        "dimensions": [
+          1290,
+          2796
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/Apple Watch 396x484/01-heart-rate-demo.png",
+        "exists": true,
+        "dimensions": [
+          396,
+          484
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/Apple Watch 396x484/02-distance-demo.png",
+        "exists": true,
+        "dimensions": [
+          396,
+          484
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/Apple Watch 396x484/03-pace-paused-demo.png",
+        "exists": true,
+        "dimensions": [
+          396,
+          484
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/Apple Watch 396x484/04-elapsed-time-paused-demo.png",
+        "exists": true,
+        "dimensions": [
+          396,
+          484
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/Apple Watch 396x484/05-cadence-demo.png",
+        "exists": true,
+        "dimensions": [
+          396,
+          484
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/Apple Watch 396x484/06-energy-demo.png",
+        "exists": true,
+        "dimensions": [
+          396,
+          484
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/Apple Watch 396x484/07-estimated-power-demo.png",
+        "exists": true,
+        "dimensions": [
+          396,
+          484
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      },
+      {
+        "file": "Store Image Candidates/Apple Watch 396x484/08-heart-rate-zone-demo.png",
+        "exists": true,
+        "dimensions": [
+          396,
+          484
+        ],
+        "mode": "RGB",
+        "sha256Matches": true
+      }
+    ]
+  },
+  "publicPages": {
+    "checkedAt": "2026-11-20T02:51:27.825998+00:00",
+    "transport": "curl with certificate verification",
+    "pages": [
+      {
+        "url": "https://strideosfitness.com/privacy.html",
+        "status": "402",
+        "exitCode": 56,
+        "error": "curl: (56) The requested URL returned error: 402"
+      },
+      {
+        "url": "https://strideosfitness.com/terms.html",
+        "status": "402",
+        "exitCode": 56,
+        "error": "curl: (56) The requested URL returned error: 402"
+      },
+      {
+        "url": "https://strideosfitness.com/support.html",
+        "status": "402",
+        "exitCode": 56,
+        "error": "curl: (56) The requested URL returned error: 402"
+      },
+      {
+        "url": "https://drizzyydrew.github.io/Stride-OS/privacy.html",
+        "status": "200",
+        "exitCode": 0,
+        "bytes": 16221,
+        "sha256": "cada2ce214ee443062541fa5bd09380139e5b458736dc16f3389e181d22a5d4e",
+        "matchesRepo": true,
+        "RevenueCatDisclosure": true,
+        "paidMembershipDisclosure": false,
+        "deletionDisabledDisclosure": true
+      },
+      {
+        "url": "https://drizzyydrew.github.io/Stride-OS/terms.html",
+        "status": "200",
+        "exitCode": 0,
+        "bytes": 5200,
+        "sha256": "c0ee646c7544b6785f583843f2d474b213d235392673a68d90fea7ae8d708551",
+        "matchesRepo": true,
+        "RevenueCatDisclosure": true,
+        "paidMembershipDisclosure": true,
+        "deletionDisabledDisclosure": true
+      },
+      {
+        "url": "https://drizzyydrew.github.io/Stride-OS/support.html",
+        "status": "200",
+        "exitCode": 0,
+        "bytes": 13024,
+        "sha256": "ab9b2ffb9c6347e09a6de467917fc1bad45ce0d0254be190fbadbba1ca0d7673",
+        "matchesRepo": true,
+        "RevenueCatDisclosure": false,
+        "paidMembershipDisclosure": false,
+        "deletionDisabledDisclosure": true
+      }
+    ]
+  },
+  "remainingPublicReadiness": [
+    "Both subscription review screenshots absent; subscriptions MISSING_METADATA.",
+    "Published App Privacy lacks Purchase History.",
+    "Reviewer notes describe subscriptions disabled; publicdraft selects109.",
+    "OldiPad/Watch interface image accuracy unresolved under image-change hold.",
+    "Account/reviewer/signup/deletion and backend paid/quota/cost gates owned by parallel checks."
+  ],
+  "sources": [
+    "https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/",
+    "https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications",
+    "https://www.revenuecat.com/docs/platform-resources/apple-platform-resources/apple-app-privacy",
+    "https://developer.apple.com/app-store/app-privacy-details/"
+  ],
+  "appStoreConnectSignedInAtInitialRead": true,
+  "appStoreConnectSessionAtEnd": "Expired; redirected to login during privacy draft Next; re-navigation remained login",
+  "ageRatingCorrection": {
+    "checkedAt": "2026-11-20T02:55:55.096Z",
+    "after": {
+      "datingAndRelationships": false,
+      "sharedLocation": false
+    },
+    "otherFieldsUnchanged": true
+  }
+}
