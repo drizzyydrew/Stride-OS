@@ -22,6 +22,7 @@ import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
 const GOALS: { value: TrainingGoalType; label: string }[] = [
   { value: 'race_prep', label: 'Prepare for a race' },
   { value: 'general_running', label: 'Running' },
+  { value: 'get_faster', label: 'Get faster' },
   { value: 'general_strength', label: 'Strength' },
   { value: 'hybrid', label: 'Hybrid · running and strength' },
 ];

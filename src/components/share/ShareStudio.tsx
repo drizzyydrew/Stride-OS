@@ -24,6 +24,8 @@ import { monthlyDistanceDefinitionFromAchievementId } from '../../achievements/m
 import { racePrDefinitionFromAchievementId } from '../../achievements/racePr';
 import AchievementBadge from '../achievements/AchievementBadge';
 import ShareBrandMark from './ShareBrandMark';
+import StoryIllustrationPicker from './StoryIllustrationPicker';
+import { availableStoryIllustration, selectAllStoryIllustration, shareEverydayEquivalent, type StoryIllustration } from '../../utils/shareEverydayEquivalent';
 import BadgeShareCanvas from './BadgeShareCanvas';
 import type { UnitSystem } from '../../store/settingsStore';
 import type { Activity } from '../../types/activity';
@@ -44,7 +46,8 @@ import {
 export type ShareStudioVariant = 'minimal_card' | 'transparent_overlay' | 'editorial_card' | 'activity_achievement';
 export type ShareStudioFormat = 'square' | 'story';
 
-type ToggleKey = 'route' | 'distance' | 'time' | 'pace' | 'elevation' | 'power' | 'achievement' | 'brand';
+type ToggleKey = 'route' | 'everyday' | 'distance' | 'time' | 'pace' | 'elevation' | 'power' | 'achievement' | 'brand';
+type DetailToggleKey = Exclude<ToggleKey, 'route' | 'everyday'>;
 type EditableLayerKey = 'brand' | 'achievement';
 const SHARE_EDGE_MARGIN = 0;
 const ROUTE_TRACE_ACCENT = '#9DB2A0';
@@ -105,6 +108,7 @@ function availableToggles(activity: Activity | undefined, achievement: Evaluated
   if (!isRunLevelAchievement && metricValue(activity, units, 'elevation')) keys.push('elevation');
   if (!isRunLevelAchievement && metricValue(activity, units, 'power')) keys.push('power');
   if (!isRunLevelAchievement && activity && activityHasShareableRoute(activity)) keys.push('route');
+  if (!isRunLevelAchievement && shareEverydayEquivalent(activity, units)) keys.push('everyday');
   if (achievement && achievementShareAllowed(achievement)) keys.push('achievement');
   keys.push('brand');
   return keys;
@@ -113,6 +117,7 @@ function availableToggles(activity: Activity | undefined, achievement: Evaluated
 function toggleLabel(key: ToggleKey, activity?: Activity): string {
   if (key === 'power') return activity ? sharePowerMetric(activity)?.label ?? 'Power' : 'Power';
   if (key === 'route') return 'Route';
+  if (key === 'everyday') return 'Everyday equivalent';
   if (key === 'time') return 'Time';
   if (key === 'pace') return activity && (activity.activityType === 'indoor_cycling'
     || (isOutdoorSport(activity.activityType) && OUTDOOR_SPORTS[activity.activityType].speedBased)) ? 'Speed' : 'Pace';
@@ -216,11 +221,11 @@ function RouteOverlay({ activity, light = false }: { activity?: Activity; light?
   );
 }
 
-function StatPill({ label, value, transparent = false }: { label: string; value: string; transparent?: boolean }) {
+function StatPill({ label, value, transparent = false, darkInk = false }: { label: string; value: string; transparent?: boolean; darkInk?: boolean }) {
   return (
     <View style={[styles.statPill, transparent && styles.statPillTransparent]}>
-      <Text allowFontScaling={false} style={[styles.statValue, transparent && styles.overlayTextShadow]}>{value}</Text>
-      <Text allowFontScaling={false} style={[styles.statLabel, transparent && styles.overlayTextShadow]}>{label}</Text>
+      <Text allowFontScaling={false} style={[styles.statValue, darkInk && styles.darkInk, transparent && !darkInk && styles.overlayTextShadow]}>{value}</Text>
+      <Text allowFontScaling={false} style={[styles.statLabel, darkInk && styles.darkInkMuted, transparent && !darkInk && styles.overlayTextShadow]}>{label}</Text>
     </View>
   );
 }
@@ -246,9 +251,8 @@ function ActivityShareStudio({
 }: Props) {
   const C = useColors();
   const isStory = format === 'story';
-  const keys = availableToggles(activity, achievement, units).filter(key => (key !== 'route' || isStory) && (isStory || !achievement || key === 'achievement' || key === 'distance'));
-  const [enabled, setEnabled] = useState<Record<ToggleKey, boolean>>({
-    route: false,
+  const keys = availableToggles(activity, achievement, units).filter(key => ((key !== 'route' && key !== 'everyday') || isStory) && (isStory || !achievement || key === 'achievement' || key === 'distance'));
+  const [detailEnabled, setEnabled] = useState<Record<DetailToggleKey, boolean>>({
     distance: keys.includes('distance'),
     time: keys.includes('time'),
     pace: keys.includes('pace'),
@@ -257,6 +261,21 @@ function ActivityShareStudio({
     achievement: Boolean(achievement && achievementShareAllowed(achievement)),
     brand: true,
   });
+  const equivalent = useMemo(() => shareEverydayEquivalent(activity, units), [activity, units]);
+  const [illustrationChoice, setIllustrationChoice] = useState<{ activityId?: string; value: StoryIllustration }>({ activityId: activity?.id, value: 'none' });
+  const illustration = availableStoryIllustration(illustrationChoice.activityId === activity?.id ? illustrationChoice.value : 'none', isStory, keys.includes('route'), keys.includes('everyday'));
+  const enabled: Record<ToggleKey, boolean> = { ...detailEnabled, route: illustration === 'route', everyday: illustration === 'everyday' };
+  const changeIllustration = (value: StoryIllustration) => {
+    const next = availableStoryIllustration(value, isStory, keys.includes('route'), keys.includes('everyday'));
+    if (next === 'route' && illustration !== 'route') onRoutePrivacyNotice?.(ROUTE_PRIVACY_NOTE);
+    setIllustrationChoice({ activityId: activity?.id, value: next });
+  };
+  useEffect(() => {
+    // Invalidated data must not revive a former selection after a later refresh.
+    if (illustrationChoice.activityId !== activity?.id || availableStoryIllustration(illustrationChoice.value, true, keys.includes('route'), keys.includes('everyday')) !== illustrationChoice.value) {
+      setIllustrationChoice({ activityId: activity?.id, value: 'none' });
+    }
+  }, [activity?.id, keys.includes('route'), keys.includes('everyday')]);
   useEffect(() => {
     setEnabled(current => ({
       ...current,
@@ -284,6 +303,8 @@ function ActivityShareStudio({
     brand: 1,
   });
   const routeEnabled = keys.includes('route') && enabled.route && activity && activityHasShareableRoute(activity);
+  const everydayEnabled = keys.includes('everyday') && enabled.everyday && equivalent != null;
+  const illustrationEnabled = routeEnabled || everydayEnabled;
   const isOverlay = variant === 'transparent_overlay';
   const activityTitle = shareActivityLabel(activity);
   const runLevelSlug = achievement ? runLevelSlugFromId(achievement.id) : null;
@@ -381,7 +402,7 @@ function ActivityShareStudio({
   const fixedAchievementStyle = [
     styles.fixedAchievement,
     isStory ? styles.fixedAchievementStory : styles.fixedAchievementSquare,
-    combinedStory && (routeEnabled ? styles.combinedStoryBadgeWithRoute : styles.combinedStoryBadge),
+    combinedStory && (illustrationEnabled ? styles.combinedStoryBadgeWithRoute : styles.combinedStoryBadge),
     combinedStory && selectedMetrics.length >= 5 && styles.denseStoryBadge,
   ];
 
@@ -390,7 +411,7 @@ function ActivityShareStudio({
       ref={canvasRef}
       collapsable={false}
       accessible={isStory && fixedActivityLayout}
-      accessibilityLabel={isStory && fixedActivityLayout ? `${activity ? displayLabel(activity.activityType) : 'Training'}. ${achievement?.title ?? ''}. ${selectedMetrics.map(item => `${toggleLabel(item.key, activity)} ${item.value}`).join('. ')}` : undefined}
+      accessibilityLabel={isStory && fixedActivityLayout ? `${activity ? displayLabel(activity.activityType) : 'Training'}. ${achievement?.title ?? ''}. ${selectedMetrics.map(item => `${toggleLabel(item.key, activity)} ${item.value}`).join('. ')}${everydayEnabled ? `. ${equivalent.accessibilityLabel}` : ''}` : undefined}
       onLayout={(event: LayoutChangeEvent) => {
         const next = event.nativeEvent.layout;
         setCanvasSize(current => (
@@ -428,6 +449,11 @@ function ActivityShareStudio({
         {!achievement && enabled.brand ? <View style={styles.squareBrand}><ShareBrandMark darkInk={foregroundDark} /></View> : null}
       </View> : null}
       {routeEnabled ? <View style={fixedActivityLayout ? fixedRouteStyle : styles.routeLayer}><RouteOverlay activity={activity} light={foregroundDark} /></View> : null}
+      {everydayEnabled ? <View style={[fixedRouteStyle, styles.equivalentLayer]} testID="everyday-share-equivalent">
+        <Text allowFontScaling={false} style={[styles.statValue, styles.equivalentComparison, foregroundDark ? styles.darkInk : styles.lightInk, !foregroundDark && styles.overlayTextShadow]}>{equivalent.comparison}</Text>
+        <Text allowFontScaling={false} style={[styles.equivalentSource, foregroundDark ? styles.darkInk : styles.lightInk]}>{equivalent.sourceLabel}</Text>
+        <Text allowFontScaling={false} style={[styles.equivalentCaveat, foregroundDark ? styles.darkInk : styles.lightInk]}>{equivalent.caveat}</Text>
+      </View> : null}
       {enabled.brand && fixedActivityLayout && !squareComposition ? (
         <View style={fixedBrandStyle}>
           <ShareBrandMark darkInk={foregroundDark} />
@@ -541,7 +567,7 @@ function ActivityShareStudio({
       {selectedMetrics.length && fixedActivityLayout && !squareComposition ? (
         <View style={fixedMetricsStyle}>
           {selectedMetrics.slice(0, 6).map(item => (
-            <StatPill key={item.key} label={toggleLabel(item.key, activity).toUpperCase()} value={item.value} transparent />
+            <StatPill key={item.key} label={toggleLabel(item.key, activity).toUpperCase()} value={item.value} transparent darkInk={foregroundDark} />
           ))}
         </View>
       ) : selectedMetrics.length && !squareComposition ? (
@@ -573,7 +599,7 @@ function ActivityShareStudio({
           accessibilityLabel="Share detail selector"
         >
           <Text style={[styles.toggleText, detailsOpen ? styles.toggleTextOn : styles.toggleTextOff, !detailsOpen && { color: C.text }]}>
-            Share Details · {selectedCount}/{keys.length}
+            Share Details · {selectedCount} selected
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -594,10 +620,10 @@ function ActivityShareStudio({
             <TouchableOpacity
               style={[styles.smallAction, styles.toggleOn]}
               onPress={() => {
-                if (keys.includes('route') && !enabled.route) onRoutePrivacyNotice?.(ROUTE_PRIVACY_NOTE);
+                changeIllustration(selectAllStoryIllustration(illustration, keys.includes('route'), keys.includes('everyday')));
                 setEnabled(current => ({
                   ...current,
-                  ...Object.fromEntries(keys.map(key => [key, true])),
+                  ...Object.fromEntries(keys.filter(key => key !== 'route' && key !== 'everyday').map(key => [key, true])),
                 }));
               }}
               accessibilityRole="button"
@@ -606,30 +632,33 @@ function ActivityShareStudio({
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.smallAction, styles.toggleOff]}
-              onPress={() => setEnabled(current => ({
-                ...current,
-                route: false,
-                distance: false,
-                time: false,
-                pace: false,
-                elevation: false,
-                power: false,
-                achievement: false,
-                brand: false,
-              }))}
+              onPress={() => {
+                changeIllustration('none');
+                setEnabled(current => ({
+                  ...current,
+                  distance: false,
+                  time: false,
+                  pace: false,
+                  elevation: false,
+                  power: false,
+                  achievement: false,
+                  brand: false,
+                }));
+              }}
               accessibilityRole="button"
             >
               <Text style={[styles.toggleText, styles.toggleTextOff]}>Clear</Text>
             </TouchableOpacity>
           </View>
-          {keys.map(key => {
+          {isStory && (keys.includes('route') || keys.includes('everyday')) ? <StoryIllustrationPicker value={illustration}
+            routeAvailable={keys.includes('route')} everydayAvailable={keys.includes('everyday')} onChange={changeIllustration} /> : null}
+          {keys.filter((key): key is DetailToggleKey => key !== 'route' && key !== 'everyday').map(key => {
             const active = enabled[key];
             return (
               <TouchableOpacity
                 key={key}
                 style={[styles.detailsRow, active && styles.detailsRowOn]}
                 onPress={() => {
-                  if (key === 'route' && !active) onRoutePrivacyNotice?.(ROUTE_PRIVACY_NOTE);
                   setEnabled(current => ({ ...current, [key]: !current[key] }));
                 }}
                 accessibilityRole="checkbox"
@@ -740,6 +769,10 @@ const styles = StyleSheet.create({
   storyComposition: { position: 'absolute', width: 360, height: 640, left: '50%', top: '50%', marginLeft: -180, marginTop: -320 },
   photoScrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.26)' },
   routeLayer: { ...StyleSheet.absoluteFill },
+  equivalentLayer: { alignItems: 'center', justifyContent: 'center', gap: 8, minWidth: 0 },
+  equivalentComparison: { width: '100%', textAlign: 'center', lineHeight: 22 },
+  equivalentSource: { width: '100%', fontSize: 11, lineHeight: 14, textAlign: 'center', fontWeight: '700' },
+  equivalentCaveat: { width: '100%', fontSize: 10, lineHeight: 13, textAlign: 'center' },
   movable: { position: 'absolute' },
   brandLayer: { alignItems: 'center', justifyContent: 'center' },
   fixedBrand: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },

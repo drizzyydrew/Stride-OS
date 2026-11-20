@@ -63,6 +63,7 @@ function foundationFocus(goalType: TrainingGoalType): string {
 }
 
 function baseFocus(goalType: TrainingGoalType): string {
+  if (goalType === 'get_faster') return 'Speed foundation — repeat easy running and relaxed mechanics before sustained faster work';
   if (goalType === 'hybrid') return 'Aerobic base — consistency first, balanced with strength work';
   if (goalType === 'general_strength') return 'Strength-first — running supports the lifting program';
   return 'Aerobic base — consistency first';
@@ -74,6 +75,11 @@ function buildFocus(goalType: TrainingGoalType): string {
 }
 
 function focusForPhase(phase: TrainingPhase, goalType: TrainingGoalType, race?: Race): string {
+  if (goalType === 'get_faster' && !['foundation', 'deload', 'recovery', 'transition'].includes(phase)) {
+    return phase === 'vo2' ? 'Get faster — earn longer aerobic-power bouts from reported tolerance; most running stays easy'
+      : phase === 'threshold' ? 'Get faster — build controlled sustained work from shorter tolerated faster bouts'
+      : 'Get faster — aerobic consistency and relaxed accelerations before more demanding speed work';
+  }
   switch (phase) {
     case 'foundation': return foundationFocus(goalType);
     case 'base':        return baseFocus(goalType);
@@ -465,6 +471,7 @@ export function buildMacroPlan(input: Parameters<typeof buildLegacyMacroPlan>[0]
   else {
     const foundation = isBeginnerGated(input.progressionLevel, input.yearsRunning, input.weeklyMileage) ? 6 : 0;
     const phases: TrainingPhase[] = input.goalType === 'general_strength' ? ['base', 'build']
+      : input.goalType === 'get_faster' ? ['aerobic_development', 'threshold', 'vo2', 'base']
       : input.goalType === 'hybrid' ? ['aerobic_development', 'base', 'threshold', 'vo2']
       : ['aerobic_development', 'threshold', 'aerobic_development', 'vo2'];
     const weeks = Array.from({ length: MIN_TOTAL_WEEKS }, (_, index) => {
@@ -491,7 +498,10 @@ export function macroWeekForDate(plan: MacroPlan, date: Date): MacroWeek | null 
   if (found) return found;
 
   // Clamp beyond generated horizon by extending the base/deload cadence.
-  const phase: TrainingPhase = deloadOr(weekNum, 'base');
+  const foundation = plan.weeks.findIndex(week => !['foundation', 'deload'].includes(week.phase));
+  const continuingPhase: TrainingPhase = plan.programmingVersion === 2 && plan.goalType === 'get_faster'
+    ? (['aerobic_development', 'threshold', 'vo2', 'base'] as const)[Math.floor((weekNum - Math.max(0, foundation) - 1) / 6) % 4]! : 'base';
+  const phase: TrainingPhase = deloadOr(weekNum, continuingPhase);
   return {
     weekNumber: weekNum,
     startDate:  toYMD(weekStartForNumber(plan.startDate, weekNum)),
@@ -499,7 +509,7 @@ export function macroWeekForDate(plan: MacroPlan, date: Date): MacroWeek | null 
     isDeload:   phase === 'deload',
     isTaper:    false,
     isRaceWeek: false,
-    focus:      'Aerobic base — continuing steady training',
+    focus:      plan.goalType === 'get_faster' ? focusForPhase(phase, plan.goalType) : 'Aerobic base — continuing steady training',
     ...(plan.programmingVersion === 2 ? { mesocycle: getGoalMesocycle(weekNum, phase, plan.goalType) } : {}),
   };
 }

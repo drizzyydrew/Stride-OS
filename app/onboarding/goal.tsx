@@ -16,6 +16,7 @@ import { todayDateOnly } from '../../src/utils/dateOnly';
 
 const GOAL_TYPES: { key: TrainingGoalType; label: string; desc: string }[] = [
   { key: 'general_running',  label: 'General Running',        desc: 'Build aerobic fitness and consistency — no race on the calendar.' },
+  { key: 'get_faster', label: 'Get faster', desc: 'Build running speed from your current level, with earned faster work and recovery — no race required.' },
   { key: 'general_strength', label: 'General Strength',       desc: 'Strength-first program, with running to support it.' },
   { key: 'race_prep',        label: 'Race Preparation',       desc: 'Train toward a specific race with a periodized build.' },
   { key: 'hybrid',           label: 'Hybrid — Run + Lift',    desc: 'Balance meaningful mileage with real strength work.' },

@@ -13,6 +13,7 @@ import type { TrainingPhase, RaceDistance } from './training';
 
 export type TrainingGoalType =
   | 'general_running'
+  | 'get_faster'
   | 'general_strength'
   | 'race_prep'
   | 'hybrid';

@@ -1,3 +1,4 @@
+import { PLYOMETRIC_CATALOG, plyometricTask } from './plyometricCatalog';
 import type { RepScheme } from '../types/strength';
 
 export type ExerciseAdjustmentReason = 'too_easy' | 'too_hard' | 'dislike' | 'equipment';
@@ -11,9 +12,15 @@ export type ExerciseStimulusProfile = { family: string; muscles: readonly string
 const FAMILIES: Array<[RegExp, string, string[], ExerciseStimulus, string]> = [
   [/running gait|walking gait|single.leg control|capacity drill/, 'assessment', [], 'assessment', 'a repeatable assessment'],
   [/running strides/, 'running_strides', ['calves', 'glutes'], 'power', 'relaxed faster running with full recovery'],
+  [/single.leg pogo/, 'unilateral_ankle_power', ['calves'], 'power', 'controlled unilateral ankle-reactive contacts'],
+  [/single.leg lateral hops/, 'unilateral_lateral_power', ['glutes', 'calves'], 'power', 'controlled unilateral lateral contacts'],
+  [/bilateral lateral hops/, 'bilateral_lateral_power', ['glutes', 'calves'], 'power', 'controlled bilateral lateral contacts'],
+  [/bilateral forward hops/, 'bilateral_horizontal_power', ['glutes', 'calves'], 'power', 'controlled bilateral forward propulsion'],
+  [/power skips/, 'running_skip_power', ['glutes', 'calves'], 'power', 'alternating running coordination and propulsion'],
+  [/line hops/, 'ankle_power', ['calves'], 'power', 'small repeatable ankle-reactive contacts'],
   [/pogo/, 'ankle_power', ['calves'], 'power', 'quick, repeatable ankle contacts'],
-  [/bound|single.leg hop/, 'horizontal_power', ['glutes', 'calves'], 'power', 'controlled single-leg propulsion and landing'],
-  [/box jump|depth jump|jump squat/, 'vertical_power', ['quads', 'glutes', 'calves'], 'power', 'quality vertical force and landing'],
+  [/bound|single.leg(?: forward)? hops?/, 'horizontal_power', ['glutes', 'calves'], 'power', 'controlled single-leg propulsion and landing'],
+  [/box jump|depth jump|jump squat|repeated squat jumps/, 'vertical_power', ['quads', 'glutes', 'calves'], 'power', 'quality vertical force and landing'],
   [/kettlebell swing/, 'hip_power', ['glutes', 'hamstrings'], 'power', 'fast hip extension'],
   [/push press/, 'overhead_power', ['delts', 'triceps'], 'power', 'fast overhead pressing'],
   [/thruster/, 'whole_body_power', ['quads', 'glutes', 'delts'], 'power', 'coordinated lower-body and overhead work'],
@@ -103,6 +110,7 @@ const option = (name: string, equipment: string[], reps = '8–12', repScheme?: 
     repScheme: repScheme ?? { kind: 'reps', repsMin: 8, repsMax: 12 } });
 const hold = (name: string, equipment: string[] = ['bodyweight']) => option(name, equipment, '20–30 sec', { kind: 'duration', secondsMin: 20, secondsMax: 30 });
 export const EXERCISE_ADAPTATION_OPTIONS = [
+  ...PLYOMETRIC_CATALOG.map(task=>({id:task.exercise.id,name:task.exercise.name,equipment:task.exercise.equipment,stimulus:'power' as const,reps:`${task.initialReps}${task.exercise.unilateral?' per leg':''}`,repScheme:{kind:'reps' as const,repsMin:task.initialReps,repsMax:task.maxReps,perSide:task.exercise.unilateral}})),
   option('Box Squat (Bodyweight)', ['bodyweight', 'bench']), option('Goblet Squat', ['dumbbell']), option('Front Squat', ['barbell', 'squat_rack']),
   option('Supported Reverse Lunge', ['bodyweight', 'support']), option('Step-Up', ['bodyweight', 'step']), option('Dumbbell Reverse Lunge', ['dumbbell']),
   option('Dumbbell Romanian Deadlift', ['dumbbell']), option('Kettlebell Deadlift', ['kettlebell']), option('Barbell Romanian Deadlift', ['barbell']),
@@ -127,6 +135,8 @@ export const EXERCISE_ADAPTATION_OPTIONS = [
   option('Low Box Jump', ['bodyweight', 'box'], '3–5', { kind: 'reps', repsMin: 3, repsMax: 5 }),
   option('Single-Leg Hop', ['bodyweight'], '3–5 per side', { kind: 'reps', repsMin: 3, repsMax: 5, perSide: true }),
   option('Plyometric Bound', ['bodyweight'], '3–5 per side', { kind: 'reps', repsMin: 3, repsMax: 5, perSide: true }),
+  option('Low Pogo Hops', ['bodyweight'], '5–8', { kind: 'reps', repsMin: 5, repsMax: 8 }),
+  option('Small Pogo Hops', ['bodyweight'], '5–8', { kind: 'reps', repsMin: 5, repsMax: 8 }),
   option('Pogo Hops', ['bodyweight'], '5–10', { kind: 'reps', repsMin: 5, repsMax: 10 }),
   option('Kettlebell Swing', ['kettlebell'], '5–8', { kind: 'reps', repsMin: 5, repsMax: 8 }),
   option('Push Press', ['barbell'], '3–5', { kind: 'reps', repsMin: 3, repsMax: 5 }),
@@ -157,10 +167,17 @@ export function getExerciseAdjustment(input: {
         : 'Reduce resistance, repetitions or one remaining set. Use support or a comfortable range while preserving the training purpose.'
       : input.reason === 'equipment' ? 'Choose only a setup you can actually use. The same muscles alone do not make two exercises equivalent.'
         : 'Choose a repeatable movement you are willing to practise while keeping its training purpose.';
+  const sourceTask=plyometricTask(input.exercise.id) ?? PLYOMETRIC_CATALOG.find(task=>input.exercise.name.toLowerCase().startsWith(task.exercise.name.toLowerCase()));
+  const tierRank={easy:0,medium:1,hard:2};
+  const choices=compatibleExerciseOptions<AdaptationExercise>(input.exercise,input.candidates ?? EXERCISE_ADAPTATION_OPTIONS,{availableEquipment:input.availableEquipment}).filter(candidate=>{
+    const candidateTask=plyometricTask(candidate.id.split(':')[0]!) ?? PLYOMETRIC_CATALOG.find(task=>candidate.name.toLowerCase().startsWith(task.exercise.name.toLowerCase()));
+    if(sourceTask) return !!candidateTask && tierRank[candidateTask.tier]<=tierRank[sourceTask.tier];
+    return !candidateTask || candidateTask.tier==='easy';
+  });
   return {
     profile,
-    guidance: profile?.stimulus === 'assessment' ? 'This is an assessment, not a loading exercise. Keep the test setup consistent; use the relevant training session for progressions.' : guidance,
-    options: compatibleExerciseOptions(input.exercise, input.candidates ?? EXERCISE_ADAPTATION_OPTIONS, { availableEquipment: input.availableEquipment }),
+    guidance: sourceTask && input.reason==='too_easy' ? 'Keep this bodyweight task controlled with full recovery. Repeat or make a small contact change only from actual performance and response; report landing control and next-day symptoms before requesting a harder future tier. Do not add external load or jump height automatically.' : profile?.stimulus === 'assessment' ? 'This is an assessment, not a loading exercise. Keep the test setup consistent; use the relevant training session for progressions.' : guidance,
+    options: choices,
     calibration: 'A new exercise or setup starts with its own load and effort calibration. Earlier weights and recorded RPE are not transferred.',
     fallback: profile ? `Keep the purpose: ${profile.target}. If no listed option fits your setup, modify the dose or choose a custom movement and review the purpose.`
       : 'The purpose of this custom movement is not confirmed. Edit its dose or choose a custom alternative after checking the movement, muscles and intended adaptation.',

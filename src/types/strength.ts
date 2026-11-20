@@ -183,6 +183,7 @@ export type CompletedSet = {
 // ─── Completed exercise within a session ─────────────────────────────────────
 
 export type CompletedExercise = {
+  impactResponse?: import('../utils/plyometricFeedback').PlyometricResponseFeedback;
   exerciseId: string;
   name?:      string;
   equipmentType?: import('../utils/strengthSession').EquipmentType;
@@ -255,6 +256,9 @@ export type StrengthEngineInput = {
   availableEquipment?: EquipmentOption[];
   exercisePreferences?: Record<string, string>;
   goalScopeId?: string;
+  referenceDate?: string;
+  runningHistory?: import('./training').CompletedWorkoutRecord[];
+  activeStrengthSessionId?: string | null;
   trainingPhase:    import('./training').TrainingPhase;
   progressionLevel: import('./training').ProgressionLevel;
   weeklyMileage:    number;

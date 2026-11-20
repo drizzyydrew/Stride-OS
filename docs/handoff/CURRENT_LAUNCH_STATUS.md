@@ -1,5 +1,15 @@
 # Current StrideOS launch status
 
+## Build 122 authorized — preparation and launch audits in progress
+
+The owner now authorizes committing, pushing and TestFlight delivery of the prepared Get faster, graded plyometric and Everyday sharing changes, superseding the earlier build hold. Technical launch and account/Apple review-readiness checks are also requested. See BUILD122_PREPARATION.md. Delivery is not established until the final Apple/group/note receipt exists; public App Review/release remains separate. Existing image assets are unchanged.
+
+## Local candidate after 121 — Get faster, graded plyometrics and Everyday sharing
+
+The owner explicitly requests **do not build yet**. Local changes add the Get faster goal, NSCA/CSCS- and ACSM-informed graded plyometric task/response logic, and mutually exclusive Route / Everyday equivalent Story sharing. No build number change, app build, prebuild, OTA update, commit, push or submission occurred for this candidate. Delivered 121 remains the last release recorded below; the new local features are not installed by that delivery.
+
+See NEXT_BUILD_GET_FASTER_AND_SHARE.md for the implementation, evidence boundaries, source verification and later device checks. Existing actual sets and captured prescriptions are preserved; current-week impact holds can omit an optional jump from a regenerated completed-plan preview. No image assets, native runtime, dependencies, backend policy or AI/subscription limits changed. Earlier public-launch gates remain separate and open.
+
 ## Latest: build 121 programming blend delivered — November 19
 
 Build 121 is VALID / IN_BETA_TESTING in the existing internal Team (Expo) group, with exact saved testing-note readback. Build source `822221c01094f721d6b749a3aeee529f691bc209`; EAS `8ca4e329-76b9-4e5a-92ce-7212087c8c72`; submission `6f01098d-187a-4c10-94df-8587d7988693`. The latest owner request explicitly authorized TestFlight, superseding the earlier hold. See BUILD121_RELEASE.md and BUILD121_DELIVERY.json.

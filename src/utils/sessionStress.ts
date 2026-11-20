@@ -1,3 +1,4 @@
+import { isReactiveExercise } from './goalPlyometrics';
 import type { ScheduledSession } from './scheduledSessions';
 import type { RichWorkoutType } from '../types/workout';
 
@@ -90,9 +91,12 @@ function classifyRun(session: ScheduledSession, text: string, richType?: RichWor
 function classifyStrength(session: ScheduledSession, text: string): SessionStressProfile['axes'] {
   const duration = axisForDuration(session.durationMinutes);
   const prescription = session.strengthSession;
+  if (prescription?.exercises.some(ex => isReactiveExercise(ex.exercise))) {
+    return { ...ZERO_AXES, lowerMuscular: 3, impact: 3, neuromuscular: 3, duration };
+  }
   if (prescription?.lowerDemand === 'reduced_support') {
     const lower = prescription.exercises.filter(ex => ['squat', 'hinge', 'lunge', 'calf_ankle', 'plyometric'].includes(ex.exercise.pattern));
-    if (lower.every(ex => ex.exercise.pattern !== 'plyometric' && ex.sets === 1 && Number.isFinite(ex.rpe) && ex.rpe >= 1 && ex.rpe <= 5)) {
+    if (lower.every(ex => !isReactiveExercise(ex.exercise) && ex.sets === 1 && Number.isFinite(ex.rpe) && ex.rpe >= 1 && ex.rpe <= 5)) {
       return { ...ZERO_AXES, lowerMuscular: lower.length ? 1 : 0,
         upperMuscular: prescription.exercises.some(ex => ['push', 'pull'].includes(ex.exercise.pattern)) ? 2 : 1, duration };
     }

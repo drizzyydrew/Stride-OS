@@ -117,6 +117,7 @@ function normalizeDisplayPlanDate(s: string): string | null {
 
 const GOAL_TYPE_OPTIONS: { key: TrainingGoalType; label: string }[] = [
   { key: 'general_running',  label: 'General Running' },
+  { key: 'get_faster', label: 'Get faster' },
   { key: 'general_strength', label: 'General Strength' },
   { key: 'race_prep',        label: 'Race Prep' },
   { key: 'hybrid',           label: 'Hybrid' },

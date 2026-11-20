@@ -1,0 +1,13 @@
+Get faster, appropriate plyometrics and Everyday sharing
+
+Get faster is now a goal choice without requiring a race. New goals retain goal-specific macro phases and build faster work from actual completed training and reported tolerance.
+
+Running-support strength plans now use graded plyometric tasks with preparation, recovery and spacing checks. Actual same-task work, landing control, symptoms and next-day response guide progression. Harder tiers also require your choice and suitable supporting history. These are coaching guides, not clearance or a guarantee of faster running.
+
+Saved strength Activity details have an optional collapsed Jump response for actually completed reactive exercises. Answers default to unknown. Next-day responses become available after 24 hours. Saving or removing a response preserves completed sets and the original prescription.
+
+Activity > Share image > Story > Share Details has one Story illustration choice: None, Route or Everyday equivalent when valid data exists. The route and equivalent cannot appear together. The comparison uses the route area, with matching number/text styling and its source note. Existing image assets are unchanged.
+
+Please check the new goal label, collapsed response controls, exercise adjustments that retain completed work, and Story choices through Select All, Clear, format changes and actual image export. No hard workout, fabricated report or repeat subscription purchase is needed. Existing history is retained. A regenerated completed-plan preview can omit an optional jump once this week's impact work has been recorded; its saved actual workout remains intact.
+
+This is an internal beta. Public launch readiness, native device acceptance and subscription lifecycle checks remain separate.

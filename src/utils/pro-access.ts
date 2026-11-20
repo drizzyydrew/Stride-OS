@@ -45,7 +45,7 @@ export function onboardingGoalDraft(input: {
 }): { goalType: TrainingGoalType; title: string; raceName: string; raceDate?: string; distance: RaceDistance; priority: RacePriority } | null {
   if (input.source !== 'onboarding' || !input.openTraining || input.hasProgrammedBefore) return null;
   const { data } = input;
-  const goalType = ['race_prep', 'general_running', 'general_strength', 'hybrid'].includes(data.goalType ?? '') ? data.goalType! : 'general_running';
+  const goalType = ['race_prep', 'general_running', 'get_faster', 'general_strength', 'hybrid'].includes(data.goalType ?? '') ? data.goalType! : 'general_running';
   const raceName = typeof data.raceName === 'string' ? data.raceName : '';
   const raceDate = data.raceDate && isValidDateOnly(data.raceDate) && data.raceDate >= input.today ? data.raceDate : undefined;
   const distance = ['5k', '10k', 'half_marathon', 'marathon'].includes(data.raceDistance ?? '') ? data.raceDistance! : '5k';

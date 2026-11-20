@@ -70,7 +70,7 @@ export function decodeGoalArchives(value: unknown, ownerUserId: string): GoalArc
       || typeof archive.sourceKey !== 'string' || !archive.sourceKey
       || typeof archive.athleteId !== 'string' || !archive.athleteId
       || typeof archive.title !== 'string' || typeof archive.kind !== 'string' || !['race', 'goal', 'beginner'].includes(archive.kind)
-      || typeof archive.goalType !== 'string' || !['general_running', 'general_strength', 'race_prep', 'hybrid'].includes(archive.goalType)
+      || typeof archive.goalType !== 'string' || !['general_running', 'get_faster', 'general_strength', 'race_prep', 'hybrid'].includes(archive.goalType)
       || typeof archive.startDate !== 'string' || !isValidDateOnly(archive.startDate)
       || typeof archive.endDate !== 'string' || !isValidDateOnly(archive.endDate) || archive.startDate > archive.endDate
       || (archive.closureReason !== undefined && archive.closureReason !== 'replaced' && archive.closureReason !== 'open_training')

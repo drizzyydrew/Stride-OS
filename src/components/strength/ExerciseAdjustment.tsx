@@ -8,6 +8,7 @@ import { captureOwnerLease, ownerLeaseIsCurrent } from '../../lib/localDataOwner
 import { useActiveStrengthSessionStore } from '../../store/activeStrengthSessionStore';
 import { saveStrengthPlanningPreferences, useOnboardingStore } from '../../store/onboardingStore';
 import { useProfileStore } from '../../store/profileStore';
+import { plyometricTask, calibratePlyometricReplacement } from '../../utils/plyometricCatalog';
 import { STRENGTH_EXERCISES } from '../../utils/strengthEngine';
 import { EXERCISE_ADAPTATION_OPTIONS, classifyExerciseStimulus, getExerciseAdjustment, remainingExerciseDoseEdits, type AdaptationExercise, type ExerciseAdjustmentReason } from '../../utils/exerciseAdaptation';
 import type { ActiveStrengthExercise } from '../../utils/strengthSession';
@@ -88,12 +89,14 @@ export default function ExerciseAdjustment({ exercise, workoutInstanceId }: { ex
       if (!ownerLeaseIsCurrent(lease) || !current) throw new Error('Workout changed');
       const profile = classifyExerciseStimulus(candidate);
       const suggested = EXERCISE_ADAPTATION_OPTIONS.find(item => item.name.toLowerCase() === candidate.name.toLowerCase());
-      const repScheme = suggested?.repScheme ?? (profile?.stimulus === 'power'
+      const catalogTask=plyometricTask(candidate.canonicalId ?? candidate.id);
+      const calibrated=catalogTask ? calibratePlyometricReplacement(catalogTask,current.current.setEntries.filter(set=>!set.completed && !set.isWarmup).map(set=>set.reps),reason==='too_hard') : null;
+      const repScheme = calibrated?.repScheme ?? suggested?.repScheme ?? (profile?.stimulus === 'power'
         ? { kind: 'reps' as const, repsMin: 3, repsMax: 5 } : { kind: 'reps' as const, repsMin: 8, repsMax: 12 });
       const remaining = current.current.setEntries.filter(set => !set.completed && !set.isWarmup).length;
       current.state.substituteExercise(exercise.id, {
         canonicalExerciseId: candidate.canonicalId ?? candidate.id, name: candidate.name, equipment: [...candidate.equipment ?? []],
-        repScheme, plannedSets: Math.max(1, remaining), plannedReps: suggested?.reps ?? (profile?.stimulus === 'power' ? '3–5' : '8–12'),
+        repScheme, plannedSets: Math.max(1, remaining), plannedReps: calibrated?.reps ?? suggested?.reps ?? (profile?.stimulus === 'power' ? '3–5' : '8–12'),
         notes: `Chosen because: ${REASONS.find(item => item.value === reason)?.label}. ${adjustment.calibration}`,
       });
       const updated = useActiveStrengthSessionStore.getState().session;
@@ -126,7 +129,7 @@ export default function ExerciseAdjustment({ exercise, workoutInstanceId }: { ex
         {edits.length && !(power && reason === 'too_easy') ? <GoalAction label={reason === 'too_easy' ? 'Slightly increase remaining targets' : 'Reduce remaining targets'} onPress={adjustDose} disabled={saving} secondary /> : null}
         <Text style={copy}>{adjustment.fallback}</Text>
         {adjustment.options.length ? <>
-          <GoalPicker label="Compatible movement" value={selected} disabled={saving} options={[{ value: '', label: 'Keep current movement' }, ...adjustment.options.map(item => ({ value: item.id, label: item.name }))]}
+          <GoalPicker label="Compatible movement" value={selected} disabled={saving} options={[{ value: '', label: 'Keep current movement' }, ...adjustment.options.map(item => ({ value: item.id, label: plyometricTask(item.id) ? `${item.name} · ${plyometricTask(item.id)!.tier} demand` : item.name }))]}
             onChange={value => { setSelected(value); setSetupConfirmed(false); setFuture(false); setStatus(''); }} />
           {candidate ? <>
             <Text style={copy}>Required setup: {(candidate.equipment ?? ['bodyweight']).join(', ').replace(/_/g, ' ')}. {adjustment.calibration}</Text>

@@ -226,7 +226,7 @@ export default function CompleteScreen() {
       });
 
       // 5. Wire onboarding data to athleteStore (goal race + mileage + name)
-      const goalRaceStr = buildGoalRaceLabel(
+      const goalRaceStr = data.goalType === 'get_faster' ? data.goalRaceLabel.trim() || 'Get faster' : buildGoalRaceLabel(
         data.primaryGoal,
         data.goalRaceLabel,
         data.prDistance,
@@ -306,7 +306,7 @@ export default function CompleteScreen() {
       {/* Summary card */}
       <View style={s.summaryCard}>
         <Text style={s.summaryTitle}>PROFILE SUMMARY</Text>
-        <SummaryRow label="Goal"           value={GOAL_LABELS[data.primaryGoal] ?? data.primaryGoal} />
+        <SummaryRow label="Goal"           value={data.goalType === 'get_faster' ? 'Get faster' : GOAL_LABELS[data.primaryGoal] ?? data.primaryGoal} />
         <SummaryRow label="Training style" value={STYLE_LABELS[data.trainingStyle] ?? data.trainingStyle} />
         <SummaryRow label="Strength"       value={STRENGTH_LABELS[data.strengthLevel] ?? data.strengthLevel} />
         <SummaryRow

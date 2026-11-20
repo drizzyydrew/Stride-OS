@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-07-16",
-  "count": 141,
+  "count": 152,
   "entries": [
     {
       "canonicalId": "exercise_90_90_hip_switches",
@@ -51,6 +51,34 @@
       "recommendedImageRequirement": "Start + End",
       "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
       "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_alternating_bounds",
+      "canonicalName": "Alternating Bounds",
+      "ids": [
+        "plyo_alternating_bounds"
+      ],
+      "aliases": [],
+      "category": [
+        "plyometric",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+      ],
+      "whereUsed": [
+        "Goal-directed running support",
+        "Exercise adjustments"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Text coaching cues only in this change",
+      "priorityTier": 3
     },
     {
       "canonicalId": "exercise_ankle_alphabet",
@@ -429,7 +457,9 @@
         "sw_band_upper_body_band_row",
         "pull_band_row"
       ],
-      "aliases": ["Resistance-Band Row"],
+      "aliases": [
+        "Resistance-Band Row"
+      ],
       "category": [
         "bodyweight",
         "strength_preset",
@@ -684,6 +714,62 @@
       "recommendedImageRequirement": "Start + End",
       "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
       "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_bilateral_forward_hops",
+      "canonicalName": "Bilateral Forward Hops",
+      "ids": [
+        "plyo_forward_hops"
+      ],
+      "aliases": [],
+      "category": [
+        "plyometric",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+      ],
+      "whereUsed": [
+        "Goal-directed running support",
+        "Exercise adjustments"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Text coaching cues only in this change",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_bilateral_lateral_hops",
+      "canonicalName": "Bilateral Lateral Hops",
+      "ids": [
+        "plyo_lateral_hops"
+      ],
+      "aliases": [],
+      "category": [
+        "plyometric",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+      ],
+      "whereUsed": [
+        "Goal-directed running support",
+        "Exercise adjustments"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Text coaching cues only in this change",
+      "priorityTier": 3
     },
     {
       "canonicalId": "exercise_bird_dog",
@@ -2884,6 +2970,90 @@
       "priorityTier": 1
     },
     {
+      "canonicalId": "exercise_low_forward_back_line_hops",
+      "canonicalName": "Low Forward-Back Line Hops",
+      "ids": [
+        "plyo_line_hops"
+      ],
+      "aliases": [],
+      "category": [
+        "plyometric",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+      ],
+      "whereUsed": [
+        "Goal-directed running support",
+        "Exercise adjustments"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Text coaching cues only in this change",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_low_lateral_line_hops",
+      "canonicalName": "Low Lateral Line Hops",
+      "ids": [
+        "plyo_lateral_line_hops"
+      ],
+      "aliases": [],
+      "category": [
+        "plyometric",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+      ],
+      "whereUsed": [
+        "Goal-directed running support",
+        "Exercise adjustments"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Text coaching cues only in this change",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_low_repeated_squat_jumps",
+      "canonicalName": "Low Repeated Squat Jumps",
+      "ids": [
+        "plyo_squat_jumps"
+      ],
+      "aliases": [],
+      "category": [
+        "plyometric",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+      ],
+      "whereUsed": [
+        "Goal-directed running support",
+        "Exercise adjustments"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Text coaching cues only in this change",
+      "priorityTier": 3
+    },
+    {
       "canonicalId": "exercise_lunge",
       "canonicalName": "Lunge",
       "ids": [
@@ -3243,9 +3413,12 @@
       "canonicalName": "Pogo Hops",
       "ids": [
         "calf_pogo",
-        "guide:pogo_hops"
+        "guide:pogo_hops",
+        "plyo_low_pogo"
       ],
-      "aliases": [],
+      "aliases": [
+        "Low Pogo Hops"
+      ],
       "category": [
         "calf_ankle",
         "exercise_guide",
@@ -3269,6 +3442,34 @@
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "No Image Initially",
       "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_power_skips",
+      "canonicalName": "Power Skips",
+      "ids": [
+        "plyo_power_skips"
+      ],
+      "aliases": [],
+      "category": [
+        "plyometric",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+      ],
+      "whereUsed": [
+        "Goal-directed running support",
+        "Exercise adjustments"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Text coaching cues only in this change",
       "priorityTier": 3
     },
     {
@@ -3391,6 +3592,34 @@
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "No Image Initially",
       "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_quick_pogo_hops",
+      "canonicalName": "Quick Pogo Hops",
+      "ids": [
+        "plyo_quick_pogo"
+      ],
+      "aliases": [],
+      "category": [
+        "plyometric",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+      ],
+      "whereUsed": [
+        "Goal-directed running support",
+        "Exercise adjustments"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Text coaching cues only in this change",
       "priorityTier": 3
     },
     {
@@ -4060,6 +4289,34 @@
       "priorityTier": 1
     },
     {
+      "canonicalId": "exercise_single_leg_pogo_hops",
+      "canonicalName": "Single-Leg Pogo Hops",
+      "ids": [
+        "plyo_single_pogo"
+      ],
+      "aliases": [],
+      "category": [
+        "plyometric",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+      ],
+      "whereUsed": [
+        "Goal-directed running support",
+        "Exercise adjustments"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Text coaching cues only in this change",
+      "priorityTier": 3
+    },
+    {
       "canonicalId": "exercise_single_leg_squat",
       "canonicalName": "Single-Leg Squat",
       "ids": [
@@ -4082,6 +4339,62 @@
       "recommendedImageRequirement": "Start + End",
       "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
       "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_small_single_leg_forward_hops",
+      "canonicalName": "Small Single-Leg Forward Hops",
+      "ids": [
+        "plyo_single_forward"
+      ],
+      "aliases": [],
+      "category": [
+        "plyometric",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+      ],
+      "whereUsed": [
+        "Goal-directed running support",
+        "Exercise adjustments"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Text coaching cues only in this change",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_small_single_leg_lateral_hops",
+      "canonicalName": "Small Single-Leg Lateral Hops",
+      "ids": [
+        "plyo_single_lateral"
+      ],
+      "aliases": [],
+      "category": [
+        "plyometric",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+      ],
+      "whereUsed": [
+        "Goal-directed running support",
+        "Exercise adjustments"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Text coaching cues only in this change",
+      "priorityTier": 3
     },
     {
       "canonicalId": "exercise_bent_knee_calf_stretch",
@@ -4596,5 +4909,6 @@
       "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
       "priorityTier": 2
     }
-  ]
+  ],
+  "updatedAt": "2026-11-20T02:16:39.622197+00:00"
 }

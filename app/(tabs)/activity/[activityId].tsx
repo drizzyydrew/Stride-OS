@@ -24,6 +24,7 @@ import { buildRunSplits } from '../../../src/utils/activitySplits';
 import ActivityRouteReview from '../../../src/components/activity/ActivityRouteReview';
 import ActivityPowerPanel from '../../../src/components/activity/ActivityPowerPanel';
 import RunningQualityFeedback from '../../../src/components/activity/RunningQualityFeedback';
+import PlyometricResponse from '../../../src/components/activity/PlyometricResponse';
 import ShareOptionGrid from '../../../src/components/share/ShareOptionGrid';
 import { analyzeSnowSegments, buildOutdoorSplits } from '../../../src/utils/outdoorAnalysis';
 import { formatDistance } from '../../../src/lib/units';
@@ -284,6 +285,7 @@ export default function ActivityDetailScreen() {
         </View> : null}
         <ActivityPowerPanel key={activity.id} activity={activity} units={units} />
         {activity.activityType === 'running' ? <RunningQualityFeedback key={`quality-${activity.id}`} recordId={activity.legacyWorkoutId} /> : null}
+        {activity.activityType === 'strength' ? <PlyometricResponse key={`jump-response-${activity.id}`} recordId={activity.legacyWorkoutId} /> : null}
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[s.eyebrow, { color: C.textDim }]}>SHARE IMAGE</Text>
           <ShareOptionGrid options={SHARE_STUDIO_VARIANTS} value={shareVariant} onChange={setShareVariant} />

@@ -5,6 +5,7 @@ import test from 'node:test';
 import vm from 'node:vm';
 import ts from 'typescript';
 import * as adaptation from '../../src/utils/exerciseAdaptation';
+import * as plyometricCatalog from '../../src/utils/plyometricCatalog';
 import { STRENGTH_EXERCISES } from '../../src/utils/strengthEngine';
 import { editSet, ensureSessionShape, substituteExercise, type ActiveStrengthSession } from '../../src/utils/strengthSession';
 import { MOBILITY_EXERCISES, getMobilityExercise } from '../../src/constants/mobilityBank';
@@ -55,6 +56,7 @@ function harness() {
     '../../store/onboardingStore': { useOnboardingStore: { getState: () => ({ data: {} }) }, saveStrengthPlanningPreferences: async () => { futureWrites++; await pendingPreference; } },
     '../../store/profileStore': { useProfileStore: { getState: () => ({ activeAthleteId: 'athlete_default' }) } },
     '../../utils/strengthEngine': { STRENGTH_EXERCISES }, '../../utils/exerciseAdaptation': adaptation,
+    '../../utils/plyometricCatalog': plyometricCatalog,
   };
   const compiled = ts.transpileModule(readFileSync(filename, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },

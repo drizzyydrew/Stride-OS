@@ -1,0 +1,50 @@
+{
+  "checkedAt": "2026-11-20T02:48:29.937618+00:00",
+  "buildNumber": "122",
+  "profile": "billing-qa",
+  "programmingAndShareTests": {
+    "testFiles": 51,
+    "tests": 424,
+    "pass": 424,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "concurrency": 1
+  },
+  "nativeReleasePreflight": {
+    "tests": 34,
+    "pass": 34,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "exitCode": 0
+  },
+  "runtimeFingerprintReverified": {
+    "files": 805,
+    "sha256": "9325de95652332255b555bc531580e714c990f66082bb9cbb3a6945e3ed54627",
+    "ordering": "Python pathlib path-component ordering; relative POSIX path bytes"
+  },
+  "canonicalTypecheck": "PASS on unchanged prepared runtime; cloud post-install check required",
+  "dependenciesAligned": true,
+  "nativePrebuildExitCode": 0,
+  "existingExpoSystemUiWarning": true,
+  "imageAssetsChanged": false,
+  "nativeRuntimeChanged": false,
+  "backendPolicyChangedByBuild": false,
+  "publicReviewSubmitted": false,
+  "logs": {
+    "strideos-build122-dependencies.log": {
+      "path": "/Users/drew/.cache/strideos-build122-dependencies.log",
+      "sha256": "8152e1dfe2839254529bd71a5c9d6f299c93bc1132025c5930dcc5dc042489db"
+    },
+    "strideos-build122-prebuild.log": {
+      "path": "/Users/drew/.cache/strideos-build122-prebuild.log",
+      "sha256": "4ef078d91eedb906232a7d997f4b08c69daac768f39d3f7b267c49b6322afe66"
+    },
+    "strideos-build122-native-preflight.log": {
+      "path": "/Users/drew/.cache/strideos-build122-native-preflight.log",
+      "sha256": "9efd9e617befa7ad9282ce477e87a21aad4a8410f131f01e0e25a35bec131283"
+    }
+  }
+}

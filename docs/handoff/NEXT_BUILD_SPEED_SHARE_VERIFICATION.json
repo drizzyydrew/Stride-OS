@@ -1,0 +1,76 @@
+{
+  "checkedAt": "2026-11-20T02:24:05.566779+00:00",
+  "stage": "LOCAL_SOURCE_VERIFIED_BUILD_HOLD",
+  "baseCommit": "ce8eecd3c02e3fdb4f11aab2e64b09a1471f7eb2",
+  "headUnchanged": true,
+  "buildNumberUnchanged": "121",
+  "scopedRegression": {
+    "testFiles": 51,
+    "tests": 424,
+    "pass": 424,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "concurrency": 1
+  },
+  "canonicalTypecheck": {
+    "command": "npm run typecheck",
+    "exitCode": 0
+  },
+  "independentCouncilSourceVerdict": "PASS",
+  "reviewCountsOverlapScopedSuite": true,
+  "browserPreview": {
+    "shareCases": 24,
+    "jumpResponseCases": 12,
+    "nativeVerified": false,
+    "fixtureSubstitutions": "Native controls, badge and stores where applicable; actual React components and source styles rendered"
+  },
+  "runtimeFingerprint": {
+    "files": 805,
+    "sha256": "9325de95652332255b555bc531580e714c990f66082bb9cbb3a6945e3ed54627",
+    "ordering": "Python pathlib path-component ordering; relative POSIX path bytes"
+  },
+  "inventoryCanonicalCount": 152,
+  "existingInventoryEntriesChanged": [
+    "exercise_pogo_hops: new Low Pogo Hops alias only"
+  ],
+  "plyometricTiers": {
+    "easy": 3,
+    "medium": 5,
+    "hard": 4
+  },
+  "scope": {
+    "imageAssetsChanged": false,
+    "nativeRuntimeChanged": false,
+    "dependenciesChanged": false,
+    "backendPolicyChanged": false,
+    "billingOrAiAllowanceChanged": false
+  },
+  "buildStarted": false,
+  "prebuildRun": false,
+  "otaPublished": false,
+  "submittedToTestFlight": false,
+  "publicReleaseSubmitted": false,
+  "physicalDeviceAccepted": false,
+  "commitOrPushPerformed": false,
+  "evidence": [
+    {
+      "path": "/Users/drew/.cache/strideos-next-speed-share-verified.log",
+      "sha256": "e5b91d25f624697d0937875600fdd974457e136d346fa4f03b405c5bd0e3a4c3"
+    },
+    {
+      "path": "/Users/drew/.cache/strideos-next-speed-share-typecheck-final.log",
+      "sha256": "12fc70d2feb72f584a6828cd9e1102cc9f447725b6b1bb2abda352bf6797e415"
+    },
+    {
+      "path": "/Users/drew/.cache/strideos-next-share-preview/results.json",
+      "sha256": "6f9eaa05833e4eb40fafe164140192d62f318b251544737341e4cd99f3ec5ae0"
+    },
+    {
+      "path": "/Users/drew/.cache/strideos-next-jump-preview/results.json",
+      "sha256": "221d4cffa102f1adb031d04ee2be4cd48672412dcd960a30c43dede322c857dd"
+    }
+  ],
+  "fixtureRepair": "Final 51-file clean run followed addition of the real plyometricCatalog dependency to an existing strict VM test mock; assertions retained."
+}

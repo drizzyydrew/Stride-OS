@@ -318,6 +318,9 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   const strengthInput: StrengthEngineInput = {
     programmingVersion: input.strengthProgrammingVersion,
     strengthLevel: input.strengthLevel,
+    referenceDate: macroWeek.startDate,
+    runningHistory: input.runningHistory,
+    activeStrengthSessionId: input.activeStrengthSessionId,
     goalType: input.goalType,
     availableEquipment: input.strengthEquipment,
     exercisePreferences: input.strengthExercisePreferences,

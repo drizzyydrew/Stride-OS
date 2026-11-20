@@ -17,6 +17,9 @@ import { syncStrengthSessionToExternalServices } from '../lib/externalIntegratio
 import { useActivityStore } from './activityStore';
 import { activityFromStrengthRecord } from '../utils/activityMigration';
 import type { CompletionClassification } from '../types/activity';
+import { useProfileStore } from './profileStore';
+import { normalizePlyometricResponse, type PlyometricResponseFeedback } from '../utils/plyometricFeedback';
+import { reportablePlyometricExercises } from '../utils/plyometricReporting';
 
 let confirmedStrengthWrites: Promise<unknown> = Promise.resolve();
 const strengthJSONStorage = createAppJSONStorage();
@@ -105,7 +108,12 @@ function migrateStrengthRecord(r: Partial<StrengthLogRecord>): StrengthLogRecord
     completionClassification: r.completionClassification,
     plannedDuration:  r.plannedDuration  ?? 0,
     actualDuration:   r.actualDuration,
-    exercises:        r.exercises        ?? [],
+    exercises:        (r.exercises ?? []).map(exercise => {
+      if (!exercise.impactResponse) return exercise;
+      const { impactResponse, ...performed } = exercise;
+      const normalized = normalizePlyometricResponse(impactResponse, r.timestamp ?? 0);
+      return normalized ? { ...performed, impactResponse: normalized } : performed;
+    }),
     exerciseDetails:  r.exerciseDetails,
     overallRpe:       r.overallRpe,
     notes:            r.notes,
@@ -340,6 +348,51 @@ export function confirmStrengthCompletionSaved(completionKey: string, lease: Own
       if (useStrengthStore.getState().history === state.history && useStrengthStore.getState().completedSessions === state.completedSessions) return;
     }
     throw new Error('Strength history changed while saving. Your active workout was kept; retry Finish.');
+  });
+  confirmedStrengthWrites = write;
+  return write;
+}
+
+/** Publish an explicit per-exercise response only after the exact local history
+ * bytes survive readback. This never edits sets, prescriptions or Activity metrics. */
+export function savePlyometricResponse(recordId: string, exerciseId: string, feedback: PlyometricResponseFeedback | null, lease: OwnerLease): Promise<void> {
+  const ready = () => ownerLeaseIsCurrent(lease) && useStrengthStore.persist.hasHydrated()
+    && useProfileStore.persist.hasHydrated() && useProfileStore.getState().activeAthleteId === 'athlete_default';
+  const write = confirmedStrengthWrites.catch(() => undefined).then(async () => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (!ready()) throw new Error('Strength history is not ready for this account and athlete');
+      const state = useStrengthStore.getState();
+      const original = state.history.find(record => record.id === recordId);
+      if (!original || !state.completedSessions.includes(recordId)
+        || ('ownerUserId' in original && original.ownerUserId != null && original.ownerUserId !== lease.ownerUserId)
+        || !reportablePlyometricExercises(original).some(exercise => exercise.exerciseId === exerciseId)) {
+        throw new Error('This saved exercise cannot accept a jump response');
+      }
+      const response = feedback === null ? undefined : normalizePlyometricResponse(feedback, original.timestamp);
+      if (feedback !== null && !response) throw new Error('Check your responses and report the next-day response only after 24 hours');
+      const updated = { ...original, exercises: original.exercises.map(exercise => {
+        if (exercise.exerciseId !== exerciseId) return exercise;
+        const { impactResponse: _previous, ...performed } = exercise;
+        return response ? { ...performed, impactResponse: response } : performed;
+      }) };
+      const history = state.history.map(record => record.id === recordId ? updated : record);
+      const encoded = JSON.stringify({ state: { completedSessions: state.completedSessions, history }, version: 0 });
+      const storage = getAppStorage();
+      await storage.setItem('strength-store', encoded);
+      if (!ready()) throw new Error('Account or athlete changed while saving the jump response');
+      if (useStrengthStore.getState().history !== state.history || useStrengthStore.getState().completedSessions !== state.completedSessions) continue;
+      const saved = await storage.getItemOnce('strength-store');
+      if (!ready()) throw new Error('Account or athlete changed while confirming the jump response');
+      if (saved !== encoded) throw new Error('Jump response saving could not be confirmed. Your workout was kept; retry Save.');
+      if (useStrengthStore.getState().history !== state.history || useStrengthStore.getState().completedSessions !== state.completedSessions) continue;
+      useStrengthStore.setState({ history });
+      // The existing sync service rechecks this tag after its async auth lookup.
+      // It is a dispatch fence, not an edit to the saved workout fields.
+      const syncRecord = { ...updated, ownerUserId: lease.ownerUserId };
+      syncStrengthLog(syncRecord).catch(console.warn);
+      return;
+    }
+    throw new Error('Strength history changed while saving. Retry the jump response.');
   });
   confirmedStrengthWrites = write;
   return write;

@@ -20,6 +20,7 @@ export function getGoalMesocycle(currentWeek: number, phase: TrainingPhase, goal
   const recovery = ['recovery', 'transition', 'taper'].includes(phase) || shouldApplyDeload(week, phase);
   const goalFocus = goalType === 'general_strength' ? 'Strength skill and progressive resistance; aerobic work supports recovery'
     : goalType === 'hybrid' ? 'Combined running and strength; protect the current priority and total recovery demand'
+    : goalType === 'get_faster' ? 'Running speed built from repeatable easy training, relaxed accelerations and gradually tolerated faster work'
     : goalType === 'race_prep' ? 'Race-specific capacity built on repeatable easy training'
     : 'Aerobic consistency followed by gradually earned faster running';
   return {

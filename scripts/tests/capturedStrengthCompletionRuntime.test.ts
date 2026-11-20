@@ -31,6 +31,7 @@ async function harness() {
     '../lib/syncService': { syncStrengthLog: async () => {}, deleteStrengthLog: async () => {} },
     '../lib/externalIntegrations': { syncStrengthSessionToExternalServices: async () => {} },
     './activityStore': { useActivityStore: { getState: () => activity } },
+    './profileStore': { useProfileStore: { getState: () => ({ activeAthleteId: 'athlete_default' }), persist: { hasHydrated: () => true } } },
     '../utils/activityMigration': { activityFromStrengthRecord: (record: { id: string }) => ({ id: `activity_strength_${record.id}` }) },
   };
   const module = { exports: {} };

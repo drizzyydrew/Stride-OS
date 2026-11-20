@@ -117,7 +117,7 @@ function applyCurrentGoalContext() {
   if (state.trainingMode === 'open') return;
   const beginner = state.activePresetPlan;
   const race = state.races.find(item => item.id === state.goalRaceId);
-  const title = beginner ? BEGINNER_PLAN_DEFINITIONS[beginner.goal].title : state.goalTitle || 'General Fitness';
+  const title = beginner ? BEGINNER_PLAN_DEFINITIONS[beginner.goal].title : state.goalTitle || (state.goalType === 'get_faster' ? 'Get faster' : 'General Fitness');
   useOnboardingStore.getState().updateData({ goalType: state.goalType, programStartDate: state.programStartDate ?? todayDateOnly(),
     primaryGoal: race?.distance ?? 'general_fitness', goalRaceLabel: race ? `${race.name} · ${race.distance.replaceAll('_', ' ')}` : '',
     raceName: race?.name ?? '', raceDate: race?.date ?? '',

@@ -1,3 +1,4 @@
+import { isReactiveExercise } from './goalPlyometrics';
 import type { CalendarEntry } from './calendarEngine';
 import { addDays, parseYMD, toYMD } from './calendarEngine';
 import type { TrainingDay } from '../types/athlete';
@@ -20,7 +21,7 @@ function keyRun(entry: CalendarEntry) {
     || entry.workout?.type === 'long_run' || (entry.workout as RichWorkout | undefined)?.richType === 'long_run');
 }
 function reduceSupport(session: StrengthSession): StrengthSession {
-  const exercises = session.exercises.filter(ex => ex.exercise.pattern !== 'plyometric').map(ex => {
+  const exercises = session.exercises.filter(ex => !isReactiveExercise(ex.exercise)).map(ex => {
     if (!LOWER.has(ex.exercise.pattern)) return ex;
     const rpe = Math.min(ex.rpe, 5);
     return { ...ex, sets: Math.min(ex.sets, 1), rpe, rir: 10 - rpe,
@@ -71,7 +72,7 @@ export function balanceHybridStrength(input: { calendarMap: Map<string, Calendar
       && (calendarMap.get(date) ?? []).every(other => !relevant(other) || (!isLongStress(stress(other)) && (other.workout as RichWorkout | undefined)?.protocol !== 'norwegian_4x4' && other.type !== 'race'))
       && nearbyKeys(date, true).length === 0 && !nearbyOtherLift(date, session.id));
     if (paired) {
-      const exercises = session.exercises.filter(ex => ex.exercise.pattern !== 'plyometric').map(ex => LOWER.has(ex.exercise.pattern) ? { ...ex, sets: Math.min(ex.sets, 2), rpe: Math.min(ex.rpe, 6), rir: Math.max(ex.rir, 4),
+      const exercises = session.exercises.filter(ex => !isReactiveExercise(ex.exercise)).map(ex => LOWER.has(ex.exercise.pattern) ? { ...ex, sets: Math.min(ex.sets, 2), rpe: Math.min(ex.rpe, 6), rir: Math.max(ex.rir, 4),
         loadTarget: 'RPE 6 or easier — manageable paired-session work; calibrate the load for this effort' } : ex);
       const adjusted = { ...session, exercises, primaryPatterns: [...new Set(exercises.map(ex => ex.exercise.pattern))], targetDuration: estimateStrengthSessionMinutes(exercises),
         progressionNote: `${session.progressionNote} This lift shares the quality day; explosive work is held and lower-body dose is capped. Put the main priority first and separate sessions by several hours when practical.` };

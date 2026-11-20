@@ -23,6 +23,7 @@ import type {
 } from '../types/strength';
 import type { TrainingPhase, ProgressionLevel } from '../types/training';
 import { parsePrescriptionScheme } from './prescriptionFormat';
+import { applyGoalPlyometrics, PLYOMETRIC_CATALOG } from './goalPlyometrics';
 import { estimateStrengthSessionMinutes, fitStrengthSessionToTime, strengthExerciseReviewNote, strengthExerciseEquipment, strengthExercisesForEquipment, strengthProgressionLevel, strengthTimeBudget } from './strengthDesign';
 import { applyGoalStrengthProgramming } from './goalStrengthProgramming';
 import { getGoalMesocycle } from './plan/goalMesocycle';
@@ -217,6 +218,7 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     contraindications: [],
     rationale: 'A bent-knee plantarflexor strength option. Use a repeatable setup and a load suited to the intended effort.',
   },
+  ...Object.fromEntries(PLYOMETRIC_CATALOG.map(task=>[task.exercise.id,task.exercise])),
   calf_pogo: {
     id: 'calf_pogo', name: 'Pogo Hops', pattern: 'calf_ankle',
     equipment: ['bodyweight'], unilateral: false, cnsLoad: 'low',
@@ -764,7 +766,8 @@ export function generateStrengthWeek(input: StrengthEngineInput): StrengthWeek {
     buildSession(sessionType, i, weekInBlock, trainingPhase, input),
   );
 
-  const { sessions, decision } = applyEarnedProgression(builtSessions, input);
+  const { sessions: earnedSessions, decision } = applyEarnedProgression(builtSessions, input);
+  const sessions = applyGoalPlyometrics(earnedSessions, input, decision.progressionState !== 'regress');
 
   const weeklyVolumeSets = sessions.reduce((s, sess) =>
     s + sess.exercises.reduce((es, ex) => es + ex.sets, 0), 0);
