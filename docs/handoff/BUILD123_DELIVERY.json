@@ -1,0 +1,92 @@
+{
+  "recordedAt": "2026-11-20T10:17:25.723028+00:00",
+  "version": "1.0.0",
+  "buildNumber": "123",
+  "profile": "billing-qa",
+  "sourceCommit": "52b71444766440c84bda8b57f004d3b85b2ac08a",
+  "buildId": "b64e8ab2-dbe1-4fd8-ae25-738026e0181a",
+  "submissionId": "046b6d3c-c83e-4575-8fa4-ccad38280b42",
+  "appleBuildId": "30fc1899-594a-4a6a-a9f9-17a1cd7f3ae0",
+  "easStatus": "FINISHED",
+  "submissionStatus": "FINISHED",
+  "appleProcessingState": "VALID",
+  "internalBuildState": "IN_BETA_TESTING",
+  "existingGroup": {
+    "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+    "name": "Team (Expo)",
+    "isInternal": true,
+    "hasAccessToAllBuilds": true,
+    "actuallyAssigned": true,
+    "testerCount": 1,
+    "testerStates": [
+      "INSTALLED"
+    ]
+  },
+  "betaNotes": {
+    "locale": "en-US",
+    "exactReadback": true,
+    "characters": 2121,
+    "sha256": "5f6a697db24337848ea05d5864787329416e7fbb19478a8e12fb12192c5b10f6"
+  },
+  "archiveSha256": "85c3e8ec68401107e41086cff7a03d308e693b8a67483b739c133d8a382cfba7",
+  "archiveBytes": 130051823,
+  "signedTargetsVerified": 3,
+  "fullRegression": {
+    "testFiles": 240,
+    "tests": 2170,
+    "pass": 2170,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "concurrency": 3,
+    "durationMs": 142816.666654
+  },
+  "localAndCloudTypecheck": "PASS",
+  "cloudDoctorPassed": 21,
+  "testedRuntimeFingerprintReverified": {
+    "files": 801,
+    "sha256": "a706e6ecc6ab9df88d734afb6aba3dd6efb8bcad9818995f56f8955134937045",
+    "ordering": "Sorted relative POSIX path bytes; path NUL content NUL; runtime code/config, excluding tests and raster assets"
+  },
+  "imageAssetsChanged": false,
+  "shareCompositionChanged": true,
+  "nativeWatchRuntimeChanged": true,
+  "backendOrBillingPolicyChanged": false,
+  "physicalDeviceAccepted": false,
+  "purchaseLifecycleAcceptedByThisDelivery": false,
+  "launchSteps2And3": "PARTIAL; earlier live service/account/store gates remain unaccepted; this beta does not rerun or close them",
+  "publicReviewSubmitted": false,
+  "publicVersion": {
+    "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "version": "1.0",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "releaseType": "MANUAL",
+    "selectedBuild": "109"
+  },
+  "evidence": [
+    "BUILD123_LOCAL_CHECKS.json",
+    "BUILD123_CLOUD_CHECKS.json",
+    "BUILD123_ARTIFACT_VERIFICATION.json",
+    "BUILD123_SUBMISSION_VERIFICATION.json",
+    "BUILD123_APPLE_ACCEPTANCE.json",
+    "BUILD123_PROGRAMMING_REVIEW.md",
+    "BUILD123_EXERCISE_CATALOG_REVIEW.md",
+    "BUILD122_LAUNCH_CHECKS.md"
+  ],
+  "ownerGuide": "BUILD123_OWNER_TEST_GUIDE.md",
+  "appleUploadProcessing": {
+    "id": "30fc1899-594a-4a6a-a9f9-17a1cd7f3ae0",
+    "state": {
+      "errors": [],
+      "warnings": [
+        {
+          "code": "90725",
+          "description": "SDK version issue. This app was built with the iOS 26.5 SDK. Starting April 2027, iOS and iPadOS apps must be built with the iOS 27 SDK or later, included in Xcode 27 or later, in order to be uploaded to App Store Connect or submitted for distribution."
+        }
+      ],
+      "infos": [],
+      "state": "COMPLETE"
+    }
+  }
+}

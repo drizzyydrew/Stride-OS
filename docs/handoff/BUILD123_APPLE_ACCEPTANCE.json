@@ -1,0 +1,55 @@
+{
+  "checkedAt": "2026-11-20T10:17:13.911Z",
+  "easBuildId": "b64e8ab2-dbe1-4fd8-ae25-738026e0181a",
+  "sourceCommit": "52b71444766440c84bda8b57f004d3b85b2ac08a",
+  "appleBuildId": "30fc1899-594a-4a6a-a9f9-17a1cd7f3ae0",
+  "version": "123",
+  "processingState": "VALID",
+  "expired": false,
+  "uploadedDate": "2026-11-20T02:13:13-08:00",
+  "internalBuildState": "IN_BETA_TESTING",
+  "externalBuildState": "READY_FOR_BETA_SUBMISSION",
+  "group": {
+    "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+    "name": "Team (Expo)",
+    "isInternal": true,
+    "hasAccessToAllBuilds": true,
+    "actuallyAssigned": true,
+    "testerCount": 1,
+    "testerStates": [
+      "INSTALLED"
+    ]
+  },
+  "whatToTest": {
+    "locale": "en-US",
+    "exactReadback": true,
+    "characters": 2121,
+    "sha256": "5f6a697db24337848ea05d5864787329416e7fbb19478a8e12fb12192c5b10f6"
+  },
+  "publicVersion": {
+    "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "version": "1.0",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "releaseType": "MANUAL",
+    "selectedBuild": "109"
+  },
+  "physicalDeviceAccepted": false,
+  "purchasesEnabled": true,
+  "billingPolicyChangedInThisTask": false,
+  "usageBackendChangedInThisTask": false,
+  "publicReviewSubmitted": false,
+  "appleUploadProcessing": {
+    "id": "30fc1899-594a-4a6a-a9f9-17a1cd7f3ae0",
+    "state": {
+      "errors": [],
+      "warnings": [
+        {
+          "code": "90725",
+          "description": "SDK version issue. This app was built with the iOS 26.5 SDK. Starting April 2027, iOS and iPadOS apps must be built with the iOS 27 SDK or later, included in Xcode 27 or later, in order to be uploaded to App Store Connect or submitted for distribution."
+        }
+      ],
+      "infos": [],
+      "state": "COMPLETE"
+    }
+  }
+}

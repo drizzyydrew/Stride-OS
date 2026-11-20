@@ -1,10 +1,16 @@
 # Current StrideOS launch status
 
-## Local addition after 122 — Open / Other workout
+## Latest: build 123 delivered — November 20 Pacific
 
-Open / Other is implemented locally under Activity > Track Workout, with a no-target timer, Pause/Resume, actual available heart rate and history saving. GPS and running metrics are omitted. Watch Other and native Live Activity presentations are included in the source changes and require the next binary. Delivered 122 is unchanged; no new build/submission or image change occurred. See NEXT_BUILD_OPEN_WORKOUT.md for validation and later device checks. Launch blockers recorded below remain open.
+Build 123 is VALID / IN_BETA_TESTING in the existing internal Team (Expo) group, with actual assignment and exact testing-note readback. Source `52b71444766440c84bda8b57f004d3b85b2ac08a`; EAS `b64e8ab2-dbe1-4fd8-ae25-738026e0181a`; submission `046b6d3c-c83e-4575-8fa4-ccad38280b42`. Commit/push/build/TestFlight were authorized. See BUILD123_RELEASE.md and BUILD123_DELIVERY.json.
 
-## Latest: build 122 delivered — November 19 Pacific
+Visible tabs, applied preset/mobility filters, searchable exercise metadata and recorded muscle work, custom grouping and local named reusable workouts are included. One primary plus up to two supporting goals uses one schedule; detailed Faster-work reporting is replaced with compact optional feedback. Everyday detail/share comparisons agree. The previously local Open / Other addition is now in this binary, including Watch cold launch handling. Friendly login errors distinguish invalid credentials from outages. No image assets, dependencies or remote billing/auth/AI allowance policy changed.
+
+All 2,170 tests, local/cloud typechecks, dependency/prebuild checks, 21/21 cloud Doctor, native archive and signed three-target artifact verification passed. Installed-device acceptance remains separate; use BUILD123_OWNER_TEST_GUIDE.md. Named templates are local to this device, and previous actual performance remains a reference rather than new completed work.
+
+**Public launch remains unaccepted.** This beta does not close the earlier live server/paid access, account/reviewer/deletion, operating cost/capacity or Store-material gates recorded in BUILD122_LAUNCH_CHECKS.md. Fresh Apple readback still finds public build 109 / PREPARE_FOR_SUBMISSION / MANUAL. No public App Review or release occurred. Earlier sections below are historical receipts, not newer availability or fresh service acceptance.
+
+## Historical: build 122 delivered — November 19 Pacific
 
 Build 122 is VALID / IN_BETA_TESTING in the existing internal Team (Expo) group, with exact saved testing-note readback. Source `8db3cab83b80219a7a4ebbf424f4cc4245d84a48`; EAS `60112771-fa3f-4e3e-8b8c-66590cfa852e`; submission `118dfd53-dda7-41ca-9457-bb8979083c64`. Commit/push and TestFlight were authorized; the earlier hold below is historical and superseded. See BUILD122_RELEASE.md and BUILD122_DELIVERY.json.
 

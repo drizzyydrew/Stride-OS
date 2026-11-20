@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-11-20T10:09:58.099625+00:00",
+  "buildId": "b64e8ab2-dbe1-4fd8-ae25-738026e0181a",
+  "sourceCommit": "52b71444766440c84bda8b57f004d3b85b2ac08a",
+  "buildNumber": "123",
+  "easStatus": "FINISHED",
+  "easUpdatedAt": "2026-11-20T10:09:00.005Z",
+  "cloudDoctor": {
+    "passed": 21,
+    "total": 21
+  },
+  "cloudCanonicalTypecheck": "PASS",
+  "typecheckPhaseStart": "2026-11-20T09:59:46.707Z",
+  "typecheckPhaseEnd": "2026-11-20T09:59:59.508Z",
+  "archive": "SUCCEEDED",
+  "archiveErrors": 0,
+  "archiveWarnings": 33,
+  "existingMetalToolchainSearchPathWarning": true,
+  "logsSha256": "01fd832bba690f8de3844c1de66f5b479c571256b6a56f5e910ed7630a2f9ace",
+  "publicReviewSubmitted": false
+}

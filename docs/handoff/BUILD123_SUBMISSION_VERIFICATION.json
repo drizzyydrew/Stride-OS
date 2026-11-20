@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-11-20T10:12:10.488719+00:00",
+  "submissionId": "046b6d3c-c83e-4575-8fa4-ccad38280b42",
+  "status": "FINISHED",
+  "createdAt": "2026-11-20T10:11:42.318Z",
+  "completedAt": "2026-11-20T10:11:55.325Z",
+  "buildId": "b64e8ab2-dbe1-4fd8-ae25-738026e0181a",
+  "sourceCommit": "52b71444766440c84bda8b57f004d3b85b2ac08a",
+  "version": "1.0.0",
+  "buildNumber": "123",
+  "buildProfile": "billing-qa",
+  "publicReviewSubmitted": false
+}

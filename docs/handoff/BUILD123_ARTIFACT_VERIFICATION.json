@@ -1,0 +1,102 @@
+{
+  "checkedAt": "2026-11-20T10:11:27.131535+00:00",
+  "buildId": "b64e8ab2-dbe1-4fd8-ae25-738026e0181a",
+  "sourceCommit": "52b71444766440c84bda8b57f004d3b85b2ac08a",
+  "profile": "billing-qa",
+  "buildNumber": "123",
+  "clientBillingEnabledByQaProfile": true,
+  "billingPolicyChangedInThisTask": false,
+  "usageBackendChangedInThisTask": false,
+  "compiledLiveActivityBrandRenditions": [
+    {
+      "Name": "StrideOSMark",
+      "PixelWidth": 28,
+      "PixelHeight": 28,
+      "Scale": 1,
+      "Opaque": false,
+      "TemplateMode": null
+    },
+    {
+      "Name": "StrideOSMark",
+      "PixelWidth": 56,
+      "PixelHeight": 56,
+      "Scale": 2,
+      "Opaque": false,
+      "TemplateMode": null
+    },
+    {
+      "Name": "StrideOSMark",
+      "PixelWidth": 84,
+      "PixelHeight": 84,
+      "Scale": 3,
+      "Opaque": false,
+      "TemplateMode": null
+    }
+  ],
+  "bytes": 130051823,
+  "sha256": "85c3e8ec68401107e41086cff7a03d308e693b8a67483b739c133d8a382cfba7",
+  "targets": [
+    {
+      "bundleId": "com.mooremovement.strideos",
+      "version": "1.0.0",
+      "build": "123",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [
+        "group.com.mooremovement.strideos"
+      ],
+      "healthKit": true,
+      "unexpiredStoreProfile": true
+    },
+    {
+      "bundleId": "com.mooremovement.strideos.liveactivity",
+      "version": "1.0.0",
+      "build": "123",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [
+        "group.com.mooremovement.strideos"
+      ],
+      "healthKit": false,
+      "unexpiredStoreProfile": true
+    },
+    {
+      "bundleId": "com.mooremovement.strideos.watch",
+      "version": "1.0.0",
+      "build": "123",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [],
+      "healthKit": true,
+      "unexpiredStoreProfile": true
+    }
+  ],
+  "privacyManifestsParsed": 21,
+  "noCredentialFilenamesInArchive": true,
+  "embeddedBundleIsHermesBytecode": true,
+  "embeddedBundleBytes": 12854344,
+  "embeddedBundleSHA256": "239b1e264d726a08aca61b3abbe699f3c8aba0463097c387d0642efc0d0c4f74",
+  "compiled1024Icons": [
+    {
+      "Name": "AppIcon",
+      "PixelWidth": 1024,
+      "PixelHeight": 1024,
+      "Opaque": true,
+      "Idiom": "phone"
+    }
+  ],
+  "nativeCallbackSchemePresent": true,
+  "locationAndHealthPurposeStringsPresent": true,
+  "signedWebcredentialsDomainAndProvisioningVerified": true,
+  "authLogoOriginalAssetFoundInArchive": true,
+  "usageUiStringsPresentInHermesBundle": true,
+  "programmingUiStringsPresentInHermesBundle": true,
+  "everydaySharingAndJumpResponseStringsPresent": true,
+  "imageAssetsChangedInThisTask": false,
+  "shareCompositionChangedInThisTask": true,
+  "nativeWatchRuntimeChangedInThisTask": true,
+  "programmingVersionBoundary": "Explicit primary plus up to two supporting goals within one schedule; legacy outputs retained without explicit new selection",
+  "physicalDeviceAccepted": false,
+  "purchaseLifecycleAccepted": false,
+  "publicReviewSubmitted": false
+}
