@@ -1,5 +1,15 @@
 # Current StrideOS launch status
 
+## Latest: build 121 programming blend delivered — November 19
+
+Build 121 is VALID / IN_BETA_TESTING in the existing internal Team (Expo) group, with exact saved testing-note readback. Build source `822221c01094f721d6b749a3aeee529f691bc209`; EAS `8ca4e329-76b9-4e5a-92ce-7212087c8c72`; submission `6f01098d-187a-4c10-94df-8587d7988693`. The latest owner request explicitly authorized TestFlight, superseding the earlier hold. See BUILD121_RELEASE.md and BUILD121_DELIVERY.json.
+
+Explicit new goals receive the goal-specific macro/mesocycle blend, actual-work progression/regression, staged faster-work exposure, eligible aerobic-power 4×4 and hybrid recovery placement. Existing goals keep their programming version; started/completed work and history are preserved. Quiet exercise adjustments, optional future preferences, clearer presets and explicit saved-run faster-work reports support adaptation without inventing performed work. Actual auto-pause switches, return-to-Live navigation and energy-detail wrapping are included. No images/share, billing/allowance, authentication policy, backend or Watch/native runtime changed.
+
+All 2,058 regression tests, local/cloud typechecks, dependency/prebuild checks, independent council source review, 21/21 cloud Doctor and signed three-target artifact verification passed. Physical Build 121 acceptance remains pending; use BUILD121_OWNER_TEST_GUIDE.md. No repeat purchase or hard workout is needed. Prior owner checks remain accepted within their reported scope.
+
+Fresh Apple readback at 2026-11-20T00:02:48Z still finds public 1.0 selecting 109 / PREPARE_FOR_SUBMISSION / MANUAL. No public review/release occurred. Remaining paid-server/cost/capacity, account/reviewer/deletion, paid lifecycle and Store-material launch gates remain separate and open. Earlier sections below are historical receipts, not superseding current availability or new authorizations.
+
 ## Owner accepts build 120 counter and dropdown
 
 The owner replies "Complete" to the request to update to120 and check the collapsed and expanded usage views. Record this as owner-reported completion of that focused UI check. Do not repeat it without a new issue. Exact request-count increments, UTC rollover, offline recovery, account switching, authenticated server entitlement enforcement and paid lifecycle were not separately reported by that reply. See BUILD120_OWNER_ACCEPTANCE.json. No app/backend change, new build or public submission is needed merely to record this acceptance.

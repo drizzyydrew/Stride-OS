@@ -1,0 +1,72 @@
+{
+  "recordedAt": "2026-11-20T00:03:47.596050+00:00",
+  "version": "1.0.0",
+  "buildNumber": "121",
+  "profile": "billing-qa",
+  "sourceCommit": "822221c01094f721d6b749a3aeee529f691bc209",
+  "buildId": "8ca4e329-76b9-4e5a-92ce-7212087c8c72",
+  "submissionId": "6f01098d-187a-4c10-94df-8587d7988693",
+  "appleBuildId": "cf08a2e0-f46e-4f34-a1d1-df56e5e16b69",
+  "easStatus": "FINISHED",
+  "submissionStatus": "FINISHED",
+  "appleProcessingState": "VALID",
+  "internalBuildState": "IN_BETA_TESTING",
+  "existingGroup": {
+    "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+    "name": "Team (Expo)",
+    "isInternal": true,
+    "hasAccessToAllBuilds": true,
+    "actuallyAssigned": true,
+    "testerCount": 1,
+    "testerStates": [
+      "INSTALLED"
+    ]
+  },
+  "betaNotes": {
+    "locale": "en-US",
+    "exactReadback": true,
+    "characters": 1676,
+    "sha256": "8213191b9da4500b8e7644cc770b49e19eb4bd3b233ab0e7de38c59e23a618ff"
+  },
+  "archiveSha256": "56b14eba3ff2f3f322dfad55b6760b09084da98b68d4bed91e4b82221062abfd",
+  "archiveBytes": 129976644,
+  "signedTargetsVerified": 3,
+  "fullRegression": {
+    "testFiles": 227,
+    "tests": 2058,
+    "passed": 2058,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "concurrency": 1
+  },
+  "localAndCloudTypecheck": "PASS",
+  "cloudDoctorPassed": 21,
+  "council": "Independent source review PASS; focused counts overlap full regression",
+  "newProgrammingVersionBoundary": "explicit-new-goals-only",
+  "imageAndShareSourcesChanged": false,
+  "backendOrBillingPolicyChanged": false,
+  "physicalDeviceAccepted": false,
+  "purchaseLifecycleAcceptedByThisDelivery": false,
+  "publicReviewSubmitted": false,
+  "publicVersion": {
+    "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "version": "1.0",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "releaseType": "MANUAL",
+    "selectedBuild": "109"
+  },
+  "evidence": [
+    "BUILD121_PROGRAMMING_VERIFICATION.json",
+    "BUILD121_CLOUD_CHECKS.json",
+    "BUILD121_ARTIFACT_VERIFICATION.json",
+    "BUILD121_APPLE_ACCEPTANCE.json"
+  ],
+  "ownerGuide": "BUILD121_OWNER_TEST_GUIDE.md",
+  "testedRuntimeFingerprintReverified": {
+    "files": 798,
+    "sha256": "e0e6c739a3db6c5b1a942c2f1c9b82cd8b49dc8f59f336b7cc73edefeeea4bc5",
+    "ordering": "Python pathlib path-component ordering, relative POSIX path bytes"
+  }
+}

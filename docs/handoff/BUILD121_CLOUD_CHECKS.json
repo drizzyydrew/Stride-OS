@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-11-19T23:56:29.311432+00:00",
+  "sourceCommit": "822221c01094f721d6b749a3aeee529f691bc209",
+  "easBuildId": "8ca4e329-76b9-4e5a-92ce-7212087c8c72",
+  "buildNumber": "121",
+  "profile": "billing-qa",
+  "status": "FINISHED",
+  "cloudTypecheckPassed": true,
+  "cloudTypecheckPostInstall": {
+    "start": "2026-11-19T23:44:36.668Z",
+    "end": "2026-11-19T23:44:46.311Z"
+  },
+  "expoDoctor": {
+    "passed": 21,
+    "total": 21
+  },
+  "archiveErrors": 0,
+  "archiveWarnings": 33,
+  "metalToolchainSearchPathWarningPresent": true,
+  "nativeArchiveSucceeded": true,
+  "archiveVerification": "BUILD121_ARTIFACT_VERIFICATION.json",
+  "publicReviewSubmitted": false,
+  "physicalDeviceAccepted": false
+}

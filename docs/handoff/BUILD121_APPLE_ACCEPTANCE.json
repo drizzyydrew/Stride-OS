@@ -1,0 +1,41 @@
+{
+  "checkedAt": "2026-11-20T00:02:48.829Z",
+  "easBuildId": "8ca4e329-76b9-4e5a-92ce-7212087c8c72",
+  "sourceCommit": "822221c01094f721d6b749a3aeee529f691bc209",
+  "appleBuildId": "cf08a2e0-f46e-4f34-a1d1-df56e5e16b69",
+  "version": "121",
+  "processingState": "VALID",
+  "expired": false,
+  "uploadedDate": "2026-11-19T15:58:11-08:00",
+  "internalBuildState": "IN_BETA_TESTING",
+  "externalBuildState": "READY_FOR_BETA_SUBMISSION",
+  "group": {
+    "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+    "name": "Team (Expo)",
+    "isInternal": true,
+    "hasAccessToAllBuilds": true,
+    "actuallyAssigned": true,
+    "testerCount": 1,
+    "testerStates": [
+      "INSTALLED"
+    ]
+  },
+  "whatToTest": {
+    "locale": "en-US",
+    "exactReadback": true,
+    "characters": 1676,
+    "sha256": "8213191b9da4500b8e7644cc770b49e19eb4bd3b233ab0e7de38c59e23a618ff"
+  },
+  "publicVersion": {
+    "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "version": "1.0",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "releaseType": "MANUAL",
+    "selectedBuild": "109"
+  },
+  "physicalDeviceAccepted": false,
+  "purchasesEnabled": true,
+  "billingPolicyChangedInThisTask": false,
+  "usageBackendChangedInThisTask": false,
+  "publicReviewSubmitted": false
+}
