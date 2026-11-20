@@ -7,7 +7,7 @@ import { getAppStorage } from './persistStorage';
 import { ownerLeaseIsCurrent, type OwnerLease } from '../lib/localDataOwner';
 
 import type { ActivitySubtype, ActivityType, CadenceSample, HeartRateSample, PowerSample, RunWalkInterval, WatchRecordingEvidence } from '../types/activity';
-import { OUTDOOR_SPORTS, type OutdoorSport } from '../utils/outdoorSports';
+import { TRACKED_ACTIVITIES, type TrackedActivityType } from '../utils/outdoorSports';
 import { appendTelemetrySamples, selectLiveTelemetry } from '../utils/outdoorTelemetry';
 import {
   appendTrackingPoint,
@@ -20,7 +20,7 @@ import { enqueueVoiceCue } from '../lib/voiceCue';
 import { initialAutoPauseState, reconcileAutoPauseMode, reduceAutoPause, type AutoPauseActivity, type AutoPauseState } from '../utils/autoPause';
 import { useSettingsStore } from './settingsStore';
 
-export type ActiveOutdoorType = OutdoorSport;
+export type ActiveOutdoorType = TrackedActivityType;
 
 const EMPTY_AGGREGATE: TrackingAggregate = {
   points: [],
@@ -136,7 +136,7 @@ export function activeOutdoorElapsedSeconds(
 }
 
 function labelFor(type: ActiveOutdoorType): string {
-  return OUTDOOR_SPORTS[type].label;
+  return TRACKED_ACTIVITIES[type].label;
 }
 
 function gpsAutoPauseActivity(state: Pick<ActiveActivityStore, 'activityType' | 'subtype'>): AutoPauseActivity | null {
@@ -187,7 +187,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
         set({
           activityId: `active_${now}`,
           activityType: input.activityType,
-          subtype: input.subtype ?? 'outdoor',
+          subtype: input.activityType === 'other' ? 'general' : input.subtype ?? 'outdoor',
           name: input.name ?? labelFor(input.activityType),
           scheduledSessionId: input.scheduledSessionId ?? null,
           associatedTrainingBlockId: input.associatedTrainingBlockId ?? null,
@@ -205,9 +205,9 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
           lastHeartRateSample: null, lastCadenceSample: null, lastPowerSample: null,
           recordingPauses: [],
       lastGoodFixAt: null,
-          runWalkIntervals: input.runWalkIntervals ?? [],
-          routeId: input.routeId ?? null,
-          navigationMode: input.navigationMode ?? 'off',
+          runWalkIntervals: input.activityType === 'other' ? [] : input.runWalkIntervals ?? [],
+          routeId: input.activityType === 'other' ? null : input.routeId ?? null,
+          navigationMode: input.activityType === 'other' ? 'off' : input.navigationMode ?? 'off',
           nextInstruction: null,
           lastRunWalkCueElapsedSeconds: 0,
           completionRequestedAt: null,
@@ -269,7 +269,7 @@ export const useActiveActivityStore = create<ActiveActivityStore>()(
       addLocation: (location, activeSeconds) => {
         get().syncAutoPauseMode();
         const state = get();
-        if (!state.isActive || state.completionRequestedAt != null) return;
+        if (!state.isActive || state.completionRequestedAt != null || state.activityType === 'other') return;
         const point = {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,

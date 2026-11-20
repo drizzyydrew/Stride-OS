@@ -1,0 +1,67 @@
+{
+  "checkedAt": "2026-11-20T04:18:37.811619+00:00",
+  "baseCommit": "159a07fbda13d2bed9f04b69fab33f9bd04652e7",
+  "testFiles": 17,
+  "tests": 205,
+  "passed": 205,
+  "failed": 0,
+  "cancelled": 0,
+  "skipped": 0,
+  "testExitCode": 0,
+  "canonicalProjectTypecheck": "PASS",
+  "typecheckExitCode": 0,
+  "swiftSyntaxParse": "PASS for Watch manager, phone connectivity module and Live Activity widget",
+  "actualWatchKindTypecheck": {
+    "status": "PASS",
+    "sdk": "Installed WatchOS11.5 SDK",
+    "target": "arm64_32-apple-watchos11.0",
+    "scope": "Actual extracted StrideWatchWorkoutKind enum against Apple Foundation and HealthKit; not the entire target"
+  },
+  "runtimeFingerprint": {
+    "files": [
+      "app/(tabs)/activity/start.tsx",
+      "modules/stride-watch-connectivity/ios/StrideWatchConnectivityModule.swift",
+      "modules/stride-watch-connectivity/src/index.ts",
+      "src/components/activity/ActiveOutdoorSession.tsx",
+      "src/components/activity/RecoveredActivityPrompt.tsx",
+      "src/components/watch/WatchWorkoutBridge.tsx",
+      "src/lib/activityGpsTracking.ts",
+      "src/lib/liveActivityContracts.ts",
+      "src/lib/outdoorCompletion.ts",
+      "src/store/activeActivityStore.ts",
+      "src/utils/liveActivityLayout.ts",
+      "src/utils/outdoorCompletionSnapshot.ts",
+      "src/utils/outdoorSports.ts",
+      "targets/StrideOSWatch/StrideWatchWorkoutManager.swift",
+      "targets/StrideRunLiveActivity/StrideRunLiveActivity.swift"
+    ],
+    "fileCount": 15,
+    "sha256": "5587afa16bd5c6ba3d50da58e6534121fd04f4f2f9d4a0794a43ebeebbe232db"
+  },
+  "reactReview": "Conditional presentation retains hook ordering, session identity, accessible actions and existing responsive layouts; no new listeners/network dependencies",
+  "imageAssetsChanged": false,
+  "backendPolicyChanged": false,
+  "buildNumberChanged": false,
+  "newBuildOrOTAOrTestFlightSubmission": false,
+  "physicalDeviceAccepted": false,
+  "fullNativeArchiveVerified": false,
+  "lastDeliveredBuild": "122",
+  "logs": {
+    "strideos-open-workout-tests.log": {
+      "path": "/Users/drew/.cache/strideos-open-workout-tests.log",
+      "sha256": "4b35d8c8e99644ba25963b4954364489e50f220a04715f8383a3e4811159e0d9"
+    },
+    "strideos-open-workout-typecheck.log": {
+      "path": "/Users/drew/.cache/strideos-open-workout-typecheck.log",
+      "sha256": "12fc70d2feb72f584a6828cd9e1102cc9f447725b6b1bb2abda352bf6797e415"
+    },
+    "strideos-open-workout-swift-parse.log": {
+      "path": "/Users/drew/.cache/strideos-open-workout-swift-parse.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "strideos-open-workout-kind-typecheck.log": {
+      "path": "/Users/drew/.cache/strideos-open-workout-kind-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

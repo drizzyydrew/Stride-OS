@@ -11,7 +11,8 @@ export type OutdoorLiveActivityType =
   | 'ski_touring'
   | 'snowboard_touring'
   | 'mobility'
-  | 'active_recovery';
+  | 'active_recovery'
+  | 'other';
 
 export type LiveActivityControlState =
   | 'ready'
@@ -105,6 +106,7 @@ export function normalizeOutdoorLiveActivitySnapshot(
   snapshot: OutdoorLiveActivitySnapshot,
   status?: string,
 ): NormalizedOutdoorLiveActivityPayload {
+  const openWorkout = snapshot.activityType === 'other';
   const speedBased = snapshot.activityType === 'cycling'
     || snapshot.activityType === 'indoor_cycling'
     || snapshot.activityType === 'downhill_skiing'
@@ -125,33 +127,33 @@ export function normalizeOutdoorLiveActivitySnapshot(
     sessionSource: snapshot.sessionSource ?? 'outdoor',
     activityType: snapshot.activityType,
     elapsedSeconds: Math.max(0, Math.round(snapshot.elapsedSeconds)),
-    distanceMiles: Math.max(0, snapshot.distanceMiles),
+    distanceMiles: openWorkout ? 0 : Math.max(0, snapshot.distanceMiles),
     // Legacy native binaries always interpret this field as minutes per mile.
-    averagePace: snapshot.averagePace?.trim() || '--:--',
+    averagePace: openWorkout ? '--:--' : snapshot.averagePace?.trim() || '--:--',
     heartRate: Math.max(0, Math.round(snapshot.heartRateBpm ?? 0)),
     zoneLabel: snapshot.zoneLabel?.trim() || 'Zone --',
     zoneStatus: snapshot.zoneStatus?.trim() || 'unknown',
     status: status ?? (snapshot.isPaused ? 'Paused' : 'Active'),
     isPaused: snapshot.isPaused,
     metricLabel: speedBased ? 'SPEED' : 'PACE',
-    metricValue,
+    metricValue: openWorkout ? '--' : metricValue,
     metricUnit: speedBased ? metric ? 'km/h' : 'mph' : metric ? '/km' : '/mi',
-    distanceValue: (Math.max(0, snapshot.distanceMiles) * (metric ? 1.609344 : 1)).toFixed(2),
+    distanceValue: openWorkout ? '--' : (Math.max(0, snapshot.distanceMiles) * (metric ? 1.609344 : 1)).toFixed(2),
     distanceUnit: metric ? 'km' : 'mi',
-    cadenceValue: finiteNonnegative(snapshot.cadenceValue),
-    cadenceUnit: snapshot.cadenceUnit,
-    cadenceObservedAt: snapshot.cadenceObservedAt,
-    powerWatts: finiteNonnegative(snapshot.powerWatts),
-    powerKind: snapshot.powerKind,
-    powerObservedAt: snapshot.powerObservedAt,
+    cadenceValue: openWorkout ? undefined : finiteNonnegative(snapshot.cadenceValue),
+    cadenceUnit: openWorkout ? undefined : snapshot.cadenceUnit,
+    cadenceObservedAt: openWorkout ? undefined : snapshot.cadenceObservedAt,
+    powerWatts: openWorkout ? undefined : finiteNonnegative(snapshot.powerWatts),
+    powerKind: openWorkout ? undefined : snapshot.powerKind,
+    powerObservedAt: openWorkout ? undefined : snapshot.powerObservedAt,
     heartRateObservedAt: snapshot.heartRateObservedAt,
-    currentInterval: snapshot.currentInterval?.trim() || '',
-    nextTransition: snapshot.nextTransition?.trim() || '',
-    navigationInstruction: snapshot.navigationInstruction?.trim() || '',
+    currentInterval: openWorkout ? '' : snapshot.currentInterval?.trim() || '',
+    nextTransition: openWorkout ? '' : snapshot.nextTransition?.trim() || '',
+    navigationInstruction: openWorkout ? '' : snapshot.navigationInstruction?.trim() || '',
     cueText: snapshot.cueText?.trim() || '',
     controlState: snapshot.controlState ?? 'ready',
-    elevationDisplay: formatElevation(snapshot.elevationGainMeters, metric),
-    descentDisplay: formatElevation(snapshot.elevationLossMeters, metric),
+    elevationDisplay: openWorkout ? '' : formatElevation(snapshot.elevationGainMeters, metric),
+    descentDisplay: openWorkout ? '' : formatElevation(snapshot.elevationLossMeters, metric),
   };
 }
 
@@ -175,6 +177,7 @@ function formatSpeed(value: number | undefined): string {
 
 function defaultActivityName(type: OutdoorLiveActivityType): string {
   switch (type) {
+  case 'other': return 'Open / Other';
   case 'walking': return 'Walk';
   case 'run_walk': return 'Run / Walk';
   case 'cycling':

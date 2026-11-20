@@ -1,6 +1,6 @@
 import type { ActivityDraft, WatchRecordingEvidence } from '../types/activity';
 import type { ActiveActivityStore } from '../store/activeActivityStore';
-import { OUTDOOR_SPORTS } from './outdoorSports';
+import { TRACKED_ACTIVITIES } from './outdoorSports';
 import { outdoorTelemetryMetrics } from './outdoorTelemetry';
 import { appendTrackingPoint, type TrackingAggregate } from './activityTracking';
 
@@ -22,14 +22,15 @@ export function captureOutdoorCompletion(state: ActiveActivityStore, command: Ou
   }
   const inRecording = <T extends { timestamp: number }>(samples: T[]) => samples
     .filter(sample => sample.timestamp >= startedAt && sample.timestamp <= command.endedAt).map(sample => ({ ...sample }));
+  const openWorkout = state.activityType === 'other';
   const telemetry = outdoorTelemetryMetrics({ ...state,
-    rawHeartRateSamples: inRecording(state.rawHeartRateSamples), cadenceSamples: inRecording(state.cadenceSamples),
-    powerSamples: inRecording(state.powerSamples),
+    rawHeartRateSamples: inRecording(state.rawHeartRateSamples), cadenceSamples: openWorkout ? [] : inRecording(state.cadenceSamples),
+    powerSamples: openWorkout ? [] : inRecording(state.powerSamples),
   }, command.endedAt);
   const wallSeconds = (command.endedAt - startedAt) / 1000;
   const pausedMs = (telemetry.recordingPauses ?? []).reduce((sum, pause) => sum + pause.endTime - pause.startTime, 0);
   const activeSeconds = command.elapsedSeconds ?? Math.max(0, wallSeconds - pausedMs / 1000);
-  const points = inRecording(state.aggregate.points);
+  const points = openWorkout ? [] : inRecording(state.aggregate.points);
   // Use the same bounded, pause-aware calculation regardless of End delivery timing.
   const empty: TrackingAggregate = { points: [], distanceMeters: 0, elevationGainMeters: 0, elevationLossMeters: 0,
     currentMetersPerSecond: 0, averageMetersPerSecond: 0, maximumMetersPerSecond: 0 };
@@ -40,7 +41,7 @@ export function captureOutdoorCompletion(state: ActiveActivityStore, command: Ou
     }
     return appendTrackingPoint(aggregate, point, state.activityType, activeSeconds);
   }, empty);
-  const distance = command.distanceMeters ?? speed.distanceMeters;
+  const distance = openWorkout ? 0 : command.distanceMeters ?? speed.distanceMeters;
   if (!Number.isFinite(activeSeconds) || activeSeconds < 0 || activeSeconds > wallSeconds + 1
     || !Number.isFinite(distance) || distance < 0) throw new Error('Outdoor End contains invalid measured totals');
   const compatibleRunWalk = (state.activityType === 'running' || state.activityType === 'walking') && state.runWalkIntervals.length > 0;
@@ -50,26 +51,29 @@ export function captureOutdoorCompletion(state: ActiveActivityStore, command: Ou
     workoutInstanceId: command.workoutInstanceId,
     watchRecording: evidence?.workoutInstanceId === command.workoutInstanceId ? { ...evidence } : undefined,
     activityType: state.activityType, subtype: compatibleRunWalk ? 'run_walk' : state.subtype,
-    source: 'tracked', status: 'completed', completionClassification: 'completed_as_prescribed',
+    source: 'tracked', status: 'completed', completionClassification: openWorkout ? 'completed_other_activity' : 'completed_as_prescribed',
     scheduled: Boolean(state.scheduledSessionId), scheduledSessionId: state.scheduledSessionId ?? undefined,
     associatedTrainingBlockId: state.associatedTrainingBlockId ?? undefined, associatedGoalId: state.associatedGoalId ?? undefined,
     startTime: startedAt, endTime: command.endedAt, indoor: false,
     metrics: {
       ...telemetry, durationSeconds: activeSeconds, elapsedTimeSeconds: wallSeconds, elapsedTimeSource: 'recorded_wall_clock', activeTimeSeconds: activeSeconds,
-      distanceMeters: distance, distanceSource: 'gps',
-      elevationGainMeters: speed.elevationGainMeters, elevationLossMeters: speed.elevationLossMeters,
-      speed: { currentMetersPerSecond: speed.currentMetersPerSecond, averageMetersPerSecond: speed.averageMetersPerSecond,
-        maximumMetersPerSecond: speed.maximumMetersPerSecond },
-      pace: OUTDOOR_SPORTS[state.activityType].speedBased ? undefined : {
-        currentSecondsPerKilometer: speed.currentMetersPerSecond ? 1000 / speed.currentMetersPerSecond : undefined,
-        averageSecondsPerKilometer: speed.averageMetersPerSecond ? 1000 / speed.averageMetersPerSecond : undefined,
-      },
-      routeId: state.routeId ?? undefined,
-      routeCoordinates: points.map(point => ({ latitude: point.latitude, longitude: point.longitude,
-        timestamp: point.timestamp, altitudeMeters: point.altitudeMeters, horizontalAccuracyMeters: point.accuracyMeters })),
-      runWalkIntervals: compatibleRunWalk ? state.runWalkIntervals.map(interval => ({ ...interval })) : undefined,
-      metricSources: { distance: command.distanceMeters != null ? 'apple_watch' : 'phone_gps', speed: 'phone_gps',
-        pace: 'phone_gps', elevation: 'phone_gps', heartRate: telemetry.rawHeartRateSamples?.at(-1)?.source ?? 'unavailable' },
+      ...(openWorkout ? { distanceSource: 'unavailable' as const } : {
+        distanceMeters: distance, distanceSource: 'gps' as const,
+        elevationGainMeters: speed.elevationGainMeters, elevationLossMeters: speed.elevationLossMeters,
+        speed: { currentMetersPerSecond: speed.currentMetersPerSecond, averageMetersPerSecond: speed.averageMetersPerSecond,
+          maximumMetersPerSecond: speed.maximumMetersPerSecond },
+        pace: TRACKED_ACTIVITIES[state.activityType].speedBased ? undefined : {
+          currentSecondsPerKilometer: speed.currentMetersPerSecond ? 1000 / speed.currentMetersPerSecond : undefined,
+          averageSecondsPerKilometer: speed.averageMetersPerSecond ? 1000 / speed.averageMetersPerSecond : undefined,
+        },
+        routeId: state.routeId ?? undefined,
+        routeCoordinates: points.map(point => ({ latitude: point.latitude, longitude: point.longitude,
+          timestamp: point.timestamp, altitudeMeters: point.altitudeMeters, horizontalAccuracyMeters: point.accuracyMeters })),
+        runWalkIntervals: compatibleRunWalk ? state.runWalkIntervals.map(interval => ({ ...interval })) : undefined,
+        metricSources: { distance: command.distanceMeters != null ? 'apple_watch' : 'phone_gps', speed: 'phone_gps',
+          pace: 'phone_gps', elevation: 'phone_gps', heartRate: telemetry.rawHeartRateSamples?.at(-1)?.source ?? 'unavailable' },
+      }),
+      ...(openWorkout ? { metricSources: { heartRate: telemetry.rawHeartRateSamples?.at(-1)?.source ?? 'unavailable' } } : {}),
     },
   };
 }

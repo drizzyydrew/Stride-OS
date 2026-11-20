@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { liveActivityMetricConfig } from '../../src/utils/liveActivityLayout';
+import { isOutdoorSport, trackedActivityFromWatch } from '../../src/utils/outdoorSports';
 import {
   liveActivityCommandMatchesSession,
   normalizeOutdoorLiveActivitySnapshot,
@@ -128,4 +130,27 @@ test('pending control commands suppress duplicate and conflicting rapid taps', (
     nextAction: 'resume',
     nowMs: 17_001,
   }), true);
+});
+
+
+test('Open workout retains time and identity while discarding distance, pace and unrelated sport telemetry', () => {
+  const payload = normalizeOutdoorLiveActivitySnapshot({ activityName: '', activityType: 'other', workoutInstanceId: 'open',
+    elapsedSeconds: 90, distanceMiles: 50, averagePace: '4:00', averageSpeedMph: 30,
+    heartRateBpm: null, isPaused: false, powerWatts: 300, powerKind: 'measured', cadenceValue: 180,
+    currentInterval: 'Run', navigationInstruction: 'Turn left' });
+  assert.equal(payload.runName, 'Open / Other');
+  assert.equal(payload.workoutInstanceId, 'open');
+  assert.equal(payload.elapsedSeconds, 90);
+  assert.equal(payload.distanceMiles, 0);
+  assert.equal(payload.distanceValue, '--');
+  assert.equal(liveActivityMetricConfig({ activityType: 'other' }).primaryMetric, 'timer');
+  assert.equal(liveActivityMetricConfig({ activityType: 'other' }).showsDistance, false);
+  assert.equal(trackedActivityFromWatch('other'), 'other');
+  assert.equal(isOutdoorSport('other'), false);
+  assert.equal(payload.averagePace, '--:--');
+  assert.equal(payload.metricValue, '--');
+  assert.equal(payload.powerWatts, undefined);
+  assert.equal(payload.cadenceValue, undefined);
+  assert.equal(payload.currentInterval, '');
+  assert.equal(payload.navigationInstruction, '');
 });

@@ -1,5 +1,9 @@
 # Current StrideOS launch status
 
+## Local addition after 122 — Open / Other workout
+
+Open / Other is implemented locally under Activity > Track Workout, with a no-target timer, Pause/Resume, actual available heart rate and history saving. GPS and running metrics are omitted. Watch Other and native Live Activity presentations are included in the source changes and require the next binary. Delivered 122 is unchanged; no new build/submission or image change occurred. See NEXT_BUILD_OPEN_WORKOUT.md for validation and later device checks. Launch blockers recorded below remain open.
+
 ## Latest: build 122 delivered — November 19 Pacific
 
 Build 122 is VALID / IN_BETA_TESTING in the existing internal Team (Expo) group, with exact saved testing-note readback. Source `8db3cab83b80219a7a4ebbf424f4cc4245d84a48`; EAS `60112771-fa3f-4e3e-8b8c-66590cfa852e`; submission `118dfd53-dda7-41ca-9457-bb8979083c64`. Commit/push and TestFlight were authorized; the earlier hold below is historical and superseded. See BUILD122_RELEASE.md and BUILD122_DELIVERY.json.

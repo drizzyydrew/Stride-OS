@@ -38,7 +38,7 @@ function readActivity(): RecoveredActivity | null {
   if (outdoor.isActive && outdoor.workoutInstanceId && outdoor.startedAt != null) {
     return {
       domain: 'outdoor', workoutInstanceId: outdoor.workoutInstanceId, startedAt: outdoor.startedAt,
-      name: 'Outdoor activity', route: '/(tabs)/activity/start',
+      name: outdoor.activityType === 'other' ? 'Open / Other' : 'Outdoor activity', route: '/(tabs)/activity/start',
       ending: outdoor.completionRequestedAt != null,
       alreadySaved: useActivityStore.getState().activities.some(activity => activity.workoutInstanceId === outdoor.workoutInstanceId && activity.endTime != null),
       mayDiscardOnStop: false,

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { createContext, runInContext, type Context } from 'node:vm';
 import ts from 'typescript';
-import { OUTDOOR_SPORTS, type OutdoorSport } from '../../src/utils/outdoorSports';
+import { OUTDOOR_SPORTS, TRACKED_ACTIVITIES, type OutdoorSport, type TrackedActivityType } from '../../src/utils/outdoorSports';
 import { profilePowerMass } from '../../src/utils/profilePower';
 
 const source = readFileSync('app/(tabs)/activity/start.tsx', 'utf8');
@@ -33,8 +33,8 @@ function evaluate(code: string, context: Context): any {
   return runInContext(ts.transpileModule(code, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText, context);
 }
 
-function launchContext(selectedType: OutdoorSport, runWalk: boolean): Context {
-  const context = createContext({ selectedType, runWalk, OUTDOOR_SPORTS,
+function launchContext(selectedType: TrackedActivityType, runWalk: boolean): Context {
+  const context = createContext({ selectedType, runWalk, OUTDOOR_SPORTS, TRACKED_ACTIVITIES,
     useMemo: (calculate: () => unknown) => calculate(),
     attached: null, mode: 'off', params: {}, units: 'metric', started: { workoutInstanceId: 'instance' },
   });
@@ -126,7 +126,7 @@ test('sport choices have accessible names and selection states and do not add sw
   const selector = openings('TouchableOpacity').find(node => attribute(node, 'key')?.initializer?.getText(ast) === '{item.type}')!;
   const context = launchContext('cycling', true);
   const types = evaluate('TYPES', context);
-  assert.equal(types.length, 9);
+  assert.equal(types.length, 10);
   assert.equal(types.some((item: { type: string }) => item.type === 'swimming'), false);
   for (const item of types) {
     context.item = item;
@@ -235,4 +235,45 @@ test('Live Activity average pace uses average speed, rounds across minute bounda
     evaluate(declaration('secPerMile'), context);
     assert.equal(evaluate(pace.initializer.getText(ast), context), expected);
   }
+});
+
+
+test('Open / Other has no target, intervals, route attachment or outdoor Watch environment', () => {
+  const context = launchContext('other', true);
+  context.attached = { id: 'route' };
+  const activity = callArgument('active.start', context);
+  assert.equal(activity.activityType, 'other');
+  assert.equal(activity.subtype, 'general');
+  assert.equal(activity.routeId, undefined);
+  assert.equal(activity.navigationMode, 'off');
+  assert.equal(activity.runWalkIntervals.length, 0);
+  context.started = { ...activity, workoutInstanceId: 'open' };
+  context.expectedId = 'open';
+  evaluate(declaration('workoutKind'), context);
+  const watch = callArgument('startStrideWatchWorkout', context, 'connectOutdoorWatch');
+  assert.equal(watch.workoutKind, 'other');
+  assert.equal(watch.environment, 'unknown');
+});
+
+
+test('actual Open start bypasses denied location, recording to the same retained session and Live identity', async () => {
+  const context = launchContext('other', false);
+  let current: any = { isActive: false };
+  const events: string[] = [];
+  Object.assign(context, {
+    activeSessionStoresHydrated: () => true, getConflictingActiveSession: () => null,
+    requestLocationRecovery: () => { assert.fail('No location prompt for Open'); },
+    startActivityLocationTracking: () => { assert.fail('No GPS task for Open'); },
+    navigationMode: 'off', active: { start: (input: any) => { events.push('start'); current = { ...input, isActive: true, workoutInstanceId: 'open-id' }; } },
+    useActiveActivityStore: { getState: () => current },
+    previousElapsed: { current: 0 }, previousGuidanceProgress: { current: null }, lastAnnouncedStep: { current: null },
+    setElapsedSeconds: () => {}, setGuidance: () => {}, connectOutdoorWatch: (id: string) => events.push('watch:' + id),
+    startOutdoorLiveActivity: async (input: any) => { assert.equal(input.workoutInstanceId, 'open-id'); assert.equal(input.activityType, 'other'); events.push('live'); },
+    enqueueVoiceCue: () => {},
+  });
+  evaluate(functionText('beginActivity'), context);
+  await evaluate('beginActivity()', context);
+  assert.deepEqual(events, ['start', 'watch:open-id', 'live']);
+  assert.equal(current.activityType, 'other');
+  assert.equal(current.subtype, 'general');
 });

@@ -48,6 +48,7 @@ function activityLocationOptions(): Location.LocationTaskOptions {
 
 export async function startActivityLocationTracking(): Promise<void> {
   return serializeTracking(async () => {
+  if (useActiveActivityStore.getState().activityType === 'other') return;
   const foreground = await Location.requestForegroundPermissionsAsync();
   if (foreground.status !== 'granted') throw new Error('Location permission is required to track this activity.');
   const background = await Location.requestBackgroundPermissionsAsync();
@@ -61,7 +62,7 @@ export async function startActivityLocationTracking(): Promise<void> {
 
 export async function resumeActivityLocationTrackingIfPermitted(): Promise<boolean> {
   return serializeTracking(async () => {
-  if (useActiveActivityStore.getState().completionRequestedAt != null) return false;
+  if (useActiveActivityStore.getState().completionRequestedAt != null || useActiveActivityStore.getState().activityType === 'other') return false;
   const foreground = await Location.getForegroundPermissionsAsync();
   const background = await Location.getBackgroundPermissionsAsync();
   if (foreground.status !== 'granted' || background.status !== 'granted') return false;

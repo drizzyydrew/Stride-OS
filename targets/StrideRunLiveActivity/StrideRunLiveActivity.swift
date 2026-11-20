@@ -28,11 +28,17 @@ struct StrideRunLiveActivity: Widget {
           IslandMetric(label: "TIME", value: formatElapsed(context.state.elapsedSeconds), unit: "", timerStart: liveTimerStart(context.state))
         }
         DynamicIslandExpandedRegion(.trailing) {
-          IslandMetric(label: "DISTANCE", value: distanceValue(context.state), unit: context.state.distanceUnit ?? "mi")
+          if context.state.activityType == "other" {
+            IslandMetric(label: "HEART RATE", value: !context.isStale && heartRateIsFresh(context.state) ? "\(context.state.heartRate)" : "--", unit: "bpm")
+          } else {
+            IslandMetric(label: "DISTANCE", value: distanceValue(context.state), unit: context.state.distanceUnit ?? "mi")
+          }
         }
         DynamicIslandExpandedRegion(.bottom) {
           HStack(spacing: 10) {
-            IslandMetric(label: context.state.metricLabel ?? "AVG PACE", value: context.state.metricValue ?? context.state.averagePace, unit: context.state.metricUnit ?? "/mi")
+            if context.state.activityType != "other" {
+              IslandMetric(label: context.state.metricLabel ?? "AVG PACE", value: context.state.metricValue ?? context.state.averagePace, unit: context.state.metricUnit ?? "/mi")
+            }
             Spacer()
             ZoneBadge(label: !context.isStale && heartRateIsFresh(context.state) ? context.state.zoneLabel : "Z--",
               status: !context.isStale && heartRateIsFresh(context.state) ? context.state.zoneStatus : "unknown")
@@ -75,7 +81,7 @@ struct StrideRunLiveActivity: Widget {
             .foregroundStyle(.white)
         }
       } compactTrailing: {
-        Text("\(distanceValue(context.state)) \(context.state.distanceUnit ?? "mi")")
+        Text(context.state.activityType == "other" ? "Open" : "\(distanceValue(context.state)) \(context.state.distanceUnit ?? "mi")")
           .font(.caption.weight(.bold))
           .foregroundStyle(StrideDesign.clay)
       } minimal: {
@@ -145,8 +151,10 @@ private struct LockScreenRunView: View {
       // Single metrics row — four cells, equal width, no vertical stacking
       HStack(alignment: .top, spacing: 8) {
         LockMetricCell(value: formatElapsed(context.state.elapsedSeconds), unit: nil, label: "TIME", primary: primaryText, secondary: secondaryText, timerStart: liveTimerStart(context.state))
-        LockMetricCell(value: distanceValue(context.state), unit: context.state.distanceUnit ?? "mi", label: "DISTANCE", primary: primaryText, secondary: secondaryText)
-        LockMetricCell(value: context.state.metricValue ?? context.state.averagePace, unit: context.state.metricUnit ?? "/mi", label: context.state.metricLabel ?? "PACE", primary: primaryText, secondary: secondaryText)
+        if context.state.activityType != "other" {
+          LockMetricCell(value: distanceValue(context.state), unit: context.state.distanceUnit ?? "mi", label: "DISTANCE", primary: primaryText, secondary: secondaryText)
+          LockMetricCell(value: context.state.metricValue ?? context.state.averagePace, unit: context.state.metricUnit ?? "/mi", label: context.state.metricLabel ?? "PACE", primary: primaryText, secondary: secondaryText)
+        }
         LockMetricCell(value: !context.isStale && heartRateIsFresh(context.state) && context.state.heartRate > 0 ? "\(context.state.heartRate)" : "--", unit: "bpm", label: "HEART RATE", primary: primaryText, secondary: secondaryText)
       }
 
@@ -336,6 +344,7 @@ private func distanceValue(_ state: StrideRunActivityAttributes.ContentState) ->
 
 private func outdoorSymbol(_ type: String?) -> String {
   switch type {
+  case "other": return "figure.mixed.cardio"
   case "walking": return "figure.walk"
   case "hiking", "ski_touring", "snowboard_touring": return "figure.hiking"
   case "cycling", "indoor_cycling": return "bicycle"

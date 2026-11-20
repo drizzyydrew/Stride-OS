@@ -267,3 +267,18 @@ test('actual native metric onLayout uses font scale and retains its full value w
     assert.equal(text.props.numberOfLines, undefined);
   }
 });
+
+
+test('Open workout retains time and controls without a map, GPS wait, distance or coaching panel', () => {
+  for (const platform of ['ios', 'web']) {
+    const all = nodes(harness(platform).default(fixture({ activityType: 'other', name: 'Open / Other', points: [],
+      primaryMetrics: [{ label: 'Heart rate', value: '--' }], additionalMetrics: [], coachingControls: null })));
+    assert.equal(all.some(node => node.props?.testID === 'active-outdoor-map'), false);
+    for (const text of ['Distance', 'Voice coaching', 'Waiting for an accurate GPS location']) {
+      assert.equal(all.some(node => node.props?.children === text), false, text);
+    }
+    assert.ok(all.some(node => node.props?.children === 'Time'));
+    assert.ok(all.some(node => node.props?.accessibilityLabel === 'Pause activity'));
+    assert.ok(all.some(node => node.props?.accessibilityLabel === 'Complete activity'));
+  }
+});

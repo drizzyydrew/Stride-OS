@@ -68,7 +68,7 @@ test('outdoor Watch helper delegates the original exact ID through the coordinat
       useActiveActivityStore: { getState: () => session },
       captureOwnerLease: () => ({ ownerUserId: 'A', generation: 1 }),
       ownerLeaseIsCurrent: () => ownerCurrent,
-      OUTDOOR_SPORTS: { walking: { watchKind: 'walking' } }, units: 'metric',
+      TRACKED_ACTIVITIES: { walking: { watchKind: 'walking' } }, units: 'metric',
       outdoorWatchStart: { request: (request: any) => {
         delegatedId = request.workoutInstanceId;
         pending = coordinator.request({ ...request, wait: async () => {

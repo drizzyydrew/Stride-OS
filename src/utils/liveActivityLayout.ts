@@ -8,7 +8,8 @@ export type LiveActivityLayoutKind =
   | 'walking'
   | 'cycling'
   | 'recovery'
-  | 'strength';
+  | 'strength'
+  | 'open';
 
 export type LiveActivityMetricConfig = {
   kind: LiveActivityLayoutKind;
@@ -25,6 +26,9 @@ export function liveActivityMetricConfig(input: {
   activityType: OutdoorLiveActivityType | 'treadmill' | 'intervals' | 'mobility' | 'active_recovery' | 'strength' | string;
   indoor?: boolean;
 }): LiveActivityMetricConfig {
+  if (input.activityType === 'other') {
+    return config('open', 'Open / Other', 'figure.mixed.cardio', 'timer', false, true, false, 'minimal');
+  }
   if (input.activityType === 'strength') {
     return config('strength', 'Strength', 'dumbbell.fill', 'sets', false, false, false, 'minimal');
   }

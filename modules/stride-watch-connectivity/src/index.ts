@@ -34,7 +34,7 @@ export type StrideWatchAckEvent = {
   timestamp: number;
 };
 
-export type StrideWatchWorkoutKind = 'run' | 'strength' | 'mobility' | 'cycling'
+export type StrideWatchWorkoutKind = 'run' | 'strength' | 'mobility' | 'cycling' | 'other'
   | 'walking' | 'hiking' | 'downhill_skiing' | 'cross_country_skiing'
   | 'snowboarding' | 'ski_touring' | 'snowboard_touring';
 
@@ -229,7 +229,7 @@ export async function startStrideWatchWorkout(options: {
   const nativeModule = getNativeModule();
   if (!nativeModule) return FALLBACK_STATUS;
   try {
-    const fencedOutdoor = options.environment === 'outdoor' && !['strength', 'mobility'].includes(options.workoutKind ?? 'run');
+    const fencedOutdoor = (options.environment === 'outdoor' || options.workoutKind === 'other') && !['strength', 'mobility'].includes(options.workoutKind ?? 'run');
     if (fencedOutdoor && options.workoutInstanceId && nativeModule.prepareWorkoutStart && nativeModule.startPreparedWorkout
       && nativeModule.cancelPendingStart) {
       const nonce = nativeModule.prepareWorkoutStart(options.workoutInstanceId);

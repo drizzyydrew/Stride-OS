@@ -14,6 +14,16 @@ export const OUTDOOR_SPORTS = {
 
 export type OutdoorSport = keyof typeof OUTDOOR_SPORTS;
 
+// Open workouts share recording/ownership controls, but are not outdoor sports.
+export const TRACKED_ACTIVITIES = {
+  ...OUTDOOR_SPORTS,
+  other: { watchKind: 'other', label: 'Open / Other', speedBased: false },
+} as const;
+export type TrackedActivityType = keyof typeof TRACKED_ACTIVITIES;
+export function trackedActivityFromWatch(kind: string | undefined): TrackedActivityType | null {
+  return kind === 'other' ? 'other' : outdoorSportFromWatch(kind);
+}
+
 export function outdoorSportFromWatch(kind: string | undefined): OutdoorSport | null {
   return (Object.keys(OUTDOOR_SPORTS) as OutdoorSport[])
     .find(type => OUTDOOR_SPORTS[type].watchKind === kind) ?? null;

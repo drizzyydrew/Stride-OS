@@ -356,7 +356,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     guard let session else { throw NSError(domain: "StrideWatchConnectivity", code: 1) }
     activate()
     let kind = payload["workoutKind"] as? String ?? "run"
-    let known = ["run", "strength", "mobility", "cycling", "walking", "hiking", "downhill_skiing", "cross_country_skiing", "snowboarding", "ski_touring", "snowboard_touring"]
+    let known = ["run", "strength", "mobility", "other", "cycling", "walking", "hiking", "downhill_skiing", "cross_country_skiing", "snowboarding", "ski_touring", "snowboard_touring"]
     guard known.contains(kind), ["run", "strength", "mobility", "cycling"].contains(kind)
       || locked({ supportedWorkoutKinds.contains(kind) }) else {
       throw NSError(domain: "StrideWatchConnectivity", code: 4, userInfo: [NSLocalizedDescriptionKey: "Open the updated StrideOS watch app to enable this sport. Phone recording is still available."])
@@ -442,6 +442,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
       case "cycling": configuration.activityType = .cycling
       case "strength": configuration.activityType = .traditionalStrengthTraining
       case "mobility": configuration.activityType = .flexibility
+    case "other": configuration.activityType = .other
       case "walking": configuration.activityType = .walking
       case "hiking", "ski_touring", "snowboard_touring": configuration.activityType = .hiking
       case "downhill_skiing": configuration.activityType = .downhillSkiing
@@ -451,6 +452,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
       }
       configuration.locationType = ["strength", "mobility"].contains(message["workoutKind"] as? String ?? "")
         || message["environment"] as? String == "indoor" ? .indoor : .outdoor
+      if message["workoutKind"] as? String == "other" { configuration.locationType = .unknown }
       start.launchRequested = true
       healthStore.startWatchApp(with: configuration) { [weak self] success, error in
         DispatchQueue.global().async {
@@ -532,7 +534,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
   @discardableResult
   func sendCommand(_ type: String, payload: [String: Any], explicit: Bool = false) throws -> [String: Any] {
     if type == StrideWatchMessageType.startWorkout, let kind = payload["workoutKind"] as? String {
-      let known = ["run", "strength", "mobility", "cycling", "walking", "hiking", "downhill_skiing", "cross_country_skiing", "snowboarding", "ski_touring", "snowboard_touring"]
+      let known = ["run", "strength", "mobility", "other", "cycling", "walking", "hiking", "downhill_skiing", "cross_country_skiing", "snowboarding", "ski_touring", "snowboard_touring"]
       guard known.contains(kind) else {
         throw NSError(domain: "StrideWatchConnectivity", code: 3, userInfo: [NSLocalizedDescriptionKey: "Unsupported workout type."])
       }
@@ -702,6 +704,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     case "cycling": configuration.activityType = .cycling
     case "strength": configuration.activityType = .traditionalStrengthTraining
     case "mobility": configuration.activityType = .flexibility
+    case "other": configuration.activityType = .other
     case "walking": configuration.activityType = .walking
     case "hiking", "ski_touring", "snowboard_touring": configuration.activityType = .hiking
     case "downhill_skiing": configuration.activityType = .downhillSkiing
@@ -711,6 +714,7 @@ private final class StrideWatchConnectivityCoordinator: NSObject, WCSessionDeleg
     }
     configuration.locationType = (kind == "strength" || kind == "mobility" || environment == "indoor") ? .indoor : .outdoor
 
+    if kind == "other" { configuration.locationType = .unknown }
     healthStore.startWatchApp(with: configuration) { [weak self] success, error in
       guard let self else { return }
       if !success {

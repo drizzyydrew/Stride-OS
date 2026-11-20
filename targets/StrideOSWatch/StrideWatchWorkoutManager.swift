@@ -10,6 +10,7 @@ enum StrideWatchWorkoutKind: String, CaseIterable, Identifiable {
   case run
   case strength
   case mobility
+  case other
   case cycling
   case walking
   case hiking
@@ -26,6 +27,7 @@ enum StrideWatchWorkoutKind: String, CaseIterable, Identifiable {
     case .run: return "Run"
     case .strength: return "Strength"
     case .mobility: return "Mobility"
+    case .other: return "Open / Other"
     case .cycling: return "Cycling"
     case .walking: return "Walk"
     case .hiking: return "Hike"
@@ -42,6 +44,7 @@ enum StrideWatchWorkoutKind: String, CaseIterable, Identifiable {
     case .run: return "StrideOS Run"
     case .strength: return "StrideOS Strength"
     case .mobility: return "StrideOS Mobility"
+    case .other: return "StrideOS Open Workout"
     case .cycling: return "StrideOS Ride"
     case .walking, .hiking, .downhillSkiing, .crossCountrySkiing, .snowboarding, .skiTouring, .snowboardTouring:
       return "StrideOS \(title)"
@@ -53,6 +56,7 @@ enum StrideWatchWorkoutKind: String, CaseIterable, Identifiable {
     case .run: return "figure.run"
     case .strength: return "dumbbell.fill"
     case .mobility: return "figure.cooldown"
+    case .other: return "figure.mixed.cardio"
     case .cycling: return "bicycle"
     case .walking: return "figure.walk"
     case .hiking: return "figure.hiking"
@@ -67,6 +71,7 @@ enum StrideWatchWorkoutKind: String, CaseIterable, Identifiable {
     case .run: return .running
     case .strength: return .traditionalStrengthTraining
     case .mobility: return .flexibility
+    case .other: return .other
     case .cycling: return .cycling
     case .walking: return .walking
     case .hiking, .skiTouring, .snowboardTouring: return .hiking
@@ -85,12 +90,12 @@ enum StrideWatchWorkoutKind: String, CaseIterable, Identifiable {
     // HealthKit has no guaranteed built-in XC distance stream. GPS route is
     // still recorded; do not label walking/running distance as ski distance.
     case .crossCountrySkiing: return nil
-    case .strength, .mobility: return nil
+    case .strength, .mobility, .other: return nil
     }
   }
 
   var tracksDistance: Bool {
-    self != .strength && self != .mobility
+    self != .strength && self != .mobility && self != .other
   }
 
   var speedBased: Bool {
@@ -769,7 +774,9 @@ final class StrideWatchWorkoutManager: NSObject, ObservableObject {
 
     let configuration = HKWorkoutConfiguration()
     configuration.activityType = kind.activityType
-    if kind.tracksDistance {
+    if kind == .other {
+      configuration.locationType = .unknown
+    } else if kind.tracksDistance {
       configuration.locationType = environment == "indoor" ? .indoor : .outdoor
     } else {
       configuration.locationType = .indoor

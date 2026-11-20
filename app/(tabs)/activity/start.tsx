@@ -24,7 +24,7 @@ import { buildRouteGuidance } from '../../../src/lib/routing';
 import { formatTurnAnnouncement, guidanceAlertCue, guidanceDisplayText, INITIAL_GUIDANCE_ALERT_STATE, isSilentGuidanceInstruction, turnAnnouncementPhase, updateRouteGuidanceProgress, type GuidanceAlertState, type RouteGuidancePlan, type RouteGuidanceProgress } from '../../../src/lib/routeGuidance';
 import { enqueueVoiceCue } from '../../../src/lib/voiceCue';
 import { evaluateRunWalkCue, intervalAtElapsed } from '../../../src/utils/activityTracking';
-import { OUTDOOR_SPORTS } from '../../../src/utils/outdoorSports';
+import { TRACKED_ACTIVITIES } from '../../../src/utils/outdoorSports';
 import { selectLiveTelemetry } from '../../../src/utils/outdoorTelemetry';
 import { completeOutdoorCommand } from '../../../src/lib/outdoorCompletion';
 import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
@@ -51,6 +51,7 @@ import {
 } from '../../../modules/stride-watch-connectivity/src';
 
 const TYPES: { type: ActiveOutdoorType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { type: 'other', label: 'Open / Other', icon: 'fitness-outline' },
   { type: 'running', label: 'Run', icon: 'walk-outline' },
   { type: 'walking', label: 'Walk', icon: 'footsteps-outline' },
   { type: 'cycling', label: 'Cycle', icon: 'bicycle-outline' },
@@ -118,7 +119,7 @@ export default function StartOutdoorActivityScreen() {
   const miles = active.aggregate.distanceMeters / 1609.344;
   const secPerMile = Number.isFinite(active.aggregate.averageMetersPerSecond) && active.aggregate.averageMetersPerSecond > 0
     ? Math.round(1609.344 / active.aggregate.averageMetersPerSecond) : 0;
-  const speedBased = OUTDOOR_SPORTS[active.activityType].speedBased;
+  const speedBased = TRACKED_ACTIVITIES[active.activityType].speedBased;
   const intervals = useMemo(() => compatibleRunWalk
     ? Array.from({ length: 12 }, (_, index) => ({ kind: index % 2 === 0 ? 'run' as const : 'walk' as const, durationSeconds: index % 2 === 0 ? 60 : 90 }))
     : [], [compatibleRunWalk]);
@@ -144,7 +145,7 @@ export default function StartOutdoorActivityScreen() {
         && current.completionRequestedAt == null && current.workoutInstanceId === expectedId;
     };
     if (!expectedId || !isCurrent()) return;
-    const workoutKind = started.runWalkIntervals.length ? 'run' : OUTDOOR_SPORTS[started.activityType].watchKind;
+    const workoutKind = started.runWalkIntervals.length ? 'run' : TRACKED_ACTIVITIES[started.activityType].watchKind;
     void outdoorWatchStart.request({
       workoutInstanceId: expectedId,
       workoutKind,
@@ -153,7 +154,7 @@ export default function StartOutdoorActivityScreen() {
       activate: activateStrideWatchConnectivity,
       setContext: () => setStrideWatchWorkoutContext({ unitSystem: units }),
       start: () => startStrideWatchWorkout({ workoutKind, workoutInstanceId: expectedId,
-        title: started.name, environment: 'outdoor', targetZone: null }),
+        title: started.name, environment: started.activityType === 'other' ? 'unknown' : 'outdoor', targetZone: null }),
     });
   }
 
@@ -268,21 +269,23 @@ export default function StartOutdoorActivityScreen() {
       );
       return;
     }
-    const permissions = await requestLocationRecovery();
-    if (permissions.foreground !== 'granted' || permissions.background !== 'granted') return;
+    if (selectedType !== 'other') {
+      const permissions = await requestLocationRecovery();
+      if (permissions.foreground !== 'granted' || permissions.background !== 'granted') return;
+    }
     // A permission sheet can outlive the session state that opened it.
     if (getConflictingActiveSession('outdoor') || useActiveActivityStore.getState().isActive) return;
-    const mode = navigationMode === 'off'
+    const mode = selectedType === 'other' || navigationMode === 'off'
       ? 'off'
       : selectedType === 'cycling'
         ? 'cycling'
         : 'walking';
     active.start({
       activityType: selectedType,
-      subtype: compatibleRunWalk ? 'run_walk' : 'outdoor',
+      subtype: selectedType === 'other' ? 'general' : compatibleRunWalk ? 'run_walk' : 'outdoor',
       name: launchName,
       runWalkIntervals: intervals,
-      routeId: attached?.id,
+      routeId: selectedType === 'other' ? undefined : attached?.id,
       navigationMode: attached ? mode : 'off',
       scheduledSessionId: params.scheduledSessionId,
       associatedTrainingBlockId: params.associatedTrainingBlockId,
@@ -296,7 +299,7 @@ export default function StartOutdoorActivityScreen() {
     // directions, which waits on the network and must never delay recording
     // (offline starts were recording nothing until that request timed out).
     const startedId = useActiveActivityStore.getState().workoutInstanceId;
-    try { await startActivityLocationTracking(); }
+    try { if (selectedType !== 'other') await startActivityLocationTracking(); }
     catch (error) {
       const current = useActiveActivityStore.getState();
       if (current.workoutInstanceId === startedId) {
@@ -371,11 +374,14 @@ export default function StartOutdoorActivityScreen() {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: C.bg }]} edges={['top']}>
         <ScreenHeader
-          eyebrow="OUTDOOR TRACKING"
+          eyebrow="WORKOUT TRACKING"
           title="Choose Activity"
           onBack={() => router.back()}
         />
         <ScrollView contentContainerStyle={s.content}>
+          {selectedType === 'other' ? <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+            <Text style={[s.helper, { color: C.textMuted }]}>Open / Other records any workout without a time, distance or exercise target. Pause whenever you need. No GPS is required; heart rate appears when a connected sensor supplies it.</Text>
+          </View> : null}
           <View style={s.typeGrid}>
             {TYPES.map(item => (
               <TouchableOpacity key={item.type} onPress={() => selectSport(item.type)} accessibilityRole="button" accessibilityLabel={item.label} accessibilityState={{ selected: selectedType === item.type }} style={[s.typeCard, { backgroundColor: selectedType === item.type ? C.primaryDim : C.card, borderColor: selectedType === item.type ? C.primary : C.border }]}>
@@ -421,7 +427,7 @@ export default function StartOutdoorActivityScreen() {
               </View>
             </View>
           ) : null}
-          <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
+          {selectedType !== 'other' ? <View style={[s.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[s.cardTitle, { color: C.text }]}>Directions</Text>
             <Text style={[s.helper, { color: C.textMuted }]}>{attached ? `${attached.name} · ${attached.distanceMiles.toFixed(1)} mi` : 'Attach a saved route to enable directions.'}</Text>
             <View style={s.navPills}>
@@ -431,7 +437,7 @@ export default function StartOutdoorActivityScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-          </View>
+          </View> : null}
           <TouchableOpacity onPress={() => void begin()} accessibilityRole="button" accessibilityLabel={`Start ${launchName}`} style={[s.startButton, { backgroundColor: C.primary }]}>
             <Text style={[s.startText, { color: C.onPrimary }]}>Start {launchName}</Text>
           </TouchableOpacity>
@@ -451,6 +457,7 @@ export default function StartOutdoorActivityScreen() {
   const hasAltitude = active.aggregate.points.some(point => Number.isFinite(point.altitudeMeters));
   const altitudeValue = (meters: number) => hasAltitude ? `${Math.round(meters * (units === 'metric' ? 1 : 3.28084))} ${units === 'metric' ? 'm' : 'ft'}` : '--';
   const averageSpeed = displaySeconds > 0 ? active.aggregate.distanceMeters / displaySeconds : 0;
+  const openWorkout = active.activityType === 'other';
   const primaryMetrics: OutdoorSessionMetric[] = [
     { label: speedBased ? 'Avg speed' : 'Avg pace', value: speedBased ? speedValue(averageSpeed) : paceValue(averageSpeed) },
     { label: 'Heart rate', value: heartRateBpm == null ? '--' : `${Math.round(heartRateBpm)} bpm`,
@@ -477,8 +484,8 @@ export default function StartOutdoorActivityScreen() {
         ending={active.completionRequestedAt != null}
         startedAt={active.startedAt} points={active.aggregate.points} recordingPauses={active.recordingPauses}
         timeLabel={time(displaySeconds)} distanceLabel={(miles * (units === 'metric' ? 1.609344 : 1)).toFixed(2)} distanceUnit={units === 'metric' ? 'km' : 'mi'}
-        primaryMetrics={primaryMetrics} additionalMetrics={additionalMetrics}
-        gpsStatus={<GpsSignalChip active={active.isActive} paused={active.isPaused} lastGoodFixAt={active.lastGoodFixAt} startedAt={active.startedAt} />}
+        primaryMetrics={openWorkout ? primaryMetrics.filter(metric => metric.label === 'Heart rate') : primaryMetrics} additionalMetrics={openWorkout ? [] : additionalMetrics}
+        gpsStatus={openWorkout ? null : <GpsSignalChip active={active.isActive} paused={active.isPaused} lastGoodFixAt={active.lastGoodFixAt} startedAt={active.startedAt} />}
         watchConnection={<WatchConnectionStatus status={outdoorWatchStatus} workoutInstanceId={active.workoutInstanceId}
           active={active.isActive} paused={active.isPaused} ending={active.completionRequestedAt != null}
           recording={watchRecording} requesting={outdoorWatchStart.busy} requestError={outdoorWatchStart.requestError}
@@ -494,7 +501,7 @@ export default function StartOutdoorActivityScreen() {
             </> : <Text style={[s.helper, { color: C.textMuted }]}>Save your current weight in Profile to enable automatic cycling-power estimates.</Text>}
           </View>
         ) : null}
-        coachingControls={<>
+        coachingControls={openWorkout ? null : <>
           <View style={s.promptRow}><Text style={[s.promptLabel, { color: C.text }]}>Interval voice prompts</Text><Switch accessibilityLabel="Interval voice prompts" disabled={!active.runWalkIntervals.length} value={active.intervalPromptsEnabled} onValueChange={active.setIntervalPromptsEnabled} trackColor={{ true: C.primary }} /></View>
           <View style={s.promptRow}><Text style={[s.promptLabel, { color: C.text }]}>Navigation prompts</Text><Switch accessibilityLabel="Navigation prompts" disabled={active.navigationMode === 'off'} value={active.navigationPromptsEnabled} onValueChange={active.setNavigationPromptsEnabled} trackColor={{ true: C.primary }} /></View>
         </>}

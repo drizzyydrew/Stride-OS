@@ -19,8 +19,8 @@ final class WCSession {
   }
   func transferUserInfo(_ payload: [String: Any]) { queued.append(payload) }
 }
-enum HKWorkoutActivityType { case running, cycling, traditionalStrengthTraining, flexibility, walking, hiking, downhillSkiing, crossCountrySkiing, snowboarding }
-enum HKWorkoutSessionLocationType { case indoor, outdoor }
+enum HKWorkoutActivityType { case other, running, cycling, traditionalStrengthTraining, flexibility, walking, hiking, downhillSkiing, crossCountrySkiing, snowboarding }
+enum HKWorkoutSessionLocationType { case indoor, outdoor, unknown }
 final class HKWorkoutConfiguration { var activityType: HKWorkoutActivityType = .running; var locationType: HKWorkoutSessionLocationType = .outdoor }
 typealias HKSampleType = String
 enum HKQuantityTypeIdentifier: String { case heartRate, activeEnergyBurned, distanceWalkingRunning, distanceCycling }

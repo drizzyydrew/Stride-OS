@@ -332,6 +332,24 @@ test('actual active-store normal writes and cleanup flush serialize so an old cl
   assert.equal(JSON.parse(data.get('active-activity-store')!).state.workoutInstanceId, 'new');
   assert.equal(store.getState().workoutInstanceId, 'new');
   assert.equal(maximumConcurrentWrites, 1);
+  store.getState().discard();
+  store.getState().start({ activityType: 'other', workoutInstanceId: 'open', subtype: 'outdoor', routeId: 'must-not-attach',
+    navigationMode: 'walking', runWalkIntervals: [{ kind: 'run', durationSeconds: 60 }] });
+  assert.equal(store.getState().subtype, 'general');
+  assert.equal(store.getState().name, 'Open / Other');
+  assert.equal(store.getState().autoPauseState, null);
+  assert.equal(store.getState().routeId, null);
+  assert.equal(store.getState().navigationMode, 'off');
+  assert.deepEqual(store.getState().runWalkIntervals, []);
+  store.getState().addLocation({ timestamp: Date.now(), coords: { latitude: 1, longitude: 2, accuracy: 1,
+    altitude: 10, altitudeAccuracy: 1, heading: 0, speed: 3 } }, 1);
+  assert.deepEqual(store.getState().aggregate.points, []);
+  store.getState().pause();
+  assert.equal(store.getState().isPaused, true);
+  store.getState().resume();
+  assert.equal(store.getState().isPaused, false);
+  await storeModule.awaitActiveActivityPersistence(lease);
+  assert.equal(JSON.parse(data.get('active-activity-store')!).state.workoutInstanceId, 'open');
 });
 
 test('real outdoor GPS cleanup rechecks after native await and orders a newer start after an in-flight stop', async () => {
@@ -379,4 +397,42 @@ test('workout-state subscribes before native buffer flush, and outdoor End has n
   const save = ui.slice(ui.indexOf('async function saveAndFinish()'), ui.indexOf('function finish()'));
   assert.match(save, /await completeOutdoorCommand/);
   assert.doesNotMatch(save, /stopActivityLocationTracking|addActivity\(|clearCompletionRequest|\.discard\(/);
+});
+
+
+test('open workout captures active time and real heart rate without invented route, distance or power', async () => {
+  const h = harness();
+  h.bind({ ...h.state, activityType: 'other', subtype: 'general', name: 'Open / Other' });
+  const instance = h.state.workoutInstanceId!;
+  const result = await h.api.completeWatchActivityEnd({ workoutInstanceId: instance, endedAt: 60_001, distanceMeters: 9999 });
+  assert.equal(result.status, 'saved');
+  const saved = h.activities[0]!;
+  assert.equal(saved.activityType, 'other');
+  assert.equal(saved.completionClassification, 'completed_other_activity');
+  assert.equal(h.events.includes('gps'), false, 'Open completion never stops a GPS task');
+  assert.equal(saved.subtype, 'general');
+  assert.equal(saved.metrics.durationSeconds, 50);
+  assert.equal(saved.metrics.elapsedTimeSeconds, 60);
+  assert.equal(saved.metrics.rawHeartRateSamples?.length, 1);
+  assert.equal(saved.metrics.distanceSource, 'unavailable');
+  for (const key of ['distanceMeters', 'routeCoordinates', 'routeId', 'pace', 'speed', 'elevationGainMeters', 'elevationLossMeters', 'cadenceSamples', 'powerSamples']) {
+    assert.equal((saved.metrics as Record<string, unknown>)[key], undefined, key);
+  }
+  assert.deepEqual(saved.metrics.metricSources, { heartRate: 'apple_watch' });
+  assert.ok(h.events.indexOf(`durable:${instance}`) < h.events.indexOf(`native:${instance}`));
+  assert.deepEqual(JSON.parse(h.data.get(OUTDOOR_END_JOURNAL_KEY)!), []);
+});
+
+test('open workout never requests location permissions or resumes GPS', async () => {
+  const forbidden = () => { assert.fail('Open workout must not touch location services'); };
+  const gps = load<typeof import('../../src/lib/activityGpsTracking')>({
+    'expo-task-manager': { defineTask: () => {} },
+    'expo-location': { requestForegroundPermissionsAsync: forbidden, requestBackgroundPermissionsAsync: forbidden,
+      getForegroundPermissionsAsync: forbidden, getBackgroundPermissionsAsync: forbidden,
+      hasStartedLocationUpdatesAsync: forbidden, startLocationUpdatesAsync: forbidden },
+    '../store/activeActivityStore': { useActiveActivityStore: { getState: () => ({ activityType: 'other', completionRequestedAt: null }) } },
+    './trackingTaskHydration': { waitForPersistedStoreHydration: async () => {} },
+  }, '../../src/lib/activityGpsTracking');
+  await gps.startActivityLocationTracking();
+  assert.equal(await gps.resumeActivityLocationTrackingIfPermitted(), false);
 });

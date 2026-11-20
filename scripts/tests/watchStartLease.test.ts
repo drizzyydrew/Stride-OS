@@ -88,6 +88,7 @@ test('actual native wrapper opts only outdoor sport recording into prepared API 
   for (const [kind, environment, expected] of [
     ['run', 'outdoor', 'preparedStart'], ['walking', 'outdoor', 'preparedStart'],
     ['run', 'indoor', 'legacyStart'], ['cycling', 'indoor', 'legacyStart'],
+    ['other', 'unknown', 'preparedStart'],
     ['strength', 'outdoor', 'legacyStart'], ['mobility', 'indoor', 'legacyStart'],
   ]) {
     await h.api.startStrideWatchWorkout({ workoutInstanceId: 'exact', workoutKind: kind, environment });

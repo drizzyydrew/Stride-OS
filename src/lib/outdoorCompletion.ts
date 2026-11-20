@@ -39,7 +39,7 @@ async function cleanup(activity: OutdoorCompletionDraft, lease: OwnerLease) {
   if (!isCurrent()) return false;
   const matches = () => isCurrent() && (!useActiveActivityStore.getState().isActive
     || useActiveActivityStore.getState().workoutInstanceId === instance);
-  if (matches()) await stopActivityLocationTrackingWhen(matches);
+  if (activity.activityType !== 'other' && matches()) await stopActivityLocationTrackingWhen(matches);
   if (!isCurrent()) return false;
   const latest = useActiveActivityStore.getState();
   if (latest.isActive && latest.workoutInstanceId === instance) latest.discard();

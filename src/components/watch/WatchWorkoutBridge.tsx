@@ -17,7 +17,7 @@ import { activeOutdoorElapsedSeconds, useActiveActivityStore, type ActiveOutdoor
 import { activeRunElapsedSeconds, useActiveRunStore } from '../../store/activeRunStore';
 import { activeStrengthElapsedSeconds, useActiveStrengthSessionStore } from '../../store/activeStrengthSessionStore';
 import { useLiveSensorStore } from '../../store/liveSensorStore';
-import { OUTDOOR_SPORTS, outdoorSportFromWatch } from '../../utils/outdoorSports';
+import { TRACKED_ACTIVITIES, trackedActivityFromWatch } from '../../utils/outdoorSports';
 import { isFreshObservation } from '../../utils/outdoorTelemetry';
 import { useSettingsStore } from '../../store/settingsStore';
 import { watchRecordingForEvent } from '../../utils/watchRecordingEvidence';
@@ -58,7 +58,7 @@ function rememberCompletedWatchWorkout(id: string, timestamp: number): boolean {
 }
 
 function outdoorTypeFromWatch(kind: string | undefined): ActiveOutdoorType | null {
-  return outdoorSportFromWatch(kind);
+  return trackedActivityFromWatch(kind);
 }
 
 function strengthKindFromWatch(kind: string | undefined): 'strength' | 'mobility' | null {
@@ -70,8 +70,8 @@ function labelForWatchKind(kind: string | undefined): string {
   if (kind === 'cycling') return 'Ride';
   if (kind === 'strength') return 'Strength';
   if (kind === 'mobility') return 'Mobility';
-  const outdoor = outdoorSportFromWatch(kind);
-  return outdoor ? OUTDOOR_SPORTS[outdoor].label : 'Workout';
+  const outdoor = trackedActivityFromWatch(kind);
+  return outdoor ? TRACKED_ACTIVITIES[outdoor].label : 'Workout';
 }
 
 function eventWorkoutId(event: StrideWatchWorkoutStateEvent): string {

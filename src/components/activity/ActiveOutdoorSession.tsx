@@ -7,7 +7,7 @@ import MapView, { Marker, Polyline } from '../maps/MapComponents';
 import { useColors } from '../../theme/useColors';
 import { buildRouteReviewObservations } from '../../utils/outdoorAnalysis';
 import type { TrackPoint } from '../../utils/activityTracking';
-import type { OutdoorSport } from '../../utils/outdoorSports';
+import type { TrackedActivityType } from '../../utils/outdoorSports';
 import type { Activity } from '../../types/activity';
 
 export type OutdoorSessionMetric = { label: string; value: string; detail?: string };
@@ -24,7 +24,7 @@ export function livePrimaryMetricBasis(time: string, distance: string, width: nu
 }
 export type ActiveOutdoorSessionProps = {
   name: string;
-  activityType: OutdoorSport;
+  activityType: TrackedActivityType;
   paused: boolean;
   ending?: boolean;
   startedAt: number | null;
@@ -47,7 +47,7 @@ export type ActiveOutdoorSessionProps = {
   onFinish: () => void;
 };
 
-export function liveOutdoorMapSegments(points: TrackPoint[], activityType: OutdoorSport,
+export function liveOutdoorMapSegments(points: TrackPoint[], activityType: TrackedActivityType,
   startedAt: number | null, recordingPauses: ActiveOutdoorSessionProps['recordingPauses']) {
   // A read-only route projection uses the same accuracy, spike and gap rules as review.
   const observations = buildRouteReviewObservations({ activityType, indoor: false,
@@ -93,7 +93,13 @@ export default function ActiveOutdoorSession(props: ActiveOutdoorSessionProps) {
 
   return <View style={[s.root, { backgroundColor: C.bg }]}>
     <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
-      <View testID="active-outdoor-map" style={[s.map, { height: Math.max(210, Math.min(280, height * 0.31)), backgroundColor: C.cardAlt }]}>
+      {props.activityType === 'other' ? <View style={[s.watch, { borderColor: C.border, margin: 20 }]}>
+        <Ionicons name="fitness-outline" size={27} color={C.primary} />
+        <View style={s.statusBody}>
+          <Text style={[s.sessionName, { color: C.text }]}>{props.name}</Text>
+          <Text style={[s.statusText, { color: C.textMuted }]}>{props.ending ? 'Finishing' : props.paused ? 'Paused' : 'Recording'} · No target</Text>
+        </View>
+      </View> : <View testID="active-outdoor-map" style={[s.map, { height: Math.max(210, Math.min(280, height * 0.31)), backgroundColor: C.cardAlt }]}>
         {last ? Platform.OS === 'web' ? <Svg width="100%" height="100%" viewBox="0 0 360 260" accessibilityLabel="Recorded live GPS trace">
           {groups.filter(group => group.length > 1).map((group, index) => <SvgPolyline key={index}
             points={group.map(point => { const p = xy(point); return `${p.x},${p.y}`; }).join(' ')}
@@ -119,17 +125,17 @@ export default function ActiveOutdoorSession(props: ActiveOutdoorSessionProps) {
           style={[s.mapButton, { backgroundColor: C.bg, borderColor: C.border, opacity: last ? 1 : 0.5 }]}>
           <Ionicons name="navigate-outline" size={21} color={C.text} />
         </TouchableOpacity> : last ? <Text style={[s.traceLabel, { color: C.textMuted }]}>Recorded GPS trace</Text> : null}
-      </View>
+      </View>}
       <View style={s.body}>
         <View testID="active-outdoor-primary" style={s.primaryRow}>
           <View style={[s.primaryMetric, { flexBasis: primaryBasis }]}>
             <FittedMetricText value={props.timeLabel} primary color={C.text} />
             <Text style={[s.label, { color: C.textMuted }]}>Time</Text>
           </View>
-          <View style={[s.primaryMetric, s.distance, { flexBasis: primaryBasis }]}>
+          {props.activityType !== 'other' ? <View style={[s.primaryMetric, s.distance, { flexBasis: primaryBasis }]}>
             <FittedMetricText value={props.distanceLabel} unit={props.distanceUnit} primary align="right" color={C.accent} />
             <Text style={[s.label, { color: C.textMuted }]}>Distance</Text>
-          </View>
+          </View> : null}
         </View>
         <View style={[s.metricRow, { borderColor: C.border }]}>
           {props.primaryMetrics.map(metric => <Metric key={metric.label} metric={metric} />)}
@@ -154,10 +160,10 @@ export default function ActiveOutdoorSession(props: ActiveOutdoorSessionProps) {
             {props.watchDetail ? <Text style={[s.statusText, { color: C.textMuted }]}>{props.watchDetail}</Text> : null}
           </View>
         </View>}
-        <View style={[s.coaching, { borderColor: C.border }]}>
+        {props.coachingControls ? <View style={[s.coaching, { borderColor: C.border }]}>
           <Text style={[s.statusTitle, { color: C.text }]}>Voice coaching</Text>
           {props.coachingControls}
-        </View>
+        </View> : null}
         {props.powerSettings ? <View style={[s.powerSettings, { borderColor: C.border }]}>{props.powerSettings}</View> : null}
       </View>
     </ScrollView>
