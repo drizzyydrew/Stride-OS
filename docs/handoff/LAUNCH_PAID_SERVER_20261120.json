@@ -1,0 +1,513 @@
+{
+  "checkedAt": "2026-11-21T01:22:40.858814+00:00",
+  "status": "PUBLIC_PAID_ACCESS_GENERATION_METERING_AND_EXISTING_SANDBOX_RENEWAL_METADATA_ACCEPTED_BOUNDED_REVIEW_SCOPE",
+  "scope": "Fresh actual RevenueCat paid-server readiness after runtime recovery; no StoreKit purchase or public release",
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "deployedAiCoach": {
+    "version": 19,
+    "verifyJwt": true,
+    "sourceReadback": 6,
+    "independentWrapperReview": "APPROVE",
+    "independentFocusedTestsPassed": 48,
+    "independentFocusedTestsFailed": 0
+  },
+  "binding": {
+    "checkedAt": "2026-11-21T00:42:54.696Z",
+    "scope": "Approved single restricted reviewer QA owner binding; public billing remains off",
+    "credentialsPrintedOrSaved": false,
+    "ownerTrainingAccountChanged": false,
+    "coachPostSent": false,
+    "quotaConsumed": false,
+    "providerCallMade": false,
+    "authHealthStatus": 200,
+    "reviewerSignInStatus": 200,
+    "exactConfirmedReviewerIdentityVerified": true,
+    "singleQaFlagSet": true,
+    "qaDigestMatchesReviewer": true,
+    "globalBillingFlagAbsent": true,
+    "temporaryLocalSignOutStatus": 204
+  },
+  "unregisteredBeforeFixtureRegistration": {
+    "checkedAt": "2026-11-21T00:44:30.751Z",
+    "phase": "inactive",
+    "deployedVersionAcceptedBeforeRequest": 19,
+    "scope": "Live restricted reviewer RevenueCat verification; QA guard stops before quota or AI",
+    "credentialsPrintedOrSaved": false,
+    "ownerTrainingAccountChanged": false,
+    "fixtureContainsAthleteData": false,
+    "qaDigestMatchesReviewer": true,
+    "publicBillingFlagAbsent": true,
+    "authHealthStatus": 200,
+    "signInStatus": 200,
+    "exactAuthenticatedReviewerVerified": true,
+    "usageBeforeStatus": 200,
+    "usedBefore": 0,
+    "coachPostStatus": 503,
+    "responseMatchesKnownContract": true,
+    "usageAfterStatus": 200,
+    "usedAfter": 0,
+    "allowanceUnchanged": true,
+    "accepted": false,
+    "noAiProviderPathByDeployedGuard": false,
+    "temporaryLocalSignOutStatus": 204
+  },
+  "fixtureCustomerRegistration": {
+    "checkedAt": "2026-11-21T00:45:32.778Z",
+    "scope": "Approved exact restricted reviewer RevenueCat Get-or-Create fixture registration; no paid entitlement or purchase",
+    "credentialsPrintedOrSaved": false,
+    "ownerTrainingAccountChanged": false,
+    "purchaseMade": false,
+    "newSecretCreated": false,
+    "existingPublicSdkKeyFound": true,
+    "httpStatus": 201,
+    "customerIdentityMatchesReviewer": true,
+    "createdThisRequest": true,
+    "entitlementCount": 0,
+    "subscriptionCount": 0,
+    "accepted": true
+  },
+  "inactive": {
+    "checkedAt": "2026-11-21T00:45:42.689Z",
+    "phase": "inactive",
+    "deployedVersionAcceptedBeforeRequest": 19,
+    "scope": "Live restricted reviewer RevenueCat verification; QA guard stops before quota or AI",
+    "credentialsPrintedOrSaved": false,
+    "ownerTrainingAccountChanged": false,
+    "fixtureContainsAthleteData": false,
+    "qaDigestMatchesReviewer": true,
+    "publicBillingFlagAbsent": true,
+    "authHealthStatus": 200,
+    "signInStatus": 200,
+    "exactAuthenticatedReviewerVerified": true,
+    "usageBeforeStatus": 200,
+    "usedBefore": 0,
+    "coachPostStatus": 402,
+    "responseMatchesKnownContract": true,
+    "usageAfterStatus": 200,
+    "usedAfter": 0,
+    "allowanceUnchanged": true,
+    "accepted": true,
+    "noAiProviderPathByDeployedGuard": true,
+    "temporaryLocalSignOutStatus": 204
+  },
+  "active": {
+    "checkedAt": "2026-11-21T00:53:51.240Z",
+    "phase": "active",
+    "deployedVersionAcceptedBeforeRequest": 19,
+    "scope": "Live restricted reviewer RevenueCat verification; QA guard stops before quota or AI",
+    "credentialsPrintedOrSaved": false,
+    "ownerTrainingAccountChanged": false,
+    "fixtureContainsAthleteData": false,
+    "qaDigestMatchesReviewer": true,
+    "publicBillingFlagAbsent": true,
+    "authHealthStatus": 200,
+    "signInStatus": 200,
+    "exactAuthenticatedReviewerVerified": true,
+    "usageBeforeStatus": 200,
+    "usedBefore": 0,
+    "coachPostStatus": 429,
+    "responseMatchesKnownContract": true,
+    "usageAfterStatus": 200,
+    "usedAfter": 0,
+    "allowanceUnchanged": true,
+    "accepted": true,
+    "noAiProviderPathByDeployedGuard": true,
+    "temporaryLocalSignOutStatus": 204
+  },
+  "revoked": {
+    "checkedAt": "2026-11-21T00:57:21.915Z",
+    "phase": "revoked",
+    "deployedVersionAcceptedBeforeRequest": 19,
+    "scope": "Live restricted reviewer RevenueCat verification; QA guard stops before quota or AI",
+    "credentialsPrintedOrSaved": false,
+    "ownerTrainingAccountChanged": false,
+    "fixtureContainsAthleteData": false,
+    "qaDigestMatchesReviewer": true,
+    "publicBillingFlagAbsent": true,
+    "authHealthStatus": 200,
+    "signInStatus": 200,
+    "exactAuthenticatedReviewerVerified": true,
+    "usageBeforeStatus": 200,
+    "usedBefore": 0,
+    "coachPostStatus": 402,
+    "responseMatchesKnownContract": true,
+    "failed": true,
+    "failureType": "Error",
+    "temporaryLocalSignOutStatus": 204
+  },
+  "publicEnforcementEnabledByThisLane": true,
+  "cleanupComplete": true,
+  "credentialsPrintedOrPersisted": false,
+  "ownerAccountChanged": false,
+  "newApiCredentialsCreated": false,
+  "purchasesMade": false,
+  "schemaOrQuotaChanged": false,
+  "notAccepted": [
+    "Actual StoreKit expired/refunded state or newly observed native Restore operation; earlier owner Restore report remains accepted within its original scope",
+    "Actual production notification delivery; configuration is present, but no production transaction/test was requested",
+    "Sustained capacity for 1002 full-allowance subscribers or an invoice/workload-average cost"
+  ],
+  "sources": [
+    "https://www.revenuecat.com/docs/api-v1/customers",
+    "https://www.revenuecat.com/docs/api-v2/customer/resources",
+    "https://www.revenuecat.com/docs/dashboard-and-metrics/customer-history/active-entitlements"
+  ],
+  "liveLimiterReadback": {
+    "checkedAt": "2026-11-21T00:46:00Z",
+    "perAccountPerUtcDay": 20,
+    "globalPerUtcDay": 500,
+    "transactionAdvisoryLock": true,
+    "atomicGlobalAndOwnerReservation": true,
+    "anonExecute": false,
+    "authenticatedExecute": false,
+    "serviceRoleExecute": true,
+    "usageTableRls": true,
+    "anonUsageRead": false,
+    "authenticatedUsageRead": false,
+    "lastSevenUtcDaysAggregateRows": 0,
+    "readOnly": true
+  },
+  "additionalProviderGuardsReview": {
+    "status": "APPROVE",
+    "currentSourceTestsPassed": 21,
+    "currentSourceTestsFailed": 0,
+    "redirectPolicy": "error",
+    "providerResponseMaximumBytes": 65536,
+    "normalRequestPayloadChanged": false,
+    "deployedInVersion19": false
+  },
+  "activeProviderMetadata": {
+    "checkedAt": "2026-11-21T00:54:42.991Z",
+    "scope": "Read bounded entitlement metadata for the already registered restricted reviewer; not StoreKit lifecycle",
+    "credentialsPrintedOrSaved": false,
+    "ownerTrainingAccountChanged": false,
+    "purchaseMade": false,
+    "newSecretCreated": false,
+    "httpStatus": 200,
+    "customerIdentityMatchesReviewer": true,
+    "entitlementCount": 1,
+    "entitlements": [
+      {
+        "expiresAt": "2026-11-22T00:52:51.000Z",
+        "activeByExpiry": true,
+        "productIdentifierIsPromotional": true
+      }
+    ],
+    "accepted": true
+  },
+  "rootUiPromotionalGrant": {
+    "reportedSavedAndReadBack": true,
+    "duration": "one day",
+    "entitlementId": "entl0c642305f9",
+    "expiresAt": "2026-11-22T00:52:51Z",
+    "purchaseOrBill": false
+  },
+  "revokedProviderMetadata": {
+    "checkedAt": "2026-11-21T00:57:32.058Z",
+    "phase": "revoked",
+    "scope": "Read bounded entitlement metadata for the already registered restricted reviewer; not StoreKit lifecycle",
+    "credentialsPrintedOrSaved": false,
+    "ownerTrainingAccountChanged": false,
+    "purchaseMade": false,
+    "newSecretCreated": false,
+    "httpStatus": 200,
+    "customerIdentityMatchesReviewer": true,
+    "entitlementCount": 1,
+    "entitlements": [
+      {
+        "expiresAt": "2026-11-21T00:56:51.000Z",
+        "activeByExpiry": false,
+        "productIdentifierIsPromotional": true
+      }
+    ],
+    "accepted": true
+  },
+  "revocationAccessDenialAccepted": true,
+  "revocationCounterAfterReadAccepted": false,
+  "revocationCounterFollowup": {
+    "checkedAt": "2026-11-21T00:58:55.768Z",
+    "phase": "revoked",
+    "deployedVersionAcceptedBeforeRequest": 19,
+    "scope": "Live restricted reviewer RevenueCat verification; QA guard stops before quota or AI",
+    "credentialsPrintedOrSaved": false,
+    "ownerTrainingAccountChanged": false,
+    "fixtureContainsAthleteData": false,
+    "qaDigestMatchesReviewer": true,
+    "publicBillingFlagAbsent": true,
+    "authHealthStatus": 200,
+    "signInStatus": 200,
+    "exactAuthenticatedReviewerVerified": true,
+    "failed": true,
+    "failureType": "Error",
+    "temporaryLocalSignOutStatus": 204,
+    "transportBoundary": "Authenticated usage GET did not complete within bounded private curl path; initial helper did not retain HTTP status or curl exit detail",
+    "retriesStopped": true
+  },
+  "independentDeletionCorrectionReview": {
+    "migration": "supabase/migrations/20261121005520_restrict_deletion_actions_to_social_providers.sql",
+    "status": "APPROVE",
+    "liveSqlExecutedByThisLane": false,
+    "independentTestsPassed": 31,
+    "tests": [
+      "scripts/tests/appleGrantSql.test.ts",
+      "scripts/tests/deletionFulfillment.test.ts"
+    ],
+    "preserves": [
+      "function owner and ACL",
+      "SECURITY DEFINER and empty search_path",
+      "Apple reserved/uncertain capture guards",
+      "unsupported identity blocking before deletion",
+      "worker plan validator"
+    ],
+    "changes": "Restores social-only provider_actions predicate; email remains an identity but has no OAuth action"
+  },
+  "rootAuthorizedPublicPolicy": {
+    "checkedAt": "2026-11-21T01:06:13.593Z",
+    "scope": "Root-approved public billing flag true and removal of single reviewer QA flag only",
+    "credentialsPrintedOrSaved": false,
+    "coachPostSent": false,
+    "pricesOrQuotaChanged": false,
+    "otherSecretsChanged": false,
+    "publicFlagSet": true,
+    "qaFlagUnset": true,
+    "publicTrueDigestVerified": true,
+    "qaFlagAbsentVerified": true,
+    "otherSecretDigestsUnchanged": true,
+    "accepted": true
+  },
+  "latestDeployedAiCoach": {
+    "checkedAt": "2026-11-21T01:06:46.095397+00:00",
+    "version": 22,
+    "status": "ACTIVE",
+    "verifyJwt": true,
+    "files": [
+      {
+        "name": "ai-coach/index.ts",
+        "sha256": "c5cbee78d74a422daef8bcdd07ab3f3c05247470b53a874d701c12e9616d6907",
+        "exact": true
+      },
+      {
+        "name": "_shared/launchHandlers.ts",
+        "sha256": "d88e743d0a081abef570f06e05abc6ac7a5535f0139bcd2e57c0b6b9fc3c7d48",
+        "exact": true
+      },
+      {
+        "name": "_shared/revenueCatAccess.ts",
+        "sha256": "013507ff25328e6ff601d96271f18efee8b8f101454d17ece14addef294927dd",
+        "exact": true
+      },
+      {
+        "name": "_shared/coachAllowance.ts",
+        "sha256": "74d1aba615da01399f00b1601618c30731614c4a6d36f9072193022f9080b4d9",
+        "exact": true
+      },
+      {
+        "name": "_shared/coachProvider.ts",
+        "sha256": "5af4513306f1df86c344dccece4b492991c82b00040db2d6789bfdb402b0058d",
+        "exact": true
+      },
+      {
+        "name": "_shared/coachProviderTelemetry.ts",
+        "sha256": "e777e9b46a80fd9b203b96a5a32fcef34c2ed457e962db81582244601cf9821c",
+        "exact": true
+      }
+    ],
+    "allSixFilesExact": true,
+    "observedColdVersions": [
+      20,
+      22
+    ]
+  },
+  "publicInactive": {
+    "checkedAt": "2026-11-21T01:07:32.083Z",
+    "phase": "public-inactive",
+    "deployedVersionAcceptedBeforeRequest": 22,
+    "scope": "Actual non-QA public paid-access branch; fixed synthetic ASCII fitness fixture only",
+    "credentialsPrintedOrSaved": false,
+    "ownerTrainingAccountChanged": false,
+    "fixtureContainsAthleteData": false,
+    "qaFlagAbsent": true,
+    "publicBillingTrueDigest": true,
+    "sixSourceFilesExact": true,
+    "authHealthStatus": 200,
+    "signInStatus": 200,
+    "exactAuthenticatedReviewerVerified": true,
+    "usageBeforeStatus": 200,
+    "usedBefore": 0,
+    "coachPostAttempted": true,
+    "coachPostStatus": 402,
+    "responseMatchesKnownContract": true,
+    "usageAfterStatus": 200,
+    "usedAfter": 0,
+    "allowanceUnchanged": true,
+    "accepted": true,
+    "noAiProviderPathBy402Branch": true,
+    "modelPostRetries": 0,
+    "temporaryLocalSignOutStatus": 204
+  },
+  "publicAnonymous": {
+    "checkedAt": "2026-11-21T01:08:09.027007+00:00",
+    "deployedVersion": 22,
+    "anonymous": true,
+    "credentialsUsed": false,
+    "checks": [
+      {
+        "method": "GET",
+        "usageQuery": true,
+        "status": "401",
+        "transportExit": 0
+      },
+      {
+        "method": "POST",
+        "usageQuery": false,
+        "status": "401",
+        "transportExit": 0
+      },
+      {
+        "method": "OPTIONS",
+        "usageQuery": false,
+        "status": "200",
+        "transportExit": 0
+      }
+    ],
+    "accepted": true
+  },
+  "qaOverrideCleanupVerified": true,
+  "currentCounterAvailabilityAccepted": true,
+  "historicalV19CounterTimeoutsRemainRecorded": true,
+  "publicActive": {
+    "checkedAt": "2026-11-21T01:13:32.322Z",
+    "phase": "public-active",
+    "deployedVersionAcceptedBeforeRequest": 22,
+    "scope": "Actual non-QA public paid-access branch; fixed synthetic ASCII fitness fixture only",
+    "credentialsPrintedOrSaved": false,
+    "ownerTrainingAccountChanged": false,
+    "fixtureContainsAthleteData": false,
+    "qaFlagAbsent": true,
+    "publicBillingTrueDigest": true,
+    "sixSourceFilesExact": true,
+    "authHealthStatus": 200,
+    "signInStatus": 200,
+    "exactAuthenticatedReviewerVerified": true,
+    "usageBeforeStatus": 200,
+    "usedBefore": 0,
+    "singleModelAttemptFenceCreated": true,
+    "coachPostAttempted": true,
+    "coachPostStatus": 200,
+    "providerReplyTextPresent": true,
+    "providerReplyCharacterCount": 169,
+    "responseMatchesKnownContract": true,
+    "usageAfterStatus": 200,
+    "usedAfter": 1,
+    "allowanceUnchanged": false,
+    "accepted": true,
+    "noAiProviderPathBy402Branch": false,
+    "modelPostRetries": 0,
+    "temporaryLocalSignOutStatus": 204
+  },
+  "finalReviewerProviderMetadata": {
+    "checkedAt": "2026-11-21T01:13:22.048Z",
+    "phase": "final-reviewer",
+    "scope": "Read bounded entitlement metadata for the already registered restricted reviewer; not StoreKit lifecycle",
+    "credentialsPrintedOrSaved": false,
+    "ownerTrainingAccountChanged": false,
+    "purchaseMade": false,
+    "newSecretCreated": false,
+    "httpStatus": 200,
+    "customerIdentityMatchesReviewer": true,
+    "entitlementCount": 1,
+    "entitlements": [
+      {
+        "expiresAt": "2026-12-22T01:12:35.000Z",
+        "activeByExpiry": true,
+        "productIdentifierIsPromotional": true
+      }
+    ],
+    "accepted": true
+  },
+  "finalPublicPolicyReadback": {
+    "checkedAt": "2026-11-21T01:19:08.501090+00:00",
+    "globalBillingTrueDigest": true,
+    "qaOwnerSettingAbsent": true,
+    "secretValuesRead": false
+  },
+  "providerUsageLogObservation": {
+    "windowStartUtc": "2026-11-21T01:13:30Z",
+    "windowEndUtc": "2026-11-21T01:15:00Z",
+    "matchingEventsObserved": 1,
+    "functionVersion": "22",
+    "model": "claude-haiku-4-5-20251001",
+    "usageStatus": "available",
+    "tokens": {
+      "input": 124,
+      "output": 36,
+      "cacheRead": 0,
+      "cacheWrite5m": 0,
+      "cacheWrite1h": 0
+    },
+    "estimatedCostNanoUsd": 304000,
+    "estimatedCostUsd": 0.000304,
+    "costBasis": "standard_text_token_rates_before_discounts",
+    "arithmeticRecomputedAndMatched": true,
+    "notInvoiceOrWorkloadAverage": true,
+    "generationRequestedByThisLane": false,
+    "promptReplyAndIdsRetrievedForThisQuery": false,
+    "rootReportedCounterBefore": 0,
+    "rootReportedCounterAfter": 1
+  },
+  "actualModelGenerationCalls": 1,
+  "modelGenerationRetries": 0,
+  "ownerExistingSandboxStoreKitHistory": {
+    "evidenceSource": "Root read-only RevenueCat UI for the already-existing owner customer; no owner login or mutation",
+    "product": "strideos_pro_monthly",
+    "currentSandboxAccessActive": true,
+    "trialStartUiDate": "2026-11-16",
+    "trialStartUiTime": "07:27",
+    "trialConversionUiDate": "2026-11-17",
+    "renewalUiDates": [
+      "2026-11-18",
+      "2026-11-19",
+      "2026-11-20"
+    ],
+    "latestEvent": {
+      "environment": "SANDBOX",
+      "type": "RENEWAL",
+      "store": "APP_STORE",
+      "renewalNumber": 5,
+      "purchasedAtUtc": "2026-11-20T07:27:49Z",
+      "expiresAtUtc": "2026-11-21T07:27:49Z"
+    },
+    "newPurchaseMade": false,
+    "actualSalesRevenue": false,
+    "ownerUuidOrTransactionOrEventIdsStored": false,
+    "establishesExpiredRefundedOrNewRestoreLifecycle": false
+  },
+  "notificationConfiguration": {
+    "checkedAt": "2026-11-21T01:20:47.959Z",
+    "scope": "Read-only Apple App Store notification configuration; opaque URLs not printed or saved",
+    "appIdentityMatched": true,
+    "production": {
+      "present": true,
+      "https": true,
+      "revenueCatHost": true
+    },
+    "productionVersion": "V2",
+    "sandbox": {
+      "present": true,
+      "https": true,
+      "revenueCatHost": true
+    },
+    "sandboxVersion": "V2",
+    "sameConfiguredUrl": true,
+    "settingsChanged": false,
+    "testNotificationSent": false,
+    "newTransactionRequested": false,
+    "credentialsPrintedOrSaved": false,
+    "actualProductionDeliveryTested": false,
+    "officialSources": [
+      "https://developer.apple.com/help/app-store-connect/configure-in-app-purchase-settings/enter-server-urls-for-app-store-server-notifications",
+      "https://www.revenuecat.com/docs/platform-resources/server-notifications/apple-server-notifications"
+    ]
+  },
+  "actualPurchaseRenewalMetadataAccepted": true
+}

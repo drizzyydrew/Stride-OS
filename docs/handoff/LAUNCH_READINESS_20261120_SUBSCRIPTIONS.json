@@ -1,0 +1,29 @@
+{
+  "checkedAt": "2026-11-21T00:23:37.772Z",
+  "descriptionCharacters": 50,
+  "changes": [
+    {
+      "subscriptionId": "6829293174",
+      "versionId": "70a0c9b1-afc0-4b27-b873-74300209db4c",
+      "localizationId": "027c503e-9e43-4002-a494-546eae651092",
+      "locale": "en-US",
+      "name": "StrideOS Pro Annual",
+      "beforeDescription": "AI Coach chat with training context and daily limits.",
+      "description": "Personalized plans, week adjustments and AI Coach.",
+      "exactReadback": true
+    },
+    {
+      "subscriptionId": "6829288874",
+      "versionId": "ad49e63a-ec13-4d55-b94c-1326aa14a6d5",
+      "localizationId": "e75c94af-cb96-44fd-964f-4cbe69229022",
+      "locale": "en-US",
+      "name": "StrideOS Pro Monthly",
+      "beforeDescription": "AI Coach chat with training context and daily limits.",
+      "description": "Personalized plans, week adjustments and AI Coach.",
+      "exactReadback": true
+    }
+  ],
+  "pricesOrTrialChanged": false,
+  "imagesChanged": false,
+  "submitted": false
+}

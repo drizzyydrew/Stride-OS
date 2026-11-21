@@ -1,5 +1,17 @@
 # Current StrideOS launch status
 
+## Latest launch services and Apple preparation — November 20 Pacific
+
+Build 123 remains the current TestFlight binary; the owner now reports that the app looks great. This pass changes server operations, a narrow deletion SQL fix, AI cost telemetry, and review metadata. No new app binary, image asset or screenshot was created or changed.
+
+Actual live evidence now verifies public email signup with confirmation kept on, genuine email confirmation/login and recovery, the restricted Apple reviewer login, and automatic deletion of a disposable account with an existing profile. The worker completed the receipt, removed Auth and account inventory, and rejected the old session. The email-as-OAuth-action regression was corrected without relaxing Apple/Google safeguards. Production deletion automation is now enabled; reviewer capability GET and the first ordinary scheduled cron invocation passed. See LAUNCH_20261120_SIGNUP_DELETION_ACCEPTANCE.md. Intermittent PostgREST timeouts occurred before successful acceptance; no sustained capacity or recurrence-free guarantee is claimed.
+
+Server Pro enforcement is enabled with the QA override removed. Real inactive/revoked access is denied; one actual public paid AI request returned 200 and advanced the account counter from 0 to 1. The deployed key matches the current Anthropic organization with the existing $20 monthly cap. Its sanitized usage event records 124 input and 36 output tokens, estimated base-price cost $0.000304. The 20/account/day and 500/global/day limits remain unchanged. This proves bounded reviewer/testing operation, not capacity for the $10,000/month target cohort. See LAUNCH_PAID_SERVER_20261120.md and LAUNCH_AI_CAPACITY_20261120.md.
+
+Apple public version 1.0 now selects VALID build 123, remains PREPARE_FOR_SUBMISSION with MANUAL release, and has current descriptions/review notes. Purchase History privacy was published and read back; subscription descriptions now cover the training bundle. The reviewer has no-charge promotional Pro access through December 22, 2026 UTC. Existing Sandbox StoreKit history shows trial conversion and monthly renewals; no purchase was repeated. Public privacy/support/terms deletion copy is published and byte-verified against canonical source.
+
+**Submission still awaits required Apple images under the owner's explicit image hold.** Both subscription review screenshots remain absent/MISSING_METADATA. Current uploaded iPad/Watch material needs to match the final interface, and required large-iPhone coverage is empty. A narrowly scoped exception was requested to capture/upload only required Apple screenshots; no response is treated as permission. No public App Review submission or release occurred. Native deletion cleanup and live Apple/Google grant revocation were not newly exercised; StoreKit refund/expiry/restore were not fabricated from promotional tests. Detailed fresh evidence is in LAUNCH_READINESS_20261120.md; dated sections below retain historical scope.
+
 ## Latest: build 123 delivered — November 20 Pacific
 
 Build 123 is VALID / IN_BETA_TESTING in the existing internal Team (Expo) group, with actual assignment and exact testing-note readback. Source `52b71444766440c84bda8b57f004d3b85b2ac08a`; EAS `b64e8ab2-dbe1-4fd8-ae25-738026e0181a`; submission `046b6d3c-c83e-4575-8fa4-ccad38280b42`. Commit/push/build/TestFlight were authorized. See BUILD123_RELEASE.md and BUILD123_DELIVERY.json.

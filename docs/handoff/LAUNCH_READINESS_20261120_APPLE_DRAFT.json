@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-11-21T00:31:05.087Z",
+  "versionId": "7f934645-486b-478c-9a6e-1d396e86782d",
+  "version": "1.0",
+  "state": "PREPARE_FOR_SUBMISSION",
+  "releaseType": "MANUAL",
+  "previousBuild": "109",
+  "selectedBuild": "123",
+  "appleBuildId": "30fc1899-594a-4a6a-a9f9-17a1cd7f3ae0",
+  "description": {
+    "characters": 3056,
+    "sha256": "1141c2ed1e2cea472c490ec8b0b5770884b1becf41717deff9955317100bfdaa",
+    "exactReadback": true
+  },
+  "reviewNotes": {
+    "characters": 3183,
+    "sha256": "1f497db3b5aa5ddea0ea1528129c6d5d4197f6ad3a736b94d1fac0d4237441ac",
+    "exactReadback": true
+  },
+  "reviewCredentialsAndContactUnchanged": true,
+  "imagesChanged": false,
+  "pricesChanged": false,
+  "publicReviewSubmitted": false,
+  "publicReleased": false,
+  "reviewerAccess": {
+    "type": "no-charge finite promotional Pro",
+    "expiresAt": "2026-12-22T01:12:35Z",
+    "checkedAt": "2026-11-21T01:15:08.597Z"
+  }
+}

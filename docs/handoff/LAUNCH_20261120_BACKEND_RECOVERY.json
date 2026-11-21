@@ -1,0 +1,317 @@
+{
+  "checkedAt": "2026-11-21T00:32:59.771209+00:00",
+  "scope": "Fresh backend recovery and restricted reviewer authentication for public submission preparation; not public review submission",
+  "project": "pbzgrhnxpbtlkzpreizy",
+  "beforeRecovery": {
+    "recordedAt": "2026-11-21T00:20:12.311229+00:00",
+    "project": "pbzgrhnxpbtlkzpreizy",
+    "scope": "Fresh runtime diagnosis before authorized one-shot recovery; no account/policy or image changes",
+    "managementMetadata": {
+      "status": "ACTIVE_HEALTHY",
+      "postgresVersion": "17.6.1.166",
+      "region": "us-east-2",
+      "isNotRuntimeHealth": true
+    },
+    "healthAdvisorLints": 0,
+    "actualSql": {
+      "attempts": 1,
+      "outcome": "Connection terminated due to connection timeout",
+      "mutations": 0
+    },
+    "auth": {
+      "checkedAt": "2026-11-21T00:13:47.807286+00:00",
+      "keyType": "current_publishable",
+      "tlsVerified": true,
+      "checks": [
+        {
+          "path": "/auth/v1/health",
+          "status": 522,
+          "transportExit": 0
+        },
+        {
+          "path": "/auth/v1/settings",
+          "status": 522,
+          "transportExit": 0
+        }
+      ]
+    },
+    "last24hProviderEvidence": {
+      "sourceCounts": {
+        "realtime_logs": 3577,
+        "storage_logs": 876,
+        "edge_logs": 122,
+        "function_edge_logs": 5,
+        "function_logs": 2
+      },
+      "authStatusGroups": [
+        {
+          "path": "/auth/v1/token",
+          "status": 522,
+          "count": 108
+        },
+        {
+          "path": "/auth/v1/authorize",
+          "status": 522,
+          "count": 8
+        },
+        {
+          "path": "/auth/v1/settings",
+          "status": 522,
+          "count": 2
+        },
+        {
+          "path": "/auth/v1/recover",
+          "status": 522,
+          "count": 1
+        }
+      ],
+      "realtimeErrors": "Migration connection pool queue timeouts after approximately 15 seconds",
+      "storageMigrationFailureCount": 87,
+      "postgresAuthSourcesAbsent": true
+    },
+    "metrics": {
+      "checkedAt": "2026-11-21T00:14:33.768114+00:00",
+      "project": "pbzgrhnxpbtlkzpreizy",
+      "readOnly": true,
+      "newKeysCreated": false,
+      "credentialPrintedOrSaved": false,
+      "destinationFixed": true,
+      "redirectsFollowed": false,
+      "tlsVerified": true,
+      "cliExit": 0,
+      "existingCredentialType": "secret",
+      "metricsHttpStatus": "522",
+      "metricsTransportExit": 0
+    },
+    "diagnosis": {
+      "confirmed": "Project-specific origin/database dependent service outage, not established incorrect credentials or local internet failure",
+      "notEstablished": [
+        "out-of-memory",
+        "disk exhaustion",
+        "connection saturation",
+        "crash root cause"
+      ]
+    },
+    "recoveryAuthorization": "Parent approved exactly one official same-project restart; no pause/restore, plan upgrade, new project or data reset",
+    "restartAttempt": {
+      "checkedAt": "2026-11-21T00:17:11.393734+00:00",
+      "project": "pbzgrhnxpbtlkzpreizy",
+      "credentialPrintedOrSaved": false,
+      "keychainSecurityChanged": false,
+      "redirectsFollowed": false,
+      "tlsVerified": true,
+      "restartAttempted": false,
+      "officialDocs": "https://supabase.com/docs/reference/api/v1-restart-a-project",
+      "preflight": [],
+      "stopped": "TimeoutExpired",
+      "reason": "Private diagnostic failed; credential-bearing output withheld"
+    },
+    "nextAction": "Dashboard official Restart control after root browser handoff; bounded Auth/SQL/metrics acceptance afterward; no credential or restart loops",
+    "sources": [
+      "https://supabase.com/kb/troubleshooting/failed-to-retrieve-tables",
+      "https://supabase.com/kb/troubleshooting/failed-to-run-sql-query-connection-terminated-due-to-connection-timeout",
+      "https://supabase.com/docs/reference/api/v1-restart-a-project",
+      "https://supabase.com/docs/guides/observability/metrics",
+      "https://raw.githubusercontent.com/supabase/cli/v2.122.0/apps/cli/src/auth/command-credentials.layer.ts"
+    ],
+    "credentialsPrintedOrSaved": false,
+    "runtimeCodeChanged": false,
+    "remotePolicyChanged": false,
+    "actualSignupReviewerDeletionLifecycleAccepted": false,
+    "publicSignupEnabledByThisLane": false,
+    "proEnforcementEnabledByThisLane": false,
+    "currentSignupPolicyFreshlyRead": false,
+    "currentProEnforcementPolicyFreshlyRead": false
+  },
+  "recovery": {
+    "project": "pbzgrhnxpbtlkzpreizy",
+    "restartInitiatedAt": "2026-11-21T00:27:40.826Z",
+    "method": "Official Supabase Dashboard Restart confirmation clicked once by root",
+    "pauseRestoreUpgradeKeyChanges": false,
+    "providerUIAfterClick": "Restarting (disabled)",
+    "restartLoops": 0
+  },
+  "afterRecovery": {
+    "managementStatusTransition": [
+      "ACTIVE_HEALTHY_WITH_FAILED_RUNTIME",
+      "RESTARTING",
+      "ACTIVE_HEALTHY"
+    ],
+    "auth": {
+      "checkedAt": "2026-11-21T00:30:32.474148+00:00",
+      "project": "pbzgrhnxpbtlkzpreizy",
+      "readOnly": true,
+      "credentialsPrintedOrPersisted": false,
+      "checks": [
+        {
+          "path": "/auth/v1/health",
+          "status": "200",
+          "transportExit": 0,
+          "json": true,
+          "name": "GoTrue",
+          "version": "v2.198.0",
+          "description": "GoTrue is a user registration and authentication API"
+        },
+        {
+          "path": "/auth/v1/settings",
+          "status": "200",
+          "transportExit": 0,
+          "json": true,
+          "settings": {
+            "disable_signup": true,
+            "mailer_autoconfirm": false,
+            "phone_autoconfirm": false
+          },
+          "externalProviders": [
+            "apple",
+            "email",
+            "google"
+          ]
+        }
+      ]
+    },
+    "sql": {
+      "checkedAt": "2026-11-21T00:31:04.741488Z",
+      "postgresStartedAt": "2026-11-21T00:30:13.290530Z",
+      "databaseBytes": 35859603,
+      "maxConnections": 60,
+      "totalConnections": 15,
+      "activeConnections": 1,
+      "idleInTransaction": 0,
+      "activeOverTwoMinutes": 0,
+      "actualProviderRead": true
+    },
+    "metrics": {
+      "checkedAt": "2026-11-21T00:31:04.935789+00:00",
+      "project": "pbzgrhnxpbtlkzpreizy",
+      "readOnly": true,
+      "newKeysCreated": false,
+      "credentialPrintedOrSaved": false,
+      "destinationFixed": true,
+      "redirectsFollowed": false,
+      "tlsVerified": true,
+      "cliExit": 0,
+      "existingCredentialType": "secret",
+      "metricsHttpStatus": "200",
+      "metricsTransportExit": 0,
+      "seriesNamesCount": 300,
+      "metrics": {
+        "node_filesystem_free_bytes": {
+          "samples": 2,
+          "min": 1854259200.0,
+          "max": 2230300672.0,
+          "sum": 4084559872.0
+        },
+        "node_load1": {
+          "samples": 1,
+          "min": 3.81,
+          "max": 3.81,
+          "sum": 3.81
+        },
+        "node_load5": {
+          "samples": 1,
+          "min": 1.23,
+          "max": 1.23,
+          "sum": 1.23
+        },
+        "node_filesystem_avail_bytes": {
+          "samples": 2,
+          "min": 1732624384.0,
+          "max": 2202894336.0,
+          "sum": 3935518720.0
+        },
+        "node_filesystem_size_bytes": {
+          "samples": 2,
+          "min": 2077073408.0,
+          "max": 10359754752.0,
+          "sum": 12436828160.0
+        },
+        "node_memory_MemTotal_bytes": {
+          "samples": 1,
+          "min": 426258432.0,
+          "max": 426258432.0,
+          "sum": 426258432.0
+        },
+        "node_memory_SwapTotal_bytes": {
+          "samples": 1,
+          "min": 1073737728.0,
+          "max": 1073737728.0,
+          "sum": 1073737728.0
+        },
+        "node_memory_MemAvailable_bytes": {
+          "samples": 1,
+          "min": 121733120.0,
+          "max": 121733120.0,
+          "sum": 121733120.0
+        },
+        "node_memory_SwapFree_bytes": {
+          "samples": 1,
+          "min": 550260736.0,
+          "max": 550260736.0,
+          "sum": 550260736.0
+        },
+        "pg_up": {
+          "samples": 1,
+          "min": 1.0,
+          "max": 1.0,
+          "sum": 1.0
+        }
+      }
+    },
+    "reviewer": {
+      "checkedAt": "2026-11-21T00:31:16.347Z",
+      "scope": "Existing restricted Apple reviewer account; sign-in and usage read only; no purchase or AI message",
+      "credentialsPrintedOrPersisted": false,
+      "ownerTrainingDataChanged": false,
+      "protectedReviewerFieldsPresent": true,
+      "signInHttpStatus": 200,
+      "authenticatedReviewerMatchesProtectedIdentity": true,
+      "emailConfirmed": true,
+      "usageReadHttpStatus": 200,
+      "usage": {
+        "used": 0,
+        "limit": 20,
+        "remaining": 20,
+        "resetsAt": "2026-11-22T00:00:00.000Z"
+      },
+      "temporarySessionLocalSignOutHttpStatus": 204,
+      "establishesPaidEntitlementVerification": false,
+      "purchaseLifecycleAccepted": false,
+      "nativeReviewerNavigationAccepted": false
+    }
+  },
+  "accepted": [
+    "Current actual Auth health and settings respond200 after single official restart",
+    "Actual PostgreSQL query responds and start time confirms restart",
+    "Actual project Metrics API responds200 and pg_up=1",
+    "Existing restricted Apple reviewer password authenticates to the intended identity with confirmed email",
+    "Authenticated reviewer usage read responds200 and temporary local session signs out204"
+  ],
+  "notAccepted": [
+    "Exact historical crash root cause; OOM/disk/connection-exhaustion not proven",
+    "Sustained production capacity or recurrence-free guarantee",
+    "Public signup/email/native confirmation return; signup remains disabled in fresh Auth settings",
+    "Live paid entitlement enforcement, purchase renewal/expiry/refund lifecycle",
+    "Disposable-account provider deletion and device cleanup",
+    "Native reviewer navigation",
+    "Public App Review readiness or submission"
+  ],
+  "safety": {
+    "trainingDataWriteQueriesIssued": 0,
+    "ownerTrainingAccountChangedByThisLane": false,
+    "accountCreatedByThisLane": false,
+    "credentialsPrintedOrPersisted": false,
+    "keysCreatedOrRotated": false,
+    "publicSignupOrProPolicyChangedByThisLane": false,
+    "imagesChanged": false,
+    "pauseRestoreUpgradeOrDataResetPerformed": false,
+    "restartAttempts": 1,
+    "restartInitiator": "Root official Dashboard control; child legacycredential route stopped before any Management request or POST"
+  },
+  "sources": [
+    "https://supabase.com/kb/troubleshooting/failed-to-retrieve-tables",
+    "https://supabase.com/kb/troubleshooting/failed-to-run-sql-query-connection-terminated-due-to-connection-timeout",
+    "https://supabase.com/docs/reference/api/v1-restart-a-project",
+    "https://supabase.com/docs/guides/observability/metrics"
+  ]
+}

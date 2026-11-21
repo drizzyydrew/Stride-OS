@@ -16,6 +16,8 @@ const files = [
   'supabase/functions/ai-coach/index.ts', 'supabase/functions/_shared/revenueCatAccess.ts',
   'supabase/functions/_shared/launchHandlers.ts',
   'supabase/functions/_shared/coachAllowance.ts',
+  'supabase/functions/_shared/coachProvider.ts',
+  'supabase/functions/_shared/coachProviderTelemetry.ts',
 ];
 const sources = new Map(files.map(file => [resolve(file), readFileSync(file, 'utf8')]));
 

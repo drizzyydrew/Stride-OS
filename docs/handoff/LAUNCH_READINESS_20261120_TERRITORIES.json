@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-11-21T00:55:29.153Z",
+  "totalTerritories": 175,
+  "availableTerritories": [
+    "AUS",
+    "CAN",
+    "GBR",
+    "NZL",
+    "USA"
+  ],
+  "chinaMainland": {
+    "territory": "CHN",
+    "available": false,
+    "contentStatuses": [
+      "CANNOT_SELL"
+    ]
+  },
+  "us": {
+    "territory": "USA",
+    "available": true,
+    "contentStatuses": [
+      "CANNOT_SELL",
+      "AVAILABLE_FOR_SALE_UNRELEASED_APP"
+    ]
+  },
+  "availabilityChanged": false,
+  "publicAppReviewSubmitted": false
+}

@@ -1,0 +1,44 @@
+{
+  "checkedAt": "2026-11-21T01:03:46.009Z",
+  "projectId": "pbzgrhnxpbtlkzpreizy",
+  "migration": {
+    "version": "20261121010258",
+    "name": "restrict_deletion_actions_to_social_providers"
+  },
+  "originalCliFilename": "20261121005520_restrict_deletion_actions_to_social_providers.sql",
+  "localFilename": "20261121010258_restrict_deletion_actions_to_social_providers.sql",
+  "exactOnePredicateDifference": true,
+  "ownerAclOidSecurityDefinerAndSearchPathUnchanged": true,
+  "before": {
+    "acl": "{postgres=X/postgres}",
+    "oid": "19356",
+    "owner": "postgres",
+    "config": [
+      "search_path=\"\""
+    ],
+    "definition": "CREATE OR REPLACE FUNCTION stride_deletion_private.provider_actions(request_id uuid)\n RETURNS jsonb\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n  select coalesce(jsonb_agg(jsonb_build_object('provider',p,\n    'status',case when p='apple' and exists(select 1 from stride_apple_private.capture_intents i where i.owner_id=r.user_id and i.state in ('reserved','uncertain')) then 'pending'\n      when s.dispositions->>p in ('revoked','manual_required') then s.dispositions->>p else 'pending' end,\n    'reason',case when p='apple' and exists(select 1 from stride_apple_private.capture_intents i where i.owner_id=r.user_id and i.state='uncertain') then 'capture_outcome_unknown'\n      when p='apple' and exists(select 1 from stride_apple_private.capture_intents i where i.owner_id=r.user_id and i.state='reserved') then 'capture_in_flight'\n      else coalesce(s.reasons->>p,'not_prepared') end) order by p),'[]'::jsonb)\n  from stride_deletion_private.request_state s join public.stride_account_deletion_requests r on r.id=s.request_id,\n    lateral (select unnest(s.providers) p union select i.provider from auth.identities i where i.user_id=r.user_id) providers\n  where s.request_id=$1\n$function$\n",
+    "security_definer": true
+  },
+  "after": {
+    "acl": "{postgres=X/postgres}",
+    "oid": "19356",
+    "owner": "postgres",
+    "config": [
+      "search_path=\"\""
+    ],
+    "definition": "CREATE OR REPLACE FUNCTION stride_deletion_private.provider_actions(request_id uuid)\n RETURNS jsonb\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n  select coalesce(jsonb_agg(jsonb_build_object('provider',p,\n    'status',case when p='apple' and exists(select 1 from stride_apple_private.capture_intents i where i.owner_id=r.user_id and i.state in ('reserved','uncertain')) then 'pending'\n      when s.dispositions->>p in ('revoked','manual_required') then s.dispositions->>p else 'pending' end,\n    'reason',case when p='apple' and exists(select 1 from stride_apple_private.capture_intents i where i.owner_id=r.user_id and i.state='uncertain') then 'capture_outcome_unknown'\n      when p='apple' and exists(select 1 from stride_apple_private.capture_intents i where i.owner_id=r.user_id and i.state='reserved') then 'capture_in_flight'\n      else coalesce(s.reasons->>p,'not_prepared') end) order by p),'[]'::jsonb)\n  from stride_deletion_private.request_state s join public.stride_account_deletion_requests r on r.id=s.request_id,\n    lateral (select unnest(s.providers) p union select i.provider from auth.identities i where i.user_id=r.user_id) providers\n  where s.request_id=$1 and p in ('apple','google')\n$function$\n",
+    "security_definer": true
+  },
+  "existingWorkerValidatorRelaxed": false,
+  "tests": {
+    "backendRegression": 60,
+    "independentSqlAndFulfillment": 31,
+    "fail": 0,
+    "skipped": 0
+  },
+  "liveDeletionAcceptance": "PASS; actual recovered disposable email account completed through worker; Auth absent, inventory zero, old JWT rejected",
+  "publicAppReviewSubmitted": false,
+  "publicAutomationEnabledAtMigration": false,
+  "subsequentProductionActivation": "PASS; global explicit-null scope, reviewer capability true, ordinary cron succeeded",
+  "finalAcceptanceReceipt": "LAUNCH_20261120_SIGNUP_DELETION_ACCEPTANCE.json"
+}

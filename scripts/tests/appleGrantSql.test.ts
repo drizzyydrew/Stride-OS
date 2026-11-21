@@ -6,6 +6,7 @@ import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import test from 'node:test';
+import { DELETION_TABLES, deletionBlockers, fulfillDeletion, validateDeletionPlan, type DeletionPlan } from '../../src/utils/deletionFulfillment';
 
 // Reuse an already cached local test engine. Never download software, connect to
 // a configured project, read a DSN, or listen on TCP. Vault below is a SQL fixture,
@@ -94,6 +95,78 @@ test('real PostgreSQL executes custody migration, transactional replacement, del
       }
       return rows;
     };
+    await t.test('actual SQL omits email actions, retains Apple/Google capture guards, and the unchanged worker accepts email plans',async()=>{
+      const fixName=readdirSync('supabase/migrations').find(name=>name.endsWith('_restrict_deletion_actions_to_social_providers.sql'));
+      assert.ok(fixName,'The social-only correction migration must exist');
+      const correction=readFileSync(join('supabase/migrations',fixName),'utf8');
+      const identity=async()=>(await db.query("select proowner,proacl::text as acl,prosecdef,proconfig::text as config from pg_proc where oid='stride_deletion_private.provider_actions(uuid)'::regprocedure")).rows[0];
+      const before=await identity();
+      const actions=async(request:string)=>(await db.query('select stride_deletion_private.provider_actions($1) value',[request])).rows[0].value;
+      const fixture=async(providers:string[],identities=providers)=>{
+        const owner=await user();
+        await db.query('delete from auth.identities where user_id=$1',[owner]);
+        for(const provider of identities) await db.query('insert into auth.identities values($1,$2,$3)',[owner,provider,`${provider}-${owner}`]);
+        const request=await job(db,owner);
+        await db.query('update stride_deletion_private.request_state set providers=$2 where request_id=$1',[request.id,providers]);
+        return {owner,request};
+      };
+      const asPlan=(owner:string,request:string,providers:string[],providerActions:DeletionPlan['provider_actions']):DeletionPlan=>({
+        request_id:request,user_id:owner,status:'pending',auth_user_exists:true,
+        record_counts:Object.fromEntries(DELETION_TABLES.map(table=>[table,0])),storage_paths:[],unsafe_storage_objects:0,
+        shared_auth_tables:[],identity_providers:providers,fulfillment_version:1,provider_actions:providerActions,
+      });
+      await db.query('begin');
+      try {
+        const email=await fixture(['email']);
+        const legacy=await actions(email.request.id);
+        // Reproduce the deployed regression, rather than assuming SQL filters email.
+        assert.deepEqual(legacy,[{provider:'email',status:'pending',reason:'not_prepared'}]);
+        assert.throws(()=>validateDeletionPlan(asPlan(email.owner,email.request.id,['email'],legacy),email.request.id),/Invalid deletion plan/);
+        await db.query(correction);
+        assert.deepEqual(await identity(),before,'Owner, privileges, SECURITY DEFINER and empty search_path stay unchanged');
+        const emailActions=await actions(email.request.id);
+        assert.deepEqual(emailActions,[]);
+        const current=asPlan(email.owner,email.request.id,['email'],emailActions);
+        assert.deepEqual(deletionBlockers(validateDeletionPlan(current,email.request.id)),[]);
+        const calls:string[]=[];
+        const result=await fulfillDeletion(email.request.id,{
+          plan:async()=>structuredClone(current),
+          claim:async()=>{calls.push('claim');current.status='processing';return email.request.processing_token;},
+          assertLease:async()=>{},removeObjects:async()=>{assert.fail('Email fixture has no objects');},
+          deleteAuthUser:async owner=>{assert.equal(owner,email.owner);calls.push('auth');current.auth_user_exists=false;},
+          complete:async()=>{calls.push('complete');current.status='completed';},
+        },true);
+        assert.equal(result.complete,true);assert.deepEqual(calls,['claim','auth','complete']);
+        for(const [providers,identities,expected] of [
+          [['email','apple'],['email','apple'],['apple']],
+          [['email','google'],['email','google'],['google']],
+          [['email','apple'],['email','apple','google'],['apple','google']],
+          [['email','apple','google'],['email','apple','google'],['apple','google']],
+        ] as [string[],string[],string[]][]) {
+          const value=await fixture(providers,identities);
+          const rows=await actions(value.request.id);
+          assert.deepEqual(rows.map((row:any)=>row.provider),expected);
+          assert.equal(rows.every((row:any)=>row.status==='pending'&&row.reason==='not_prepared'),true);
+          validateDeletionPlan(asPlan(value.owner,value.request.id,identities,rows),value.request.id);
+        }
+        const unknown=await fixture(['email','future_oidc']);
+        const unknownActions=await actions(unknown.request.id);
+        assert.deepEqual(unknownActions,[]);
+        assert.match(deletionBlockers(asPlan(unknown.owner,unknown.request.id,['email','future_oidc'],unknownActions)).join(' '),/unsupported identity provider/i);
+        const appleOwner=await user();
+        const capture=await reserve(db,appleOwner,'d'.repeat(64));
+        const appleJob=await job(db,appleOwner);
+        await db.query('savepoint reserved_capture_guard');
+        await assert.rejects(db.query("update stride_deletion_private.request_state set dispositions='{\"apple\":\"revoked\"}' where request_id=$1",[appleJob.id]),/Apple capture outcome remains pending/);
+        await db.query('rollback to savepoint reserved_capture_guard');
+        assert.deepEqual(await actions(appleJob.id),[{provider:'apple',status:'pending',reason:'capture_in_flight'}]);
+        await db.query("update stride_apple_private.capture_intents set state='uncertain' where id=$1",[capture]);
+        assert.deepEqual(await actions(appleJob.id),[{provider:'apple',status:'pending',reason:'capture_outcome_unknown'}]);
+      } finally { await db.query('rollback'); }
+      // The rest of the custody/permissions suite exercises the corrected helper too.
+      await db.query(correction);
+      assert.deepEqual(await identity(),before);
+    });
     await t.test('capture/hash idempotency and newer active grant retain all completed responses for cleanup',async()=>{
       const id=await user(); await store(db,id); const first=await secret(id); const before=await count('vault.secrets');
       await store(db,id); assert.equal((await secret(id)).vault_secret_id,first.vault_secret_id); assert.equal(await count('vault.secrets'),before);

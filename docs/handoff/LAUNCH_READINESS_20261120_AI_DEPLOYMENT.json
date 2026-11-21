@@ -1,0 +1,298 @@
+{
+  "checkedAt": "2026-11-21T01:19:08.505556+00:00",
+  "projectId": "pbzgrhnxpbtlkzpreizy",
+  "function": "ai-coach",
+  "versionAtSourceDeployment": 20,
+  "runtimeVersionAtFinalReadback": 22,
+  "status": "ACTIVE",
+  "verifyJwt": true,
+  "exactDeployedSourceReadback": 6,
+  "files": {
+    "ai-coach/index.ts": "c5cbee78d74a422daef8bcdd07ab3f3c05247470b53a874d701c12e9616d6907",
+    "_shared/launchHandlers.ts": "d88e743d0a081abef570f06e05abc6ac7a5535f0139bcd2e57c0b6b9fc3c7d48",
+    "_shared/revenueCatAccess.ts": "013507ff25328e6ff601d96271f18efee8b8f101454d17ece14addef294927dd",
+    "_shared/coachAllowance.ts": "74d1aba615da01399f00b1601618c30731614c4a6d36f9072193022f9080b4d9",
+    "_shared/coachProvider.ts": "5af4513306f1df86c344dccece4b492991c82b00040db2d6789bfdb402b0058d",
+    "_shared/coachProviderTelemetry.ts": "e777e9b46a80fd9b203b96a5a32fcef34c2ed457e962db81582244601cf9821c"
+  },
+  "allSixFilesExact": true,
+  "independentReview": {
+    "call": "APPROVE",
+    "owningLaneFinalChecks": {
+      "tests": 68,
+      "pass": 68,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "denoEntrypointAndHelperTypecheck": "PASS",
+      "organizationProbeTests": 7,
+      "providerRedirectsRejected": true,
+      "providerResponseJsonMaxBytes": 65536
+    },
+    "owningLaneEvidenceLogs": {
+      "strideos-launch-ai-final-68-tests.log": "8d6e503818b1457568aa210b6c074712a84f95c7781e2d8c88a7a47ba24d9e82",
+      "strideos-launch-ai-metering-final-deno.log": "b852b442c79caf62b7dbe0e850eba23855f16c38bf05eec5ac4021373619ddbd",
+      "strideos-launch-ai-organization-hash-tests.log": "6a931e72a488347f073d2a40994041c3c95b2098ba445f7a92fb5570e95abead",
+      "strideos-launch-ai-organization-hash-deno.log": "1808ed9afa59c992d49a5899eef7f822aa5ab5e11e2620c3bc7521f250a0d7ca",
+      "strideos-launch-ai-org-probe-final-cleanup-tests.log": "aa70ea4c99bc8d033cf7e1943869c17213f4306bffa60cfeb9d0a7e1de4fb485",
+      "strideos-launch-ai-org-probe-final-cleanup-deno.log": "b4ade09862516251b7007fc5fef9a6c7296d4cd347da359cdc68e62ccea8f265"
+    },
+    "independentBaselineSubsetPassed": 48,
+    "independentHardenedProviderQaSubsetPassed": 21,
+    "subsetsOverlap": true,
+    "scope": "Fixed-host transport/safety/payload/output bound preserved; metadata-only whitelist; redirects refused and response JSON bounded"
+  },
+  "sourcePolicyChanged": false,
+  "quotaChanged": false,
+  "modelChanged": false,
+  "publicBillingEnforcementChangedBySourceDeployment": false,
+  "publicBillingEnforcementChangedByApprovedSecretOperation": true,
+  "publicBillingEnforcementEnabled": true,
+  "existingSingleQaOwnerSettingPresent": false,
+  "otherSecretDigestsUnchanged": true,
+  "providerGenerationCalls": 1,
+  "providerGenerationRetries": 0,
+  "actualReplyVerified": true,
+  "replyCharacterCount": 169,
+  "verifiedAllowanceIncrement": {
+    "before": 0,
+    "after": 1
+  },
+  "providerUsageLogAcceptancePending": false,
+  "phases": {
+    "initialTelemetrySourceDeployment": {
+      "checkedAt": "2026-11-21T00:44:18.739350+00:00",
+      "version": 19,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "exactDeployedSourceReadback": 6,
+      "files": {
+        "ai-coach/index.ts": "c5cbee78d74a422daef8bcdd07ab3f3c05247470b53a874d701c12e9616d6907",
+        "_shared/launchHandlers.ts": "d88e743d0a081abef570f06e05abc6ac7a5535f0139bcd2e57c0b6b9fc3c7d48",
+        "_shared/revenueCatAccess.ts": "013507ff25328e6ff601d96271f18efee8b8f101454d17ece14addef294927dd",
+        "_shared/coachAllowance.ts": "74d1aba615da01399f00b1601618c30731614c4a6d36f9072193022f9080b4d9",
+        "_shared/coachProvider.ts": "51463ba2394947af05802d38f043f25934a489190b99b44ed3a5f0b81e78b699",
+        "_shared/coachProviderTelemetry.ts": "e777e9b46a80fd9b203b96a5a32fcef34c2ed457e962db81582244601cf9821c"
+      },
+      "publicBillingEnforcementEnabled": false,
+      "reviewerQaOverridePresent": true,
+      "providerGenerationCallsAtThatTime": 0,
+      "note": "Historical initial wrapper before redirect/error and response-size guards; final hashes are not attributed to this phase"
+    },
+    "finalHardenedSourceDeployment": {
+      "version": 20,
+      "rootConfirmedAllSixFilesExactBeforePolicyChange": true,
+      "providerWrapperSha256": "5af4513306f1df86c344dccece4b492991c82b00040db2d6789bfdb402b0058d",
+      "reviewedTests": 68,
+      "denoEntrypointAndHelperTypecheck": "PASS",
+      "deploymentTimestampNotSeparatelyRecordedHere": true
+    },
+    "approvedPublicPolicyChange": {
+      "checkedAt": "2026-11-21T01:06:13.593Z",
+      "scope": "Root-approved public billing flag true and removal of single reviewer QA flag only",
+      "credentialsPrintedOrSaved": false,
+      "coachPostSent": false,
+      "pricesOrQuotaChanged": false,
+      "otherSecretsChanged": false,
+      "publicFlagSet": true,
+      "qaFlagUnset": true,
+      "publicTrueDigestVerified": true,
+      "qaFlagAbsentVerified": true,
+      "otherSecretDigestsUnchanged": true,
+      "accepted": true
+    },
+    "finalColdReadback": {
+      "checkedAt": "2026-11-21T01:13:21.601608+00:00",
+      "version": 22,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "files": [
+        {
+          "name": "ai-coach/index.ts",
+          "sha256": "c5cbee78d74a422daef8bcdd07ab3f3c05247470b53a874d701c12e9616d6907",
+          "exact": true
+        },
+        {
+          "name": "_shared/launchHandlers.ts",
+          "sha256": "d88e743d0a081abef570f06e05abc6ac7a5535f0139bcd2e57c0b6b9fc3c7d48",
+          "exact": true
+        },
+        {
+          "name": "_shared/revenueCatAccess.ts",
+          "sha256": "013507ff25328e6ff601d96271f18efee8b8f101454d17ece14addef294927dd",
+          "exact": true
+        },
+        {
+          "name": "_shared/coachAllowance.ts",
+          "sha256": "74d1aba615da01399f00b1601618c30731614c4a6d36f9072193022f9080b4d9",
+          "exact": true
+        },
+        {
+          "name": "_shared/coachProvider.ts",
+          "sha256": "5af4513306f1df86c344dccece4b492991c82b00040db2d6789bfdb402b0058d",
+          "exact": true
+        },
+        {
+          "name": "_shared/coachProviderTelemetry.ts",
+          "sha256": "e777e9b46a80fd9b203b96a5a32fcef34c2ed457e962db81582244601cf9821c",
+          "exact": true
+        }
+      ],
+      "allSixFilesExact": true
+    },
+    "actualPublicInactive": {
+      "checkedAt": "2026-11-21T01:07:32.083Z",
+      "phase": "public-inactive",
+      "deployedVersionAcceptedBeforeRequest": 22,
+      "scope": "Actual non-QA public paid-access branch; fixed synthetic ASCII fitness fixture only",
+      "credentialsPrintedOrSaved": false,
+      "ownerTrainingAccountChanged": false,
+      "fixtureContainsAthleteData": false,
+      "qaFlagAbsent": true,
+      "publicBillingTrueDigest": true,
+      "sixSourceFilesExact": true,
+      "authHealthStatus": 200,
+      "signInStatus": 200,
+      "exactAuthenticatedReviewerVerified": true,
+      "usageBeforeStatus": 200,
+      "usedBefore": 0,
+      "coachPostAttempted": true,
+      "coachPostStatus": 402,
+      "responseMatchesKnownContract": true,
+      "usageAfterStatus": 200,
+      "usedAfter": 0,
+      "allowanceUnchanged": true,
+      "accepted": true,
+      "noAiProviderPathBy402Branch": true,
+      "modelPostRetries": 0,
+      "temporaryLocalSignOutStatus": 204
+    },
+    "actualPublicActive": {
+      "checkedAt": "2026-11-21T01:13:32.322Z",
+      "phase": "public-active",
+      "deployedVersionAcceptedBeforeRequest": 22,
+      "scope": "Actual non-QA public paid-access branch; fixed synthetic ASCII fitness fixture only",
+      "credentialsPrintedOrSaved": false,
+      "ownerTrainingAccountChanged": false,
+      "fixtureContainsAthleteData": false,
+      "qaFlagAbsent": true,
+      "publicBillingTrueDigest": true,
+      "sixSourceFilesExact": true,
+      "authHealthStatus": 200,
+      "signInStatus": 200,
+      "exactAuthenticatedReviewerVerified": true,
+      "usageBeforeStatus": 200,
+      "usedBefore": 0,
+      "singleModelAttemptFenceCreated": true,
+      "coachPostAttempted": true,
+      "coachPostStatus": 200,
+      "providerReplyTextPresent": true,
+      "providerReplyCharacterCount": 169,
+      "responseMatchesKnownContract": true,
+      "usageAfterStatus": 200,
+      "usedAfter": 1,
+      "allowanceUnchanged": false,
+      "accepted": true,
+      "noAiProviderPathBy402Branch": false,
+      "modelPostRetries": 0,
+      "temporaryLocalSignOutStatus": 204
+    },
+    "anonymousBoundary": {
+      "checkedAt": "2026-11-21T01:08:09.027007+00:00",
+      "deployedVersion": 22,
+      "anonymous": true,
+      "credentialsUsed": false,
+      "checks": [
+        {
+          "method": "GET",
+          "usageQuery": true,
+          "status": "401",
+          "transportExit": 0
+        },
+        {
+          "method": "POST",
+          "usageQuery": false,
+          "status": "401",
+          "transportExit": 0
+        },
+        {
+          "method": "OPTIONS",
+          "usageQuery": false,
+          "status": "200",
+          "transportExit": 0
+        }
+      ],
+      "accepted": true
+    }
+  },
+  "reviewerPromotionalAccess": {
+    "currentProviderMetadata": {
+      "checkedAt": "2026-11-21T01:13:22.048Z",
+      "phase": "final-reviewer",
+      "scope": "Read bounded entitlement metadata for the already registered restricted reviewer; not StoreKit lifecycle",
+      "credentialsPrintedOrSaved": false,
+      "ownerTrainingAccountChanged": false,
+      "purchaseMade": false,
+      "newSecretCreated": false,
+      "httpStatus": 200,
+      "customerIdentityMatchesReviewer": true,
+      "entitlementCount": 1,
+      "entitlements": [
+        {
+          "expiresAt": "2026-12-22T01:12:35.000Z",
+          "activeByExpiry": true,
+          "productIdentifierIsPromotional": true
+        }
+      ],
+      "accepted": true
+    },
+    "leaveActiveForApple": true,
+    "isStoreKitPurchase": false,
+    "changesOwnerAccount": false
+  },
+  "budget": {
+    "monthlyCapUsd": 20,
+    "increased": false,
+    "providerOrganizationMatched": true,
+    "proofSource": "LAUNCH_AI_CAPACITY_20261120.json",
+    "actualInvoiceReconciled": false
+  },
+  "credentialsPrintedOrPersisted": false,
+  "imagesChanged": false,
+  "publicAppReviewSubmitted": false,
+  "publicReleasePerformed": false,
+  "providerUsageLogObservation": {
+    "windowStartUtc": "2026-11-21T01:13:30Z",
+    "windowEndUtc": "2026-11-21T01:15:00Z",
+    "matchingEventsObserved": 1,
+    "functionVersion": "22",
+    "model": "claude-haiku-4-5-20251001",
+    "usageStatus": "available",
+    "tokens": {
+      "input": 124,
+      "output": 36,
+      "cacheRead": 0,
+      "cacheWrite5m": 0,
+      "cacheWrite1h": 0
+    },
+    "estimatedCostNanoUsd": 304000,
+    "estimatedCostUsd": 0.000304,
+    "costBasis": "standard_text_token_rates_before_discounts",
+    "arithmeticRecomputedAndMatched": true,
+    "notInvoiceOrWorkloadAverage": true,
+    "generationRequestedByThisLane": false,
+    "promptReplyAndIdsRetrievedForThisQuery": false,
+    "rootReportedCounterBefore": 0,
+    "rootReportedCounterAfter": 1
+  },
+  "finalPublicPolicyReadback": {
+    "checkedAt": "2026-11-21T01:19:08.501090+00:00",
+    "globalBillingTrueDigest": true,
+    "qaOwnerSettingAbsent": true,
+    "secretValuesRead": false
+  },
+  "runtimeGenerationProofAccepted": true,
+  "providerUsageCostIsInvoice": false,
+  "relatedSandboxHistoryReceipt": "LAUNCH_PAID_SERVER_20261120.json",
+  "currentSourceAndPolicyFinalized": true
+}

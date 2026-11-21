@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-11-21T00:25:38.294658+00:00",
+  "url": "https://appstoreconnect.apple.com/apps/6782788130/distribution/privacy",
+  "beforeDataTypes": 11,
+  "afterDataTypes": 12,
+  "addedType": "Purchase History",
+  "purposes": [
+    "Analytics",
+    "App Functionality"
+  ],
+  "linkedToIdentity": true,
+  "trackingAnswerSelected": false,
+  "published": true,
+  "destinationReadback": [
+    "Published a few seconds ago by Drew Moore",
+    "12 data types collected from this app",
+    "Purchases: Used for Analytics, and App Functionality",
+    "Linked to the user\u2019s identity"
+  ],
+  "otherExistingDeclarationsChanged": false,
+  "publicAppReviewSubmitted": false,
+  "imagesChanged": false
+}
