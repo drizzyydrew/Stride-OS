@@ -22,7 +22,7 @@
     "capture-sim": {
       "extends": "production",
       "developmentClient": false,
-      "env": { "EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED": "false" },
+      "env": { "EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED": "true" },
       "ios": {
         "simulator": true,
         "buildConfiguration": "Release",
