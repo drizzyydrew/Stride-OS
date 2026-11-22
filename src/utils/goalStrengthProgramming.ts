@@ -1,33 +1,104 @@
-import type { Exercise, PlannedExercise, StrengthEngineInput, StrengthLogRecord, StrengthSessionType } from '../types/strength';
+import type { CompletedExercise, Exercise, PlannedExercise, StrengthEngineInput, StrengthLogRecord, StrengthSessionType } from '../types/strength';
 import { trainingGoalBlend } from './trainingGoals';
 import { compatibleExerciseOptions } from './exerciseAdaptation';
 import { getGoalMesocycle } from './plan/goalMesocycle';
 import { strengthExerciseEquipment, strengthProgressionLevel } from './strengthDesign';
 import { mapEquipmentType } from './strengthSession';
 
-/** Explicit comparable working sets are evidence; attendance and target RPE
- * are not. Setup/resistance changes require a new calibration. */
-export function comparableStrengthExposures(exercise: Exercise, history: StrengthLogRecord[], topReps: number, now = Date.now()) {
-  if (exercise.equipment.length !== 1) return [];
-  const setup = mapEquipmentType(exercise.equipment);
-  return history.filter(record => !record.skipped && Number.isFinite(record.timestamp)
-    && record.timestamp <= now && record.timestamp >= now - 42 * 86400000).flatMap(record => {
-    const performed = record.exercises.find(item => item.exerciseId === exercise.id && !item.skipped && item.equipmentType === setup);
-    const sets = performed?.sets.filter(set => set.completed && !set.isWarmup) ?? [];
-    if (sets.length < 2 || performed!.sets.some(set => !set.isWarmup && !set.completed)
-      || (performed?.prescription && sets.length < performed.prescription.sets)
-      || !sets.every(set => Number.isFinite(set.rpe) && set.rpe! >= 1 && set.rpe! <= 7
-      && Number.isFinite(set.reps) && set.reps! >= topReps)) return [];
+/** Inspect attempts before judging success: a recent hard, skipped or ambiguous
+ * attempt must not disappear and expose two older favorable performances. */
+function strengthAttempts(exercise: Exercise, history: StrengthLogRecord[], now: number) {
+  const seen = new Set<string>();
+  return history.filter(record => record.exercises.some(item => item.exerciseId === exercise.id))
+    .sort((a, b) => !Number.isFinite(a.timestamp) ? -1 : !Number.isFinite(b.timestamp) ? 1 : b.timestamp - a.timestamp).filter(record => {
+      const key = record.scheduledSessionId ?? record.sessionId ?? record.id;
+      if (seen.has(key) || seen.has(record.id)) return false;
+      seen.add(key); seen.add(record.id); return true;
+    }).map(record => {
+      const matches = record.exercises.filter(item => item.exerciseId === exercise.id);
+      const performed = matches.length === 1 ? matches[0] : undefined;
+      const valid = !record.skipped && Number.isFinite(record.timestamp)
+        && record.timestamp <= now && record.timestamp >= now - 42 * 86400000
+        && performed && !performed.skipped;
+      return { record, performed: valid ? performed : undefined };
+    });
+}
+
+function resolvedSetup(exercise: Exercise, attempts: ReturnType<typeof strengthAttempts>) {
+  const actual = attempts[0]?.performed?.equipmentType;
+  return exercise.equipment.length === 1 ? exercise.equipment[0]
+    : actual ? exercise.equipment.find(option => mapEquipmentType([option]) === actual) : undefined;
+}
+
+function exposure(performed: CompletedExercise | undefined, setup: ReturnType<typeof mapEquipmentType>, topReps: number, heavy = false, recovery = false) {
+    if (!performed || performed.equipmentType !== setup) return null;
+    const sets = performed.sets.filter(set => !set.isWarmup);
+    if (sets.length < (recovery ? 1 : 2) || sets.some(set => !set.completed)
+      || (performed.prescription && sets.length < performed.prescription.sets)
+      || !sets.every(set => Number.isFinite(set.rpe) && set.rpe! >= 1 && set.rpe! <= (heavy ? 8 : recovery ? 6 : 7)
+      && Number.isFinite(set.reps) && set.reps! >= (heavy ? 3 : topReps) && (!heavy || set.reps! <= 5))) return null;
+    if (heavy) {
+      const rx = performed.prescription;
+      const scheme = rx?.repScheme;
+      if (scheme?.kind !== 'reps' || scheme.repsMin !== 3 || scheme.repsMax !== 5
+        || rx?.targetRpe !== 8 || (rx.restSeconds ?? 0) < 180) return null;
+    }
     const loads = sets.map(set => {
-      if (typeof set.weight === 'number' && Number.isFinite(set.weight) && set.weight > 0 && (set.weightUnit === 'lb' || set.weightUnit === 'kg')) return `${set.weight}:${set.weightUnit}`;
+      if (set.weight !== undefined) {
+        if (Number.isFinite(set.weight) && set.weight > 0 && (set.weightUnit === 'lb' || set.weightUnit === 'kg')) return `${set.weight}:${set.weightUnit}`;
+        if (set.weight === 0 && setup === 'bodyweight' && /^bw$/i.test(set.load?.trim() ?? '')) return 'BW';
+        return null; // An unqualified structured quantity cannot borrow a stale display label's unit.
+      }
       if (typeof set.load === 'string' && /^(\d+(?:\.\d+)?)\s*(lb|lbs|kg)$/i.test(set.load.trim())) return set.load.trim().toLowerCase().replace(/\s+/g, '').replace(/lbs$/, 'lb');
       if (setup === 'bodyweight' && /^bw$/i.test(set.load?.trim() ?? '')) return 'BW';
       if (setup === 'resistance_band' && set.bandLevel) return `band:${set.bandLevel}:${set.bandCustomLabel ?? ''}`;
       return null;
     });
-    if (!loads[0] || loads.some(load => load !== loads[0])) return [];
-    return [{ id: record.id, timestamp: record.timestamp, load: loads[0] }];
-  }).sort((a, b) => b.timestamp - a.timestamp).filter((record, index, all) => all.findIndex(other => other.id === record.id) === index);
+    if (!loads[0] || loads.some(load => load !== loads[0])) return null;
+    return loads[0];
+}
+
+/** Valid consecutive recent attempts, not a selection of favorable history. */
+export function comparableStrengthExposures(exercise: Exercise, history: StrengthLogRecord[], topReps: number, now = Date.now()) {
+  const attempts = strengthAttempts(exercise, history, now);
+  const option = resolvedSetup(exercise, attempts);
+  if (!option) return [];
+  const setup = mapEquipmentType([option]);
+  const result = [];
+  for (const { record, performed } of attempts) {
+    const load = exposure(performed, setup, topReps);
+    if (!load) break;
+    result.push({ id: record.id, timestamp: record.timestamp, load });
+  }
+  return result;
+}
+
+function strengthSpecificEvidence(exercise: Exercise, history: StrengthLogRecord[], now: number) {
+  const attempts = strengthAttempts(exercise, history, now);
+  const option = resolvedSetup(exercise, attempts);
+  if (!option || !['barbell', 'dumbbell', 'kettlebell', 'machine'].includes(option)) return null;
+  const setup = mapEquipmentType([option]);
+  // Planned easy recovery is not a failed heavy session and earns no progress.
+  let offset = 0;
+  while (offset < 2) {
+    const performed = attempts[offset]?.performed;
+    const targetRpe = performed?.prescription?.targetRpe;
+    const scheme = performed?.prescription?.repScheme;
+    if (!performed?.prescription?.loadTarget?.startsWith('Recovery practice after strength-specific work')
+      || !Number.isFinite(targetRpe) || targetRpe! < 1 || targetRpe! > 6
+      || scheme?.kind !== 'reps' || !scheme.repsMin || !exposure(performed, setup, scheme.repsMin, false, true)) break;
+    offset++;
+  }
+  const recent = attempts.slice(offset);
+  const basePair = (start: number) => {
+    const first = exposure(recent[start]?.performed, setup, 10);
+    return !!first && first === exposure(recent[start + 1]?.performed, setup, 10);
+  };
+  const firstHeavy = exposure(recent[0]?.performed, setup, 3, true);
+  const secondHeavy = exposure(recent[1]?.performed, setup, 3, true);
+  return { option, prepared: offset === 0 && basePair(0),
+    familiar: !!firstHeavy && (!!secondHeavy || basePair(1)),
+    twoHeavy: !!firstHeavy && !!secondHeavy };
 }
 
 function replacementOf(original: PlannedExercise, replacement: Exercise, input: StrengthEngineInput, reason: string): PlannedExercise {
@@ -52,12 +123,13 @@ export function applyGoalStrengthProgramming(exercises: PlannedExercise[], input
     || input.recoveryScore < 55 || input.fatigueScore > 70 || (input.soreness ?? 0) >= 7;
   const blend = trainingGoalBlend(input.goalType ?? 'general_running', input.secondaryGoalTypes);
   const strengthFirst = input.goalType === 'general_strength';
-  const strengthSupport = blend.secondary.includes('general_strength') || blend.secondary.includes('hybrid');
+  const strengthSupport = input.goalType === 'hybrid' || blend.secondary.includes('general_strength') || blend.secondary.includes('hybrid');
   const raceSupport = input.goalType === 'race_prep' && ['threshold', 'vo2', 'race_specific', 'build', 'peak', 'taper'].includes(input.trainingPhase);
   const candidates = Object.values(library).map(exercise => ({ ...exercise, equipment: strengthExerciseEquipment(exercise, input.availableEquipment) }))
     .filter(exercise => exercise.equipment.length > 0);
   let rotated = false;
   let progressed = false;
+  let heavyCount = 0;
   const adapted = exercises.map((original, index) => {
     let exercise = original;
     const preferredId = input.exercisePreferences?.[original.exerciseId];
@@ -81,25 +153,45 @@ export function applyGoalStrengthProgramming(exercises: PlannedExercise[], input
     if (!repeatLift) return exercise;
     // A new variation starts from a manageable baseline. A lower rep target
     // is a goal-specific stimulus, not permission to transfer a heavier load.
-    const repRange: [number, number] = index < 3
+    let repRange: [number, number] = index < 3
       ? strengthFirst && level !== 'beginner' ? [6, 10] : [8, 10]
       : [8, 12];
     let sets = recoveryLimited ? Math.min(exercise.sets, 1) : Math.min(exercise.sets, raceSupport ? 2 : 3);
+    const specific = strengthSpecificEvidence(exercise.exercise, input.strengthHistory, Date.now());
+    const eligible = (strengthFirst || strengthSupport) && level !== 'beginner' && !raceSupport
+      && input.trainingPhase !== 'foundation' && Number.isFinite(input.availableTimeMin) && input.availableTimeMin! >= 30
+      && ['squat', 'hinge', 'lunge', 'push', 'pull'].includes(exercise.exercise.pattern)
+      && heavyCount < (strengthFirst ? 2 : 1);
+    const heavy = eligible && !recoveryLimited && input.recoveryScore >= 65 && specific
+      && (!strengthFirst || cycle.strengthLoading === 'intensification')
+      && (specific.familiar || (cycle.doseStage === 'develop' || strengthFirst && cycle.strengthLoading === 'intensification')
+        && specific.prepared && input.recoveryScore >= 65);
+    const recoveryAfterHeavy = eligible && recoveryLimited && specific?.familiar;
+    if (heavy) {
+      heavyCount++;
+      exercise = { ...exercise, exercise: { ...exercise.exercise, equipment: [specific.option] } };
+      repRange = [3, 5]; sets = 2;
+      if (!progressed && specific.twoHeavy && cycle.doseStage === 'develop' && input.recoveryScore >= 65) {
+        sets = 3; progressed = true;
+      }
+    }
     const evidence = comparableStrengthExposures(exercise.exercise, input.strengthHistory, repRange[1]);
     const comparablePair = evidence.length >= 2 && evidence[0]!.load === evidence[1]!.load;
     const needsCalibration = !!exercise.notes && !comparablePair;
-    if (!progressed && index === 0 && !recoveryLimited && !raceSupport && cycle.doseStage === 'develop'
+    if (!heavy && !progressed && index === 0 && !recoveryLimited && !raceSupport && cycle.doseStage === 'develop'
       && !needsCalibration && comparablePair && sets === 2 && input.recoveryScore >= 65) {
       sets = 3; progressed = true;
     }
-    const rpe = Math.min(exercise.rpe, recoveryLimited ? 6 : level === 'beginner' ? 7 : 8);
+    const rpe = heavy ? 8 : Math.min(exercise.rpe, recoveryLimited ? 6 : level === 'beginner' ? 7 : 8);
     return { ...exercise, sets, repRange, repScheme: { kind: 'reps' as const, repsMin: repRange[0], repsMax: repRange[1], perSide: scheme?.perSide ?? exercise.exercise.unilateral },
-      rpe, rir: 10 - rpe, restSeconds: Math.max(exercise.restSeconds, (strengthFirst || strengthSupport) && index < 3 ? 120 : 90),
-      loadTarget: needsCalibration ? `RPE ${rpe} — calibrate this exercise and setup separately` : `RPE ${rpe} — choose a repeatable load for ${repRange[0]}–${repRange[1]} reps`,
+      rpe, rir: 10 - rpe, restSeconds: Math.max(exercise.restSeconds, heavy ? 180 : (strengthFirst || strengthSupport) && index < 3 ? 120 : 90),
+      loadTarget: recoveryAfterHeavy ? `Recovery practice after strength-specific work — recalibrate a lighter load for ${repRange[0]}–${repRange[1]} reps at RPE ${rpe}`
+        : heavy ? `RPE 8 — strength-specific 3–5 reps, about two reps in reserve. Calibrate this rep range and setup; do not transfer or automatically increase the last working weight.`
+        : needsCalibration ? `RPE ${rpe} — calibrate this exercise and setup separately` : `RPE ${rpe} — choose a repeatable load for ${repRange[0]}–${repRange[1]} reps`,
       progressionRule: 'Repeat the same setup. Build to the top of the rep range at the intended effort before choosing a small equipment-appropriate load increase. Missing effort, changed setup or a new variation calls for calibration.',
       regressionRule: 'If the work is too hard, reduce load or reps while retaining the intended movement. Reduce a working set when recovery is limited; record what you actually complete.',
     };
   });
-  const note = `${cycle.focus}. Practice block ${cycle.blockNumber}, week ${cycle.weekInBlock}/6; loading/recovery week ${cycle.loadingWeek}/4.${rotated ? ' One compatible accessory variation was selected; calibrate its load separately.' : ' Useful main lifts stay consistent.'}${progressed ? ' One main exercise gains a working set after two comparable, manageable recorded exposures; the time budget still applies.' : ' Calendar advancement alone adds no load or working sets.'}`;
+  const note = `${cycle.focus}. Practice block ${cycle.blockNumber}, week ${cycle.weekInBlock}/6; loading/recovery week ${cycle.loadingWeek}/4.${rotated ? ' One compatible accessory variation was selected; calibrate its load separately.' : ' Useful main lifts stay consistent.'}${heavyCount ? ' Earned main-lift work uses 3–5 reps at RPE 8 with at least three minutes rest; accessories retain their own purpose. This is effort guidance, not a measured percentage of 1RM.' : ''}${progressed ? ' One main exercise gains a working set after two comparable, manageable recorded exposures in its own rep range; the time budget still applies.' : ' Calendar advancement alone adds no load or working sets.'}`;
   return { exercises: adapted, cycle, note };
 }

@@ -1,0 +1,520 @@
+{
+  "checkedDatePacific": "2026-11-21",
+  "archiveAdvertisedArticles": 58,
+  "publicLinkedArticlesRetrieved": 60,
+  "allFullTextsAssignedForCouncilReview": true,
+  "paidCoursesOrPodcastsReviewed": false,
+  "articles": [
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/12-essential-books-that-shaped-our-strength-training-philosophy",
+      "title": "12 Essential Books That Shaped Our Strength Training Philosophy",
+      "words": 1179,
+      "ok": true,
+      "htmlSha256": "2c4f48917e0d0d899e6c051a9891607274c355cfcf9d4bbc74bb40597d882888",
+      "textSha256": "6ee5e9c253b3d01e6cf5f0f066505671cbe669971f82dd481d90dd9dc99b65d0"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/adapting-the-optimizing-strength-ratios-program-to-a-three-day-microcycle",
+      "title": "Adapting the Optimizing Strength Ratios Program to a Three-Day Microcycle",
+      "words": 846,
+      "ok": true,
+      "htmlSha256": "3f201f9ffc6525ec38012271ed5d96faa57eccf9a2b9db07d83f74c2a336f5c8",
+      "textSha256": "878336cb1081334bbc6ad577aa2c9f340c1b5d48bb5663e4ad32c9d71c9990d3"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/before-you-chase-anything-else-build-strength",
+      "title": "Before You Chase Anything Else: Build Strength",
+      "words": 1730,
+      "ok": true,
+      "htmlSha256": "0e31ffd8ff92c34494054a821220dc8aa7910060a6d1348440962c4acb0a7a21",
+      "textSha256": "d3a564ea75b3022e2ea3be2e27a775d5badf2b44e404e6957c74a33f5c4c0588"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/build-capacity-before-performance",
+      "title": "Capacity Before Expression: Why You Cannot Skip the Base",
+      "words": 666,
+      "ok": true,
+      "htmlSha256": "f1cd9261328fc0bf3751f6ce696fb7982ac9b7e68a260c213357cef604132fc8",
+      "textSha256": "7e15c3fcea3deebaaf2e9dcd7e5d52956fcd42469b4f100e62d5dd11a74e2ef0"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/building-strength-vs-displaying-strength",
+      "title": "Building Strength vs. Displaying Strength: Volume, Intensity, and Fatigue",
+      "words": 1710,
+      "ok": true,
+      "htmlSha256": "04a604047cfd0714712f4c864c7e58d0b80d9f06a3a2e2972e6fd0498bf1e673",
+      "textSha256": "eac8c0f239a78f1ed83890becc6f4682ca8d5074db230f6b08ac7f44618b5c71"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/built-by-design-how-we-structure-upper-body-strength-sessions",
+      "title": "Built by Design: How We Structure Upper Body Strength Sessions",
+      "words": 814,
+      "ok": true,
+      "htmlSha256": "419173e0a9e8df54df169e471f7cd665ebbfe4513388fd800ff9ec91f9fe8fc7",
+      "textSha256": "f1ef5eeb3b685cab22fb83e338c1ac2650c162a6ea5dba25e3613290d8a1ea64"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/built-from-the-bar-the-kilo-chin-up-progression",
+      "title": "Built from the Bar: The KILO Chin-Up Progression",
+      "words": 955,
+      "ok": true,
+      "htmlSha256": "27e07df6345d3f5a22937569507946437ff5442880e14621f1cce1b25a8911fd",
+      "textSha256": "46474d077e1d206dd4550ff8964dcc8f671b13d3f3f4ada3d2d2736c9570b475"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/built-from-the-ground-up-how-we-structure-lower-body-strength-sessions",
+      "title": "Built from the Ground Up: How We Structure Lower Body Strength Sessions",
+      "words": 812,
+      "ok": true,
+      "htmlSha256": "522f588b4092900a5b3aa7fdb0e27c3d485f72806c1046b3444a1478377a73cd",
+      "textSha256": "7f90c171db6b9cc1bda8f8035b77f0fee7b2487d5742eac58b83326e6f59241e"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/choosing-the-right-split-a-strategic-guide-to-fat-loss-hypertrophy-and-strength-training",
+      "title": "Choosing the Right Split: A Strategic Guide to Fat Loss, Hypertrophy, and Strength Training",
+      "words": 1402,
+      "ok": true,
+      "htmlSha256": "7bad2a0302a332f989efaa4beb5e1419be75a7f4572e9d78573dd420345d2ecc",
+      "textSha256": "176c7ae72d5a146c91855aab403c9ed88b24a13647e29454b874a1b651f6324a"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/concentric-dominant-methods-for-maximal-strength-removing-elastic-contribution-to-build-true-force-capacity",
+      "title": "Concentric-Dominant Methods for Maximal Strength: Removing Elastic Contribution to Build True Force Capacity",
+      "words": 1249,
+      "ok": true,
+      "htmlSha256": "833530d8a22adcc602f40c6a24b4a8fd35603b4262f8ecc5a6c7135f1f785b48",
+      "textSha256": "2569c77a914b46b248d4fcef3cf2f82f68cb71fa9120a8514e903e9b93a57187"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/consistency-repetition-build-mastery",
+      "title": "When Mastery Looks Like Boredom",
+      "words": 1163,
+      "ok": true,
+      "htmlSha256": "abfd7edbe400b181b6e125a74767fcd70eaadf03c181c9199fa56298dd4b3835",
+      "textSha256": "54aca0df5d5f984ad0ed21757849c423e71f222751d7d97d49800d87360558fd"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/cost-of-delay-training",
+      "title": "The Cost of Delay in Training and Nutrition",
+      "words": 775,
+      "ok": true,
+      "htmlSha256": "9a9da1bff77267bb29bb373d8c862b8806511da5436acd3a251e49a5efbdad2e",
+      "textSha256": "be4e5ce24e8699210440fa72ca79ea9ff7a1ce07ce99f2622735a45918fb1b87"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/does-this-session-make-sense-designing-training-across-six-layers-of-context",
+      "title": "Does This Session Make Sense? Designing Training Across Six Layers of Context",
+      "words": 1099,
+      "ok": true,
+      "htmlSha256": "27e6be99b6800748339995c5faa27c527eb03df8266ee0b7b7ca85cd7b8cc326",
+      "textSha256": "9876a2f7f5012183b957ed808bba68e912aef4948e8d5105b842a74aa08ccddf"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/every-exercise-has-a-cost",
+      "title": "Every Exercise Has a Cost: Exercise Selection and Recovery",
+      "words": 2534,
+      "ok": true,
+      "htmlSha256": "17062225b57920df1ff1d4fe8bb7c482e7d74e70de4b5bc96f0ccd18c15e5a8d",
+      "textSha256": "cf5295f1cb1c2e0e7da8c3485b252818a45f07f583c876f8237e9e5715d6dd95"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/exercise-variation-retention-strategy",
+      "title": "Exercise Variation: Preserve What You\u2019ve Built",
+      "words": 2488,
+      "ok": true,
+      "htmlSha256": "ac1cad698c8c967ee34f4eb6680ef0679b354b0fd791495871b7a43d2dff7b23",
+      "textSha256": "14b1df05a078559113a44a0b153545c3cff42d88b6132a786bbf33d637c8780b"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/fish-oil-vs-spms",
+      "title": "Fish Oil vs. SPMs: When and Why?",
+      "words": 742,
+      "ok": true,
+      "htmlSha256": "797165de457d07f4bf6b08e74f813b39be5983cd6df881ed61520046a8fd3101",
+      "textSha256": "160f9ae71a43c8295a17d229a7aec18489c21b1d6d5323a5945a0f83af1a8668"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/from-sponge-to-specialist-how-strength-training-changes-as-you-advance",
+      "title": "From Sponge to Specialist: How Strength Training Changes as You Advance",
+      "words": 1073,
+      "ok": true,
+      "htmlSha256": "39556396df637413d2d8929fc671cd08bab150d57435340c958a44e5de09a074",
+      "textSha256": "aa06c717773d39c0b36d5ff3a4ec9f4f36d18820b639a938476d415ee7ca50a6"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/general-physical-preparation-for-soccer-players-what-muscle-groups-should-you-prioritize",
+      "title": "General Physical Preparation for Soccer Players: What Muscle Groups Should You Prioritize?",
+      "words": 1033,
+      "ok": true,
+      "htmlSha256": "01d2791cfddea88cb15f5bea05173713d7b9da90d5027202ea81713281ce3d1a",
+      "textSha256": "6cd14ceae4cc482f98d7e1380129df23fe3ff3a13b8ec80704c787f82f68c5d2"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/good-training-starts-before-the-session",
+      "title": "Good Training Starts Before the Session",
+      "words": 927,
+      "ok": true,
+      "htmlSha256": "8537239d45add690f47815cef24bfd6a301683b82eb0ecc3b94e3cbe8549df47",
+      "textSha256": "74b7432e320c2ffa87b63691f7820e7152fbe91cc788feb02526581240b7b9ad"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/how-coaches-should-actually-use-tempo",
+      "title": "How Coaches Should Actually Use Tempo",
+      "words": 2149,
+      "ok": true,
+      "htmlSha256": "6a099814b08b8b7226eb06e00b0e34c92e1f11b88237c3928fc6662bf701a551",
+      "textSha256": "2865ea44eb431ef729a3c72985d4976742c2ba2a85de865313377bba97006567"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/how-technical-proficiency-should-determine-training-load",
+      "title": "How Technical Proficiency Should Determine Training Load",
+      "words": 973,
+      "ok": true,
+      "htmlSha256": "34c235eec23d1539904b150f444772d6d6143a0acab01676a585e4de7f1f3eec",
+      "textSha256": "c21c167e927a426f9d5a787b130ec6c158dceb7d5bafc638174359440f4f0621"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/intermuscular-coordination-strength-development",
+      "title": "Intermuscular Coordination at Every Stage of Strength Development",
+      "words": 2736,
+      "ok": true,
+      "htmlSha256": "8423be1ae0b9528d733457a8944132d83416ef272c095879a61c73540c864888",
+      "textSha256": "c79e311f739f570241d7adde8d37119985a550254b891bfb9cdba47eaa62246c"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/intramuscular-coordination-heavy-loading",
+      "title": "Intramuscular Coordination: When Heavier Loading Becomes the Priority",
+      "words": 3072,
+      "ok": true,
+      "htmlSha256": "43386e7f9a206273516d4f85e2dce21c17a417211bf718a48ef197c6f98a144b",
+      "textSha256": "d3f4f4236ef2c3dcddff652c526f5b7fdc34462de1b496854140e9383f9b41d4"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/mastering-training-fundamentals",
+      "title": "To Do a Common Thing Uncommonly Well",
+      "words": 1008,
+      "ok": true,
+      "htmlSha256": "d673ee6840222ae883e24f3f6e4acb971a0b2921bf5a12bd442ed02d2516bab1",
+      "textSha256": "1afa8159558836b53b1b28f2822ae0dd140e7ccdd8252d644fbee977c9651fa9"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/motor-unit-recruitment-101-why-novices-feel-crushed-by-light-weights",
+      "title": "Motor Unit Recruitment 101: Why Novices Feel Crushed by Light Weights",
+      "words": 807,
+      "ok": true,
+      "htmlSha256": "4690f609e6981ee5234676480f4c5a761f8a3a8567a110da8722142c728d8290",
+      "textSha256": "b0d553041168307bac7dca23d3a4c4eedb755c9c1c484c6d725e45e5d4992fe4"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/muscle-length-vs-point-of-overload",
+      "title": "Muscle Length vs. Point of Overload in Exercise Selection",
+      "words": 2090,
+      "ok": true,
+      "htmlSha256": "74398c89d023ab255a1e69f2e78b4ae456e4380be6e61bb746765334cb66c327",
+      "textSha256": "056f9490a08054619973a461244feaa821b013edce832f1097e22f7731e3cd44"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/neural-adaptations-to-strength-training-unlocking-the-power-of-the-nervous-system",
+      "title": "Neural Adaptations to Strength Training: Unlocking the Power of the Nervous System",
+      "words": 1047,
+      "ok": true,
+      "htmlSha256": "67c00552b3038e0f9a6d69b10a7b28a08ff921f1e2d92032a1c66f2c6e2841c2",
+      "textSha256": "f8ee4c585b66856e007e9b39764f0394e6823e94cadf53184286b5e984cfd912"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/optimization-of-periodization-engineering-progress-through-smarter-structure",
+      "title": "Optimization of Periodization: Engineering Progress Through Smarter Structure",
+      "words": 704,
+      "ok": true,
+      "htmlSha256": "b4e8ac23a059e3c1e1c9ac04bf87218f982a1fe14b30f49e8166249eb8b2be89",
+      "textSha256": "330a2d6d7760e28734e634470c4e58c17c7c0db5d6229ca4dc5ecafe24c135cf"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/periodization-vs-programming-why-good-workouts-are-not-enough",
+      "title": "Periodization vs Programming: Why Good Workouts Are Not Enough",
+      "words": 814,
+      "ok": true,
+      "htmlSha256": "f2c178a36d5b7e03430b4e1bb381072d579ee0d77ad21da514621209765cb7e1",
+      "textSha256": "df6ff540c0e4f128cbdedb07186b21f6f68c34f0b013eebf8435358d9fa9c665"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/personal-trainer-vs-strength-coach",
+      "title": "Stop Trying to Sound More Qualified. Be More Qualified.",
+      "words": 1414,
+      "ok": true,
+      "htmlSha256": "6a6b6d5dc496f08348df2f90de23d3640c0dac03fde2d97e11deb12f2b986b47",
+      "textSha256": "60b27b505b48bb6e9e5180eb55dba15186659af4d0c1927070cd261473ab9ec2"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/precision-loading-how-rep-schemes-potentiate-strength-across-phases",
+      "title": "Precision Loading: How Rep Schemes Potentiate Strength Across Phases",
+      "words": 1167,
+      "ok": true,
+      "htmlSha256": "b71a9d50a2fc15ee5f973fcd59dfcfa6da83f2ffa07f63fae83a65ac63b3624e",
+      "textSha256": "858e54fc8081c540abb21480633540ba729c228cbfc7f5f8aa339d462f7d3fbd"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/principles-of-periodization-the-foundation-of-long-term-progress",
+      "title": "Principles of Periodization: The Foundation of Long-Term Progress",
+      "words": 802,
+      "ok": true,
+      "htmlSha256": "493d6059a41b96e6bf6ea41ee37d803259db1504e66266c33047bae17bc641e8",
+      "textSha256": "616ba563d9cb1214c9fd03b8fa42e0128c37c57748f979ec255bbfed1ee5131b"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/programming-heavy-inertia-and-heavy-deadstop-for-relative-strength-development",
+      "title": "Programming Heavy Inertia and Heavy Deadstop for Relative Strength Development",
+      "words": 1725,
+      "ok": true,
+      "htmlSha256": "4cf6a0f1dfe7a79439b9ac81c0951493b3cfc14ac1ceb9b7c5c243678addf296",
+      "textSha256": "db33ed28d7071445897a77a21e31243cf3c4167168866e2dd6ca900128543ac8"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/proximity-to-failure-how-close-you-train-to-failure-depends-on-the-goal",
+      "title": "Proximity to Failure: How Close You Train to Failure Depends on the Goal",
+      "words": 859,
+      "ok": true,
+      "htmlSha256": "ec776d9e26acaca3173a8412d6f5732e49f1e816b0a8d3ce26d2832a0913dad8",
+      "textSha256": "2f821897d2623bd6dffa3db50c9e3c8a50b02af1713042c6670ae170d1284e30"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/rest-periods-strength-training",
+      "title": "Protect Your Rest Periods",
+      "words": 1091,
+      "ok": true,
+      "htmlSha256": "3ac1120e3e5855e3a50d219db376848478ede5d6dbe0c9e3cfef863f41ee13b1",
+      "textSha256": "d7d4110392fcf607e1e1713e69ef1dcdfb4a9716503cbb704c8b7ff7339380b0"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/sequential-periodization-training-phases",
+      "title": "The Route Determines the Result: Sequential Periodization",
+      "words": 2520,
+      "ok": true,
+      "htmlSha256": "042d43437e705f39bbf2a0754e5effc1013727b45fa7229d1530a78e55ed50ae",
+      "textSha256": "a2403d5bf13e48aad629b01d76c773141c49275a2abff127eae5c4eb51de0293"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/session-loading-how-kilo-structures-in-session-progression-for-maximum-gains",
+      "title": "Session Loading: How KILO Structures In-Session Progression for Maximum Gains",
+      "words": 917,
+      "ok": true,
+      "htmlSha256": "09b96ee59922c948513da1071974a04d1af91e0abee85889e1d57e19f4ea627b",
+      "textSha256": "dd39c7aa90e73c17ab240aa1c4e02f1dcb6e3d7dff2ca444328d6a88cdb08cdc"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/step-loading-maximal-strength",
+      "title": "Understanding Load Progressions for Maximal Strength Development",
+      "words": 1992,
+      "ok": true,
+      "htmlSha256": "27fcd93d2ce4ca9defec4d688616458ed069d0a885cf278da55ba87472974c68",
+      "textSha256": "ef2c90e9d7fbbcf4e9b7ba8673360ca8c3aa41375e25f9b0906790b48fd1eeb5"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/step-loading-strength-training",
+      "title": "Step Loading: From Movement Efficiency to Force Expression",
+      "words": 2378,
+      "ok": true,
+      "htmlSha256": "a287719ee835ea63b742a1c60eecdbfdff1067982d04dc29b07d8d6b8b36c44a",
+      "textSha256": "336e86b6773bff0df50a6c0df3b50aa70debb65ee4def6c99e47a482cdb066e0"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/step-loading-without-microplates",
+      "title": "Step Loading Without Microplates",
+      "words": 1274,
+      "ok": true,
+      "htmlSha256": "67d626d65f9bf3ef482130d61d0d8c431dba358308c6c15165205200cf32e47a",
+      "textSha256": "95321f2ac3e791221c2c3ddd3942fb7da26f44561e5e110637174e96f807af96"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/strength-deficit-vs-reserve",
+      "title": "Strength Deficit, Association, and Reserve: Why \u201cStrong Enough\u201d Depends on the Task",
+      "words": 1072,
+      "ok": true,
+      "htmlSha256": "cf0d01bb76e7b9a4631326a65cd2ed296d31919eae3a8bb87bcd75f772eed824",
+      "textSha256": "3a71c0606b4f5e9bbe210dd4a649720457976e1690c0ad5c89d0bedf0da4a1bd"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/strength-ratios-in-program-design-a-guide-to-smarter-exercise-selection",
+      "title": "Strength Ratios in Program Design: A Guide to Smarter Exercise Selection",
+      "words": 757,
+      "ok": true,
+      "htmlSha256": "569c876e2862c8b4df7544e36ae2061eba27fc9111789771fe56d4f447628d4a",
+      "textSha256": "34537ee56478b83382c084802cf4f5421cb3357dee4ddb3d6bf7ca05db6c3325"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/strength-training-growing-coaching-needs-to-catch-up",
+      "title": "Strength Training Is Growing. Coaching Needs to Catch Up.",
+      "words": 3069,
+      "ok": true,
+      "htmlSha256": "77288e9e9b182610acecd9f84592ff5435049b612837807af9d24c66a8ad568d",
+      "textSha256": "ad9614a4462eb22d6fbf48a8dea8446b841a9a531c4d17ab712caaf21204a8b4"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/the-b-stance-deadlift-a-smarter-way-to-manage-fatigue-in-your-training",
+      "title": "The B-Stance Deadlift: A Smarter Way to Manage Fatigue in Your Training",
+      "words": 1072,
+      "ok": true,
+      "htmlSha256": "e488ac0ca6269f48da2aeeced8c487bfedc9d6b265b94210c5e9782bbc0df830",
+      "textSha256": "04d11cbf45278f6e1e5185432a7e9dde855c0d631f5389dbdd6f24695d08e487"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/the-fitness-fatigue-paradigm-the-engine-behind-performance",
+      "title": "The Fitness-Fatigue Paradigm: The Engine Behind Performance",
+      "words": 1238,
+      "ok": true,
+      "htmlSha256": "289e24b26f897d0a929515c392d633ab0e8029ceef46574983ad30f3214abd00",
+      "textSha256": "e347454ba710b712d63c88d55a4427abb42f58b8b680f201b43155c3f052c207"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/the-missing-link-in-strength-why-grip-training-deserves-a-front-row-seat",
+      "title": "The Missing Link in Strength: Why Grip Training Deserves a Front Row Seat",
+      "words": 999,
+      "ok": true,
+      "htmlSha256": "2bc0c4b294f4ce117ac93cbaace66583f5210933523188425f3ac13e12e77404",
+      "textSha256": "d4e94e793bcd2a09ad28e1de62f45dcde6d4c69bceb84303745a9f427036f67f"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/the-numbers-that-guide-the-process-why-tracking-metrics-matters-in-strength-training",
+      "title": "The Numbers That Guide the Process: Why Tracking Metrics Matters in Strength Training",
+      "words": 1074,
+      "ok": true,
+      "htmlSha256": "1204358418c7dba41edf5b1b9c29b7d1e9c98279128c2c22ed4953c4ee4d671e",
+      "textSha256": "55370af7caacaef1184ac2cbeddd96e3e6c3dae1fc547e4b46c429ad81bdf9a7"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/the-pros-cons-of-phase-undulating-periodization",
+      "title": "The Pros & Cons of Phase Undulating Periodization",
+      "words": 1267,
+      "ok": true,
+      "htmlSha256": "4c6538a36f58a952db887d5c3c0a80c617d404dade033d4ffa306ba215367b9c",
+      "textSha256": "04d7bec0b880b6942e0599aa46eb130f64e5c93eb94ec026742b91a3d8349aea"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/the-reward-for-good-work-is-more-work",
+      "title": "The Reward for Good Work Is More Work",
+      "words": 805,
+      "ok": true,
+      "htmlSha256": "e21e2fe6ab823d583457fcb776fdc7fed8803ae6415cd538e6e16bdd4392e716",
+      "textSha256": "81ccaaddc6a544c9ff6f128322dd8c45c32091b6bdcc0116a0154de8163d619f"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/the-split-squat-question-when-it-s-brilliant-when-it-s-overrated-and-how-we-actually-use-it",
+      "title": "The Split Squat Question: When It\u2019s Brilliant, When It\u2019s Overrated, and How We Actually Use It",
+      "words": 1766,
+      "ok": true,
+      "htmlSha256": "328752b5525a5529a8bb767ea30b6387e0948899cbc324a6e370734a6d3cd6e2",
+      "textSha256": "de8eef154921e0201701bc0ee9448ad16ea6ffa0184099699a6c32d7f542f656"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/the-two-pathways-to-stimulate-muscle-protein-synthesis",
+      "title": "The Two Pathways to Stimulate Muscle Protein Synthesis",
+      "words": 1092,
+      "ok": true,
+      "htmlSha256": "368ebeb8b56f93464759e5148ef35bfc3538072536ab78d50f29a2ed33be672c",
+      "textSha256": "98eb0ce18496c684989ea4afa0423283b7c4561aa430632fc0e310c21e977466"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/training-load-management",
+      "title": "Training Load Management: What Coaches Get Wrong",
+      "words": 908,
+      "ok": true,
+      "htmlSha256": "025f1b53f92bcebec989536a36abce58c72e87534b246ea91b3ed1b86890cf3b",
+      "textSha256": "142d28a1cdd3848ab69e4c6424bf6ae78804b6a986550c01ae60b147866ac50c"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/two-a-day-training-structuring-double-sessions-for-smarter-results",
+      "title": "Two-a-Day Training: Structuring Double Sessions for Smarter Results",
+      "words": 1088,
+      "ok": true,
+      "htmlSha256": "0cf3869fc5d880d1b08935c1bc52b3f647d670e74a83562963c0c96ff63260b1",
+      "textSha256": "e83b39efdd2f56af2d3636cc9d7d19aa8de55865a938e00377eddef1c62b10b7"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/undulating-periodization-annual-training-plan",
+      "title": "Organizing Macrocycle Goals Across the Year: The KILO Approach to Undulating Periodization",
+      "words": 1761,
+      "ok": true,
+      "htmlSha256": "a3c462f65799d1ef051199b15fcc7c623eca7e478d89e5c7b4d79bb34516208b",
+      "textSha256": "7e8c88544105c9055ceca683d5457efe8242519f2c7343dc94df5e9442a82c01"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/warm-ups-that-actually-work-how-to-prepare-for-better-lifts-without-wasting-time",
+      "title": "Warm-Ups That Actually Work: How to Prepare for Better Lifts Without Wasting Time",
+      "words": 1679,
+      "ok": true,
+      "htmlSha256": "c209b1ae72c53e1271e0d596c7643f56fcc1ab0f9b785adf9975cdfe6cec5f09",
+      "textSha256": "d1109c24961f248ac89ca5132a2049ef210375de98d10dd199149d5723bc86cb"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/when-to-break-the-rules-how-to-bend-the-kilo-system-without-breaking-your-results",
+      "title": "When To Break The Rules: How To Bend The KILO System Without Breaking Your Results",
+      "words": 2143,
+      "ok": true,
+      "htmlSha256": "f879f53ebf8a93d753c063efee40909053640d44c9e7e4c9ec1aeb84bda15267",
+      "textSha256": "d4cc3394a740e91e1c234ad75dbccc88789c84c30130b2372ae5800777871806"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/why-coaching-provides-direction",
+      "title": "The Value of Coaching: Why Direction Drives Results",
+      "words": 691,
+      "ok": true,
+      "htmlSha256": "fe0a41957e721a17c1e2f7de136a55c86791257507cf47321179bc9cdf995662",
+      "textSha256": "9be3774f90888ed2f6a45ab8893248bd9bd02cf51af91af970096870fe6085e9"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/why-strength-is-king-the-mother-quality-behind-speed-power-and-longevity",
+      "title": "Why Strength Is King: The Mother Quality Behind Speed, Power, and Longevity",
+      "words": 920,
+      "ok": true,
+      "htmlSha256": "54ea21b86846309f732acd9e212190becc4e9e4834443be619fb9fcca17237f7",
+      "textSha256": "ecac5eee366de387e5af7f8141b98ef04cd563c95a46cb017725bc460315985a"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/you-cannot-ride-two-horses-with-one-ass",
+      "title": "You Cannot Ride Two Horses With One Ass",
+      "words": 2108,
+      "ok": true,
+      "htmlSha256": "500a16570b394b7446a0cd4fd063f2e1198429c2ac475fadfb92356d3260252c",
+      "textSha256": "5b09dbd97bc68106da7ad7bcd2cafb1e4fff226d792c316f8bdd88b8395c87cb"
+    },
+    {
+      "url": "https://trainkilo.com/blogs/inside-the-system/zone-2-training-context",
+      "title": "Zone 2 Training: Useful, Not Universal",
+      "words": 2707,
+      "ok": true,
+      "htmlSha256": "b6dc99ed4906402113ee658744fb922dd2281df3c39c7cc2c21cf11882cb2f17",
+      "textSha256": "0c3bc47d785f4f130fd4088aba14f152399a6c75739f536857f9ec3b58f77013"
+    }
+  ],
+  "allPublicFullTextsReviewed": true,
+  "independentReviewCoverage": [
+    {
+      "seat": "Coaching and contrarian",
+      "indices": [
+        0,
+        19
+      ]
+    },
+    {
+      "seat": "Programming and product",
+      "indices": [
+        20,
+        29
+      ]
+    },
+    {
+      "seat": "Chair",
+      "indices": [
+        30,
+        39
+      ]
+    },
+    {
+      "seat": "Training and athlete",
+      "indices": [
+        40,
+        59
+      ]
+    }
+  ]
+}

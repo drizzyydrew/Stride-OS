@@ -99,7 +99,13 @@ test('navigating away cancels pending target measurement and never resurrects th
 test('a missing navigation action has an honest fallback and can be skipped', async () => {
   const h = harness();
   h.registry().registerTarget('running.tab.active', { measure: async () => ({ x: 30, y: 160, width: 120, height: 44 }) });
-  h.registry().startTour('running'); h.render(); await h.settled(600);
+  h.registry().startTour('running'); h.render();
+  // Await the observable fallback, rather than assume all nested async target
+  // retries finish during one wall-clock sleep on a loaded build machine.
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (h.find(node => node.props?.accessibilityLabel === 'Next walkthrough step')?.props.disabled === false) break;
+    await h.settled(25);
+  }
   assert.equal(h.find(node => node.props?.testID === 'feature-tour-highlight'), undefined);
   const next = h.find(node => node.props?.accessibilityLabel === 'Next walkthrough step');
   assert.equal(next.props.disabled, false); next.props.onPress(); h.render();

@@ -1,0 +1,75 @@
+{
+  "checkedAt": "2026-11-22T01:45:38.437113+00:00",
+  "version": "1.0.0",
+  "buildNumber": "124",
+  "profile": "billing-qa",
+  "baseCommit": "3af05a3304e58094eec7004fdc1cc5841c2ce3b7",
+  "fullRegression": {
+    "tests": 2222,
+    "pass": 2222,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "logSha256": "ac018ca17419596c9172d68bf159c400db127ef30cfc4bcc04e898cc2f55f6a1"
+  },
+  "finalAffectedChecks": {
+    "tests": 40,
+    "pass": 40,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "logSha256": "b9e3b2deec7e447e3a68483fd03d23565d508e16c625bb20f3a9b20ef55fa160"
+  },
+  "scope": "Full sweep passed before the final conservative structured-weight unit guard. The final guard passed the focused40-test lane and canonical typecheck. Subsets overlap and are not summed.",
+  "canonicalTypecheck": "PASS",
+  "canonicalTypecheckLogSha256": "12fc70d2feb72f584a6828cd9e1102cc9f447725b6b1bb2abda352bf6797e415",
+  "expoDependencyCheck": "PASS; dependencies up to date",
+  "nativePrebuild": "PASS; existing optional expo-system-ui backgroundColor notice retained",
+  "prebuildLogSha256": "4ef078d91eedb906232a7d997f4b08c69daac768f39d3f7b267c49b6322afe66",
+  "councilSourceVerdict": "GO after independent coaching/contrarian, UI/preset and unit/tempo/per-side counter-regression review",
+  "publicArticlesReviewed": 60,
+  "imagesOrExerciseArtworkChanged": false,
+  "nativeWatchRuntimeChanged": false,
+  "backendOrBillingPolicyChanged": false,
+  "historyAndActivePrescriptionsRewritten": false,
+  "physicalDeviceAccepted": false,
+  "publicReviewSubmitted": false,
+  "changedRuntimeFiles": [
+    {
+      "path": "app.json",
+      "sha256": "8f55784a16aca84353daed56fc5c7660ba397c52a3200d19c9e76f5c7d2a43a4"
+    },
+    {
+      "path": "app/(tabs)/strength/index.tsx",
+      "sha256": "d3b9cbdb925a235ea6710da61ab41dbf5054280c900f559dd4e410abd7556eb5"
+    },
+    {
+      "path": "app/(tabs)/strength/preset/[id].tsx",
+      "sha256": "2e521ea5562ffc16ba7c14a631d477f28750cdc2521b3d1cdf07cd84b67d58f0"
+    },
+    {
+      "path": "src/constants/strengthBank.ts",
+      "sha256": "e3041469d143075ceb299a62ac05aaf0670146123bc025cf2e0e8fa4e4431a60"
+    },
+    {
+      "path": "src/utils/goalStrengthProgramming.ts",
+      "sha256": "caa6f3346a7b153aa8f71c7bdc301552dbc0e5c53001d8eae903b651125de211"
+    },
+    {
+      "path": "src/utils/plan/goalMesocycle.ts",
+      "sha256": "a5b8b35e45aab30e2c3742c29311d3d61ad90ffd0a9235b89385a68a1014d162"
+    },
+    {
+      "path": "src/utils/strengthHistory.ts",
+      "sha256": "3e67d2078079f29fc13e0bfa6dd23ef3f32b6a7896aea8f5d1d6617e0867d701"
+    },
+    {
+      "path": "src/utils/strengthPresetProgramming.ts",
+      "sha256": "4d3b34923fade5ef8b14c49e35a10a9b0095e7856d39e5d9d83759a1645fdaeb"
+    },
+    {
+      "path": "src/utils/workoutBuilder.ts",
+      "sha256": "e15964672531bb76a1f7ba96bcc498451151b97099e3b2eb1322e19280d95b32"
+    }
+  ]
+}

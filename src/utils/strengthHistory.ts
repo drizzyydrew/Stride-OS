@@ -133,6 +133,7 @@ export type LastExercisePerformance = {
   rpe?:         number;
   comparableWorkingSets?: boolean;
   equipmentType?: import('./strengthSession').EquipmentType;
+  prescription?: import('../types/strength').CompletedExercise['prescription'];
 };
 
 // ─── Progression suggestion ───────────────────────────────────────────────────
@@ -154,6 +155,23 @@ function parseLoadValue(load?: string): number | null {
   return match ? Number(match[1]) : null;
 }
 
+export type StrengthPrescriptionContext = { repsMin: number; repsMax: number; targetRpe?: number; loadTarget?: string; repScheme?: import('../types/strength').RepScheme };
+
+/** A reference weight belongs to its captured exercise, setup and rep/effort
+ * target. An absent historic prescription is unknown, never reconstructed. */
+export function strengthPrescriptionsMatch(
+  prior: import('../types/strength').CompletedExercise['prescription'] | undefined,
+  current: StrengthPrescriptionContext,
+): boolean {
+  const scheme = prior?.repScheme;
+  const sameKind = scheme?.kind === (current.repScheme?.kind ?? 'reps');
+  const sameTempo = scheme?.kind !== 'reps_tempo' || current.repScheme?.kind === 'reps_tempo' && scheme.tempo === current.repScheme.tempo;
+  const sameSides = (scheme?.perSide ?? false) === (current.repScheme?.perSide ?? false);
+  return !!scheme && sameKind && sameTempo && sameSides && (scheme.kind === 'reps' || scheme.kind === 'reps_tempo')
+    && scheme.repsMin === current.repsMin && (scheme.repsMax ?? scheme.repsMin) === current.repsMax
+    && Number.isFinite(current.targetRpe) && prior?.targetRpe === current.targetRpe;
+}
+
 export function suggestProgression(
   last:             LastExercisePerformance | null,
   targetSets:       number,
@@ -161,12 +179,20 @@ export function suggestProgression(
   unitLabel:        string,
   targetTopReps?:   number | null,
   currentEquipmentType?: import('./strengthSession').EquipmentType,
+  currentPrescription?: StrengthPrescriptionContext,
 ): ProgressionSuggestion | null {
   if (!last) return null;
   if (!Number.isFinite(last.timestamp) || last.timestamp > Date.now() || last.timestamp < daysAgo(42)) return {
     headline: 'Recalibrate your starting load',
     reason: 'This is an older performance reference. Use current reps, setup and effort before adding load; the historical workout remains unchanged.',
   };
+
+  if (currentPrescription) {
+    if (!strengthPrescriptionsMatch(last.prescription, currentPrescription)) return {
+      headline: 'Calibrate this rep range and effort',
+      reason: 'The previous prescription differs or is unknown. Choose a starting load for today’s reps and effort; do not transfer the old weight or add load automatically.',
+    };
+  }
 
   const loadValue = parseLoadValue(last.load);
   const isBodyweight = /^bw$/i.test(last.load?.trim() ?? '');
@@ -180,9 +206,39 @@ export function suggestProgression(
   };
 
   if (readinessLimited) {
+    if (currentPrescription) return {
+      headline: 'Choose a lighter, repeatable load',
+      reason: 'Recovery takes priority today. Recalibrate for the prescribed reps and effort; do not chase the previous working weight.',
+    };
     return {
       headline: `Hold at ${loadLabel}`,
       reason:   'Readiness is limited today — repeat last session\'s load and bank quality reps instead of chasing progression.',
+    };
+  }
+
+  const unitMatches = isBodyweight || (currentPrescription
+    ? last.load?.trim().toLowerCase().endsWith(` ${unitLabel.toLowerCase()}`) === true
+    : new RegExp(`\\b${unitLabel}\\b`, 'i').test(last.load ?? ''));
+  const achievedReps = typeof targetTopReps === 'number' && targetTopReps > 0 && last.reps >= targetTopReps;
+  const matchingSetup = !!currentEquipmentType && last.equipmentType === currentEquipmentType;
+  if (currentPrescription) {
+    const target = currentPrescription.targetRpe!;
+    if (last.reps < currentPrescription.repsMin || reportedEffort && last.rpe! > target + 1) return {
+      headline: 'Reduce and recalibrate the working load',
+      reason: 'The last work missed the lower rep target or exceeded the intended effort. Use a lighter load that preserves control and the prescribed range; stop a set when technique changes.',
+    };
+    if (finishedAllSets && achievedReps && reportedEffort && last.rpe! <= Math.min(8, target)
+      && last.comparableWorkingSets === true && unitMatches && matchingSetup) return isBodyweight ? {
+        headline: 'Repeat quality reps or choose a suitable progression',
+        reason: 'You reached the prescribed range at the intended effort. Keep the movement controlled; a harder variation needs its own calibration rather than unlimited extra repetitions.',
+      } : {
+        headline: 'Consider a small load increase',
+        reason: 'All working sets reached the top of the range at the intended effort. If technique and recovery remain suitable, use the smallest available increase, roughly 2–3%. If the equipment jump is larger, hold this load and consolidate the prescribed reps instead. No weight is changed automatically.',
+      };
+    return {
+      headline: 'Consolidate the prescribed reps and effort',
+      reason: !reportedEffort ? 'Record actual effort before considering more load. Completion and the target RPE are not proof of readiness.'
+        : 'Keep the same setup and build controlled repetitions within the prescribed range. Review rest, execution and recovery before adding load; reduce the load if those targets cannot be maintained.',
     };
   }
 
@@ -193,9 +249,6 @@ export function suggestProgression(
     };
   }
 
-  const unitMatches = isBodyweight || new RegExp(`\\b${unitLabel}\\b`, 'i').test(last.load ?? '');
-  const achievedReps = typeof targetTopReps === 'number' && targetTopReps > 0 && last.reps >= targetTopReps;
-  const matchingSetup = !!currentEquipmentType && last.equipmentType === currentEquipmentType;
   if (finishedAllSets && achievedReps && reportedEffort && last.rpe! <= 7 && last.comparableWorkingSets === true && unitMatches && matchingSetup) {
     if (isBodyweight) {
       return {
@@ -226,18 +279,22 @@ export function getLastLoggedExercise(
   expectedEquipmentType?: import('./strengthSession').EquipmentType | null,
 ): LastExercisePerformance | null {
   const matches = history
-    .filter(r => !r.skipped)
     .flatMap(r => {
-      const match = r.exercises.find(e => e.exerciseId === exerciseId);
-      if (!match || match.skipped) return [];
-      const completed = match.sets.filter(s => s.completed && !s.isWarmup);
-      if (completed.length === 0) return [];
-      return [{ timestamp: r.timestamp, match, completed }];
+      const exercises = r.exercises.filter(e => e.exerciseId === exerciseId);
+      const match = exercises[0];
+      if (!match) return [];
+      const completeAttempt = !r.skipped && !match.skipped && exercises.length === 1;
+      const completed = completeAttempt ? match.sets.filter(s => s.completed && !s.isWarmup) : [];
+      return [{ timestamp: r.timestamp, match, completed, completeAttempt }];
     })
-    .sort((a, b) => b.timestamp - a.timestamp);
+    .sort((a, b) => !Number.isFinite(a.timestamp) ? -1 : !Number.isFinite(b.timestamp) ? 1 : b.timestamp - a.timestamp);
 
   const latest = matches[0];
   if (!latest) return null;
+  if (!latest.completed.length) return {
+    timestamp: latest.timestamp, completedSets: 0, reps: 0,
+    comparableWorkingSets: false, prescription: latest.match.prescription,
+  };
 
   const normalized = latest.completed.map(set => {
     const label = set.load?.trim();
@@ -267,7 +324,10 @@ export function getLastLoggedExercise(
     reps:          validReps ? Math.min(...latest.completed.map(set => set.reps!)) : 0,
     load:          !comparable ? undefined : first.bodyweight ? 'BW' : shownWeight && shownUnit ? `${Math.round(shownWeight * 10) / 10} ${shownUnit}` : undefined,
     rpe:           validEffort ? Math.max(...latest.completed.map(set => set.rpe!)) : undefined,
-    comparableWorkingSets: comparable && validReps,
+    comparableWorkingSets: comparable && validReps && latest.completeAttempt
+      && !latest.match.sets.some(set => !set.isWarmup && !set.completed)
+      && (!latest.match.prescription || latest.completed.length >= latest.match.prescription.sets),
     equipmentType: latest.match.equipmentType,
+    prescription: latest.match.prescription,
   };
 }

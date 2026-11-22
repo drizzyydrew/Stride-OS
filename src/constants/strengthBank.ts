@@ -64,6 +64,22 @@ export type PresetStrengthWorkout = {
   exercises:    PresetStrengthExercise[];
   trainingPurpose?: 'strength' | 'running_support' | 'power' | 'activation' | 'recovery';
   planningNote?: string;
+  /** Explicit priority lifts, not a rule applied to every exercise or preset. */
+  strengthSpecificMainExercises?: readonly string[];
+};
+
+export const STRENGTH_PRESET_PRIORITY_MAINS: Readonly<Record<string, readonly string[]>> = {
+  sw_barbell_full_body_strength_a: ['Back Squat', 'Bench Press'],
+  sw_barbell_full_body_strength_b: ['Deadlift', 'Overhead Press'],
+  sw_barbell_lower_body_squat_focus: ['Back Squat'],
+  sw_barbell_deadlift_day: ['Conventional Deadlift'],
+  sw_barbell_bench_press_day: ['Bench Press'],
+  sw_barbell_upper_body_push_pull: ['Bench Press'],
+  sw_barbell_squat_rack_strength: ['Back Squat'],
+  sw_barbell_posterior_chain: ['Romanian Deadlift'],
+  sw_barbell_push_day: ['Bench Press', 'Overhead Press'],
+  sw_barbell_pull_day: ['Deadlift'],
+  sw_barbell_leg_day: ['Back Squat', 'Romanian Deadlift'],
 };
 
 function ex(name: string, sets: number, reps: string, equipment: StrengthEquipment[], notes?: string): PresetStrengthExercise {
@@ -92,10 +108,20 @@ function preset(
   const trainingPurpose = categories.includes('pre_run') ? 'activation' : categories.includes('post_run_recovery') ? 'recovery'
     : /power/i.test(title) ? 'power' : categories.includes('runner_strength') ? 'running_support' : 'strength';
   const beginner = /beginner/i.test(title);
+  const priorityMains = trainingPurpose === 'strength' ? STRENGTH_PRESET_PRIORITY_MAINS[id] : undefined;
   const fitted = exercises.map(exercise => {
     const lowDemand = trainingPurpose === 'activation' || trainingPurpose === 'recovery';
     const targetRpe = lowDemand ? 3 : beginner ? 6 : trainingPurpose === 'running_support' || trainingPurpose === 'power' ? 6 : 7;
     const sets = lowDemand ? Math.min(2, exercise.sets) : beginner || trainingPurpose === 'running_support' ? Math.min(2, exercise.sets) : exercise.sets;
+    if (priorityMains?.includes(exercise.name)) return {
+      ...exercise,
+      sets: Math.min(2, exercise.sets),
+      reps: '3-5',
+      repScheme: parsePrescriptionScheme('3-5', { exerciseName: exercise.name }),
+      targetRpe: 8,
+      restSeconds: 180,
+      notes: `${exercise.notes ? exercise.notes + ' ' : ''}For practiced lifters: rehearse with lighter sets, then calibrate this exercise and setup for 3–5 controlled repetitions with about two good repetitions remaining. Previous higher-repetition loads do not establish this starting load.`,
+    };
     return { ...exercise, sets, targetRpe, restSeconds: lowDemand ? 30 : trainingPurpose === 'power' ? 150 : 90 };
   });
   const planningNote = trainingPurpose === 'power'
@@ -105,7 +131,10 @@ function preset(
       : trainingPurpose === 'activation' || trainingPurpose === 'recovery'
         ? 'Keep this light and comfortable. It does not replace a full rest day or a progressive strength session.'
         : 'Repeat the setup and record actual sets, load and effort. Progress one variable only when performance supports it; a standalone preset is not a complete periodized plan.';
-  return { id, title, description, durationMin, equipment: workoutEquipment(fitted), categories, exercises: fitted, trainingPurpose, planningNote };
+  return { id, title, description, durationMin, equipment: workoutEquipment(fitted), categories, exercises: fitted, trainingPurpose,
+    planningNote: priorityMains ? `${planningNote} The named main lifts use a low-repetition strength stimulus for practiced lifters. Calibrate the load separately; no maximum test or weekly percentage target is required.` : planningNote,
+    ...(priorityMains ? { strengthSpecificMainExercises: priorityMains } : {}),
+  };
 }
 
 // ─── Gym / Barbell (15 — barbell, squat rack, deadlift, and bench combinations) ──

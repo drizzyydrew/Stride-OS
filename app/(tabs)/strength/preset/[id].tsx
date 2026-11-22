@@ -1,8 +1,9 @@
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRef } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import SafeAreaView from '../../../../src/components/layout/PageSafeAreaView';
 
-import { getStrengthPresetWorkout, presetExerciseId } from '../../../../src/constants/strengthBank';
+import { getStrengthPresetWorkout } from '../../../../src/constants/strengthBank';
 import { useActiveStrengthSessionStore } from '../../../../src/store/activeStrengthSessionStore';
 import { endStrengthLiveActivity, startStrengthLiveActivity } from '../../../../src/lib/strengthLiveActivity';
 import { useColors } from '../../../../src/theme/useColors';
@@ -20,6 +21,13 @@ import {
   startStrideWatchWorkout,
 } from '../../../../modules/stride-watch-connectivity/src';
 import { useSettingsStore } from '../../../../src/store/settingsStore';
+import { useOnboardingStore } from '../../../../src/store/onboardingStore';
+import { useAthleteStore } from '../../../../src/store/athleteStore';
+import { useCheckInStore } from '../../../../src/store/checkInStore';
+import { useTrainingPlanStore } from '../../../../src/store/trainingPlanStore';
+import { useWeekPlan } from '../../../../src/hooks/useWeekPlan';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../../src/lib/localDataOwner';
+import { buildStrengthPresetContext, resolveStrengthPresetWorkout, strengthPresetLaunchInput, type ResolvedStrengthPreset } from '../../../../src/utils/strengthPresetProgramming';
 
 function exerciseSupport(name: string, equipment: string[]) {
   const lower = name.toLowerCase();
@@ -45,9 +53,24 @@ export default function PresetStrengthDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { units } = useSettingsStore();
-  const workout = getStrengthPresetWorkout(String(id));
+  const catalogWorkout = getStrengthPresetWorkout(String(id));
   const active = useActiveStrengthSessionStore(state => state.session);
   const startSession = useActiveStrengthSessionStore(state => state.startSession);
+  const onboarding = useOnboardingStore(state => state.data);
+  const fatigueScore = useAthleteStore(state => state.fatigueScore);
+  const recoveryScore = useAthleteStore(state => state.recoveryScore);
+  const goalType = useTrainingPlanStore(state => state.goalType);
+  const weekPlan = useWeekPlan();
+  const trainingPhase = weekPlan.metadata.trainingMode === 'open' ? undefined : weekPlan.metadata.trainingPhase;
+  const planRecoveryLimited = weekPlan.strengthWeek.progressionState === 'regress';
+  const checkIn = useCheckInStore(state => state.todayCheckIn);
+  const currentPlanContext = useRef({ trainingPhase, planRecoveryLimited });
+  currentPlanContext.current = { trainingPhase, planRecoveryLimited };
+  const presetContext = buildStrengthPresetContext(onboarding, { fatigueScore, recoveryScore, trainingPhase, goalType }, checkIn);
+  presetContext.recoveryLimited ||= planRecoveryLimited;
+  const resolved = catalogWorkout ? resolveStrengthPresetWorkout(catalogWorkout,
+    presetContext, active) : null;
+  const workout = resolved?.workout;
 
   if (!workout) {
     return (
@@ -58,11 +81,39 @@ export default function PresetStrengthDetailScreen() {
     );
   }
 
+  const currentResolution = () => {
+    const context = buildStrengthPresetContext(useOnboardingStore.getState().data, {
+      ...useAthleteStore.getState(), trainingPhase: currentPlanContext.current.trainingPhase,
+      goalType: useTrainingPlanStore.getState().goalType,
+    }, useCheckInStore.getState().todayCheckIn);
+    context.recoveryLimited ||= currentPlanContext.current.planRecoveryLimited;
+    return resolveStrengthPresetWorkout(catalogWorkout!, context, useActiveStrengthSessionStore.getState().session);
+  };
+  const showSessionFit = (fit: ResolvedStrengthPreset) => {
+    Alert.alert('Choose a session that fits today', fit.reason ?? 'Review your current training preferences before starting.', [
+      ...(fit.alternativeWorkoutId ? [{ text: 'View lighter alternative', onPress: () => router.replace({
+        pathname: '/(tabs)/strength/preset/[id]', params: { id: fit.alternativeWorkoutId },
+      } as never) }] : [{ text: 'Browse other presets', onPress: () => router.back() }]),
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
   const begin = () => {
     if (!activeSessionStoresHydrated()) {
       Alert.alert('Restoring session', 'StrideOS is restoring your active-session state. Try again in a moment.');
       return;
     }
+    const lease = captureOwnerLease();
+    if (!lease || !ownerLeaseIsCurrent(lease)) {
+      Alert.alert('Profile is still restoring', 'Reopen this preset after your account and training preferences are ready.');
+      return;
+    }
+    const active = useActiveStrengthSessionStore.getState().session;
+    if (active?.source === 'preset' && active.workoutId === workout.id) {
+      router.push('/(tabs)/strength/preset-session' as never);
+      return;
+    }
+    const fit = currentResolution();
+    if (!fit.canStart) return showSessionFit(fit);
     const crossDomainConflict = getConflictingActiveSession('strength');
     if (crossDomainConflict) {
       Alert.alert(
@@ -79,28 +130,22 @@ export default function PresetStrengthDetailScreen() {
       return;
     }
     const launch = () => {
-      const exercises = workout.exercises.map(exercise => ({
-        id: presetExerciseId(workout.id, exercise.name),
-        name: exercise.name,
-        sets: exercise.sets,
-        reps: exercise.reps,
-        repScheme: exercise.repScheme,
-        equipment: exercise.equipment,
-        notes: exercise.notes,
-        plannedRpe: exercise.targetRpe,
-        plannedRestSeconds: exercise.restSeconds,
-        plannedLoadTarget: exercise.targetRpe ? `Target RPE ${exercise.targetRpe}; calibrate this setup` : undefined,
-      }));
-      startSession({
-        source: 'preset',
-        workoutId: workout.id,
-        workoutName: workout.title,
-        plannedDurationMin: workout.durationMin,
-        exercises,
-      });
+      if (!ownerLeaseIsCurrent(lease)) return;
+      const currentActive = useActiveStrengthSessionStore.getState().session;
+      if (currentActive?.workoutInstanceId !== active?.workoutInstanceId || getConflictingActiveSession('strength')) {
+        Alert.alert('Session changed', 'Continue the current session, then reopen this preset.');
+        return;
+      }
+      const latest = currentResolution();
+      if (!latest.canStart) return showSessionFit(latest);
+      const launchWorkout = latest.workout;
+      const launchInput = strengthPresetLaunchInput(latest);
+      if (!launchInput) return showSessionFit(latest);
+      const exercises = launchInput.exercises;
+      startSession(launchInput);
       const launchedSession = useActiveStrengthSessionStore.getState().session;
       startStrengthLiveActivity({
-        workoutName: workout.title,
+        workoutName: launchWorkout.title,
         elapsedSeconds: 0,
         currentExercise: `${exercises[0]?.name ?? ''} · ${formatPrescriptionWithSets(exercises[0]?.sets ?? 0, exercises[0]?.repScheme, exercises[0]?.reps ?? '')}`,
         nextExercise: exercises[1]?.name ?? '',
@@ -111,7 +156,7 @@ export default function PresetStrengthDetailScreen() {
       startStrideWatchWorkout({
         workoutKind: 'strength',
         workoutInstanceId: launchedSession?.workoutInstanceId ?? null,
-        title: workout.title,
+        title: launchWorkout.title,
         environment: 'indoor',
         targetZone: null,
       }).catch(() => undefined);
@@ -119,10 +164,6 @@ export default function PresetStrengthDetailScreen() {
     };
 
     if (!active) return launch();
-    if (active.source === 'preset' && active.workoutId === workout.id) {
-      router.push('/(tabs)/strength/preset-session' as never);
-      return;
-    }
     Alert.alert(
       'Another strength session is active',
       `${active.workoutName} is still in progress. StrideOS will never end it silently.`,
@@ -137,8 +178,15 @@ export default function PresetStrengthDetailScreen() {
           text: 'End Current Session and Start Other Workout',
           style: 'destructive',
           onPress: async () => {
+            const unchanged = () => ownerLeaseIsCurrent(lease)
+              && useActiveStrengthSessionStore.getState().session?.workoutInstanceId === active.workoutInstanceId;
+            if (!unchanged()) return;
+            const latest = currentResolution();
+            if (!latest.canStart) return showSessionFit(latest);
             await endStrengthLiveActivity().catch(console.warn);
+            if (!unchanged()) return;
             await endStrideWatchWorkout().catch(() => undefined);
+            if (!unchanged()) return;
             launch();
           },
         },
@@ -164,6 +212,10 @@ export default function PresetStrengthDetailScreen() {
           <Text style={[styles.detailLabel, { color: C.textDim }]}>INTENDED USE</Text>
           <Text style={[styles.body, { color: C.textMuted }]}>{workout.description}</Text>
           {workout.planningNote ? <Text style={[styles.body, { color: C.textMuted }]}>{workout.planningNote}</Text> : null}
+          {resolved?.reason ? <>
+            <Text style={[styles.detailLabel, { color: C.primary }]}>SESSION FIT</Text>
+            <Text style={[styles.body, { color: C.textMuted }]}>{resolved.reason}</Text>
+          </> : null}
           <Text style={[styles.detailLabel, { color: C.textDim }]}>RECOMMENDED FREQUENCY</Text>
           <Text style={[styles.body, { color: C.textMuted }]}>Use 1–3 times per week when it fits your running load, recovery, and current training block.</Text>
           <Text style={[styles.sectionTitle, { color: C.primary }]}>WHY THIS WORKOUT</Text>
@@ -201,7 +253,8 @@ export default function PresetStrengthDetailScreen() {
         })}
         <TouchableOpacity style={[styles.startButton, { backgroundColor: C.primary }]} onPress={begin}>
           <Text style={[styles.startText, { color: C.onPrimary }]}>
-            {active?.source === 'preset' && active.workoutId === workout.id ? `Continue ${workout.title}` : `Start ${workout.title}`}
+            {active?.source === 'preset' && active.workoutId === workout.id ? `Continue ${workout.title}`
+              : resolved?.canStart ? `Start ${workout.title}` : 'Review session fit'}
           </Text>
         </TouchableOpacity>
       </ScrollView>

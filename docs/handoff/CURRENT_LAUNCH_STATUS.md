@@ -1,5 +1,9 @@
 # Current StrideOS launch status
 
+## Strength specificity and KILO blend — source revision after123
+
+The public Inside the System corpus was reviewed in full by the chair and independent council:58 archive articles plus two related public articles. The bounded revision adds accumulation/intensification intent, earned heavier main-lift doses, effort-aware load progression/regression and prescription-specific calibration. Preset display and launch share current lifting-experience, canonical phase, recovery and time checks. Legacy plans, active captures and completed history remain protected. No automatic step loading, maximal testing or universal weekly percentage floor is claimed. See KILO_PROGRAMMING_BLEND_20261121.md and KILO_PUBLIC_ARTICLE_COVERAGE_20261121.json. Build124 is being prepared; this source work is not installed by123 and has not been publicly submitted.
+
 ## Latest Store screenshots completed — November 21 Pacific
 
 The owner clarified that the image hold applies to exercise additions, and authorized Store captures with council approval. All six actual current native captures passed independent visual/platform review and Apple processing/relationship readback. Both subscription products now report READY_TO_SUBMIT with COMPLETE review images. Two medium phone screenshots, one large phone screenshot and one clean idle Watch screenshot replace the old Store material. All ten exact obsolete image IDs were removed after replacement verification and rollback hash checks. The selected signed Build123 is native iPhone-only; its old iPad images were removed rather than presenting the compatibility window as native iPad support. No exercise artwork changed.

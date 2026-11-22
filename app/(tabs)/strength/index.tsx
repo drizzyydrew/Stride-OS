@@ -21,7 +21,7 @@ import { useActivityStore } from '../../../src/store/activityStore';
 import { confirmStrengthCompletionSaved, useStrengthStore } from '../../../src/store/strengthStore';
 import { LAYOUT } from '../../../src/constants/layout';
 import type { MovementPattern, RepScheme, StrengthSession } from '../../../src/types/strength';
-import { getLastLoggedExercise, suggestProgression } from '../../../src/utils/strengthHistory';
+import { getLastLoggedExercise, strengthPrescriptionsMatch, suggestProgression } from '../../../src/utils/strengthHistory';
 import { mapEquipmentType } from '../../../src/utils/strengthSession';
 import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
 import { strengthWeightForDisplay } from '../../../src/utils/strengthDesign';
@@ -65,6 +65,10 @@ import FeatureTourTarget from '../../../src/components/featureTour/FeatureTourTa
 import WorkoutLibraryFilters, { LibraryViewSelector } from '../../../src/components/strength/WorkoutLibraryFilters';
 import { emptyWorkoutLibraryFilters, matchesWorkoutLibraryFilters, mobilityLibraryItem, presetLibraryItem, uniqueLibraryTags } from '../../../src/utils/workoutLibraryFilters';
 import { resolveExerciseMetadata } from '../../../src/utils/exerciseCatalog';
+import { useOnboardingStore } from '../../../src/store/onboardingStore';
+import { useCheckInStore } from '../../../src/store/checkInStore';
+import { buildStrengthPresetContext, resolveStrengthPresetWorkout } from '../../../src/utils/strengthPresetProgramming';
+import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
 import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import {
   activeSessionStoresHydrated,
@@ -271,17 +275,31 @@ function PresetsTabContent({ segment, setSegment, C }: {
   const router = useRouter();
   const [libraryView, setLibraryView] = useState<'recommended' | 'all'>('all');
   const [filters, setFilters] = useState(emptyWorkoutLibraryFilters);
-  const libraryItems = useMemo(() => STRENGTH_PRESET_WORKOUTS.map(presetLibraryItem), []);
+  const onboarding = useOnboardingStore(s => s.data);
+  const fatigueScore = useAthleteStore(s => s.fatigueScore);
+  const recoveryScore = useAthleteStore(s => s.recoveryScore);
+  const weekPlan = useWeekPlan();
+  const trainingPhase = weekPlan.metadata.trainingMode === 'open' ? undefined : weekPlan.metadata.trainingPhase;
+  const presetRegressing = weekPlan.strengthWeek.progressionState === 'regress';
+  const goalType = useTrainingPlanStore(s => s.goalType);
+  const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
+  const presetContext = useMemo(() => {
+    const context = buildStrengthPresetContext(onboarding, { fatigueScore, recoveryScore, trainingPhase, goalType }, todayCheckIn);
+    return { ...context, recoveryLimited: context.recoveryLimited || presetRegressing };
+  }, [onboarding, fatigueScore, recoveryScore, trainingPhase, goalType, todayCheckIn, presetRegressing]);
+  const resolvedPresets = useMemo(() => STRENGTH_PRESET_WORKOUTS.map(workout => resolveStrengthPresetWorkout(workout, presetContext)), [presetContext]);
+  const allPresets = useMemo(() => resolvedPresets.map(result => result.workout), [resolvedPresets]);
+  const libraryItems = useMemo(() => allPresets.map(presetLibraryItem), [allPresets]);
   const [openPresetId, setOpenPresetId] = useState<string | null>(null);
   const completedSessions = useStrengthStore(s => s.completedSessions);
 
   const recommended = useMemo(
-    () => STRENGTH_PRESET_WORKOUTS.filter(w => w.categories.includes('recommended')),
-    [],
+    () => resolvedPresets.filter(result => result.recommended).map(result => result.workout),
+    [resolvedPresets],
   );
-  const filteredPresets = useMemo(() => (libraryView === 'recommended' ? recommended : STRENGTH_PRESET_WORKOUTS)
+  const filteredPresets = useMemo(() => (libraryView === 'recommended' ? recommended : allPresets)
     .filter(workout => matchesWorkoutLibraryFilters(libraryItems.find(item => item.id === workout.id)!, filters)),
-    [libraryView, recommended, filters, libraryItems]);
+    [libraryView, recommended, allPresets, filters, libraryItems]);
 
   function renderPresetCard(preset: PresetStrengthWorkout, key: string) {
     const open = openPresetId === preset.id;
@@ -409,7 +427,9 @@ function sessionToExDefs(session: StrengthSession, strengthHistory: ReturnType<t
     const expectedSetup = ex.exercise.equipment.length === 1 ? mapEquipmentType(ex.exercise.equipment) : null;
     const last = getLastLoggedExercise(strengthHistory, ex.exerciseId, unit, expectedSetup);
     const recentReference = last && Number.isFinite(last.timestamp) && last.timestamp <= Date.now() && last.timestamp >= Date.now() - 42 * 86400000;
-    const parsedWeight = recentReference && last.load ? parseFloat(last.load) : NaN;
+    const compatibleTarget = !session.id.startsWith('goal_') || strengthPrescriptionsMatch(last?.prescription,
+      { repsMin: ex.repRange[0], repsMax: ex.repRange[1], targetRpe: ex.rpe, loadTarget: ex.loadTarget, repScheme: ex.repScheme });
+    const parsedWeight = recentReference && compatibleTarget && last.load ? parseFloat(last.load) : NaN;
     return {
       id: ex.exerciseId,
       name: ex.exercise.name,
@@ -1249,7 +1269,10 @@ export default function StrengthScreen() {
           const scheme = ex.repScheme;
           const topReps = scheme && 'repsMin' in scheme ? scheme.repsMax ?? scheme.repsMin
             : /sec|min|meter|metre|\bm\b|hold|carry/i.test(ex.reps) ? null : Number(ex.reps.match(/\d+/g)?.slice(-1)[0]) || null;
-          const progression = suggestProgression(lastPerformance, ex.sets, readinessLimited, wtUnit, topReps, knownSetup);
+          const minReps = scheme && 'repsMin' in scheme ? scheme.repsMin : Number(ex.reps.match(/\d+/)?.[0]) || null;
+          const progression = suggestProgression(lastPerformance, ex.sets, readinessLimited, wtUnit, topReps, knownSetup,
+            (ownsActiveTrainingBlock ? activeStrengthSession?.workoutId : session?.id)?.startsWith('goal_') && minReps && topReps
+              ? { repsMin: minReps, repsMax: topReps, targetRpe: ex.targetRpe, loadTarget: ex.loadTarget, repScheme: ex.repScheme } : undefined);
           const guide = getExerciseGuide(ex.id);
           return (
             <View
