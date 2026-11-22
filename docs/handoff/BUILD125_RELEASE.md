@@ -1,5 +1,7 @@
 # Build125 delivered to internal TestFlight — November21,2026 Pacific
 
+**Later public-review checkpoint:** Build125 and both Pro subscriptions were submitted November22 and are WAITING_FOR_REVIEW with MANUAL release. See PUBLIC_APP_REVIEW_20261122.md. The internal-delivery facts below retain their dated scope.
+
 Build **1.0.0(125)** is VALID / IN_BETA_TESTING and assigned to the existing **Team (Expo)** internal group. Testing notes were saved and read back exactly. Source `2091d5b8c29a255f268d23475c0e45b1e67b58be`, EAS build `fcd18291-a03e-4319-8559-f5f2edc29662`, submission `cffd2c3c-0392-47a4-9a39-aec571ccc912`, Apple build `34fda62a-e2bb-4f84-a49a-ff2d1f1b7de1`. See BUILD125_DELIVERY.json and its hashed receipts.
 
 The rationale for RPE8 and the previous two-set dose was explained before edits. Practiced-lifter strength preset main lifts now default to three working sets, with a three/four/five-set choice and matching full-rest time/display/launch. Generated heavy calibration can still start with two; earned successful three-set work survives review. Power work keeps speed/recovery intent and receives session-fit guidance. A session-only Continue anyway acknowledgement is bound to the displayed dose, current guidance and owner; hydration, session conflicts and captured-workout protection remain intact.

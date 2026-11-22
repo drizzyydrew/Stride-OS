@@ -1,0 +1,246 @@
+{
+  "checkedAt": "2026-11-22T10:40:24.903564+00:00",
+  "userAuthorization": "Explicit Yes\u2014submit for App Review; manual release after approval",
+  "appId": "6782788130",
+  "appStoreVersion": "1.0",
+  "binaryVersion": "1.0.0",
+  "buildNumber": "125",
+  "binarySourceCommit": "2091d5b8c29a255f268d23475c0e45b1e67b58be",
+  "appleBuildId": "34fda62a-e2bb-4f84-a49a-ff2d1f1b7de1",
+  "submission": {
+    "checkedAt": "2026-11-22T10:36:35.672Z",
+    "appId": "6782788130",
+    "appStoreVersionId": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "versionString": "1.0",
+    "selectedBuildNumber": "125",
+    "selectedBuildId": "34fda62a-e2bb-4f84-a49a-ff2d1f1b7de1",
+    "buildProcessingState": "VALID",
+    "releaseType": "MANUAL",
+    "reviewSubmissionId": "54fdb6a6-e747-44c2-ae87-d088e0ed4487",
+    "reviewSubmissionState": "WAITING_FOR_REVIEW",
+    "submittedDate": "2026-11-22T10:36:33.638Z",
+    "appStoreState": "WAITING_FOR_REVIEW",
+    "items": [
+      {
+        "itemId": "NTRmZGI2YTYtZTc0Ny00NGMyLWFlODctZDA4OGUwZWQ0NDg3fDZ8ODg3MjcyMjgy",
+        "itemState": "READY_FOR_REVIEW",
+        "kind": "appStoreVersion",
+        "type": "appStoreVersions",
+        "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+        "resourceState": "WAITING_FOR_REVIEW"
+      },
+      {
+        "itemId": "NTRmZGI2YTYtZTc0Ny00NGMyLWFlODctZDA4OGUwZWQ0NDg3fDE5fGEzM2Y1ODU1LTdkZWMtNDQxOC04ODU0LTZjY2ZiODBjZDI3MA",
+        "itemState": "READY_FOR_REVIEW",
+        "kind": "subscriptionGroupVersion",
+        "type": "subscriptionGroupVersions",
+        "id": "a33f5855-7dec-4418-8854-6ccfb80cd270",
+        "resourceState": "WAITING_FOR_REVIEW"
+      },
+      {
+        "itemId": "NTRmZGI2YTYtZTc0Ny00NGMyLWFlODctZDA4OGUwZWQ0NDg3fDE4fDcwYTBjOWIxLWFmYzAtNGIyNy1iODczLTc0MzAwMjA5ZGI0Yw",
+        "itemState": "READY_FOR_REVIEW",
+        "kind": "subscriptionVersion",
+        "type": "subscriptionVersions",
+        "id": "70a0c9b1-afc0-4b27-b873-74300209db4c",
+        "resourceState": "WAITING_FOR_REVIEW"
+      },
+      {
+        "itemId": "NTRmZGI2YTYtZTc0Ny00NGMyLWFlODctZDA4OGUwZWQ0NDg3fDE4fGFkNDllNjNhLWVjMTMtNGQ1NS1iOTRjLTEzMjZhYTE0YTZkNQ",
+        "itemState": "READY_FOR_REVIEW",
+        "kind": "subscriptionVersion",
+        "type": "subscriptionVersions",
+        "id": "ad49e63a-ec13-4d55-b94c-1326aa14a6d5",
+        "resourceState": "WAITING_FOR_REVIEW"
+      }
+    ],
+    "accepted": true,
+    "submitAttemptedThisRun": true,
+    "submitEndpoint": "/v1/reviewSubmissions/54fdb6a6-e747-44c2-ae87-d088e0ed4487",
+    "method": "Official App Store Connect API PATCH of existing browser-prepared first-review draft",
+    "documentationLimitation": "First subscriptions are documented through the website; this fallback is accepted only by actual complete Apple state readback",
+    "publiclyReleased": false,
+    "releaseAfterApprovalRequiresManualAction": true
+  },
+  "independentFinalReadback": {
+    "checkedAt": "2026-11-22T10:38:44.254Z",
+    "appId": "6782788130",
+    "appStoreVersionId": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "versionString": "1.0",
+    "selectedBuildNumber": "125",
+    "selectedBuildId": "34fda62a-e2bb-4f84-a49a-ff2d1f1b7de1",
+    "buildProcessingState": "VALID",
+    "releaseType": "MANUAL",
+    "reviewSubmissionId": "54fdb6a6-e747-44c2-ae87-d088e0ed4487",
+    "reviewSubmissionState": "WAITING_FOR_REVIEW",
+    "submittedDate": "2026-11-22T10:36:33.638Z",
+    "appStoreState": "WAITING_FOR_REVIEW",
+    "items": [
+      {
+        "itemId": "NTRmZGI2YTYtZTc0Ny00NGMyLWFlODctZDA4OGUwZWQ0NDg3fDZ8ODg3MjcyMjgy",
+        "itemState": "READY_FOR_REVIEW",
+        "kind": "appStoreVersion",
+        "type": "appStoreVersions",
+        "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+        "resourceState": "WAITING_FOR_REVIEW"
+      },
+      {
+        "itemId": "NTRmZGI2YTYtZTc0Ny00NGMyLWFlODctZDA4OGUwZWQ0NDg3fDE5fGEzM2Y1ODU1LTdkZWMtNDQxOC04ODU0LTZjY2ZiODBjZDI3MA",
+        "itemState": "READY_FOR_REVIEW",
+        "kind": "subscriptionGroupVersion",
+        "type": "subscriptionGroupVersions",
+        "id": "a33f5855-7dec-4418-8854-6ccfb80cd270",
+        "resourceState": "WAITING_FOR_REVIEW"
+      },
+      {
+        "itemId": "NTRmZGI2YTYtZTc0Ny00NGMyLWFlODctZDA4OGUwZWQ0NDg3fDE4fDcwYTBjOWIxLWFmYzAtNGIyNy1iODczLTc0MzAwMjA5ZGI0Yw",
+        "itemState": "READY_FOR_REVIEW",
+        "kind": "subscriptionVersion",
+        "type": "subscriptionVersions",
+        "id": "70a0c9b1-afc0-4b27-b873-74300209db4c",
+        "resourceState": "WAITING_FOR_REVIEW"
+      },
+      {
+        "itemId": "NTRmZGI2YTYtZTc0Ny00NGMyLWFlODctZDA4OGUwZWQ0NDg3fDE4fGFkNDllNjNhLWVjMTMtNGQ1NS1iOTRjLTEzMjZhYTE0YTZkNQ",
+        "itemState": "READY_FOR_REVIEW",
+        "kind": "subscriptionVersion",
+        "type": "subscriptionVersions",
+        "id": "ad49e63a-ec13-4d55-b94c-1326aa14a6d5",
+        "resourceState": "WAITING_FOR_REVIEW"
+      }
+    ],
+    "accepted": true,
+    "submitAttemptedThisRun": false,
+    "publiclyReleased": false,
+    "method": "Official App Store Connect API state readback"
+  },
+  "writeAheadJournal": {
+    "submissionId": "54fdb6a6-e747-44c2-ae87-d088e0ed4487",
+    "versionId": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "buildId": "34fda62a-e2bb-4f84-a49a-ff2d1f1b7de1",
+    "bodySHA256": "2a765abaeac1626b90a5961caa8812a77dee53eefbddb04ff8c82a940b2fb9c1",
+    "state": "CONFIRMED_BY_READBACK",
+    "attemptedAt": "2026-11-22T10:36:31.386Z",
+    "automaticRetryAllowed": false,
+    "acknowledgedAt": "2026-11-22T10:36:34.660Z",
+    "confirmedAt": "2026-11-22T10:36:35.673Z"
+  },
+  "metadata": {
+    "checkedAt": "2026-11-22T10:27:37.267Z",
+    "appId": "6782788130",
+    "versionId": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "selectedBuildId": "34fda62a-e2bb-4f84-a49a-ff2d1f1b7de1",
+    "selectedBuildNumber": "125",
+    "draftId": "54fdb6a6-e747-44c2-ae87-d088e0ed4487",
+    "draftState": "READY_FOR_REVIEW",
+    "submittedDate": null,
+    "releaseType": "MANUAL",
+    "fourExistingReviewItemsUnchanged": true,
+    "descriptionSHA256": "69ec787beb53607eaef109b91f525df8ca46717afceb5939481ac780b6ba4ee6",
+    "reviewNotesSHA256": "7b951e20adddb534bda8db528940a15b34c29a3cfe6aaaaad2f3fa6f7b1e1025",
+    "notesUTF8Bytes": 3832,
+    "publicReviewSubmitted": false,
+    "actions": [
+      {
+        "name": "description",
+        "route": "/v1/appStoreVersionLocalizations/7c5c0262-bdeb-4ea6-aaf3-6e74df905c3c",
+        "method": "PATCH",
+        "state": "CONFIRMED",
+        "attemptedAt": "2026-11-22T10:27:29.697Z",
+        "confirmedAt": "2026-11-22T10:27:30.251Z"
+      },
+      {
+        "name": "review-notes",
+        "route": "/v1/appStoreReviewDetails/8a4b651d-dc9d-48bf-8771-1a273ee76c63",
+        "method": "PATCH",
+        "state": "CONFIRMED",
+        "attemptedAt": "2026-11-22T10:27:30.984Z",
+        "confirmedAt": "2026-11-22T10:27:31.286Z"
+      },
+      {
+        "name": "select-build125",
+        "route": "/v1/appStoreVersions/7f934645-486b-478c-9a6e-1d396e86782d/relationships/build",
+        "method": "PATCH",
+        "state": "CONFIRMED",
+        "attemptedAt": "2026-11-22T10:27:32.151Z",
+        "confirmedAt": "2026-11-22T10:27:36.340Z"
+      }
+    ]
+  },
+  "reviewerAndServiceCheck": {
+    "checkedAt": "2026-11-22T10:22:27.032Z",
+    "scope": "Existing protected Apple reviewer: Auth, usage GET, RevenueCat metadata only",
+    "purchaseMade": false,
+    "modelGenerationRequested": false,
+    "ownerTrainingDataChanged": false,
+    "credentialsPrintedOrPersisted": false,
+    "health": [
+      {
+        "path": "/auth/v1/health",
+        "httpStatus": 200,
+        "json": true
+      },
+      {
+        "path": "/auth/v1/settings",
+        "httpStatus": 200,
+        "json": true,
+        "signupEnabled": true,
+        "emailConfirmationEnabled": true
+      }
+    ],
+    "serverProEnforcementEnabled": true,
+    "qaOwnerOverrideAbsent": true,
+    "signInHttpStatus": 200,
+    "protectedReviewerIdentityVerified": true,
+    "emailConfirmed": true,
+    "usageReadHttpStatus": 200,
+    "usage": {
+      "used": 0,
+      "limit": 20,
+      "remaining": 20,
+      "resetsAt": "2026-11-23T00:00:00.000Z"
+    },
+    "entitlementReadHttpStatus": 200,
+    "reviewerProActive": true,
+    "reviewerProExpiresAt": "2026-12-22T01:12:35Z",
+    "reviewerProIsPromotional": true,
+    "accepted": true,
+    "temporarySessionLocalSignOutHttpStatus": 204,
+    "purchaseLifecycleAccepted": false,
+    "nativeReviewerNavigationAccepted": false
+  },
+  "publicTerms": {
+    "checkedAt": "2026-11-22T10:28:18.620531+00:00",
+    "url": "https://drizzyydrew.github.io/Stride-OS/terms.html",
+    "httpStatus": 200,
+    "sha256": "5d7d8cd9a39cfbbea9667f1c325536185ccf68eeb9c776cf2de46267b03216ca",
+    "exactCanonicalBytes": true,
+    "pagesCommit": "e341f1c83bc586ee58552c423d023b615b735026",
+    "workflowRun": 45012266484,
+    "workflowConclusion": "success",
+    "changes": "Membership feature clarification only; no price/trial/quota/privacy-category changes"
+  },
+  "council": "Independent platform and contrarian first passes, cross-examination, exact-copy and guarded-helper review; final submitted-resource receipt GO",
+  "submissionMutationCount": 1,
+  "screenshotsChanged": false,
+  "newBinaryBuilt": false,
+  "paidPurchaseMade": false,
+  "aiGenerationRequested": false,
+  "priceTrialQuotaBudgetChanged": false,
+  "appCodeChanged": false,
+  "privacyCollectionCategoriesChanged": false,
+  "publiclyReleased": false,
+  "releaseType": "MANUAL",
+  "publicCapacityProven": false,
+  "limitations": [
+    "No new native reviewer navigation or StoreKit purchase lifecycle test claimed",
+    "Existing AI capacity/budget limitation remains for public-release decision; no budget increase",
+    "First subscriptions are documented through the website; existing browser-prepared four-item draft accepted by one official API submission and full state readback",
+    "ReviewSubmissionItem enum remains READY_FOR_REVIEW while all four authoritative version resources and parent are WAITING_FOR_REVIEW"
+  ],
+  "helperSHA256": {
+    "apply-metadata.cjs": "eeae8b88f554d2e477f61ceeedbc0e5ee95bbebea4cbaf88402f01a2f2d50872",
+    "submit-review.cjs": "d7ddbf8ac7f0af557ec7755f421332b3f04d38d5a11e949727eb71168c29f9a2",
+    "reviewer-check.cjs": "b65bd291e0b1fe92ef31b04189776a448cdf03e3d1c72d29206adb7b5288e17f"
+  }
+}
