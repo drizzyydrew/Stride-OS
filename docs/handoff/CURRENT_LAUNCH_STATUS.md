@@ -1,6 +1,12 @@
 # Current StrideOS launch status
 
-## Latest launch services and Apple preparation — November 20 Pacific
+## Latest Store screenshots completed — November 21 Pacific
+
+The owner clarified that the image hold applies to exercise additions, and authorized Store captures with council approval. All six actual current native captures passed independent visual/platform review and Apple processing/relationship readback. Both subscription products now report READY_TO_SUBMIT with COMPLETE review images. Two medium phone screenshots, one large phone screenshot and one clean idle Watch screenshot replace the old Store material. All ten exact obsolete image IDs were removed after replacement verification and rollback hash checks. The selected signed Build123 is native iPhone-only; its old iPad images were removed rather than presenting the compatibility window as native iPad support. No exercise artwork changed.
+
+The unsent public review draft now contains exactly four READY_FOR_REVIEW items: Build123/version1.0, the Pro subscription group, annual subscription version and monthly subscription version. Browser-only first-subscription association was completed and independently verified through exact API relationships at 2026-11-22T01:10:56Z. The final Submit for Review control is enabled and untouched; submittedDate is null and release remains MANUAL. The subsequent strength-specificity request is not represented as shipped in Build123. See BUILD123_SCREENSHOT_CAPTURE_PLAN.md and BUILD123_SCREENSHOT_COMPLETION.json; approved PNGs are in docs/assets/screenshots/native-123 and the downloadable Desktop ZIP preserves originals.
+
+## Historical launch services and Apple preparation — November 20 Pacific
 
 Build 123 remains the current TestFlight binary; the owner now reports that the app looks great. This pass changes server operations, a narrow deletion SQL fix, AI cost telemetry, and review metadata. No new app binary, image asset or screenshot was created or changed.
 
@@ -10,7 +16,7 @@ Server Pro enforcement is enabled with the QA override removed. Real inactive/re
 
 Apple public version 1.0 now selects VALID build 123, remains PREPARE_FOR_SUBMISSION with MANUAL release, and has current descriptions/review notes. Purchase History privacy was published and read back; subscription descriptions now cover the training bundle. The reviewer has no-charge promotional Pro access through December 22, 2026 UTC. Existing Sandbox StoreKit history shows trial conversion and monthly renewals; no purchase was repeated. Public privacy/support/terms deletion copy is published and byte-verified against canonical source.
 
-**Submission still awaits required Apple images under the owner's explicit image hold.** Both subscription review screenshots remain absent/MISSING_METADATA. Current uploaded iPad/Watch material needs to match the final interface, and required large-iPhone coverage is empty. A narrowly scoped exception was requested to capture/upload only required Apple screenshots; no response is treated as permission. No public App Review submission or release occurred. Native deletion cleanup and live Apple/Google grant revocation were not newly exercised; StoreKit refund/expiry/restore were not fabricated from promotional tests. Detailed fresh evidence is in LAUNCH_READINESS_20261120.md; dated sections below retain historical scope.
+**At this dated checkpoint, submission awaited Apple images; the November 21 section above supersedes this screenshot hold.** Both subscription review screenshots remain absent/MISSING_METADATA. Current uploaded iPad/Watch material needs to match the final interface, and required large-iPhone coverage is empty. A narrowly scoped exception was requested to capture/upload only required Apple screenshots; no response is treated as permission. No public App Review submission or release occurred. Native deletion cleanup and live Apple/Google grant revocation were not newly exercised; StoreKit refund/expiry/restore were not fabricated from promotional tests. Detailed fresh evidence is in LAUNCH_READINESS_20261120.md; dated sections below retain historical scope.
 
 ## Latest: build 123 delivered — November 20 Pacific
 

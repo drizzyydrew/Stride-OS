@@ -1,5 +1,7 @@
 # Launch preparation — November 20, 2026 Pacific
 
+Update November 21 Pacific: the owner clarified the image hold, council approved actual native captures, all six uploads are COMPLETE, both subscriptions are READY_TO_SUBMIT, and all ten obsolete images were removed. The later browser staging step placed the app, group and both subscription versions into one READY_FOR_REVIEW draft; all four exact relationships were independently verified, submittedDate is null and release remains MANUAL. Submit for Review was not clicked. See BUILD123_SCREENSHOT_CAPTURE_PLAN.md and BUILD123_SCREENSHOT_COMPLETION.json. The dated evidence below retains its original scope.
+
 The remaining server work is completed within the live acceptance scope below. Apple version 1.0 selects Build 123 and remains a manual-release draft. Public App Review was not submitted. Submission is still held for the required screenshot work under the owner's explicit instruction not to change/add images; a narrow exception has been requested.
 
 ## Verified at the destination

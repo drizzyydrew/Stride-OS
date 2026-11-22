@@ -1,0 +1,260 @@
+{
+  "checkedAt": "2026-11-22T00:44:21.236Z",
+  "appId": "6782788130",
+  "versionId": "7f934645-486b-478c-9a6e-1d396e86782d",
+  "buildNumber": "123",
+  "publicReviewSubmitted": false,
+  "publicReleased": false,
+  "exerciseArtworkChanged": false,
+  "councilApproved": true,
+  "sourceCommit": "52b71444766440c84bda8b57f004d3b85b2ac08a",
+  "captureConfigurationCommit": "9eace98e79e0ce3ee3fe01728dfd3c70079ff57b",
+  "simulatorBuildId": "4da3fb6a-0c28-477d-ae2a-809cef508a2c",
+  "signedSelectedDeviceFamily": [
+    1
+  ],
+  "apple": {
+    "checkedAt": "2026-11-22T00:44:21.236Z",
+    "appId": "6782788130",
+    "versionId": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "buildId": "30fc1899-594a-4a6a-a9f9-17a1cd7f3ae0",
+    "buildNumber": "123",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "releaseType": "MANUAL",
+    "locales": [
+      {
+        "id": "7c5c0262-bdeb-4ea6-aaf3-6e74df905c3c",
+        "locale": "en-US",
+        "sets": [
+          {
+            "id": "9ba35ab9-4b50-4484-b0c8-5227f0d9ccc5",
+            "displayType": "APP_IPHONE_61",
+            "images": [
+              {
+                "id": "78800019-4492-8222-8039-a0200d7f9c7a",
+                "type": "appScreenshots",
+                "fileName": "phone-medium-library.png",
+                "fileSize": 213114,
+                "checksum": "3826ce9b27c016bf85f3a323fd607ee4",
+                "state": "COMPLETE",
+                "errorCodes": [],
+                "width": 1206,
+                "height": 2622
+              },
+              {
+                "id": "10400019-4492-8222-800e-4a665e2cd9fa",
+                "type": "appScreenshots",
+                "fileName": "phone-medium-mobility.png",
+                "fileSize": 197403,
+                "checksum": "675f87c4f9a90aa2d9221aeb62be8a59",
+                "state": "COMPLETE",
+                "errorCodes": [],
+                "width": 1206,
+                "height": 2622
+              }
+            ]
+          },
+          {
+            "id": "5a569766-02dc-4df8-9de0-e82f9ad4d522",
+            "displayType": "APP_IPHONE_67",
+            "images": [
+              {
+                "id": "41c00019-4492-8222-8023-ac2747068deb",
+                "type": "appScreenshots",
+                "fileName": "phone-pro-benefits.png",
+                "fileSize": 245009,
+                "checksum": "b3b2d32179365012b0a8edf93d12b74e",
+                "state": "COMPLETE",
+                "errorCodes": [],
+                "width": 1320,
+                "height": 2868
+              }
+            ]
+          },
+          {
+            "id": "17c7de92-7ebb-42d3-ac79-2fba0d1c54a0",
+            "displayType": "APP_IPAD_PRO_3GEN_129",
+            "images": []
+          },
+          {
+            "id": "6b2e4f08-def7-410e-a0cb-fbdec1329fb6",
+            "displayType": "APP_IPHONE_65",
+            "images": []
+          },
+          {
+            "id": "f0b87c5c-1f0f-4065-8261-b27e82e2580c",
+            "displayType": "APP_WATCH_ULTRA",
+            "images": [
+              {
+                "id": "cd400019-4492-8222-8023-7dc9b150fea0",
+                "type": "appScreenshots",
+                "fileName": "watch-ready.png",
+                "fileSize": 14087,
+                "checksum": "528cca681bf416c86532adfec3195d08",
+                "state": "COMPLETE",
+                "errorCodes": [],
+                "width": 422,
+                "height": 514
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "subscriptions": [
+      {
+        "id": "6829293174",
+        "state": "READY_TO_SUBMIT",
+        "reviewScreenshot": {
+          "id": "d0741006-5552-40ed-91f5-b007a56ad4c1",
+          "type": "subscriptionAppStoreReviewScreenshots",
+          "fileName": "SOURCE",
+          "fileSize": 228154,
+          "checksum": "5c8dd998956463ab34c2a5a3d3925492",
+          "state": "COMPLETE",
+          "width": 1320,
+          "height": 2868
+        }
+      },
+      {
+        "id": "6829288874",
+        "state": "READY_TO_SUBMIT",
+        "reviewScreenshot": {
+          "id": "01d8b243-25d1-49f2-b33d-a45203c01219",
+          "type": "subscriptionAppStoreReviewScreenshots",
+          "fileName": "SOURCE",
+          "fileSize": 227897,
+          "checksum": "c7a4c56819f5589bff94bce5e5610bfb",
+          "state": "COMPLETE",
+          "width": 1320,
+          "height": 2868
+        }
+      }
+    ]
+  },
+  "oldScreenshotsRemoved": 10,
+  "allOldRollbackHashesVerified": true,
+  "nativeCaptureOnly": true,
+  "normalization": "Fully opaque RGBA to RGB, exact RGB pixels retained; no UI or data painting",
+  "assets": [
+    {
+      "kind": "app",
+      "displayType": "APP_IPHONE_61",
+      "fileName": "phone-medium-library.png",
+      "sha256": "b139708061bdd51fe81b5d48b0e1d00c38358476f8d94cc4201e5944e5d4f8ee"
+    },
+    {
+      "kind": "app",
+      "displayType": "APP_IPHONE_61",
+      "fileName": "phone-medium-mobility.png",
+      "sha256": "d9838178d85527ddf1ea5139c5ba20cd1090e837d06b8cc65e5cc2a6620cb365"
+    },
+    {
+      "kind": "app",
+      "displayType": "APP_IPHONE_67",
+      "fileName": "phone-pro-benefits.png",
+      "sha256": "f80edebfef2f65268cc361b3a7b87f3d1c6aa9020a6bdaff3298ee5199597380"
+    },
+    {
+      "kind": "app",
+      "displayType": "APP_WATCH_ULTRA",
+      "fileName": "watch-ready.png",
+      "sha256": "164ef8b4604eaec3b66baf3d9065f11ab54437537b288574f08e714f12a5f5a7"
+    },
+    {
+      "kind": "subscription",
+      "subscriptionId": "6829293174",
+      "fileName": "strideos-pro-annual.png",
+      "sha256": "72ed182fc68f21583746ddf37605cb643bdf72f57effcc4a34f6e4da41bbd6ab"
+    },
+    {
+      "kind": "subscription",
+      "subscriptionId": "6829288874",
+      "fileName": "strideos-pro-monthly.png",
+      "sha256": "3596b2b7f8c5d8d37b59bcce3a04a0c4eae156eed49dd7ca4f5183d1afcbdbe9"
+    }
+  ],
+  "limits": [
+    "Watch image is genuine idle UI, not new paired-active recording or sensor acceptance.",
+    "No production purchase, refund, restoration or growth-capacity acceptance is inferred.",
+    "Subsequent strength-specificity revision is not contained in selected Build123."
+  ],
+  "reviewDraft": {
+    "checkedAt": "2026-11-22T01:10:56.653Z",
+    "appId": "6782788130",
+    "submissionId": "54fdb6a6-e747-44c2-ae87-d088e0ed4487",
+    "submissionState": "READY_FOR_REVIEW",
+    "submittedDate": null,
+    "platform": "IOS",
+    "exactFourItems": [
+      {
+        "id": "NTRmZGI2YTYtZTc0Ny00NGMyLWFlODctZDA4OGUwZWQ0NDg3fDZ8ODg3MjcyMjgy",
+        "state": "READY_FOR_REVIEW",
+        "kind": "appStoreVersion",
+        "targetId": "7f934645-486b-478c-9a6e-1d396e86782d"
+      },
+      {
+        "id": "NTRmZGI2YTYtZTc0Ny00NGMyLWFlODctZDA4OGUwZWQ0NDg3fDE5fGEzM2Y1ODU1LTdkZWMtNDQxOC04ODU0LTZjY2ZiODBjZDI3MA",
+        "state": "READY_FOR_REVIEW",
+        "kind": "subscriptionGroupVersion",
+        "targetId": "a33f5855-7dec-4418-8854-6ccfb80cd270"
+      },
+      {
+        "id": "NTRmZGI2YTYtZTc0Ny00NGMyLWFlODctZDA4OGUwZWQ0NDg3fDE4fDcwYTBjOWIxLWFmYzAtNGIyNy1iODczLTc0MzAwMjA5ZGI0Yw",
+        "state": "READY_FOR_REVIEW",
+        "kind": "subscriptionVersion",
+        "targetId": "70a0c9b1-afc0-4b27-b873-74300209db4c"
+      },
+      {
+        "id": "NTRmZGI2YTYtZTc0Ny00NGMyLWFlODctZDA4OGUwZWQ0NDg3fDE4fGFkNDllNjNhLWVjMTMtNGQ1NS1iOTRjLTEzMjZhYTE0YTZkNQ",
+        "state": "READY_FOR_REVIEW",
+        "kind": "subscriptionVersion",
+        "targetId": "ad49e63a-ec13-4d55-b94c-1326aa14a6d5"
+      }
+    ],
+    "appVersion": {
+      "id": "7f934645-486b-478c-9a6e-1d396e86782d",
+      "versionString": "1.0",
+      "state": "READY_FOR_REVIEW",
+      "releaseType": "MANUAL",
+      "buildId": "30fc1899-594a-4a6a-a9f9-17a1cd7f3ae0",
+      "buildNumber": "123",
+      "buildProcessingState": "VALID"
+    },
+    "subscriptions": [
+      {
+        "subscriptionId": "6829293174",
+        "productId": "strideos_pro_annual",
+        "period": "ONE_YEAR",
+        "parentState": "READY_TO_SUBMIT",
+        "versionId": "70a0c9b1-afc0-4b27-b873-74300209db4c",
+        "version": 1,
+        "versionState": "READY_FOR_REVIEW",
+        "groupId": "22532701"
+      },
+      {
+        "subscriptionId": "6829288874",
+        "productId": "strideos_pro_monthly",
+        "period": "ONE_MONTH",
+        "parentState": "READY_TO_SUBMIT",
+        "versionId": "ad49e63a-ec13-4d55-b94c-1326aa14a6d5",
+        "version": 1,
+        "versionState": "READY_FOR_REVIEW",
+        "groupId": "22532701"
+      }
+    ],
+    "subscriptionGroup": {
+      "id": "22532701",
+      "versionId": "a33f5855-7dec-4418-8854-6ccfb80cd270",
+      "version": 1,
+      "state": "READY_FOR_REVIEW"
+    },
+    "allExpectedRelationshipsVerified": true,
+    "publicReviewSubmitted": false,
+    "mutationsPerformed": false,
+    "reviewerCredentialsRead": false
+  },
+  "appleSnapshotScope": "Post-image acceptance before review staging; reviewDraft supersedes the earlier version state.",
+  "latestCheckedAt": "2026-11-22T01:10:56.653Z",
+  "currentReviewState": "READY_FOR_REVIEW"
+}
