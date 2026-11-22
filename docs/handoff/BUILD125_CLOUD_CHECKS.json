@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-11-22T06:58:02.346957+00:00",
+  "buildId": "fcd18291-a03e-4319-8559-f5f2edc29662",
+  "sourceCommit": "2091d5b8c29a255f268d23475c0e45b1e67b58be",
+  "buildNumber": "125",
+  "easStatus": "FINISHED",
+  "easUpdatedAt": "2026-11-22T06:57:28.967Z",
+  "cloudDoctor": {
+    "passed": 21,
+    "total": 21
+  },
+  "cloudCanonicalTypecheck": "PASS",
+  "typecheckPhaseStart": "2026-11-22T06:48:42.300Z",
+  "typecheckPhaseEnd": "2026-11-22T06:48:53.762Z",
+  "archive": "SUCCEEDED",
+  "archiveErrors": 0,
+  "archiveWarnings": 33,
+  "existingMetalToolchainSearchPathWarning": true,
+  "logsSha256": "b4d21d466ee5402a07fb1e9eee0fd98c953e2ac2fed71d8e52d220a1f6443e9d",
+  "evidenceScope": "Cloud build checks only; no device, purchase, or App Review acceptance",
+  "publicReviewSubmitted": false
+}

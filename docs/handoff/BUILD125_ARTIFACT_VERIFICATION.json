@@ -1,0 +1,117 @@
+{
+  "checkedAt": "2026-11-22T06:58:17.573425+00:00",
+  "buildId": "fcd18291-a03e-4319-8559-f5f2edc29662",
+  "sourceCommit": "2091d5b8c29a255f268d23475c0e45b1e67b58be",
+  "profile": "billing-qa",
+  "buildNumber": "125",
+  "nativeDeviceFamily": [
+    1
+  ],
+  "bytes": 130088561,
+  "sha256": "c90a0741fddd62daf32b9bbad84718a968576d60c1d9ff3cad91f626c5151f6a",
+  "targets": [
+    {
+      "bundleId": "com.mooremovement.strideos",
+      "version": "1.0.0",
+      "build": "125",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [
+        "group.com.mooremovement.strideos"
+      ],
+      "healthKit": true,
+      "unexpiredStoreProfile": true,
+      "profileMatchesBundleAndTeam": true
+    },
+    {
+      "bundleId": "com.mooremovement.strideos.liveactivity",
+      "version": "1.0.0",
+      "build": "125",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [
+        "group.com.mooremovement.strideos"
+      ],
+      "healthKit": false,
+      "unexpiredStoreProfile": true,
+      "profileMatchesBundleAndTeam": true
+    },
+    {
+      "bundleId": "com.mooremovement.strideos.watch",
+      "version": "1.0.0",
+      "build": "125",
+      "strictSignatureVerified": true,
+      "debugSigning": false,
+      "appGroups": [],
+      "healthKit": true,
+      "unexpiredStoreProfile": true,
+      "profileMatchesBundleAndTeam": true
+    }
+  ],
+  "privacyManifestsParsed": 21,
+  "noCredentialFilenamesInArchive": true,
+  "embeddedBundleIsHermesBytecode": true,
+  "embeddedBundleBytes": 13049812,
+  "embeddedBundleSHA256": "26004624c220dde979db8c07eaae2163b713179efd68605ae3ae1c717ad03cb7",
+  "currentStrengthTextMarkers": {
+    "strengthCalculatorsRoute": true,
+    "trainingRangesHelp": true,
+    "movementLabMembership": true,
+    "singleSessionChoice": true,
+    "mainSetChoice": true,
+    "sheetRirExplanation": true,
+    "accumulationIntent": true,
+    "coarseEquipmentJumpGuidance": true,
+    "earnedHeavyMainLiftDose": true,
+    "presetExerciseSpecificCalibration": true,
+    "liftingExperienceGuard": true,
+    "phaseRecoveryGuard": true,
+    "changedPrescriptionRequiresCalibration": true,
+    "activePrescriptionPreserved": true,
+    "recoveryPracticeIdentity": true
+  },
+  "markerEvidenceScope": "Embedded text and version evidence only; not execution, coaching correctness, eligibility, or on-device acceptance",
+  "compiled1024Icons": [
+    {
+      "Name": "AppIcon",
+      "PixelWidth": 1024,
+      "PixelHeight": 1024,
+      "Opaque": true,
+      "Idiom": "phone"
+    }
+  ],
+  "compiledLiveActivityBrandRenditions": [
+    {
+      "Name": "StrideOSMark",
+      "PixelWidth": 28,
+      "PixelHeight": 28,
+      "Scale": 1,
+      "Opaque": false,
+      "TemplateMode": null
+    },
+    {
+      "Name": "StrideOSMark",
+      "PixelWidth": 56,
+      "PixelHeight": 56,
+      "Scale": 2,
+      "Opaque": false,
+      "TemplateMode": null
+    },
+    {
+      "Name": "StrideOSMark",
+      "PixelWidth": 84,
+      "PixelHeight": 84,
+      "Scale": 3,
+      "Opaque": false,
+      "TemplateMode": null
+    }
+  ],
+  "authLogoExpectedAssetFoundInArchive": true,
+  "nativeCallbackSchemePresent": true,
+  "locationAndHealthPurposeStringsPresent": true,
+  "signedWebcredentialsDomainAndProvisioningVerified": true,
+  "programmingVersionBoundary": "Future Build125 source; completed and active prescriptions are not rewritten by artifact verification",
+  "physicalDeviceAccepted": false,
+  "purchaseLifecycleAccepted": false,
+  "publicReviewSubmitted": false
+}

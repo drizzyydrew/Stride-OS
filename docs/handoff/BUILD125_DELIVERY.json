@@ -1,0 +1,71 @@
+{
+  "checkedAt": "2026-11-22T07:04:13.792953+00:00",
+  "version": "1.0.0",
+  "buildNumber": "125",
+  "sourceCommit": "2091d5b8c29a255f268d23475c0e45b1e67b58be",
+  "easBuildId": "fcd18291-a03e-4319-8559-f5f2edc29662",
+  "easStatus": "FINISHED",
+  "easProfile": "billing-qa",
+  "easSubmissionId": "cffd2c3c-0392-47a4-9a39-aec571ccc912",
+  "easSubmissionStatus": "FINISHED",
+  "appleBuildId": "34fda62a-e2bb-4f84-a49a-ff2d1f1b7de1",
+  "appleProcessingState": "VALID",
+  "appleInternalBuildState": "IN_BETA_TESTING",
+  "internalGroup": {
+    "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+    "name": "Team (Expo)",
+    "isInternal": true,
+    "actuallyAssigned": true,
+    "testerCount": 1,
+    "testerStates": [
+      "INSTALLED"
+    ]
+  },
+  "betaNotes": {
+    "locale": "en-US",
+    "exactReadback": true,
+    "sha256": "3803d06850d023179fc4b0c7e3037e49f3d148c46f7c21a9828dd4ce5f32b084",
+    "characters": 1214
+  },
+  "artifactSHA256": "c90a0741fddd62daf32b9bbad84718a968576d60c1d9ff3cad91f626c5151f6a",
+  "receipts": {
+    "BUILD125_LOCAL_CHECKS.json": "796a675466f35822f958ca37da8b8a0e51ef9c4a45a005703a279bc90488691b",
+    "BUILD125_CLOUD_CHECKS.json": "794097f41500a3b046ef6e809383ce9095310de7ff472b79179de2ab7f7ce29a",
+    "BUILD125_ARTIFACT_VERIFICATION.json": "2b6058c3feba603f22c78c18e17ffc4c1557414c499f73e0ac697b0443e85540",
+    "BUILD125_SUBMISSION_VERIFICATION.json": "d96b08c2796f21df60eba63d2c5e5fa40118554013ef206720bfe683e3030fa3",
+    "BUILD125_APPLE_ACCEPTANCE.json": "359ba261a734aa6bd8eeafd42a0c9d13d0c35ed77b8b109ef44177fd719fa0c1"
+  },
+  "council": "Independent training and contrarian product/access first passes; post-fix actual-diff GO",
+  "localFullRegressionPassed": 2258,
+  "finalMovementFocusedPassed": 29,
+  "overlappingTestsNotSummed": true,
+  "physicalDeviceAccepted": false,
+  "nativeVisualAcceptance": "Not newly exercised; focused owner guide supplied",
+  "publicReviewSubmitted": false,
+  "publicDraft": {
+    "versionId": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "selectedBuildId": "30fc1899-594a-4a6a-a9f9-17a1cd7f3ae0",
+    "selectedBuildNumber": "123",
+    "releaseType": "MANUAL",
+    "draftId": "54fdb6a6-e747-44c2-ae87-d088e0ed4487",
+    "draftState": "READY_FOR_REVIEW",
+    "submittedDate": null
+  },
+  "publicDraftUnchanged": true,
+  "imagesChanged": false,
+  "sourceSpreadsheetWritten": false,
+  "backendPolicyChanged": false,
+  "billingPricesTrialsAndQuotaChanged": false,
+  "deliveryToolsTestsPassed": 8,
+  "deliveryToolSHA256": {
+    "apple125.test.cjs": "b699d91d47fa6275ce58fb26becebc216ee17093c858b37df6db0e378a9688ec",
+    "fetch-logs.py": "d451c63c85fa2f047185db31022fa5be5c4b1dc6be543e8384cc50f49007e204",
+    "cloud125.py": "ad352a7ada454e6d927e6ef54af8c978fe97b383d657670fca77cd28f1b28a32",
+    "download125.py": "6e005d4727d0daac7199162f254b6cb2ec74fd3cbe30e33108fb17b57fca4555",
+    "poll125.py": "9fb96ba66afa5d99bce2f637ed2fa4acd1ea835f7773c5a13e7958c1455ee49e",
+    "verify125.py": "98affa93709210dcdb09dc5d3de9701a82ed8baf9fae33e84feb7d12165a02de",
+    "poll-submit125.py": "f6643f2772f75439b2d54eb5f5c9e2df4ff51d4ea0a1aef9385b4602bdc9c9de",
+    "apple125.cjs": "c7fced2c6c8818441d9251bc52676fb591e29e14680d5481683358bf33c67bd5"
+  },
+  "releaseRecordCouncil": "GO; cleared stale pending-test field and clarified percentage-tool detail display"
+}

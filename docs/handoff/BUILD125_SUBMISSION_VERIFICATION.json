@@ -1,0 +1,13 @@
+{
+  "submissionId": "cffd2c3c-0392-47a4-9a39-aec571ccc912",
+  "status": "FINISHED",
+  "platform": "IOS",
+  "createdAt": "2026-11-22T06:58:56.358Z",
+  "completedAt": "2026-11-22T06:59:09.260Z",
+  "buildId": "fcd18291-a03e-4319-8559-f5f2edc29662",
+  "sourceCommit": "2091d5b8c29a255f268d23475c0e45b1e67b58be",
+  "buildNumber": "125",
+  "buildStatus": "FINISHED",
+  "submissionScope": "EAS upload completion only; Apple processing, internal group and beta notes checked separately",
+  "publicReviewSubmitted": false
+}

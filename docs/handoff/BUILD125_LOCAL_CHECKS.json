@@ -5,7 +5,7 @@
   "expoDependencyCheck": "PASS",
   "iosPrebuild": "PASS",
   "prebuildWarning": "Existing optional expo-system-ui background color notice; no dependency change",
-  "tests": "PENDING_FINAL_RUN",
+  "tests": "PASS",
   "nativeVisualAcceptance": false,
   "publicReviewSubmitted": false,
   "canonicalFinalTypecheck": "PASS",
