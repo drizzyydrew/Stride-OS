@@ -115,7 +115,7 @@ function preset(
     const sets = lowDemand ? Math.min(2, exercise.sets) : beginner || trainingPurpose === 'running_support' ? Math.min(2, exercise.sets) : exercise.sets;
     if (priorityMains?.includes(exercise.name)) return {
       ...exercise,
-      sets: Math.min(2, exercise.sets),
+      sets: 3,
       reps: '3-5',
       repScheme: parsePrescriptionScheme('3-5', { exerciseName: exercise.name }),
       targetRpe: 8,
@@ -224,8 +224,8 @@ const GYM_BARBELL: PresetStrengthWorkout[] = [
     ex('Standing Calf Raise', 3, '12-15', ['barbell']),
   ]),
   preset('sw_barbell_total_body_power', 'Total-Body Barbell Power', 'Low-repetition lower-body strength and crisp overhead power, with full rests between sets.', 45, ['gym_barbell', 'full_body'], [
-    ex('Trap Bar Deadlift', 3, '3-5', ['barbell'], 'Strength support: choose a repeatable submaximal load rather than grind repetitions.'),
     ex('Push Press', 3, '3-5', ['barbell'], 'Purposeful speed and stable overhead control. Rest fully; stop before repetitions slow markedly.'),
+    ex('Trap Bar Deadlift', 3, '3-5', ['barbell'], 'Strength support: choose a repeatable submaximal load rather than grind repetitions.'),
     ex('Front Squat', 2, '5', ['barbell', 'squat_rack']),
     ex('Barbell Row', 2, '6-8', ['barbell']),
   ]),

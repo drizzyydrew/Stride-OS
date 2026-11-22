@@ -16,7 +16,7 @@ test('practiced-lifter preset resolves priority mains, not a universal heavy pre
   assert.equal(result.canStart, true);
   assert.equal(result.recommended, true);
   assert.deepEqual(result.workout.exercises.slice(0, 2).map(ex => [ex.sets, ex.reps, ex.targetRpe, ex.restSeconds]),
-    [[2, '3-5', 8, 180], [2, '3-5', 8, 180]]);
+    [[3, '3-5', 8, 180], [3, '3-5', 8, 180]]);
   assert.deepEqual(result.workout.exercises.slice(2).map(ex => [ex.name, ex.sets, ex.reps, ex.targetRpe, ex.restSeconds]),
     [['Bent-Over Row', 3, '8-10', 7, 90], ['Plank', 3, '30-45s', 7, 90]]);
   assert.ok(result.workout.durationMin >= estimateStrengthPresetMinutes(result.workout));
@@ -71,7 +71,7 @@ test('time guard uses the resolved full-rest duration and supplies a fitting lig
 
 test('explicit allowlist preserves Classic 5x5 and beginner, running, power and recovery prescriptions', () => {
   const protectedIds = ['sw_barbell_strength_5x5', 'sw_barbell_beginner_full_body', 'sw_barbell_runner_strength_gym',
-    'sw_barbell_total_body_power', 'sw_band_activation_pre_run', 'sw_post_run_recovery_bodyweight'];
+    'sw_band_activation_pre_run', 'sw_post_run_recovery_bodyweight'];
   for (const id of protectedIds) {
     const original = getStrengthPresetWorkout(id)!;
     assert.ok(!STRENGTH_PRESET_PRIORITY_MAINS[id]);
@@ -85,6 +85,60 @@ test('explicit allowlist preserves Classic 5x5 and beginner, running, power and 
     assert.equal(workout.trainingPurpose, 'strength');
     assert.ok(mains.length <= 2 && mains.every(name => workout.exercises.some(ex => ex.name === name)));
   }
+});
+
+test('optional fourth and fifth main sets change the displayed and launched dose and full-rest time only', () => {
+  const original = JSON.stringify(fullBody());
+  const three = resolveStrengthPresetWorkout(fullBody(), { ...ready, availableTimeMin: 120 });
+  const durations = [three.workout.durationMin];
+  for (const mainSets of [4, 5] as const) {
+    const resolution = resolveStrengthPresetWorkout(fullBody(), { ...ready, availableTimeMin: 120, mainSets });
+    assert.equal(resolution.canStart, true);
+    assert.deepEqual(resolution.workout.exercises.slice(0, 2).map(ex => ex.sets), [mainSets, mainSets]);
+    assert.deepEqual(resolution.workout.exercises.slice(2), three.workout.exercises.slice(2));
+    assert.equal(strengthPresetLaunchInput(resolution)!.exercises[0]!.sets, mainSets);
+    assert.equal(resolution.workout.durationMin, Math.max(fullBody().durationMin, estimateStrengthPresetMinutes(resolution.workout)));
+    durations.push(resolution.workout.durationMin);
+    const limited = resolveStrengthPresetWorkout(fullBody(), { ...ready, availableTimeMin: three.workout.durationMin, mainSets });
+    assert.equal(limited.canStart, false);
+  }
+  assert.ok(durations[1]! > durations[0]! && durations[2]! > durations[1]!);
+  assert.equal(JSON.stringify(fullBody()), original);
+  assert.deepEqual(resolveStrengthPresetWorkout(getStrengthPresetWorkout('sw_barbell_strength_5x5')!, { ...ready, mainSets: 3 }).workout.exercises.map(ex => ex.sets), [5, 5, 5]);
+});
+
+test('session-fit bypass requires acknowledgement of the exact current context and prescription', () => {
+  const fit = resolveStrengthPresetWorkout(fullBody(), { ...ready, strengthLevel: 'beginner' });
+  assert.equal(strengthPresetLaunchInput(fit), null);
+  const allowed = strengthPresetLaunchInput(fit, fit.sessionFitKey)!;
+  assert.equal(allowed.workoutId, fullBody().id);
+  assert.equal(allowed.exercises[0]!.sets, 3);
+  assert.equal(strengthPresetLaunchInput(fit, 'different-session'), null);
+  for (const patch of [{ mainSets: 4 as const }, { soreness: 8 }, { recoveryScore: 70 }, { trainingPhase: 'recovery' as const }]) {
+    const changed = resolveStrengthPresetWorkout(fullBody(), { ...ready, strengthLevel: 'beginner', ...patch });
+    assert.equal(strengthPresetLaunchInput(changed, fit.sessionFitKey), null);
+  }
+  // Acknowledgement neither changes the default decision nor bypasses malformed data.
+  assert.equal(strengthPresetLaunchInput(fit), null);
+  assert.equal(strengthPresetLaunchInput({ ...fit, workout: { ...fit.workout, durationMin: NaN } }, fit.sessionFitKey), null);
+  assert.equal(strengthPresetLaunchInput({ ...fit, workout: { ...fit.workout, exercises: [{ ...fit.workout.exercises[0]!, sets: Infinity }] } }, fit.sessionFitKey), null);
+});
+
+test('power purpose keeps its distinct dose, speed-first order and session-fit guidance', () => {
+  const power = getStrengthPresetWorkout('sw_barbell_total_body_power')!;
+  assert.equal(power.exercises[0]!.name, 'Push Press');
+  const before = JSON.stringify(power);
+  const fresh = resolveStrengthPresetWorkout(power, { ...ready, mainSets: 5 });
+  assert.equal(fresh.mode, 'power_specific');
+  assert.equal(fresh.canStart, true);
+  assert.deepEqual(fresh.workout.exercises, power.exercises);
+  for (const patch of [{ strengthLevel: 'beginner' as const }, { fatigueScore: 90 }, { soreness: 8 }, { availableTimeMin: 10 }]) {
+    const fit = resolveStrengthPresetWorkout(power, { ...ready, ...patch });
+    assert.equal(fit.canStart, false);
+    assert.equal(strengthPresetLaunchInput(fit), null);
+    assert.ok(strengthPresetLaunchInput(fit, fit.sessionFitKey));
+  }
+  assert.equal(JSON.stringify(power), before);
 });
 
 test('Recommended retains its existing category rather than admitting every allowed preset', () => {

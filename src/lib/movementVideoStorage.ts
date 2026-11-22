@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 
 import { resolveDocumentUri, toRelativeDocumentPath } from './mediaPaths';
 import { getSupabaseAvailability, supabaseUnavailableMessage } from './supabase';
+import { assertMovementLabWork, recheckMovementLabWork, type MovementLabWork } from './movementLabAccess';
 
 const VIDEO_DIR = `${FileSystem.documentDirectory}movement-videos/`;
 
@@ -95,7 +96,10 @@ export async function uploadMovementVideo(
   localUri: string,
   storagePath: string,
   contentType: string,
+  work: MovementLabWork,
 ): Promise<void> {
+  assertMovementLabWork(work);
+  if (storagePath.split('/')[0] !== work.lease.ownerUserId) throw new Error('This video belongs to a different account.');
   const supabaseState = getSupabaseAvailability();
   if (supabaseState.status !== 'available') {
     throw new Error(supabaseUnavailableMessage('Movement video upload'));
@@ -106,6 +110,8 @@ export async function uploadMovementVideo(
   const base64 = await FileSystem.readAsStringAsync(resolvedUri, {
     encoding: FileSystem.EncodingType.Base64,
   });
+  await recheckMovementLabWork(work);
+  assertMovementLabWork(work);
   const arrayBuffer = base64ToArrayBuffer(base64);
 
   const { error } = await supabase.storage

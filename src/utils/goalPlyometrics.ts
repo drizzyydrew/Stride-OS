@@ -21,6 +21,7 @@ export function isRecordedReactiveExercise(exercise: Pick<import('../types/stren
 
 
 function actualWorkingSets(record: StrengthLogRecord, exerciseId: string) {
+  if (!record.completed || record.skipped) return [];
   const matches = record.exercises.filter(item => item.exerciseId === exerciseId);
   const exercise = matches.length===1 && !matches[0]!.skipped ? matches[0] : undefined;
   if (!exercise || exercise.equipmentType !== 'bodyweight'
@@ -36,12 +37,14 @@ function actualWorkingSets(record: StrengthLogRecord, exerciseId: string) {
 
 function recentRecords(input: StrengthEngineInput, now: number) {
   const seen = new Set<string>();
-  return input.strengthHistory.filter(record => record.completed && !record.skipped && Number.isFinite(record.timestamp)
+  // Keep attempts until qualification. Otherwise an unfinished or skipped
+  // recent workout can reveal older favorable impact/preparation evidence.
+  return input.strengthHistory.filter(record => Number.isFinite(record.timestamp)
     && record.timestamp <= now && record.timestamp >= now - 42 * DAY)
     .sort((a, b) => b.timestamp - a.timestamp).filter(record => {
-      const key = record.scheduledSessionId || `${record.id}`;
-      if (seen.has(key)) return false;
-      seen.add(key); return true;
+      const key = record.scheduledSessionId || record.sessionId || record.id;
+      if (seen.has(key) || seen.has(record.id)) return false;
+      seen.add(key); seen.add(record.id); return true;
     });
 }
 
@@ -70,27 +73,40 @@ export function plyometricDose(input: StrengthEngineInput): { task: PlyometricTa
   const records = recentRecords(input, now);
   if (records[0]?.overallRpe !== undefined && (!Number.isFinite(records[0].overallRpe) || records[0].overallRpe! > 7)) return null;
   // Two separate days of actual manageable lower-body AND calf practice.
-  const preparatory = records.filter(record => {
-    const usable = record.exercises.filter(item => !item.skipped && !/pogo|plyo|hop|jump/.test(item.exerciseId));
-    return ['lower', 'calf'].every(role => usable.some(item => {
-      const relevant = role === 'calf' ? /^calf_(single_standing|seated)$/.test(item.exerciseId)
-        : /^(squat_|hinge_|lunge_)/.test(item.exerciseId);
+  const preparationRole = (item: StrengthLogRecord['exercises'][number]) =>
+    /^calf_(single_standing|seated)$/.test(item.exerciseId) ? 'calf'
+      : /^(squat_|hinge_|lunge_)/.test(item.exerciseId) ? 'lower' : undefined;
+  const preparationDays = new Set<string>();
+  const preparatory: StrengthLogRecord[] = [];
+  for (const record of records) {
+    const usable = record.exercises.filter(item => preparationRole(item));
+    if (!usable.length) continue; // Unrelated upper-body or mobility work is not a failed preparation attempt.
+    const day = toYMD(new Date(record.timestamp));
+    if (preparationDays.has(day)) continue;
+    preparationDays.add(day);
+    const manageable = record.completed && !record.skipped
+      && ['lower', 'calf'].every(role => usable.some(item => {
+      if (preparationRole(item) !== role) return false;
       const sets = item.sets.filter(set => !set.isWarmup);
-      return relevant && !!item.equipmentType && sets.length >= 2 && (!item.prescription || sets.length >= item.prescription.sets)
+      return !item.skipped && !!item.equipmentType && sets.length >= 2 && (!item.prescription || sets.length >= item.prescription.sets)
         && sets.every(set => set.completed && Number.isSafeInteger(set.reps) && set.reps! >= 6
           && !set.holdSeconds && !set.distanceMeters
           && (set.weight === undefined || (Number.isFinite(set.weight) && set.weight >= 0 && ['lb', 'kg'].includes(set.weightUnit ?? '')))
           && (set.load === undefined || /^bw$/i.test(set.load.trim()) || /^(\d+(?:\.\d+)?)\s*(lb|lbs|kg)$/i.test(set.load.trim()))
           && Number.isFinite(set.rpe) && set.rpe! >= 1 && set.rpe! <= 7);
     }));
-  });
+    if (!manageable) break;
+    preparatory.push(record);
+  }
   if (new Set(preparatory.map(record => toYMD(new Date(record.timestamp)))).size < 2) return null;
-  const impactReports = records.flatMap(record=>record.exercises.filter(ex=>!ex.skipped && isRecordedReactiveExercise(ex)
+  // Completed contacts still happened if the parent workout/exercise was later
+  // marked unfinished or skipped. Preserve their reported adverse response.
+  const impactReports = records.flatMap(record=>record.exercises.filter(ex=>isRecordedReactiveExercise(ex)
     && ex.sets.some(set=>set.completed && !set.isWarmup && (set.reps??0)>0)).map(ex=>({timestamp:record.timestamp,response:normalizePlyometricResponse(ex.impactResponse,record.timestamp,now)})));
   const adverse = impactReports.find(item=>item.response?.symptomsDuring==='present' || item.response?.nextDayResponse==='worse' || item.response?.landingControl==='lost');
   const observedAll = records.flatMap(record => record.exercises.flatMap(exercise => {
     const task = plyometricTask(exercise.exerciseId);
-    return task && !exercise.skipped && exercise.sets.some(set => set.completed && !set.isWarmup)
+    return task
       ? [{ record, exercise, task, response: normalizePlyometricResponse(exercise.impactResponse, record.timestamp, now) }] : [];
   }));
   const responsePositive = (item: typeof observedAll[number]) => item.response?.landingControl === 'controlled'
@@ -123,7 +139,7 @@ export function plyometricDose(input: StrengthEngineInput): { task: PlyometricTa
     const latestMinimumReps=Math.min(...actualWorkingSets(latest.record,latest.exercise.exerciseId).map(set=>set.reps!));
     // A harder tier additionally retains an actual single-leg strength and
     // running foundation; an advanced label or a week number is insufficient.
-    const singleLegDays = new Set(records.filter(record => ['calf_single_standing', 'lunge_reverse'].every(role => record.exercises.some(exercise => {
+    const singleLegDays = new Set(preparatory.filter(record => ['calf_single_standing', 'lunge_reverse'].every(role => record.exercises.some(exercise => {
       const match = role === 'calf_single_standing' ? exercise.exerciseId === role
         : ['lunge_reverse', 'squat_bulgarian', 'hinge_single_rdl'].includes(exercise.exerciseId);
       return match && !exercise.skipped && !!exercise.equipmentType && exercise.prescription?.repScheme?.perSide===true
@@ -175,10 +191,8 @@ export function applyGoalPlyometrics(sessions: StrengthSession[], input: Strengt
   const dose = allowNewImpact ? plyometricDose(input) : null;
   const weekStartDate = sundayOf(input.referenceDate ? new Date(`${input.referenceDate}T12:00:00`) : new Date());
   const weekStart = weekStartDate.getTime(), weekEnd = addDays(weekStartDate, 7).getTime();
-  const performedThisWeek = input.strengthHistory.filter(record => record.completed && !record.skipped
-    && Number.isFinite(record.timestamp) && record.timestamp >= weekStart && record.timestamp < weekEnd
-    && record.timestamp <= Date.now() && record.exercises.some(ex => !ex.skipped
-      && /pogo|plyo|hop|jump|bound/i.test(`${ex.exerciseId} ${ex.name ?? ''}`)
+  const performedThisWeek = input.strengthHistory.filter(record => Number.isFinite(record.timestamp) && record.timestamp >= weekStart && record.timestamp < weekEnd
+    && record.timestamp <= Date.now() && record.exercises.some(ex => isRecordedReactiveExercise(ex)
       && ex.sets.some(set => set.completed && !set.isWarmup && (set.reps ?? 0) > 0)));
   let used = false;
   return sessions.map(session => {

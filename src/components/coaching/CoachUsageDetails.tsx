@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, Text, View, useWindowDimensions } from 'react-native';
-import { Collapsible, Host, RNHostView } from '@expo/ui';
+import { Collapsible, Host } from '@expo/ui';
 import { useThemeMode } from '../../store/themeStore';
 import { useColors } from '../../theme/useColors';
 import { coachUsageExample, coachUsageLabel, type CoachUsage } from '../../utils/coachUsage';
@@ -17,12 +17,15 @@ export default function CoachUsageDetails({ usage, status, checkedAt, sending, o
   const label = sending ? 'Updating AI usage…' : shown
     ? `${coachUsageLabel(shown)}${status === 'unavailable' ? ' · last checked' : status === 'loading' ? ' · updating' : ''}`
     : status === 'loading' ? 'Checking AI usage…' : 'AI usage unavailable';
-  const copy = { color: C.textMuted, fontSize: 13, lineHeight: 20 };
-  return <View style={{ paddingHorizontal: 4, paddingBottom: 8 }}>
+  const copy = { color: C.textMuted, fontSize: 13, lineHeight: 20, flexShrink: 1 };
+  return <View style={{ width: '100%', maxWidth: '100%', minWidth: 0, paddingHorizontal: 4, paddingBottom: 8 }}>
     <Host matchContents={{ vertical: true }} colorScheme={mode} seedColor={C.primary} ignoreSafeArea="all" style={{ width: '100%', minHeight: 44 }}>
       <Collapsible label={label} isOpen={open} onOpenChange={setOpen}
-        labelStyle={{ color: C.textMuted, fontSize: 13 * fontScale, fontWeight: '500' }}>
-        {open ? <RNHostView matchContents><View style={{ paddingVertical: 8, gap: 8 }}>
+        labelStyle={{ color: C.textMuted, fontSize: 13 * fontScale, fontWeight: '500' }} />
+    </Host>
+    {/* Yoga owns the paragraph width. A content-sized RNHostView inside the
+        native disclosure group measures long paragraphs at intrinsic width. */}
+    {open ? <View style={{ width: '100%', maxWidth: '100%', minWidth: 0, alignSelf: 'stretch', paddingVertical: 8, paddingHorizontal: 8, gap: 8 }}>
           <Text style={[copy, { color: C.text, fontWeight: '600' }]}>AI usage details</Text>
           {shown ? <>
             <Text style={copy}>{shown.remaining} requests remain in your personal daily allowance. Resets {new Date(shown.resetsAt).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })} (00:00 UTC).</Text>
@@ -36,8 +39,6 @@ export default function CoachUsageDetails({ usage, status, checkedAt, sending, o
             style={{ minHeight: 44, justifyContent: 'center', opacity: sending || status === 'loading' ? 0.5 : 1 }}>
             <Text style={[copy, { color: C.primary, fontWeight: '600' }]}>{status === 'loading' ? 'Refreshing…' : 'Refresh usage'}</Text>
           </Pressable>
-        </View></RNHostView> : null}
-      </Collapsible>
-    </Host>
+        </View> : null}
   </View>;
 }

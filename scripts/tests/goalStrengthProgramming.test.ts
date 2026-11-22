@@ -138,6 +138,28 @@ test('a third heavy working set needs two successful heavy sessions, while a bet
   assert.equal(reviewed.sets, 2, 'a review week retains familiar work without adding a set');
 });
 
+test('a completed captured third heavy set survives review without calendar-driven volume loss', () => {
+  const latest = heavyExposure('own-three-sets', 2, 35);
+  latest.exercises[0]!.prescription!.sets = 3;
+  latest.exercises[0]!.sets.push({ ...latest.exercises[0]!.sets[0]! });
+  const history = [exposure('base-a', 14), exposure('base-b', 11), heavyExposure('heavy-a', 7), latest];
+  const before = structuredClone(history);
+  for (const currentWeek of [5, 6, 11]) {
+    const planned = squat({ currentWeek, strengthHistory: history });
+    assert.ok(isHeavy(planned));
+    assert.equal(planned.sets, 3, `week ${currentWeek} retains actual successful three-set work`);
+  }
+  assert.ok(squat({ currentWeek: 4, strengthHistory: history }).sets <= 2, 'recovery still overrides retained volume');
+  assert.ok(squat({ availableTimeMin: 20, strengthHistory: history }).sets <= 2, 'retained volume cannot bypass the real time budget');
+  assert.deepEqual(history, before);
+  for (const incomplete of [false, true]) {
+    const unfinished = structuredClone(latest);
+    if (incomplete) unfinished.exercises[0]!.sets[2]!.completed = false;
+    else unfinished.exercises[0]!.sets.pop();
+    assert.equal(isHeavy(squat({ currentWeek: 6, strengthHistory: [...history.slice(0, -1), unfinished] })), false, 'a prescribed third set is not proof it was completed');
+  }
+});
+
 test('completed planned recovery preserves familiar heavy practice without counting as another heavy success', () => {
   const history = [exposure('base-a', 12), exposure('base-b', 9), heavyExposure('heavy-a', 5)];
   const recovery = squat({ currentWeek: 4, strengthHistory: history });

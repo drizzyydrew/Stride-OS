@@ -22,6 +22,9 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { useEffect, useRef, useState } from 'react';
+import { useMovementLabWork } from '../../../src/hooks/useMovementLabWork';
+import type { MovementLabWork } from '../../../src/lib/movementLabAccess';
+import MovementLabCreateGate from '../../../src/components/movement/MovementLabCreateGate';
 import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -202,6 +205,12 @@ function anglesForView(
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function AnalyzeScreen() {
+  return <MovementLabCreateGate><MovementAnalyzeContent /></MovementLabCreateGate>;
+}
+
+function MovementAnalyzeContent() {
+  const access = useMovementLabWork();
+  const mediaWork = useRef<MovementLabWork | null>(null);
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ kind?: string }>();
   const normalizedKind = normalizeAnalysisKind(params.kind ?? 'general');
@@ -341,14 +350,19 @@ export default function AnalyzeScreen() {
   }
 
   async function pickPhoto(source: 'camera' | 'library') {
+    const work = await access.begin();
+    if (!work) return;
+    mediaWork.current = work;
     if (source === 'camera') {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (!await access.refresh(work)) return;
       if (status !== 'granted') {
         Alert.alert('Permission needed', 'StrideOS needs camera access to record for analysis.');
         return;
       }
     } else {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!await access.refresh(work)) return;
       if (status !== 'granted') {
         Alert.alert('Permission needed', 'StrideOS needs photo library access to choose media for analysis.');
         return;
@@ -359,6 +373,7 @@ export default function AnalyzeScreen() {
     const result = source === 'camera'
       ? await ImagePicker.launchCameraAsync(options)
       : await ImagePicker.launchImageLibraryAsync(options);
+    if (!await access.refresh(work)) return;
 
     if (!result.canceled && result.assets.length > 0) {
       applyPickedAsset(result.assets[0], 'photo');
@@ -366,6 +381,8 @@ export default function AnalyzeScreen() {
   }
 
   async function prepareVideoAsset(asset: ImagePicker.ImagePickerAsset) {
+    const work = mediaWork.current;
+    if (!await access.refresh(work)) return;
     setImportingVideo(true);
     setImportError(null);
     setRetryVideoAsset(asset);
@@ -377,6 +394,7 @@ export default function AnalyzeScreen() {
       fileName: asset.fileName,
     });
     setImportingVideo(false);
+    if (!await access.refresh(work)) return;
     if (!prepared.ok) {
       setImportError(prepared.error.message);
       return;
@@ -393,21 +411,29 @@ export default function AnalyzeScreen() {
   }
 
   async function pickVideoFromLibrary() {
+    const work = await access.begin();
+    if (!work) return;
+    mediaWork.current = work;
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!await access.refresh(work)) return;
     if (status !== 'granted') {
       Alert.alert('Permission needed', 'StrideOS needs photo library access to choose a video for analysis.');
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync(MOVEMENT_VIDEO_PICKER_OPTIONS);
+    if (!await access.refresh(work)) return;
     if (result.canceled || result.assets.length === 0) return;
     await prepareVideoAsset(result.assets[0]);
   }
 
   async function handleCameraCaptured(result: TimedCaptureResult) {
+    const work = mediaWork.current;
+    if (!await access.refresh(work)) return;
     const { uri } = result;
     if (result.type === 'video') {
       const validationError = await validatePickedVideo({ uri });
+      if (!await access.refresh(work)) return;
       if (validationError) {
         Alert.alert("This clip can't be used", validationError.message);
         return;
@@ -423,6 +449,13 @@ export default function AnalyzeScreen() {
     });
     setFrame(null);
     resetPoseState();
+  }
+
+  async function openCamera(mode: 'photo' | 'video') {
+    const work = await access.begin();
+    if (!work) return;
+    mediaWork.current = work;
+    setCameraMode(mode); setShowCamera(true);
   }
 
   function removeMedia() {
@@ -496,12 +529,15 @@ export default function AnalyzeScreen() {
     runId: number = analysisRunRef.current,
   ) {
     if (!media || media.type !== 'video') return;
+    const work = mediaWork.current;
+    if (!await access.refresh(work)) return;
     setFrameBusy(timeMs);
     try {
       const { uri, width, height } = await VideoThumbnails.getThumbnailAsync(media.uri, {
         time:    timeMs,
         quality: 0.9,
       });
+      if (!await access.refresh(work)) return;
       if (isStaleRun(runId)) return;
       setFrame({ uri, width, height, timeMs });
       const seqFrame = nearestSequenceFrame(resultOverride ?? sequenceResult, timeMs);
@@ -522,6 +558,7 @@ export default function AnalyzeScreen() {
         // detection on the extracted frame instead of waiting for a button tap.
         if (poseAvailable) {
           const result = await detectPose(uri);
+          if (!await access.refresh(work)) return;
           if (isStaleRun(runId)) return;
           if (result && result.joints.length > 0) {
             const landmarks = result.joints.map(j => ({ name: j.name, x: j.x, y: j.y, confidence: j.confidence }));
@@ -548,10 +585,13 @@ export default function AnalyzeScreen() {
 
   async function handleDetectPose(runId: number = analysisRunRef.current) {
     if (!analyzableStillUri || detecting) return;
+    const work = mediaWork.current;
     setDetecting(true);
     setPoseMessage(null);
     try {
+      if (!await access.refresh(work)) return;
       const result = await detectPose(analyzableStillUri);
+      if (!await access.refresh(work)) return;
       if (isStaleRun(runId)) return;
       if (!result || result.joints.length === 0) {
         setPose(null);
@@ -575,7 +615,8 @@ export default function AnalyzeScreen() {
   }
 
   async function handleAnalyzeVideo(runId: number = analysisRunRef.current) {
-    if (!media || media.type !== 'video') return;
+    if (!media || media.type !== 'video' || analyzingVideo) return;
+    const work = mediaWork.current;
     const mediaUri = media.uri;
     setAnalyzingVideo(true);
     setSeqProgress({ processed: 0, total: 1 });
@@ -583,6 +624,7 @@ export default function AnalyzeScreen() {
     setSequenceResult(null);
     setSequenceAnalysis(null);
     try {
+      if (!await access.refresh(work)) return;
       const result = await detectPoseSequence(mediaUri, {
         fps: 12,
         maxDurationMs: 30_000,
@@ -590,6 +632,7 @@ export default function AnalyzeScreen() {
           if (!isStaleRun(runId)) setSeqProgress({ processed, total });
         },
       });
+      if (!await access.refresh(work)) return;
       if (isStaleRun(runId)) return;
 
       if (!result || result.frames.length === 0) {
@@ -692,7 +735,10 @@ export default function AnalyzeScreen() {
 
   async function handleSave() {
     if (!media || !canSave || saving || closestSideUnresolved || orientationUnconfirmed) return;
+    const work = mediaWork.current;
     setSaving(true);
+    try {
+    if (!await access.refresh(work)) return;
 
     const checklistFindings: ChecklistFinding[] = checklist
       .filter(item => answers[item.id] !== undefined)
@@ -733,6 +779,7 @@ export default function AnalyzeScreen() {
     } catch {
       // keep original URI
     }
+    if (!await access.refresh(work)) return;
 
     let storedReferenceFrameUri: string | undefined;
     let storedSourceVideoUri: string | undefined;
@@ -745,6 +792,7 @@ export default function AnalyzeScreen() {
       } catch {
         storedReferenceFrameUri = referenceFrameUri;
       }
+      if (!await access.refresh(work)) return;
     }
     if (media.type === 'video' && mediaType === 'video_frame') {
       try {
@@ -752,7 +800,9 @@ export default function AnalyzeScreen() {
       } catch {
         storedSourceVideoUri = media.uri;
       }
+      if (!await access.refresh(work)) return;
     }
+    if (!await access.refresh(work)) return;
 
     const effectiveKeyFrames = sequenceAnalysis?.keyFrames.map(keyFrame => ({
       ...keyFrame,
@@ -786,6 +836,7 @@ export default function AnalyzeScreen() {
     }));
     const manualRecommendations = buildAnalysisRecommendations(kind, checklistFindings);
 
+    if (!access.check(work)) return;
     const id = addAnalysis({
       type:              kind,
       mediaUri:          storedUri,
@@ -834,19 +885,19 @@ export default function AnalyzeScreen() {
     } as never);
 
     if (sequenceResult) {
-      try {
-        const poseUri = await savePoseSequence(id, sequenceResult);
-        updateAnalysis(id, { poseSequenceUri: poseUri });
-      } catch {
-        // Inline angle/key-frame data remains available if the raw pose file cannot be written.
-      }
+      const attachment = await access.attach(work, () => savePoseSequence(id, sequenceResult));
+      if (!attachment.allowed) return;
+      if (!access.check(work)) return;
+      if (attachment.value) updateAnalysis(id, { poseSequenceUri: attachment.value });
     }
 
-    setSaving(false);
+    if (!await access.refresh(work)) return;
+    if (!access.check(work)) return;
     router.replace({
       pathname: mediaType === 'video' ? '/(tabs)/movement/video-analysis' : '/(tabs)/movement/analysis-detail',
       params: mediaType === 'video' ? { id } : { analysisId: id },
     } as never);
+    } finally { setSaving(false); }
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -919,13 +970,13 @@ export default function AnalyzeScreen() {
           {!media ? (
             <View style={{ gap: spacing.sm }}>
               <View style={s.mediaBtnGrid}>
-                <Pressable style={s.mediaBtn} onPress={() => { setCameraMode('video'); setShowCamera(true); }}>
+                <Pressable style={s.mediaBtn} onPress={() => void openCamera('video')}>
                   <Text style={s.mediaBtnTxt}>Record Video</Text>
                 </Pressable>
                 <Pressable style={[s.mediaBtn, importingVideo && { opacity: 0.5 }]} onPress={pickVideoFromLibrary} disabled={importingVideo}>
                   <Text style={s.mediaBtnTxt}>{importingVideo ? 'Preparing…' : 'Choose Video'}</Text>
                 </Pressable>
-                <Pressable style={s.mediaBtn} onPress={() => { setCameraMode('photo'); setShowCamera(true); }}>
+                <Pressable style={s.mediaBtn} onPress={() => void openCamera('photo')}>
                   <Text style={s.mediaBtnTxt}>Take Photo</Text>
                 </Pressable>
                 <Pressable style={s.mediaBtn} onPress={() => pickPhoto('library')}>
@@ -953,7 +1004,7 @@ export default function AnalyzeScreen() {
               )}
               <View style={s.mediaActionsRow}>
                 {media.type === 'video' && (
-                  <Pressable style={s.mediaActionBtn} onPress={() => { setCameraMode('video'); setShowCamera(true); }}>
+                  <Pressable style={s.mediaActionBtn} onPress={() => void openCamera('video')}>
                     <Text style={s.mediaActionTxt}>Retake</Text>
                   </Pressable>
                 )}

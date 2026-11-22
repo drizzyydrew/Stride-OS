@@ -4,7 +4,7 @@ import type { RaceDistance } from '../types/training';
 import { isValidDateOnly } from './dateOnly';
 
 export type ProAccessStatus = 'included' | 'active' | 'checking' | 'inactive' | 'unavailable' | 'signed-out';
-export type ProFeature = 'personalized-plans' | 'week-rebuild';
+export type ProFeature = 'personalized-plans' | 'week-rebuild' | 'movement-lab';
 export type ProAccess = { status: ProAccessStatus; allowed: boolean; message: string };
 
 /** Access never changes, deletes, or hides an athlete's existing training. */
@@ -18,15 +18,16 @@ export function evaluateProAccess(input: {
   isPro: boolean;
   isLoading: boolean;
   error: string | null;
-}): ProAccess {
+}, feature: ProFeature = 'personalized-plans'): ProAccess {
+  const movement = feature === 'movement-lab';
   if (!input.billingEnabled) return { status: 'included', allowed: true, message: '' };
   if (!input.owner || !input.localAccess) return { status: 'signed-out', allowed: false, message: 'Sign in with the account that owns this training history.' };
-  if (!input.billingConfigured || !input.online) return { status: 'unavailable', allowed: false, message: 'Connect to the internet to verify membership before creating personalized training. Your saved plans and activities remain available.' };
-  if (input.error && input.membershipOwner === input.owner) return { status: 'unavailable', allowed: false, message: 'Membership could not be verified. Retry online. Your saved plans and activities remain available.' };
+  if (!input.billingConfigured || !input.online) return { status: 'unavailable', allowed: false, message: movement ? 'Connect to the internet to verify membership before starting new Movement Lab work. Your saved clips and results remain available.' : 'Connect to the internet to verify membership before creating personalized training. Your saved plans and activities remain available.' };
+  if (input.error && input.membershipOwner === input.owner) return { status: 'unavailable', allowed: false, message: movement ? 'Membership could not be verified. Retry online. Your saved clips and results remain available.' : 'Membership could not be verified. Retry online. Your saved plans and activities remain available.' };
   if (input.membershipOwner !== input.owner || input.isLoading) return { status: 'checking', allowed: false, message: 'Checking your membership…' };
   return input.isPro
     ? { status: 'active', allowed: true, message: '' }
-    : { status: 'inactive', allowed: false, message: 'Personalized plans and automatic week rebuilding are included with StrideOS Pro. Your existing plans and history remain available.' };
+    : { status: 'inactive', allowed: false, message: movement ? 'New Movement Lab recordings, imports and assessments are included with StrideOS Pro. Your saved clips and results remain available.' : 'Personalized plans and automatic week rebuilding are included with StrideOS Pro. Your existing plans and history remain available.' };
 }
 
 export function adaptationNeedsPro(overlays: ReadonlyArray<{ action: string }>, requiresPro?: 'week-rebuild'): boolean {

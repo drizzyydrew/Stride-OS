@@ -9,7 +9,10 @@ import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, 
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useMovementLabWork } from '../../../src/hooks/useMovementLabWork';
+import type { MovementLabWork } from '../../../src/lib/movementLabAccess';
+import { captureOwnerLease, ownerLeaseIsCurrent, type OwnerLease } from '../../../src/lib/localDataOwner';
 import * as FileSystem from 'expo-file-system';
 
 import { useMovementStore } from '../../../src/store/movementStore';
@@ -342,6 +345,9 @@ function SubmitForAnalysisCard({
 const HIT_SLOP = { top: 12, bottom: 12, left: 16, right: 16 } as const;
 
 export default function VideoDetailScreen() {
+  const access = useMovementLabWork();
+  const gaitWork = useRef<MovementLabWork | null>(null);
+  const gaitOwner = useRef<OwnerLease | null>(null);
   const insets    = useSafeAreaInsets();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
   const {
@@ -411,11 +417,36 @@ export default function VideoDetailScreen() {
   const findings = session?.gaitFindings ?? [];
   const flags    = session?.riskFlags    ?? [];
 
-  function handleSaveGait(g: GaitAnalysis) {
+  async function openGaitChecklist() {
+    if (useMovementStore.getState().getVideoSession(videoId!)?.gaitAnalysis) {
+      const lease = captureOwnerLease();
+      if (!lease) return;
+      gaitOwner.current = lease; gaitWork.current = null;
+    } else {
+      const work = await access.begin();
+      if (!work) return;
+      gaitOwner.current = work.lease; gaitWork.current = work;
+    }
+    setShowGaitModal(true);
+  }
+
+  async function handleSaveGait(g: GaitAnalysis) {
+    const lease = gaitOwner.current;
+    const work = gaitWork.current;
+    if (!lease || !ownerLeaseIsCurrent(lease)
+      || !useMovementStore.getState().videos.some(item => item.id === videoId)) return;
+    if (work) {
+      if (!await access.refresh(work)) return;
+    } else if (!useMovementStore.getState().getVideoSession(videoId!)?.gaitAnalysis) return;
+    if (!ownerLeaseIsCurrent(lease)) return;
     ensureSession(videoId!);
     updateGaitAnalysis(videoId!, g);
-    const suggested = suggestGaitFindings(g);
-    for (const f of suggested) addGaitFinding(videoId!, f);
+    // Corrections to an owned checklist stay available. Newly generated
+    // coaching findings require the verified paid work ticket.
+    if (work && access.check(work)) {
+      const suggested = suggestGaitFindings(g);
+      for (const f of suggested) addGaitFinding(videoId!, f);
+    }
   }
 
   function handleDelete() {
@@ -598,9 +629,10 @@ export default function VideoDetailScreen() {
               </View>
             )}
 
-            <Pressable style={s.actionBtn} onPress={() => setShowGaitModal(true)}>
+            <Pressable style={s.actionBtn} onPress={() => void openGaitChecklist()}>
               <Text style={s.actionBtnTxt}>{gait ? 'Update Gait Checklist' : 'Run Gait Checklist'}</Text>
             </Pressable>
+            {gait ? <Text style={s.emptyNote}>Update your saved checklist. Existing coaching findings remain unchanged.</Text> : null}
 
             {gait ? (
               <View style={s.gaitSummary}>

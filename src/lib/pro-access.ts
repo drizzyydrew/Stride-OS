@@ -9,7 +9,7 @@ export function proMembershipEnabled(): boolean {
   return Platform.OS === 'ios' && process.env.EXPO_PUBLIC_STRIDEOS_BILLING_ENABLED === 'true';
 }
 
-export function getProAccess() {
+export function getProAccess(feature: ProFeature = 'personalized-plans') {
   const auth = useAuthStore.getState();
   const membership = useSubscriptionStore.getState();
   const owner = auth.user?.id ?? auth.offlineOwnerId;
@@ -20,11 +20,11 @@ export function getProAccess() {
     owner, localAccess: auth.canAccessLocalData && !!localLease && localLease.ownerUserId === owner,
     online: !!onlineLease && onlineLease.ownerUserId === owner, membershipOwner: membership.owner,
     isPro: membership.isPro, isLoading: membership.isLoading, error: membership.error,
-  });
+  }, feature);
 }
 
-export function assertProAccess(_feature: ProFeature): void {
-  const access = getProAccess();
+export function assertProAccess(feature: ProFeature): void {
+  const access = getProAccess(feature);
   if (!access.allowed) throw new Error(access.message);
 }
 

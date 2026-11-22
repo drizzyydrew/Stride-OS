@@ -1,9 +1,11 @@
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Host, Picker } from '@expo/ui';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import SafeAreaView from '../../../../src/components/layout/PageSafeAreaView';
 
-import { getStrengthPresetWorkout } from '../../../../src/constants/strengthBank';
+import { getStrengthPresetWorkout, STRENGTH_PRESET_PRIORITY_MAINS } from '../../../../src/constants/strengthBank';
+import { useThemeMode } from '../../../../src/store/themeStore';
 import { useActiveStrengthSessionStore } from '../../../../src/store/activeStrengthSessionStore';
 import { endStrengthLiveActivity, startStrengthLiveActivity } from '../../../../src/lib/strengthLiveActivity';
 import { useColors } from '../../../../src/theme/useColors';
@@ -48,10 +50,32 @@ function exerciseSupport(name: string, equipment: string[]) {
   };
 }
 
+function MainSetPicker({ value, onChange }: { value: 3 | 4 | 5; onChange: (value: 3 | 4 | 5) => void }) {
+  const C = useColors(), theme = useThemeMode();
+  const change = (next: number) => { if (next === 3 || next === 4 || next === 5) onChange(next); };
+  const native = () => {
+    const { Picker: NativePicker, Text: NativeText } = require('@expo/ui/swift-ui') as typeof import('@expo/ui/swift-ui');
+    const { pickerStyle, tag, accessibilityLabel } = require('@expo/ui/swift-ui/modifiers') as typeof import('@expo/ui/swift-ui/modifiers');
+    return <NativePicker label="Working sets per main lift" selection={value} onSelectionChange={change}
+      modifiers={[pickerStyle('menu'), accessibilityLabel('Working sets per main lift')]}>
+      {[3, 4, 5].map(sets => <NativeText key={sets} modifiers={[tag(sets)]}>{sets} sets</NativeText>)}
+    </NativePicker>;
+  };
+  return <Host matchContents={{ vertical: true }} colorScheme={theme} seedColor={C.primary} style={{ width: '100%', minHeight: 44 }}>
+    {process.env.EXPO_OS === 'ios' ? native() : <Picker selectedValue={value} onValueChange={change} appearance="menu">
+      {[3, 4, 5].map(sets => <Picker.Item key={sets} value={sets} label={`${sets} sets per main lift`} />)}
+    </Picker>}
+  </Host>;
+}
+
 export default function PresetStrengthDetailScreen() {
   const C = useColors();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [mainSets, setMainSets] = useState<3 | 4 | 5>(3);
+  useEffect(() => setMainSets(3), [id]);
+  const mainSetsRef = useRef(mainSets);
+  mainSetsRef.current = mainSets;
   const { units } = useSettingsStore();
   const catalogWorkout = getStrengthPresetWorkout(String(id));
   const active = useActiveStrengthSessionStore(state => state.session);
@@ -68,6 +92,7 @@ export default function PresetStrengthDetailScreen() {
   currentPlanContext.current = { trainingPhase, planRecoveryLimited };
   const presetContext = buildStrengthPresetContext(onboarding, { fatigueScore, recoveryScore, trainingPhase, goalType }, checkIn);
   presetContext.recoveryLimited ||= planRecoveryLimited;
+  presetContext.mainSets = mainSets;
   const resolved = catalogWorkout ? resolveStrengthPresetWorkout(catalogWorkout,
     presetContext, active) : null;
   const workout = resolved?.workout;
@@ -87,17 +112,23 @@ export default function PresetStrengthDetailScreen() {
       goalType: useTrainingPlanStore.getState().goalType,
     }, useCheckInStore.getState().todayCheckIn);
     context.recoveryLimited ||= currentPlanContext.current.planRecoveryLimited;
+    context.mainSets = mainSetsRef.current;
     return resolveStrengthPresetWorkout(catalogWorkout!, context, useActiveStrengthSessionStore.getState().session);
   };
-  const showSessionFit = (fit: ResolvedStrengthPreset) => {
-    Alert.alert('Choose a session that fits today', fit.reason ?? 'Review your current training preferences before starting.', [
+  type SessionAcknowledgement = { key: string; lease: NonNullable<ReturnType<typeof captureOwnerLease>> };
+  const showSessionFit = (fit: ResolvedStrengthPreset, lease: SessionAcknowledgement['lease']) => {
+    Alert.alert('Choose a session that fits today', `${fit.reason ?? 'Review your current training preferences before starting.'}\n\nThis preset takes about ${fit.workout.durationMin} minutes. Continuing applies only to this session and keeps the displayed sets, effort and full rests. Adjust or stop if it does not feel right.`, [
       ...(fit.alternativeWorkoutId ? [{ text: 'View lighter alternative', onPress: () => router.replace({
         pathname: '/(tabs)/strength/preset/[id]', params: { id: fit.alternativeWorkoutId },
       } as never) }] : [{ text: 'Browse other presets', onPress: () => router.back() }]),
+      ...(fit.sessionFitKey ? [{ text: 'Continue anyway', onPress: () => {
+        if (ownerLeaseIsCurrent(lease)) begin({ key: fit.sessionFitKey!, lease });
+      } }] : []),
       { text: 'Cancel', style: 'cancel' },
     ]);
   };
-  const begin = () => {
+  const begin = (acknowledgement?: SessionAcknowledgement) => {
+    if (acknowledgement && !ownerLeaseIsCurrent(acknowledgement.lease)) return;
     if (!activeSessionStoresHydrated()) {
       Alert.alert('Restoring session', 'StrideOS is restoring your active-session state. Try again in a moment.');
       return;
@@ -113,7 +144,15 @@ export default function PresetStrengthDetailScreen() {
       return;
     }
     const fit = currentResolution();
-    if (!fit.canStart) return showSessionFit(fit);
+    const accepts = (latest: ResolvedStrengthPreset) => {
+      if (acknowledgement && latest.sessionFitKey !== acknowledgement.key) {
+        Alert.alert('Session details changed', 'Review the updated prescription and your current preferences before starting.');
+        return false;
+      }
+      if (!latest.canStart && !acknowledgement) { showSessionFit(latest, lease); return false; }
+      return true;
+    };
+    if (!accepts(fit)) return;
     const crossDomainConflict = getConflictingActiveSession('strength');
     if (crossDomainConflict) {
       Alert.alert(
@@ -137,10 +176,13 @@ export default function PresetStrengthDetailScreen() {
         return;
       }
       const latest = currentResolution();
-      if (!latest.canStart) return showSessionFit(latest);
+      if (!accepts(latest)) return;
       const launchWorkout = latest.workout;
-      const launchInput = strengthPresetLaunchInput(latest);
-      if (!launchInput) return showSessionFit(latest);
+      const launchInput = strengthPresetLaunchInput(latest, acknowledgement?.key);
+      if (!launchInput) {
+        Alert.alert('Review this preset', 'The prescription changed or is unavailable. Reopen it before starting.');
+        return;
+      }
       const exercises = launchInput.exercises;
       startSession(launchInput);
       const launchedSession = useActiveStrengthSessionStore.getState().session;
@@ -182,7 +224,7 @@ export default function PresetStrengthDetailScreen() {
               && useActiveStrengthSessionStore.getState().session?.workoutInstanceId === active.workoutInstanceId;
             if (!unchanged()) return;
             const latest = currentResolution();
-            if (!latest.canStart) return showSessionFit(latest);
+            if (!accepts(latest)) return;
             await endStrengthLiveActivity().catch(console.warn);
             if (!unchanged()) return;
             await endStrideWatchWorkout().catch(() => undefined);
@@ -212,6 +254,11 @@ export default function PresetStrengthDetailScreen() {
           <Text style={[styles.detailLabel, { color: C.textDim }]}>INTENDED USE</Text>
           <Text style={[styles.body, { color: C.textMuted }]}>{workout.description}</Text>
           {workout.planningNote ? <Text style={[styles.body, { color: C.textMuted }]}>{workout.planningNote}</Text> : null}
+          {STRENGTH_PRESET_PRIORITY_MAINS[workout.id]?.length && resolved?.mode !== 'captured' ? <>
+            <Text style={[styles.detailLabel, { color: C.textDim }]}>WORKING SETS PER MAIN LIFT</Text>
+            <MainSetPicker value={mainSets} onChange={setMainSets} />
+            <Text style={[styles.body, { color: C.textMuted }]}>Start with 3. Choose 4 or 5 when your experience, weekly lifting volume, time and recovery support it. Rehearsal sets are separate. The estimated time above includes the selected sets and full rests.</Text>
+          </> : null}
           {resolved?.reason ? <>
             <Text style={[styles.detailLabel, { color: C.primary }]}>SESSION FIT</Text>
             <Text style={[styles.body, { color: C.textMuted }]}>{resolved.reason}</Text>
@@ -251,7 +298,7 @@ export default function PresetStrengthDetailScreen() {
           </View>
           );
         })}
-        <TouchableOpacity style={[styles.startButton, { backgroundColor: C.primary }]} onPress={begin}>
+        <TouchableOpacity accessibilityRole="button" style={[styles.startButton, { backgroundColor: C.primary }]} onPress={() => begin()}>
           <Text style={[styles.startText, { color: C.onPrimary }]}>
             {active?.source === 'preset' && active.workoutId === workout.id ? `Continue ${workout.title}`
               : resolved?.canStart ? `Start ${workout.title}` : 'Review session fit'}

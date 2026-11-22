@@ -6,9 +6,10 @@ import { useSubscriptionStore } from '../store/subscriptionStore';
 import { getProAccess, proMembershipEnabled } from '../lib/pro-access';
 import { billingIsConfigured } from '../lib/revenueCat';
 import { captureOwnerLease } from '../lib/localDataOwner';
+import type { ProFeature } from '../utils/pro-access';
 
 /** Focus-scoped refresh: no app startup gate and no automatic restore/purchase. */
-export function useProAccess() {
+export function useProAccess(feature: ProFeature = 'personalized-plans') {
   const owner = useAuthStore(state => state.user?.id ?? state.offlineOwnerId);
   const localAccess = useAuthStore(state => state.canAccessLocalData);
   const localStatus = useAuthStore(state => state.localAccessStatus);
@@ -31,5 +32,5 @@ export function useProAccess() {
     });
     return () => { active = false; listener.remove(); };
   }, [owner, localAccess, localStatus, retry]));
-  return { ...getProAccess(), retry };
+  return { ...getProAccess(feature), retry };
 }

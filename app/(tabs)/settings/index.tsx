@@ -758,6 +758,21 @@ export default function SettingsScreen() {
         </View>
       </TouchableOpacity>
 
+      <TouchableOpacity accessibilityRole="button"
+        style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}
+        activeOpacity={0.75} onPress={() => router.push('/(tabs)/settings/strength-calculators' as never)}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: C.primaryDim }}>
+            <Ionicons name="calculator-outline" size={18} color={C.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.settingTitle, { color: C.text }]}>Strength calculators</Text>
+            <Text style={[styles.settingCaption, { color: C.textMuted }]}>Estimate your rep max, repetitions and percentage loads, with examples</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+        </View>
+      </TouchableOpacity>
+
       {/* Training Plan */}
       <View style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.sectionLabel, { color: C.textDim }]}>TRAINING PLAN</Text>

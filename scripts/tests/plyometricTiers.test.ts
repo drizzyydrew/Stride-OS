@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { plyometricDose, isReactiveExercise, isRecordedReactiveExercise } from '../../src/utils/goalPlyometrics';
+import { applyGoalPlyometrics, plyometricDose, isReactiveExercise, isRecordedReactiveExercise } from '../../src/utils/goalPlyometrics';
 import { PLYOMETRIC_CATALOG, plyometricTask, plyometricFootContacts, nextPlyometricTask, calibratePlyometricReplacement } from '../../src/utils/plyometricCatalog';
 import { normalizePlyometricResponse, type PlyometricResponseFeedback } from '../../src/utils/plyometricFeedback';
 import { classifyExerciseStimulus, getExerciseAdjustment, EXERCISE_ADAPTATION_OPTIONS } from '../../src/utils/exerciseAdaptation';
-import type { StrengthEngineInput, StrengthLogRecord, CompletedExercise } from '../../src/types/strength';
+import type { StrengthEngineInput, StrengthLogRecord, CompletedExercise, StrengthSession } from '../../src/types/strength';
 import type { CompletedWorkoutRecord } from '../../src/types/training';
 
 const DAY=86400000,referenceDate='2026-08-16',NOW=new Date(`${referenceDate}T12:00:00`).getTime();
@@ -62,6 +62,58 @@ test('Medium requires explicit request and repeated latest own dose, retaining p
  assert.equal(line.task.exercise.id,'plyo_forward_hops');
  const short=plyometricDose(withOwn(own(3,undefined,1,{nextStep:'consider_harder'}),...repeated))!;
  assert.equal(short.task.tier,'easy');assert.ok(short.reps<=2);
+});
+
+test('newer incomplete or skipped impact attempts cannot expose older favorable progression evidence',()=>{
+ const older=[4,11,18].map(d=>own(d,undefined,6,{nextStep:d===4?'consider_harder':'repeat'}));
+ assert.equal(plyometricDose(withOwn(...older))?.task.tier,'medium');
+ for(const kind of ['incomplete-workout','skipped-workout','skipped-exercise','unfinished-sets'] as const){
+  const latest=own(2,undefined,1);
+  if(kind==='incomplete-workout')latest.completed=false;
+  if(kind==='skipped-workout')latest.skipped=true;
+  if(kind==='skipped-exercise')latest.exercises[0]!.skipped=true;
+  if(kind==='unfinished-sets')latest.exercises[0]!.sets[1]!.completed=false;
+  const history=withOwn(...older,latest),before=structuredClone(history.strengthHistory);
+  assert.equal(plyometricDose(history),null,kind);
+  assert.deepEqual(history.strengthHistory,before,'dose decisions preserve actual history');
+ }
+});
+
+test('actual adverse contacts remain relevant when their parent workout or exercise was not completed',()=>{
+ const older=[4,11,18].map(d=>own(d,undefined,6,{nextStep:d===4?'consider_harder':'repeat'}));
+ for(const kind of ['incomplete-workout','skipped-workout','skipped-exercise'] as const){
+  const latest=own(2,'plyo_low_pogo',3,{symptomsDuring:'present'});
+  if(kind==='incomplete-workout')latest.completed=false;
+  if(kind==='skipped-workout')latest.skipped=true;
+  if(kind==='skipped-exercise')latest.exercises[0]!.skipped=true;
+  assert.equal(plyometricDose(withOwn(...older,latest)),null,kind);
+ }
+});
+
+test('a newer failed preparation attempt prevents older good sessions from authorizing impact work',()=>{
+ for(const kind of ['incomplete','skipped','hard','unfinished'] as const){
+  const latest=record(1,{id:`latest-prep-${kind}`,sessionId:`latest-prep-${kind}`});
+  if(kind==='incomplete')latest.completed=false;
+  if(kind==='skipped')latest.skipped=true;
+  if(kind==='hard')latest.exercises[1]!.sets[1]!.rpe=9;
+  if(kind==='unfinished')latest.exercises[1]!.sets[1]!.completed=false;
+  assert.equal(plyometricDose(input({strengthHistory:[record(3),record(10),latest]})),null,kind);
+ }
+});
+
+test('actual contacts in an unfinished custom workout still consume this week\'s automatic impact dose',()=>{
+ const session:StrengthSession={id:'future-strength',title:'Strength',goal:'force_production',sessionType:'full_body',targetDuration:30,
+  primaryPatterns:[],exercises:[],warmupProtocol:'Dynamic warm-up',cooldownProtocol:'Easy movement',purpose:'Practice',rationale:'Manageable work',progressionNote:''};
+ assert.equal(applyGoalPlyometrics([session],input())[0]!.exercises.filter(ex=>isReactiveExercise(ex.exercise)).length,1);
+ for(const skipped of [false,true]){
+  const partial=record(0.25,{id:'partial-custom',sessionId:'partial-custom',completed:false,skipped,exercises:[{
+   exerciseId:'custom-contact',name:'Pogo Hops',equipmentType:'bodyweight',sets:[{completed:true,reps:3,rpe:5}],
+  }]});
+  const context=withOwn(partial),before=structuredClone(context.strengthHistory);
+  assert.ok(plyometricDose(context),'the independent small-dose readiness assessment remains available');
+  assert.equal(applyGoalPlyometrics([session],context)[0]!.exercises.filter(ex=>isReactiveExercise(ex.exercise)).length,0);
+  assert.deepEqual(context.strengthHistory,before);
+ }
 });
 
 test('Hard needs specific unilateral foundation, sustained running and explicit controlled Medium response',()=>{

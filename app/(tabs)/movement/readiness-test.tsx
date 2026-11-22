@@ -16,7 +16,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useMovementLabWork } from '../../../src/hooks/useMovementLabWork';
+import type { MovementLabWork } from '../../../src/lib/movementLabAccess';
+import MovementLabCreateGate from '../../../src/components/movement/MovementLabCreateGate';
 import { router, useLocalSearchParams } from 'expo-router';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
 import { Ionicons } from '@expo/vector-icons';
@@ -155,6 +158,8 @@ function VideoCaptureBlock({
   title:        string;
   durationSec:  number;
 }) {
+  const access = useMovementLabWork();
+  const mediaWork = useRef<MovementLabWork | null>(null);
   const C = useColors();
   const s = useMemo(() => makeStyles(C), [C]);
   const addAnalysis    = useMovementStore(st => st.addAnalysis);
@@ -177,19 +182,26 @@ function VideoCaptureBlock({
   }
 
   async function pickFromLibrary() {
+    const work = await access.begin();
+    if (!work) return;
+    mediaWork.current = work;
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!await access.refresh(work)) return;
     if (perm.status !== 'granted') {
       Alert.alert('Permission needed', 'StrideOS needs photo library access to choose a video for this test.');
       return;
     }
 
     const picked = await ImagePicker.launchImageLibraryAsync(MOVEMENT_VIDEO_PICKER_OPTIONS);
+    if (!await access.refresh(work)) return;
     if (picked.canceled || picked.assets.length === 0) return;
     const asset = picked.assets[0];
     await prepareLibraryAsset(asset);
   }
 
   async function prepareLibraryAsset(asset: ImagePicker.ImagePickerAsset) {
+    const work = mediaWork.current;
+    if (!await access.refresh(work)) return;
     setImportBusy(true);
     setImportError(null);
     setRetryAsset(asset);
@@ -201,6 +213,7 @@ function VideoCaptureBlock({
       mimeType: asset.mimeType,
     });
     setImportBusy(false);
+    if (!await access.refresh(work)) return;
     if (!prepared.ok) {
       setImportError(prepared.error.message);
       return;
@@ -214,7 +227,10 @@ function VideoCaptureBlock({
   }
 
   async function analyzeVideo(uri: string, captureMetadata: CaptureMetadata) {
+    const work = mediaWork.current;
+    if (!await access.refresh(work)) return;
     const validation = await validatePickedVideo({ uri });
+    if (!await access.refresh(work)) return;
     if (validation) {
       Alert.alert("This clip can't be used", validation.message);
       return;
@@ -229,6 +245,7 @@ function VideoCaptureBlock({
           { label: 'Saved mirrored', value: 'mirrored' },
         ],
       );
+      if (!await access.refresh(work)) return;
       if (!mirrorChoice) return;
       effectiveMetadata = {
         ...effectiveMetadata,
@@ -246,11 +263,13 @@ function VideoCaptureBlock({
       } catch {
         // keep original URI
       }
+      if (!await access.refresh(work)) return;
 
       const seqResult = await detectPoseSequence(resolveDocumentUri(storedUri) ?? storedUri, {
         fps: 12, maxDurationMs: 30_000,
         onProgress: (processed, total) => setProgress({ processed, total }),
       });
+      if (!await access.refresh(work)) return;
 
       if (!seqResult || seqResult.frames.length === 0) {
         Alert.alert('Analysis failed', decodeFailedError().message);
@@ -274,6 +293,7 @@ function VideoCaptureBlock({
               { label: 'Right side closest', value: 'right' },
             ],
           );
+          if (!await access.refresh(work)) return;
           if (!sideChoice) return;
           closestSide = sideChoice;
           closestSideSource = 'user';
@@ -311,6 +331,9 @@ function VideoCaptureBlock({
         recommendation: normalizeSavedSideText(recommendation.recommendation),
       }));
 
+      if (!await access.refresh(work)) return;
+
+      if (!access.check(work)) return;
       const id = addAnalysis({
         type: analysisKind, mediaUri: storedUri, mediaType: 'video', cameraView: view,
         closestSide, closestSideSource, captureMetadata: effectiveMetadata,
@@ -324,20 +347,27 @@ function VideoCaptureBlock({
         viewFiltersMaterialized: false,
       });
 
-      try {
-        const poseUri = await savePoseSequence(id, seqResult);
-        updateAnalysis(id, { poseSequenceUri: poseUri });
-      } catch {
-        // angle series / key frames are already saved inline
-      }
+      const attachment = await access.attach(work, () => savePoseSequence(id, seqResult));
+      if (!attachment.allowed) return;
+      if (!access.check(work)) return;
+      if (attachment.value) updateAnalysis(id, { poseSequenceUri: attachment.value });
 
+      if (!await access.refresh(work)) return;
+      if (!access.check(work)) return;
       onResult({ analysisId: id, captureRating: quality.rating, issues: quality.issues });
     } catch {
+      if (!await access.refresh(work)) return;
       Alert.alert('Analysis failed', decodeFailedError().message);
     } finally {
       setBusy(false);
       setProgress(null);
     }
+  }
+
+  async function openCamera() {
+    const work = await access.begin();
+    if (!work) return;
+    mediaWork.current = work; setCameraOpen(true);
   }
 
   if (busy) {
@@ -377,7 +407,7 @@ function VideoCaptureBlock({
   return (
     <>
       <View style={s.mediaRow}>
-        <Pressable style={s.mediaBtn} onPress={() => setCameraOpen(true)}>
+        <Pressable style={s.mediaBtn} onPress={() => void openCamera()}>
           <Text style={s.mediaBtnTxt}>Record Video</Text>
         </Pressable>
         <Pressable style={[s.mediaBtn, importBusy && { opacity: 0.5 }]} onPress={pickFromLibrary} disabled={importBusy}>
@@ -412,6 +442,11 @@ function VideoCaptureBlock({
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function ReadinessTestScreen() {
+  return <MovementLabCreateGate><ReadinessTestContent /></MovementLabCreateGate>;
+}
+
+function ReadinessTestContent() {
+  const access = useMovementLabWork();
   const C = useColors();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(C), [C]);
@@ -539,6 +574,8 @@ export default function ReadinessTestScreen() {
     if (saving) return;
     setSaving(true);
     try {
+      const work = await access.begin();
+      if (!work || !access.check(work)) return;
       const flatResults = Object.values(results).flat();
       const intensity = Math.max(0, Math.min(10, Number(symptomIntensity)));
       const symptom = painReported && symptomLocation.trim()

@@ -138,12 +138,13 @@ export default function MembershipScreen() {
     <ScreenHeader eyebrow="MEMBERSHIP" title="StrideOS Pro" onBack={() => router.back()} />
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.content}>
       <Text style={[s.heading, { color: C.text }]}>Training that grows with you</Text>
-      <Text style={[s.copy, { color: C.textMuted }]}>One membership for personalized plans, thoughtful adjustments, and your AI Coach.</Text>
+      <Text style={[s.copy, { color: C.textMuted }]}>One membership for personalized plans, thoughtful adjustments, your AI Coach and Movement Lab.</Text>
       <View style={[s.benefits, { borderColor: C.border }]}>
         {[
           ['Personalized plans', 'Running and hybrid training built around your goal.'],
           ['Adapt your week', 'Review a rebuilt week as your training changes.'],
           ['AI Coach', 'Ask questions using the training context you choose. Up to 20 requests per UTC day.'],
+          ['Movement Lab', 'Record or import movement videos and start new movement assessments. Your saved clips and results remain available without Pro.'],
         ].map(([title, detail]) => <View key={title} style={s.benefit}>
           <Ionicons name="checkmark-circle-outline" size={21} color={C.primary} />
           <View style={s.flex}><Text style={[s.benefitTitle, { color: C.text }]}>{title}</Text><Text style={[s.copy, { color: C.textMuted }]}>{detail}</Text></View>
@@ -200,7 +201,7 @@ export default function MembershipScreen() {
           return refreshAccess('restore', isCurrent, ownerId);
         }); }}><Text style={[s.copy, { color: C.primary }]}>Restore purchases</Text></TouchableOpacity>
       </>}
-      <Text style={[s.copy, { color: C.textMuted }]}>Recording, calendar, saved history, existing plans, and on-device Insights remain available without Pro.</Text>
+      <Text style={[s.copy, { color: C.textMuted }]}>Workout tracking, calendar, saved history, existing plans, and on-device Insights remain available without Pro. Saved Movement Lab clips and results also stay available.</Text>
       <Host matchContents={{ vertical: true }} style={{ width: '100%' }}>
         <Collapsible label="Membership details & privacy" isOpen={detailsOpen} onOpenChange={setDetailsOpen} labelStyle={{ color: C.primary, fontSize: 14 }}>
           <Column spacing={12} style={{ paddingTop: 12 }}>

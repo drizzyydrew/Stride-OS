@@ -96,9 +96,12 @@ function strengthSpecificEvidence(exercise: Exercise, history: StrengthLogRecord
   };
   const firstHeavy = exposure(recent[0]?.performed, setup, 3, true);
   const secondHeavy = exposure(recent[1]?.performed, setup, 3, true);
+  const latestHeavy = recent[0]?.performed;
+  const completedThird = !!firstHeavy && Number.isSafeInteger(latestHeavy?.prescription?.sets)
+    && latestHeavy!.prescription!.sets >= 3 && latestHeavy!.sets.filter(set => !set.isWarmup).length >= 3;
   return { option, prepared: offset === 0 && basePair(0),
     familiar: !!firstHeavy && (!!secondHeavy || basePair(1)),
-    twoHeavy: !!firstHeavy && !!secondHeavy };
+    twoHeavy: !!firstHeavy && !!secondHeavy, completedThird };
 }
 
 function replacementOf(original: PlannedExercise, replacement: Exercise, input: StrengthEngineInput, reason: string): PlannedExercise {
@@ -170,8 +173,10 @@ export function applyGoalStrengthProgramming(exercises: PlannedExercise[], input
     if (heavy) {
       heavyCount++;
       exercise = { ...exercise, exercise: { ...exercise.exercise, equipment: [specific.option] } };
-      repRange = [3, 5]; sets = 2;
-      if (!progressed && specific.twoHeavy && cycle.doseStage === 'develop' && input.recoveryScore >= 65) {
+      // Review is not a recovery week. Retain a third working set only when
+      // the same exercise/setup actually completed its captured three-set dose.
+      repRange = [3, 5]; sets = specific.completedThird ? 3 : 2;
+      if (sets === 2 && !progressed && specific.twoHeavy && cycle.doseStage === 'develop' && input.recoveryScore >= 65) {
         sets = 3; progressed = true;
       }
     }

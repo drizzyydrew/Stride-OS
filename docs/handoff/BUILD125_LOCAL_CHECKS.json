@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-11-22T06:45:24.391206+00:00",
+  "buildNumber": "125",
+  "canonicalTypecheck": "PASS",
+  "expoDependencyCheck": "PASS",
+  "iosPrebuild": "PASS",
+  "prebuildWarning": "Existing optional expo-system-ui background color notice; no dependency change",
+  "tests": "PENDING_FINAL_RUN",
+  "nativeVisualAcceptance": false,
+  "publicReviewSubmitted": false,
+  "canonicalFinalTypecheck": "PASS",
+  "fullRegression": {
+    "passed": 2258,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 187261.339719
+  },
+  "finalMovementFocusedTests": {
+    "passed": 29,
+    "failed": 0,
+    "scope": "After final owner-key/modal lifetime edit; overlapping subsets not summed"
+  },
+  "councilActualDiffReview": "GO",
+  "sourceSpreadsheet": "Read only; formulas matched; no writes",
+  "imagesChanged": false,
+  "fullRegressionLogSha256": "add78b4f3890639cdb9788cd117d79a86fff3b6bdd575432d277e4357c9f7b91"
+}

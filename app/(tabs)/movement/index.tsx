@@ -8,7 +8,11 @@ import Modal from '../../../src/components/ui/RecoverableModal';
 
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useProAccess } from '../../../src/hooks/useProAccess';
+import { useMovementLabWork } from '../../../src/hooks/useMovementLabWork';
+import type { MovementLabWork } from '../../../src/lib/movementLabAccess';
+import ProAccessNotice from '../../../src/components/subscription/ProAccessNotice';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -178,12 +182,15 @@ function AddVideoModal({
   onClose,
   onAdd,
   uploading,
+  work,
 }: {
   visible:   boolean;
   onClose:   () => void;
   onAdd:     (form: AddVideoForm) => void;
   uploading: boolean;
+  work: MovementLabWork | null;
 }) {
+  const access = useMovementLabWork();
   const today = new Date().toISOString().split('T')[0];
   const [form, setForm] = useState<AddVideoForm>({
     title:        '',
@@ -202,13 +209,16 @@ function AddVideoModal({
   }
 
   async function handlePickVideo() {
+    if (!await access.refresh(work)) return;
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!await access.refresh(work)) return;
     if (status !== 'granted') {
       Alert.alert('Permission needed', 'StrideOS needs access to your photo library to select a video.');
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync(MOVEMENT_VIDEO_PICKER_OPTIONS);
+    if (!await access.refresh(work)) return;
 
     if (!result.canceled && result.assets.length > 0) {
       await prepareVideoAsset(result.assets[0]);
@@ -216,6 +226,7 @@ function AddVideoModal({
   }
 
   async function prepareVideoAsset(asset: ImagePicker.ImagePickerAsset) {
+    if (!await access.refresh(work)) return;
     setPreparingVideo(true);
     setVideoImportError(null);
     setRetryAsset(asset);
@@ -227,6 +238,7 @@ function AddVideoModal({
       mimeType: asset.mimeType,
     });
     setPreparingVideo(false);
+    if (!await access.refresh(work)) return;
     if (!prepared.ok) {
       setVideoImportError(prepared.error.message);
       return;
@@ -237,7 +249,8 @@ function AddVideoModal({
     patch('fileName', prepared.video.fileName ?? `video_${Date.now()}.${ext}`);
   }
 
-  function handleAdd() {
+  async function handleAdd() {
+    if (!await access.refresh(work)) return;
     if (!form.title.trim()) return;
     onAdd(form);
     setForm({
@@ -463,11 +476,31 @@ export default function MovementIndexScreen() {
   useFeatureTour('movement-lab');
   const { videos, addVideo, updateVideo, analyses } = useMovementStore();
   const user = useAuthStore(s => s.user);
+  const owner = useAuthStore(s => s.user?.id ?? s.offlineOwnerId);
+  const membership = useProAccess('movement-lab');
+  const access = useMovementLabWork();
+  const [addWork, setAddWork] = useState<MovementLabWork | null>(null);
   const [showAdd,   setShowAdd]   = useState(false);
   const [uploading, setUploading] = useState(false);
   const [legacyOpen, setLegacyOpen] = useState(false);
+  useEffect(() => { setShowAdd(false); setAddWork(null); }, [owner]);
+
+  async function openAdd() {
+    const work = await access.begin();
+    if (!work) return;
+    setAddWork(work); setShowAdd(true);
+  }
+
+  async function startAnalysis(kind: MovementAnalysisKind) {
+    const work = await access.begin();
+    if (!work || !access.check(work)) return;
+    router.push({ pathname: '/(tabs)/movement/analyze', params: { kind } } as never);
+  }
 
   async function handleAdd(form: AddVideoForm) {
+    const work = addWork;
+    if (!await access.refresh(work) || !work) return;
+    if (!access.check(work)) return;
     // addVideo returns the ID it assigns — capture it so updateVideo targets the right record
     const videoId = addVideo({
       uri:          '',
@@ -486,15 +519,20 @@ export default function MovementIndexScreen() {
     setUploading(true);
     try {
       const { localUri, ext, contentType } = await copyVideoToMovementStorage(form.localUri, videoId, form.fileName);
+      if (!await access.refresh(work)) return;
 
       // Save local URI immediately so video is playable even if cloud upload fails
+      if (!access.check(work)) return;
       updateVideo(videoId, { uri: localUri });
 
-      if (!user) return;
+      if (!user || user.id !== work.lease.ownerUserId) return;
 
       const storagePath = `${user.id}/${videoId}.${ext}`;
       try {
-        await uploadMovementVideo(localUri, storagePath, contentType);
+        if (!await access.refresh(work)) return;
+        await uploadMovementVideo(localUri, storagePath, contentType, work);
+        if (!await access.refresh(work)) return;
+        if (!access.check(work)) return;
         updateVideo(videoId, { storagePath });
       } catch (uploadError) {
         console.warn('Supabase upload error:', uploadError);
@@ -510,7 +548,7 @@ export default function MovementIndexScreen() {
     <View style={s.root}>
       <View style={s.header}>
         <Text style={s.headerTitle}>Movement Lab</Text>
-        <Pressable style={s.addBtn} onPress={() => setShowAdd(true)}>
+        <Pressable style={s.addBtn} onPress={() => void openAdd()}>
           <Text style={s.addBtnTxt}>+ Add</Text>
         </Pressable>
       </View>
@@ -523,6 +561,7 @@ export default function MovementIndexScreen() {
       )}
 
       <FeatureTourScrollView style={s.list} contentContainerStyle={s.listContent} showsVerticalScrollIndicator={false}>
+        <ProAccessNotice access={membership} title="New Movement Lab work" />
         {/* Running/Walking Readiness — single clean entry point */}
         <FeatureTourTarget targetId="movement.capture">
           <ReadinessEntryCard />
@@ -538,7 +577,7 @@ export default function MovementIndexScreen() {
               <Pressable
                 key={kind}
                 style={s.kindCard}
-                onPress={() => router.push({ pathname: '/(tabs)/movement/analyze', params: { kind } } as never)}
+                onPress={() => void startAnalysis(kind)}
               >
                 <DionInstructionCard dion={dionEntry} variant="compact" />
                 <View style={s.kindInfo}>
@@ -588,7 +627,7 @@ export default function MovementIndexScreen() {
               Add a video session to keep longer clips and structured notes tied to
               your athlete profile.
             </Text>
-            <Pressable style={s.emptyBtn} onPress={() => setShowAdd(true)}>
+            <Pressable style={s.emptyBtn} onPress={() => void openAdd()}>
               <Text style={s.emptyBtnTxt}>Add Video Session</Text>
             </Pressable>
           </View>
@@ -602,10 +641,12 @@ export default function MovementIndexScreen() {
       </FeatureTourScrollView>
 
       <AddVideoModal
+        key={owner ?? 'no-owner'}
         visible={showAdd}
         onClose={() => setShowAdd(false)}
         onAdd={handleAdd}
         uploading={uploading}
+        work={addWork}
       />
     </View>
   );

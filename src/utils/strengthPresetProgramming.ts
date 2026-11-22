@@ -18,6 +18,8 @@ export type StrengthPresetContext = {
   trainingPhase?: TrainingPhase;
   goalType?: TrainingGoalType;
   recoveryLimited?: boolean;
+  /** A standalone preset choice, never an automatic plan progression. */
+  mainSets?: 3 | 4 | 5;
 };
 
 /** The library and detail screen use the same profile inputs. Running
@@ -62,16 +64,23 @@ export type ResolvedStrengthPreset = {
   workout: PresetStrengthWorkout;
   canStart: boolean;
   recommended: boolean;
-  mode: 'standard' | 'strength_specific' | 'captured';
+  mode: 'standard' | 'strength_specific' | 'power_specific' | 'captured';
   reason?: string;
   alternativeWorkoutId?: string;
+  /** Binds a one-session acknowledgement to exactly the guidance and dose shown. */
+  sessionFitKey?: string;
 };
 
 /** The displayed resolved prescription is also the launch contract. No
  * previous working weight or estimated maximum is copied into a new session. */
-export function strengthPresetLaunchInput(resolved: ResolvedStrengthPreset) {
-  if (!resolved.canStart) return null;
+export function strengthPresetLaunchInput(resolved: ResolvedStrengthPreset, acknowledgedSessionFitKey?: string) {
+  if (acknowledgedSessionFitKey !== undefined && acknowledgedSessionFitKey !== resolved.sessionFitKey) return null;
+  if (!resolved.canStart && (!resolved.reason || !resolved.sessionFitKey || acknowledgedSessionFitKey !== resolved.sessionFitKey)) return null;
   const workout = resolved.workout;
+  if (!Number.isFinite(workout.durationMin) || workout.durationMin <= 0 || !workout.exercises.length
+    || workout.exercises.some(ex => !ex.name.trim() || !Number.isInteger(ex.sets) || ex.sets < 1
+      || !ex.reps.trim() || !Number.isFinite(ex.restSeconds ?? 90) || (ex.restSeconds ?? 90) < 0
+      || ex.targetRpe !== undefined && (!Number.isFinite(ex.targetRpe) || ex.targetRpe < 1 || ex.targetRpe > 10))) return null;
   return {
     source: 'preset' as const,
     workoutId: workout.id,
@@ -118,18 +127,25 @@ export function resolveStrengthPresetWorkout(
   }
 
   const mains = STRENGTH_PRESET_PRIORITY_MAINS[original.id];
-  if (original.trainingPurpose !== 'strength' || !mains?.length) {
+  const powerSpecific = original.trainingPurpose === 'power';
+  if (!powerSpecific && (original.trainingPurpose !== 'strength' || !mains?.length)) {
     return { workout: original, canStart: true, recommended: original.categories.includes('recommended'), mode: 'standard' };
   }
-  const workout = { ...original, exercises: original.exercises.map(exercise => ({ ...exercise })),
-    durationMin: Math.max(original.durationMin, estimateStrengthPresetMinutes(original)),
+  const selectedSets = context.mainSets === 4 || context.mainSets === 5 ? context.mainSets : 3;
+  const exercises = original.exercises.map(exercise => ({ ...exercise,
+    ...(mains?.includes(exercise.name) ? { sets: selectedSets } : {}),
+  }));
+  const workout = { ...original, exercises,
+    durationMin: Math.max(original.durationMin, estimateStrengthPresetMinutes({ ...original, exercises })),
   };
   const validScore = (value: number | undefined) => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
   const phaseLimited = !!context.trainingPhase && (['foundation', 'deload', 'taper', 'recovery', 'transition'].includes(context.trainingPhase)
     || context.goalType === 'race_prep' && ['threshold', 'vo2', 'race_specific', 'build', 'peak'].includes(context.trainingPhase));
   let reason: string | undefined;
   if (context.strengthLevel !== 'intermediate' && context.strengthLevel !== 'advanced') {
-    reason = 'This low-repetition preset is for practiced lifters. Choose a lighter calibration session while you establish a repeatable setup and lifting experience.';
+    reason = powerSpecific
+      ? 'This power preset calls for practiced lifting and controlled, quick repetitions. Build a repeatable setup with a simpler session first; stop power sets when speed or control drops.'
+      : 'This low-repetition preset is for practiced lifters. Choose a lighter calibration session while you establish a repeatable setup and lifting experience.';
   } else if (!validScore(context.fatigueScore) || !validScore(context.recoveryScore) || context.recoveryLimited
     || context.fatigueScore! > 70 || context.recoveryScore! < 65 || phaseLimited
     || context.soreness != null && (!Number.isFinite(context.soreness) || context.soreness < 1 || context.soreness > 10 || context.soreness >= 7)) {
@@ -139,7 +155,10 @@ export function resolveStrengthPresetWorkout(
   }
   const minutes = typeof context.availableTimeMin === 'number' && Number.isFinite(context.availableTimeMin) && context.availableTimeMin > 0
     ? context.availableTimeMin : undefined;
-  return { workout, canStart: !reason, recommended: original.categories.includes('recommended') && !reason, mode: 'strength_specific', reason,
+  const sessionFitKey = JSON.stringify({ context, workout }, (_key, value) =>
+    typeof value === 'number' && !Number.isFinite(value) ? String(value) : value);
+  return { workout, canStart: !reason, recommended: original.categories.includes('recommended') && !reason,
+    mode: powerSpecific ? 'power_specific' : 'strength_specific', reason, sessionFitKey,
     ...(reason ? { alternativeWorkoutId: lighterAlternative(workout, minutes) } : {}),
   };
 }
