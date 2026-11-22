@@ -1,6 +1,6 @@
 # Build124 focused owner checks
 
-These checks inspect ordinary app behavior. No hard workout, fabricated training entry or repeated subscription purchase is needed. Delivery and device acceptance are separate; this guide is not proof that124 is already available.
+Build1.0.0(124) is available in the existing internal TestFlight group. These checks inspect ordinary app behavior. No hard workout, fabricated training entry or repeated subscription purchase is needed. Delivery and installed-device acceptance are separate; completing this guide remains owner work.
 
 1. Open Strength → Preset Library. Recommended retains a focused list; All remains available. Muscle/equipment/time filters still apply. A selected heavier strength preset shows its main-lift reps, target effort and full rest; the detail and started prescription should agree.
 2. Check a preset appropriate to your lifting experience and current schedule. If the heavier form does not fit, Review session fit explains why and offers a lighter option. Existing active workouts should continue their captured prescription.

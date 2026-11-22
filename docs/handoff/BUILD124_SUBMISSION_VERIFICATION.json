@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-11-22T02:08:11.614155+00:00",
+  "submissionId": "065d890b-fc46-4287-bb2c-30a009b08c3e",
+  "buildId": "085c864e-0f74-4534-a26d-75458bcd434a",
+  "sourceCommit": "62a7c7556dd8bef9e660b163e91cbe07c1602ae5",
+  "buildNumber": "124",
+  "status": "FINISHED",
+  "platform": "IOS",
+  "createdAt": "2026-11-22T02:00:23.998Z",
+  "appReviewSubmitted": false,
+  "scope": "Binary upload completed; Apple VALID/internal group and exact beta notes are independently verified in BUILD124_APPLE_ACCEPTANCE.json."
+}

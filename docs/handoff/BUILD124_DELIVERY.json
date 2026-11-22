@@ -1,0 +1,80 @@
+{
+  "recordedAt": "2026-11-22T02:08:11.616632+00:00",
+  "version": "1.0.0",
+  "buildNumber": "124",
+  "profile": "billing-qa",
+  "sourceCommit": "62a7c7556dd8bef9e660b163e91cbe07c1602ae5",
+  "buildId": "085c864e-0f74-4534-a26d-75458bcd434a",
+  "submissionId": "065d890b-fc46-4287-bb2c-30a009b08c3e",
+  "appleBuildId": "2c9e4193-2a59-4732-86cd-cc9229bb6450",
+  "easStatus": "FINISHED",
+  "submissionStatus": "FINISHED",
+  "appleProcessingState": "VALID",
+  "internalBuildState": "IN_BETA_TESTING",
+  "existingGroup": {
+    "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+    "name": "Team (Expo)",
+    "isInternal": true,
+    "actuallyAssigned": true,
+    "testerCount": 1,
+    "testerStates": [
+      "INSTALLED"
+    ]
+  },
+  "betaNotesExactReadback": true,
+  "betaNotesSha256": "f71ba7889e10a8ae6cd29a6c51b7e906a539132d0ee6b790d56b04acaf18c194",
+  "archiveSha256": "f5a095749e6e8ff8a4af8b38c8ddc5d1961a8a1090d4501e4b8b19fea8a4cbf8",
+  "archiveBytes": 130060701,
+  "signedTargetsVerified": 3,
+  "nativeDeviceFamily": [
+    1
+  ],
+  "fullRegression": {
+    "tests": 2222,
+    "pass": 2222,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "logSha256": "ac018ca17419596c9172d68bf159c400db127ef30cfc4bcc04e898cc2f55f6a1"
+  },
+  "finalAffectedChecks": {
+    "tests": 40,
+    "pass": 40,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "logSha256": "b9e3b2deec7e447e3a68483fd03d23565d508e16c625bb20f3a9b20ef55fa160"
+  },
+  "localAndCloudTypecheck": "PASS",
+  "cloudDoctor": {
+    "passed": 21,
+    "total": 21
+  },
+  "councilSourceVerdict": "GO",
+  "publicKiloArticlesReviewed": 60,
+  "exerciseArtworkChanged": false,
+  "nativeWatchRuntimeChanged": false,
+  "backendOrBillingPolicyChanged": false,
+  "physicalDeviceAccepted": false,
+  "publicReviewSubmitted": false,
+  "publicVersion": {
+    "versionId": "7f934645-486b-478c-9a6e-1d396e86782d",
+    "selectedBuildId": "30fc1899-594a-4a6a-a9f9-17a1cd7f3ae0",
+    "selectedBuildNumber": "123",
+    "releaseType": "MANUAL",
+    "draftId": "54fdb6a6-e747-44c2-ae87-d088e0ed4487",
+    "draftState": "READY_FOR_REVIEW",
+    "submittedDate": null
+  },
+  "ownerGuide": "BUILD124_OWNER_TEST_GUIDE.md",
+  "evidence": [
+    "BUILD124_LOCAL_CHECKS.json",
+    "BUILD124_CLOUD_CHECKS.json",
+    "BUILD124_ARTIFACT_VERIFICATION.json",
+    "BUILD124_SUBMISSION_VERIFICATION.json",
+    "BUILD124_APPLE_ACCEPTANCE.json",
+    "KILO_PROGRAMMING_BLEND_20261121.md",
+    "KILO_PUBLIC_ARTICLE_COVERAGE_20261121.json",
+    "BUILD123_SCREENSHOT_COMPLETION.json"
+  ]
+}
