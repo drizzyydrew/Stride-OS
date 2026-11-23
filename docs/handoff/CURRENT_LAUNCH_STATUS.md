@@ -1,5 +1,10 @@
 # Current StrideOS launch status
 
+## 2026-11-23 — Build 126 internal TestFlight delivery
+
+Build 126 from `b8d91cc` is store-signed and VALID / IN_BETA_TESTING in the existing internal group, with exact beta-note readback. Membership/access, strength guidance/calculators and durable Coach allowance/history changes are included. The standalone expiring 30-message pack remains disabled pending separate Apple/product/native/reminder activation gates. V2 is bounded to a $1 monthly testing reservation allocation; overall provider/public-launch capacity is not newly established. Versioned beta policy pages are live; standard 125 pages and the pending 125/MANUAL public submission remain unchanged. Physical-device acceptance is separate. See BUILD126_RELEASE.md, BUILD126_DELIVERY.json and BUILD126_OWNER_TEST_GUIDE.md.
+
+
 ## App Review submitted — November22 Pacific
 
 App version1.0 with **Build125**, the Pro subscription group and both annual/monthly Pro versions are **WAITING_FOR_REVIEW**, submitted **2026-11-22T10:36:33.638Z**. Release remains **MANUAL**; no public release occurred. Exact selected build34fda62a-e2bb-4f84-a49a-ff2d1f1b7de1, same four target relationships, submittedDate and all four related version queue states were verified after the single authorized submission and independently read back. The user explicitly approved public App Review. Store/reviewer/Terms copy now matches Movement Lab Pro access; no new binary or image changes were needed. Fresh reviewer login, active promotional Pro, usage read, Auth health and enforcement/QA-absence checks passed without an AI response or purchase. See PUBLIC_APP_REVIEW_20261122.md/json. Prior budget/capacity and native lifecycle limitations remain separate from submission; public release after approval stays owner-controlled.

@@ -1,0 +1,361 @@
+{
+  "apple": {
+    "checkedAt": "2026-11-23T07:12:48.839Z",
+    "appId": "6782788130",
+    "buildNumber": "126",
+    "easBuildId": "a1181bd8-ae3f-47a9-8cc0-1c2e8b4ff70e",
+    "sourceCommit": "b8d91cc98958034c3bde00e04ad58bb4b9ad5274",
+    "sourceEvidence": "Explicit state and finished EAS receipt match; signed-artifact verification is separate",
+    "publicVersion": {
+      "versionId": "7f934645-486b-478c-9a6e-1d396e86782d",
+      "selectedBuildId": "34fda62a-e2bb-4f84-a49a-ff2d1f1b7de1",
+      "selectedBuildNumber": "125",
+      "releaseType": "MANUAL",
+      "versionState": "WAITING_FOR_REVIEW",
+      "draftId": "54fdb6a6-e747-44c2-ae87-d088e0ed4487",
+      "draftState": "WAITING_FOR_REVIEW",
+      "submittedDate": "2026-11-22T10:36:33.638Z"
+    },
+    "physicalDeviceAccepted": false,
+    "publicReviewSubmitted": false,
+    "buildExists": true,
+    "appleBuildId": "72459210-a2d7-481e-b5f9-693f4d180707",
+    "processingState": "VALID",
+    "expired": false,
+    "uploadedDate": "2026-11-22T23:09:25-08:00",
+    "internalBuildState": "IN_BETA_TESTING",
+    "externalBuildState": "READY_FOR_BETA_SUBMISSION",
+    "group": {
+      "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+      "name": "Team (Expo)",
+      "isInternal": true,
+      "actuallyAssigned": true,
+      "testerCount": 1,
+      "testerStates": [
+        "INSTALLED"
+      ]
+    },
+    "whatToTest": {
+      "locale": "en-US",
+      "exactReadback": true,
+      "sha256": "06b67744bfa41f8ca6d41bcb2ae7ab5c3c823d0a2cb37ffe8093c9bbad4c7b93",
+      "characters": 1026
+    },
+    "accepted": true,
+    "mutationsPerformed": true,
+    "publicDraftUnchanged": true
+  },
+  "eas": {
+    "id": "a1181bd8-ae3f-47a9-8cc0-1c2e8b4ff70e",
+    "status": "FINISHED",
+    "platform": "IOS",
+    "appVersion": "1.0.0",
+    "appBuildVersion": "126",
+    "gitCommitHash": "b8d91cc98958034c3bde00e04ad58bb4b9ad5274",
+    "buildProfile": "billing-qa",
+    "distribution": "STORE",
+    "completedAt": "2026-11-23T07:04:03.934Z"
+  },
+  "submission": {
+    "id": "c1565c65-b67d-4b27-ab31-b15b6b295920",
+    "status": "FINISHED",
+    "platform": "IOS",
+    "completedAt": "2026-11-23T07:08:14.716Z"
+  },
+  "artifact": {
+    "checkedAt": "2026-11-23T07:07:11.060721+00:00",
+    "buildId": "a1181bd8-ae3f-47a9-8cc0-1c2e8b4ff70e",
+    "sourceCommit": "b8d91cc98958034c3bde00e04ad58bb4b9ad5274",
+    "profile": "billing-qa",
+    "buildNumber": "126",
+    "nativeDeviceFamily": [
+      1
+    ],
+    "bytes": 130108790,
+    "sha256": "778673363eb4ea02fe7a1cfe70644c6a92ded75cb19980a7b93d8e27ef0b7c6a",
+    "targets": [
+      {
+        "bundleId": "com.mooremovement.strideos",
+        "version": "1.0.0",
+        "build": "126",
+        "strictSignatureVerified": true,
+        "debugSigning": false,
+        "appGroups": [
+          "group.com.mooremovement.strideos"
+        ],
+        "healthKit": true,
+        "unexpiredStoreProfile": true,
+        "profileMatchesBundleAndTeam": true
+      },
+      {
+        "bundleId": "com.mooremovement.strideos.liveactivity",
+        "version": "1.0.0",
+        "build": "126",
+        "strictSignatureVerified": true,
+        "debugSigning": false,
+        "appGroups": [
+          "group.com.mooremovement.strideos"
+        ],
+        "healthKit": false,
+        "unexpiredStoreProfile": true,
+        "profileMatchesBundleAndTeam": true
+      },
+      {
+        "bundleId": "com.mooremovement.strideos.watch",
+        "version": "1.0.0",
+        "build": "126",
+        "strictSignatureVerified": true,
+        "debugSigning": false,
+        "appGroups": [],
+        "healthKit": true,
+        "unexpiredStoreProfile": true,
+        "profileMatchesBundleAndTeam": true
+      }
+    ],
+    "privacyManifestsParsed": 21,
+    "noCredentialFilenamesInArchive": true,
+    "embeddedBundleIsHermesBytecode": true,
+    "embeddedBundleBytes": 12986488,
+    "embeddedBundleSHA256": "81da897a0a4f2a4222a1baed55060a9b1600dd740f8e0f68e86eb9e6bf37323b",
+    "currentStrengthTextMarkers": {
+      "membershipComparison": true,
+      "lifeChanges": true,
+      "strengthCalculatorsRoute": true,
+      "strengthDisclosure": true,
+      "chatStorage": true,
+      "coachV2Endpoint": true,
+      "usageDetails": true,
+      "individualHistoryExpiry": true,
+      "temporaryTimezoneDisclosure": true,
+      "purchasedAccessDescription": true,
+      "versionedPrivacy": true,
+      "versionedTerms": true,
+      "versionedSupport": true,
+      "activePrescriptionPreserved": true
+    },
+    "markerEvidenceScope": "Embedded text and version evidence only; not execution, coaching correctness, eligibility, or on-device acceptance",
+    "compiled1024Icons": [
+      {
+        "Name": "AppIcon",
+        "PixelWidth": 1024,
+        "PixelHeight": 1024,
+        "Opaque": true,
+        "Idiom": "phone"
+      }
+    ],
+    "compiledLiveActivityBrandRenditions": [
+      {
+        "Name": "StrideOSMark",
+        "PixelWidth": 28,
+        "PixelHeight": 28,
+        "Scale": 1,
+        "Opaque": false,
+        "TemplateMode": null
+      },
+      {
+        "Name": "StrideOSMark",
+        "PixelWidth": 56,
+        "PixelHeight": 56,
+        "Scale": 2,
+        "Opaque": false,
+        "TemplateMode": null
+      },
+      {
+        "Name": "StrideOSMark",
+        "PixelWidth": 84,
+        "PixelHeight": 84,
+        "Scale": 3,
+        "Opaque": false,
+        "TemplateMode": null
+      }
+    ],
+    "authLogoExpectedAssetFoundInArchive": true,
+    "nativeCallbackSchemePresent": true,
+    "locationAndHealthPurposeStringsPresent": true,
+    "signedWebcredentialsDomainAndProvisioningVerified": true,
+    "programmingVersionBoundary": "Future Build126 source; completed and active prescriptions are not rewritten by artifact verification",
+    "physicalDeviceAccepted": false,
+    "purchaseLifecycleAccepted": false,
+    "publicReviewSubmitted": false
+  },
+  "versionedPolicyReadback": [
+    {
+      "page": "privacy-126",
+      "curlExit": 0,
+      "sha256": "7661293d7f5358e2c687cd59954f2dfd0ba9e1ef85127fef1f2464df93e2cc58",
+      "matchesExpected": true
+    },
+    {
+      "page": "terms-126",
+      "curlExit": 0,
+      "sha256": "b5c7add93b5767240984b5e33be37c95cb38f2ccd4bf3648aa3c9cc205d8be88",
+      "matchesExpected": true
+    },
+    {
+      "page": "support-126",
+      "curlExit": 0,
+      "sha256": "4541ca9403779c35b8875b47db749c2ccc090ced1cd0e562af4c2502b2f2cf82",
+      "matchesExpected": true
+    },
+    {
+      "page": "privacy",
+      "curlExit": 0,
+      "sha256": "4c636054d5063f6091bcefc4f9b3897f438b869e3e6d261c7716ec097a7ecd18",
+      "matchesExpected": true
+    },
+    {
+      "page": "terms",
+      "curlExit": 0,
+      "sha256": "5d7d8cd9a39cfbbea9667f1c325536185ccf68eeb9c776cf2de46267b03216ca",
+      "matchesExpected": true
+    },
+    {
+      "page": "support",
+      "curlExit": 0,
+      "sha256": "6beaa1bc0d62ca9a648889c721f4a90dfb3aa73c4bcd02089f1aaaeffc84cbca",
+      "matchesExpected": true
+    }
+  ],
+  "coachV2HostedReadOnlyCheck": {
+    "checkedAt": "2026-11-23T07:12:05.346Z",
+    "scope": "Existing protected Apple reviewer: Auth, usage GET, RevenueCat metadata only",
+    "purchaseMade": false,
+    "modelGenerationRequested": false,
+    "ownerTrainingDataChanged": false,
+    "credentialsPrintedOrPersisted": false,
+    "health": [
+      {
+        "path": "/auth/v1/health",
+        "httpStatus": 200,
+        "json": true
+      },
+      {
+        "path": "/auth/v1/settings",
+        "httpStatus": 200,
+        "json": true,
+        "signupEnabled": true,
+        "emailConfirmationEnabled": true
+      }
+    ],
+    "serverProEnforcementEnabled": true,
+    "qaOwnerOverrideAbsent": true,
+    "signInHttpStatus": 200,
+    "protectedReviewerIdentityVerified": true,
+    "emailConfirmed": true,
+    "v2Configured": true,
+    "v2UsageStatus": 200,
+    "v2Usage": {
+      "pro": true,
+      "used": 0,
+      "limit": 20,
+      "version": 2,
+      "resetsAt": "2026-11-23T08:00:00.000Z",
+      "timezone": "America/Los_Angeles",
+      "remaining": 20,
+      "canPurchase": false,
+      "packsEnabled": false,
+      "purchasedExpiresAt": null,
+      "purchasedRemaining": 0,
+      "timezoneChangePending": false
+    },
+    "fallbackStatus": 200,
+    "fallback": {
+      "pro": true,
+      "used": 0,
+      "limit": 20,
+      "version": 2,
+      "resetsAt": "2026-11-23T08:00:00.000Z",
+      "timezone": "America/Los_Angeles",
+      "remaining": 20,
+      "canPurchase": false,
+      "packsEnabled": false,
+      "purchasedExpiresAt": null,
+      "purchasedRemaining": 0,
+      "timezoneChangePending": true,
+      "requestedTimezone": "Canada/Pacific",
+      "timezoneFallback": "server_tzdata_outdated"
+    },
+    "testTimezoneRestored": true,
+    "accepted": true,
+    "temporarySessionLocalSignOutHttpStatus": 204,
+    "purchaseLifecycleAccepted": false,
+    "nativeReviewerNavigationAccepted": false
+  },
+  "physicalDeviceAcceptance": false,
+  "packSalesEnabled": false,
+  "publicReviewReplacementPerformed": false,
+  "legacyAndV2FinalReadback": {
+    "checkedAt": "2026-11-23T07:13:39.164Z",
+    "scope": "Existing protected Apple reviewer: Auth, usage GET, RevenueCat metadata only",
+    "purchaseMade": false,
+    "modelGenerationRequested": false,
+    "ownerTrainingDataChanged": false,
+    "credentialsPrintedOrPersisted": false,
+    "health": [
+      {
+        "path": "/auth/v1/health",
+        "httpStatus": 200,
+        "json": true
+      },
+      {
+        "path": "/auth/v1/settings",
+        "httpStatus": 200,
+        "json": true,
+        "signupEnabled": true,
+        "emailConfirmationEnabled": true
+      }
+    ],
+    "serverProEnforcementEnabled": true,
+    "qaOwnerOverrideAbsent": true,
+    "signInHttpStatus": 200,
+    "protectedReviewerIdentityVerified": true,
+    "emailConfirmed": true,
+    "v1HealthStatus": 200,
+    "v1Configured": true,
+    "v1UsageStatus": 200,
+    "v1Usage": {
+      "used": 0,
+      "limit": 20,
+      "remaining": 20,
+      "resetsAt": "2026-11-24T00:00:00.000Z"
+    },
+    "v2Configured": true,
+    "v2UsageStatus": 200,
+    "v2Usage": {
+      "pro": true,
+      "used": 0,
+      "limit": 20,
+      "version": 2,
+      "resetsAt": "2026-11-23T08:00:00.000Z",
+      "timezone": "America/Los_Angeles",
+      "remaining": 20,
+      "canPurchase": false,
+      "packsEnabled": false,
+      "purchasedExpiresAt": null,
+      "purchasedRemaining": 0,
+      "timezoneChangePending": false
+    },
+    "fallbackStatus": 200,
+    "fallback": {
+      "pro": true,
+      "used": 0,
+      "limit": 20,
+      "version": 2,
+      "resetsAt": "2026-11-23T08:00:00.000Z",
+      "timezone": "America/Los_Angeles",
+      "remaining": 20,
+      "canPurchase": false,
+      "packsEnabled": false,
+      "purchasedExpiresAt": null,
+      "purchasedRemaining": 0,
+      "timezoneChangePending": true,
+      "requestedTimezone": "Canada/Pacific",
+      "timezoneFallback": "server_tzdata_outdated"
+    },
+    "testTimezoneRestored": true,
+    "accepted": true,
+    "temporarySessionLocalSignOutHttpStatus": 204,
+    "purchaseLifecycleAccepted": false,
+    "nativeReviewerNavigationAccepted": false
+  }
+}

@@ -30,3 +30,15 @@ Hosted Postgres has outdated timezone data. Known affected regions/aliases tempo
 The first hosted usage read uncovered an Auth-table privilege mismatch. The additive repair is applied: a private service-only boolean helper reads existence, all ledger functions remain invoker, direct Auth-table SELECT remains denied, and the private schema is rejected by the Data API. Hosted authenticated v1/v2 usage and RevenueCat Pro reads passed; a rolled-back legacy quota reservation also succeeded. No broad Auth-table grant was added. Reviewer enrollment remains false, test timezone state was restored, and no provider generation/purchase occurred.
 
 Versioned beta policy pages (privacy-126.html, terms-126.html, support-126.html) are published separately, and Build 126 links to them. The existing standard 125 pages stay unchanged. When selecting 126 for review, reconcile the standard policy pages and Apple description/reviewer notes, preserving manual release and the two submitted subscriptions. Historical 125 receipts remain unchanged.
+
+## Completed internal delivery
+
+Source commit `b8d91cc98958034c3bde00e04ad58bb4b9ad5274` is pushed on `codex/launch-polish-20261115`. EAS build `a1181bd8-ae3f-47a9-8cc0-1c2e8b4ff70e` finished successfully. Submission `c1565c65-b67d-4b27-ab31-b15b6b295920` uploaded that exact archive. Apple build `72459210-a2d7-481e-b5f9-693f4d180707` is VALID / IN_BETA_TESTING and assigned to the existing Team (Expo) internal group; the 1,026-character testing notes were read back exactly. Tester-group membership is not proof of a physical installation of 126.
+
+The downloaded IPA is 130,108,790 bytes, SHA256 `778673363eb4ea02fe7a1cfe70644c6a92ded75cb19980a7b93d8e27ef0b7c6a`. All three store-signed targets have version 1.0.0/build 126 and the expected team/bundle/profile, entitlements and app groups. Twenty-one privacy manifests parsed; Hermes and the new feature/legal-link markers are present. Existing opaque app icon and transparent Live Activity logo renditions were verified without changing images.
+
+Versioned policy pages returned HTTP success and exact hashes; the three standard 125 pages retained their prior bytes. The new Coach endpoint health and verified Pro/usage/fallback readbacks passed without generation or purchases. Source checks do not claim physical-device, native StoreKit lifecycle or launch-scale capacity acceptance.
+
+App Store version 1.0 still selects Build 125 in the existing WAITING_FOR_REVIEW submission dated 2026-11-22T10:36:33.638Z, with MANUAL release. No review withdrawal/replacement or public release was performed during 126 internal delivery. Prepared replacement metadata remains cache-only for the next explicitly coordinated step.
+
+Final compatibility readback at 2026-11-23T07:13:39Z passed v1 health/usage and v2 configuration/verified Pro/usage/fallback checks, with test timezone restored and temporary session signed out. Earlier read-only transport timeouts recovered; no extra model call, purchase, allowance charge, or new source change was used to obtain this result.
