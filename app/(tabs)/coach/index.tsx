@@ -4,7 +4,7 @@ import AiSharingPreferences from '../../../src/components/settings/AiSharingPref
 import { aiConsent, useAiConsent } from '../../../src/store/aiConsentStore';
 import { billingIsConfigured } from '../../../src/lib/revenueCat';
 import { useSubscriptionStore } from '../../../src/store/subscriptionStore';
-import { captureOwnerLease } from '../../../src/lib/localDataOwner';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
 // ─── AI Coach ─────────────────────────────────────────────────────────────────
 //
 // Chat interface powered by Claude. Builds a system prompt from the user's
@@ -13,6 +13,7 @@ import { captureOwnerLease } from '../../../src/lib/localDataOwner';
 
 import {
   ActivityIndicator,
+  Alert,
   AppState,
   Keyboard,
   KeyboardAvoidingView,
@@ -25,6 +26,7 @@ import {
   View,
 } from 'react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { randomUUID } from 'expo-crypto';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
@@ -55,6 +57,12 @@ import { useRecalculationStore } from '../../../src/store/recalculationStore';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useCoachUsage } from '../../../src/hooks/useCoachUsage';
 import CoachUsageDetails from '../../../src/components/coaching/CoachUsageDetails';
+import CoachMessagePack from '../../../src/components/coaching/CoachMessagePack';
+import { coachLowBalanceNotices } from '../../../src/utils/coachUsage';
+import { useCoachChatHistory } from '../../../src/hooks/useCoachChatHistory';
+import { unexpiredCoachMessages, type SavedCoachMessage } from '../../../src/utils/coachChatHistory';
+import { useProAccess } from '../../../src/hooks/useProAccess';
+import ProAccessNotice from '../../../src/components/subscription/ProAccessNotice';
 import { pickTargetRace } from '../../../src/utils/plan/macroPlanner';
 import { buildCoachingInput } from '../../../src/utils/coachingInputBuilder';
 import { buildBudgetedCoachPrompt } from '../../../src/utils/coachPromptBudget';
@@ -82,6 +90,7 @@ import {
   checkAiCoachHealth,
   isAiCoachConfigured,
   sendCoachMessage,
+  recoverCoachReply,
   type AiCoachHealth,
   type CoachMessage,
 } from '../../../src/lib/aiCoach';
@@ -103,7 +112,7 @@ import { buildBuild45CoachContextSections } from '../../../src/utils/coachBuild4
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Role    = 'user' | 'assistant';
-type Message = CoachMessage & { role: Role };
+type Message = SavedCoachMessage & { role: Role };
 type CoachTab = 'chat' | 'insights' | 'video';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -614,6 +623,7 @@ function buildContextSummary(data: ReturnType<typeof useOnboardingStore.getState
 export default function CoachScreen() {
   const aiSharing = useAiConsent();
   const membership = useSubscriptionStore();
+  const movementLabPro = useProAccess('movement-lab');
   useFocusEffect(useCallback(() => {
     let focused = true;
     let previousState = AppState.currentState;
@@ -783,10 +793,21 @@ export default function CoachScreen() {
   useFeatureTour('ai-coach', targetId => {
     if (targetId === 'coach.context' || targetId === 'coach.input') setTab('chat');
   });
-  const [messages,  setMessages]  = useState<Message[]>([]);
+  const chat = useCoachChatHistory();
+  const messages = unexpiredCoachMessages(chat.messages, Date.now());
   const [input,     setInput]     = useState('');
   const [loading,   setLoading]   = useState(false);
+  const inFlight = useRef(false);
+  const operation = useRef(0);
   const coachUsage = useCoachUsage(tab === 'chat' && aiSharing.allowed, loading);
+  const warnedBalances = useRef(new Set<string>());
+  useEffect(() => {
+    if (coachUsage.status !== 'current' || loading || tab !== 'chat') return;
+    for (const notice of coachLowBalanceNotices(coachUsage.usage)) {
+      const key = `${chat.owner}:${notice.key}`;
+      if (!warnedBalances.current.has(key)) { warnedBalances.current.add(key); Alert.alert('AI Coach messages', notice.text); }
+    }
+  }, [coachUsage.usage, coachUsage.status, loading, tab, chat.owner]);
   const [error,     setError]     = useState<string | null>(null);
   // The analysis the athlete tapped "Discuss with AI Coach" on. Captured from
   // the deep-link param and kept in state past the param-clear so it grounds
@@ -807,18 +828,24 @@ export default function CoachScreen() {
   const s = useMemo(() => makeStyles(C), [C]);
   const b = useMemo(() => makeBubbleStyles(C), [C]);
 
+  useEffect(() => {
+    operation.current += 1; inFlight.current = false;
+    setInput(''); setFocusAnalysisId(null); setError(null); setLoading(false);
+    setCoachHealth(null); warnedBalances.current.clear();
+  }, [chat.owner]);
+
   // Deep-link handoff (e.g. TermDefinitionModal, readiness report "Ask AI
   // Coach", Movement Lab "Discuss with AI Coach"): prefill the ask param into
   // the input without auto-sending and capture any analysisId into state before
   // clearing the params so they don't refire on the next render. analysisId is
   // read alongside ask so a later ask-only handoff clears any stale focus.
   useEffect(() => {
-    if (!params.ask && !params.analysisId) return;
+    if (!chat.ready || (!params.ask && !params.analysisId)) return;
     setTab('chat');
     if (params.ask) setInput(params.ask);
     setFocusAnalysisId(params.analysisId ?? null);
     router.setParams({ ask: undefined, analysisId: undefined });
-  }, [params.ask, params.analysisId]);
+  }, [params.ask, params.analysisId, chat.ready]);
 
   useEffect(() => {
     let cancelled = false;
@@ -836,39 +863,91 @@ export default function CoachScreen() {
     return () => {
       cancelled = true;
     };
-  }, [isConfigured, tab]);
+  }, [isConfigured, tab, chat.owner]);
 
   async function sendMessage() {
     const text = input.trim();
-    if (!text || loading) return;
-
-    const userMsg: Message   = { role: 'user', content: text };
-    const updated: Message[] = [...messages, userMsg];
-    setMessages(updated);
+    if (!text || inFlight.current || !chat.ready || recoverable) return;
+    const lease = captureOwnerLease(true);
+    if (!lease) { setError('Connect with the account that owns this conversation before sending.'); return; }
+    inFlight.current = true;
+    const token = ++operation.current;
+    setLoading(true);
+    const userMsg: Message = { id: randomUUID(), role: 'user', content: text, createdAt: Date.now() };
+    try { await chat.append(userMsg); } catch (failure) {
+      if (token === operation.current) { inFlight.current = false; setLoading(false); setError(failure instanceof Error ? failure.message : 'Chat could not be opened.'); }
+      return;
+    }
+    if (token !== operation.current || !ownerLeaseIsCurrent(lease, true)) return;
     setInput('');
+    await completeMessage(userMsg, token);
+  }
+
+  async function completeMessage(userMsg: Message, token: number) {
+    const lease = captureOwnerLease(true);
+    if (!lease) { if (token === operation.current) { inFlight.current = false; setLoading(false); } return; }
     setLoading(true);
     setError(null);
 
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
-      const focusedAnalysis = focusAnalysisId
+      const updated = await chat.prune();
+      if (!ownerLeaseIsCurrent(lease, true) || token !== operation.current) return;
+      if (!updated.some(message => message.id === userMsg.id)) throw new Error('That message has expired. Send a new question.');
+      const focusedAnalysis = movementLabPro.allowed && focusAnalysisId
         ? movementAnalyses.find(a => a.id === focusAnalysisId)
         : undefined;
       const system  = buildSystemPrompt(
-        data, riskFlags, trainingCtx, movementAnalyses,
-        latestReadinessAssessment, mobilityRecommendedIds, mobilityCompletions,
-        focusedAnalysis, text, buildHydrationContext(data),
+        data, movementLabPro.allowed ? riskFlags : () => [], trainingCtx, movementLabPro.allowed ? movementAnalyses : [],
+        movementLabPro.allowed ? latestReadinessAssessment : undefined, mobilityRecommendedIds, mobilityCompletions,
+        focusedAnalysis, userMsg.content, buildHydrationContext(data),
         buildStrengthContext(trainingCtx, weekPlan.strengthWeek.sessions[0]),
       );
-      const reply = sanitizeCoachDisplayText(await sendCoachMessage(updated, system));
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+      const reply = await sendCoachMessage(updated, system, { requestId: userMsg.id });
+      if (!ownerLeaseIsCurrent(lease, true) || token !== operation.current) return;
+      await chat.append({ id: `${userMsg.id}:reply`, role: 'assistant', content: sanitizeCoachDisplayText(reply.text), createdAt: Math.min(Date.now(), reply.createdAt) });
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to reach AI coach.');
+      if (ownerLeaseIsCurrent(lease, true) && token === operation.current) {
+        if ((e as { notAccepted?: boolean })?.notAccepted) {
+          await chat.markFailed(userMsg.id).catch(() => undefined);
+          if (!ownerLeaseIsCurrent(lease, true) || token !== operation.current) return;
+          setInput(userMsg.content);
+        }
+        setError(e instanceof Error ? e.message : 'Failed to reach AI coach.');
+      }
     } finally {
-      setLoading(false);
+      if (token === operation.current) { inFlight.current = false; setLoading(false); void coachUsage.refresh(); }
     }
+  }
+
+  const lastQuestion = [...messages].reverse().find(message => message.role === 'user');
+  const recoverable = lastQuestion && lastQuestion.delivery !== 'failed' && !messages.some(message => message.id === `${lastQuestion.id}:reply`) ? lastQuestion : null;
+  async function recoverMessage() {
+    if (!recoverable || inFlight.current) return;
+    const lease = captureOwnerLease(true);
+    if (!lease) return;
+    inFlight.current = true;
+    const token = ++operation.current;
+    setLoading(true); setError(null);
+    try {
+      const current = await chat.prune();
+      if (!ownerLeaseIsCurrent(lease, true) || token !== operation.current) return;
+      if (!current.some(message => message.id === recoverable.id)) throw new Error('That message has expired. Send a new question.');
+      const result = await recoverCoachReply(recoverable.id);
+      if (!ownerLeaseIsCurrent(lease, true) || token !== operation.current) return;
+      if (result.status === 'completed' && result.text && Number.isFinite(result.createdAt)) {
+        await chat.append({ id: `${recoverable.id}:reply`, role: 'assistant', content: sanitizeCoachDisplayText(result.text), createdAt: Math.min(Date.now(), result.createdAt!) });
+      } else if (result.status === 'not_found') {
+        await completeMessage(recoverable, token);
+      } else if (result.status === 'failed') {
+        await chat.markFailed(recoverable.id);
+        if (!ownerLeaseIsCurrent(lease, true) || token !== operation.current) return;
+        setInput(recoverable.content); setError('The reply could not be completed and its message was returned. Review the question and send it again.');
+      } else setError('The reply is still being checked. Recover it again shortly; no duplicate message has been sent.');
+    } catch (failure) { if (ownerLeaseIsCurrent(lease, true) && token === operation.current) setError(failure instanceof Error ? failure.message : 'This reply could not be recovered.'); }
+    finally { if (token === operation.current) { inFlight.current = false; setLoading(false); void coachUsage.refresh(); } }
   }
 
   return (
@@ -913,15 +992,6 @@ export default function CoachScreen() {
         <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 32 }}>
           <AiSharingPreferences />
         </ScrollView>
-      ) : tab === 'chat' && billingIsConfigured() && (!membership.isPro || membership.owner !== aiSharing.owner) ? (
-        <View style={s.noKey}>
-          <Text style={s.noKeyTitle}>{membership.isLoading ? 'Checking membership' : 'AI Coach chat is part of Pro'}</Text>
-          <Text style={s.noKeyDesc}>{membership.error ?? 'Tracking, saved history, and on-device Insights remain available without Pro. Membership verification uses RevenueCat purchase records, not health data.'}</Text>
-          {membership.isLoading ? <ActivityIndicator color={C.primary} /> : <>
-            <Pressable style={s.retryBtn} onPress={() => router.push('/(tabs)/settings/membership' as never)} accessibilityRole="button"><Text style={s.retryTxt}>View membership</Text></Pressable>
-            <Pressable style={s.retryBtn} onPress={() => { void useSubscriptionStore.getState().refresh(); }} accessibilityRole="button"><Text style={s.retryTxt}>Retry membership check</Text></Pressable>
-          </>}
-        </View>
       ) : tab === 'chat' && (!isConfigured || (coachHealth && !coachHealth.ok)) ? (
         <View style={s.noKey}>
           <Ionicons name="key-outline" size={38} color={C.primary} />
@@ -961,6 +1031,9 @@ export default function CoachScreen() {
           >
             <CoachUsageDetails usage={coachUsage.usage} status={coachUsage.status}
               checkedAt={coachUsage.checkedAt} sending={loading} onRefresh={() => { void coachUsage.refresh(); }} />
+            <CoachMessagePack key={chat.owner} usage={coachUsage.usage} onRefresh={coachUsage.refresh} />
+            {chat.error ? <View style={s.errorBox}><Text style={s.errorTxt}>{chat.error}</Text>
+              {!chat.ready ? <Pressable accessibilityRole="button" onPress={() => { void chat.retry(); }} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: C.primary }}>Retry saved chat</Text></Pressable> : null}</View> : null}
             <FeatureTourTarget targetId="coach.context" style={s.contextCard}>
               <Text style={s.contextEyebrow}>Your Training Context</Text>
               <Text style={s.contextTxt}>{contextSummary}</Text>
@@ -987,7 +1060,8 @@ export default function CoachScreen() {
               </View>
             )}
 
-            {messages.map((msg, i) => <Bubble key={i} msg={msg} />)}
+            {messages.map(msg => <Bubble key={msg.id} msg={msg} />)}
+            {recoverable && !loading ? <Pressable accessibilityRole="button" onPress={() => { void recoverMessage(); }} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: C.primary }}>Recover the last reply</Text></Pressable> : null}
 
             {loading && (
               <View style={[b.wrap, b.assistantWrap]}>
@@ -1009,6 +1083,7 @@ export default function CoachScreen() {
             <TextInput
               style={s.input}
               value={input}
+              editable={chat.ready && !loading && !recoverable}
               onChangeText={setInput}
               placeholder="Ask your coach..."
               placeholderTextColor={C.textSubtle}
@@ -1020,7 +1095,7 @@ export default function CoachScreen() {
             <Pressable
               style={[s.sendBtn, (!input.trim() || loading) && s.sendBtnDisabled]}
               onPress={sendMessage}
-              disabled={!input.trim() || loading}
+              disabled={!input.trim() || loading || !chat.ready || !!recoverable}
             >
               <Text style={s.sendTxt}>↑</Text>
             </Pressable>
@@ -1040,13 +1115,15 @@ export default function CoachScreen() {
           <CoachInsightsCard insights={coaching.allInsights} maxVisible={4} />
           <RaceReadinessCard readiness={coaching.raceReadiness} />
         </ScrollView>
+      ) : !movementLabPro.allowed ? (
+        <View style={{ padding: 18 }}><ProAccessNotice access={movementLabPro} title="Movement Lab" /></View>
       ) : (
         <ScrollView style={s.messages} contentContainerStyle={s.videoContent} showsVerticalScrollIndicator={false}>
           <View style={s.contextCard}>
             <Text style={s.contextEyebrow}>Movement Lab</Text>
             <Text style={s.contextTxt}>
               Movement Lab is the single home for recording, importing, and analyzing your movement.
-              Your saved analyses feed this chat automatically — open one below or tap "Discuss with AI
+              Open a saved analysis below or tap "Discuss with AI
               Coach" from any analysis to ask about it here.
             </Text>
           </View>

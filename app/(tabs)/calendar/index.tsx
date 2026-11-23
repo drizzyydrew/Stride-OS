@@ -43,6 +43,7 @@ import { useProfileStore } from '../../../src/store/profileStore';
 import { goalArchiveLink } from '../../../src/utils/goal-archive-link';
 import { raceEventSnapshot, resolveArchiveActivityResult, resolveRaceActivityResult } from '../../../src/utils/raceLink';
 import { displayLabel } from '../../../src/utils/displayLabels';
+import { requireProAccess } from '../../../src/lib/pro-access';
 
 type CalendarEntry = BaseCalendarEntry & { raceId?: string; raceOutcome?: string; raceArchiveKey?: string };
 
@@ -600,7 +601,8 @@ export default function CalendarScreen() {
       ...(isToday ? [{
         text: 'Remove from Today',
         style: 'destructive' as const,
-        onPress: () => removeScheduledSessionFromToday(todayYMD, entry.scheduledSessionId!),
+        onPress: () => { void requireProAccess('schedule-changes').then(() => removeScheduledSessionFromToday(todayYMD, entry.scheduledSessionId!))
+          .catch(error => Alert.alert('Plan adjustments', error instanceof Error ? error.message : 'Membership could not be verified.')); },
       }] : [{
         text: 'Keep Scheduled Date',
         style: 'cancel' as const,

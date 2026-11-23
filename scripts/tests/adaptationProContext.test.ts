@@ -13,7 +13,7 @@ function harness(action = 'rebuild_week') {
   let release!: () => void;
   const pending = new Promise<void>(resolve => { release = resolve; });
   let owner = 'a', athlete = 'athlete_default', revision = 1, activities: object[] = [], confirmed = {};
-  let reads = 0, writes = 0, generations = 0;
+  let reads = 0, writes = 0, generations = 0, allowed = true;
   const messages: string[] = [];
   const previewContext = { current: 'original' };
   const context = {
@@ -23,7 +23,7 @@ function harness(action = 'rebuild_week') {
     useTrainingPlanStore: { getState: () => ({ revision }) },
     useActivityStore: { getState: () => ({ activities }) },
     useAdaptationStore: { getState: () => ({ confirmed }) }, previewContext,
-    requireProAccess: async () => { reads++; await pending; },
+    requireProAccess: async (feature: string) => { assert.equal(feature, 'schedule-changes'); reads++; await pending; if (!allowed) throw new Error('Pro required'); },
     Alert: { alert: (_title: string, message: string) => { messages.push(message); } },
     scheduled: { weekSessions: [{ scheduledSessionId: 's1', date: '2026-11-16', title: 'Easy run', subtype: 'easy' }], canonicalWeekSessions: [] },
     weekPlan: { weekStartDate: new Date('2026-11-15T12:00:00'), metadata: { startsOn: '2026-11-15' } },
@@ -31,10 +31,10 @@ function harness(action = 'rebuild_week') {
     toYMD: (date: Date) => date.toISOString().slice(0, 10),
     addCalendarDays: (date: Date, count: number) => new Date(date.getTime() + count * 86_400_000),
     createAdaptationPreview: () => { generations++; return { overlays: [] }; },
-    setPreview: () => { writes++; }, Date,
+    setPreview: () => { writes++; }, Date, Error,
   };
   const run = vm.runInNewContext(`${js}\npreview`, context);
-  return { run, release, messages, counts: () => ({ reads, writes, generations }),
+  return { run, release, messages, deny: () => { allowed = false; }, counts: () => ({ reads, writes, generations }),
     change: (kind: string) => {
       if (kind === 'owner') owner = 'b';
       if (kind === 'athlete') athlete = 'athlete_secondary';
@@ -46,7 +46,7 @@ function harness(action = 'rebuild_week') {
 }
 
 for (const kind of ['owner', 'athlete', 'screen', 'plan', 'activity', 'adaptation']) {
-  test(`automatic week rebuild rejects stale ${kind} context after membership read`, async () => {
+  test(`plan adjustment rejects stale ${kind} context after membership read`, async () => {
     const h = harness(); const pending = h.run();
     h.change(kind); h.release(); await pending;
     assert.equal(h.counts().generations, 0);
@@ -61,7 +61,16 @@ test('an unchanged verified rebuild context can generate a preview', async () =>
   assert.equal(h.messages.length, 0);
 });
 
-test('rest does not contact billing and can still create its safety preview', async () => {
-  const h = harness('rest'); await h.run();
-  assert.deepEqual(h.counts(), { reads: 0, generations: 1, writes: 1 });
-});
+for (const action of ['rest', 'reduced', 'remove_intensity', 'unchanged', 'removed', 'moved', 'convert_easy', 'active_recovery', 'rebuild_week']) {
+  test(`${action} schedule preview requires verified Pro before any generation or state write`, async () => {
+    const h = harness(action); const pending = h.run();
+    assert.deepEqual(h.counts(), { reads: 1, generations: 0, writes: 0 });
+    h.release(); await pending;
+    assert.deepEqual(h.counts(), { reads: 1, generations: 1, writes: 1 });
+  });
+  test(`${action} schedule preview preserves the plan when membership is denied`, async () => {
+    const h = harness(action); h.deny(); const pending = h.run(); h.release(); await pending;
+    assert.deepEqual(h.counts(), { reads: 1, generations: 0, writes: 0 });
+    assert.match(h.messages[0], /Pro required/);
+  });
+}

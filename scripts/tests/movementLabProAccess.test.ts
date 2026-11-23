@@ -54,7 +54,7 @@ test('Movement Lab access has distinct paid-action copy and fails closed for new
   for (const patch of [{ isPro: false }, { isLoading: true }, { error: 'outage' }, { online: false }, { membershipOwner: 'b' }]) {
     const access = evaluateProAccess({ ...active, ...patch }, 'movement-lab');
     assert.equal(access.allowed, false);
-    if (access.status !== 'checking') assert.match(access.message, /saved clips and results remain available/);
+    if (access.status !== 'checking') assert.match(access.message, /Export and deletion remain available without Pro/);
   }
   assert.equal(evaluateProAccess({ ...active, billingEnabled: false, isPro: false }, 'movement-lab').allowed, true);
 });
@@ -72,7 +72,7 @@ test('creation gate keys content by owner while preserving same-owner verificati
     '../../lib/localDataOwner': { captureOwnerLease: () => ({ ownerUserId: owner, generation: 1 }) },
     '../../theme/useColors': { useColors: () => ({ bg: '#000' }) },
     '../layout/ScreenHeader': { default: passive }, '../subscription/ProAccessNotice': { default: passive },
-    '../layout/PageSafeAreaView': { default: passive },
+    '../layout/PageSafeAreaView': { default: passive }, '../ui/Button': { default: passive },
   });
   const content = { selectedMedia: 'owner-a-video' };
   const first = gateModule.default({ children: content });

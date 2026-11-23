@@ -26,6 +26,7 @@ const sources = new Map(files.map(file => [resolve(file), readFileSync(file, 'ut
 function harness(options: {
   qaOwner?: string; global?: string; userId?: string; authError?: boolean;
   providerStatus?: number; active?: boolean; networkFailure?: boolean; configured?: boolean;
+  migrated?: boolean; migrationError?: boolean;
 } = {}) {
   const env: Record<string, string | undefined> = {
     SUPABASE_URL: 'https://fixture.invalid', SUPABASE_SERVICE_ROLE_KEY: 'synthetic-service-key',
@@ -35,6 +36,7 @@ function harness(options: {
   };
   const reads: string[] = [], events: string[] = [];
   const rpcCalls: { name: string; args: unknown }[] = [];
+  const migrationCalls: { name: string; args: unknown }[] = [];
   let handler: ((request: Request) => Promise<Response>) | undefined;
   const cache = new Map<string, { exports: any }>();
   const admin = {
@@ -44,6 +46,11 @@ function harness(options: {
         : { data: { user: { id: options.userId ?? owner } }, error: null };
     } },
     rpc: async (name: string, args: unknown) => {
+      if (name === 'stride_coach_v2_is_enrolled') {
+        events.push('migration'); migrationCalls.push({ name, args: JSON.parse(JSON.stringify(args)) });
+        return { data: options.migrated === true, error: options.migrationError ? { message: 'private migration lookup failure' } : null };
+      }
+      assert.equal(name, 'consume_stride_coach_allowance');
       events.push('quota'); rpcCalls.push({ name, args: JSON.parse(JSON.stringify(args)) }); return { data: true, error: null };
     },
   };
@@ -98,7 +105,7 @@ function harness(options: {
     ...(method === 'POST' ? { body: JSON.stringify({ consentVersion: 1, system: 'Synthetic context',
       messages: [{ role: 'user', content: 'Easy run?' }], ...extra }) } : {}),
   }));
-  return { request, reads, events, rpcCalls };
+  return { request, reads, events, rpcCalls, migrationCalls };
 }
 
 test('QA policy accepts exactly one nonzero UUID and snapshots configuration', () => {
@@ -134,7 +141,8 @@ for (const row of [
     const fixture = harness({ qaOwner: owner, global: 'false', ...row });
     const response = await fixture.request();
     assert.equal(response.status, row.status);
-    assert.deepEqual(fixture.events, ['auth', 'revenuecat']); assert.deepEqual(fixture.rpcCalls, []);
+    assert.deepEqual(fixture.events, ['auth', 'migration', 'revenuecat']); assert.deepEqual(fixture.rpcCalls, []);
+    assert.deepEqual(fixture.migrationCalls, [{ name: 'stride_coach_v2_is_enrolled', args: { p_owner: owner } }]);
     const body = await response.json();
     assert.deepEqual(Object.keys(body), ['error']);
     const receipt = JSON.stringify(body);
@@ -148,20 +156,21 @@ for (const row of [
 test('QA no-quota guard survives global billing enabled', async () => {
   const fixture = harness({ qaOwner: owner, global: 'true' });
   assert.equal((await fixture.request()).status, 429);
-  assert.deepEqual(fixture.events, ['auth', 'revenuecat']); assert.deepEqual(fixture.rpcCalls, []);
+  assert.deepEqual(fixture.events, ['auth', 'migration', 'revenuecat']); assert.deepEqual(fixture.rpcCalls, []);
 });
 
 test('body identity and entitlement claims cannot select QA or replace verified owner', async () => {
   const fixture = harness({ qaOwner: owner, active: false });
   assert.equal((await fixture.request('POST', true, { userId: other, ownerUserId: other, isPro: true })).status, 402);
-  assert.deepEqual(fixture.events, ['auth', 'revenuecat']); assert.deepEqual(fixture.rpcCalls, []);
+  assert.deepEqual(fixture.events, ['auth', 'migration', 'revenuecat']); assert.deepEqual(fixture.rpcCalls, []);
+  assert.deepEqual(fixture.migrationCalls, [{ name: 'stride_coach_v2_is_enrolled', args: { p_owner: owner } }]);
 });
 
 test('unset QA and another owner preserve existing off/default behavior without reading RevenueCat key', async () => {
   for (const options of [{}, { qaOwner: owner, userId: other }]) {
     const fixture = harness(options);
     assert.equal((await fixture.request('POST', true, { ownerUserId: owner, isPro: true })).status, 200);
-    assert.deepEqual(fixture.events, ['auth', 'quota', 'ai']);
+    assert.deepEqual(fixture.events, ['auth', 'migration', 'quota', 'ai']);
     assert.deepEqual(fixture.rpcCalls, [{ name: 'consume_stride_coach_allowance', args: { owner_id: options.userId ?? owner } }]);
     assert.ok(!fixture.reads.includes('REVENUECAT_SECRET_API_KEY'));
   }
@@ -170,7 +179,27 @@ test('unset QA and another owner preserve existing off/default behavior without 
 test('global enabled still verifies non-QA owners through existing quota and AI bindings', async () => {
   const fixture = harness({ qaOwner: owner, userId: other, global: 'true' });
   assert.equal((await fixture.request()).status, 200);
-  assert.deepEqual(fixture.events, ['auth', 'revenuecat', 'quota', 'ai']);
+  assert.deepEqual(fixture.events, ['auth', 'migration', 'revenuecat', 'quota', 'ai']);
+});
+
+test('an enrolled owner gets an explicit update response before RevenueCat, quota or AI', async () => {
+  const fixture = harness({ migrated: true, global: 'true' });
+  const response = await fixture.request('POST', true, { ownerUserId: other, isPro: true });
+  assert.equal(response.status, 426);
+  assert.match((await response.json()).error, /Update StrideOS/);
+  assert.deepEqual(fixture.events, ['auth', 'migration']);
+  assert.deepEqual(fixture.rpcCalls, []);
+  assert.deepEqual(fixture.migrationCalls, [{ name: 'stride_coach_v2_is_enrolled', args: { p_owner: owner } }]);
+  assert.ok(!fixture.reads.includes('REVENUECAT_SECRET_API_KEY'));
+});
+
+test('migration lookup failure stops before quota or AI and does not leak database details', async () => {
+  const fixture = harness({ migrationError: true, global: 'true' });
+  const response = await fixture.request();
+  assert.equal(response.status, 503);
+  assert.doesNotMatch(await response.text(), /private migration/);
+  assert.deepEqual(fixture.events, ['auth', 'migration']);
+  assert.deepEqual(fixture.rpcCalls, []);
 });
 
 test('authentication, GET, preflight, invalid input and unavailable configuration never run QA verification or writes', async () => {
@@ -185,6 +214,7 @@ test('authentication, GET, preflight, invalid input and unavailable configuratio
     const fixture = harness({ qaOwner: owner, ...row });
     assert.equal((await fixture.request(row.method, row.authenticated ?? true, row.extra)).status, row.status);
     assert.deepEqual(fixture.events, row.events); assert.deepEqual(fixture.rpcCalls, []);
+    assert.deepEqual(fixture.migrationCalls, []);
     assert.ok(!fixture.reads.includes('REVENUECAT_SECRET_API_KEY'));
   }
 });

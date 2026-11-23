@@ -4,10 +4,11 @@ import type { RaceDistance } from '../types/training';
 import { isValidDateOnly } from './dateOnly';
 
 export type ProAccessStatus = 'included' | 'active' | 'checking' | 'inactive' | 'unavailable' | 'signed-out';
-export type ProFeature = 'personalized-plans' | 'week-rebuild' | 'movement-lab';
+export type ProFeature = 'personalized-plans' | 'week-rebuild' | 'movement-lab' | 'custom-routes' | 'custom-workouts' | 'schedule-changes' | 'forecasts';
 export type ProAccess = { status: ProAccessStatus; allowed: boolean; message: string };
 
-/** Access never changes, deletes, or hides an athlete's existing training. */
+/** Access never deletes history or media. Free data controls remain separate
+ * from paid builders, forecasts and Movement Lab playback/results. */
 export function evaluateProAccess(input: {
   billingEnabled: boolean;
   billingConfigured: boolean;
@@ -19,20 +20,32 @@ export function evaluateProAccess(input: {
   isLoading: boolean;
   error: string | null;
 }, feature: ProFeature = 'personalized-plans'): ProAccess {
-  const movement = feature === 'movement-lab';
+  const featureName: Record<ProFeature, string> = {
+    'personalized-plans': 'Personalized training plans',
+    'week-rebuild': 'Automatic plan adjustments',
+    'movement-lab': 'Movement Lab recordings, playback, results and assessments',
+    'custom-routes': 'Custom route builders',
+    'custom-workouts': 'Custom workout builders and saved workout templates',
+    'schedule-changes': 'Training schedule changes',
+    'forecasts': 'Performance forecasts',
+  };
+  const retained = feature === 'movement-lab'
+    ? 'Your saved media and results are retained for when Pro resumes. Export and deletion remain available without Pro.'
+    : 'Your training history, workout tracking and data controls remain available.';
   if (!input.billingEnabled) return { status: 'included', allowed: true, message: '' };
   if (!input.owner || !input.localAccess) return { status: 'signed-out', allowed: false, message: 'Sign in with the account that owns this training history.' };
-  if (!input.billingConfigured || !input.online) return { status: 'unavailable', allowed: false, message: movement ? 'Connect to the internet to verify membership before starting new Movement Lab work. Your saved clips and results remain available.' : 'Connect to the internet to verify membership before creating personalized training. Your saved plans and activities remain available.' };
-  if (input.error && input.membershipOwner === input.owner) return { status: 'unavailable', allowed: false, message: movement ? 'Membership could not be verified. Retry online. Your saved clips and results remain available.' : 'Membership could not be verified. Retry online. Your saved plans and activities remain available.' };
+  if (!input.billingConfigured || !input.online) return { status: 'unavailable', allowed: false, message: `Connect to the internet to verify membership. ${retained}` };
+  if (input.error && input.membershipOwner === input.owner) return { status: 'unavailable', allowed: false, message: `Membership could not be verified. Retry online. ${retained}` };
   if (input.membershipOwner !== input.owner || input.isLoading) return { status: 'checking', allowed: false, message: 'Checking your membership…' };
   return input.isPro
     ? { status: 'active', allowed: true, message: '' }
-    : { status: 'inactive', allowed: false, message: movement ? 'New Movement Lab recordings, imports and assessments are included with StrideOS Pro. Your saved clips and results remain available.' : 'Personalized plans and automatic week rebuilding are included with StrideOS Pro. Your existing plans and history remain available.' };
+    : { status: 'inactive', allowed: false, message: `${featureName[feature]} are included with StrideOS Pro. ${retained}` };
 }
 
 export function adaptationNeedsPro(overlays: ReadonlyArray<{ action: string }>, requiresPro?: 'week-rebuild'): boolean {
-  // Rest, reducing intensity, skipping, manual moves, and reverting stay free.
-  return requiresPro === 'week-rebuild' || overlays.some(overlay => overlay.action === 'rebuild_week');
+  // Editing the plan/schedule is Pro. Recording actual performance, skipped
+  // outcomes, corrections and stopping an active workout remain independent.
+  return requiresPro === 'week-rebuild' || overlays.length > 0;
 }
 
 export function onboardingTrainingChoice(input: { billingEnabled: boolean; hasExistingPlan: boolean; proAllowed: boolean }): 'preserve' | 'structured' | 'open' {

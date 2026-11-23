@@ -40,6 +40,7 @@ export function createCoachHandler(deps: {
   configured(): boolean;
   readUsage?(userId: string): Promise<{ used: number; limit: number; remaining: number; resetsAt: string }>;
   canUsePlan?(userId: string): Promise<boolean>;
+  requiresUpdate?(userId: string): Promise<boolean>;
   consumeAllowance(userId: string): Promise<boolean>;
   reply(payload: { messages: CoachMessage[]; system: string }, signal: AbortSignal): Promise<{ content: { type: 'text'; text: string }[] }>;
 }) {
@@ -60,6 +61,7 @@ export function createCoachHandler(deps: {
       try { body = await readJson(req); } catch { return json({ error: 'Invalid or oversized request.' }, 400); }
       if (!validCoachPayload(body)) return json({ error: 'AI sharing permission or message format is invalid. Update the app and review AI Coach Privacy.' }, 400);
       if (!deps.configured()) return json({ error: 'AI Coach is temporarily unavailable.' }, 503);
+      if (deps.requiresUpdate && await deps.requiresUpdate(userId)) return json({ error: 'This account now uses the updated AI allowance. Update StrideOS to continue; your saved messages and balance are retained.' }, 426);
       if (deps.canUsePlan && !await deps.canUsePlan(userId)) return json({ error: 'An active StrideOS Pro subscription is required for AI Coach chat.' }, 402);
       if (!await deps.consumeAllowance(userId)) return json({ error: 'AI Coach has reached its daily request limit. Try again tomorrow; on-device Insights remain available.' }, 429);
       const controller = new AbortController();

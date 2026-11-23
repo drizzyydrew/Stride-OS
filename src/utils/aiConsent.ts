@@ -1,5 +1,5 @@
 export const AI_CONSENT_KEY = 'strideos-ai-sharing-v1';
-export const AI_DISCLOSURE_VERSION = 1;
+export const AI_DISCLOSURE_VERSION = 2;
 
 type Storage = {
   getItem(key: string): Promise<string | null>;

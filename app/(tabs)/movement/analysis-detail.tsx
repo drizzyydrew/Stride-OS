@@ -1,3 +1,4 @@
+import MovementLabCreateGate from '../../../src/components/movement/MovementLabCreateGate';
 // ─── Movement Lab — Analysis Detail ───────────────────────────────────────────
 //
 // Read-only view of a saved MovementAnalysis: analyzed still with the skeleton
@@ -80,7 +81,7 @@ function formatDate(ms: number): string {
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
-export default function AnalysisDetailScreen() {
+function AnalysisDetailScreenContent() {
   const insets = useSafeAreaInsets();
   const { analysisId } = useLocalSearchParams<{ analysisId?: string }>();
   const analysis = useMovementStore(s => s.analyses.find(a => a.id === analysisId));
@@ -438,3 +439,7 @@ const s = StyleSheet.create({
   deleteBtnTxt:    { color: colors.critical, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   smallDisclaimer: { color: colors.textSubtle, fontSize: FontSize.xs, lineHeight: 16 },
 });
+
+export default function AnalysisDetailScreen() {
+  return <MovementLabCreateGate><AnalysisDetailScreenContent /></MovementLabCreateGate>;
+}

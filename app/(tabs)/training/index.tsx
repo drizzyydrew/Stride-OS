@@ -1,3 +1,4 @@
+import { assertProAccess, requireProAccess } from '../../../src/lib/pro-access';
 import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import Modal from '../../../src/components/ui/RecoverableModal';
@@ -488,7 +489,6 @@ function PlanTab() {
   const dismissedTodayCustomRunId = useCustomWorkoutStore(s => s.dismissedTodayCustomRunId);
   const selectCustomRunToday = useCustomWorkoutStore(s => s.selectCustomRunToday);
   const dismissCustomRunToday = useCustomWorkoutStore(s => s.dismissCustomRunToday);
-  const restoreCustomRunToday = useCustomWorkoutStore(s => s.restoreCustomRunToday);
   const deleteCustomRun = useCustomWorkoutStore(s => s.deleteCustomRun);
   const selectedCustomRunToday = selectedTodayDate === todayYMD
     ? customRuns.find(run => run.id === selectedTodayCustomRunId)
@@ -505,6 +505,18 @@ function PlanTab() {
     log.date === todayYMD && log.category === 'running' && notTodayLogIds.includes(log.id),
   );
   const customRunToday = selectedCustomRunToday ?? legacyCustomRunToday;
+
+  async function useSavedCustomRun(runId: string) {
+    const lease = captureOwnerLease(true);
+    if (!lease) { Alert.alert('StrideOS Pro', 'Sign in online to use saved custom workouts.'); return; }
+    try {
+      await requireProAccess('custom-workouts');
+      if (!ownerLeaseIsCurrent(lease, true)) return;
+      assertProAccess('custom-workouts');
+      if (!useCustomWorkoutStore.getState().customRuns.some(run => run.id === runId)) return;
+      selectCustomRunToday(runId, todayYMD);
+    } catch (error) { if (ownerLeaseIsCurrent(lease, true)) Alert.alert('StrideOS Pro', error instanceof Error ? error.message : 'Membership could not be verified.'); }
+  }
 
   function confirmDeleteCustomRun(runId: string, runName: string) {
     Alert.alert(
@@ -733,7 +745,7 @@ function PlanTab() {
           <TouchableOpacity
             style={{ alignSelf: 'flex-start', marginTop: 10, paddingVertical: 7, paddingHorizontal: 11, borderRadius: 8, backgroundColor: C.primaryDim }}
             onPress={() => dismissedCustomRunToday
-              ? restoreCustomRunToday(todayYMD)
+              ? void useSavedCustomRun(dismissedCustomRunToday.id)
               : dismissedLegacyRun ? restoreLegacyLogToday(dismissedLegacyRun.id) : undefined}
           >
             <Text style={{ color: C.primary, fontSize: 12, fontWeight: '700' }}>Restore for Today</Text>
@@ -752,7 +764,7 @@ function PlanTab() {
               >
                 <TouchableOpacity
                   style={{ flex: 1 }}
-                  onPress={() => selectCustomRunToday(run.id, todayYMD)}
+                  onPress={() => { void useSavedCustomRun(run.id); }}
                   accessibilityRole="button"
                   accessibilityLabel={`Select ${run.name} for today`}
                 >
@@ -1194,6 +1206,12 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       return;
     }
     setLastEnvironmentPreference(pendingEnvironment);
+    const customStartLease = pendingMode === 'workout' && usingCustomWorkout ? captureOwnerLease(true) : null;
+    if (pendingMode === 'workout' && usingCustomWorkout) {
+      try { await requireProAccess('custom-workouts'); }
+      catch (error) { Alert.alert('StrideOS Pro', error instanceof Error ? error.message : 'Membership could not be verified.'); return; }
+      if (!customStartLease || !ownerLeaseIsCurrent(customStartLease, true)) return;
+    }
     const startWorkout = pendingMode === 'workout' ? workoutForStart : null;
     // Picker values are in display units; the store always holds miles and sec/mi.
     const toMiles = (v: number) => imp ? v : v / 1.609344;
@@ -1267,6 +1285,11 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     if (config.raceLink && (!raceOwner || !ownerLeaseIsCurrent(raceOwner)
       || useProfileStore.getState().activeAthleteId !== 'athlete_default')) {
       Alert.alert('Account changed', 'Choose the race again in its original account.'); return;
+    }
+    if (customStartLease) {
+      if (!ownerLeaseIsCurrent(customStartLease, true)) return;
+      try { assertProAccess('custom-workouts'); }
+      catch (error) { Alert.alert('StrideOS Pro', error instanceof Error ? error.message : 'Membership could not be verified.'); return; }
     }
     startRun(startWorkout, config);
     speakCue('Starting workout.', 'interval');

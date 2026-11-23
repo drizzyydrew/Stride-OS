@@ -1,3 +1,5 @@
+import { useProAccess } from '../../../src/hooks/useProAccess';
+import ProAccessNotice from '../../../src/components/subscription/ProAccessNotice';
 import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import Modal from '../../../src/components/ui/RecoverableModal';
 import { useMemo, useRef, useState } from 'react';
@@ -356,6 +358,7 @@ function getDayLabel(): string {
 }
 
 export default function TodayScreen() {
+  const forecastAccess = useProAccess('forecasts');
   const scrollRef = useRef<ScrollView>(null);
   useTodayScrollToTop(scrollRef);
   const C = useColors();
@@ -810,7 +813,8 @@ export default function TodayScreen() {
       </FeatureTourTarget>
 
       {/* Performance Forecast */}
-      {showBalancedDetails ? <FeatureTourTarget targetId="today.forecast" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
+      {showBalancedDetails && !forecastAccess.allowed ? <ProAccessNotice access={forecastAccess} title="Performance forecasts" /> : null}
+      {showBalancedDetails && forecastAccess.allowed ? <FeatureTourTarget targetId="today.forecast" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
         <Text style={[styles.cardLabel, { color: C.textDim }]}>PERFORMANCE FORECAST</Text>
         <Text style={[styles.outlookCopy, { color: C.textMuted }]}>{performanceForecast.summary}</Text>
         <View style={styles.forecastSummaryGrid}>
@@ -876,7 +880,7 @@ export default function TodayScreen() {
       </FeatureTourTarget> : null}
       </FeatureTourScrollView>
       <ForecastChartDetailModal
-        metric={forecastChartMetric}
+        metric={forecastAccess.allowed ? forecastChartMetric : null}
         confidence={performanceForecast.confidence}
         limitations={performanceForecast.limitations}
         onClose={() => setForecastChartMetric(null)}

@@ -14,6 +14,8 @@ import type { TrainingDay } from '../../../src/types/athlete';
 import StrengthSessionFit from '../../../src/components/strength/StrengthSessionFit';
 import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
 import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
+import ProFeatureGate from '../../../src/components/subscription/ProFeatureGate';
+import { assertProAccess } from '../../../src/lib/pro-access';
 
 const DAYS: TrainingDay[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -27,6 +29,10 @@ function sortedDays(days: TrainingDay[]) {
 }
 
 export default function AvailabilityScreen() {
+  return <ProFeatureGate feature="schedule-changes" title="Training availability"><AvailabilityContent /></ProFeatureGate>;
+}
+
+function AvailabilityContent() {
   const C = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -43,6 +49,7 @@ export default function AvailabilityScreen() {
   const liftDays = data.liftDays ?? profile?.liftDays ?? [];
 
   function save(nextAvailable = availableDays, nextRun = runDays, nextLift = liftDays) {
+    assertProAccess('schedule-changes');
     const cleanAvailable = sortedDays(nextAvailable);
     const cleanRun = sortedDays(nextRun.filter(day => cleanAvailable.includes(day)));
     const cleanLift = sortedDays(nextLift.filter(day => cleanAvailable.includes(day)));
@@ -139,6 +146,7 @@ export default function AvailabilityScreen() {
           ? 'These choices guide generated strength sessions. Running and lifting experience are separate, and completed records stay unchanged.'
           : 'These choices apply when you choose a new goal with the updated programming. Your current plan keeps its existing structure.'}
           onChange={async patch => {
+            assertProAccess('schedule-changes');
             const lease = captureOwnerLease();
             if (!lease || !ownerLeaseIsCurrent(lease) || !useOnboardingStore.persist.hasHydrated()
               || useProfileStore.getState().activeAthleteId !== 'athlete_default') throw new Error('Profile is not ready');

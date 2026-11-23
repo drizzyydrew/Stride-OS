@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Stack } from 'expo-router';
-import { Button, Collapsible, Host, Picker, TextInput, useNativeState } from '@expo/ui';
+import { Button, Host, Picker, TextInput, useNativeState } from '@expo/ui';
 import { useColors } from '../../../src/theme/useColors';
 import { useThemeMode } from '../../../src/store/themeStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { LAYOUT } from '../../../src/constants/layout';
 import {
   estimateOneRepMax, estimateRepMaxWeight, estimateRepetitions, parseStrengthCalculatorNumber, percentageLoads,
-  type StrengthCalculatorMethod, type StrengthCalculatorResult, type StrengthCalculatorUnit,
+  type StrengthCalculatorResult, type StrengthCalculatorUnit,
 } from '../../../src/utils/strengthCalculators';
 
 type Tool = 'one_rm' | 'rep_max' | 'repetitions' | 'percentages';
@@ -78,11 +78,11 @@ export default function StrengthCalculatorsScreen() {
   const { fontScale } = useWindowDimensions();
   const [tool, setTool] = useState<Tool>('one_rm');
   const [unit, setUnit] = useState<StrengthCalculatorUnit>(settingsUnits === 'imperial' ? 'lb' : 'kg');
-  const [method, setMethod] = useState<StrengthCalculatorMethod>('sheet_average');
+  const method = 'sheet_average' as const;
   const [convention, setConvention] = useState('barbell');
   const [weight, setWeight] = useState(''), [reps, setReps] = useState(''), [maximum, setMaximum] = useState('');
   const [effort, setEffort] = useState('unadjusted'), [rir, setRir] = useState('');
-  const [attempted, setAttempted] = useState(false), [detailsOpen, setDetailsOpen] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const copy = { color: C.textMuted, fontSize: 14, lineHeight: 21 };
   const card = { borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 16, backgroundColor: C.card, gap: 14, minWidth: 0 };
   const number = (value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 1 });
@@ -99,16 +99,15 @@ export default function StrengthCalculatorsScreen() {
     } catch (error) { return { error: error instanceof Error ? error.message : 'Check the entered values.' }; }
   }, [attempted, tool, weight, reps, maximum, unit, method, effort, rir]);
 
-  const example = tool === 'one_rm' ? `Example: 100 ${unit} for 5 repetitions gives 115.5 ${unit} using the seven-equation average, or 116.7 ${unit} with Epley. No RIR adjustment.`
-    : tool === 'rep_max' ? `Example: a 200 ${unit} 1RM and a target of 5 repetitions gives about 173.2 ${unit} using the seven-equation average. This estimates a 5RM, not a working-set recommendation.`
-      : tool === 'repetitions' ? `Example: with a 200 ${unit} 1RM, 150 ${unit} predicts about 9.9 repetitions using the three-equation average, or 10 with Epley. Actual performance can differ.`
-        : `Example: with a 200 ${unit} 1RM, 40% is 80 ${unit}, 70% is 140 ${unit}, and 80% is 160 ${unit}. Percentages alone do not choose your workout effort.`;
+  const example = tool === 'one_rm' ? `Example: 100 ${unit} for 5 repetitions gives an estimated maximum of 115.5 ${unit}, without effort adjustment.`
+    : tool === 'rep_max' ? `Example: a 200 ${unit} 1RM and a target of 5 repetitions gives about 173.2 ${unit} for a maximum set of 5 reps. Your normal working sets should leave room for the prescribed effort.`
+      : tool === 'repetitions' ? `Example: with a 200 ${unit} 1RM, 150 ${unit} predicts about 10 repetitions. Actual performance can differ.`
+        : `Example: with a 200 ${unit} 1RM, 50% is 100 ${unit}, 75% is 150 ${unit}, and 80% is 160 ${unit}. Percentages alone do not choose your workout effort.`;
   function useExample() {
     setWeight(tool === 'repetitions' ? '150' : '100'); setMaximum('200'); setReps('5');
     setEffort('unadjusted'); setRir(''); setAttempted(true); Keyboard.dismiss();
   }
   const resultUnit = tool === 'repetitions' ? 'reps' : unit;
-  const methodLabel = method === 'epley' ? 'Epley' : `Sheet average (${tool === 'repetitions' ? '3' : '7'} equations)`;
 
   return <View style={{ flex: 1, backgroundColor: C.bg }}>
     <Stack.Screen options={{ headerShown: true, title: 'Strength calculators', headerTintColor: C.text,
@@ -118,18 +117,17 @@ export default function StrengthCalculatorsScreen() {
       <Text style={copy}>Explore estimated strength values without testing a maximum. These tools do not change your plan, logged sets or workout weights.</Text>
       <View style={card}>
         <Choice label="Calculator" value={tool} options={TOOLS} onChange={value => {
-          setTool(value as Tool); setAttempted(false); setDetailsOpen(false);
+          setTool(value as Tool); setAttempted(false);
         }} />
         <Choice label="Weight unit" value={unit} options={[{ value: 'lb', label: 'Pounds (lb)' }, { value: 'kg', label: 'Kilograms (kg)' }]}
           onChange={value => { if (value !== unit) { setUnit(value as StrengthCalculatorUnit); setWeight(''); setMaximum(''); setAttempted(false); } }} />
-        <Text style={copy}>Changing units clears entered weights so the same number is never silently relabeled.</Text>
         <Choice label="Load convention" value={convention} options={CONVENTIONS} onChange={value => {
           if (value !== convention) { setConvention(value); setWeight(''); setMaximum(''); setAttempted(false); }
         }} />
         <Text style={copy}>{convention === 'barbell' ? 'Enter bar plus plates together.'
           : convention === 'dumbbell' ? 'Enter the load of one dumbbell. Results remain per hand; do not add both dumbbells together.'
             : convention === 'machine' ? 'Enter the displayed load. Results apply only to the same machine, settings and setup.'
-              : 'Use a repeatable external-load convention for the same exercise and setup.'} Bodyweight, bands, timed holds and carries are not supported by these rep-max equations.</Text>
+              : 'Use a repeatable external-load convention for the same exercise and setup.'} These calculators do not support bodyweight, bands, timed holds or carries.</Text>
         {tool !== 'one_rm' ? <NumberField label={`Known or estimated 1RM (${unit})`} value={maximum} onChange={setMaximum} /> : null}
         {tool === 'one_rm' || tool === 'repetitions' ? <NumberField label={`Working weight (${unit})`} value={weight} onChange={setWeight} /> : null}
         {tool === 'one_rm' || tool === 'rep_max' ? <NumberField label={tool === 'one_rm' ? 'Repetitions completed (1–15)' : 'Target repetitions (1–15)'} value={reps} onChange={setReps} whole /> : null}
@@ -138,7 +136,6 @@ export default function StrengthCalculatorsScreen() {
           {effort === 'reported_rir' ? <><NumberField label="Actual reps in reserve (0–4)" value={rir} onChange={setRir} whole />
             <Text style={copy}>How many more controlled reps could you actually have completed? Use your reported effort, not the workout’s target. Unknown effort is not zero RIR.</Text></> : null}
         </> : null}
-        {tool !== 'percentages' ? <Choice label="Result method" value={method} options={[{ value: 'sheet_average', label: 'Sheet average' }, { value: 'epley', label: 'Epley' }]} onChange={value => setMethod(value as StrengthCalculatorMethod)} /> : null}
         <Host matchContents={{ vertical: true }} colorScheme={theme} seedColor={C.primary} style={{ width: '100%', minHeight: 44 }}>
           <Button label="Calculate" onPress={() => { setAttempted(true); Keyboard.dismiss(); }} />
         </Host>
@@ -148,29 +145,25 @@ export default function StrengthCalculatorsScreen() {
       {calculation.result ? <View style={card} accessibilityLiveRegion="polite">
         <Text style={[copy, { color: C.text, fontWeight: '600' }]}>{tool === 'one_rm' ? 'Estimated 1RM' : tool === 'rep_max' ? 'Estimated rep-max weight' : 'Estimated repetitions'}</Text>
         <Text selectable style={{ color: C.text, fontSize: 32, fontWeight: '700', fontVariant: ['tabular-nums'], flexShrink: 1 }}>{number(calculation.result.value)} {resultUnit}</Text>
-        <Text style={copy}>{methodLabel}{tool === 'one_rm' && effort === 'reported_rir' ? ` · adjusted using ${rir} reported RIR` : ''}</Text>
         {calculation.result.warnings.map(warning => <Text key={warning} style={copy}>{warning}</Text>)}
-        <Host matchContents={{ vertical: true }} colorScheme={theme} seedColor={C.primary} ignoreSafeArea="all" style={{ width: '100%', minHeight: 44 }}>
-          <Collapsible label="Calculation details" isOpen={detailsOpen} onOpenChange={setDetailsOpen}
-            labelStyle={{ color: C.primary, fontSize: 14 * fontScale, fontWeight: '600' }} />
-        </Host>
-            {detailsOpen ? <View style={{ gap: 12, minWidth: 0, width: '100%', maxWidth: '100%' }}>
-              <Text style={copy}>{tool === 'repetitions' ? 'M = entered 1RM; W = working weight. Three populated equations are averaged.'
-                : tool === 'one_rm' ? 'W = working weight; R = completed reps, plus actual RIR only when selected.'
-                  : 'M = entered 1RM; R = target repetitions. Each forward equation is inverted separately, then the seven weights are averaged.'}</Text>
-              {calculation.result.methods.map(row => <View key={row.id} style={{ gap: 4, minWidth: 0 }}>
-                <Text selectable style={[copy, { color: C.text, fontWeight: '600' }]}>{row.label}: {number(row.value)} {resultUnit}</Text>
-                <Text selectable style={copy}>{row.formula}</Text>
-              </View>)}
-              <Text selectable style={copy}>Average: {number(calculation.result.average)} {resultUnit}. Equation range: {number(calculation.result.range.min)}–{number(calculation.result.range.max)} {resultUnit}.</Text>
-              <Text style={copy}>The range shows disagreement between equations, not a confidence interval or a guaranteed range for your true maximum. Different lifts, technique, fatigue and experience can change the result.</Text>
-            </View> : null}
       </View> : null}
 
       {calculation.percentages ? <View style={card}>
         <Text style={[copy, { color: C.text, fontWeight: '600' }]}>Percentage loads</Text>
-        {calculation.percentages.map(row => <Text selectable key={row.percent} style={[copy, { color: C.text, fontVariant: ['tabular-nums'] }]}>{row.percent}%: {number(row.weight)} {unit}</Text>)}
-        <Text style={copy}>Each load is entered 1RM × percentage. These are reference values, not automatic workout targets or instructions to test a maximum.</Text>
+        <View accessibilityRole="summary" style={{ width: '100%', minWidth: 0 }}>
+          <View style={{ flexDirection: 'row', paddingVertical: 10, borderBottomWidth: 1, borderColor: C.border }}>
+            <Text style={[copy, { flex: 1, color: C.text, fontWeight: '700' }]}>% of maximum</Text>
+            <Text style={[copy, { flex: 1, color: C.text, fontWeight: '700', textAlign: 'right' }]}>Load ({unit})</Text>
+          </View>
+          {calculation.percentages.map(row => <View key={row.percent} style={{ flexDirection: 'row', paddingVertical: 9,
+            borderBottomWidth: 1, borderColor: C.border }}>
+            <Text selectable style={[copy, { flex: 1, color: C.text }]}>{row.percent}%</Text>
+            <Text selectable style={[copy, { flex: 1, color: C.text, textAlign: 'right', fontVariant: ['tabular-nums'] }]}>{number(row.weight)}</Text>
+          </View>)}
+        </View>
+        <Text style={copy}>Strength: heavier priority lifts often use around 80% or above. Muscle growth: a wide range can work, commonly around 60–85%. Endurance: often lighter loads around 50–65% or below. These ranges overlap; effort, repetitions and weekly volume matter.</Text>
+        <Text style={copy}>Power: quick, controlled repetitions often use around 30–70%, including loads below this table. Choose the load for the exercise and stop when speed or control drops.</Text>
+        <Text style={copy}>Reference loads only. A percentage does not establish a suitable working weight or tell you to test your maximum.</Text>
       </View> : null}
 
       <View style={card}>
@@ -184,7 +177,7 @@ export default function StrengthCalculatorsScreen() {
       <View style={card}>
         <Text style={[copy, { color: C.text, fontWeight: '600' }]}>Reps, effort and your goal</Text>
         <Text style={copy}>RPE is effort, not a percentage. RPE 8 means about 2 good reps remain. For example, 3–5 completed reps at RPE 8 is roughly a 5–7 rep capacity; the weight can still be heavy.</Text>
-        <Text style={copy}>Strength: practiced lifters often use 3–6 reps for priority lifts, with heavier work around 80% of estimated 1RM or above when appropriate. Beginners can build strength with lighter loads. Do not force every set, accessory or recovery week into one weekly percentage average.</Text>
+        <Text style={copy}>Strength: practiced lifters often use 1–6 reps for priority lifts, with heavier work around 80% of estimated 1RM or above when appropriate. Beginners can build strength with lighter loads. Do not force every set, accessory or recovery week into one weekly percentage average.</Text>
         <Text style={copy}>Muscle growth: 6–12 reps is a useful common range, with effective work possible across a wider range. Strength and muscle growth overlap; 70% of 1RM can still improve strength.</Text>
         <Text style={copy}>Muscular endurance: often 12 or more reps with manageable loads. Power: short sets of quick, controlled reps with full recovery; stop when speed or control falls. Power does not always mean the heaviest weight.</Text>
         <Text style={copy}>These are starting ranges, not strict boundaries. Match working sets, effort, rests and weekly volume to experience, your main goal and how you recover.</Text>

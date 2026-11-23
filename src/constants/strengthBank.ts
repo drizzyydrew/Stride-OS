@@ -112,7 +112,10 @@ function preset(
   const fitted = exercises.map(exercise => {
     const lowDemand = trainingPurpose === 'activation' || trainingPurpose === 'recovery';
     const targetRpe = lowDemand ? 3 : beginner ? 6 : trainingPurpose === 'running_support' || trainingPurpose === 'power' ? 6 : 7;
-    const sets = lowDemand ? Math.min(2, exercise.sets) : beginner || trainingPurpose === 'running_support' ? Math.min(2, exercise.sets) : exercise.sets;
+    const repMinimum = exercise.repScheme && 'repsMin' in exercise.repScheme ? exercise.repScheme.repsMin : undefined;
+    const doseCap = beginner ? 3 : trainingPurpose === 'power' || (repMinimum !== undefined && repMinimum <= 6) ? 5 : 4;
+    const sets = lowDemand ? Math.min(2, exercise.sets)
+      : beginner || trainingPurpose === 'running_support' ? Math.min(2, exercise.sets) : Math.min(doseCap, exercise.sets);
     if (priorityMains?.includes(exercise.name)) return {
       ...exercise,
       sets: 3,

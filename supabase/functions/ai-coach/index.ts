@@ -23,6 +23,13 @@ Deno.serve(createCoachHandler({
     const { data, error } = await admin.auth.getUser(token);
     return error || !data.user ? null : data.user.id;
   },
+  requiresUpdate: async userId => {
+    // Deploy only after the additive v2 migration. Unenrolled Build 125 users
+    // keep the existing allowance; migrated users cannot claim a second pool.
+    const { data, error } = await admin.rpc('stride_coach_v2_is_enrolled', { p_owner: userId });
+    if (error) throw new Error('Allowance verification unavailable');
+    return data === true;
+  },
   readUsage: userId => readCoachAllowance(userId, async (owner, day) => {
     const { data, error } = await admin.from('stride_coach_usage')
       .select('requests').eq('day', day).eq('scope', owner).maybeSingle();

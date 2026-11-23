@@ -7,12 +7,12 @@ import ts from 'typescript';
 function harness(enabled = true) {
   let active = true; let sdkId = ''; let configured = false; let sdkLoads = 0; let purchases = 0; let restores = 0;
   let afterOfferings: (() => void) | null = null; let afterIdentity: (() => void) | null = null;
-  let pro = true;
+  let pro = true; let expiry: string | null = null;
   const product: any = { identifier: 'strideos_pro_monthly', price: 9.99, priceString: '$9.99', currencyCode: 'USD', subscriptionPeriod: 'P1M' };
   const pkg = { identifier: '$rc_monthly', product };
   let packages = [pkg, { identifier: 'unapproved', product: { ...product, identifier: 'unexpected_product' } }];
   let eligibility = 2, eligibilityFails = false, afterEligibility: (() => void) | null = null;
-  const info = () => ({ entitlements: { active: pro ? { pro: { isActive: true } } : {} } });
+  const info = () => ({ entitlements: { active: pro ? { pro: { isActive: true, expirationDate: expiry } } : {} } });
   const sdk = {
     isConfigured: async () => configured,
     configure: (config: any) => { assert.equal(config.automaticDeviceIdentifierCollectionEnabled, false); sdkId = config.appUserID; configured = true; },
@@ -40,7 +40,7 @@ function harness(enabled = true) {
       throw new Error(`Unexpected import ${id}`);
     },
   });
-  return { api: exports, pkg, revoke: () => { active = false; }, expire: () => { pro = false; },
+  return { api: exports, pkg, setExpiry: (value: string | null) => { expiry = value; }, revoke: () => { active = false; }, expire: () => { pro = false; },
     setPackages: (next: typeof packages) => { packages = next; },
     eligibility: (status: number, fail = false) => { eligibility = status; eligibilityFails = fail; },
     afterEligibility: (fn: () => void) => { afterEligibility = fn; },
@@ -113,4 +113,18 @@ test('annual savings compare numeric recurring prices in the same currency and k
   assert.equal((await h.api.getSubscriptionOptions()).length, 1, 'unexpected periods are not sold as annual');
   annual.product.subscriptionPeriod = null;
   assert.equal((await h.api.getSubscriptionOptions()).length, 1, 'missing periods are not inferred from a product name');
+});
+
+test('entitlement carries the verified expiry including store grace extensions, without treating cancellation as expiry', async () => {
+  const h = harness();
+  h.setExpiry('2030-01-15T12:00:00Z');
+  const active = await h.api.checkEntitlements();
+  assert.equal(active.isPro, true);
+  assert.equal(active.proExpiresAt, Date.parse('2030-01-15T12:00:00Z'));
+  h.setExpiry('invalid');
+  assert.equal((await h.api.checkEntitlements()).proExpiresAt, null);
+  h.setExpiry(null);
+  assert.equal((await h.api.checkEntitlements()).proExpiresAt, null);
+  h.expire();
+  assert.equal((await h.api.checkEntitlements()).isPro, false);
 });

@@ -30,7 +30,10 @@ test('preset workouts use detail, persistent active-session, completion, history
   assert.match(library, /Another strength session is active/);
   assert.match(detail, /active\.source === 'preset'/);
   assert.match(activeStore, /ActiveStrengthSource = 'training_block' \| 'preset'/);
-  assert.match(detail, /WHAT IT SHOULD FEEL LIKE/);
+  assert.match(detail, /ExerciseGuidance.*strengthGuidance/);
+  assert.match(session, /ExerciseGuidance.*strengthGuidance/);
+  const guidance = read('src/components/strength/exercise-guidance.tsx');
+  for (const label of ['How to perform', 'Coaching cues', 'What it should feel like', 'When to stop or modify', 'Easier alternatives']) assert.ok(guidance.includes(label), label);
   assert.match(session, /Warm-Up/);
   assert.match(completion, /Session feedback/);
   assert.doesNotMatch(library, /Finish & Log/);

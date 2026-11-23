@@ -5,6 +5,7 @@ import { createAppJSONStorage } from './persistStorage';
 import type { ScheduledSession } from '../utils/scheduledSessions';
 import type { ScheduleMoveLedger } from '../utils/scheduleMoveLedger';
 import { legacyOverridesToMoveLedger } from '../utils/scheduleMoveLedger';
+import { assertProAccess } from '../lib/pro-access';
 
 type ScheduledSessionSelectionStore = {
   selectedByDate: Record<string, string | undefined>;
@@ -46,7 +47,8 @@ export const useScheduledSessionSelectionStore = create<ScheduledSessionSelectio
           };
         }),
 
-      removeFromToday: (dateYMD, scheduledSessionId) =>
+      removeFromToday: (dateYMD, scheduledSessionId) => {
+        assertProAccess('schedule-changes');
         set(state => {
           const selectedByDate = { ...state.selectedByDate };
           if (selectedByDate[dateYMD] === scheduledSessionId) delete selectedByDate[dateYMD];
@@ -54,7 +56,8 @@ export const useScheduledSessionSelectionStore = create<ScheduledSessionSelectio
             selectedByDate,
             removedFromToday: { ...state.removedFromToday, [`${dateYMD}:${scheduledSessionId}`]: true },
           };
-        }),
+        });
+      },
 
       clearSelection: dateYMD =>
         set(state => {
@@ -66,7 +69,8 @@ export const useScheduledSessionSelectionStore = create<ScheduledSessionSelectio
       isRemovedFromToday: (dateYMD, scheduledSessionId) =>
         Boolean(get().removedFromToday[`${dateYMD}:${scheduledSessionId}`]),
 
-      rescheduleSession: (scheduledSessionId, newDateYMD, snapshot, reason) =>
+      rescheduleSession: (scheduledSessionId, newDateYMD, snapshot, reason) => {
+        assertProAccess('schedule-changes');
         set(state => ({
           dateOverrides: { ...state.dateOverrides, [scheduledSessionId]: newDateYMD },
           moveLedger: {
@@ -78,16 +82,19 @@ export const useScheduledSessionSelectionStore = create<ScheduledSessionSelectio
               snapshot,
             },
           },
-        })),
+        }));
+      },
 
-      clearReschedule: (scheduledSessionId) =>
+      clearReschedule: (scheduledSessionId) => {
+        assertProAccess('schedule-changes');
         set(state => {
           const dateOverrides = { ...state.dateOverrides };
           const moveLedger = { ...state.moveLedger };
           delete dateOverrides[scheduledSessionId];
           delete moveLedger[scheduledSessionId];
           return { dateOverrides, moveLedger };
-        }),
+        });
+      },
     }),
     {
       name: 'scheduled-session-selection-store',

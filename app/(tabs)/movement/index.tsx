@@ -1,3 +1,4 @@
+import MovementLabCreateGate from '../../../src/components/movement/MovementLabCreateGate';
 import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import Modal from '../../../src/components/ui/RecoverableModal';
 // ─── Movement Lab ─────────────────────────────────────────────────────────────
@@ -472,7 +473,7 @@ function AnalysisCard({ analysis }: { analysis: MovementAnalysis }) {
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
-export default function MovementIndexScreen() {
+function MovementIndexScreenContent() {
   useFeatureTour('movement-lab');
   const { videos, addVideo, updateVideo, analyses } = useMovementStore();
   const user = useAuthStore(s => s.user);
@@ -893,3 +894,7 @@ const m = StyleSheet.create({
   aiNoteTitle: { color: colors.primary, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   aiNoteSub:   { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
 });
+
+export default function MovementIndexScreen() {
+  return <MovementLabCreateGate><MovementIndexScreenContent /></MovementLabCreateGate>;
+}

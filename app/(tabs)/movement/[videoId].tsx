@@ -1,3 +1,4 @@
+import MovementLabCreateGate from '../../../src/components/movement/MovementLabCreateGate';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import Modal from '../../../src/components/ui/RecoverableModal';
 // ─── Movement Analysis Detail ─────────────────────────────────────────────────
@@ -344,7 +345,7 @@ function SubmitForAnalysisCard({
 
 const HIT_SLOP = { top: 12, bottom: 12, left: 16, right: 16 } as const;
 
-export default function VideoDetailScreen() {
+function VideoDetailScreenContent() {
   const access = useMovementLabWork();
   const gaitWork = useRef<MovementLabWork | null>(null);
   const gaitOwner = useRef<OwnerLease | null>(null);
@@ -1033,3 +1034,7 @@ const sub = StyleSheet.create({
   },
   comingSoonTxt: { color: colors.textMuted, fontSize: FontSize.xs },
 });
+
+export default function VideoDetailScreen() {
+  return <MovementLabCreateGate><VideoDetailScreenContent /></MovementLabCreateGate>;
+}

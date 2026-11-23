@@ -144,9 +144,6 @@ export default function StrengthSetEditor({
         <Ionicons name="add" size={16} color={C.primary} />
         <Text style={[styles.addText, { color: C.primary }]}>Add Set</Text>
       </TouchableOpacity>
-      <Text style={[styles.help, { color: C.textDim }]}>
-        The flame / Warm-up button marks warm-up sets; W appears in the set column. Warm-ups stay separate from working-set volume. Hold is recorded in seconds. Complete only sets you performed.
-      </Text>
     </View>
   );
 }

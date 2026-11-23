@@ -1,10 +1,12 @@
+import ProFeatureGate from '../../../src/components/subscription/ProFeatureGate';
+import { assertProAccess, requireProAccess } from '../../../src/lib/pro-access';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 // ─── Run Creator ──────────────────────────────────────────────────────────────
 //
 // Builds a custom run (fartlek, tempo, intervals, long run + strides) and
 // estimates total duration before the user starts.
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import {
   Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -441,9 +443,19 @@ function SummaryCard({ estimate, easyPaceSecPerMi }: { estimate: DurationEstimat
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
-export default function RunCreatorScreen() {
+function RunCreatorScreenContent() {
   const router = useRouter();
   const C = useColors();
+  const saveAlive = useRef(true);
+  const savePending = useRef(false);
+  useEffect(() => { saveAlive.current = true; return () => { saveAlive.current = false; }; }, []);
+  async function authorizeSave(goToRun: boolean) {
+    if (savePending.current) return;
+    savePending.current = true;
+    try { await requireProAccess('custom-workouts'); if (saveAlive.current) { if (goToRun) handleGoToStartRun(); else handleSave(); } }
+    catch (error) { if (saveAlive.current) Alert.alert('StrideOS Pro', error instanceof Error ? error.message : 'Membership could not be verified.'); }
+    finally { savePending.current = false; }
+  }
   const { editId } = useLocalSearchParams<{ editId?: string }>();
 
   const weeklyMileage  = useOnboardingStore(s => s.data.weeklyMileage);
@@ -566,6 +578,7 @@ export default function RunCreatorScreen() {
   }
 
   function saveRunForToday(): string | null {
+    try { assertProAccess('custom-workouts'); } catch (error) { Alert.alert('StrideOS Pro', error instanceof Error ? error.message : 'Membership could not be verified.'); return null; }
     if (runType === 'custom_segments') {
       const invalid = structuredSegments.find(segment => {
         const value = segment.target === 'time' ? segment.durationMinutes : segment.distanceMiles;
@@ -905,7 +918,7 @@ export default function RunCreatorScreen() {
 
         {/* Actions */}
         <View style={st.actions}>
-          <TouchableOpacity style={st.btnPrimary} onPress={handleGoToStartRun} accessibilityHint="Saves this workout for today and opens Start Run">
+          <TouchableOpacity style={st.btnPrimary} onPress={() => { void authorizeSave(true); }} accessibilityHint="Saves this workout for today and opens Start Run">
             <Ionicons name="play-circle-outline" size={18} color={colors.text} />
             <Text style={st.btnPrimaryTxt}>Save & Go to Start Run</Text>
           </TouchableOpacity>
@@ -916,7 +929,7 @@ export default function RunCreatorScreen() {
               <Text style={st.savedTxt}>Saved and selected for today</Text>
             </View>
           ) : (
-            <TouchableOpacity style={st.btnSecondary} onPress={handleSave}>
+            <TouchableOpacity style={st.btnSecondary} onPress={() => { void authorizeSave(false); }}>
               <Ionicons name="bookmark-outline" size={18} color={colors.primary} />
               <Text style={st.btnSecondaryTxt}>{editingRun ? 'Save Changes & Use Today' : 'Save & Use Today'}</Text>
             </TouchableOpacity>
@@ -1350,3 +1363,7 @@ const st = StyleSheet.create({
     fontWeight: FontWeight.medium,
   },
 });
+
+export default function RunCreatorScreen() {
+  return <ProFeatureGate feature="custom-workouts" title="Custom running workouts"><RunCreatorScreenContent /></ProFeatureGate>;
+}

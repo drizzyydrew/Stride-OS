@@ -1,3 +1,9 @@
+import { useProAccess } from '../../../src/hooks/useProAccess';
+import { requireProAccess } from '../../../src/lib/pro-access';
+import ProAccessNotice from '../../../src/components/subscription/ProAccessNotice';
+import ExerciseGuidance from '../../../src/components/strength/exercise-guidance';
+import StrengthCalculatorLink from '../../../src/components/strength/strength-calculator-link';
+import { strengthGuidance } from '../../../src/utils/strengthGuidance';
 import ExerciseMuscleTags from '../../../src/components/strength/ExerciseMuscleTags';
 import CustomExercisePicker from '../../../src/components/strength/CustomExercisePicker';
 import SaveWorkoutTemplateControl from '../../../src/components/strength/SaveWorkoutTemplateControl';
@@ -48,6 +54,9 @@ function warmupKind(scheduledCategory: string | undefined): WarmupSessionKind {
 }
 
 export default function CustomStrengthSessionScreen() {
+  const access = useProAccess('custom-workouts');
+  const [showMembership,setShowMembership]=useState(false);
+  const paidActionBusy=useRef(false);
   const C = useColors();
   const router = useRouter();
   const { units } = useSettingsStore();
@@ -131,14 +140,26 @@ export default function CustomStrengthSessionScreen() {
     const lease=captureOwnerLease();return ownerLeaseIsCurrent(editorLease.current)&&!!lease&&lease.ownerUserId===editorLease.current?.ownerUserId&&ownerLeaseIsCurrent(lease)&&current?.workoutInstanceId===activeSession.workoutInstanceId&&current.source==='custom';
   }
   function groupSelected(kind:'superset'|'circuit'|null) {
+    void paidAction(()=>{
     if(!currentEditor())return;const selected=useActiveStrengthSessionStore.getState().session!.exercises.filter(ex=>selectedIds.includes(ex.id)&&!ex.skipped).map(ex=>ex.id);
     if(kind&&(selected.length<2||kind==='superset'&&selected.length!==2)){setGroupStatus('Select two available exercises for a superset, or two or more for a circuit.');return;}
     useActiveStrengthSessionStore.getState().groupExercises(selected,kind);
     setGroupStatus(kind?`${kind==='superset'?'Superset':'Circuit'} saved. Complete and record each set separately.`:'Selected exercise groups removed.');setActionsOpen(false);setSelectedIds([]);setSelectMode(false);
+    });
   }
   function makeDropSet() {
+    void paidAction(()=>{
     if(!currentEditor()||selectedIds.length!==1)return;const exercise=useActiveStrengthSessionStore.getState().session!.exercises.find(ex=>ex.id===selectedIds[0]&&!ex.skipped);if(!exercise){setGroupStatus('Choose an available exercise for a drop set.');return;}useActiveStrengthSessionStore.getState().addDropSet(exercise.id);
     setGroupStatus('Drop-set stage added to that exercise. Enter an appropriate lower load; no stage is marked complete.');setActionsOpen(false);setSelectedIds([]);setSelectMode(false);
+    });
+  }
+
+  async function paidAction(action:()=>void) {
+    if(paidActionBusy.current||!currentEditor())return;
+    paidActionBusy.current=true;
+    try { await requireProAccess('custom-workouts'); if(currentEditor()) action(); }
+    catch(error) { if(currentEditor()) { setShowMembership(true);setGroupStatus(error instanceof Error?error.message:'Membership could not be verified. Your workout was kept.'); } }
+    finally { paidActionBusy.current=false; }
   }
 
   function saveDraftAndExit() {
@@ -247,11 +268,12 @@ export default function CustomStrengthSessionScreen() {
           <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
             <Text style={[styles.progress, { color: C.text }]}>{session.exercises.filter(e => !e.skipped).length} exercises added</Text>
             <View style={{flexDirection:'row',gap:8}}>
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel={selectMode?'Finish selecting exercises':'Select exercises'} onPress={()=>{setSelectMode(value=>!value);setSelectedIds([]);setActionsOpen(false);}} style={styles.secondaryButton}><Text style={[styles.secondaryText,{color:C.primary}]}>{selectMode?'Done':'Select'}</Text></TouchableOpacity>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={selectMode?'Finish selecting exercises':'Select exercises'} onPress={()=>{if(!access.allowed){setShowMembership(true);return;}setSelectMode(value=>!value);setSelectedIds([]);setActionsOpen(false);}} style={styles.secondaryButton}><Text style={[styles.secondaryText,{color:C.primary}]}>{selectMode?'Done':'Select'}</Text></TouchableOpacity>
               {selectMode&&selectedIds.length?<TouchableOpacity accessibilityRole="button" accessibilityLabel="More actions for selected exercises" onPress={()=>setActionsOpen(value=>!value)} style={styles.secondaryButton}><Ionicons name="ellipsis-horizontal" size={22} color={C.primary}/></TouchableOpacity>:null}
             </View>
           </View>
-          {actionsOpen?<View style={{gap:8,marginTop:12}}>
+          {showMembership&&!access.allowed?<ProAccessNotice access={access} title="Workout groups and templates are part of Pro"/>:null}
+          {actionsOpen&&access.allowed?<View style={{gap:8,marginTop:12}}>
             <Text style={{color:C.textMuted,fontSize:13}}>{selectedIds.length} selected. Superset pairs two exercises; a circuit can contain two or more. A drop set is a sequence within one exercise.</Text>
             {selectedIds.length>=2?<><GoalAction label="Make superset" disabled={selectedIds.length!==2} secondary onPress={()=>groupSelected('superset')}/><GoalAction label="Make circuit" secondary onPress={()=>groupSelected('circuit')}/></>:<GoalAction label="Add drop-set stage" secondary onPress={makeDropSet}/>}
             <GoalAction label="Remove selected groups" secondary onPress={()=>groupSelected(null)}/>
@@ -287,6 +309,7 @@ export default function CustomStrengthSessionScreen() {
           </TouchableOpacity>
         ) : null}
 
+        <StrengthCalculatorLink />
         <Text style={[styles.eyebrow, styles.flowLabel, { color: C.textDim }]}>EXERCISES</Text>
         {session.exercises.map((exercise, index) => (
           <View key={exercise.id}>
@@ -308,7 +331,7 @@ export default function CustomStrengthSessionScreen() {
             onToggleCompleted={setId => toggleSetCompleted(exercise.id, setId)}
             onRemoveExercise={() => removeExercise(exercise.id)}
             onSkipExercise={() => skipExercise(exercise.id, !exercise.skipped)}
-            onReorder={direction => reorderExercise(exercise.id, direction)}
+            onReorder={direction => {void paidAction(()=>reorderExercise(exercise.id, direction));}}
           />
           <ExerciseAdjustment exercise={exercise} workoutInstanceId={session.workoutInstanceId} showMuscleTags={false} />
           </View>
@@ -372,6 +395,8 @@ function ExerciseCard({
       </View>
       {!exercise.skipped ? (
         <View style={{ marginTop: 8 }}>
+          <ExerciseGuidance key={`${exercise.id}:${exercise.name}`} content={strengthGuidance({ id: exercise.canonicalExerciseId, name: exercise.name,
+            equipment: exercise.equipment }, exercise.notes)} />
           <StrengthSetEditor sets={exercise.setEntries} equipmentType={exercise.equipmentType} weightUnit={weightUnit}
             onAdd={onAddSet} onDuplicate={onDuplicateSet} onRemove={onRemoveSet} onEdit={onEditSet}
             onToggleWarmup={onToggleWarmup} onToggleCompleted={onToggleCompleted}/>

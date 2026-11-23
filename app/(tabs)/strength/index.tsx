@@ -1,3 +1,6 @@
+import ExerciseGuidance from '../../../src/components/strength/exercise-guidance';
+import StrengthCalculatorLink from '../../../src/components/strength/strength-calculator-link';
+import { strengthGuidance } from '../../../src/utils/strengthGuidance';
 import FeatureTourScrollView from '../../../src/components/featureTour/FeatureTourScrollView';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -25,7 +28,6 @@ import { getLastLoggedExercise, strengthPrescriptionsMatch, suggestProgression }
 import { mapEquipmentType } from '../../../src/utils/strengthSession';
 import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
 import { strengthWeightForDisplay } from '../../../src/utils/strengthDesign';
-import { getExerciseGuide } from '../../../src/constants/exerciseGuides';
 import { toYMD } from '../../../src/utils/calendarEngine';
 import { useWeekPlan } from '../../../src/hooks/useWeekPlan';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
@@ -228,6 +230,7 @@ function MobilityTabContent({ segment, setSegment, C }: {
       </View>
 
       <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
+      <StrengthCalculatorLink />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -366,6 +369,7 @@ function PresetsTabContent({ segment, setSegment, C }: {
       </View>
 
       <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
+      <StrengthCalculatorLink />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -601,7 +605,6 @@ export default function StrengthScreen() {
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [completedExercises, setCompletedExercises] = useState<Record<string, boolean>>({});
   const [rpe,     setRpe]     = useState<Record<string, number>>({});
-  const [howOpen, setHowOpen] = useState<Record<string, boolean>>({});
   const [warmupOpen, setWarmupOpen] = useState(false);
   const [cooldownOpen, setCooldownOpen] = useState(false);
   const [weightPickerFor, setWeightPickerFor] = useState<ExDef | null>(null);
@@ -1056,6 +1059,7 @@ export default function StrengthScreen() {
           </View>
         </View>
         <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
+      <StrengthCalculatorLink />
         <View style={{ paddingHorizontal: 18 }}>
           <FeatureTourTarget targetId="strength.today" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[styles.subTitle, { color: C.text, marginBottom: 6 }]}>Your plan hasn't started yet</Text>
@@ -1090,6 +1094,7 @@ export default function StrengthScreen() {
           </View>
         </View>
         <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
+      <StrengthCalculatorLink />
         <View style={{ paddingHorizontal: 18 }}>
           <FeatureTourTarget targetId="strength.today" style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[{ fontSize: 13, color: C.textMuted, lineHeight: 19 }]}>
@@ -1126,6 +1131,7 @@ export default function StrengthScreen() {
       </View>
 
       <SegmentedControl segment={segment} setSegment={setSegment} C={C} />
+      <StrengthCalculatorLink />
 
       <FeatureTourScrollView
         style={{ flex: 1 }}
@@ -1259,7 +1265,6 @@ export default function StrengthScreen() {
           const w = getWeight(ex);
           const isDone = isExerciseDone(ex);
           const isCurrent = !isDone && currentExercise?.id === ex.id;
-          const htOpen = !!howOpen[ex.id];
           const rpeVal = rpe[ex.id];
           const wDisplay = w > 0 ? `${w} ${wtUnit}` : ex.equipment.length === 1 && ex.equipment[0] === 'bodyweight' ? 'BW' : 'Load not set';
           const activeExercise = ownsActiveTrainingBlock ? activeStrengthSession?.exercises.find(item => item.id === ex.id) : null;
@@ -1273,7 +1278,6 @@ export default function StrengthScreen() {
           const progression = suggestProgression(lastPerformance, ex.sets, readinessLimited, wtUnit, topReps, knownSetup,
             (ownsActiveTrainingBlock ? activeStrengthSession?.workoutId : session?.id)?.startsWith('goal_') && minReps && topReps
               ? { repsMin: minReps, repsMax: topReps, targetRpe: ex.targetRpe, loadTarget: ex.loadTarget, repScheme: ex.repScheme } : undefined);
-          const guide = getExerciseGuide(ex.id);
           return (
             <View
               key={ex.id}
@@ -1322,57 +1326,9 @@ export default function StrengthScreen() {
                 </View>
               </View>
 
-              {/* How to perform */}
-              <View style={[{ borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: 16 }]}>
-                <TouchableOpacity
-                  style={{ paddingVertical: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-                  onPress={() => setHowOpen(p => ({ ...p, [ex.id]: !p[ex.id] }))}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[{ fontSize: 12, fontWeight: '700', color: C.textMuted }]}>How to Perform</Text>
-                  <Text style={[{ fontSize: 12, color: C.textDim }]}>{htOpen ? '▲' : '▼'}</Text>
-                </TouchableOpacity>
-                {htOpen && (
-                  <View style={{ paddingBottom: 14 }}>
-                    {guide ? (
-                      <View style={{ gap: 8, marginBottom: 10 }}>
-                        <View>
-                          <Text style={[{ fontSize: 9, fontWeight: '700', color: C.textDim, letterSpacing: 0.8, marginBottom: 2 }]}>START POSITION</Text>
-                          <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{guide.startPosition}</Text>
-                        </View>
-                        <View>
-                          <Text style={[{ fontSize: 9, fontWeight: '700', color: C.textDim, letterSpacing: 0.8, marginBottom: 2 }]}>FINISH POSITION</Text>
-                          <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{guide.finishPosition}</Text>
-                        </View>
-                        <View>
-                          <Text style={[{ fontSize: 9, fontWeight: '700', color: C.textDim, letterSpacing: 0.8, marginBottom: 2 }]}>HOW TO PERFORM</Text>
-                          <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 18 }]}>{guide.howTo}</Text>
-                        </View>
-                        <View>
-                          <Text style={[{ fontSize: 9, fontWeight: '700', color: C.textDim, letterSpacing: 0.8, marginBottom: 2 }]}>COMMON MISTAKES</Text>
-                          {guide.mistakes.map(m => (
-                            <Text key={m} style={[{ fontSize: 11, color: C.textMuted, lineHeight: 17 }]}>• {m}</Text>
-                          ))}
-                        </View>
-                      </View>
-                    ) : (
-                      <Text style={[{ fontSize: 12, color: C.textMuted, lineHeight: 19, marginBottom: 10 }]}>{ex.desc}</Text>
-                    )}
-                    <View style={[{ backgroundColor: C.primaryDim, borderRadius: 8, padding: 10 }]}>
-                      <Text style={[{ fontSize: 9, fontWeight: '700', color: C.primary, letterSpacing: 0.8, marginBottom: 3 }]}>CLINICAL PEARL</Text>
-                      <Text style={[{ fontSize: 11, color: C.textMuted, lineHeight: 16 }]}>{guide?.tips[0] ?? ex.cue}</Text>
-                      {guide?.tips[1] ? (
-                        <Text style={[{ fontSize: 11, color: C.textMuted, lineHeight: 16, marginTop: 3 }]}>{guide.tips[1]}</Text>
-                      ) : null}
-                    </View>
-                    {progression && (
-                      <View style={[{ backgroundColor: C.cardAlt, borderRadius: 8, padding: 10, marginTop: 8 }]}>
-                        <Text style={[{ fontSize: 9, fontWeight: '700', color: C.accent, letterSpacing: 0.8, marginBottom: 3 }]}>PROGRESSION</Text>
-                        <Text style={[{ fontSize: 11, color: C.textMuted, lineHeight: 16 }]}>{progression.reason}</Text>
-                      </View>
-                    )}
-                  </View>
-                )}
+              <View style={{ borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: 16 }}>
+                <ExerciseGuidance key={`${ex.id}:${ex.name}`} content={strengthGuidance({ id: ex.id, name: ex.name, equipment: ex.equipment },
+                  [ex.cue, progression?.reason].filter(Boolean).join(' '), ex.desc)} />
               </View>
 
               {/* RPE — compact picker-wheel row, consistent with the weight selector */}

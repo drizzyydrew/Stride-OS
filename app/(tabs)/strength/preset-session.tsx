@@ -1,3 +1,6 @@
+import { strengthGuidance } from '../../../src/utils/strengthGuidance';
+import StrengthCalculatorLink from '../../../src/components/strength/strength-calculator-link';
+import ExerciseGuidance from '../../../src/components/strength/exercise-guidance';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -37,21 +40,6 @@ import {
 
 function formatElapsed(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
-}
-
-function sessionExerciseSupport(name: string, equipment: string[]) {
-  const lower = name.toLowerCase();
-  return {
-    how: 'Set up in a stable position, use a controlled range, and keep each repetition repeatable.',
-    feel: lower.includes('plank') || lower.includes('hold')
-      ? 'Steady trunk tension with normal breathing.'
-      : 'Working effort in the target muscles without sharp, escalating, or unfamiliar symptoms.',
-    easier: lower.includes('single') || lower.includes('lunge')
-      ? 'Use bodyweight, shorten the range, or hold a stable support.'
-      : equipment.includes('barbell')
-        ? 'Reduce the load or use a dumbbell or bodyweight variation.'
-        : 'Reduce load, range, or repetitions.',
-  };
 }
 
 export default function PresetStrengthSessionScreen() {
@@ -306,10 +294,10 @@ export default function PresetStrengthSessionScreen() {
           </View>
         ) : null}
         <Text style={[styles.eyebrow, styles.flowLabel, { color: C.textDim }]}>EXERCISE-BY-EXERCISE FLOW</Text>
+        <StrengthCalculatorLink />
         {session.exercises.map((exercise, index) => {
           const done = session.completedExerciseIds.includes(exercise.id);
           const selected = index === session.currentExerciseIndex;
-          const support = sessionExerciseSupport(exercise.name, exercise.equipment);
           return (
             <TouchableOpacity
               key={exercise.id}
@@ -331,18 +319,7 @@ export default function PresetStrengthSessionScreen() {
               </View>
               {selected && !done ? (
                 <View style={{ marginTop: 12 }}>
-                  <Text style={[styles.detailLabel, { color: C.textDim }]}>HOW TO PERFORM</Text>
-                  <Text style={[styles.instructions, { color: C.textMuted }]}>{support.how}</Text>
-                  <Text style={[styles.detailLabel, { color: C.textDim }]}>COACHING CUES</Text>
-                  <Text style={[styles.instructions, { color: C.textMuted }]}>
-                    {exercise.notes ?? 'Use a controlled range, maintain stable technique, and choose a load appropriate for today.'}
-                  </Text>
-                  <Text style={[styles.detailLabel, { color: C.textDim }]}>WHAT IT SHOULD FEEL LIKE</Text>
-                  <Text style={[styles.instructions, { color: C.textMuted }]}>{support.feel}</Text>
-                  <Text style={[styles.detailLabel, { color: C.textDim }]}>WHEN TO STOP OR MODIFY</Text>
-                  <Text style={[styles.instructions, { color: C.textMuted }]}>Stop the set for pain, dizziness, or meaningful loss of control.</Text>
-                  <Text style={[styles.detailLabel, { color: C.textDim }]}>EASIER ALTERNATIVE</Text>
-                  <Text style={[styles.instructions, { color: C.textMuted }]}>{support.easier}</Text>
+                  <ExerciseGuidance key={`${exercise.id}:${exercise.name}`} content={strengthGuidance({ name: exercise.name, equipment: exercise.equipment }, exercise.notes)} />
                   <TextInput
                     value={session.loadByExercise[exercise.id] ?? ''}
                     onChangeText={value => setExerciseLoad(exercise.id, value)}

@@ -465,3 +465,34 @@ test('old performance remains a historical reference rather than a new load-incr
     comparableWorkingSets: true, equipmentType: 'dumbbell' }, 3, false, 'lb', 12, 'dumbbell');
   assert.match(suggestion!.headline, /Recalibrate/); assert.doesNotMatch(suggestion!.headline, /Try|Add/);
 });
+
+test('advanced strength dose earns at most one set from two captured successes, never more than five', () => {
+  function completedDose(id: string, days: number, sets: number) {
+    const record = heavyExposure(id, days);
+    record.exercises[0]!.prescription!.sets = sets;
+    record.exercises[0]!.sets = Array.from({ length: sets }, () => ({ completed: true, reps: 4, weight: 30, weightUnit: 'lb' as const, rpe: 8 }));
+    return record;
+  }
+  for (const sets of [3, 4, 5]) {
+    const history = [completedDose('prior', 6, sets), completedDose('latest', 2, sets)];
+    const before = structuredClone(history);
+    const planned = squat({ strengthLevel: 'advanced', strengthHistory: history });
+    assert.equal(planned.sets, Math.min(5, sets + 1));
+    assert.deepEqual(planned.repRange, [3, 5]); assert.equal(planned.rpe, 8);
+    assert.equal(squat({ strengthLevel: 'advanced', strengthHistory: history, currentWeek: 6 }).sets, sets,
+      'review retains the completed dose without adding a set');
+    assert.equal(squat({ strengthLevel: 'intermediate', strengthHistory: history }).sets, sets,
+      'only advanced strength-priority work can earn the additional higher-volume dose');
+    assert.deepEqual(history, before, 'planning cannot edit completed records');
+  }
+  const three = [completedDose('prior', 6, 3), completedDose('latest', 2, 3)];
+  const differentLoad = structuredClone(three); differentLoad[0]!.exercises[0]!.sets.forEach(set => { set.weight = 25; });
+  assert.equal(squat({ strengthLevel: 'advanced', strengthHistory: differentLoad }).sets, 3, 'do not increase load and sets from incomparable work');
+  const priorTwo = [completedDose('prior', 6, 2), completedDose('latest', 2, 3)];
+  assert.equal(squat({ strengthLevel: 'advanced', strengthHistory: priorTwo }).sets, 3, 'one three-set attempt is insufficient');
+  const incomplete = structuredClone(three); incomplete[1]!.exercises[0]!.sets[2]!.completed = false;
+  assert.ok(squat({ strengthLevel: 'advanced', strengthHistory: incomplete }).sets <= 2);
+  assert.ok(squat({ strengthLevel: 'advanced', strengthHistory: three, recoveryScore: 40 }).sets <= 2);
+  const short = generateStrengthWeek(input({ strengthLevel: 'advanced', strengthHistory: three, availableTimeMin: 20 }));
+  assert.ok(short.sessions.every(session => estimateStrengthSessionMinutes(session.exercises) <= 20));
+});

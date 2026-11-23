@@ -14,6 +14,7 @@ export default function AiSharingPreferences() {
     <Text style={[s.heading, { color: C.text }]}>AI Coach Privacy</Text>
     <Text style={[s.copy, { color: C.textMuted }]}>With your permission, AI Coach sends your messages and selected profile, training, recovery, hydration, and movement-analysis context to Anthropic (Claude), through StrideOS's server, to answer you. This can include health information. Raw videos and route coordinates are not included in this chat request.</Text>
     <Text style={[s.copy, { color: C.textMuted }]}>Optional. You can keep using tracking, your calendar, and on-device training guidance without AI sharing. Turning this off stops new chat requests; it cannot recall data already sent.</Text>
+    <Text style={[s.copy, { color: C.textMuted }]}>Chat history is saved on this device for 24 hours per message. StrideOS also keeps a reply temporarily so an interrupted response can be recovered without spending another message. Expired replies cannot be recovered; device cleanup resumes when the app opens. Your profile, goals and chosen training records remain separate, and chat does not create permanent profile memories. Anthropic has its own retention policy, described in our privacy policy.</Text>
     <Host style={{ width: '100%' }} matchContents={{ vertical: true }} colorScheme={mode} seedColor={C.primary} ignoreSafeArea="all">
       <Switch label="Allow sharing with Anthropic for AI Coach" value={consent.allowed}
         disabled={!consent.ready || !consent.owner || consent.saving}

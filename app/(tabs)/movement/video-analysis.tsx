@@ -1,3 +1,4 @@
+import MovementLabCreateGate from '../../../src/components/movement/MovementLabCreateGate';
 // ─── Movement Lab — Video Analysis ─────────────────────────────────────────────
 //
 // Read-only view of a saved full-video MovementAnalysis (Build 34 / V2): the
@@ -138,7 +139,7 @@ function estimatedBikeFitPhases(series: AngleSeries[]): MovementAnalysis['bikeFi
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
-export default function VideoAnalysisScreen() {
+function VideoAnalysisScreenContent() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const analysis = useMovementStore(s => s.analyses.find(a => a.id === id));
@@ -907,3 +908,7 @@ const s = StyleSheet.create({
   deleteBtnTxt:    { color: colors.critical, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   smallDisclaimer: { color: colors.textSubtle, fontSize: FontSize.xs, lineHeight: 16 },
 });
+
+export default function VideoAnalysisScreen() {
+  return <MovementLabCreateGate><VideoAnalysisScreenContent /></MovementLabCreateGate>;
+}

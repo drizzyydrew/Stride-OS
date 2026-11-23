@@ -187,3 +187,18 @@ test('context uses actual lifting experience, canonical goal override and only t
   assert.equal(resolveStrengthPresetWorkout(fullBody(), context).canStart, false);
   assert.equal(buildStrengthPresetContext({}, {}, { date: '2026-11-22', soreness: 8 }, '2026-11-22').soreness, 8);
 });
+
+test('catalog doses distinguish low demand, beginner practice, heavy strength and higher-repetition work', () => {
+  const schemes = new Set<string>();
+  for (const workout of STRENGTH_PRESET_WORKOUTS) for (const exercise of workout.exercises) {
+    assert.ok(exercise.sets >= 1 && exercise.sets <= 5);
+    const lowDemand = workout.trainingPurpose === 'activation' || workout.trainingPurpose === 'recovery';
+    if (lowDemand || /beginner/i.test(workout.title)) assert.ok(exercise.sets <= 3);
+    const reps = exercise.repScheme && 'repsMin' in exercise.repScheme ? exercise.repScheme.repsMin : undefined;
+    if (workout.trainingPurpose !== 'power' && (reps === undefined || reps > 6)) assert.ok(exercise.sets <= 4);
+    schemes.add(`${exercise.sets}x${exercise.reps}`);
+  }
+  assert.ok(schemes.size > 10, 'variety follows exercise purpose rather than a universal 3x10');
+  assert.ok([...schemes].some(scheme => scheme.startsWith('2x')));
+  assert.ok([...schemes].some(scheme => scheme.startsWith('5x5')));
+});

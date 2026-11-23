@@ -1,3 +1,5 @@
+import ProFeatureGate from '../../../src/components/subscription/ProFeatureGate';
+import { assertProAccess, requireProAccess } from '../../../src/lib/pro-access';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import Modal from '../../../src/components/ui/RecoverableModal';
 // ─── Route Builder ────────────────────────────────────────────────────────────
@@ -57,7 +59,7 @@ function fmtDuration(min: number): string {
   return h > 0 ? `${h}h ${m}m` : `${m} min`;
 }
 
-export default function RouteBuilderScreen() {
+function RouteBuilderScreenContent() {
   const C = useColors();
   const mode = useThemeMode();
   const insets = useSafeAreaInsets();
@@ -96,6 +98,16 @@ export default function RouteBuilderScreen() {
   const mapRef = useRef<MapViewRef>(null);
   const routeNameInputRef = useRef<TextInput>(null);
   const routeNotesInputRef = useRef<TextInput>(null);
+  const saveAlive = useRef(true);
+  const savePending = useRef(false);
+  useEffect(() => { saveAlive.current = true; return () => { saveAlive.current = false; }; }, []);
+  async function authorizeSave() {
+    if (savePending.current) return;
+    savePending.current = true;
+    try { await requireProAccess('custom-routes'); if (saveAlive.current) saveRoute(); }
+    catch (error) { if (saveAlive.current) Alert.alert('StrideOS Pro', error instanceof Error ? error.message : 'Membership could not be verified.'); }
+    finally { savePending.current = false; }
+  }
 
   const snapUnresolved = snapEnabled && snapFailed && waypoints.length >= 2 && !routingBusy;
   const geometry = routed?.geometry ?? waypoints;
@@ -286,6 +298,7 @@ export default function RouteBuilderScreen() {
   }
 
   function saveRoute() {
+    try { assertProAccess('custom-routes'); } catch (error) { Alert.alert('StrideOS Pro', error instanceof Error ? error.message : 'Membership could not be verified.'); return; }
     if (!canSave) return;
     const name = routeName.trim() || 'Custom Route';
     const gainFt = elevation ? Math.round(elevation.gainMeters * 3.28084) : Math.round(distanceMiles * 48);
@@ -822,7 +835,7 @@ export default function RouteBuilderScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[s.primaryBtn, { flex: 1.4, backgroundColor: C.primary }]}
-                onPress={saveRoute}
+                onPress={() => { void authorizeSave(); }}
                 activeOpacity={0.85}
               >
                 <Text style={[s.primaryBtnText, { color: C.onPrimary }]}>Save</Text>
@@ -1197,4 +1210,8 @@ function FilterRow<T extends string>({
       </ScrollView>
     </View>
   );
+}
+
+export default function RouteBuilderScreen() {
+  return <ProFeatureGate feature="custom-routes" title="Custom routes"><RouteBuilderScreenContent /></ProFeatureGate>;
 }

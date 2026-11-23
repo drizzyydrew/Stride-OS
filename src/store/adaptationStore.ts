@@ -48,22 +48,26 @@ export const useAdaptationStore = create<AdaptationStore>()(
       confirmed: {},
       auditHistory: [],
 
-      setAdaptation: (week, result) =>
+      setAdaptation: (week, result) => {
+        assertProAccess('schedule-changes');
         set(state => ({
           adaptations: { ...state.adaptations, [`w${week}`]: result },
-        })),
+        }));
+      },
 
-      clearAdaptation: (week) =>
+      clearAdaptation: (week) => {
+        assertProAccess('schedule-changes');
         set(state => {
           const next = { ...state.adaptations };
           delete next[`w${week}`];
           return { adaptations: next };
-        }),
+        });
+      },
 
       getAdaptation: (week) => get().adaptations[`w${week}`],
 
       setPreview: preview => {
-        if (adaptationNeedsPro(preview.overlays, preview.requiresPro)) assertProAccess('week-rebuild');
+        if (adaptationNeedsPro(preview.overlays, preview.requiresPro)) assertProAccess('schedule-changes');
         set(state => ({ previews: { ...state.previews, [preview.weekKey]: preview } }));
       },
 
@@ -76,7 +80,7 @@ export const useAdaptationStore = create<AdaptationStore>()(
       confirmPreview: (weekKey, confirmedAt = Date.now()) => {
         const preview = get().previews[weekKey];
         if (!preview || preview.conflicts.length > 0) return null;
-        if (adaptationNeedsPro(preview.overlays, preview.requiresPro)) assertProAccess('week-rebuild');
+        if (adaptationNeedsPro(preview.overlays, preview.requiresPro)) assertProAccess('schedule-changes');
         const confirmed: ConfirmedAdaptation = {
           ...preview,
           confirmedAt,
@@ -94,11 +98,14 @@ export const useAdaptationStore = create<AdaptationStore>()(
         return confirmed;
       },
 
-      clearConfirmed: weekKey => set(state => {
+      clearConfirmed: weekKey => {
+        assertProAccess('schedule-changes');
+        set(state => {
         const confirmed = { ...state.confirmed };
         delete confirmed[weekKey];
         return { confirmed };
-      }),
+        });
+      },
 
       getConfirmed: weekKey => get().confirmed[weekKey],
     }),

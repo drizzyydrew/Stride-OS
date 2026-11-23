@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createAiConsent, AI_CONSENT_KEY } from '../../src/utils/aiConsent';
+import { createAiConsent, AI_CONSENT_KEY, AI_DISCLOSURE_VERSION } from '../../src/utils/aiConsent';
 import { createCoachHandler, createDeletionRequestHandler, readJson, validCoachPayload } from '../../supabase/functions/_shared/launchHandlers';
 
 const tick = () => new Promise<void>(resolve => setImmediate(resolve));
@@ -8,7 +8,7 @@ function disk(raw: string | null = null) {
   return { getItem: async () => raw, setItem: async (_key: string, next: string) => { raw = next; }, removeItem: async () => { raw = null; } };
 }
 test('AI sharing defaults off and restores only the same owner and disclosure version', async () => {
-  for (const raw of [null, '{}', '{bad', JSON.stringify({ version: 2, owner: 'a', allowed: true }), JSON.stringify({ version: 1, owner: 'b', allowed: true }), JSON.stringify({ version: 1, owner: 'a', allowed: 'true' })]) {
+  for (const raw of [null, '{}', '{bad', JSON.stringify({ version: 1, owner: 'a', allowed: true }), JSON.stringify({ version: 1, owner: 'b', allowed: true }), JSON.stringify({ version: 1, owner: 'a', allowed: 'true' })]) {
     const consent = createAiConsent(disk(raw));
     assert.equal(consent.getState().allowed, false);
     await consent.setOwner('a'); assert.equal(consent.getState().allowed, false);
@@ -34,7 +34,7 @@ test('AI sharing cannot cross a pending owner read, and storage failures fail cl
   const consent = createAiConsent({ ...disk(), getItem: () => new Promise(resolve => { finish = resolve; }) });
   const a = consent.setOwner('a'); await tick(); const resolveA = finish;
   const b = consent.setOwner('b'); await tick();
-  resolveA(JSON.stringify({ version: 1, owner: 'a', allowed: true })); await a;
+  resolveA(JSON.stringify({ version: AI_DISCLOSURE_VERSION, owner: 'a', allowed: true })); await a;
   assert.equal(consent.getState().allowed, false); finish(null); await b;
   assert.equal(consent.getState().owner, 'b'); assert.equal(consent.getState().allowed, false);
   const failed = createAiConsent({ ...disk(), setItem: async () => { throw new Error('locked'); } });
@@ -42,7 +42,7 @@ test('AI sharing cannot cross a pending owner read, and storage failures fail cl
   assert.equal(failed.getState().allowed, false); assert.equal(failed.getState().error, true);
 });
 test('a failed consent write tries to remove stale saved permission and a later off save recovers', async () => {
-  const saved = disk(JSON.stringify({ version: 1, owner: 'a', allowed: true }));
+  const saved = disk(JSON.stringify({ version: AI_DISCLOSURE_VERSION, owner: 'a', allowed: true }));
   let failing = true;
   const consent = createAiConsent({ ...saved, setItem: async (key, value) => { if (failing) throw new Error('write failed'); await saved.setItem(key, value); } });
   await consent.setOwner('a'); assert.equal(consent.getState().allowed, true);

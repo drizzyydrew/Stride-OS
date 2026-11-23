@@ -1,3 +1,6 @@
+import { useProAccess } from '../../hooks/useProAccess';
+import { requireProAccess } from '../../lib/pro-access';
+import ProAccessNotice from '../subscription/ProAccessNotice';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, ScrollView, Text, TextInput, View } from 'react-native';
 import Modal from '../ui/RecoverableModal';
@@ -10,20 +13,25 @@ import { makeStrengthTemplate, type SavedStrengthTemplate } from '../../utils/st
 import { saveStrengthTemplate } from '../../lib/strengthTemplateRepository';
 
 export default function SaveWorkoutTemplateControl({session}:{session:ActiveStrengthSession}) {
+  const access=useProAccess('custom-workouts');
+  const [showMembership,setShowMembership]=useState(false);
   const C=useColors();const[lease]=useState(()=>captureOwnerLease());const[open,setOpen]=useState(false);const[name,setName]=useState(session.workoutName+(session.templateId?' copy':''));const[busy,setBusy]=useState(false);const[status,setStatus]=useState('');const pending=useRef<SavedStrengthTemplate|null>(null);const writing=useRef(false);
   useEffect(()=>getLocalDataOwner()?.onInvalidated(()=>{setOpen(false);pending.current=null;setStatus('');}),[]);
   async function save(){
     const writeLease=captureOwnerLease();if(writing.current||!ownerLeaseIsCurrent(lease)||!writeLease||writeLease.ownerUserId!==lease?.ownerUserId||!ownerLeaseIsCurrent(writeLease))return;const current=useActiveStrengthSessionStore.getState().session;
     if(!current||current.workoutInstanceId!==session.workoutInstanceId)return;writing.current=true;setBusy(true);setStatus('');
     try{
+      await requireProAccess('custom-workouts');
+      if(!ownerLeaseIsCurrent(writeLease)||useActiveStrengthSessionStore.getState().session?.workoutInstanceId!==current.workoutInstanceId)return;
       pending.current??=makeStrengthTemplate(current,name,writeLease.ownerUserId);
       await saveStrengthTemplate(pending.current,writeLease);if(!ownerLeaseIsCurrent(writeLease))return;
       useActiveStrengthSessionStore.getState().attachTemplate(current.workoutInstanceId,pending.current.id);
       setOpen(false);setStatus(`Saved “${pending.current.name}” in Saved workouts.`);pending.current=null;
-    }catch(error){if(captureOwnerLease()?.ownerUserId===lease?.ownerUserId)setStatus(error instanceof Error?error.message:'Workout could not be saved. Keep this screen open and retry.');}
+    }catch(error){setShowMembership(true);if(captureOwnerLease()?.ownerUserId===lease?.ownerUserId)setStatus(error instanceof Error?error.message:'Workout could not be saved. Keep this screen open and retry.');}
     finally{writing.current=false;setBusy(false);}
   }
-  return <View style={{gap:8}}><GoalAction label={session.templateId?'Save a workout copy':'Save workout'} secondary disabled={!session.exercises.length} onPress={()=>{if(ownerLeaseIsCurrent(lease)&&captureOwnerLease()?.ownerUserId===lease?.ownerUserId){pending.current=null;setStatus('');setOpen(true);}}}/>
+  return <View style={{gap:8}}><GoalAction label={session.templateId?'Save a workout copy':'Save workout'} secondary disabled={!session.exercises.length} onPress={()=>{if(!access.allowed){setShowMembership(true);return;}if(ownerLeaseIsCurrent(lease)&&captureOwnerLease()?.ownerUserId===lease?.ownerUserId){pending.current=null;setStatus('');setOpen(true);}}}/>
+    {showMembership&&!access.allowed?<ProAccessNotice access={access} title="Saved workout templates are part of Pro"/>:null}
     {status&&!open?<Text accessibilityRole="alert" style={{color:C.textMuted,fontSize:13}}>{status}</Text>:null}
     <Modal visible={open} onRequestClose={()=>{if(!busy)setOpen(false);}} presentationStyle="pageSheet"><KeyboardAvoidingView style={{flex:1}} behavior={process.env.EXPO_OS==='ios'?'padding':undefined}><ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{padding:20,paddingBottom:40,gap:16}}>
       <Text style={{fontSize:22,fontWeight:'700',color:C.text}}>Name your workout</Text>

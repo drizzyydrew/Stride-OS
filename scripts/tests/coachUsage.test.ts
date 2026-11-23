@@ -71,10 +71,10 @@ test('client rejects old backend/malformed readings; empty is not loading and UT
   for (const body of [null, {}, { ok: true }, { usage: { ...usage, used: -1 } },
     { usage: { ...usage, remaining: 18 } }, { usage: { ...usage, resetsAt: 'bad' } },
     { usage: { ...usage, resetsAt: '2026-11-19T01:00:00.000Z' } }]) assert.throws(() => parseCoachUsage(body));
-  assert.equal(coachUsageLabel(usage, Date.parse('2026-11-18T20:00:00Z')), '3 of 20 requests used today');
+  assert.equal(coachUsageLabel(usage, Date.parse('2026-11-18T20:00:00Z')), '3 of 20 messages used today');
   assert.equal(coachUsageLabel(usage, Date.parse(usage.resetsAt)), 'Usage unavailable');
-  assert.match(coachUsageExample(20), /3 messages.*3 requests.*17/);
-  assert.match(coachUsageExample(2), /2 messages.*2 requests.*0/);
+  assert.match(coachUsageExample(20), /3 messages.*17 included messages/);
+  assert.match(coachUsageExample(2), /2 messages.*0 included messages/);
 });
 
 test('late/out-of-order reads and a revoked owner cannot replace the current count', async () => {
@@ -124,4 +124,14 @@ test('timeout marks unavailable even if a read ignores abort; late data cannot b
   assert.equal(monitor.getSnapshot().usage, null);
   assert.equal(monitor.getSnapshot().status, 'unavailable');
   monitor.clear();
+});
+
+
+test('v2 accepts the applied server timezone and disclosed temporary fallback without changing allowance', () => {
+  const reading = { version: 2 as const, ...usage, pro: true, timezone: 'UTC', timezoneChangePending: false,
+    purchasedRemaining: 0, purchasedExpiresAt: null, packsEnabled: false, canPurchase: false,
+    requestedTimezone: 'Canada/Pacific', timezoneFallback: 'server_tzdata_outdated' as const };
+  assert.deepEqual(parseCoachUsage({ usage: reading }), reading);
+  assert.throws(() => parseCoachUsage({ usage: { ...reading, timezoneFallback: 'other' } }));
+  assert.throws(() => parseCoachUsage({ usage: { ...reading, requestedTimezone: undefined } }));
 });

@@ -1,0 +1,175 @@
+{
+  "build": "126",
+  "verificationDate": "2026-11-23",
+  "aggregateTests": {
+    "total": 2312,
+    "passed": 2309,
+    "failed": 3,
+    "skipped": 0,
+    "limitations": "Three unchanged deadline/resource failures passed in isolated follow-up; this aggregate preceded final UTC and hosted Auth ACL follow-up cases."
+  },
+  "isolatedFollowup": {
+    "total": 75,
+    "passed": 75,
+    "failed": 0,
+    "skipped": 0
+  },
+  "backendBehavior": {
+    "passed": 29,
+    "failed": 0
+  },
+  "actualSql": {
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0,
+    "engine": "PGlite 0.5.17",
+    "authUsersSelectWithheld": true
+  },
+  "typecheckPassed": true,
+  "iosPrebuildPassed": true,
+  "denoEntrypointsChecked": 3,
+  "nativeDeviceAcceptance": false,
+  "imagesChanged": false,
+  "paidPacksEnabled": false,
+  "appleExpiringApproval": false,
+  "v2MonthlyReservationUsd": 1,
+  "v2MaxMonthlyProviderAttempts": 50,
+  "providerOrgCapFreshlyVerified": false,
+  "publicReleaseAuthorized": false,
+  "existingPublicSubmissionChanged": false,
+  "hostedReadOnlyAcceptance": {
+    "checkedAt": "2026-11-23T06:49:02.903Z",
+    "scope": "Existing protected Apple reviewer: Auth, usage GET, RevenueCat metadata only",
+    "purchaseMade": false,
+    "modelGenerationRequested": false,
+    "ownerTrainingDataChanged": false,
+    "credentialsPrintedOrPersisted": false,
+    "health": [
+      {
+        "path": "/auth/v1/health",
+        "httpStatus": 200,
+        "json": true
+      },
+      {
+        "path": "/auth/v1/settings",
+        "httpStatus": 200,
+        "json": true,
+        "signupEnabled": true,
+        "emailConfirmationEnabled": true
+      }
+    ],
+    "serverProEnforcementEnabled": true,
+    "qaOwnerOverrideAbsent": true,
+    "signInHttpStatus": 200,
+    "protectedReviewerIdentityVerified": true,
+    "emailConfirmed": true,
+    "usageReadHttpStatus": 200,
+    "usage": {
+      "used": 0,
+      "limit": 20,
+      "remaining": 20,
+      "resetsAt": "2026-11-24T00:00:00.000Z"
+    },
+    "v2UsageStatus": 200,
+    "v2Usage": {
+      "pro": true,
+      "used": 0,
+      "limit": 20,
+      "version": 2,
+      "resetsAt": "2026-11-23T08:00:00.000Z",
+      "timezone": "America/Los_Angeles",
+      "remaining": 20,
+      "canPurchase": false,
+      "packsEnabled": false,
+      "purchasedExpiresAt": null,
+      "purchasedRemaining": 0,
+      "timezoneChangePending": false
+    },
+    "fallbackStatus": 200,
+    "fallback": {
+      "pro": true,
+      "used": 0,
+      "limit": 20,
+      "version": 2,
+      "resetsAt": "2026-11-23T08:00:00.000Z",
+      "timezone": "America/Los_Angeles",
+      "remaining": 20,
+      "canPurchase": false,
+      "packsEnabled": false,
+      "purchasedExpiresAt": null,
+      "purchasedRemaining": 0,
+      "timezoneChangePending": true,
+      "requestedTimezone": "Canada/Pacific",
+      "timezoneFallback": "server_tzdata_outdated"
+    },
+    "accepted": true,
+    "temporarySessionLocalSignOutHttpStatus": 204,
+    "purchaseLifecycleAccepted": false,
+    "nativeReviewerNavigationAccepted": false
+  },
+  "privateSchemaAcceptance": {
+    "checkedAt": "2026-11-23T06:51:16.241Z",
+    "scope": "Existing protected Apple reviewer: Auth, usage GET, RevenueCat metadata only",
+    "purchaseMade": false,
+    "modelGenerationRequested": false,
+    "ownerTrainingDataChanged": false,
+    "credentialsPrintedOrPersisted": false,
+    "health": [
+      {
+        "path": "/auth/v1/health",
+        "httpStatus": 200,
+        "json": true
+      },
+      {
+        "path": "/auth/v1/settings",
+        "httpStatus": 200,
+        "json": true,
+        "signupEnabled": true,
+        "emailConfirmationEnabled": true
+      }
+    ],
+    "privateSchemaStatus": 406,
+    "privateSchemaCode": "PGRST106",
+    "accepted": true,
+    "purchaseLifecycleAccepted": false,
+    "nativeReviewerNavigationAccepted": false
+  },
+  "policyPages": [
+    {
+      "page": "privacy-126",
+      "curlExit": 0,
+      "sha256": "7661293d7f5358e2c687cd59954f2dfd0ba9e1ef85127fef1f2464df93e2cc58",
+      "matchesExpected": true
+    },
+    {
+      "page": "terms-126",
+      "curlExit": 0,
+      "sha256": "b5c7add93b5767240984b5e33be37c95cb38f2ccd4bf3648aa3c9cc205d8be88",
+      "matchesExpected": true
+    },
+    {
+      "page": "support-126",
+      "curlExit": 0,
+      "sha256": "4541ca9403779c35b8875b47db749c2ccc090ced1cd0e562af4c2502b2f2cf82",
+      "matchesExpected": true
+    },
+    {
+      "page": "privacy",
+      "curlExit": 0,
+      "sha256": "4c636054d5063f6091bcefc4f9b3897f438b869e3e6d261c7716ec097a7ecd18",
+      "matchesExpected": true
+    },
+    {
+      "page": "terms",
+      "curlExit": 0,
+      "sha256": "5d7d8cd9a39cfbbea9667f1c325536185ccf68eeb9c776cf2de46267b03216ca",
+      "matchesExpected": true
+    },
+    {
+      "page": "support",
+      "curlExit": 0,
+      "sha256": "6beaa1bc0d62ca9a648889c721f4a90dfb3aa73c4bcd02089f1aaaeffc84cbca",
+      "matchesExpected": true
+    }
+  ]
+}

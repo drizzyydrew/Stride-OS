@@ -103,7 +103,7 @@ function isHealthMode(mode?: string): boolean { return mode === 'health'; }
 
 export default function AdaptMyWeekScreen() {
   const router = useRouter();
-  const pro = useProAccess();
+  const pro = useProAccess('schedule-changes');
   const { mode, scheduledSessionId, preferredAction } = useLocalSearchParams<{
     mode?: string;
     scheduledSessionId?: string;
@@ -141,7 +141,7 @@ export default function AdaptMyWeekScreen() {
 
   async function preview() {
     if (!session) return;
-    if (action === 'rebuild_week') {
+    {
       const lease = captureOwnerLease();
       const athlete = useProfileStore.getState().activeAthleteId;
       const context = previewContext.current;
@@ -149,14 +149,14 @@ export default function AdaptMyWeekScreen() {
       const activities = useActivityStore.getState().activities;
       const confirmed = useAdaptationStore.getState().confirmed;
       try {
-        await requireProAccess('week-rebuild');
+        await requireProAccess('schedule-changes');
         if (!ownerLeaseIsCurrent(lease) || useProfileStore.getState().activeAthleteId !== athlete
           || previewContext.current !== context || useTrainingPlanStore.getState().revision !== revision
           || useActivityStore.getState().activities !== activities || useAdaptationStore.getState().confirmed !== confirmed) {
           throw new Error('Your account, athlete, or schedule changed. Review the current week before rebuilding.');
         }
       }
-      catch (error) { Alert.alert('Personalized week rebuilding', error instanceof Error ? error.message : 'Membership could not be verified.'); return; }
+      catch (error) { Alert.alert('Plan adjustments', error instanceof Error ? error.message : 'Membership could not be verified.'); return; }
     }
     const weekDates = [...new Set(scheduled.weekSessions.map(item => item.date))].sort();
     const planStartDate = toYMD(weekPlan.weekStartDate);
@@ -269,7 +269,7 @@ export default function AdaptMyWeekScreen() {
           {storedPreview.conflicts.length > 0 ? storedPreview.conflicts.map(conflict => <Text key={`${conflict.code}:${conflict.sessionIds.join(':')}`} style={styles.conflict}>{conflict.message}</Text>) : <Text style={styles.ok}>No scheduling conflicts found.</Text>}
           <Button label="Apply confirmed change" onPress={confirm} disabled={storedPreview.conflicts.length > 0} style={{ marginTop: spacing.md }} />
         </Card>}
-        {(action === 'rebuild_week' || adaptationNeedsPro(storedPreview?.overlays ?? [], storedPreview?.requiresPro)) && <ProAccessNotice access={pro} />}
+        <ProAccessNotice access={pro} title="Plan adjustments" />
         <Button label="Preview change" onPress={() => { void preview(); }} variant="secondary" />
       </ScrollView>
     </SafeAreaView>

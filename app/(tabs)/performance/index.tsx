@@ -1,3 +1,5 @@
+import { useProAccess } from '../../../src/hooks/useProAccess';
+import ProAccessNotice from '../../../src/components/subscription/ProAccessNotice';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -121,6 +123,7 @@ function ForecastMetricCard({ metric, onChartPress }: { metric: PerformanceForec
 }
 
 export default function PerformanceScreen() {
+  const forecastAccess = useProAccess('forecasts');
   const C = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -187,7 +190,7 @@ export default function PerformanceScreen() {
         ))}
       </View>
 
-      {view === 'forecast' ? (
+      {view === 'forecast' ? (!forecastAccess.allowed ? <ProAccessNotice access={forecastAccess} title="Performance forecasts" /> : (
         <>
           <View style={[styles.scoreCard, { backgroundColor: C.card, borderColor: C.border }]}>
             <Text style={[styles.scoreLabel, { color: C.textDim }]}>PERFORMANCE FORECAST</Text>
@@ -199,7 +202,7 @@ export default function PerformanceScreen() {
             <ForecastMetricCard key={metric.key} metric={metric} onChartPress={() => setForecastChartMetric(metric)} />
           ))}
         </>
-      ) : (
+      )) : (
         <>
       {/* Overall score */}
       <View style={[styles.scoreCard, { backgroundColor: C.card, borderColor: C.border }]}>
@@ -227,7 +230,7 @@ export default function PerformanceScreen() {
         </>
       )}
       <ForecastChartDetailModal
-        metric={forecastChartMetric}
+        metric={forecastAccess.allowed ? forecastChartMetric : null}
         confidence={forecast.confidence}
         limitations={forecast.limitations}
         onClose={() => setForecastChartMetric(null)}

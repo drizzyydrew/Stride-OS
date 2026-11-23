@@ -19,7 +19,8 @@ export function getProAccess(feature: ProFeature = 'personalized-plans') {
     billingEnabled: proMembershipEnabled(), billingConfigured: billingIsConfigured(),
     owner, localAccess: auth.canAccessLocalData && !!localLease && localLease.ownerUserId === owner,
     online: !!onlineLease && onlineLease.ownerUserId === owner, membershipOwner: membership.owner,
-    isPro: membership.isPro, isLoading: membership.isLoading, error: membership.error,
+    isPro: membership.isPro && (!membership.proExpiresAt || membership.proExpiresAt > Date.now()),
+    isLoading: membership.isLoading, error: membership.error,
   }, feature);
 }
 

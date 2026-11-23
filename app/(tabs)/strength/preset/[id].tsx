@@ -1,3 +1,6 @@
+import { strengthGuidance } from '../../../../src/utils/strengthGuidance';
+import StrengthCalculatorLink from '../../../../src/components/strength/strength-calculator-link';
+import ExerciseGuidance from '../../../../src/components/strength/exercise-guidance';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Host, Picker } from '@expo/ui';
@@ -30,25 +33,6 @@ import { useTrainingPlanStore } from '../../../../src/store/trainingPlanStore';
 import { useWeekPlan } from '../../../../src/hooks/useWeekPlan';
 import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../../src/lib/localDataOwner';
 import { buildStrengthPresetContext, resolveStrengthPresetWorkout, strengthPresetLaunchInput, type ResolvedStrengthPreset } from '../../../../src/utils/strengthPresetProgramming';
-
-function exerciseSupport(name: string, equipment: string[]) {
-  const lower = name.toLowerCase();
-  const isSingleLeg = lower.includes('single') || lower.includes('lunge') || lower.includes('step-up');
-  const isPress = lower.includes('press') || lower.includes('push-up') || lower.includes('dip');
-  const isHold = lower.includes('plank') || lower.includes('hold') || lower.includes('carry');
-  return {
-    feel: isHold
-      ? 'Steady trunk tension and controlled breathing without pinching or sharp symptoms.'
-      : isPress
-        ? 'Working effort through the chest, shoulders, or arms while the trunk stays organized.'
-        : 'Working effort in the target muscles with stable joints and a repeatable range.',
-    easier: isSingleLeg
-      ? 'Use bodyweight, shorten the range, or hold a stable support.'
-      : equipment.includes('barbell')
-        ? 'Reduce the load or use a dumbbell or bodyweight version.'
-        : 'Reduce load, range, or repetitions while keeping the same movement pattern.',
-  };
-}
 
 function MainSetPicker({ value, onChange }: { value: 3 | 4 | 5; onChange: (value: 3 | 4 | 5) => void }) {
   const C = useColors(), theme = useThemeMode();
@@ -270,28 +254,17 @@ export default function PresetStrengthDetailScreen() {
             This preset provides a repeatable session for the stated purpose. Choose loads that preserve technique and adjust the session when symptoms, fatigue, or equipment change.
           </Text>
         </View>
+        <StrengthCalculatorLink />
         <Text style={[styles.eyebrow, { color: C.textDim, marginBottom: 8 }]}>EXERCISES</Text>
         {workout.exercises.map((exercise, index) => {
-          const support = exerciseSupport(exercise.name, exercise.equipment);
           return (
           <View key={exercise.name} style={[styles.exerciseCard, { backgroundColor: C.card, borderColor: C.border }]}> 
             <Text style={[styles.exerciseNumber, { color: C.primary }]}>{index + 1}</Text>
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={[styles.exerciseName, { color: C.text }]}>{exercise.name}</Text>
               <Text style={[styles.meta, { color: C.textMuted }]}>{formatPrescriptionWithSets(exercise.sets, exercise.repScheme, exercise.reps)} · {displayLabels(exercise.equipment)}</Text>
               <Text style={[styles.meta, { color: C.textMuted }]}>Target RPE {exercise.targetRpe ?? 'not set'} · rest {exercise.restSeconds ?? 90}s</Text>
-              <Text style={[styles.detailLabel, { color: C.textDim }]}>HOW TO PERFORM</Text>
-              <Text style={[styles.body, { color: C.textMuted }]}>
-                Use a controlled range you can own. Keep the prescribed setup stable and stop the set before technique meaningfully changes.
-              </Text>
-              <Text style={[styles.detailLabel, { color: C.textDim }]}>COACHING CUE</Text>
-              <Text style={[styles.body, { color: C.textMuted }]}>{exercise.notes ?? 'Move with control and keep effort appropriate for today.'}</Text>
-              <Text style={[styles.detailLabel, { color: C.textDim }]}>WHAT IT SHOULD FEEL LIKE</Text>
-              <Text style={[styles.body, { color: C.textMuted }]}>{support.feel}</Text>
-              <Text style={[styles.detailLabel, { color: C.textDim }]}>WHEN TO STOP OR MODIFY</Text>
-              <Text style={[styles.body, { color: C.textMuted }]}>Stop or choose an easier load or range if pain, dizziness, or loss of control occurs.</Text>
-              <Text style={[styles.detailLabel, { color: C.textDim }]}>EASIER ALTERNATIVE</Text>
-              <Text style={[styles.body, { color: C.textMuted }]}>{support.easier}</Text>
+              <ExerciseGuidance key={exercise.name} content={strengthGuidance({ name: exercise.name, equipment: exercise.equipment }, exercise.notes)} />
               <Text style={[styles.detailLabel, { color: C.textDim }]}>LOAD TYPE</Text>
               <Text style={[styles.body, { color: C.textMuted }]}>{displayLabels(exercise.equipment)} · {formatPrescriptionWithSets(exercise.sets, exercise.repScheme, exercise.reps)}</Text>
             </View>

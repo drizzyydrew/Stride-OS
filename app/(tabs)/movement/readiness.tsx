@@ -1,3 +1,4 @@
+import MovementLabCreateGate from '../../../src/components/movement/MovementLabCreateGate';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 // ─── Running/Walking Readiness — Hub ──────────────────────────────────────────
 //
@@ -56,7 +57,7 @@ const chipStyles = StyleSheet.create({
   txt:  { fontSize: 11, fontWeight: FontWeight.bold },
 });
 
-export default function ReadinessHubScreen() {
+function ReadinessHubScreenContent() {
   const C = useColors();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(C), [C]);
@@ -229,4 +230,8 @@ function makeStyles(C: Palette) {
     assessmentTitle: { color: C.text, fontSize: FontSize.base, fontWeight: FontWeight.bold },
     assessmentDate:  { color: C.textSubtle, fontSize: FontSize.xs },
   });
+}
+
+export default function ReadinessHubScreen() {
+  return <MovementLabCreateGate><ReadinessHubScreenContent /></MovementLabCreateGate>;
 }

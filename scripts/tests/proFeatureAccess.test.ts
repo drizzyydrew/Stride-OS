@@ -4,6 +4,9 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
 import { evaluateProAccess, adaptationNeedsPro, onboardingTrainingChoice, onboardingGoalDraft } from '../../src/utils/pro-access';
 
 const active = { billingEnabled: true, billingConfigured: true, owner: 'a', localAccess: true, online: true,
@@ -24,10 +27,11 @@ test('billing-disabled builds retain their existing paths, while enabled missing
   assert.equal(evaluateProAccess({ ...active, billingConfigured: false }).allowed, false);
 });
 
-test('all safety and manual adaptation controls remain free; automatic rebuilding is paid', () => {
+test('all nonempty schedule adaptations require Pro, while an empty preview has no paid change', () => {
   for (const action of ['rest', 'reduced', 'remove_intensity', 'unchanged', 'removed', 'moved', 'convert_easy', 'active_recovery']) {
-    assert.equal(adaptationNeedsPro([{ action }]), false, action);
+    assert.equal(adaptationNeedsPro([{ action }]), true, action);
   }
+  assert.equal(adaptationNeedsPro([]), false);
   assert.equal(adaptationNeedsPro([{ action: 'rest' }, { action: 'rebuild_week' }]), true);
   assert.equal(adaptationNeedsPro([{ action: 'convert_easy' }], 'week-rebuild'), true);
 });
@@ -82,7 +86,7 @@ test('a direct paid-action request verifies membership and rejects an owner swit
   await assert.rejects(api.requireProAccess('personalized-plans'), /account changed/);
 });
 
-test('inactive membership cannot confirm a persisted automatic rebuild, but rest changes still apply', () => {
+test('inactive membership cannot confirm persisted schedule changes, including rest, and keeps previews intact', () => {
   let allowed = true;
   const fakePersist = (initializer: any) => initializer;
   const api = loadSource('src/store/adaptationStore.ts', {
@@ -99,7 +103,71 @@ test('inactive membership cannot confirm a persisted automatic rebuild, but rest
   assert.throws(() => store.getState().confirmPreview('week'), /Pro required/);
   assert.equal(store.getState().confirmed.week, undefined);
   assert.equal(store.getState().previews.week, preview);
-  store.getState().setPreview({ ...preview, overlays: [{ action: 'rest' }] });
+  for (const action of ['rest', 'reduced', 'moved', 'removed', 'convert_easy', 'active_recovery']) {
+    const retained = { ...preview, overlays: [{ action }] };
+    allowed = true; store.getState().setPreview(retained); allowed = false;
+    assert.throws(() => store.getState().confirmPreview('week'), /Pro required/);
+    assert.equal(store.getState().previews.week, retained);
+    assert.equal(store.getState().confirmed.week, undefined);
+  }
+  assert.equal(store.getState().auditHistory.length, 0);
+  allowed = true;
   assert.equal(store.getState().confirmPreview('week').confirmation, 'confirmed');
   assert.equal(store.getState().auditHistory.length, 1);
+});
+
+
+test('inactive users cannot remove, move or undo a scheduled date; denied writes preserve the complete selection state', () => {
+  let allowed = true;
+  const api = loadSource('src/store/scheduledSessionSelectionStore.ts', {
+    zustand: { create }, 'zustand/middleware': { persist: (initializer: unknown) => initializer },
+    '@react-native-async-storage/async-storage': {}, './persistStorage': { createAppJSONStorage: () => ({}) },
+    '../utils/scheduleMoveLedger': { legacyOverridesToMoveLedger: () => ({}) },
+    '../lib/pro-access': { assertProAccess: (feature: string) => { assert.equal(feature, 'schedule-changes'); if (!allowed) throw new Error('Pro required'); } },
+  });
+  const store = api.useScheduledSessionSelectionStore;
+  store.getState().selectForDate('2026-11-23', 's1');
+  store.getState().rescheduleSession('s1', '2026-11-24');
+  const before = JSON.stringify(store.getState());
+  allowed = false;
+  for (const action of [() => store.getState().removeFromToday('2026-11-23', 's1'),
+    () => store.getState().rescheduleSession('s1', '2026-11-25'), () => store.getState().clearReschedule('s1')]) {
+    assert.throws(action, /Pro required/);
+    assert.equal(JSON.stringify(store.getState()), before);
+  }
+  allowed = true;
+  store.getState().clearReschedule('s1');
+  assert.equal(store.getState().dateOverrides.s1, undefined);
+  store.getState().removeFromToday('2026-11-23', 's1');
+  assert.equal(store.getState().isRemovedFromToday('2026-11-23', 's1'), true);
+});
+
+test('actual distance correction, pause and completion remain available when premium schedule access is denied', () => {
+  const filename = resolve('src/store/activeRunStore.ts');
+  const nativeRequire = createRequire(filename);
+  let billingCalls = 0;
+  const mocks: Record<string, unknown> = {
+    '@react-native-async-storage/async-storage': {},
+    'zustand/middleware': { persist },
+    './persistStorage': { createAppJSONStorage: () => createJSONStorage(() => ({ getItem: () => null, setItem() {}, removeItem() {} })) },
+    './settingsStore': { useSettingsStore: { getState: () => ({ autoPauseMode: 'off' }) } },
+    '../lib/voiceCue': { enqueueVoiceCue() {} },
+    '../lib/localDataOwner': { captureOwnerLease: () => ({ ownerUserId: 'a' }), ownerLeaseIsCurrent: () => true },
+    '../lib/pro-access': { assertProAccess: () => { billingCalls++; throw new Error('Pro required'); } },
+  };
+  const module = { exports: {} as any };
+  const compiled = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: {
+    module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true,
+  } }).outputText;
+  vm.runInNewContext(compiled, { module, exports: module.exports, Date, console, setTimeout, clearTimeout,
+    require: (id: string) => Object.hasOwn(mocks, id) ? mocks[id] : nativeRequire(id) }, { filename });
+  const run = module.exports.useActiveRunStore;
+  const startedAt = Date.now() - 60_000;
+  run.getState().startRun(null, { mode: 'quick', environment: 'indoor', workoutInstanceId: 'free-stop', startedAtMs: startedAt });
+  run.getState().setManualLiveDistance(1.25);
+  assert.equal(run.getState().manualDistanceMiles, 1.25);
+  run.getState().pauseRun(); assert.equal(run.getState().isPaused, true);
+  const endedAt = Date.now(); run.getState().requestCompletion(endedAt);
+  assert.equal(run.getState().completionRequestedAt, endedAt);
+  assert.equal(billingCalls, 0, 'recording actual work and stopping must never require a subscription');
 });

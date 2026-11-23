@@ -97,11 +97,20 @@ function strengthSpecificEvidence(exercise: Exercise, history: StrengthLogRecord
   const firstHeavy = exposure(recent[0]?.performed, setup, 3, true);
   const secondHeavy = exposure(recent[1]?.performed, setup, 3, true);
   const latestHeavy = recent[0]?.performed;
-  const completedThird = !!firstHeavy && Number.isSafeInteger(latestHeavy?.prescription?.sets)
-    && latestHeavy!.prescription!.sets >= 3 && latestHeavy!.sets.filter(set => !set.isWarmup).length >= 3;
+  // A prescribed dose is only retained when its actual working sets were
+  // completed. Extra ad-hoc sets do not silently become next week's target.
+  const capturedDose = (performed: CompletedExercise | undefined, valid: string | null) => {
+    const count = performed?.prescription?.sets;
+    return valid && Number.isSafeInteger(count) && count! >= 2 && count! <= 5
+      && performed!.sets.filter(set => !set.isWarmup).length >= count! ? count! : 2;
+  };
+  const completedDose = capturedDose(latestHeavy, firstHeavy);
+  const priorDose = capturedDose(recent[1]?.performed, secondHeavy);
   return { option, prepared: offset === 0 && basePair(0),
     familiar: !!firstHeavy && (!!secondHeavy || basePair(1)),
-    twoHeavy: !!firstHeavy && !!secondHeavy, completedThird };
+    twoHeavy: !!firstHeavy && !!secondHeavy, completedDose, priorDose,
+    sameHeavyLoad: !!firstHeavy && firstHeavy === secondHeavy };
+
 }
 
 function replacementOf(original: PlannedExercise, replacement: Exercise, input: StrengthEngineInput, reason: string): PlannedExercise {
@@ -173,11 +182,17 @@ export function applyGoalStrengthProgramming(exercises: PlannedExercise[], input
     if (heavy) {
       heavyCount++;
       exercise = { ...exercise, exercise: { ...exercise.exercise, equipment: [specific.option] } };
-      // Review is not a recovery week. Retain a third working set only when
-      // the same exercise/setup actually completed its captured three-set dose.
-      repRange = [3, 5]; sets = specific.completedThird ? 3 : 2;
+      // Review retains the successfully completed captured dose; neither a
+      // calendar change nor unplanned extra sets prove more capacity.
+      repRange = [3, 5]; sets = specific.completedDose;
       if (sets === 2 && !progressed && specific.twoHeavy && cycle.doseStage === 'develop' && input.recoveryScore >= 65) {
         sets = 3; progressed = true;
+      } else if (sets >= 3 && sets < 5 && !progressed && strengthFirst && level === 'advanced'
+        && input.availableTimeMin! >= 60 && cycle.doseStage === 'develop'
+        && specific.twoHeavy && specific.priorDose >= sets && specific.sameHeavyLoad) {
+        // After repeated success at this dose, add at most one working set
+        // to one priority lift. The final fitter still protects actual time.
+        sets += 1; progressed = true;
       }
     }
     const evidence = comparableStrengthExposures(exercise.exercise, input.strengthHistory, repRange[1]);

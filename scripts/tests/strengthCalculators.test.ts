@@ -48,7 +48,8 @@ test('expected repetitions average only the three populated Sheet equations and 
   assert.deepEqual(result.methods.map(row => row.id), ['epley', 'brzycki', 'lander']);
   close(result.methods[0]!.value, 10); close(result.methods[1]!.value, 10);
   close(result.methods[2]!.value, 9.84565162865047); close(result.value, 9.94855054288349);
-  assert.match(result.warnings.join(' '), /three populated/i);
+  assert.match(result.warnings.join(' '), /not a prescribed set/i);
+  assert.doesNotMatch(result.warnings.join(' '), /equation|formula|average|Epley/i);
   close(estimateRepetitions({ oneRepMax: 200, weight: 150, unit: 'kg', method: 'epley' }).value, 10);
   assert.throws(() => estimateRepetitions({ oneRepMax: 100, weight: 101, unit: 'lb', method: 'sheet_average' }), /must not exceed/i);
   const nearMaximum = estimateRepetitions({ oneRepMax: 100, weight: 100, unit: 'lb', method: 'sheet_average' });
@@ -100,7 +101,9 @@ test('unit conversion preserves physical load and equation estimates without dum
   const pounds = estimateOneRepMax(base), metric = estimateOneRepMax({ ...base, weight: kilograms, unit: 'kg' });
   close(convertCalculatorWeight(pounds.value, 'lb', 'kg'), metric.value);
   close(estimateOneRepMax({ ...base, weight: 25, unit: 'kg', method: 'epley' }).value, 29.166666666666668);
-  assert.deepEqual(percentageLoads(200, 'lb'), [40, 50, 60, 70, 80, 90, 100].map(percent => ({ percent, weight: 2 * percent })));
+  const percentages = percentageLoads(200, 'lb');
+  assert.deepEqual(percentages.map(row => row.percent), [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]);
+  percentages.forEach(row => close(row.weight, row.percent * 2));
 });
 
 test('numeric parsing does not accept blanks, units, partial strings, hexadecimal or exponents', () => {
@@ -116,6 +119,6 @@ test('calculators leave caller inputs intact and the UI does not write training 
   const source = readFileSync('app/(tabs)/settings/strength-calculators.tsx', 'utf8');
   assert.doesNotMatch(source, /use(?:Strength|TrainingPlan|Profile|ActiveStrengthSession)Store|\.setState\(|fetch\(/);
   assert.match(source, /setWeight\(''\).*setMaximum\(''\)/);
-  assert.match(source, /useState<StrengthCalculatorMethod>\('sheet_average'\)/);
+  assert.match(source, /const method = 'sheet_average' as const/);
   assert.match(source, /Single|single completed rep|calculation\.result\.warnings/);
 });

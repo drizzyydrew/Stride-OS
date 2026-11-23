@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
+import { MEMBERSHIP_COMPARISON } from '../../src/utils/membershipComparison';
 
 const coachPath = 'app/(tabs)/coach/index.tsx';
 const membershipPath = 'app/(tabs)/settings/membership.tsx';
@@ -121,6 +122,7 @@ function membershipHarness(enabled = true, initiallyPro = false, source?: string
       useFocusEffect(callback: () => void | (() => void)) { react.useEffect(() => focused ? callback() : undefined, [callback, focused]); } },
     '../../../src/components/layout/ScreenHeader': { __esModule: true, default: 'ScreenHeader' },
     '../../../src/theme/useColors': { useColors: () => ({}) },
+    '../../../src/utils/membershipComparison': { MEMBERSHIP_COMPARISON },
     '../../../src/utils/legal': { LEGAL_URLS: {} },
     '../../../src/lib/observability': { observability: { track: (name: string, properties = {}) => events.push({ name, properties }) } },
     '../../../src/store/authStore': { useAuthStore: (selector: (value: typeof auth) => unknown) => selector(auth) },

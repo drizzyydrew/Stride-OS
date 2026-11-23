@@ -9,7 +9,7 @@ export const ACCOUNT_DATA_KEYS = [
   'readiness-store', 'recalculation-store', 'route-store', 'scheduled-session-selection-store',
   'strength-store', 'training-plan-store', 'training-preferences-store', 'voice-log-store',
   'settings-store', 'strideos-weather-cache-v1',
-  'workout-store', 'workout-week-store', 'subscription-store', 'strideos-ai-sharing-v1',
+  'workout-store', 'workout-week-store', 'subscription-store', 'strideos-ai-sharing-v1', 'strideos-coach-chat-v1',
   'strideos-observability-consent-v1', 'strideos-run-completion-journal-v1',
   'strideos-outdoor-end-journal-v1', 'strideos-watch-run-end-retry-v1',
   'strava_access_token', 'strava_refresh_token', 'strava_token_expiry',

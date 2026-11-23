@@ -7,7 +7,7 @@ const PRODUCT_IDS = new Set(['strideos_pro_monthly', 'strideos_pro_annual']);
 let sdk: typeof Purchases | undefined;
 let queue: Promise<unknown> = Promise.resolve();
 
-export type Entitlements = { hasAnalysisCredits: boolean; isPro: boolean };
+export type Entitlements = { hasAnalysisCredits: boolean; isPro: boolean; proExpiresAt?: number | null };
 export type SubscriptionOption = {
   id: string;
   period: 'month' | 'year';
@@ -47,7 +47,10 @@ export function billingIsConfigured() {
     && /^appl_[A-Za-z0-9]+$/.test(process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '');
 }
 function entitlements(info: CustomerInfo): Entitlements {
-  return { isPro: Boolean(info.entitlements.active.pro?.isActive), hasAnalysisCredits: false };
+  const pro = info.entitlements.active.pro;
+  const expiry = pro?.expirationDate ? Date.parse(pro.expirationDate) : NaN;
+  return { isPro: Boolean(pro?.isActive), hasAnalysisCredits: false,
+    proExpiresAt: Number.isFinite(expiry) ? expiry : null };
 }
 async function withPurchases<T>(action: (client: typeof Purchases, assertCurrent: () => void) => Promise<T>): Promise<T> {
   const lease = captureOwnerLease(true);
@@ -83,7 +86,7 @@ export async function initRevenueCat(_userId?: string): Promise<void> {
   await withPurchases(async () => undefined);
 }
 export async function checkEntitlements(): Promise<Entitlements> {
-  if (!billingIsConfigured()) return { isPro: false, hasAnalysisCredits: false };
+  if (!billingIsConfigured()) return { isPro: false, proExpiresAt: null, hasAnalysisCredits: false };
   return withPurchases(async client => entitlements(await client.getCustomerInfo()));
 }
 export async function getSubscriptionOptions(): Promise<SubscriptionOption[]> {
@@ -120,4 +123,51 @@ export async function purchaseSubscription(option: SubscriptionOption): Promise<
 }
 export async function restoreSubscriptions(): Promise<Entitlements> {
   return withPurchases(async client => entitlements(await client.restorePurchases()));
+}
+
+export const COACH_PACK_PRODUCT_ID = 'strideos_coach_messages_30_12mo';
+export type CoachPackOffer = { price: string; productId: string };
+
+/** Server approval, available capacity and the account balance determine
+ * eligibility. There is no client credit grant or local subscription shortcut. */
+export async function getCoachPackOffer(): Promise<CoachPackOffer | null> {
+  const { fetchCoachUsage } = await import('./aiCoach');
+  const { canBuyCoachPack } = await import('../utils/coachUsage');
+  const usage = await fetchCoachUsage(AbortSignal.timeout(10_000));
+  if (!canBuyCoachPack(usage)) return null;
+  return withPurchases(async (client, assertCurrent) => {
+    const product = (await client.getProducts([COACH_PACK_PRODUCT_ID], client.PRODUCT_CATEGORY.NON_SUBSCRIPTION))
+      .find(item => item.identifier === COACH_PACK_PRODUCT_ID && item.productCategory === client.PRODUCT_CATEGORY.NON_SUBSCRIPTION
+        && !item.subscriptionPeriod && Number.isFinite(item.price) && item.price > 0
+        && (item.currencyCode !== 'USD' || Math.abs(item.price - 4.99) < 0.001));
+    assertCurrent();
+    return product ? { price: product.priceString, productId: product.identifier } : null;
+  });
+}
+
+export async function purchaseCoachPack(offer: CoachPackOffer): Promise<void> {
+  if (offer.productId !== COACH_PACK_PRODUCT_ID) throw new Error('This message pack is unavailable.');
+  return withPurchases(async (client, assertCurrent) => {
+    const { fetchCoachUsage, reserveCoachPackPurchase, cancelCoachPackPurchase } = await import('./aiCoach');
+    const { canBuyCoachPack } = await import('../utils/coachUsage');
+    if (!canBuyCoachPack(await fetchCoachUsage(AbortSignal.timeout(10_000)))) throw new Error('Use your purchased messages before buying another pack.');
+    assertCurrent();
+    const product = (await client.getProducts([COACH_PACK_PRODUCT_ID], client.PRODUCT_CATEGORY.NON_SUBSCRIPTION))
+      .find(item => item.identifier === offer.productId && item.productCategory === client.PRODUCT_CATEGORY.NON_SUBSCRIPTION
+        && !item.subscriptionPeriod && item.priceString === offer.price);
+    if (!product) throw new Error('The price or message pack changed. Reload before purchasing.');
+    assertCurrent();
+    const intentId = await reserveCoachPackPurchase();
+    assertCurrent();
+    try { await client.purchaseStoreProduct(product); }
+    catch (error) {
+      if ((error as { userCancelled?: boolean })?.userCancelled) {
+        try { assertCurrent(); await cancelCoachPackPurchase(intentId); } catch { /* The old owner's server intent expires without a payment. */ }
+      }
+      throw error;
+    }
+    assertCurrent();
+    // Success here is the Apple payment result, not proof of a server credit.
+    // The screen waits for verified balance reconciliation before enabling chat.
+  });
 }

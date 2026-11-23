@@ -71,10 +71,10 @@ export function estimateOneRepMax(input: { weight: number; reps: number; unit: S
   const reps = input.reps + (input.actualRir ?? 0);
   requireReps(reps, 20);
   const warnings = [input.actualRir === undefined
-    ? 'Unadjusted formulas assume the entered repetitions approximate a repetition maximum. A submaximal set can underestimate your capacity; you do not need to train to failure to use this tool.'
+    ? 'Without effort adjustment, a submaximal set can underestimate your capacity. You do not need to train to failure to use this tool.'
     : 'RIR adjustment adds your reported remaining repetitions to completed reps. It is an additional estimate, not a measured maximum or a required failure test.'];
-  if (reps > 10) warnings.push('More than 10 effective repetitions: estimates are less dependable and equations may diverge.');
-  if (input.reps === 1) warnings.push('A single completed rep is not necessarily a tested maximum. The original Sheet equations are retained and can differ even at one repetition.');
+  if (reps > 10) warnings.push('More than 10 effective repetitions: estimates are less dependable.');
+  if (input.reps === 1) warnings.push('A single completed rep is not necessarily a tested maximum.');
   return summarize(REP_MAX_EQUATIONS.map(row => ({ ...row, value: input.weight * factor(row.id, reps) })), input.method, warnings);
 }
 
@@ -84,7 +84,7 @@ export function estimateRepMaxWeight(input: { oneRepMax: number; targetReps: num
   return summarize(REP_MAX_EQUATIONS.map(row => ({ ...row, value: input.oneRepMax / factor(row.id, input.targetReps),
     formula: `M ÷ (${row.formula.replace(/^W × /, '').replace(/W/g, '1')})` })), input.method,
   ['A target RM estimates a repetition-limit load, not a recommended working load. Leave room for the effort and recovery your workout requires.',
-    ...(input.targetReps > 10 ? ['Above 10 repetitions, estimates are less dependable and equations may diverge.'] : [])]);
+    ...(input.targetReps > 10 ? ['Above 10 repetitions, estimates are less dependable.'] : [])]);
 }
 
 /** Only the Sheet's three populated prediction equations are used. Its average
@@ -99,14 +99,14 @@ export function estimateRepetitions(input: { oneRepMax: number; weight: number; 
     { id: 'lander', label: 'Lander', value: (101.3 - 100 * input.weight / input.oneRepMax) / 2.67123, formula: '(101.3 − 100 × W ÷ M) ÷ 2.67123' },
   ];
   return summarize(methods, input.method,
-    ['This is a fractional model estimate, not a prescribed set or a promise of how many reps you can perform. Only the Sheet’s three populated prediction formulas are averaged.',
+    ['This is an estimate, not a prescribed set or a promise of how many reps you can perform.',
       ...(methods.some(row => row.value > 10) ? ['Higher-repetition predictions are less dependable. Use actual controlled performance and effort to guide training.'] : []),
-      ...(methods.some(row => row.value < 1) ? ['Near an entered 1RM, equations can return fewer than one repetition and disagree. Keep the original arithmetic separate from actual performance.'] : [])]);
+      ...(methods.some(row => row.value < 1) ? ['Near an entered maximum, the estimate can return fewer than one repetition. Actual performance can differ.'] : [])]);
 }
 
 export function percentageLoads(oneRepMax: number, unit: StrengthCalculatorUnit): { percent: number; weight: number }[] {
   requireUnit(unit); requirePositive(oneRepMax, '1RM');
-  return [40, 50, 60, 70, 80, 90, 100].map(percent => ({ percent, weight: oneRepMax * (percent / 100) }));
+  return Array.from({ length: 11 }, (_, index) => 50 + index * 5).map(percent => ({ percent, weight: oneRepMax * (percent / 100) }));
 }
 
 export function convertCalculatorWeight(weight: number, from: StrengthCalculatorUnit, to: StrengthCalculatorUnit): number {

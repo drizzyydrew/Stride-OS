@@ -1,3 +1,4 @@
+import MovementLabCreateGate from '../../../src/components/movement/MovementLabCreateGate';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
 // ─── Running/Walking Readiness — Report ───────────────────────────────────────
 //
@@ -85,7 +86,7 @@ function DomainCard({ domain }: { domain: DomainResult }) {
   );
 }
 
-export default function ReadinessReportScreen() {
+function ReadinessReportScreenContent() {
   const C = useColors();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(C), [C]);
@@ -282,4 +283,8 @@ function makeStyles(C: Palette) {
     disclaimerBox: { paddingHorizontal: spacing.sm },
     disclaimerTxt: { color: C.textSubtle, fontSize: 10, lineHeight: 15 },
   });
+}
+
+export default function ReadinessReportScreen() {
+  return <MovementLabCreateGate><ReadinessReportScreenContent /></MovementLabCreateGate>;
 }

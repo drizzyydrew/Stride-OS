@@ -11,6 +11,7 @@ import { useSubscriptionStore } from '../../../src/store/subscriptionStore';
 import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
 import { useAuthStore } from '../../../src/store/authStore';
 import { observability } from '../../../src/lib/observability';
+import { MEMBERSHIP_COMPARISON } from '../../../src/utils/membershipComparison';
 
 export default function MembershipScreen() {
   const C = useColors();
@@ -30,13 +31,14 @@ export default function MembershipScreen() {
   const localAccessStatus = useAuthStore(state => state.localAccessStatus);
   const accessOwner = useSubscriptionStore(state => state.owner);
   const isPro = useSubscriptionStore(state => state.isPro);
+  const proExpiresAt = useSubscriptionStore(state => state.proExpiresAt);
   const accessLoading = useSubscriptionStore(state => state.isLoading);
   const accessError = useSubscriptionStore(state => state.error);
   const [message, setMessage] = useState<string | null>(null);
   const [needsAccessRefresh, setNeedsAccessRefresh] = useState(false);
   const configured = billingIsConfigured();
   const verified = Boolean(owner && accessOwner === owner && !accessLoading && !accessError);
-  const active = verified && isPro;
+  const active = verified && isPro && (!proExpiresAt || proExpiresAt > Date.now());
   const visibleOptions = optionsOwner === owner ? options : null;
   const option = visibleOptions?.find(item => item.id === selected);
   const savings = annualSavingsPercent(visibleOptions ?? []);
@@ -135,20 +137,34 @@ export default function MembershipScreen() {
   }
   const disabled = busy || loadingPlans || accessLoading;
   return <View style={{ flex: 1, backgroundColor: C.bg }}>
-    <ScreenHeader eyebrow="MEMBERSHIP" title="StrideOS Pro" onBack={() => router.back()} />
+    <ScreenHeader eyebrow="MEMBERSHIP" title="Membership" onBack={() => router.back()} />
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.content}>
       <Text style={[s.heading, { color: C.text }]}>Training that grows with you</Text>
       <Text style={[s.copy, { color: C.textMuted }]}>One membership for personalized plans, thoughtful adjustments, your AI Coach and Movement Lab.</Text>
       <View style={[s.benefits, { borderColor: C.border }]}>
         {[
           ['Personalized plans', 'Running and hybrid training built around your goal.'],
-          ['Adapt your week', 'Review a rebuilt week as your training changes.'],
-          ['AI Coach', 'Ask questions using the training context you choose. Up to 20 requests per UTC day.'],
-          ['Movement Lab', 'Record or import movement videos and start new movement assessments. Your saved clips and results remain available without Pro.'],
+          ['A plan that changes with life', 'When life changes, adjust today, this week, or the rest of your plan to fit your time and needs.'],
+          ['AI Coach', 'Ask questions using the training context you choose. Pro includes up to 20 messages per day. See your reset time in AI Coach.'],
+          ['Movement Lab', 'Record, import and review movement videos, assessments and results while Pro is active. Saved content is retained if Pro ends and unlocks when you resume.'],
         ].map(([title, detail]) => <View key={title} style={s.benefit}>
           <Ionicons name="checkmark-circle-outline" size={21} color={C.primary} />
           <View style={s.flex}><Text style={[s.benefitTitle, { color: C.text }]}>{title}</Text><Text style={[s.copy, { color: C.textMuted }]}>{detail}</Text></View>
         </View>)}
+      </View>
+      <View style={[s.comparison, { borderColor: C.border }]} accessibilityLabel="Free and Pro membership comparison">
+        <Text style={[s.benefitTitle, { color: C.text }]}>Free vs Pro</Text>
+        <View style={[s.comparisonRow, { borderColor: C.border }]}>
+          <Text style={[s.comparisonFeature, { color: C.textMuted }]}>Feature</Text>
+          <Text style={[s.comparisonValue, { color: C.text }]}>Free</Text>
+          <Text style={[s.comparisonValue, { color: C.primary }]}>Pro</Text>
+        </View>
+        {MEMBERSHIP_COMPARISON.map(row => <View key={row.feature} style={[s.comparisonRow, { borderColor: C.border }]}>
+          <Text style={[s.comparisonFeature, { color: C.text }]}>{row.feature}</Text>
+          <Text style={[s.comparisonValue, { color: C.textMuted }]}>{row.free}</Text>
+          <Text style={[s.comparisonValue, { color: C.primary }]}>{row.pro}</Text>
+        </View>)}
+        <Text style={[s.finePrint, { color: C.textMuted }]}>*AI Coach needs your separate sharing permission and is subject to availability. Extra message purchases are not available in this build.</Text>
       </View>
       {!configured ? <Text style={[s.copy, { color: C.text }]}>Purchases are not available in this build. No payment will be taken.</Text> : <>
         <View accessibilityLiveRegion="polite" style={[s.status, { borderColor: active ? C.primary : C.border }]}>
@@ -156,7 +172,6 @@ export default function MembershipScreen() {
           <Text selectable style={[s.benefitTitle, { color: C.text }]}>{active ? 'Your Pro subscription is active.'
             : accessLoading || loadingPlans ? 'Checking your membership…'
               : accessError || !verified ? 'Membership has not been verified.' : 'Choose your Pro membership'}</Text>
-          {active ? <Text style={[s.copy, { color: C.textMuted }]}>You stay subscribed when you close the app. Restore purchases is only needed to recover a purchase.</Text> : null}
           {accessError && !busy ? <Text style={[s.copy, { color: C.textMuted }]}>Connect and retry the membership check. Your saved training remains available.</Text> : null}
         </View>
         {active ? <TouchableOpacity style={[s.command, { backgroundColor: C.primary }]} accessibilityRole="button"
@@ -201,7 +216,7 @@ export default function MembershipScreen() {
           return refreshAccess('restore', isCurrent, ownerId);
         }); }}><Text style={[s.copy, { color: C.primary }]}>Restore purchases</Text></TouchableOpacity>
       </>}
-      <Text style={[s.copy, { color: C.textMuted }]}>Workout tracking, calendar, saved history, existing plans, and on-device Insights remain available without Pro. Saved Movement Lab clips and results also stay available.</Text>
+      <Text style={[s.copy, { color: C.textMuted }]}>Your tracking, history, existing plans, exercise instructions, calculators and data controls stay available without Pro. Movement Lab playback and results require active Pro; ending Pro does not delete them.</Text>
       <Host matchContents={{ vertical: true }} style={{ width: '100%' }}>
         <Collapsible label="Membership details & privacy" isOpen={detailsOpen} onOpenChange={setDetailsOpen} labelStyle={{ color: C.primary, fontSize: 14 }}>
           <Column spacing={12} style={{ paddingTop: 12 }}>
@@ -210,13 +225,17 @@ export default function MembershipScreen() {
           </Column>
         </Collapsible>
       </Host>
-      {(['privacy', 'terms', 'subscriptions'] as const).map(key => <TouchableOpacity key={key} style={s.link} accessibilityRole="link" onPress={() => {
+      {(['subscriptions', 'privacy', 'terms'] as const).map(key => <TouchableOpacity key={key} style={s.link} accessibilityRole="link" onPress={() => {
         void Linking.openURL(LEGAL_URLS[key]).catch(() => { if (mounted.current) setMessage('This link could not be opened. Please try again.'); });
       }}><Text style={[s.copy, { color: C.primary }]}>{key === 'privacy' ? 'Privacy policy' : key === 'terms' ? 'Terms of use' : 'Manage Apple subscriptions'}</Text></TouchableOpacity>)}
     </ScrollView>
   </View>;
 }
 const s = StyleSheet.create({
+  comparison: { borderWidth: 1, borderRadius: 18, padding: 14, gap: 10 },
+  comparisonRow: { flexDirection: 'row', alignItems: 'flex-start', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 10, gap: 8 },
+  comparisonFeature: { flex: 1.8, flexShrink: 1, fontSize: 13, lineHeight: 19 },
+  comparisonValue: { flex: 1, flexShrink: 1, minWidth: 0, fontSize: 12, lineHeight: 18, textAlign: 'center' },
   content: { padding: 20, paddingBottom: 120, gap: 18 },
   heading: { fontSize: 24, fontWeight: '700' },
   copy: { fontSize: 14, lineHeight: 21, flexShrink: 1 },
