@@ -1,0 +1,206 @@
+{
+  "checkedAt": "2026-11-23T13:15:27.276898+00:00",
+  "build": {
+    "id": "9337f289-c2b2-4f95-bff9-8ebbc7584080",
+    "status": "FINISHED",
+    "platform": "IOS",
+    "distribution": "STORE",
+    "buildProfile": "billing-qa",
+    "appVersion": "1.0.0",
+    "appBuildVersion": "127",
+    "gitCommitHash": "45c540fc07218c6f473e5879cf2a5c6fa21abe70",
+    "createdAt": "2026-11-23T12:58:34.001Z",
+    "completedAt": "2026-11-23T13:06:10.941Z"
+  },
+  "submission": {
+    "id": "8399fb35-c09d-4722-8993-c05bb58a00b1",
+    "status": "FINISHED",
+    "createdAt": "2026-11-23T13:08:12.706Z",
+    "completedAt": "2026-11-23T13:08:28.733Z"
+  },
+  "artifact": {
+    "checkedAt": "2026-11-23T13:07:30.766170+00:00",
+    "buildId": "9337f289-c2b2-4f95-bff9-8ebbc7584080",
+    "sourceCommit": "45c540fc07218c6f473e5879cf2a5c6fa21abe70",
+    "profile": "billing-qa",
+    "buildNumber": "127",
+    "nativeDeviceFamily": [
+      1
+    ],
+    "bytes": 130160104,
+    "sha256": "9e004762fb672a2a5836872f24d590491ce384f9139b67e1d6b92124be102923",
+    "targets": [
+      {
+        "bundleId": "com.mooremovement.strideos",
+        "version": "1.0.0",
+        "build": "127",
+        "strictSignatureVerified": true,
+        "debugSigning": false,
+        "appGroups": [
+          "group.com.mooremovement.strideos"
+        ],
+        "healthKit": true,
+        "unexpiredStoreProfile": true,
+        "profileMatchesBundleAndTeam": true
+      },
+      {
+        "bundleId": "com.mooremovement.strideos.liveactivity",
+        "version": "1.0.0",
+        "build": "127",
+        "strictSignatureVerified": true,
+        "debugSigning": false,
+        "appGroups": [
+          "group.com.mooremovement.strideos"
+        ],
+        "healthKit": false,
+        "unexpiredStoreProfile": true,
+        "profileMatchesBundleAndTeam": true
+      },
+      {
+        "bundleId": "com.mooremovement.strideos.watch",
+        "version": "1.0.0",
+        "build": "127",
+        "strictSignatureVerified": true,
+        "debugSigning": false,
+        "appGroups": [],
+        "healthKit": true,
+        "unexpiredStoreProfile": true,
+        "profileMatchesBundleAndTeam": true
+      }
+    ],
+    "privacyManifestsParsed": 21,
+    "noCredentialFilenamesInArchive": true,
+    "embeddedBundleIsHermesBytecode": true,
+    "embeddedBundleBytes": 13099708,
+    "embeddedBundleSHA256": "8e73c81ec7ff52755c6f79d11aa534efd9fb8ea505d7c028cbbc16f5ff3a2f58",
+    "currentStrengthTextMarkers": {
+      "coachRetryNotice": true,
+      "footClock": true,
+      "loadedSeatedCalf": true,
+      "outdoorGoal": true,
+      "aerobicGoal": true,
+      "routeSegments": true,
+      "routeEdit": true,
+      "archiveOriginalWindow": true,
+      "membershipComparison": true,
+      "lifeChanges": true,
+      "strengthCalculatorsRoute": true,
+      "strengthDisclosure": true,
+      "chatStorage": true,
+      "coachV2Endpoint": true,
+      "usageDetails": true,
+      "individualHistoryExpiry": true,
+      "temporaryTimezoneDisclosure": true,
+      "purchasedAccessDescription": true,
+      "versionedPrivacy": true,
+      "versionedTerms": true,
+      "versionedSupport": true,
+      "activePrescriptionPreserved": true
+    },
+    "markerEvidenceScope": "Embedded text and version evidence only; not execution, coaching correctness, eligibility, or on-device acceptance",
+    "compiled1024Icons": [
+      {
+        "Name": "AppIcon",
+        "PixelWidth": 1024,
+        "PixelHeight": 1024,
+        "Opaque": true,
+        "Idiom": "phone"
+      }
+    ],
+    "compiledLiveActivityBrandRenditions": [
+      {
+        "Name": "StrideOSMark",
+        "PixelWidth": 28,
+        "PixelHeight": 28,
+        "Scale": 1,
+        "Opaque": false,
+        "TemplateMode": null
+      },
+      {
+        "Name": "StrideOSMark",
+        "PixelWidth": 56,
+        "PixelHeight": 56,
+        "Scale": 2,
+        "Opaque": false,
+        "TemplateMode": null
+      },
+      {
+        "Name": "StrideOSMark",
+        "PixelWidth": 84,
+        "PixelHeight": 84,
+        "Scale": 3,
+        "Opaque": false,
+        "TemplateMode": null
+      }
+    ],
+    "authLogoExpectedAssetFoundInArchive": true,
+    "nativeCallbackSchemePresent": true,
+    "locationAndHealthPurposeStringsPresent": true,
+    "signedWebcredentialsDomainAndProvisioningVerified": true,
+    "programmingVersionBoundary": "Future Build127 source; completed and active prescriptions are not rewritten by artifact verification",
+    "physicalDeviceAccepted": false,
+    "purchaseLifecycleAccepted": false,
+    "publicReviewSubmitted": false
+  },
+  "apple": {
+    "checkedAt": "2026-11-23T13:14:42.372Z",
+    "appId": "6782788130",
+    "buildNumber": "127",
+    "easBuildId": "9337f289-c2b2-4f95-bff9-8ebbc7584080",
+    "sourceCommit": "45c540fc07218c6f473e5879cf2a5c6fa21abe70",
+    "sourceEvidence": "Explicit state and finished EAS receipt match; signed-artifact verification is separate",
+    "publicVersion": {
+      "versionId": "7f934645-486b-478c-9a6e-1d396e86782d",
+      "selectedBuildId": "34fda62a-e2bb-4f84-a49a-ff2d1f1b7de1",
+      "selectedBuildNumber": "125",
+      "releaseType": "MANUAL",
+      "versionState": "WAITING_FOR_REVIEW",
+      "draftId": "54fdb6a6-e747-44c2-ae87-d088e0ed4487",
+      "draftState": "WAITING_FOR_REVIEW",
+      "submittedDate": "2026-11-22T10:36:33.638Z"
+    },
+    "physicalDeviceAccepted": false,
+    "publicReviewSubmitted": false,
+    "buildExists": true,
+    "appleBuildId": "e4353b61-4cf1-4fa7-a94d-1a7b8178596f",
+    "processingState": "VALID",
+    "expired": false,
+    "uploadedDate": "2026-11-23T05:11:15-08:00",
+    "internalBuildState": "IN_BETA_TESTING",
+    "externalBuildState": "READY_FOR_BETA_SUBMISSION",
+    "group": {
+      "id": "531e9db1-cac3-4779-8466-8426e2944a34",
+      "name": "Team (Expo)",
+      "isInternal": true,
+      "actuallyAssigned": true,
+      "testerCount": 1,
+      "testerStates": [
+        "INSTALLED"
+      ]
+    },
+    "whatToTest": {
+      "locale": "en-US",
+      "exactReadback": true,
+      "sha256": "6669235170d75d1167062caaf925952f3b4950e60e2dfc3704a59c89830657a7",
+      "characters": 1131
+    },
+    "accepted": true,
+    "mutationsPerformed": true,
+    "publicDraftUnchanged": true
+  },
+  "verificationFile": "BUILD127_VERIFICATION.json",
+  "appleEmailEvidence": {
+    "availabilityMessageId": "1a2088a62e589492",
+    "availabilityMessageAt": "2026-11-23T13:13:36Z",
+    "advisoryMessageId": "1a20888660d10e53",
+    "advisoryCode": "ITMS-90725",
+    "advisoryMeaning": "Same nonblocking SDK notice: iOS 27 SDK or later required starting April 2027"
+  },
+  "boundaries": {
+    "physicalDeviceAccepted": false,
+    "publicReviewSubmitted": false,
+    "publicReviewCandidate": "125",
+    "publicReleasePerformed": false,
+    "exerciseImagesChanged": false
+  }
+}
