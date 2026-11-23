@@ -1,14 +1,16 @@
+import { pruneDeletedWorkoutProjections } from '../../lib/completedWorkoutDeletion';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
-import { backupRecords, deleteActivityLog, upsertActivityLogs } from '../../lib/syncService';
+import { backupRecords, upsertActivityLogs, syncWorkoutDeletions } from '../../lib/syncService';
 import { useActivityStore } from '../../store/activityStore';
 import { useAuthStore } from '../../store/authStore';
 import { useCustomWorkoutStore } from '../../store/customWorkoutStore';
 import { useStrengthStore } from '../../store/strengthStore';
+import { useMobilityStore } from '../../store/mobilityStore';
 import { useWorkoutStore } from '../../store/workoutStore';
 import type { Activity } from '../../types/activity';
-import { activityChangesToSync, MAX_PROPAGATED_DELETES } from '../../utils/cloudBackupDiff';
+import { activityChangesToSync } from '../../utils/cloudBackupDiff';
 import { captureOwnerLease, ownerLeaseIsCurrent } from '../../lib/localDataOwner';
 
 const DEBOUNCE_MS = 5_000;
@@ -30,12 +32,21 @@ function whenHydrated(store: PersistApi): Promise<void> {
  * - once per launch (after every store has loaded its real data), upserts all
  *   local history so older records reach the cloud too;
  * - then pushes Activity changes a few seconds after they happen.
- * Bulk disappearances are never propagated as cloud deletes: only small,
- * deliberate deletions are (see MAX_PROPAGATED_DELETES).
+ * Explicit persisted tombstones are replayed first; a missing local row alone
+ * never authorizes deletion. Old clients cannot re-upload tombstoned records.
  */
 export default function CloudBackupBridge() {
   const userId = useAuthStore(state => state.user?.id ?? null);
   const accessStatus = useAuthStore(state => state.localAccessStatus);
+  const access = useAuthStore(state => state.canAccessLocalData);
+  useEffect(() => {
+    if (!access) return;
+    let cancelled = false;
+    const prune = () => { const lease = captureOwnerLease(); if (!cancelled && lease) pruneDeletedWorkoutProjections(lease); };
+    const unsubscribe = useActivityStore.subscribe(prune);
+    void Promise.all([whenHydrated(useActivityStore as unknown as PersistApi), whenHydrated(useWorkoutStore as unknown as PersistApi), whenHydrated(useStrengthStore as unknown as PersistApi), whenHydrated(useCustomWorkoutStore as unknown as PersistApi), whenHydrated(useMobilityStore as unknown as PersistApi)]).then(prune);
+    return () => { cancelled = true; unsubscribe(); };
+  }, [access, userId]);
 
   useEffect(() => {
     if (!userId || accessStatus !== 'ready') return undefined;
@@ -62,6 +73,8 @@ export default function CloudBackupBridge() {
       busy = true;
       let successful = false;
       try {
+        if (!await syncWorkoutDeletions() || !current()) return;
+        pruneDeletedWorkoutProjections(lease);
         const next = useActivityStore.getState().activities;
         if (!initialBackupComplete) {
           const results = await Promise.all([
@@ -73,15 +86,10 @@ export default function CloudBackupBridge() {
           if (!current() || results.some(result => !result)) return;
           initialBackupComplete = true;
         } else {
-          const { upserts, deletes } = activityChangesToSync(synced, next);
+          const { upserts } = activityChangesToSync(synced, next);
           if (upserts.length && !await upsertActivityLogs(upserts)) return;
           if (!current()) return;
-          if (deletes.length <= MAX_PROPAGATED_DELETES) {
-            for (const id of deletes) {
-              if (!current()) return;
-              await deleteActivityLog(id);
-            }
-          }
+
         }
         if (!current()) return;
         synced = next;

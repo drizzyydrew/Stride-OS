@@ -1,3 +1,4 @@
+import { ACTIVITY_EXERCISE_DEFINITIONS } from './activityExerciseBank';
 // ─── Exercise Guide Library ───────────────────────────────────────────────────
 //
 // Static coaching content for the exercise library: how to set up, how to
@@ -57,7 +58,7 @@ const GUIDES: Record<string, ExerciseGuide> = {
     howTo:          'Hinge at the standing hip while the free leg counterbalances behind. Keep the pelvis square, then return by driving the standing hip forward.',
     tips:           ['Point the rear-foot toes at the floor to keep the hips from opening.', 'Use a fingertip on a wall for balance before adding load.'],
     mistakes:       ['Rotating the pelvis open toward the free-leg side.', 'Rushing the descent and losing balance instead of owning the hinge.'],
-    whenToUse:      'Single-leg hamstring strength plus balance — the closest gym match to the demands of stance phase in running.',
+    whenToUse:      'Unilateral hip-extension strength. Use hand support when it permits meaningful loading; actual running supplies its own specific stance demands.',
   },
   hip_thrust: {
     startPosition:  'Upper back on a bench, feet flat about hip-width, bar or dumbbell over the hips, chin gently tucked.',
@@ -356,6 +357,9 @@ const EXERCISE_GUIDE_ALIASES: Record<string, string> = {
 };
 
 export function getExerciseGuide(exerciseId: string): ExerciseGuide | null {
+  const activity = ACTIVITY_EXERCISE_DEFINITIONS.find(entry=>entry.id===exerciseId);
+  if(activity) return {startPosition:activity.setup,finishPosition:'Return to a stable starting position before the next repetition.',
+    howTo:activity.setup,tips:[...activity.coachingCues,activity.progression],mistakes:['Increasing difficulty before the current setup is controlled and tolerated.'],whenToUse:activity.rationale};
   const slug = EXERCISE_GUIDE_ALIASES[exerciseId] ?? exerciseId;
   return GUIDES[slug] ?? null;
 }

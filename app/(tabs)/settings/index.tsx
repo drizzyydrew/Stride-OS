@@ -1,3 +1,4 @@
+import { useActivityStore } from '../../../src/store/activityStore';
 import { trainingGoalBlend } from '../../../src/utils/trainingGoals';
 import { formatHistoryNumber } from '../../../src/utils/historyFormatting';
 import { LegacyBackControl } from '../../../src/components/layout/NavigationEscape';
@@ -182,8 +183,7 @@ export default function SettingsScreen() {
   const integrations = useIntegrationsStore();
   const legacyMorningReminderEnabled = useReadinessStore(state => state.reminderEnabled);
   const signOut = useAuthStore(state => state.signOut);
-  const workoutHistory = useWorkoutStore(state => state.history);
-  const strengthHistory = useStrengthStore(state => state.history);
+  const canonicalHistory = useActivityStore(state => state.activities);
 
   const planGoalType     = useTrainingPlanStore(s => s.goalType);
   const secondaryGoalTypes = useTrainingPlanStore(s => s.secondaryGoalTypes);
@@ -295,28 +295,13 @@ export default function SettingsScreen() {
     : 'Workout reminders & readiness alerts';
 
   const recentTrainingHistory = useMemo(() => {
-    const runs = workoutHistory.map(record => ({
-      id: `run-${record.id}`,
-      title: record.skipped ? 'Skipped run' : 'Run workout',
-      meta: `${formatHistoryDate(record.timestamp)} · ${
-        formatHistoryNumber(record.actualDurationMinutes ?? record.durationMinutes)
-      } min${record.actualDistanceMiles ? ` · ${formatHistoryNumber(imp ? record.actualDistanceMiles : record.actualDistanceMiles * 1.609344)} ${imp ? 'mi' : 'km'}` : ''}`,
-      timestamp: record.timestamp,
-      skipped: Boolean(record.skipped),
+    return [...canonicalHistory].sort((a, b) => b.startTime - a.startTime).slice(0, 5).map(record => ({
+      id: record.id,
+      title: record.activityType.replace(/_/g, ' '),
+      meta: `${formatHistoryDate(record.startTime)} · ${formatHistoryNumber(record.metrics.durationSeconds == null ? undefined : record.metrics.durationSeconds / 60)} min${record.metrics.distanceMeters != null && Number.isFinite(record.metrics.distanceMeters) ? ` · ${formatHistoryNumber(record.metrics.distanceMeters / (imp ? 1609.344 : 1000))} ${imp ? 'mi' : 'km'}` : ''}`,
+      timestamp: record.startTime, skipped: record.status === 'skipped',
     }));
-
-    const strength = strengthHistory.map(record => ({
-      id: `strength-${record.id}`,
-      title: record.skipped ? 'Skipped strength' : 'Strength session',
-      meta: `${formatHistoryDate(record.timestamp)} · ${formatHistoryNumber(record.actualDuration ?? record.plannedDuration)} min`,
-      timestamp: record.timestamp,
-      skipped: Boolean(record.skipped),
-    }));
-
-    return [...runs, ...strength]
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, 5);
-  }, [imp, strengthHistory, workoutHistory]);
+  }, [canonicalHistory, imp]);
 
   useEffect(() => {
     if (!integrations.morningReminderMigratedV37) {
@@ -890,7 +875,7 @@ export default function SettingsScreen() {
                 index < recentTrainingHistory.length - 1 && { borderBottomColor: C.border, borderBottomWidth: 1 },
               ]}
               activeOpacity={0.75}
-              onPress={() => router.push('/(tabs)/activity' as any)}
+              onPress={() => router.push({ pathname: '/(tabs)/activity/[activityId]', params: { activityId: item.id } } as never)}
             >
               <View style={[styles.historyIcon, { backgroundColor: item.skipped ? C.cardAlt : C.primaryDim }]}>
                 <Ionicons name={item.skipped ? 'remove-circle-outline' : 'checkmark-circle-outline'} size={18} color={item.skipped ? C.textMuted : C.primary} />

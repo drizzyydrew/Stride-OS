@@ -1278,7 +1278,7 @@ test('real workout/activity stores persist one live completion, preserve nearby 
   assert.equal(workout.getState().history.length, 3);
   assert.equal(activity.getState().activities.length, 3);
   assert.equal((await journal.read())[0].ownerUserId, 'B');
-  workout.getState().deleteLog(recoveryEntry.completionKey);
+  await workout.getState().deleteLog(recoveryEntry.completionKey);
   assert.equal(activity.getState().getById(healthId), undefined);
   assert.equal(workout.getState().history.length, 2);
   const now = Date.now();

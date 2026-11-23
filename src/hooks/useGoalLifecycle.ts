@@ -1,3 +1,4 @@
+import { visibleGoalArchives } from '../lib/goalArchiveOperations';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import { reconcileGoalLifecycle, useGoalLifecycleRuntime } from '../lib/goalLifecycle';
@@ -34,8 +35,8 @@ export function useGoalLifecycle() {
   }, [access, accountId, athleteId, revision]);
   const visible = access && archiveOwner === accountId && athleteId === 'athlete_default';
   return {
-    archives: visible ? archives : EMPTY_ARCHIVES,
-    pendingArchive: visible ? archives.find(archive => archive.id === pendingId) ?? null : null,
+    archives: visible ? visibleGoalArchives(archives) : EMPTY_ARCHIVES,
+    pendingArchive: visible ? visibleGoalArchives(archives).find(archive => archive.id === pendingId) ?? null : null,
     status: !visible || archiveStatus === 'loading' ? 'loading' as const : archiveStatus === 'error' ? 'error' as const : status,
     error, mode, syncStatus, isDefaultAthlete: athleteId === 'athlete_default',
     retry: () => { void reconcileGoalLifecycle().catch(() => undefined); },

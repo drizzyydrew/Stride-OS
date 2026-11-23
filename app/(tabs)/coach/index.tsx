@@ -797,6 +797,9 @@ export default function CoachScreen() {
   const messages = unexpiredCoachMessages(chat.messages, Date.now());
   const [input,     setInput]     = useState('');
   const [loading,   setLoading]   = useState(false);
+  const [chatRetrying,setChatRetrying]=useState(false);
+  const chatRetryInFlight=useRef(false);
+  const [chatNotice,setChatNotice]=useState<string|null>(null);
   const inFlight = useRef(false);
   const operation = useRef(0);
   const coachUsage = useCoachUsage(tab === 'chat' && aiSharing.allowed, loading);
@@ -829,7 +832,7 @@ export default function CoachScreen() {
   const b = useMemo(() => makeBubbleStyles(C), [C]);
 
   useEffect(() => {
-    operation.current += 1; inFlight.current = false;
+    operation.current += 1; inFlight.current = false; chatRetryInFlight.current=false;setChatRetrying(false);setChatNotice(null);
     setInput(''); setFocusAnalysisId(null); setError(null); setLoading(false);
     setCoachHealth(null); warnedBalances.current.clear();
   }, [chat.owner]);
@@ -865,12 +868,31 @@ export default function CoachScreen() {
     };
   }, [isConfigured, tab, chat.owner]);
 
+  async function retrySavedChat() {
+    if(chatRetryInFlight.current||inFlight.current) return;
+    const lease=captureOwnerLease();
+    if(!lease) { setError('Sign in with the account that owns this conversation.'); return; }
+    chatRetryInFlight.current=true;
+    const token=++operation.current;
+    setChatRetrying(true);setError(null);setChatNotice(null);
+    try {
+      const ready=await chat.retry();
+      if(!ownerLeaseIsCurrent(lease)||token!==operation.current) return;
+      if(ready) { setError(null);setChatNotice(input.trim()?'Saved chat restored. Tap Send to send your draft.':'Saved chat restored.'); }
+      else setError('Saved chat is still unavailable. Unlock your device and retry. Your draft is kept and existing messages were not changed.');
+    } catch { if(ownerLeaseIsCurrent(lease)&&token===operation.current) setError('Could not read saved chat. Your draft is kept. Please retry.'); }
+    finally { if(token===operation.current) {chatRetryInFlight.current=false;setChatRetrying(false);} }
+  }
+
   async function sendMessage() {
     const text = input.trim();
-    if (!text || inFlight.current || !chat.ready || recoverable) return;
+    if (!text || inFlight.current || chatRetryInFlight.current) return;
+    if(!chat.ready) { await retrySavedChat(); return; }
+    if(recoverable) { setError('Recover the last reply before sending a new question. Your draft is kept.'); return; }
     const lease = captureOwnerLease(true);
     if (!lease) { setError('Connect with the account that owns this conversation before sending.'); return; }
     inFlight.current = true;
+    setChatNotice(null);
     const token = ++operation.current;
     setLoading(true);
     const userMsg: Message = { id: randomUUID(), role: 'user', content: text, createdAt: Date.now() };
@@ -1023,7 +1045,7 @@ export default function CoachScreen() {
           <FeatureTourScrollView
             ref={scrollRef}
             style={s.messages}
-            contentContainerStyle={[s.messagesContent, { paddingBottom: spacing.xxl + insets.bottom + 84 }]}
+            contentContainerStyle={[s.messagesContent, { paddingBottom: spacing.md }, messages.length===0?{flexGrow:1,justifyContent:'flex-end'}:null]}
             showsVerticalScrollIndicator={false}
             keyboardDismissMode="interactive"
             keyboardShouldPersistTaps="handled"
@@ -1033,7 +1055,7 @@ export default function CoachScreen() {
               checkedAt={coachUsage.checkedAt} sending={loading} onRefresh={() => { void coachUsage.refresh(); }} />
             <CoachMessagePack key={chat.owner} usage={coachUsage.usage} onRefresh={coachUsage.refresh} />
             {chat.error ? <View style={s.errorBox}><Text style={s.errorTxt}>{chat.error}</Text>
-              {!chat.ready ? <Pressable accessibilityRole="button" onPress={() => { void chat.retry(); }} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: C.primary }}>Retry saved chat</Text></Pressable> : null}</View> : null}
+              {!chat.ready ? <Pressable accessibilityRole="button" onPress={() => { void retrySavedChat(); }} disabled={chatRetrying} style={{ minHeight: 44, justifyContent: 'center',flexDirection:'row',alignItems:'center',gap:8 }}><Text style={{ color: C.primary }}>{chatRetrying?'Reading saved chat…':'Retry saved chat'}</Text>{chatRetrying?<ActivityIndicator size="small" color={C.primary}/>:null}</Pressable> : null}</View> : null}
             <FeatureTourTarget targetId="coach.context" style={s.contextCard}>
               <Text style={s.contextEyebrow}>Your Training Context</Text>
               <Text style={s.contextTxt}>{contextSummary}</Text>
@@ -1079,23 +1101,27 @@ export default function CoachScreen() {
             )}
           </FeatureTourScrollView>
 
+          {chatNotice?<Text accessibilityLiveRegion="polite" style={{color:C.textMuted,fontSize:12,paddingHorizontal:18,paddingTop:4}}>{chatNotice}</Text>:null}
           <FeatureTourTarget targetId="coach.input" style={[s.inputRow, { paddingBottom: insets.bottom + 10 }]}>
             <TextInput
               style={s.input}
               value={input}
-              editable={chat.ready && !loading && !recoverable}
+              editable={!loading}
               onChangeText={setInput}
               placeholder="Ask your coach..."
               placeholderTextColor={C.textSubtle}
               multiline
               maxLength={1000}
               onSubmitEditing={sendMessage}
+              accessibilityLabel="Message your AI Coach"
               returnKeyType="send"
             />
             <Pressable
-              style={[s.sendBtn, (!input.trim() || loading) && s.sendBtnDisabled]}
+              style={[s.sendBtn, (!input.trim() || loading || chatRetrying) && s.sendBtnDisabled]}
               onPress={sendMessage}
-              disabled={!input.trim() || loading || !chat.ready || !!recoverable}
+              accessibilityRole="button"
+              accessibilityLabel={!chat.ready?'Retry saved chat and keep draft':'Send message'}
+              disabled={!input.trim() || loading || chatRetrying}
             >
               <Text style={s.sendTxt}>↑</Text>
             </Pressable>

@@ -27,17 +27,16 @@ test('actual Settings history callback rounds run and strength previews without 
   };
   visit(ast);
   assert.ok(callback);
-  const workoutHistory = [{ id: 'run', timestamp: 2, actualDurationMinutes: 18.2666666666667, actualDistanceMiles: 1.23456789 }];
-  const strengthHistory = [{ id: 'strength', timestamp: 1, actualDuration: 139.4166666666667 }];
-  const before = JSON.stringify({ workoutHistory, strengthHistory });
+  const canonicalHistory = [{ id: 'run', startTime: 2, activityType: 'running', status: 'completed', metrics: { durationSeconds: 18.2666666666667 * 60, distanceMeters: 1.23456789 * 1609.344 } }, { id: 'strength', startTime: 1, activityType: 'strength', status: 'completed', metrics: { durationSeconds: 139.4166666666667 * 60 } }];
+  const before = JSON.stringify(canonicalHistory);
   for (const imp of [true, false]) {
     const render = runInNewContext(ts.transpile(`const renderHistory = ${callback}; renderHistory;`, { target: ts.ScriptTarget.ES2022 }), {
-      imp, workoutHistory, strengthHistory, formatHistoryNumber, formatHistoryDate: () => 'Nov 15',
+      imp, canonicalHistory, formatHistoryNumber, formatHistoryDate: () => 'Nov 15',
     });
     const rows = render();
     assert.equal(rows[0].meta, `Nov 15 · 18.27 min · ${imp ? '1.23 mi' : '1.99 km'}`);
     assert.equal(rows[1].meta, 'Nov 15 · 139.42 min');
-    assert.equal(JSON.stringify({ workoutHistory, strengthHistory }), before);
+    assert.equal(JSON.stringify(canonicalHistory), before);
   }
 });
 

@@ -115,11 +115,13 @@ export function fitRunningWeekToVolume(input: WorkoutEngineInput, workouts: Rich
   const remaining = Math.max(0, budget.minutes - (quality?.durationMinutes ?? 0));
   const allowed = [...ordinary].sort((a, b) => (a.richType === 'long_run' ? 1 : 0) - (b.richType === 'long_run' ? 1 : 0))
     .slice(0, Math.min(ordinary.length, Math.floor(remaining / 5)));
-  const weights = allowed.reduce((sum, workout) => sum + (workout.richType === 'long_run' ? 1.4 : 1), 0);
+  const longerFocus = input.goalIntent?.priorities[0] === 'run_farther';
+  const longWeight = longerFocus ? 1.7 : 1.4;
+  const weights = allowed.reduce((sum, workout) => sum + (workout.richType === 'long_run' ? longWeight : 1), 0);
   const extra = Math.max(0, remaining - allowed.length * 5);
   const next = workouts.map(workout => {
     if (EXCLUDED.has(workout.richType) || workout === quality) return workout;
-    const share = allowed.includes(workout) ? 5 + (weights ? extra * (workout.richType === 'long_run' ? 1.4 : 1) / weights : 0) : 0;
+    const share = allowed.includes(workout) ? 5 + (weights ? extra * (workout.richType === 'long_run' ? longWeight : 1) / weights : 0) : 0;
     if (workout.richType === 'long_run' && allowed.length === 1 && budget.minutes < 15) {
       return resizeRunningEasyWorkout({ ...workout, richType: 'easy_run', type: 'easy_run', title: 'Easy Run — Rebuild' }, Math.min(workout.durationMinutes, share), input.calibration !== null, budget.rationale);
     }

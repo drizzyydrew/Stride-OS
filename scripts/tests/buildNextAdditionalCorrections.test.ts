@@ -254,7 +254,7 @@ test('Activity UI supports swipe and long-press deletion with explicit confirmat
   assert.match(source, /onLongPress=\{\(\) => confirmDeleteActivity/);
   assert.match(source, /Delete this activity\?/);
   assert.match(source, /Delete Activity/);
-  assert.match(source, /removeActivity\(activity\.id\)/);
+  assert.match(source, /deleteCompletedWorkout\(activity\.id, lease\)/);
 });
 
 test('beginner periodization never keeps two primary running sessions on one day', () => {

@@ -1,3 +1,4 @@
+import { visibleGoalArchives } from './goalArchiveOperations';
 import type { Activity, ActivityRaceResult } from '../types/activity';
 import type { RaceActivityLink, RaceEventSnapshot } from '../types/raceLink';
 import type { GoalArchive } from '../types/goalArchive';
@@ -38,7 +39,7 @@ function ready(lease: OwnerLease, profileCreatedAt?: number) {
     || archives.status !== 'ready' || archives.ownerUserId !== lease.ownerUserId) {
     throw new Error('Reopen this race link after the original account and athlete history finish loading.');
   }
-  return { activities: activities.activities, archives: archives.archives, profileCreatedAt: profile.createdAt };
+  return { activities: activities.activities, archives: visibleGoalArchives(archives.archives), profileCreatedAt: profile.createdAt };
 }
 function findActivity(rows: readonly Activity[], id: string): Activity {
   const found = rows.filter(row => row.id === id);

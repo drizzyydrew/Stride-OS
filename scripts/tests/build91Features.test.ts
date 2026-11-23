@@ -102,7 +102,8 @@ test('cloud backup: composite-key upserts, activity history backed up, bulk dele
   const wipe = activityChangesToSync([a, b, c], []);
   assert.ok(wipe.deletes.length > MAX_PROPAGATED_DELETES);
   const bridge = read('src/components/sync/CloudBackupBridge.tsx');
-  assert.match(bridge, /if \(deletes\.length <= MAX_PROPAGATED_DELETES\)/);
+  assert.match(bridge, /await syncWorkoutDeletions\(\)/);
+  assert.doesNotMatch(bridge, /await deleteActivityLog\(/);
 });
 
 // ─── Apple Health restore / second copy ──────────────────────────────────────

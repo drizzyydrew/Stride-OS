@@ -51,6 +51,7 @@ import {
 import { useAthleteStore } from '../../../src/store/athleteStore';
 import { useWorkoutStore } from '../../../src/store/workoutStore';
 import { runCompletionKey } from '../../../src/utils/runCompletionIdentity';
+import { legacyRouteSections, routeGeometryMeters, routeSectionCue, routeSectionTarget, routeSectionSummary, nextRouteSection, advanceRouteSectionProgress } from '../../../src/utils/routeSections';
 import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
 import { useActivityStore } from '../../../src/store/activityStore';
 import { useCustomWorkoutStore } from '../../../src/store/customWorkoutStore';
@@ -959,7 +960,10 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const usingCustomWorkout = Boolean(selectedCustomWorkout);
   const routeAttachment = useRouteStore(s => s.routeAttachment);
   const attachedRoute = useRouteStore(s => s.routes.find(r => r.id === s.routeAttachment.routeId) ?? null);
-  const selectedRoute = effectiveAttachedRoute(attachedRoute, routeAttachment);
+  const plannedRoute=useMemo(()=>effectiveAttachedRoute(attachedRoute,routeAttachment),[attachedRoute,routeAttachment]);
+  const liveRouteSnapshot=useActiveRunStore(s=>s.routeSnapshot);
+  const selectedRoute=isActive?liveRouteSnapshot:plannedRoute;
+  const geographicSections=useMemo(()=>selectedRoute?(selectedRoute.sections??legacyRouteSections(selectedRoute.segments,routeGeometryMeters(selectedRoute.points))):[],[selectedRoute]);
   const detachRouteFromToday = useRouteStore(s => s.detachRouteFromToday);
   const reverseAttachedRoute = useRouteStore(s => s.reverseAttachedRoute);
   const liveSensorReadings = useLiveSensorStore(s => s.readings);
@@ -968,7 +972,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [watchStatus, setWatchStatus] = useState<StrideWatchStatus>(() => getStrideWatchStatus());
   const runWatchStart = useWatchStartRequest(setWatchStatus, workoutInstanceId);
   const [permission, setPermission] = useState<TrackingPermissionState>({ foreground: 'unknown', background: 'unknown' });
-  const [routeSegmentIndex, setRouteSegmentIndex] = useState(0);
   const [turnGuidance, setTurnGuidance] = useState<RouteGuidancePlan | null>(null);
   const [turnGuidanceProgress, setTurnGuidanceProgress] = useState<RouteGuidanceProgress | null>(null);
   const [pendingMode, setPendingMode] = useState<RunMode>(() => (selectedCustomWorkout ? 'workout' : 'quick'));
@@ -1001,13 +1004,11 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   const [raceMilesInput, setRaceMilesInput] = useState(13.1);
   const [racePaceSecInput, setRacePaceSecInput] = useState(540);
   const [goalPickerFor, setGoalPickerFor] = useState<null | 'time' | 'distance' | 'raceDist' | 'racePace'>(null);
-  const segmentStartRef = useRef<{ index: number; time: number } | null>(null);
   const workoutSegmentStartRef = useRef<{ index: number; elapsed: number; miles: number } | null>(null);
   const paceCueStateRef = useRef<PaceCueState>(INITIAL_PACE_CUE_STATE);
-  const maxRouteProgressRef = useRef(0);
-  const routeNoticeRef = useRef<string | null>(null);
   const previousTurnGuidanceProgress = useRef<RouteGuidanceProgress | null>(null);
   const lastTurnAnnouncementRef = useRef<string | null>(null);
+  const lastTurnSpokenAt=useRef(0);
   const guidanceAlertRef = useRef<GuidanceAlertState>(INITIAL_GUIDANCE_ALERT_STATE);
   const effortCueRef = useRef<EffortCueState>({ consecutiveHighSamples: 0, consecutiveLowSamples: 0, wasOutOfRange: false, lastCueElapsedSeconds: -9999 });
   const reminderCueRef = useRef({ lastHydrationCueSec: 0, lastFuelCueSec: 0 });
@@ -1116,27 +1117,20 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   ]);
 
   useEffect(() => {
-    setRouteSegmentIndex(0);
-    maxRouteProgressRef.current = 0;
-    routeNoticeRef.current = null;
     previousTurnGuidanceProgress.current = null;
     lastTurnAnnouncementRef.current = null;
     setTurnGuidanceProgress(null);
-    segmentStartRef.current = isActive ? { index: 0, time: Date.now() } : null;
     workoutSegmentStartRef.current = isActive ? { index: 0, elapsed: 0, miles: 0 } : null;
     runWalkCueRef.current = 0;
     coachMomentRef.current = 0;
   }, [isActive, selectedRoute?.id]);
 
   useEffect(() => {
-    setRouteSegmentIndex(0);
-    maxRouteProgressRef.current = 0;
-    routeNoticeRef.current = null;
+    if(isActive) return;
     previousTurnGuidanceProgress.current = null;
     lastTurnAnnouncementRef.current = null;
     setTurnGuidanceProgress(null);
-    segmentStartRef.current = selectedRoute && isActive ? { index: 0, time: Date.now() } : null;
-  }, [routeAttachment.direction, routeAttachment.status]);
+  }, [isActive, routeAttachment.direction, routeAttachment.status]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1157,14 +1151,24 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     return () => {
       cancelled = true;
     };
-  }, [routeAttachment.direction, selectedRoute?.id, selectedRoute?.points.length]);
+  }, [selectedRoute]);
+
+  function confirmReverseRoute() {
+    if(isActive) return;
+    const lease=captureOwnerLease();
+    if(!lease) return;
+    const preview=effectiveAttachedRoute(attachedRoute,{...routeAttachment,direction:routeAttachment.direction==='reverse'?'forward':'reverse'});
+    Alert.alert('Review reversed route',routeSectionSummary(preview?.sections??[],imp)||'The route direction will change for your next run.',[
+      {text:'Cancel',style:'cancel'},
+      {text:'Use this direction',onPress:()=>{if(ownerLeaseIsCurrent(lease)) reverseAttachedRoute();}},
+    ]);
+    setShowRouteActions(false);
+  }
 
   function removeRouteFromToday() {
+    if(isActive) { Alert.alert('Current route is fixed','Saved route changes apply to your next run.'); return; }
     detachRouteFromToday();
     setShowRouteActions(false);
-    setRouteSegmentIndex(0);
-    maxRouteProgressRef.current = 0;
-    segmentStartRef.current = null;
     setTurnGuidance(null);
     setTurnGuidanceProgress(null);
     previousTurnGuidanceProgress.current = null;
@@ -1271,10 +1275,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       }
     }
 
-    setRouteSegmentIndex(0);
-    maxRouteProgressRef.current = 0;
-    routeNoticeRef.current = null;
-    segmentStartRef.current = { index: 0, time: Date.now() };
     workoutSegmentStartRef.current = { index: 0, elapsed: 0, miles: 0 };
     reminderCueRef.current = { lastHydrationCueSec: 0, lastFuelCueSec: 0 };
     runWalkCueRef.current = 0;
@@ -1291,6 +1291,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
       try { assertProAccess('custom-workouts'); }
       catch (error) { Alert.alert('StrideOS Pro', error instanceof Error ? error.message : 'Membership could not be verified.'); return; }
     }
+    config.routeSnapshot=pendingEnvironment==='outdoor'?plannedRoute:null;
     startRun(startWorkout, config);
     speakCue('Starting workout.', 'interval');
     const firstSegment = startWorkout ? workoutSegments(startWorkout)[0] : null;
@@ -1335,9 +1336,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     } catch (error) {
       endStrideWatchRun(workoutInstanceId).then(setWatchStatus).catch(() => undefined);
       cancelRun();
-      setRouteSegmentIndex(0);
-      maxRouteProgressRef.current = 0;
-      segmentStartRef.current = null;
       Alert.alert('Location unavailable', error instanceof Error ? error.message : 'Could not start GPS tracking.');
     }
   }
@@ -1486,9 +1484,6 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     if (finalElapsed >= 300 || keepLinkedRace) speakCue(`Run complete. ${finalDurationMin} minutes, ${finalDistanceMiles.toFixed(2)} miles saved.`, 'motivation');
     finishRun();
     setElapsed(0);
-    setRouteSegmentIndex(0);
-    maxRouteProgressRef.current = 0;
-    segmentStartRef.current = null;
     onFinished?.();
     if (finalElapsed >= 300 || keepLinkedRace) Alert.alert('Run saved', `${finalDurationMin} min · ${finalDistanceMiles.toFixed(2)} mi saved to Activity Log.${finalState.raceLink?.outcome === 'unrecorded' ? ' Review the saved run to confirm its race result.' : ''}`);
     else Alert.alert('Run discarded', 'Runs under 5 minutes are not saved.');
@@ -1683,8 +1678,11 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     latitude: coordinates[coordinates.length - 1].lat,
     longitude: coordinates[coordinates.length - 1].lng,
   } : null;
-  const routeProgress = selectedRoute && currentPoint ? routeProgressForLocation(selectedRoute, currentPoint) : 0;
-  const nextSegment = selectedRoute?.segments[routeSegmentIndex] ?? null;
+  const rawRouteProgress = selectedRoute && currentPoint ? (turnGuidanceProgress?.alongMeters!=null?turnGuidanceProgress.alongMeters/1609.344:routeProgressForLocation(selectedRoute,currentPoint)) : 0;
+  const savedRouteProgress=(useActiveRunStore.getState().routeSectionCueState?.maxProgressMeters??0)/1609.344;
+  const routeProgress=isActive?Math.max(savedRouteProgress,rawRouteProgress<=distanceMiles+150/1609.344?rawRouteProgress:savedRouteProgress):rawRouteProgress;
+  const upcomingGeographicSection=nextRouteSection(geographicSections,routeProgress*1609.344);
+  const nextSegment=upcomingGeographicSection?{label:upcomingGeographicSection.name,distanceMiles:upcomingGeographicSection.startMeters/1609.344}:null;
   const turnInstructionText = turnGuidanceProgress?.isOffRoute || turnGuidanceProgress?.isWrongWay
     ? guidanceDisplayText(turnGuidanceProgress)
     : turnGuidanceProgress?.nextInstruction && turnGuidanceProgress.distanceToNextStepMeters !== null
@@ -1756,6 +1754,7 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
     const key = `${progress.nextStepIndex}:${turnAnnouncementPhase(progress.distanceToNextStepMeters)}`;
     if (text && lastTurnAnnouncementRef.current !== key) {
       lastTurnAnnouncementRef.current = key;
+      lastTurnSpokenAt.current=Date.now();
       speakCue(text, 'navigation');
     }
   }, [
@@ -1864,34 +1863,32 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
   ) : null;
 
   useEffect(() => {
-    if (!selectedRoute || !currentPoint || !nextSegment || !isActive || isPaused) return;
-    if (turnGuidance?.kind === 'turn_by_turn') return;
-    maxRouteProgressRef.current = Math.max(maxRouteProgressRef.current, routeProgress);
-    if (maxRouteProgressRef.current + 0.03 < nextSegment.distanceMiles) return;
-
-    const distanceToMarker = metersBetween(currentPoint, nextSegment.point);
-    const noticeKey = `${routeSegmentIndex}:${nextSegment.label}`;
-    if (distanceToMarker <= 110 && distanceToMarker > 75 && routeNoticeRef.current !== noticeKey) {
-      routeNoticeRef.current = noticeKey;
-      speakCue(`In about 100 yards, segment ${nextSegment.label}.`, 'navigation');
-      return;
+    if(!selectedRoute||!currentPoint||!isActive||isPaused) return;
+    const progress=turnGuidanceProgress;
+    if(progress?.isOffRoute||progress?.isWrongWay) return;
+    const projected=closestRoutePoint(selectedRoute.points,currentPoint);
+    if(!projected||metersBetween(currentPoint,projected.point)>75) return;
+    const along=progress?.alongMeters??routeProgress*1609.344;
+    const current=useActiveRunStore.getState();
+    const state=current.routeSectionCueState??{seenIds:[],lastAt:0,maxProgressMeters:0};
+    // Save accepted monotonic progress even when voice is off or a nearby turn
+    // postpones this segment announcement. A remount cannot regress the range.
+    if(current.workoutInstanceId!==workoutInstanceId) return;
+    const advanced=advanceRouteSectionProgress(state,along,distanceMiles*1609.344);
+    if(along>distanceMiles*1609.344+150) return;
+    if(advanced!==state) useActiveRunStore.setState({routeSectionCueState:advanced});
+    const monotonic=advanced.maxProgressMeters;
+    if(!voiceCuePreferences.navigation||Date.now()-lastTurnSpokenAt.current<10000) return;
+    const cue=routeSectionCue({sections:geographicSections,progressMeters:monotonic,
+      lastId:null,seenIds:state.seenIds,lastAt:state.lastAt,now:Date.now(),imperial:imp,
+      turnNear:!!progress?.nextInstruction&&!isSilentGuidanceInstruction(progress.nextInstruction)
+        &&progress.distanceToNextStepMeters!==null&&progress.distanceToNextStepMeters<=150});
+    if(current.workoutInstanceId!==workoutInstanceId) return;
+    if(cue&&!state.seenIds.includes(cue.id)) {
+      useActiveRunStore.setState({routeSectionCueState:{seenIds:[...state.seenIds,cue.id],lastAt:Date.now(),maxProgressMeters:monotonic}});
+      speakCue(cue.cue,'navigation');
     }
-    if (distanceToMarker > 75) return;
-
-    const now = Date.now();
-    const segStart = segmentStartRef.current?.index === routeSegmentIndex
-      ? segmentStartRef.current.time
-      : startTime ?? now;
-    const previousDistance = routeSegmentIndex > 0 ? selectedRoute.segments[routeSegmentIndex - 1].distanceMiles : 0;
-    const segmentMiles = Math.max(0.01, nextSegment.distanceMiles - previousDistance);
-    const elapsedSeconds = Math.max(1, Math.floor((now - segStart) / 1000));
-    const segmentPace = paceLabel(elapsedSeconds / segmentMiles);
-
-    speakCue(`End of segment ${routeSegmentIndex + 1}. Pace: ${segmentPace} per mile.`, 'navigation');
-    const nextIndex = routeSegmentIndex + 1;
-    setRouteSegmentIndex(nextIndex);
-    segmentStartRef.current = { index: nextIndex, time: now };
-  }, [selectedRoute?.id, currentPoint?.latitude, currentPoint?.longitude, nextSegment?.label, nextSegment?.distanceMiles, isActive, isPaused, routeProgress, routeSegmentIndex, startTime, turnGuidance?.kind]);
+  },[selectedRoute,currentPoint?.latitude,currentPoint?.longitude,isActive,isPaused,turnGuidanceProgress,routeProgress,geographicSections,distanceMiles,voiceCuePreferences.navigation,workoutInstanceId,imp]);
 
   useEffect(() => {
     if (!isActive || isPaused || runMode !== 'workout' || !currentWorkoutSegment) return;
@@ -2657,6 +2654,10 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             </Text>
           </View>
         ) : null}
+        {selectedRoute&&geographicSections.find(section=>routeProgress*1609.344>=section.startMeters&&routeProgress*1609.344<section.endMeters)?(()=>{
+          const section=geographicSections.find(section=>routeProgress*1609.344>=section.startMeters&&routeProgress*1609.344<section.endMeters)!;
+          return <View style={[styles.relocatedRoutePanel,{backgroundColor:C.cardAlt,borderColor:C.border}]}><Text style={[styles.metricLabel,{color:C.textDim}]}>ROUTE SEGMENT</Text><Text style={[styles.routeProgressTitle,{color:C.text}]}>{section.name}</Text><Text style={[styles.metricUnit,{color:C.textMuted}]}>{((section.endMeters-section.startMeters)/(imp?1609.344:1000)).toFixed(2)} {imp?'mi':'km'} · {routeSectionTarget(section,imp)||'By feel'}</Text></View>;
+        })():null}
         {selectedRoute && turnInstructionText ? (
           <TouchableOpacity
             style={[styles.relocatedRoutePanel, { backgroundColor: C.cardAlt, borderColor: C.border }]}
@@ -2723,9 +2724,10 @@ function ActiveTab({ onFinished, fullScreen = false }: { onFinished?: () => void
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.pointMenuRow, { borderBottomColor: C.border }]}
-              onPress={() => { reverseAttachedRoute(); setShowRouteActions(false); }}
+              disabled={isActive}
+              onPress={confirmReverseRoute}
             >
-              <Text style={{ color: C.text, fontWeight: '700' }}>Reverse Route</Text>
+              <Text style={{ color: C.text, fontWeight: '700' }}>{isActive?'Route direction is fixed during this run':'Reverse Route'}</Text>
               <Ionicons name="swap-horizontal-outline" size={19} color={C.primary} />
             </TouchableOpacity>
             <TouchableOpacity style={[styles.pointMenuRow, { borderBottomColor: C.border }]} onPress={removeRouteFromToday}>
@@ -3379,7 +3381,7 @@ function RoutesTab({ onStartRoute }: { onStartRoute: () => void }) {
     }
 
     try {
-      startRun(null);
+      startRun(null,{mode:'quick',environment:'outdoor',routeSnapshot:route});
       const startedAt = useActiveRunStore.getState().startTime;
       const startedWorkoutInstanceId = useActiveRunStore.getState().workoutInstanceId;
       await startRunLiveActivity({
@@ -3597,7 +3599,10 @@ function GPSTab() {
   } = useActiveRunStore();
   const routeAttachment = useRouteStore(s => s.routeAttachment);
   const attachedRoute = useRouteStore(s => s.routes.find(r => r.id === s.routeAttachment.routeId) ?? null);
-  const selectedRoute = effectiveAttachedRoute(attachedRoute, routeAttachment);
+  const plannedRoute=useMemo(()=>effectiveAttachedRoute(attachedRoute,routeAttachment),[attachedRoute,routeAttachment]);
+  const liveRouteSnapshot=useActiveRunStore(s=>s.routeSnapshot);
+  const selectedRoute=isActive?liveRouteSnapshot:plannedRoute;
+  const geographicSections=useMemo(()=>selectedRoute?(selectedRoute.sections??legacyRouteSections(selectedRoute.segments,routeGeometryMeters(selectedRoute.points))):[],[selectedRoute]);
   const [permission, setPermission] = useState<TrackingPermissionState>({ foreground: 'unknown', background: 'unknown' });
   const [elapsed, setElapsed] = useState(0);
 

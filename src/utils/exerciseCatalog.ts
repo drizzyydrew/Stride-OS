@@ -1,3 +1,4 @@
+import { ACTIVITY_EXERCISE_DEFINITIONS } from '../constants/activityExerciseBank';
 // Shared exercise identity, plain-language muscle tags and coaching metadata.
 // Tags are programming descriptions, not measured muscle activation or fractional set credits.
 // Sources and review boundaries: docs/handoff/BUILD123_EXERCISE_CATALOG_REVIEW.md.
@@ -337,8 +338,15 @@ const SETUP_DETAILS:Record<string,string>={
   'standing shoulder flexion':'Stand comfortably with the ribs controlled and raise the arms forward and overhead only as far as feels smooth. Lower slowly without forcing a back arch.',
 };
 export function resolveExerciseMetadata(input: ExerciseMetadataInput): ExerciseMetadata {
-  const raw=input.name?.trim() || EXERCISE_ID_NAMES[input.id??''] || CATALOG_EXERCISE_NAMES.find(item=>`library_${normalizedExerciseIdentityName(item).replace(/[^a-z0-9]+/g,'_')}`===input.id) || '';
+  const raw=input.name?.trim() || ACTIVITY_EXERCISE_DEFINITIONS.find(entry=>entry.id===input.id)?.name || EXERCISE_ID_NAMES[input.id??''] || CATALOG_EXERCISE_NAMES.find(item=>`library_${normalizedExerciseIdentityName(item).replace(/[^a-z0-9]+/g,'_')}`===input.id) || '';
   const name=normalizedExerciseIdentityName(raw);
+  const activity=ACTIVITY_EXERCISE_DEFINITIONS.find(entry=>normalizedExerciseIdentityName(entry.name)===name);
+  if(activity) return { canonicalId: `library_${name.replace(/[^a-z0-9]+/g,'_')}`, name: raw,
+    primaryMuscles:[...activity.primaryMuscles], supportMuscles:activity.kind==='balance'?['glutes','calves','core']:[], mobilityTargets:[],
+    equipment:input.equipment ? typeof input.equipment==='string'?[input.equipment]:[...input.equipment] : [...activity.equipment,...activity.setupEquipment],
+    category:activity.pattern==='carry'?'full_body':activity.pattern==='trunk'?'core':activity.pattern==='pull'?'upper':'lower',
+    movementPattern:activity.pattern,kind:activity.kind,setup:activity.setup,benefit:activity.rationale,
+    adjustment:`${activity.progression} ${activity.regression} ${activity.substitution}`,known:true };
   const recognized=CATALOG_EXERCISE_NAMES.some(item=>normalizedExerciseIdentityName(item)===name);
   const family=recognized ? FAMILIES.find(item=>item.test.test(name)) : undefined;
   const key=name || input.id?.trim() || 'unknown';
@@ -353,6 +361,7 @@ export function resolveExerciseMetadata(input: ExerciseMetadataInput): ExerciseM
   return result;
 }
 export const CATALOG_EXERCISE_NAMES: readonly string[] = [
+  ...ACTIVITY_EXERCISE_DEFINITIONS.map(entry=>entry.name),
   "90/90 Hip Switches",
   "Adductor Rockbacks",
   "Alternating Bounds",

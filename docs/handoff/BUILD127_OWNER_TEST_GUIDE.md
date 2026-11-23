@@ -1,0 +1,14 @@
+# Build 127 owner check
+
+Install through the existing internal TestFlight group once actual processing and delivery are confirmed. No hard workout, purchase or new exercise image is required. The public App Review candidate remains separate.
+
+1. **AI Coach:** open Ask Coach, type in the bottom box and try the suggested questions. Saved-chat Retry should show progress and preserve your draft; after recovery it explains that Send can be tapped. At the scroll bottom, suggestions and the composer should have a compact gap. Do not use a paid message merely for this check unless you want an actual answer.
+2. **Deletion:** create a disposable manual workout. Delete that test workout from History, restart, then let cloud restore run. It should stay deleted. A new performance for the same scheduled session must remain possible. Do not delete meaningful history as a test. This action does not delete the Apple Health original.
+3. **Previous goals:** correct a saved goal's title/dates. The recorded summary identifies its original snapshot window. Repeat should prefill a new goal without completed sets or a past event date. Delete archive removes the goal entry while keeping actual workouts.
+4. **New goal:** choose a separate goal, with primary/secondary/tertiary order, suitable equipment and available days. Aerobic Base stays easy-only. Sport plans should display relevant strength and aerobic tasks, not renamed running distances. Lower-priority work should yield when the shared budget is tight. Check that an existing goal still keeps its previous programming.
+5. **Feet:** browse Feet & Ankles presets. Check clear clock-reach instructions, meaningful loaded seated-calf guidance and an introductory hopping dose. Reading the prescription is enough; you do not need to perform impact work.
+6. **Calendar:** switch month/week. Planned/completed/missed meanings and legend should agree. Today remains an outline/context marker, and a partly completed day should not say fully completed.
+7. **Routes:** open a disposable saved route's details, Edit Route, and cancel first. Reopen; its line should be unchanged. Try Save as New, then edit the copy. Geographic segments show start/end and distance with optional targets. Changing geometry requires segment review. An active run's captured route should not change when its saved source is edited.
+8. **Small-phone layout:** keyboard, route segment fields, save choices, goal corrections and large text should remain reachable within the scrollable screen. Report any clipped control with the screen name and device size.
+
+Automated source/storage/database checks and signed-archive verification are recorded separately. They do not establish physical-device acceptance, native GPS accuracy, Health behavior on your account, or a purchase lifecycle.

@@ -17,7 +17,7 @@ async function harness() {
     getItemOnce: async (key: string) => saved.get(key) ?? null,
     setItem: async (key: string, value: string) => { if (failWrite) throw new Error('disk failed'); saved.set(key, value); },
     removeItem: async (key: string) => { saved.delete(key); } };
-  const activity = { addActivity: (value: { id: string }) => { activities.set(value.id, value); return value.id; },
+  const activity = { deletedActivities: [], confirmedDeletedActivities: [], addActivity: (value: { id: string }) => { activities.set(value.id, value); return value.id; },
     addActivityAndPersist: async (value: { id: string }) => { activityCommits++; activities.set(value.id, value); } };
   const filename = resolve('src/store/strengthStore.ts');
   const compiled = ts.transpileModule(readFileSync(filename, 'utf8'), {

@@ -4,6 +4,9 @@ import {
   STRENGTH_PRESET_PRIORITY_MAINS,
   type PresetStrengthWorkout,
 } from '../constants/strengthBank';
+import { resolveExerciseMetadata } from './exerciseCatalog';
+import { normalizePlyometricResponse } from './plyometricFeedback';
+import type { StrengthLogRecord } from '../types/strength';
 import type { StrengthLevel, TrainingPhase } from '../types/training';
 import type { TrainingGoalType } from '../types/plan';
 import { todayDateKey } from '../types/checkin';
@@ -20,6 +23,8 @@ export type StrengthPresetContext = {
   recoveryLimited?: boolean;
   /** A standalone preset choice, never an automatic plan progression. */
   mainSets?: 3 | 4 | 5;
+  /** Actual controlled impact work with a later athlete report; lifting level alone is insufficient. */
+  footImpactStage?: 0 | 1 | 2 | 3;
 };
 
 /** The library and detail screen use the same profile inputs. Running
@@ -40,6 +45,36 @@ export function buildStrengthPresetContext(
     soreness: checkIn?.date === today ? checkIn.soreness : null,
     recoveryLimited: onboarding.hasCurrentInjury === true,
   };
+}
+
+/** Two consecutive complete, tolerated exposures support one small volume step.
+ * A newer uncertain/painful/missing report resets the recommendation to the introduction.
+ * This is an app coaching rule, not a medical clearance test. */
+export function footImpactProgressionStage(history: readonly StrengthLogRecord[], now = Date.now()): 0|1|2|3 {
+  const impactName=(exercise:StrengthLogRecord['exercises'][number])=>exercise.name ?? resolveExerciseMetadata({id:exercise.exerciseId}).name;
+  const unique=new Map<string,StrengthLogRecord>();
+  for(const record of history) if(Number.isFinite(record.timestamp) && record.timestamp<=now && now-record.timestamp<=42*86400000) {
+    const key=record.scheduledSessionId ?? record.sessionId ?? record.id;
+    const prior=unique.get(key);
+    // Conflicting copies cannot improve eligibility: prefer the incomplete/skipped copy.
+    if(!prior || record.timestamp>prior.timestamp || record.timestamp===prior.timestamp&&(record.skipped || record.completed!==true))unique.set(key,record);
+  }
+  const attempts=[...unique.values()].filter(record=>record.exercises.some(ex=>/pogo|hop|jump|bound/i.test(impactName(ex)))).sort((a,b)=>b.timestamp-a.timestamp);
+  if(attempts.length<2)return 0;
+  const doses=attempts.slice(0,2).map(record=>{
+    if(record.completed!==true || record.skipped)return 0;
+    const impacts=record.exercises.filter(ex=>/pogo|hop|jump|bound/i.test(impactName(ex)));
+    if(impacts.some(ex=>{
+      const report=normalizePlyometricResponse(ex.impactResponse,record.timestamp,now);
+      return ex.skipped || report?.landingControl!=='controlled' || report.symptomsDuring!=='none' || report.nextDayResponse!=='usual';
+    }))return 0;
+    const actual=impacts.filter(ex=>/low pogo hops|low forward.back line hops/i.test(impactName(ex)))
+      .flatMap(ex=>ex.sets.filter(set=>set.completed&&!set.isWarmup&&Number.isInteger(set.reps)&&set.reps!>=5));
+    if(actual.length<2)return 0;
+    return actual.reduce((sum,set)=>sum+set.reps!,0);
+  });
+  const minimum=Math.min(...doses);
+  return minimum>=20?3:minimum>=15?2:minimum>=10?1:0;
 }
 
 export function estimateStrengthPresetMinutes(workout: PresetStrengthWorkout): number {
@@ -126,6 +161,27 @@ export function resolveStrengthPresetWorkout(
     }, canStart: true, recommended: false, mode: 'captured' };
   }
 
+  // New supporting modules scale from lifting experience, not running experience.
+  if(original.id.startsWith('sw_') && original.goalProfiles?.length && original.id!=='sw_foot_reactive') {
+    const novice = context.strengthLevel!=='intermediate' && context.strengthLevel!=='advanced';
+    const lighter = context.recoveryLimited || context.fatigueScore!=null && context.fatigueScore>70 || context.recoveryScore!=null && context.recoveryScore<65 || context.soreness!=null && context.soreness>=7
+      || ['deload','taper','recovery','transition'].includes(context.trainingPhase ?? '');
+    if(novice || lighter) original={...original,exercises:original.exercises.map(exercise=>{
+      if(!exercise.targetRpe || /clock reach|toe press/i.test(exercise.name))return exercise;
+      const strengthReps=exercise.repScheme?.kind==='reps';
+      return {...exercise,sets:Math.min(2,exercise.sets),targetRpe:lighter?5:6,
+        ...(strengthReps?{reps:exercise.repScheme?.perSide?'8-12 per side':'8-12',repScheme:{kind:'reps' as const,repsMin:8,repsMax:12,perSide:exercise.repScheme?.perSide}}:{}),
+        notes:`${exercise.notes ?? ''} Today's introductory/recovery dose uses manageable effort; reduce load or use the supported/bilateral alternative when needed.`};
+    })};
+  }
+  if(original.id==='sw_foot_reactive') {
+    const stage=context.footImpactStage ?? 0;
+    const pogos={...original.exercises[0]!,sets:stage===0?2:3};
+    const lines={...original.exercises[1]!,sets:stage===2?1:2};
+    original={...original,title:stage===0?'Reactive Feet & Ankles — Introduction':original.title,
+      exercises:stage<2?[pogos]:[pogos,lines],durationMin:stage===0?10:15,
+      planningNote:`Today's dose: ${stage===0?10:stage===1?15:stage===2?20:25} two-foot landing events (twice as many individual foot contacts). Replace existing impact work. Two recent controlled exposures with an acceptable later/next-day report support only one dose step. New symptoms, uncertain control or missing response return the recommendation to the introduction. Stop or skip if not tolerated.`};
+  }
   const mains = STRENGTH_PRESET_PRIORITY_MAINS[original.id];
   const powerSpecific = original.trainingPurpose === 'power';
   if (!powerSpecific && (original.trainingPurpose !== 'strength' || !mains?.length)) {
@@ -142,7 +198,7 @@ export function resolveStrengthPresetWorkout(
   const phaseLimited = !!context.trainingPhase && (['foundation', 'deload', 'taper', 'recovery', 'transition'].includes(context.trainingPhase)
     || context.goalType === 'race_prep' && ['threshold', 'vo2', 'race_specific', 'build', 'peak'].includes(context.trainingPhase));
   let reason: string | undefined;
-  if (context.strengthLevel !== 'intermediate' && context.strengthLevel !== 'advanced') {
+  if (original.id !== 'sw_foot_reactive' && context.strengthLevel !== 'intermediate' && context.strengthLevel !== 'advanced') {
     reason = powerSpecific
       ? 'This power preset calls for practiced lifting and controlled, quick repetitions. Build a repeatable setup with a simpler session first; stop power sets when speed or control drops.'
       : 'This low-repetition preset is for practiced lifters. Choose a lighter calibration session while you establish a repeatable setup and lifting experience.';

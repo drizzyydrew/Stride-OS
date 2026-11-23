@@ -39,6 +39,8 @@ import {
   parseYMD,
   addDays,
 } from './calendarEngine';
+import { plannedStrengthWorkingSets } from './goalProfileProgramming';
+import { intentAllowsRunningQuality } from './goalIntent';
 import { trainingGoalBlend } from './trainingGoals';
 import { pickTargetRace } from './plan/macroPlanner';
 import { reconcileMissedSessions } from './plan/missedWorkouts';
@@ -64,6 +66,7 @@ export type EngineInput = {
   // ── Plan spine (from trainingPlanStore + macroPlanner) ──────────────────────
   goalType:            TrainingGoalType;
   secondaryGoalTypes?: TrainingGoalType[];
+  goalIntent?: import('../types/goalIntent').GoalIntent;
   goalScopeId?: string;
   referenceDate?: string;
   trainingMode?:       'structured' | 'open';
@@ -129,6 +132,7 @@ export type WeekPlan = {
   weeksToRace:   number;
   adaptations:   string[]; // human-readable notes: readiness downgrades + missed-workout swaps
   metadata: {
+    goalIntent?: import('../types/goalIntent').GoalIntent;
     trainingMode?:   'structured' | 'open';
     trainingPhase:    TrainingPhase;
     progressionLevel: ProgressionLevel;
@@ -275,6 +279,12 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   } else if (input.goalType === 'hybrid') {
     hybridBalance = true;
   }
+  if (input.goalIntent) {
+    const primary = input.goalIntent.priorities[0];
+    // Easy-only base and outdoor preparation never borrow faster work from a supporting goal.
+    if (!intentAllowsRunningQuality(input.goalIntent)) trainingStyle = 'base_only';
+    if (input.goalIntent.season === 'in_season') hybridBalance = true;
+  }
   // general_running: style stays the athlete's preference — the macro plan
   // already guarantees this goal never reaches a 'peak' phase.
 
@@ -282,6 +292,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
   const workoutInput: WorkoutEngineInput = {
     programmingVersion: input.strengthProgrammingVersion,
     goalType: blend.runningGoal,
+    goalIntent: input.goalIntent,
     goalScopeId: input.goalScopeId,
     runningHistory: input.runningHistory,
     referenceDate: macroWeek.startDate,
@@ -327,6 +338,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
     activeStrengthSessionId: input.activeStrengthSessionId,
     goalType: input.goalType,
     secondaryGoalTypes: blend.secondary,
+    goalIntent: input.goalIntent,
     availableEquipment: input.strengthEquipment,
     exercisePreferences: input.strengthExercisePreferences,
     goalScopeId: input.goalScopeId,
@@ -462,7 +474,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
       calendarMap = balanced.calendarMap;
       if (balanced.replacements.size) {
         const sessions = strengthWeek.sessions.map(session => balanced.replacements.get(session.id) ?? session);
-        strengthWeek = { ...strengthWeek, sessions, weeklyVolumeSets: sessions.reduce((sum, session) => sum + session.exercises.reduce((n, ex) => n + ex.sets, 0), 0) };
+        strengthWeek = { ...strengthWeek, sessions, weeklyVolumeSets: plannedStrengthWorkingSets(sessions, input.goalIntent) };
       }
       adaptations.push(...balanced.notes);
     }
@@ -471,7 +483,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
     calendarMap = markCapturedStrengthCompletions(rest.calendarMap, capturedCompletions);
     if (rest.omittedSessionIds.length) {
       const sessions = strengthWeek.sessions.filter(session => !rest.omittedSessionIds.includes(session.id));
-      strengthWeek = { ...strengthWeek, sessions, weeklyVolumeSets: sessions.reduce((sum, session) => sum + session.exercises.reduce((n, exercise) => n + exercise.sets, 0), 0),
+      strengthWeek = { ...strengthWeek, sessions, weeklyVolumeSets: plannedStrengthWorkingSets(sessions, input.goalIntent),
         phaseNote: `${sessions.length} strength ${sessions.length === 1 ? 'session' : 'sessions'} — full rest day protected` };
     }
     if (rest.note) adaptations.push(rest.note);
@@ -503,6 +515,7 @@ export function buildWeekPlan(input: EngineInput): WeekPlan {
       currentWeek,
       weeksToRace,
       generatedAt:      Date.now(),
+      ...(input.goalIntent ? { goalIntent: input.goalIntent } : {}),
       focus:            macroWeek.focus,
     },
   };

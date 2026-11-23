@@ -124,6 +124,7 @@ export type PlannedExercise = {
 // ─── Complete strength session ────────────────────────────────────────────────
 
 export type StrengthSession = {
+  goalProfile?: import('./goalIntent').GoalProfileId;
   id:               string;           // stable: "strength_{type}_{weekInBlock}_{index}"
   title:            string;
   goal:             StrengthGoal;
@@ -217,8 +218,11 @@ export type ExerciseSessionDetail = {
 // backfills defaults for records written before a field was added.
 
 export type StrengthLogRecord = {
+  workoutInstanceId?: string;
   templateId?: string;
   id:              string;    // "sw${week}_${sessionId}_${index}"
+  /** Logical schedule slot when a fresh performance replaces a deliberately deleted log. */
+  completionKey?: string;
   sessionId:       string;   // original session id
   // Canonical `week:${date}:strength:${strengthId}` scheduled-session id, set
   // when the caller already knows it (e.g. manual completion from the
@@ -258,6 +262,7 @@ export type StrengthEngineInput = {
   strengthLevel?: import('./training').StrengthLevel;
   goalType?: import('./plan').TrainingGoalType;
   secondaryGoalTypes?: import('./plan').TrainingGoalType[];
+  goalIntent?: import('./goalIntent').GoalIntent;
   availableEquipment?: EquipmentOption[];
   exercisePreferences?: Record<string, string>;
   goalScopeId?: string;

@@ -149,6 +149,7 @@ export type PhysiologicalRationale = {
 // ─── Rich workout ─────────────────────────────────────────────────────────────
 
 export type RichWorkout = Workout & {
+  goalIntent?: import('./goalIntent').GoalIntent;
   paceTargetSource?: 'calibration' | 'effort';
   richType:      RichWorkoutType;
   protocol?:     'norwegian_4x4';
@@ -186,6 +187,7 @@ export type RichWorkout = Workout & {
 // ─── Engine input / output ────────────────────────────────────────────────────
 
 export type WorkoutEngineInput = {
+  goalIntent?: import('./goalIntent').GoalIntent;
   raceDistance?: import('./training').RaceDistance;
   goalScopeId?: string;
   programmingVersion?: 1 | 2;

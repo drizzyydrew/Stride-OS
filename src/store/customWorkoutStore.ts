@@ -1,3 +1,6 @@
+import { captureOwnerLease, ownerLeaseIsCurrent, type OwnerLease } from '../lib/localDataOwner';
+import { useActivityStore } from './activityStore';
+import { workoutWasDeleted } from '../utils/workoutDeletion';
 // ─── Custom Workout Store ─────────────────────────────────────────────────────
 //
 // Persists custom and backdated workout logs.
@@ -35,7 +38,7 @@ type CustomWorkoutStore = {
   ) => string;  // returns generated id
 
   editLog:   (id: string, patch: Partial<CustomWorkoutLog>) => void;
-  deleteLog: (id: string) => void;
+  deleteLog: (id: string, lease?: OwnerLease) => Promise<void>;
   markNotToday: (id: string) => void;
   restoreLegacyLogToday: (id: string) => void;
   saveCustomRun: (run: Omit<CustomRunDefinition, 'id' | 'createdAt' | 'updatedAt'>, editId?: string) => string;
@@ -91,7 +94,11 @@ export const useCustomWorkoutStore = create<CustomWorkoutStore>()(
           logs: state.logs.map(l => l.id === id ? { ...l, ...patch } : l),
         })),
 
-      deleteLog: (id) => {
+      deleteLog: async (id, expectedOwner) => {
+        const lease = expectedOwner ?? captureOwnerLease();
+        if (!lease || !ownerLeaseIsCurrent(lease)) throw new Error('Sign in with this workout’s owner first');
+        await useActivityStore.getState().removeActivityAndPersist(`activity_custom_${id}`, lease);
+        if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed during deletion');
         set(state => ({
           logs: state.logs.filter(l => l.id !== id),
           notTodayLogIds: state.notTodayLogIds.filter(logId => logId !== id),
@@ -152,6 +159,7 @@ export const useCustomWorkoutStore = create<CustomWorkoutStore>()(
         })),
 
       hydrateLogs: (records) => {
+        records = records.filter(row => !workoutWasDeleted(useActivityStore.getState().deletedActivities, 'custom_workout_logs', row));
         set(state => {
           const existingIds = new Set(state.logs.map(l => l.id));
           const newLogs = records.filter(r => !existingIds.has(r.id));

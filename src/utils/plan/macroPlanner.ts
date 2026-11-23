@@ -425,6 +425,7 @@ function buildRacePrepPlan(
 // ─── Main entry point ─────────────────────────────────────────────────────────
 
 function buildLegacyMacroPlan(input: {
+  goalIntent?: import('../../types/goalIntent').GoalIntent;
   secondaryGoalTypes?: TrainingGoalType[];
   goalType:         TrainingGoalType;
   startDate:        string;
@@ -488,8 +489,25 @@ export function buildMacroPlan(input: Parameters<typeof buildLegacyMacroPlan>[0]
     plan = { goalType: input.goalType, startDate: input.startDate, totalWeeks: weeks.length, weeks,
       generatedAt: Date.now(), ...(input.goalType === 'race_prep' ? { limitationNote: 'Add a race date to anchor event-specific work; current training builds general aerobic capacity.' } : {}) };
   }
-  return { ...plan, secondaryGoalTypes: blend.secondary, programmingVersion: 2, weeks: plan.weeks.map(week => ({ ...week,
-    mesocycle: getGoalMesocycle(week.weekNumber, week.phase, input.goalType) })) };
+  const intent = input.goalIntent;
+  const primary = intent?.priorities[0];
+  const weeks = plan.weeks.map(week => {
+    if (!intent) return { ...week, mesocycle: getGoalMesocycle(week.weekNumber, week.phase, input.goalType) };
+    let phase = week.phase;
+    // Only an explicit event creates a taper. A block end is a review date.
+    if (primary !== 'race_prep') {
+      if (['aerobic_base', 'run_farther', 'general_fitness', 'hiking', 'downhill_skiing', 'snowboarding', 'cross_country_skiing', 'mountaineering'].includes(primary!) && !['foundation', 'deload'].includes(phase)) phase = 'base';
+      if (intent.eventDate) {
+        const event = parseYMD(intent.eventDate).getTime();
+        const days = (event - parseYMD(week.startDate).getTime()) / 86400000;
+        if (days >= 0 && days < 14) phase = 'taper';
+        else if (days < 0 && days >= -7) phase = 'recovery';
+      }
+    }
+    const mesocycle = getGoalMesocycle(week.weekNumber, phase, input.goalType, intent);
+    return { ...week, phase, isTaper: phase === 'taper', isDeload: phase === 'deload', focus: mesocycle.focus, mesocycle };
+  });
+  return { ...plan, ...(intent ? { goalIntent: intent } : {}), secondaryGoalTypes: blend.secondary, programmingVersion: 2, weeks };
 }
 
 // ─── Date lookup ──────────────────────────────────────────────────────────────
@@ -503,7 +521,7 @@ export function macroWeekForDate(plan: MacroPlan, date: Date): MacroWeek | null 
 
   // Clamp beyond generated horizon by extending the base/deload cadence.
   const foundation = plan.weeks.findIndex(week => !['foundation', 'deload'].includes(week.phase));
-  const continuingPhase: TrainingPhase = plan.programmingVersion === 2 && plan.goalType === 'get_faster'
+  const continuingPhase: TrainingPhase = plan.programmingVersion === 2 && plan.goalType === 'get_faster' && (!plan.goalIntent || plan.goalIntent.priorities[0] === 'get_faster')
     ? (['aerobic_development', 'threshold', 'vo2', 'base'] as const)[Math.floor((weekNum - Math.max(0, foundation) - 1) / 6) % 4]! : 'base';
   const phase: TrainingPhase = deloadOr(weekNum, continuingPhase);
   return {
@@ -514,6 +532,6 @@ export function macroWeekForDate(plan: MacroPlan, date: Date): MacroWeek | null 
     isTaper:    false,
     isRaceWeek: false,
     focus:      plan.goalType === 'get_faster' ? focusForPhase(phase, plan.goalType) : 'Aerobic base — continuing steady training',
-    ...(plan.programmingVersion === 2 ? { mesocycle: getGoalMesocycle(weekNum, phase, plan.goalType) } : {}),
+    ...(plan.programmingVersion === 2 ? { mesocycle: getGoalMesocycle(weekNum, phase, plan.goalType, plan.goalIntent) } : {}),
   };
 }

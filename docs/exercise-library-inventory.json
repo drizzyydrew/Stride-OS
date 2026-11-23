@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-16",
-  "count": 152,
+  "generatedAt": "2026-11-23",
+  "count": 175,
   "entries": [
     {
       "canonicalId": "exercise_90_90_hip_switches",
@@ -20,7 +20,7 @@
         "2 sets · 10 reps"
       ],
       "whereUsed": [
-        "Mobility — Hip Extension Mobility; Hip Control + Mobility; Full-Body Runner Mobility; Pre-Run Hip Opener; Hip Rotation & Control; Full-Body Mobility — Session B"
+        "Mobility — Downhill Skiing — Prepare; Snowboarding — Prepare; Hip Extension Mobility; Hip Control + Mobility; Full-Body Runner Mobility; Pre-Run Hip Opener; Hip Rotation & Control; Full-Body Mobility — Session B"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Start + End",
@@ -45,7 +45,7 @@
         "2 sets · 8 reps / side"
       ],
       "whereUsed": [
-        "Mobility — Low Back Mobility Reset"
+        "Mobility — Hiking — Prepare; Downhill Skiing — Prepare; Low Back Mobility Reset"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Start + End",
@@ -69,16 +69,15 @@
       "laterality": "unilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+        "planned sets, reps or hold with RPE/load progression"
       ],
       "whereUsed": [
-        "Goal-directed running support",
-        "Exercise adjustments"
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
-      "recommendedImageRequirement": "No Image Initially",
-      "recommendedCameraView": "Text coaching cues only in this change",
-      "priorityTier": 3
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
     },
     {
       "canonicalId": "exercise_ankle_alphabet",
@@ -149,7 +148,7 @@
         "2 sets · 12 reps"
       ],
       "whereUsed": [
-        "Mobility — Pre-Run Mobility Primer; Ankle Dorsiflexion Routine; Calf/Soleus Mobility + Capacity; Pre-Run Ankle Activation; 5-Minute Pre-Run Primer; Ankle Circles & Control; Combined Ankle + Calf Reset; Calf & Ankle Lower-Body Session; Full-Body Mobility — Session A; Quick 10-Minute Full-Body Mobility; Race-Week Gentle Primer; Hill-Prep Ankle & Calf Session; Long-Run Prep & Recovery Combo; Gentle Daily Walk Prep"
+        "Mobility — Hiking — Prepare; Downhill Skiing — Prepare; Snowboarding — Prepare; Cross-Country Skiing — Prepare; Mountaineering — Prepare; Pre-Run Mobility Primer; Ankle Dorsiflexion Routine; Calf/Soleus Mobility + Capacity; Pre-Run Ankle Activation; 5-Minute Pre-Run Primer; Ankle Circles & Control; Combined Ankle + Calf Reset; Calf & Ankle Lower-Body Session; Full-Body Mobility — Session A; Quick 10-Minute Full-Body Mobility; Race-Week Gentle Primer; Hill-Prep Ankle & Calf Session; Long-Run Prep & Recovery Combo; Gentle Daily Walk Prep"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Start + End",
@@ -219,9 +218,9 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "3 sets · 6-8",
-        "3 sets · 8-10",
-        "4 sets · 6-8",
+        "2 sets · 6-8",
+        "2 sets · 8-10",
+        "3 sets · 3-5",
         "5 sets · 5",
         "sets/reps or user-entered"
       ],
@@ -254,7 +253,8 @@
         "upper_body"
       ],
       "equipment": [
-        "band"
+        "band",
+        "secure_anchor"
       ],
       "laterality": "bilateral",
       "movementType": "dynamic",
@@ -323,7 +323,8 @@
         "upper_body"
       ],
       "equipment": [
-        "band"
+        "band",
+        "secure_anchor"
       ],
       "laterality": "bilateral",
       "movementType": "dynamic",
@@ -359,8 +360,7 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "2 sets · 15",
-        "3 sets · 15"
+        "2 sets · 15"
       ],
       "whereUsed": [
         "Preset Workout — Band Activation — Pre-Run",
@@ -454,27 +454,67 @@
       "canonicalId": "exercise_band_row",
       "canonicalName": "Band Row",
       "ids": [
-        "sw_band_upper_body_band_row",
-        "pull_band_row"
+        "guide:band_row",
+        "pull_band_row",
+        "sw_band_upper_body_band_row"
       ],
-      "aliases": [
-        "Resistance-Band Row"
-      ],
+      "aliases": [],
       "category": [
         "bodyweight",
+        "exercise_guide",
+        "exercise_guide_alias",
         "strength_preset",
         "upper_body"
       ],
       "equipment": [
-        "band"
+        "band",
+        "secure_anchor"
       ],
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "3 sets · 12-15"
+        "3 sets · 12-15",
+        "instruction reference"
       ],
       "whereUsed": [
+        "Exercise Guide aliases",
+        "Exercise Guides",
         "Preset Workout — Band Upper Body"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_band_straight_arm_poling_pull",
+      "canonicalName": "Band Straight-Arm Poling Pull",
+      "ids": [
+        "sw_cross_country_ski_strength_band_straight_arm_poling_pull",
+        "xc_straight_arm_pull"
+      ],
+      "aliases": [],
+      "category": [
+        "cross_country_skiing",
+        "dumbbell",
+        "full_body",
+        "pull",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "band",
+        "secure_anchor"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 8-12",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Cross-Country Skiing — Legs & Poling",
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Start + End",
@@ -541,6 +581,8 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "2 sets · 6-8",
+        "2 sets · 8-10",
         "3 sets · 8-10",
         "4 sets · 8-10",
         "5 sets · 5"
@@ -643,8 +685,8 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "3 sets · 8-10",
-        "4 sets · 6-8",
+        "2 sets · 8-10",
+        "3 sets · 3-5",
         "5 sets · 5"
       ],
       "whereUsed": [
@@ -732,15 +774,14 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+        "planned sets, reps or hold with RPE/load progression"
       ],
       "whereUsed": [
-        "Goal-directed running support",
-        "Exercise adjustments"
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "No Image Initially",
-      "recommendedCameraView": "Text coaching cues only in this change",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
       "priorityTier": 3
     },
     {
@@ -760,15 +801,14 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+        "planned sets, reps or hold with RPE/load progression"
       ],
       "whereUsed": [
-        "Goal-directed running support",
-        "Exercise adjustments"
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "No Image Initially",
-      "recommendedCameraView": "Text coaching cues only in this change",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
       "priorityTier": 3
     },
     {
@@ -829,7 +869,8 @@
         "upper_body"
       ],
       "equipment": [
-        "bodyweight"
+        "bodyweight",
+        "support"
       ],
       "laterality": "bilateral",
       "movementType": "dynamic",
@@ -900,6 +941,7 @@
       ],
       "equipment": [
         "barbell",
+        "bench",
         "squat_rack"
       ],
       "laterality": "bilateral",
@@ -994,12 +1036,14 @@
         "strength_preset"
       ],
       "equipment": [
+        "bench",
         "bodyweight",
         "dumbbell"
       ],
       "laterality": "unilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "2 sets · 8 per leg",
         "3 sets · 8 per leg",
         "instruction reference",
         "planned sets, reps or hold with RPE/load progression",
@@ -1032,6 +1076,7 @@
         "strength_preset"
       ],
       "equipment": [
+        "bench",
         "bodyweight"
       ],
       "laterality": "unilateral",
@@ -1119,7 +1164,7 @@
         "2 sets · 30s hold / side"
       ],
       "whereUsed": [
-        "Mobility — Post-Run Recovery Mobility; Ankle Dorsiflexion Routine; Full-Body Runner Mobility; Calf/Soleus Mobility + Capacity; Post-Run Calf & Ankle Cooldown; Full-Body Post-Run Cooldown; Ankle Dorsiflexion Progression; Combined Ankle + Calf Reset; Calf & Ankle Lower-Body Session; Full-Body Mobility — Session B; Calf Capacity — Problem Area Focus; Ankle Dorsiflexion Deficit Focus; Long-Run Prep & Recovery Combo"
+        "Mobility — Hiking — Unwind; Cross-Country Skiing — Unwind; Post-Run Recovery Mobility; Ankle Dorsiflexion Routine; Full-Body Runner Mobility; Calf/Soleus Mobility + Capacity; Post-Run Calf & Ankle Cooldown; Full-Body Post-Run Cooldown; Ankle Dorsiflexion Progression; Combined Ankle + Calf Reset; Calf & Ankle Lower-Body Session; Full-Body Mobility — Session B; Calf Capacity — Problem Area Focus; Ankle Dorsiflexion Deficit Focus; Long-Run Prep & Recovery Combo"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Single Reference",
@@ -1169,7 +1214,7 @@
         "1 sets · 0 reps"
       ],
       "whereUsed": [
-        "Mobility — Post-Run Recovery Mobility; Low Back Mobility Reset; Post-Run Hip & Low Back Release; Low Back Daily Reset; Cat-Cow & Breathing Flow; Long-Run Prep & Recovery Combo"
+        "Mobility — Snowboarding — Unwind; Mountaineering — Unwind; Post-Run Recovery Mobility; Low Back Mobility Reset; Post-Run Hip & Low Back Release; Low Back Daily Reset; Cat-Cow & Breathing Flow; Long-Run Prep & Recovery Combo"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Single Reference",
@@ -1266,6 +1311,47 @@
       "priorityTier": 1
     },
     {
+      "canonicalId": "exercise_controlled_step_down",
+      "canonicalName": "Controlled Step-Down",
+      "ids": [
+        "hike_step_down",
+        "sw_hiking_ascent_descent_controlled_step_down",
+        "sw_mountaineering_strength_controlled_step_down"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "full_body",
+        "hiking",
+        "lower_body",
+        "lunge",
+        "mountaineering",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight",
+        "step",
+        "support"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 6 per side",
+        "2 sets · 6-8 per side",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Hiking — Ascent & Descent Strength",
+        "Preset Workout — Mountaineering — Ascent & Carrying",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
       "canonicalId": "exercise_conventional_deadlift",
       "canonicalName": "Conventional Deadlift",
       "ids": [
@@ -1283,7 +1369,7 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "5 sets · 5"
+        "3 sets · 3-5"
       ],
       "whereUsed": [
         "Preset Workout — Deadlift Day"
@@ -1356,6 +1442,42 @@
       "recommendedImageRequirement": "Single Reference",
       "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
       "priorityTier": 2
+    },
+    {
+      "canonicalId": "exercise_cross_country_step_up",
+      "canonicalName": "Cross-Country Step-Up",
+      "ids": [
+        "sw_cross_country_ski_strength_cross_country_step_up",
+        "xc_single_leg_step"
+      ],
+      "aliases": [],
+      "category": [
+        "cross_country_skiing",
+        "dumbbell",
+        "full_body",
+        "lunge",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell",
+        "step",
+        "support"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 6-8 per side",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Cross-Country Skiing — Legs & Poling",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
     },
     {
       "canonicalId": "exercise_db_press",
@@ -1489,7 +1611,7 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "4 sets · 5",
+        "3 sets · 3-5",
         "movement-specific timed capture",
         "sets/reps or user-entered"
       ],
@@ -1578,7 +1700,7 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "3 sets · 10-12",
+        "2 sets · 10-12",
         "3 sets · 8-10",
         "4 sets · 8-10"
       ],
@@ -1614,8 +1736,8 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "3 sets · 15",
-        "3 sets · 15 per leg"
+        "2 sets · 15 per leg",
+        "3 sets · 15"
       ],
       "whereUsed": [
         "Preset Workout — Dumbbell Lower Body",
@@ -1652,6 +1774,40 @@
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Start + End",
       "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_dumbbell_hiking_carry",
+      "canonicalName": "Dumbbell Hiking Carry",
+      "ids": [
+        "hike_pack_carry",
+        "sw_hiking_ascent_descent_dumbbell_hiking_carry"
+      ],
+      "aliases": [],
+      "category": [
+        "carry",
+        "dumbbell",
+        "hiking",
+        "lower_body",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 30s",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Hiking — Ascent & Descent Strength",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
       "priorityTier": 1
     },
     {
@@ -2023,7 +2179,7 @@
         "2 sets · 30s hold / side"
       ],
       "whereUsed": [
-        "Mobility — Post-Run Hip & Low Back Release; Glute Activation + Hip Control; Joint-Friendly Full-Body Session"
+        "Mobility — Downhill Skiing — Unwind; Snowboarding — Unwind; Post-Run Hip & Low Back Release; Glute Activation + Hip Control; Joint-Friendly Full-Body Session"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Single Reference",
@@ -2078,6 +2234,7 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "2 sets · 5",
         "3 sets · 6-8"
       ],
       "whereUsed": [
@@ -2119,8 +2276,8 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "2 sets · 12",
         "2 sets · 15",
-        "3 sets · 12",
         "3 sets · 12 reps",
         "3 sets · 15",
         "instruction reference"
@@ -2175,7 +2332,7 @@
       "movementType": "dynamic",
       "prescriptionConvention": [
         "2 sets · 10",
-        "3 sets · 10-12",
+        "2 sets · 10-12",
         "4 sets · 10-12",
         "instruction reference",
         "planned sets, reps or hold with RPE/load progression",
@@ -2343,7 +2500,7 @@
         "Exercise Guide aliases",
         "Exercise Guides",
         "Exercise Library",
-        "Mobility — Post-Run Recovery Mobility; Hip Extension Mobility; Post-Run Hip & Low Back Release; Full-Body Post-Run Cooldown; Hip Flexor Focus; Desk-Break Mobility; Hip & Glute Lower-Body Session; Quad & Hip Flexor Lower-Body Session; Hip Extension Deficit Focus",
+        "Mobility — Hiking — Unwind; Cross-Country Skiing — Unwind; Mountaineering — Unwind; Post-Run Recovery Mobility; Hip Extension Mobility; Post-Run Hip & Low Back Release; Full-Body Post-Run Cooldown; Hip Flexor Focus; Desk-Break Mobility; Hip & Glute Lower-Body Session; Quad & Hip Flexor Lower-Body Session; Hip Extension Deficit Focus",
         "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
@@ -2519,10 +2676,12 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "2 sets · 8-10",
         "3 sets · 10-12",
         "4 sets · 10-12"
       ],
       "whereUsed": [
+        "Preset Workout — Beginner Kettlebell Full Body",
         "Preset Workout — Full-Body Kettlebell B",
         "Preset Workout — Kettlebell Lower Body"
       ],
@@ -2583,6 +2742,7 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "2 sets · 10",
         "3 sets · 10",
         "3 sets · 10-12",
         "4 sets · 10-12",
@@ -2623,6 +2783,7 @@
       "laterality": "unilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "2 sets · 8 per leg",
         "3 sets · 8 per leg"
       ],
       "whereUsed": [
@@ -2656,6 +2817,7 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "2 sets · 10 per side",
         "3 sets · 10 per side",
         "3 sets · 12 per side"
       ],
@@ -2716,7 +2878,7 @@
       "laterality": "unilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "3 sets · 8 per leg"
+        "2 sets · 8 per leg"
       ],
       "whereUsed": [
         "Preset Workout — Runner Strength — Kettlebell"
@@ -2759,7 +2921,6 @@
       "canonicalName": "Kettlebell Swing",
       "ids": [
         "b_kb_swing",
-        "sw_kettlebell_beginner_kettlebell_swing",
         "sw_kettlebell_conditioning_strength_kettlebell_swing",
         "sw_kettlebell_full_body_a_kettlebell_swing",
         "sw_kettlebell_runner_strength_kettlebell_swing",
@@ -2781,15 +2942,14 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "3 sets · 10-12",
+        "2 sets · 15",
         "4 sets · 15",
+        "4 sets · 15-20",
         "4 sets · 20",
-        "5 sets · 15-20",
         "sets/reps or user-entered"
       ],
       "whereUsed": [
         "Exercise Library",
-        "Preset Workout — Beginner Kettlebell Full Body",
         "Preset Workout — Full-Body Kettlebell A",
         "Preset Workout — Kettlebell Conditioning Strength",
         "Preset Workout — Kettlebell Swing Focus",
@@ -2818,7 +2978,7 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "3 sets · 8-10"
+        "2 sets · 8-10"
       ],
       "whereUsed": [
         "Preset Workout — Beginner Bodyweight Full Body"
@@ -2970,15 +3130,157 @@
       "priorityTier": 1
     },
     {
-      "canonicalId": "exercise_low_forward_back_line_hops",
-      "canonicalName": "Low Forward-Back Line Hops",
+      "canonicalId": "exercise_loaded_hiking_step_up",
+      "canonicalName": "Loaded Hiking Step-Up",
       "ids": [
-        "plyo_line_hops"
+        "hike_step_up",
+        "sw_hiking_ascent_descent_loaded_hiking_step_up"
       ],
       "aliases": [],
       "category": [
-        "plyometric",
+        "dumbbell",
+        "hiking",
+        "lower_body",
+        "lunge",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell",
+        "step",
+        "support"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 6-8 per side",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Hiking — Ascent & Descent Strength",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_loaded_seated_calf_raise",
+      "canonicalName": "Loaded Seated Calf Raise",
+      "ids": [
+        "calf_seated",
+        "foot_loaded_seated",
+        "sw_foot_calf_strength_loaded_seated_calf_raise"
+      ],
+      "aliases": [],
+      "category": [
+        "calf_ankle",
+        "dumbbell",
+        "foot_ankle",
+        "lower_body",
+        "runner_strength",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bench",
+        "dumbbell",
+        "machine"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 8-12",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Foot & Calf Strength",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_loaded_supported_bent_knee_calf_raise",
+      "canonicalName": "Loaded Supported Bent-Knee Calf Raise",
+      "ids": [
+        "foot_loaded_bent_knee"
+      ],
+      "aliases": [],
+      "category": [
+        "calf_ankle",
         "strength_engine"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_loaded_supported_single_leg_calf_raise",
+      "canonicalName": "Loaded Supported Single-Leg Calf Raise",
+      "ids": [
+        "foot_loaded_single_calf",
+        "sw_foot_calf_strength_loaded_supported_single_leg_calf_raise"
+      ],
+      "aliases": [],
+      "category": [
+        "calf_ankle",
+        "dumbbell",
+        "foot_ankle",
+        "lower_body",
+        "runner_strength",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell",
+        "support"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 6-8 per side",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Foot & Calf Strength",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_low_forward_back_line_hops",
+      "canonicalName": "Low Forward-Back Line Hops",
+      "ids": [
+        "plyo_line_hops",
+        "sw_foot_reactive_low_forward_back_line_hops"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "foot_ankle",
+        "plyometric",
+        "runner_strength",
+        "strength_engine",
+        "strength_preset"
       ],
       "equipment": [
         "bodyweight"
@@ -2986,15 +3288,16 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+        "2 sets · 5",
+        "planned sets, reps or hold with RPE/load progression"
       ],
       "whereUsed": [
-        "Goal-directed running support",
-        "Exercise adjustments"
+        "Preset Workout — Reactive Feet & Ankles",
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "No Image Initially",
-      "recommendedCameraView": "Text coaching cues only in this change",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
       "priorityTier": 3
     },
     {
@@ -3014,15 +3317,48 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+        "planned sets, reps or hold with RPE/load progression"
       ],
       "whereUsed": [
-        "Goal-directed running support",
-        "Exercise adjustments"
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "No Image Initially",
-      "recommendedCameraView": "Text coaching cues only in this change",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_low_pogo_hops",
+      "canonicalName": "Low Pogo Hops",
+      "ids": [
+        "plyo_low_pogo",
+        "sw_foot_reactive_low_pogo_hops"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "foot_ankle",
+        "plyometric",
+        "runner_strength",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 5",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Reactive Feet & Ankles",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
       "priorityTier": 3
     },
     {
@@ -3042,16 +3378,15 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+        "planned sets, reps or hold with RPE/load progression"
       ],
       "whereUsed": [
-        "Goal-directed running support",
-        "Exercise adjustments"
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
-      "recommendedImageRequirement": "No Image Initially",
-      "recommendedCameraView": "Text coaching cues only in this change",
-      "priorityTier": 3
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
     },
     {
       "canonicalId": "exercise_lunge",
@@ -3095,7 +3430,77 @@
         "2 sets · 8 reps / side"
       ],
       "whereUsed": [
-        "Mobility — Pre-Run Mobility Primer; Pre-Run Hip Opener; Hip Rotation & Control; Speed-Work Prep Mobility"
+        "Mobility — Hiking — Prepare; Cross-Country Skiing — Prepare; Mountaineering — Prepare; Pre-Run Mobility Primer; Pre-Run Hip Opener; Hip Rotation & Control; Speed-Work Prep Mobility"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_mountaineering_dumbbell_carry",
+      "canonicalName": "Mountaineering Dumbbell Carry",
+      "ids": [
+        "mountaineering_carry",
+        "sw_mountaineering_strength_mountaineering_dumbbell_carry"
+      ],
+      "aliases": [],
+      "category": [
+        "carry",
+        "dumbbell",
+        "full_body",
+        "mountaineering",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 30-45s",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Mountaineering — Ascent & Carrying",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_mountaineering_step_up",
+      "canonicalName": "Mountaineering Step-Up",
+      "ids": [
+        "mountaineering_step_up",
+        "sw_mountaineering_strength_mountaineering_step_up"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "full_body",
+        "lunge",
+        "mountaineering",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell",
+        "step",
+        "support"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 6-8 per side",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Mountaineering — Ascent & Carrying",
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Start + End",
@@ -3220,8 +3625,8 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "3 sets · 3-5",
         "3 sets · 6-8",
-        "4 sets · 6-8",
         "instruction reference",
         "sets/reps or user-entered"
       ],
@@ -3347,6 +3752,7 @@
         "2 sets · 15-20s",
         "2 sets · 20-30s",
         "2 sets · 20s",
+        "2 sets · 30-45s",
         "2 sets · 30s",
         "3 sets · 30-45s",
         "3 sets · 30s",
@@ -3413,12 +3819,9 @@
       "canonicalName": "Pogo Hops",
       "ids": [
         "calf_pogo",
-        "guide:pogo_hops",
-        "plyo_low_pogo"
+        "guide:pogo_hops"
       ],
-      "aliases": [
-        "Low Pogo Hops"
-      ],
+      "aliases": [],
       "category": [
         "calf_ankle",
         "exercise_guide",
@@ -3461,16 +3864,15 @@
       "laterality": "unilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+        "planned sets, reps or hold with RPE/load progression"
       ],
       "whereUsed": [
-        "Goal-directed running support",
-        "Exercise adjustments"
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
-      "recommendedImageRequirement": "No Image Initially",
-      "recommendedCameraView": "Text coaching cues only in this change",
-      "priorityTier": 3
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
     },
     {
       "canonicalId": "exercise_pull_up",
@@ -3491,12 +3893,13 @@
         "upper_body"
       ],
       "equipment": [
-        "bodyweight"
+        "bodyweight",
+        "pull_up_bar"
       ],
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "3 sets · AMRAP",
+        "3 sets · 4-8",
         "sets/reps or user-entered"
       ],
       "whereUsed": [
@@ -3527,7 +3930,7 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "3 sets · 6-8"
+        "3 sets · 3-5"
       ],
       "whereUsed": [
         "Preset Workout — Total-Body Barbell Power"
@@ -3611,16 +4014,42 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+        "planned sets, reps or hold with RPE/load progression"
       ],
       "whereUsed": [
-        "Goal-directed running support",
-        "Exercise adjustments"
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "No Image Initially",
-      "recommendedCameraView": "Text coaching cues only in this change",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
       "priorityTier": 3
+    },
+    {
+      "canonicalId": "exercise_resistance_band_row",
+      "canonicalName": "Resistance-Band Row",
+      "ids": [
+        "pull_band_row"
+      ],
+      "aliases": [],
+      "category": [
+        "pull",
+        "strength_engine"
+      ],
+      "equipment": [
+        "band"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
     },
     {
       "canonicalId": "exercise_reverse_knee_extension",
@@ -3685,6 +4114,7 @@
       "laterality": "unilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "2 sets · 10 per leg",
         "3 sets · 10 per leg",
         "instruction reference",
         "planned sets, reps or hold with RPE/load progression",
@@ -3737,8 +4167,8 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "3 sets · 3-5",
         "3 sets · 8-10",
-        "4 sets · 8-10",
         "instruction reference",
         "planned sets, reps or hold with RPE/load progression",
         "sets/reps or user-entered"
@@ -3821,25 +4251,18 @@
       ],
       "aliases": [],
       "category": [
-        "calf_ankle",
         "exercise_guide",
-        "exercise_guide_alias",
-        "strength_engine"
+        "exercise_guide_alias"
       ],
-      "equipment": [
-        "dumbbell",
-        "machine"
-      ],
-      "laterality": "bilateral",
-      "movementType": "dynamic",
+      "equipment": [],
+      "laterality": "not_applicable",
+      "movementType": "mixed",
       "prescriptionConvention": [
-        "instruction reference",
-        "planned sets, reps or hold with RPE/load progression"
+        "instruction reference"
       ],
       "whereUsed": [
         "Exercise Guide aliases",
-        "Exercise Guides",
-        "Training Block Workouts"
+        "Exercise Guides"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Start + End",
@@ -3872,6 +4295,68 @@
       "priorityTier": 2
     },
     {
+      "canonicalId": "exercise_seated_toe_press",
+      "canonicalName": "Seated Toe Press",
+      "ids": [
+        "foot_toe_press",
+        "sw_foot_foundation_seated_toe_press"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "calf_ankle",
+        "foot_ankle",
+        "runner_strength",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bench",
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 6 x 5s hold",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Foot Control & Balance",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_short_foot_arch_practice",
+      "canonicalName": "Short-Foot Arch Practice",
+      "ids": [
+        "foot_short_arch"
+      ],
+      "aliases": [],
+      "category": [
+        "calf_ankle",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "No Image Initially",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 3
+    },
+    {
       "canonicalId": "exercise_shoulder_wall_slides",
       "canonicalName": "Shoulder Wall Slides",
       "ids": [
@@ -3889,7 +4374,7 @@
         "2 sets · 10 reps"
       ],
       "whereUsed": [
-        "Mobility — Seated Spinal Mobility; Shoulder & Thoracic Combo; Running Posture Reset; Desk-Break Mobility"
+        "Mobility — Cross-Country Skiing — Prepare; Mountaineering — Prepare; Seated Spinal Mobility; Shoulder & Thoracic Combo; Running Posture Reset; Desk-Break Mobility"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Start + End",
@@ -3904,6 +4389,7 @@
         "guide:side_plank",
         "sw_bodyweight_core_side_plank",
         "sw_bodyweight_full_body_b_side_plank",
+        "sw_cross_country_ski_strength_side_plank",
         "sw_dumbbell_core_and_stability_side_plank",
         "sw_kettlebell_core_and_carry_side_plank",
         "sw_post_run_recovery_bodyweight_side_plank",
@@ -3915,6 +4401,7 @@
         "bodyweight",
         "core",
         "core_anti_lateral",
+        "cross_country_skiing",
         "dumbbell",
         "exercise_guide",
         "exercise_guide_alias",
@@ -3933,6 +4420,7 @@
       "laterality": "unilateral",
       "movementType": "mixed",
       "prescriptionConvention": [
+        "2 sets · 20-30s per side",
         "2 sets · 20s per side",
         "3 sets · 20-30s per side",
         "instruction reference",
@@ -3946,6 +4434,7 @@
         "Preset Workout — Bodyweight Core",
         "Preset Workout — Core & Carry — Kettlebell",
         "Preset Workout — Core & Stability — Dumbbell",
+        "Preset Workout — Cross-Country Skiing — Legs & Poling",
         "Preset Workout — Full-Body Bodyweight B",
         "Preset Workout — Post-Run Recovery — Bodyweight",
         "Preset Workout — Problem Area — Hip Stability",
@@ -4108,6 +4597,7 @@
       "laterality": "unilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "2 sets · 8 per leg",
         "3 sets · 8 per leg",
         "instruction reference",
         "planned sets, reps or hold with RPE/load progression"
@@ -4182,6 +4672,33 @@
       "priorityTier": 1
     },
     {
+      "canonicalId": "exercise_single_leg_clock_reach",
+      "canonicalName": "Single-Leg Clock Reach",
+      "ids": [
+        "foot_clock_reach"
+      ],
+      "aliases": [],
+      "category": [
+        "mobility",
+        "strength_engine"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
       "canonicalId": "exercise_single_leg_control",
       "canonicalName": "Single-Leg Control",
       "ids": [
@@ -4227,6 +4744,7 @@
       "laterality": "unilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "2 sets · 10 per leg",
         "3 sets · 10 per leg"
       ],
       "whereUsed": [
@@ -4305,16 +4823,15 @@
       "laterality": "unilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+        "planned sets, reps or hold with RPE/load progression"
       ],
       "whereUsed": [
-        "Goal-directed running support",
-        "Exercise adjustments"
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
-      "recommendedImageRequirement": "No Image Initially",
-      "recommendedCameraView": "Text coaching cues only in this change",
-      "priorityTier": 3
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
     },
     {
       "canonicalId": "exercise_single_leg_squat",
@@ -4341,6 +4858,41 @@
       "priorityTier": 1
     },
     {
+      "canonicalId": "exercise_ski_wall_sit",
+      "canonicalName": "Ski Wall Sit",
+      "ids": [
+        "ski_wall_hold",
+        "sw_downhill_ski_strength_ski_wall_sit"
+      ],
+      "aliases": [],
+      "category": [
+        "downhill_skiing",
+        "dumbbell",
+        "lower_body",
+        "squat",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight",
+        "wall"
+      ],
+      "laterality": "bilateral",
+      "movementType": "mixed",
+      "prescriptionConvention": [
+        "2 sets · 20-30s",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Downhill Skiing — Leg Strength",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
       "canonicalId": "exercise_small_single_leg_forward_hops",
       "canonicalName": "Small Single-Leg Forward Hops",
       "ids": [
@@ -4357,16 +4909,15 @@
       "laterality": "unilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+        "planned sets, reps or hold with RPE/load progression"
       ],
       "whereUsed": [
-        "Goal-directed running support",
-        "Exercise adjustments"
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
-      "recommendedImageRequirement": "No Image Initially",
-      "recommendedCameraView": "Text coaching cues only in this change",
-      "priorityTier": 3
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
     },
     {
       "canonicalId": "exercise_small_single_leg_lateral_hops",
@@ -4385,16 +4936,84 @@
       "laterality": "unilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "planned low-repetition contacts; per-leg convention explicit when unilateral"
+        "planned sets, reps or hold with RPE/load progression"
       ],
       "whereUsed": [
-        "Goal-directed running support",
-        "Exercise adjustments"
+        "Training Block Workouts"
       ],
       "existingDionAssetStatus": "none",
-      "recommendedImageRequirement": "No Image Initially",
-      "recommendedCameraView": "Text coaching cues only in this change",
-      "priorityTier": 3
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_snowboard_offset_squat",
+      "canonicalName": "Snowboard Offset Squat",
+      "ids": [
+        "snowboard_offset_squat",
+        "sw_snowboard_strength_snowboard_offset_squat"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "lower_body",
+        "snowboarding",
+        "squat",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 6-8",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Snowboarding — Legs & Trunk",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_snowboard_pallof_press",
+      "canonicalName": "Snowboard Pallof Press",
+      "ids": [
+        "snowboard_pallof",
+        "sw_snowboard_strength_snowboard_pallof_press"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "lower_body",
+        "snowboarding",
+        "strength_engine",
+        "strength_preset",
+        "trunk"
+      ],
+      "equipment": [
+        "band",
+        "secure_anchor"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 8 per side",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Snowboarding — Legs & Trunk",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral or direct frontal based on technique objective",
+      "priorityTier": 1
     },
     {
       "canonicalId": "exercise_bent_knee_calf_stretch",
@@ -4414,7 +5033,7 @@
         "2 sets · 30s hold / side"
       ],
       "whereUsed": [
-        "Mobility — Post-Run Recovery Mobility; Ankle Dorsiflexion Routine; Calf/Soleus Mobility + Capacity; Post-Run Calf & Ankle Cooldown; Calf Capacity Builder; Combined Ankle + Calf Reset; Calf Capacity — Problem Area Focus; Ankle Dorsiflexion Deficit Focus"
+        "Mobility — Hiking — Unwind; Downhill Skiing — Unwind; Snowboarding — Unwind; Mountaineering — Unwind; Post-Run Recovery Mobility; Ankle Dorsiflexion Routine; Calf/Soleus Mobility + Capacity; Post-Run Calf & Ankle Cooldown; Calf Capacity Builder; Combined Ankle + Calf Reset; Calf Capacity — Problem Area Focus; Ankle Dorsiflexion Deficit Focus"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Single Reference",
@@ -4474,7 +5093,7 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "3 sets · 10-12",
+        "2 sets · 10-12",
         "3 sets · 15",
         "4 sets · 15-20",
         "assessment-specific reps, time, or manual count",
@@ -4545,8 +5164,9 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
+        "2 sets · 12-15",
+        "2 sets · 15",
         "3 sets · 12-15",
-        "3 sets · 15",
         "4 sets · 12-15"
       ],
       "whereUsed": [
@@ -4604,7 +5224,7 @@
         "2 sets · 30s hold / side"
       ],
       "whereUsed": [
-        "Mobility — Hip Flexor Focus; Quad & Hip Flexor Lower-Body Session; Hip Extension Deficit Focus"
+        "Mobility — Downhill Skiing — Unwind; Hip Flexor Focus; Quad & Hip Flexor Lower-Body Session; Hip Extension Deficit Focus"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Single Reference",
@@ -4640,7 +5260,8 @@
       ],
       "equipment": [
         "bodyweight",
-        "dumbbell"
+        "dumbbell",
+        "step"
       ],
       "laterality": "unilateral",
       "movementType": "dynamic",
@@ -4725,6 +5346,202 @@
       "priorityTier": 1
     },
     {
+      "canonicalId": "exercise_supported_lateral_lunge",
+      "canonicalName": "Supported Lateral Lunge",
+      "ids": [
+        "ski_lateral_lunge",
+        "sw_downhill_ski_strength_supported_lateral_lunge"
+      ],
+      "aliases": [],
+      "category": [
+        "downhill_skiing",
+        "dumbbell",
+        "lower_body",
+        "lunge",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight",
+        "support"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 8 per side",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Downhill Skiing — Leg Strength",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_supported_lateral_step_up",
+      "canonicalName": "Supported Lateral Step-Up",
+      "ids": [
+        "snowboard_lateral_step",
+        "sw_snowboard_strength_supported_lateral_step_up"
+      ],
+      "aliases": [],
+      "category": [
+        "dumbbell",
+        "lower_body",
+        "lunge",
+        "snowboarding",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight",
+        "step",
+        "support"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 8 per side",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Snowboarding — Legs & Trunk",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_supported_single_leg_clock_reach",
+      "canonicalName": "Supported Single-Leg Clock Reach",
+      "ids": [
+        "foot_clock_supported",
+        "sw_cross_country_ski_strength_supported_single_leg_clock_reach",
+        "sw_downhill_ski_strength_supported_single_leg_clock_reach",
+        "sw_foot_calf_strength_supported_single_leg_clock_reach",
+        "sw_foot_foundation_supported_single_leg_clock_reach",
+        "sw_hiking_ascent_descent_supported_single_leg_clock_reach",
+        "sw_mountaineering_strength_supported_single_leg_clock_reach",
+        "sw_snowboard_strength_supported_single_leg_clock_reach"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "cross_country_skiing",
+        "downhill_skiing",
+        "dumbbell",
+        "foot_ankle",
+        "full_body",
+        "hiking",
+        "lower_body",
+        "mobility",
+        "mountaineering",
+        "runner_strength",
+        "snowboarding",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight",
+        "support"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 3 per side",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Cross-Country Skiing — Legs & Poling",
+        "Preset Workout — Downhill Skiing — Leg Strength",
+        "Preset Workout — Foot & Calf Strength",
+        "Preset Workout — Foot Control & Balance",
+        "Preset Workout — Hiking — Ascent & Descent Strength",
+        "Preset Workout — Mountaineering — Ascent & Carrying",
+        "Preset Workout — Snowboarding — Legs & Trunk",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_supported_ski_split_squat",
+      "canonicalName": "Supported Ski Split Squat",
+      "ids": [
+        "ski_split_squat",
+        "sw_downhill_ski_strength_supported_ski_split_squat"
+      ],
+      "aliases": [],
+      "category": [
+        "downhill_skiing",
+        "dumbbell",
+        "lower_body",
+        "lunge",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "dumbbell",
+        "support"
+      ],
+      "laterality": "unilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "3 sets · 5-6 per side",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Downhill Skiing — Leg Strength",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
+      "canonicalId": "exercise_supported_standing_calf_raise",
+      "canonicalName": "Supported Standing Calf Raise",
+      "ids": [
+        "foot_supported_calf",
+        "sw_foot_foundation_supported_standing_calf_raise"
+      ],
+      "aliases": [],
+      "category": [
+        "bodyweight",
+        "calf_ankle",
+        "foot_ankle",
+        "runner_strength",
+        "strength_engine",
+        "strength_preset"
+      ],
+      "equipment": [
+        "bodyweight",
+        "support"
+      ],
+      "laterality": "bilateral",
+      "movementType": "dynamic",
+      "prescriptionConvention": [
+        "2 sets · 8-12",
+        "planned sets, reps or hold with RPE/load progression"
+      ],
+      "whereUsed": [
+        "Preset Workout — Foot Control & Balance",
+        "Training Block Workouts"
+      ],
+      "existingDionAssetStatus": "none",
+      "recommendedImageRequirement": "Start + End",
+      "recommendedCameraView": "Direct lateral; add direct frontal only when frontal-plane alignment is the purpose",
+      "priorityTier": 1
+    },
+    {
       "canonicalId": "exercise_thoracic_open_books",
       "canonicalName": "Thoracic Open Books",
       "ids": [
@@ -4742,7 +5559,7 @@
         "2 sets · 8 reps / side"
       ],
       "whereUsed": [
-        "Mobility — Low Back Mobility Reset; Thoracic Mobility for Running Posture; Full-Body Runner Mobility; Full-Body Post-Run Cooldown; Thoracic Rotation Flow; Shoulder & Thoracic Combo; Running Posture Reset; Full-Body Mobility — Session A; Full-Body Mobility — Session B"
+        "Mobility — Snowboarding — Prepare; Cross-Country Skiing — Unwind; Low Back Mobility Reset; Thoracic Mobility for Running Posture; Full-Body Runner Mobility; Full-Body Post-Run Cooldown; Thoracic Rotation Flow; Shoulder & Thoracic Combo; Running Posture Reset; Full-Body Mobility — Session A; Full-Body Mobility — Session B"
       ],
       "existingDionAssetStatus": "none",
       "recommendedImageRequirement": "Start + End",
@@ -4819,7 +5636,7 @@
       "laterality": "bilateral",
       "movementType": "dynamic",
       "prescriptionConvention": [
-        "4 sets · 5"
+        "3 sets · 3-5"
       ],
       "whereUsed": [
         "Preset Workout — Total-Body Barbell Power"
@@ -4909,6 +5726,5 @@
       "recommendedCameraView": "Direct view that keeps all required joints visible; no 45-degree reference",
       "priorityTier": 2
     }
-  ],
-  "updatedAt": "2026-11-20T02:16:39.622197+00:00"
+  ]
 }

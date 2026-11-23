@@ -79,6 +79,8 @@ export function decodeGoalArchives(value: unknown, ownerUserId: string): GoalArc
       || !nonnegative(archive.archivedAt) || !validSummary(archive.summary)) {
       throw new Error('Unreadable or foreign goal archives; saved history was retained');
     }
+    if (archive.deletedAt !== undefined && !nonnegative(archive.deletedAt)) throw new Error('Invalid archive deletion record');
+    if (archive.metadata !== undefined) validateGoalArchiveMetadata(archive.metadata);
     const result = decodeGoalArchiveResult(archive.result);
     decoded.push({ ...archive, result } as GoalArchive);
     ids.add(archive.id);
@@ -90,14 +92,35 @@ export function goalArchiveResultTime(result: GoalArchive['result']): number {
   return result.updatedAt ?? -1;
 }
 
-/** First collection owns every immutable field; ties retain its result too. */
+export function validateGoalArchiveMetadata(value: unknown): asserts value is NonNullable<GoalArchive['metadata']> {
+  if (!object(value) || typeof value.title !== 'string' || !value.title.trim() || value.title.length > 160
+    || typeof value.startDate !== 'string' || !isValidDateOnly(value.startDate)
+    || typeof value.endDate !== 'string' || !isValidDateOnly(value.endDate) || value.startDate > value.endDate
+    || !nonnegative(value.updatedAt) || typeof value.mutationId !== 'string' || !value.mutationId || value.mutationId.length > 120) {
+    throw new Error('Enter a name and valid start/end dates for this archive');
+  }
+}
+export function goalArchiveRevision(archive: GoalArchive): string {
+  return JSON.stringify([archive.result, archive.metadata ?? null, archive.deletedAt ?? null]);
+}
+function newerMetadata(a: GoalArchive['metadata'], b: GoalArchive['metadata']) {
+  if (!a) return b; if (!b) return a;
+  return b.updatedAt > a.updatedAt || b.updatedAt === a.updatedAt && b.mutationId > a.mutationId ? b : a;
+}
+/** Frozen plan/summary stay canonical; independent revisions merge without resurrection. */
 export function mergeGoalArchives(canonical: readonly GoalArchive[], incoming: readonly GoalArchive[]): GoalArchive[] {
   const byId = new Map(canonical.map(archive => [archive.id, archive]));
   for (const archive of incoming) {
     const existing = byId.get(archive.id);
     if (!existing) byId.set(archive.id, archive);
-    else if (goalArchiveResultTime(archive.result) > goalArchiveResultTime(existing.result)) {
-      byId.set(archive.id, { ...existing, result: archive.result });
+    else {
+      if (existing.ownerUserId !== archive.ownerUserId || existing.sourceKey !== archive.sourceKey) throw new Error('Archive identity conflict');
+      const metadata = newerMetadata(existing.metadata, archive.metadata);
+      const deletion = existing.deletedAt ?? archive.deletedAt;
+      byId.set(archive.id, { ...existing,
+        result: goalArchiveResultTime(archive.result) > goalArchiveResultTime(existing.result) ? archive.result : existing.result,
+        ...(metadata ? { metadata } : {}), ...(deletion !== undefined ? { deletedAt: deletion } : {}),
+      });
     }
   }
   return [...byId.values()];
@@ -151,9 +174,9 @@ export async function syncGoalArchives(local: readonly GoalArchive[], lease: Own
   const cloudById = new Map(cloud.map(archive => [archive.id, archive]));
   for (const archive of canonical) {
     const existing = cloudById.get(archive.id);
-    if (existing && goalArchiveResultTime(existing.result) >= goalArchiveResultTime(archive.result)) continue;
+    if (existing && goalArchiveRevision(mergeGoalArchives([existing], [archive])[0]) === goalArchiveRevision(existing)) continue;
     requireGoalArchiveLease(lease, true);
-    const response = await context.supabase.rpc('merge_stride_goal_archive', { archive: encodeGoalArchiveForCloud(archive) })
+    const response = await context.supabase.rpc(archive.metadata || archive.deletedAt !== undefined ? 'revise_stride_goal_archive' : 'merge_stride_goal_archive', { archive: encodeGoalArchiveForCloud(archive) })
       .setHeader('Authorization', context.authorization);
     requireGoalArchiveLease(lease, true);
     if (response.error) throw new Error('Goal archive cloud backup failed; local history was retained');
@@ -163,7 +186,7 @@ export async function syncGoalArchives(local: readonly GoalArchive[], lease: Own
   const confirmedById = new Map(confirmed.map(archive => [archive.id, archive]));
   for (const archive of canonical) {
     const saved = confirmedById.get(archive.id);
-    if (!saved || goalArchiveResultTime(saved.result) < goalArchiveResultTime(archive.result)) {
+    if (!saved || goalArchiveRevision(mergeGoalArchives([saved], [archive])[0]) !== goalArchiveRevision(saved)) {
       throw new Error('Goal archive cloud backup was not confirmed; local history was retained');
     }
   }

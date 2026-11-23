@@ -20,8 +20,9 @@ import { matchingWatchRecording, mergeRecording, sameRecording, type RunWorkoutR
 function canonicalRunScheduledSessionId(record: CompletedWorkoutRecord): string | undefined {
   if (!record.workoutId) return undefined;
   const prefix = `w${record.week}_${record.workoutId}_`;
-  if (!record.id.startsWith(prefix)) return undefined;
-  const dayIndex = Number(record.id.slice(prefix.length));
+  const completionKey = record.completionKey ?? record.id;
+  if (!completionKey.startsWith(prefix)) return undefined;
+  const dayIndex = Number(completionKey.slice(prefix.length));
   if (!Number.isInteger(dayIndex) || dayIndex < 0) return undefined;
   return runScheduledSessionId(toYMD(new Date(record.timestamp)), record.workoutId, dayIndex);
 }
@@ -33,7 +34,7 @@ function canonicalRunScheduledSessionId(record: CompletedWorkoutRecord): string 
 // build a canonical scheduledSessionId from.
 function canonicalStrengthScheduledSessionId(record: StrengthLogRecord): string | undefined {
   if (record.scheduledSessionId) return record.scheduledSessionId;
-  if (!record.sessionId || record.sessionId === record.id) return undefined;
+  if (!record.sessionId || record.sessionId === (record.completionKey ?? record.id)) return undefined;
   return strengthScheduledSessionId(toYMD(new Date(record.timestamp)), record.sessionId);
 }
 
@@ -175,6 +176,7 @@ export function activityFromStrengthRecord(
     : undefined;
   return {
     id: `activity_strength_${record.id}`,
+    workoutInstanceId: record.workoutInstanceId,
     activityType: 'strength',
     subtype: record.sessionType,
     source: legacyImport

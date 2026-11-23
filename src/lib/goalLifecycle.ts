@@ -15,6 +15,8 @@ import { useActiveIndoorRideStore } from '../store/activeIndoorRideStore';
 import { useActiveStrengthSessionStore } from '../store/activeStrengthSessionStore';
 import { buildGoalArchive } from '../utils/goalArchive';
 import { endedGoalDescriptors } from '../utils/goalLifecycle';
+import type { GoalIntent } from '../types/goalIntent';
+import { validateGoalIntent, legacyGoalForProfile, legacySupportingForIntent } from '../utils/goalIntent';
 import { buildMacroPlan } from '../utils/plan/macroPlanner';
 import { alignStoredBeginnerMacro } from '../utils/plan/storedBeginnerMacro';
 import { isValidDateOnly, todayDateOnly } from '../utils/dateOnly';
@@ -97,7 +99,7 @@ function captureCurrentFocus(lease: OwnerLease, closureReason: 'replaced' | 'ope
       kind: 'goal', title: plan.goalTitle ?? plan.goalType.replaceAll('_', ' ') }];
   }
   const onboarding = useOnboardingStore.getState().data;
-  const macroPlan = isValidDateOnly(plan.programStartDate) ? alignStoredBeginnerMacro(buildMacroPlan({ secondaryGoalTypes: plan.secondaryGoalTypes, goalType: plan.goalType, programmingVersion: plan.strengthProgrammingVersion,
+  const macroPlan = isValidDateOnly(plan.programStartDate) ? alignStoredBeginnerMacro(buildMacroPlan({ goalIntent: plan.goalIntent, secondaryGoalTypes: plan.secondaryGoalTypes, goalType: plan.goalType, programmingVersion: plan.strengthProgrammingVersion,
     startDate: plan.programStartDate, races: plan.races, progressionLevel: useAthleteStore.getState().progressionLevel,
     yearsRunning: onboarding.yearsRunning, weeklyMileage: onboarding.weeklyMileage }), currentBeginnerPlan()) : undefined;
   const snapshots: GoalArchive[] = [];
@@ -194,7 +196,7 @@ export function reconcileGoalLifecycle(now = new Date()): Promise<void> {
       const profile = useProfileStore.getState().profiles.athlete_default;
       const onboarding = useOnboardingStore.getState().data;
       const macroPlan = isValidDateOnly(plan.programStartDate) ? alignStoredBeginnerMacro(buildMacroPlan({
-        secondaryGoalTypes: plan.secondaryGoalTypes, goalType: plan.goalType, programmingVersion: plan.strengthProgrammingVersion, startDate: plan.programStartDate, races: plan.races,
+        goalIntent: plan.goalIntent, secondaryGoalTypes: plan.secondaryGoalTypes, goalType: plan.goalType, programmingVersion: plan.strengthProgrammingVersion, startDate: plan.programStartDate, races: plan.races,
         progressionLevel: useAthleteStore.getState().progressionLevel,
         yearsRunning: onboarding.yearsRunning, weeklyMileage: onboarding.weeklyMileage,
       }), currentBeginnerPlan()) : undefined;
@@ -245,7 +247,7 @@ async function continueOpen(): Promise<void> {
   await commitChoice(lease, 'open', snapshots, { open: true }, () => useTrainingPlanStore.getState().trainingMode === 'open');
 }
 
-type NextGoal = { title: string; goalType: TrainingGoalType; secondaryGoalTypes?: TrainingGoalType[]; endDate: string; race?: Omit<Race, 'id'> };
+type NextGoal = { operationId?: string; goalIntent?: GoalIntent; title: string; goalType: TrainingGoalType; secondaryGoalTypes?: TrainingGoalType[]; endDate: string; race?: Omit<Race, 'id'> };
 export function startNextGoal(input: NextGoal): Promise<void> {
   const captured = JSON.parse(JSON.stringify(input)) as NextGoal;
   return serializeChoice(() => startGoal(captured));
@@ -254,6 +256,9 @@ async function startGoal(input: NextGoal): Promise<void> {
   const lease = captureOwnerLease();
   if (!lease) throw new Error('Sign in to the account that owns this training history.');
   const today = todayDateOnly();
+  const goalIntent = validateGoalIntent(input.goalIntent);
+  if (input.operationId !== undefined && (!/^[a-zA-Z0-9_-]{1,120}$/.test(input.operationId))) throw new Error('The goal operation is invalid. Reopen the goal form.');
+  if (goalIntent && (legacyGoalForProfile(goalIntent.priorities[0]!) !== input.goalType || goalIntent.eventDate && (goalIntent.eventDate < today || goalIntent.eventDate > input.endDate))) throw new Error('The goal focus or event date does not match this training block.');
   if (!input.title.trim() || !isValidDateOnly(input.endDate) || input.endDate < today
     || (input.goalType === 'race_prep' && (!input.race || input.race.date !== input.endDate))) {
     throw new Error('Choose a goal name and a valid target date today or later.');
@@ -268,14 +273,15 @@ async function startGoal(input: NextGoal): Promise<void> {
   if (sessionInProgress()) throw new Error('Finish your current workout before changing your training goal.');
   const snapshots = captureCurrentFocus(lease, 'replaced');
   if (sessionInProgress()) throw new Error('Finish your current workout before changing your training goal.');
-  const secondaryGoalTypes = validateSupportingGoals(input.goalType, input.secondaryGoalTypes);
-  const choice = { ...input, secondaryGoalTypes, title: input.title.trim(), startDate: today };
-  const requestKey = JSON.stringify({ kind: 'goal', title: choice.title, type: input.goalType, ...(secondaryGoalTypes.length ? { secondaryGoalTypes } : {}), end: input.endDate, start: today,
+  const secondaryGoalTypes = goalIntent ? legacySupportingForIntent(goalIntent) : validateSupportingGoals(input.goalType, input.secondaryGoalTypes);
+  const choice = { ...input, goalIntent, secondaryGoalTypes, title: input.title.trim(), startDate: today };
+  const requestKey = JSON.stringify({ kind: 'goal', ...(input.operationId ? { operationId: input.operationId } : {}), ...(goalIntent ? { goalIntent } : {}), title: choice.title, type: input.goalType, ...(secondaryGoalTypes.length ? { secondaryGoalTypes } : {}), end: input.endDate, start: today,
     race: input.race ? { name: input.race.name, date: input.race.date, distance: input.race.distance, priority: input.race.priority } : null });
   await commitChoice(lease, requestKey, snapshots, choice, () => {
     const state = useTrainingPlanStore.getState();
     return state.trainingMode === 'structured' && !state.activePresetGoal && state.goalType === input.goalType
       && JSON.stringify(normalizeSupportingGoals(state.goalType, state.secondaryGoalTypes)) === JSON.stringify(secondaryGoalTypes)
+      && JSON.stringify(state.goalIntent) === JSON.stringify(goalIntent)
       && state.goalTitle === choice.title && state.goalEndDate === input.endDate && state.programStartDate === today;
   }, () => hasProAccess('personalized-plans'));
 }

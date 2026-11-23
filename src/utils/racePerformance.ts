@@ -109,7 +109,8 @@ export function reconcileRacePerformances(
   ownerUserId: string, athleteId: string, now = Date.now(), activities: readonly Activity[] = [],
 ): RacePR[] {
   const manual = existing.filter(pr => !pr.source || !['goal_archive', 'custom_workout', 'activity', 'recorded_effort'].includes(pr.source.kind));
-  const ownedArchives = archives.filter(row => row.ownerUserId === ownerUserId && row.athleteId === athleteId && row.kind === 'race' && row.race);
+  const deletedSources = new Set(archives.filter(row => row.deletedAt !== undefined).map(row => `${row.ownerUserId}:${row.sourceKey}`));
+  const ownedArchives = archives.filter(row => !deletedSources.has(`${row.ownerUserId}:${row.sourceKey}`) && row.ownerUserId === ownerUserId && row.athleteId === athleteId && row.kind === 'race' && row.race);
   const manualEvents = new Set(ownedArchives.filter(row => row.result.source === 'user' && (row.result.status !== 'unrecorded' || row.result.timeSeconds !== undefined)).map(row => row.race!.id));
   const claimCounts = new Map<string, number>();
   for (const activity of activities) {

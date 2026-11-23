@@ -69,7 +69,7 @@ import { emptyWorkoutLibraryFilters, matchesWorkoutLibraryFilters, mobilityLibra
 import { resolveExerciseMetadata } from '../../../src/utils/exerciseCatalog';
 import { useOnboardingStore } from '../../../src/store/onboardingStore';
 import { useCheckInStore } from '../../../src/store/checkInStore';
-import { buildStrengthPresetContext, resolveStrengthPresetWorkout } from '../../../src/utils/strengthPresetProgramming';
+import { buildStrengthPresetContext, footImpactProgressionStage, resolveStrengthPresetWorkout } from '../../../src/utils/strengthPresetProgramming';
 import { useTrainingPlanStore } from '../../../src/store/trainingPlanStore';
 import { useFeatureTour } from '../../../src/components/featureTour/FeatureTourProvider';
 import {
@@ -149,6 +149,7 @@ const segStyles = StyleSheet.create({
 const CATEGORY_FILTERS: MobilityCategory[] = [
   'full_body', 'problem_areas', 'ankle', 'hip', 'back_spine',
   'pre_run', 'post_run', 'upper_body', 'lower_body', 'running_readiness', 'walking_readiness',
+  'hiking', 'downhill_skiing', 'snowboarding', 'cross_country_skiing', 'mountaineering',
 ];
 
 function formatLastDone(ts: number | null): string {
@@ -170,14 +171,15 @@ function MobilityTabContent({ segment, setSegment, C }: {
   const router = useRouter();
   const completions = useMobilityStore(s => s.completions);
   const recommendedWorkoutIds = useMobilityStore(s => s.recommendedWorkoutIds);
+  const mobilityGoalPriorities = useTrainingPlanStore(s => s.goalIntent?.priorities);
   const [libraryView, setLibraryView] = useState<'recommended' | 'all'>('all');
   const [filters, setFilters] = useState(emptyWorkoutLibraryFilters);
   const libraryItems = useMemo(() => MOBILITY_WORKOUTS.map(workout => mobilityLibraryItem(workout, MOBILITY_EXERCISES)), []);
 
   const weekCount = useMemo(() => weeklyCompletionCount(completions), [completions]);
   const recommended = useMemo(
-    () => MOBILITY_WORKOUTS.filter(w => recommendedWorkoutIds.includes(w.id)),
-    [recommendedWorkoutIds],
+    () => MOBILITY_WORKOUTS.filter(w => recommendedWorkoutIds.includes(w.id) || w.categories.some(category=>mobilityGoalPriorities?.some(profile=>profile===category))),
+    [recommendedWorkoutIds, mobilityGoalPriorities],
   );
   const filteredWorkouts = useMemo(() => (libraryView === 'recommended' ? recommended : MOBILITY_WORKOUTS)
     .filter(workout => matchesWorkoutLibraryFilters(libraryItems.find(item => item.id === workout.id)!, filters)),
@@ -267,6 +269,7 @@ function MobilityTabContent({ segment, setSegment, C }: {
 const PRESET_CATEGORY_FILTERS: StrengthPresetCategory[] = [ 'gym_barbell', 'dumbbell', 'kettlebell', 'bodyweight',
   'full_body', 'upper_body', 'lower_body', 'runner_strength',
   'pre_run', 'post_run_recovery', 'problem_area',
+  'foot_ankle', 'hiking', 'downhill_skiing', 'snowboarding', 'cross_country_skiing', 'mountaineering',
 ];
 
 function PresetsTabContent({ segment, setSegment, C }: {
@@ -285,11 +288,13 @@ function PresetsTabContent({ segment, setSegment, C }: {
   const trainingPhase = weekPlan.metadata.trainingMode === 'open' ? undefined : weekPlan.metadata.trainingPhase;
   const presetRegressing = weekPlan.strengthWeek.progressionState === 'regress';
   const goalType = useTrainingPlanStore(s => s.goalType);
+  const goalPriorities = useTrainingPlanStore(s => s.goalIntent?.priorities);
+  const impactHistory = useStrengthStore(s => s.history);
   const todayCheckIn = useCheckInStore(s => s.todayCheckIn);
   const presetContext = useMemo(() => {
     const context = buildStrengthPresetContext(onboarding, { fatigueScore, recoveryScore, trainingPhase, goalType }, todayCheckIn);
-    return { ...context, recoveryLimited: context.recoveryLimited || presetRegressing };
-  }, [onboarding, fatigueScore, recoveryScore, trainingPhase, goalType, todayCheckIn, presetRegressing]);
+    return { ...context, footImpactStage:footImpactProgressionStage(impactHistory), recoveryLimited: context.recoveryLimited || presetRegressing };
+  }, [onboarding, fatigueScore, recoveryScore, trainingPhase, goalType, todayCheckIn, presetRegressing, impactHistory]);
   const resolvedPresets = useMemo(() => STRENGTH_PRESET_WORKOUTS.map(workout => resolveStrengthPresetWorkout(workout, presetContext)), [presetContext]);
   const allPresets = useMemo(() => resolvedPresets.map(result => result.workout), [resolvedPresets]);
   const libraryItems = useMemo(() => allPresets.map(presetLibraryItem), [allPresets]);
@@ -297,8 +302,8 @@ function PresetsTabContent({ segment, setSegment, C }: {
   const completedSessions = useStrengthStore(s => s.completedSessions);
 
   const recommended = useMemo(
-    () => resolvedPresets.filter(result => result.recommended).map(result => result.workout),
-    [resolvedPresets],
+    () => resolvedPresets.filter(result => result.recommended || result.canStart && result.workout.goalProfiles?.some(profile=>goalPriorities?.includes(profile))).map(result => result.workout),
+    [resolvedPresets, goalPriorities],
   );
   const filteredPresets = useMemo(() => (libraryView === 'recommended' ? recommended : allPresets)
     .filter(workout => matchesWorkoutLibraryFilters(libraryItems.find(item => item.id === workout.id)!, filters)),

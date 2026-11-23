@@ -63,6 +63,14 @@ export async function hydrateUserData(): Promise<void> {
   if (!ownerLeaseIsCurrent(result.ownerLease, true)) {
     throw new Error('Account changed during cloud restore. Please retry.');
   }
+  await useActivityStore.getState().awaitPersistence(result.ownerLease);
+  if (!ownerLeaseIsCurrent(result.ownerLease, true)) throw new Error('Account changed during cloud restore');
+  useActivityStore.getState().mergeDeletedActivities(result.deletions);
+  await useActivityStore.getState().awaitPersistence(result.ownerLease);
+  if (!ownerLeaseIsCurrent(result.ownerLease, true)) throw new Error('Account changed during cloud restore');
+  const { pruneDeletedWorkoutProjections } = await import('./completedWorkoutDeletion');
+  if (!ownerLeaseIsCurrent(result.ownerLease, true)) throw new Error('Account changed during cloud restore');
+  pruneDeletedWorkoutProjections(result.ownerLease);
   useWorkoutStore.getState().hydrateWorkouts(result.workoutLogs);
   useStrengthStore.getState().hydrateStrength(result.strengthLogs);
   useCustomWorkoutStore.getState().hydrateLogs(result.customLogs);

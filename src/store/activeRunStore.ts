@@ -29,6 +29,8 @@ import { captureRunningQualityPrescription } from '../utils/runningQualityFeedba
 import { captureTrainingRunEnd } from '../utils/trainingRunEndSnapshot';
 import type { RaceActivityLink } from '../types/raceLink';
 import { isValidRaceActivityLink } from '../utils/raceLink';
+import type { RunRoute } from './routeStore';
+import { snapshotRoute } from '../utils/routeSections';
 
 export type Coordinate = {
   lat:       number;
@@ -58,6 +60,7 @@ export type RunModeConfig = {
   workoutInstanceId?:     string | null;
   startedAtMs?:           number | null;
   raceLink?:              RaceActivityLink;
+  routeSnapshot?: RunRoute | null;
 };
 
 // Rolling window for pace calculation (seconds of data to average)
@@ -115,6 +118,8 @@ export type ActiveRunStore = {
   goalMiles:              number | null;
   targetPaceSecPerMile:   number | null;
   raceLink:              RaceActivityLink | null;
+  routeSnapshot:         RunRoute | null;
+  routeSectionCueState: { seenIds:string[];lastAt:number;maxProgressMeters:number };
   completionRequestedAt:  number | null;
 
   // Live workout instance identity — see src/utils/workoutInstance.ts. Every
@@ -192,6 +197,8 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
   goalMiles:              null,
   targetPaceSecPerMile:   null,
   raceLink:              null,
+  routeSnapshot:         null,
+  routeSectionCueState: {seenIds:[],lastAt:0,maxProgressMeters:0},
   completionRequestedAt:  null,
   workoutInstanceId:      null,
   environment:            'outdoor',
@@ -240,6 +247,8 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       goalMiles:              config?.goalMiles ?? null,
       targetPaceSecPerMile:   config?.targetPaceSecPerMile ?? null,
       raceLink:              config?.raceLink ? JSON.parse(JSON.stringify(config.raceLink)) : null,
+      routeSnapshot:         environment === 'outdoor' ? snapshotRoute(config?.routeSnapshot ?? null) : null,
+      routeSectionCueState: {seenIds:[],lastAt:0,maxProgressMeters:0},
       completionRequestedAt:  null,
       workoutInstanceId:      config?.workoutInstanceId ?? buildWorkoutInstanceId(config?.scheduledSessionId ?? null, startedAt),
       environment,
@@ -543,6 +552,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       scheduledSessionId:     null,
       runMode:                'quick',
       raceLink:               null,
+      routeSnapshot:          null,
       goalMinutes:            null,
       goalMiles:              null,
       targetPaceSecPerMile:   null,
@@ -583,6 +593,7 @@ export const useActiveRunStore = create<ActiveRunStore>()(persist((set, get) => 
       scheduledSessionId:     null,
       runMode:                'quick',
       raceLink:               null,
+      routeSnapshot:          null,
       goalMinutes:            null,
       goalMiles:              null,
       targetPaceSecPerMile:   null,

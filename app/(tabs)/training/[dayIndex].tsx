@@ -1,3 +1,4 @@
+import { captureOwnerLease } from '../../../src/lib/localDataOwner';
 import Modal from '../../../src/components/ui/RecoverableModal';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -185,7 +186,7 @@ export default function SessionDetailScreen() {
   const isComplete = completedWorkouts.includes(completionKey);
 
   // Find the history record for this session
-  const logRecord = history.find(r => r.id === completionKey);
+  const logRecord = history.find(r => r.id === completionKey || r.completionKey === completionKey);
 
   const isRest = workout?.type === 'rest';
 
@@ -294,6 +295,9 @@ export default function SessionDetailScreen() {
   }
 
   function handleDelete() {
+    const lease = captureOwnerLease();
+    if (!lease) return;
+    const remove = () => { void deleteLog(completionKey, lease).catch(error => Alert.alert('Deletion not confirmed', error instanceof Error ? error.message : 'Please retry deleting this workout.')); };
     Alert.alert(
       'Delete Log',
       'Remove this session from your history? The session will return to "not completed" state.',
@@ -302,7 +306,7 @@ export default function SessionDetailScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => deleteLog(completionKey),
+          onPress: remove,
         },
       ],
     );

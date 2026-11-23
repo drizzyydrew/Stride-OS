@@ -44,6 +44,7 @@ export type MacroWeek = {
 };
 
 export type MacroPlan = {
+  goalIntent?: import('./goalIntent').GoalIntent;
   programmingVersion?: 1 | 2;
   goalType:        TrainingGoalType;
   secondaryGoalTypes?: TrainingGoalType[];

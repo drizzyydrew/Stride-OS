@@ -1,3 +1,4 @@
+import { captureOwnerLease } from '../../../src/lib/localDataOwner';
 import Modal from '../../../src/components/ui/RecoverableModal';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -280,7 +281,7 @@ export default function StrengthSessionDetailScreen() {
 
   const completionKey = session ? `sw${currentWeek}_${session.id}_${idx}` : '';
   const isComplete    = completedSessions.includes(completionKey);
-  const logRecord     = history.find(r => r.id === completionKey);
+  const logRecord     = history.find(r => r.id === completionKey || r.completionKey === completionKey);
   const isActive      = sessionStartTime !== null && !isComplete;
 
   useEffect(() => {
@@ -434,12 +435,15 @@ export default function StrengthSessionDetailScreen() {
   }
 
   function handleDelete() {
+    const lease = captureOwnerLease();
+    if (!lease) return;
+    const remove = () => { void deleteLog(completionKey, lease).catch(error => Alert.alert('Deletion not confirmed', error instanceof Error ? error.message : 'Please retry deleting this workout.')); };
     Alert.alert(
       'Delete Session Log',
       'Remove this session from your history?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => { deleteLog(completionKey); } },
+        { text: 'Delete', style: 'destructive', onPress: remove },
       ],
     );
   }

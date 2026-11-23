@@ -1,3 +1,4 @@
+import { useStrengthStore } from '../../../../src/store/strengthStore';
 import { strengthGuidance } from '../../../../src/utils/strengthGuidance';
 import StrengthCalculatorLink from '../../../../src/components/strength/strength-calculator-link';
 import ExerciseGuidance from '../../../../src/components/strength/exercise-guidance';
@@ -32,7 +33,7 @@ import { useCheckInStore } from '../../../../src/store/checkInStore';
 import { useTrainingPlanStore } from '../../../../src/store/trainingPlanStore';
 import { useWeekPlan } from '../../../../src/hooks/useWeekPlan';
 import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../../src/lib/localDataOwner';
-import { buildStrengthPresetContext, resolveStrengthPresetWorkout, strengthPresetLaunchInput, type ResolvedStrengthPreset } from '../../../../src/utils/strengthPresetProgramming';
+import { buildStrengthPresetContext, footImpactProgressionStage, resolveStrengthPresetWorkout, strengthPresetLaunchInput, type ResolvedStrengthPreset } from '../../../../src/utils/strengthPresetProgramming';
 
 function MainSetPicker({ value, onChange }: { value: 3 | 4 | 5; onChange: (value: 3 | 4 | 5) => void }) {
   const C = useColors(), theme = useThemeMode();
@@ -77,6 +78,7 @@ export default function PresetStrengthDetailScreen() {
   const presetContext = buildStrengthPresetContext(onboarding, { fatigueScore, recoveryScore, trainingPhase, goalType }, checkIn);
   presetContext.recoveryLimited ||= planRecoveryLimited;
   presetContext.mainSets = mainSets;
+  presetContext.footImpactStage = footImpactProgressionStage(useStrengthStore.getState().history);
   const resolved = catalogWorkout ? resolveStrengthPresetWorkout(catalogWorkout,
     presetContext, active) : null;
   const workout = resolved?.workout;
@@ -97,6 +99,7 @@ export default function PresetStrengthDetailScreen() {
     }, useCheckInStore.getState().todayCheckIn);
     context.recoveryLimited ||= currentPlanContext.current.planRecoveryLimited;
     context.mainSets = mainSetsRef.current;
+    context.footImpactStage = footImpactProgressionStage(useStrengthStore.getState().history);
     return resolveStrengthPresetWorkout(catalogWorkout!, context, useActiveStrengthSessionStore.getState().session);
   };
   type SessionAcknowledgement = { key: string; lease: NonNullable<ReturnType<typeof captureOwnerLease>> };

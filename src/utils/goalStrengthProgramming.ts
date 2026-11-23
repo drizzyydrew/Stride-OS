@@ -125,7 +125,7 @@ function replacementOf(original: PlannedExercise, replacement: Exercise, input: 
 /** Goal-directed prescriptions within the existing phase/recovery schedule.
  * Six-week variation is a review opportunity, never evidence of more fitness. */
 export function applyGoalStrengthProgramming(exercises: PlannedExercise[], input: StrengthEngineInput, sessionType: StrengthSessionType, library: Record<string, Exercise>) {
-  const cycle = getGoalMesocycle(input.currentWeek, input.trainingPhase, input.goalType ?? 'general_running');
+  const cycle = getGoalMesocycle(input.currentWeek, input.trainingPhase, input.goalType ?? 'general_running', input.goalIntent);
   const level = strengthProgressionLevel(input.strengthLevel);
   const recoveryLimited = cycle.recovery || input.injuryRisk || !Number.isFinite(input.recoveryScore)
     || input.recoveryScore < 0 || input.recoveryScore > 100
@@ -170,7 +170,7 @@ export function applyGoalStrengthProgramming(exercises: PlannedExercise[], input
       : [8, 12];
     let sets = recoveryLimited ? Math.min(exercise.sets, 1) : Math.min(exercise.sets, raceSupport ? 2 : 3);
     const specific = strengthSpecificEvidence(exercise.exercise, input.strengthHistory, Date.now());
-    const eligible = (strengthFirst || strengthSupport) && level !== 'beginner' && !raceSupport
+    const eligible = (!input.goalIntent || input.goalIntent.priorities[0] === 'get_stronger' || index === 4 && input.goalIntent.priorities[1] === 'get_stronger' || index === 5 && input.goalIntent.priorities[2] === 'get_stronger') && (strengthFirst || strengthSupport) && level !== 'beginner' && !raceSupport
       && input.trainingPhase !== 'foundation' && Number.isFinite(input.availableTimeMin) && input.availableTimeMin! >= 30
       && ['squat', 'hinge', 'lunge', 'push', 'pull'].includes(exercise.exercise.pattern)
       && heavyCount < (strengthFirst ? 2 : 1);
@@ -213,5 +213,36 @@ export function applyGoalStrengthProgramming(exercises: PlannedExercise[], input
     };
   });
   const note = `${cycle.focus}. Practice block ${cycle.blockNumber}, week ${cycle.weekInBlock}/6; loading/recovery week ${cycle.loadingWeek}/4.${rotated ? ' One compatible accessory variation was selected; calibrate its load separately.' : ' Useful main lifts stay consistent.'}${heavyCount ? ' Earned main-lift work uses 3–5 reps at RPE 8 with at least three minutes rest; accessories retain their own purpose. This is effort guidance, not a measured percentage of 1RM.' : ''}${progressed ? ' One main exercise gains a working set after two comparable, manageable recorded exposures in its own rep range; the time budget still applies.' : ' Calendar advancement alone adds no load or working sets.'}`;
-  return { exercises: adapted, cycle, note };
+  if (!input.goalIntent) return { exercises: adapted, cycle, note };
+  const primary = input.goalIntent.priorities[0];
+  const specific = adapted.map((exercise, index) => {
+    const focus = index === 4 ? input.goalIntent?.priorities[1] ?? primary : index === 5 ? input.goalIntent?.priorities[2] ?? primary : primary;
+    const priorityPower = focus === 'power' && (index < 3 || focus !== primary);
+    const pattern = exercise.exercise.pattern;
+    const supported = recoveryLimited || input.goalIntent?.season === 'in_season';
+    if (pattern === 'mobility' || pattern === 'plyometric') return exercise;
+    if (pattern === 'trunk' || pattern === 'carry' || exercise.repScheme?.kind === 'duration') return {
+      ...exercise, sets: supported ? 1 : Math.min(2, exercise.sets), rpe: Math.min(exercise.rpe, supported ? 6 : 7),
+    };
+    let reps: [number, number] = exercise.repRange;
+    let sets = exercise.sets;
+    let rpe = exercise.rpe;
+    let rest = exercise.restSeconds;
+    if (focus === 'build_muscle') { reps = level === 'beginner' ? [10, 15] : [8, 12]; sets = Math.min(4, sets); rest = Math.max(90, rest); }
+    if (priorityPower) {
+      reps = level === 'beginner' || supported ? [5, 6] : [2, 5]; sets = supported ? 1 : Math.min(3, Math.max(2, sets));
+      rpe = Math.min(6, rpe); rest = Math.max(120, rest);
+    }
+    if (focus === 'general_fitness') { reps = [10, 15]; sets = Math.min(2, sets); }
+    if (['hiking', 'cross_country_skiing', 'mountaineering'].includes(focus!) && pattern !== 'push' && pattern !== 'pull') reps = [8, 12];
+    if (['downhill_skiing', 'snowboarding'].includes(focus!)) { reps = [6, 10]; rest = Math.max(120, rest); }
+    if (supported) { sets = 1; rpe = Math.min(6, rpe); }
+    return { ...exercise, sets, repRange: reps,
+      repScheme: { kind: 'reps' as const, repsMin: reps[0], repsMax: reps[1], perSide: exercise.exercise.unilateral },
+      rpe, rir: 10 - rpe, restSeconds: rest,
+      loadTarget: priorityPower ? `RPE ${rpe} — a controllable load moved with purposeful speed; stop before speed or control drops. No maximum-load target.` : `RPE ${rpe} — calibrate a repeatable load for ${reps[0]}–${reps[1]} repetitions in this setup`,
+      notes: [exercise.notes, priorityPower ? 'Power practice uses few quality repetitions with full recovery. Beginners establish controlled technique before ballistic variations.' : undefined].filter(Boolean).join(' ') || undefined,
+    };
+  });
+  return { exercises: specific, cycle, note };
 }

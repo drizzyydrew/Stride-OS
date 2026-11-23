@@ -1,3 +1,4 @@
+import { decodeWorkoutDeletions, workoutWasDeleted, type WorkoutDeletion } from '../utils/workoutDeletion';
 // ─── Supabase Sync Service ────────────────────────────────────────────────────
 //
 // Non-blocking background upserts; hydrate-on-sign-in to restore data after
@@ -220,6 +221,7 @@ export type HydrateResult = {
   customLogs:   CustomWorkoutLog[];
   checkIns:     DailyCheckIn[];
   activities:   Activity[];
+  deletions: WorkoutDeletion[];
 };
 
 export async function hydrateFromSupabase(): Promise<HydrateResult> {
@@ -227,26 +229,49 @@ export async function hydrateFromSupabase(): Promise<HydrateResult> {
   if (!context || !ownerLeaseIsCurrent(context.lease, true)) throw new Error('Cloud restore requires the current data owner');
   const { supabase, user_id, lease, authorization } = context;
 
-  const [workouts, strength, custom, checkins, activities] = await Promise.all([
+  const [workouts, strength, custom, checkins, activities, deleted] = await Promise.all([
     supabase.from('workout_logs').select('data').eq('user_id', user_id).setHeader('Authorization', authorization),
     supabase.from('strength_logs').select('data').eq('user_id', user_id).setHeader('Authorization', authorization),
     supabase.from('custom_workout_logs').select('data').eq('user_id', user_id).setHeader('Authorization', authorization),
     supabase.from('daily_check_ins').select('data').eq('user_id', user_id).setHeader('Authorization', authorization),
     supabase.from('activity_logs').select('data').eq('user_id', user_id).setHeader('Authorization', authorization),
+    supabase.from('workout_deletions').select('data').eq('user_id', user_id).setHeader('Authorization', authorization),
   ]);
 
   if (!ownerLeaseIsCurrent(lease, true)) throw new Error('Account changed during cloud restore');
-  if ([workouts, strength, custom, checkins, activities].some(result => result.error)) throw new Error('Cloud restore is unavailable; local history was retained');
+  if ([workouts, strength, custom, checkins, activities, deleted].some(result => result.error)) throw new Error('Cloud restore is unavailable; local history was retained');
   for (const result of [workouts, strength, custom, checkins, activities]) {
     assertRecordOwners((result.data ?? []).map(row => row.data), user_id);
   }
 
+  const deletions = decodeWorkoutDeletions((deleted.data ?? []).map(row => row.data), user_id);
+  const keep = (table: Parameters<typeof workoutWasDeleted>[1], row: Record<string, any>) => !workoutWasDeleted(deletions, table, row, user_id);
   return {
-    ownerLease: lease,
-    workoutLogs:  (workouts.data  ?? []).map(r => r.data as CompletedWorkoutRecord),
-    strengthLogs: (strength.data  ?? []).map(r => r.data as StrengthLogRecord),
-    customLogs:   (custom.data    ?? []).map(r => r.data as CustomWorkoutLog),
+    ownerLease: lease, deletions,
+    workoutLogs:  (workouts.data  ?? []).map(r => r.data as CompletedWorkoutRecord).filter(row => keep('workout_logs', row)),
+    strengthLogs: (strength.data  ?? []).map(r => r.data as StrengthLogRecord).filter(row => keep('strength_logs', row)),
+    customLogs:   (custom.data    ?? []).map(r => r.data as CustomWorkoutLog).filter(row => keep('custom_workout_logs', row)),
     checkIns:     (checkins.data  ?? []).map(r => r.data as DailyCheckIn),
-    activities:   (activities.data ?? []).map(r => r.data as Activity),
+    activities:   (activities.data ?? []).map(r => r.data as Activity).filter(row => keep('activity_logs', row)),
   };
+}
+
+/** Explicit tombstones, never infer deletion from a missing local row. */
+export async function syncWorkoutDeletions(): Promise<boolean> {
+  const context = await getOwnerContext();
+  if (!context) return false;
+  const { supabase, user_id, lease, authorization } = context;
+  const { useActivityStore } = await import('../store/activityStore');
+  if (!ownerLeaseIsCurrent(lease, true)) return false;
+  const rows = decodeWorkoutDeletions(useActivityStore.getState().confirmedDeletedActivities, user_id);
+  for (const deletion of rows) {
+    if (!ownerLeaseIsCurrent(lease, true)) return false;
+    const result = await supabase.rpc('delete_stride_completed_workout', { tombstone: deletion }).setHeader('Authorization', authorization);
+    if (result.error || !ownerLeaseIsCurrent(lease, true)) return false;
+  }
+  const restored = await supabase.from('workout_deletions').select('data').eq('user_id', user_id).setHeader('Authorization', authorization);
+  if (restored.error || !ownerLeaseIsCurrent(lease, true)) return false;
+  useActivityStore.getState().mergeDeletedActivities(decodeWorkoutDeletions((restored.data ?? []).map(row => row.data), user_id));
+  await useActivityStore.getState().awaitPersistence(lease);
+  return true;
 }

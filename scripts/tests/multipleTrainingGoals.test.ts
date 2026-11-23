@@ -63,8 +63,8 @@ test('all five goals and supported combinations retain bounded strength doses ac
 });
 
 test('all preset and mobility rows have usable prescriptions, references and safety guidance', () => {
-  assert.equal(STRENGTH_PRESET_WORKOUTS.length, 50);
-  assert.equal(MOBILITY_WORKOUTS.length, 50);
+  assert.ok(STRENGTH_PRESET_WORKOUTS.length >= 58);
+  assert.ok(MOBILITY_WORKOUTS.length >= 60);
   assert.equal(MOBILITY_EXERCISES.length, 24);
   for (const workout of STRENGTH_PRESET_WORKOUTS) {
     for (const ex of workout.exercises) assert.ok(ex.sets > 0 && ex.repScheme && ex.targetRpe! <= 8 && ex.restSeconds! > 0, `${workout.id}:${ex.name}`);
@@ -81,7 +81,7 @@ test('all preset and mobility rows have usable prescriptions, references and saf
 
 test('all five generated strength templates resolve actual exercise definitions and use adjustable setup cues', () => {
   assert.equal(Object.keys(SESSION_TEMPLATES).length, 5);
-  assert.equal(Object.keys(STRENGTH_EXERCISES).length, 42);
+  assert.ok(Object.keys(STRENGTH_EXERCISES).length >= 63);
   for (const template of Object.values(SESSION_TEMPLATES)) {
     for (const id of template.exerciseIds) assert.ok(STRENGTH_EXERCISES[id], `${template.title}:${id}`);
   }

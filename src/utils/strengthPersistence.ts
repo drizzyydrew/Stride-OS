@@ -80,6 +80,7 @@ export function trainingBlockCompletionFromActiveSession(session: ActiveStrength
   const partial = marked && exercises.some(ex => ex.skipped || ex.sets.some(set => !set.completed));
   return {
     completionKey: `training_block_${session.workoutInstanceId}`,
+    workoutInstanceId: session.workoutInstanceId,
     scheduledSessionId: session.scheduledSessionId,
     sessionType: session.trackingContext?.sessionType ?? 'full_body' as const,
     goal: session.trackingContext?.goal ?? 'maintenance' as const,

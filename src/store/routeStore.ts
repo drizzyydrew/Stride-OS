@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createAppJSONStorage } from './persistStorage';
+import type { RouteSection } from '../types/route';
+import { legacyRouteSections, reverseRouteSections, routeGeometryMeters } from '../utils/routeSections';
 import {
   EMPTY_ROUTE_ATTACHMENT,
   attachRouteState,
@@ -46,6 +48,8 @@ export type RunRoute = {
   elevationProfileFt?: number[];
   estimatedMinutes: number;
   segments: RouteInterval[];
+  /** Geographic ranges; legacy segments remain checkpoint-compatible. */
+  sections?: RouteSection[];
   // Full route line (snapped geometry when the router produced one). This is
   // the polyline every consumer draws and measures — GeoJSON-convertible via
   // routeToGeoJSON() in src/lib/routing.ts.
@@ -201,6 +205,10 @@ export function effectiveAttachedRoute(
     ...route,
     points,
     waypoints: route.waypoints ? [...route.waypoints].reverse() : undefined,
+    // Forward street maneuvers do not describe the reversed line. Navigation
+    // must request fresh directions or use its honest breadcrumb fallback.
+    maneuvers: undefined,
+    sections: reverseRouteSections(route.sections ?? legacyRouteSections(route.segments,routeGeometryMeters(route.points)),routeGeometryMeters(route.points)),
     segments: route.segments
       .map(segment => ({
         ...segment,

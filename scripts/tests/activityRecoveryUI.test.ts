@@ -84,13 +84,13 @@ test('Health recovery callbacks from a covered screen stay invalid after focus r
 
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
-test('missing Activity offers explicit restore with prior-removal consent and reachable frozen Back', () => {
+test('missing Activity offers explicit recovery while deliberate deletion remains respected and Back reachable', () => {
   const ui = harness(); ui.render();
   assert.ok(ui.nodes().some(n => n.type === 'ScreenHeader'));
   assert.ok(ui.nodes().some(n => n.type === 'ScrollView'));
   ui.button().props.onPress();
   assert.equal(ui.calls.length, 0);
-  assert.match(ui.alerts[0][1], /previously removed/);
+  assert.match(ui.alerts[0][1], /Deliberately deleted workouts stay deleted/);
   assert.ok(ui.text().includes('Back to Activity'));
 });
 

@@ -10,6 +10,11 @@
 // injury prevention or diagnosis.
 
 export type MobilityCategory =
+  | 'hiking'
+  | 'downhill_skiing'
+  | 'snowboarding'
+  | 'cross_country_skiing'
+  | 'mountaineering'
   | 'full_body'
   | 'problem_areas'
   | 'ankle'

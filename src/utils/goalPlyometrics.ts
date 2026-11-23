@@ -74,7 +74,7 @@ export function plyometricDose(input: StrengthEngineInput): { task: PlyometricTa
   if (records[0]?.overallRpe !== undefined && (!Number.isFinite(records[0].overallRpe) || records[0].overallRpe! > 7)) return null;
   // Two separate days of actual manageable lower-body AND calf practice.
   const preparationRole = (item: StrengthLogRecord['exercises'][number]) =>
-    /^calf_(single_standing|seated)$/.test(item.exerciseId) ? 'calf'
+    (/^calf_(single_standing|seated)$/.test(item.exerciseId) || ['foot_supported_calf','foot_loaded_single_calf','foot_loaded_bent_knee','foot_loaded_seated'].includes(item.exerciseId)) ? 'calf'
       : /^(squat_|hinge_|lunge_)/.test(item.exerciseId) ? 'lower' : undefined;
   const preparationDays = new Set<string>();
   const preparatory: StrengthLogRecord[] = [];
@@ -140,7 +140,7 @@ export function plyometricDose(input: StrengthEngineInput): { task: PlyometricTa
     // A harder tier additionally retains an actual single-leg strength and
     // running foundation; an advanced label or a week number is insufficient.
     const singleLegDays = new Set(preparatory.filter(record => ['calf_single_standing', 'lunge_reverse'].every(role => record.exercises.some(exercise => {
-      const match = role === 'calf_single_standing' ? exercise.exerciseId === role
+      const match = role === 'calf_single_standing' ? ['calf_single_standing','foot_loaded_single_calf'].includes(exercise.exerciseId)
         : ['lunge_reverse', 'squat_bulgarian', 'hinge_single_rdl'].includes(exercise.exerciseId);
       return match && !exercise.skipped && !!exercise.equipmentType && exercise.prescription?.repScheme?.perSide===true
         && exercise.sets.filter(set => !set.isWarmup).length >= Math.max(2,exercise.prescription.sets)
@@ -212,8 +212,11 @@ export function applyGoalPlyometrics(sessions: StrengthSession[], input: Strengt
       };
       // Preserve the first lower/push/pull roles. Remove only trailing support
       // if the small plyometric dose and those priorities still fit.
-      let candidate = [plyo, ...exercises];
-      while (candidate.length > 4 && estimateStrengthSessionMinutes(candidate) > strengthTimeBudget(input.availableTimeMin)) candidate.pop();
+      const balance = input.goalIntent ? exercises.filter(exercise=>['foot_clock_reach','foot_clock_supported'].includes(exercise.exerciseId)) : [];
+      let candidate = input.goalIntent ? [...balance,plyo,...exercises.filter(exercise=>!balance.includes(exercise))] : [plyo, ...exercises];
+      // Explicit profile plans have already fitted primary, balance and calf roles.
+      // Optional impact may use genuinely spare time; it cannot evict that work.
+      if (!input.goalIntent) while (candidate.length > 4 && estimateStrengthSessionMinutes(candidate) > strengthTimeBudget(input.availableTimeMin)) candidate.pop();
       if (estimateStrengthSessionMinutes(candidate) <= strengthTimeBudget(input.availableTimeMin)) {
         exercises = candidate; used = true; added = true;
       }

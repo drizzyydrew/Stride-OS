@@ -23,6 +23,8 @@ import { runningSpecificityDecision, applyRunningSpecificity } from './training/
 import { buildSpecificityWorkout } from './training/runningSpecificityWorkout';
 import { getGoalMesocycle } from './plan/goalMesocycle';
 import { addDays, parseYMD, toYMD } from './calendarEngine';
+import { ACTIVITY_MOBILITY_PRESETS } from '../constants/activityMobilityPresets';
+import { OUTDOOR_PROFILES, GOAL_PROFILE_LABELS, intentAllowsRunningQuality } from './goalIntent';
 import { fitRunningWeekToVolume, resizeRunningEasyWorkout } from './training/runningVolume';
 
 // ─── Phase intensity multipliers ──────────────────────────────────────────────
@@ -425,6 +427,8 @@ function specificityInputForDay(input: WorkoutEngineInput, dayIndex: number): Wo
 // ─── Main engine ───────────────────────────────────────────────────────────────
 
 export function generateRichWeek(input: WorkoutEngineInput): RichWeek {
+  const primary = input.goalIntent?.priorities[0];
+  if (input.goalIntent && !intentAllowsRunningQuality(input.goalIntent)) input = { ...input, trainingStyle: 'base_only' };
   const {
     calibration, trainingPhase, progressionLevel,
     weeklyMileage, currentWeek, goalRace,
@@ -470,9 +474,52 @@ export function generateRichWeek(input: WorkoutEngineInput): RichWeek {
     return workout;
   });
   const volumeFit = specificity ? fitRunningWeekToVolume(input, builtWorkouts) : undefined;
-  const workouts = (volumeFit?.workouts ?? builtWorkouts).map(workout => {
+  const fittedWorkouts = volumeFit?.workouts ?? builtWorkouts;
+  const supportingRun = input.goalIntent?.priorities.slice(1).find(profile => ['running', 'aerobic_base', 'run_farther', 'get_faster'].includes(profile));
+  const aerobicSlots = fittedWorkouts.filter(workout => !['rest', 'mobility', 'strength'].includes(workout.richType) && workout.durationMinutes >= 5);
+  const supportingRunId = input.goalIntent && OUTDOOR_PROFILES.includes(input.goalIntent.priorities[0]!) && supportingRun && aerobicSlots.length >= 2
+    ? (supportingRun === 'get_faster' ? aerobicSlots.find(workout => !!workout.intervals || workout.richType === 'strides') ?? aerobicSlots[0]
+      : supportingRun === 'run_farther' ? aerobicSlots.find(workout => workout.richType === 'long_run') ?? aerobicSlots[0] : aerobicSlots[0])?.id : undefined;
+  const workouts = fittedWorkouts.map(workout => {
     const envAdj = computeEnvAdjustment(workout.paceRange, workout.durationMinutes, temperatureCelsius, altitudeMeters);
-    return envAdj ? { ...workout, environmentAdjustment: envAdj } : workout;
+    let adjusted = envAdj ? { ...workout, environmentAdjustment: envAdj } : workout;
+    const intent = input.goalIntent;
+    const profile = intent?.priorities[0];
+    if (profile && OUTDOOR_PROFILES.includes(profile) && adjusted.richType === 'mobility' && adjusted.durationMinutes > 0) {
+      const preset = ACTIVITY_MOBILITY_PRESETS.find(candidate => candidate.category === profile && candidate.id.endsWith('_prepare'));
+      if (preset) {
+        const duration = Math.min(adjusted.durationMinutes, preset.durationMin);
+        const mainSet = preset.exercises.map(entry => {
+          const dose = entry.dose;
+          const count = dose?.reps ? `${dose.reps} comfortable repetitions${dose.perSide ? ' per side' : ''}` : `${dose?.holdSec ?? dose?.timeSec ?? 20} comfortable seconds${dose?.perSide ? ' per side' : ''}`;
+          return { label: entry.exerciseId.replace(/_/g, ' '), duration: count, targetSeconds: Math.floor(duration * 60 / Math.max(1, preset.exercises.length)),
+            paceGuide: 'Comfortable movement; no pace target', hrZone: 1, rpe: [1, 3] as [number, number], instructions: `${entry.cues.join(' ')} Stay within the session time; fewer repetitions or skipping an uncomfortable movement is welcome.` };
+        });
+        return { ...adjusted, goalIntent: intent, goalProfile: profile, title: preset.title, durationMinutes: duration, targetDistance: 0,
+          purpose: preset.purpose, mainSet, warmup: { ...adjusted.warmup, label: 'Begin comfortably', duration: '0 min', targetSeconds: 0, instructions: 'Preparation time is included in the movements below.' }, cooldown: { ...adjusted.cooldown, label: 'Finish comfortably', duration: '0 min', targetSeconds: 0, instructions: 'Finish within the session time.' }, instructions: [preset.purpose, ...mainSet.map(segment => `${segment.label}: ${segment.duration}. ${segment.instructions}`), preset.cautionNote ?? 'Keep the range comfortable.'],
+          progressionNote: 'This preparation replaces the existing mobility slot. It adds no session or weekly volume and does not establish readiness for harder sport work.' };
+      }
+    }
+    if (!profile || !OUTDOOR_PROFILES.includes(profile) || ['rest', 'mobility', 'strength'].includes(adjusted.richType)) return intent ? { ...adjusted, goalIntent: intent, goalProfile: profile } : adjusted;
+    if (workout.id === supportingRunId) return { ...adjusted, goalIntent: intent, goalProfile: supportingRun,
+      progressionNote: `${adjusted.progressionNote ?? ''} One supporting run shares the outdoor plan’s time budget. Running quality requires actual running tolerance; skiing or hiking fitness does not establish it.` };
+    // Other sport slots stay easy even if the supporting-running template contained quality.
+    adjusted = resizeRunningEasyWorkout(adjusted, adjusted.durationMinutes, false, 'Sport preparation uses comfortable time-based effort; do not add omitted running quality.');
+    const modality = profile === 'hiking' ? 'comfortable hiking' : profile === 'mountaineering' ? 'comfortable uphill ski or uphill walking practice with a controlled descent'
+      : profile === 'cross_country_skiing' ? 'comfortable cross-country ski practice or easy low-impact aerobic work'
+      : profile === 'snowboarding' ? 'easy aerobic conditioning or low-demand snowboard technique practice'
+      : 'easy aerobic conditioning or low-demand downhill ski technique practice';
+    const instructions = `Use ${modality}. Terrain, descent and actual sport practice count toward this session, not extra work. Stay within the time shown; reduce time for difficult terrain or fatigue.`;
+    const segment = (value: typeof adjusted.warmup) => ({ ...value, rpe: [2, 4] as [number, number], hrZone: 2, paceGuide: 'Comfortable conversational effort', instructions });
+    return { ...adjusted, goalIntent: intent, goalProfile: profile, richType: 'cross_training' as const, type: 'cross_training' as const,
+      title: `${GOAL_PROFILE_LABELS[profile]} · ${adjusted.richType === 'long_run' ? 'Sustained easy practice' : 'Easy aerobic support'}`,
+      targetDistance: 0, paceTargetSource: 'effort' as const, intervals: undefined, protocol: undefined,
+      warmup: segment(adjusted.warmup), mainSet: adjusted.mainSet.map(segment), cooldown: segment(adjusted.cooldown),
+      paceGuidance: { label: 'Easy sport effort', description: instructions, targetPace: 'Comfortable conversation; no running pace target' },
+      purpose: `Build ${GOAL_PROFILE_LABELS[profile].toLowerCase()} capacity while leaving recovery for strength and skill practice.`,
+      instructions: [instructions, 'Start easily, keep conditions within your ability, and finish before control or tolerance deteriorates.'],
+      progressionNote: `${adjusted.progressionNote ?? ''} This is a conservative time ceiling, not an estimate of ski or hiking distance. Actual sport tolerance and next-day response guide later changes.` };
+
   });
 
   return {

@@ -12,7 +12,7 @@ import Modal from '../../../src/components/ui/RecoverableModal';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { usePageSafeAreaInsets as useSafeAreaInsets } from '../../../src/components/layout/PageSafeAreaView';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import MapView, { Marker, Polyline, type MapViewRef } from '../../../src/components/maps/MapComponents';
@@ -32,6 +32,11 @@ import {
   type GeneratedRouteHillIntent,
   type GeneratedRouteShape,
 } from '../../../src/utils/routeGeneration';
+import RouteSectionsEditor from '../../../src/components/running/RouteSectionsEditor';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
+import { routeEditWaypoints, routeEditCanCommit } from '../../../src/utils/routeEditing';
+import type { RouteSection } from '../../../src/types/route';
+import { legacyRouteSections, routeGeometryMeters, routeSectionLine, routePointAtMeters, routeSectionsError, snapshotRoute } from '../../../src/utils/routeSections';
 import { estimateEasyPaceSecPerMi } from '../../../src/utils/hydrationEngine';
 import { DEFAULT_MAP_REGION, MAP_STYLE_DARK, MAP_STYLE_LIGHT, regionForPoints } from '../../../src/constants/mapStyles';
 
@@ -68,20 +73,36 @@ function RouteBuilderScreenContent() {
   const imp = units === 'imperial';
   const weeklyMileage = useAthleteStore(s => s.weeklyMileage);
   const addRoute = useRouteStore(s => s.addRoute);
+  const updateRoute = useRouteStore(s => s.updateRoute);
+  const {routeId}=useLocalSearchParams<{routeId?:string}>();
+  const [editingRoute]=useState(()=>snapshotRoute(useRouteStore.getState().routes.find(r=>r.id===routeId)??null));
+  const ownerLease=useRef(captureOwnerLease(true));
+  const [geometryRevision,setGeometryRevision]=useState(0);
+  const initialWaypoints=useMemo(()=>editingRoute?routeEditWaypoints(editingRoute):[],[editingRoute]);
+  const initialLine=editingRoute?.points??[];
+  const initialSections=editingRoute?(editingRoute.sections??legacyRouteSections(editingRoute.segments,routeGeometryMeters(initialLine))):[];
+  const [sections,setSections]=useState<RouteSection[]>(()=>snapshotRoute(initialSections));
+  const [sectionsNeedReview,setSectionsNeedReview]=useState(false);
+  const [saveAsNew,setSaveAsNew]=useState(false);
+  const geometryChanged=geometryRevision>0;
+  function changeWaypoints(action:RoutePoint[]|((previous:RoutePoint[])=>RoutePoint[])) {
+    setGeometryRevision(n=>n+1); setSectionsNeedReview(true); setWaypoints(action);
+  }
 
-  const [waypoints, setWaypoints] = useState<RoutePoint[]>([]);
-  const [routed, setRouted] = useState<RoutedPath | null>(null);
-  const [elevation, setElevation] = useState<ElevationSummary | null>(null);
+
+  const [waypoints, setWaypoints] = useState<RoutePoint[]>(initialWaypoints);
+  const [routed, setRouted] = useState<RoutedPath | null>(()=>editingRoute?{provider:editingRoute.routingProvider??'direct',geometry:snapshotRoute(editingRoute.points),distanceMeters:editingRoute.distanceMeters??routeGeometryMeters(editingRoute.points),maneuvers:snapshotRoute(editingRoute.maneuvers)}:null);
+  const [elevation, setElevation] = useState<ElevationSummary | null>(()=>editingRoute?.elevationProfileFt?{profileM:editingRoute.elevationProfileFt.map(n=>n/3.28084),gainMeters:editingRoute.elevationGainMeters??editingRoute.elevationGainFt/3.28084,lossMeters:editingRoute.elevationLossMeters??0}:null);
   const [routingBusy, setRoutingBusy] = useState(false);
   const [snapFailed, setSnapFailed] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
-  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [snapEnabled, setSnapEnabled] = useState(editingRoute?.routingProvider!=='direct');
   const [showSave, setShowSave] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
-  const [routeName, setRouteName] = useState('');
-  const [routeFolder, setRouteFolder] = useState<RunRoute['folder']>('custom');
-  const [routeSurfaceType, setRouteSurfaceType] = useState<RunRoute['surfaceType']>('unknown');
-  const [routeNotes, setRouteNotes] = useState('');
+  const [routeName, setRouteName] = useState(editingRoute?.name??'');
+  const [routeFolder, setRouteFolder] = useState<RunRoute['folder']>(editingRoute?.folder??'custom');
+  const [routeSurfaceType, setRouteSurfaceType] = useState<RunRoute['surfaceType']>(editingRoute?.surfaceType??'unknown');
+  const [routeNotes, setRouteNotes] = useState(editingRoute?.notes??'');
   const [autoRouteOpen, setAutoRouteOpen] = useState(false);
   const [autoDistanceInput, setAutoDistanceInput] = useState('5');
   const [autoSurface, setAutoSurface] = useState<Exclude<RouteSurface, 'unknown'>>('mixed');
@@ -104,7 +125,7 @@ function RouteBuilderScreenContent() {
   async function authorizeSave() {
     if (savePending.current) return;
     savePending.current = true;
-    try { await requireProAccess('custom-routes'); if (saveAlive.current) saveRoute(); }
+    try { await requireProAccess('custom-routes'); if (saveAlive.current && ownerLeaseIsCurrent(ownerLease.current,true)) saveRoute(); }
     catch (error) { if (saveAlive.current) Alert.alert('StrideOS Pro', error instanceof Error ? error.message : 'Membership could not be verified.'); }
     finally { savePending.current = false; }
   }
@@ -116,11 +137,15 @@ function RouteBuilderScreenContent() {
   const distDisplay = imp ? distanceMiles : distanceMiles * 1.609344;
   const distUnit = imp ? 'mi' : 'km';
   const easyPaceSecPerMi = estimateEasyPaceSecPerMi(weeklyMileage || 15);
-  const estimatedMin = distanceMiles > 0 ? Math.round((distanceMiles * easyPaceSecPerMi) / 60) : 0;
+  const estimatedMin = editingRoute&&!geometryChanged ? editingRoute.estimatedDurationMin??editingRoute.estimatedMinutes
+    : distanceMiles > 0 ? Math.round((distanceMiles * easyPaceSecPerMi) / 60) : 0;
   const gainDisplay = elevation ? Math.round(imp ? elevation.gainMeters * 3.28084 : elevation.gainMeters) : null;
   const lossDisplay = elevation ? Math.round(imp ? elevation.lossMeters * 3.28084 : elevation.lossMeters) : null;
   const elevUnit = imp ? 'ft' : 'm';
-  const canSave = waypoints.length >= 2 && !routingBusy && (routed !== null) && !(snapEnabled && snapFailed);
+  const sectionLength=routeGeometryMeters(geometry);
+  const sectionError=routeSectionsError(sections,sectionLength);
+  const canSave = (!routeId||!!editingRoute) && waypoints.length >= 2 && !routingBusy && (routed !== null) && !(snapEnabled && snapFailed)
+    && !sectionError && (!sections.length||!sectionsNeedReview);
 
   // Re-route + re-fetch elevation whenever the control points change.
   // Debounced, and guarded with a request id so a stale response can never
@@ -128,6 +153,7 @@ function RouteBuilderScreenContent() {
   // athlete sees an error and can retry; there is no silent straight-line
   // substitution in the visible route-building flow.
   useEffect(() => {
+    if(editingRoute&&!geometryChanged) return;
     const requestId = ++requestIdRef.current;
     if (waypoints.length < 2) {
       setRouted(null);
@@ -142,6 +168,7 @@ function RouteBuilderScreenContent() {
       const path = snapEnabled ? await snapRouteToPaths(waypoints) : buildDirectPath(waypoints);
       if (requestId !== requestIdRef.current) return;
       setRouted(path);
+      setSectionsNeedReview(true);
       setSnapFailed(snapEnabled && path === null);
       setRoutingBusy(false);
 
@@ -155,14 +182,14 @@ function RouteBuilderScreenContent() {
     }, 450);
 
     return () => clearTimeout(timer);
-  }, [waypoints, snapEnabled, retryNonce]);
+  }, [waypoints, snapEnabled, retryNonce,geometryRevision]);
 
   function addWaypoint(point: RoutePoint) {
-    setWaypoints(prev => [...prev, point]);
+    changeWaypoints(prev => [...prev, point]);
   }
 
   function moveWaypoint(index: number, point: RoutePoint) {
-    setWaypoints(prev => prev.map((p, i) => (i === index ? point : p)));
+    changeWaypoints(prev => prev.map((p, i) => (i === index ? point : p)));
   }
 
   function removeWaypoint(index: number) {
@@ -172,13 +199,13 @@ function RouteBuilderScreenContent() {
       {
         text: 'Remove',
         style: 'destructive',
-        onPress: () => setWaypoints(prev => prev.filter((_, i) => i !== index)),
+        onPress: () => changeWaypoints(prev => prev.filter((_, i) => i !== index)),
       },
     ]);
   }
 
   function undo() {
-    setWaypoints(prev => prev.slice(0, -1));
+    changeWaypoints(prev => prev.slice(0, -1));
   }
 
   function fitToRoute() {
@@ -189,7 +216,7 @@ function RouteBuilderScreenContent() {
   // Runner shortcuts: mirror the waypoints back to the start (out & back), or
   // route back to the start point (close loop).
   function makeOutAndBack() {
-    setWaypoints(prev => {
+    changeWaypoints(prev => {
       if (prev.length < 2) return prev;
       const mirrored = [...prev.slice(0, -1)].reverse();
       return [...prev, ...mirrored];
@@ -197,14 +224,14 @@ function RouteBuilderScreenContent() {
   }
 
   function closeLoop() {
-    setWaypoints(prev => (prev.length < 2 ? prev : [...prev, prev[0]]));
+    changeWaypoints(prev => (prev.length < 2 ? prev : [...prev, prev[0]]));
   }
 
   function clearAll() {
     if (waypoints.length === 0) return;
     Alert.alert('Clear route', 'Remove all waypoints and start over?', [
       { text: 'Keep', style: 'cancel' },
-      { text: 'Clear', style: 'destructive', onPress: () => setWaypoints([]) },
+      { text: 'Clear', style: 'destructive', onPress: () => changeWaypoints([]) },
     ]);
   }
 
@@ -301,16 +328,21 @@ function RouteBuilderScreenContent() {
     try { assertProAccess('custom-routes'); } catch (error) { Alert.alert('StrideOS Pro', error instanceof Error ? error.message : 'Membership could not be verified.'); return; }
     if (!canSave) return;
     const name = routeName.trim() || 'Custom Route';
-    const gainFt = elevation ? Math.round(elevation.gainMeters * 3.28084) : Math.round(distanceMiles * 48);
-    const id = addRoute({
+    const gainFt = elevation ? Math.round(elevation.gainMeters * 3.28084) : (geometryChanged?0:editingRoute?.elevationGainFt??0);
+    if(!routeEditCanCommit(ownerLeaseIsCurrent(ownerLease.current,true),editingRoute,
+      useRouteStore.getState().routes.find(r=>r.id===editingRoute?.id),saveAsNew)) {
+      Alert.alert('Route changed','Your account or saved route changed. Reopen the route, or save a copy in the original account.'); return;
+    }
+    const patch:Omit<RunRoute,'id'> = {
       name,
       folder: routeFolder,
-      difficulty: 'Custom',
+      difficulty: editingRoute?.difficulty??'Custom',
       distanceMiles,
       elevationGainFt: gainFt,
       elevationProfileFt: elevation ? elevation.profileM.map(m => Math.round(m * 3.28084)) : undefined,
       estimatedMinutes: Math.max(1, estimatedMin),
-      segments: [],
+      segments: sections.map(section=>({label:section.name,distanceMiles:section.endMeters/1609.344,point:routePointAtMeters(geometry,section.endMeters)!})),
+      sections:snapshotRoute(sections),
       points: geometry,
       waypoints,
       distanceMeters: Math.round(distanceMeters),
@@ -321,7 +353,11 @@ function RouteBuilderScreenContent() {
       routingProvider: routed?.provider ?? 'direct',
       maneuvers: routed?.maneuvers,
       notes: routeNotes.trim() || undefined,
-    });
+      offlineMap:geometryChanged||saveAsNew?undefined:editingRoute?.offlineMap,
+      linkedWorkoutId:editingRoute&&!saveAsNew?editingRoute.linkedWorkoutId:undefined,
+    };
+    const id=editingRoute&&!saveAsNew?editingRoute.id:addRoute(patch);
+    if(editingRoute&&!saveAsNew) updateRoute(id,patch);
     setShowSave(false);
     router.replace({ pathname: '/(tabs)/training/route-detail', params: { routeId: id } } as never);
   }
@@ -369,7 +405,7 @@ function RouteBuilderScreenContent() {
         if (!current) return;
         const waypointsForPlace = [current, selectedPlace.point];
         setSnapEnabled(true);
-        setWaypoints(waypointsForPlace);
+        changeWaypoints(waypointsForPlace);
         setRouteName(`Run to ${selectedPlace.label}`);
         setRouteNotes(`Auto-created destination route to ${selectedPlace.label}. Snapping and elevation are resolved after generation.`);
         setRouteSurfaceType(autoSurface);
@@ -394,7 +430,7 @@ function RouteBuilderScreenContent() {
         seed: Math.round(Date.now() / 1000),
       });
       setSnapEnabled(true);
-      setWaypoints(generated.waypoints);
+      changeWaypoints(generated.waypoints);
       const placePrefix = selectedPlace && autoAnchorMode !== 'current'
         ? `${autoAnchorMode === 'around_place' ? 'Around' : 'From'} ${selectedPlace.label}`
         : generated.name;
@@ -420,7 +456,7 @@ function RouteBuilderScreenContent() {
         <MapView
           ref={mapRef}
           style={StyleSheet.absoluteFill}
-          initialRegion={DEFAULT_MAP_REGION}
+          initialRegion={initialLine.length?regionForPoints(initialLine):DEFAULT_MAP_REGION}
           customMapStyle={mapStyle}
           showsUserLocation
           onPress={event => addWaypoint(event.nativeEvent.coordinate)}
@@ -433,6 +469,7 @@ function RouteBuilderScreenContent() {
               lineDashPattern={snapUnresolved ? [2, 1.5] : undefined}
             />
           ) : null}
+          {sections.filter(section=>!routeSectionsError([section],sectionLength)).map((section,index)=><Polyline key={`section-${section.id}`} coordinates={routeSectionLine(geometry,section.startMeters,section.endMeters)} strokeColor={index%2?C.primary:C.warning} strokeWidth={8}/>)}
           {waypoints.map((point, index) => {
             const isStart = index === 0;
             const isEnd = index === waypoints.length - 1 && waypoints.length > 1;
@@ -466,7 +503,7 @@ function RouteBuilderScreenContent() {
         <View style={[s.headerOverlay, { top: insets.top + 6 }]}>
           <LegacyBackControl onBack={() => router.back()} />
           <View style={[s.headerPill, { backgroundColor: panelBg, borderColor: C.border }]}>
-            <Text style={[s.headerPillText, { color: C.text }]}>Route Builder</Text>
+            <Text style={[s.headerPillText, { color: C.text }]}>{editingRoute?'Edit Route':'Route Builder'}</Text>
           </View>
           <TouchableOpacity
             style={[s.roundBtn, { backgroundColor: panelBg, borderColor: C.border }]}
@@ -749,13 +786,13 @@ function RouteBuilderScreenContent() {
             <Text style={[s.secondaryBtnText, { color: C.text }]}>Clear</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[s.primaryBtn, { backgroundColor: C.primary, opacity: canSave ? 1 : 0.45 }]}
+            style={[s.primaryBtn, { backgroundColor: C.primary, opacity: routed&&!routingBusy ? 1 : 0.45 }]}
             onPress={() => setShowSave(true)}
-            disabled={!canSave}
+            disabled={!routed||routingBusy}
             activeOpacity={0.85}
           >
             <Ionicons name="bookmark-outline" size={16} color={C.onPrimary} />
-            <Text style={[s.primaryBtnText, { color: C.onPrimary }]}>Save Route</Text>
+            <Text style={[s.primaryBtnText, { color: C.onPrimary }]}>{editingRoute?'Review & Save':'Segments & Save'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -771,7 +808,7 @@ function RouteBuilderScreenContent() {
         <KeyboardAvoidingView style={s.keyboardAvoid} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={s.modalOverlay} onPress={() => setShowSave(false)} accessible={false}>
           <Pressable style={[s.modalSheet, { backgroundColor: C.card, paddingBottom: insets.bottom + 12 }]} onPress={event => event.stopPropagation()} accessible={false}>
-            <Text style={[s.modalTitle, { color: C.text }]}>Save Route</Text>
+            <Text style={[s.modalTitle, { color: C.text }]}>{editingRoute?'Save Route Changes':'Save Route'}</Text>
             <Text style={[s.modalMeta, { color: C.textMuted }]}>
               {distDisplay.toFixed(2)} {distUnit}
               {gainDisplay !== null ? ` · +${gainDisplay} ${elevUnit}` : ''} · ~{fmtDuration(Math.max(1, estimatedMin))} easy
@@ -794,6 +831,8 @@ function RouteBuilderScreenContent() {
               onSubmitEditing={() => routeNotesInputRef.current?.focus()}
               style={[s.input, { backgroundColor: C.cardAlt, borderColor: C.border, color: C.text }]}
             />
+            <RouteSectionsEditor sections={sections} onChange={setSections} lengthMeters={sectionLength} imperial={imp} needsReview={sectionsNeedReview} onReview={()=>setSectionsNeedReview(false)} error={sectionError}/>
+            {editingRoute?<View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>{[{copy:false,label:'Save Changes'},{copy:true,label:'Save as New'}].map(option=><TouchableOpacity key={option.label} onPress={()=>setSaveAsNew(option.copy)} accessibilityRole="button" accessibilityState={{selected:saveAsNew===option.copy}} style={{minHeight:44,justifyContent:'center',padding:12,borderRadius:10,borderWidth:1,borderColor:saveAsNew===option.copy?C.primary:C.border,backgroundColor:saveAsNew===option.copy?C.primaryDim:C.cardAlt}}><Text style={{color:saveAsNew===option.copy?C.primary:C.text,fontWeight:'700'}}>{option.label}</Text></TouchableOpacity>)}</View>:null}
             <View style={s.folderRow}>
               {FOLDERS.map(folder => (
                 <TouchableOpacity
@@ -836,9 +875,10 @@ function RouteBuilderScreenContent() {
               <TouchableOpacity
                 style={[s.primaryBtn, { flex: 1.4, backgroundColor: C.primary }]}
                 onPress={() => { void authorizeSave(); }}
+                disabled={!canSave}
                 activeOpacity={0.85}
               >
-                <Text style={[s.primaryBtnText, { color: C.onPrimary }]}>Save</Text>
+                <Text style={[s.primaryBtnText, { color: C.onPrimary }]}>{editingRoute?(saveAsNew?'Save as New':'Save Changes'):'Save Route'}</Text>
               </TouchableOpacity>
             </View>
           </Pressable>

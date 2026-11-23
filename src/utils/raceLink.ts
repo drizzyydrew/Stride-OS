@@ -1,3 +1,4 @@
+import { visibleGoalArchives } from '../lib/goalArchiveOperations';
 import type { Activity, ActivityRaceResult } from '../types/activity';
 import { STANDARD_DISTANCE_METERS } from '../types/athlete';
 import type { GoalArchive } from '../types/goalArchive';
@@ -36,7 +37,7 @@ export function createRaceActivityLink(race: Pick<Race, 'id' | 'name' | 'date' |
 }
 export function raceLinkEvents(races: readonly Race[], archives: readonly GoalArchive[], ownerUserId: string): RaceEventSnapshot[] {
   const events = new Map<string, RaceEventSnapshot>();
-  for (const race of [...archives.filter(row => row.ownerUserId === ownerUserId && row.athleteId === 'athlete_default').flatMap(row => row.race ? [row.race] : []), ...races]) {
+  for (const race of [...visibleGoalArchives(archives).filter(row => row.ownerUserId === ownerUserId && row.athleteId === 'athlete_default').flatMap(row => row.race ? [row.race] : []), ...races]) {
     try { const event = raceEventSnapshot(race); events.set(event.id, event); } catch { /* Invalid legacy event remains unavailable. */ }
   }
   return [...events.values()].sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));

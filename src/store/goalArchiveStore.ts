@@ -4,7 +4,7 @@ import type { OwnerLease } from '../lib/localDataOwner';
 import { ownerLeaseIsCurrent } from '../lib/localDataOwner';
 import {
   decodeGoalArchives, fetchGoalArchives, mergeGoalArchives, requireGoalArchiveLease,
-  syncGoalArchives, validateGoalArchiveResult,
+  syncGoalArchives, validateGoalArchiveResult, validateGoalArchiveMetadata,
 } from '../lib/goalArchiveSync';
 import { getAppStorage } from './persistStorage';
 
@@ -16,6 +16,8 @@ export type GoalArchiveState = {
   load: (lease: OwnerLease) => Promise<void>;
   addArchive: (archive: GoalArchive, lease: OwnerLease) => Promise<void>;
   saveResult: (id: string, result: GoalArchive['result'], lease: OwnerLease) => Promise<void>;
+  correctMetadata: (id: string, metadata: Pick<NonNullable<GoalArchive['metadata']>, 'title' | 'startDate' | 'endDate'>, lease: OwnerLease) => Promise<void>;
+  deleteArchive: (id: string, lease: OwnerLease) => Promise<void>;
   sync: (lease: OwnerLease) => Promise<void>;
 };
 
@@ -129,7 +131,7 @@ export const useGoalArchiveStore = create<GoalArchiveState>((set, get) => {
         validateGoalArchiveResult(candidate);
         await mutate(current, archives => {
           const archive = archives.find(item => item.id === id);
-          if (!archive) throw new Error('Goal archive was not found');
+          if (!archive || archive.deletedAt !== undefined) throw new Error('Goal archive was not found or was deleted');
           const updated = { ...candidate, source: candidate.source ?? 'user' as const,
             updatedAt: candidate.updatedAt ?? Math.max(Date.now(), (archive.result.updatedAt ?? -1) + 1) };
           return mergeGoalArchives(archives, [{ ...archive, result: updated }]);
@@ -137,6 +139,25 @@ export const useGoalArchiveStore = create<GoalArchiveState>((set, get) => {
         requireReady(current);
       });
     },
+    correctMetadata: (id, metadata, lease) => {
+      const draft = copy(metadata);
+      return enqueue(lease, async current => {
+        await mutate(current, archives => {
+          const archive = archives.find(item => item.id === id);
+          if (!archive || archive.deletedAt !== undefined) throw new Error('This archive is no longer available');
+          const correction = { ...draft, title: draft.title.trim(), updatedAt: Math.max(Date.now(), (archive.metadata?.updatedAt ?? 0) + 1), mutationId: `${Date.now()}-${Math.random().toString(36).slice(2)}` };
+          validateGoalArchiveMetadata(correction);
+          return mergeGoalArchives(archives, [{ ...archive, metadata: correction }]);
+        });
+      });
+    },
+    deleteArchive: (id, lease) => enqueue(lease, async current => {
+      await mutate(current, archives => {
+        const archive = archives.find(item => item.id === id);
+        if (!archive) throw new Error('This archive is no longer available');
+        return mergeGoalArchives(archives, [{ ...archive, deletedAt: archive.deletedAt ?? Date.now() }]);
+      });
+    }),
     sync: lease => enqueue(lease, async current => {
       const local = await currentLocal(current);
       requireReady(current);

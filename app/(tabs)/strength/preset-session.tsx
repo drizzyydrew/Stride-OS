@@ -181,6 +181,7 @@ export default function PresetStrengthSessionScreen() {
 
     manualLog({
       completionKey: `preset_${session.workoutId}_${session.startedAt}`,
+      workoutInstanceId: session.workoutInstanceId,
       sessionType: 'full_body',
       goal: 'maintenance',
       week: Math.max(1, currentWeek),

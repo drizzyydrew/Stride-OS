@@ -1,0 +1,52 @@
+{
+  "checkedAt": "2026-11-23T12:56:35.902593+00:00",
+  "buildNumber": "127",
+  "branch": "codex/build127-goals-routes-history",
+  "checks": {
+    "aggregateBeforeFinalFootCoverage": {
+      "tests": 2393,
+      "passed": 2393,
+      "failed": 0,
+      "skipped": 0
+    },
+    "postOwnerFootCoverage": {
+      "focusedPassed": 60,
+      "laterRaceAndPlyometricIntegrationPassed": 27,
+      "legacyProgrammingPassed": 49,
+      "skipped": 0,
+      "evidence": "Independent implementation-agent tool runs reported to root; source frozen afterward"
+    },
+    "finalSourceTypecheck": "PASS",
+    "cleanIosPrebuild": "PASS",
+    "expoDependencies": "UP_TO_DATE",
+    "gitDiffCheck": "PASS",
+    "hostedHistoryAcceptance": "PASS_ROLLED_BACK",
+    "hostedSyntheticDeletionRowsRemaining": 0,
+    "hostedMigration": "20261123123200_workout_deletion_and_archive_revisions",
+    "newSecurityAdvisorFindings": 0
+  },
+  "logDigests": {
+    "aggregate": {
+      "sha256": "e67a1bc108137a7043418348332b0cccd3d0a92f26d46a4be14bdad7d232dc32"
+    },
+    "typecheck": {
+      "sha256": "12fc70d2feb72f584a6828cd9e1102cc9f447725b6b1bb2abda352bf6797e415"
+    },
+    "prebuild": {
+      "sha256": "4ef078d91eedb906232a7d997f4b08c69daac768f39d3f7b267c49b6322afe66"
+    },
+    "dependencyCheck": {
+      "sha256": "bd9a35261fde78096b948d6d82f75427487729ed25e06a856170d972b9571d47"
+    }
+  },
+  "boundaries": {
+    "exerciseImagesChanged": false,
+    "nativeWatchOrLiveActivitySourceChanged": false,
+    "dependenciesChanged": false,
+    "aiPurchaseOrProviderBudgetChanges": false,
+    "physicalDeviceAccepted": false,
+    "publicReviewSubmitted": false,
+    "publicReviewCandidatePreserved": "125",
+    "releaseType": "MANUAL"
+  }
+}

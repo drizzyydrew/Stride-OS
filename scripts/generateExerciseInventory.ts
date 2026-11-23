@@ -36,6 +36,7 @@ type Draft = {
 };
 
 const ROOT = resolve(import.meta.dirname, '..');
+const generatedAt = process.env.STRIDEOS_INVENTORY_DATE ?? new Date().toISOString().slice(0, 10);
 
 function titleFromSlug(value: string): string {
   return value
@@ -242,12 +243,12 @@ const inventory: InventoryEntry[] = [...drafts.entries()].map(([key, draft]) => 
 }).sort((a, b) => a.canonicalName.localeCompare(b.canonicalName));
 
 const jsonPath = resolve(ROOT, 'docs/exercise-library-inventory.json');
-writeFileSync(jsonPath, `${JSON.stringify({ generatedAt: '2026-07-16', count: inventory.length, entries: inventory }, null, 2)}\n`);
+writeFileSync(jsonPath, `${JSON.stringify({ generatedAt, count: inventory.length, entries: inventory }, null, 2)}\n`);
 
 const sourceCounts = new Map<string, number>();
 for (const entry of inventory) for (const category of entry.category) sourceCounts.set(category, (sourceCounts.get(category) ?? 0) + 1);
 const rows = inventory.map(entry => `| ${entry.canonicalName.replace(/\|/g, '\\|')} | ${entry.ids.join(', ') || '—'} | ${entry.category.join(', ')} | ${entry.whereUsed.join('; ').replace(/\|/g, '\\|')} | ${entry.existingDionAssetStatus} | ${entry.recommendedImageRequirement} | ${entry.priorityTier} |`);
-const markdown = `# Exercise Library Inventory\n\nGenerated: 2026-07-16  \nCanonical entries: **${inventory.length}**\n\nThis inventory normalizes display names without changing stored IDs. Aliases and all discovered source IDs remain in the JSON artifact. Movement Lab Dion images are marked \`assessment_reference_only\`; that status does not approve them as general strength or mobility exercise imagery.\n\n## Sources audited\n\n- Training Block strength engine\n- Strength Preset bank\n- Exercise Library built-ins\n- Mobility exercises and all Mobility workouts\n- Exercise Guide canonicals and aliases\n- Running warm-up and cool-down protocols\n- Movement Readiness battery\n- Movement Lab assessment bank\n\n## Image-priority rules\n\n- Tier 1: compound, unilateral, complex setup, band work, mobility positions, or meaningfully different start/end positions.\n- Tier 2: static holds, common stretches, and positions where one reference image is sufficient.\n- Tier 3: familiar movements that can initially be supported by clear text.\n- Every recommended view is direct. No 45-degree reference is approved.\n\n## Inventory\n\n| Canonical name | Preserved IDs | Categories | Where used | Dion status | Image need | Tier |\n|---|---|---|---|---|---|---:|\n${rows.join('\n')}\n`;
+const markdown = `# Exercise Library Inventory\n\nGenerated: ${generatedAt}\nCanonical entries: **${inventory.length}**\n\nThis inventory normalizes display names without changing stored IDs. Aliases and all discovered source IDs remain in the JSON artifact. Movement Lab Dion images are marked \`assessment_reference_only\`; that status does not approve them as general strength or mobility exercise imagery.\n\n## Sources audited\n\n- Training Block strength engine\n- Strength Preset bank\n- Exercise Library built-ins\n- Mobility exercises and all Mobility workouts\n- Exercise Guide canonicals and aliases\n- Running warm-up and cool-down protocols\n- Movement Readiness battery\n- Movement Lab assessment bank\n\n## Image-priority rules\n\n- Tier 1: compound, unilateral, complex setup, band work, mobility positions, or meaningfully different start/end positions.\n- Tier 2: static holds, common stretches, and positions where one reference image is sufficient.\n- Tier 3: familiar movements that can initially be supported by clear text.\n- Every recommended view is direct. No 45-degree reference is approved.\n\n## Inventory\n\n| Canonical name | Preserved IDs | Categories | Where used | Dion status | Image need | Tier |\n|---|---|---|---|---|---|---:|\n${rows.join('\n')}\n`;
 writeFileSync(resolve(ROOT, 'docs/exercise-library-inventory.md'), markdown);
 
 console.log(`Generated ${inventory.length} canonical exercise entries.`);

@@ -6,7 +6,7 @@ import { LegacyBackControl } from '../../../src/components/layout/NavigationEsca
 // (selects it for the next tracked run), delete, and the planned-vs-watch
 // distance education card.
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -18,7 +18,9 @@ import MapView, { Marker, Polyline } from '../../../src/components/maps/MapCompo
 import { useColors } from '../../../src/theme/useColors';
 import { useThemeMode } from '../../../src/store/themeStore';
 import { useSettingsStore } from '../../../src/store/settingsStore';
-import { useRouteStore } from '../../../src/store/routeStore';
+import { captureOwnerLease, ownerLeaseIsCurrent } from '../../../src/lib/localDataOwner';
+import { legacyRouteSections, routeGeometryMeters, routeSectionLine, routeSectionSummary, routeSectionTarget } from '../../../src/utils/routeSections';
+import { effectiveAttachedRoute, useRouteStore } from '../../../src/store/routeStore';
 import { TANGENTS_EDUCATION_COPY } from '../../../src/lib/routing';
 import { MAP_STYLE_DARK, MAP_STYLE_LIGHT, regionForPoints } from '../../../src/constants/mapStyles';
 import { LAYOUT } from '../../../src/constants/layout';
@@ -34,6 +36,7 @@ export default function RouteDetailScreen() {
   const mode = useThemeMode();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const ownerLease=useRef(captureOwnerLease());
   const { routeId } = useLocalSearchParams<{ routeId?: string }>();
   const { units } = useSettingsStore();
   const imp = units === 'imperial';
@@ -85,17 +88,19 @@ export default function RouteDetailScreen() {
 
   function commitName() {
     const next = nameDraft.trim();
+    if (!ownerLeaseIsCurrent(ownerLease.current)) return;
     if (next && next !== route!.name) updateRoute(route!.id, { name: next });
     setEditingName(false);
   }
 
   function commitNotes() {
-    if (notesDraft === null) return;
+    if (notesDraft === null || !ownerLeaseIsCurrent(ownerLease.current)) return;
     updateRoute(route!.id, { notes: notesDraft.trim() || undefined });
     setNotesDraft(null);
   }
 
   function useRoute() {
+    if(!ownerLeaseIsCurrent(ownerLease.current)) return;
     attachRoute(route!.id);
     Alert.alert(
       'Route selected',
@@ -105,6 +110,7 @@ export default function RouteDetailScreen() {
   }
 
   function detachRoute() {
+    if(!ownerLeaseIsCurrent(ownerLease.current)) return;
     detachRouteFromToday();
     Alert.alert(
       'Route removed from today',
@@ -119,6 +125,7 @@ export default function RouteDetailScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
+          if(!ownerLeaseIsCurrent(ownerLease.current)) return;
           removeRoute(route!.id);
           router.back();
         },
@@ -126,6 +133,14 @@ export default function RouteDetailScreen() {
     ]);
   }
 
+  const displayRoute=isAttached?effectiveAttachedRoute(route,attachment)??route:route;
+  const sections=displayRoute.sections??legacyRouteSections(displayRoute.segments,routeGeometryMeters(displayRoute.points));
+  function reverseWithReview() {
+    const next=effectiveAttachedRoute(route!,{...attachment,direction:attachment.direction==='reverse'?'forward':'reverse'});
+    Alert.alert('Review reversed route',next?.sections?.length?routeSectionSummary(next.sections,imp):'The route direction will change for your next run.',[
+      {text:'Cancel',style:'cancel'},{text:'Use this direction',onPress:()=>{if(ownerLeaseIsCurrent(ownerLease.current)) reverseAttachedRoute();}},
+    ]);
+  }
   const profileMin = profile && profile.length >= 2 ? Math.min(...profile) : 0;
   const profileMax = profile && profile.length >= 2 ? Math.max(...profile) : 0;
   const profileRange = Math.max(profileMax - profileMin, 10);
@@ -148,9 +163,10 @@ export default function RouteDetailScreen() {
           rotateEnabled={false}
         >
           {route.points.length > 1 ? (
-            <Polyline coordinates={route.points} strokeColor={C.positive} strokeWidth={5} />
+            <Polyline coordinates={displayRoute.points} strokeColor={C.positive} strokeWidth={5} />
           ) : null}
-          {route.points[0] ? <Marker coordinate={route.points[0]} title="Start" pinColor={C.positive} /> : null}
+          {sections.map((section,index)=><Polyline key={section.id} coordinates={routeSectionLine(displayRoute.points,section.startMeters,section.endMeters)} strokeColor={index%2?C.primary:C.warning} strokeWidth={7}/>)}
+          {displayRoute.points[0] ? <Marker coordinate={displayRoute.points[0]} title="Start" pinColor={C.positive} /> : null}
         </MapView>
         <LegacyBackControl onBack={() => router.back()} />
       </View>
@@ -204,6 +220,10 @@ export default function RouteDetailScreen() {
             </View>
           </View>
 
+          <TouchableOpacity onPress={()=>router.push({pathname:'/(tabs)/training/route-builder',params:{routeId:route.id}} as never)} style={[st.reverseBtn,{borderColor:C.primary,backgroundColor:C.cardAlt}]} accessibilityRole="button" accessibilityLabel="Edit saved route">
+            <Ionicons name="create-outline" size={18} color={C.primary}/><Text style={[st.useBtnText,{color:C.primary}]}>Edit Route</Text>
+          </TouchableOpacity>
+          <Text style={{color:C.textMuted,fontSize:12,marginTop:8}}>Changes apply to future runs. A recording already in progress keeps its original route.</Text>
           <TouchableOpacity
             style={[st.useBtn, { backgroundColor: C.primary }]}
             onPress={isAttached ? detachRoute : useRoute}
@@ -215,7 +235,7 @@ export default function RouteDetailScreen() {
           {isAttached ? (
             <TouchableOpacity
               style={[st.reverseBtn, { borderColor: C.border, backgroundColor: C.cardAlt }]}
-              onPress={reverseAttachedRoute}
+              onPress={reverseWithReview}
             >
               <Ionicons name="swap-horizontal-outline" size={16} color={C.text} />
               <Text style={[st.useBtnText, { color: C.text }]}>
@@ -225,6 +245,14 @@ export default function RouteDetailScreen() {
           ) : null}
         </View>
 
+        {sections.length>0?<View style={[st.card,{backgroundColor:C.card,borderColor:C.border}]}>
+          <Text style={[st.cardLabel,{color:C.textDim}]}>ROUTE SEGMENTS{isAttached&&attachment.direction==='reverse'?' · REVERSED':''}</Text>
+          {sections.map(section=><View key={section.id} style={{gap:4,marginTop:12}}>
+            <Text style={{color:C.text,fontWeight:'700'}}>{section.name}</Text>
+            <Text style={{color:C.textMuted}}>{(section.startMeters/(imp?1609.344:1000)).toFixed(2)}–{(section.endMeters/(imp?1609.344:1000)).toFixed(2)} {distUnit} · {((section.endMeters-section.startMeters)/(imp?1609.344:1000)).toFixed(2)} {distUnit} long</Text>
+            {!!routeSectionTarget(section,imp)&&<Text style={{color:C.primary}}>{routeSectionTarget(section,imp)}</Text>}
+          </View>)}
+        </View>:null}
         {/* Elevation profile */}
         <View style={[st.card, { backgroundColor: C.card, borderColor: C.border }]}>
           <Text style={[st.cardLabel, { color: C.textDim }]}>ELEVATION PROFILE</Text>

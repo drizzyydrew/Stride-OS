@@ -8,6 +8,8 @@
 // no diagnosis or guarantee claims. Ids are stable (`sw_<slug>`) — once
 // shipped, do not rename or remove an id; downstream logging may reference it.
 
+import { ACTIVITY_STRENGTH_PRESETS } from './activityStrengthPresets';
+import type { GoalProfileId } from '../types/goalIntent';
 import type { RepScheme } from '../types/strength';
 import { parsePrescriptionScheme } from '../utils/prescriptionFormat';
 
@@ -23,9 +25,16 @@ export type StrengthEquipment =
   | 'support'
   | 'step'
   | 'secure_anchor'
-  | 'box';
+  | 'box'
+  | 'wall';
 
 export type StrengthPresetCategory =
+  | 'foot_ankle'
+  | 'hiking'
+  | 'downhill_skiing'
+  | 'snowboarding'
+  | 'cross_country_skiing'
+  | 'mountaineering'
   | 'recommended'
   | 'full_body'
   | 'upper_body'
@@ -64,6 +73,7 @@ export type PresetStrengthWorkout = {
   exercises:    PresetStrengthExercise[];
   trainingPurpose?: 'strength' | 'running_support' | 'power' | 'activation' | 'recovery';
   planningNote?: string;
+  goalProfiles?: readonly GoalProfileId[];
   /** Explicit priority lifts, not a rule applied to every exercise or preset. */
   strengthSpecificMainExercises?: readonly string[];
 };
@@ -453,6 +463,7 @@ export const STRENGTH_PRESET_WORKOUTS: PresetStrengthWorkout[] = [
   ...KETTLEBELL,
   ...BODYWEIGHT,
   ...OTHER,
+  ...ACTIVITY_STRENGTH_PRESETS,
 ];
 
 export function getStrengthPresetWorkout(id: string): PresetStrengthWorkout | undefined {
@@ -464,6 +475,12 @@ export function getStrengthPresetWorkoutsByCategory(category: StrengthPresetCate
 }
 
 export const STRENGTH_PRESET_CATEGORY_LABELS: Record<StrengthPresetCategory, string> = {
+  foot_ankle: 'Feet & Ankles',
+  hiking: 'Hiking',
+  downhill_skiing: 'Downhill Skiing',
+  snowboarding: 'Snowboarding',
+  cross_country_skiing: 'Cross-Country Skiing',
+  mountaineering: 'Mountaineering',
   recommended:        'Recommended For You',
   full_body:          'Full Body',
   upper_body:         'Upper Body',

@@ -5,11 +5,12 @@ import { createHydrationSafeStorage, type HydrationSafeStorage } from './hydrati
 import { accountStorageBarrier, CleanupFencedError } from '../lib/localAccountCleanup';
 import { initializeAccountDeletionControl } from '../lib/accountDeletionControl';
 
-type AppStorage = StateStorage & Pick<HydrationSafeStorage, 'getItemOnce'>;
+type AppStorage = StateStorage & Pick<HydrationSafeStorage, 'getItemOnce'|'readItemOnce'>;
 
 const serverStorage: AppStorage = {
   getItem: async () => null,
   getItemOnce: async () => null,
+  readItemOnce: async () => null,
   setItem: async () => {},
   removeItem: async () => {},
 };
@@ -34,7 +35,10 @@ export function getAppStorage(): AppStorage {
       getItem: key => hydrated.getItemOnce(key),
       setItem: async () => {}, removeItem: async () => {},
     });
-    appStorage = { ...hydrated, ...guarded, getItemOnce: key => oneShot.getItem(key) };
+    const initialRead = accountStorageBarrier.wrap({
+      getItem:key=>hydrated.readItemOnce(key),setItem:async()=>{},removeItem:async()=>{},
+    });
+    appStorage = { ...hydrated, ...guarded, getItemOnce: key => oneShot.getItem(key),readItemOnce:key=>initialRead.getItem(key) };
   }
   return appStorage;
 }

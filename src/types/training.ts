@@ -135,6 +135,7 @@ export type GeneratableWorkoutType =
 // ─── Core Workout & Week Types ────────────────────────────────────────────────
 
 export type Workout = {
+  goalProfile?: import('./goalIntent').GoalProfileId;
   id: string;
 
   title: string;
@@ -211,6 +212,8 @@ export type RunningQualityPrescription = {
 
 export type CompletedWorkoutRecord = {
   id:                     string;           // week-scoped key: "w1_easy_run_0"
+  /** Logical schedule slot when a fresh performance replaces a deliberately deleted log. */
+  completionKey?: string;
   workoutId:              string;           // raw workout.id from generator: "easy_run"
   type:                   WorkoutType;
   intensity:              WorkoutIntensity;

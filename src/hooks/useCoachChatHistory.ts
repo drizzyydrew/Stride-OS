@@ -6,7 +6,7 @@ import { getLocalDataOwner } from '../lib/localDataOwner';
 import { createCoachChatHistory } from '../utils/coachChatHistory';
 
 export const coachChatHistory = createCoachChatHistory({
-  getItem: async key => await getAppStorage().getItemOnce(key),
+  getItem: async key => await getAppStorage().readItemOnce(key),
   setItem: async (key, value) => { await getAppStorage().setItem(key, value); },
 });
 
@@ -39,5 +39,11 @@ export function useCoachChatHistory() {
       if (coachChatHistory.getState().owner !== state.owner) throw new Error('Your account changed.');
       return messages;
     },
-    retry: () => coachChatHistory.setOwner(currentOwner ?? null) };
+    retry: async () => {
+      reconcile();
+      const owner=currentOwner??null;
+      await coachChatHistory.setOwner(owner);
+      const fresh=coachChatHistory.getState();
+      return !!owner&&fresh.owner===owner&&fresh.ready;
+    } };
 }

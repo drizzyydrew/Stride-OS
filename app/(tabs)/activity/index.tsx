@@ -1,3 +1,5 @@
+import { captureOwnerLease } from '../../../src/lib/localDataOwner';
+import { deleteCompletedWorkout } from '../../../src/lib/completedWorkoutDeletion';
 import { formatHistoryNumber } from '../../../src/utils/historyFormatting';
 import { useMemo, useState } from 'react';
 import { Alert, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -74,7 +76,6 @@ export default function ActivityScreen() {
   const C = useColors();
   const router = useRouter();
   const activities = useActivityStore(state => state.activities);
-  const removeActivity = useActivityStore(state => state.removeActivity);
   const recalculationStatus = useRecalculationStore(state => state.status);
   const recalculationLastRunAt = useRecalculationStore(state => state.lastRunAt);
   const recalculationError = useRecalculationStore(state => state.error);
@@ -90,15 +91,18 @@ export default function ActivityScreen() {
   ), [meaningful]);
 
   function confirmDeleteActivity(activity: Activity) {
+    const lease = captureOwnerLease();
+    if (!lease) return;
+    const performDelete = () => { void deleteCompletedWorkout(activity.id, lease).catch(error => Alert.alert('Deletion not confirmed', error instanceof Error ? error.message : 'Retry deleting this workout.', [{ text: 'Not now', style: 'cancel' }, { text: 'Retry', onPress: performDelete }])); };
     Alert.alert(
       'Delete this activity?',
-      'This removes the activity from your history and recalculates affected load and analytics. This cannot be undone.',
+      'This deletes the entire workout from StrideOS history and its account backup. It does not delete the workout from Apple Health. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete Activity',
           style: 'destructive',
-          onPress: () => removeActivity(activity.id),
+          onPress: performDelete,
         },
       ],
     );

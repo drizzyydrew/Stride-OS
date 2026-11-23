@@ -20,6 +20,7 @@ import { useActivityStore } from '../../../src/store/activityStore';
 import { useScheduledSessionSelectionStore } from '../../../src/store/scheduledSessionSelectionStore';
 import { useScheduledSessions } from '../../../src/hooks/useScheduledSessions';
 import { calendarEntriesFromScheduledSessions, sessionsFromBeginnerPlanForDate } from '../../../src/utils/scheduledSessions';
+import { visibleGoalArchives } from '../../../src/lib/goalArchiveOperations';
 import { useGoalArchiveStore } from '../../../src/store/goalArchiveStore';
 import { mergeCalendarHistory } from '../../../src/utils/calendarHistoryProjection';
 import { buildSkippedActivityDraft } from '../../../src/utils/activityCompletion';
@@ -44,6 +45,7 @@ import { goalArchiveLink } from '../../../src/utils/goal-archive-link';
 import { raceEventSnapshot, resolveArchiveActivityResult, resolveRaceActivityResult } from '../../../src/utils/raceLink';
 import { displayLabel } from '../../../src/utils/displayLabels';
 import { requireProAccess } from '../../../src/lib/pro-access';
+import { calendarDayStatus, calendarActivityIcon, CALENDAR_STATUS_LABEL } from '../../../src/utils/calendarPresentation';
 
 type CalendarEntry = BaseCalendarEntry & { raceId?: string; raceOutcome?: string; raceArchiveKey?: string };
 
@@ -186,7 +188,7 @@ export default function CalendarScreen() {
   const athleteId = useProfileStore(state => state.activeAthleteId);
   const archiveState = useGoalArchiveStore();
   const goalArchives = access && athleteId === 'athlete_default' && archiveState.ownerUserId === owner && archiveState.status === 'ready'
-    ? archiveState.archives.filter(archive => archive.ownerUserId === owner && archive.athleteId === 'athlete_default') : [];
+    ? visibleGoalArchives(archiveState.archives).filter(archive => archive.ownerUserId === owner && archive.athleteId === 'athlete_default') : [];
   const progressionLevel = useAthleteStore(s => s.progressionLevel);
   const activities = useActivityStore(s => s.activities);
   const activityStatus = useActivityStore(s => s.hydrationStatus);
@@ -342,25 +344,21 @@ export default function CalendarScreen() {
     return { entries: withHistory(entries), macroWeek, beforeStart: false };
   }
 
-  function rowState(date: Date, entries: CalendarEntry[], beforeStart: boolean): 'empty' | 'race' | 'completed' | 'missed' | 'today' | 'rest' | 'upcoming' {
-    if (beforeStart) return 'empty';
-    if (entries.some(e => e.type === 'race')) return 'race';
-    if (sameDay(date, today)) return 'today';
-    if (entries.length === 0) return 'rest';
-    if (entries.some(e => e.missed)) return 'missed';
-    if (entries.every(e => e.completed)) return 'completed';
-    return toYMD(date) < todayYMD ? 'missed' : 'upcoming';
+  function rowState(date: Date, entries: CalendarEntry[], beforeStart: boolean) {
+    return calendarDayStatus(entries,beforeStart,toYMD(date)<todayYMD);
   }
-
-  const STATE_COLOR: Record<string, string> = {
-    empty:     C.textMuted,
-    race:      '#DCC0A7',
-    completed: C.positive,
-    missed:    C.critical,
-    today:     C.primary,
-    rest:      C.textMuted,
-    upcoming:  C.textDim,
+  const STATE_COLOR: Record<string,string> = {
+    empty:C.textMuted, rest:C.textMuted, planned:C.primary,
+    completed:C.positive, missed:C.critical, partial:C.warning,
   };
+  function renderStatusLegend() {
+    return <View style={[styles.legendRow,{borderTopColor:C.border}]}>
+      {(['planned','completed','missed','partial'] as const).map(status=><View key={status} style={styles.legendItem}>
+        <View style={[styles.legendDot,{backgroundColor:STATE_COLOR[status]}]}/>
+        <Text style={[styles.legendText,{color:C.textMuted}]}>{CALENDAR_STATUS_LABEL[status]}</Text>
+      </View>)}
+    </View>;
+  }
 
   function changePeriod(direction: -1 | 1) {
     if (view === 'month') {
@@ -652,6 +650,7 @@ export default function CalendarScreen() {
               <TouchableOpacity
                 key={cell.key}
                 style={styles.monthCell}
+                accessibilityLabel={cell.date ? `${formatDayTitle(cell.date)}. ${CALENDAR_STATUS_LABEL[state]}. ${info?.entries.map(e=>e.label).join(', ') ?? ''}` : undefined}
                 onPress={() => cell.date && selectDate(cell.date)}
                 disabled={!cell.date}
                 activeOpacity={0.75}
@@ -669,25 +668,16 @@ export default function CalendarScreen() {
                     {cell.date ? cell.date.getDate() : ''}
                   </Text>
                 </View>
-                <View style={[styles.monthDot, { backgroundColor: dotColor }]} />
+                <View style={{flexDirection:'row',alignItems:'center',gap:3}}>
+                  <View style={[styles.monthDot, { backgroundColor: dotColor }]} />
+                  {info?.entries[0] ? <Ionicons name={calendarActivityIcon(info.entries[0].type)} size={11} color={C.textMuted}/> : null}
+                  {(info?.entries.length ?? 0)>1 ? <Text style={{fontSize:9,color:C.textMuted}}>+{info!.entries.length-1}</Text> : null}
+                </View>
               </TouchableOpacity>
             );
           })}
         </View>
-        <View style={[styles.legendRow, { borderTopColor: C.border }]}>
-          {[
-            ['Upcoming', C.textDim],
-            ['Completed', C.positive],
-            ['Missed', C.critical],
-            ['Race', '#DCC0A7'],
-            ['Deload/Taper', C.warning],
-          ].map(([label, color]) => (
-            <View key={label} style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: color }]} />
-              <Text style={[styles.legendText, { color: C.textMuted }]}>{label}</Text>
-            </View>
-          ))}
-        </View>
+        {renderStatusLegend()}
       </View>
     );
   }
@@ -731,8 +721,9 @@ export default function CalendarScreen() {
                 style={[
                   styles.weekItem,
                   {
-                    backgroundColor: isToday ? C.primaryDim : C.cardAlt,
+                    backgroundColor: C.cardAlt,
                     borderColor: isToday ? C.primary : 'transparent',
+                    borderLeftWidth:4, borderLeftColor:STATE_COLOR[item.state],
                     opacity: item.info.beforeStart ? 0.55 : 1,
                   },
                 ]}
@@ -742,27 +733,22 @@ export default function CalendarScreen() {
                 <Text style={[styles.weekDay, { color: STATE_COLOR[item.state] }]}>
                   {item.day.toLocaleDateString('en-US', { weekday: 'short' })}
                 </Text>
+                <Ionicons name={calendarActivityIcon(item.info.entries[0]?.type ?? 'rest')} size={17} color={C.textMuted}/>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.weekTitle, { color: C.text }]} numberOfLines={1}>
-                    {item.title}{isToday ? ' · Today' : ''}
+                    {item.title}
                   </Text>
                 </View>
-                {item.state === 'completed' ? (
-                  <Text style={[styles.doneText, { color: C.positive }]}>Done</Text>
-                ) : item.state === 'missed' ? (
-                  <Text style={[styles.doneText, { color: C.critical }]}>Missed</Text>
-                ) : item.state === 'race' ? (
-                  <Ionicons name="flag" size={16} color="#DCC0A7" />
-                ) : isToday ? (
-                  <View style={[styles.todayBadge, { backgroundColor: C.primaryDim, borderColor: C.primary }]}>
-                    <Text style={[styles.todayBadgeText, { color: C.primary }]}>TODAY</Text>
-                  </View>
-                ) : null}
+                <View style={{alignItems:'flex-end',gap:4}}>
+                  <Text style={[styles.doneText,{color:STATE_COLOR[item.state]}]}>{CALENDAR_STATUS_LABEL[item.state]}</Text>
+                  {isToday ? <Text style={[styles.todayBadgeText,{color:C.primary}]}>TODAY</Text> : null}
+                </View>
               </TouchableOpacity>
             );
           })}
         </View>
 
+        {renderStatusLegend()}
         {totalPlanned > 0 ? (
           <View style={[styles.weekProgress, { borderTopColor: C.border }]}>
             <Text style={[styles.weekProgressText, { color: C.textMuted }]}>

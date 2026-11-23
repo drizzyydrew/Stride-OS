@@ -63,6 +63,7 @@ export function useWeekPlan(): WeekPlan {
 
   // ── Plan spine ────────────────────────────────────────────────────────────
   const goalType         = useTrainingPlanStore(s => s.goalType);
+  const goalIntent = useTrainingPlanStore(s => s.goalIntent);
   const secondaryGoalTypes = useTrainingPlanStore(s => s.secondaryGoalTypes);
   const goalBlockId = useTrainingPlanStore(s => s.goalBlockId);
   const programmingStartedAt = useTrainingPlanStore(s => s.programmingStartedAt);
@@ -149,7 +150,7 @@ export function useWeekPlan(): WeekPlan {
     if (!programStartDate) return null;
     return alignStoredBeginnerMacro(buildMacroPlan({
       programmingVersion: strengthProgrammingVersion,
-      goalType, secondaryGoalTypes,
+      goalType, goalIntent, secondaryGoalTypes,
       startDate:     programStartDate,
       races,
       progressionLevel,
@@ -157,7 +158,7 @@ export function useWeekPlan(): WeekPlan {
       weeklyMileage: onboardingData.weeklyMileage,
     }), activeBeginnerPlan);
   }, [
-    goalType, secondaryGoalTypes, strengthProgrammingVersion, programStartDate, races, progressionLevel, activeBeginnerPlan,
+    goalType, goalIntent, secondaryGoalTypes, strengthProgrammingVersion, programStartDate, races, progressionLevel, activeBeginnerPlan,
     onboardingData.yearsRunning, onboardingData.weeklyMileage,
   ]);
 
@@ -184,7 +185,7 @@ export function useWeekPlan(): WeekPlan {
     progressionLevel,
 
     // Plan spine
-    goalType, secondaryGoalTypes,
+    goalType, goalIntent, secondaryGoalTypes,
     goalScopeId: goalBlockId ?? `${goalType}:${programStartDate}:${programmingStartedAt ?? 'legacy'}`,
     trainingMode,
     macroWeek,
@@ -236,7 +237,7 @@ export function useWeekPlan(): WeekPlan {
   }), [
     goalRace, weeklyMileage, fatigueScore, recoveryScore,
     currentWeek, trainingPhase, progressionLevel,
-    goalType, secondaryGoalTypes, goalBlockId, programmingStartedAt, strengthProgrammingVersion, activeStrengthSessionId, activeRunningWorkoutId, trainingMode, macroWeek, beforeStart, programStartDate, races, activeBeginnerPlan,
+    goalType, goalIntent, secondaryGoalTypes, goalBlockId, programmingStartedAt, strengthProgrammingVersion, activeStrengthSessionId, activeRunningWorkoutId, trainingMode, macroWeek, beforeStart, programStartDate, races, activeBeginnerPlan,
     calibration, profile,
     onboardingData,
     checkedIn, todayCheckIn,

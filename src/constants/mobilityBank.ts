@@ -1,3 +1,4 @@
+import { ACTIVITY_MOBILITY_PRESETS } from './activityMobilityPresets';
 // ─── Mobility Exercise & Workout Bank (Build 34, Wave 1B) ─────────────────────
 //
 // Content contract: docs/movement-readiness-evidence.md. Language stays inside
@@ -484,6 +485,7 @@ export function getMobilityExercise(id: string): MobilityExercise | undefined {
 // ─── Workouts ──────────────────────────────────────────────────────────────────
 
 export const MOBILITY_WORKOUTS: MobilityWorkout[] = [
+  ...ACTIVITY_MOBILITY_PRESETS,
   {
     id: 'pre_run_mobility_primer',
     title: 'Pre-Run Mobility Primer',
@@ -1349,6 +1351,11 @@ export function getMobilityWorkoutsByCategory(category: MobilityCategory): Mobil
 }
 
 export const MOBILITY_CATEGORY_LABELS: Record<MobilityCategory, string> = {
+  hiking: 'Hiking',
+  downhill_skiing: 'Downhill Skiing',
+  snowboarding: 'Snowboarding',
+  cross_country_skiing: 'Cross-Country Skiing',
+  mountaineering: 'Mountaineering',
   full_body: 'Full Body',
   problem_areas: 'Problem Areas',
   ankle: 'Ankle',

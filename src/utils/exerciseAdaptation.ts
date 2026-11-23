@@ -1,3 +1,4 @@
+import { ACTIVITY_EXERCISE_DEFINITIONS } from '../constants/activityExerciseBank';
 import { PLYOMETRIC_CATALOG, plyometricTask } from './plyometricCatalog';
 import type { RepScheme } from '../types/strength';
 
@@ -25,6 +26,12 @@ const FAMILIES: Array<[RegExp, string, string[], ExerciseStimulus, string]> = [
   [/push press/, 'overhead_power', ['delts', 'triceps'], 'power', 'fast overhead pressing'],
   [/thruster/, 'whole_body_power', ['quads', 'glutes', 'delts'], 'power', 'coordinated lower-body and overhead work'],
   [/squat pry|lunge with rotation/, 'multi_joint_mobility', ['hips', 'legs'], 'mobility', 'comfortable dynamic hip and leg range'],
+  [/clock reach/, 'dynamic_balance', ['calves', 'glutes'], 'capacity', 'controlled single-leg reaching and return with support as needed'],
+  [/short.foot|arch practice/, 'foot_arch_control', ['foot muscles'], 'capacity', 'small controlled arch movement without toe gripping'],
+  [/toe press/, 'foot_toe_pressure', ['foot muscles'], 'capacity', 'controlled toe-pad pressure without gripping'],
+  [/straight.arm.*(?:poling|pull)/, 'shoulder_extension', ['lats','triceps'], 'strength', 'controlled straight-arm shoulder extension'],
+  [/hiking carry|mountaineering dumbbell carry/, 'carry_bilateral', ['grip','traps'], 'capacity', 'bilateral loaded carrying'],
+  [/ski wall sit/, 'knee_extension_isometric', ['quads'], 'capacity', 'controlled knee-extension isometric loading'],
   [/single.leg balance|tandem balance/, 'balance', ['calves', 'glutes'], 'capacity', 'controlled balance practice with support as needed'],
   [/hip adduction/, 'hip_adduction', ['adductors'], 'strength', 'direct hip-adductor loading'],
   [/triceps/, 'elbow_extension', ['triceps'], 'strength', 'controlled elbow extension'],
@@ -117,6 +124,13 @@ const option = (name: string, equipment: string[], reps = '8–12', repScheme?: 
     repScheme: repScheme ?? { kind: 'reps', repsMin: 8, repsMax: 12 } });
 const hold = (name: string, equipment: string[] = ['bodyweight']) => option(name, equipment, '20–30 sec', { kind: 'duration', secondsMin: 20, secondsMax: 30 });
 export const EXERCISE_ADAPTATION_OPTIONS = [
+  ...ACTIVITY_EXERCISE_DEFINITIONS.map(entry=>{
+    const timed=entry.pattern==='carry'||entry.id==='ski_wall_hold';
+    const footControl=entry.id==='foot_toe_press'||entry.id==='foot_short_arch';
+    const repScheme:RepScheme=timed?{kind:'duration',secondsMin:20,secondsMax:30}:footControl?{kind:'reps_hold',repsMin:6,repsMax:6,holdSeconds:5}:{kind:'reps',repsMin:entry.kind==='balance'?3:8,repsMax:entry.kind==='balance'?3:12,perSide:entry.unilateral};
+    return {id:entry.id,name:entry.name,equipment:[...entry.equipment,...entry.setupEquipment],stimulus:entry.kind==='strength'?'strength' as const:'capacity' as const,
+      reps:timed?'20–30 sec':footControl?'6 × 5 sec hold':entry.kind==='balance'?'3 per side':'8–12',repScheme};
+  }),
   ...PLYOMETRIC_CATALOG.map(task=>({id:task.exercise.id,name:task.exercise.name,equipment:task.exercise.equipment,stimulus:'power' as const,reps:`${task.initialReps}${task.exercise.unilateral?' per leg':''}`,repScheme:{kind:'reps' as const,repsMin:task.initialReps,repsMax:task.maxReps,perSide:task.exercise.unilateral}})),
   option('Leg Press', ['machine']), option('Single-Leg Leg Press', ['machine']), option('Supported Sit-to-Stand', ['bodyweight', 'bench']),
   option('Leg Extension', ['machine']), option('Cable Hip Adduction', ['cable']), option('Standing Band Hip Adduction', ['band', 'secure_anchor']),

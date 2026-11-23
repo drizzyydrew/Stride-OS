@@ -1,3 +1,4 @@
+import { workoutWasDeleted, newPerformanceIdentity, completionKeyFor } from '../utils/workoutDeletion';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createAppJSONStorage, getAppStorage } from './persistStorage';
@@ -82,7 +83,7 @@ type WorkoutStore = {
   ) => void;
 
   editLog:    (id: string, updates: LogEdits)        => void;
-  deleteLog:  (id: string)                           => void;
+  deleteLog:  (id: string, lease?: OwnerLease) => Promise<void>;
   hydrateWorkouts: (records: CompletedWorkoutRecord[]) => void;
   manualLog:  (
     entry:            ManualLogEntry,
@@ -241,7 +242,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           if (entry.ownerUserId && entry.ownerUserId !== lease.ownerUserId) throw new Error('Run belongs to a different local account');
           if (!entry.workoutInstanceId || entry.actualStartTime == null || entry.actualEndTime == null) throw new Error('Run identity and actual times are required');
           const completionKey = runCompletionKey(entry.workoutInstanceId, entry.actualStartTime);
-          const existing = get().history.find(record => record.id === completionKey || record.workoutInstanceId === entry.workoutInstanceId);
+          const existing = get().history.find(record => (record.id === completionKey || record.completionKey === completionKey) || record.workoutInstanceId === entry.workoutInstanceId);
           if (existing) {
             if (existing.ownerUserId && existing.ownerUserId !== lease.ownerUserId) throw new Error('Saved run belongs to a different local account');
             const projection = activityFromWorkoutRecord(existing, false);
@@ -260,7 +261,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           get().manualLog({ ...saved.entry, watchRecording: saved.entry.watchRecording
             ?? matchingWatchRecording(entry.watchRecording, saved.entry.workoutInstanceId, saved.entry.actualStartTime) },
           saved.week, saved.fatigue, saved.recovery, setFatigueScore, setRecentEasyLoad);
-          const record = get().history.find(record => record.id === completionKey || record.workoutInstanceId === saved.entry.workoutInstanceId);
+          const record = get().history.find(record => (record.id === completionKey || record.completionKey === completionKey) || record.workoutInstanceId === saved.entry.workoutInstanceId);
           if (!record) throw new Error('Saved recording history is unavailable; retry recovery');
           const activityId = await flushCompletionHistory(lease, record);
           if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed; run recovery remains available to its original owner');
@@ -355,7 +356,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           computeLoadFields(workout.durationMinutes, workout.intensity, currentFatigue, history, workout.type);
 
         const record: CompletedWorkoutRecord = {
-          id:                     completionKey,
+          ...newPerformanceIdentity(completionKey, 'workout', useActivityStore.getState().deletedActivities),
           workoutId:              workout.id,
           type:                   workout.type,
           intensity:              workout.intensity,
@@ -373,6 +374,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           source:                 'generated',
         };
 
+        if (workoutWasDeleted(useActivityStore.getState().deletedActivities, 'activity_logs', activityFromWorkoutRecord(record, false))) throw new Error('This exact workout was deleted. Start a new recording rather than retry the deleted recording.');
         setRecentEasyLoad(newEasyLoad);
         setFatigueScore(fatigueAfter);
 
@@ -401,7 +403,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
         const recoveryDelta = 2;
 
         const record: CompletedWorkoutRecord = {
-          id:                     completionKey,
+          ...newPerformanceIdentity(completionKey, 'workout', useActivityStore.getState().deletedActivities),
           workoutId:              workout.id,
           type:                   workout.type,
           intensity:              workout.intensity,
@@ -434,10 +436,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       editLog: (id, updates) => {
         if (!captureOwnerLease()) throw new Error('Local training data is locked until its owner is confirmed');
-        const existing = get().history.find(record => record.id === id);
+        const existing = get().history.find(record => (record.id === id || record.completionKey === id));
         set(state => ({
           history: state.history.map(r =>
-            r.id === id ? { ...r, ...updates } : r,
+            (r.id === id || r.completionKey === id) ? { ...r, ...updates } : r,
           ),
         }));
         if (existing) {
@@ -449,30 +451,34 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       // ── Delete a logged record ────────────────────────────────────────────────
 
-      deleteLog: (id) => {
-        if (!captureOwnerLease()) throw new Error('Local training data is locked until its owner is confirmed');
-        const record = get().history.find(item => item.id === id);
+      deleteLog: async (id, expectedOwner) => {
+        const lease = expectedOwner ?? captureOwnerLease();
+        if (!lease || !ownerLeaseIsCurrent(lease)) throw new Error('Local training data is locked until its owner is confirmed');
+        const record = get().history.find(item => (item.id === id || item.completionKey === id));
         const projection = record ? activityFromWorkoutRecord(record, false) : null;
         const activityIds = projection ? useActivityStore.getState().activities
-          .filter(activity => sameRecording(activity, projection)).map(activity => activity.id) : [`activity_workout_${id}`];
+          .filter(activity => sameRecording(activity, projection)).map(activity => activity.id) : [];
+        if (!activityIds.length) activityIds.push(`activity_workout_${id}`);
+        for (const activityId of activityIds) await useActivityStore.getState().removeActivityAndPersist(activityId, lease);
+        if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed during deletion');
         set(state => ({
-          completedWorkouts: state.completedWorkouts.filter(k => k !== id),
-          history:           state.history.filter(r => r.id !== id),
+          completedWorkouts: state.completedWorkouts.filter(k => k !== id && k !== record?.id && k !== record?.completionKey),
+          history:           state.history.filter(r => r.id !== (record?.id ?? id)),
         }));
-        activityIds.forEach(activityId => useActivityStore.getState().removeActivity(activityId));
-        deleteWorkoutLog(id).catch(console.warn);
+        deleteWorkoutLog(record?.id ?? id).catch(console.warn);
       },
 
       // ── Hydrate from Supabase ─────────────────────────────────────────────────
 
       hydrateWorkouts: (records) => {
+        records = records.filter(row => !workoutWasDeleted(useActivityStore.getState().deletedActivities, 'workout_logs', row));
         if (!captureOwnerLease()) throw new Error('Local training data is locked until its owner is confirmed');
         set(state => {
-          const existingIds = new Set(state.completedWorkouts);
+          const existingIds = new Set(state.history.map(row => row.id));
           const newRecords  = records.filter(r => !existingIds.has(r.id)).map(migrateRecord);
           if (newRecords.length === 0) return state;
           return {
-            completedWorkouts: [...state.completedWorkouts, ...newRecords.map(r => r.id)],
+            completedWorkouts: [...state.completedWorkouts, ...newRecords.map(completionKeyFor)],
             history:           [...state.history, ...newRecords],
           };
         });
@@ -491,7 +497,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }
         if (!lease) throw new Error('Local training data is locked until its owner is confirmed');
         if (entry.ownerUserId && entry.ownerUserId !== lease.ownerUserId) throw new Error('Run belongs to a different local account');
-        const existing = get().history.find(record => record.id === entry.completionKey
+        if (entry.workoutInstanceId && workoutWasDeleted(useActivityStore.getState().deletedActivities, 'activity_logs', { id: `activity_workout_${entry.completionKey}`, legacyWorkoutId: entry.completionKey, workoutInstanceId: entry.workoutInstanceId })) throw new Error('This exact recording was deleted. Start a new recording.');
+        const existing = get().history.find(record => (record.id === entry.completionKey || record.completionKey === entry.completionKey)
           || (entry.workoutInstanceId && record.workoutInstanceId === entry.workoutInstanceId));
         if (existing) {
           if (existing.ownerUserId && existing.ownerUserId !== lease.ownerUserId) throw new Error('Saved run belongs to a different local account');
@@ -518,7 +525,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           computeLoadFields(entry.durationMinutes, intensity, currentFatigue, history, entry.type);
 
         const record: RunWorkoutRecord = {
-          id:                     entry.completionKey,
+          ...(entry.workoutInstanceId ? { id: entry.completionKey } : newPerformanceIdentity(entry.completionKey, 'workout', useActivityStore.getState().deletedActivities)),
           workoutId:              entry.workoutId ?? entry.type,
           workoutInstanceId:      entry.workoutInstanceId,
           watchRecording:         matchingWatchRecording(entry.watchRecording, entry.workoutInstanceId, entry.actualStartTime),
@@ -555,6 +562,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
           source:                 entry.source ?? 'manual',
         };
 
+        if (workoutWasDeleted(useActivityStore.getState().deletedActivities, 'activity_logs', activityFromWorkoutRecord(record, false))) throw new Error('This exact workout was deleted. Start a new recording rather than retry the deleted recording.');
         setRecentEasyLoad(newEasyLoad);
         setFatigueScore(fatigueAfter);
 
@@ -595,14 +603,14 @@ export function saveRunningQualityFeedback(id: string, feedback: RunningQualityF
   // Capture before entering the queue; a later same-ID record is not the editor's original.
   const expectedSignature = guard ? signature(guard.expectedRecord) : null;
   const guardCurrent = () => !guard || guard.isCurrent()
-    && useWorkoutStore.getState().history.find(record => record.id === id) === guard.expectedRecord
+    && useWorkoutStore.getState().history.find(record => (record.id === id || record.completionKey === id)) === guard.expectedRecord
     && signature(guard.expectedRecord) === expectedSignature;
   return serializedCompletion(async () => {
     for (let attempt = 0; attempt < 3; attempt++) {
       if (!ownerLeaseIsCurrent(lease) || !useWorkoutStore.persist.hasHydrated()) throw new Error('Run history is not ready for this account');
       if (!guardCurrent()) throw new Error('Workout or athlete changed. Reopen feedback for the current saved run.');
       const state = useWorkoutStore.getState();
-      const original = state.history.find(record => record.id === id);
+      const original = state.history.find(record => (record.id === id || record.completionKey === id));
       if (!canReportRunningQuality(original) || (original?.ownerUserId && original.ownerUserId !== lease.ownerUserId)) throw new Error('This saved run cannot accept a quality report');
       const quality = feedback === null ? undefined : normalizeRunningQuality(feedback, original!.actualDurationMinutes);
       if (feedback !== null && !quality) throw new Error('Check the completed repeats, work time and effort against the actual run duration');
@@ -617,7 +625,7 @@ export function saveRunningQualityFeedback(id: string, feedback: RunningQualityF
       }
       const updated = { ...original!, runningQuality: quality,
         ...(normalizedResponse ? { runningQualityResponse: normalizedResponse } : {}) };
-      const history = state.history.map(record => record.id === id ? updated : record);
+      const history = state.history.map(record => (record.id === id || record.completionKey === id) ? updated : record);
       const encode = (value: Pick<WorkoutStore, 'history' | 'completedWorkouts'>) => JSON.stringify({ state: { history: value.history, completedWorkouts: value.completedWorkouts }, version: 0 });
       const encoded = encode({ history, completedWorkouts: state.completedWorkouts });
       const storage = getAppStorage();

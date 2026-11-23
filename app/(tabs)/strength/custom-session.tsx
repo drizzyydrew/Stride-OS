@@ -216,6 +216,7 @@ export default function CustomStrengthSessionScreen() {
 
     manualLog({
       completionKey: `custom_${activeSession.workoutInstanceId}`,
+      workoutInstanceId: activeSession.workoutInstanceId,
       templateId: activeSession.templateId,
       scheduledSessionId: activeSession.scheduledSessionId,
       sessionType: scheduledSession?.strengthSession?.sessionType ?? 'full_body',

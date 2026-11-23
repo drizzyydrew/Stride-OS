@@ -155,17 +155,17 @@ function screenHandlers(context: Record<string, any>) {
     && node.expression.arguments[1]?.getText(file) === '[chat.owner]') as ts.ExpressionStatement;
   assert.ok(reset && ts.isCallExpression(reset.expression));
   const resetBody = reset.expression.arguments[0]!.getText(file);
-  const code = ts.transpileModule(`${declaration('sendMessage')}\n${declaration('recoverMessage')}\nconst resetOwner=${resetBody};\nmodule.exports={sendMessage,recoverMessage,resetOwner};`, {
+  const code = ts.transpileModule(`${declaration('retrySavedChat')}\n${declaration('sendMessage')}\n${declaration('recoverMessage')}\nconst resetOwner=${resetBody};\nmodule.exports={sendMessage,recoverMessage,retrySavedChat,resetOwner};`, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const module = { exports: {} };
   vm.runInNewContext(code, { module, exports: module.exports, Error, Date, ...context });
-  return module.exports as { sendMessage(): Promise<void>; recoverMessage(): Promise<void>; resetOwner(): void };
+  return module.exports as { sendMessage(): Promise<void>; recoverMessage(): Promise<void>; retrySavedChat(): Promise<void>; resetOwner(): void };
 }
 function handlerHarness() {
   const pending = deferred<void>(), appends: SavedCoachMessage[] = [], sends: any[] = [], state: Record<string, any> = {};
   let sequence = 0;
-  const context = { input: 'My question', recoverable: null as SavedCoachMessage | null, inFlight: { current: false }, operation: { current: 0 },
-    chat: { owner: 'A', ready: true, append: async (value: SavedCoachMessage) => { appends.push(value); await pending.promise; },
+  const context = { input: 'My question', chatRetryInFlight:{current:false}, setChatRetrying:(value:boolean)=>{state.retrying=value},setChatNotice:(value:string|null)=>{state.notice=value}, recoverable: null as SavedCoachMessage | null, inFlight: { current: false }, operation: { current: 0 },
+    chat: { owner: 'A', ready: true,retry:async()=>true, append: async (value: SavedCoachMessage) => { appends.push(value); await pending.promise; },
       prune: async () => [message('recover')], markFailed: async () => undefined },
     randomUUID: () => `request-${++sequence}`, setLoading: (value: boolean) => { state.loading = value; },
     setError: (value: string | null) => { state.error = value; }, setInput: (value: string) => { state.input = value; },
@@ -217,4 +217,20 @@ test('failed-reply recovery cannot restore a previous owner question after a del
   writing.resolve(); await recovery;
   assert.equal(h.state.input, 'New owner draft'); assert.equal(h.state.error, null);
   assert.equal(h.context.inFlight.current, false);
+});
+
+
+test('saved-chat Retry is actionable, preserves the draft, and never spends a message', async()=>{
+ const h=handlerHarness();h.context.chat.ready=false;
+ const handlers=screenHandlers(h.context);await handlers.sendMessage();
+ assert.equal(h.appends.length,0);assert.equal(h.sends.length,0);assert.equal(h.state.input,undefined);
+ assert.equal(h.state.retrying,false);assert.equal(h.context.chatRetryInFlight.current,false);
+ assert.equal(h.state.notice,'Saved chat restored. Tap Send to send your draft.');
+});
+test('saved-chat Retry locks synchronously and an owner reset cancels its delayed UI result',async()=>{
+ const h=handlerHarness(),pending=deferred<boolean>();let calls=0;
+ h.context.chat.retry=async()=>{calls++;return pending.promise};
+ const handlers=screenHandlers(h.context),first=handlers.retrySavedChat(),second=handlers.retrySavedChat();
+ assert.equal(calls,1);handlers.resetOwner();h.state.error='New owner status';pending.resolve(true);await Promise.all([first,second]);
+ assert.equal(h.state.error,'New owner status');assert.equal(h.sends.length,0);
 });

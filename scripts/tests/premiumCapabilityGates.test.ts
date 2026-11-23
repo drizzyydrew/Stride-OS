@@ -6,6 +6,8 @@ import ts from 'typescript';
 import { Fragment } from 'react';
 import * as jsxRuntime from 'react/jsx-runtime';
 import { evaluateProAccess, type ProFeature } from '../../src/utils/pro-access';
+import { routeEditCanCommit } from '../../src/utils/routeEditing';
+import { routePointAtMeters, snapshotRoute } from '../../src/utils/routeSections';
 
 function moduleAt(file: string, mocks: Record<string, unknown>) {
   const module = { exports: {} as any };
@@ -109,12 +111,18 @@ function routeSaveHarness() {
   const functions = screen.body!.statements.filter(node => ts.isFunctionDeclaration(node)
     && ['authorizeSave', 'saveRoute'].includes(node.name?.text ?? '')).map(node => node.getText(file)).join('\n');
   let allowed = true, checks = 0, commits = 0;
+  let generation=1;
   let wait: Promise<void> = Promise.resolve();
   const alive = { current: true }, pending = { current: false };
   const script = ts.transpileModule(`${functions}\nexports.save = authorizeSave;`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
   const exports: any = {};
   vm.runInNewContext(script, { exports, Error, Math,
     saveAlive: alive, savePending: pending,
+    ownerLease:{current:{ownerUserId:'a',generation:1}},
+    ownerLeaseIsCurrent:(lease:any)=>lease.ownerUserId==='a'&&lease.generation===generation,
+    routeEditCanCommit,routePointAtMeters,snapshotRoute,
+    editingRoute:null,geometryChanged:false,saveAsNew:false,sections:[],
+    useRouteStore:{getState:()=>({routes:[]})},updateRoute(){throw new Error('A new route cannot mutate a saved route');},
     requireProAccess: async () => { checks++; await wait; },
     assertProAccess: () => { if (!allowed) throw new Error('Membership expired'); },
     Alert: { alert() {} }, canSave: true, routeName: '', elevation: null, distanceMiles: 1,
@@ -123,15 +131,16 @@ function routeSaveHarness() {
     addRoute: () => { commits++; return 'new-route'; },
   });
   return { save: () => exports.save(), expire: () => { allowed = false; }, unmount: () => { alive.current = false; },
+    changeOwner:()=>{generation++;},
     wait: (value: Promise<void>) => { wait = value; }, counts: () => ({ checks, commits }) };
 }
 
 test('route save rechecks expiry after verification and never commits a retired screen draft', async () => {
-  for (const invalidation of ['expiry', 'unmount'] as const) {
+  for (const invalidation of ['expiry', 'unmount','owner'] as const) {
     const h = routeSaveHarness(); let release!: () => void;
     h.wait(new Promise<void>(resolve => { release = resolve; }));
     const saving = h.save();
-    if (invalidation === 'expiry') h.expire(); else h.unmount();
+    if (invalidation === 'expiry') h.expire(); else if(invalidation==='owner') h.changeOwner(); else h.unmount();
     release(); await saving;
     assert.deepEqual(h.counts(), { checks: 1, commits: 0 });
   }

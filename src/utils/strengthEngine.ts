@@ -26,6 +26,9 @@ import { parsePrescriptionScheme } from './prescriptionFormat';
 import { applyGoalPlyometrics, PLYOMETRIC_CATALOG } from './goalPlyometrics';
 import { estimateStrengthSessionMinutes, fitStrengthSessionToTime, strengthExerciseReviewNote, strengthExerciseEquipment, strengthExercisesForEquipment, strengthProgressionLevel, strengthTimeBudget } from './strengthDesign';
 import { trainingGoalBlend } from './trainingGoals';
+import { ACTIVITY_EXERCISES, ACTIVITY_PROFILE_EXERCISE_IDS } from '../constants/activityExerciseBank';
+import { profileExerciseIds, profileExerciseDose, fitProfileStrengthSession, plannedStrengthWorkingSets, FOOT_BALANCE_PROFILES, PROFILE_PREPARATION } from './goalProfileProgramming';
+import { GOAL_PROFILE_LABELS } from './goalIntent';
 import { applyGoalStrengthProgramming } from './goalStrengthProgramming';
 import { getGoalMesocycle } from './plan/goalMesocycle';
 
@@ -35,6 +38,7 @@ import { getGoalMesocycle } from './plan/goalMesocycle';
 // pattern from ID without needing the full Exercise object.
 
 export const STRENGTH_EXERCISES: Record<string, Exercise> = {
+  ...Object.fromEntries(ACTIVITY_EXERCISES.map(exercise => [exercise.id, exercise])),
 
   // ── Squat ──────────────────────────────────────────────────────────────────
   squat_goblet: {
@@ -213,9 +217,9 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
     rationale: 'Direct plantarflexor strength. Use a consistent range, support and load; record the work actually completed.',
   },
   calf_seated: {
-    id: 'calf_seated', name: 'Seated Calf Raise', pattern: 'calf_ankle',
+    id: 'calf_seated', name: 'Loaded Seated Calf Raise', pattern: 'calf_ankle',
     equipment: ['dumbbell', 'machine'], unilateral: false, cnsLoad: 'low',
-    coachingCues: ['Heavy load on top of quads', 'Full ROM — stretch and squeeze', 'Slow tempo isolates soleus'],
+    coachingCues: ['Secure a meaningful load comfortably above the knees.', 'Use a repeatable, comfortable range and controlled lowering.', 'Choose resistance for the prescribed effort; seated work is not automatically easy.'],
     contraindications: [],
     rationale: 'A bent-knee plantarflexor strength option. Use a repeatable setup and a load suited to the intended effort.',
   },
@@ -223,7 +227,7 @@ export const STRENGTH_EXERCISES: Record<string, Exercise> = {
   calf_pogo: {
     id: 'calf_pogo', name: 'Pogo Hops', pattern: 'calf_ankle',
     equipment: ['bodyweight'], unilateral: false, cnsLoad: 'low',
-    coachingCues: ['Land on forefeet — zero heel contact', 'Stiff ankles — minimal knee bend', 'Fast ground contact — think springs'],
+    coachingCues: ['Use small comfortable two-foot contacts on a clear level surface', 'Allow controlled ankle and knee motion; heel contact can vary with the task', 'Reset or rest fully when rhythm, control or tolerance changes'],
     contraindications: ['achilles_tendinopathy_reactive', 'plantar_fasciitis_acute'],
     rationale: 'A reactive hopping option. Keep repetitions controllable and choose a lower-impact alternative if this stimulus does not fit.',
   },
@@ -580,7 +584,13 @@ function buildSession(
     rationale: 'Knee-dominant, hip-dominant, push, pull, single-leg, calf and trunk roles organize the work. Exercises are adjustable tools; weekly coverage and a manageable dose matter more than filling every category in every session.',
   } : original;
   const isDeload  = phase === 'deload' || phase === 'taper' || input.fatigueScore > 75;
-  const selectedIds = personFirst ? strengthExercisesForEquipment(template.exerciseIds, input.availableEquipment, STRENGTH_EXERCISES) : template.exerciseIds;
+  const intent = personFirst ? input.goalIntent : undefined;
+  const primary = intent?.priorities[0];
+  const primaryIds = primary ? ACTIVITY_PROFILE_EXERCISE_IDS[primary] : undefined;
+  // Priority work is placed first so the existing time fitter drops support first.
+  // Supporting profiles share slots; they never append a second program.
+  const profileIds = intent ? profileExerciseIds(intent, template.exerciseIds, index) : [...template.exerciseIds];
+  const selectedIds = personFirst ? strengthExercisesForEquipment(profileIds, input.availableEquipment, STRENGTH_EXERCISES) : template.exerciseIds;
   let exercises = selectedIds.map(id =>
     buildExercise(id, template, isDeload),
   );
@@ -595,8 +605,11 @@ function buildSession(
       progressionRule: 'First repeat the setup and prescribed reps at the intended effort. Consider a small rep or load change only from recorded working-set performance; keep failure optional.',
       loadTarget: ex.exercise.pattern === 'mobility' ? ex.loadTarget : `RPE ${ex.rpe} — choose a repeatable, submaximal effort; this is not a measured maximum`,
     }));
-    const designed = applyGoalStrengthProgramming(exercises, input, sessionType, STRENGTH_EXERCISES);
-    exercises = fitStrengthSessionToTime(designed.exercises, strengthTimeBudget(input.availableTimeMin));
+    // New catalog entries cannot change legacy six-week variation ordering.
+    const programmingLibrary = intent ? STRENGTH_EXERCISES : Object.fromEntries(Object.entries(STRENGTH_EXERCISES)
+      .filter(([id]) => !ACTIVITY_EXERCISES.some(exercise => exercise.id === id)));
+    const designed = applyGoalStrengthProgramming(exercises, input, sessionType, programmingLibrary);
+    exercises = intent ? fitProfileStrengthSession(designed.exercises.map(exercise => profileExerciseDose(exercise, input)), input, strengthTimeBudget(input.availableTimeMin)) : fitStrengthSessionToTime(designed.exercises, strengthTimeBudget(input.availableTimeMin));
     goalProgrammingNote = designed.note;
   }
 
@@ -615,15 +628,16 @@ function buildSession(
 
   return {
     id,
-    title:            personFirst && sessionType === 'full_body' && !['push', 'pull'].every(role => exercises.some(ex => ex.exercise.pattern === role)) ? 'Strength Priorities' : template.title,
-    goal:             template.goal,
+    ...(primary ? { goalProfile: primary } : {}),
+    title:            primary ? `${GOAL_PROFILE_LABELS[primary]} · ${index % 2 ? 'B' : 'A'}` : personFirst && sessionType === 'full_body' && !['push', 'pull'].every(role => exercises.some(ex => ex.exercise.pattern === role)) ? 'Strength Priorities' : template.title,
+    goal:             primary === 'power' ? 'power' : primary === 'build_muscle' ? 'hypertrophy' : intent?.season === 'in_season' ? 'maintenance' : template.goal,
     sessionType,
     targetDuration,
     primaryPatterns:  personFirst ? [...new Set(exercises.map(ex => ex.exercise.pattern))] : template.patterns,
     exercises,
-    warmupProtocol:   personFirst ? 'Allow about 5 minutes for easy movement and lighter rehearsal sets of the first exercises. Adjust setup, support and range before working sets; no maximum-strength test is required.' : 'Dynamic warm-up: 5 min — leg swings (front/lateral), hip circles, glute bridges (2×10), and a light set of the first exercise at 40% load.',
-    cooldownProtocol: personFirst ? 'Allow about 3 minutes to finish with easy movement. Optional comfortable mobility can fit here; extra recovery exercises are not required just to fill categories.' : 'Foam roll legs (IT band, hamstrings, quads) 60–90s per side. Hip flexor and calf stretches 30s per side.',
-    purpose:          exercises.length ? template.purpose : 'No complete working-set prescription fits this time window. Choose more time or a shorter custom session rather than rush the planned work.',
+    warmupProtocol:   primary && FOOT_BALANCE_PROFILES.includes(primary) && exercises.some(exercise=>exercise.exerciseId==='foot_clock_reach') ? `Begin with the small supported clock-reach primer shown below; it is already counted in this session. Do not repeat it in the warm-up. ${PROFILE_PREPARATION[primary]?.warmup ?? 'Then use easy task-specific movement and lighter rehearsal sets of the main exercises.'}` : primary && PROFILE_PREPARATION[primary] ? PROFILE_PREPARATION[primary]!.warmup : primaryIds?.length ? 'Begin with easy sport-relevant movement, supported clock reaches and lighter rehearsal of the first loaded movement. Balance replaces other balance work; do not add extra hops or calf sets beyond this plan.' : personFirst ? 'Allow about 5 minutes for easy movement and lighter rehearsal sets of the first exercises. Adjust setup, support and range before working sets; no maximum-strength test is required.' : 'Dynamic warm-up: 5 min — leg swings (front/lateral), hip circles, glute bridges (2×10), and a light set of the first exercise at 40% load.',
+    cooldownProtocol: primary && PROFILE_PREPARATION[primary] ? PROFILE_PREPARATION[primary]!.cooldown : primaryIds?.length ? 'Finish with easy movement and comfortable ankle, calf and hip mobility relevant to today’s sport. Reduce range or omit positions that aggravate symptoms.' : personFirst ? 'Allow about 3 minutes to finish with easy movement. Optional comfortable mobility can fit here; extra recovery exercises are not required just to fill categories.' : 'Foam roll legs (IT band, hamstrings, quads) 60–90s per side. Hip flexor and calf stretches 30s per side.',
+    purpose:          exercises.length ? primary ? `Develop ${GOAL_PROFILE_LABELS[primary].toLowerCase()} capacity within your shared weekly budget.` : template.purpose : 'No complete working-set prescription fits this time window. Choose more time or a shorter custom session rather than rush the planned work.',
     rationale:        template.rationale,
     progressionNote: personFirst ? `${goalProgrammingNote} ${exercises.length < template.exerciseIds.length ? 'Some supporting roles were omitted to fit the stated time or equipment; review coverage across the week.' : ''}` : progressionNote,
   };
@@ -748,7 +762,7 @@ export function generateStrengthWeek(input: StrengthEngineInput): StrengthWeek {
     ?? PHASE_CONFIG['base']!['intermediate']!;
 
   const goalBlend = trainingGoalBlend(input.goalType ?? 'general_running', input.secondaryGoalTypes);
-  if (input.programmingVersion === 2 && (trainingPhase === 'foundation'
+  if (input.programmingVersion === 2 && (input.goalIntent !== undefined || trainingPhase === 'foundation'
     || (goalBlend.strengthSupport && (['base', 'aerobic_development', 'build'].includes(trainingPhase)
       || (input.goalType === 'general_strength' && goalBlend.speedSupport && trainingPhase === 'threshold'))))) {
     const count = Math.min(2, Math.max(1, input.liftDays?.length ?? (level === 'beginner' ? 1 : 2)));
@@ -770,17 +784,17 @@ export function generateStrengthWeek(input: StrengthEngineInput): StrengthWeek {
   );
 
   const { sessions: earnedSessions, decision } = applyEarnedProgression(builtSessions, input);
-  const sessions = applyGoalPlyometrics(earnedSessions, input, decision.progressionState !== 'regress');
+  const runnerImpactFits = !input.goalIntent || ['running', 'get_faster', 'race_prep', 'hybrid'].includes(input.goalIntent.priorities[0]!);
+  const sessions = applyGoalPlyometrics(earnedSessions, input, decision.progressionState !== 'regress' && runnerImpactFits && (!input.goalIntent || input.availableTimeMin >= 45));
 
-  const weeklyVolumeSets = sessions.reduce((s, sess) =>
-    s + sess.exercises.reduce((es, ex) => es + ex.sets, 0), 0);
+  const weeklyVolumeSets = plannedStrengthWorkingSets(sessions, input.goalIntent);
 
   const cycle = input.programmingVersion === 2 ? getGoalMesocycle(currentWeek, trainingPhase, input.goalType ?? 'general_running') : null;
   return {
     sessions,
     sessionDays:      config.sessionDays,
     weeklyVolumeSets,
-    primaryGoal:      config.goal,
+    primaryGoal:      input.goalIntent ? sessions[0]?.goal ?? config.goal : config.goal,
     phaseNote:        cycle ? `${config.phaseNote} · Practice block ${cycle.blockNumber}, ${cycle.weekInBlock}/6` : config.phaseNote,
     phaseRationale:   cycle ? `${cycle.focus}. The current phase and combined workload shape a manageable strength dose. Six-week exercise practice and the existing loading/recovery cycle are separate; actual performance determines progression.` : config.phaseRationale,
     generatedAt:      Date.now(),

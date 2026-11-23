@@ -62,6 +62,7 @@ function harness() {
     [root + 'store/settingsStore']: { useSettingsStore: () => ({ units: 'imperial' }) },
     [root + 'store/activeStrengthSessionStore']: { useActiveStrengthSessionStore: store(active) },
     [root + 'store/onboardingStore']: { useOnboardingStore: store(onboarding) },
+    [root + 'store/strengthStore']: { useStrengthStore: store({ history: [] }) },
     [root + 'store/athleteStore']: { useAthleteStore: store(athlete) },
     [root + 'store/checkInStore']: { useCheckInStore: store({ todayCheckIn: null }) },
     [root + 'store/trainingPlanStore']: { useTrainingPlanStore: store({ goalType: 'general_strength' }) },

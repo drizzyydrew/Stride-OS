@@ -797,3 +797,22 @@ test('a fourth goal or unanchored secondary race is rejected without publishing 
     assert.equal(h.plan.getState().goalBlockId, before);
   }
 });
+
+test('explicit profile choices persist ordered intent and repeat operation identity without copying actual history', async () => {
+ const h = await harness({ unfinished: true });
+ const goalIntent = { version: 1 as const, priorities: ['get_stronger','hiking','power'] as const, season: 'off_season' as const };
+ const choice = { ...nextGoal, goalIntent: { ...goalIntent, priorities: [...goalIntent.priorities] }, operationId: 'repeat_form_one' };
+ h.hooks.failPlanWrite = true;
+ await assert.rejects(h.runtime.startNextGoal(choice), /disk full/);
+ assert.equal(h.plan.getState().goalIntent, undefined);
+ h.hooks.failPlanWrite = false;
+ await h.runtime.startNextGoal(choice);
+ const first = h.plan.getState().goalBlockId;
+ assert.deepEqual(JSON.parse(JSON.stringify(h.plan.getState().goalIntent)), goalIntent);
+ assert.deepEqual(JSON.parse(h.values.get('training-plan-store')!).state.goalIntent, goalIntent);
+ await h.runtime.startNextGoal(choice);
+ assert.equal(h.plan.getState().goalBlockId, first, 'same-form retry is idempotent');
+ await h.runtime.startNextGoal({ ...choice, operationId: 'repeat_form_two' });
+ assert.notEqual(h.plan.getState().goalBlockId, first, 'another intentional repeat is a fresh block');
+ assert.equal(h.activityMutations, 0);
+});

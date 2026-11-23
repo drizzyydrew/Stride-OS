@@ -53,6 +53,12 @@ export function fitStrengthSessionToTime(exercises: PlannedExercise[], minutes: 
 }
 
 const EQUIPMENT_FALLBACK: Record<string, string> = {
+  hike_step_up: 'lunge_reverse', hike_step_down: 'lunge_reverse',
+  ski_split_squat: 'lunge_reverse', ski_lateral_lunge: 'lunge_reverse',
+  snowboard_offset_squat: 'squat_box', snowboard_lateral_step: 'lunge_reverse', snowboard_pallof: 'trunk_dead_bug',
+  xc_straight_arm_pull: 'pull_band_row', xc_single_leg_step: 'lunge_reverse',
+  mountaineering_step_up: 'lunge_reverse',
+  foot_loaded_single_calf: 'foot_supported_calf', foot_loaded_bent_knee: 'foot_supported_calf', foot_loaded_seated: 'foot_supported_calf',
   squat_goblet: 'squat_box', squat_bulgarian: 'lunge_reverse', hinge_rdl: 'hinge_hip_thrust',
   hinge_single_rdl: 'hinge_hip_thrust', push_db_press: 'push_pushup', pull_row: 'pull_band_row',
   calf_seated: 'calf_single_standing',

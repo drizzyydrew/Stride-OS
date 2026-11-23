@@ -180,3 +180,37 @@ test('real weekly calendar retains exact completion and does not add impact afte
  assert.ok([...moved.calendarMap.values()].flat().filter(e=>!e.completed).every(e=>!e.session?.exercises.some(ex=>isReactiveExercise(ex.exercise))));
  assert.equal(JSON.stringify(logged),capture);
 });
+
+test('new calf strength identities qualify only through the same actual preparation criteria',()=>{
+ for(const exerciseId of ['foot_supported_calf','foot_loaded_single_calf','foot_loaded_bent_knee','foot_loaded_seated']) {
+  const history=[3,10].map(days=>record(days,{exercises:[completedExercise('squat_box'),{
+   ...completedExercise(exerciseId), equipmentType:exerciseId==='foot_supported_calf'?'bodyweight':'dumbbell',
+   sets:exerciseId==='foot_supported_calf'?[set(),set()]:[set(),set()].map(value=>({...value,load:undefined,weight:20,weightUnit:'lb' as const})),
+  }]}));
+  assert.ok(plyometricDose(input({strengthHistory:history})),exerciseId);
+  const uncertain=history.map(record=>({...record,exercises:record.exercises.map(exercise=>({...exercise,sets:exercise.sets.map(set=>({...set,rpe:undefined}))}))}));
+  assert.equal(plyometricDose(input({strengthHistory:uncertain})),null);
+ }
+ for(const exerciseId of ['foot_toe_press','foot_short_arch','foot_clock_reach','foot_clock_supported'])assert.equal(plyometricDose(input({strengthHistory:[3,10].map(days=>record(days,{exercises:[completedExercise('squat_box'),completedExercise(exerciseId)]}))})),null);
+});
+
+test('optional impact in explicit profiles cannot evict main, calf or fresh balance work at45plus minutes',()=>{
+ const goalIntent={version:1 as const,priorities:['get_faster' as const]};
+ const ready=input({goalIntent,availableTimeMin:60,availableEquipment:['bodyweight','dumbbell','band']});
+ assert.ok(plyometricDose(ready));
+ const base=generateStrengthWeek({...ready,strengthHistory:[]}).sessions;
+ const withImpact=applyGoalPlyometrics(base,ready);
+ for(const original of base) {
+  const resulting=withImpact.find(session=>session.id===original.id)!;
+  assert.ok(original.exercises.every(exercise=>resulting.exercises.some(candidate=>candidate.exerciseId===exercise.exerciseId&&candidate.sets===exercise.sets)));
+  assert.equal(resulting.exercises[0]!.exerciseId,'foot_clock_reach');
+  assert.ok(estimateStrengthSessionMinutes(resulting.exercises)<=60);
+ }
+ const first=base[0]!;
+ const tight={...first,exercises:first.exercises.map(exercise=>({...exercise}))};
+ while(estimateStrengthSessionMinutes(tight.exercises)<45)tight.exercises[1]!.restSeconds+=30;
+ const budget=estimateStrengthSessionMinutes(tight.exercises);
+ const noRoom=applyGoalPlyometrics([tight],{...ready,availableTimeMin:budget});
+ assert.ok(noRoom[0]!.exercises.every(exercise=>!isReactiveExercise(exercise.exercise)));
+ assert.deepEqual(noRoom[0]!.exercises.map(exercise=>exercise.exerciseId),tight.exercises.map(exercise=>exercise.exerciseId));
+});

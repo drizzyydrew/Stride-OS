@@ -44,12 +44,17 @@ function ArchiveBody({ archive }: { archive: GoalArchive }) {
   const activities = useActivityStore(state => state.activities);
   const activityHydration = useActivityStore(state => state.hydrationStatus);
   const units = useSettingsStore(state => state.units);
+  const capturedArchive = useGoalArchiveStore(state => state.archives.find(item => item.id === archive.id));
   const effectiveResult = resolveArchiveActivityResult(archive, activities, archive.ownerUserId);
   const linkedActivityId = archive.result.linkedActivityId ?? effectiveResult.linkedActivityId;
   const linked = archive.result.source === 'activity_link' || !!effectiveResult.linkedActivityId;
   const saveResult = useGoalArchiveStore(state => state.saveResult);
   const [status, setStatus] = useState(archive.result.status);
   const [time, setTime] = useState(() => archive.result.timeSeconds == null ? '' : elapsed(archive.result.timeSeconds));
+  const [editingMetadata, setEditingMetadata] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(archive.title);
+  const [startDraft, setStartDraft] = useState(archive.startDate);
+  const [endDraft, setEndDraft] = useState(archive.endDate);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -81,6 +86,23 @@ function ArchiveBody({ archive }: { archive: GoalArchive }) {
     finally { inFlight.current = false; setBusy(false); }
   }
 
+  async function archiveAction(kind: 'correct' | 'delete') {
+    if (inFlight.current) return;
+    const lease = captureOwnerLease();
+    if (!lease || lease.ownerUserId !== archive.ownerUserId) { setError('Sign in with this archive’s owner first.'); return; }
+    inFlight.current = true; setBusy(true); setError(null);
+    try {
+      const store = useGoalArchiveStore.getState();
+      if (kind === 'correct') await store.correctMetadata(archive.id, { title: titleDraft, startDate: startDraft, endDate: endDraft }, lease);
+      else await store.deleteArchive(archive.id, lease);
+      if (!ownerLeaseIsCurrent(lease)) return;
+      if (kind === 'delete') router.replace('/(tabs)/settings/goal-archive' as never);
+      else setEditingMetadata(false);
+      void useGoalArchiveStore.getState().sync(lease).catch(() => undefined);
+    } catch (cause) { if (ownerLeaseIsCurrent(lease)) setError(cause instanceof Error ? cause.message : 'The archive change could not be saved.'); }
+    finally { inFlight.current = false; if (ownerLeaseIsCurrent(lease)) setBusy(false); }
+  }
+
   function editLink() {
     router.push({ pathname: '/(tabs)/activity/link-race', params: {
       ...goalArchiveLink(archive.id).params,
@@ -107,6 +129,7 @@ function ArchiveBody({ archive }: { archive: GoalArchive }) {
     {archive.race && archive.race.date > archive.endDate ? <GoalMessage>Planned race date: {goalDate(archive.race.date)}</GoalMessage> : null}
     <View style={section}>
       <Text accessibilityRole="header" style={{ color: C.text, fontSize: 19, fontWeight: '700' }}>Recorded training during this block</Text>
+      <GoalMessage>Snapshot window: {goalDate(capturedArchive?.startDate ?? archive.startDate)} – {goalDate(capturedArchive?.endDate ?? archive.endDate)}. Display-date corrections do not recalculate these recorded totals.</GoalMessage>
       <GoalMessage>Frozen as of {new Date(archive.archivedAt).toLocaleString()}. These are recorded activities within the date window, not adherence or plan-completion scores. Later imports and corrections do not rewrite this snapshot.</GoalMessage>
       <GoalMessage>Completed activities: {number(archive.summary.completedActivities)}{ '\n' }Partial activities: {number(archive.summary.partialActivities)}{ '\n' }Active days: {number(archive.summary.activeDays)}{ '\n' }Recorded distance: {distance(archive.summary.distanceMeters)}{ '\n' }Recorded duration: {elapsed(archive.summary.durationSeconds)}{ '\n' }Elevation gain: {archive.summary.elevationGainMeters == null ? '—' : `${number(archive.summary.elevationGainMeters / (metric ? 1 : 0.3048))} ${metric ? 'm' : 'ft'}`}{ '\n' }Recorded training load: {number(archive.summary.trainingLoad)}</GoalMessage>
       <GoalMessage>{formatArchivedCoverage(archive.summary)}</GoalMessage>
@@ -165,6 +188,20 @@ function ArchiveBody({ archive }: { archive: GoalArchive }) {
             }} /> : <GoalMessage key={id}>Activity {index + 1} · Unavailable (deleted or not on this device)</GoalMessage>;
         })}
       </GoalDisclosure>
+    </View>
+    <View style={section}>
+      <GoalAction label="Correct archive details" secondary disabled={busy} onPress={() => setEditingMetadata(value => !value)} />
+      {editingMetadata ? <>
+        <GoalMessage>Correct the displayed name or date window. Recorded workouts, original prescriptions and the frozen training summary stay unchanged.</GoalMessage>
+        <GoalField label="Name" value={titleDraft} onChange={setTitleDraft} disabled={busy} />
+        <GoalField label="Start date · YYYY-MM-DD" value={startDraft} onChange={setStartDraft} disabled={busy} />
+        <GoalField label="End date · YYYY-MM-DD" value={endDraft} onChange={setEndDraft} disabled={busy} />
+        <GoalAction label={busy ? 'Saving…' : 'Save corrections'} disabled={busy} onPress={() => { void archiveAction('correct'); }} />
+      </> : null}
+      <GoalAction label="Repeat with a new plan" secondary disabled={busy} onPress={() => { const lease = captureOwnerLease(); if (!lease || lease.ownerUserId !== archive.ownerUserId) { setError('Sign in with this archive’s owner first.'); return; } router.push({ pathname: '/(tabs)/settings/next-goal', params: { repeatArchiveId: archive.id } } as never); }} />
+      <GoalMessage>Repeating starts a new unchecked plan. Your previous workouts remain in history.</GoalMessage>
+      <GoalAction label="Delete archived goal" secondary disabled={busy} onPress={() => Alert.alert('Delete this archived goal?', 'This removes the archived goal from your library and backup. Your recorded workouts remain in Activity history.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete goal', style: 'destructive', onPress: () => { void archiveAction('delete'); } }])} />
+      {error ? <GoalMessage error>{error}</GoalMessage> : null}
     </View>
     <GoalAction label="View all archives" secondary onPress={() => router.push('/(tabs)/settings/goal-archive' as never)} />
   </View>;

@@ -93,7 +93,7 @@ export default function ActivityDetailScreen() {
   }
   function confirmRestore() {
     const request = recoveryRequest.current;
-    Alert.alert('Restore saved recording?', 'This restores the exact run saved on this phone, including an entry previously removed from Activity. It does not start a new recording or change other activities.', [
+    Alert.alert('Restore saved recording?', 'This restores an available run saved on this phone. Deliberately deleted workouts stay deleted. It does not start a new recording or change other activities.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Restore', onPress: () => { if (request === recoveryRequest.current) void retrySavedActivity(); } },
     ]);

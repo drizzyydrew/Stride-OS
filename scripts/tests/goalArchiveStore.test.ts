@@ -111,7 +111,7 @@ async function harness(options: { local?: string | GoalArchive[]; cloud?: unknow
       return query;
     },
     rpc: (name: string, args: { archive: GoalArchive }) => {
-      assert.equal(name, 'merge_stride_goal_archive');
+      assert.ok(['merge_stride_goal_archive', 'revise_stride_goal_archive'].includes(name));
       // Deployed SQL accepts these two sources only; no schema/RPC changes.
       assert.ok(args.archive.result.source === undefined || ['race_record', 'user'].includes(args.archive.result.source), 'deployed RPC source allowlist');
       return { setHeader: async (header: string, value: string) => {
@@ -479,4 +479,35 @@ test('malformed encoded linked pointers cannot enter local state as copied or fi
     { status: 'did_not_finish', source: 'race_record', linkedActivityId: 'run' }]) {
     assert.throws(() => h.sync.decodeGoalArchives([{ ...archive(), result }], 'owner'), /Invalid goal archive result/);
   }
+});
+
+
+test('metadata corrections and deleted-source tombstones survive offline restart and stale cloud replay', async () => {
+  const original = archive();
+  const h = await harness({ local: [original], cloud: [original], offline: true });
+  await h.store.getState().load(h.lease());
+  await h.store.getState().correctMetadata(original.id, { title: 'Corrected name', startDate: '2026-09-30', endDate: '2026-11-01' }, h.lease());
+  assert.equal(h.local()[0].title, original.title);
+  assert.equal(h.local()[0].metadata?.title, 'Corrected name');
+  assert.deepEqual(h.local()[0].summary, original.summary);
+  await h.store.getState().deleteArchive(original.id, h.lease());
+  const restarted = h.makeStore(); await restarted.getState().load(h.lease());
+  assert.ok(restarted.getState().archives[0].deletedAt !== undefined);
+  h.hooks.offline = false; await restarted.getState().sync(h.lease());
+  assert.ok(h.cloud()[0].deletedAt !== undefined);
+  assert.equal(h.cloud()[0].metadata?.title, 'Corrected name');
+  h.setCloud([original]); await restarted.getState().load(h.lease()); await restarted.getState().sync(h.lease());
+  assert.ok(h.cloud()[0].deletedAt !== undefined);
+  await assert.rejects(restarted.getState().correctMetadata(original.id, { title:'Resurrect',startDate:original.startDate,endDate:original.endDate }, h.lease()), /no longer available/);
+});
+
+test('archive correction/deletion failures and owner changes do not publish success or erase original snapshots', async () => {
+  const original=archive(); const h=await harness({ local:[original] }); await h.store.getState().load(h.lease());
+  h.hooks.writeFailure=true; await assert.rejects(h.store.getState().deleteArchive(original.id,h.lease()),/disk full/);
+  assert.equal(h.store.getState().archives[0].deletedAt,undefined);
+  h.hooks.writeFailure=false;
+  const lease=h.lease(); await h.owner.signOut();
+  await assert.rejects(h.store.getState().correctMetadata(original.id,{title:'Wrong owner',startDate:original.startDate,endDate:original.endDate},lease),/owner changed/);
+  assert.equal(h.store.getState().archives[0].metadata,undefined);
+  assert.deepEqual(h.local()[0].summary,original.summary);
 });

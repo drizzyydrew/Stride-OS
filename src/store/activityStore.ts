@@ -1,3 +1,4 @@
+import { deletionForActivity, mergeWorkoutDeletions, workoutWasDeleted, workoutIdentityKeys, decodeWorkoutDeletions, type WorkoutDeletion } from '../utils/workoutDeletion';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -20,11 +21,16 @@ import { captureOwnerLease, ownerLeaseIsCurrent, type OwnerLease } from '../lib/
 import { mergeRecording, sameRecording } from '../utils/runCompletionIdentity';
 import { waitForPersistedStoreHydration } from '../lib/trackingTaskHydration';
 
-export const ACTIVITY_STORE_SCHEMA_VERSION = 3;
+export const ACTIVITY_STORE_SCHEMA_VERSION = 4;
 
 type ActivityStore = {
   schemaVersion: number;
   activities: Activity[];
+  deletedActivities: WorkoutDeletion[];
+  /** In-memory acknowledgment of the exact disk-confirmed deletion revision. Never persist this field. */
+  confirmedDeletedActivities: WorkoutDeletion[];
+  mergeDeletedActivities: (rows: WorkoutDeletion[]) => void;
+  removeActivityAndPersist: (id: string, lease: OwnerLease) => Promise<void>;
   hydrationStatus: 'loading' | 'ready' | 'error';
   addActivity: (input: Activity | ActivityDraft) => string;
   /** Caller journals the first End before invoking this; resolves only after durable history readback. */
@@ -56,7 +62,11 @@ function serializeActivityWrite<T>(action: () => T | Promise<T>): Promise<T> {
 const activityJSONStorage = createAppJSONStorage();
 const activityStorage: typeof activityJSONStorage = activityJSONStorage && {
   ...activityJSONStorage,
-  setItem: (name, value) => serializeActivityWrite(() => activityJSONStorage.setItem(name, value)),
+  setItem: (name, value) => serializeActivityWrite(() => activityJSONStorage.setItem(name, value)).catch(error => {
+    // Middleware writes are best effort; explicit commits below still reject
+    // and verify exact bytes. Never leave an unhandled background rejection.
+    console.warn('Activity background save failed; explicit saves remain retryable', error);
+  }),
   removeItem: name => serializeActivityWrite(() => activityJSONStorage.removeItem(name)),
 };
 let activityCommitQueue: Promise<unknown> = Promise.resolve();
@@ -100,7 +110,7 @@ async function flushActivityHistory(lease: OwnerLease) {
     const committed = await serializeActivityWrite(async () => {
       requireActivityOwner(lease);
       const state = useActivityStore.getState();
-      const encoded = JSON.stringify({ state: { schemaVersion: state.schemaVersion, activities: state.activities }, version: ACTIVITY_STORE_SCHEMA_VERSION });
+      const encoded = JSON.stringify({ state: { schemaVersion: state.schemaVersion, activities: state.activities, deletedActivities: state.deletedActivities }, version: ACTIVITY_STORE_SCHEMA_VERSION });
       const storage = getAppStorage();
       await storage.setItem('activity-store', encoded);
       requireActivityOwner(lease);
@@ -108,12 +118,15 @@ async function flushActivityHistory(lease: OwnerLease) {
       const saved = await (storage.getItemOnce ? storage.getItemOnce('activity-store') : storage.getItem('activity-store'));
       requireActivityOwner(lease);
       if (saved !== encoded) throw new Error('Activity history persistence could not be confirmed');
+      if (useActivityStore.getState().confirmedDeletedActivities !== state.deletedActivities) {
+        useActivityStore.setState({ confirmedDeletedActivities: state.deletedActivities });
+      }
       return state;
     });
     requireActivityOwner(lease);
     const current = useActivityStore.getState();
     // Immutable history references act as revisions; retry behind queued edits.
-    if (current.activities === committed.activities && current.schemaVersion === committed.schemaVersion) return;
+    if (current.activities === committed.activities && current.schemaVersion === committed.schemaVersion && current.deletedActivities === committed.deletedActivities) return;
   }
   throw new Error('Activity history kept changing during persistence; retry saving it');
 }
@@ -146,7 +159,7 @@ function normalizeActivity(input: Activity | ActivityDraft, now = Date.now()): A
   };
 }
 
-export function migrateActivityStoreState(persisted: unknown): Pick<ActivityStore, 'schemaVersion' | 'activities'> {
+export function migrateActivityStoreState(persisted: unknown): Pick<ActivityStore, 'schemaVersion' | 'activities' | 'deletedActivities'> {
   const source = (persisted ?? {}) as Partial<ActivityStore>;
   const normalized = Array.isArray(source.activities)
     ? source.activities.map(activity => normalizeActivity(activity, activity.updatedAt ?? Date.now()))
@@ -157,9 +170,12 @@ export function migrateActivityStoreState(persisted: unknown): Pick<ActivityStor
   // because `merge` calls this same function on every hydration regardless
   // of version — the remap is idempotent (see remapLegacyScheduledSessionId)
   // so that's safe and keeps already-migrated installs correct too.
+  const rawDeletions = source.deletedActivities ?? [];
+  const declaredOwner = Array.isArray(rawDeletions) ? rawDeletions[0]?.ownerUserId : undefined;
+  const deletedActivities = decodeWorkoutDeletions(rawDeletions, captureOwnerLease()?.ownerUserId ?? declaredOwner ?? '');
   return {
-    schemaVersion: ACTIVITY_STORE_SCHEMA_VERSION,
-    activities: remapLegacyScheduledSessionIds(normalized),
+    schemaVersion: ACTIVITY_STORE_SCHEMA_VERSION, deletedActivities,
+    activities: remapLegacyScheduledSessionIds(normalized).filter(row => !workoutWasDeleted(deletedActivities, 'activity_logs', row)),
   };
 }
 
@@ -167,7 +183,24 @@ export const useActivityStore = create<ActivityStore>()(
   persist(
     (set, get) => ({
       schemaVersion: ACTIVITY_STORE_SCHEMA_VERSION,
-      activities: [],
+      activities: [], deletedActivities: [], confirmedDeletedActivities: [],
+      mergeDeletedActivities: rows => {
+        const lease = captureOwnerLease();
+        if (!lease || rows.some(row => row.ownerUserId !== lease.ownerUserId)) throw new Error('Deleted history belongs to another owner');
+        const merged = mergeWorkoutDeletions(get().deletedActivities, rows);
+        if (JSON.stringify(merged) === JSON.stringify(get().deletedActivities)) return;
+        set(state => {
+          const deletedActivities = merged;
+          return { deletedActivities, activities: state.activities.filter(row => !workoutWasDeleted(deletedActivities, 'activity_logs', row)) };
+        });
+        runRecalculation('activity_removed', get().activities);
+      },
+      removeActivityAndPersist: (id, lease) => serializeActivityCommit(async () => {
+        await waitForActivityHistory(lease);
+        requireActivityOwner(lease);
+        get().removeActivity(id);
+        await flushActivityHistory(lease);
+      }),
       hydrationStatus: 'loading',
 
       addActivityAndPersist: (input, lease, options) => {
@@ -181,6 +214,7 @@ export const useActivityStore = create<ActivityStore>()(
           const existing = options?.onlyIfMissing
             ? get().activities.filter(activity => sameRecording(activity, snapshot as Activity)) : [];
           if (existing.length > 1) throw new Error('More than one saved activity matches this recording. No activity was replaced.');
+          if (workoutWasDeleted(get().deletedActivities, 'activity_logs', snapshot)) throw new Error('This workout was deleted. It has not been restored.');
           const id = existing[0]?.id ?? get().addActivity(snapshot);
           await flushActivityHistory(owner);
           requireActivityOwner(owner);
@@ -240,6 +274,7 @@ export const useActivityStore = create<ActivityStore>()(
           for (const record of records) {
             if (!record || typeof record.id !== 'string') continue;
             const incoming = normalizeActivity(record, record.updatedAt ?? Date.now());
+            if (workoutWasDeleted(state.deletedActivities, 'activity_logs', incoming)) continue;
             const index = merged.findIndex(item => sameRecording(item, incoming));
             if (index < 0) { merged.push(incoming); added += 1; }
           }
@@ -252,6 +287,7 @@ export const useActivityStore = create<ActivityStore>()(
       addActivity: (input) => {
         if (!captureOwnerLease()) throw new Error('Local history is locked until its owner is confirmed');
         const activity = normalizeActivity(input);
+        if (workoutWasDeleted(get().deletedActivities, 'activity_logs', activity)) throw new Error('This workout was deleted. It has not been restored.');
         let savedActivityId = activity.id;
         set(state => {
           const existingIndex = state.activities.findIndex(item => item.id === activity.id);
@@ -295,7 +331,14 @@ export const useActivityStore = create<ActivityStore>()(
       removeActivity: (id) => {
         if (!captureOwnerLease()) throw new Error('Local history is locked until its owner is confirmed');
         activityRemovalRevision += 1;
-        set(state => ({ activities: state.activities.filter(activity => activity.id !== id) }));
+        const lease = captureOwnerLease()!;
+        set(state => {
+          const activity = state.activities.find(row => row.id === id);
+          const tombstone = activity ? deletionForActivity(activity, lease.ownerUserId)
+            : { ownerUserId: lease.ownerUserId, activityId: id, deletedAt: Date.now(), keys: workoutIdentityKeys('activity_logs', { id }) };
+          const deletedActivities = mergeWorkoutDeletions(state.deletedActivities, [tombstone]);
+          return { deletedActivities, activities: state.activities.filter(row => !workoutWasDeleted(deletedActivities, 'activity_logs', row)) };
+        });
         runRecalculation('activity_removed', get().activities);
       },
 
@@ -303,17 +346,17 @@ export const useActivityStore = create<ActivityStore>()(
 
       importLegacyWorkouts: (records) =>
         set(state => ({
-          activities: migrateLegacyWorkoutHistory(records, state.activities),
+          activities: migrateLegacyWorkoutHistory(records, state.activities).filter(row => !workoutWasDeleted(state.deletedActivities, 'activity_logs', row)),
         })),
 
       importLegacyStrength: records =>
         set(state => ({
-          activities: migrateLegacyStrengthHistory(records, state.activities),
+          activities: migrateLegacyStrengthHistory(records, state.activities).filter(row => !workoutWasDeleted(state.deletedActivities, 'activity_logs', row)),
         })),
 
       importLegacyMobility: records =>
         set(state => ({
-          activities: migrateLegacyMobilityHistory(records, state.activities),
+          activities: migrateLegacyMobilityHistory(records, state.activities).filter(row => !workoutWasDeleted(state.deletedActivities, 'activity_logs', row)),
         })),
 
       setHydrationStatus: hydrationStatus => set({ hydrationStatus }),
@@ -324,7 +367,7 @@ export const useActivityStore = create<ActivityStore>()(
       storage: activityStorage,
       partialize: state => ({
         schemaVersion: state.schemaVersion,
-        activities: state.activities,
+        activities: state.activities, deletedActivities: state.deletedActivities,
       }),
       migrate: persisted => migrateActivityStoreState(persisted),
       merge: (persisted, current) => ({
@@ -341,13 +384,17 @@ export const useActivityStore = create<ActivityStore>()(
           useActivityStore.getState().setHydrationStatus('error');
           return;
         }
+        // Only tombstones actually read from disk are acknowledged at hydration.
+        state.confirmedDeletedActivities = state.deletedActivities;
         // Build 36/37 stored completed running workouts separately. Read that
         // persisted snapshot after this store hydrates, then project it with
         // stable IDs. Repeating this on every launch is safe and idempotent.
         const storage = getAppStorage();
+        const migrationLease = captureOwnerLease();
+        const migrationCurrent = () => !migrationLease || ownerLeaseIsCurrent(migrationLease);
         Promise.allSettled([
           Promise.resolve(storage.getItem('workout-store')).then((raw: string | null) => {
-            if (!raw) return;
+            if (!raw || !migrationCurrent()) return;
             const parsed = JSON.parse(raw) as {
               state?: { history?: CompletedWorkoutRecord[] };
             };
@@ -356,7 +403,7 @@ export const useActivityStore = create<ActivityStore>()(
             }
           }),
           Promise.resolve(storage.getItem('strength-store')).then((raw: string | null) => {
-            if (!raw) return;
+            if (!raw || !migrationCurrent()) return;
             const parsed = JSON.parse(raw) as {
               state?: { history?: StrengthLogRecord[] };
             };
@@ -365,7 +412,7 @@ export const useActivityStore = create<ActivityStore>()(
             }
           }),
           Promise.resolve(storage.getItem('mobility-store')).then((raw: string | null) => {
-            if (!raw) return;
+            if (!raw || !migrationCurrent()) return;
             const parsed = JSON.parse(raw) as {
               state?: { completions?: MobilityCompletion[] };
             };
@@ -379,7 +426,7 @@ export const useActivityStore = create<ActivityStore>()(
               console.warn('Activity legacy migration failed', result.reason);
             }
           });
-          state.setHydrationStatus('ready');
+          if (migrationCurrent()) state.setHydrationStatus('ready');
         });
       },
     },

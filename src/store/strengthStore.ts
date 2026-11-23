@@ -1,3 +1,4 @@
+import { workoutWasDeleted, workoutIdentityKeys, newPerformanceIdentity, completionKeyFor } from '../utils/workoutDeletion';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createAppJSONStorage, getAppStorage } from './persistStorage';
@@ -40,6 +41,7 @@ type StrengthLogEdits = Partial<Pick<StrengthLogRecord,
   'actualDuration' | 'overallRpe' | 'notes' | 'exercises'>>;
 
 type ManualStrengthEntry = {
+  workoutInstanceId?: string;
   templateId?: string;
   completionKey:   string;
   scheduledSessionId?: string;
@@ -87,7 +89,7 @@ type StrengthStore = {
   ) => void;
 
   editLog:   (id: string, updates: StrengthLogEdits) => void;
-  deleteLog: (id: string)                            => void;
+  deleteLog: (id: string, lease?: OwnerLease) => Promise<void>;
 
   manualLog: (entry: ManualStrengthEntry, fatigueBefore: number) => void;
 
@@ -162,7 +164,7 @@ export const useStrengthStore = create<StrengthStore>()(
           computeStrengthFatigue(fatigueBefore, estimatedLoad, overallRpe);
 
         const record: StrengthLogRecord = {
-          id:              completionKey,
+          ...newPerformanceIdentity(completionKey, 'strength', useActivityStore.getState().deletedActivities),
           sessionId,
           sessionType,
           goal,
@@ -181,6 +183,7 @@ export const useStrengthStore = create<StrengthStore>()(
           estimatedLoad,
         };
 
+        if (workoutWasDeleted(useActivityStore.getState().deletedActivities, 'activity_logs', activityFromStrengthRecord(record, false))) throw new Error('This workout was deleted. Start a new session.');
         set(state => ({
           completedSessions: [...state.completedSessions, completionKey],
           history:           [...state.history, record],
@@ -199,7 +202,7 @@ export const useStrengthStore = create<StrengthStore>()(
         if (get().completedSessions.includes(completionKey)) return;
 
         const record: StrengthLogRecord = {
-          id:              completionKey,
+          ...newPerformanceIdentity(completionKey, 'strength', useActivityStore.getState().deletedActivities),
           sessionId,
           sessionType,
           goal,
@@ -217,6 +220,7 @@ export const useStrengthStore = create<StrengthStore>()(
           estimatedLoad:   0,
         };
 
+        if (workoutWasDeleted(useActivityStore.getState().deletedActivities, 'activity_logs', activityFromStrengthRecord(record, false))) throw new Error('This workout was deleted. Start a new session.');
         set(state => ({
           completedSessions: [...state.completedSessions, completionKey],
           history:           [...state.history, record],
@@ -230,10 +234,10 @@ export const useStrengthStore = create<StrengthStore>()(
       // ── Edit a logged record ──────────────────────────────────────────────────
 
       editLog: (id, updates) => {
-        const existing = get().history.find(record => record.id === id);
+        const existing = get().history.find(record => (record.id === id || record.completionKey === id));
         set(state => ({
           history: state.history.map(r =>
-            r.id === id ? { ...r, ...updates } : r,
+            (r.id === id || r.completionKey === id) ? { ...r, ...updates } : r,
           ),
         }));
         if (existing) {
@@ -245,13 +249,20 @@ export const useStrengthStore = create<StrengthStore>()(
 
       // ── Delete a logged record ────────────────────────────────────────────────
 
-      deleteLog: (id) => {
+      deleteLog: async (id, expectedOwner) => {
+        const lease = expectedOwner ?? captureOwnerLease();
+        if (!lease || !ownerLeaseIsCurrent(lease)) throw new Error('Sign in with this workout’s owner first');
+        const existing = get().history.find(row => (row.id === id || row.completionKey === id));
+        const keys = existing ? workoutIdentityKeys('activity_logs', activityFromStrengthRecord(existing, false)) : [`activity:activity_strength_${id}`, `strength:${id}`];
+        const ids = useActivityStore.getState().activities.filter(row => workoutIdentityKeys('activity_logs', row).some(key => keys.includes(key))).map(row => row.id);
+        if (!ids.length) ids.push(`activity_strength_${id}`);
+        for (const activityId of ids) await useActivityStore.getState().removeActivityAndPersist(activityId, lease);
+        if (!ownerLeaseIsCurrent(lease)) throw new Error('Account changed during deletion');
         set(state => ({
-          completedSessions: state.completedSessions.filter(k => k !== id),
-          history:           state.history.filter(r => r.id !== id),
+          completedSessions: state.completedSessions.filter(k => k !== id && k !== existing?.id && k !== existing?.completionKey),
+          history:           state.history.filter(r => r.id !== (existing?.id ?? id)),
         }));
-        useActivityStore.getState().removeActivity(`activity_strength_${id}`);
-        deleteStrengthLog(id).catch(console.warn);
+        deleteStrengthLog(existing?.id ?? id).catch(console.warn);
       },
 
       // ── Manual log ────────────────────────────────────────────────────────────
@@ -265,7 +276,8 @@ export const useStrengthStore = create<StrengthStore>()(
 
         const record: StrengthLogRecord = {
           templateId:      entry.templateId,
-          id:              entry.completionKey,
+          ...((entry.workoutInstanceId || /^(training_block_|preset_|custom_)/.test(entry.completionKey)) ? { id: entry.completionKey } : newPerformanceIdentity(entry.completionKey, 'strength', useActivityStore.getState().deletedActivities)),
+          workoutInstanceId: entry.workoutInstanceId,
           sessionId:       entry.completionKey,
           scheduledSessionId: entry.scheduledSessionId,
           sessionType:     entry.sessionType,
@@ -289,6 +301,7 @@ export const useStrengthStore = create<StrengthStore>()(
           estimatedLoad,
         };
 
+        if (workoutWasDeleted(useActivityStore.getState().deletedActivities, 'activity_logs', activityFromStrengthRecord(record, false))) throw new Error('This workout was deleted. Start a new session.');
         set(state => ({
           completedSessions: [...state.completedSessions, entry.completionKey],
           history:           [...state.history, record],
@@ -302,12 +315,13 @@ export const useStrengthStore = create<StrengthStore>()(
       // ── Hydrate from Supabase ─────────────────────────────────────────────────
 
       hydrateStrength: (records) => {
+        records = records.filter(row => !workoutWasDeleted(useActivityStore.getState().deletedActivities, 'strength_logs', row));
         set(state => {
-          const existingIds = new Set(state.completedSessions);
+          const existingIds = new Set(state.history.map(row => row.id));
           const newRecords  = records.filter(r => !existingIds.has(r.id)).map(migrateStrengthRecord);
           if (newRecords.length === 0) return state;
           return {
-            completedSessions: [...state.completedSessions, ...newRecords.map(r => r.id)],
+            completedSessions: [...state.completedSessions, ...newRecords.map(completionKeyFor)],
             history:           [...state.history, ...newRecords],
           };
         });
@@ -338,7 +352,7 @@ export function confirmStrengthCompletionSaved(completionKey: string, lease: Own
     for (let attempt = 0; attempt < 3; attempt++) {
       if (!ownerLeaseIsCurrent(lease) || !useStrengthStore.persist.hasHydrated()) throw new Error('Strength history is not ready for this account');
       const state = useStrengthStore.getState();
-      const record = state.history.find(item => item.id === completionKey);
+      const record = state.history.find(item => (item.id === completionKey || item.completionKey === completionKey));
       if (!record || !state.completedSessions.includes(completionKey)) throw new Error('The workout has not been recorded yet');
       const encoded = JSON.stringify({ state: { completedSessions: state.completedSessions, history: state.history }, version: 0 });
       const storage = getAppStorage();
@@ -366,7 +380,7 @@ export function savePlyometricResponse(recordId: string, exerciseId: string, fee
       if (!ready()) throw new Error('Strength history is not ready for this account and athlete');
       const state = useStrengthStore.getState();
       const original = state.history.find(record => record.id === recordId);
-      if (!original || !state.completedSessions.includes(recordId)
+      if (!original || !state.completedSessions.includes(completionKeyFor(original))
         || ('ownerUserId' in original && original.ownerUserId != null && original.ownerUserId !== lease.ownerUserId)
         || !reportablePlyometricExercises(original).some(exercise => exercise.exerciseId === exerciseId)) {
         throw new Error('This saved exercise cannot accept a jump response');

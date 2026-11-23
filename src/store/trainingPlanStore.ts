@@ -15,6 +15,8 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { getAppStorage } from './persistStorage';
 import { ownerLeaseIsCurrent, type OwnerLease } from '../lib/localDataOwner';
 
+import { validateGoalIntent, normalizeGoalIntent, legacyGoalForProfile, legacySupportingForIntent } from '../utils/goalIntent';
+import type { GoalIntent } from '../types/goalIntent';
 import { normalizeSupportingGoals, validateSupportingGoals } from '../utils/trainingGoals';
 import type { TrainingGoalType, Race } from '../types/plan';
 import type { ActivePresetGoal, GeneratedBeginnerPlan } from '../types/beginnerPlan';
@@ -40,6 +42,7 @@ const planStorage = createJSONStorage(() => ({
 type TrainingPlanState = {
   goalType:          TrainingGoalType;
   secondaryGoalTypes?: TrainingGoalType[];
+  goalIntent?: GoalIntent;
   programStartDate:  string | null;
   races:             Race[];
   activePresetGoal:  ActivePresetGoal | null;
@@ -55,7 +58,7 @@ type TrainingPlanState = {
   pendingArchiveId: string | null;
   revision: number;
   lastTransitionId: string | null;
-  beginGoal: (goal: { goalType: TrainingGoalType; secondaryGoalTypes?: TrainingGoalType[]; title: string; startDate: string; endDate: string; race?: Omit<Race, 'id'> }) => void;
+  beginGoal: (goal: { goalType: TrainingGoalType; secondaryGoalTypes?: TrainingGoalType[]; goalIntent?: GoalIntent; title: string; startDate: string; endDate: string; race?: Omit<Race, 'id'> }) => void;
   retireBlock: (archiveId: string, expectedRevision: number) => void;
   continueOpen: () => void;
 
@@ -74,9 +77,12 @@ type TrainingPlanState = {
 
 type GoalChoice = Parameters<TrainingPlanState['beginGoal']>[0];
 function goalChoicePatch(state: TrainingPlanState, goal: GoalChoice): Partial<TrainingPlanState> {
+  const goalIntent = validateGoalIntent(goal.goalIntent);
+  if (goalIntent && legacyGoalForProfile(goalIntent.priorities[0]!) !== goal.goalType) throw new Error('The goal focus does not match this plan.');
   const race = goal.race ? { ...goal.race, id: uid() } : null;
   return {
-    goalType: goal.goalType, secondaryGoalTypes: validateSupportingGoals(goal.goalType, goal.secondaryGoalTypes), programStartDate: goal.startDate,
+    goalIntent,
+    goalType: goal.goalType, secondaryGoalTypes: goalIntent ? legacySupportingForIntent(goalIntent) : validateSupportingGoals(goal.goalType, goal.secondaryGoalTypes), programStartDate: goal.startDate,
     goalTitle: goal.title, goalEndDate: goal.endDate, goalRaceId: race?.id ?? null,
     programmingStartedAt: Date.now(), goalBlockId: `goal_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
     strengthProgrammingVersion: 2,
@@ -114,7 +120,7 @@ export const useTrainingPlanStore = create<TrainingPlanState>()(
         : {}),
       continueOpen: () => set(state => ({ trainingMode: 'open', pendingArchiveId: null, revision: state.revision + 1 })),
 
-      setGoalType: (goalType, secondaryGoalTypes) => set(state => ({ goalType, secondaryGoalTypes: validateSupportingGoals(goalType, secondaryGoalTypes), trainingMode: 'structured', goalBlockId: null, goalRaceId: null, goalTitle: null, goalEndDate: null, activePresetGoal: null, programmingStartedAt: Date.now(), strengthProgrammingVersion: 2, pendingArchiveId: null, revision: state.revision + 1 })),
+      setGoalType: (goalType, secondaryGoalTypes) => set(state => ({ goalIntent: undefined, goalType, secondaryGoalTypes: validateSupportingGoals(goalType, secondaryGoalTypes), trainingMode: 'structured', goalBlockId: null, goalRaceId: null, goalTitle: null, goalEndDate: null, activePresetGoal: null, programmingStartedAt: Date.now(), strengthProgrammingVersion: 2, pendingArchiveId: null, revision: state.revision + 1 })),
       setProgramStartDate: (date) => set(state => ({ programStartDate: date, revision: state.revision + 1 })),
 
       addRace: (race) => {
@@ -132,7 +138,7 @@ export const useTrainingPlanStore = create<TrainingPlanState>()(
       removeRace: (id) =>
         set(state => ({ races: state.races.filter(r => r.id !== id), revision: state.revision + 1 })),
 
-      setActivePresetGoal: (activePresetGoal) => set(state => ({ activePresetGoal, secondaryGoalTypes: [], activePresetPlan: null, trainingMode: 'structured', goalBlockId: null, goalRaceId: null, goalTitle: null, goalEndDate: null, programmingStartedAt: Date.now(), strengthProgrammingVersion: 2, pendingArchiveId: null, revision: state.revision + 1 })),
+      setActivePresetGoal: (activePresetGoal) => set(state => ({ activePresetGoal, goalIntent: undefined, secondaryGoalTypes: [], activePresetPlan: null, trainingMode: 'structured', goalBlockId: null, goalRaceId: null, goalTitle: null, goalEndDate: null, programmingStartedAt: Date.now(), strengthProgrammingVersion: 2, pendingArchiveId: null, revision: state.revision + 1 })),
 
       // Clearing a goal intentionally affects only future goal programming.
       // Completed activity, readiness, analytics, and workout history live in
@@ -157,6 +163,7 @@ export const useTrainingPlanStore = create<TrainingPlanState>()(
           ...current,
           ...state,
           goalType:         state?.goalType         ?? current.goalType,
+          goalIntent: normalizeGoalIntent(state?.goalIntent),
           secondaryGoalTypes: normalizeSupportingGoals(state?.goalType ?? current.goalType, state?.secondaryGoalTypes),
           programStartDate: state?.programStartDate ?? current.programStartDate,
           races:            state?.races             ?? current.races,
@@ -207,7 +214,7 @@ export async function saveTrainingPlanChoice(lease: OwnerLease,
       // beginner store is only a compatibility cache, never a second authority.
       activePresetGoal: choice.beginner, activePresetPlan: choice.plan, programStartDate: choice.startDate,
       strengthProgrammingVersion: previous.activePresetGoal?.planId === choice.plan.id ? previous.strengthProgrammingVersion : 2,
-      goalType: 'general_running', secondaryGoalTypes: [],
+      goalType: 'general_running', goalIntent: undefined, secondaryGoalTypes: [],
       trainingMode: 'structured', goalBlockId: null, goalRaceId: null, goalTitle: null, goalEndDate: null,
       programmingStartedAt: previous.activePresetGoal?.planId === choice.plan.id ? previous.programmingStartedAt : Date.now(), pendingArchiveId: null, revision: previous.revision + 1,
     } : goalChoicePatch(previous, choice);
@@ -245,7 +252,7 @@ export async function recoverTrainingPlanChoice(transitionId: string, lease: Own
     if (!['open', 'structured'].includes(candidate.trainingMode!) || !Array.isArray(candidate.races)
       || (candidate.activePresetPlan && candidate.activePresetGoal?.planId !== candidate.activePresetPlan.id)) throw new Error('Saved training transition is inconsistent; history was retained');
     if (current.lastTransitionId !== transitionId) {
-      const fields = ['goalType', 'secondaryGoalTypes', 'programStartDate', 'races', 'activePresetGoal', 'activePresetPlan', 'initialized',
+      const fields = ['goalType', 'goalIntent', 'secondaryGoalTypes', 'programStartDate', 'races', 'activePresetGoal', 'activePresetPlan', 'initialized',
         'trainingMode', 'goalBlockId', 'goalTitle', 'goalEndDate', 'goalRaceId', 'programmingStartedAt', 'strengthProgrammingVersion',
         'pendingArchiveId', 'revision', 'lastTransitionId'] as const;
       useTrainingPlanStore.setState(Object.fromEntries(fields.map(field => [field, field === 'secondaryGoalTypes' ? normalizeSupportingGoals(candidate.goalType!, candidate.secondaryGoalTypes) : candidate[field]])));

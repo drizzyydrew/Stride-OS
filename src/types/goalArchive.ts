@@ -13,6 +13,10 @@ export type GoalArchive = {
   startDate: string;
   endDate: string;
   archivedAt: number;
+  /** Display corrections never rewrite the saved plan, prescriptions or summary. */
+  metadata?: { title: string; startDate: string; endDate: string; updatedAt: number; mutationId: string };
+  /** Permanent source tombstone; backfill must retain this record. */
+  deletedAt?: number;
   closureReason?: 'replaced' | 'open_training';
   race?: Race;
   beginnerPlan?: GeneratedBeginnerPlan;
