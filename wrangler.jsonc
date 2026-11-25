@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "strideos-website",
+  "account_id": "81480b7800ef605176e4e5c43fb16138",
+  "compatibility_date": "2026-11-18",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./docs"
+  }
+}
