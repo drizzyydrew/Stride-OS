@@ -6,5 +6,15 @@
   "workers_dev": true,
   "assets": {
     "directory": "./docs"
-  }
+  },
+  "routes": [
+    {
+      "pattern": "strideosfitness.com/*",
+      "zone_id": "b6256e265ce5d880af5699151a673222"
+    },
+    {
+      "pattern": "www.strideosfitness.com/*",
+      "zone_id": "b6256e265ce5d880af5699151a673222"
+    }
+  ]
 }

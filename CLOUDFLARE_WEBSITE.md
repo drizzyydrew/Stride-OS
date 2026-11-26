@@ -36,9 +36,17 @@ matched all 16 checked pages/assets, including the Apple association endpoint.
 The new account does not require the Bet Desk account's Access exception.
 The version verified was `d85b1a71-effb-4de9-8535-32bcba1e61ae`.
 
-The custom domain `strideosfitness.com` has not yet been connected to Cloudflare.
-Its DNS and existing authentication email records remain unchanged. The remaining
-custom-domain cutover requires importing and checking the mail/DNS records,
-connecting the domain and updating its registrar nameservers. Preserve existing
-GitHub Pages URLs and the pending Apple submission. Do not disable protections
-for Bet Desk applications or upgrade any paid plan as part of this move.
+On November 26, 2026, the domain was added to the dedicated Cloudflare account
+on the Free plan. The authentication email CNAME and TXT records were imported
+and checked against the Vercel backup. Exact-host Worker routes now map
+`strideosfitness.com/*` and `www.strideosfitness.com/*` to this static website.
+The existing proxied website DNS records remain; the Worker serves matching
+requests before they reach the previous host. Keep these routes in the deployment
+configuration.
+
+Vercel accepted the registrar nameserver update to `hank.ns.cloudflare.com` and
+`vita.ns.cloudflare.com`. Acceptance does not establish propagation or HTTPS
+readiness: verify the public domain, linked assets, authentication email DNS and
+Apple association endpoint after activation. Preserve existing GitHub Pages URLs
+and the pending Apple submission. Do not disable protections for Bet Desk
+applications or upgrade any paid plan as part of this move.
