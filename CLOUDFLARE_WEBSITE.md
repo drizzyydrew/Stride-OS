@@ -4,33 +4,41 @@ The public website source is the `docs/` folder on
 `claude/stride-os-visibility-sxl7xl`. GitHub Pages remains available at
 https://drizzyydrew.github.io/Stride-OS/.
 
-Cloudflare application: `strideos-website`, account
-`81480b7800ef605176e4e5c43fb16138`. The generated Cloudflare URL is
-https://strideos-website.betdeskhq.workers.dev/.
+Cloudflare application: `strideos-website`. The dedicated account belongs to
+`strideosfitness@gmail.com`, account `049b18a987ad6622853eea826657be82`.
+Its current public address is:
+https://strideos-website.strideos-website-transfer-20261126.workers.dev/.
 
-Deploy from this branch with an authenticated Wrangler installation:
+Use the dedicated StrideOS authorization when deploying from this branch:
 
 ```sh
-wrangler deploy --config wrangler.jsonc
+XDG_CONFIG_HOME="$HOME/.config/strideos-cloudflare" wrangler deploy --no-autoconfig --config wrangler.jsonc
 ```
 
+That authentication directory is local and must not be committed. Credentials
+are encrypted with a key held in macOS Keychain. The default Wrangler login
+continues to belong to Bet Desk; this configuration intentionally requires the
+separate StrideOS account. Do not change the account ID to work around an
+authorization error.
+
 This deploys static files only. It does not build or submit the iOS app, run
-backend functions, or synchronize automatically on each GitHub push.
-Do not deploy the native app branch with this configuration: its `docs/`
-folder contains internal handoff material that does not belong on the website.
+backend functions, or synchronize automatically on every GitHub push. Do not
+copy this configuration onto the native app branch: its `docs/` folder includes
+internal handoff material that does not belong on the website.
 
-`docs/.well-known/apple-app-site-association` preserves the app's existing
-password-autofill association. `_headers` serves it as JSON. Verify HTTP 200,
-no redirect or authentication, and the expected app identifier after deployment.
-Verify the home, privacy, terms, support, and linked assets by content readback.
+`docs/.well-known/apple-app-site-association` preserves the existing password-
+autofill association. `_headers` serves it as JSON. Check HTTP 200, no redirect
+or authentication, and the expected app identifier after deployment. Verify the
+home, privacy, terms, support and linked assets by content readback.
 
-As of the first migration upload on November 25, 2026, Cloudflare account-level
-Access still protects the new application and the custom domain still points
-to the paused Vercel host. Deployment success alone does not establish public
-availability. The remaining cutover requires a public exception scoped to this
-website, importing the existing email/DNS records into Cloudflare, connecting
-the custom domain, and updating the domain nameservers at its registrar.
+On November 26, 2026, public HTTPS readback on the dedicated StrideOS account
+matched all 16 checked pages/assets, including the Apple association endpoint.
+The new account does not require the Bet Desk account's Access exception.
+The version verified was `d85b1a71-effb-4de9-8535-32bcba1e61ae`.
 
-Preserve authentication email DNS records, existing GitHub Pages URLs, all
-website content, and the pending Apple submission. Do not disable Access for
-other Cloudflare applications or upgrade any paid plan as part of this move.
+The custom domain `strideosfitness.com` has not yet been connected to Cloudflare.
+Its DNS and existing authentication email records remain unchanged. The remaining
+custom-domain cutover requires importing and checking the mail/DNS records,
+connecting the domain and updating its registrar nameservers. Preserve existing
+GitHub Pages URLs and the pending Apple submission. Do not disable protections
+for Bet Desk applications or upgrade any paid plan as part of this move.
